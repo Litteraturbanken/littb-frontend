@@ -1,0 +1,1697 @@
+@charset "UTF-8";
+/*
+ *  Litteraturbanken and sister projects (LBSP)
+ *  Copyright (C) 2008-2011 Språkbanken, (The Swedish Language Bank),
+ *  University of Gothenburg, <http://spraakbanken.gu.se/>.
+ *  This file is part of Språkbanken's Corpus Infrastructure, especially LBSP.
+ *
+ *  LBSP is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  LBSP is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with LBSP.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  $Id: app.css 62131 2012-11-12 15:43:11Z johanrox $
+ */
+/** Add css rules here for your application. */
+@media only screen and (max-width: 760px), (min-device-width: 768px) and (max-device-width: 1024px) {
+  /* Force table to not be like tables anymore */
+  /* line 34, app.scss */
+  .page-titlar-epub {
+    /* Hide table headers (but not display: none;, for accessibility) */
+    	/*.app-titlar-titel {
+     	 font-size : 8px;
+     }*/
+  }
+  /* line 40, app.scss */
+  .page-titlar-epub table,
+  .page-titlar-epub thead,
+  .page-titlar-epub tbody,
+  .page-titlar-epub th,
+  .page-titlar-epub td,
+  .page-titlar-epub tr {
+    display: block;
+  }
+  /* line 43, app.scss */
+  .page-titlar-epub tr:first-child {
+    display: none;
+  }
+  /* line 48, app.scss */
+  .page-titlar-epub thead tr {
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  /* line 54, app.scss */
+  .page-titlar-epub tr:nth-of-type(odd) {
+    background-color: #EDEDED;
+  }
+  /* line 58, app.scss */
+  .page-titlar-epub td {
+    /* Behave  like a "row" */
+    border: none;
+    position: relative;
+  }
+  /* line 64, app.scss */
+  .page-titlar-epub td:before {
+    /* Now like a table header */
+    position: absolute;
+    /* Top/left values mimic padding */
+    top: 6px;
+    left: 6px;
+    width: 45%;
+    padding-right: 10px;
+    white-space: nowrap;
+  }
+  /* line 75, app.scss */
+  .page-titlar-epub .app-titlar-result {
+    padding-right: 25px;
+  }
+  /* line 79, app.scss */
+  .page-titlar-epub .app-utfyllt-element {
+    background-color: transparent;
+  }
+  /* line 82, app.scss */
+  .page-titlar-epub .app-punkt-utfyllnad {
+    border-bottom: none;
+  }
+}
+/* line 98, app.scss */
+body {
+  padding-left: 25px;
+  padding-bottom: 2em;
+  white-space: nowrap;
+  font-family: georgia,serif;
+  color: black;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 17.5px;
+  padding: 0;
+}
+
+/* line 110, app.scss */
+body > * {
+  white-space: normal;
+}
+
+/* IE hack för bugg 1244 */
+/* line 117, app.scss */
+li a {
+  display: inline-block;
+}
+
+/* line 118, app.scss */
+li a {
+  display: block;
+}
+
+/* GENERELLT */
+/* line 121, app.scss */
+ul, ol {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
+}
+
+/* line 127, app.scss */
+[role=button] {
+  outline: none;
+}
+
+/* line 132, app.scss */
+.app-body {
+  font-family: georgia,serif;
+  color: black;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 17.5px;
+  padding: 0;
+}
+
+/* line 141, app.scss */
+#app-rot-linkbar {
+  float: right;
+  position: relative;
+  top: -0.5em;
+  margin: 0;
+  display: none;
+}
+
+/* line 148, app.scss */
+.state-start #app-rot-linkbar {
+  display: block;
+}
+
+/* line 152, app.scss */
+#app-rot-linkbar li {
+  display: inline-block;
+  *display: inline;
+  *zoom: 1;
+}
+
+/* line 157, app.scss */
+#app-rot-linkbar a {
+  color: black;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+/* line 162, app.scss */
+#app-rot-linkbar a:hover {
+  color: #990000;
+}
+
+/* line 167, app.scss */
+#app-rot-linkbar li:not(:first-of-type) {
+  margin-left: 6px;
+}
+
+/* line 172, app.scss */
+#app-rot-linkbar li:not(:first-of-type) a:before {
+  content: ".";
+  font-weight: bold;
+  /* 	margin-left: 0.3em; */
+  /*     margin-right: 0.9em;  */
+  color: black;
+  position: relative;
+  bottom: 3px;
+  right: 5px;
+}
+
+/* line 183, app.scss */
+#maindiv {
+  vertical-align: top;
+  position: relative;
+}
+
+/* line 188, app.scss */
+.state-not-parallel #maindiv {
+  width: 100%;
+}
+
+/* line 192, app.scss */
+.app-body-medium {
+  font-family: georgia,serif;
+  color: black;
+  font-size: 11px;
+  font-weight: normal;
+  line-height: 15.95px;
+  padding: 0;
+}
+
+/* line 201, app.scss */
+.app-body-liten {
+  font-family: georgia,serif;
+  color: black;
+  font-size: 10px;
+  font-weight: normal;
+  line-height: 17.4px;
+  padding: 0;
+}
+
+/* line 210, app.scss */
+.app-body-tat {
+  font-family: georgia,serif;
+  color: black;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 15px;
+  padding: 0;
+}
+
+/* line 219, app.scss */
+.app-body-liten-tat {
+  font-family: georgia,serif;
+  color: black;
+  font-size: 10px;
+  font-weight: normal;
+  line-height: 12.9833px;
+  padding: 0;
+}
+
+/* line 228, app.scss */
+.app-body-tabell {
+  font-family: georgia,serif;
+  color: black;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 9.5px;
+  padding: 0;
+  margin: 0;
+}
+
+/* line 238, app.scss */
+.app-body-stor-kursiv {
+  font-family: georgia,serif;
+  color: black;
+  font-size: 17px;
+  font-weight: normal;
+  font-style: italic;
+  line-height: 17.5px;
+  padding: 0;
+}
+
+/* line 248, app.scss */
+.app-tat {
+  line-height: 13.9833px;
+}
+
+/* line 252, app.scss */
+.app-text-medel {
+  font-family: georgia,serif;
+  font-size: 16px;
+  font-style: normal;
+}
+
+/* line 258, app.scss */
+.app-text-stor {
+  font-family: georgia,serif;
+  font-size: 18px;
+  text-align: center;
+  padding: 2px;
+  color: white;
+}
+
+/* line 268, app.scss */
+.app-body-etext {
+  font-family: Georgia, Times,  serif;
+  color: black;
+  font-size: 10pt;
+}
+
+/* line 274, app.scss */
+.app-text {
+  font-size: 12px;
+}
+
+/* line 278, app.scss */
+.app-text-liten {
+  font-size: 10px;
+}
+
+/* line 282, app.scss */
+.app-text-rod {
+  font-size: 12px;
+  color: #990000;
+}
+
+/* line 287, app.scss */
+.app-text-fet-rod {
+  font-size: 12px;
+  font-weight: bold;
+  color: #990000;
+}
+
+/* line 293, app.scss */
+.app-text-gra {
+  color: gray !important;
+}
+
+/* line 297, app.scss */
+.app-text-fet {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* line 302, app.scss */
+.app-text-kursiv {
+  font-style: italic;
+}
+
+/* line 306, app.scss */
+.app-text-rod-kursiv {
+  color: #990000;
+  font-style: italic;
+}
+
+/* line 311, app.scss */
+.app-text-kapital {
+  font-family: georgia,serif;
+  font-variant: small-caps;
+  font-size: 15px;
+}
+
+/* line 317, app.scss */
+.app-text-blink {
+  text-decoration: blink;
+}
+
+/* line 321, app.scss */
+.app-inline {
+  display: inline-block;
+  *display: inline;
+  zoom: 1;
+}
+
+/* line 327, app.scss */
+#app-rot-huvudmeny {
+  vertical-align: middle;
+}
+
+/* line 331, app.scss */
+.app-margin-top {
+  margin-top: 15px;
+}
+
+/* line 335, app.scss */
+.app-undermeny {
+  margin-top: 10px;
+}
+
+/* line 339, app.scss */
+.app-status-message {
+  position: absolute;
+  top: 15px;
+  left: 566px;
+}
+
+/* line 345, app.scss */
+.app-tooltip {
+  background-color: #990000;
+  font-size: 14px;
+  line-height: 17.4px;
+  color: white;
+  opacity: 0.85;
+  padding: 5px;
+  padding-left: 5px;
+  width: auto;
+  max-width: 350px;
+  /* 	white-space:normal; */
+  height: auto;
+  z-index: 200;
+}
+
+/* line 360, app.scss */
+.app-tooltip-svart {
+  background-color: black;
+  font-size: 14px;
+  line-height: 17.4px;
+  color: white;
+  opacity: 0.85;
+  width: auto;
+  max-width: 350px;
+  /* 	white-space:normal; */
+  height: auto;
+  padding: 5px;
+  z-index: 200;
+}
+
+/* line 374, app.scss */
+.app-sidhjalp {
+  width: 118px;
+  margin-top: 35px;
+  z-index: 0;
+}
+
+/* line 380, app.scss */
+.app-sidhjalptext {
+  z-index: 1;
+}
+
+/* line 384, app.scss */
+.app-sidhjalptext a:link {
+  text-decoration: none;
+  color: black;
+}
+
+/* line 389, app.scss */
+.app-sidhjalptext a:visited {
+  text-decoration: none;
+  color: black;
+}
+
+/* line 393, app.scss */
+.app-sidhjalptext a:active {
+  text-decoration: none;
+  color: black;
+}
+
+/* line 398, app.scss */
+.app-sidhjalptext a:hover {
+  text-decoration: underline;
+  color: red;
+}
+
+/* line 403, app.scss */
+.app-ankarmeny li {
+  margin-bottom: 2px;
+}
+
+/* regler för logotyp */
+/* line 409, app.scss */
+#app-rot-header hr {
+  display: none;
+  width: 350px;
+  margin-left: 1px;
+  border: none;
+  border-top: 1px solid grey;
+}
+
+/* line 417, app.scss */
+body.site-littb.svg.state-start #app-rot-header hr {
+  display: block;
+  text-align: left;
+}
+
+/* line 421, app.scss */
+body.site-littb.svg #logo_img {
+  background-image: url("/bilder/LBlogga.svg");
+  background-size: contain;
+  margin-left: -7px;
+  margin-bottom: 4px;
+  height: 25px;
+}
+
+/* line 428, app.scss */
+body.site-littb.state-start.svg #logo_img {
+  background-image: url("/bilder/LBlogga.svg");
+  background-size: contain;
+  height: 60px;
+  margin-top: 20px;
+  margin-left: -17px;
+}
+
+/* line 436, app.scss */
+body.state-start #logo_img {
+  background-image: url("/bilder/LBloggaochstreckHel.png");
+  height: 80px;
+  margin-left: -9px;
+}
+
+/* relativ positionering för länkens skull */
+/* line 442, app.scss */
+#app-rot-logga {
+  position: relative;
+}
+
+/* line 446, app.scss */
+#logo_img {
+  background-image: url("/bilder/LBunderloggaochstreck.png");
+  background-repeat: no-repeat;
+  display: block;
+  height: 30px;
+}
+
+/* line 452, app.scss */
+#app-rot-logga a {
+  position: absolute;
+  width: 270px;
+  height: 100%;
+  color: grey;
+}
+
+/* ingen länk på startsidan */
+/* line 459, app.scss */
+body.state-start #app-rot-logga a {
+  display: none;
+}
+
+/* line 464, app.scss */
+#app-rot-arbetsyta {
+  margin-top: 10px;
+  white-space: normal;
+  vertical-align: top;
+  background-color: white;
+}
+
+/* line 470, app.scss */
+#app-rot-undermeny {
+  margin-top: 34px;
+}
+
+/* line 474, app.scss */
+#alphabetT {
+  width: 102px;
+  padding: 20px 0;
+  border-top: solid 1px grey;
+  border-bottom: solid 1px grey;
+}
+
+/* line 481, app.scss */
+.app-start-arbetsyta {
+  position: relative;
+  width: 478px;
+  margin-left: 60px;
+}
+
+/* line 487, app.scss */
+.app-start-sok {
+  margin-top: 220px;
+}
+
+/* line 491, app.scss */
+.app-start-skicka {
+  position: relative;
+  left: 2px;
+  top: 2px;
+}
+
+/* line 497, app.scss */
+.app-start-status {
+  position: relative;
+  left: -35px;
+  top: -3px;
+  width: 437px;
+  border: 0px none;
+}
+
+/* line 505, app.scss */
+body.state-start #app-rot-header {
+  border: none;
+}
+
+/* line 508, app.scss */
+#app-rot-header {
+  width: 675px;
+  position: relative;
+  border-bottom: solid 1px grey;
+  margin-top: 25px;
+}
+
+/* line 516, app.scss */
+#app-rot-bokmarke {
+  bottom: 0;
+  right: 0;
+  position: absolute;
+}
+
+/* line 522, app.scss */
+#app-rot-meny {
+  /* 	margin-left:24px; */
+  margin-top: 15px;
+  white-space: normal;
+}
+
+/* line 528, app.scss */
+.app-meny {
+  width: 120px;
+  margin-right: 40px;
+}
+
+/* line 536, app.scss */
+.app-arbetsyta-text {
+  width: 437px;
+  margin: 1em 0 0 1em;
+}
+
+/* line 541, app.scss */
+.app-arbetsyta-lista {
+  height: 118px;
+  left: 200px;
+  top: 89px;
+  width: 507px;
+}
+
+/* line 548, app.scss */
+.app-meddelande {
+  left: 200px;
+  position: absolute;
+  top: 100px;
+  width: 400px;
+  color: white;
+  text-align: center;
+  border: solid 1px white;
+  background: #990000;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  z-index: 500;
+  opacity: 0.85;
+}
+
+/* line 563, app.scss */
+.app-skicka {
+  position: relative;
+  left: 2px;
+  top: 7px;
+  padding-right: 5px;
+  padding-left: 3px;
+}
+
+/* TEXTVISNING_ETEXT */
+/* line 572, app.scss */
+.app-arbetsyta-etext {
+  border: 0px none;
+  white-space: nowrap;
+  position: relative;
+}
+
+/* line 578, app.scss */
+.app-kontextmeny {
+  background-color: gray;
+  border-color: gray gray gray gray;
+  border-width: 1px 3px 3px 1px;
+  border-style: solid solid solid solid;
+  z-index: 200;
+}
+
+/* line 586, app.scss */
+.app-kontextmenyval {
+  font-weight: normal;
+  font-size: 80%;
+}
+
+/* line 591, app.scss */
+.app-kontext-result-div {
+  background-color: white;
+  opacity: 0.85;
+  width: auto;
+  height: auto;
+  z-index: 200;
+}
+
+/* line 599, app.scss */
+.app-kontext-result-text {
+  background-color: #990000;
+  font-size: 14px;
+  line-height: 17.4px;
+  color: white;
+  opacity: 0.85;
+  padding: 20px;
+  margin: 10px;
+  min-width: 450px;
+  max-width: 450px;
+  min-height: 50px;
+  width: auto;
+  height: auto;
+  z-index: 300;
+}
+
+/* KALLINFO */
+/* line 616, app.scss */
+errata td {
+  width: 78px;
+  font-weight: bold;
+}
+
+/* line 621, app.scss */
+errata td + td {
+  width: auto;
+  font-weight: normal;
+  word-wrap: normal;
+}
+
+/* FORFATTARE */
+/* line 628, app.scss */
+.app-arbetsyta-forfattare {
+  margin-top: 2em;
+  width: 520px;
+  border: 0px none;
+}
+
+/* line 634, app.scss */
+.app-forfattare-intro {
+  border: 0 none;
+  width: 437px;
+}
+
+/* line 639, app.scss */
+.app-forfattare-verklank {
+  margin-bottom: 20px;
+}
+
+/* line 643, app.scss */
+.app-forfattare-portratt {
+  border: 0 none;
+  right: 0px;
+  padding: 0;
+  /* 	position:absolute; */
+  width: auto;
+}
+
+/* line 651, app.scss */
+.app-forfattare-bildinfo {
+  text-align: right;
+  padding: 0;
+  margin-top: 5px;
+  margin-bottom: 20px;
+  border: 0px none;
+}
+
+/* line 659, app.scss */
+.app-forfattare-bild1 {
+  text-align: right;
+  padding: 0;
+  margin-top: 50px;
+  border: 0px none;
+}
+
+/* TEXTVISNING_FAKSIMIL */
+/* line 669, app.scss */
+.app-arbetsyta-faksimil {
+  position: relative;
+  white-space: nowrap;
+}
+
+/* line 677, app.scss */
+.app-status-faksimil {
+  /* 	height : 1em; */
+  margin-bottom: 5px;
+  height: 0;
+  overflow: visible;
+}
+
+/* line 684, app.scss */
+.app-faksimil-markering {
+  position: absolute;
+  opacity: 0.6;
+  /* ie hack */
+  filter: alpha(opacity=60);
+  zoom: 1;
+  background-color: red;
+  z-index: 500;
+}
+
+/* line 694, app.scss */
+.app-faksimil-storlekar {
+  margin-top: 5px;
+}
+
+/* TEXTVISNING - verktygslada */
+/* line 699, app.scss */
+.app-text-sidnavigator {
+  	/*position:absolute;
+  		left:-3px;
+  
+  	*/
+  height: 30px;
+  width: 103px;
+  z-index: 100;
+}
+
+/* line 709, app.scss */
+.app-text-pil {
+  display: inline;
+  border: none;
+  z-index: 1;
+}
+
+/* line 715, app.scss */
+.app-text-sidnavigator:hover {
+  text-decoration: none;
+  color: #990000;
+  cursor: hand;
+  cursor: pointer;
+}
+
+/* line 723, app.scss */
+.app-text-sidfalt {
+  margin-top: 5px;
+  width: 50px;
+  height: 24px;
+}
+
+/* line 729, app.scss */
+.app-text-fulldelnav {
+  color: white;
+  min-width: 90px;
+  padding: 20px 20px 20px;
+  white-space: nowrap;
+}
+
+/* line 737, app.scss */
+.fullPartNavigation {
+  position: relative;
+}
+
+/* line 741, app.scss */
+.fullPartNavigation > img {
+  /* 	margin : 5px 0; */
+}
+
+/* line 745, app.scss */
+.fullPartPopup {
+  position: absolute;
+  bottom: 0;
+  background-color: #990000;
+  margin-left: 120px;
+  z-index: 200;
+  opacity: 0.85;
+}
+
+/* line 754, app.scss */
+.app-text-fulldelnav-skroll:hover {
+  cursor: pointer;
+}
+
+/* line 758, app.scss */
+.app-text-fulldelnav-dek {
+  left: -25px;
+  position: relative;
+  bottom: -4px;
+  -webkit-margin-after: -1px;
+}
+
+/* line 766, app.scss */
+.app-text-fulldelnav-td {
+  font-size: 12px;
+  font-style: italic;
+  line-height: 15px;
+  text-align: left;
+  vertical-align: top;
+  padding: 0;
+  color: white;
+  opacity: 0.85;
+  z-index: 100;
+}
+
+/* line 778, app.scss */
+.app-text-fulldelnav-td:hover {
+  text-decoration: underline;
+  cursor: hand;
+  cursor: pointer;
+}
+
+/* line 784, app.scss */
+.app-text-delnavigation-td {
+  font-size: 10px;
+  font-style: italic;
+  text-align: left;
+  vertical-align: top;
+  padding: 0;
+  z-index: 100;
+}
+
+/* line 793, app.scss */
+.app-text-delnavigation-td:hover {
+  text-decoration: none;
+  color: #990000;
+  cursor: hand;
+  cursor: pointer;
+}
+
+/* PRESENTATIONER */
+/* line 802, app.scss */
+.app-arbetsyta-presentationer {
+  width: 513px;
+  margin: 3em 0 0 2em;
+}
+
+/* line 808, app.scss */
+div.txt {
+  white-space: nowrap;
+  margin-top: 3em;
+  margin-left: 3em;
+  width: 35em;
+  height: 42em;
+  text-align: left;
+}
+
+/* line 819, app.scss */
+.app-arbetsyta-aktuellpresentation {
+  width: 437px;
+  margin: 2em 0 0 2em;
+  position: relative;
+}
+
+/* LISTSIDOR (ListPage)*/
+/* line 827, app.scss */
+.app-arbetsyta-tabell {
+  /* 	position: absolute; */
+  top: 78px;
+  left: 178px;
+  width: 554px;
+  border: 0px none;
+}
+
+/* line 837, app.scss */
+.app-sortbutton {
+  border: 0px none;
+  font-size: 9pt;
+  text-decoration: underline;
+  background-color: #FFFFFF;
+  margin-bottom: 8px;
+}
+
+/* line 847, app.scss */
+.app-sortbutton:hover {
+  text-decoration: none;
+  color: #990000;
+  cursor: hand;
+  cursor: pointer;
+}
+
+/* line 854, app.scss */
+.app-table_element {
+  font-size: 12px;
+  border: 0px none;
+  margin: 0;
+  text-align: left;
+  vertical-align: bottom;
+  word-wrap: normal;
+  padding-bottom: 0px;
+}
+
+/* line 864, app.scss */
+.app-tomt-tabell_element {
+  height: 12px;
+}
+
+/* line 868, app.scss */
+.app-utfyllt-element {
+  vertical-align: text-top;
+}
+
+/* line 874, app.scss */
+.app-punkt-utfyllnad {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 3px;
+  border-bottom: 1px dotted #C0C0C0;
+}
+
+/* line 883, app.scss */
+.app-td-div {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  line-height: 17.4px;
+  overflow: hidden;
+}
+
+/* LISTSIDOR - TITLAR_A-O */
+/* line 894, app.scss */
+.app-titlar-status2 {
+  width: 512px;
+  text-align: right;
+}
+
+/* line 899, app.scss */
+.app-titlar-titel {
+  width: 457px;
+  max-width: 457px;
+  font-size: 12px;
+  border: 0px none;
+  margin: 0;
+  vertical-align: bottom;
+  font-style: italic;
+}
+
+/* line 909, app.scss */
+.app-titlar-forfattare-first {
+  width: 246px;
+  max-width: 246px;
+  font-size: 12px;
+  border: 0px none;
+  margin: 0;
+  vertical-align: top;
+}
+
+/* line 919, app.scss */
+.app-titlar-forfattare {
+  width: 246px;
+  vertical-align: bottom;
+}
+
+/* line 924, app.scss */
+.app-titlar-intro {
+  width: 520px;
+}
+
+/* line 928, app.scss */
+.app-titlar-formular-topp {
+  left: 1px;
+}
+
+/* line 932, app.scss */
+.app-titlar-formular-topp {
+  left: 1px;
+  top: 0px;
+}
+
+/* line 937, app.scss */
+.app-titlar-formular {
+  /* 	position:absolute; */
+  left: 1px;
+  top: 146px;
+}
+
+/* line 943, app.scss */
+.app-titlar-mediatyp {
+  width: 246px;
+  font-size: 12px;
+  vertical-align: bottom;
+}
+
+/* line 949, app.scss */
+.app-titlar-rad1 {
+  margin: 15px 0;
+}
+
+/* line 953, app.scss */
+.app-titlar-rad2 {
+  position: relative;
+  left: 1px;
+  top: 0px;
+  height: 37px;
+}
+
+/* line 960, app.scss */
+.app-titlar-rad2 .app-inline {
+  vertical-align: baseline;
+}
+
+/* line 964, app.scss */
+.app-titlar-fras {
+  width: 107px;
+  margin-left: 5px;
+}
+
+/* line 969, app.scss */
+.app-titlar-result {
+  margin: 20px 0;
+  position: relative;
+}
+
+/* line 974, app.scss */
+.app-titlar-status {
+  left: 209px;
+  position: relative;
+  text-align: right;
+  top: 13px;
+  width: 300px;
+}
+
+/* line 982, app.scss */
+td .app-inga-traffar {
+  padding: 0px;
+  white-space: nowrap;
+}
+
+/* line 987, app.scss */
+.app-verkilb-td1 {
+  width: 291px;
+  font-size: 12px;
+  border: 0px none;
+  margin: 0;
+  vertical-align: bottom;
+  max-width: 291px;
+}
+
+/*Listsidor - F�RFATTARE A-� */
+/* line 997, app.scss */
+.app-forflista-sok {
+  height: 39px;
+  left: 0px;
+  /* 	position:absolute; */
+  top: 2px;
+  width: 600px;
+}
+
+/* line 1005, app.scss */
+app-forflista-status {
+  left: 344px;
+  /* 	position:absolute; */
+  top: 90px;
+  width: 300px;
+}
+
+/* SAMMA SOM app-titel-fras */
+/* line 1013, app.scss */
+.app-forflista-fras {
+  width: 107px;
+  margin-left: 5px;
+  width: 107px;
+}
+
+/* line 1019, app.scss */
+.app-forflista-result {
+  left: 0px;
+  /* 	position:absolute; */
+  top: 70px;
+  width: 700px;
+  margin-bottom: 20px;
+  white-space: nowrap;
+}
+
+/* line 1028, app.scss */
+.app-forflista-td1 {
+  width: 235px;
+  max-width: 235px;
+  margin: 0;
+  border: 0px none;
+  text-align: left;
+  vertical-align: text-bottom;
+  word-wrap: normal;
+}
+
+/* line 1038, app.scss */
+.app-forflista-td2 {
+  width: 80px;
+  max-width: 80px;
+  margin: 0;
+  border: 0px none;
+  text-align: left;
+  vertical-align: text-bottom;
+  word-wrap: normal;
+}
+
+/* line 1048, app.scss */
+.app-forflista-td3 {
+  margin: 0;
+  border: 0px none;
+  text-align: left;
+  vertical-align: text-bottom;
+  word-wrap: normal;
+}
+
+/* UNDERMENY ALLMANT */
+/* For alfabetet */
+/* line 1060, app.scss */
+.app-toppstreck-inbaddat {
+  /* 	position:absolute; */
+  left: -3px;
+  top: -25px;
+  width: 116px;
+  height: 11px;
+}
+
+/* line 1068, app.scss */
+.app-bottenstreck-inbaddat {
+  /* 	position:absolute; */
+  left: -4px;
+  top: 123px;
+  width: 118px;
+  height: 25px;
+}
+
+/* t ex AKTUELL_FORFATTARE */
+/* line 1077, app.scss */
+.app-toppstreck-lagre {
+  /*width:116px;
+  height:11px;*/
+  margin-left: -3px;
+}
+
+/* line 1083, app.scss */
+.app-bottenstreck-lagre {
+  /*
+  width:116px;
+  height:16px;*/
+  margin-left: -3px;
+  /*margin-top: 18px;
+  margin-bottom: 25px;*/
+}
+
+/* line 1092, app.scss */
+.app-streck {
+  /* 	position:absolute; */
+  left: -3px;
+  width: 116px;
+  height: 16px;
+}
+
+/* t ex TEXTVISNING */
+/* line 1100, app.scss */
+.app-toppstreck-hogre {
+  /* 	position:absolute; */
+  left: 29px;
+  top: 255px;
+  width: 116px;
+  height: 11px;
+}
+
+/* line 1108, app.scss */
+.app-bottenstreck-hogre {
+  /* 	position:absolute; */
+  top: 388px;
+  left: 29px;
+  width: 116px;
+  height: 16px;
+}
+
+/* UNDERMENY - Alfabetsnavigering */
+/* line 1118, app.scss */
+.app-alfabet {
+  width: 99px;
+  height: 80px;
+  margin-left: 1px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* line 1126, app.scss */
+.app-alfabet-element {
+  width: 20px;
+  text-align: center;
+  vertical-align: top;
+}
+
+/* UNDERMENY for ETEXTVISNING */
+/* line 1135, app.scss */
+.app-undermeny-verkinfo {
+  margin-top: 3px;
+  margin-bottom: 1em;
+  /* 	height:60px; */
+  /* 	width:116px; */
+}
+
+/* line 1143, app.scss */
+.app-undermeny-kallinfo {
+  margin-top: 35px;
+  width: 119px;
+}
+
+/* line 1148, app.scss */
+.app-etext-fulldelnav-mo {
+  margin-top: 15px;
+  z-index: 100;
+}
+
+/* line 1153, app.scss */
+.app-etext-fulldelnav-mo:hover {
+  text-decoration: none;
+  color: #990000;
+  cursor: hand;
+  cursor: pointer;
+}
+
+/* line 1160, app.scss */
+#parallel_wrapper {
+  vertical-align: top;
+}
+
+/* line 1168, app.scss */
+#paralleldiv {
+  vertical-align: top;
+}
+
+/* line 1176, app.scss */
+.state-parallel .app-arbetsyta-faksimil #paralleldiv {
+  margin-right: 2em;
+}
+
+/* UNDERMENY for AKTUELL_FÖRFATTARE */
+/*.app-undermeny-forfattare {
+	height:166px;
+	left:32px;
+	position:absolute;
+	top:332px;
+	width:120px;
+}*/
+/* line 1197, app.scss */
+.app-undermeny-aktuell {
+  margin-top: 5px;
+  margin-bottom: 30px;
+  width: 111px;
+}
+
+/* line 1204, app.scss */
+.app-arbetsyta-verkilb {
+  margin-top: 1em;
+}
+
+/* line 1208, app.scss */
+.app-verkilb-lista {
+  margin-top: 4em;
+}
+
+/* SOK_I_ETEXT */
+/* line 1213, app.scss */
+.app-sok-fras-rad {
+  width: 600px;
+}
+
+/* line 1217, app.scss */
+.app-sok-konfig {
+  background-color: white;
+  border: 1px solid lightGrey;
+  height: 93px;
+  left: 0;
+  opacity: 1;
+  padding: 12px;
+}
+
+/* line 1226, app.scss */
+.internh3 {
+  margin: 0px 0px 3px 0px;
+}
+
+/* line 1230, app.scss */
+.app-sok-titel {
+  left: 250px;
+  position: absolute;
+  top: 27px;
+}
+
+/* line 1236, app.scss */
+.row {
+  left: 15px;
+  position: absolute;
+  top: 6px;
+}
+
+/* line 1242, app.scss */
+.app-sok-titelval {
+  width: 255px;
+}
+
+/* line 1246, app.scss */
+.app-sok-status {
+  position: absolute;
+  text-align: right;
+  top: -5px;
+  width: 535px;
+}
+
+/* line 1253, app.scss */
+.app-sok-skicka-aktiv {
+  border: none;
+}
+
+/* line 1257, app.scss */
+.app-sok-result {
+  margin-bottom: 20px;
+}
+
+/* line 1261, app.scss */
+.app-sok-index {
+  color: grey;
+  width: auto;
+  white-space: nowrap;
+}
+
+/* line 1267, app.scss */
+.app-td-left {
+  text-align: right;
+  width: auto;
+  white-space: nowrap;
+}
+
+/* line 1273, app.scss */
+.app-sok-forf-td {
+  width: auto;
+  white-space: nowrap;
+}
+
+/* line 1278, app.scss */
+.app-sok-autotd {
+  width: auto;
+  white-space: nowrap;
+}
+
+/* line 1284, app.scss */
+.app-sok-sidnr {
+  margin-left: 2px;
+  width: 119px;
+}
+
+/* line 1289, app.scss */
+.app-sok-textbox {
+  margin-left: 2px;
+  width: 47px;
+}
+
+/* line 1294, app.scss */
+.app-sok-nav-skicka {
+  margin-left: 3px;
+}
+
+/* line 1298, app.scss */
+.app-sok-etextnavigation {
+  background-image: url(bilder/Soknavigering.png);
+  width: 113px;
+  height: 62px;
+  margin-left: -5px;
+}
+
+/* line 1306, app.scss */
+.app-sok-hit {
+  background-color: pink;
+  /*     display: inline-block; */
+  margin-right: -4px;
+  padding-right: 3px;
+  text-indent: 0;
+}
+
+/* line 1313, app.scss */
+.app-sok-hit-last {
+  /*     display: inline; */
+  margin-right: 0;
+  padding-right: 0;
+}
+
+/* KONTAKT */
+/* line 1321, app.scss */
+.app-kontakt-text {
+  width: 390px;
+  height: 234px;
+}
+
+/* line 1326, app.scss */
+.app-kontakt-test {
+  color: #990000;
+}
+
+/* line 1330, app.scss */
+.list-td {
+  border: 0px none;
+  padding: 0;
+  margin: 0;
+  line-height: 100%;
+}
+
+/* line 1337, app.scss */
+.app-dold {
+  visibility: hidden;
+}
+
+/* line 1341, app.scss */
+.app-body-statistik {
+  font-family: Georgia, Times,  serif;
+  color: black;
+  font-size: 10pt;
+}
+
+/* line 1347, app.scss */
+.app-errata-closed .overflow {
+  display: none;
+}
+
+/* line 1351, app.scss */
+[content="❦"]::after {
+  content: "❦";
+}
+
+/* line 1354, app.scss */
+[content="❦"] img {
+  display: none;
+}
+
+/* line 1358, app.scss */
+div.pname {
+  /* 	position : relative !important; */
+}
+
+/* line 1362, app.scss */
+div.gloss_label {
+  display: inline;
+  font-size: 90%;
+  font-weight: bolder;
+  text-align: left;
+}
+
+/* line 1369, app.scss */
+div.gloss_item {
+  display: inline;
+  font-size: 90%;
+  padding-left: 0.5em;
+  text-align: left;
+}
+
+/* line 1377, app.scss */
+.sla-work h3 {
+  text-transform: capitalize;
+}
+
+/* line 1381, app.scss */
+.sla-work:nth-child(even) {
+  background-color: lightgrey;
+}
+
+/* line 1385, app.scss */
+.toolkit-link:before {
+  content: ":::";
+  margin-left: 2px;
+}
+
+/* line 1389, app.scss */
+.toolkit-link {
+  cursor: pointer;
+}
+
+/* line 1393, app.scss */
+body.state-start .app-start-arbetsyta {
+  margin-top: 16px;
+}
+
+/* line 1397, app.scss */
+.gratis-ebok {
+  font-size: 1em;
+  font-variant: small-caps;
+  line-height: 1.2em;
+  margin: 0;
+}
+
+/* line 1406, app.scss */
+.site-spf .app-arbetsyta-etext {
+  white-space: nowrap;
+}
+/* line 1409, app.scss */
+.site-spf .txt {
+  white-space: nowrap;
+}
+/* line 1413, app.scss */
+.site-spf #app-rot-linkbar {
+  display: none;
+}
+/* line 1417, app.scss */
+.site-spf #logo_img {
+  background-image: url("/bilder/SpfLogoSmall.png");
+  height: 75px;
+  width: 110px;
+  margin-left: -16px;
+}
+/* line 1424, app.scss */
+.site-spf #app-rot-header {
+  border: none;
+}
+/* line 1428, app.scss */
+.site-spf .txt {
+  width: 30em;
+  margin-right: 4em;
+}
+/* line 1433, app.scss */
+.site-spf .app-arbetsyta-tabell {
+  width: 800px;
+}
+/* line 1437, app.scss */
+.site-spf.svg #logo_img {
+  background-image: url("/bilder/spf1800_logotyp.svg");
+  height: 75px;
+  width: 110px;
+  margin-left: -8px;
+  background-size: contain;
+}
+/* line 1445, app.scss */
+.site-spf .app-titlar-forfattare {
+  padding-right: 5px;
+}
+/* line 1449, app.scss */
+.site-spf .app-forflista-td3 {
+  padding-right: 10px;
+}
+/* line 1453, app.scss */
+.site-spf.state-start #logo_img {
+  background-image: url("/bilder/SpfLogoLarge.png");
+  height: 95px;
+  width: 110px;
+  margin-left: -22px;
+}
+/* line 1460, app.scss */
+.site-spf.state-start.svg #logo_img {
+  background-image: url("/bilder/spf1800_logotyp.svg");
+  height: 95px;
+  width: 110px;
+  margin-left: -10px;
+  background-size: contain;
+}
+
+/* line 1470, app.scss */
+.site-sla {
+  background-color: #EDEDED;
+  background-image: url(/bilder/SLA_grundbild_undersidabild_notext.jpg);
+  background-repeat: no-repeat;
+}
+/* line 1476, app.scss */
+.site-sla .app-td-div {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  line-height: 17.4px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+/* line 1485, app.scss */
+.site-sla .app-utfyllt-element {
+  vertical-align: text-top;
+  white-space: nowrap;
+}
+/* line 1490, app.scss */
+.site-sla .app-sortbutton {
+  border: 0px none;
+  font-size: 9pt;
+  text-decoration: underline;
+  background-color: transparent;
+  margin-bottom: 8px;
+}
+/* line 1498, app.scss */
+.site-sla .app-meny {
+  font-size: 0.9em;
+  font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
+  color: #A53F0F;
+  font-weight: 100;
+  padding: 10px 10px 10px 66px;
+  margin-top: 200px;
+  width: 220px;
+  position: absolute;
+  line-height: 120%;
+  white-space: nowrap;
+}
+/* line 1511, app.scss */
+.site-sla #app-rot-arbetsyta {
+  position: absolute;
+  left: 335px;
+  top: 162px;
+  width: 532px;
+  height: 368px;
+  z-index: -1;
+}
+/* line 1520, app.scss */
+.site-sla .app-body {
+  font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
+  font-size: 0.9em;
+  color: black;
+  font-weight: 100;
+  line-height: 110%;
+  padding: 0;
+}
+/* line 1529, app.scss */
+.site-sla a:link, .site-sla a:visited {
+  text-decoration: none;
+  /* Dick vill ha det här vitt */
+  color: black;
+  background-color: transparent;
+}
+/* line 1536, app.scss */
+.site-sla a:hover, .site-sla a:active {
+  text-decoration: none;
+  color: black;
+  background-color: transparent;
+}
+/* line 1542, app.scss */
+.site-sla .app-text-stor {
+  font-size: 1.1em;
+  font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
+  color: #A53F0F;
+  font-weight: 100;
+  text-align: center;
+  padding: 2px;
+}
+/* line 1551, app.scss */
+.site-sla #logo_img {
+  background-image: url("/bilder/SlaLogoSmall.png");
+  height: 110px;
+}
+/* line 1555, app.scss */
+.site-sla.state-start #logo_img {
+  height: 105px;
+}

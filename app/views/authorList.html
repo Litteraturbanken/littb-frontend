@@ -1,0 +1,12 @@
+
+<h1>Författare</h1>
+
+Sök efter författare: <input ng-model="authorFilter"> (Lämna rutan tom för att visa alla)
+
+<table class="table-striped contenttable">
+    <tr ng-repeat="row in rows | filter:authorFilter | orderBy:nameforindex">
+        <td>{{row.nameforindex}}</td>
+        <td>{{row.datestring}}</td>
+        <td><em ng-show="row.pseudonymfor">::: se {{authorIdGroup[row.pseudonymfor][0].nameforindex}}</em></td>
+    </tr>
+</table>

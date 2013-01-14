@@ -1,0 +1,775 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"br",
+				"browserWarn"
+			],
+			[
+				"for",
+				"forof	Object Comprehension"
+			],
+			[
+				"fo",
+				"forin	Array Comprehension"
+			],
+			[
+				"mod",
+				"mod	Angular Module value"
+			],
+			[
+				"li",
+				"list-style-position"
+			],
+			[
+				"par",
+				"routeParams	\\$routeParams"
+			],
+			[
+				"tab",
+				"table	Tag"
+			],
+			[
+				"i",
+				"import"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "app/scripts/controllers/controllers.coffee",
+			"settings":
+			{
+				"buffer_size": 1830,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/index.html",
+			"settings":
+			{
+				"buffer_size": 2510,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/views/list.html",
+			"settings":
+			{
+				"buffer_size": 1071,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/scripts/app.coffee",
+			"settings":
+			{
+				"buffer_size": 577,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/styles/sass.scss",
+			"settings":
+			{
+				"buffer_size": 1208,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"selected_items":
+		[
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"lint",
+				"SublimeLinter: Disable Linting"
+			],
+			[
+				"linter",
+				"SublimeLinter: Disable Linting"
+			],
+			[
+				"key",
+				"Preferences: Key Bindings - User"
+			],
+			[
+				"linting",
+				"SublimeLinter: Disable Linting"
+			],
+			[
+				"indent",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"sublimelin",
+				"SublimeLinter: Disable Linting"
+			],
+			[
+				"keybi",
+				"Preferences: Key Bindings - User"
+			],
+			[
+				"inden",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"coffee",
+				"Coffee: Compile File"
+			],
+			[
+				"zen w",
+				"Zen Coding: Wrap zen as you type"
+			],
+			[
+				"zen as you",
+				"Zen Coding: Zen as you type"
+			],
+			[
+				"zen as",
+				"Zen Coding: Zen as you type"
+			],
+			[
+				"wrap",
+				"Zen Coding: Wrap zen as you type"
+			],
+			[
+				"zen",
+				"Zen Coding: Wrap zen as you type"
+			],
+			[
+				"revel",
+				"File: Reveal"
+			],
+			[
+				"align",
+				"Preferences: Alignment Key Bindings – Default"
+			],
+			[
+				"user",
+				"Preferences: Key Bindings - User"
+			],
+			[
+				"reind",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"reinden",
+				"Indentation: Reindent Lines"
+			],
+			[
+				"toggle",
+				"View: Toggle Open Files in Side Bar"
+			],
+			[
+				"side",
+				"View: Toggle Open Files in Side Bar"
+			],
+			[
+				"buil",
+				"SublimeREPL: Python - RUN current file"
+			],
+			[
+				"python",
+				"SublimeREPL: Python"
+			],
+			[
+				"rep",
+				"SublimeREPL: Python - execnet"
+			],
+			[
+				"repl py",
+				"SublimeREPL: Python - execnet"
+			],
+			[
+				"instal",
+				"Package Control: Install Package"
+			],
+			[
+				"coff",
+				"Coffee: Run Script"
+			],
+			[
+				"directi",
+				"Snippet: Angular Module directive (simple)"
+			],
+			[
+				"angular",
+				"Snippet: Angular $location"
+			],
+			[
+				"packa",
+				"Package Control: Remove Package"
+			],
+			[
+				"angular controll",
+				"Snippet: Angular Module controller"
+			],
+			[
+				"angular controller",
+				"Snippet: Angular Controller $dirty"
+			],
+			[
+				"Snippet: ",
+				"Snippet: Angular bootstrap"
+			],
+			[
+				"angular con",
+				"Snippet: Angular $controller"
+			],
+			[
+				"direc",
+				"Snippet: Angular Module directive (complete)"
+			],
+			[
+				"angul",
+				"Snippet: Angular filter"
+			],
+			[
+				"before",
+				"Snippet: .insertBefore"
+			],
+			[
+				"insta",
+				"Package Control: Install Package"
+			],
+			[
+				"git",
+				"Package Control: Install Package"
+			],
+			[
+				"new",
+				"File: New View into File"
+			],
+			[
+				"expan",
+				"Expand Selection to Function (JavaScript)"
+			]
+		],
+		"width": 593.0
+	},
+	"console":
+	{
+		"height": 125.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/johan/demo/cgi/get.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/sass.css",
+		"/Users/johan/Dropbox/Development/workspace_juno/pub/korp_manual_swe.md",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/lookup.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/nysno_server.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/src/main.coffee",
+		"/Users/johan/Dropbox/Development/startup.sh",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/find_fwords.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/index.html",
+		"/Users/johan/Dropbox/Development/shell.sh",
+		"/Users/johan/www/cgi-bin/proxy.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/src/index.haml",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/src/style.scss",
+		"/Users/johan/Dropbox/Development/sublime/Packages/Default/Default (OSX).sublime-keymap",
+		"/Users/johan/Dropbox/Development/sublime/Packages/User/Default (OSX).sublime-keymap",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/coffee-compile.sh",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/lib/xml2json.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/src/main.js",
+		"/Users/johan/Dropbox/Development/sublime/Packages/BuildOnSave/buildonsave.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/nysno.sublime-project",
+		"/Users/johan/Dropbox/Development/workspace_juno/nysno/build/main.js",
+		"/Users/johan/Dropbox/Development/sublime/Packages/Default/Preferences.sublime-settings",
+		"/Users/johan/Dropbox/Development/workspace_juno/korp/app/index.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/korp/app/scripts/korp.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/korp/release.sh",
+		"/Users/johan/Dropbox/Development/workspace_juno/korp/app/scripts/widgets_coffee.coffee",
+		"/Users/mini/Dropbox/Development/workspace_juno/test/test.js",
+		"/Users/mini/Dropbox/Development/sublime/Packages/Alignment/Default (OSX).sublime-keymap",
+		"/Users/mini/Dropbox/Development/sublime/Packages/User/Default (OSX).sublime-keymap",
+		"/Users/mini/Dropbox/Development/workspace_juno/test/test.html",
+		"/Users/mini/Dropbox/Development/sublime/Packages/User/Preferences.sublime-settings",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/src/test/pyscxmlTest.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/w3c_tests/failed.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/src/scxml/compiler.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/w3c_tests/w3cTests.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/w3c_tests/assertions_xpath/test483.scxml",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/w3c_tests/newer_xpath_tests/failed/test519.scxml",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/w3c_tests/newer_xpath_tests/failed/test483.scxml",
+		"/Users/johan/Dropbox/Development/sublime/Packages/XML/XML.sublime-settings",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/unittest_xml/all_configs.xml",
+		"/Users/johan/Dropbox/Development/sublime/Packages/User/SideBarEnhancements/Open With/Side Bar.sublime-menu",
+		"/Users/johan/Dropbox/Development/sublime/Packages/Python/Python.sublime-build",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/setup.py",
+		"/Users/johan/Desktop/untitled.sublime-project",
+		"/Users/johan/Dropbox/Development/sublime/Packages/Alignment/Default (OSX).sublime-keymap",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/unittest_xml/finalize.xml",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/src/scxml/pyscxml.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/examples/scxml_sandbox/server.py",
+		"/Users/johan/Dropbox/Development/sublime/Packages/User/Preferences.sublime-settings",
+		"/Users/johan/Dropbox/Development/workspace_juno/test/test.coffee",
+		"/Users/johan/Dropbox/Development/workspace_juno/test/test.html",
+		"/Users/johan/Dropbox/Development/sublime/Packages/AdvancedNewFile/README.md",
+		"/Users/johan/Dropbox/Development/workspace_juno/test/test.js",
+		"/Users/johan/Library/Application Support/Sublime Text 2/Packages/Default/Preferences.sublime-settings",
+		"/Users/johan/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
+		"/Users/johan/Dropbox/Development/workspace_juno/test/test.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/korp/Gruntfile.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/korp/app/scripts/widgets.js"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			"",
+			".",
+			"/",
+			"All Files and Folders"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"names",
+			"val",
+			"setupHash",
+			"filter",
+			"scope",
+			"$scope",
+			"t ",
+			"t",
+			"getSynsetSafe",
+			"backend_url",
+			"korp_url",
+			"proxy",
+			"\n        ",
+			"pipeline",
+			"130.241.42.54",
+			"\")\n",
+			"c.log",
+			")\n",
+			"\"\n",
+			"lemgram",
+			"k",
+			"quick_find",
+			"	\n",
+			"c.log",
+			"convertJSON",
+			"parseKorpResult",
+			"output",
+			"print",
+			"data",
+			"jsondata",
+			"data",
+			"blissMixin",
+			"data",
+			"json",
+			"sublime text grunt",
+			"subprocess",
+			"run_pipeline",
+			"getBliss",
+			"pwd",
+			"__name__",
+			"130.241.42.54",
+			"\"",
+			"@",
+			" \n",
+			" ",
+			"c.log",
+			",",
+			"style",
+			"<td",
+			"td",
+			"class",
+			"style",
+			"pointer",
+			"cursor:",
+			"cursor",
+			"center",
+			"text-align",
+			"<td style=\"width: 12px; text-align: center; cursor: pointer\"\n				class=\"ui-state-default specialkey\">å</td>",
+			"center",
+			"shift",
+			"move",
+			"move_to_group",
+			"ctrl",
+			"foreach",
+			"item",
+			"expr",
+			"valid",
+			"Valid",
+			"\n    ",
+			"map",
+			"minimap",
+			"map",
+			"\n		",
+			" (",
+			"\"\"",
+			"\n	\"\"",
+			"render",
+			"promise",
+			"	$.",
+			"saldo",
+			"inherit",
+			"a",
+			"super.",
+			"\"\"],",
+			"ajaxSetup",
+			"Deferred",
+			"deferred_sm",
+			"currentMode",
+			"function",
+			"Deferred",
+			"    \n",
+			"family",
+			"font",
+			"sdfsdfsdfsdf",
+			"sublime",
+			"keys",
+			"super",
+			"success",
+			"\n		",
+			"		\n",
+			"\n\"\".",
+			"files",
+			"app"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"deferred_sm"
+		],
+		"reverse": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 2,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "app/scripts/controllers/controllers.coffee",
+					"settings":
+					{
+						"buffer_size": 1830,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								102,
+								102
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/CoffeeScript.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "app/index.html",
+					"settings":
+					{
+						"buffer_size": 2510,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1439,
+								1439
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "app/views/list.html",
+					"settings":
+					{
+						"buffer_size": 1071,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1071,
+								1071
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "app/scripts/app.coffee",
+					"settings":
+					{
+						"buffer_size": 577,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								577,
+								577
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/CoffeeScript.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "app/styles/sass.scss",
+					"settings":
+					{
+						"buffer_size": 1208,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								193,
+								193
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Sass/Syntaxes/Sass.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 34.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 43.0
+	},
+	"replace":
+	{
+		"height": 0.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+			[
+				"sass",
+				"app/styles/sass.scss"
+			],
+			[
+				"list",
+				"app/views/list.html"
+			],
+			[
+				"inde",
+				"app/index.html"
+			],
+			[
+				"look",
+				"lookup.py"
+			],
+			[
+				"nysn",
+				"nysno_server.py"
+			],
+			[
+				"haml",
+				"src/index.haml"
+			],
+			[
+				"index",
+				"index.html"
+			],
+			[
+				"widg",
+				"app/scripts/widgets_coffee.coffee"
+			],
+			[
+				"pyscxt",
+				"pyscxml/src/test/pyscxmlTest.py"
+			],
+			[
+				"w3",
+				"pyscxml/w3c_tests/w3cTests.py"
+			],
+			[
+				"comp",
+				"pyscxml/src/scxml/compiler.py"
+			],
+			[
+				"fail",
+				"pyscxml/w3c_tests/failed.py"
+			],
+			[
+				"py",
+				"pyscxml/src/test/pyscxmlTest.py"
+			],
+			[
+				"server",
+				"pyscxml/examples/scxml_sandbox/server.py"
+			],
+			[
+				"pysc",
+				"pyscxml/src/scxml/pyscxml.py"
+			],
+			[
+				"main",
+				"korp/app/scripts/main.js"
+			],
+			[
+				"styles",
+				"korp/app/styles/style.css"
+			],
+			[
+				"wid",
+				"app/scripts/widgets.js"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"selected_items":
+		[
+			[
+				"korp",
+				"/Users/johan/Dropbox/Development/workspace_juno/korp/korp.sublime-project"
+			],
+			[
+				"kor",
+				"/Users/johan/Dropbox/Development/workspace_juno/korp/korp.sublime-project"
+			],
+			[
+				"ko",
+				"/Users/johan/Dropbox/Development/workspace_juno/korp/korp.sublime-project"
+			],
+			[
+				"",
+				"/Users/johan/Dropbox/Development/workspace_juno/korp/korp.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 205.0,
+	"status_bar_visible": true
+}

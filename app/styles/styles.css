@@ -1,0 +1,137 @@
+/* line 1, styles.scss */
+body {
+  font-size: 12px;
+  padding-top: 20px;
+  padding-left: 40px;
+  white-space: nowrap;
+  font-family: georgia, serif;
+  line-height: 17.5px;
+}
+
+/* line 10, styles.scss */
+body > * {
+  white-space: normal;
+}
+
+/* line 14, styles.scss */
+tr:nth-of-type(10n) {
+  padding-bottom: 2em;
+}
+
+/* line 19, styles.scss */
+#letters {
+  display: inline-block;
+}
+
+/* line 22, styles.scss */
+#controls > * {
+  vertical-align: top;
+}
+
+/* line 25, styles.scss */
+tr:nth-of-type(10n) td {
+  padding-bottom: 1em;
+}
+
+/*#table tr:nth-of-type(odd) {
+    background-color : lighten(#999, 30%);
+}
+*/
+/* line 32, styles.scss */
+.contenttable {
+  min-width: 700px;
+}
+/* line 34, styles.scss */
+.contenttable td {
+  max-width: 300px;
+  padding: 5px;
+}
+/* line 38, styles.scss */
+.contenttable td:nth-child(2) {
+  vertical-align: bottom;
+}
+
+/* line 42, styles.scss */
+th {
+  padding: 5px;
+  text-align: left;
+}
+
+/* line 47, styles.scss */
+.contenttable td:last-of-type,
+th:last-of-type {
+  text-align: right;
+}
+
+/* line 51, styles.scss */
+#controls td {
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 6px;
+}
+/* line 56, styles.scss */
+#controls td.disabled {
+  font-weight: normal !important;
+  cursor: default !important;
+  text-align: center;
+  padding-bottom: 2px;
+}
+/* line 63, styles.scss */
+#controls td.selected {
+  color: #A53F0F;
+}
+
+/* line 68, styles.scss */
+a {
+  color: black;
+  text-decoration: none;
+}
+
+/* line 72, styles.scss */
+a:hover {
+  color: #A53F0F;
+}
+
+/* line 75, styles.scss */
+ul {
+  padding: 0;
+  margin: 0;
+}
+
+/* line 79, styles.scss */
+li {
+  list-style: none;
+}
+
+/* line 82, styles.scss */
+.mainnav {
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 2em;
+}
+
+/* line 87, styles.scss */
+#mainview {
+  display: inline-block;
+  vertical-align: top;
+  width: 650px;
+}
+
+/* line 93, styles.scss */
+label {
+  display: inline;
+}
+
+/* line 97, styles.scss */
+#logo {
+  height: 30px;
+  left: -8px;
+  position: relative;
+}
+
+/* line 103, styles.scss */
+header {
+  border-bottom: 1px solid grey;
+  margin-bottom: 1em;
+  padding-bottom: 5px;
+}

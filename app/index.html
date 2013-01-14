@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+        <title></title>
+        <meta name="description" content=""/>
+        <meta name="viewport" content="width=device-width"/>
+        <link rel="stylesheet" href="components/bootstrap/docs/assets/css/bootstrap.css"/>
+        <link rel="stylesheet" href="styles/red.css"/>
+        <link rel="stylesheet" href="styles/main.css"/>
+        <link rel="stylesheet" type="text/css" href="styles/styles.css" />
+
+    </head>
+    <body ng-app="littbApp" ng-cloak>
+        <header>
+            <a href="#/"><img id="logo" src="http://litteraturbanken.se/bilder/LBlogga.svg"></a>
+        </header>
+        <ul role="navigation" class="mainnav">
+            <li>
+                <a href="#forfattare">Författare</a>
+            </li>
+            <li>
+                <a href="#titlar">Titlar</a>
+            </li>
+            <li>
+                <a href="#epub">Epub-filer</a>
+            </li>
+            <li>
+                <a href="#presentationer">Presentationer</a>
+            </li>
+            <li>
+                <a href="#om/aktuellt">Aktuellt</a>
+            </li>
+            <li>
+                <a href="#om/rattigheter">Rättigheter</a>
+            </li>
+            <li>
+                <a href="#om/ide">Om LB</a>
+            </li>
+            <li>
+                <a href="#om/inenglish">In English</a>
+            </li>
+            <li>
+                <a href="#kontakt">Kontakt</a>
+            </li>
+            <li>
+                <a href="#om/hjalp">Hjälp</a>
+            </li>
+            <li>
+                <a href="#statistik">Statistik</a>
+            </li>
+            <li>
+                <a href="#sok">Sök i verk</a>
+            </li>
+        </ul>
+
+        <div id="mainview" ng-view>
+
+        </div>
+
+
+
+        <script src="components/jquery/jquery.js"></script>
+
+        <script src="components/underscore/underscore.js"></script>
+        <!-- <script src="components/angular/angular.js"></script> -->
+        <script src="lib/angular1.1.1.js"></script>
+
+
+        <!-- build:js scripts/scripts.js -->
+        <script src="scripts/bin/app.js"></script>
+
+        <script src="scripts/bin/controllers/controllers.js"></script>
+        <!-- endbuild -->
+		<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+    </body>
+</html>

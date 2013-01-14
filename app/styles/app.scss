@@ -1,0 +1,1560 @@
+@charset "UTF-8";
+/*
+ *  Litteraturbanken and sister projects (LBSP)
+ *  Copyright (C) 2008-2011 Språkbanken, (The Swedish Language Bank),
+ *  University of Gothenburg, <http://spraakbanken.gu.se/>.
+ *  This file is part of Språkbanken's Corpus Infrastructure, especially LBSP.
+ *
+ *  LBSP is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  LBSP is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with LBSP.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  $Id: app.css 62131 2012-11-12 15:43:11Z johanrox $
+ */
+/** Add css rules here for your application. */
+
+
+$spf-page-width : 30em;
+$littb-page-width : 35em;
+
+
+@media
+only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px)  {
+/* Force table to not be like tables anymore */
+	.page-titlar-epub {
+  	table,
+  	thead,
+  	tbody,
+  	th,
+  	td,
+  	tr {
+	   	display: block;
+	  }
+  	tr:first-child {
+  		display : none;
+  	}
+
+  	/* Hide table headers (but not display: none;, for accessibility) */
+  	thead tr {
+  		position: absolute;
+  		top: -9999px;
+  		left: -9999px;
+  	}
+
+  	tr:nth-of-type(odd) {
+  		background-color : #EDEDED;
+  	}
+
+  	td {
+  		/* Behave  like a "row" */
+  		border: none;
+  		position: relative;
+  	}
+
+  	td:before {
+  		/* Now like a table header */
+  		position: absolute;
+  		/* Top/left values mimic padding */
+  		top: 6px;
+  		left: 6px;
+  		width: 45%;
+  		padding-right: 10px;
+  		white-space: nowrap;
+  	}
+
+  	.app-titlar-result {
+  		padding-right : 25px;
+
+  	}
+  	.app-utfyllt-element {
+  		background-color : transparent;
+  	}
+  	.app-punkt-utfyllnad {
+  		border-bottom : none;
+  	}
+
+  	.app-tomt-tabell_element {
+  	}
+
+  	/*.app-titlar-titel {
+   	 font-size : 8px;
+   }*/
+
+  }
+
+}
+
+
+body {
+	padding-left : 25px;
+	padding-bottom : 2em;
+	white-space : nowrap;
+    font-family: georgia,serif;
+    color: black;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 17.5px;
+    padding: 0;
+}
+
+body > * {
+	white-space : normal;
+}
+
+
+
+/* IE hack för bugg 1244 */
+li a {display:inline-block;}
+li a {display:block;}
+
+/* GENERELLT */
+ul, ol {
+	list-style: none;
+	padding-left : 0;
+	margin-left : 0;
+}
+
+[role=button] {
+	outline : none;
+}
+
+
+.app-body {
+	font-family: georgia,serif;
+	color: black;
+	font-size: 12px;
+	font-weight: normal;
+	line-height: 17.5px;
+	padding: 0;
+}
+
+#app-rot-linkbar {
+	float : right;
+	position: relative;
+	top : -.5em;
+	margin : 0;
+	display : none;
+}
+.state-start #app-rot-linkbar {
+	display : block;
+}
+
+#app-rot-linkbar li {
+	display : inline-block;
+	*display : inline;
+	*zoom:1;
+}
+#app-rot-linkbar a {
+	color: black;
+	font-size : 11px;
+	text-decoration: none;
+}
+#app-rot-linkbar a:hover {
+	color: #990000;
+
+}
+
+#app-rot-linkbar li:not(:first-of-type) {
+	margin-left : 6px;
+
+}
+
+#app-rot-linkbar li:not(:first-of-type) a:before {
+	content : ".";
+	font-weight : bold;
+/* 	margin-left: 0.3em; */
+/*     margin-right: 0.9em;  */
+    color : black;
+    position: relative;
+    bottom : 3px;
+    right : 5px;
+}
+
+#maindiv {
+	vertical-align: top;
+	position : relative;
+}
+
+.state-not-parallel #maindiv {
+	width : 100%;
+}
+
+.app-body-medium {
+	font-family:georgia,serif;
+	color: black;
+	font-size:11px;
+	font-weight:normal;
+	line-height:15.95px;
+	padding:0;
+}
+
+.app-body-liten {
+	font-family: georgia,serif;
+	color: black;
+	font-size: 10px;
+	font-weight: normal;
+	line-height: 17.4px;
+	padding: 0;
+}
+
+.app-body-tat {
+	font-family: georgia,serif;
+	color: black;
+	font-size: 12px;
+	font-weight: normal;
+	line-height: 15px;
+	padding: 0;
+}
+
+.app-body-liten-tat {
+	font-family: georgia,serif;
+	color: black;
+	font-size: 10px;
+	font-weight: normal;
+	line-height: 12.9833px;
+	padding: 0;
+}
+
+.app-body-tabell {
+	font-family: georgia,serif;
+	color: black;
+	font-size: 12px;
+	font-weight: normal;
+	line-height: 9.5px;
+	padding: 0;
+	margin: 0;
+}
+
+.app-body-stor-kursiv {
+	font-family: georgia,serif;
+	color: black;
+	font-size: 17px;
+	font-weight: normal;
+	font-style: italic;
+	line-height: 17.5px;
+	padding: 0;
+}
+
+.app-tat {
+	line-height: 13.9833px;
+}
+
+.app-text-medel {
+	font-family:georgia,serif;
+	font-size:16px;
+	font-style:normal;
+}
+
+.app-text-stor {
+	font-family: georgia,serif;
+	font-size: 18px;
+	text-align:center;
+	padding:2px;
+	color:white;
+}
+
+
+
+.app-body-etext {
+	font-family:Georgia, Times,  serif;
+	color: black;
+	font-size:10pt;
+}
+
+.app-text {
+	font-size: 12px;
+}
+
+.app-text-liten {
+	font-size: 10px;
+}
+
+.app-text-rod {
+	font-size: 12px;
+	color: #990000;
+}
+
+.app-text-fet-rod {
+	font-size: 12px;
+	font-weight: bold;
+	color: #990000;
+}
+
+.app-text-gra {
+	color: gray !important;
+}
+
+.app-text-fet {
+	font-size: 12px;
+	font-weight: bold;
+}
+
+.app-text-kursiv {
+	font-style:italic;
+}
+
+.app-text-rod-kursiv {
+	color:#990000;
+	font-style:italic;
+}
+
+.app-text-kapital {
+	font-family:georgia,serif;
+	font-variant:small-caps;
+	font-size: 15px;
+}
+
+.app-text-blink {
+	text-decoration: blink;
+}
+
+.app-inline {
+	display : inline-block;
+	*display : inline;
+	zoom:1;
+}
+
+#app-rot-huvudmeny {
+	vertical-align : middle;
+}
+
+.app-margin-top {
+	margin-top: 15px;
+}
+
+.app-undermeny {
+	margin-top: 10px;
+}
+
+.app-status-message {
+	position: absolute;
+	top: 15px;
+	left: 566px;
+}
+
+.app-tooltip {
+	background-color: #990000;
+	font-size: 14px;
+	line-height:17.4px;
+	color:white;
+	opacity:0.85;
+	padding:5px;
+	padding-left:5px;
+	width:auto;
+	max-width:350px;
+/* 	white-space:normal; */
+	height:auto;
+	z-index:200;
+}
+
+.app-tooltip-svart {
+	background-color: black;
+	font-size: 14px;
+	line-height:17.4px;
+	color:white;
+	opacity:0.85;
+	width:auto;
+	max-width:350px;
+/* 	white-space:normal; */
+	height:auto;
+	padding:5px;
+	z-index:200;
+}
+
+.app-sidhjalp {
+	width:118px;
+	margin-top:35px;
+	z-index:0;
+}
+
+.app-sidhjalptext {
+	z-index:1;
+}
+
+.app-sidhjalptext a:link {
+	text-decoration: none;
+	color: black;
+}
+
+.app-sidhjalptext a:visited {
+	text-decoration: none;
+	color: black;
+}
+.app-sidhjalptext a:active {
+	text-decoration: none;
+	color: black;
+}
+
+.app-sidhjalptext a:hover {
+	text-decoration: underline;
+	color: red;
+}
+
+.app-ankarmeny li {
+	margin-bottom : 2px;
+}
+
+/* regler för logotyp */
+
+#app-rot-header hr {
+	display: none;
+	width : 350px;
+	margin-left : 1px;
+	border : none;
+	border-top : 1px solid grey;
+
+}
+body.site-littb.svg.state-start #app-rot-header hr {
+	display: block;
+	text-align : left;
+}
+body.site-littb.svg #logo_img {
+	background-image: url("/bilder/LBlogga.svg");
+    background-size: contain;
+	margin-left : -7px;
+	margin-bottom : 4px;
+	height : 25px;
+}
+body.site-littb.state-start.svg #logo_img  {
+	background-image: url("/bilder/LBlogga.svg");
+    background-size: contain;
+    height : 60px;
+    margin-top : 20px;
+    margin-left : -17px;
+}
+
+body.state-start #logo_img  {
+	background-image: url("/bilder/LBloggaochstreckHel.png");
+	height : 80px;
+	margin-left : -9px;
+}
+/* relativ positionering för länkens skull */
+#app-rot-logga {
+	position: relative;
+}
+
+#logo_img {
+	background-image: url("/bilder/LBunderloggaochstreck.png");
+    background-repeat: no-repeat;
+    display : block;
+    height : 30px;
+}
+#app-rot-logga a {
+	position: absolute;
+	width : 270px;
+	height : 100%;
+	color : grey;
+}
+/* ingen länk på startsidan */
+body.state-start #app-rot-logga a {
+	display: none;
+}
+
+
+#app-rot-arbetsyta {
+	margin-top : 10px;
+	white-space : normal;
+	vertical-align: top;
+	background-color : white;
+}
+#app-rot-undermeny {
+	margin-top: 34px;
+}
+
+#alphabetT {
+	width : 102px;
+	padding : 20px 0;
+	border-top : solid 1px grey;
+	border-bottom : solid 1px grey;
+}
+
+.app-start-arbetsyta {
+	position:relative;
+	width:478px;
+	margin-left : 60px;
+}
+
+.app-start-sok {
+	margin-top : 220px;
+}
+
+.app-start-skicka {
+	position:relative;
+	left:2px;
+	top:2px;
+}
+
+.app-start-status {
+	position:relative;
+	left:-35px;
+	top:-3px;
+	width:437px;
+	border:0px none;
+}
+
+body.state-start #app-rot-header {
+	border : none;
+}
+#app-rot-header {
+	width : 675px;
+	position: relative;
+	border-bottom : solid 1px grey;
+	margin-top : 25px;
+}
+
+
+#app-rot-bokmarke {
+	bottom : 0;
+	right : 0;
+	position: absolute;
+}
+
+#app-rot-meny {
+/* 	margin-left:24px; */
+	margin-top : 15px;
+	white-space: normal;
+}
+
+.app-meny {
+	width:120px;
+	margin-right : 40px;
+}
+
+
+
+
+.app-arbetsyta-text {
+	width:437px;
+	margin : 1em 0 0 1em;
+}
+
+.app-arbetsyta-lista {
+  height:118px;
+  left:200px;
+  top:89px;
+  width:507px;
+}
+
+.app-meddelande {
+  left:200px;
+  position:absolute;
+  top:100px;
+  width:400px;
+  color:white;
+  text-align:center;
+  border : solid 1px white;
+  background:#990000;
+  padding-top:5px;
+  padding-bottom:5px;
+  z-index:500;
+  opacity: 0.85;
+}
+
+.app-skicka {
+	position:relative;
+	left:2px;
+	top:7px;
+	padding-right:5px;
+	padding-left:3px;
+}
+
+/* TEXTVISNING_ETEXT */
+.app-arbetsyta-etext {
+	border:0px none;
+	white-space: nowrap;
+	position: relative;
+}
+
+.app-kontextmeny {
+  background-color: gray;
+  border-color: gray gray gray gray;
+  border-width: 1px 3px 3px 1px;
+  border-style: solid solid solid solid;
+  z-index:200;
+}
+
+.app-kontextmenyval {
+  font-weight: normal;
+  font-size: 80%;
+}
+
+.app-kontext-result-div {
+	background-color: white;
+	opacity:0.85;
+	width:auto;
+	height:auto;
+	z-index:200;
+}
+
+.app-kontext-result-text {
+	background-color: #990000;
+	font-size: 14px;
+	line-height:17.4px;
+	color:white;
+	opacity:0.85;
+	padding:20px;
+	margin:10px;
+	min-width:450px;
+	max-width:450px;
+	min-height:50px;
+	width:auto;
+	height:auto;
+	z-index:300;
+}
+
+/* KALLINFO */
+errata td {
+	width: 78px;
+	font-weight: bold;
+}
+
+errata td + td {
+	width: auto;
+	font-weight: normal;
+	word-wrap:normal;
+}
+
+/* FORFATTARE */
+.app-arbetsyta-forfattare {
+	margin-top : 2em;
+    width:520px;
+    border:0px none;
+}
+
+.app-forfattare-intro {
+	border:0 none;
+	width:437px;
+}
+
+.app-forfattare-verklank {
+	margin-bottom : 20px;
+}
+
+.app-forfattare-portratt {
+	border:0 none;
+	right:0px;
+	padding:0;
+/* 	position:absolute; */
+	width:auto;
+}
+
+.app-forfattare-bildinfo {
+	text-align: right;
+	padding:0;
+	margin-top:5px;
+	margin-bottom: 20px;
+	border:0px none;
+}
+
+.app-forfattare-bild1 {
+	text-align: right;
+	padding:0;
+	margin-top:50px;
+	border:0px none;
+}
+
+
+/* TEXTVISNING_FAKSIMIL */
+
+.app-arbetsyta-faksimil {
+	position : relative;
+	white-space : nowrap;
+}
+
+.app-faksimil-sida {
+}
+
+.app-status-faksimil {
+/* 	height : 1em; */
+	margin-bottom : 5px;
+	height : 0;
+	overflow : visible;
+}
+
+.app-faksimil-markering {
+	position:absolute;
+	opacity:0.6;
+	/* ie hack */
+	filter: alpha(opacity = 60);
+	zoom : 1;
+	background-color: red;
+	z-index: 500;
+}
+
+.app-faksimil-storlekar {
+	margin-top:5px;
+}
+
+/* TEXTVISNING - verktygslada */
+.app-text-sidnavigator {
+	/*position:absolute;
+		left:-3px;
+
+	*/
+	height:30px;
+	width:103px;
+	z-index:100;
+}
+
+.app-text-pil {
+	display: inline;
+	border:none;
+	z-index:1;
+}
+
+.app-text-sidnavigator:hover {
+	text-decoration: none;
+	color: #990000;
+	cursor: hand;
+	cursor: pointer;
+}
+
+
+.app-text-sidfalt {
+	margin-top:5px;
+	width:50px;
+	height:24px;
+}
+
+.app-text-fulldelnav {
+    color: white;
+    min-width: 90px;
+
+    padding: 20px 20px 20px;
+    white-space: nowrap;
+}
+
+.fullPartNavigation {
+	position: relative;
+}
+
+.fullPartNavigation > img {
+/* 	margin : 5px 0; */
+}
+
+.fullPartPopup {
+	position : absolute;
+	bottom : 0;
+	background-color: #990000;
+	margin-left : 120px;
+	z-index : 200;
+	opacity: 0.85;
+}
+
+.app-text-fulldelnav-skroll:hover {
+	cursor: pointer;
+}
+
+.app-text-fulldelnav-dek {
+    left: -25px;
+    position: relative;
+    bottom : -4px;
+    -webkit-margin-after : -1px;
+
+}
+
+.app-text-fulldelnav-td {
+	font-size: 12px;
+	font-style: italic;
+	line-height:15px;
+	text-align:left;
+	vertical-align:top;
+	padding:0;
+	color:white;
+	opacity:0.85;
+	z-index:100;
+}
+
+.app-text-fulldelnav-td:hover {
+	text-decoration: underline;
+	cursor: hand;
+	cursor: pointer;
+}
+
+.app-text-delnavigation-td {
+	font-size: 10px;
+	font-style: italic;
+	text-align:left;
+	vertical-align:top;
+	padding: 0;
+	z-index:100;
+}
+
+.app-text-delnavigation-td:hover {
+	text-decoration: none;
+	color: #990000;
+	cursor: hand;
+	cursor: pointer;
+}
+
+
+/* PRESENTATIONER */
+.app-arbetsyta-presentationer {
+	width:513px;
+	margin : 3em 0 0 2em;
+
+}
+
+div.txt {
+	white-space:nowrap;
+	margin-top : 3em;
+	margin-left : 3em;
+
+	width: $littb-page-width;
+	height:42em;
+	text-align:left;
+}
+
+
+.app-arbetsyta-aktuellpresentation {
+	width:437px;
+	margin : 2em 0 0 2em;
+	position: relative;
+}
+
+
+/* LISTSIDOR (ListPage)*/
+.app-arbetsyta-tabell {
+/* 	position: absolute; */
+	top:78px;
+	left:178px;
+	width:554px;
+	border:0px none;
+}
+
+
+
+.app-sortbutton {
+	border:0px none;
+	font-size:9pt;
+    text-decoration: underline;
+	background-color: #FFFFFF;
+	margin-bottom:8px;
+}
+
+
+
+.app-sortbutton:hover {
+	text-decoration: none;
+	color: #990000;
+	cursor: hand;
+	cursor: pointer;
+}
+
+.app-table_element {
+	font-size:12px;
+	border:0px none;
+	margin:0;
+	text-align:left;
+	vertical-align:bottom;
+	word-wrap:normal;
+	padding-bottom: 0px;
+}
+
+.app-tomt-tabell_element {
+	height:12px;
+}
+
+.app-utfyllt-element {
+	vertical-align:text-top;
+}
+
+
+
+.app-punkt-utfyllnad {
+  position : absolute;
+  left : 0;
+  right : 0;
+  bottom: 3px;
+  border-bottom: 1px dotted #C0C0C0;
+
+}
+
+.app-td-div {
+	position: relative;
+	padding:0;
+	margin:0;
+	line-height: 17.4px;
+	overflow : hidden;
+}
+
+
+
+/* LISTSIDOR - TITLAR_A-O */
+.app-titlar-status2 {
+	width:512px;
+	text-align: right;
+}
+
+.app-titlar-titel {
+	width:457px;
+	max-width:457px;
+	font-size:12px;
+  border:0px none;
+	margin:0;
+	vertical-align:bottom;
+	font-style:italic;
+}
+
+.app-titlar-forfattare-first {
+	width:246px;
+	max-width:246px;
+	font-size:12px;
+  border:0px none;
+	margin:0;
+	vertical-align:top;
+}
+
+
+.app-titlar-forfattare {
+	width:246px;
+	vertical-align:bottom;
+}
+
+.app-titlar-intro {
+	width : 520px;
+}
+
+.app-titlar-formular-topp {
+	left:1px;
+}
+
+.app-titlar-formular-topp {
+	left:1px;
+	top:0px;
+}
+
+.app-titlar-formular {
+/* 	position:absolute; */
+	left:1px;
+	top:146px;
+}
+
+.app-titlar-mediatyp {
+	width:246px;
+	font-size:12px;
+	vertical-align : bottom;
+}
+
+.app-titlar-rad1 {
+	margin : 15px 0;
+}
+
+.app-titlar-rad2 {
+	position:relative;
+	left:1px;
+	top:0px;
+	height:37px;
+}
+
+.app-titlar-rad2 .app-inline {
+	vertical-align : baseline;
+}
+
+.app-titlar-fras {
+	width:107px;
+	margin-left:5px;
+}
+
+.app-titlar-result {
+	margin:20px 0;
+	position : relative;
+}
+
+.app-titlar-status {
+  left: 209px;
+  position: relative;
+  text-align: right;
+  top: 13px;
+  width: 300px;
+}
+
+td .app-inga-traffar {
+	padding: 0px;
+	white-space:nowrap;
+}
+
+.app-verkilb-td1 {
+	width:291px;
+	font-size:12px;
+ 	border:0px none;
+	margin:0;
+	vertical-align:bottom;
+	max-width:291px;
+}
+
+/*Listsidor - F�RFATTARE A-� */
+.app-forflista-sok {
+	height:39px;
+	left:0px;
+/* 	position:absolute; */
+	top:2px;
+	width:600px;
+}
+
+app-forflista-status {
+	left:344px;
+/* 	position:absolute; */
+	top:90px;
+	width:300px;
+}
+
+/* SAMMA SOM app-titel-fras */
+.app-forflista-fras {
+	width:107px;
+	margin-left:5px;
+	width:107px;
+}
+
+.app-forflista-result {
+	left:0px;
+/* 	position:absolute; */
+	top:70px;
+	width:700px;
+	margin-bottom: 20px;
+	white-space: nowrap;
+}
+
+.app-forflista-td1 {
+	width:235px;
+	max-width:235px;
+	margin:0;
+	border:0px none;
+	text-align:left;
+	vertical-align:text-bottom;
+	word-wrap:normal;
+}
+
+.app-forflista-td2 {
+	width:80px;
+	max-width:80px;
+	margin:0;
+	border:0px none;
+	text-align:left;
+	vertical-align:text-bottom;
+	word-wrap:normal;
+}
+
+.app-forflista-td3 {
+	margin:0;
+	border:0px none;
+	text-align:left;
+	vertical-align:text-bottom;
+	word-wrap:normal;
+}
+
+
+/* UNDERMENY ALLMANT */
+
+/* For alfabetet */
+.app-toppstreck-inbaddat {
+/* 	position:absolute; */
+	left:-3px;
+	top:-25px;
+	width:116px;
+	height:11px;
+}
+
+.app-bottenstreck-inbaddat {
+/* 	position:absolute; */
+	left:-4px;
+	top:123px;
+	width:118px;
+	height:25px;
+}
+
+/* t ex AKTUELL_FORFATTARE */
+.app-toppstreck-lagre {
+	/*width:116px;
+	height:11px;*/
+	margin-left: -3px;
+}
+
+.app-bottenstreck-lagre {
+	/*
+	width:116px;
+	height:16px;*/
+	margin-left: -3px;
+	/*margin-top: 18px;
+	margin-bottom: 25px;*/
+}
+
+.app-streck {
+/* 	position:absolute; */
+	left:-3px;
+	width:116px;
+	height:16px;
+}
+
+/* t ex TEXTVISNING */
+.app-toppstreck-hogre {
+/* 	position:absolute; */
+	left:29px;
+	top:255px;
+	width:116px;
+	height:11px;
+}
+
+.app-bottenstreck-hogre {
+/* 	position:absolute; */
+	top:388px;
+	left:29px;
+	width:116px;
+	height:16px;
+}
+
+
+/* UNDERMENY - Alfabetsnavigering */
+.app-alfabet {
+	width:99px;
+	height:80px;
+	margin-left:1px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+.app-alfabet-element {
+	width:20px;
+	text-align:center;
+	vertical-align:top;
+}
+
+
+/* UNDERMENY for ETEXTVISNING */
+
+.app-undermeny-verkinfo {
+	margin-top:3px;
+	margin-bottom : 1em;
+/* 	height:60px; */
+/* 	width:116px; */
+}
+
+
+.app-undermeny-kallinfo {
+	margin-top:35px;
+	width:119px;
+}
+
+.app-etext-fulldelnav-mo {
+	margin-top:15px;
+	z-index:100;
+}
+
+.app-etext-fulldelnav-mo:hover {
+	text-decoration: none;
+	color: #990000;
+	cursor: hand;
+	cursor: pointer;
+}
+
+#parallel_wrapper {
+	vertical-align : top;
+}
+
+.state-parallel #paralleldiv {
+
+}
+
+#paralleldiv {
+	vertical-align: top;
+}
+
+.app-etext-parallel {
+
+}
+
+.state-parallel .app-arbetsyta-faksimil #paralleldiv {
+	margin-right : 2em;
+}
+
+.media-faksimil #paralleldiv {
+
+}
+.media-etext #paralleldiv {
+
+}
+
+
+/* UNDERMENY for AKTUELL_FÖRFATTARE */
+/*.app-undermeny-forfattare {
+	height:166px;
+	left:32px;
+	position:absolute;
+	top:332px;
+	width:120px;
+}*/
+
+.app-undermeny-aktuell {
+	margin-top: 5px;
+	margin-bottom: 30px;
+	width:111px;
+}
+
+
+.app-arbetsyta-verkilb {
+  margin-top : 1em;
+}
+
+.app-verkilb-lista {
+	margin-top : 4em;
+}
+
+/* SOK_I_ETEXT */
+.app-sok-fras-rad {
+	width:600px;
+}
+
+.app-sok-konfig {
+  background-color: white;
+  border: 1px solid lightGrey;
+  height: 93px;
+  left: 0;
+  opacity: 1;
+  padding: 12px;
+}
+
+.internh3 {
+	margin:0px 0px 3px 0px;
+}
+
+.app-sok-titel {
+  left: 250px;
+  position: absolute;
+  top: 27px;
+}
+
+.row {
+	left:15px;
+	position:absolute;
+	top: 6px;
+}
+
+.app-sok-titelval {
+	width:255px;
+}
+
+.app-sok-status {
+  position: absolute;
+  text-align: right;
+  top: -5px;
+  width: 535px;
+}
+
+.app-sok-skicka-aktiv {
+	border: none;
+}
+
+.app-sok-result {
+	margin-bottom: 20px;
+}
+
+.app-sok-index {
+	color:grey;
+	width:auto;
+	white-space:nowrap;
+}
+
+.app-td-left {
+	text-align:right;
+	width:auto;
+	white-space:nowrap;
+}
+
+.app-sok-forf-td {
+	width:auto;
+	white-space:nowrap;
+}
+
+.app-sok-autotd {
+	width:auto;
+	white-space:nowrap;
+}
+
+
+.app-sok-sidnr {
+	margin-left:2px;
+	width:119px;
+}
+
+.app-sok-textbox {
+	margin-left:2px;
+	width:47px;
+}
+
+.app-sok-nav-skicka {
+	margin-left : 3px;
+}
+
+.app-sok-etextnavigation {
+	background-image : url(bilder/Soknavigering.png);
+	width: 113px;
+  height: 62px;
+  margin-left : -5px;
+}
+
+
+.app-sok-hit {
+    background-color: pink;
+/*     display: inline-block; */
+    margin-right: -4px;
+    padding-right: 3px;
+    text-indent: 0;
+}
+.app-sok-hit-last {
+/*     display: inline; */
+    margin-right : 0;
+    padding-right : 0;
+}
+
+
+/* KONTAKT */
+.app-kontakt-text {
+	width:390px;
+	height:234px;
+}
+
+.app-kontakt-test {
+	color:#990000;
+}
+
+.list-td {
+  border:0px none;
+	padding:0;
+	margin:0;
+	line-height:100%;
+}
+
+.app-dold {
+	visibility: hidden;
+}
+
+.app-body-statistik {
+	font-family:Georgia, Times,  serif;
+	color:black;
+	font-size:10pt;
+}
+
+.app-errata-closed .overflow {
+	display : none;
+}
+
+[content="❦"]::after {
+   content: "❦";
+}
+[content="❦"] img {
+	display : none;
+}
+
+div.pname {
+/* 	position : relative !important; */
+}
+
+div.gloss_label {
+    display: inline;
+    font-size: 90%;
+    font-weight: bolder;
+    text-align: left;
+}
+
+div.gloss_item {
+    display: inline;
+    font-size: 90%;
+    padding-left: 0.5em;
+    text-align: left;
+}
+
+
+.sla-work h3 {
+	text-transform : capitalize;
+}
+
+.sla-work:nth-child(even) {
+	background-color : lightgrey;
+}
+
+.toolkit-link:before {
+	content : ":::";
+	margin-left : 2px;
+}
+.toolkit-link {
+	cursor : pointer;
+}
+
+body.state-start .app-start-arbetsyta {
+	margin-top : 16px;
+}
+
+.gratis-ebok {
+	font-size : 1em;
+	font-variant: small-caps;
+	line-height: 1.2em;
+	margin : 0;
+}
+
+
+.site-spf {
+	.app-arbetsyta-etext {
+		white-space : nowrap;
+	}
+	.txt {
+		white-space : nowrap;
+	}
+
+	#app-rot-linkbar {
+		display : none;
+	}
+
+	#logo_img  {
+		background-image: url("/bilder/SpfLogoSmall.png");
+		height: 75px;
+		width : 110px;
+		margin-left : -16px;
+	}
+
+	#app-rot-header {
+		border : none;
+	}
+
+	.txt {
+		width: $spf-page-width;
+		margin-right : 4em;
+	}
+
+	.app-arbetsyta-tabell {
+		width : 800px;
+	}
+
+	&.svg #logo_img  {
+		background-image: url("/bilder/spf1800_logotyp.svg");
+		height: 75px;
+		width : 110px;
+		margin-left : -8px;
+		background-size: contain;
+	}
+
+	.app-titlar-forfattare {
+		padding-right : 5px;
+	}
+
+	.app-forflista-td3 {
+		padding-right : 10px;
+	}
+
+	&.state-start #logo_img  {
+		background-image: url("/bilder/SpfLogoLarge.png");
+		height : 95px;
+		width : 110px;
+		margin-left : -22px;
+	}
+
+	&.state-start.svg #logo_img  {
+		background-image: url("/bilder/spf1800_logotyp.svg");
+		height : 95px;
+		width : 110px;
+		margin-left : -10px;
+		background-size: contain;
+	}
+
+}
+
+.site-sla {
+
+	background-color: #EDEDED;
+  background-image: url(/bilder/SLA_grundbild_undersidabild_notext.jpg);
+  background-repeat: no-repeat;
+
+	.app-td-div {
+    position: relative;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    line-height: 17.4px;
+    overflow : hidden;
+    white-space: nowrap;
+	}
+	.app-utfyllt-element {
+    vertical-align:text-top;
+    white-space: nowrap;
+	}
+
+	.app-sortbutton {
+    border:0px none;
+    font-size:9pt;
+    text-decoration: underline;
+    background-color: transparent;
+    margin-bottom:8px;
+	}
+
+	.app-meny {
+    font-size: 0.9em;
+    font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
+    color: #A53F0F;
+    font-weight: 100;
+    padding: 10px 10px 10px 66px;
+    margin-top: 200px;
+    width: 220px;
+    position: absolute;
+    line-height: 120%;
+    white-space: nowrap;
+	}
+
+	#app-rot-arbetsyta {
+    position:absolute;
+    left:335px;
+    top:162px;
+    width:532px;
+    height:368px;
+    z-index:-1;
+	}
+
+	.app-body {
+    font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
+    font-size: 0.9em;
+    color: black;
+    font-weight: 100;
+    line-height: 110%;
+    padding: 0;
+	}
+
+	a:link, a:visited {
+    text-decoration: none;
+    /* Dick vill ha det här vitt */
+    color: black;
+    background-color: transparent;
+	}
+
+	a:hover, a:active {
+    text-decoration: none;
+    color: black;
+    background-color: transparent;
+	}
+
+	.app-text-stor {
+    font-size: 1.1em;
+    font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
+    color: #A53F0F;
+    font-weight: 100;
+    text-align:center;
+    padding:2px;
+	}
+
+	#logo_img  {
+		background-image: url("/bilder/SlaLogoSmall.png");
+		height : 110px;
+	}
+	&.state-start #logo_img  {
+		height : 105px;
+	}
+
+}
+

@@ -1,0 +1,39 @@
+<div ng-show="rows.length">
+    <div id="controls">
+        <select ng-model="sort" >
+            <option value="">-- Sortera på --</option>
+            <option value="title">Titel</option>
+            <option value="author">Författare</option>
+        </select>
+        <label for="filter_input">Filtrera:</label> <input id="filter_input" type="text" ng-model="filter">
+        <table id="letters">
+            <tr ng-repeat="row in letterArray">
+                <td ng-repeat="letter in row"
+                    ng-class="{disabled: !rowByLetter[letter].length, selected: letter == selectedLetter}"
+                    ng-click="setLetter(letter)">{{letter}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <table id="table" class="table-striped contenttable" >
+        <thead>
+            <th>Titel</th>
+            <th>Författare</th>
+            <th>Mediatyp</th>
+
+        </thead>
+        <tr ng-repeat="row in rows | orderBy:sort | filter:{title : filter || ''}">
+            <td>
+                <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>
+            </td>
+            <td><a href="#/forfattare/{{row.author.authorid}}">{{row.author.fullname}}</a></td>
+            <td>
+                <span ng-repeat="type in row.mediatype">
+
+                    <span ng-show="!$first">:::</span>
+                    <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
+                </span>
+            </td>
+        </tr>
+    </table>
+</div>

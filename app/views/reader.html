@@ -1,0 +1,10 @@
+<a href="#/forfattare/{{author}}/titlar/{{title}}/sida/{{pagenum-1}}/{{mediatype}}">Föregående</a>
+<a href="#/forfattare/{{author}}/titlar/{{title}}/sida/{{pagenum+1}}/{{mediatype}}">Nästa</a>
+<br>
+
+
+<div ng-switch on="mediatype">
+    <img src="{{url}}" ng-show="url" ng-switch-when="faksimil">
+    <div ng-switch-when="etext" ng-bind-html-unsafe="etext_html" ></div>
+    <span ng-switch-default>default</span>
+</div>

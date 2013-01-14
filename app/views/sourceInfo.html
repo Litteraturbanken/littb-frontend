@@ -1,0 +1,9 @@
+<h3>{{data.authorFullname}}</h3>
+<h3><em>{{data.showtitle}}</em></h3>
+
+<div ng-bind-html-unsafe="data.sourcedesc"></div>
+
+<div ng-repeat="mediatype in data.mediatypes">
+    Läs verket som <a href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}}</a>
+</div>
+
