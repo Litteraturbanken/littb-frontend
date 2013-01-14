@@ -164,7 +164,7 @@ littb.factory 'backend', ($http, $q) ->
 
     getAuthorList : ->
         def = $q.defer()
-        url = "http://localhost/cgi-bin/get.py?url=" + encodeURIComponent("http://demolittb.spraakdata.gu.se/query/lb-authors.xql?action=get-authors&username=app")
+        url = "/query/lb-authors.xql?action=get-authors&username=app"
         $http(
             method : "GET"
             url : url
@@ -180,7 +180,7 @@ littb.factory 'backend', ($http, $q) ->
 
     getSourceInfo : (author, title) ->
         def = $q.defer()
-        url = "http://localhost/cgi-bin/get.py?url=" + encodeURIComponent("http://demolittb.spraakdata.gu.se/query/lb-anthology.xql")
+        url = "/query/lb-anthology.xql"
         $http(
             method : "GET"
             url : url
@@ -211,7 +211,7 @@ littb.factory 'backend', ($http, $q) ->
 
     getPage : (author, title, mediatype, pagenum) ->
         def = $q.defer()
-        url = "http://localhost/cgi-bin/get.py?url=" + encodeURIComponent("http://demolittb.spraakdata.gu.se/query/lb-anthology.xql")
+        url = "/query/lb-anthology.xql"
 
         params =
             action : "get-work-data-init"
@@ -241,7 +241,7 @@ littb.factory 'backend', ($http, $q) ->
 
     getAuthorInfo : (author) ->
         def = $q.defer()
-        url = "http://localhost/cgi-bin/get.py?url=" + encodeURIComponent("http://demolittb.spraakdata.gu.se/query/lb-authors.xql")
+        url = "/query/lb-authors.xql"
         $http(
             method : "GET"
             url : url
