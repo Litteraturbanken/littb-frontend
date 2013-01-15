@@ -218,7 +218,7 @@
       getAuthorList: function() {
         var def, url;
         def = $q.defer();
-        url = "/query/lb-authors.xql?action=get-authors&username=app";
+        url = host("/query/lb-authors.xql?action=get-authors&username=app");
         $http({
           method: "GET",
           url: url,
@@ -242,7 +242,7 @@
       getSourceInfo: function(author, title) {
         var def, url;
         def = $q.defer();
-        url = "/query/lb-anthology.xql";
+        url = host("/query/lb-anthology.xql");
         $http({
           method: "GET",
           url: url,
@@ -279,7 +279,7 @@
       getPage: function(author, title, mediatype, pagenum) {
         var def, params, url;
         def = $q.defer();
-        url = "/query/lb-anthology.xql";
+        url = host("/query/lb-anthology.xql");
         params = {
           action: "get-work-data-init",
           username: "app",
@@ -306,7 +306,7 @@
       getAuthorInfo: function(author) {
         var def, url;
         def = $q.defer();
-        url = "/query/lb-authors.xql";
+        url = host("/query/lb-authors.xql");
         $http({
           method: "GET",
           url: url,

@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"mod",
+				"mod	Angular Module filter"
+			],
+			[
 				"br",
 				"browserWarn"
 			],
@@ -14,10 +18,6 @@
 			[
 				"fo",
 				"forin	Array Comprehension"
-			],
-			[
-				"mod",
-				"mod	Angular Module value"
 			],
 			[
 				"li",
@@ -39,46 +39,6 @@
 	},
 	"buffers":
 	[
-		{
-			"file": "app/scripts/controllers/controllers.coffee",
-			"settings":
-			{
-				"buffer_size": 1830,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "app/index.html",
-			"settings":
-			{
-				"buffer_size": 2510,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "app/views/list.html",
-			"settings":
-			{
-				"buffer_size": 1071,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "app/scripts/app.coffee",
-			"settings":
-			{
-				"buffer_size": 577,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "app/styles/sass.scss",
-			"settings":
-			{
-				"buffer_size": 1208,
-				"line_ending": "Unix"
-			}
-		}
 	],
 	"build_system": "",
 	"command_palette":
@@ -276,6 +236,22 @@
 	},
 	"file_history":
 	[
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/sass.scss",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/index.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/list.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/controllers/controllers.coffee",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/authorList.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/app.coffee",
+		"/Users/johan/www/cgi-bin/get.py",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/authorList.coffee",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/java_version.java",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/my_version.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/testacular.conf.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/test/lib/angular-mocks.js",
+		"/Users/johan/Dropbox/Development/sublime/Packages/User/Preferences.sublime-settings",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/test/spec/controllers/main.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/app.scss",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/Gruntfile.js",
 		"/Users/johan/demo/cgi/get.py",
 		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/sass.css",
 		"/Users/johan/Dropbox/Development/workspace_juno/pub/korp_manual_swe.md",
@@ -324,7 +300,6 @@
 		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/unittest_xml/finalize.xml",
 		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/src/scxml/pyscxml.py",
 		"/Users/johan/Dropbox/Development/workspace_juno/pyscxml/examples/scxml_sandbox/server.py",
-		"/Users/johan/Dropbox/Development/sublime/Packages/User/Preferences.sublime-settings",
 		"/Users/johan/Dropbox/Development/workspace_juno/test/test.coffee",
 		"/Users/johan/Dropbox/Development/workspace_juno/test/test.html",
 		"/Users/johan/Dropbox/Development/sublime/Packages/AdvancedNewFile/README.md",
@@ -355,6 +330,37 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"groupBy",
+			"_.group",
+			"object",
+			"attrArray",
+			"x",
+			"data",
+			"def",
+			"authorListCtrl",
+			"setLetter",
+			"backend",
+			"rows",
+			"getTitles",
+			"def",
+			"selectedLetter",
+			"rowByLetter",
+			"[$",
+			"selectedLetter",
+			"rowByLetter",
+			"forEach",
+			"$http\n",
+			"$http",
+			"rows",
+			"workIdGroups",
+			"setupHash",
+			"watch",
+			"$watch",
+			"setupHash",
+			"MainCtrl",
+			"angularTestApp",
+			"workIdGroups",
+			"location",
 			"names",
 			"val",
 			"setupHash",
@@ -451,13 +457,7 @@
 			"sdfsdfsdfsdf",
 			"sublime",
 			"keys",
-			"super",
-			"success",
-			"\n		",
-			"		\n",
-			"\n\"\".",
-			"files",
-			"app"
+			"super"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -467,7 +467,7 @@
 		[
 			"deferred_sm"
 		],
-		"reverse": true,
+		"reverse": false,
 		"show_context": true,
 		"use_buffer2": true,
 		"whole_word": false,
@@ -476,149 +476,8 @@
 	"groups":
 	[
 		{
-			"selected": 2,
 			"sheets":
 			[
-				{
-					"buffer": 0,
-					"file": "app/scripts/controllers/controllers.coffee",
-					"settings":
-					{
-						"buffer_size": 1830,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								102,
-								102
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/CoffeeScript/CoffeeScript.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "app/index.html",
-					"settings":
-					{
-						"buffer_size": 2510,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1439,
-								1439
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/HTML/HTML.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "app/views/list.html",
-					"settings":
-					{
-						"buffer_size": 1071,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1071,
-								1071
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/HTML/HTML.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "app/scripts/app.coffee",
-					"settings":
-					{
-						"buffer_size": 577,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								577,
-								577
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/CoffeeScript/CoffeeScript.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "app/styles/sass.scss",
-					"settings":
-					{
-						"buffer_size": 1208,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								193,
-								193
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Sass/Syntaxes/Sass.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				}
 			]
 		}
 	],
@@ -668,16 +527,40 @@
 		"selected_items":
 		[
 			[
+				"au",
+				"app/views/authorList.html"
+			],
+			[
+				"inde",
+				"app/index.html"
+			],
+			[
+				"ap",
+				"app/scripts/app.coffee"
+			],
+			[
+				"app.c",
+				"app/scripts/app.coffee"
+			],
+			[
+				"scss",
+				"app/styles/sass.scss"
+			],
+			[
+				"style",
+				"app/styles/app.scss"
+			],
+			[
+				"grunt",
+				"Gruntfile.js"
+			],
+			[
 				"sass",
 				"app/styles/sass.scss"
 			],
 			[
 				"list",
 				"app/views/list.html"
-			],
-			[
-				"inde",
-				"app/index.html"
 			],
 			[
 				"look",

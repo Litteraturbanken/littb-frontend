@@ -22,7 +22,7 @@
             <th>Mediatyp</th>
 
         </thead>
-        <tr ng-repeat="row in rows | orderBy:sort | filter:{title : filter || ''}">
+        <tr ng-repeat="row in rows | orderBy:sort | filter:{'itemAttrs.showtitle' : filter || ''}">
             <td>
                 <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>
             </td>

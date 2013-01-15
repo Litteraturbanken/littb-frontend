@@ -1,36 +1,32 @@
 'use strict';
-
+window.host = (url) -> "http://demolittbdev.spraakdata.gu.se" + url
 window.littb = angular.module('littbApp', [])
     .config ($routeProvider) ->
 
         $routeProvider
             .when '/',
                 # templateUrl: 'views/main.html',
-                templateUrl: '/red/om/start/startsida.html',
+                templateUrl: host '/red/om/start/startsida.html'
                 controller: 'MainCtrl'
-            .when '/presentationer',
-                templateUrl: '/red/presentationer/presentationerForfattare.html',
+            .when '/presentationer'
+                templateUrl: host '/red/presentationer/presentationerForfattare.html'
             .when '/om/aktuellt',
-                templateUrl: '/red/om/aktuellt/aktuellt.html',
+                templateUrl: host '/red/om/aktuellt/aktuellt.html'
             .when '/om/rattigheter',
-                templateUrl: '/red/om/rattigheter/rattigheter.html',
+                templateUrl: host '/red/om/rattigheter/rattigheter.html'
             .when '/om/ide',
-                templateUrl: '/red/om/ide/omlitteraturbanken.html',
+                templateUrl: host '/red/om/ide/omlitteraturbanken.html'
             .when '/om/inenglish',
-                templateUrl: '/red/om/ide/inenglish.html',
-            .when '/kontakt',
-                templateUrl: 'views/contactForm.html',
-                controller : 'contactFormCtrl',
-                reloadOnSearch : false
+                templateUrl: host '/red/om/ide/inenglish.html'
             .when '/om/hjalp',
-                templateUrl: '/red/om/hjalp/hjalp.html',
+                templateUrl: '/red/om/hjalp/hjalp.html'
             .when '/statistik',
-                templateUrl: 'views/stats.html',
-                controller : 'statsCtrl',
+                templateUrl: 'views/stats.html'
+                controller : 'statsCtrl'
                 reloadOnSearch : false
             .when '/sok',
-                templateUrl: 'views/search.html',
-                controller : 'searchCtrl',
+                templateUrl: 'views/search.html'
+                controller : 'searchCtrl'
                 reloadOnSearch : false
 
 
@@ -59,6 +55,10 @@ window.littb = angular.module('littbApp', [])
             .when "/forfattare/:author/titlar/:title/sida/:pagenum/:mediatype"
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
+                reloadOnSearch : false
+            .when '/kontakt',
+                templateUrl: 'views/contactForm.html'
+                controller : 'contactFormCtrl'
                 reloadOnSearch : false
 
             .otherwise

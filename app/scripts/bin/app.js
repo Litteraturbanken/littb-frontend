@@ -1,24 +1,24 @@
 (function() {
   'use strict';
 
+  window.host = function(url) {
+    return "http://demolittbdev.spraakdata.gu.se" + url;
+  };
+
   window.littb = angular.module('littbApp', []).config(function($routeProvider) {
     return $routeProvider.when('/', {
-      templateUrl: '/red/om/start/startsida.html',
+      templateUrl: host('/red/om/start/startsida.html'),
       controller: 'MainCtrl'
     }).when('/presentationer', {
-      templateUrl: '/red/presentationer/presentationerForfattare.html'
+      templateUrl: host('/red/presentationer/presentationerForfattare.html')
     }).when('/om/aktuellt', {
-      templateUrl: '/red/om/aktuellt/aktuellt.html'
+      templateUrl: host('/red/om/aktuellt/aktuellt.html')
     }).when('/om/rattigheter', {
-      templateUrl: '/red/om/rattigheter/rattigheter.html'
+      templateUrl: host('/red/om/rattigheter/rattigheter.html')
     }).when('/om/ide', {
-      templateUrl: '/red/om/ide/omlitteraturbanken.html'
+      templateUrl: host('/red/om/ide/omlitteraturbanken.html')
     }).when('/om/inenglish', {
-      templateUrl: '/red/om/ide/inenglish.html'
-    }).when('/kontakt', {
-      templateUrl: 'views/contactForm.html',
-      controller: 'contactFormCtrl',
-      reloadOnSearch: false
+      templateUrl: host('/red/om/ide/inenglish.html')
     }).when('/om/hjalp', {
       templateUrl: '/red/om/hjalp/hjalp.html'
     }).when('/statistik', {
@@ -54,6 +54,10 @@
     }).when("/forfattare/:author/titlar/:title/sida/:pagenum/:mediatype", {
       templateUrl: "views/reader.html",
       controller: "readingCtrl",
+      reloadOnSearch: false
+    }).when('/kontakt', {
+      templateUrl: 'views/contactForm.html',
+      controller: 'contactFormCtrl',
       reloadOnSearch: false
     }).otherwise({
       redirectTo: '/'
