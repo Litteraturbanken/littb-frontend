@@ -1,1 +1,19 @@
-statistik
+<h1>Statistik för Litteraturbanken</h1>
+
+<div>Litteraturbanken innehåller just nu: </div>
+
+<ul>
+    <li>{{data.works}} verk</li>
+    <li>{{data.authors}} författare</li>
+    <li>{{data.pages.etext}} sidor etext</li>
+    <li>{{data.pages.faksimil}} sidor faksimil</li>
+    <li>{{data.words.etext}} ord</li>
+    <li>{{data.epubs}} epubfiler</li>
+</ul>
+
+<div>De mest lästa verken är:</div>
+<ul>
+    <li ng-repeat="title in data.titleList" ng-bind-html-unsafe="title">
+
+    </li>
+</ul>

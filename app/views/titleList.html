@@ -5,14 +5,15 @@
             <option value="title">Titel</option>
             <option value="author">Författare</option>
         </select>
+        <select ng-model="mediatypeFilter" >
+            <option value="">-- Mediatyper --</option>
+            <option value="etext">Etext</option>
+            <option value="faksimil">Faksimil</option>
+            <option value="epub">Epub</option>
+            <option value="pdf">PDF</option>
+        </select>
         <label for="filter_input">Filtrera:</label> <input id="filter_input" type="text" ng-model="filter">
-        <table id="letters">
-            <tr ng-repeat="row in letterArray">
-                <td ng-repeat="letter in row"
-                    ng-class="{disabled: !rowByLetter[letter].length, selected: letter == selectedLetter}"
-                    ng-click="setLetter(letter)">{{letter}}</td>
-            </tr>
-        </table>
+
     </div>
 
     <table id="table" class="table-striped contenttable" >
@@ -22,7 +23,7 @@
             <th>Mediatyp</th>
 
         </thead>
-        <tr ng-repeat="row in rows | orderBy:sort | filter:{'itemAttrs.showtitle' : filter || ''}">
+        <tr ng-repeat="row in rows | orderBy:sort | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || ''}">
             <td>
                 <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>
             </td>
@@ -36,4 +37,20 @@
             </td>
         </tr>
     </table>
+
+
+    <div toolkit>
+        <table id="letters">
+            <tr ng-repeat="row in letterArray">
+                <td ng-repeat="letter in row"
+                    ng-class="{disabled: !rowByLetter[letter].length, selected: letter == selectedLetter}"
+                    ng-click="setLetter(letter)">{{letter}}</td>
+            </tr>
+        </table>
+
+        <div>
+            Det här är en alfabetisk lista över alla de titlar som Litteraturbanken har att erbjuda, med länkar till text, faksimil- eller pdf-versioner av verken. – Samtliga verk visar titlar på hela verk. Samtliga titlar inkluderar titlar på dikter, noveller etc.
+        </div>
+    </div>
 </div>
+

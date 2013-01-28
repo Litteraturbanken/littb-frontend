@@ -1,5 +1,4 @@
-<a href="#/forfattare/{{author}}/titlar/{{title}}/sida/{{pagenum-1}}/{{mediatype}}">Föregående</a>
-<a href="#/forfattare/{{author}}/titlar/{{title}}/sida/{{pagenum+1}}/{{mediatype}}">Nästa</a>
+
 <br>
 
 
@@ -8,3 +7,34 @@
     <div ng-switch-when="etext" ng-bind-html-unsafe="etext_html" ></div>
     <span ng-switch-default>default</span>
 </div>
+
+<toolkit>
+
+    <hr>
+
+
+    <div>{{workinfo.authorFullname}}
+        <em>{{workinfo.showtitle}}</em>
+    </div>
+
+    <div style="height: 2em;"></div>
+
+    <div><a>::: Bibliografisk info.</a></div>
+
+    <hr>
+
+
+    <div>
+        <img src="http://demolittb.spraakdata.gu.se/bilder/LBstart.png">
+        <a href="#/forfattare/{{author}}/titlar/{{title}}/sida/{{pagenum-1}}/{{mediatype}}"><img src="http://demolittb.spraakdata.gu.se/bilder/LBforegaende.png"></a>
+        <a href="#/forfattare/{{author}}/titlar/{{title}}/sida/{{pagenum+1}}/{{mediatype}}"><img src="http://demolittb.spraakdata.gu.se/bilder/LBnasta.png"></a>
+
+
+        <img src="http://demolittb.spraakdata.gu.se/bilder/LBslut.png">
+    </div>
+    <div>
+        Sida <input ng-model="pagenum"><!-- should be name -->
+    </div>
+
+
+</toolkit>

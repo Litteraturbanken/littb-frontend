@@ -37,10 +37,31 @@ camelCase = (name) ->
 
 
 
-littb.controller "MainCtrl", () ->
+littb.controller "startCtrl", () ->
+
 littb.controller "contactFormCtrl", ($scope, backend) ->
 littb.controller "statsCtrl", ($scope, backend) ->
+    s = $scope
+    backend.getStats().then (data) ->
+        s.data = data
+
 littb.controller "searchCtrl", ($scope, backend) ->
+    s = $scope
+    s.open = true
+    s.searchProofread = true
+    s.searchNonProofread = true
+
+    s.authors = backend.getAuthorList()
+
+    s.$watch "selected_author", (newAuthor, prevVal) ->
+        return unless newAuthor
+        s.titles = backend.getTitlesByAuthor(newAuthor.authorid)
+
+
+    backend.searchWorks()
+
+
+
 littb.controller "authorInfoCtrl", ($scope, backend, $routeParams) ->
     {author} = $routeParams
 
@@ -83,6 +104,18 @@ littb.controller "titleListCtrl", ($scope, $location, backend, util) ->
             s.rows = list
 
 littb.controller "epubListCtrl", ($scope, backend) ->
+    s = $scope
+    backend.getTitles().then (titleArray) ->
+        s.rows = titleArray
+        authors = (x.author for x in titleArray when "epub" in x.mediatype)
+
+        s.authorData = _.unique authors, false, (item) ->
+            item.authorid
+
+
+    s.authorData = backend.getAuthorList()
+
+
 
 littb.controller "authorListCtrl", ($scope, backend) ->
     backend.getAuthorList().then (data) ->
@@ -99,17 +132,17 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
     _.extend s, $routeParams
     backend.getSourceInfo(author, title).then (data) ->
         s.data = data
-        c.log "data", JSON.stringify data, null, 2
 
 
 littb.controller "readingCtrl", ($scope, backend, $routeParams) ->
     s = $scope
     {title, author, mediatype, pagenum} = $routeParams
-    c.log "params", $routeParams
     _.extend s, $routeParams
     s.pagenum = Number(pagenum)
 
-    backend.getPage(author, title, mediatype, s.pagenum).then (data) ->
+    backend.getPage(author, title, mediatype, s.pagenum).then ([data, workinfo]) ->
+        c.log "page data", data, workinfo
+        s.workinfo = workinfo
         page = $("page[name=#{pagenum}]", data).clone()
         if not page.length
             page = $("page:last", data).clone()
@@ -139,6 +172,25 @@ littb.factory 'backend', ($http, $q) ->
     objFromAttrs = (elem) ->
         _.object ([attrib.name, attrib.value] for attrib in elem.attributes)
 
+    parseWorkInfo = (root, xml) ->
+        useInnerXML = ["sourcedesc"]
+        asArray = ["mediatypes"]
+        output = {}
+        for elem in $(root, xml).children()
+            if elem.nodeName in useInnerXML
+                val = getInnerXML elem
+
+            else if elem.nodeName in asArray
+                 val = _.map $(elem).children(), (child) ->
+                    $(child).text()
+            else
+                val = $(elem).text()
+
+            output[normalize(elem.nodeName)] = val
+        return output
+
+
+
     getTitles : ->
         def = $q.defer()
         $http(
@@ -164,7 +216,8 @@ littb.factory 'backend', ($http, $q) ->
 
     getAuthorList : ->
         def = $q.defer()
-        url = host "/query/lb-authors.xql?action=get-authors&username=app"
+        # url = host "/query/lb-authors.xql?action=get-authors&username=app"
+        url = "authors.xml"
         $http(
             method : "GET"
             url : url
@@ -192,20 +245,21 @@ littb.factory 'backend', ($http, $q) ->
                 titlepath : title
                 # mediatype:
         ).success (xml) ->
-            useInnerXML = ["sourcedesc"]
-            asArray = ["mediatypes"]
-            output = {}
-            for elem in $("result", xml).children()
-                if elem.nodeName in useInnerXML
-                    val = getInnerXML elem
+            output = parseWorkInfo("result", xml)
+            # useInnerXML = ["sourcedesc"]
+            # asArray = ["mediatypes"]
+            # output = {}
+            # for elem in $("result", xml).children()
+            #     if elem.nodeName in useInnerXML
+            #         val = getInnerXML elem
 
-                else if elem.nodeName in asArray
-                     val = _.map $(elem).children(), (child) ->
-                        $(child).text()
-                else
-                    val = $(elem).text()
+            #     else if elem.nodeName in asArray
+            #          val = _.map $(elem).children(), (child) ->
+            #             $(child).text()
+            #     else
+            #         val = $(elem).text()
 
-                output[normalize(elem.nodeName)] = val
+            #     output[normalize(elem.nodeName)] = val
             def.resolve output
         return def.promise
 
@@ -235,7 +289,13 @@ littb.factory 'backend', ($http, $q) ->
             transformResponse : transform
             params : params
         ).success (xml) ->
-            def.resolve xml
+            info = parseWorkInfo("LBwork", xml)
+
+            info["authorFullname"] = $("author-fullname", xml).text()
+            info["showtitle"] = $("showtitle", xml).text()
+
+
+            def.resolve [xml, info]
 
         return def.promise
 
@@ -265,6 +325,91 @@ littb.factory 'backend', ($http, $q) ->
 
             def.resolve authorInfo
 
+        return def.promise
+
+
+    getStats : () ->
+        def = $q.defer()
+        url = host "/query/lb-stats.xql"
+        $http(
+            method : "GET"
+            url : url
+            transformResponse : transform
+            params :
+                action : "get-overall-stats"
+                username : "app"
+
+        ).success (xml) ->
+            output = {}
+            parseObj = ["pages", "words"]
+            for elem in $("result", xml).children()
+                if elem.tagName == "table"
+                    output.titleList = ("<a href='#{$(x).attr('href')}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", elem))
+                    c.log "titleList", output.titleList
+                else if elem.tagName in parseObj
+                    output[elem.tagName] = _.object _.map $(elem).children(), (child) ->
+                        [child.tagName, $(child).text()]
+                else
+                    output[elem.tagName] = $(elem).text()
+
+            def.resolve output
+
+
+
+        return def.promise
+
+    getTitlesByAuthor : (authorid) ->
+        def = $q.defer()
+        url = host "/query/lb-anthology.xql"
+        $http(
+            method : "GET"
+            url : url
+            transformResponse : transform
+            params :
+                action : "get-titles-by-author"
+                authorid : authorid
+                username : "app"
+        ).success (xml) ->
+            output = []
+            for elem in $("result", xml).children()
+                output.push objFromAttrs(elem)
+
+            def.resolve output
+
+
+        return def.promise
+
+    searchWorks : () ->
+        def = $q.defer()
+        url = host "/query/lb-search.xql"
+
+        $http(
+            method : "POST"
+            url : url
+            headers : {"Content-Type" : "text/xml; charset=utf-8"}
+            transformResponse : transform
+            params :
+                action : "search-init"
+                username : "app"
+            data : """
+                    <search>
+                        <string-filter>
+                            <item type="string">Gud|</item>
+                        </string-filter>
+                    <domain-filter>
+                        <item type="titlepath" mediatype="all">Intradestal1786</item>
+                    </domain-filter>
+                    <ne-filter>
+                        <item type="NUL"></item>
+                    </ne-filter>
+                    </search>
+                """
+        ).success((data) ->
+            c.log "success", data
+            def.resolve data
+        ).error (data) ->
+            c.log "error", arguments
+            def.reject()
         return def.promise
 
 

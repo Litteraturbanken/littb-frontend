@@ -1,34 +1,47 @@
-/* line 1, styles.scss */
+/* line 14, styles.scss */
+select {
+  width: auto;
+}
+
+/* line 17, styles.scss */
+input {
+  font-size: inherit;
+  width: auto;
+}
+
+/* line 22, styles.scss */
 body {
-  font-size: 12px;
+  font-size: 11px;
   padding-top: 20px;
   padding-left: 40px;
   white-space: nowrap;
   font-family: georgia, serif;
-  line-height: 17.5px;
+  line-height: 16px;
+  width: 670px;
 }
-
-/* line 10, styles.scss */
+/* line 31, styles.scss */
 body > * {
   white-space: normal;
 }
 
-/* line 14, styles.scss */
+/* line 42, styles.scss */
+#toolkit hr {
+  border-top: 1px solid grey;
+  margin-bottom: 1em;
+  margin-top: 1em;
+}
+
+/* line 49, styles.scss */
 tr:nth-of-type(10n) {
   padding-bottom: 2em;
 }
 
-/* line 19, styles.scss */
-#letters {
-  display: inline-block;
-}
-
-/* line 22, styles.scss */
+/* line 54, styles.scss */
 #controls > * {
   vertical-align: top;
 }
 
-/* line 25, styles.scss */
+/* line 57, styles.scss */
 tr:nth-of-type(10n) td {
   padding-bottom: 1em;
 }
@@ -37,101 +50,187 @@ tr:nth-of-type(10n) td {
     background-color : lighten(#999, 30%);
 }
 */
-/* line 32, styles.scss */
+/* line 64, styles.scss */
 .contenttable {
   min-width: 700px;
 }
-/* line 34, styles.scss */
+/* line 66, styles.scss */
 .contenttable td {
   max-width: 300px;
   padding: 5px;
 }
-/* line 38, styles.scss */
+/* line 70, styles.scss */
 .contenttable td:nth-child(2) {
   vertical-align: bottom;
 }
-
-/* line 42, styles.scss */
-th {
+/* line 73, styles.scss */
+.contenttable th {
   padding: 5px;
   text-align: left;
 }
 
-/* line 47, styles.scss */
+/* line 79, styles.scss */
 .contenttable td:last-of-type,
 th:last-of-type {
   text-align: right;
 }
 
-/* line 51, styles.scss */
-#controls td {
+/* line 88, styles.scss */
+#letters td {
   font-weight: bold;
   cursor: pointer;
   padding: 0 6px;
 }
-/* line 56, styles.scss */
-#controls td.disabled {
+/* line 93, styles.scss */
+#letters td.disabled {
   font-weight: normal !important;
   cursor: default !important;
   text-align: center;
   padding-bottom: 2px;
 }
-/* line 63, styles.scss */
-#controls td.selected {
-  color: #A53F0F;
+/* line 100, styles.scss */
+#letters td.selected {
+  color: #990000;
+}
+/* line 103, styles.scss */
+#letters td:first-child {
+  padding-left: 0;
 }
 
-/* line 68, styles.scss */
+/* line 109, styles.scss */
 a {
   color: black;
   text-decoration: none;
 }
 
-/* line 72, styles.scss */
+/* line 113, styles.scss */
 a:hover {
-  color: #A53F0F;
+  color: #990000;
+  text-decoration: none;
 }
 
-/* line 75, styles.scss */
+/* line 117, styles.scss */
 ul {
   padding: 0;
   margin: 0;
 }
 
-/* line 79, styles.scss */
+/* line 121, styles.scss */
 li {
   list-style: none;
 }
 
-/* line 82, styles.scss */
+/* line 124, styles.scss */
+#leftCorridor {
+  width: 120px;
+  margin-right: 40px;
+  display: -moz-inline-stack;
+  display: inline-block;
+  vertical-align: top;
+  *vertical-align: auto;
+  zoom: 1;
+  *display: inline;
+}
+/* line 128, styles.scss */
+#leftCorridor > * {
+  margin-bottom: 2em;
+}
+
+/* line 132, styles.scss */
 .mainnav {
-  display: inline-block;
   vertical-align: top;
-  margin-right: 2em;
 }
 
-/* line 87, styles.scss */
+/* line 135, styles.scss */
 #mainview {
+  display: -moz-inline-stack;
   display: inline-block;
   vertical-align: top;
-  width: 650px;
+  *vertical-align: auto;
+  zoom: 1;
+  *display: inline;
+  vertical-align: top;
+  width: 510px;
 }
 
-/* line 93, styles.scss */
+/* line 141, styles.scss */
 label {
   display: inline;
 }
 
-/* line 97, styles.scss */
+/* line 145, styles.scss */
 #logo {
   height: 30px;
   left: -8px;
   position: relative;
 }
 
-/* line 103, styles.scss */
+/* line 151, styles.scss */
 header {
   border-bottom: 1px solid grey;
   margin-bottom: 1em;
   padding-bottom: 5px;
+}
+
+/* line 157, styles.scss */
+.page-start #toolkit {
+  margin-top: 18em;
+  font-size: 0.9em;
+}
+/* line 160, styles.scss */
+.page-start #toolkit input {
+  font-size: 1.1em;
+  width: 90px;
+}
+
+/* line 167, styles.scss */
+.page-stats #mainview > * {
+  margin-bottom: 1em;
+}
+
+/* line 174, styles.scss */
+.page-search #mainview .submit_btn {
+  float: right;
+}
+/* line 177, styles.scss */
+.page-search #mainview .input {
+  width: 432px;
+}
+/* line 180, styles.scss */
+.page-search #mainview .header {
+  position: relative;
+}
+/* line 184, styles.scss */
+.page-search #mainview .header .open_toggle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+/* line 192, styles.scss */
+.page-search #mainview .extended {
+  border: 1px lightgrey solid;
+  padding: 8px;
+}
+/* line 197, styles.scss */
+.page-search #mainview .columns > div {
+  width: 49%;
+  display: -moz-inline-stack;
+  display: inline-block;
+  vertical-align: top;
+  *vertical-align: auto;
+  zoom: 1;
+  *display: inline;
+}
+/* line 201, styles.scss */
+.page-search #mainview .columns > div label {
+  display: block;
+}
+/* line 207, styles.scss */
+.page-search #toolkit {
+  font-size: .9em;
+}
+
+/* line 214, styles.scss */
+.page-reading #toolkit input {
+  width: 70px;
 }

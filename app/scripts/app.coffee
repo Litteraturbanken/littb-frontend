@@ -5,9 +5,9 @@ window.littb = angular.module('littbApp', [])
 
         $routeProvider
             .when '/',
-                # templateUrl: 'views/main.html',
-                templateUrl: host '/red/om/start/startsida.html'
-                controller: 'MainCtrl'
+                templateUrl: 'views/start.html',
+                # templateUrl: host '/red/om/start/startsida.html'
+                controller: 'startCtrl'
             .when '/presentationer'
                 templateUrl: host '/red/presentationer/presentationerForfattare.html'
             .when '/om/aktuellt',
@@ -19,7 +19,7 @@ window.littb = angular.module('littbApp', [])
             .when '/om/inenglish',
                 templateUrl: host '/red/om/ide/inenglish.html'
             .when '/om/hjalp',
-                templateUrl: '/red/om/hjalp/hjalp.html'
+                templateUrl: host '/red/om/hjalp/hjalp.html'
             .when '/statistik',
                 templateUrl: 'views/stats.html'
                 controller : 'statsCtrl'
@@ -63,3 +63,19 @@ window.littb = angular.module('littbApp', [])
 
             .otherwise
                 redirectTo: '/'
+
+littb.run ($rootScope) ->
+    $rootScope.$on "$routeChangeSuccess", (event, newRoute, prevRoute) ->
+        # c.log "$routeChangeSuccess", arguments
+
+        $("#toolkit").html ""
+
+        # sync ng-view class name to page
+        classList = ($("[ng-view]").attr("class") or "").split(" ")
+        classList = _.filter classList, (item) -> not _.str.startsWith item, "page-"
+        $("body").attr "class", classList.join(" ")
+        if newRoute.controller
+            $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""))
+
+
+

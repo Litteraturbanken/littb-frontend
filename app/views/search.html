@@ -1,1 +1,57 @@
-search
+<div class="header">
+    <h1>Sök i texten</h1>
+    <a class="open_toggle" ng-click="open = !open">
+        <em ng-show="!open">visa sökalternativ >></em>
+        <em ng-show="open">&lt;&lt; dölj sökalternativ</em>
+
+
+    </a>
+    <div style="clear:both;"></div>
+</div>
+
+
+<div>Ord eller fras: <input class="input"></div>
+
+<div class="extended" ng-show="open">
+    <h2>Urval</h2>
+    <div class="columns">
+        <div class="left">
+            <label for="author_select">Författare</label>
+            <select id="author_select" ng-model="selected_author" ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
+                <option value="">Alla Författare</option>
+            </select>
+        </div>
+        <div class="right">
+            <label for="title_select">Titel: (välj författare först)</label>
+            <select id="title_select" ng-model="selected_title"
+                ng-options="title.showtitle for title in titles | filter:{searchable: 'true', proofread: searchProofread}">
+
+                <option value="">Allt tillgängligt</option>
+            </select>
+            <!-- what is the logic searchproofread and searchNonProofread? -->
+        </div>
+    </div>
+    Sök i:
+    <input type="checkbox" id="proofread" ng-model="searchProofread">
+    <label for="proofread">korrekturläst</label>
+    <input type="checkbox" id="non_proofread" ng-model="searchNonProofread">
+    <label for="non_proofread">ej korrekturläst</label>
+</div>
+
+<div><span submit-btn></span><div style="clear:both;"></div></div>
+
+
+
+Visa
+<select id="num_hits">
+    <option value="10">10</option>
+    <option value="20">20</option>
+    <option value="50">50</option>
+    <option value="100">100</option>
+    <option value="150">150</option>
+</select>
+per sida.
+
+<div toolkit>
+    Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.
+</div>

@@ -1,14 +1,49 @@
+@import "compass/css3/inline-block";
+
+$inline-block-alignment : top;
+
+$main-menu-width : 120px;
+$gutter-width : 40px;
+$page-width : 670px;
+$mainview-width : $page-width - $main-menu-width - $gutter-width;
+
+$primarycolor : #990000;
+
+
+// bootstrap overrides
+select {
+    width : auto;
+}
+input {
+    font-size: inherit;
+    width : auto;
+}
+
 body {
-    font-size : 12px;
+    font-size : 11px;
     padding-top : 20px;
     padding-left : 40px;
     white-space: nowrap;
     font-family : georgia, serif;
-    line-height : 17.5px;
+    line-height : 16px;
+    width : $page-width;
+
+    > * {
+        white-space : normal;
+    }
 
 }
-body > * {
-    white-space : normal;
+
+// #toolkit:not(:empty) {
+//     border-top : solid 1px grey;
+//     padding-top : 1em;
+// }
+#toolkit {
+    hr {
+        border-top : 1px solid grey;
+        margin-bottom : 1em;
+        margin-top : 1em;
+    }
 }
 
 tr:nth-of-type(10n) {
@@ -16,9 +51,6 @@ tr:nth-of-type(10n) {
 }
 
 
-#letters {
-    display : inline-block;
-}
 #controls > * {
     vertical-align: top;
 }
@@ -38,30 +70,39 @@ tr:nth-of-type(10n) td {
     td:nth-child(2) {
         vertical-align : bottom;
     }
-}
-th {
-    padding : 5px;
-    text-align : left;
+    th {
+        padding : 5px;
+        text-align : left;
+    }
 }
 .contenttable td:last-of-type,
 th:last-of-type {
     text-align:right;
 }
 
-#controls td {
-    font-weight : bold;
-    cursor : pointer;
-    padding : 0 6px;
+#toolkit {
+}
 
-    &.disabled {
-        font-weight: normal !important;
-        cursor : default !important;
-        text-align : center;
-        padding-bottom : 2px;
+#letters {
 
-    }
-    &.selected {
-        color : #A53F0F;
+    td {
+        font-weight : bold;
+        cursor : pointer;
+        padding : 0 6px;
+
+        &.disabled {
+            font-weight: normal !important;
+            cursor : default !important;
+            text-align : center;
+            padding-bottom : 2px;
+
+        }
+        &.selected {
+            color : $primarycolor;
+        }
+        &:first-child {
+            padding-left : 0;
+        }
     }
 }
 
@@ -70,7 +111,8 @@ a {
     text-decoration: none;
 }
 a:hover {
-    color : #A53F0F;
+    color : $primarycolor;
+    text-decoration: none;
 }
 ul {
     padding : 0;
@@ -79,15 +121,21 @@ ul {
 li {
     list-style: none;
 }
+#leftCorridor {
+    width : $main-menu-width;
+    margin-right : $gutter-width;
+    @include inline-block();
+    > * {
+        margin-bottom : 2em;
+    }
+}
 .mainnav {
-    display : inline-block;
     vertical-align: top;
-    margin-right : 2em;
 }
 #mainview {
-    display : inline-block;
+    @include inline-block();
     vertical-align: top;
-    width : 650px;
+    width : $mainview-width;
 }
 
 label {
@@ -96,12 +144,75 @@ label {
 
 #logo {
     height: 30px;
-   left: -8px;
-   position: relative;
+    left: -8px;
+    position: relative;
 }
 
 header {
     border-bottom : 1px solid grey;
     margin-bottom : 1em;
     padding-bottom : 5px;
+}
+
+.page-start #toolkit {
+    margin-top : 18em;
+    font-size : 0.9em;
+    input {
+        font-size : 1.1em;
+        width : 90px;
+    }
+}
+
+.page-stats #mainview {
+    > * {
+        margin-bottom : 1em;
+    }
+}
+
+.page-search {
+    #mainview {
+        .submit_btn {
+            float : right;
+        }
+        .input {
+            width : 432px;
+        }
+        .header {
+            position : relative;
+            h1 {
+            }
+            .open_toggle {
+                position: absolute;
+                bottom : 0;
+                right : 0;
+
+            }
+
+        }
+        .extended {
+            border : 1px lightgrey solid;
+            padding : 8px;
+        }
+        .columns {
+            > div {
+                width : 49%;
+                @include inline-block();
+
+                label {
+                    display : block;
+                }
+            }
+        }
+    }
+    #toolkit {
+        font-size : .9em;
+    }
+}
+
+.page-reading {
+    #toolkit {
+        input {
+            width : 70px;
+        }
+    }
 }

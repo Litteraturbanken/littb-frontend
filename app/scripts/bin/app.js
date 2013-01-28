@@ -7,8 +7,8 @@
 
   window.littb = angular.module('littbApp', []).config(function($routeProvider) {
     return $routeProvider.when('/', {
-      templateUrl: host('/red/om/start/startsida.html'),
-      controller: 'MainCtrl'
+      templateUrl: 'views/start.html',
+      controller: 'startCtrl'
     }).when('/presentationer', {
       templateUrl: host('/red/presentationer/presentationerForfattare.html')
     }).when('/om/aktuellt', {
@@ -20,7 +20,7 @@
     }).when('/om/inenglish', {
       templateUrl: host('/red/om/ide/inenglish.html')
     }).when('/om/hjalp', {
-      templateUrl: '/red/om/hjalp/hjalp.html'
+      templateUrl: host('/red/om/hjalp/hjalp.html')
     }).when('/statistik', {
       templateUrl: 'views/stats.html',
       controller: 'statsCtrl',
@@ -61,6 +61,21 @@
       reloadOnSearch: false
     }).otherwise({
       redirectTo: '/'
+    });
+  });
+
+  littb.run(function($rootScope) {
+    return $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
+      var classList;
+      $("#toolkit").html("");
+      classList = ($("[ng-view]").attr("class") || "").split(" ");
+      classList = _.filter(classList, function(item) {
+        return !_.str.startsWith(item, "page-");
+      });
+      $("body").attr("class", classList.join(" "));
+      if (newRoute.controller) {
+        return $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""));
+      }
     });
   });
 
