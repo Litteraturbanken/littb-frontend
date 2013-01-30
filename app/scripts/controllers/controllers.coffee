@@ -402,13 +402,14 @@ littb.factory 'backend', ($http, $q) ->
             params :
                 action : "search"
                 username : "app"
+            # <item type="titlepath" mediatype="all">Intradestal1786</item>
             data : """
                     <search>
                         <string-filter>
                             <item type="string">#{query or "finge"}|</item>
                         </string-filter>
                     <domain-filter>
-                        <item type="titlepath" mediatype="all">Intradestal1786</item>
+                    <item type="all-titles" mediatype="all"></item>
                     </domain-filter>
                     <ne-filter>
                         <item type="NUL"></item>

@@ -480,7 +480,7 @@
             action: "search",
             username: "app"
           },
-          data: "<search>\n    <string-filter>\n        <item type=\"string\">" + (query || "finge") + "|</item>\n    </string-filter>\n<domain-filter>\n    <item type=\"titlepath\" mediatype=\"all\">Intradestal1786</item>\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
+          data: "<search>\n    <string-filter>\n        <item type=\"string\">" + (query || "finge") + "|</item>\n    </string-filter>\n<domain-filter>\n<item type=\"all-titles\" mediatype=\"all\"></item>\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
         }).success(function(data) {
           var ref;
           c.log("success", $("result", data).attr("ref"));
