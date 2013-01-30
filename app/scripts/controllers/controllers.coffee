@@ -47,7 +47,7 @@ littb.controller "statsCtrl", ($scope, backend) ->
 
 littb.controller "searchCtrl", ($scope, backend) ->
     s = $scope
-    s.open = true
+    s.open = false
     s.searchProofread = true
     s.searchNonProofread = true
 
@@ -58,7 +58,8 @@ littb.controller "searchCtrl", ($scope, backend) ->
         s.titles = backend.getTitlesByAuthor(newAuthor.authorid)
 
 
-    backend.searchWorks()
+    s.search = () ->
+        s.results = backend.searchWorks(s.query)
 
 
 
@@ -168,8 +169,19 @@ littb.factory "util", ($location) ->
                     $location.search(name, val or null)
 
 littb.factory 'backend', ($http, $q) ->
-    transform = (data, headers) -> new DOMParser().parseFromString(data, "text/xml")
+    $http.defaults.transformResponse = (data, headers) ->
+        output = new DOMParser().parseFromString(data, "text/xml")
+        if $("fel", output).length
+            c.log "fel:", $("fel", output).text()
+        return output
+    $http.defaults.transformRequest
+
+    # transform = (data, headers) ->
+    #     output = new DOMParser().parseFromString(data, "text/xml")
+    #     if $("fel", output).length
+    #         c.log "fel:", $("fel", output).text()
     objFromAttrs = (elem) ->
+        return null unless elem
         _.object ([attrib.name, attrib.value] for attrib in elem.attributes)
 
     parseWorkInfo = (root, xml) ->
@@ -194,19 +206,24 @@ littb.factory 'backend', ($http, $q) ->
     getTitles : ->
         def = $q.defer()
         $http(
-            url : "data.xml"
+            # url : "data.xml"
+            url : host "/query/lb-anthology.xql"
             method : "GET"
-            transformResponse : transform
+            params:
+                action : "get-works"
+                username : "app"
         ).success (xml) ->
+            c.log "getTitles success", xml
             workIdGroups = _.groupBy $("item", xml), (item) ->
                 $(item).attr("lbworkid")
 
             rows = {}
             for workid, elemList of workIdGroups
                 itm = $(elemList[0])
+                c.log elemList[0], itm.find("author").get(0)
                 rows[workid] =
                     itemAttrs : objFromAttrs elemList[0]
-                    author : objFromAttrs itm.find("author").get(0)
+                    author : (objFromAttrs itm.find("author").get(0)) or ""
                     mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
 
             rows = _.flatten _.values rows
@@ -216,14 +233,14 @@ littb.factory 'backend', ($http, $q) ->
 
     getAuthorList : ->
         def = $q.defer()
-        # url = host "/query/lb-authors.xql?action=get-authors&username=app"
-        url = "authors.xml"
+        url = host "/query/lb-authors.xql?action=get-authors"
+        # url = "authors.xml"
         $http(
             method : "GET"
             url : url
-            transformResponse : transform
-        ).success (xml) ->
-
+            params:
+                username : "app"
+            ).success (xml) ->
             attrArray = for item in $("item", xml)
                 objFromAttrs item
 
@@ -237,7 +254,6 @@ littb.factory 'backend', ($http, $q) ->
         $http(
             method : "GET"
             url : url
-            transformResponse : transform
             params :
                 action : "get-work-info-init"
                 username : "app"
@@ -286,7 +302,6 @@ littb.factory 'backend', ($http, $q) ->
         $http(
             method : "GET"
             url : url
-            transformResponse : transform
             params : params
         ).success (xml) ->
             info = parseWorkInfo("LBwork", xml)
@@ -305,7 +320,6 @@ littb.factory 'backend', ($http, $q) ->
         $http(
             method : "GET"
             url : url
-            transformResponse : transform
             params :
                 action : "get-author-data-init"
                 authorid : author
@@ -334,7 +348,6 @@ littb.factory 'backend', ($http, $q) ->
         $http(
             method : "GET"
             url : url
-            transformResponse : transform
             params :
                 action : "get-overall-stats"
                 username : "app"
@@ -364,7 +377,6 @@ littb.factory 'backend', ($http, $q) ->
         $http(
             method : "GET"
             url : url
-            transformResponse : transform
             params :
                 action : "get-titles-by-author"
                 authorid : authorid
@@ -379,7 +391,7 @@ littb.factory 'backend', ($http, $q) ->
 
         return def.promise
 
-    searchWorks : () ->
+    searchWorks : (query) ->
         def = $q.defer()
         url = host "/query/lb-search.xql"
 
@@ -387,14 +399,13 @@ littb.factory 'backend', ($http, $q) ->
             method : "POST"
             url : url
             headers : {"Content-Type" : "text/xml; charset=utf-8"}
-            transformResponse : transform
             params :
-                action : "search-init"
+                action : "search"
                 username : "app"
             data : """
                     <search>
                         <string-filter>
-                            <item type="string">Gud|</item>
+                            <item type="string">#{query or "finge"}|</item>
                         </string-filter>
                     <domain-filter>
                         <item type="titlepath" mediatype="all">Intradestal1786</item>
@@ -405,8 +416,36 @@ littb.factory 'backend', ($http, $q) ->
                     </search>
                 """
         ).success((data) ->
-            c.log "success", data
-            def.resolve data
+            c.log "success", $("result", data).attr("ref")
+            ref = $("result", data).attr("ref")
+
+
+            $http(
+                method : "GET"
+                url : url
+                params :
+                    action : "get-result-set"
+                    searchref : ref
+                    username : "app"
+
+            ).success (resultset) ->
+                c.log "get-result-set success", resultset, $("result", resultset).children()
+
+                output = []
+
+                for elem in $("result", resultset).children()
+                    [left, kw, right, work] = _.map $(elem).children(), $
+                    # c.log "elem", work.get(0), work.get(0).attributes
+                    output.push
+                        left : left.text()
+                        kw : kw.text()
+                        right : right.text()
+                        item : objFromAttrs work.get(0)
+
+                def.resolve output
+
+
+
         ).error (data) ->
             c.log "error", arguments
             def.reject()

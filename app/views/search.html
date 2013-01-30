@@ -10,14 +10,16 @@
 </div>
 
 
-<div>Ord eller fras: <input class="input"></div>
+<form ng-submit="search()">Ord eller fras: <input class="input" ng-model="query" autofocus></form>
 
 <div class="extended" ng-show="open">
     <h2>Urval</h2>
     <div class="columns">
         <div class="left">
             <label for="author_select">Författare</label>
-            <select id="author_select" ng-model="selected_author" ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
+            <select id="author_select"
+                    ng-model="selected_author"
+                    ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
                 <option value="">Alla Författare</option>
             </select>
         </div>
@@ -51,6 +53,20 @@ Visa
     <option value="150">150</option>
 </select>
 per sida.
+
+<div>
+    <table>
+        <tr ng-repeat="result in results">
+
+            <td>{{result.item.title.slice(0, 30)}}...</td>
+            <td>{{result.left}}</td>
+            <td><strong>{{result.kw}}</strong></td>
+            <td>{{result.right}}</td>
+        </tr>
+    </table>
+</div>
+
+
 
 <div toolkit>
     Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.

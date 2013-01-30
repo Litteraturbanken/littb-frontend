@@ -72,7 +72,7 @@
   littb.controller("searchCtrl", function($scope, backend) {
     var s;
     s = $scope;
-    s.open = true;
+    s.open = false;
     s.searchProofread = true;
     s.searchNonProofread = true;
     s.authors = backend.getAuthorList();
@@ -82,7 +82,9 @@
       }
       return s.titles = backend.getTitlesByAuthor(newAuthor.authorid);
     });
-    return backend.searchWorks();
+    return s.search = function() {
+      return s.results = backend.searchWorks(s.query);
+    };
   });
 
   littb.controller("authorInfoCtrl", function($scope, backend, $routeParams) {
@@ -211,12 +213,21 @@
   });
 
   littb.factory('backend', function($http, $q) {
-    var objFromAttrs, parseWorkInfo, transform;
-    transform = function(data, headers) {
-      return new DOMParser().parseFromString(data, "text/xml");
+    var objFromAttrs, parseWorkInfo;
+    $http.defaults.transformResponse = function(data, headers) {
+      var output;
+      output = new DOMParser().parseFromString(data, "text/xml");
+      if ($("fel", output).length) {
+        c.log("fel:", $("fel", output).text());
+      }
+      return output;
     };
+    $http.defaults.transformRequest;
     objFromAttrs = function(elem) {
       var attrib;
+      if (!elem) {
+        return null;
+      }
       return _.object((function() {
         var _i, _len, _ref, _results;
         _ref = elem.attributes;
@@ -254,11 +265,15 @@
         var def;
         def = $q.defer();
         $http({
-          url: "data.xml",
+          url: host("/query/lb-anthology.xql"),
           method: "GET",
-          transformResponse: transform
+          params: {
+            action: "get-works",
+            username: "app"
+          }
         }).success(function(xml) {
           var elemList, itm, rows, workIdGroups, workid;
+          c.log("getTitles success", xml);
           workIdGroups = _.groupBy($("item", xml), function(item) {
             return $(item).attr("lbworkid");
           });
@@ -266,9 +281,10 @@
           for (workid in workIdGroups) {
             elemList = workIdGroups[workid];
             itm = $(elemList[0]);
+            c.log(elemList[0], itm.find("author").get(0));
             rows[workid] = {
               itemAttrs: objFromAttrs(elemList[0]),
-              author: objFromAttrs(itm.find("author").get(0)),
+              author: (objFromAttrs(itm.find("author").get(0))) || "",
               mediatype: _.unique(_.map(elemList, function(item) {
                 return $(item).attr("mediatype");
               }))
@@ -282,11 +298,13 @@
       getAuthorList: function() {
         var def, url;
         def = $q.defer();
-        url = "authors.xml";
+        url = host("/query/lb-authors.xql?action=get-authors");
         $http({
           method: "GET",
           url: url,
-          transformResponse: transform
+          params: {
+            username: "app"
+          }
         }).success(function(xml) {
           var attrArray, item;
           attrArray = (function() {
@@ -310,7 +328,6 @@
         $http({
           method: "GET",
           url: url,
-          transformResponse: transform,
           params: {
             action: "get-work-info-init",
             username: "app",
@@ -344,7 +361,6 @@
         $http({
           method: "GET",
           url: url,
-          transformResponse: transform,
           params: params
         }).success(function(xml) {
           var info;
@@ -362,7 +378,6 @@
         $http({
           method: "GET",
           url: url,
-          transformResponse: transform,
           params: {
             action: "get-author-data-init",
             authorid: author,
@@ -392,7 +407,6 @@
         $http({
           method: "GET",
           url: url,
-          transformResponse: transform,
           params: {
             action: "get-overall-stats",
             username: "app"
@@ -435,7 +449,6 @@
         $http({
           method: "GET",
           url: url,
-          transformResponse: transform,
           params: {
             action: "get-titles-by-author",
             authorid: authorid,
@@ -453,7 +466,7 @@
         });
         return def.promise;
       },
-      searchWorks: function() {
+      searchWorks: function(query) {
         var def, url;
         def = $q.defer();
         url = host("/query/lb-search.xql");
@@ -463,15 +476,40 @@
           headers: {
             "Content-Type": "text/xml; charset=utf-8"
           },
-          transformResponse: transform,
           params: {
-            action: "search-init",
+            action: "search",
             username: "app"
           },
-          data: "<search>\n    <string-filter>\n        <item type=\"string\">Gud|</item>\n    </string-filter>\n<domain-filter>\n    <item type=\"titlepath\" mediatype=\"all\">Intradestal1786</item>\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
+          data: "<search>\n    <string-filter>\n        <item type=\"string\">" + (query || "finge") + "|</item>\n    </string-filter>\n<domain-filter>\n    <item type=\"titlepath\" mediatype=\"all\">Intradestal1786</item>\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
         }).success(function(data) {
-          c.log("success", data);
-          return def.resolve(data);
+          var ref;
+          c.log("success", $("result", data).attr("ref"));
+          ref = $("result", data).attr("ref");
+          return $http({
+            method: "GET",
+            url: url,
+            params: {
+              action: "get-result-set",
+              searchref: ref,
+              username: "app"
+            }
+          }).success(function(resultset) {
+            var elem, kw, left, output, right, work, _i, _len, _ref, _ref1;
+            c.log("get-result-set success", resultset, $("result", resultset).children());
+            output = [];
+            _ref = $("result", resultset).children();
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              elem = _ref[_i];
+              _ref1 = _.map($(elem).children(), $), left = _ref1[0], kw = _ref1[1], right = _ref1[2], work = _ref1[3];
+              output.push({
+                left: left.text(),
+                kw: kw.text(),
+                right: right.text(),
+                item: objFromAttrs(work.get(0))
+              });
+            }
+            return def.resolve(output);
+          });
         }).error(function(data) {
           c.log("error", arguments);
           return def.reject();
