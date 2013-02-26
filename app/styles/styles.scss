@@ -207,9 +207,15 @@ header {
     #toolkit {
         font-size : .9em;
     }
+    #title_select {
+        max-width : 247px;
+    }
 }
 
 .page-reading {
+    #mainview {
+        position : relative;
+    }
     #toolkit {
         input {
             width : 70px;

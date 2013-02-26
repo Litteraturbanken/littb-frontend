@@ -4,11 +4,14 @@
 
 <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
     <option value="">Alla Författare<option>
-
 </select>
 
+<div>
+    Filtrera: <input ng-model="filterTxt">
+</div>
+
 <table class="table-striped contenttable" >
-    <tr ng-repeat="row in rows | filter:{author.authorid: authorFilter.authorid || '', mediatype : 'epub'} | orderBy:'author.authorid'">
+    <tr ng-repeat="row in rows | filter:{author.authorid: authorFilter.authorid || '', mediatype : 'epub', author.fullname : filterTxt || ''} | orderBy:'author.nameforindex'">
         <td><a href="#/forfattare/{{row.author.authorid}}">{{row.author.nameforindex}}</a></td>
         <td>
             <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>

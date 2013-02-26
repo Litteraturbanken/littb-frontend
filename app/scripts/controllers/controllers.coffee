@@ -65,10 +65,9 @@ littb.controller "searchCtrl", ($scope, backend) ->
 
 littb.controller "authorInfoCtrl", ($scope, backend, $routeParams) ->
     {author} = $routeParams
+    $scope.authorInfo = backend.getAuthorInfo(author)
 
-    backend.getAuthorInfo(author).then (data) ->
-        $scope.authorInfo = data
-        c.log data
+
 
 
 littb.controller "titleListCtrl", ($scope, $location, backend, util) ->
@@ -84,7 +83,7 @@ littb.controller "titleListCtrl", ($scope, $location, backend, util) ->
         "ZÅÄÖ"
     ], "split", "")
 
-    util.setupHash(s, "sort", "filter")
+    util.setupHash(s, "sort", "filter", "mediatypeFilter")
 
 
     backend.getTitles().then (titleArray) ->
@@ -112,9 +111,10 @@ littb.controller "epubListCtrl", ($scope, backend) ->
 
         s.authorData = _.unique authors, false, (item) ->
             item.authorid
+        # c.log s.authorData
 
 
-    s.authorData = backend.getAuthorList()
+    # s.authorData = backend.getAuthorList()
 
 
 
@@ -129,10 +129,15 @@ littb.controller "authorListCtrl", ($scope, backend) ->
 
 littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
     s = $scope
-    {title, author} = $routeParams
+    {title, author, mediatype} = $routeParams
     _.extend s, $routeParams
+
+    s.getMediatypes = () ->
+        if mediatype then [mediatype] else s.data?.mediatypes
+
     backend.getSourceInfo(author, title).then (data) ->
         s.data = data
+
 
 
 littb.controller "readingCtrl", ($scope, backend, $routeParams) ->
@@ -142,7 +147,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams) ->
     s.pagenum = Number(pagenum)
 
     backend.getPage(author, title, mediatype, s.pagenum).then ([data, workinfo]) ->
-        c.log "page data", data, workinfo
         s.workinfo = workinfo
         page = $("page[name=#{pagenum}]", data).clone()
         if not page.length
@@ -168,18 +172,27 @@ littb.factory "util", ($location) ->
                 (val) ->
                     $location.search(name, val or null)
 
-littb.factory 'backend', ($http, $q) ->
-    $http.defaults.transformResponse = (data, headers) ->
-        output = new DOMParser().parseFromString(data, "text/xml")
-        if $("fel", output).length
-            c.log "fel:", $("fel", output).text()
-        return output
-    $http.defaults.transformRequest
 
-    # transform = (data, headers) ->
-    #     output = new DOMParser().parseFromString(data, "text/xml")
-    #     if $("fel", output).length
-    #         c.log "fel:", $("fel", output).text()
+
+
+
+littb.factory 'backend', ($http, $q) ->
+    # $http.defaults.transformResponse = (data, headers) ->
+
+    http = (config) ->
+        defaultConfig =
+            method : "GET"
+            params:
+                username : "app"
+            transformResponse : (data, headers) ->
+                output = new DOMParser().parseFromString(data, "text/xml")
+                if $("fel", output).length
+                    c.log "fel:", $("fel", output).text()
+                return output
+
+        $http(_.deepExtend defaultConfig, config)
+
+
     objFromAttrs = (elem) ->
         return null unless elem
         _.object ([attrib.name, attrib.value] for attrib in elem.attributes)
@@ -205,22 +218,19 @@ littb.factory 'backend', ($http, $q) ->
 
     getTitles : ->
         def = $q.defer()
-        $http(
-            # url : "data.xml"
+        http(
             url : host "/query/lb-anthology.xql"
-            method : "GET"
             params:
                 action : "get-works"
-                username : "app"
+
         ).success (xml) ->
-            c.log "getTitles success", xml
+            # c.log "getTitles success", xml
             workIdGroups = _.groupBy $("item", xml), (item) ->
                 $(item).attr("lbworkid")
 
             rows = {}
             for workid, elemList of workIdGroups
                 itm = $(elemList[0])
-                c.log elemList[0], itm.find("author").get(0)
                 rows[workid] =
                     itemAttrs : objFromAttrs elemList[0]
                     author : (objFromAttrs itm.find("author").get(0)) or ""
@@ -235,11 +245,8 @@ littb.factory 'backend', ($http, $q) ->
         def = $q.defer()
         url = host "/query/lb-authors.xql?action=get-authors"
         # url = "authors.xml"
-        $http(
-            method : "GET"
+        http(
             url : url
-            params:
-                username : "app"
             ).success (xml) ->
             attrArray = for item in $("item", xml)
                 objFromAttrs item
@@ -251,12 +258,10 @@ littb.factory 'backend', ($http, $q) ->
     getSourceInfo : (author, title) ->
         def = $q.defer()
         url = host "/query/lb-anthology.xql"
-        $http(
-            method : "GET"
+        http(
             url : url
             params :
                 action : "get-work-info-init"
-                username : "app"
                 authorid : author
                 titlepath : title
                 # mediatype:
@@ -285,22 +290,16 @@ littb.factory 'backend', ($http, $q) ->
 
         params =
             action : "get-work-data-init"
-            username : "app"
             authorid : author
             titlepath : title
             navinfo : true
             css : true
             workdb : true
             mediatype: mediatype
-            # pagename : pagenum
 
         if pagenum then params["pagename"] = pagenum
 
-        #     params["pagename"] = [pagenum, pagenum]
-
-
-        $http(
-            method : "GET"
+        http(
             url : url
             params : params
         ).success (xml) ->
@@ -308,6 +307,7 @@ littb.factory 'backend', ($http, $q) ->
 
             info["authorFullname"] = $("author-fullname", xml).text()
             info["showtitle"] = $("showtitle", xml).text()
+            info["css"] = $("css", xml).text()
 
 
             def.resolve [xml, info]
@@ -317,13 +317,11 @@ littb.factory 'backend', ($http, $q) ->
     getAuthorInfo : (author) ->
         def = $q.defer()
         url = host "/query/lb-authors.xql"
-        $http(
-            method : "GET"
+        http(
             url : url
             params :
                 action : "get-author-data-init"
                 authorid : author
-                username : "app"
 
         ).success (xml) ->
             authorInfo = {}
@@ -335,8 +333,15 @@ littb.factory 'backend', ($http, $q) ->
 
                 authorInfo[normalize(elem.nodeName)] = val
 
+            works = []
+            for item in $("works item", xml)
+                c.log "works item", item
+                obj = objFromAttrs item
+                # _.extend obj,
+                    # mediatypes : _.unique (_.map $("mediatypes", item).children(), (child) -> $(child).attr("mediatype"))
+                works.push obj
 
-
+            authorInfo.works = works
             def.resolve authorInfo
 
         return def.promise
@@ -345,12 +350,11 @@ littb.factory 'backend', ($http, $q) ->
     getStats : () ->
         def = $q.defer()
         url = host "/query/lb-stats.xql"
-        $http(
-            method : "GET"
+        http(
+
             url : url
             params :
                 action : "get-overall-stats"
-                username : "app"
 
         ).success (xml) ->
             output = {}
@@ -374,13 +378,12 @@ littb.factory 'backend', ($http, $q) ->
     getTitlesByAuthor : (authorid) ->
         def = $q.defer()
         url = host "/query/lb-anthology.xql"
-        $http(
-            method : "GET"
+        http(
+
             url : url
             params :
                 action : "get-titles-by-author"
                 authorid : authorid
-                username : "app"
         ).success (xml) ->
             output = []
             for elem in $("result", xml).children()
@@ -395,13 +398,12 @@ littb.factory 'backend', ($http, $q) ->
         def = $q.defer()
         url = host "/query/lb-search.xql"
 
-        $http(
+        http(
             method : "POST"
             url : url
             headers : {"Content-Type" : "text/xml; charset=utf-8"}
             params :
                 action : "search"
-                username : "app"
             # <item type="titlepath" mediatype="all">Intradestal1786</item>
             data : """
                     <search>
@@ -421,13 +423,12 @@ littb.factory 'backend', ($http, $q) ->
             ref = $("result", data).attr("ref")
 
 
-            $http(
-                method : "GET"
+            http(
+
                 url : url
                 params :
                     action : "get-result-set"
                     searchref : ref
-                    username : "app"
 
             ).success (resultset) ->
                 c.log "get-result-set success", resultset, $("result", resultset).children()

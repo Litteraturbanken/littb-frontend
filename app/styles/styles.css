@@ -229,8 +229,16 @@ header {
 .page-search #toolkit {
   font-size: .9em;
 }
+/* line 210, styles.scss */
+.page-search #title_select {
+  max-width: 247px;
+}
 
-/* line 214, styles.scss */
+/* line 216, styles.scss */
+.page-reading #mainview {
+  position: relative;
+}
+/* line 220, styles.scss */
 .page-reading #toolkit input {
   width: 70px;
 }

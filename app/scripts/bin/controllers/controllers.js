@@ -90,10 +90,7 @@
   littb.controller("authorInfoCtrl", function($scope, backend, $routeParams) {
     var author;
     author = $routeParams.author;
-    return backend.getAuthorInfo(author).then(function(data) {
-      $scope.authorInfo = data;
-      return c.log(data);
-    });
+    return $scope.authorInfo = backend.getAuthorInfo(author);
   });
 
   littb.controller("titleListCtrl", function($scope, $location, backend, util) {
@@ -101,7 +98,7 @@
     s = $scope;
     s.loc = $location;
     s.letterArray = _.invoke(["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "ZÅÄÖ"], "split", "");
-    util.setupHash(s, "sort", "filter");
+    util.setupHash(s, "sort", "filter", "mediatypeFilter");
     backend.getTitles().then(function(titleArray) {
       s.rowByLetter = _.groupBy(titleArray, function(item) {
         return item.itemAttrs.showtitle[0];
@@ -123,7 +120,7 @@
   littb.controller("epubListCtrl", function($scope, backend) {
     var s;
     s = $scope;
-    backend.getTitles().then(function(titleArray) {
+    return backend.getTitles().then(function(titleArray) {
       var authors, x;
       s.rows = titleArray;
       authors = (function() {
@@ -141,7 +138,6 @@
         return item.authorid;
       });
     });
-    return s.authorData = backend.getAuthorList();
   });
 
   littb.controller("authorListCtrl", function($scope, backend) {
@@ -155,10 +151,18 @@
   });
 
   littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams) {
-    var author, s, title;
+    var author, mediatype, s, title;
     s = $scope;
-    title = $routeParams.title, author = $routeParams.author;
+    title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype;
     _.extend(s, $routeParams);
+    s.getMediatypes = function() {
+      var _ref;
+      if (mediatype) {
+        return [mediatype];
+      } else {
+        return (_ref = s.data) != null ? _ref.mediatypes : void 0;
+      }
+    };
     return backend.getSourceInfo(author, title).then(function(data) {
       return s.data = data;
     });
@@ -173,7 +177,6 @@
     return backend.getPage(author, title, mediatype, s.pagenum).then(function(_arg) {
       var data, page, workinfo;
       data = _arg[0], workinfo = _arg[1];
-      c.log("page data", data, workinfo);
       s.workinfo = workinfo;
       page = $("page[name=" + pagenum + "]", data).clone();
       if (!page.length) {
@@ -213,16 +216,25 @@
   });
 
   littb.factory('backend', function($http, $q) {
-    var objFromAttrs, parseWorkInfo;
-    $http.defaults.transformResponse = function(data, headers) {
-      var output;
-      output = new DOMParser().parseFromString(data, "text/xml");
-      if ($("fel", output).length) {
-        c.log("fel:", $("fel", output).text());
-      }
-      return output;
+    var http, objFromAttrs, parseWorkInfo;
+    http = function(config) {
+      var defaultConfig;
+      defaultConfig = {
+        method: "GET",
+        params: {
+          username: "app"
+        },
+        transformResponse: function(data, headers) {
+          var output;
+          output = new DOMParser().parseFromString(data, "text/xml");
+          if ($("fel", output).length) {
+            c.log("fel:", $("fel", output).text());
+          }
+          return output;
+        }
+      };
+      return $http(_.deepExtend(defaultConfig, config));
     };
-    $http.defaults.transformRequest;
     objFromAttrs = function(elem) {
       var attrib;
       if (!elem) {
@@ -264,16 +276,13 @@
       getTitles: function() {
         var def;
         def = $q.defer();
-        $http({
+        http({
           url: host("/query/lb-anthology.xql"),
-          method: "GET",
           params: {
-            action: "get-works",
-            username: "app"
+            action: "get-works"
           }
         }).success(function(xml) {
           var elemList, itm, rows, workIdGroups, workid;
-          c.log("getTitles success", xml);
           workIdGroups = _.groupBy($("item", xml), function(item) {
             return $(item).attr("lbworkid");
           });
@@ -281,7 +290,6 @@
           for (workid in workIdGroups) {
             elemList = workIdGroups[workid];
             itm = $(elemList[0]);
-            c.log(elemList[0], itm.find("author").get(0));
             rows[workid] = {
               itemAttrs: objFromAttrs(elemList[0]),
               author: (objFromAttrs(itm.find("author").get(0))) || "",
@@ -299,12 +307,8 @@
         var def, url;
         def = $q.defer();
         url = host("/query/lb-authors.xql?action=get-authors");
-        $http({
-          method: "GET",
-          url: url,
-          params: {
-            username: "app"
-          }
+        http({
+          url: url
         }).success(function(xml) {
           var attrArray, item;
           attrArray = (function() {
@@ -325,12 +329,10 @@
         var def, url;
         def = $q.defer();
         url = host("/query/lb-anthology.xql");
-        $http({
-          method: "GET",
+        http({
           url: url,
           params: {
             action: "get-work-info-init",
-            username: "app",
             authorid: author,
             titlepath: title
           }
@@ -347,7 +349,6 @@
         url = host("/query/lb-anthology.xql");
         params = {
           action: "get-work-data-init",
-          username: "app",
           authorid: author,
           titlepath: title,
           navinfo: true,
@@ -358,8 +359,7 @@
         if (pagenum) {
           params["pagename"] = pagenum;
         }
-        $http({
-          method: "GET",
+        http({
           url: url,
           params: params
         }).success(function(xml) {
@@ -367,6 +367,7 @@
           info = parseWorkInfo("LBwork", xml);
           info["authorFullname"] = $("author-fullname", xml).text();
           info["showtitle"] = $("showtitle", xml).text();
+          info["css"] = $("css", xml).text();
           return def.resolve([xml, info]);
         });
         return def.promise;
@@ -375,16 +376,14 @@
         var def, url;
         def = $q.defer();
         url = host("/query/lb-authors.xql");
-        $http({
-          method: "GET",
+        http({
           url: url,
           params: {
             action: "get-author-data-init",
-            authorid: author,
-            username: "app"
+            authorid: author
           }
         }).success(function(xml) {
-          var authorInfo, elem, val, _i, _len, _ref;
+          var authorInfo, elem, item, obj, val, works, _i, _j, _len, _len1, _ref, _ref1;
           authorInfo = {};
           _ref = $("LBauthor", xml).children();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -396,6 +395,15 @@
             }
             authorInfo[normalize(elem.nodeName)] = val;
           }
+          works = [];
+          _ref1 = $("works item", xml);
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            item = _ref1[_j];
+            c.log("works item", item);
+            obj = objFromAttrs(item);
+            works.push(obj);
+          }
+          authorInfo.works = works;
           return def.resolve(authorInfo);
         });
         return def.promise;
@@ -404,12 +412,10 @@
         var def, url;
         def = $q.defer();
         url = host("/query/lb-stats.xql");
-        $http({
-          method: "GET",
+        http({
           url: url,
           params: {
-            action: "get-overall-stats",
-            username: "app"
+            action: "get-overall-stats"
           }
         }).success(function(xml) {
           var elem, output, parseObj, x, _i, _len, _ref, _ref1;
@@ -446,13 +452,11 @@
         var def, url;
         def = $q.defer();
         url = host("/query/lb-anthology.xql");
-        $http({
-          method: "GET",
+        http({
           url: url,
           params: {
             action: "get-titles-by-author",
-            authorid: authorid,
-            username: "app"
+            authorid: authorid
           }
         }).success(function(xml) {
           var elem, output, _i, _len, _ref;
@@ -470,28 +474,25 @@
         var def, url;
         def = $q.defer();
         url = host("/query/lb-search.xql");
-        $http({
+        http({
           method: "POST",
           url: url,
           headers: {
             "Content-Type": "text/xml; charset=utf-8"
           },
           params: {
-            action: "search",
-            username: "app"
+            action: "search"
           },
           data: "<search>\n    <string-filter>\n        <item type=\"string\">" + (query || "finge") + "|</item>\n    </string-filter>\n<domain-filter>\n<item type=\"all-titles\" mediatype=\"all\"></item>\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
         }).success(function(data) {
           var ref;
           c.log("success", $("result", data).attr("ref"));
           ref = $("result", data).attr("ref");
-          return $http({
-            method: "GET",
+          return http({
             url: url,
             params: {
               action: "get-result-set",
-              searchref: ref,
-              username: "app"
+              searchref: ref
             }
           }).success(function(resultset) {
             var elem, kw, left, output, right, work, _i, _len, _ref, _ref1;

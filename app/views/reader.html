@@ -1,12 +1,16 @@
 
 <br>
 
+<div css="{{workinfo.css}}" if="mediatype == 'etext'"></div>
 
 <div ng-switch on="mediatype">
-    <img src="{{url}}" ng-show="url" ng-switch-when="faksimil">
+    <img ng-src="{{url}}" ng-show="url" ng-switch-when="faksimil">
+
     <div ng-switch-when="etext" ng-bind-html-unsafe="etext_html" ></div>
-    <span ng-switch-default>default</span>
+
+    <!-- <span ng-switch-default>default</span> -->
 </div>
+
 
 <toolkit>
 

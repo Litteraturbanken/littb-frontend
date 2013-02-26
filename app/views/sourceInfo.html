@@ -3,7 +3,8 @@
 
 <div ng-bind-html-unsafe="data.sourcedesc"></div>
 
-<div ng-repeat="mediatype in data.mediatypes">
+
+<div ng-repeat="mediatype in getMediatypes()">
     Läs verket som <a href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}}</a>
 </div>
 
