@@ -61,4 +61,12 @@
     };
   });
 
+  littb.directive('linklist', function() {
+    return function(scope, elm, attrs) {
+      return c.log("link", $("[id]", "#mainview").map(function(i, item) {
+        return $(item).text();
+      }));
+    };
+  });
+
 }).call(this);

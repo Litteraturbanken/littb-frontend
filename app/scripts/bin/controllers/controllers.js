@@ -1,60 +1,11 @@
 (function() {
   'use strict';
 
-  var MOZ_HACK_REGEXP, PREFIX_REGEXP, SPECIAL_CHARS_REGEXP, camelCase, normalize,
-    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
+  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __slice = [].slice;
 
   window.c = typeof console !== "undefined" && console !== null ? console : {
     log: _.noop
-  };
-
-  window.xml2Str = function(xmlNode) {
-    try {
-      return (new XMLSerializer()).serializeToString(xmlNode);
-    } catch (e) {
-      try {
-        return xmlNode.xml;
-      } catch (e) {
-        alert("Xmlserializer not supported");
-      }
-    }
-    return false;
-  };
-
-  window.getInnerXML = function(elem) {
-    var child, strArray;
-    strArray = (function() {
-      var _i, _len, _ref, _results;
-      _ref = elem.childNodes;
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        child = _ref[_i];
-        _results.push(xml2Str(child));
-      }
-      return _results;
-    })();
-    return strArray.join("");
-  };
-
-  PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i;
-
-  SPECIAL_CHARS_REGEXP = /([\:\-\_]+(.))/g;
-
-  MOZ_HACK_REGEXP = /^moz([A-Z])/;
-
-  normalize = function(name) {
-    return camelCase(name.replace(PREFIX_REGEXP, ''));
-  };
-
-  camelCase = function(name) {
-    return name.replace(SPECIAL_CHARS_REGEXP, function(_, separator, letter, offset) {
-      if (offset) {
-        return letter.toUpperCase();
-      } else {
-        return letter;
-      }
-    }).replace(MOZ_HACK_REGEXP, "Moz$1");
   };
 
   littb.controller("startCtrl", function() {});
@@ -93,49 +44,81 @@
     return $scope.authorInfo = backend.getAuthorInfo(author);
   });
 
-  littb.controller("titleListCtrl", function($scope, $location, backend, util) {
-    var s;
-    s = $scope;
-    s.loc = $location;
-    s.letterArray = _.invoke(["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "ZÅÄÖ"], "split", "");
-    util.setupHash(s, "sort", "filter", "mediatypeFilter");
-    backend.getTitles().then(function(titleArray) {
-      s.rowByLetter = _.groupBy(titleArray, function(item) {
-        return item.itemAttrs.showtitle[0];
-      });
-      s.selectedLetter = _.keys(s.rowByLetter).sort()[0];
-      s.selectedLetter = "A";
-      return s.rows = s.rowByLetter[s.selectedLetter];
-    });
-    return s.setLetter = function(l) {
-      var list;
-      list = s.rowByLetter[l];
-      if (l && l.length) {
-        s.selectedLetter = l;
-        return s.rows = list;
+  littb.directive('letterMap', function() {
+    return {
+      template: "<table class=\"letters\">\n    <tr ng-repeat=\"row in letterArray\">\n        <td ng-repeat=\"letter in row\"\n            ng-class=\"{disabled: !ifShow(letter), selected: letter == selectedLetter}\"\n            ng-click=\"setLetter(letter)\">{{letter}}</td>\n    </tr>\n</table>",
+      replace: true,
+      scope: {
+        selected: "=",
+        enabledLetters: "="
+      },
+      link: function(scope, elm, attrs) {
+        var s;
+        s = scope;
+        s.letterArray = _.invoke(["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "ZÅÄÖ"], "split", "");
+        s.ifShow = function(letter) {
+          if (!s.enabledLetters) {
+            return false;
+          }
+          return __indexOf.call(s.enabledLetters, letter) >= 0;
+        };
+        return s.setLetter = function(l) {
+          return s.selected = l;
+        };
       }
     };
   });
 
-  littb.controller("epubListCtrl", function($scope, backend) {
+  littb.controller("titleListCtrl", function($scope, $location, backend, util) {
     var s;
     s = $scope;
+    s.loc = $location;
+    util.setupHash(s, "sort", "filter", "mediatypeFilter", "selectedLetter");
     return backend.getTitles().then(function(titleArray) {
-      var authors, x;
-      s.rows = titleArray;
-      authors = (function() {
-        var _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = titleArray.length; _i < _len; _i++) {
-          x = titleArray[_i];
-          if (__indexOf.call(x.mediatype, "epub") >= 0) {
-            _results.push(x.author);
-          }
+      s.rowByLetter = _.groupBy(titleArray, function(item) {
+        return item.itemAttrs.showtitle[0];
+      });
+      return s.currentLetters = _.keys(s.rowByLetter);
+    });
+  });
+
+  littb.controller("epubListCtrl", function($scope, backend, util) {
+    var s;
+    s = $scope;
+    window.has = function(one, two) {
+      return one.toLowerCase().indexOf(two) !== -1;
+    };
+    s.rowFilter = function(item) {
+      if (__indexOf.call(item.mediatype, "epub") < 0) {
+        return false;
+      }
+      if (s.authorFilter && s.authorFilter.authorid !== item.author.authorid) {
+        return false;
+      }
+      if (s.filterTxt) {
+        if (!((has(item.author.fullname, s.filterTxt)) || (has(item.itemAttrs.showtitle, s.filterTxt)))) {
+          return false;
         }
-        return _results;
-      })();
-      return s.authorData = _.unique(authors, false, function(item) {
+      }
+      return true;
+    };
+    return backend.getTitles().then(function(titleArray) {
+      var authors;
+      s.rows = _.filter(titleArray, function(item) {
+        return __indexOf.call(item.mediatype, "epub") >= 0;
+      });
+      authors = _.pluck(s.rows, "author");
+      s.authorData = _.unique(authors, false, function(item) {
         return item.authorid;
+      });
+      s.currentLetters = _.unique(_.map(titleArray, function(item) {
+        return item.itemAttrs.showtitle[0];
+      }));
+      c.log("currentLetters", _.unique(s.currentLetters));
+      return util.setupHash(s, {
+        "selectedLetter": function(val) {
+          return c.log("watch lttr val", val);
+        }
       });
     });
   });
@@ -193,9 +176,51 @@
   });
 
   littb.factory("util", function($location) {
+    var MOZ_HACK_REGEXP, PREFIX_REGEXP, SPECIAL_CHARS_REGEXP, camelCase, xml2Str;
+    PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i;
+    SPECIAL_CHARS_REGEXP = /([\:\-\_]+(.))/g;
+    MOZ_HACK_REGEXP = /^moz([A-Z])/;
+    camelCase = function(name) {
+      return name.replace(SPECIAL_CHARS_REGEXP, function(_, separator, letter, offset) {
+        if (offset) {
+          return letter.toUpperCase();
+        } else {
+          return letter;
+        }
+      }).replace(MOZ_HACK_REGEXP, "Moz$1");
+    };
+    xml2Str = function(xmlNode) {
+      try {
+        return (new XMLSerializer()).serializeToString(xmlNode);
+      } catch (e) {
+        try {
+          return xmlNode.xml;
+        } catch (e) {
+          alert("Xmlserializer not supported");
+        }
+      }
+      return false;
+    };
     return {
+      getInnerXML: function(elem) {
+        var child, strArray;
+        strArray = (function() {
+          var _i, _len, _ref, _results;
+          _ref = elem.childNodes;
+          _results = [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            child = _ref[_i];
+            _results.push(xml2Str(child));
+          }
+          return _results;
+        })();
+        return strArray.join("");
+      },
+      normalize: function(name) {
+        return camelCase(name.replace(PREFIX_REGEXP, ''));
+      },
       setupHash: function() {
-        var name, names, scope, _i, _len, _results;
+        var callback, name, names, scope, _i, _len, _ref, _results;
         scope = arguments[0], names = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
         scope[name] = $location.search()[name];
         scope.$watch('loc.search()', function() {
@@ -204,9 +229,15 @@
         _results = [];
         for (_i = 0, _len = names.length; _i < _len; _i++) {
           name = names[_i];
+          if (_.isObject(name)) {
+            _ref = _.head(_.pairs(name)), name = _ref[0], callback = _ref[1];
+          }
           _results.push(scope.$watch(name, (function(name) {
             return function(val) {
-              return $location.search(name, val || null);
+              $location.search(name, val || null);
+              if (callback) {
+                return callback(val);
+              }
             };
           })(name)));
         }
@@ -215,7 +246,7 @@
     };
   });
 
-  littb.factory('backend', function($http, $q) {
+  littb.factory('backend', function($http, $q, util) {
     var http, objFromAttrs, parseWorkInfo;
     http = function(config) {
       var defaultConfig;
@@ -260,7 +291,7 @@
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         elem = _ref[_i];
         if (_ref1 = elem.nodeName, __indexOf.call(useInnerXML, _ref1) >= 0) {
-          val = getInnerXML(elem);
+          val = util.getInnerXML(elem);
         } else if (_ref2 = elem.nodeName, __indexOf.call(asArray, _ref2) >= 0) {
           val = _.map($(elem).children(), function(child) {
             return $(child).text();
@@ -268,7 +299,7 @@
         } else {
           val = $(elem).text();
         }
-        output[normalize(elem.nodeName)] = val;
+        output[util.normalize(elem.nodeName)] = val;
       }
       return output;
     };

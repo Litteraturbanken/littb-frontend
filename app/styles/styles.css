@@ -75,25 +75,29 @@ th:last-of-type {
   text-align: right;
 }
 
+/* line 86, styles.scss */
+.letters {
+  margin-bottom: 1em;
+}
 /* line 88, styles.scss */
-#letters td {
+.letters td {
   font-weight: bold;
   cursor: pointer;
   padding: 0 6px;
 }
 /* line 93, styles.scss */
-#letters td.disabled {
+.letters td.disabled {
   font-weight: normal !important;
   cursor: default !important;
   text-align: center;
   padding-bottom: 2px;
 }
 /* line 100, styles.scss */
-#letters td.selected {
+.letters td.selected {
   color: #990000;
 }
 /* line 103, styles.scss */
-#letters td:first-child {
+.letters td:first-child {
   padding-left: 0;
 }
 

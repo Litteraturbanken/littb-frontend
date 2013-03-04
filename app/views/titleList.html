@@ -1,9 +1,9 @@
-<div ng-show="rows.length">
+<div>
     <div id="controls">
         <select ng-model="sort" >
             <option value="">-- Sortera på --</option>
             <option value="title">Titel</option>
-            <option value="author.surname">Författare</option>
+            <option value="author.nameforindex">Författare</option>
         </select>
         <select ng-model="mediatypeFilter" >
             <option value="">-- Mediatyper --</option>
@@ -15,7 +15,6 @@
         <label for="filter_input">Filtrera:</label> <input id="filter_input" type="text" ng-model="filter">
 
     </div>
-
     <table id="table" class="table-striped contenttable" >
         <thead>
             <th>Titel</th>
@@ -23,7 +22,7 @@
             <th>Mediatyp</th>
 
         </thead>
-        <tr ng-repeat="row in rows | orderBy:sort | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || ''}">
+        <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sort | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || ''}">
             <td>
                 <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
             </td>
@@ -40,13 +39,7 @@
 
 
     <div toolkit>
-        <table id="letters">
-            <tr ng-repeat="row in letterArray">
-                <td ng-repeat="letter in row"
-                    ng-class="{disabled: !rowByLetter[letter].length, selected: letter == selectedLetter}"
-                    ng-click="setLetter(letter)">{{letter}}</td>
-            </tr>
-        </table>
+        <div letter-map selected="selectedLetter" enabled-letters="currentLetters"></div>
 
         <div>
             Det här är en alfabetisk lista över alla de titlar som Litteraturbanken har att erbjuda, med länkar till text, faksimil- eller pdf-versioner av verken. – Samtliga verk visar titlar på hela verk. Samtliga titlar inkluderar titlar på dikter, noveller etc.

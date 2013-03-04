@@ -30,7 +30,8 @@ window.littb = angular.module('littbApp', [])
                 templateUrl: host '/red/om/ide/inenglish.html'
                 title : "In English"
             .when '/om/hjalp',
-                templateUrl: host '/red/om/hjalp/hjalp.html'
+                # templateUrl: host '/red/om/hjalp/hjalp.html'
+                templateUrl : "views/help.html"
                 title : "Hjälp"
             .when '/statistik',
                 templateUrl: 'views/stats.html'

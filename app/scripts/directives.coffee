@@ -46,3 +46,6 @@ littb.directive 'pagetitle', () ->
                 $("title").text(val)
 
 
+littb.directive 'linklist', () ->
+    return (scope, elm, attrs) ->
+        c.log "link", $("[id]", "#mainview").map((i, item) ->$(item).text())

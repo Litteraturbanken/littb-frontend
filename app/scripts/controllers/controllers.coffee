@@ -2,41 +2,6 @@
 
 window.c = console ? log : _.noop
 
-
-window.xml2Str = (xmlNode) ->
-  try
-
-    # Gecko- and Webkit-based browsers (Firefox, Chrome), Opera.
-    return (new XMLSerializer()).serializeToString(xmlNode)
-  catch e
-    try
-
-      # Internet Explorer.
-      return xmlNode.xml
-    catch e
-
-      #Other browsers without XML Serializer
-      alert "Xmlserializer not supported"
-  false
-window.getInnerXML = (elem) ->
-    strArray = for child in elem.childNodes
-        xml2Str child
-    return strArray.join("")
-
-
-PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i
-SPECIAL_CHARS_REGEXP = /([\:\-\_]+(.))/g
-MOZ_HACK_REGEXP = /^moz([A-Z])/
-normalize = (name) ->
-    camelCase(name.replace(PREFIX_REGEXP, ''));
-
-camelCase = (name) ->
-  name.replace(SPECIAL_CHARS_REGEXP, (_, separator, letter, offset) ->
-    (if offset then letter.toUpperCase() else letter)
-  ).replace MOZ_HACK_REGEXP, "Moz$1"
-
-
-
 littb.controller "startCtrl", () ->
 
 littb.controller "contactFormCtrl", ($scope, backend) ->
@@ -68,53 +33,76 @@ littb.controller "authorInfoCtrl", ($scope, backend, $routeParams) ->
     $scope.authorInfo = backend.getAuthorInfo(author)
 
 
+littb.directive 'letterMap', () ->
+    template : """
+        <table class="letters">
+            <tr ng-repeat="row in letterArray">
+                <td ng-repeat="letter in row"
+                    ng-class="{disabled: !ifShow(letter), selected: letter == selectedLetter}"
+                    ng-click="setLetter(letter)">{{letter}}</td>
+            </tr>
+        </table>
+    """
+    replace : true
+    scope :
+        selected : "="
+        enabledLetters : "="
+    link : (scope, elm, attrs) ->
+        s = scope
+
+        s.letterArray = _.invoke([
+            "ABCDE",
+            "FGHIJ",
+            "KLMNO",
+            "PQRST",
+            "UVWXY",
+            "ZÅÄÖ"
+        ], "split", "")
+
+        s.ifShow = (letter) ->
+            unless s.enabledLetters then return false
+            letter in s.enabledLetters
+
+        s.setLetter = (l) ->
+            s.selected = l
 
 
 littb.controller "titleListCtrl", ($scope, $location, backend, util) ->
     s = $scope
     s.loc = $location
 
-    s.letterArray = _.invoke([
-        "ABCDE",
-        "FGHIJ",
-        "KLMNO",
-        "PQRST",
-        "UVWXY",
-        "ZÅÄÖ"
-    ], "split", "")
+    util.setupHash(s, "sort", "filter", "mediatypeFilter", "selectedLetter")
 
-    util.setupHash(s, "sort", "filter", "mediatypeFilter")
-
-
+    #TODO: what about titles that start with strange chars or non lower case letters?
     backend.getTitles().then (titleArray) ->
         # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
         s.rowByLetter = _.groupBy titleArray, (item) ->
             item.itemAttrs.showtitle[0]
+        s.currentLetters = _.keys s.rowByLetter
 
-        s.selectedLetter = _.keys(s.rowByLetter).sort()[0]
-
-        s.selectedLetter = "A"
-        s.rows = s.rowByLetter[s.selectedLetter]
-
-
-    s.setLetter = (l) ->
-        list = s.rowByLetter[l]
-        if l and l.length
-            s.selectedLetter = l
-            s.rows = list
-
-littb.controller "epubListCtrl", ($scope, backend) ->
+littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope
+
+    window.has = (one, two) -> one.toLowerCase().indexOf(two) != -1
+    s.rowFilter = (item) ->
+        if "epub" not in item.mediatype then return false
+        if s.authorFilter and s.authorFilter.authorid != item.author.authorid then return false
+        if s.filterTxt
+            return false if not ((has item.author.fullname, s.filterTxt) or (has item.itemAttrs.showtitle, s.filterTxt))
+        return true
+
     backend.getTitles().then (titleArray) ->
-        s.rows = titleArray
-        authors = (x.author for x in titleArray when "epub" in x.mediatype)
+        s.rows = _.filter titleArray, (item) -> "epub" in item.mediatype
+        authors = _.pluck s.rows, "author"
 
         s.authorData = _.unique authors, false, (item) ->
             item.authorid
-        # c.log s.authorData
 
+        s.currentLetters = _.unique _.map titleArray, (item) ->
+            item.itemAttrs.showtitle[0]
+        c.log "currentLetters", _.unique s.currentLetters
 
-    # s.authorData = backend.getAuthorList()
+        util.setupHash s, {"selectedLetter" : (val) -> c.log "watch lttr val", val}
 
 
 
@@ -162,21 +150,56 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams) ->
 
 
 littb.factory "util", ($location) ->
+    PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i
+    SPECIAL_CHARS_REGEXP = /([\:\-\_]+(.))/g
+    MOZ_HACK_REGEXP = /^moz([A-Z])/
+    camelCase = (name) ->
+        name.replace(SPECIAL_CHARS_REGEXP, (_, separator, letter, offset) ->
+            if offset then letter.toUpperCase() else letter
+        ).replace MOZ_HACK_REGEXP, "Moz$1"
+
+
+    xml2Str = (xmlNode) ->
+        try
+            # Gecko- and Webkit-based browsers (Firefox, Chrome), Opera.
+            return (new XMLSerializer()).serializeToString(xmlNode)
+        catch e
+            try
+
+                # Internet Explorer.
+                return xmlNode.xml
+            catch e
+                #Other browsers without XML Serializer
+                alert "Xmlserializer not supported"
+        false
+
+
+    getInnerXML : (elem) ->
+        strArray = for child in elem.childNodes
+            xml2Str child
+        return strArray.join("")
+
+    normalize : (name) ->
+        camelCase(name.replace(PREFIX_REGEXP, ''))
+
     setupHash : (scope, names...) ->
         scope[name] = $location.search()[name]
         scope.$watch 'loc.search()', ->
             _.extend(scope, _.pick($location.search(), names...))
 
         for name in names
+            if _.isObject name
+                [name, callback] = _.head _.pairs name
             scope.$watch name, do (name) ->
                 (val) ->
                     $location.search(name, val or null)
+                    callback(val) if callback
 
 
 
 
 
-littb.factory 'backend', ($http, $q) ->
+littb.factory 'backend', ($http, $q, util) ->
     # $http.defaults.transformResponse = (data, headers) ->
 
     http = (config) ->
@@ -203,7 +226,7 @@ littb.factory 'backend', ($http, $q) ->
         output = {}
         for elem in $(root, xml).children()
             if elem.nodeName in useInnerXML
-                val = getInnerXML elem
+                val = util.getInnerXML elem
 
             else if elem.nodeName in asArray
                  val = _.map $(elem).children(), (child) ->
@@ -211,7 +234,7 @@ littb.factory 'backend', ($http, $q) ->
             else
                 val = $(elem).text()
 
-            output[normalize(elem.nodeName)] = val
+            output[util.normalize(elem.nodeName)] = val
         return output
 
 

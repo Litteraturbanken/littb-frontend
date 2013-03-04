@@ -1,17 +1,17 @@
-<h1>Litteraturbankens ePub-filer</h1>
+<h1>Litteraturbankens epubfiler</h1>
 
-<p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>ePub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Listan på verk som finns tillgängliga i formatet kommer att utökas med tiden. Läs mer om ePub på hjälpsidan.</p>
+<p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Listan på verk som finns tillgängliga i formatet kommer att utökas med tiden. Läs mer om epub på hjälpsidan.</p>
 
 <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
     <option value="">Alla Författare<option>
 </select>
 
 <div>
-    Filtrera: <input ng-model="filterTxt">
+    Filtrera: <input ng-model="filterTxt" autofocus>
 </div>
 
 <table class="table-striped contenttable" >
-    <tr ng-repeat="row in rows | filter:{author.authorid: authorFilter.authorid || '', mediatype : 'epub', author.fullname : filterTxt || ''} | orderBy:'author.nameforindex'">
+    <tr ng-repeat="row in rows | filter:rowFilter | orderBy:'author.nameforindex'">
         <td><a href="#/forfattare/{{row.author.authorid}}">{{row.author.nameforindex}}</a></td>
         <td>
             <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>
@@ -21,3 +21,8 @@
         </td>
     </tr>
 </table>
+
+
+<!-- <div toolkit>
+    <div letter-map selected="selectedLetter" enabled-letters="currentLetters"></div>
+</div> -->
