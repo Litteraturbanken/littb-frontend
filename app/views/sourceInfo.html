@@ -1,14 +1,22 @@
-<h3>{{data.authorFullname}}</h3>
-<h3><em>{{data.showtitle}}</em></h3>
+<h3 class="author">{{data.authorFullname}}</h3>
+<h3 class="title"><em>{{data.title}}</em></h3>
 
+<div ng-show="mediatype == 'faksimil'">
 <div ng-bind-html-unsafe="data.sourcedesc"></div>
+</div>
 
 
 <div ng-repeat="mediatype in getMediatypes()">
     Läs verket som <a href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}}</a>
 </div>
 
+<div ng-show="!mediatype || mediatype == 'etext'">
+I etexten har följande ändringar gjorts mot originalet:
+<div ng-bind-html-unsafe="data.errata"></div>
+</div>
+
 <div toolkit>
+    <hr>
     <div>{{data.authorFullname}}</div>
     <div><em>{{data.shorttitle}}</em></div>
-</div toolkit>
+</div>

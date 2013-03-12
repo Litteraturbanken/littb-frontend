@@ -89,12 +89,17 @@ th:last-of-type {
         font-weight : bold;
         cursor : pointer;
         padding : 0 6px;
+        text-align : center;
+        height : 20px;
+        width : 20px;
+
 
         &.disabled {
             font-weight: normal !important;
             cursor : default !important;
-            text-align : center;
-            padding-bottom : 2px;
+            // padding-bottom : 2px;
+            // position: relative;
+            // top : 3px;
 
         }
         &.selected {
@@ -136,6 +141,7 @@ li {
     @include inline-block();
     vertical-align: top;
     width : $mainview-width;
+    margin-top : 2em;
 }
 
 label {
@@ -160,6 +166,9 @@ header {
     input {
         font-size : 1.1em;
         width : 90px;
+    }
+    form {
+        margin-bottom : 1em;
     }
 }
 
@@ -211,7 +220,7 @@ header {
         max-width : 247px;
     }
 }
-
+$partnav-width : 120px;
 .page-reading {
     #mainview {
         position : relative;
@@ -220,5 +229,111 @@ header {
         input {
             width : 70px;
         }
+    }
+    .work_parts {
+        margin-top : 1em;
+        li {
+            font-size : smaller;
+            overflow-x : hidden;
+            white-space : nowrap;
+            text-overflow : ellipsis;
+            font-style : italic;
+        }
+    }
+    .partnav {
+        position : relative;
+        .arrow_icon {
+            color : $primarycolor;
+        }
+
+        .triangle {
+            width: 0px;
+            height: 0px;
+            border-style: solid;
+            border-width: 0 0 25px 25px;
+            border-color: transparent transparent $primarycolor transparent;
+            opacity : 0.5;
+
+            position : absolute;
+            left : ($main-menu-width + $gutter-width) - 25;
+            bottom : 0;
+
+
+        }
+
+        .part_menu {
+            background-color : $primarycolor;
+            opacity : 0.8;
+            width : $partnav-width;
+            position : absolute;
+            bottom : 0;
+            left : $main-menu-width + $gutter-width;
+            padding : 2em;
+            z-index : 100;
+            a {
+                color : white;
+            }
+        }
+    }
+}
+
+.page-sourceInfo {
+    h3 {
+        margin : 0;
+        line-height : inherit;
+        &.author {
+            font-variant : small-caps;
+        }
+        &.title {
+            margin-bottom : 2em;
+        }
+    }
+}
+
+.page-authorList {
+    table {
+        margin-top : 3em;
+    }
+    #mainview > * {
+        margin-bottom : 1em;
+    }
+}
+
+.page-titleList {
+    th {
+        padding-bottom : 1em;
+    }
+}
+
+$triangle_size : 8px;
+
+.triangle {
+    width: 0px;
+    height: 0px;
+    border-style: solid;
+    position : relative;
+    margin-right : 3px;
+    cursor : pointer;
+
+    &.disabled {
+        cursor: normal;
+    }
+
+    &.disabled.up {
+        border-color: transparent transparent grey transparent;
+    }
+    &.disabled.down {
+        border-color: grey transparent transparent transparent;
+    }
+    &.up {
+        border-width: 0 $triangle_size $triangle_size $triangle_size;
+        border-color: transparent transparent $primarycolor transparent;
+        bottom : 11px;
+    }
+
+    &.down {
+        border-width: $triangle_size $triangle_size 0 $triangle_size;
+        border-color: $primarycolor transparent transparent transparent;
+        top : 11px;
     }
 }

@@ -14,7 +14,11 @@
   };
 
   window.littb = angular.module('littbApp', []).config(function($routeProvider) {
-    return $routeProvider.when('/', {
+    return $routeProvider.when('', {
+      redirectTo: "/start"
+    }).when('/', {
+      redirectTo: "/start"
+    }).when('/start', {
       templateUrl: 'views/start.html',
       controller: 'startCtrl',
       title: "Svenska klassiker som e-bok och epub"
@@ -29,13 +33,17 @@
       title: "Rättigheter"
     }).when('/om/ide', {
       templateUrl: host('/red/om/ide/omlitteraturbanken.html'),
-      title: "Om LB"
+      title: "Om LB",
+      reloadOnSearch: false
     }).when('/om/inenglish', {
       templateUrl: host('/red/om/ide/inenglish.html'),
-      title: "In English"
+      title: "In English",
+      reloadOnSearch: false
     }).when('/om/hjalp', {
       templateUrl: "views/help.html",
-      title: "Hjälp"
+      controller: "helpCtrl",
+      title: "Hjälp",
+      reloadOnSearch: false
     }).when('/statistik', {
       templateUrl: 'views/stats.html',
       controller: 'statsCtrl',
@@ -59,7 +67,8 @@
     }).when("/forfattare", {
       templateUrl: "views/authorList.html",
       controller: "authorListCtrl",
-      title: "Författare"
+      title: "Författare",
+      reloadOnSearch: false
     }).when("/forfattare/:author/titlar", {
       templateUrl: "views/authorTitles.html",
       controller: "authorInfoCtrl",
@@ -84,7 +93,24 @@
     }).when("/forfattare/:author/titlar/:title/sida/:pagenum/:mediatype", {
       templateUrl: "views/reader.html",
       controller: "readingCtrl",
-      reloadOnSearch: false
+      reloadOnSearch: false,
+      resolve: {
+        r: function($q, $routeParams, $route) {
+          var def;
+          def = $q.defer();
+          c.log("route", $route);
+          if (_.isEmpty($routeParams)) {
+            def.resolve();
+            return def.promise;
+          }
+          if ("pagenum" in $routeParams) {
+            def.reject();
+          } else {
+            def.resolve();
+          }
+          return def.promise;
+        }
+      }
     }).when('/kontakt', {
       templateUrl: 'views/contactForm.html',
       controller: 'contactFormCtrl',
@@ -95,22 +121,26 @@
     });
   });
 
-  littb.run(function($rootScope) {
-    $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
+  littb.config([
+    '$httpProvider', function($httpProvider) {
+      return delete $httpProvider.defaults.headers.common["X-Requested-With"];
+    }
+  ]);
+
+  littb.run(function($rootScope, $location) {
+    $rootScope.goto = function(path) {
+      return $location.url(path);
+    };
+    return $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
       var classList, title;
-      c.log("$routeChangeSuccess", newRoute);
       if (newRoute.title) {
         title = "Litteraturbanken v.3 | " + newRoute.title;
       } else {
         title = "Litteraturbanken v.3";
       }
       $("title").text(title);
-      c.log(newRoute.loadedTemplateUrl, prevRoute != null ? prevRoute.loadedTemplateUrl : void 0);
       if (newRoute.loadedTemplateUrl !== (prevRoute != null ? prevRoute.loadedTemplateUrl : void 0)) {
-        c.log("empty toolkit");
         $("#toolkit").html("");
-      } else {
-        c.log(event.preventDefault());
       }
       $rootScope.prevRoute = prevRoute;
       classList = ($("[ng-view]").attr("class") || "").split(" ");
@@ -121,16 +151,6 @@
       if (newRoute.controller) {
         return $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""));
       }
-    });
-    $rootScope.$on("$routeChangeStart", function(event, next, current) {
-      c.log("routeChangeStart", next, current);
-      c.log("routeChangeStart", next != null ? next.templateUrl : void 0, current != null ? current.templateUrl : void 0);
-      if ((next != null ? next.templateUrl : void 0) === (current != null ? current.templateUrl : void 0)) {
-        return c.log("don't change");
-      }
-    });
-    return $rootScope.$on("$routeChangeError", function() {
-      return c.log("routeChangeError", arguments);
     });
   });
 

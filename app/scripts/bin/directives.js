@@ -61,11 +61,26 @@
     };
   });
 
-  littb.directive('linklist', function() {
-    return function(scope, elm, attrs) {
-      return c.log("link", $("[id]", "#mainview").map(function(i, item) {
-        return $(item).text();
-      }));
+  littb.directive('sortTriangles', function() {
+    return {
+      template: '<div><span ng-click="up()" class="triangle up"></span>\n     <span ng-click="down()" class="triangle down"></span>\n       <input ng-model="tuple">\n</div>',
+      replace: true,
+      scope: {
+        sorttuple: "="
+      },
+      link: function(scope, elem, iAttrs) {
+        var s;
+        c.log("tiran", scope, elem, iAttrs);
+        s = scope;
+        s.up = function() {
+          c.log("iAttrs.val", iAttrs.val);
+          return scope.tuple = [iAttrs.val, 1];
+        };
+        return s.down = function() {
+          c.log("iAttrs.val", iAttrs.val);
+          return scope.tuple = [iAttrs.val, -1];
+        };
+      }
     };
   });
 

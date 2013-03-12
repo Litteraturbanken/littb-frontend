@@ -8,7 +8,7 @@
     log: _.noop
   };
 
-  littb.controller("startCtrl", function() {});
+  littb.controller("startCtrl", function($scope) {});
 
   littb.controller("contactFormCtrl", function($scope, backend) {});
 
@@ -69,11 +69,11 @@
     };
   });
 
-  littb.controller("titleListCtrl", function($scope, $location, backend, util) {
+  littb.controller("titleListCtrl", function($scope, backend, util) {
     var s;
     s = $scope;
-    s.loc = $location;
-    util.setupHash(s, "sort", "filter", "mediatypeFilter", "selectedLetter");
+    util.setupHash(s, "filter", "mediatypeFilter", "selectedLetter");
+    s.sorttuple = ["title", 1];
     return backend.getTitles().then(function(titleArray) {
       s.rowByLetter = _.groupBy(titleArray, function(item) {
         return item.itemAttrs.showtitle[0];
@@ -123,14 +123,54 @@
     });
   });
 
-  littb.controller("authorListCtrl", function($scope, backend) {
-    return backend.getAuthorList().then(function(data) {
-      $scope.authorIdGroup = _.groupBy(data, function(item) {
+  littb.controller("helpCtrl", function($scope, $http, util, $location) {
+    var s, url;
+    s = $scope;
+    url = host("/red/om/hjalp/hjalp.html");
+    return $http.get(url).success(function(data) {
+      var elem;
+      s.htmlContent = data;
+      s.labelArray = (function() {
+        var _i, _len, _ref, _results;
+        _ref = $("[id]", data);
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          elem = _ref[_i];
+          _results.push({
+            label: $(elem).text(),
+            id: $(elem).attr("id")
+          });
+        }
+        return _results;
+      })();
+      return util.setupHash(s, {
+        "ankare": function(val) {
+          if (!val) {
+            $(window).scrollTop(0);
+            return;
+          }
+          return $(window).scrollTop($("#" + val).offset().top);
+        }
+      });
+    });
+  });
+
+  littb.controller("authorListCtrl", function($scope, backend, util) {
+    var s;
+    s = $scope;
+    util.setupHash(s, "authorFilter");
+    backend.getAuthorList().then(function(data) {
+      s.authorIdGroup = _.groupBy(data, function(item) {
         return item.authorid;
       });
-      $scope.authorIdGroup[""] = "";
-      return $scope.rows = data;
+      s.authorIdGroup[""] = "";
+      return s.rows = data;
     });
+    return s.getAuthor = function(row) {
+      var first, last, _ref;
+      _ref = row.nameforindex.split(","), last = _ref[0], first = _ref[1];
+      return last.toUpperCase() + "," + first;
+    };
   });
 
   littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams) {
@@ -146,32 +186,71 @@
         return (_ref = s.data) != null ? _ref.mediatypes : void 0;
       }
     };
-    return backend.getSourceInfo(author, title).then(function(data) {
-      return s.data = data;
-    });
+    return s.data = backend.getSourceInfo(author, title, mediatype || "etext");
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams) {
-    var author, mediatype, pagenum, s, title;
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location) {
+    var author, mediatype, pagenum, s, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagenum = $routeParams.pagenum;
     _.extend(s, $routeParams);
     s.pagenum = Number(pagenum);
-    return backend.getPage(author, title, mediatype, s.pagenum).then(function(_arg) {
-      var data, page, workinfo;
-      data = _arg[0], workinfo = _arg[1];
-      s.workinfo = workinfo;
-      page = $("page[name=" + pagenum + "]", data).clone();
-      if (!page.length) {
-        page = $("page:last", data).clone();
-        s.pagenum = Number(page.attr("name"));
+    s.getPage = function() {
+      return $route.current.pathParams.pagenum;
+    };
+    s.nextPage = function() {
+      return s.pagenum++;
+    };
+    s.prevPage = function() {
+      return s.pagenum--;
+    };
+    s.gotopage = function(page) {
+      c.log("gotopage", page);
+      return s.pagenum = Number(page);
+    };
+    s.mouseover = function() {
+      c.log("mouseover");
+      return s.showPopup = true;
+    };
+    watches = [];
+    watches.push(s.$watch("pagenum", function(val) {
+      c.log("pagenum", val);
+      s.displaynum = val;
+      return $location.path("/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype);
+    }));
+    watches.push(s.$watch("getPage()", function(val) {
+      c.log("getPage watch", val);
+      if (val == null) {
+        return;
       }
-      if (mediatype === 'faksimil') {
-        return s.url = $("faksimil-url[size=3]", page).text();
-      } else {
-        page.children().remove();
-        return s.etext_html = page.text();
+      s.pagenum = Number(val);
+      return backend.getPage(author, title, mediatype, s.pagenum).then(function(_arg) {
+        var data, page, pagemap, workinfo;
+        data = _arg[0], workinfo = _arg[1];
+        s.workinfo = workinfo;
+        pagemap = workinfo.pagemap;
+        s.startpage = Number(workinfo.startpagename);
+        page = $("page[name=" + pagenum + "]", data).clone();
+        if (!page.length) {
+          page = $("page:last", data).clone();
+          s.pagenum = Number(page.attr("name"));
+        }
+        if (mediatype === 'faksimil') {
+          return s.url = $("faksimil-url[size=3]", page).text();
+        } else {
+          page.children().remove();
+          return s.etext_html = page.text();
+        }
+      });
+    }));
+    return s.$on("$destroy", function() {
+      var w, _i, _len, _results;
+      _results = [];
+      for (_i = 0, _len = watches.length; _i < _len; _i++) {
+        w = watches[_i];
+        _results.push(w());
       }
+      return _results;
     });
   });
 
@@ -204,6 +283,9 @@
     return {
       getInnerXML: function(elem) {
         var child, strArray;
+        if ("get" in elem) {
+          elem = elem.get(0);
+        }
         strArray = (function() {
           var _i, _len, _ref, _results;
           _ref = elem.childNodes;
@@ -220,20 +302,30 @@
         return camelCase(name.replace(PREFIX_REGEXP, ''));
       },
       setupHash: function() {
-        var callback, name, names, scope, _i, _len, _ref, _results;
-        scope = arguments[0], names = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-        scope[name] = $location.search()[name];
+        var callback, name, nameConfig, names, scope, _i, _len, _ref, _results;
+        scope = arguments[0], nameConfig = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+        names = _.map(nameConfig, function(item) {
+          if (_.isObject(item)) {
+            return (_.head(_.pairs(item)))[0];
+          } else {
+            return item;
+          }
+        });
+        c.log("init", _.pick.apply(_, [$location.search()].concat(__slice.call(names))));
+        _.extend(scope, _.pick.apply(_, [$location.search()].concat(__slice.call(names))));
         scope.$watch('loc.search()', function() {
           return _.extend(scope, _.pick.apply(_, [$location.search()].concat(__slice.call(names))));
         });
         _results = [];
-        for (_i = 0, _len = names.length; _i < _len; _i++) {
-          name = names[_i];
+        for (_i = 0, _len = nameConfig.length; _i < _len; _i++) {
+          name = nameConfig[_i];
           if (_.isObject(name)) {
             _ref = _.head(_.pairs(name)), name = _ref[0], callback = _ref[1];
           }
+          scope[name] = $location.search()[name];
           _results.push(scope.$watch(name, (function(name) {
             return function(val) {
+              c.log("watch name", val);
               $location.search(name, val || null);
               if (callback) {
                 return callback(val);
@@ -356,7 +448,7 @@
         });
         return def.promise;
       },
-      getSourceInfo: function(author, title) {
+      getSourceInfo: function(author, title, mediatype) {
         var def, url;
         def = $q.defer();
         url = host("/query/lb-anthology.xql");
@@ -365,11 +457,16 @@
           params: {
             action: "get-work-info-init",
             authorid: author,
-            titlepath: title
+            titlepath: title,
+            mediatype: mediatype
           }
         }).success(function(xml) {
-          var output;
+          var errata, output;
           output = parseWorkInfo("result", xml);
+          errata = $("errata", xml).parent().clone();
+          if (errata.length) {
+            output.errata = util.getInnerXML(errata);
+          }
           return def.resolve(output);
         });
         return def.promise;
@@ -394,11 +491,21 @@
           url: url,
           params: params
         }).success(function(xml) {
-          var info;
+          var info, p, page, pgMap, _i, _len, _ref;
           info = parseWorkInfo("LBwork", xml);
           info["authorFullname"] = $("author-fullname", xml).text();
-          info["showtitle"] = $("showtitle", xml).text();
+          info["showtitle"] = $(":root > showtitle", xml).text();
           info["css"] = $("css", xml).text();
+          pgMap = {};
+          _ref = $("bok sida", xml);
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            page = _ref[_i];
+            p = $(page);
+            pgMap["ix_" + p.attr("ix")] = p.attr("sidn");
+            pgMap["page_" + p.attr("sidn")] = Number(p.attr("ix"));
+          }
+          info.pagemap = pgMap;
+          info.parts = _.map($("parts > part", xml), objFromAttrs);
           return def.resolve([xml, info]);
         });
         return def.promise;
@@ -420,11 +527,11 @@
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             elem = _ref[_i];
             if (elem.nodeName === "intro") {
-              val = getInnerXML(elem);
+              val = util.getInnerXML(elem);
             } else {
               val = $(elem).text();
             }
-            authorInfo[normalize(elem.nodeName)] = val;
+            authorInfo[util.normalize(elem.nodeName)] = val;
           }
           works = [];
           _ref1 = $("works item", xml);

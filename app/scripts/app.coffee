@@ -1,5 +1,4 @@
 'use strict';
-
 _.mixin deepExtend: underscoreDeepExtend(_)
 _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
@@ -10,7 +9,11 @@ window.littb = angular.module('littbApp', [])
     .config ($routeProvider) ->
 
         $routeProvider
+            .when '',
+                redirectTo : "/start"
             .when '/',
+                redirectTo : "/start"
+            .when '/start',
                 templateUrl: 'views/start.html',
                 controller: 'startCtrl'
                 title : "Svenska klassiker som e-bok och epub"
@@ -26,13 +29,17 @@ window.littb = angular.module('littbApp', [])
             .when '/om/ide',
                 templateUrl: host '/red/om/ide/omlitteraturbanken.html'
                 title : "Om LB"
+                reloadOnSearch : false
             .when '/om/inenglish',
                 templateUrl: host '/red/om/ide/inenglish.html'
                 title : "In English"
+                reloadOnSearch : false
             .when '/om/hjalp',
                 # templateUrl: host '/red/om/hjalp/hjalp.html'
                 templateUrl : "views/help.html"
+                controller : "helpCtrl"
                 title : "Hjälp"
+                reloadOnSearch : false
             .when '/statistik',
                 templateUrl: 'views/stats.html'
                 controller : 'statsCtrl'
@@ -58,6 +65,7 @@ window.littb = angular.module('littbApp', [])
                 templateUrl : "views/authorList.html"
                 controller : "authorListCtrl"
                 title : "Författare"
+                reloadOnSearch : false
             .when "/forfattare/:author/titlar",
                 templateUrl : "views/authorTitles.html"
                 controller : "authorInfoCtrl"
@@ -82,7 +90,23 @@ window.littb = angular.module('littbApp', [])
             .when "/forfattare/:author/titlar/:title/sida/:pagenum/:mediatype"
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
-                reloadOnSearch : false
+                reloadOnSearch : false,
+                resolve :
+                    r : ($q, $routeParams, $route) ->
+                        def = $q.defer()
+
+                        c.log "route", $route
+                        if _.isEmpty($routeParams)
+                            def.resolve()
+                            return def.promise
+                        # because we have a pagenum here,
+                        # we're still in the reader and should't leave
+                        if "pagenum" of $routeParams
+                            def.reject()
+                        else
+                            def.resolve()
+                        return def.promise
+
             .when '/kontakt',
                 templateUrl: 'views/contactForm.html'
                 controller : 'contactFormCtrl'
@@ -91,26 +115,23 @@ window.littb = angular.module('littbApp', [])
             .otherwise
                 redirectTo: '/'
 
-littb.run ($rootScope) ->
+littb.config ['$httpProvider', ($httpProvider) ->
+  delete $httpProvider.defaults.headers.common["X-Requested-With"]
+]
+
+littb.run ($rootScope, $location) ->
+    $rootScope.goto = (path) ->
+        $location.url(path)
+
     $rootScope.$on "$routeChangeSuccess", (event, newRoute, prevRoute) ->
-
-        c.log "$routeChangeSuccess", newRoute
-
         if newRoute.title
             title = "Litteraturbanken v.3 | " + newRoute.title
-
-            # if newRoute.controller == "startCtrl"
         else
             title = "Litteraturbanken v.3"
 
         $("title").text(title)
-        # c.log "prev != new"
-        c.log newRoute.loadedTemplateUrl, prevRoute?.loadedTemplateUrl
         if newRoute.loadedTemplateUrl != prevRoute?.loadedTemplateUrl
-            c.log "empty toolkit"
             $("#toolkit").html ""
-        else
-            c.log event.preventDefault()
         $rootScope.prevRoute = prevRoute
 
         # sync ng-view class name to page
@@ -123,12 +144,6 @@ littb.run ($rootScope) ->
 
 
 
-    $rootScope.$on "$routeChangeStart", (event, next, current) ->
-        c.log "routeChangeStart", next, current
-        c.log "routeChangeStart", next?.templateUrl, current?.templateUrl
-        if next?.templateUrl == current?.templateUrl
-            c.log "don't change"
-            # event.preventDefault()
+    # $rootScope.$on "$routeChangeStart", (event, next, current) ->
 
-    $rootScope.$on "$routeChangeError", () ->
-            c.log "routeChangeError", arguments
+    # $rootScope.$on "$routeChangeError", () ->

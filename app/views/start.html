@@ -2,11 +2,17 @@
 
 <div toolkit>
     Sök författare
-    <input><span submit-btn></span>
+    <form ng-submit="goto('/forfattare?authorFilter=' + author)">
+        <input ng-model="author"><span submit-btn></span>
+    </form>
     Sök titel
-    <input><span submit-btn></span>
+    <form ng-submit="goto('/forfattare?authorFilter=' + title)">
+        <input ng-model="title"><span submit-btn></span>
+    </form>
     Sök i texterna
-    <input><span submit-btn></span>
+    <form ng-submit="goto('/forfattare?authorFilter=' + search)">
+        <input ng-model="search"><span submit-btn></span>
+    </form>
 
 
 </div>

@@ -1,6 +1,12 @@
-<ng-include src="'http://demolittb.spraakdata.gu.se/red/om/hjalp/hjalp.html'"></ng-include>
+<!-- <ng-include src="'http://demolittb.spraakdata.gu.se/red/om/hjalp/hjalp.html'"></ng-include> -->
+
+<div ng-bind-html-unsafe="htmlContent"></div>
 
 <div toolkit>
-    <!-- TODO: finish here -->
-    <ul linklist></ul>
+    <ul>
+        <li ng-repeat="item in labelArray">
+            <span ng-click="ankare = item.id">::: {{item.label}}</span>
+        </li>
+    </ul>
+
 </div>

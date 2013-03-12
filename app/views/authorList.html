@@ -1,11 +1,11 @@
 
 <h1>Författare</h1>
 
-Sök efter författare: <input ng-model="authorFilter"> (Lämna rutan tom för att visa alla)
+<div class="filter_header">Sök efter författare: <input ng-model="authorFilter" autofocus> (Lämna rutan tom för att visa alla)</div>
 
 <table class="table-striped contenttable">
     <tr ng-repeat="row in rows | filter:authorFilter | orderBy:nameforindex">
-        <td><a href="#/forfattare/{{row.authorid}}">{{row.nameforindex}}</a></td>
+        <td><a href="#/forfattare/{{row.authorid}}">{{getAuthor(row)}}</a></td>
         <td>{{row.datestring}}</td>
         <td><em ng-show="row.pseudonymfor">::: se {{authorIdGroup[row.pseudonymfor][0].nameforindex}}</em></td>
     </tr>

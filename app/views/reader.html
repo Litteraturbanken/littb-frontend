@@ -17,27 +17,59 @@
     <hr>
 
 
-    <div>{{workinfo.authorFullname}}
-        <em>{{workinfo.showtitle}}</em>
+    <div>
+        <a href="#/forfattare/{{workinfo.authorid}}">
+            {{workinfo.authorFullname}}
+        </a>
+    </div>
+    <div>
+        <em><a href="#/forfattare/{{workinfo.authorid}}/titlar/{{workinfo.titlepath}}/info">{{workinfo.showtitle}}</a></em>
     </div>
 
     <div style="height: 2em;"></div>
 
-    <div><a>::: Bibliografisk info.</a></div>
+    <div><a href="#/forfattare/{{workinfo.authorid}}/titlar/{{workinfo.titlepath}}/info/{{mediatype}}">::: Om boken</a></div>
 
     <hr>
 
 
     <div>
         <img src="http://demolittb.spraakdata.gu.se/bilder/LBstart.png">
-        <a href="#/forfattare/{{author}}/titlar/{{title}}/sida/{{pagenum-1}}/{{mediatype}}"><img src="http://demolittb.spraakdata.gu.se/bilder/LBforegaende.png"></a>
-        <a href="#/forfattare/{{author}}/titlar/{{title}}/sida/{{pagenum+1}}/{{mediatype}}"><img src="http://demolittb.spraakdata.gu.se/bilder/LBnasta.png"></a>
+        <a ng-click="prevPage()"><img src="http://demolittb.spraakdata.gu.se/bilder/LBforegaende.png"></a>
+        <a ng-click="nextPage()"><img src="http://demolittb.spraakdata.gu.se/bilder/LBnasta.png"></a>
 
 
         <img src="http://demolittb.spraakdata.gu.se/bilder/LBslut.png">
     </div>
+    <form ng-submit="pagenum = displaynum">
+        Sida <input ng-model="displaynum"><!-- should be name -->
+    </form>
+
     <div>
-        Sida <input ng-model="pagenum"><!-- should be name -->
+        <ul class="work_parts">
+            <li><a ng-click="gotopage(startpage)">[Start]</a></li>
+            <li ng-repeat="part in workinfo.parts | limitTo:5">
+                <a ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="partnav">
+        <div>
+            <i ng-mouseover="mouseover()" class="arrow_icon icon-play icon-large"></i>
+        </div>
+
+        <div ng-show="showPopup" class="triangle"></div>
+
+
+
+        <div class="part_menu" ng-show="showPopup">
+            <li><a ng-click="gotopage(startpage)">[Start]</a></li>
+            <li ng-repeat="part in workinfo.parts">
+                <a ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
+            </li>
+        </div>
+
     </div>
 
 

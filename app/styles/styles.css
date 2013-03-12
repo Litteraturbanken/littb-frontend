@@ -84,47 +84,48 @@ th:last-of-type {
   font-weight: bold;
   cursor: pointer;
   padding: 0 6px;
+  text-align: center;
+  height: 20px;
+  width: 20px;
 }
-/* line 93, styles.scss */
+/* line 97, styles.scss */
 .letters td.disabled {
   font-weight: normal !important;
   cursor: default !important;
-  text-align: center;
-  padding-bottom: 2px;
 }
-/* line 100, styles.scss */
+/* line 105, styles.scss */
 .letters td.selected {
   color: #990000;
 }
-/* line 103, styles.scss */
+/* line 108, styles.scss */
 .letters td:first-child {
   padding-left: 0;
 }
 
-/* line 109, styles.scss */
+/* line 114, styles.scss */
 a {
   color: black;
   text-decoration: none;
 }
 
-/* line 113, styles.scss */
+/* line 118, styles.scss */
 a:hover {
   color: #990000;
   text-decoration: none;
 }
 
-/* line 117, styles.scss */
+/* line 122, styles.scss */
 ul {
   padding: 0;
   margin: 0;
 }
 
-/* line 121, styles.scss */
+/* line 126, styles.scss */
 li {
   list-style: none;
 }
 
-/* line 124, styles.scss */
+/* line 129, styles.scss */
 #leftCorridor {
   width: 120px;
   margin-right: 40px;
@@ -135,17 +136,17 @@ li {
   zoom: 1;
   *display: inline;
 }
-/* line 128, styles.scss */
+/* line 133, styles.scss */
 #leftCorridor > * {
   margin-bottom: 2em;
 }
 
-/* line 132, styles.scss */
+/* line 137, styles.scss */
 .mainnav {
   vertical-align: top;
 }
 
-/* line 135, styles.scss */
+/* line 140, styles.scss */
 #mainview {
   display: -moz-inline-stack;
   display: inline-block;
@@ -155,67 +156,72 @@ li {
   *display: inline;
   vertical-align: top;
   width: 510px;
+  margin-top: 2em;
 }
 
-/* line 141, styles.scss */
+/* line 147, styles.scss */
 label {
   display: inline;
 }
 
-/* line 145, styles.scss */
+/* line 151, styles.scss */
 #logo {
   height: 30px;
   left: -8px;
   position: relative;
 }
 
-/* line 151, styles.scss */
+/* line 157, styles.scss */
 header {
   border-bottom: 1px solid grey;
   margin-bottom: 1em;
   padding-bottom: 5px;
 }
 
-/* line 157, styles.scss */
+/* line 163, styles.scss */
 .page-start #toolkit {
   margin-top: 18em;
   font-size: 0.9em;
 }
-/* line 160, styles.scss */
+/* line 166, styles.scss */
 .page-start #toolkit input {
   font-size: 1.1em;
   width: 90px;
 }
+/* line 170, styles.scss */
+.page-start #toolkit form {
+  margin-bottom: 1em;
+}
 
-/* line 167, styles.scss */
+/* line 176, styles.scss */
 .page-stats #mainview > * {
   margin-bottom: 1em;
 }
 
-/* line 174, styles.scss */
+/* line 183, styles.scss */
 .page-search #mainview .submit_btn {
   float: right;
 }
-/* line 177, styles.scss */
+/* line 186, styles.scss */
 .page-search #mainview .input {
   width: 432px;
 }
-/* line 180, styles.scss */
+/* line 189, styles.scss */
 .page-search #mainview .header {
   position: relative;
 }
-/* line 184, styles.scss */
+/* line 193, styles.scss */
 .page-search #mainview .header .open_toggle {
   position: absolute;
   bottom: 0;
   right: 0;
 }
-/* line 192, styles.scss */
+/* line 201, styles.scss */
 .page-search #mainview .extended {
   border: 1px lightgrey solid;
   padding: 8px;
 }
-/* line 197, styles.scss */
+/* line 206, styles.scss */
 .page-search #mainview .columns > div {
   width: 49%;
   display: -moz-inline-stack;
@@ -225,24 +231,133 @@ header {
   zoom: 1;
   *display: inline;
 }
-/* line 201, styles.scss */
+/* line 210, styles.scss */
 .page-search #mainview .columns > div label {
   display: block;
 }
-/* line 207, styles.scss */
+/* line 216, styles.scss */
 .page-search #toolkit {
   font-size: .9em;
 }
-/* line 210, styles.scss */
+/* line 219, styles.scss */
 .page-search #title_select {
   max-width: 247px;
 }
 
-/* line 216, styles.scss */
+/* line 225, styles.scss */
 .page-reading #mainview {
   position: relative;
 }
-/* line 220, styles.scss */
+/* line 229, styles.scss */
 .page-reading #toolkit input {
   width: 70px;
+}
+/* line 233, styles.scss */
+.page-reading .work_parts {
+  margin-top: 1em;
+}
+/* line 235, styles.scss */
+.page-reading .work_parts li {
+  font-size: smaller;
+  overflow-x: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-style: italic;
+}
+/* line 243, styles.scss */
+.page-reading .partnav {
+  position: relative;
+}
+/* line 245, styles.scss */
+.page-reading .partnav .arrow_icon {
+  color: #990000;
+}
+/* line 249, styles.scss */
+.page-reading .partnav .triangle {
+  width: 0px;
+  height: 0px;
+  border-style: solid;
+  border-width: 0 0 25px 25px;
+  border-color: transparent transparent #990000 transparent;
+  opacity: 0.5;
+  position: absolute;
+  left: 135px;
+  bottom: 0;
+}
+/* line 264, styles.scss */
+.page-reading .partnav .part_menu {
+  background-color: #990000;
+  opacity: 0.8;
+  width: 120px;
+  position: absolute;
+  bottom: 0;
+  left: 160px;
+  padding: 2em;
+  z-index: 100;
+}
+/* line 273, styles.scss */
+.page-reading .partnav .part_menu a {
+  color: white;
+}
+
+/* line 281, styles.scss */
+.page-sourceInfo h3 {
+  margin: 0;
+  line-height: inherit;
+}
+/* line 284, styles.scss */
+.page-sourceInfo h3.author {
+  font-variant: small-caps;
+}
+/* line 287, styles.scss */
+.page-sourceInfo h3.title {
+  margin-bottom: 2em;
+}
+
+/* line 294, styles.scss */
+.page-authorList table {
+  margin-top: 3em;
+}
+/* line 297, styles.scss */
+.page-authorList #mainview > * {
+  margin-bottom: 1em;
+}
+
+/* line 303, styles.scss */
+.page-titleList th {
+  padding-bottom: 1em;
+}
+
+/* line 310, styles.scss */
+.triangle {
+  width: 0px;
+  height: 0px;
+  border-style: solid;
+  position: relative;
+  margin-right: 3px;
+  cursor: pointer;
+}
+/* line 318, styles.scss */
+.triangle.disabled {
+  cursor: normal;
+}
+/* line 322, styles.scss */
+.triangle.disabled.up {
+  border-color: transparent transparent grey transparent;
+}
+/* line 325, styles.scss */
+.triangle.disabled.down {
+  border-color: grey transparent transparent transparent;
+}
+/* line 328, styles.scss */
+.triangle.up {
+  border-width: 0 8px 8px 8px;
+  border-color: transparent transparent #990000 transparent;
+  bottom: 11px;
+}
+/* line 334, styles.scss */
+.triangle.down {
+  border-width: 8px 8px 0 8px;
+  border-color: #990000 transparent transparent transparent;
+  top: 11px;
 }

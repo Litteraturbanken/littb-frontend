@@ -2,7 +2,11 @@
 
 window.c = console ? log : _.noop
 
-littb.controller "startCtrl", () ->
+littb.controller "startCtrl", ($scope) ->
+
+
+
+
 
 littb.controller "contactFormCtrl", ($scope, backend) ->
 littb.controller "statsCtrl", ($scope, backend) ->
@@ -67,14 +71,16 @@ littb.directive 'letterMap', () ->
             s.selected = l
 
 
-littb.controller "titleListCtrl", ($scope, $location, backend, util) ->
+littb.controller "titleListCtrl", ($scope, backend, util) ->
     s = $scope
-    s.loc = $location
 
-    util.setupHash(s, "sort", "filter", "mediatypeFilter", "selectedLetter")
+    util.setupHash(s, "filter", "mediatypeFilter", "selectedLetter")
+    s.sorttuple = ["title", 1]
+
 
     #TODO: what about titles that start with strange chars or non lower case letters?
     backend.getTitles().then (titleArray) ->
+        # c.log "getTitles", titleArray
         # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
         s.rowByLetter = _.groupBy titleArray, (item) ->
             item.itemAttrs.showtitle[0]
@@ -106,12 +112,36 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
 
 
 
-littb.controller "authorListCtrl", ($scope, backend) ->
+
+littb.controller "helpCtrl", ($scope, $http, util, $location) ->
+    s = $scope
+    url = host "/red/om/hjalp/hjalp.html"
+    $http.get(url).success (data) ->
+        s.htmlContent = data
+        s.labelArray = for elem in $("[id]", data)
+            label : $(elem).text()
+            id : $(elem).attr("id")
+
+        util.setupHash s, {"ankare" : (val) ->
+            unless val
+                $(window).scrollTop(0)
+                return
+            $(window).scrollTop($("##{val}").offset().top)
+        }
+
+
+littb.controller "authorListCtrl", ($scope, backend, util) ->
+    s = $scope
+    util.setupHash s, "authorFilter"
     backend.getAuthorList().then (data) ->
-        $scope.authorIdGroup = _.groupBy data, (item) ->
+        s.authorIdGroup = _.groupBy data, (item) ->
             return item.authorid
-        $scope.authorIdGroup[""] = ""
-        $scope.rows = data
+        s.authorIdGroup[""] = ""
+        s.rows = data
+
+    s.getAuthor = (row) ->
+        [last, first] = row.nameforindex.split(",")
+        return last.toUpperCase() + "," + first
     # $scope.
 
 
@@ -123,31 +153,74 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
     s.getMediatypes = () ->
         if mediatype then [mediatype] else s.data?.mediatypes
 
-    backend.getSourceInfo(author, title).then (data) ->
-        s.data = data
+    s.data = backend.getSourceInfo(author, title, mediatype or "etext")
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams) ->
+
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location) ->
     s = $scope
     {title, author, mediatype, pagenum} = $routeParams
     _.extend s, $routeParams
     s.pagenum = Number(pagenum)
 
-    backend.getPage(author, title, mediatype, s.pagenum).then ([data, workinfo]) ->
-        s.workinfo = workinfo
-        page = $("page[name=#{pagenum}]", data).clone()
-        if not page.length
-            page = $("page:last", data).clone()
-            s.pagenum = Number(page.attr("name"))
-        if mediatype == 'faksimil'
-            s.url = $("faksimil-url[size=3]", page).text()
-        else
-            page.children().remove()
-            s.etext_html = page.text()
+    s.getPage = () ->
+        $route.current.pathParams.pagenum
+    s.nextPage = () ->
+        s.pagenum++
+    s.prevPage = () ->
+        s.pagenum--
+
+
+    # if not s.workinfo?
+    #     c.log "no workinfo"
+
+    s.gotopage = (page) ->
+        c.log "gotopage", page
+        s.pagenum = Number(page)
+
+    s.mouseover = () ->
+        c.log "mouseover"
+        s.showPopup = true
 
 
 
+    watches = []
+    watches.push s.$watch "pagenum", (val) ->
+        c.log "pagenum", val
+        s.displaynum = val
+        $location.path("/forfattare/#{author}/titlar/#{title}/sida/#{val}/#{mediatype}")
+
+
+    watches.push s.$watch "getPage()", (val) ->
+        c.log "getPage watch", val
+        unless val? then return
+
+
+        s.pagenum = Number(val)
+        backend.getPage(author, title, mediatype, s.pagenum).then ([data, workinfo]) ->
+            # c.log "data, workinfo", data, workinfo
+            s.workinfo = workinfo
+            pagemap = workinfo.pagemap
+            # c.log "pagemap", pagemap
+            # c.log "parts", workinfo.parts
+
+            s.startpage = Number(workinfo.startpagename)
+
+
+            page = $("page[name=#{pagenum}]", data).clone()
+            if not page.length
+                page = $("page:last", data).clone()
+                s.pagenum = Number(page.attr("name"))
+            if mediatype == 'faksimil'
+                s.url = $("faksimil-url[size=3]", page).text()
+            else
+                page.children().remove()
+                s.etext_html = page.text()
+
+    s.$on "$destroy", () ->
+        for w in watches
+            w()
 
 littb.factory "util", ($location) ->
     PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i
@@ -175,6 +248,8 @@ littb.factory "util", ($location) ->
 
 
     getInnerXML : (elem) ->
+        if "get" of elem
+            elem = elem.get(0)
         strArray = for child in elem.childNodes
             xml2Str child
         return strArray.join("")
@@ -182,16 +257,24 @@ littb.factory "util", ($location) ->
     normalize : (name) ->
         camelCase(name.replace(PREFIX_REGEXP, ''))
 
-    setupHash : (scope, names...) ->
-        scope[name] = $location.search()[name]
+    setupHash : (scope, nameConfig...) ->
+        names = _.map nameConfig, (item) ->
+            if _.isObject(item)
+                return (_.head _.pairs item)[0]
+            else
+                return item
+        c.log "init", _.pick($location.search(), names...)
+        _.extend(scope, _.pick($location.search(), names...))
         scope.$watch 'loc.search()', ->
             _.extend(scope, _.pick($location.search(), names...))
 
-        for name in names
+        for name in nameConfig
             if _.isObject name
                 [name, callback] = _.head _.pairs name
+            scope[name] = $location.search()[name]
             scope.$watch name, do (name) ->
                 (val) ->
+                    c.log "watch name", val
                     $location.search(name, val or null)
                     callback(val) if callback
 
@@ -278,32 +361,25 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    getSourceInfo : (author, title) ->
+    getSourceInfo : (author, title, mediatype) ->
         def = $q.defer()
         url = host "/query/lb-anthology.xql"
+
         http(
             url : url
             params :
                 action : "get-work-info-init"
                 authorid : author
                 titlepath : title
-                # mediatype:
+                mediatype: mediatype
+
         ).success (xml) ->
             output = parseWorkInfo("result", xml)
-            # useInnerXML = ["sourcedesc"]
-            # asArray = ["mediatypes"]
-            # output = {}
-            # for elem in $("result", xml).children()
-            #     if elem.nodeName in useInnerXML
-            #         val = getInnerXML elem
 
-            #     else if elem.nodeName in asArray
-            #          val = _.map $(elem).children(), (child) ->
-            #             $(child).text()
-            #     else
-            #         val = $(elem).text()
+            errata = $("errata", xml).parent().clone()
+            if errata.length
+                output.errata = util.getInnerXML errata
 
-            #     output[normalize(elem.nodeName)] = val
             def.resolve output
         return def.promise
 
@@ -329,8 +405,18 @@ littb.factory 'backend', ($http, $q, util) ->
             info = parseWorkInfo("LBwork", xml)
 
             info["authorFullname"] = $("author-fullname", xml).text()
-            info["showtitle"] = $("showtitle", xml).text()
+            info["showtitle"] = $(":root > showtitle", xml).text()
             info["css"] = $("css", xml).text()
+            pgMap = {}
+            for page in $("bok sida", xml)
+                p = $(page)
+                pgMap["ix_" + p.attr("ix")] = p.attr("sidn")
+                pgMap["page_" + p.attr("sidn")] = Number p.attr("ix")
+
+
+            info.pagemap = pgMap
+
+            info.parts = _.map $("parts > part", xml), objFromAttrs
 
 
             def.resolve [xml, info]
@@ -350,11 +436,11 @@ littb.factory 'backend', ($http, $q, util) ->
             authorInfo = {}
             for elem in $("LBauthor", xml).children()
                 if elem.nodeName == "intro"
-                    val = getInnerXML elem
+                    val = util.getInnerXML elem
                 else
                     val = $(elem).text()
 
-                authorInfo[normalize(elem.nodeName)] = val
+                authorInfo[util.normalize(elem.nodeName)] = val
 
             works = []
             for item in $("works item", xml)

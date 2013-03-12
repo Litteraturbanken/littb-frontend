@@ -11,9 +11,6 @@ littb.directive 'toolkit', ($compile, $location, $route) ->
         elm.remove()
         cmp = $compile("<div>#{elm.html()}</div>")
         return (scope, iElement, iAttrs) ->
-            # if $route.current.templateUrl == scope.$root.prevRoute?.templateUrl
-            #     return
-
             cmp(scope, (clonedElement, scope) ->
                 $("#toolkit").html(clonedElement)
 
@@ -46,6 +43,41 @@ littb.directive 'pagetitle', () ->
                 $("title").text(val)
 
 
-littb.directive 'linklist', () ->
-    return (scope, elm, attrs) ->
-        c.log "link", $("[id]", "#mainview").map((i, item) ->$(item).text())
+littb.directive 'sortTriangles', () ->
+    # controller: () ->
+        #controller cn func, may access $scope, $element, $attrs, $transclude
+    template: '''<div><span ng-click="up()" class="triangle up"></span>
+                      <span ng-click="down()" class="triangle down"></span>
+                        <input ng-model="tuple">
+                 </div>'''
+    replace: true
+    scope : {sorttuple : "="}
+    link: (scope, elem, iAttrs) ->
+        c.log "tiran", scope, elem, iAttrs
+        s = scope
+
+        s.up = () ->
+            c.log "iAttrs.val", iAttrs.val
+            scope.tuple = [iAttrs.val, 1]
+        s.down = () ->
+            c.log "iAttrs.val", iAttrs.val
+            scope.tuple = [iAttrs.val, -1]
+
+
+        # elem.on "click", ".triangle", () ->
+        #     elem.find(".triangle").removeClass "disabled"
+        #     $(this).addClass "disabled"
+        #     c.log "set tuple", iAttrs.val
+
+            # scope.$apply () ->
+
+                # scope.tuple = [iAttrs.val, 1]
+
+
+
+        # scope.$destroy () ->
+            # elem.off "click"
+
+
+
+
