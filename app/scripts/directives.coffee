@@ -46,16 +46,16 @@ littb.directive 'pagetitle', () ->
 littb.directive 'sortTriangles', () ->
     # controller: () ->
         #controller cn func, may access $scope, $element, $attrs, $transclude
-    template: '''<div><span ng-click="up()" class="triangle up"></span>
-                      <span ng-click="down()" class="triangle down"></span>
-                        <input ng-model="tuple">
-                 </div>'''
-    replace: true
-    scope : {sorttuple : "="}
+    # template: '''<div><span ng-click="up()" class="triangle up"></span>
+    #                   <span ng-click="down()" class="triangle down"></span>
+    #                     <input ng-model="tuple">
+    #              </div>'''
+    # replace: true
+    # scope : {sorttuple : "="}
     link: (scope, elem, iAttrs) ->
         c.log "tiran", scope, elem, iAttrs
         s = scope
-
+        scope.sorttuple = [iAttrs.val, 1]
         s.up = () ->
             c.log "iAttrs.val", iAttrs.val
             scope.tuple = [iAttrs.val, 1]
