@@ -63,22 +63,26 @@
 
   littb.directive('sortTriangles', function() {
     return {
-      template: '<div><span ng-click="up()" class="triangle up"></span>\n     <span ng-click="down()" class="triangle down"></span>\n       <input ng-model="tuple">\n</div>',
-      replace: true,
+      template: '<span><span ng-click="up()"\n             class="triangle up" ng-class="{\'disabled\' : active && !enabled[0]}"></span>\n       <span ng-click="down()"\n             class="triangle down" ng-class="{\'disabled\' : active && !enabled[1]}"></span>\n </span>',
       scope: {
-        sorttuple: "="
+        tuple: "=",
+        val: "@"
       },
       link: function(scope, elem, iAttrs) {
         var s;
-        c.log("tiran", scope, elem, iAttrs);
         s = scope;
+        s.enabled = [true, true];
+        s.$watch("tuple", function(newtup) {
+          var dir, newval;
+          newval = newtup[0], dir = newtup[1];
+          s.active = s.val === newval;
+          return s.enabled = [!dir, dir];
+        });
         s.up = function() {
-          c.log("iAttrs.val", iAttrs.val);
-          return scope.tuple = [iAttrs.val, 1];
+          return scope.tuple = [s.val, true];
         };
         return s.down = function() {
-          c.log("iAttrs.val", iAttrs.val);
-          return scope.tuple = [iAttrs.val, -1];
+          return scope.tuple = [s.val, false];
         };
       }
     };

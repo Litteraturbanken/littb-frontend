@@ -12,6 +12,17 @@
 </div>
 
 
+<div modal="lex_article" close="close()" options="opts">
+    <div class="modal-header">
+        <h4>Svensk ordbok (2009)</h4>
+    </div>
+    <div class="modal-body" ng-bind-html-unsafe="lex_article.lexemes">
+    </div>
+    <div class="modal-footer">
+    </div>
+</div>
+
+
 <toolkit>
 
     <hr>
@@ -70,6 +81,13 @@
             </li>
         </div>
 
+    </div>
+
+    <div>
+        <label><small>Slå upp i svensk ordbok</small></label>
+        <input class="word_search"
+            ng-model="lex_article"
+            typeahead="article as article.baseform for article in getWords($viewValue)">
     </div>
 
 

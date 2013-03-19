@@ -15,27 +15,21 @@
         <label for="filter_input">Filtrera:</label> <input id="filter_input" type="text" ng-model="filter">
 
     </div>
-    <span>{{sorttuple}}</span>
     <table id="table" class="table-striped contenttable" >
         <thead>
             <th>
-                <span sort-triangles
-                    ng-class="{'deselected' : sorttuple[0] == 'title'}"
-                    val="title" tuple="sorttuple"></span>
+                <div sort-triangles val="itemAttrs.showtitle" tuple="sorttuple"></div>
             </th>
             <th>
-                <span
-                    sort-triangles
-                    ng-class="{'deselected' : sorttuple[0] == 'author.nameforindex'}"
-                    val="author.nameforindex" tuple="sorttuple"></span>
+                <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div>
             </th>
             <th></th>
         </thead>
-        <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || ''}">
+        <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || ''}">
             <td>
                 <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info"><i>{{row.itemAttrs.showtitle}}</i></a>
             </td>
-            <td><a href="#/forfattare/{{row.author.authorid}}">{{row.author.fullname}}</a></td>
+            <td><a href="#/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a></td>
             <td>
                 <span ng-repeat="type in row.mediatype">
 

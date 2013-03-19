@@ -14,7 +14,7 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend) ->
+littb.controller "searchCtrl", ($scope, backend, $location) ->
     s = $scope
     s.open = false
     s.searchProofread = true
@@ -27,8 +27,19 @@ littb.controller "searchCtrl", ($scope, backend) ->
         s.titles = backend.getTitlesByAuthor(newAuthor.authorid)
 
 
-    s.search = () ->
+    s.search = (query) ->
+        if query
+            $location.search("fras", query)
+            s.query = query
+        else
+            $location.search("fras", s.query)
+
+
         s.results = backend.searchWorks(s.query)
+
+    queryvars = $location.search()
+    if "fras" of queryvars
+        s.search(queryvars.fras)
 
 
 
@@ -74,8 +85,34 @@ littb.directive 'letterMap', () ->
 littb.controller "titleListCtrl", ($scope, backend, util) ->
     s = $scope
 
-    util.setupHash(s, "filter", "mediatypeFilter", "selectedLetter")
-    s.sorttuple = ["title", 1]
+    util.setupHash(s, "mediatypeFilter", "selectedLetter")
+    s.sorttuple = ["itemAttrs.showtitle", false]
+    s.setSort = (sortstr) ->
+        s.sorttuple[0] = sortstr
+    s.setDir = (isAsc) ->
+        s.sorttuple[1] = isAsc
+
+
+
+    util.setupHashComplex s,
+        [
+            expr : "sorttuple[0]"
+            # scope_name : "sortVal"
+            scope_func : "setSort"
+            key : "sortering"
+            # val_in : (val) ->
+            # val_out : (val) ->
+            # post_change : () ->
+        ,
+            expr : "sorttuple[1]"
+            scope_func : "setDir"
+            key : "fallande"
+        ,
+            key : "filter"
+        ]
+
+    # util.setupHash ""
+
 
 
     #TODO: what about titles that start with strange chars or non lower case letters?
@@ -163,6 +200,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     {title, author, mediatype, pagenum} = $routeParams
     _.extend s, $routeParams
     s.pagenum = Number(pagenum)
+    s.opts =
+        backdropFade: true
+        dialogFade:true
+
 
     s.getPage = () ->
         $route.current.pathParams.pagenum
@@ -183,6 +224,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         c.log "mouseover"
         s.showPopup = true
 
+
+    s.getWords = (val) ->
+        unless val then return []
+        return backend.searchLexicon(val)
 
 
     watches = []
@@ -257,14 +302,56 @@ littb.factory "util", ($location) ->
     normalize : (name) ->
         camelCase(name.replace(PREFIX_REGEXP, ''))
 
+
+    setupHashComplex : (scope, config) ->
+        # config = [
+        #     expr : "sorttuple[0]"
+        #     scope_name : "sortVal"
+        #     scope_func : "locChange"
+        #     key : "sortering"
+        #     val_in : (val) ->
+        #         newVal
+        #     val_out : (val) ->
+        #         newVal
+        #     post_change : () ->
+        #     default : [val : valval]
+
+        # ]
+        scope.loc = $location
+        scope.$watch 'loc.search()', ->
+            for obj in config
+                val = $location.search()[obj.key]
+                unless val then continue
+
+                val = (obj.val_in or _.identity)(val)
+
+                if "scope_name" of obj
+                    scope[obj.scope_name] = val
+                else if "scope_func" of obj
+                    scope[obj.scope_func](val)
+                else
+                    scope[obj.key] = val
+
+        for obj in config
+            scope.$watch obj.expr? or obj.key, do (obj) ->
+                (val) ->
+                    val = (obj.val_out or _.identity)(val)
+                    $location.search obj.key, val or null
+                    obj.post_change?(val)
+
+
+
+
+
     setupHash : (scope, nameConfig...) ->
         names = _.map nameConfig, (item) ->
             if _.isObject(item)
                 return (_.head _.pairs item)[0]
             else
                 return item
-        c.log "init", _.pick($location.search(), names...)
+        # c.log "init", _.pick($location.search(), names...)
         _.extend(scope, _.pick($location.search(), names...))
+        scope.loc = $location
         scope.$watch 'loc.search()', ->
             _.extend(scope, _.pick($location.search(), names...))
 
@@ -562,4 +649,28 @@ littb.factory 'backend', ($http, $q, util) ->
             def.reject()
         return def.promise
 
+    searchLexicon : (str) ->
+        def = $q.defer()
+        url = "http://demolittb.spraakdata.gu.se/query/so.xql"
+        # http://demolittb.spraakdata.gu.se?word=abdikerades
+        http(
+            url : url
+            params :
+                word : str + "*"
+            # transformResponse : (data, headers) ->
+            #     c.log "transformResponse", data, headers
+
+        ).success (xml) ->
+            c.log "searchLexicon", xml
+
+            output = for article in $("artikel", xml)
+                baseform : $("grundform", article).text()
+                # lexemes : (_.map $("lexem", article), util.getInnerXML).join("\n")
+                lexemes : util.getInnerXML article
+
+            def.resolve output
+
+
+
+        return def.promise
 

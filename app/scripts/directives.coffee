@@ -44,40 +44,25 @@ littb.directive 'pagetitle', () ->
 
 
 littb.directive 'sortTriangles', () ->
-    # controller: () ->
-        #controller cn func, may access $scope, $element, $attrs, $transclude
-    # template: '''<div><span ng-click="up()" class="triangle up"></span>
-    #                   <span ng-click="down()" class="triangle down"></span>
-    #                     <input ng-model="tuple">
-    #              </div>'''
-    # replace: true
-    # scope : {sorttuple : "="}
+    template: '''
+    <span><span ng-click="up()"
+                 class="triangle up" ng-class="{'disabled' : active && !enabled[0]}"></span>
+           <span ng-click="down()"
+                 class="triangle down" ng-class="{'disabled' : active && !enabled[1]}"></span>
+     </span>'''
+    scope : {tuple : "=", val : "@"}
     link: (scope, elem, iAttrs) ->
-        c.log "tiran", scope, elem, iAttrs
         s = scope
         scope.sorttuple = [iAttrs.val, 1]
+        s.enabled = [true, true]
+
+        s.$watch "tuple", (newtup) ->
+            [newval, dir] = newtup
+            s.active = s.val == newval
+            s.enabled = [!dir, dir]
         s.up = () ->
-            c.log "iAttrs.val", iAttrs.val
-            scope.tuple = [iAttrs.val, 1]
+            scope.tuple = [s.val, true]
         s.down = () ->
-            c.log "iAttrs.val", iAttrs.val
-            scope.tuple = [iAttrs.val, -1]
-
-
-        # elem.on "click", ".triangle", () ->
-        #     elem.find(".triangle").removeClass "disabled"
-        #     $(this).addClass "disabled"
-        #     c.log "set tuple", iAttrs.val
-
-            # scope.$apply () ->
-
-                # scope.tuple = [iAttrs.val, 1]
-
-
-
-        # scope.$destroy () ->
-            # elem.off "click"
-
-
+            scope.tuple = [s.val, false]
 
 

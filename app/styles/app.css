@@ -139,7 +139,7 @@ ul, ol {
 #app-rot-linkbar {
   float: right;
   position: relative;
-  top: -0.5em;
+  top: -.5em;
   margin: 0;
   display: none;
 }
@@ -281,7 +281,7 @@ ul, ol {
 
 /* line 268, app.scss */
 .app-body-etext {
-  font-family: Georgia, Times,  serif;
+  font-family: Georgia, Times, serif;
   color: black;
   font-size: 10pt;
 }
@@ -1465,7 +1465,7 @@ app-forflista-status {
 
 /* line 1341, app.scss */
 .app-body-statistik {
-  font-family: Georgia, Times,  serif;
+  font-family: Georgia, Times, serif;
   color: black;
   font-size: 10pt;
 }

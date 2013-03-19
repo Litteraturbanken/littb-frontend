@@ -20,8 +20,8 @@
     });
   });
 
-  littb.controller("searchCtrl", function($scope, backend) {
-    var s;
+  littb.controller("searchCtrl", function($scope, backend, $location) {
+    var queryvars, s;
     s = $scope;
     s.open = false;
     s.searchProofread = true;
@@ -33,9 +33,19 @@
       }
       return s.titles = backend.getTitlesByAuthor(newAuthor.authorid);
     });
-    return s.search = function() {
+    s.search = function(query) {
+      if (query) {
+        $location.search("fras", query);
+        s.query = query;
+      } else {
+        $location.search("fras", s.query);
+      }
       return s.results = backend.searchWorks(s.query);
     };
+    queryvars = $location.search();
+    if ("fras" in queryvars) {
+      return s.search(queryvars.fras);
+    }
   });
 
   littb.controller("authorInfoCtrl", function($scope, backend, $routeParams) {
@@ -72,8 +82,27 @@
   littb.controller("titleListCtrl", function($scope, backend, util) {
     var s;
     s = $scope;
-    util.setupHash(s, "filter", "mediatypeFilter", "selectedLetter");
-    s.sorttuple = ["title", 1];
+    util.setupHash(s, "mediatypeFilter", "selectedLetter");
+    s.sorttuple = ["itemAttrs.showtitle", false];
+    s.setSort = function(sortstr) {
+      return s.sorttuple[0] = sortstr;
+    };
+    s.setDir = function(isAsc) {
+      return s.sorttuple[1] = isAsc;
+    };
+    util.setupHashComplex(s, [
+      {
+        expr: "sorttuple[0]",
+        scope_func: "setSort",
+        key: "sortering"
+      }, {
+        expr: "sorttuple[1]",
+        scope_func: "setDir",
+        key: "fallande"
+      }, {
+        key: "filter"
+      }
+    ]);
     return backend.getTitles().then(function(titleArray) {
       s.rowByLetter = _.groupBy(titleArray, function(item) {
         return item.itemAttrs.showtitle[0];
@@ -195,6 +224,10 @@
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagenum = $routeParams.pagenum;
     _.extend(s, $routeParams);
     s.pagenum = Number(pagenum);
+    s.opts = {
+      backdropFade: true,
+      dialogFade: true
+    };
     s.getPage = function() {
       return $route.current.pathParams.pagenum;
     };
@@ -211,6 +244,12 @@
     s.mouseover = function() {
       c.log("mouseover");
       return s.showPopup = true;
+    };
+    s.getWords = function(val) {
+      if (!val) {
+        return [];
+      }
+      return backend.searchLexicon(val);
     };
     watches = [];
     watches.push(s.$watch("pagenum", function(val) {
@@ -301,6 +340,42 @@
       normalize: function(name) {
         return camelCase(name.replace(PREFIX_REGEXP, ''));
       },
+      setupHashComplex: function(scope, config) {
+        var obj, _i, _len, _results;
+        scope.loc = $location;
+        scope.$watch('loc.search()', function() {
+          var obj, val, _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = config.length; _i < _len; _i++) {
+            obj = config[_i];
+            val = $location.search()[obj.key];
+            if (!val) {
+              continue;
+            }
+            val = (obj.val_in || _.identity)(val);
+            if ("scope_name" in obj) {
+              _results.push(scope[obj.scope_name] = val);
+            } else if ("scope_func" in obj) {
+              _results.push(scope[obj.scope_func](val));
+            } else {
+              _results.push(scope[obj.key] = val);
+            }
+          }
+          return _results;
+        });
+        _results = [];
+        for (_i = 0, _len = config.length; _i < _len; _i++) {
+          obj = config[_i];
+          _results.push(scope.$watch((obj.expr != null) || obj.key, (function(obj) {
+            return function(val) {
+              val = (obj.val_out || _.identity)(val);
+              $location.search(obj.key, val || null);
+              return typeof obj.post_change === "function" ? obj.post_change(val) : void 0;
+            };
+          })(obj)));
+        }
+        return _results;
+      },
       setupHash: function() {
         var callback, name, nameConfig, names, scope, _i, _len, _ref, _results;
         scope = arguments[0], nameConfig = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
@@ -311,8 +386,8 @@
             return item;
           }
         });
-        c.log("init", _.pick.apply(_, [$location.search()].concat(__slice.call(names))));
         _.extend(scope, _.pick.apply(_, [$location.search()].concat(__slice.call(names))));
+        scope.loc = $location;
         scope.$watch('loc.search()', function() {
           return _.extend(scope, _.pick.apply(_, [$location.search()].concat(__slice.call(names))));
         });
@@ -652,6 +727,35 @@
         }).error(function(data) {
           c.log("error", arguments);
           return def.reject();
+        });
+        return def.promise;
+      },
+      searchLexicon: function(str) {
+        var def, url;
+        def = $q.defer();
+        url = "http://demolittb.spraakdata.gu.se/query/so.xql";
+        http({
+          url: url,
+          params: {
+            word: str + "*"
+          }
+        }).success(function(xml) {
+          var article, output;
+          c.log("searchLexicon", xml);
+          output = (function() {
+            var _i, _len, _ref, _results;
+            _ref = $("artikel", xml);
+            _results = [];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              article = _ref[_i];
+              _results.push({
+                baseform: $("grundform", article).text(),
+                lexemes: util.getInnerXML(article)
+              });
+            }
+            return _results;
+          })();
+          return def.resolve(output);
         });
         return def.promise;
       }

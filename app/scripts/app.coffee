@@ -5,7 +5,9 @@ _.templateSettings =
 
 
 window.host = (url) -> "http://demolittbdev.spraakdata.gu.se" + url
-window.littb = angular.module('littbApp', [])
+window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
+                                           "template/typeahead/typeahead.html"
+                                           "ui.bootstrap.modal"])
     .config ($routeProvider) ->
 
         $routeProvider

@@ -13,7 +13,7 @@
     return "http://demolittbdev.spraakdata.gu.se" + url;
   };
 
-  window.littb = angular.module('littbApp', []).config(function($routeProvider) {
+  window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal"]).config(function($routeProvider) {
     return $routeProvider.when('', {
       redirectTo: "/start"
     }).when('/', {

@@ -1,7 +1,6 @@
 <div ng-include="'http://demolittb.spraakdata.gu.se/red/om/start/startsida.html'"></div>
 
-<div toolkit>
-    Sök författare
+<div toolkit>Sök författare
     <form ng-submit="goto('/forfattare?authorFilter=' + author)">
         <input ng-model="author"><span submit-btn></span>
     </form>
@@ -9,10 +8,10 @@
     <form ng-submit="goto('/forfattare?authorFilter=' + title)">
         <input ng-model="title"><span submit-btn></span>
     </form>
-    Sök i texterna
-    <form ng-submit="goto('/forfattare?authorFilter=' + search)">
-        <input ng-model="search"><span submit-btn></span>
-    </form>
 
+    Sök i texterna
+    <form ng-submit="goto('/forfattare?authorFilter=' + title)">
+        <input ng-model="title"><span submit-btn></span>
+    </form>
 
 </div>

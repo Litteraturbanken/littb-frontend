@@ -212,6 +212,18 @@ header {
                 }
             }
         }
+        table {
+            white-space : nowrap;
+            td:nth-of-type(2) {
+                max-width : 100px;
+                overflow-x : hidden;
+                text-overflow : ellipsis;
+                font-style: italic;
+            }
+            td:nth-of-type(3) {
+                text-align : right;
+            }
+        }
     }
     #toolkit {
         font-size : .9em;
@@ -337,3 +349,4 @@ $triangle_size : 8px;
         top : 11px;
     }
 }
+

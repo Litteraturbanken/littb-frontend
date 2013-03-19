@@ -235,28 +235,43 @@ header {
 .page-search #mainview .columns > div label {
   display: block;
 }
-/* line 216, styles.scss */
+/* line 215, styles.scss */
+.page-search #mainview table {
+  white-space: nowrap;
+}
+/* line 217, styles.scss */
+.page-search #mainview table td:nth-of-type(2) {
+  max-width: 100px;
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  font-style: italic;
+}
+/* line 223, styles.scss */
+.page-search #mainview table td:nth-of-type(3) {
+  text-align: right;
+}
+/* line 228, styles.scss */
 .page-search #toolkit {
   font-size: .9em;
 }
-/* line 219, styles.scss */
+/* line 231, styles.scss */
 .page-search #title_select {
   max-width: 247px;
 }
 
-/* line 225, styles.scss */
+/* line 237, styles.scss */
 .page-reading #mainview {
   position: relative;
 }
-/* line 229, styles.scss */
+/* line 241, styles.scss */
 .page-reading #toolkit input {
   width: 70px;
 }
-/* line 233, styles.scss */
+/* line 245, styles.scss */
 .page-reading .work_parts {
   margin-top: 1em;
 }
-/* line 235, styles.scss */
+/* line 247, styles.scss */
 .page-reading .work_parts li {
   font-size: smaller;
   overflow-x: hidden;
@@ -264,15 +279,15 @@ header {
   text-overflow: ellipsis;
   font-style: italic;
 }
-/* line 243, styles.scss */
+/* line 255, styles.scss */
 .page-reading .partnav {
   position: relative;
 }
-/* line 245, styles.scss */
+/* line 257, styles.scss */
 .page-reading .partnav .arrow_icon {
   color: #990000;
 }
-/* line 249, styles.scss */
+/* line 261, styles.scss */
 .page-reading .partnav .triangle {
   width: 0px;
   height: 0px;
@@ -284,7 +299,7 @@ header {
   left: 135px;
   bottom: 0;
 }
-/* line 264, styles.scss */
+/* line 276, styles.scss */
 .page-reading .partnav .part_menu {
   background-color: #990000;
   opacity: 0.8;
@@ -295,40 +310,40 @@ header {
   padding: 2em;
   z-index: 100;
 }
-/* line 273, styles.scss */
+/* line 285, styles.scss */
 .page-reading .partnav .part_menu a {
   color: white;
 }
 
-/* line 281, styles.scss */
+/* line 293, styles.scss */
 .page-sourceInfo h3 {
   margin: 0;
   line-height: inherit;
 }
-/* line 284, styles.scss */
+/* line 296, styles.scss */
 .page-sourceInfo h3.author {
   font-variant: small-caps;
 }
-/* line 287, styles.scss */
+/* line 299, styles.scss */
 .page-sourceInfo h3.title {
   margin-bottom: 2em;
 }
 
-/* line 294, styles.scss */
+/* line 306, styles.scss */
 .page-authorList table {
   margin-top: 3em;
 }
-/* line 297, styles.scss */
+/* line 309, styles.scss */
 .page-authorList #mainview > * {
   margin-bottom: 1em;
 }
 
-/* line 303, styles.scss */
+/* line 315, styles.scss */
 .page-titleList th {
   padding-bottom: 1em;
 }
 
-/* line 310, styles.scss */
+/* line 322, styles.scss */
 .triangle {
   width: 0px;
   height: 0px;
@@ -337,25 +352,25 @@ header {
   margin-right: 3px;
   cursor: pointer;
 }
-/* line 318, styles.scss */
+/* line 330, styles.scss */
 .triangle.disabled {
   cursor: normal;
 }
-/* line 322, styles.scss */
+/* line 334, styles.scss */
 .triangle.disabled.up {
   border-color: transparent transparent grey transparent;
 }
-/* line 325, styles.scss */
+/* line 337, styles.scss */
 .triangle.disabled.down {
   border-color: grey transparent transparent transparent;
 }
-/* line 328, styles.scss */
+/* line 340, styles.scss */
 .triangle.up {
   border-width: 0 8px 8px 8px;
   border-color: transparent transparent #990000 transparent;
   bottom: 11px;
 }
-/* line 334, styles.scss */
+/* line 346, styles.scss */
 .triangle.down {
   border-width: 8px 8px 0 8px;
   border-color: #990000 transparent transparent transparent;
