@@ -6,7 +6,7 @@
 <div ng-switch on="mediatype">
     <img ng-src="{{url}}" ng-show="url" ng-switch-when="faksimil">
 
-    <div ng-switch-when="etext" ng-bind-html-unsafe="etext_html" ></div>
+    <div ng-switch-when="etext" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
 
     <!-- <span ng-switch-default>default</span> -->
 </div>
@@ -28,16 +28,12 @@
     <hr>
 
 
-    <div>
-        <a href="#/forfattare/{{workinfo.authorid}}">
-            {{workinfo.authorFullname}}
-        </a>
-    </div>
-    <div>
-        <em><a href="#/forfattare/{{workinfo.authorid}}/titlar/{{workinfo.titlepath}}/info">{{workinfo.showtitle}}</a></em>
-    </div>
+    <a class="author" href="#/forfattare/{{workinfo.authorid}}">
+        {{workinfo.authorFullname}}
+    </a>
+    <a class="title" href="#/forfattare/{{workinfo.authorid}}/titlar/{{workinfo.titlepath}}/info">{{workinfo.showtitle}}</a>
 
-    <div style="height: 2em;"></div>
+    <div style="height: 1em;"></div>
 
     <div><a href="#/forfattare/{{workinfo.authorid}}/titlar/{{workinfo.titlepath}}/info/{{mediatype}}">::: Om boken</a></div>
 
@@ -53,19 +49,19 @@
         <img src="http://demolittb.spraakdata.gu.se/bilder/LBslut.png">
     </div>
     <form ng-submit="pagenum = displaynum">
-        Sida <input ng-model="displaynum"><!-- should be name -->
+        Sida <input class="pageinput" ng-model="displaynum"><!-- should be name -->
     </form>
 
     <div>
         <ul class="work_parts">
             <li><a ng-click="gotopage(startpage)">[Start]</a></li>
             <li ng-repeat="part in workinfo.parts | limitTo:5">
-                <a ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
+                <a tooltip="{{getTooltip(part)}}" ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
             </li>
         </ul>
     </div>
 
-    <div class="partnav">
+    <div class="partnav" ng-show="workinfo.parts.length > 5">
         <div>
             <i ng-mouseover="mouseover()" class="arrow_icon icon-play icon-large"></i>
         </div>
@@ -74,20 +70,20 @@
 
 
 
-        <div class="part_menu" ng-show="showPopup">
+        <ul class="part_menu" ng-show="showPopup">
             <li><a ng-click="gotopage(startpage)">[Start]</a></li>
             <li ng-repeat="part in workinfo.parts">
+                <!-- tooltip="{{part.navtitle}}" -->
                 <a ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
             </li>
-        </div>
+        </ul>
 
     </div>
 
-    <div>
-        <label><small>Slå upp i svensk ordbok</small></label>
-        <input class="word_search"
-            ng-model="lex_article"
-            typeahead="article as article.baseform for article in getWords($viewValue)">
+    <div class="word_search">
+        <label>Slå upp i svensk ordbok</label>
+        <input ng-model="lex_article"
+               typeahead="article as article.baseform for article in getWords($viewValue)">
     </div>
 
 

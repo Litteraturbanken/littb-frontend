@@ -218,28 +218,44 @@
     return s.data = backend.getSourceInfo(author, title, mediatype || "etext");
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location) {
-    var author, mediatype, pagenum, s, title, watches;
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util) {
+    var author, mediatype, pagename, s, title, watches;
     s = $scope;
-    title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagenum = $routeParams.pagenum;
-    _.extend(s, $routeParams);
-    s.pagenum = Number(pagenum);
+    title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
+    _.extend(s, _.omit($routeParams, "traff", "traffslut"));
+    s.pagename = pagename;
     s.opts = {
       backdropFade: true,
       dialogFade: true
     };
     s.getPage = function() {
-      return $route.current.pathParams.pagenum;
+      return $route.current.pathParams.pagename;
+    };
+    s.setPage = function(ix) {
+      s.pageix = ix;
+      return s.pagename = s.pagemap["ix_" + s.pageix];
     };
     s.nextPage = function() {
-      return s.pagenum++;
+      var newix;
+      newix = s.pageix + 1;
+      if ("ix_" + newix in s.pagemap) {
+        return s.setPage(newix);
+      } else {
+        return s.setPage(0);
+      }
     };
     s.prevPage = function() {
-      return s.pagenum--;
+      var newix;
+      newix = s.pageix - 1;
+      if ("ix_" + newix in s.pagemap) {
+        return s.setPage(newix);
+      } else {
+        return s.setPage(0);
+      }
     };
     s.gotopage = function(page) {
       c.log("gotopage", page);
-      return s.pagenum = Number(page);
+      return s.pagename = Number(page);
     };
     s.mouseover = function() {
       c.log("mouseover");
@@ -251,9 +267,23 @@
       }
       return backend.searchLexicon(val);
     };
+    s.getTooltip = function(part) {
+      if (part.navtitle !== part.showtitle) {
+        return part.navtitle;
+      }
+    };
+    util.setupHashComplex(s, [
+      {
+        scope_name: "markee_from",
+        key: "traff"
+      }, {
+        scope_name: "markee_to",
+        key: "traffslut"
+      }
+    ]);
     watches = [];
-    watches.push(s.$watch("pagenum", function(val) {
-      c.log("pagenum", val);
+    watches.push(s.$watch("pagename", function(val) {
+      c.log("pagename", val);
       s.displaynum = val;
       return $location.path("/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype);
     }));
@@ -262,18 +292,20 @@
       if (val == null) {
         return;
       }
-      s.pagenum = Number(val);
-      return backend.getPage(author, title, mediatype, s.pagenum).then(function(_arg) {
-        var data, page, pagemap, workinfo;
+      s.pagename = val;
+      return backend.getPage(author, title, mediatype, s.pagename).then(function(_arg) {
+        var data, page, workinfo;
         data = _arg[0], workinfo = _arg[1];
         s.workinfo = workinfo;
-        pagemap = workinfo.pagemap;
+        s.pagemap = workinfo.pagemap;
+        c.log("pagemap", s.pagemap);
         s.startpage = Number(workinfo.startpagename);
-        page = $("page[name=" + pagenum + "]", data).clone();
+        page = $("page[name=" + pagename + "]", data).clone();
         if (!page.length) {
           page = $("page:last", data).clone();
-          s.pagenum = Number(page.attr("name"));
+          s.pagename = page.attr("name");
         }
+        s.pageix = s.pagemap["page_" + s.pagename];
         if (mediatype === 'faksimil') {
           return s.url = $("faksimil-url[size=3]", page).text();
         } else {
@@ -341,7 +373,7 @@
         return camelCase(name.replace(PREFIX_REGEXP, ''));
       },
       setupHashComplex: function(scope, config) {
-        var obj, _i, _len, _results;
+        var obj, watch, _i, _len, _results;
         scope.loc = $location;
         scope.$watch('loc.search()', function() {
           var obj, val, _i, _len, _results;
@@ -366,7 +398,8 @@
         _results = [];
         for (_i = 0, _len = config.length; _i < _len; _i++) {
           obj = config[_i];
-          _results.push(scope.$watch((obj.expr != null) || obj.key, (function(obj) {
+          watch = obj.expr || obj.scope_name || obj.key;
+          _results.push(scope.$watch(watch, (function(obj) {
             return function(val) {
               val = (obj.val_out || _.identity)(val);
               $location.search(obj.key, val || null);
@@ -444,7 +477,7 @@
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           attrib = _ref[_i];
-          _results.push([attrib.name, attrib.value]);
+          _results.push([util.normalize(attrib.name), attrib.value]);
         }
         return _results;
       })());

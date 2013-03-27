@@ -195,22 +195,34 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util) ->
     s = $scope
-    {title, author, mediatype, pagenum} = $routeParams
-    _.extend s, $routeParams
-    s.pagenum = Number(pagenum)
+    {title, author, mediatype, pagename} = $routeParams
+    _.extend s, (_.omit $routeParams, "traff", "traffslut")
+
+    s.pagename = pagename
     s.opts =
         backdropFade: true
         dialogFade:true
 
 
     s.getPage = () ->
-        $route.current.pathParams.pagenum
+        $route.current.pathParams.pagename
+    s.setPage = (ix) ->
+        s.pageix = ix
+        s.pagename = s.pagemap["ix_" + s.pageix]
     s.nextPage = () ->
-        s.pagenum++
+        newix = s.pageix + 1
+        if "ix_" + newix of s.pagemap
+            s.setPage(newix)
+        else
+            s.setPage(0)
     s.prevPage = () ->
-        s.pagenum--
+        newix = s.pageix - 1
+        if "ix_" + newix of s.pagemap
+            s.setPage(newix)
+        else
+            s.setPage(0)
 
 
     # if not s.workinfo?
@@ -218,7 +230,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.gotopage = (page) ->
         c.log "gotopage", page
-        s.pagenum = Number(page)
+        s.pagename = Number(page)
 
     s.mouseover = () ->
         c.log "mouseover"
@@ -229,10 +241,22 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         unless val then return []
         return backend.searchLexicon(val)
 
+    s.getTooltip = (part) ->
+        return part.navtitle if part.navtitle != part.showtitle
+
+
+    util.setupHashComplex s, [
+            scope_name : "markee_from"
+            key : "traff"
+        ,
+            scope_name : "markee_to"
+            key : "traffslut"
+
+    ]
 
     watches = []
-    watches.push s.$watch "pagenum", (val) ->
-        c.log "pagenum", val
+    watches.push s.$watch "pagename", (val) ->
+        c.log "pagename", val
         s.displaynum = val
         $location.path("/forfattare/#{author}/titlar/#{title}/sida/#{val}/#{mediatype}")
 
@@ -242,21 +266,24 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         unless val? then return
 
 
-        s.pagenum = Number(val)
-        backend.getPage(author, title, mediatype, s.pagenum).then ([data, workinfo]) ->
+        s.pagename = val
+        backend.getPage(author, title, mediatype, s.pagename).then ([data, workinfo]) ->
             # c.log "data, workinfo", data, workinfo
             s.workinfo = workinfo
-            pagemap = workinfo.pagemap
-            # c.log "pagemap", pagemap
+            s.pagemap = workinfo.pagemap
+            c.log "pagemap", s.pagemap
             # c.log "parts", workinfo.parts
 
             s.startpage = Number(workinfo.startpagename)
 
 
-            page = $("page[name=#{pagenum}]", data).clone()
+            page = $("page[name=#{pagename}]", data).clone()
             if not page.length
                 page = $("page:last", data).clone()
-                s.pagenum = Number(page.attr("name"))
+                s.pagename = page.attr("name")
+
+            s.pageix = s.pagemap["page_" + s.pagename]
+
             if mediatype == 'faksimil'
                 s.url = $("faksimil-url[size=3]", page).text()
             else
@@ -333,7 +360,8 @@ littb.factory "util", ($location) ->
                     scope[obj.key] = val
 
         for obj in config
-            scope.$watch obj.expr? or obj.key, do (obj) ->
+            watch = obj.expr or obj.scope_name or obj.key
+            scope.$watch watch, do (obj) ->
                 (val) ->
                     val = (obj.val_out or _.identity)(val)
                     $location.search obj.key, val or null
@@ -388,7 +416,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     objFromAttrs = (elem) ->
         return null unless elem
-        _.object ([attrib.name, attrib.value] for attrib in elem.attributes)
+        _.object ([util.normalize(attrib.name), attrib.value] for attrib in elem.attributes)
 
     parseWorkInfo = (root, xml) ->
         useInnerXML = ["sourcedesc"]

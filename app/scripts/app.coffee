@@ -7,7 +7,10 @@ _.templateSettings =
 window.host = (url) -> "http://demolittbdev.spraakdata.gu.se" + url
 window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "template/typeahead/typeahead.html"
-                                           "ui.bootstrap.modal"])
+                                           "ui.bootstrap.modal"
+                                           "ui.bootstrap.tooltip"
+                                           "template/tooltip/tooltip-popup.html"
+                                           ])
     .config ($routeProvider) ->
 
         $routeProvider
@@ -89,7 +92,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false
-            .when "/forfattare/:author/titlar/:title/sida/:pagenum/:mediatype"
+            .when "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype"
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false,
@@ -97,13 +100,13 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                     r : ($q, $routeParams, $route) ->
                         def = $q.defer()
 
-                        c.log "route", $route
+                        # c.log "route", $route
                         if _.isEmpty($routeParams)
                             def.resolve()
                             return def.promise
                         # because we have a pagenum here,
                         # we're still in the reader and should't leave
-                        if "pagenum" of $routeParams
+                        if "pagename" of $routeParams
                             def.reject()
                         else
                             def.resolve()
@@ -149,3 +152,20 @@ littb.run ($rootScope, $location) ->
     # $rootScope.$on "$routeChangeStart", (event, next, current) ->
 
     # $rootScope.$on "$routeChangeError", () ->
+
+littb.filter "setMarkee", () ->
+    return (input, fromid, toid) ->
+        input = $(input)
+        wrapper = $("<div>")
+        if fromid == toid
+            $("#" + fromid, input).addClass "markee"
+        else
+            $("#" + fromid, input)
+                .nextUntil("#" + toid, "span")
+                .andSelf()
+                .add("#" + toid, input)
+                .addClass("markee")
+
+        wrapper.append input
+        return wrapper.html()
+

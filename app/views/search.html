@@ -46,7 +46,6 @@
 
 Visa
 <select id="num_hits">
-    <option value="10">10</option>
     <option value="20">20</option>
     <option value="50">50</option>
     <option value="100">100</option>
@@ -57,11 +56,16 @@ per sida.
 <div>
     <table>
         <tr ng-repeat="result in results">
-
-            <td>{{result.item.nameforindex}}</td>
-            <td>{{result.item.title}}</td>
-            <td>{{result.left}}</td>
-            <td><strong>{{result.kw}}</strong></td>
+            <td>{{$index + 1}}</td>
+            <td><a href="#/forfattare/{{result.item.authorid}}">{{result.item.nameforindex}}</a></td>
+            <td class="title"><a tooltip="{{result.item.title}}" href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/{{result.item.mediatype}}">{{result.item.title}}</a></td>
+            <td>
+                <a href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/sida/{{result.item.pagename}}/{{result.item.mediatype}}?traff={{result.item.nodeid}}&traffslut={{result.item.endnodeid}}">s. {{result.item.pagename}}</a>
+            </td>
+            <td class="left_context">{{result.left}}</td>
+            <td><strong>
+                <a href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/sida/{{result.item.pagename}}/{{result.item.mediatype}}?traff={{result.item.nodeid}}&traffslut={{result.item.endnodeid}}">{{result.kw}}</a>
+                </strong></td>
             <td>{{result.right}}</td>
         </tr>
     </table>

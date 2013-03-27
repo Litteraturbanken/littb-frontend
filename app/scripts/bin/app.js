@@ -13,7 +13,7 @@
     return "http://demolittbdev.spraakdata.gu.se" + url;
   };
 
-  window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal"]).config(function($routeProvider) {
+  window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal", "ui.bootstrap.tooltip", "template/tooltip/tooltip-popup.html"]).config(function($routeProvider) {
     return $routeProvider.when('', {
       redirectTo: "/start"
     }).when('/', {
@@ -90,7 +90,7 @@
       templateUrl: "views/reader.html",
       controller: "readingCtrl",
       reloadOnSearch: false
-    }).when("/forfattare/:author/titlar/:title/sida/:pagenum/:mediatype", {
+    }).when("/forfattare/:author/titlar/:title/sida/:pagename/:mediatype", {
       templateUrl: "views/reader.html",
       controller: "readingCtrl",
       reloadOnSearch: false,
@@ -98,12 +98,11 @@
         r: function($q, $routeParams, $route) {
           var def;
           def = $q.defer();
-          c.log("route", $route);
           if (_.isEmpty($routeParams)) {
             def.resolve();
             return def.promise;
           }
-          if ("pagenum" in $routeParams) {
+          if ("pagename" in $routeParams) {
             def.reject();
           } else {
             def.resolve();
@@ -152,6 +151,21 @@
         return $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""));
       }
     });
+  });
+
+  littb.filter("setMarkee", function() {
+    return function(input, fromid, toid) {
+      var wrapper;
+      input = $(input);
+      wrapper = $("<div>");
+      if (fromid === toid) {
+        $("#" + fromid, input).addClass("markee");
+      } else {
+        $("#" + fromid, input).nextUntil("#" + toid, "span").andSelf().add("#" + toid, input).addClass("markee");
+      }
+      wrapper.append(input);
+      return wrapper.html();
+    };
   });
 
 }).call(this);

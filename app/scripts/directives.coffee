@@ -66,3 +66,16 @@ littb.directive 'sortTriangles', () ->
             scope.tuple = [s.val, false]
 
 
+littb.directive 'markee', () ->
+    link : (scope, elm, attrs, readingCtrl) ->
+        {markee_from, markee_to} = scope
+        c.log "markee_from, markee_to", readingCtrl, scope
+
+        scope.refreshMarkee = () ->
+            $("#" + markee_from)
+            .nextUntil("#" + markee_to)
+            .andSelf()
+            .add("#" + markee_to)
+            .addClass "markee"
+
+

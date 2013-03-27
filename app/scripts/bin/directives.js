@@ -71,6 +71,7 @@
       link: function(scope, elem, iAttrs) {
         var s;
         s = scope;
+        scope.sorttuple = [iAttrs.val, 1];
         s.enabled = [true, true];
         s.$watch("tuple", function(newtup) {
           var dir, newval;
@@ -83,6 +84,19 @@
         };
         return s.down = function() {
           return scope.tuple = [s.val, false];
+        };
+      }
+    };
+  });
+
+  littb.directive('markee', function() {
+    return {
+      link: function(scope, elm, attrs, readingCtrl) {
+        var markee_from, markee_to;
+        markee_from = scope.markee_from, markee_to = scope.markee_to;
+        c.log("markee_from, markee_to", readingCtrl, scope);
+        return scope.refreshMarkee = function() {
+          return $("#" + markee_from).nextUntil("#" + markee_to).andSelf().add("#" + markee_to).addClass("markee");
         };
       }
     };

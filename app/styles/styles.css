@@ -240,66 +240,93 @@ header {
   white-space: nowrap;
 }
 /* line 217, styles.scss */
-.page-search #mainview table td:nth-of-type(2) {
+.page-search #mainview table td.title {
   max-width: 100px;
   overflow-x: hidden;
   text-overflow: ellipsis;
   font-style: italic;
 }
 /* line 223, styles.scss */
-.page-search #mainview table td:nth-of-type(3) {
+.page-search #mainview table td.left_context {
   text-align: right;
 }
 /* line 228, styles.scss */
 .page-search #toolkit {
   font-size: .9em;
 }
-/* line 231, styles.scss */
+/* line 232, styles.scss */
 .page-search #title_select {
   max-width: 247px;
 }
 
-/* line 237, styles.scss */
+/* line 238, styles.scss */
 .page-reading #mainview {
   position: relative;
 }
-/* line 241, styles.scss */
-.page-reading #toolkit input {
-  width: 70px;
+/* line 242, styles.scss */
+.page-reading #toolkit > * {
+  display: block;
 }
 /* line 245, styles.scss */
+.page-reading #toolkit > div {
+  margin: 1em 0;
+}
+/* line 248, styles.scss */
+.page-reading #toolkit .title {
+  font-style: italic;
+}
+/* line 251, styles.scss */
+.page-reading #toolkit .pageinput {
+  width: 50px;
+  margin-left: 5px;
+}
+/* line 255, styles.scss */
+.page-reading #toolkit .word_search {
+  margin-top: 1em;
+}
+/* line 257, styles.scss */
+.page-reading #toolkit .word_search label {
+  display: block;
+  font-size: .9em;
+}
+/* line 263, styles.scss */
 .page-reading .work_parts {
   margin-top: 1em;
 }
-/* line 247, styles.scss */
+/* line 265, styles.scss */
 .page-reading .work_parts li {
   font-size: smaller;
   overflow-x: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   font-style: italic;
+  cursor: pointer;
 }
-/* line 255, styles.scss */
+/* line 274, styles.scss */
+.page-reading .work_parts li .tooltip {
+  white-space: normal;
+}
+/* line 279, styles.scss */
 .page-reading .partnav {
   position: relative;
 }
-/* line 257, styles.scss */
+/* line 281, styles.scss */
 .page-reading .partnav .arrow_icon {
   color: #990000;
 }
-/* line 261, styles.scss */
+/* line 285, styles.scss */
 .page-reading .partnav .triangle {
   width: 0px;
   height: 0px;
   border-style: solid;
   border-width: 0 0 25px 25px;
   border-color: transparent transparent #990000 transparent;
-  opacity: 0.5;
+  opacity: 0.8;
   position: absolute;
   left: 135px;
   bottom: 0;
 }
-/* line 276, styles.scss */
+/* line 300, styles.scss */
 .page-reading .partnav .part_menu {
   background-color: #990000;
   opacity: 0.8;
@@ -309,41 +336,47 @@ header {
   left: 160px;
   padding: 2em;
   z-index: 100;
+  max-height: 300px;
 }
-/* line 285, styles.scss */
+/* line 311, styles.scss */
+.page-reading .partnav .part_menu li {
+  color: white;
+  cursor: pointer;
+}
+/* line 319, styles.scss */
 .page-reading .partnav .part_menu a {
   color: white;
 }
 
-/* line 293, styles.scss */
+/* line 327, styles.scss */
 .page-sourceInfo h3 {
   margin: 0;
   line-height: inherit;
 }
-/* line 296, styles.scss */
+/* line 330, styles.scss */
 .page-sourceInfo h3.author {
   font-variant: small-caps;
 }
-/* line 299, styles.scss */
+/* line 333, styles.scss */
 .page-sourceInfo h3.title {
   margin-bottom: 2em;
 }
 
-/* line 306, styles.scss */
+/* line 340, styles.scss */
 .page-authorList table {
   margin-top: 3em;
 }
-/* line 309, styles.scss */
+/* line 343, styles.scss */
 .page-authorList #mainview > * {
   margin-bottom: 1em;
 }
 
-/* line 315, styles.scss */
+/* line 349, styles.scss */
 .page-titleList th {
   padding-bottom: 1em;
 }
 
-/* line 322, styles.scss */
+/* line 356, styles.scss */
 .triangle {
   width: 0px;
   height: 0px;
@@ -352,27 +385,32 @@ header {
   margin-right: 3px;
   cursor: pointer;
 }
-/* line 330, styles.scss */
+/* line 364, styles.scss */
 .triangle.disabled {
   cursor: normal;
 }
-/* line 334, styles.scss */
+/* line 368, styles.scss */
 .triangle.disabled.up {
   border-color: transparent transparent grey transparent;
 }
-/* line 337, styles.scss */
+/* line 371, styles.scss */
 .triangle.disabled.down {
   border-color: grey transparent transparent transparent;
 }
-/* line 340, styles.scss */
+/* line 374, styles.scss */
 .triangle.up {
   border-width: 0 8px 8px 8px;
   border-color: transparent transparent #990000 transparent;
   bottom: 11px;
 }
-/* line 346, styles.scss */
+/* line 380, styles.scss */
 .triangle.down {
   border-width: 8px 8px 0 8px;
   border-color: #990000 transparent transparent transparent;
   top: 11px;
+}
+
+/* line 387, styles.scss */
+.markee {
+  background-color: pink;
 }

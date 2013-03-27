@@ -214,19 +214,20 @@ header {
         }
         table {
             white-space : nowrap;
-            td:nth-of-type(2) {
+            td.title {
                 max-width : 100px;
                 overflow-x : hidden;
                 text-overflow : ellipsis;
                 font-style: italic;
             }
-            td:nth-of-type(3) {
+            td.left_context {
                 text-align : right;
             }
         }
     }
     #toolkit {
         font-size : .9em;
+
     }
     #title_select {
         max-width : 247px;
@@ -238,8 +239,25 @@ $partnav-width : 120px;
         position : relative;
     }
     #toolkit {
-        input {
-            width : 70px;
+        & > * {
+            display : block;
+        }
+        & > div {
+            margin : 1em 0;
+        }
+        .title {
+            font-style: italic;
+        }
+        .pageinput {
+            width : 50px;
+            margin-left: 5px;
+        }
+        .word_search {
+            margin-top : 1em;
+            label {
+                display : block;
+                font-size : .9em;
+            }
         }
     }
     .work_parts {
@@ -250,6 +268,12 @@ $partnav-width : 120px;
             white-space : nowrap;
             text-overflow : ellipsis;
             font-style : italic;
+            cursor : pointer;
+
+
+            .tooltip {
+                white-space: normal;
+            }
         }
     }
     .partnav {
@@ -264,7 +288,7 @@ $partnav-width : 120px;
             border-style: solid;
             border-width: 0 0 25px 25px;
             border-color: transparent transparent $primarycolor transparent;
-            opacity : 0.5;
+            opacity : 0.8;
 
             position : absolute;
             left : ($main-menu-width + $gutter-width) - 25;
@@ -282,6 +306,16 @@ $partnav-width : 120px;
             left : $main-menu-width + $gutter-width;
             padding : 2em;
             z-index : 100;
+            max-height : 300px;
+            // overflow-y: scroll;
+            li {
+                // overflow-x:hidden;
+                // white-space: nowrap;
+                // text-overflow : ellipsis;
+                color : white;
+                cursor : pointer;
+
+            }
             a {
                 color : white;
             }
@@ -350,3 +384,6 @@ $triangle_size : 8px;
     }
 }
 
+.markee {
+    background-color : pink;
+}
