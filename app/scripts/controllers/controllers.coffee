@@ -44,8 +44,14 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
 
 
 littb.controller "authorInfoCtrl", ($scope, backend, $routeParams) ->
-    {author} = $routeParams
-    $scope.authorInfo = backend.getAuthorInfo(author)
+    s = $scope
+    _.extend s, $routeParams
+    backend.getAuthorInfo(s.author).then (data) ->
+        s.authorInfo = data
+
+        s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
+
+
 
 
 littb.directive 'letterMap', () ->
@@ -178,7 +184,11 @@ littb.controller "authorListCtrl", ($scope, backend, util) ->
 
     s.getAuthor = (row) ->
         [last, first] = row.nameforindex.split(",")
-        return last.toUpperCase() + "," + first
+        last = last.toUpperCase()
+        if first
+            return last + "," + first
+        else 
+            return last
     # $scope.
 
 
@@ -187,12 +197,11 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
     {title, author, mediatype} = $routeParams
     _.extend s, $routeParams
 
-    s.getMediatypes = () ->
-        if mediatype then [mediatype] else s.data?.mediatypes
+    s.getOtherMediatypes = () ->
+        (x for x in (s.data?.mediatypes or []) when x != mediatype)
 
-    s.data = backend.getSourceInfo(author, title, mediatype or "etext")
-
-
+    backend.getSourceInfo(author, title, mediatype or "etext").then (data) ->
+        s.data = data
 
 
 littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util) ->
@@ -559,7 +568,6 @@ littb.factory 'backend', ($http, $q, util) ->
 
             works = []
             for item in $("works item", xml)
-                c.log "works item", item
                 obj = objFromAttrs item
                 # _.extend obj,
                     # mediatypes : _.unique (_.map $("mediatypes", item).children(), (child) -> $(child).attr("mediatype"))

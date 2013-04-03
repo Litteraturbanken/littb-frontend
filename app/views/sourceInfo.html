@@ -2,17 +2,20 @@
 <h3 class="title"><em>{{data.title}}</em></h3>
 
 <div ng-show="mediatype == 'faksimil'">
-<div ng-bind-html-unsafe="data.sourcedesc"></div>
+    <div ng-bind-html-unsafe="data.sourcedesc"></div>
 </div>
 
-
-<div ng-repeat="mediatype in getMediatypes()">
-    Läs verket som <a href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}}</a>
+<div>
+    Läs verket som <a class="mediatype" href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}}</a>
+</div>
+<div ng-show="data.mediatypes.length > 1">
+    Även tillgängligt som 
+    <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}} </a>
 </div>
 
 <div ng-show="!mediatype || mediatype == 'etext'">
-I etexten har följande ändringar gjorts mot originalet:
-<div ng-bind-html-unsafe="data.errata"></div>
+    <div>I etexten har följande ändringar gjorts mot originalet:</div>
+    <div ng-bind-html-unsafe="data.errata"></div>
 </div>
 
 <div toolkit>

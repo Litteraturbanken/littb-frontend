@@ -1,4 +1,7 @@
+@charset "UTF-8";
 @import "compass/css3/inline-block";
+
+
 
 $inline-block-alignment : top;
 
@@ -324,14 +327,24 @@ $partnav-width : 120px;
 }
 
 .page-sourceInfo {
-    h3 {
-        margin : 0;
-        line-height : inherit;
-        &.author {
-            font-variant : small-caps;
+    #mainview {
+        div {
+            margin-bottom : 1em;
         }
-        &.title {
-            margin-bottom : 2em;
+
+        h3 {
+            margin : 0;
+            line-height : inherit;
+            &.author {
+                font-variant : small-caps;
+            }
+            &.title {
+                margin-bottom : 2em;
+                max-width: 400px;
+            }
+        }
+        .mediatype {
+            font-variant : small-caps;
         }
     }
 }

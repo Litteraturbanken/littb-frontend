@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"dir",
+				"dir	Angular Module directive (simple)"
+			],
+			[
+				"font-",
+				"font-variant"
+			],
+			[
 				"mod",
 				"mod	Angular Module filter"
 			],
@@ -39,6 +47,126 @@
 	},
 	"buffers":
 	[
+		{
+			"file": "app/scripts/app.coffee",
+			"settings":
+			{
+				"buffer_size": 6702,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/scripts/controllers/controllers.coffee",
+			"settings":
+			{
+				"buffer_size": 20427,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/scripts/directives.coffee",
+			"settings":
+			{
+				"buffer_size": 2505,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/components/angular-ui-bootstrap-bower/ui-bootstrap.js",
+			"settings":
+			{
+				"buffer_size": 55073,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/components/angular-ui-bootstrap-bower/ui-bootstrap-tpls.js",
+			"settings":
+			{
+				"buffer_size": 61103,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/johan/Dropbox/Development/workspace_juno/course/app/styles/main.css",
+			"settings":
+			{
+				"buffer_size": 162794,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/index.html",
+			"settings":
+			{
+				"buffer_size": 3518,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/styles/styles.scss",
+			"settings":
+			{
+				"buffer_size": 7209,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/views/titleList.html",
+			"settings":
+			{
+				"buffer_size": 2043,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/views/start.html",
+			"settings":
+			{
+				"buffer_size": 563,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/views/epubList.html",
+			"settings":
+			{
+				"buffer_size": 1233,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/views/help.html",
+			"settings":
+			{
+				"buffer_size": 319,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/views/reader.html",
+			"settings":
+			{
+				"buffer_size": 2709,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/views/authorList.html",
+			"settings":
+			{
+				"buffer_size": 523,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "app/views/search.html",
+			"settings":
+			{
+				"buffer_size": 3377,
+				"line_ending": "Unix"
+			}
+		}
 	],
 	"build_system": "",
 	"command_palette":
@@ -47,12 +175,16 @@
 		"selected_items":
 		[
 			[
-				"install",
-				"Package Control: Install Package"
-			],
-			[
 				"remove",
 				"Package Control: Remove Package"
+			],
+			[
+				"list",
+				"Package Control: List Packages"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
 			],
 			[
 				"lint",
@@ -219,7 +351,7 @@
 				"Expand Selection to Function (JavaScript)"
 			]
 		],
-		"width": 593.0
+		"width": 376.0
 	},
 	"console":
 	{
@@ -236,12 +368,35 @@
 	},
 	"file_history":
 	[
-		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/sass.scss",
-		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/index.html",
-		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/list.html",
-		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/controllers/controllers.coffee",
-		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/authorList.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/styles.scss",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/bootstrap_dropdowns.css",
+		"/Users/johan/www/korp_print.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/so_stildef_xml_litt.css",
+		"/Users/johan/Dropbox/Development/shell.sh",
+		"/Users/johan/.profile",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/contactForm.html",
 		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/app.coffee",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/epubList.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/directives.coffee",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/search.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/sourceInfo.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/authorTitles.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/start.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/titleList.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/index.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/reader.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/authorList.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/authorInfo.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/stats.html",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/controllers/controllers.coffee",
+		"/Users/johan/Dropbox/Development/workspace_juno/yo_test/Gruntfile.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/test/spec/controllers/authorList.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/lib/angular_unstable.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/app.scss",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/lib/jquery1.9.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/bin/controllers/controllers.js",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/sass.scss",
+		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/views/list.html",
 		"/Users/johan/www/cgi-bin/get.py",
 		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/scripts/authorList.coffee",
 		"/Users/johan/Dropbox/Development/workspace_juno/littb/java_version.java",
@@ -250,7 +405,6 @@
 		"/Users/johan/Dropbox/Development/workspace_juno/littb/test/lib/angular-mocks.js",
 		"/Users/johan/Dropbox/Development/sublime/Packages/User/Preferences.sublime-settings",
 		"/Users/johan/Dropbox/Development/workspace_juno/littb/test/spec/controllers/main.js",
-		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/app.scss",
 		"/Users/johan/Dropbox/Development/workspace_juno/littb/Gruntfile.js",
 		"/Users/johan/demo/cgi/get.py",
 		"/Users/johan/Dropbox/Development/workspace_juno/littb/app/styles/sass.css",
@@ -261,7 +415,6 @@
 		"/Users/johan/Dropbox/Development/startup.sh",
 		"/Users/johan/Dropbox/Development/workspace_juno/nysno/find_fwords.py",
 		"/Users/johan/Dropbox/Development/workspace_juno/nysno/index.html",
-		"/Users/johan/Dropbox/Development/shell.sh",
 		"/Users/johan/www/cgi-bin/proxy.py",
 		"/Users/johan/Dropbox/Development/workspace_juno/nysno/src/index.haml",
 		"/Users/johan/Dropbox/Development/workspace_juno/nysno/src/style.scss",
@@ -319,6 +472,8 @@
 		"height": 0.0,
 		"where_history":
 		[
+			"<project>",
+			"<open folders>",
 			"",
 			".",
 			"/",
@@ -330,134 +485,134 @@
 		"case_sensitive": false,
 		"find_history":
 		[
-			"groupBy",
-			"_.group",
-			"object",
-			"attrArray",
-			"x",
-			"data",
-			"def",
-			"authorListCtrl",
-			"setLetter",
-			"backend",
-			"rows",
-			"getTitles",
-			"def",
-			"selectedLetter",
-			"rowByLetter",
-			"[$",
-			"selectedLetter",
-			"rowByLetter",
-			"forEach",
-			"$http\n",
-			"$http",
-			"rows",
-			"workIdGroups",
-			"setupHash",
-			"watch",
-			"$watch",
-			"setupHash",
-			"MainCtrl",
-			"angularTestApp",
-			"workIdGroups",
-			"location",
-			"names",
-			"val",
-			"setupHash",
+			"part_menu",
+			"pagen",
+			"Number",
+			"pagename",
+			"pagenum",
+			"getPage",
+			"getPage(",
+			"gotopage",
+			"getPage",
+			"s.",
+			"70px",
+			"div",
+			"part_menu",
+			"txt = ",
+			"markee_to",
+			"setMarkee",
+			"Filter",
 			"filter",
-			"scope",
-			"$scope",
-			"t ",
-			"t",
-			"getSynsetSafe",
-			"backend_url",
-			"korp_url",
-			"proxy",
-			"\n        ",
-			"pipeline",
-			"130.241.42.54",
-			"\")\n",
-			"c.log",
-			")\n",
-			"\"\n",
-			"lemgram",
-			"k",
-			"quick_find",
-			"	\n",
-			"c.log",
-			"convertJSON",
-			"parseKorpResult",
-			"output",
-			"print",
-			"data",
-			"jsondata",
-			"data",
-			"blissMixin",
-			"data",
-			"json",
-			"sublime text grunt",
-			"subprocess",
-			"run_pipeline",
-			"getBliss",
-			"pwd",
-			"__name__",
-			"130.241.42.54",
-			"\"",
+			"Filter",
+			"filter",
+			"Filter",
+			"filter",
+			"Filter",
+			"filter",
+			"Filter",
+			"read",
+			"reader",
+			"refreshMarkee",
+			"markee_to",
+			".",
+			"\"#lb8216654_27689\"",
 			"@",
-			" \n",
-			" ",
-			"c.log",
+			"setupHashComplex",
+			"scopename",
+			"scopeName",
+			"setupHashComplex",
+			"markee",
+			"triangle",
+			"word_search",
+			".triang",
+			"tooltip-popup.html",
+			"tooltip",
+			"objFromAttrs",
+			"normalize",
+			"showtitle",
+			"title",
+			"setupHashC",
+			"setuphashc",
+			"setuphasc",
+			"setupHashComplex",
+			"util.",
+			"tab",
+			"_dropdowns",
+			".dropdown-menu",
+			"output",
+			"lex_article",
+			"lex_word",
+			"searchLexicon",
+			"modal",
+			"typeahead",
 			",",
-			"style",
-			"<td",
-			"td",
-			"class",
-			"style",
-			"pointer",
-			"cursor:",
-			"cursor",
-			"center",
-			"text-align",
-			"<td style=\"width: 12px; text-align: center; cursor: pointer\"\n				class=\"ui-state-default specialkey\">å</td>",
-			"center",
-			"shift",
-			"move",
-			"move_to_group",
-			"ctrl",
-			"foreach",
-			"item",
+			"lex_word",
+			"searchLexicon",
+			"getMatchesAsync",
+			"getMatches",
+			"searchLexicon",
+			"getWords",
+			"getMatchesAsync",
+			"searchLexicon",
+			"output",
+			"transformResponse",
+			"searchLexicon",
+			"word_search",
+			"smaller",
+			"search",
+			"s.search",
+			"search(",
+			"s.query",
+			"search()",
+			"searchctrl",
+			"loc",
+			"location",
+			"loc",
+			"setupHashComplex",
 			"expr",
-			"valid",
-			"Valid",
-			"\n    ",
-			"map",
-			"minimap",
-			"map",
-			"\n		",
-			" (",
-			"\"\"",
-			"\n	\"\"",
-			"render",
-			"promise",
-			"	$.",
-			"saldo",
-			"inherit",
-			"a",
-			"super.",
-			"\"\"],",
-			"ajaxSetup",
-			"Deferred",
-			"deferred_sm",
-			"currentMode",
-			"function",
-			"Deferred",
-			"    \n",
-			"family",
-			"font",
-			"sdfsdfsdfsdf",
-			"sublime",
-			"keys",
-			"super"
+			"setupHashComplex",
+			"setupHash",
+			"title",
+			"searchct",
+			"setupHashComplex",
+			"scope_func",
+			"setupHashComplex",
+			"sortstr",
+			"newVal",
+			"val",
+			"scope",
+			"in",
+			"scope",
+			"obj",
+			"names",
+			"setupHash",
+			"!isInit",
+			"tuple",
+			"val",
+			"enabled",
+			"titlel",
+			"orderBy",
+			"enabled",
+			"div",
+			"span",
+			"tuple=\"sorttuple\"",
+			"iAttrs",
+			"scope",
+			"apply",
+			"scope.",
+			"tuple",
+			"val",
+			"ng-class",
+			"--",
+			"sort",
+			"titleArray",
+			"sorttuple",
+			"title",
+			"active",
+			"activelist",
+			"active",
+			"primarycolor",
+			"<span class=\"triangle up\"></span><span class=\"triangle down\"></span>"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -465,6 +620,7 @@
 		"regex": false,
 		"replace_history":
 		[
+			"angular.element",
 			"deferred_sm"
 		],
 		"reverse": false,
@@ -476,8 +632,515 @@
 	"groups":
 	[
 		{
+			"selected": 7,
 			"sheets":
 			[
+				{
+					"buffer": 0,
+					"file": "app/scripts/app.coffee",
+					"settings":
+					{
+						"buffer_size": 6702,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4405,
+								4405
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/CoffeeScript.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 990.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "app/scripts/controllers/controllers.coffee",
+					"settings":
+					{
+						"buffer_size": 20427,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								6906,
+								6906
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/CoffeeScript.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3680.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "app/scripts/directives.coffee",
+					"settings":
+					{
+						"buffer_size": 2505,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2286,
+								2297
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CoffeeScript/CoffeeScript.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 313.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "app/components/angular-ui-bootstrap-bower/ui-bootstrap.js",
+					"settings":
+					{
+						"buffer_size": 55073,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								50905,
+								50895
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 22753.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "app/components/angular-ui-bootstrap-bower/ui-bootstrap-tpls.js",
+					"settings":
+					{
+						"buffer_size": 61103,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								60127,
+								60092
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 26450.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "/Users/johan/Dropbox/Development/workspace_juno/course/app/styles/main.css",
+					"settings":
+					{
+						"buffer_size": 162794,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								98785,
+								98905
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/CSS/CSS.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 59468.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "app/index.html",
+					"settings":
+					{
+						"buffer_size": 3518,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1872,
+								1872
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "app/styles/styles.scss",
+					"settings":
+					{
+						"buffer_size": 7209,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5700,
+								5700
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/SCSS/SCSS.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 4047.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 5,
+			"sheets":
+			[
+				{
+					"buffer": 6,
+					"file": "app/index.html",
+					"settings":
+					{
+						"buffer_size": 3518,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3451,
+								3451
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 685.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "app/views/titleList.html",
+					"settings":
+					{
+						"buffer_size": 2043,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								30,
+								30
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "app/views/start.html",
+					"settings":
+					{
+						"buffer_size": 563,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								563,
+								563
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "app/views/epubList.html",
+					"settings":
+					{
+						"buffer_size": 1233,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								441,
+								448
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "app/views/help.html",
+					"settings":
+					{
+						"buffer_size": 319,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								319,
+								319
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "app/views/reader.html",
+					"settings":
+					{
+						"buffer_size": 2709,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2314,
+								2314
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 845.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "app/views/epubList.html",
+					"settings":
+					{
+						"buffer_size": 1233,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1117,
+								1117
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "app/views/authorList.html",
+					"settings":
+					{
+						"buffer_size": 523,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								111,
+								111
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 14,
+					"file": "app/views/search.html",
+					"settings":
+					{
+						"buffer_size": 3377,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2105,
+								2105
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/HTML/HTML.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "app/styles/styles.scss",
+					"settings":
+					{
+						"buffer_size": 7209,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5207,
+								5207
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/SCSS/SCSS.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 3432.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
 			]
 		}
 	],
@@ -498,11 +1161,18 @@
 				0,
 				1,
 				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
 			]
 		],
 		"cols":
 		[
 			0.0,
+			0.505638586957,
 			1.0
 		],
 		"rows":
@@ -527,12 +1197,148 @@
 		"selected_items":
 		[
 			[
-				"au",
-				"app/views/authorList.html"
+				"style",
+				"app/styles/styles.scss"
+			],
+			[
+				"contr",
+				"app/scripts/controllers/controllers.coffee"
+			],
+			[
+				"styl",
+				"app/styles/styles.scss"
+			],
+			[
+				"app",
+				"app/scripts/app.coffee"
+			],
+			[
+				"ide",
+				"app/index.html"
+			],
+			[
+				"direc",
+				"app/scripts/directives.coffee"
+			],
+			[
+				"stye",
+				"app/styles/styles.scss"
+			],
+			[
+				"sty",
+				"app/styles/styles.scss"
+			],
+			[
+				"sear",
+				"app/views/search.html"
+			],
+			[
+				"tit",
+				"app/views/titleList.html"
+			],
+			[
+				"conr",
+				"app/scripts/controllers/controllers.coffee"
+			],
+			[
+				"dire",
+				"app/scripts/directives.coffee"
+			],
+			[
+				"controll",
+				"app/scripts/controllers/controllers.coffee"
 			],
 			[
 				"inde",
 				"app/index.html"
+			],
+			[
+				"ind",
+				"app/index.html"
+			],
+			[
+				"start",
+				"app/views/start.html"
+			],
+			[
+				"reader",
+				"app/views/reader.html"
+			],
+			[
+				"star",
+				"app/views/start.html"
+			],
+			[
+				"con",
+				"app/scripts/controllers/controllers.coffee"
+			],
+			[
+				"st",
+				"app/styles/styles.scss"
+			],
+			[
+				"auth",
+				"app/views/authorList.html"
+			],
+			[
+				"read",
+				"app/views/reader.html"
+			],
+			[
+				"titl",
+				"app/views/titleList.html"
+			],
+			[
+				"",
+				"app/scripts/app.coffee"
+			],
+			[
+				"contro",
+				"app/scripts/controllers/controllers.coffee"
+			],
+			[
+				"epub",
+				"app/views/epubList.html"
+			],
+			[
+				"title",
+				"app/views/titleList.html"
+			],
+			[
+				"coff",
+				"app/scripts/app.coffee"
+			],
+			[
+				"stats",
+				"app/views/stats.html"
+			],
+			[
+				"info",
+				"app/views/sourceInfo.html"
+			],
+			[
+				"ti",
+				"app/views/titleList.html"
+			],
+			[
+				"author",
+				"app/views/authorInfo.html"
+			],
+			[
+				"contac",
+				"app/views/contactForm.html"
+			],
+			[
+				"conta",
+				"app/views/contactForm.html"
+			],
+			[
+				"search",
+				"app/views/search.html"
+			],
+			[
+				"au",
+				"app/views/authorList.html"
 			],
 			[
 				"ap",
@@ -545,10 +1351,6 @@
 			[
 				"scss",
 				"app/styles/sass.scss"
-			],
-			[
-				"style",
-				"app/styles/app.scss"
 			],
 			[
 				"grunt",
@@ -631,6 +1433,10 @@
 		"selected_items":
 		[
 			[
+				"",
+				"/Users/johan/Dropbox/Development/workspace_juno/nysno/nysno.sublime-project"
+			],
+			[
 				"korp",
 				"/Users/johan/Dropbox/Development/workspace_juno/korp/korp.sublime-project"
 			],
@@ -641,10 +1447,6 @@
 			[
 				"ko",
 				"/Users/johan/Dropbox/Development/workspace_juno/korp/korp.sublime-project"
-			],
-			[
-				"",
-				"/Users/johan/Dropbox/Development/workspace_juno/korp/korp.sublime-project"
 			]
 		],
 		"width": 380.0
@@ -653,6 +1455,6 @@
 	"show_open_files": true,
 	"show_tabs": true,
 	"side_bar_visible": true,
-	"side_bar_width": 205.0,
+	"side_bar_width": 259.0,
 	"status_bar_visible": true
 }

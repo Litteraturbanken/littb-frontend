@@ -1,0 +1,121 @@
+@charset "UTF-8";
+._so_article {
+
+kapitel,so {font-family: serif; max-width: 12cm;}
+artikel {font-family: "Georgia",serif; display: block; margin-left: 0.5cm; margin-right:0.5cm;padding-left: 0.7cm; max-width: 12cm;}
+lemma{display: block; font-size: medium; font-style: normal; font-weight: bold; padding-top: 0.2cm ;}
+f {font-size: medium; font-style: normal; font-weight: bold;}
+venster {display:inline;position: relative; left: -0.6cm;}
+homonr {display:inline; font-size: x-small; font-style: normal ;vertical-align: super; font-weight: bold; color: red; position: relative; left: -0.4cm;}
+hvhomo {display:inline; font-size: xx-small; font-style: normal ;vertical-align: super; }
+grundform {display:inline; font-size: medium; font-style: normal; font-weight: bold;color: red; position: relative; left: -0.4cm;}
+uttal {display:inline; font-size: small; font-style: normal; font-weight: normal;  position: relative; left: -0.3cm;}
+alt_uttal {display:inline; font-size: medium; font-style: normal; font-weight: normal;}
+avstav {display:block; font-size: small; font-style: normal; font-weight: normal;position: relative; left: -0.4cm;}
+avstav:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-variant:small-caps; color:gray; content:"Ordled: "}
+ordbildn {display:inline; font-size: small; font-weight: bold; }
+ordbprep {display:inline; font-size: small; font-weight: normal; }
+ordbildn:first-child    {padding-left: 5.5em;}
+ordbildnx {font-size: small; font-weight: normal;display: block;position: relative; left: -0.4cm;padding-top:0.2em;}
+ordbildnx:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Subst:\a0";float:left;}
+ordbtxt {display:none;font-size: x-small; font-style: normal;font-weight: normal; padding-right: 2em;color:gray;font-variant:small-caps;position:relative;left:-1em;}
+bt {display:inline; font-size: medium; font-style: normal; font-weight: normal;}
+def {display:inline; font-size: small; font-style: normal; font-weight: normal; }
+idiomdef {display:inline; font-size: small; font-style: normal; font-weight: normal; }
+deft{display:inline; font-size: x-small; font-style: normal; font-weight: normal;padding-left: 0.5em; }
+utv {display:inline; font-size: x-small; font-style: normal; font-weight: normal; }
+idiomdeft {display:inline; font-size: x-small; font-style: normal; font-weight: normal;padding-left: 0.5em; }
+sxblocklx {display:block;font-weight: normal ;font-size: x-small;}
+sxblocklx:before {padding-top: 0.3em ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Exempel: ";float:left;}
+sxblock {display:block;font-weight: normal;padding-bottom: 0.3em;}
+sxblock:before {padding-top: 0.3em ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Exempel: ";float:left;}
+syntex {display:inline; font-style: italic;font-size: small;  font-weight: normal;padding-right: 0.2em;}
+hkom {display:inline; font-style: normal; font-weight: normal;font-size: x-small; }
+ukom {display:inline; font-style: normal; font-weight: normal;font-size: x-small; padding-left: 0.3em; padding-right: 0.2em; }
+fkom { display:inline; font-size: x-small; font-style: normal; font-weight: normal;  padding-right: 0.4em;}
+fkom:before {content: "(";}
+fkom:after {content: ")";}
+fkom2 { display:inline; font-size: x-small; font-style: normal; font-weight: normal; padding-left: 0.3em; padding-right: 0.2em;}
+k { font-style: italic ;}
+anm {display:inline; font-size: small; font-style: normal;padding-left: 0.3em; font-weight: normal ;}
+bojning {display:inline; font-size: small; font-style: italic ; padding-left: 0.5em; padding-right: 0.5em;font-weight: normal ;}
+tempus,tempmm {font-style: normal; font-size: x-small;}
+pt { display:inline; font-size: small; font-style: normal; font-weight: normal; }
+ordklass {display:inline; font-size: small; font-style: normal; font-weight: normal;}
+sup {font-size: x-small; vertical-align: super;}
+siku {font-size: x-small; vertical-align: super;}
+punkt {display:inline; font-weight: bold  ;font-size: x-small;position:relative;left:-1em;}
+defxx:before {content:"\2022";}
+fm {display:inline; font-weight: bold  ;font-size: small;}
+alt {display:inline; font-weight: bold  ;font-size: small;padding-right: 0.5em;}
+pm {display:inline; font-weight: bold  ;font-size: small;}
+fk {display:inline; font-weight: normal ;font-size: small;}
+fb {display:inline; font-weight: normal ;font-size: small;}
+fb:after {content:"; ";}
+et {display:inline; font-weight: normal ;font-size: small;padding-left: 0.5em;}
+vinkel {font-size: small; font-style: normal;}
+bruk {font-size: small; font-style: normal;}
+fack {display:none; font-size: small; font-style: normal;}
+tanke {font-size: small; font-style: normal;}
+lexem {display: block; font-size: medium; padding-top: 0.3em;}
+cykel {display: block; font-size: medium; padding-bottom: 0.3em;font-weight: normal}
+idiom {display: block; font-size: small; font-weight:bold;padding-bottom: 0.3em;}
+idiomexblock {display:block;padding-top: 0.3em;}
+idiomexblock:before {padding-top: 0.3em ;font-size: x-small; font-style: normal;font-variant:small-caps;font-weight: normal; color:gray; content:"Exempel: ";float:left;}
+idiomex {display: block; font-weight: normal ; font-size: small; font-style:italic; padding-left: 5.5em;}
+etymologiblock {display: block;}
+etymologiblock:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-weight: normal; font-variant:small-caps;color:gray; content:"Hist:";float:left;}
+etymologi {display: block;  color:black;font-style: normal;font-size: x-small;  position:relative;left:-1em;padding-left: 5.5em;}
+besl {font-style:italic;}
+valens {display: block; font-size: x-small;font-style: normal;}
+valens:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Konstr:";float:left;}
+vt {display:block; padding-left: 5.5em;margin:0; font-weight: normal ;font-size: small;font-style: italic ;font-variant:normal;color:black;padding-bottom: 0.3em;}
+fras {font-size: small; color:navy;}
+fras:after {content: " ";}
+kastas {display: none;}
+fon {font-style: italic; font-weight: bold;}
+ls {font-style: italic; font-weight: bold;}
+ms {font-size: small; font-style: normal;}
+hv {display: inline; padding-left: 0.5em;font-size: x-small;font-variant:normal;color:black;font-weight: normal;}
+hvtyp{font-size: x-small;font-variant:small-caps; color:gray;font-style: normal;position:relative;left:-0.5em;}
+hvtyp2{display:none;font-style: italic;padding-left: 0.4em;}
+hv1{display: block;font-size: small;font-style: normal;padding-right: 1em;position:relative;left:-1em;padding-top:0.2em;}
+hv1:before {padding-top: 0.2em ;font-size: x-small;font-style: normal;font-variant:small-caps; color:gray;content:"Synonym:"}
+hv2{display: block;font-size: x-small;font-style: normal;padding-right: 1em;position:relative;left:-1em;padding-top:0.2em;}
+hv2:before {padding-top: 0.2em ;font-size: x-small;font-style: normal;font-variant:small-caps; color:gray;content:"Motsats:"}
+hv3{display: block;font-size: x-small;font-style: normal;padding-right: 2em;position:relative;left:-1em;padding-top:0.2em;}
+hv3:before {padding-top: 0.2em ;font-size: x-small;font-style: normal;font-variant:small-caps; color:gray;content:"Se"}
+hv4{display: block;font-size: x-small;font-style: normal;padding-right: 1em;position:relative;left:-1em;padding-top:0.2em;}
+hv4:before {padding-top: 0.2em ;font-size: x-small;font-style: normal;font-variant:small-caps; color:gray;content:"Jämför:"}
+mx {display:inline; font-size: small; font-style: italic;}
+mxblock {display: block;font-weight: normal;padding-bottom: 0.3em;}
+mxblock:before {padding-top: 0.2em ;font-size: x-small;font-style: normal;font-variant:small-caps;color:gray; content:"Sammansättn.: ";}
+mxblocklx {display: block;padding-bottom: 0.3em;font-size: x-small;font-weight: normal;}
+mxblocklx:before {padding-top: 0.2em ;font-size: x-small;font-style: normal;font-variant:small-caps;color:gray; content:"Sammansättn.: ";}
+b {font-weight: bold}
+ur {display:inline;font-size: x-small;}
+detaljer {display:block;}
+scriptonly {display:block; max-width: 12cm; color: blue; font-size: small; text-align:right;}
+h4 {margin-bottom: 0em;}
+hvlnk:link {text-decoration: underline; color: red; }
+a {font-variant:normal;text-decoration: none;color: black;}
+a {font-variant:normal; padding-left: 0.5em;}
+a.mer:link {text-decoration: none; color: blue;font-size: x-small;}
+ljudblock {display:none;}
+ljud {display:inline  ;font-size: small;}
+hvtag {display:none;}
+mxref {display:inline;}
+mxref:after     {content: ">" ;}
+hv>hvord {font-weight:bold;}
+hvgrupp>hvord:not(:last-child):after {content:", ";}
+mx:not(:last-child):after {content:"; ";}
+syntex:not(:last-child):after {content:"; ";}
+syntex:first-child {padding-left: 2.3em;}
+hvgrupp {}
+hvid {display: none;}
+utv:not(:last-child):after {content:" ";}
+cykel>def:not(:last-child):after {content:": ";}
+idiomdef:not(:last-child):after {content:": ";}
+fras:not(:last-child):after {content:" ";}
+
+}

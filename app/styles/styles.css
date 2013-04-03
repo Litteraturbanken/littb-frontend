@@ -1,15 +1,15 @@
-/* line 14, styles.scss */
+/* line 17, styles.scss */
 select {
   width: auto;
 }
 
-/* line 17, styles.scss */
+/* line 20, styles.scss */
 input {
   font-size: inherit;
   width: auto;
 }
 
-/* line 22, styles.scss */
+/* line 25, styles.scss */
 body {
   font-size: 11px;
   padding-top: 20px;
@@ -19,29 +19,29 @@ body {
   line-height: 16px;
   width: 670px;
 }
-/* line 31, styles.scss */
+/* line 34, styles.scss */
 body > * {
   white-space: normal;
 }
 
-/* line 42, styles.scss */
+/* line 45, styles.scss */
 #toolkit hr {
   border-top: 1px solid grey;
   margin-bottom: 1em;
   margin-top: 1em;
 }
 
-/* line 49, styles.scss */
+/* line 52, styles.scss */
 tr:nth-of-type(10n) {
   padding-bottom: 2em;
 }
 
-/* line 54, styles.scss */
+/* line 57, styles.scss */
 #controls > * {
   vertical-align: top;
 }
 
-/* line 57, styles.scss */
+/* line 60, styles.scss */
 tr:nth-of-type(10n) td {
   padding-bottom: 1em;
 }
@@ -50,36 +50,36 @@ tr:nth-of-type(10n) td {
     background-color : lighten(#999, 30%);
 }
 */
-/* line 64, styles.scss */
+/* line 67, styles.scss */
 .contenttable {
   min-width: 700px;
 }
-/* line 66, styles.scss */
+/* line 69, styles.scss */
 .contenttable td {
   max-width: 300px;
   padding: 5px;
 }
-/* line 70, styles.scss */
+/* line 73, styles.scss */
 .contenttable td:nth-child(2) {
   vertical-align: bottom;
 }
-/* line 73, styles.scss */
+/* line 76, styles.scss */
 .contenttable th {
   padding: 5px;
   text-align: left;
 }
 
-/* line 79, styles.scss */
+/* line 82, styles.scss */
 .contenttable td:last-of-type,
 th:last-of-type {
   text-align: right;
 }
 
-/* line 86, styles.scss */
+/* line 89, styles.scss */
 .letters {
   margin-bottom: 1em;
 }
-/* line 88, styles.scss */
+/* line 91, styles.scss */
 .letters td {
   font-weight: bold;
   cursor: pointer;
@@ -88,44 +88,44 @@ th:last-of-type {
   height: 20px;
   width: 20px;
 }
-/* line 97, styles.scss */
+/* line 100, styles.scss */
 .letters td.disabled {
   font-weight: normal !important;
   cursor: default !important;
 }
-/* line 105, styles.scss */
+/* line 108, styles.scss */
 .letters td.selected {
   color: #990000;
 }
-/* line 108, styles.scss */
+/* line 111, styles.scss */
 .letters td:first-child {
   padding-left: 0;
 }
 
-/* line 114, styles.scss */
+/* line 117, styles.scss */
 a {
   color: black;
   text-decoration: none;
 }
 
-/* line 118, styles.scss */
+/* line 121, styles.scss */
 a:hover {
   color: #990000;
   text-decoration: none;
 }
 
-/* line 122, styles.scss */
+/* line 125, styles.scss */
 ul {
   padding: 0;
   margin: 0;
 }
 
-/* line 126, styles.scss */
+/* line 129, styles.scss */
 li {
   list-style: none;
 }
 
-/* line 129, styles.scss */
+/* line 132, styles.scss */
 #leftCorridor {
   width: 120px;
   margin-right: 40px;
@@ -136,17 +136,17 @@ li {
   zoom: 1;
   *display: inline;
 }
-/* line 133, styles.scss */
+/* line 136, styles.scss */
 #leftCorridor > * {
   margin-bottom: 2em;
 }
 
-/* line 137, styles.scss */
+/* line 140, styles.scss */
 .mainnav {
   vertical-align: top;
 }
 
-/* line 140, styles.scss */
+/* line 143, styles.scss */
 #mainview {
   display: -moz-inline-stack;
   display: inline-block;
@@ -159,69 +159,69 @@ li {
   margin-top: 2em;
 }
 
-/* line 147, styles.scss */
+/* line 150, styles.scss */
 label {
   display: inline;
 }
 
-/* line 151, styles.scss */
+/* line 154, styles.scss */
 #logo {
   height: 30px;
   left: -8px;
   position: relative;
 }
 
-/* line 157, styles.scss */
+/* line 160, styles.scss */
 header {
   border-bottom: 1px solid grey;
   margin-bottom: 1em;
   padding-bottom: 5px;
 }
 
-/* line 163, styles.scss */
+/* line 166, styles.scss */
 .page-start #toolkit {
   margin-top: 18em;
   font-size: 0.9em;
 }
-/* line 166, styles.scss */
+/* line 169, styles.scss */
 .page-start #toolkit input {
   font-size: 1.1em;
   width: 90px;
 }
-/* line 170, styles.scss */
+/* line 173, styles.scss */
 .page-start #toolkit form {
   margin-bottom: 1em;
 }
 
-/* line 176, styles.scss */
+/* line 179, styles.scss */
 .page-stats #mainview > * {
   margin-bottom: 1em;
 }
 
-/* line 183, styles.scss */
+/* line 186, styles.scss */
 .page-search #mainview .submit_btn {
   float: right;
 }
-/* line 186, styles.scss */
+/* line 189, styles.scss */
 .page-search #mainview .input {
   width: 432px;
 }
-/* line 189, styles.scss */
+/* line 192, styles.scss */
 .page-search #mainview .header {
   position: relative;
 }
-/* line 193, styles.scss */
+/* line 196, styles.scss */
 .page-search #mainview .header .open_toggle {
   position: absolute;
   bottom: 0;
   right: 0;
 }
-/* line 201, styles.scss */
+/* line 204, styles.scss */
 .page-search #mainview .extended {
   border: 1px lightgrey solid;
   padding: 8px;
 }
-/* line 206, styles.scss */
+/* line 209, styles.scss */
 .page-search #mainview .columns > div {
   width: 49%;
   display: -moz-inline-stack;
@@ -231,69 +231,69 @@ header {
   zoom: 1;
   *display: inline;
 }
-/* line 210, styles.scss */
+/* line 213, styles.scss */
 .page-search #mainview .columns > div label {
   display: block;
 }
-/* line 215, styles.scss */
+/* line 218, styles.scss */
 .page-search #mainview table {
   white-space: nowrap;
 }
-/* line 217, styles.scss */
+/* line 220, styles.scss */
 .page-search #mainview table td.title {
   max-width: 100px;
   overflow-x: hidden;
   text-overflow: ellipsis;
   font-style: italic;
 }
-/* line 223, styles.scss */
+/* line 226, styles.scss */
 .page-search #mainview table td.left_context {
   text-align: right;
 }
-/* line 228, styles.scss */
+/* line 231, styles.scss */
 .page-search #toolkit {
   font-size: .9em;
 }
-/* line 232, styles.scss */
+/* line 235, styles.scss */
 .page-search #title_select {
   max-width: 247px;
 }
 
-/* line 238, styles.scss */
+/* line 241, styles.scss */
 .page-reading #mainview {
   position: relative;
 }
-/* line 242, styles.scss */
+/* line 245, styles.scss */
 .page-reading #toolkit > * {
   display: block;
 }
-/* line 245, styles.scss */
+/* line 248, styles.scss */
 .page-reading #toolkit > div {
   margin: 1em 0;
 }
-/* line 248, styles.scss */
+/* line 251, styles.scss */
 .page-reading #toolkit .title {
   font-style: italic;
 }
-/* line 251, styles.scss */
+/* line 254, styles.scss */
 .page-reading #toolkit .pageinput {
   width: 50px;
   margin-left: 5px;
 }
-/* line 255, styles.scss */
+/* line 258, styles.scss */
 .page-reading #toolkit .word_search {
   margin-top: 1em;
 }
-/* line 257, styles.scss */
+/* line 260, styles.scss */
 .page-reading #toolkit .word_search label {
   display: block;
   font-size: .9em;
 }
-/* line 263, styles.scss */
+/* line 266, styles.scss */
 .page-reading .work_parts {
   margin-top: 1em;
 }
-/* line 265, styles.scss */
+/* line 268, styles.scss */
 .page-reading .work_parts li {
   font-size: smaller;
   overflow-x: hidden;
@@ -302,19 +302,19 @@ header {
   font-style: italic;
   cursor: pointer;
 }
-/* line 274, styles.scss */
+/* line 277, styles.scss */
 .page-reading .work_parts li .tooltip {
   white-space: normal;
 }
-/* line 279, styles.scss */
+/* line 282, styles.scss */
 .page-reading .partnav {
   position: relative;
 }
-/* line 281, styles.scss */
+/* line 284, styles.scss */
 .page-reading .partnav .arrow_icon {
   color: #990000;
 }
-/* line 285, styles.scss */
+/* line 288, styles.scss */
 .page-reading .partnav .triangle {
   width: 0px;
   height: 0px;
@@ -326,7 +326,7 @@ header {
   left: 135px;
   bottom: 0;
 }
-/* line 300, styles.scss */
+/* line 303, styles.scss */
 .page-reading .partnav .part_menu {
   background-color: #990000;
   opacity: 0.8;
@@ -338,45 +338,54 @@ header {
   z-index: 100;
   max-height: 300px;
 }
-/* line 311, styles.scss */
+/* line 314, styles.scss */
 .page-reading .partnav .part_menu li {
   color: white;
   cursor: pointer;
 }
-/* line 319, styles.scss */
+/* line 322, styles.scss */
 .page-reading .partnav .part_menu a {
   color: white;
 }
 
-/* line 327, styles.scss */
-.page-sourceInfo h3 {
+/* line 331, styles.scss */
+.page-sourceInfo #mainview div {
+  margin-bottom: 1em;
+}
+/* line 335, styles.scss */
+.page-sourceInfo #mainview h3 {
   margin: 0;
   line-height: inherit;
 }
-/* line 330, styles.scss */
-.page-sourceInfo h3.author {
+/* line 338, styles.scss */
+.page-sourceInfo #mainview h3.author {
   font-variant: small-caps;
 }
-/* line 333, styles.scss */
-.page-sourceInfo h3.title {
+/* line 341, styles.scss */
+.page-sourceInfo #mainview h3.title {
   margin-bottom: 2em;
+  max-width: 400px;
+}
+/* line 346, styles.scss */
+.page-sourceInfo #mainview .mediatype {
+  font-variant: small-caps;
 }
 
-/* line 340, styles.scss */
+/* line 353, styles.scss */
 .page-authorList table {
   margin-top: 3em;
 }
-/* line 343, styles.scss */
+/* line 356, styles.scss */
 .page-authorList #mainview > * {
   margin-bottom: 1em;
 }
 
-/* line 349, styles.scss */
+/* line 362, styles.scss */
 .page-titleList th {
   padding-bottom: 1em;
 }
 
-/* line 356, styles.scss */
+/* line 369, styles.scss */
 .triangle {
   width: 0px;
   height: 0px;
@@ -385,32 +394,32 @@ header {
   margin-right: 3px;
   cursor: pointer;
 }
-/* line 364, styles.scss */
+/* line 377, styles.scss */
 .triangle.disabled {
   cursor: normal;
 }
-/* line 368, styles.scss */
+/* line 381, styles.scss */
 .triangle.disabled.up {
   border-color: transparent transparent grey transparent;
 }
-/* line 371, styles.scss */
+/* line 384, styles.scss */
 .triangle.disabled.down {
   border-color: grey transparent transparent transparent;
 }
-/* line 374, styles.scss */
+/* line 387, styles.scss */
 .triangle.up {
   border-width: 0 8px 8px 8px;
   border-color: transparent transparent #990000 transparent;
   bottom: 11px;
 }
-/* line 380, styles.scss */
+/* line 393, styles.scss */
 .triangle.down {
   border-width: 8px 8px 0 8px;
   border-color: #990000 transparent transparent transparent;
   top: 11px;
 }
 
-/* line 387, styles.scss */
+/* line 400, styles.scss */
 .markee {
   background-color: pink;
 }
