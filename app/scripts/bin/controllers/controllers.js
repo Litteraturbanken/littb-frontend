@@ -8,7 +8,17 @@
     log: _.noop
   };
 
-  littb.controller("startCtrl", function($scope) {});
+  littb.controller("startCtrl", function($scope, $location) {
+    return $scope.gotoTitle = function(query) {
+      var url;
+      if (!query) {
+        url = "/titlar";
+      } else {
+        url = "/titlar?filter=" + query + "&selectedLetter=" + (query[0].toUpperCase());
+      }
+      return $scope.goto(url);
+    };
+  });
 
   littb.controller("contactFormCtrl", function($scope, backend) {});
 
@@ -27,6 +37,7 @@
     s.searchProofread = true;
     s.searchNonProofread = true;
     s.authors = backend.getAuthorList();
+    s.searching = false;
     s.$watch("selected_author", function(newAuthor, prevVal) {
       if (!newAuthor) {
         return;
@@ -40,7 +51,11 @@
       } else {
         $location.search("fras", s.query);
       }
-      return s.results = backend.searchWorks(s.query);
+      s.searching = true;
+      return backend.searchWorks(s.query).then(function(data) {
+        s.results = data;
+        return s.searching = false;
+      });
     };
     queryvars = $location.search();
     if ("fras" in queryvars) {
@@ -49,34 +64,13 @@
   });
 
   littb.controller("authorInfoCtrl", function($scope, backend, $routeParams) {
-    var author;
-    author = $routeParams.author;
-    return $scope.authorInfo = backend.getAuthorInfo(author);
-  });
-
-  littb.directive('letterMap', function() {
-    return {
-      template: "<table class=\"letters\">\n    <tr ng-repeat=\"row in letterArray\">\n        <td ng-repeat=\"letter in row\"\n            ng-class=\"{disabled: !ifShow(letter), selected: letter == selectedLetter}\"\n            ng-click=\"setLetter(letter)\">{{letter}}</td>\n    </tr>\n</table>",
-      replace: true,
-      scope: {
-        selected: "=",
-        enabledLetters: "="
-      },
-      link: function(scope, elm, attrs) {
-        var s;
-        s = scope;
-        s.letterArray = _.invoke(["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "ZÅÄÖ"], "split", "");
-        s.ifShow = function(letter) {
-          if (!s.enabledLetters) {
-            return false;
-          }
-          return __indexOf.call(s.enabledLetters, letter) >= 0;
-        };
-        return s.setLetter = function(l) {
-          return s.selected = l;
-        };
-      }
-    };
+    var s;
+    s = $scope;
+    _.extend(s, $routeParams);
+    return backend.getAuthorInfo(s.author).then(function(data) {
+      s.authorInfo = data;
+      return s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
+    });
   });
 
   littb.controller("titleListCtrl", function($scope, backend, util) {
@@ -198,7 +192,12 @@
     return s.getAuthor = function(row) {
       var first, last, _ref;
       _ref = row.nameforindex.split(","), last = _ref[0], first = _ref[1];
-      return last.toUpperCase() + "," + first;
+      last = last.toUpperCase();
+      if (first) {
+        return last + "," + first;
+      } else {
+        return last;
+      }
     };
   });
 
@@ -207,15 +206,22 @@
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype;
     _.extend(s, $routeParams);
-    s.getMediatypes = function() {
-      var _ref;
-      if (mediatype) {
-        return [mediatype];
-      } else {
-        return (_ref = s.data) != null ? _ref.mediatypes : void 0;
+    s.getOtherMediatypes = function() {
+      var x, _i, _len, _ref, _ref1, _results;
+      _ref1 = ((_ref = s.data) != null ? _ref.mediatypes : void 0) || [];
+      _results = [];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        x = _ref1[_i];
+        if (x !== s.mediatype) {
+          _results.push(x);
+        }
       }
+      return _results;
     };
-    return s.data = backend.getSourceInfo(author, title, mediatype || "etext");
+    return backend.getSourceInfo(author, title, mediatype || "etext").then(function(data) {
+      s.data = data;
+      return s.mediatype = s.data.mediatypes[0];
+    });
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util) {
@@ -283,7 +289,6 @@
     ]);
     watches = [];
     watches.push(s.$watch("pagename", function(val) {
-      c.log("pagename", val);
       s.displaynum = val;
       return $location.path("/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype);
     }));
@@ -569,8 +574,14 @@
             mediatype: mediatype
           }
         }).success(function(xml) {
-          var errata, output;
+          var errata, output, prov;
           output = parseWorkInfo("result", xml);
+          prov = $("result provenance-data", xml);
+          output["provenance"] = {
+            text: $("text", prov).text(),
+            image: $("image", prov).text(),
+            link: $("link", prov).text()
+          };
           errata = $("errata", xml).parent().clone();
           if (errata.length) {
             output.errata = util.getInnerXML(errata);
@@ -645,7 +656,6 @@
           _ref1 = $("works item", xml);
           for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
             item = _ref1[_j];
-            c.log("works item", item);
             obj = objFromAttrs(item);
             works.push(obj);
           }

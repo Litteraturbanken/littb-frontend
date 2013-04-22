@@ -5,13 +5,11 @@
         <input ng-model="author"><span submit-btn></span>
     </form>
     Sök titel
-    <form ng-submit="goto('/forfattare?authorFilter=' + title)">
+    <form ng-submit="gotoTitle(title)">
         <input ng-model="title"><span submit-btn></span>
     </form>
 
     Sök i texterna
-    <form ng-submit="goto('/forfattare?authorFilter=' + title)">
-        <input ng-model="title"><span submit-btn></span>
-    </form>
-
-</div>
+    <form ng-submit="goto('/sok?fras=' + text)">
+        <input ng-model="text"><span submit-btn></span>
+    </form></div>

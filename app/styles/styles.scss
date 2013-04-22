@@ -1,6 +1,6 @@
 @charset "UTF-8";
 @import "compass/css3/inline-block";
-
+@import "compass_twitter_bootstrap";
 
 
 $inline-block-alignment : top;
@@ -14,14 +14,6 @@ $primarycolor : #990000;
 
 
 // bootstrap overrides
-select {
-    width : auto;
-}
-input {
-    font-size: inherit;
-    width : auto;
-}
-
 body {
     font-size : 11px;
     padding-top : 20px;
@@ -139,6 +131,7 @@ li {
 }
 .mainnav {
     vertical-align: top;
+    line-height : 19px;
 }
 #mainview {
     @include inline-block();
@@ -183,6 +176,15 @@ header {
 
 .page-search {
     #mainview {
+        .preloader {
+            visibility: hidden;
+            color : $primarycolor;
+            text-align: right;
+        }
+        .preloader.searching {
+            visibility: visible;
+        }
+
         .submit_btn {
             float : right;
         }
@@ -331,6 +333,9 @@ $partnav-width : 120px;
         div {
             margin-bottom : 1em;
         }
+        .mediatypes {
+            margin-bottom : 0;
+        }
 
         h3 {
             margin : 0;
@@ -399,4 +404,11 @@ $triangle_size : 8px;
 
 .markee {
     background-color : pink;
+}
+
+.dots_blink {
+    text-decoration: blink;
+    &:after {
+        content : "...";
+    } 
 }

@@ -5,7 +5,9 @@
     <div ng-bind-html-unsafe="data.sourcedesc"></div>
 </div>
 
-<div>
+<div ng-bind-html-unsafe="data.sourcedesc"></div>
+
+<div class="mediatypes">
     Läs verket som <a class="mediatype" href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}}</a>
 </div>
 <div ng-show="data.mediatypes.length > 1">
@@ -13,10 +15,20 @@
     <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}} </a>
 </div>
 
+<div>
+    <a ng-href="{{data.provenance.link}}"><img onerror="this.style.visibility = 'hidden'" ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a>
+    <p>{{data.provenance.text}}</p>
+</div>
+
+<div ng-bind-html-unsafe="data.licenseText"></div>
+
 <div ng-show="!mediatype || mediatype == 'etext'">
-    <div>I etexten har följande ändringar gjorts mot originalet:</div>
+    <div ng-show="data.errata">I etexten har följande ändringar gjorts mot originalet:</div>
+    <div ng-show="!data.errata">Inga ändringar har gjorts mot orginalet.</div>
     <div ng-bind-html-unsafe="data.errata"></div>
 </div>
+
+
 
 <div toolkit>
     <hr>

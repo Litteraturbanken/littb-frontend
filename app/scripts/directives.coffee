@@ -79,3 +79,35 @@ littb.directive 'markee', () ->
             .addClass "markee"
 
 
+littb.directive 'letterMap', () ->
+    template : """
+        <table class="letters">
+            <tr ng-repeat="row in letterArray">
+                <td ng-repeat="letter in row"
+                    ng-class="{disabled: !ifShow(letter), selected: letter == selectedLetter}"
+                    ng-click="setLetter(letter)">{{letter}}</td>
+            </tr>
+        </table>
+    """
+    replace : true
+    scope :
+        selected : "="
+        enabledLetters : "="
+    link : (scope, elm, attrs) ->
+        s = scope
+
+        s.letterArray = _.invoke([
+            "ABCDE",
+            "FGHIJ",
+            "KLMNO",
+            "PQRST",
+            "UVWXY",
+            "ZÅÄÖ"
+        ], "split", "")
+
+        s.ifShow = (letter) ->
+            unless s.enabledLetters then return false
+            letter in s.enabledLetters
+
+        s.setLetter = (l) ->
+            s.selected = l

@@ -125,6 +125,7 @@ littb.config ['$httpProvider', ($httpProvider) ->
 ]
 
 littb.run ($rootScope, $location) ->
+
     $rootScope.goto = (path) ->
         $location.url(path)
 

@@ -1,4 +1,5 @@
 (function() {
+  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   littb.directive('submitBtn', function() {
     return {
@@ -97,6 +98,31 @@
         c.log("markee_from, markee_to", readingCtrl, scope);
         return scope.refreshMarkee = function() {
           return $("#" + markee_from).nextUntil("#" + markee_to).andSelf().add("#" + markee_to).addClass("markee");
+        };
+      }
+    };
+  });
+
+  littb.directive('letterMap', function() {
+    return {
+      template: "<table class=\"letters\">\n    <tr ng-repeat=\"row in letterArray\">\n        <td ng-repeat=\"letter in row\"\n            ng-class=\"{disabled: !ifShow(letter), selected: letter == selectedLetter}\"\n            ng-click=\"setLetter(letter)\">{{letter}}</td>\n    </tr>\n</table>",
+      replace: true,
+      scope: {
+        selected: "=",
+        enabledLetters: "="
+      },
+      link: function(scope, elm, attrs) {
+        var s;
+        s = scope;
+        s.letterArray = _.invoke(["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "ZÅÄÖ"], "split", "");
+        s.ifShow = function(letter) {
+          if (!s.enabledLetters) {
+            return false;
+          }
+          return __indexOf.call(s.enabledLetters, letter) >= 0;
+        };
+        return s.setLetter = function(l) {
+          return s.selected = l;
         };
       }
     };

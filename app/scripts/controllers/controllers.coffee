@@ -2,10 +2,15 @@
 
 window.c = console ? log : _.noop
 
-littb.controller "startCtrl", ($scope) ->
+littb.controller "startCtrl", ($scope, $location) ->
 
+    $scope.gotoTitle = (query) ->
+        unless query
+            url = "/titlar"
+        else
+            url = "/titlar?filter=#{query}&selectedLetter=#{query[0].toUpperCase()}"
 
-
+        $scope.goto url
 
 
 littb.controller "contactFormCtrl", ($scope, backend) ->
@@ -21,6 +26,7 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
     s.searchNonProofread = true
 
     s.authors = backend.getAuthorList()
+    s.searching = false
 
     s.$watch "selected_author", (newAuthor, prevVal) ->
         return unless newAuthor
@@ -34,8 +40,11 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
         else
             $location.search("fras", s.query)
 
+        s.searching = true
+        backend.searchWorks(s.query).then (data) ->
+            s.results = data
+            s.searching = false
 
-        s.results = backend.searchWorks(s.query)
 
     queryvars = $location.search()
     if "fras" of queryvars
@@ -50,42 +59,6 @@ littb.controller "authorInfoCtrl", ($scope, backend, $routeParams) ->
         s.authorInfo = data
 
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
-
-
-
-
-littb.directive 'letterMap', () ->
-    template : """
-        <table class="letters">
-            <tr ng-repeat="row in letterArray">
-                <td ng-repeat="letter in row"
-                    ng-class="{disabled: !ifShow(letter), selected: letter == selectedLetter}"
-                    ng-click="setLetter(letter)">{{letter}}</td>
-            </tr>
-        </table>
-    """
-    replace : true
-    scope :
-        selected : "="
-        enabledLetters : "="
-    link : (scope, elm, attrs) ->
-        s = scope
-
-        s.letterArray = _.invoke([
-            "ABCDE",
-            "FGHIJ",
-            "KLMNO",
-            "PQRST",
-            "UVWXY",
-            "ZÅÄÖ"
-        ], "split", "")
-
-        s.ifShow = (letter) ->
-            unless s.enabledLetters then return false
-            letter in s.enabledLetters
-
-        s.setLetter = (l) ->
-            s.selected = l
 
 
 littb.controller "titleListCtrl", ($scope, backend, util) ->
@@ -198,10 +171,12 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
     _.extend s, $routeParams
 
     s.getOtherMediatypes = () ->
-        (x for x in (s.data?.mediatypes or []) when x != mediatype)
+        (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
 
     backend.getSourceInfo(author, title, mediatype or "etext").then (data) ->
         s.data = data
+
+        s.mediatype = s.data.mediatypes[0]
 
 
 littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util) ->
@@ -234,9 +209,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.setPage(0)
 
 
-    # if not s.workinfo?
-    #     c.log "no workinfo"
-
     s.gotopage = (page) ->
         c.log "gotopage", page
         s.pagename = Number(page)
@@ -265,7 +237,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     watches = []
     watches.push s.$watch "pagename", (val) ->
-        c.log "pagename", val
+        # c.log "pagename", val
         s.displaynum = val
         $location.path("/forfattare/#{author}/titlar/#{title}/sida/#{val}/#{mediatype}")
 
@@ -499,6 +471,13 @@ littb.factory 'backend', ($http, $q, util) ->
 
         ).success (xml) ->
             output = parseWorkInfo("result", xml)
+
+            prov = $("result provenance-data", xml)
+            output["provenance"] = {
+                text : $("text", prov).text()
+                image : $("image", prov).text()
+                link : $("link", prov).text()
+            }
 
             errata = $("errata", xml).parent().clone()
             if errata.length
