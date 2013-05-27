@@ -266,7 +266,7 @@ module.exports = function (grunt) {
     'testacular'
   ]);
 
-  grunt.registerTask('build', [
+  gruntacularunt.registerTask('build', [
     'clean:dist',
     // 'jshint',
     // 'test',

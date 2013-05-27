@@ -1,5 +1,4 @@
 'use strict';
-_.mixin deepExtend: underscoreDeepExtend(_)
 _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 
