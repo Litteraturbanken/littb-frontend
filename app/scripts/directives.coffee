@@ -79,6 +79,7 @@ littb.directive 'markee', () ->
             .addClass "markee"
 
 
+
 littb.directive 'letterMap', () ->
     template : """
         <table class="letters">
@@ -111,3 +112,24 @@ littb.directive 'letterMap', () ->
 
         s.setLetter = (l) ->
             s.selected = l
+
+littb.directive 'square', () ->
+    template : "<div></div>"
+    replace : false
+    scope : 
+        left : "=x"
+        top : "=y"
+        width : "="
+        height : "="
+    link : (scope, elm, attrs) ->
+        s = scope   
+        coors = _.pick scope, "top", "left", "width", "height"
+        c.log "coors", coors, _.isEmpty coors
+        unless _.compact(_.values(coors)).length then return
+        coors = _.object _.map coors, (val, key) ->
+            [key, val.split(",")[2] + "px"]
+
+        elm.css coors
+
+
+        

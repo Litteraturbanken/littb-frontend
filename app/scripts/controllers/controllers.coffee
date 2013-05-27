@@ -37,7 +37,7 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
             obj = _.pick item, "x", "y", "width", "height"
             return _(obj).pairs().invoke("join", "=").join("&")
         else 
-            return "traff=#{item.nodeid}}&traffslut=#{item.endnodeid}"
+            return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
 
     s.search = (query) ->
@@ -69,13 +69,14 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
 
 
 
-littb.controller "authorInfoCtrl", ($scope, backend, $routeParams) ->
+littb.controller "authorInfoCtrl", ($scope, $rootScope, backend, $routeParams) ->
     s = $scope
     _.extend s, $routeParams
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
 
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
+        $rootScope.appendCrumb data.surname
 
 
 littb.controller "titleListCtrl", ($scope, backend, util) ->
@@ -148,13 +149,27 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
 
 littb.controller "helpCtrl", ($scope, $http, util, $location) ->
     s = $scope
-    url = host "/red/om/hjalp/hjalp.html"
+    url = "/red/om/hjalp/hjalp.html"
     $http.get(url).success (data) ->
         s.htmlContent = data
         s.labelArray = for elem in $("[id]", data)
             label : $(elem).text()
             id : $(elem).attr("id")
 
+        util.setupHash s, {"ankare" : (val) ->
+            unless val
+                $(window).scrollTop(0)
+                return
+            $(window).scrollTop($("##{val}").offset().top)
+        }
+
+littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, util) ->
+    s = $scope
+    url = '/red/presentationer/presentationerForfattare.html'
+    $http.get(url).success (data) ->
+        s.doc = data
+        s.currentLetters = for elem in $("[id]", data)
+            $(elem).attr("id")
         util.setupHash s, {"ankare" : (val) ->
             unless val
                 $(window).scrollTop(0)
@@ -181,6 +196,14 @@ littb.controller "authorListCtrl", ($scope, backend, util) ->
             return last
     # $scope.
 
+littb.filter "correctLink", () ->
+    (html) ->
+        c.log "html", html
+        wrapper = $("<div>").append html
+        img = $("img", wrapper)
+        img.attr "src", "/red/bilder/gemensamt/" + img.attr("src")
+        return wrapper.html()
+
 
 littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
     s = $scope
@@ -194,11 +217,12 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
         s.errataLimit = if s.isOpen then 8 else 1000
         s.isOpen = !s.isOpen
 
+    
 
     s.getOtherMediatypes = () ->
         (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
 
-    backend.getSourceInfo(author, title, mediatype or "etext").then (data) ->
+    backend.getSourceInfo(author, title, mediatype).then (data) ->
         s.data = data
 
         s.mediatype = s.data.mediatypes[0]
@@ -267,17 +291,19 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
     ]
+        
+        
 
     watches = []
     watches.push s.$watch "pagename", (val) ->
         # c.log "pagename", val
+        unless val? then return
         s.displaynum = val
         $location.path("/forfattare/#{author}/titlar/#{title}/sida/#{val}/#{mediatype}")
 
 
-    watches.push s.$watch "getPage()", (val) ->
-        c.log "getPage watch", val
-        unless val? then return
+    loadPage = (val) ->
+        # unless val? then return
 
 
         s.pagename = val
@@ -299,10 +325,22 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pageix = s.pagemap["page_" + s.pagename]
 
             if mediatype == 'faksimil'
-                s.url = $("faksimil-url[size=3]", page).text()
+                s.url = $("faksimil-url[size=#{s.size + 1}]", page).last().text()
             else
                 page.children().remove()
                 s.etext_html = page.text()
+
+    s.size = 2
+    s.sizes = _.map [0...5], () -> false
+    s.sizes[s.size] = true
+    s.setSize = (index) ->
+        s.sizes = _.map [0...5], () -> false
+        s.sizes[index] = true
+        s.size = index
+        loadPage(s.getPage())
+
+
+    watches.push s.$watch "getPage()", loadPage
 
     s.$on "$destroy", () ->
         for w in watches
@@ -334,8 +372,10 @@ littb.factory "util", ($location) ->
 
 
     getInnerXML : (elem) ->
-        if "get" of elem
+        if "jquery" of elem
+            unless elem.length then return null
             elem = elem.get(0)
+
         strArray = for child in elem.childNodes
             xml2Str child
         return strArray.join("")
@@ -403,7 +443,6 @@ littb.factory "util", ($location) ->
             scope[name] = $location.search()[name]
             scope.$watch name, do (name) ->
                 (val) ->
-                    c.log "watch name", val
                     $location.search(name, val or null)
                     callback(val) if callback
 
@@ -454,7 +493,7 @@ littb.factory 'backend', ($http, $q, util) ->
     getTitles : ->
         def = $q.defer()
         http(
-            url : host "/query/lb-anthology.xql"
+            url : "/query/lb-anthology.xql"
             params:
                 action : "get-works"
 
@@ -478,7 +517,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getAuthorList : ->
         def = $q.defer()
-        url = host "/query/lb-authors.xql?action=get-authors"
+        url = "/query/lb-authors.xql?action=get-authors"
         # url = "authors.xml"
         http(
             url : url
@@ -491,16 +530,20 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
 
     getSourceInfo : (author, title, mediatype) ->
+        c.log "getSourceInfo", mediatype
         def = $q.defer()
-        url = host "/query/lb-anthology.xql"
+        url = "/query/lb-anthology.xql"
+        params = 
+            action : "get-work-info-init"
+            authorid : author
+            titlepath : title
+
+        if mediatype
+            params.mediatype = mediatype
 
         http(
             url : url
-            params :
-                action : "get-work-info-init"
-                authorid : author
-                titlepath : title
-                mediatype: mediatype
+            params : params
 
         ).success (xml) ->
             output = parseWorkInfo("result", xml)
@@ -523,6 +566,7 @@ littb.factory 'backend', ($http, $q, util) ->
             #     output.errata = util.getInnerXML errata
 
             sourcedesc = errata.parent().clone()
+            c.log "sourcedesc", sourcedesc
             sourcedesc.find("errata").remove()
             output.sourcedesc = (util.getInnerXML sourcedesc) or ""
 
@@ -532,7 +576,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getPage : (author, title, mediatype, pagenum) ->
         def = $q.defer()
-        url = host "/query/lb-anthology.xql"
+        url = "/query/lb-anthology.xql"
 
         params =
             action : "get-work-data-init"
@@ -572,7 +616,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getAuthorInfo : (author) ->
         def = $q.defer()
-        url = host "/query/lb-authors.xql"
+        url = "/query/lb-authors.xql"
         http(
             url : url
             params :
@@ -604,7 +648,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getStats : () ->
         def = $q.defer()
-        url = host "/query/lb-stats.xql"
+        url = "/query/lb-stats.xql"
         http(
 
             url : url
@@ -632,7 +676,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getTitlesByAuthor : (authorid) ->
         def = $q.defer()
-        url = host "/query/lb-anthology.xql"
+        url = "/query/lb-anthology.xql"
         http(
 
             url : url
@@ -651,7 +695,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     searchWorks : (query, mediatype) ->
         def = $q.defer()
-        url = host "/query/lb-search.xql"
+        url = "/query/lb-search.xql"
 
         http(
             method : "POST"

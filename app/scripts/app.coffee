@@ -3,7 +3,6 @@ _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 
 
-window.host = (url) -> "http://demolittbdev.spraakdata.gu.se" + url
 window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "template/typeahead/typeahead.html"
                                            "ui.bootstrap.modal"
@@ -22,33 +21,46 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 controller: 'startCtrl'
                 title : "Svenska klassiker som e-bok och epub"
             .when '/presentationer',
-                templateUrl: host '/red/presentationer/presentationerForfattare.html'
                 title : "Presentationer"
+                breadcrumb : ["presentationer"]
+                templateUrl : "views/presentations.html"
+                controller : "presentationCtrl"
+                        
+            .when '/presentationer/specialomraden/:doc',
+                controller : ($scope, $routeParams) ->
+                    $scope.doc = "/red/presentationer/specialomraden/#{$routeParams.doc}"
+                template : '''
+                        <div style="position:relative;" ng-include="doc"></div>
+                    '''
             .when '/om/aktuellt',
-                templateUrl: host '/red/om/aktuellt/aktuellt.html'
+                templateUrl: '/red/om/aktuellt/aktuellt.html'
                 title : "Aktuellt"
             .when '/om/rattigheter',
-                templateUrl: host '/red/om/rattigheter/rattigheter.html'
+                templateUrl: '/red/om/rattigheter/rattigheter.html'
                 title : "Rättigheter"
             .when '/om/ide',
-                templateUrl: host '/red/om/ide/omlitteraturbanken.html'
+                templateUrl: '/red/om/ide/omlitteraturbanken.html'
                 title : "Om LB"
                 reloadOnSearch : false
+                breadcrumb : ["idé"]
             .when '/om/inenglish',
-                templateUrl: host '/red/om/ide/inenglish.html'
+                templateUrl: '/red/om/ide/inenglish.html'
                 title : "In English"
+                breadcrumb : ["in english"]
                 reloadOnSearch : false
             .when '/om/hjalp',
-                # templateUrl: host '/red/om/hjalp/hjalp.html'
+                # templateUrl: '/red/om/hjalp/hjalp.html'
                 templateUrl : "views/help.html"
                 controller : "helpCtrl"
                 title : "Hjälp"
+                breadcrumb : ["hjälp"]
                 reloadOnSearch : false
             .when '/statistik',
                 templateUrl: 'views/stats.html'
                 controller : 'statsCtrl'
                 reloadOnSearch : false
                 title : "Statistik"
+                # breadcrumb : ["statistik"]
             .when '/sok',
                 templateUrl: 'views/search.html'
                 controller : 'searchCtrl'
@@ -70,6 +82,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 controller : "authorListCtrl"
                 title : "Författare"
                 reloadOnSearch : false
+                breadcrumb : ["författare"]
             .when "/forfattare/:author/titlar",
                 templateUrl : "views/authorTitles.html"
                 controller : "authorInfoCtrl"
@@ -78,6 +91,10 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
             .when "/forfattare/:author",
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
+                breadcrumb : [
+                    label : "författare"
+                    url : "#/forfattare"
+                ]
             .when "/forfattare/:author/titlar/:title/info",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"
@@ -116,12 +133,14 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 controller : 'contactFormCtrl'
                 reloadOnSearch : false
                 title : "Kontakt"
+                breadcrumb : ["kontakt"]
             .otherwise
                 redirectTo: '/'
 
-littb.config ['$httpProvider', ($httpProvider) ->
-  delete $httpProvider.defaults.headers.common["X-Requested-With"]
-]
+littb.config ($httpProvider, $locationProvider) ->
+    # $locationProvider.hashPrefix('!')
+    delete $httpProvider.defaults.headers.common["X-Requested-With"]
+
 
 littb.run ($rootScope, $location) ->
 
@@ -143,15 +162,26 @@ littb.run ($rootScope, $location) ->
         classList = ($("[ng-view]").attr("class") or "").split(" ")
         classList = _.filter classList, (item) -> not _.str.startsWith item, "page-"
         $("body").attr "class", classList.join(" ")
-        if newRoute.controller
+        if newRoute.controller?.replace
             $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""))
 
 
+        normalizeUrl = (str) ->
+            trans = _.object _.zip "åäö", "aao"
+
+            _.map str, (letter) ->
+                trans[letter.toLowerCase()] or letter
 
 
-    # $rootScope.$on "$routeChangeStart", (event, next, current) ->
+        $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
+            if _.isObject item 
+                item 
+            else
+                {label : item, url : "#/" + normalizeUrl(item).join("")}
 
-    # $rootScope.$on "$routeChangeError", () ->
+        $rootScope.appendCrumb = (label) ->
+            $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, [{label : label}]
+
 
 littb.filter "setMarkee", () ->
     return (input, fromid, toid) ->
@@ -168,4 +198,5 @@ littb.filter "setMarkee", () ->
 
         wrapper.append input
         return wrapper.html()
+
 

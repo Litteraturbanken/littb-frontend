@@ -1,14 +1,11 @@
 
-<br>
-
 <div css="{{workinfo.css}}" if="mediatype == 'etext'"></div>
 
 <div ng-switch on="mediatype">
     <img ng-src="{{url}}" ng-show="url" ng-switch-when="faksimil">
 
     <div ng-switch-when="etext" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
-
-    <!-- <span ng-switch-default>default</span> -->
+    <div ng-switch-when="faksimil" square x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
 </div>
 
 
@@ -68,7 +65,7 @@
 
         <div ng-show="showPopup" class="triangle"></div>
 
-
+        
 
         <ul class="part_menu" ng-show="showPopup">
             <li><a ng-click="gotopage(startpage)">[Start]</a></li>
@@ -78,6 +75,11 @@
             </li>
         </ul>
 
+    </div>
+
+    <div class="size_picker">
+        <div ng-class="{selected : size}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
+        
     </div>
 
     <div class="word_search">

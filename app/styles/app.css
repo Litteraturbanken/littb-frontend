@@ -1,9 +1,9 @@
 @charset "UTF-8";
 /*
  *  Litteraturbanken and sister projects (LBSP)
- *  Copyright (C) 2008-2011 Språkbanken, (The Swedish Language Bank),
+ *  Copyright (C) 2008-2011 SprÃ¥kbanken, (The Swedish Language Bank), 
  *  University of Gothenburg, <http://spraakbanken.gu.se/>.
- *  This file is part of Språkbanken's Corpus Infrastructure, especially LBSP.
+ *  This file is part of SprÃ¥kbanken's Corpus Infrastructure, especially LBSP.
  *
  *  LBSP is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
@@ -17,50 +17,59 @@
  *
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with LBSP.  If not, see <http://www.gnu.org/licenses/>.
- *
+ *  
  *  $Id: app.css 62131 2012-11-12 15:43:11Z johanrox $
  */
 /** Add css rules here for your application. */
 @media only screen and (max-width: 760px), (min-device-width: 768px) and (max-device-width: 1024px) {
   /* Force table to not be like tables anymore */
-  /* line 34, app.scss */
-  .page-titlar-epub {
-    /* Hide table headers (but not display: none;, for accessibility) */
-    	/*.app-titlar-titel {
-     	 font-size : 8px;
-     }*/
-  }
   /* line 40, app.scss */
+  .page-titlar-epub, .page-titlar {
+    /* Hide table headers (but not display: none;, for accessibility) */
+   /*.app-titlar-titel {
+    font-size : 8px;
+  }*/
+  }
+  /* line 46, app.scss */
   .page-titlar-epub table,
   .page-titlar-epub thead,
   .page-titlar-epub tbody,
   .page-titlar-epub th,
   .page-titlar-epub td,
-  .page-titlar-epub tr {
+  .page-titlar-epub tr, .page-titlar table,
+  .page-titlar thead,
+  .page-titlar tbody,
+  .page-titlar th,
+  .page-titlar td,
+  .page-titlar tr {
     display: block;
   }
-  /* line 43, app.scss */
-  .page-titlar-epub tr:first-child {
+  /* line 49, app.scss */
+  .page-titlar-epub tr:first-child, .page-titlar tr:first-child {
     display: none;
   }
-  /* line 48, app.scss */
-  .page-titlar-epub thead tr {
+  /* line 54, app.scss */
+  .page-titlar-epub thead tr, .page-titlar thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
-  /* line 54, app.scss */
-  .page-titlar-epub tr:nth-of-type(odd) {
+  /* line 60, app.scss */
+  .page-titlar-epub tr:nth-of-type(odd), .page-titlar tr:nth-of-type(odd) {
     background-color: #EDEDED;
   }
-  /* line 58, app.scss */
-  .page-titlar-epub td {
+  /* line 63, app.scss */
+  .page-titlar-epub .no_hits tr, .page-titlar .no_hits tr {
+    background-color: white;
+  }
+  /* line 67, app.scss */
+  .page-titlar-epub td, .page-titlar td {
     /* Behave  like a "row" */
     border: none;
     position: relative;
   }
-  /* line 64, app.scss */
-  .page-titlar-epub td:before {
+  /* line 73, app.scss */
+  .page-titlar-epub td:before, .page-titlar td:before {
     /* Now like a table header */
     position: absolute;
     /* Top/left values mimic padding */
@@ -70,62 +79,56 @@
     padding-right: 10px;
     white-space: nowrap;
   }
-  /* line 75, app.scss */
-  .page-titlar-epub .app-titlar-result {
+  /* line 84, app.scss */
+  .page-titlar-epub .app-titlar-result, .page-titlar .app-titlar-result {
     padding-right: 25px;
   }
-  /* line 79, app.scss */
-  .page-titlar-epub .app-utfyllt-element {
+  /* line 88, app.scss */
+  .page-titlar-epub .app-utfyllt-element, .page-titlar .app-utfyllt-element {
     background-color: transparent;
   }
-  /* line 82, app.scss */
-  .page-titlar-epub .app-punkt-utfyllnad {
+  /* line 91, app.scss */
+  .page-titlar-epub .app-punkt-utfyllnad, .page-titlar .app-punkt-utfyllnad {
     border-bottom: none;
   }
 }
-/* line 98, app.scss */
+/* line 107, app.scss */
 body {
   padding-left: 25px;
   padding-bottom: 2em;
   white-space: nowrap;
-  font-family: georgia,serif;
-  color: black;
-  font-size: 12px;
-  font-weight: normal;
-  line-height: 17.5px;
-  padding: 0;
 }
 
-/* line 110, app.scss */
+/* line 113, app.scss */
 body > * {
   white-space: normal;
 }
 
-/* IE hack för bugg 1244 */
-/* line 117, app.scss */
+/* IE hack fÃ¶r bugg 1244 */
+/* line 120, app.scss */
 li a {
   display: inline-block;
 }
 
-/* line 118, app.scss */
+/* line 121, app.scss */
 li a {
   display: block;
 }
 
 /* GENERELLT */
-/* line 121, app.scss */
+/* line 124, app.scss */
 ul, ol {
   list-style: none;
   padding-left: 0;
   margin-left: 0;
 }
 
-/* line 127, app.scss */
+/* line 130, app.scss */
 [role=button] {
   outline: none;
 }
 
-/* line 132, app.scss */
+/* line 135, app.scss */
 .app-body {
   font-family: georgia,serif;
   color: black;
@@ -135,49 +138,52 @@ ul, ol {
   padding: 0;
 }
 
-/* line 141, app.scss */
+/* line 144, app.scss */
 #app-rot-linkbar {
   float: right;
   position: relative;
-  top: -.5em;
+  top: -0.5em;
   margin: 0;
   display: none;
 }
 
-/* line 148, app.scss */
+/* line 151, app.scss */
 .state-start #app-rot-linkbar {
   display: block;
 }
 
-/* line 152, app.scss */
+/* line 155, app.scss */
 #app-rot-linkbar li {
+  display: -moz-inline-stack;
   display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  zoom: 1;
   *display: inline;
-  *zoom: 1;
 }
 
-/* line 157, app.scss */
+/* line 158, app.scss */
 #app-rot-linkbar a {
   color: black;
   font-size: 11px;
   text-decoration: none;
 }
 
-/* line 162, app.scss */
+/* line 163, app.scss */
 #app-rot-linkbar a:hover {
   color: #990000;
 }
 
-/* line 167, app.scss */
+/* line 168, app.scss */
 #app-rot-linkbar li:not(:first-of-type) {
   margin-left: 6px;
 }
 
-/* line 172, app.scss */
+/* line 173, app.scss */
 #app-rot-linkbar li:not(:first-of-type) a:before {
   content: ".";
   font-weight: bold;
-  /* 	margin-left: 0.3em; */
+  /*  margin-left: 0.3em; */
   /*     margin-right: 0.9em;  */
   color: black;
   position: relative;
@@ -185,18 +191,18 @@ ul, ol {
   right: 5px;
 }
 
-/* line 183, app.scss */
+/* line 184, app.scss */
 #maindiv {
   vertical-align: top;
   position: relative;
 }
 
-/* line 188, app.scss */
+/* line 189, app.scss */
 .state-not-parallel #maindiv {
   width: 100%;
 }
 
-/* line 192, app.scss */
+/* line 193, app.scss */
 .app-body-medium {
   font-family: georgia,serif;
   color: black;
@@ -206,7 +212,7 @@ ul, ol {
   padding: 0;
 }
 
-/* line 201, app.scss */
+/* line 202, app.scss */
 .app-body-liten {
   font-family: georgia,serif;
   color: black;
@@ -216,7 +222,7 @@ ul, ol {
   padding: 0;
 }
 
-/* line 210, app.scss */
+/* line 211, app.scss */
 .app-body-tat {
   font-family: georgia,serif;
   color: black;
@@ -226,7 +232,7 @@ ul, ol {
   padding: 0;
 }
 
-/* line 219, app.scss */
+/* line 220, app.scss */
 .app-body-liten-tat {
   font-family: georgia,serif;
   color: black;
@@ -236,7 +242,7 @@ ul, ol {
   padding: 0;
 }
 
-/* line 228, app.scss */
+/* line 229, app.scss */
 .app-body-tabell {
   font-family: georgia,serif;
   color: black;
@@ -247,7 +253,7 @@ ul, ol {
   margin: 0;
 }
 
-/* line 238, app.scss */
+/* line 239, app.scss */
 .app-body-stor-kursiv {
   font-family: georgia,serif;
   color: black;
@@ -258,19 +264,19 @@ ul, ol {
   padding: 0;
 }
 
-/* line 248, app.scss */
+/* line 249, app.scss */
 .app-tat {
   line-height: 13.9833px;
 }
 
-/* line 252, app.scss */
+/* line 253, app.scss */
 .app-text-medel {
   font-family: georgia,serif;
   font-size: 16px;
   font-style: normal;
 }
 
-/* line 258, app.scss */
+/* line 259, app.scss */
 .app-text-stor {
   font-family: georgia,serif;
   font-size: 18px;
@@ -279,100 +285,103 @@ ul, ol {
   color: white;
 }
 
-/* line 268, app.scss */
+/* line 269, app.scss */
 .app-body-etext {
-  font-family: Georgia, Times, serif;
+  font-family: Georgia, Times,  serif;
   color: black;
   font-size: 10pt;
 }
 
-/* line 274, app.scss */
+/* line 275, app.scss */
 .app-text {
   font-size: 12px;
 }
 
-/* line 278, app.scss */
+/* line 279, app.scss */
 .app-text-liten {
   font-size: 10px;
 }
 
-/* line 282, app.scss */
+/* line 283, app.scss */
 .app-text-rod {
   font-size: 12px;
   color: #990000;
 }
 
-/* line 287, app.scss */
+/* line 288, app.scss */
 .app-text-fet-rod {
   font-size: 12px;
   font-weight: bold;
   color: #990000;
 }
 
-/* line 293, app.scss */
+/* line 294, app.scss */
 .app-text-gra {
   color: gray !important;
 }
 
-/* line 297, app.scss */
+/* line 298, app.scss */
 .app-text-fet {
   font-size: 12px;
   font-weight: bold;
 }
 
-/* line 302, app.scss */
+/* line 303, app.scss */
 .app-text-kursiv {
   font-style: italic;
 }
 
-/* line 306, app.scss */
+/* line 307, app.scss */
 .app-text-rod-kursiv {
   color: #990000;
   font-style: italic;
 }
 
-/* line 311, app.scss */
+/* line 312, app.scss */
 .app-text-kapital {
   font-family: georgia,serif;
   font-variant: small-caps;
   font-size: 15px;
 }
 
-/* line 317, app.scss */
+/* line 318, app.scss */
 .app-text-blink {
   text-decoration: blink;
 }
 
-/* line 321, app.scss */
+/* line 322, app.scss */
 .app-inline {
+  display: -moz-inline-stack;
   display: inline-block;
-  *display: inline;
+  vertical-align: middle;
+  *vertical-align: auto;
   zoom: 1;
+  *display: inline;
 }
 
-/* line 327, app.scss */
+/* line 326, app.scss */
 #app-rot-huvudmeny {
   vertical-align: middle;
 }
 
-/* line 331, app.scss */
+/* line 330, app.scss */
 .app-margin-top {
   margin-top: 15px;
 }
 
-/* line 335, app.scss */
+/* line 334, app.scss */
 .app-undermeny {
   margin-top: 10px;
 }
 
-/* line 339, app.scss */
+/* line 338, app.scss */
 .app-status-message {
   position: absolute;
   top: 15px;
   left: 566px;
 }
 
-/* line 345, app.scss */
+/* line 344, app.scss */
 .app-tooltip {
   background-color: #990000;
   font-size: 14px;
@@ -383,12 +392,12 @@ ul, ol {
   padding-left: 5px;
   width: auto;
   max-width: 350px;
-  /* 	white-space:normal; */
+  /*  white-space:normal; */
   height: auto;
   z-index: 200;
 }
 
-/* line 360, app.scss */
+/* line 359, app.scss */
 .app-tooltip-svart {
   background-color: black;
   font-size: 14px;
@@ -397,55 +406,55 @@ ul, ol {
   opacity: 0.85;
   width: auto;
   max-width: 350px;
-  /* 	white-space:normal; */
+  /*  white-space:normal; */
   height: auto;
   padding: 5px;
   z-index: 200;
 }
 
-/* line 374, app.scss */
+/* line 373, app.scss */
 .app-sidhjalp {
   width: 118px;
   margin-top: 35px;
   z-index: 0;
 }
 
-/* line 380, app.scss */
+/* line 379, app.scss */
 .app-sidhjalptext {
   z-index: 1;
 }
 
-/* line 384, app.scss */
+/* line 383, app.scss */
 .app-sidhjalptext a:link {
   text-decoration: none;
   color: black;
 }
 
-/* line 389, app.scss */
+/* line 388, app.scss */
 .app-sidhjalptext a:visited {
   text-decoration: none;
   color: black;
 }
 
-/* line 393, app.scss */
+/* line 392, app.scss */
 .app-sidhjalptext a:active {
   text-decoration: none;
   color: black;
 }
 
-/* line 398, app.scss */
+/* line 397, app.scss */
 .app-sidhjalptext a:hover {
   text-decoration: underline;
   color: red;
 }
 
-/* line 403, app.scss */
+/* line 402, app.scss */
 .app-ankarmeny li {
   margin-bottom: 2px;
 }
 
-/* regler för logotyp */
-/* line 409, app.scss */
+/* regler fÃ¶r logotyp */
+/* line 408, app.scss */
 #app-rot-header hr {
   display: none;
   width: 350px;
@@ -454,13 +463,13 @@ ul, ol {
   border-top: 1px solid grey;
 }
 
-/* line 417, app.scss */
+/* line 416, app.scss */
 body.site-littb.svg.state-start #app-rot-header hr {
   display: block;
   text-align: left;
 }
 
-/* line 421, app.scss */
+/* line 420, app.scss */
 body.site-littb.svg #logo_img {
   background-image: url("/bilder/LBlogga.svg");
   background-size: contain;
@@ -469,7 +478,7 @@ body.site-littb.svg #logo_img {
   height: 25px;
 }
 
-/* line 428, app.scss */
+/* line 427, app.scss */
 body.site-littb.state-start.svg #logo_img {
   background-image: url("/bilder/LBlogga.svg");
   background-size: contain;
@@ -478,20 +487,20 @@ body.site-littb.state-start.svg #logo_img {
   margin-left: -17px;
 }
 
-/* line 436, app.scss */
+/* line 435, app.scss */
 body.state-start #logo_img {
   background-image: url("/bilder/LBloggaochstreckHel.png");
   height: 80px;
   margin-left: -9px;
 }
 
-/* relativ positionering för länkens skull */
-/* line 442, app.scss */
+/* relativ positionering fÃ¶r lÃ¤nkens skull */
+/* line 441, app.scss */
 #app-rot-logga {
   position: relative;
 }
 
-/* line 446, app.scss */
+/* line 445, app.scss */
 #logo_img {
   background-image: url("/bilder/LBunderloggaochstreck.png");
   background-repeat: no-repeat;
@@ -499,7 +508,7 @@ body.state-start #logo_img {
   height: 30px;
 }
 
-/* line 452, app.scss */
+/* line 451, app.scss */
 #app-rot-logga a {
   position: absolute;
   width: 270px;
@@ -507,26 +516,26 @@ body.state-start #logo_img {
   color: grey;
 }
 
-/* ingen länk på startsidan */
-/* line 459, app.scss */
+/* ingen lÃ¤nk pÃ¥ startsidan */
+/* line 458, app.scss */
 body.state-start #app-rot-logga a {
   display: none;
 }
 
-/* line 464, app.scss */
-#app-rot-arbetsyta {
+/* line 463, app.scss */
+.site-littb #app-rot-arbetsyta, .site-spf #app-rot-arbetsyta {
   margin-top: 10px;
   white-space: normal;
   vertical-align: top;
   background-color: white;
 }
 
-/* line 470, app.scss */
+/* line 469, app.scss */
 #app-rot-undermeny {
   margin-top: 34px;
 }
 
-/* line 474, app.scss */
+/* line 473, app.scss */
 #alphabetT {
   width: 102px;
   padding: 20px 0;
@@ -534,26 +543,26 @@ body.state-start #app-rot-logga a {
   border-bottom: solid 1px grey;
 }
 
-/* line 481, app.scss */
+/* line 480, app.scss */
 .app-start-arbetsyta {
   position: relative;
   width: 478px;
   margin-left: 60px;
 }
 
-/* line 487, app.scss */
+/* line 486, app.scss */
 .app-start-sok {
   margin-top: 220px;
 }
 
-/* line 491, app.scss */
+/* line 490, app.scss */
 .app-start-skicka {
   position: relative;
   left: 2px;
   top: 2px;
 }
 
-/* line 497, app.scss */
+/* line 496, app.scss */
 .app-start-status {
   position: relative;
   left: -35px;
@@ -562,12 +571,12 @@ body.state-start #app-rot-logga a {
   border: 0px none;
 }
 
-/* line 505, app.scss */
+/* line 504, app.scss */
 body.state-start #app-rot-header {
   border: none;
 }
 
-/* line 508, app.scss */
+/* line 507, app.scss */
 #app-rot-header {
   width: 675px;
   position: relative;
@@ -575,33 +584,33 @@ body.state-start #app-rot-header {
   margin-top: 25px;
 }
 
-/* line 516, app.scss */
+/* line 515, app.scss */
 #app-rot-bokmarke {
   bottom: 0;
   right: 0;
   position: absolute;
 }
 
-/* line 522, app.scss */
+/* line 521, app.scss */
 #app-rot-meny {
-  /* 	margin-left:24px; */
+  /*  margin-left:24px; */
   margin-top: 15px;
   white-space: normal;
 }
 
-/* line 528, app.scss */
+/* line 527, app.scss */
 .app-meny {
   width: 120px;
   margin-right: 40px;
 }
 
-/* line 536, app.scss */
+/* line 535, app.scss */
 .app-arbetsyta-text {
   width: 437px;
   margin: 1em 0 0 1em;
 }
 
-/* line 541, app.scss */
+/* line 540, app.scss */
 .app-arbetsyta-lista {
   height: 118px;
   left: 200px;
@@ -609,7 +618,7 @@ body.state-start #app-rot-header {
   width: 507px;
 }
 
-/* line 548, app.scss */
+/* line 547, app.scss */
 .app-meddelande {
   left: 200px;
   position: absolute;
@@ -625,7 +634,7 @@ body.state-start #app-rot-header {
   opacity: 0.85;
 }
 
-/* line 563, app.scss */
+/* line 562, app.scss */
 .app-skicka {
   position: relative;
   left: 2px;
@@ -635,14 +644,14 @@ body.state-start #app-rot-header {
 }
 
 /* TEXTVISNING_ETEXT */
-/* line 572, app.scss */
+/* line 571, app.scss */
 .app-arbetsyta-etext {
   border: 0px none;
   white-space: nowrap;
   position: relative;
 }
 
-/* line 578, app.scss */
+/* line 577, app.scss */
 .app-kontextmeny {
   background-color: gray;
   border-color: gray gray gray gray;
@@ -651,13 +660,13 @@ body.state-start #app-rot-header {
   z-index: 200;
 }
 
-/* line 586, app.scss */
+/* line 585, app.scss */
 .app-kontextmenyval {
   font-weight: normal;
   font-size: 80%;
 }
 
-/* line 591, app.scss */
+/* line 590, app.scss */
 .app-kontext-result-div {
   background-color: white;
   opacity: 0.85;
@@ -666,7 +675,7 @@ body.state-start #app-rot-header {
   z-index: 200;
 }
 
-/* line 599, app.scss */
+/* line 598, app.scss */
 .app-kontext-result-text {
   background-color: #990000;
   font-size: 14px;
@@ -684,13 +693,13 @@ body.state-start #app-rot-header {
 }
 
 /* KALLINFO */
-/* line 616, app.scss */
+/* line 615, app.scss */
 errata td {
   width: 78px;
   font-weight: bold;
 }
 
-/* line 621, app.scss */
+/* line 620, app.scss */
 errata td + td {
   width: auto;
   font-weight: normal;
@@ -698,34 +707,34 @@ errata td + td {
 }
 
 /* FORFATTARE */
-/* line 628, app.scss */
+/* line 627, app.scss */
 .app-arbetsyta-forfattare {
   margin-top: 2em;
   width: 520px;
   border: 0px none;
 }
 
-/* line 634, app.scss */
+/* line 633, app.scss */
 .app-forfattare-intro {
   border: 0 none;
   width: 437px;
 }
 
-/* line 639, app.scss */
+/* line 638, app.scss */
 .app-forfattare-verklank {
   margin-bottom: 20px;
 }
 
-/* line 643, app.scss */
+/* line 642, app.scss */
 .app-forfattare-portratt {
   border: 0 none;
   right: 0px;
   padding: 0;
-  /* 	position:absolute; */
+  /*  position:absolute; */
   width: auto;
 }
 
-/* line 651, app.scss */
+/* line 650, app.scss */
 .app-forfattare-bildinfo {
   text-align: right;
   padding: 0;
@@ -734,7 +743,7 @@ errata td + td {
   border: 0px none;
 }
 
-/* line 659, app.scss */
+/* line 658, app.scss */
 .app-forfattare-bild1 {
   text-align: right;
   padding: 0;
@@ -743,21 +752,21 @@ errata td + td {
 }
 
 /* TEXTVISNING_FAKSIMIL */
-/* line 669, app.scss */
+/* line 668, app.scss */
 .app-arbetsyta-faksimil {
   position: relative;
   white-space: nowrap;
 }
 
-/* line 677, app.scss */
+/* line 676, app.scss */
 .app-status-faksimil {
-  /* 	height : 1em; */
+  /*  height : 1em; */
   margin-bottom: 5px;
   height: 0;
   overflow: visible;
 }
 
-/* line 684, app.scss */
+/* line 683, app.scss */
 .app-faksimil-markering {
   position: absolute;
   opacity: 0.6;
@@ -768,31 +777,31 @@ errata td + td {
   z-index: 500;
 }
 
-/* line 694, app.scss */
+/* line 693, app.scss */
 .app-faksimil-storlekar {
   margin-top: 5px;
 }
 
 /* TEXTVISNING - verktygslada */
-/* line 699, app.scss */
+/* line 698, app.scss */
 .app-text-sidnavigator {
-  	/*position:absolute;
-  		left:-3px;
-  
-  	*/
+    /*position:absolute;
+        left:-3px;
+
+    */
   height: 30px;
   width: 103px;
   z-index: 100;
 }
 
-/* line 709, app.scss */
+/* line 708, app.scss */
 .app-text-pil {
   display: inline;
   border: none;
   z-index: 1;
 }
 
-/* line 715, app.scss */
+/* line 714, app.scss */
 .app-text-sidnavigator:hover {
   text-decoration: none;
   color: #990000;
@@ -800,14 +809,14 @@ errata td + td {
   cursor: pointer;
 }
 
-/* line 723, app.scss */
+/* line 722, app.scss */
 .app-text-sidfalt {
   margin-top: 5px;
   width: 50px;
   height: 24px;
 }
 
-/* line 729, app.scss */
+/* line 728, app.scss */
 .app-text-fulldelnav {
   color: white;
   min-width: 90px;
@@ -815,17 +824,17 @@ errata td + td {
   white-space: nowrap;
 }
 
-/* line 737, app.scss */
+/* line 736, app.scss */
 .fullPartNavigation {
   position: relative;
 }
 
-/* line 741, app.scss */
+/* line 740, app.scss */
 .fullPartNavigation > img {
-  /* 	margin : 5px 0; */
+  /*  margin : 5px 0; */
 }
 
-/* line 745, app.scss */
+/* line 744, app.scss */
 .fullPartPopup {
   position: absolute;
   bottom: 0;
@@ -835,12 +844,12 @@ errata td + td {
   opacity: 0.85;
 }
 
-/* line 754, app.scss */
+/* line 753, app.scss */
 .app-text-fulldelnav-skroll:hover {
   cursor: pointer;
 }
 
-/* line 758, app.scss */
+/* line 757, app.scss */
 .app-text-fulldelnav-dek {
   left: -25px;
   position: relative;
@@ -848,7 +857,7 @@ errata td + td {
   -webkit-margin-after: -1px;
 }
 
-/* line 766, app.scss */
+/* line 765, app.scss */
 .app-text-fulldelnav-td {
   font-size: 12px;
   font-style: italic;
@@ -861,14 +870,14 @@ errata td + td {
   z-index: 100;
 }
 
-/* line 778, app.scss */
+/* line 777, app.scss */
 .app-text-fulldelnav-td:hover {
   text-decoration: underline;
   cursor: hand;
   cursor: pointer;
 }
 
-/* line 784, app.scss */
+/* line 783, app.scss */
 .app-text-delnavigation-td {
   font-size: 10px;
   font-style: italic;
@@ -878,7 +887,7 @@ errata td + td {
   z-index: 100;
 }
 
-/* line 793, app.scss */
+/* line 792, app.scss */
 .app-text-delnavigation-td:hover {
   text-decoration: none;
   color: #990000;
@@ -887,13 +896,13 @@ errata td + td {
 }
 
 /* PRESENTATIONER */
-/* line 802, app.scss */
+/* line 801, app.scss */
 .app-arbetsyta-presentationer {
   width: 513px;
   margin: 3em 0 0 2em;
 }
 
-/* line 808, app.scss */
+/* line 807, app.scss */
 div.txt {
   white-space: nowrap;
   margin-top: 3em;
@@ -903,7 +912,7 @@ div.txt {
   text-align: left;
 }
 
-/* line 819, app.scss */
+/* line 818, app.scss */
 .app-arbetsyta-aktuellpresentation {
   width: 437px;
   margin: 2em 0 0 2em;
@@ -911,16 +920,16 @@ div.txt {
 }
 
 /* LISTSIDOR (ListPage)*/
-/* line 827, app.scss */
+/* line 826, app.scss */
 .app-arbetsyta-tabell {
-  /* 	position: absolute; */
+  /*  position: absolute; */
   top: 78px;
   left: 178px;
   width: 554px;
   border: 0px none;
 }
 
-/* line 837, app.scss */
+/* line 836, app.scss */
 .app-sortbutton {
   border: 0px none;
   font-size: 9pt;
@@ -929,7 +938,7 @@ div.txt {
   margin-bottom: 8px;
 }
 
-/* line 847, app.scss */
+/* line 846, app.scss */
 .app-sortbutton:hover {
   text-decoration: none;
   color: #990000;
@@ -937,7 +946,7 @@ div.txt {
   cursor: pointer;
 }
 
-/* line 854, app.scss */
+/* line 853, app.scss */
 .app-table_element {
   font-size: 12px;
   border: 0px none;
@@ -948,42 +957,48 @@ div.txt {
   padding-bottom: 0px;
 }
 
-/* line 864, app.scss */
+/* line 863, app.scss */
 .app-tomt-tabell_element {
   height: 12px;
 }
 
-/* line 868, app.scss */
+/* line 867, app.scss */
 .app-utfyllt-element {
-  vertical-align: text-top;
+  position: relative;
+  z-index: 10;
+  display: -moz-inline-stack;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  zoom: 1;
+  *display: inline;
+  background-color: white;
 }
 
-/* line 874, app.scss */
+/* line 878, app.scss */
 .app-punkt-utfyllnad {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 3px;
+  position: relative;
+  display: block;
   border-bottom: 1px dotted #C0C0C0;
+  top: -5px;
 }
 
-/* line 883, app.scss */
+/* line 885, app.scss */
 .app-td-div {
   position: relative;
   padding: 0;
   margin: 0;
   line-height: 17.4px;
-  overflow: hidden;
 }
 
 /* LISTSIDOR - TITLAR_A-O */
-/* line 894, app.scss */
+/* line 895, app.scss */
 .app-titlar-status2 {
   width: 512px;
   text-align: right;
 }
 
-/* line 899, app.scss */
+/* line 900, app.scss */
 .app-titlar-titel {
   width: 457px;
   max-width: 457px;
@@ -994,7 +1009,7 @@ div.txt {
   font-style: italic;
 }
 
-/* line 909, app.scss */
+/* line 910, app.scss */
 .app-titlar-forfattare-first {
   width: 246px;
   max-width: 246px;
@@ -1004,48 +1019,48 @@ div.txt {
   vertical-align: top;
 }
 
-/* line 919, app.scss */
+/* line 920, app.scss */
 .app-titlar-forfattare {
   width: 246px;
   vertical-align: bottom;
 }
 
-/* line 924, app.scss */
+/* line 925, app.scss */
 .app-titlar-intro {
   width: 520px;
 }
 
-/* line 928, app.scss */
+/* line 929, app.scss */
 .app-titlar-formular-topp {
   left: 1px;
 }
 
-/* line 932, app.scss */
+/* line 933, app.scss */
 .app-titlar-formular-topp {
   left: 1px;
   top: 0px;
 }
 
-/* line 937, app.scss */
+/* line 938, app.scss */
 .app-titlar-formular {
-  /* 	position:absolute; */
+  /*  position:absolute; */
   left: 1px;
   top: 146px;
 }
 
-/* line 943, app.scss */
+/* line 944, app.scss */
 .app-titlar-mediatyp {
   width: 246px;
   font-size: 12px;
   vertical-align: bottom;
 }
 
-/* line 949, app.scss */
+/* line 950, app.scss */
 .app-titlar-rad1 {
   margin: 15px 0;
 }
 
-/* line 953, app.scss */
+/* line 954, app.scss */
 .app-titlar-rad2 {
   position: relative;
   left: 1px;
@@ -1053,24 +1068,24 @@ div.txt {
   height: 37px;
 }
 
-/* line 960, app.scss */
+/* line 961, app.scss */
 .app-titlar-rad2 .app-inline {
   vertical-align: baseline;
 }
 
-/* line 964, app.scss */
+/* line 965, app.scss */
 .app-titlar-fras {
   width: 107px;
   margin-left: 5px;
 }
 
-/* line 969, app.scss */
+/* line 970, app.scss */
 .app-titlar-result {
   margin: 20px 0;
   position: relative;
 }
 
-/* line 974, app.scss */
+/* line 975, app.scss */
 .app-titlar-status {
   left: 209px;
   position: relative;
@@ -1079,13 +1094,13 @@ div.txt {
   width: 300px;
 }
 
-/* line 982, app.scss */
+/* line 983, app.scss */
 td .app-inga-traffar {
   padding: 0px;
   white-space: nowrap;
 }
 
-/* line 987, app.scss */
+/* line 988, app.scss */
 .app-verkilb-td1 {
   width: 291px;
   font-size: 12px;
@@ -1095,50 +1110,49 @@ td .app-inga-traffar {
   max-width: 291px;
 }
 
-/*Listsidor - F�RFATTARE A-� */
-/* line 997, app.scss */
+/*Listsidor - Fï¿½RFATTARE A-ï¿½ */
+/* line 998, app.scss */
 .app-forflista-sok {
   height: 39px;
   left: 0px;
-  /* 	position:absolute; */
+  /*  position:absolute; */
   top: 2px;
   width: 600px;
 }
 
-/* line 1005, app.scss */
+/* line 1006, app.scss */
 app-forflista-status {
   left: 344px;
-  /* 	position:absolute; */
+  /*  position:absolute; */
   top: 90px;
   width: 300px;
 }
 
 /* SAMMA SOM app-titel-fras */
-/* line 1013, app.scss */
+/* line 1014, app.scss */
 .app-forflista-fras {
   width: 107px;
   margin-left: 5px;
   width: 107px;
 }
 
-/* line 1019, app.scss */
+/* line 1020, app.scss */
 .app-forflista-result {
   left: 0px;
-  /* 	position:absolute; */
+  /*  position:absolute; */
   top: 70px;
   width: 700px;
   margin-bottom: 20px;
   white-space: nowrap;
 }
 
-/* line 1028, app.scss */
+/* line 1029, app.scss */
 .app-forflista-td1 {
   width: 235px;
-  max-width: 235px;
   margin: 0;
   border: 0px none;
   text-align: left;
-  vertical-align: text-bottom;
+  vertical-align: bottom;
   word-wrap: normal;
 }
 
@@ -1166,7 +1180,7 @@ app-forflista-status {
 /* For alfabetet */
 /* line 1060, app.scss */
 .app-toppstreck-inbaddat {
-  /* 	position:absolute; */
+  /*  position:absolute; */
   left: -3px;
   top: -25px;
   width: 116px;
@@ -1175,7 +1189,7 @@ app-forflista-status {
 
 /* line 1068, app.scss */
 .app-bottenstreck-inbaddat {
-  /* 	position:absolute; */
+  /*  position:absolute; */
   left: -4px;
   top: 123px;
   width: 118px;
@@ -1202,7 +1216,7 @@ app-forflista-status {
 
 /* line 1092, app.scss */
 .app-streck {
-  /* 	position:absolute; */
+  /*  position:absolute; */
   left: -3px;
   width: 116px;
   height: 16px;
@@ -1211,7 +1225,7 @@ app-forflista-status {
 /* t ex TEXTVISNING */
 /* line 1100, app.scss */
 .app-toppstreck-hogre {
-  /* 	position:absolute; */
+  /*  position:absolute; */
   left: 29px;
   top: 255px;
   width: 116px;
@@ -1220,7 +1234,7 @@ app-forflista-status {
 
 /* line 1108, app.scss */
 .app-bottenstreck-hogre {
-  /* 	position:absolute; */
+  /*  position:absolute; */
   top: 388px;
   left: 29px;
   width: 116px;
@@ -1249,8 +1263,8 @@ app-forflista-status {
 .app-undermeny-verkinfo {
   margin-top: 3px;
   margin-bottom: 1em;
-  /* 	height:60px; */
-  /* 	width:116px; */
+  /*  height:60px; */
+  /*  width:116px; */
 }
 
 /* line 1143, app.scss */
@@ -1288,13 +1302,13 @@ app-forflista-status {
   margin-right: 2em;
 }
 
-/* UNDERMENY for AKTUELL_FÖRFATTARE */
+/* UNDERMENY for AKTUELL_FÃ–RFATTARE */
 /*.app-undermeny-forfattare {
-	height:166px;
-	left:32px;
-	position:absolute;
-	top:332px;
-	width:120px;
+    height:166px;
+    left:32px;
+    position:absolute;
+    top:332px;
+    width:120px;
 }*/
 /* line 1197, app.scss */
 .app-undermeny-aktuell {
@@ -1465,7 +1479,7 @@ app-forflista-status {
 
 /* line 1341, app.scss */
 .app-body-statistik {
-  font-family: Georgia, Times, serif;
+  font-family: Georgia, Times,  serif;
   color: black;
   font-size: 10pt;
 }
@@ -1476,18 +1490,18 @@ app-forflista-status {
 }
 
 /* line 1351, app.scss */
-[content="❦"]::after {
-  content: "❦";
+[content="â¦"]::after {
+  content: "â¦";
 }
 
 /* line 1354, app.scss */
-[content="❦"] img {
+[content="â¦"] img {
   display: none;
 }
 
 /* line 1358, app.scss */
 div.pname {
-  /* 	position : relative !important; */
+  /*  position : relative !important; */
 }
 
 /* line 1362, app.scss */
@@ -1565,7 +1579,7 @@ body.state-start .app-start-arbetsyta {
 }
 /* line 1428, app.scss */
 .site-spf .txt {
-  width: 30em;
+  width: 20em;
   margin-right: 4em;
 }
 /* line 1433, app.scss */
@@ -1667,7 +1681,7 @@ body.state-start .app-start-arbetsyta {
 /* line 1529, app.scss */
 .site-sla a:link, .site-sla a:visited {
   text-decoration: none;
-  /* Dick vill ha det här vitt */
+  /* Dick vill ha det hÃ¤r vitt */
   color: black;
   background-color: transparent;
 }
@@ -1694,4 +1708,140 @@ body.state-start .app-start-arbetsyta {
 /* line 1555, app.scss */
 .site-sla.state-start #logo_img {
   height: 105px;
+}
+
+/* line 1565, app.scss */
+.page-kallinfoetext, .page-kallinfofaksimil, .page-kallinfopdf, .page-kallinfozip, .page-kallinfoepub {
+  width: 500px;
+}
+/* line 1568, app.scss */
+.page-kallinfoetext.showing_image .cover, .page-kallinfofaksimil.showing_image .cover, .page-kallinfopdf.showing_image .cover, .page-kallinfozip.showing_image .cover, .page-kallinfoepub.showing_image .cover {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.6);
+}
+/* line 1577, app.scss */
+.page-kallinfoetext .largeImage, .page-kallinfofaksimil .largeImage, .page-kallinfopdf .largeImage, .page-kallinfozip .largeImage, .page-kallinfoepub .largeImage {
+  position: absolute;
+  top: 50px;
+  left: 160px;
+  width: 500px;
+}
+/* line 1582, app.scss */
+.page-kallinfoetext .largeImage img, .page-kallinfofaksimil .largeImage img, .page-kallinfopdf .largeImage img, .page-kallinfozip .largeImage img, .page-kallinfoepub .largeImage img {
+  display: block;
+  margin: 0 auto;
+}
+/* line 1588, app.scss */
+.page-kallinfoetext .mainPanel > div, .page-kallinfofaksimil .mainPanel > div, .page-kallinfopdf .mainPanel > div, .page-kallinfozip .mainPanel > div, .page-kallinfoepub .mainPanel > div {
+  margin: 20px 0;
+}
+/* line 1591, app.scss */
+.page-kallinfoetext .left_column, .page-kallinfofaksimil .left_column, .page-kallinfopdf .left_column, .page-kallinfozip .left_column, .page-kallinfoepub .left_column {
+  float: left;
+  width: 358px;
+}
+/* line 1595, app.scss */
+.page-kallinfoetext .left_column > div, .page-kallinfofaksimil .left_column > div, .page-kallinfopdf .left_column > div, .page-kallinfozip .left_column > div, .page-kallinfoepub .left_column > div {
+  margin: 20px 0;
+}
+/* line 1598, app.scss */
+.page-kallinfoetext .left_column .header, .page-kallinfofaksimil .left_column .header, .page-kallinfopdf .left_column .header, .page-kallinfozip .left_column .header, .page-kallinfoepub .left_column .header {
+  margin-top: 0;
+}
+/* line 1603, app.scss */
+.page-kallinfoetext .errata, .page-kallinfofaksimil .errata, .page-kallinfopdf .errata, .page-kallinfozip .errata, .page-kallinfoepub .errata {
+  margin-top: 40px;
+}
+/* line 1606, app.scss */
+.page-kallinfoetext .errataHeader, .page-kallinfofaksimil .errataHeader, .page-kallinfopdf .errataHeader, .page-kallinfozip .errataHeader, .page-kallinfoepub .errataHeader {
+  margin-bottom: 1em;
+}
+/* line 1609, app.scss */
+.page-kallinfoetext .errataBody, .page-kallinfofaksimil .errataBody, .page-kallinfopdf .errataBody, .page-kallinfozip .errataBody, .page-kallinfoepub .errataBody {
+  margin-bottom: .5em;
+}
+/* line 1613, app.scss */
+.page-kallinfoetext .link, .page-kallinfofaksimil .link, .page-kallinfopdf .link, .page-kallinfozip .link, .page-kallinfoepub .link {
+  cursor: pointer;
+}
+/* line 1618, app.scss */
+.page-kallinfoetext .more, .page-kallinfofaksimil .more, .page-kallinfopdf .more, .page-kallinfozip .more, .page-kallinfoepub .more {
+  cursor: pointer;
+  float: right;
+  margin-top: 10px;
+}
+/* line 1623, app.scss */
+.page-kallinfoetext .more:hover, .page-kallinfofaksimil .more:hover, .page-kallinfopdf .more:hover, .page-kallinfozip .more:hover, .page-kallinfoepub .more:hover {
+  color: #990000;
+}
+/* line 1628, app.scss */
+.page-kallinfoetext .word.truncated:after, .page-kallinfofaksimil .word.truncated:after, .page-kallinfopdf .word.truncated:after, .page-kallinfozip .word.truncated:after, .page-kallinfoepub .word.truncated:after {
+  content: "...";
+}
+/* line 1631, app.scss */
+.page-kallinfoetext .cover_image, .page-kallinfofaksimil .cover_image, .page-kallinfopdf .cover_image, .page-kallinfozip .cover_image, .page-kallinfoepub .cover_image {
+  float: right;
+  cursor: pointer;
+}
+/* line 1637, app.scss */
+.page-kallinfoetext .cover_image, .page-kallinfoetext .word, .page-kallinfoetext .more, .page-kallinfofaksimil .cover_image, .page-kallinfofaksimil .word, .page-kallinfofaksimil .more, .page-kallinfopdf .cover_image, .page-kallinfopdf .word, .page-kallinfopdf .more, .page-kallinfozip .cover_image, .page-kallinfozip .word, .page-kallinfozip .more, .page-kallinfoepub .cover_image, .page-kallinfoepub .word, .page-kallinfoepub .more {
+  display: none;
+}
+/* line 1642, app.scss */
+.page-kallinfoetext .provenance > *, .page-kallinfofaksimil .provenance > *, .page-kallinfopdf .provenance > *, .page-kallinfozip .provenance > *, .page-kallinfoepub .provenance > * {
+  display: -moz-inline-stack;
+  display: inline-block;
+  vertical-align: middle;
+  *vertical-align: auto;
+  zoom: 1;
+  *display: inline;
+}
+/* line 1645, app.scss */
+.page-kallinfoetext .provenance a, .page-kallinfofaksimil .provenance a, .page-kallinfopdf .provenance a, .page-kallinfozip .provenance a, .page-kallinfoepub .provenance a {
+  border: none;
+}
+/* line 1648, app.scss */
+.page-kallinfoetext .provenance .prov_text, .page-kallinfofaksimil .provenance .prov_text, .page-kallinfopdf .provenance .prov_text, .page-kallinfozip .provenance .prov_text, .page-kallinfoepub .provenance .prov_text {
+  width: 250px;
+  margin-left: 20px;
+}
+/* line 1651, app.scss */
+.page-kallinfoetext .provenance .prov_text.no_image, .page-kallinfofaksimil .provenance .prov_text.no_image, .page-kallinfopdf .provenance .prov_text.no_image, .page-kallinfozip .provenance .prov_text.no_image, .page-kallinfoepub .provenance .prov_text.no_image {
+  margin-left: 0;
+}
+/* line 1655, app.scss */
+.page-kallinfoetext .provenance a.no_image, .page-kallinfofaksimil .provenance a.no_image, .page-kallinfopdf .provenance a.no_image, .page-kallinfozip .provenance a.no_image, .page-kallinfoepub .provenance a.no_image {
+  display: none;
+}
+/* line 1659, app.scss */
+.page-kallinfoetext p + p, .page-kallinfofaksimil p + p, .page-kallinfopdf p + p, .page-kallinfozip p + p, .page-kallinfoepub p + p {
+  text-indent: 0;
+}
+
+/* line 1665, app.scss */
+.page-statistik ol.app-ordnad-lista li {
+  counter-increment: listcounter;
+}
+/* line 1667, app.scss */
+.page-statistik ol.app-ordnad-lista li a:before {
+  content: counter(listcounter, decimal) ". ";
+}
+
+/* line 1673, app.scss */
+.search_footer {
+  margin-top: 10px;
+}
+
+/* line 1676, app.scss */
+.search_footer > * {
+  margin-right: 1em;
+}
+
+/* line 1680, app.scss */
+.site-spf .search_footer {
+  display: none;
 }

@@ -14,6 +14,7 @@
         <link rel="stylesheet" href="styles/red.css"/>
         <link rel="stylesheet" href="http://demolittb.spraakdata.gu.se/red/css/etext.css"/>
         <link rel="stylesheet" type="text/css" href="styles/so.css" />
+        <link rel="stylesheet" type="text/css" href="styles/bootstrap.css" />
         <link rel="stylesheet" type="text/css" href="styles/styles.css" />
         <link rel="stylesheet" href="components/font-awesome/css/font-awesome.css"/>
 
@@ -21,6 +22,12 @@
     <body ng-app="littbApp" ng-cloak>
         <header>
             <a href="#/"><img id="logo" src="http://litteraturbanken.se/bilder/LBlogga.svg"></a>
+            <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
+                <li><a href="#/start">Hem</a> <span class="divider" >></span></li>
+                
+                <li ng-repeat="item in breadcrumb track by $index" ng-class="{active : $last}"><a ng-href="{{item.url}}">{{item.label}}</a> <span class="divider" ng-show="!$last">></span></li>
+              <!-- <li class="active">Data</li> -->
+            </ul>
         </header>
         <div id="leftCorridor">
             <ul role="navigation" class="mainnav">

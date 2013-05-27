@@ -1,8 +1,10 @@
 'use strict';
 var lrSnippet = require('grunt-contrib-livereload/lib/utils').livereloadSnippet;
+var proxySnippet = require('grunt-connect-proxy/lib/utils').proxyRequest;
 var mountFolder = function (connect, dir) {
   return connect.static(require('path').resolve(dir));
 };
+
 
 module.exports = function (grunt) {
   // load all grunt tasks
@@ -49,11 +51,28 @@ module.exports = function (grunt) {
         // Change this to '0.0.0.0' to access the server from outside.
         hostname: 'localhost',
       },
+      proxies: [
+                  {
+                      context: '/red',
+                      host: 'demolittbdev.spraakdata.gu.se',
+                      port: 80,
+                      https: false,
+                      changeOrigin: true
+                  },
+                  {
+                      context: '/query',
+                      host: 'demolittbdev.spraakdata.gu.se',
+                      port: 80,
+                      https: false,
+                      changeOrigin: true
+                  }
+              ],
       livereload: {
           options: {
               middleware: function (connect) {
                   return [
                       lrSnippet,
+                      proxySnippet,
                       mountFolder(connect, '.tmp'),
                       mountFolder(connect, yeomanConfig.app)
                   ];
@@ -280,6 +299,7 @@ module.exports = function (grunt) {
           'clean:server',
           'coffee:dist',
           'compass:server',
+          'configureProxies',
           'livereload-start',
           'connect:livereload',
           // 'open',

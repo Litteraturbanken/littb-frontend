@@ -16,11 +16,11 @@
 </div>
 
 <div class="provenance">
-    <a ng-href="{{data.provenance.link}}"><img onerror="this.style.visibility = 'hidden'" ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a>
+    <a ng-href="{{data.provenance.link}}"><img ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
     <p>{{data.provenance.text}}</p>
 </div>
 
-<div ng-bind-html-unsafe="data.licenseText"></div>
+<div ng-bind-html-unsafe="data.licenseText | correctLink"></div>
 
 <div ng-show="!mediatype || mediatype == 'etext'">
     <div ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet:</div>
@@ -31,8 +31,8 @@
             <td>{{tup[1]}}</td>
         </tr>
     </table>
-    <a ng-click="toggleErrata()" ng-show="!isOpen">Visa fler</a>
-    <a ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
+    <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen">Visa fler</a>
+    <a class="toggle" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
 </div>
 
 

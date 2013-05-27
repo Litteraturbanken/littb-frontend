@@ -3,10 +3,6 @@
     interpolate: /\{\{(.+?)\}\}/g
   };
 
-  window.host = function(url) {
-    return "http://demolittbdev.spraakdata.gu.se" + url;
-  };
-
   window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal", "ui.bootstrap.tooltip", "template/tooltip/tooltip-popup.html"]).config(function($routeProvider) {
     return $routeProvider.when('', {
       redirectTo: "/start"
@@ -17,26 +13,36 @@
       controller: 'startCtrl',
       title: "Svenska klassiker som e-bok och epub"
     }).when('/presentationer', {
-      templateUrl: host('/red/presentationer/presentationerForfattare.html'),
-      title: "Presentationer"
+      title: "Presentationer",
+      breadcrumb: ["presentationer"],
+      templateUrl: "views/presentations.html",
+      controller: "presentationCtrl"
+    }).when('/presentationer/specialomraden/:doc', {
+      controller: function($scope, $routeParams) {
+        return $scope.doc = "/red/presentationer/specialomraden/" + $routeParams.doc;
+      },
+      template: '<div style="position:relative;" ng-include="doc"></div>'
     }).when('/om/aktuellt', {
-      templateUrl: host('/red/om/aktuellt/aktuellt.html'),
+      templateUrl: '/red/om/aktuellt/aktuellt.html',
       title: "Aktuellt"
     }).when('/om/rattigheter', {
-      templateUrl: host('/red/om/rattigheter/rattigheter.html'),
+      templateUrl: '/red/om/rattigheter/rattigheter.html',
       title: "Rättigheter"
     }).when('/om/ide', {
-      templateUrl: host('/red/om/ide/omlitteraturbanken.html'),
+      templateUrl: '/red/om/ide/omlitteraturbanken.html',
       title: "Om LB",
-      reloadOnSearch: false
+      reloadOnSearch: false,
+      breadcrumb: ["idé"]
     }).when('/om/inenglish', {
-      templateUrl: host('/red/om/ide/inenglish.html'),
+      templateUrl: '/red/om/ide/inenglish.html',
       title: "In English",
+      breadcrumb: ["in english"],
       reloadOnSearch: false
     }).when('/om/hjalp', {
       templateUrl: "views/help.html",
       controller: "helpCtrl",
       title: "Hjälp",
+      breadcrumb: ["hjälp"],
       reloadOnSearch: false
     }).when('/statistik', {
       templateUrl: 'views/stats.html',
@@ -62,7 +68,8 @@
       templateUrl: "views/authorList.html",
       controller: "authorListCtrl",
       title: "Författare",
-      reloadOnSearch: false
+      reloadOnSearch: false,
+      breadcrumb: ["författare"]
     }).when("/forfattare/:author/titlar", {
       templateUrl: "views/authorTitles.html",
       controller: "authorInfoCtrl",
@@ -70,7 +77,13 @@
       title: "Titlar"
     }).when("/forfattare/:author", {
       templateUrl: "views/authorInfo.html",
-      controller: "authorInfoCtrl"
+      controller: "authorInfoCtrl",
+      breadcrumb: [
+        {
+          label: "författare",
+          url: "#/forfattare"
+        }
+      ]
     }).when("/forfattare/:author/titlar/:title/info", {
       templateUrl: "views/sourceInfo.html",
       controller: "sourceInfoCtrl",
@@ -109,24 +122,23 @@
       templateUrl: 'views/contactForm.html',
       controller: 'contactFormCtrl',
       reloadOnSearch: false,
-      title: "Kontakt"
+      title: "Kontakt",
+      breadcrumb: ["kontakt"]
     }).otherwise({
       redirectTo: '/'
     });
   });
 
-  littb.config([
-    '$httpProvider', function($httpProvider) {
-      return delete $httpProvider.defaults.headers.common["X-Requested-With"];
-    }
-  ]);
+  littb.config(function($httpProvider, $locationProvider) {
+    return delete $httpProvider.defaults.headers.common["X-Requested-With"];
+  });
 
   littb.run(function($rootScope, $location) {
     $rootScope.goto = function(path) {
       return $location.url(path);
     };
     return $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
-      var classList, title;
+      var classList, item, normalizeUrl, title, _ref;
 
       if (newRoute.title) {
         title = "Litteraturbanken v.3 | " + newRoute.title;
@@ -143,9 +155,42 @@
         return !_.str.startsWith(item, "page-");
       });
       $("body").attr("class", classList.join(" "));
-      if (newRoute.controller) {
-        return $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""));
+      if ((_ref = newRoute.controller) != null ? _ref.replace : void 0) {
+        $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""));
       }
+      normalizeUrl = function(str) {
+        var trans;
+
+        trans = _.object(_.zip("åäö", "aao"));
+        return _.map(str, function(letter) {
+          return trans[letter.toLowerCase()] || letter;
+        });
+      };
+      $rootScope.breadcrumb = (function() {
+        var _i, _len, _ref1, _results;
+
+        _ref1 = (newRoute != null ? newRoute.breadcrumb : void 0) || [];
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          item = _ref1[_i];
+          if (_.isObject(item)) {
+            _results.push(item);
+          } else {
+            _results.push({
+              label: item,
+              url: "#/" + normalizeUrl(item).join("")
+            });
+          }
+        }
+        return _results;
+      })();
+      return $rootScope.appendCrumb = function(label) {
+        return $rootScope.breadcrumb = [].concat($rootScope.breadcrumb, [
+          {
+            label: label
+          }
+        ]);
+      };
     });
   });
 

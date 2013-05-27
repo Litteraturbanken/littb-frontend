@@ -53,7 +53,7 @@
         obj = _.pick(item, "x", "y", "width", "height");
         return _(obj).pairs().invoke("join", "=").join("&");
       } else {
-        return "traff=" + item.nodeid + "}&traffslut=" + item.endnodeid;
+        return "traff=" + item.nodeid + "&traffslut=" + item.endnodeid;
       }
     };
     s.search = function(query) {
@@ -83,14 +83,15 @@
     }
   });
 
-  littb.controller("authorInfoCtrl", function($scope, backend, $routeParams) {
+  littb.controller("authorInfoCtrl", function($scope, $rootScope, backend, $routeParams) {
     var s;
 
     s = $scope;
     _.extend(s, $routeParams);
     return backend.getAuthorInfo(s.author).then(function(data) {
       s.authorInfo = data;
-      return s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
+      s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
+      return $rootScope.appendCrumb(data.surname);
     });
   });
 
@@ -174,7 +175,7 @@
     var s, url;
 
     s = $scope;
-    url = host("/red/om/hjalp/hjalp.html");
+    url = "/red/om/hjalp/hjalp.html";
     return $http.get(url).success(function(data) {
       var elem;
 
@@ -190,6 +191,38 @@
             label: $(elem).text(),
             id: $(elem).attr("id")
           });
+        }
+        return _results;
+      })();
+      return util.setupHash(s, {
+        "ankare": function(val) {
+          if (!val) {
+            $(window).scrollTop(0);
+            return;
+          }
+          return $(window).scrollTop($("#" + val).offset().top);
+        }
+      });
+    });
+  });
+
+  littb.controller("presentationCtrl", function($scope, $http, $routeParams, $location, util) {
+    var s, url;
+
+    s = $scope;
+    url = '/red/presentationer/presentationerForfattare.html';
+    return $http.get(url).success(function(data) {
+      var elem;
+
+      s.doc = data;
+      s.currentLetters = (function() {
+        var _i, _len, _ref, _results;
+
+        _ref = $("[id]", data);
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          elem = _ref[_i];
+          _results.push($(elem).attr("id"));
         }
         return _results;
       })();
@@ -230,6 +263,18 @@
     };
   });
 
+  littb.filter("correctLink", function() {
+    return function(html) {
+      var img, wrapper;
+
+      c.log("html", html);
+      wrapper = $("<div>").append(html);
+      img = $("img", wrapper);
+      img.attr("src", "/red/bilder/gemensamt/" + img.attr("src"));
+      return wrapper.html();
+    };
+  });
+
   littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams) {
     var author, mediatype, s, title;
 
@@ -255,14 +300,14 @@
       }
       return _results;
     };
-    return backend.getSourceInfo(author, title, mediatype || "etext").then(function(data) {
+    return backend.getSourceInfo(author, title, mediatype).then(function(data) {
       s.data = data;
       return s.mediatype = s.data.mediatypes[0];
     });
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util) {
-    var author, mediatype, pagename, s, title, watches;
+    var author, loadPage, mediatype, pagename, s, title, watches;
 
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
@@ -336,14 +381,13 @@
     ]);
     watches = [];
     watches.push(s.$watch("pagename", function(val) {
-      s.displaynum = val;
-      return $location.path("/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype);
-    }));
-    watches.push(s.$watch("getPage()", function(val) {
-      c.log("getPage watch", val);
       if (val == null) {
         return;
       }
+      s.displaynum = val;
+      return $location.path("/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype);
+    }));
+    loadPage = function(val) {
       s.pagename = val;
       return backend.getPage(author, title, mediatype, s.pagename).then(function(_arg) {
         var data, page, workinfo;
@@ -360,13 +404,27 @@
         }
         s.pageix = s.pagemap["page_" + s.pagename];
         if (mediatype === 'faksimil') {
-          return s.url = $("faksimil-url[size=3]", page).text();
+          return s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
         } else {
           page.children().remove();
           return s.etext_html = page.text();
         }
       });
-    }));
+    };
+    s.size = 2;
+    s.sizes = _.map([0, 1, 2, 3, 4], function() {
+      return false;
+    });
+    s.sizes[s.size] = true;
+    s.setSize = function(index) {
+      s.sizes = _.map([0, 1, 2, 3, 4], function() {
+        return false;
+      });
+      s.sizes[index] = true;
+      s.size = index;
+      return loadPage(s.getPage());
+    };
+    watches.push(s.$watch("getPage()", loadPage));
     return s.$on("$destroy", function() {
       var w, _i, _len, _results;
 
@@ -414,7 +472,10 @@
       getInnerXML: function(elem) {
         var child, strArray;
 
-        if ("get" in elem) {
+        if ("jquery" in elem) {
+          if (!elem.length) {
+            return null;
+          }
           elem = elem.get(0);
         }
         strArray = (function() {
@@ -497,7 +558,6 @@
           scope[name] = $location.search()[name];
           _results.push(scope.$watch(name, (function(name) {
             return function(val) {
-              c.log("watch name", val);
               $location.search(name, val || null);
               if (callback) {
                 return callback(val);
@@ -579,7 +639,7 @@
 
         def = $q.defer();
         http({
-          url: host("/query/lb-anthology.xql"),
+          url: "/query/lb-anthology.xql",
           params: {
             action: "get-works"
           }
@@ -610,7 +670,7 @@
         var def, url;
 
         def = $q.defer();
-        url = host("/query/lb-authors.xql?action=get-authors");
+        url = "/query/lb-authors.xql?action=get-authors";
         http({
           url: url
         }).success(function(xml) {
@@ -632,18 +692,22 @@
         return def.promise;
       },
       getSourceInfo: function(author, title, mediatype) {
-        var def, url;
+        var def, params, url;
 
+        c.log("getSourceInfo", mediatype);
         def = $q.defer();
-        url = host("/query/lb-anthology.xql");
+        url = "/query/lb-anthology.xql";
+        params = {
+          action: "get-work-info-init",
+          authorid: author,
+          titlepath: title
+        };
+        if (mediatype) {
+          params.mediatype = mediatype;
+        }
         http({
           url: url,
-          params: {
-            action: "get-work-info-init",
-            authorid: author,
-            titlepath: title,
-            mediatype: mediatype
-          }
+          params: params
         }).success(function(xml) {
           var errata, output, prov, sourcedesc, tr;
 
@@ -667,6 +731,7 @@
             return _results;
           })();
           sourcedesc = errata.parent().clone();
+          c.log("sourcedesc", sourcedesc);
           sourcedesc.find("errata").remove();
           output.sourcedesc = (util.getInnerXML(sourcedesc)) || "";
           return def.resolve(output);
@@ -677,7 +742,7 @@
         var def, params, url;
 
         def = $q.defer();
-        url = host("/query/lb-anthology.xql");
+        url = "/query/lb-anthology.xql";
         params = {
           action: "get-work-data-init",
           authorid: author,
@@ -718,7 +783,7 @@
         var def, url;
 
         def = $q.defer();
-        url = host("/query/lb-authors.xql");
+        url = "/query/lb-authors.xql";
         http({
           url: url,
           params: {
@@ -755,7 +820,7 @@
         var def, url;
 
         def = $q.defer();
-        url = host("/query/lb-stats.xql");
+        url = "/query/lb-stats.xql";
         http({
           url: url,
           params: {
@@ -798,7 +863,7 @@
         var def, url;
 
         def = $q.defer();
-        url = host("/query/lb-anthology.xql");
+        url = "/query/lb-anthology.xql";
         http({
           url: url,
           params: {
@@ -822,7 +887,7 @@
         var def, url;
 
         def = $q.defer();
-        url = host("/query/lb-search.xql");
+        url = "/query/lb-search.xql";
         http({
           method: "POST",
           url: url,

@@ -133,4 +133,31 @@
     };
   });
 
+  littb.directive('square', function() {
+    return {
+      template: "<div></div>",
+      replace: false,
+      scope: {
+        left: "=x",
+        top: "=y",
+        width: "=",
+        height: "="
+      },
+      link: function(scope, elm, attrs) {
+        var coors, s;
+
+        s = scope;
+        coors = _.pick(scope, "top", "left", "width", "height");
+        c.log("coors", coors, _.isEmpty(coors));
+        if (!_.compact(_.values(coors)).length) {
+          return;
+        }
+        coors = _.object(_.map(coors, function(val, key) {
+          return [key, val.split(",")[2] + "px"];
+        }));
+        return elm.css(coors);
+      }
+    };
+  });
+
 }).call(this);
