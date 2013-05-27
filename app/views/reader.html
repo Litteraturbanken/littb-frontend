@@ -38,15 +38,13 @@
 
 
     <div>
-        <img src="http://demolittb.spraakdata.gu.se/bilder/LBstart.png">
-        <a ng-click="prevPage()"><img src="http://demolittb.spraakdata.gu.se/bilder/LBforegaende.png"></a>
-        <a ng-click="nextPage()"><img src="http://demolittb.spraakdata.gu.se/bilder/LBnasta.png"></a>
-
-
-        <img src="http://demolittb.spraakdata.gu.se/bilder/LBslut.png">
+        <img src="bilder/LBstart.png">
+        <a ng-click="prevPage()"><img src="bilder/LBforegaende.png"></a>
+        <a ng-click="nextPage()"><img src="bilder/LBnasta.png"></a>
+        <img src="bilder/LBslut.png">
     </div>
     <form ng-submit="pagenum = displaynum">
-        Sida <input class="pageinput" ng-model="displaynum"><!-- should be name -->
+        Sida <input class="pageinput" ng-model="displaynum">
     </form>
 
     <div>
@@ -65,8 +63,6 @@
 
         <div ng-show="showPopup" class="triangle"></div>
 
-        
-
         <ul class="part_menu" ng-show="showPopup">
             <li><a ng-click="gotopage(startpage)">[Start]</a></li>
             <li ng-repeat="part in workinfo.parts">
@@ -77,7 +73,7 @@
 
     </div>
 
-    <div class="size_picker">
+    <div class="size_picker" ng-show="mediatype == 'faksimil'">
         <div ng-class="{selected : size}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
         
     </div>

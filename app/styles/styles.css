@@ -20,18 +20,22 @@ body > * {
   margin-bottom: 1em;
   margin-top: 1em;
 }
+/* line 44, styles.scss */
+#toolkit input {
+  max-width: 100%;
+}
 
-/* line 46, styles.scss */
+/* line 49, styles.scss */
 tr:nth-of-type(10n) {
   padding-bottom: 2em;
 }
 
-/* line 51, styles.scss */
+/* line 54, styles.scss */
 #controls > * {
   vertical-align: top;
 }
 
-/* line 54, styles.scss */
+/* line 57, styles.scss */
 tr:nth-of-type(10n) td {
   padding-bottom: 1em;
 }
@@ -40,36 +44,36 @@ tr:nth-of-type(10n) td {
     background-color : lighten(#999, 30%);
 }
 */
-/* line 61, styles.scss */
+/* line 64, styles.scss */
 .contenttable {
   min-width: 700px;
 }
-/* line 63, styles.scss */
+/* line 66, styles.scss */
 .contenttable td {
   max-width: 300px;
   padding: 5px;
 }
-/* line 67, styles.scss */
+/* line 70, styles.scss */
 .contenttable td:nth-child(2) {
   vertical-align: bottom;
 }
-/* line 70, styles.scss */
+/* line 73, styles.scss */
 .contenttable th {
   padding: 5px;
   text-align: left;
 }
 
-/* line 76, styles.scss */
+/* line 79, styles.scss */
 .contenttable td:last-of-type,
 th:last-of-type {
   text-align: right;
 }
 
-/* line 83, styles.scss */
+/* line 86, styles.scss */
 .letters {
   margin-bottom: 1em;
 }
-/* line 85, styles.scss */
+/* line 88, styles.scss */
 .letters td {
   font-weight: bold;
   cursor: pointer;
@@ -78,44 +82,44 @@ th:last-of-type {
   height: 20px;
   width: 20px;
 }
-/* line 94, styles.scss */
+/* line 97, styles.scss */
 .letters td.disabled {
   font-weight: normal !important;
   cursor: default !important;
 }
-/* line 102, styles.scss */
+/* line 105, styles.scss */
 .letters td.selected {
   color: #990000;
 }
-/* line 105, styles.scss */
+/* line 108, styles.scss */
 .letters td:first-child {
   padding-left: 0;
 }
 
-/* line 111, styles.scss */
+/* line 114, styles.scss */
 a {
   color: black;
   text-decoration: none;
 }
 
-/* line 115, styles.scss */
+/* line 118, styles.scss */
 a:hover {
   color: #990000;
   text-decoration: none;
 }
 
-/* line 119, styles.scss */
+/* line 122, styles.scss */
 ul {
   padding: 0;
   margin: 0;
 }
 
-/* line 123, styles.scss */
+/* line 126, styles.scss */
 li {
   list-style: none;
 }
 
-/* line 126, styles.scss */
+/* line 129, styles.scss */
 #leftCorridor {
   width: 120px;
   margin-right: 40px;
@@ -126,18 +130,18 @@ li {
   zoom: 1;
   *display: inline;
 }
-/* line 130, styles.scss */
+/* line 133, styles.scss */
 #leftCorridor > * {
   margin-bottom: 2em;
 }
 
-/* line 134, styles.scss */
+/* line 137, styles.scss */
 .mainnav {
   vertical-align: top;
   line-height: 19px;
 }
 
-/* line 138, styles.scss */
+/* line 141, styles.scss */
 #mainview {
   display: -moz-inline-stack;
   display: inline-block;
@@ -150,26 +154,26 @@ li {
   margin-top: 2em;
 }
 
-/* line 145, styles.scss */
+/* line 148, styles.scss */
 label {
   display: inline;
 }
 
-/* line 149, styles.scss */
+/* line 152, styles.scss */
 #logo {
   height: 30px;
   left: -8px;
   position: relative;
 }
 
-/* line 155, styles.scss */
+/* line 158, styles.scss */
 header {
   border-bottom: 1px solid grey;
   margin-bottom: 1em;
   padding-bottom: 5px;
   position: relative;
 }
-/* line 160, styles.scss */
+/* line 163, styles.scss */
 header .breadcrumb {
   position: absolute;
   bottom: 2px;
@@ -180,68 +184,69 @@ header .breadcrumb {
   font-size: 0.9em;
 }
 
-/* line 174, styles.scss */
+/* line 177, styles.scss */
 .page-start .breadcrumb {
   display: none;
 }
-/* line 177, styles.scss */
+/* line 180, styles.scss */
 .page-start #toolkit {
   margin-top: 18em;
   font-size: 0.9em;
 }
-/* line 180, styles.scss */
+/* line 183, styles.scss */
 .page-start #toolkit input {
   font-size: 1.1em;
   width: 90px;
 }
-/* line 184, styles.scss */
+/* line 187, styles.scss */
 .page-start #toolkit form {
   margin-bottom: 1em;
 }
 
-/* line 191, styles.scss */
+/* line 194, styles.scss */
 .page-stats #mainview > * {
   margin-bottom: 1em;
 }
 
-/* line 197, styles.scss */
+/* line 200, styles.scss */
 .page-search #mainview {
   position: relative;
 }
-/* line 199, styles.scss */
+/* line 202, styles.scss */
 .page-search #mainview .preloader {
   visibility: hidden;
   color: #990000;
   text-align: right;
 }
-/* line 204, styles.scss */
+/* line 207, styles.scss */
 .page-search #mainview .preloader.searching {
   visibility: visible;
 }
-/* line 208, styles.scss */
+/* line 211, styles.scss */
 .page-search #mainview .submit_btn {
   float: right;
 }
-/* line 211, styles.scss */
+/* line 214, styles.scss */
 .page-search #mainview .input {
   width: 432px;
 }
-/* line 214, styles.scss */
+/* line 217, styles.scss */
 .page-search #mainview .header {
   position: relative;
 }
-/* line 218, styles.scss */
+/* line 221, styles.scss */
 .page-search #mainview .header .open_toggle {
   position: absolute;
   bottom: 0;
   right: 0;
+  cursor: pointer;
 }
-/* line 226, styles.scss */
+/* line 229, styles.scss */
 .page-search #mainview .extended {
   border: 1px lightgrey solid;
   padding: 8px;
 }
-/* line 231, styles.scss */
+/* line 234, styles.scss */
 .page-search #mainview .columns > div {
   width: 49%;
   display: -moz-inline-stack;
@@ -251,79 +256,96 @@ header .breadcrumb {
   zoom: 1;
   *display: inline;
 }
-/* line 235, styles.scss */
+/* line 238, styles.scss */
 .page-search #mainview .columns > div label {
   display: block;
 }
-/* line 240, styles.scss */
+/* line 243, styles.scss */
 .page-search #mainview table {
   white-space: nowrap;
 }
-/* line 242, styles.scss */
+/* line 245, styles.scss */
 .page-search #mainview table tr.is_faksimil * {
   color: grey;
 }
-/* line 245, styles.scss */
+/* line 248, styles.scss */
 .page-search #mainview table td.title {
   max-width: 100px;
   overflow-x: hidden;
   text-overflow: ellipsis;
   font-style: italic;
 }
-/* line 251, styles.scss */
+/* line 254, styles.scss */
 .page-search #mainview table td.left_context {
   text-align: right;
 }
-/* line 256, styles.scss */
+/* line 259, styles.scss */
 .page-search #toolkit {
   font-size: .9em;
 }
-/* line 260, styles.scss */
+/* line 261, styles.scss */
+.page-search #toolkit .littb_pager {
+  margin-top: 1em;
+  margin-bottom: 2em;
+}
+/* line 264, styles.scss */
+.page-search #toolkit .littb_pager input {
+  width: 60px;
+}
+/* line 267, styles.scss */
+.page-search #toolkit .littb_pager .ctrl {
+  margin: 10px 0;
+}
+/* line 269, styles.scss */
+.page-search #toolkit .littb_pager .ctrl > * {
+  cursor: pointer;
+}
+/* line 275, styles.scss */
 .page-search #title_select {
   max-width: 247px;
 }
 
-/* line 266, styles.scss */
+/* line 281, styles.scss */
 .page-reading #mainview {
   position: relative;
 }
-/* line 268, styles.scss */
+/* line 283, styles.scss */
 .page-reading #mainview .faksimilMarkee {
   background-color: #990000;
   opacity: 0.5;
   position: absolute;
 }
-/* line 273, styles.scss */
+/* line 288, styles.scss */
 .page-reading #mainview img {
   max-width: inherit;
 }
-/* line 278, styles.scss */
+/* line 293, styles.scss */
 .page-reading #toolkit > * {
   display: block;
 }
-/* line 281, styles.scss */
+/* line 296, styles.scss */
 .page-reading #toolkit > div {
   margin: 1em 0;
 }
-/* line 284, styles.scss */
+/* line 299, styles.scss */
 .page-reading #toolkit .title {
   font-style: italic;
 }
-/* line 287, styles.scss */
+/* line 302, styles.scss */
 .page-reading #toolkit .pageinput {
   width: 50px;
   margin-left: 5px;
 }
-/* line 291, styles.scss */
+/* line 306, styles.scss */
 .page-reading #toolkit .word_search {
   margin-top: 1em;
 }
-/* line 293, styles.scss */
+/* line 308, styles.scss */
 .page-reading #toolkit .word_search label {
   display: block;
   font-size: .9em;
 }
-/* line 298, styles.scss */
+/* line 313, styles.scss */
 .page-reading #toolkit .size_picker > div {
   display: -moz-inline-stack;
   display: inline-block;
@@ -343,16 +365,16 @@ header .breadcrumb {
   font-family: "Helvetica", "Arial", sans-serif;
   cursor: pointer;
 }
-/* line 310, styles.scss */
+/* line 325, styles.scss */
 .page-reading #toolkit .size_picker > div.selected {
   background-color: #990000;
   cursor: normal;
 }
-/* line 316, styles.scss */
+/* line 331, styles.scss */
 .page-reading .work_parts {
   margin-top: 1em;
 }
-/* line 318, styles.scss */
+/* line 333, styles.scss */
 .page-reading .work_parts li {
   font-size: smaller;
   overflow-x: hidden;
@@ -361,19 +383,19 @@ header .breadcrumb {
   font-style: italic;
   cursor: pointer;
 }
-/* line 327, styles.scss */
+/* line 342, styles.scss */
 .page-reading .work_parts li .tooltip {
   white-space: normal;
 }
-/* line 332, styles.scss */
+/* line 347, styles.scss */
 .page-reading .partnav {
   position: relative;
 }
-/* line 334, styles.scss */
+/* line 349, styles.scss */
 .page-reading .partnav .arrow_icon {
   color: #990000;
 }
-/* line 338, styles.scss */
+/* line 353, styles.scss */
 .page-reading .partnav .triangle {
   width: 0px;
   height: 0px;
@@ -385,7 +407,7 @@ header .breadcrumb {
   left: 135px;
   bottom: 0;
 }
-/* line 353, styles.scss */
+/* line 368, styles.scss */
 .page-reading .partnav .part_menu {
   background-color: #990000;
   opacity: 0.8;
@@ -398,43 +420,43 @@ header .breadcrumb {
   max-height: 300px;
   overflow-y: auto;
 }
-/* line 364, styles.scss */
+/* line 379, styles.scss */
 .page-reading .partnav .part_menu li {
   color: white;
   cursor: pointer;
 }
-/* line 368, styles.scss */
+/* line 383, styles.scss */
 .page-reading .partnav .part_menu a {
   color: white;
 }
 
-/* line 377, styles.scss */
+/* line 392, styles.scss */
 .page-sourceInfo #mainview div {
   margin-bottom: 1em;
 }
-/* line 380, styles.scss */
+/* line 395, styles.scss */
 .page-sourceInfo #mainview .mediatypes {
   margin-bottom: 0;
 }
-/* line 384, styles.scss */
+/* line 399, styles.scss */
 .page-sourceInfo #mainview h3 {
   margin: 0;
   line-height: inherit;
 }
-/* line 387, styles.scss */
+/* line 402, styles.scss */
 .page-sourceInfo #mainview h3.author {
   font-variant: small-caps;
 }
-/* line 390, styles.scss */
+/* line 405, styles.scss */
 .page-sourceInfo #mainview h3.title {
   margin-bottom: 2em;
   max-width: 400px;
 }
-/* line 395, styles.scss */
+/* line 410, styles.scss */
 .page-sourceInfo #mainview .mediatype {
   font-variant: small-caps;
 }
-/* line 399, styles.scss */
+/* line 414, styles.scss */
 .page-sourceInfo #mainview .provenance * {
   display: -moz-inline-stack;
   display: inline-block;
@@ -443,31 +465,31 @@ header .breadcrumb {
   zoom: 1;
   *display: inline;
 }
-/* line 402, styles.scss */
+/* line 417, styles.scss */
 .page-sourceInfo #mainview .provenance p {
   width: 250px;
   margin-left: 10px;
 }
-/* line 407, styles.scss */
+/* line 422, styles.scss */
 .page-sourceInfo #mainview .toggle {
   cursor: pointer;
 }
 
-/* line 414, styles.scss */
+/* line 429, styles.scss */
 .page-authorList table {
   margin-top: 3em;
 }
-/* line 417, styles.scss */
+/* line 432, styles.scss */
 .page-authorList #mainview > * {
   margin-bottom: 1em;
 }
 
-/* line 423, styles.scss */
+/* line 438, styles.scss */
 .page-titleList th {
   padding-bottom: 1em;
 }
 
-/* line 430, styles.scss */
+/* line 445, styles.scss */
 .triangle {
   width: 0px;
   height: 0px;
@@ -476,46 +498,46 @@ header .breadcrumb {
   margin-right: 3px;
   cursor: pointer;
 }
-/* line 438, styles.scss */
+/* line 453, styles.scss */
 .triangle.disabled {
   cursor: normal;
 }
-/* line 442, styles.scss */
+/* line 457, styles.scss */
 .triangle.disabled.up {
   border-color: transparent transparent grey transparent;
 }
-/* line 445, styles.scss */
+/* line 460, styles.scss */
 .triangle.disabled.down {
   border-color: grey transparent transparent transparent;
 }
-/* line 448, styles.scss */
+/* line 463, styles.scss */
 .triangle.up {
   border-width: 0 8px 8px 8px;
   border-color: transparent transparent #990000 transparent;
   bottom: 11px;
 }
-/* line 454, styles.scss */
+/* line 469, styles.scss */
 .triangle.down {
   border-width: 8px 8px 0 8px;
   border-color: #990000 transparent transparent transparent;
   top: 11px;
 }
 
-/* line 461, styles.scss */
+/* line 476, styles.scss */
 .markee {
   background-color: pink;
 }
 
-/* line 465, styles.scss */
+/* line 480, styles.scss */
 .dots_blink {
   text-decoration: blink;
 }
-/* line 467, styles.scss */
+/* line 482, styles.scss */
 .dots_blink:after {
   content: "...";
 }
 
-/* line 472, styles.scss */
+/* line 487, styles.scss */
 .gratis-ebok {
   font-size: 1em;
   font-variant: small-caps;

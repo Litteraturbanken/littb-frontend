@@ -2,7 +2,7 @@
 littb.directive 'submitBtn', () ->
 
     replace : true
-    template : '<img class="submit_btn" src="http://demolittb.spraakdata.gu.se/bilder/LBsubmitknapp.jpeg">'
+    template : '<img class="submit_btn" src="bilder/LBsubmitknapp.jpeg">'
     # link: (scope, elm, attrs) ->
 
 littb.directive 'toolkit', ($compile, $location, $route) ->
@@ -29,7 +29,7 @@ littb.directive 'css', ($compile) ->
 
             scope.$watch 'css', (val) ->
                 if scope.evalIf()
-                    $("#reading_css").attr("href", host val)
+                    $("#reading_css").attr("href", val)
 
 
 
@@ -64,20 +64,6 @@ littb.directive 'sortTriangles', () ->
             scope.tuple = [s.val, true]
         s.down = () ->
             scope.tuple = [s.val, false]
-
-
-littb.directive 'markee', () ->
-    link : (scope, elm, attrs, readingCtrl) ->
-        {markee_from, markee_to} = scope
-        c.log "markee_from, markee_to", readingCtrl, scope
-
-        scope.refreshMarkee = () ->
-            $("#" + markee_from)
-            .nextUntil("#" + markee_to)
-            .andSelf()
-            .add("#" + markee_to)
-            .addClass "markee"
-
 
 
 littb.directive 'letterMap', () ->

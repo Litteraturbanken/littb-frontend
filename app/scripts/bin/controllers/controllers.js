@@ -31,7 +31,7 @@
     });
   });
 
-  littb.controller("searchCtrl", function($scope, backend, $location) {
+  littb.controller("searchCtrl", function($scope, backend, $location, util) {
     var queryvars, s;
 
     s = $scope;
@@ -40,6 +40,9 @@
     s.searchNonProofread = true;
     s.authors = backend.getAuthorList();
     s.searching = false;
+    s.num_hits = 20;
+    s.show_from_result = 1;
+    s.current_page = 1;
     s.$watch("selected_author", function(newAuthor, prevVal) {
       if (!newAuthor) {
         return;
@@ -72,15 +75,22 @@
       } else {
         mediatype = _.filter(mediatype, Boolean);
       }
-      return backend.searchWorks(s.query, mediatype).then(function(data) {
-        s.results = data;
+      return backend.searchWorks(s.query, mediatype, s.show_from_result, s.num_hits).then(function(data) {
+        s.data = data;
+        s.total_pages = Math.ceil(data.count / s.num_hits);
         return s.searching = false;
       });
     };
     queryvars = $location.search();
     if ("fras" in queryvars) {
-      return s.search(queryvars.fras);
+      s.search(queryvars.fras);
     }
+    return util.setupHashComplex(s, [
+      {
+        scope_name: "current_page",
+        key: "traffsida"
+      }
+    ]);
   });
 
   littb.controller("authorInfoCtrl", function($scope, $rootScope, backend, $routeParams) {
@@ -281,7 +291,8 @@
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype;
     _.extend(s, $routeParams);
-    s.errataLimit = 8;
+    s.defaultErrataLimit = 8;
+    s.errataLimit = s.defaultErrataLimit;
     s.isOpen = false;
     s.toggleErrata = function() {
       s.errataLimit = s.isOpen ? 8 : 1000;
@@ -368,7 +379,8 @@
         scope_name: "markee_from",
         key: "traff"
       }, {
-        scope_name: "markee_to"
+        scope_name: "markee_to",
+        key: "traffslut"
       }, {
         key: "x"
       }, {
@@ -883,7 +895,7 @@
         });
         return def.promise;
       },
-      searchWorks: function(query, mediatype) {
+      searchWorks: function(query, mediatype, resultitem, resultlength) {
         var def, url;
 
         def = $q.defer();
@@ -907,18 +919,23 @@
             url: url,
             params: {
               action: "get-result-set",
-              searchref: ref
+              searchref: ref,
+              resultlength: resultlength,
+              resultitem: resultitem
             }
           }).success(function(resultset) {
             var elem, kw, left, output, right, work, _i, _len, _ref, _ref1;
 
             c.log("get-result-set success", resultset, $("result", resultset).children());
-            output = [];
+            output = {
+              kwic: [],
+              count: parseInt($("result", resultset).attr("count"))
+            };
             _ref = $("result", resultset).children();
             for (_i = 0, _len = _ref.length; _i < _len; _i++) {
               elem = _ref[_i];
               _ref1 = _.map($(elem).children(), $), left = _ref1[0], kw = _ref1[1], right = _ref1[2], work = _ref1[3];
-              output.push({
+              output.kwic.push({
                 left: left.text(),
                 kw: kw.text(),
                 right: right.text(),
@@ -937,7 +954,7 @@
         var def, url;
 
         def = $q.defer();
-        url = "http://demolittb.spraakdata.gu.se/query/so.xql";
+        url = "query/so.xql";
         http({
           url: url,
           params: {

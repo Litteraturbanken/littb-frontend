@@ -4,7 +4,7 @@
   littb.directive('submitBtn', function() {
     return {
       replace: true,
-      template: '<img class="submit_btn" src="http://demolittb.spraakdata.gu.se/bilder/LBsubmitknapp.jpeg">'
+      template: '<img class="submit_btn" src="bilder/LBsubmitknapp.jpeg">'
     };
   });
 
@@ -38,7 +38,7 @@
         return function(scope, iElement, iAttrs) {
           return scope.$watch('css', function(val) {
             if (scope.evalIf()) {
-              return $("#reading_css").attr("href", host(val));
+              return $("#reading_css").attr("href", val);
             }
           });
         };
@@ -88,20 +88,6 @@
         };
         return s.down = function() {
           return scope.tuple = [s.val, false];
-        };
-      }
-    };
-  });
-
-  littb.directive('markee', function() {
-    return {
-      link: function(scope, elm, attrs, readingCtrl) {
-        var markee_from, markee_to;
-
-        markee_from = scope.markee_from, markee_to = scope.markee_to;
-        c.log("markee_from, markee_to", readingCtrl, scope);
-        return scope.refreshMarkee = function() {
-          return $("#" + markee_from).nextUntil("#" + markee_to).andSelf().add("#" + markee_to).addClass("markee");
         };
       }
     };

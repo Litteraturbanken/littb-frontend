@@ -31,7 +31,7 @@
             <td>{{tup[1]}}</td>
         </tr>
     </table>
-    <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen">Visa fler</a>
+    <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>
     <a class="toggle" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
 </div>
 

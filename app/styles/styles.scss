@@ -41,6 +41,9 @@ body {
         margin-bottom : 1em;
         margin-top : 1em;
     }
+    input {
+        max-width : 100%;
+    }
 }
 
 tr:nth-of-type(10n) {
@@ -219,7 +222,7 @@ header {
                 position: absolute;
                 bottom : 0;
                 right : 0;
-
+                cursor : pointer;
             }
 
         }
@@ -255,7 +258,19 @@ header {
     }
     #toolkit {
         font-size : .9em;
-
+        .littb_pager {
+            margin-top : 1em;
+            margin-bottom : 2em;
+            input {
+                width : 60px;
+            }
+            .ctrl {
+                margin : 10px 0;
+                & > * {
+                    cursor : pointer;
+                }
+            }
+        }
     }
     #title_select {
         max-width : 247px;

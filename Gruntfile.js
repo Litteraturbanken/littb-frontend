@@ -51,22 +51,15 @@ module.exports = function (grunt) {
         // Change this to '0.0.0.0' to access the server from outside.
         hostname: 'localhost',
       },
-      proxies: [
-                  {
-                      context: '/red',
-                      host: 'demolittbdev.spraakdata.gu.se',
-                      port: 80,
-                      https: false,
-                      changeOrigin: true
-                  },
-                  {
-                      context: '/query',
-                      host: 'demolittbdev.spraakdata.gu.se',
+      proxies : ["red", "query", "bilder", "css"].map(function(item) {
+        return {
+                      context: '/' + item,
+                      host: 'demolittb.spraakdata.gu.se',
                       port: 80,
                       https: false,
                       changeOrigin: true
                   }
-              ],
+      }),
       livereload: {
           options: {
               middleware: function (connect) {

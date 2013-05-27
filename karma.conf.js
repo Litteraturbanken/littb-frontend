@@ -9,13 +9,7 @@ files = [
   JASMINE_ADAPTER,
   'app/components/angular/angular.js',
   'app/components/angular-mocks/angular-mocks.js',
-  // 'app/components/jquery/jquery.js',
-  // 'app/scripts/*.js',
-  // 'app/scripts/**/*.js',
-  'test/mock/**/*.js',
   'app/components/lodash/lodash.js',
-  'app/config.js',
-  'app/scripts/bin/util_coffee.js',
   'test/spec/**/*.js'
 ];
 

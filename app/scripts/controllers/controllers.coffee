@@ -14,12 +14,14 @@ littb.controller "startCtrl", ($scope, $location) ->
 
 
 littb.controller "contactFormCtrl", ($scope, backend) ->
+    #TODO: implement me. 
+    
 littb.controller "statsCtrl", ($scope, backend) ->
     s = $scope
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend, $location) ->
+littb.controller "searchCtrl", ($scope, backend, $location, util) ->
     s = $scope
     s.open = false
     s.searchProofread = true
@@ -27,6 +29,10 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
 
     s.authors = backend.getAuthorList()
     s.searching = false
+    s.num_hits = 20
+    s.show_from_result = 1
+    s.current_page = 1
+    
 
     s.$watch "selected_author", (newAuthor, prevVal) ->
         return unless newAuthor
@@ -57,15 +63,24 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
         else 
             mediatype = _.filter mediatype, Boolean
 
+        # resultitem = s.current_page * num_hits
+        backend.searchWorks(s.query, mediatype, s.show_from_result, s.num_hits).then (data) ->
+            s.data = data
+            s.total_pages = Math.ceil(data.count / s.num_hits)
 
-        backend.searchWorks(s.query, mediatype).then (data) ->
-            s.results = data
             s.searching = false
 
 
     queryvars = $location.search()
     if "fras" of queryvars
         s.search(queryvars.fras)
+
+
+    util.setupHashComplex s,
+        [
+            scope_name : "current_page"
+            key : "traffsida"
+        ]
 
 
 
@@ -210,7 +225,8 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
     {title, author, mediatype} = $routeParams
     _.extend s, $routeParams
 
-    s.errataLimit = 8
+    s.defaultErrataLimit = 8
+    s.errataLimit = s.defaultErrataLimit
     s.isOpen = false
 
     s.toggleErrata = () ->
@@ -280,6 +296,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             key : "traff"
         ,
             scope_name : "markee_to"
+            key : "traffslut"
         ,
             key : "x"
         ,
@@ -693,7 +710,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    searchWorks : (query, mediatype) ->
+    searchWorks : (query, mediatype, resultitem, resultlength) ->
         def = $q.defer()
         url = "/query/lb-search.xql"
 
@@ -728,16 +745,18 @@ littb.factory 'backend', ($http, $q, util) ->
                 params :
                     action : "get-result-set"
                     searchref : ref
+                    resultlength : resultlength
+                    resultitem : resultitem
 
             ).success (resultset) ->
                 c.log "get-result-set success", resultset, $("result", resultset).children()
 
-                output = []
+                output = {kwic : [], count : parseInt($("result", resultset).attr("count"))}
 
                 for elem in $("result", resultset).children()
                     [left, kw, right, work] = _.map $(elem).children(), $
                     # c.log "elem", work.get(0), work.get(0).attributes
-                    output.push
+                    output.kwic.push
                         left : left.text()
                         kw : kw.text()
                         right : right.text()
@@ -754,7 +773,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     searchLexicon : (str) ->
         def = $q.defer()
-        url = "http://demolittb.spraakdata.gu.se/query/so.xql"
+        url = "query/so.xql"
         # http://demolittb.spraakdata.gu.se?word=abdikerades
         http(
             url : url
