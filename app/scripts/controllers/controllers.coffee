@@ -32,6 +32,13 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
         return unless newAuthor
         s.titles = backend.getTitlesByAuthor(newAuthor.authorid)
 
+    s.getHitParams = (item) ->
+        if item.mediatype == "faksimil"
+            obj = _.pick item, "x", "y", "width", "height"
+            return _(obj).pairs().invoke("join", "=").join("&")
+        else 
+            return "traff=#{item.nodeid}}&traffslut=#{item.endnodeid}"
+
 
     s.search = (query) ->
         if query
@@ -41,7 +48,17 @@ littb.controller "searchCtrl", ($scope, backend, $location) ->
             $location.search("fras", s.query)
 
         s.searching = true
-        backend.searchWorks(s.query).then (data) ->
+
+        
+        mediatype = [s.searchProofread and "etext", s.searchNonProofread and "faksimil"]
+        # if not _.any mediatype then VALIDATION_ERROR
+        if _.all mediatype
+            mediatype = "all"
+        else 
+            mediatype = _.filter mediatype, Boolean
+
+
+        backend.searchWorks(s.query, mediatype).then (data) ->
             s.results = data
             s.searching = false
 
@@ -170,6 +187,14 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
     {title, author, mediatype} = $routeParams
     _.extend s, $routeParams
 
+    s.errataLimit = 8
+    s.isOpen = false
+
+    s.toggleErrata = () ->
+        s.errataLimit = if s.isOpen then 8 else 1000
+        s.isOpen = !s.isOpen
+
+
     s.getOtherMediatypes = () ->
         (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
 
@@ -182,7 +207,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
 littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
-    _.extend s, (_.omit $routeParams, "traff", "traffslut")
+    _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width")
 
     s.pagename = pagename
     s.opts =
@@ -231,7 +256,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             key : "traff"
         ,
             scope_name : "markee_to"
-            key : "traffslut"
+        ,
+            key : "x"
+        ,
+            key : "y"
+        ,
+            key : "width"
+        ,
+            key : "height"
+
 
     ]
 
@@ -392,7 +425,7 @@ littb.factory 'backend', ($http, $q, util) ->
                     c.log "fel:", $("fel", output).text()
                 return output
 
-        $http(_.deepExtend defaultConfig, config)
+        $http(_.merge defaultConfig, config)
 
 
     objFromAttrs = (elem) ->
@@ -400,7 +433,7 @@ littb.factory 'backend', ($http, $q, util) ->
         _.object ([util.normalize(attrib.name), attrib.value] for attrib in elem.attributes)
 
     parseWorkInfo = (root, xml) ->
-        useInnerXML = ["sourcedesc"]
+        useInnerXML = ["sourcedesc", "license-text"]
         asArray = ["mediatypes"]
         output = {}
         for elem in $(root, xml).children()
@@ -479,9 +512,20 @@ littb.factory 'backend', ($http, $q, util) ->
                 link : $("link", prov).text()
             }
 
-            errata = $("errata", xml).parent().clone()
-            if errata.length
-                output.errata = util.getInnerXML errata
+            errata = $("errata", xml)
+            output.errata = for tr in $("tr", errata)
+                _($(tr).find("td")).map(util.getInnerXML)
+                .map(_.str.strip).value()
+
+
+
+            # if errata.length
+            #     output.errata = util.getInnerXML errata
+
+            sourcedesc = errata.parent().clone()
+            sourcedesc.find("errata").remove()
+            output.sourcedesc = (util.getInnerXML sourcedesc) or ""
+
 
             def.resolve output
         return def.promise
@@ -605,7 +649,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    searchWorks : (query) ->
+    searchWorks : (query, mediatype) ->
         def = $q.defer()
         url = host "/query/lb-search.xql"
 
@@ -619,10 +663,10 @@ littb.factory 'backend', ($http, $q, util) ->
             data : """
                     <search>
                         <string-filter>
-                            <item type="string">#{query or "finge"}|</item>
+                            <item type="string">#{query}|</item>
                         </string-filter>
                     <domain-filter>
-                    <item type="all-titles" mediatype="all"></item>
+                    <item type="all-titles" mediatype="#{mediatype}"></item>
                     </domain-filter>
                     <ne-filter>
                         <item type="NUL"></item>

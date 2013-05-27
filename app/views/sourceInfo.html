@@ -1,10 +1,10 @@
 <h3 class="author">{{data.authorFullname}}</h3>
 <h3 class="title"><em>{{data.title}}</em></h3>
 
-<div ng-show="mediatype == 'faksimil'">
+<!-- <div ng-show="mediatype == 'faksimil'">
     <div ng-bind-html-unsafe="data.sourcedesc"></div>
 </div>
-
+ -->
 <div ng-bind-html-unsafe="data.sourcedesc"></div>
 
 <div class="mediatypes">
@@ -12,10 +12,10 @@
 </div>
 <div ng-show="data.mediatypes.length > 1">
     Även tillgängligt som 
-    <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}} </a>
+    <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}"><span ng-show="!$first">::: </span>{{mediatype}} </a>
 </div>
 
-<div>
+<div class="provenance">
     <a ng-href="{{data.provenance.link}}"><img onerror="this.style.visibility = 'hidden'" ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a>
     <p>{{data.provenance.text}}</p>
 </div>
@@ -23,9 +23,16 @@
 <div ng-bind-html-unsafe="data.licenseText"></div>
 
 <div ng-show="!mediatype || mediatype == 'etext'">
-    <div ng-show="data.errata">I etexten har följande ändringar gjorts mot originalet:</div>
+    <div ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet:</div>
     <div ng-show="!data.errata">Inga ändringar har gjorts mot orginalet.</div>
-    <div ng-bind-html-unsafe="data.errata"></div>
+    <table>
+        <tr ng-repeat="tup in data.errata | limitTo:errataLimit">
+            <td><strong>{{tup[0]}}</strong></td>
+            <td>{{tup[1]}}</td>
+        </tr>
+    </table>
+    <a ng-click="toggleErrata()" ng-show="!isOpen">Visa fler</a>
+    <a ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
 </div>
 
 

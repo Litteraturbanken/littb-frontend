@@ -21,7 +21,7 @@
             <select id="author_select"
                     ng-model="selected_author"
                     ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
-                <option value="">Alla Författare</option>
+                <option value="">Alla författare</option>
             </select>
         </div>
         <div class="right">
@@ -41,7 +41,7 @@
     <label for="non_proofread">ej korrekturläst</label>
 </div>
 
-<div><span submit-btn></span><div style="clear:both;"></div></div>
+<div><span ng-click="search()" submit-btn></span><div style="clear:both;"></div></div>
 
 
 
@@ -56,7 +56,7 @@ per sida.
 
 <div>
     <table>
-        <tr ng-repeat="result in results">
+        <tr ng-repeat="result in results" ng-class="{is_faksimil : result.item.mediatype == 'faksimil'}">
             <td>{{$index + 1}}</td>
             <td><a href="#/forfattare/{{result.item.authorid}}">{{result.item.nameforindex}}</a></td>
             <td class="title"><a tooltip="{{result.item.title}}" href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/{{result.item.mediatype}}">{{result.item.title}}</a></td>
@@ -65,7 +65,7 @@ per sida.
             </td>
             <td class="left_context">{{result.left}}</td>
             <td><strong>
-                <a href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/sida/{{result.item.pagename}}/{{result.item.mediatype}}?traff={{result.item.nodeid}}&traffslut={{result.item.endnodeid}}">{{result.kw}}</a>
+                <a href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/sida/{{result.item.pagename}}/{{result.item.mediatype}}?{{getHitParams(result.item)}}">{{result.kw}}</a>
                 </strong></td>
             <td>{{result.right}}</td>
         </tr>

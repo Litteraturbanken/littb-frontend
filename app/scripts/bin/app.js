@@ -1,11 +1,5 @@
 (function() {
-  'use strict';
-
-  _.mixin({
-    deepExtend: underscoreDeepExtend(_)
-  });
-
-  _.templateSettings = {
+  'use strict';  _.templateSettings = {
     interpolate: /\{\{(.+?)\}\}/g
   };
 
@@ -97,6 +91,7 @@
       resolve: {
         r: function($q, $routeParams, $route) {
           var def;
+
           def = $q.defer();
           if (_.isEmpty($routeParams)) {
             def.resolve();
@@ -132,6 +127,7 @@
     };
     return $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
       var classList, title;
+
       if (newRoute.title) {
         title = "Litteraturbanken v.3 | " + newRoute.title;
       } else {
@@ -156,6 +152,7 @@
   littb.filter("setMarkee", function() {
     return function(input, fromid, toid) {
       var wrapper;
+
       input = $(input);
       wrapper = $("<div>");
       if (fromid === toid) {

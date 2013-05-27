@@ -13,6 +13,7 @@
       restrict: "EA",
       compile: function(elm, attrs) {
         var cmp;
+
         elm.remove();
         cmp = $compile("<div>" + (elm.html()) + "</div>");
         return function(scope, iElement, iAttrs) {
@@ -71,11 +72,13 @@
       },
       link: function(scope, elem, iAttrs) {
         var s;
+
         s = scope;
         scope.sorttuple = [iAttrs.val, 1];
         s.enabled = [true, true];
         s.$watch("tuple", function(newtup) {
           var dir, newval;
+
           newval = newtup[0], dir = newtup[1];
           s.active = s.val === newval;
           return s.enabled = [!dir, dir];
@@ -94,6 +97,7 @@
     return {
       link: function(scope, elm, attrs, readingCtrl) {
         var markee_from, markee_to;
+
         markee_from = scope.markee_from, markee_to = scope.markee_to;
         c.log("markee_from, markee_to", readingCtrl, scope);
         return scope.refreshMarkee = function() {
@@ -113,6 +117,7 @@
       },
       link: function(scope, elm, attrs) {
         var s;
+
         s = scope;
         s.letterArray = _.invoke(["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "ZÅÄÖ"], "split", "");
         s.ifShow = function(letter) {

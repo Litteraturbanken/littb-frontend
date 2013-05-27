@@ -18,10 +18,10 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
             .when '/',
                 redirectTo : "/start"
             .when '/start',
-                templateUrl: 'views/start.html',
+                templateUrl: 'views/start.html'
                 controller: 'startCtrl'
                 title : "Svenska klassiker som e-bok och epub"
-            .when '/presentationer'
+            .when '/presentationer',
                 templateUrl: host '/red/presentationer/presentationerForfattare.html'
                 title : "Presentationer"
             .when '/om/aktuellt',
@@ -78,20 +78,20 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
             .when "/forfattare/:author",
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
-            .when "/forfattare/:author/titlar/:title/info"
+            .when "/forfattare/:author/titlar/:title/info",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"
                 reloadOnSearch : false
                 title : "Verk"
-            .when "/forfattare/:author/titlar/:title/info/:mediatype"
+            .when "/forfattare/:author/titlar/:title/info/:mediatype",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"
                 reloadOnSearch : false
-            .when "/forfattare/:author/titlar/:title/:mediatype"
+            .when "/forfattare/:author/titlar/:title/:mediatype",
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false
-            .when "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype"
+            .when "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false,

@@ -219,6 +219,9 @@ header {
         }
         table {
             white-space : nowrap;
+            tr.is_faksimil * {
+                color : grey;
+            }
             td.title {
                 max-width : 100px;
                 overflow-x : hidden;
@@ -350,6 +353,12 @@ $partnav-width : 120px;
         }
         .mediatype {
             font-variant : small-caps;
+        }
+        .provenance {
+            p {
+                width : 250px;
+                margin-right : 10px;
+            }
         }
     }
 }
