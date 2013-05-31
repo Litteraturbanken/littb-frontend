@@ -440,6 +440,12 @@ $partnav-width : 120px;
     }
 }
 
+.page-biblinfo {
+    .results > div {
+        margin-bottom : 1em;
+    }
+}
+
 $triangle_size : 8px;
 
 .triangle {

@@ -23,6 +23,10 @@ module.exports = function (grunt) {
   grunt.initConfig({
     yeoman: yeomanConfig,
     watch: {
+      haml : {
+        files: ['<%= yeoman.app %>/{,*/}*.haml'],
+        tasks: ['haml']
+      },
       coffee: {
         files: ['<%= yeoman.app %>/scripts/{,*/}*.coffee'],
         tasks: ['coffee:dist']
@@ -37,7 +41,7 @@ module.exports = function (grunt) {
       },
       livereload: {
         files: [
-          '<%= yeoman.app %>/{,*/}*.html',
+          '<%= yeoman.app %>/{,**/}*.html',
           '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.css',
           '{.tmp,<%= yeoman.app %>}/scripts/{,*/}*.js',
           '<%= yeoman.app %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
@@ -49,12 +53,13 @@ module.exports = function (grunt) {
       options: {
         port: 9000,
         // Change this to '0.0.0.0' to access the server from outside.
-        hostname: 'localhost',
+        hostname: '0.0.0.0',
       },
-      proxies : ["red", "query", "bilder", "css"].map(function(item) {
+      proxies : ["red", "query", "bilder", "css", "sla-bibliografi"].map(function(item) {
+        var host = 'demolittb.spraakdata.gu.se'
         return {
                       context: '/' + item,
-                      host: 'demolittb.spraakdata.gu.se',
+                      host: host,
                       port: 80,
                       https: false,
                       changeOrigin: true
@@ -143,6 +148,19 @@ module.exports = function (grunt) {
           dest: 'test/spec',
           ext: '.js'
         }]
+      }
+    },
+    haml: {
+      // compile individually into dest, maintaining folder structure
+      dist: {
+        options : {
+          language : "coffee",
+        },
+        files: grunt.file.expandMapping(['app/*.haml'], './', {
+          rename: function(base, path) {
+            return base + path.replace(/\.haml$/, '.html');
+          }
+        })
       }
     },
     compass: {
@@ -290,6 +308,7 @@ module.exports = function (grunt) {
 
       grunt.task.run([
           'clean:server',
+          'haml:dist',
           'coffee:dist',
           'compass:server',
           'configureProxies',
@@ -302,6 +321,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'clean:server',
+    'haml',
     'coffee',
     'compass',
     'connect:test',
@@ -312,6 +332,7 @@ module.exports = function (grunt) {
     'clean:dist',
     // 'jshint',
     // 'test',
+    'haml',
     'coffee',
     'compass:dist',
     'useminPrepare',

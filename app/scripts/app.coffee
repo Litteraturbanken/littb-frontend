@@ -3,6 +3,8 @@ _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 
 
+
+
 window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "template/typeahead/typeahead.html"
                                            "ui.bootstrap.modal"
@@ -10,7 +12,6 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "template/tooltip/tooltip-popup.html"
                                            ])
     .config ($routeProvider) ->
-
         $routeProvider
             .when '',
                 redirectTo : "/start"
@@ -83,6 +84,14 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 title : "Författare"
                 reloadOnSearch : false
                 breadcrumb : ["författare"]
+            .when "/forfattare/LagerlofS",
+                templateUrl : "views/sla/lagerlof.html"
+                controller : "lagerlofCtrl"
+                reloadOnSearch : false
+            .when "/forfattare/LagerlofS/biblinfo",
+                templateUrl : "views/sla/biblinfo.html"
+                controller : "biblinfoCtrl"
+                reloadOnSearch : false
             .when "/forfattare/:author/titlar",
                 templateUrl : "views/authorTitles.html"
                 controller : "authorInfoCtrl"
@@ -108,6 +117,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false
+            
             .when "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
@@ -142,8 +152,7 @@ littb.config ($httpProvider, $locationProvider) ->
     delete $httpProvider.defaults.headers.common["X-Requested-With"]
 
 
-littb.run ($rootScope, $location) ->
-
+littb.run ($rootScope, $location, $rootElement) ->
     $rootScope.goto = (path) ->
         $location.url(path)
 
@@ -166,21 +175,21 @@ littb.run ($rootScope, $location) ->
             $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""))
 
 
-        normalizeUrl = (str) ->
-            trans = _.object _.zip "åäö", "aao"
+    normalizeUrl = (str) ->
+        trans = _.object _.zip "åäö", "aao"
 
-            _.map str, (letter) ->
-                trans[letter.toLowerCase()] or letter
+        _.map str, (letter) ->
+            trans[letter.toLowerCase()] or letter
 
 
-        $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
-            if _.isObject item 
-                item 
-            else
-                {label : item, url : "#/" + normalizeUrl(item).join("")}
+    $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
+        if _.isObject item 
+            item 
+        else
+            {label : item, url : "#/" + normalizeUrl(item).join("")}
 
-        $rootScope.appendCrumb = (label) ->
-            $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, [{label : label}]
+    $rootScope.appendCrumb = (label) ->
+        $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, [{label : label}]
 
 
 littb.filter "setMarkee", () ->

@@ -93,6 +93,73 @@
     ]);
   });
 
+  littb.controller("lagerlofCtrl", function($scope, $rootScope, backend) {
+    var s;
+
+    s = $scope;
+    s.author = "LagerlofS";
+    return backend.getAuthorInfo(s.author).then(function(data) {
+      s.authorInfo = data;
+      s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
+      return $rootScope.appendCrumb(data.surname);
+    });
+  });
+
+  littb.controller("biblinfoCtrl", function($scope, backend) {
+    var limit, s;
+
+    s = $scope;
+    limit = true;
+    s.showHit = 0;
+    s.showAll = function() {
+      return limit = false;
+    };
+    s.increment = function() {
+      var _ref;
+
+      limit = true;
+      return ((_ref = s.entries) != null ? _ref[s.showHit + 1] : void 0) && s.showHit++;
+    };
+    s.decrement = function() {
+      limit = true;
+      return s.showHit && s.showHit--;
+    };
+    s.getEntries = function() {
+      var _ref;
+
+      if (limit) {
+        return [(_ref = s.entries) != null ? _ref[s.showHit] : void 0];
+      } else {
+        return s.entries;
+      }
+    };
+    s.submit = function() {
+      var names, params, wf, x;
+
+      names = ["manus", "tryckt_material", "annat_tryckt", "forskning"];
+      params = (function() {
+        var _i, _len, _results;
+
+        _results = [];
+        for (_i = 0, _len = names.length; _i < _len; _i++) {
+          x = names[_i];
+          if (s[x]) {
+            _results.push("resurs=" + x);
+          }
+        }
+        return _results;
+      })();
+      if (s.wf) {
+        wf = s.wf;
+      }
+      c.log("submit params", params.join("&"));
+      return backend.getBiblinfo(params.join("&"), wf).then(function(data) {
+        return s.entries = data;
+      });
+    };
+    return s.submit();
+  });
+
   littb.controller("authorInfoCtrl", function($scope, $rootScope, backend, $routeParams) {
     var s;
 
@@ -974,6 +1041,41 @@
               _results.push({
                 baseform: $("grundform", article).text(),
                 lexemes: util.getInnerXML(article)
+              });
+            }
+            return _results;
+          })();
+          return def.resolve(output);
+        });
+        return def.promise;
+      },
+      getBiblinfo: function(params, wf) {
+        var def, url;
+
+        def = $q.defer();
+        url = "http://demolittb.spraakdata.gu.se/sla-bibliografi/?" + params;
+        $http({
+          url: url,
+          method: "GET",
+          params: {
+            username: "app",
+            wf: wf
+          }
+        }).success(function(xml) {
+          var entry, output;
+
+          output = (function() {
+            var _i, _len, _ref, _results;
+
+            _ref = $("entry", xml);
+            _results = [];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              entry = _ref[_i];
+              _results.push({
+                title: util.getInnerXML($("title", entry)),
+                isbn: util.getInnerXML($("isbn", entry)),
+                issn: util.getInnerXML($("issn", entry)),
+                archive: util.getInnerXML($("manusarchive ArchiveID", entry))
               });
             }
             return _results;

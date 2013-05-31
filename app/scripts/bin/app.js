@@ -70,6 +70,14 @@
       title: "Författare",
       reloadOnSearch: false,
       breadcrumb: ["författare"]
+    }).when("/forfattare/LagerlofS", {
+      templateUrl: "views/sla/lagerlof.html",
+      controller: "lagerlofCtrl",
+      reloadOnSearch: false
+    }).when("/forfattare/LagerlofS/biblinfo", {
+      templateUrl: "views/sla/biblinfo.html",
+      controller: "biblinfoCtrl",
+      reloadOnSearch: false
     }).when("/forfattare/:author/titlar", {
       templateUrl: "views/authorTitles.html",
       controller: "authorInfoCtrl",
@@ -133,12 +141,14 @@
     return delete $httpProvider.defaults.headers.common["X-Requested-With"];
   });
 
-  littb.run(function($rootScope, $location) {
+  littb.run(function($rootScope, $location, $rootElement) {
+    var item, normalizeUrl;
+
     $rootScope.goto = function(path) {
       return $location.url(path);
     };
-    return $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
-      var classList, item, normalizeUrl, title, _ref;
+    $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
+      var classList, title, _ref;
 
       if (newRoute.title) {
         title = "Litteraturbanken v.3 | " + newRoute.title;
@@ -156,42 +166,42 @@
       });
       $("body").attr("class", classList.join(" "));
       if ((_ref = newRoute.controller) != null ? _ref.replace : void 0) {
-        $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""));
+        return $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""));
       }
-      normalizeUrl = function(str) {
-        var trans;
-
-        trans = _.object(_.zip("åäö", "aao"));
-        return _.map(str, function(letter) {
-          return trans[letter.toLowerCase()] || letter;
-        });
-      };
-      $rootScope.breadcrumb = (function() {
-        var _i, _len, _ref1, _results;
-
-        _ref1 = (newRoute != null ? newRoute.breadcrumb : void 0) || [];
-        _results = [];
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          item = _ref1[_i];
-          if (_.isObject(item)) {
-            _results.push(item);
-          } else {
-            _results.push({
-              label: item,
-              url: "#/" + normalizeUrl(item).join("")
-            });
-          }
-        }
-        return _results;
-      })();
-      return $rootScope.appendCrumb = function(label) {
-        return $rootScope.breadcrumb = [].concat($rootScope.breadcrumb, [
-          {
-            label: label
-          }
-        ]);
-      };
     });
+    normalizeUrl = function(str) {
+      var trans;
+
+      trans = _.object(_.zip("åäö", "aao"));
+      return _.map(str, function(letter) {
+        return trans[letter.toLowerCase()] || letter;
+      });
+    };
+    $rootScope.breadcrumb = (function() {
+      var _i, _len, _ref, _results;
+
+      _ref = (typeof newRoute !== "undefined" && newRoute !== null ? newRoute.breadcrumb : void 0) || [];
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        if (_.isObject(item)) {
+          _results.push(item);
+        } else {
+          _results.push({
+            label: item,
+            url: "#/" + normalizeUrl(item).join("")
+          });
+        }
+      }
+      return _results;
+    })();
+    return $rootScope.appendCrumb = function(label) {
+      return $rootScope.breadcrumb = [].concat($rootScope.breadcrumb, [
+        {
+          label: label
+        }
+      ]);
+    };
   });
 
   littb.filter("setMarkee", function() {

@@ -13,6 +13,9 @@ littb.controller "startCtrl", ($scope, $location) ->
         $scope.goto url
 
 
+# littb.controller "menuCtrl", ($scope) ->
+    # $scope.menu = menu
+
 littb.controller "contactFormCtrl", ($scope, backend) ->
     #TODO: implement me. 
     
@@ -81,6 +84,57 @@ littb.controller "searchCtrl", ($scope, backend, $location, util) ->
             scope_name : "current_page"
             key : "traffsida"
         ]
+
+
+
+littb.controller "lagerlofCtrl", ($scope, $rootScope, backend) ->
+    s = $scope
+    s.author = "LagerlofS"
+    backend.getAuthorInfo(s.author).then (data) ->
+        s.authorInfo = data
+        s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
+        $rootScope.appendCrumb data.surname
+
+
+littb.controller "biblinfoCtrl", ($scope, backend) ->
+    s = $scope
+    limit = true
+    s.showHit = 0
+
+    s.showAll = () ->
+        limit = false
+    
+    s.increment = () ->
+        limit = true
+        s.entries?[s.showHit + 1] && s.showHit++
+    s.decrement = () ->
+        limit = true
+        s.showHit && s.showHit--
+
+    s.getEntries = () ->
+        if limit
+            return [s.entries?[s.showHit]]
+        else 
+            s.entries
+    
+    s.submit = () ->
+        # params = _.filter ["manus", "tryckt_material", "annat_tryckt", "forskning"], (item) ->
+        #     s[item]
+        names = ["manus", "tryckt_material", "annat_tryckt", "forskning"]
+        params = ("resurs=" + x for x in names when s[x])
+
+        wf = s.wf if s.wf
+
+        c.log "submit params", params.join("&")
+
+        backend.getBiblinfo(params.join("&"), wf).then (data) ->
+            s.entries = data
+
+
+
+    s.submit()
+
+
 
 
 
@@ -796,3 +850,25 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
+    getBiblinfo : (params, wf) ->
+        def = $q.defer()
+
+        url = "http://demolittb.spraakdata.gu.se/sla-bibliografi/?" + params
+
+        $http(
+            url : url
+            method : "GET"
+            params:
+                username : "app"
+                wf : wf
+        ).success (xml) ->
+            output = for entry in $("entry", xml)
+                title : util.getInnerXML $("title", entry)
+                isbn : util.getInnerXML $("isbn", entry)
+                issn : util.getInnerXML $("issn", entry)
+                archive : util.getInnerXML $("manusarchive ArchiveID", entry)
+
+
+
+            def.resolve output
+        return def.promise
