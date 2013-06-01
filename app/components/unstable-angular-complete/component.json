@@ -1,0 +1,15 @@
+{
+  "name": "unstable-angular-complete",
+  "version": "1.1.5",
+  "main": "./angular.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "gitHead": "5033b1893fd1faf3d80f3f52a713b61655fe3aee",
+  "_id": "unstable-angular-complete@1.1.5",
+  "readme": "ERROR: No README.md file found!",
+  "description": "ERROR: No README.md file found!",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ryanzec/bower-unstable-angular-complete.git"
+  }
+}

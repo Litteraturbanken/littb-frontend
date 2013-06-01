@@ -13,8 +13,6 @@ littb.controller "startCtrl", ($scope, $location) ->
         $scope.goto url
 
 
-# littb.controller "menuCtrl", ($scope) ->
-    # $scope.menu = menu
 
 littb.controller "contactFormCtrl", ($scope, backend) ->
     #TODO: implement me. 
@@ -118,8 +116,6 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
             s.entries
     
     s.submit = () ->
-        # params = _.filter ["manus", "tryckt_material", "annat_tryckt", "forskning"], (item) ->
-        #     s[item]
         names = ["manus", "tryckt_material", "annat_tryckt", "forskning"]
         params = ("resurs=" + x for x in names when s[x])
 
