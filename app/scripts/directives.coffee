@@ -2,7 +2,7 @@
 littb.directive 'submitBtn', () ->
 
     replace : true
-    template : '<img class="submit_btn" src="/bilder/LBsubmitknapp.jpeg">'
+    template : '<input type="image" class="submit_btn" ng-src="/bilder/LBsubmitknapp.jpeg">'
     # link: (scope, elm, attrs) ->
 
 littb.directive 'toolkit', ($compile, $location, $route) ->

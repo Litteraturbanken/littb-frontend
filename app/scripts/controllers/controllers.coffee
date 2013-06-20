@@ -22,7 +22,7 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend, $location, util) ->
+littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
     s = $scope
     s.open = false
     s.searchProofread = true
@@ -61,7 +61,12 @@ littb.controller "searchCtrl", ($scope, backend, $location, util) ->
         s.search(s.query)
         
 
+    s.save_search = () ->
+        c.log "search saved"
+        searchData.save(s.data)
 
+    s.getItems = () ->
+        _.pluck "item", data.kwic
 
 
     s.search = (query) ->
@@ -326,11 +331,11 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
         s.mediatype = s.data.mediatypes[0]
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width")
-
+    s.searchData = searchData.get()
     s.pagename = pagename
     s.opts =
         backdropFade: true

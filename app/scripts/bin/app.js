@@ -204,6 +204,20 @@
     };
   });
 
+  littb.factory("searchData", function() {
+    var data;
+
+    data = {};
+    return {
+      save: function(input) {
+        return data = input;
+      },
+      get: function() {
+        return data;
+      }
+    };
+  });
+
   littb.filter("setMarkee", function() {
     return function(input, fromid, toid) {
       var wrapper;

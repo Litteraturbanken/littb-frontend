@@ -35,6 +35,9 @@ body {
 //     border-top : solid 1px grey;
 //     padding-top : 1em;
 // }
+[submit-btn] {
+    cursor : pointer;
+}
 #toolkit {
     hr {
         border-top : 1px solid grey;
@@ -180,7 +183,7 @@ header {
     #toolkit {
         margin-top : 18em;
         font-size : 0.9em;
-        input {
+        input[type=text] {
             font-size : 1.1em;
             width : 90px;
         }
@@ -230,6 +233,9 @@ header {
             }
 
         }
+        .n_pages {
+            margin-bottom: 1em;
+        }
         .extended {
             border : 1px lightgrey solid;
             padding : 8px;
@@ -265,7 +271,7 @@ header {
         .littb_pager {
             margin-top : 1em;
             margin-bottom : 2em;
-            input {
+            .input_page {
                 width : 60px;
             }
             .ctrl {
@@ -306,6 +312,31 @@ $partnav-width : 120px;
         .pageinput {
             width : 50px;
             margin-left: 5px;
+        }
+        #search_nav {
+            .box {
+                background-image : url(/bilder/Soknavigering.png);
+                width: 113px;
+                height: 62px;
+                margin-left : -5px;
+                padding-top : 0.5em;
+
+                .text {
+                    float : left;
+                    color : white;
+                    width : 40px;
+                    white-space : nowrap;
+                    margin-left : 30px;
+
+                }
+                .ctrls {
+                    float : right;
+                    .close_btn {
+                        float : right;
+                    }
+                }
+            }
+                
         }
         .word_search {
             margin-top : 1em;

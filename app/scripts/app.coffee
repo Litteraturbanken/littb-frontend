@@ -191,6 +191,13 @@ littb.run ($rootScope, $location, $rootElement) ->
     $rootScope.appendCrumb = (label) ->
         $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, [{label : label}]
 
+littb.factory "searchData", () ->
+    data = {}
+    save : (input) ->
+        data = input
+    get : () ->
+        data
+
 
 littb.filter "setMarkee", () ->
     return (input, fromid, toid) ->

@@ -31,7 +31,7 @@
     });
   });
 
-  littb.controller("searchCtrl", function($scope, backend, $location, util) {
+  littb.controller("searchCtrl", function($scope, backend, $location, util, searchData) {
     var queryvars, s;
 
     s = $scope;
@@ -73,6 +73,13 @@
     s.lastPage = function() {
       s.current_page = s.total_pages;
       return s.search(s.query);
+    };
+    s.save_search = function() {
+      c.log("search saved");
+      return searchData.save(s.data);
+    };
+    s.getItems = function() {
+      return _.pluck("item", data.kwic);
     };
     s.search = function(query) {
       var mediatype, q;
@@ -415,12 +422,13 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util) {
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData) {
     var author, loadPage, mediatype, pagename, s, title, watches;
 
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width"));
+    s.searchData = searchData.get();
     s.pagename = pagename;
     s.opts = {
       backdropFade: true,

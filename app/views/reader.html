@@ -1,5 +1,5 @@
 
-<div css="{{workinfo.css}}" if="mediatype == 'etext'"></div>
+<div css="{{workinfo.css}}" ng-if="mediatype == 'etext'"></div>
 
 <div ng-switch on="mediatype">
     <img ng-src="{{url}}" ng-show="url" ng-switch-when="faksimil">
@@ -29,6 +29,27 @@
         {{workinfo.authorFullname}}
     </a>
     <a class="title" href="#/forfattare/{{workinfo.authorid}}/titlar/{{workinfo.titlepath}}/info">{{workinfo.showtitle}}</a>
+
+    <div id="search_nav">
+        <div class="box" style="">
+            <div class="text">
+                <div>
+                    Sökträff
+                </div>
+                <div>
+                    <span>1</span> av <span>{{searchData.count}}</span>
+                </div>
+            </div>
+            <div class="ctrls">
+                <img class="close_btn" src="/bilder/kryssruta.png">
+                <div style="clear:both;"></div>
+                <div class="">
+                    <img class="" src="/bilder/v_pil.png"> 
+                    <img class="" src="/bilder/h_pil.png">
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div style="height: 1em;"></div>
 
