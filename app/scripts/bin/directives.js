@@ -4,7 +4,7 @@
   littb.directive('submitBtn', function() {
     return {
       replace: true,
-      template: '<img class="submit_btn" src="bilder/LBsubmitknapp.jpeg">'
+      template: '<img class="submit_btn" src="/bilder/LBsubmitknapp.jpeg">'
     };
   });
 

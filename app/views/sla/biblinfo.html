@@ -1,41 +1,57 @@
-
-
-<input ng-model="wf" placeholder="Fritextsökning i hela databasen"><button>Sök</button>
-<select>
-    <option value="">Alla verk</option>
-</select>
-
-<ul>
-    <li>
-        <input type="checkbox" ng-model="manus" value="manus" id="manuscriptChk"> <label for="manuscriptChk">Visa information om alla manuskript</label>
-    </li>
-    <li>
-        <input type="checkbox" ng-model="tryckt_material" value="tryckt_material" id="printedChk"> <label for="printedChk">Visa information om alla tryckta upplagor</label>
-    </li>
-    <li>
-        <input type="checkbox" ng-model="annat_tryckt" value="annat_tryckt" id="publicationChk"> <label for="publicationChk">Visa information om andra publikationsformer</label>
-    </li>
-    <li>
-        <input type="checkbox" ng-model="forskning" value="forskning" id="researchChk"> <label for="researchChk">Visa information om forskning</label>
-    </li>
-</ul>
-
-<button ng-click="submit()">Gör ny sökning</button>
-
-<div class="results">
-    <div ng-repeat="entry in getEntries()">
-        
-        <div ng-repeat="(k, v) in entry track by $id($index)" >
-            {{k}}: <span ng-if="v">{{v}}</span><span ng-if="!v">[tom]</span>
+<div ng-class="{searching:searching}">
+    <h1>
+        Bibliografisk databas
+    </h1>
+    <div class="preloader">Söker <span class="dots_blink"></span></div>
+    <div class="search">
+        <input ng-model="wf" placeholder="Fritextsökning i hela databasen"><button>Sök</button>
+        <select>
+            <option value="">Alla verk</option>
+        </select>
+    </div>
+    
+    <ul>
+        <li>
+            <input type="checkbox" ng-model="manus" value="manus" id="manuscriptChk"> <label for="manuscriptChk">Visa information om alla manuskript</label>
+        </li>
+        <li>
+            <input type="checkbox" ng-model="tryckt_material" value="tryckt_material" id="printedChk"> <label for="printedChk">Visa information om alla tryckta upplagor</label>
+        </li>
+        <li>
+            <input type="checkbox" ng-model="annat_tryckt" value="annat_tryckt" id="publicationChk"> <label for="publicationChk">Visa information om andra publikationsformer</label>
+        </li>
+        <li>
+            <input type="checkbox" ng-model="forskning" value="forskning" id="researchChk"> <label for="researchChk">Visa information om forskning</label>
+        </li>
+    </ul>
+    
+    <!-- <button ng-click="submit()">Gör ny sökning</button> -->
+    
+    <div class="results">
+        <div ng-repeat="entry in getEntries()" ng-class-even="'even'">
+            <div class="col">
+                <div ng-repeat="(k, v) in getColumn1(entry) track by $id($index)" >
+                    <h4>{{k}}</h4> 
+                    <span ng-if="v">{{v}}</span><span ng-if="!v">[tom]</span>
+                </div>
+            </div>
+            <div class="col">
+                <div ng-repeat="(k, v) in getColumn2(entry) track by $id($index)" >
+                    <h4>{{k}}</h4> 
+                    <span ng-if="v">{{v}}</span><span ng-if="!v">[tom]</span>
+                </div>
+            </div>
+            
         </div>
     </div>
-</div>
-
-
-<div toolkit>
-    <ul>
-        <li><a href="javascript:" ng-click="increment()">Visa nästa sökträff</a></li>
-        <li><a href="javascript:" ng-click="decrement()">Visa föregående sökträff</a></li>
-        <li><a href="javascript:" ng-click="showAll()">Visa alla sökträffar</a></li>
-    </ul>
+    
+    
+    <div toolkit>
+        <div class="num_hits" ng-show="num_hits">{{num_hits}} träffar</div>
+        <ul>
+            <li><a href="javascript:" ng-click="increment()">Visa nästa sökträff</a></li>
+            <li><a href="javascript:" ng-click="decrement()">Visa föregående sökträff</a></li>
+            <li><a href="javascript:" ng-click="showAll()">Visa alla sökträffar</a></li>
+        </ul>
+    </div>
 </div>

@@ -41,7 +41,6 @@
     s.authors = backend.getAuthorList();
     s.searching = false;
     s.num_hits = 20;
-    s.show_from_result = 1;
     s.current_page = 1;
     s.$watch("selected_author", function(newAuthor, prevVal) {
       if (!newAuthor) {
@@ -59,15 +58,30 @@
         return "traff=" + item.nodeid + "&traffslut=" + item.endnodeid;
       }
     };
+    s.nextPage = function() {
+      s.current_page++;
+      return s.search(s.query);
+    };
+    s.prevPage = function() {
+      s.current_page--;
+      return s.search(s.query);
+    };
+    s.firstPage = function() {
+      s.current_page = 1;
+      return s.search(s.query);
+    };
+    s.lastPage = function() {
+      s.current_page = s.total_pages;
+      return s.search(s.query);
+    };
     s.search = function(query) {
-      var mediatype;
+      var mediatype, q;
 
-      if (query) {
-        $location.search("fras", query);
-        s.query = query;
-      } else {
-        $location.search("fras", s.query);
+      q = query || s.query;
+      if (q) {
+        $location.search("fras", q);
       }
+      s.query = q;
       s.searching = true;
       mediatype = [s.searchProofread && "etext", s.searchNonProofread && "faksimil"];
       if (_.all(mediatype)) {
@@ -75,7 +89,7 @@
       } else {
         mediatype = _.filter(mediatype, Boolean);
       }
-      return backend.searchWorks(s.query, mediatype, s.show_from_result, s.num_hits).then(function(data) {
+      return backend.searchWorks(s.query, mediatype, s.current_page, s.num_hits).then(function(data) {
         s.data = data;
         s.total_pages = Math.ceil(data.count / s.num_hits);
         return s.searching = false;
@@ -111,6 +125,7 @@
     s = $scope;
     limit = true;
     s.showHit = 0;
+    s.searching = false;
     s.showAll = function() {
       return limit = false;
     };
@@ -133,6 +148,20 @@
         return s.entries;
       }
     };
+    s.getColumn1 = function(entry) {
+      var pairs, splitAt;
+
+      pairs = _.pairs(entry);
+      splitAt = Math.floor(pairs.length / 2);
+      return _.object(pairs.slice(0, +splitAt + 1 || 9e9));
+    };
+    s.getColumn2 = function(entry) {
+      var pairs, splitAt;
+
+      pairs = _.pairs(entry);
+      splitAt = Math.floor(pairs.length / 2);
+      return _.object(pairs.slice(splitAt + 1));
+    };
     s.submit = function() {
       var names, params, wf, x;
 
@@ -149,12 +178,14 @@
         }
         return _results;
       })();
-      if (s.wf) {
+      if (wf) {
         wf = s.wf;
       }
-      c.log("submit params", params.join("&"));
+      s.searching = true;
       return backend.getBiblinfo(params.join("&"), wf).then(function(data) {
-        return s.entries = data;
+        s.entries = data;
+        s.num_hits = data.length;
+        return s.searching = false;
       });
     };
     return s.submit();

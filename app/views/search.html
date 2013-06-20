@@ -1,91 +1,99 @@
-<div class="preloader" ng-class="{searching:searching}">Söker <span class="dots_blink"></span></div>
-<div class="header">
-    <h1>Sök i texten</h1>
-    <a class="open_toggle" ng-click="open = !open">
-        <em ng-show="!open">visa sökalternativ >></em>
-        <em ng-show="open">&lt;&lt; dölj sökalternativ</em>
-
-
-    </a>
-    <div style="clear:both;"></div>
-</div>
-
-
-<form ng-submit="search()">Ord eller fras: <input class="input" ng-model="query" autofocus></form>
-
-<div class="extended" ng-show="open">
-    <h2>Urval</h2>
-    <div class="columns">
-        <div class="left">
-            <label for="author_select">Författare</label>
-            <select id="author_select"
-                    ng-model="selected_author"
-                    ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
-                <option value="">Alla författare</option>
-            </select>
-        </div>
-        <div class="right">
-            <label for="title_select">Titel: (välj författare först)</label>
-            <select id="title_select" ng-model="selected_title"
-                ng-options="title.showtitle for title in titles | filter:{searchable: 'true', proofread: searchProofread}">
-
-                <option value="">Allt tillgängligt</option>
-            </select>
-            <!-- what is the logic searchproofread and searchNonProofread? -->
-        </div>
+<div ng-class="{searching:searching}">
+    <div class="preloader">Söker <span class="dots_blink"></span></div>
+    <div class="header">
+        <h1>Sök i texten</h1>
+        <a class="open_toggle" ng-click="open = !open">
+            <em ng-show="!open">visa sökalternativ >></em>
+            <em ng-show="open">&lt;&lt; dölj sökalternativ</em>
+    
+    
+        </a>
+        <div style="clear:both;"></div>
     </div>
-    Sök i:
-    <input type="checkbox" id="proofread" ng-model="searchProofread">
-    <label for="proofread">korrekturläst</label>
-    <input type="checkbox" id="non_proofread" ng-model="searchNonProofread">
-    <label for="non_proofread">ej korrekturläst</label>
-</div>
-
-<div><span ng-click="search()" submit-btn></span><div style="clear:both;"></div></div>
-
-
-
-Visa
-<select id="num_hits" ng-model="num_hits" ng-options="num for num in [10, 20, 50, 100, 150]">
-</select>
-per sida.
-
-<div>
-    <table>
-        <tr ng-repeat="result in data.kwic" ng-class="{is_faksimil : result.item.mediatype == 'faksimil'}">
-            <td>{{$index + 1}}</td>
-            <td><a href="#/forfattare/{{result.item.authorid}}">{{result.item.nameforindex}}</a></td>
-            <td class="title"><a tooltip="{{result.item.title}}" href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/{{result.item.mediatype}}">{{result.item.title}}</a></td>
-            <td>
-                <a href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/sida/{{result.item.pagename}}/{{result.item.mediatype}}?traff={{result.item.nodeid}}&traffslut={{result.item.endnodeid}}">s. {{result.item.pagename}}</a>
-            </td>
-            <td class="left_context">{{result.left}}</td>
-            <td><strong>
-                <a href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/sida/{{result.item.pagename}}/{{result.item.mediatype}}?{{getHitParams(result.item)}}">{{result.kw}}</a>
+    
+    
+    <form ng-submit="search()">Ord eller fras: <input class="input" ng-model="query" autofocus></form>
+    
+    <div class="extended" ng-show="open">
+        <h2>Urval</h2>
+        <div class="columns">
+            <div class="left">
+                <label for="author_select">Författare</label>
+                <select id="author_select"
+                        ng-model="selected_author"
+                        ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
+                    <option value="">Alla författare</option>
+                </select>
+            </div>
+            <div class="right">
+                <label for="title_select">Titel: (välj författare först)</label>
+                <select id="title_select" ng-model="selected_title"
+                    ng-options="title.showtitle for title in titles | filter:{searchable: 'true', proofread: searchProofread}">
+    
+                    <option value="">Allt tillgängligt</option>
+                </select>
+                <!-- what is the logic searchproofread and searchNonProofread? -->
+            </div>
+        </div>
+        Sök i:
+        <input type="checkbox" id="proofread" ng-model="searchProofread">
+        <label for="proofread">korrekturläst</label>
+        <input type="checkbox" id="non_proofread" ng-model="searchNonProofread">
+        <label for="non_proofread">ej korrekturläst</label>
+    </div>
+    
+    <div><span ng-click="search()" submit-btn></span><div style="clear:both;"></div></div>
+    
+    
+    
+    Visa
+    <select id="num_hits" ng-model="num_hits" 
+        ng-options="num for num in [10, 20, 50, 100, 150]" ng-change="search(query)">
+    </select>
+    per sida.
+    
+    <div>
+        <div ng-if="!data || !data.count">Din sökning gav inga träffar</div>
+        <table class="results">
+            <tr ng-repeat="result in data.kwic" ng-class="{is_faksimil : result.item.mediatype == 'faksimil'}">
+                <td>{{($index + 1) + (current_page * num_hits)}}</td>
+                <td><a href="#/forfattare/{{result.item.authorid}}">{{result.item.nameforindex}}</a></td>
+                <td class="title">
+                    <a tooltip="{{result.item.title}}" 
+                        href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/{{result.item.mediatype}}">{{result.item.title}}</a>
+                </td>
+                <td>
+                    <a href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/sida/{{result.item.pagename}}/{{result.item.mediatype}}?traff={{result.item.nodeid}}&traffslut={{result.item.endnodeid}}">s. {{result.item.pagename}}</a>
+                </td>
+                <td class="left_context">{{result.left}}</td>
+                <td><strong>
+                    <a href="#/forfattare/{{result.item.authorid}}/titlar/{{result.item.titleidNew}}/sida/{{result.item.pagename}}/{{result.item.mediatype}}?{{getHitParams(result.item)}}">{{result.kw}}</a>
+                    
                 </strong></td>
-            <td>{{result.right}}</td>
-        </tr>
-    </table>
-</div>
-
-
-
-<div toolkit>
-    <hr>
-    <div class="littb_pager" ng-show="data">
-        Visar {{show_from_result}}-{{show_from_result + num_hits}} av 
-        {{data.count}} träffar,
-        sida {{current_page}} av {{total_pages}}.
-        <div class="ctrl">
-            <img src="bilder/LBstart.png">
-            <a ng-click="prevPage()"><img src="bilder/LBforegaende.png"></a>
-            <a ng-click="nextPage()"><img src="bilder/LBnasta.png"></a>
-            <img src="bilder/LBslut.png">
-        </div>
-
-        <label>Gå till träffsida</label>
-        <input ng-model="current_page"><span submit-btn></span>
+                <td>{{result.right}}</td>
+            </tr>
+        </table>
     </div>
-
-    Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.
+    
+    
+    
+    <div toolkit>
+        <hr>
+        <div class="littb_pager" ng-show="data && data.count">
+            Visar {{current_page  * num_hits + 1}}-{{(current_page  * num_hits + 1) + num_hits}} av 
+            {{data.count}} träffar,
+            sida {{current_page}} av {{total_pages}}.
+            <div class="ctrl">
+                <a ng-click="firstPage()"><img src="bilder/LBstart.png"></a>
+                <a ng-click="prevPage()"><img src="bilder/LBforegaende.png"></a>
+                <a ng-click="nextPage()"><img src="bilder/LBnasta.png"></a>
+                <a ng-click="lastPage()"><img src="bilder/LBslut.png"></a>
+            </div>
+    
+            <label>Gå till träffsida</label>
+            <input ng-model="current_page"><span submit-btn></span>
+        </div>
+    
+        Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.
+    </div>
 </div>

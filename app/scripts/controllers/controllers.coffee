@@ -31,7 +31,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, util) ->
     s.authors = backend.getAuthorList()
     s.searching = false
     s.num_hits = 20
-    s.show_from_result = 1
     s.current_page = 1
     
 
@@ -47,13 +46,29 @@ littb.controller "searchCtrl", ($scope, backend, $location, util) ->
             return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
 
-    s.search = (query) ->
-        if query
-            $location.search("fras", query)
-            s.query = query
-        else
-            $location.search("fras", s.query)
+    s.nextPage = () ->
+        s.current_page++
+        s.search(s.query)
+    s.prevPage = () ->
+        s.current_page--
+        s.search(s.query)
 
+    s.firstPage = () ->
+        s.current_page = 1
+        s.search(s.query)
+    s.lastPage = () ->
+        s.current_page = s.total_pages
+        s.search(s.query)
+        
+
+
+
+
+    s.search = (query) ->
+        q = query or s.query
+        $location.search("fras", q) if q
+
+        s.query = q
         s.searching = true
 
         
@@ -65,7 +80,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util) ->
             mediatype = _.filter mediatype, Boolean
 
         # resultitem = s.current_page * num_hits
-        backend.searchWorks(s.query, mediatype, s.show_from_result, s.num_hits).then (data) ->
+        backend.searchWorks(s.query, mediatype, s.current_page, s.num_hits).then (data) ->
             s.data = data
             s.total_pages = Math.ceil(data.count / s.num_hits)
 
@@ -98,6 +113,7 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
     s = $scope
     limit = true
     s.showHit = 0
+    s.searching = false
 
     s.showAll = () ->
         limit = false
@@ -114,17 +130,33 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
             return [s.entries?[s.showHit]]
         else 
             s.entries
+
+    s.getColumn1 = (entry) ->
+        pairs = _.pairs entry
+        splitAt = Math.floor pairs.length / 2
+        _.object pairs[0..splitAt]
+
+    s.getColumn2 = (entry) ->
+        pairs = _.pairs entry
+        splitAt = Math.floor pairs.length / 2
+        _.object pairs[(splitAt + 1)..]
+
+
+
+
     
     s.submit = () ->
         names = ["manus", "tryckt_material", "annat_tryckt", "forskning"]
         params = ("resurs=" + x for x in names when s[x])
 
-        wf = s.wf if s.wf
+        wf = s.wf if wf
 
-        c.log "submit params", params.join("&")
+        s.searching = true
 
         backend.getBiblinfo(params.join("&"), wf).then (data) ->
             s.entries = data
+            s.num_hits = data.length
+            s.searching = false
 
 
 
@@ -863,7 +895,6 @@ littb.factory 'backend', ($http, $q, util) ->
                 isbn : util.getInnerXML $("isbn", entry)
                 issn : util.getInnerXML $("issn", entry)
                 archive : util.getInnerXML $("manusarchive ArchiveID", entry)
-
 
 
             def.resolve output

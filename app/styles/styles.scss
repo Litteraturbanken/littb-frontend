@@ -195,19 +195,23 @@ header {
         margin-bottom : 1em;
     }
 }
+.preloader {
+    visibility: hidden;
+    color : $primarycolor;
+    text-align: right;
+}
+.searching .preloader {
+    visibility: visible;
+}
 
 .page-search {
     #mainview {
         position : relative;
-        .preloader {
-            visibility: hidden;
-            color : $primarycolor;
-            text-align: right;
-        }
-        .preloader.searching {
-            visibility: visible;
-        }
 
+        .searching .results {
+            opacity : 0.3;
+        }
+        
         .submit_btn {
             float : right;
         }
@@ -441,8 +445,49 @@ $partnav-width : 120px;
 }
 
 .page-biblinfo {
-    .results > div {
-        margin-bottom : 1em;
+
+    #mainview {
+        & > * {
+            margin-bottom : 1em;
+        }
+        li {
+            margin-bottom : 0.5em;
+        }
+
+        .search {
+            margin-bottom: 1em;
+            input {
+                width : 300px;
+                margin-right : 2px;
+            }
+        }
+
+    }
+    #toolkit {
+        .num_hits {
+            margin-bottom : 1em;
+            height : 1em;
+        }
+    }
+    .results {
+
+        & > div {
+            margin-bottom : 2em;
+            padding: 1em;
+            &.even {
+                background-color : #E3E3E3;
+            }
+        }
+        h4 {
+            text-transform: uppercase;
+            color : #666;
+            font-weight: normal;
+
+        }
+        .col {
+            @include inline-block();
+            width: 49%;
+        }
     }
 }
 
