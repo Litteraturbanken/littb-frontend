@@ -1006,7 +1006,7 @@
       searchLexicon: function(str) {
         var def, url;
         def = $q.defer();
-        url = "query/so.xql";
+        url = "/query/so.xql";
         http({
           url: url,
           params: {
