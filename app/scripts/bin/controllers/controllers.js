@@ -1022,7 +1022,7 @@
             for (_i = 0, _len = _ref.length; _i < _len; _i++) {
               article = _ref[_i];
               _results.push({
-                baseform: $("grundform-clean", article).text(),
+                baseform: $("grundform-clean:first", article).text(),
                 lexemes: util.getInnerXML(article)
               });
             }

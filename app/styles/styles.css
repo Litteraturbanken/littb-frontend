@@ -636,3 +636,8 @@ header .breadcrumb {
 grundform-clean {
   display: none;
 }
+
+@media -sass-debug-info{filename{font-family:file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss}line{font-family:\00003582}}
+.so_modal {
+  padding: 1em 1em 1em 3em;
+}
