@@ -885,7 +885,7 @@ littb.factory 'backend', ($http, $q, util) ->
             c.log "searchLexicon", xml
 
             output = for article in $("artikel", xml)
-                baseform : $("grundform", article).text()
+                baseform : $("grundform-clean", article).text()
                 # lexemes : (_.map $("lexem", article), util.getInnerXML).join("\n")
                 lexemes : util.getInnerXML article
 
