@@ -13,7 +13,6 @@
       restrict: "EA",
       compile: function(elm, attrs) {
         var cmp;
-
         elm.remove();
         cmp = $compile("<div>" + (elm.html()) + "</div>");
         return function(scope, iElement, iAttrs) {
@@ -72,13 +71,11 @@
       },
       link: function(scope, elem, iAttrs) {
         var s;
-
         s = scope;
         scope.sorttuple = [iAttrs.val, 1];
         s.enabled = [true, true];
         s.$watch("tuple", function(newtup) {
           var dir, newval;
-
           newval = newtup[0], dir = newtup[1];
           s.active = s.val === newval;
           return s.enabled = [!dir, dir];
@@ -103,7 +100,6 @@
       },
       link: function(scope, elm, attrs) {
         var s;
-
         s = scope;
         s.letterArray = _.invoke(["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXY", "ZÅÄÖ"], "split", "");
         s.ifShow = function(letter) {
@@ -131,7 +127,6 @@
       },
       link: function(scope, elm, attrs) {
         var coors, s;
-
         s = scope;
         coors = _.pick(scope, "top", "left", "width", "height");
         c.log("coors", coors, _.isEmpty(coors));
@@ -142,6 +137,20 @@
           return [key, val.split(",")[2] + "px"];
         }));
         return elm.css(coors);
+      }
+    };
+  });
+
+  littb.directive('clickOutside', function($document) {
+    return {
+      restrict: 'A',
+      link: function(scope, elem, attr, ctrl) {
+        elem.bind('click', function(e) {
+          return e.stopPropagation();
+        });
+        return $document.on('click', function() {
+          return scope.$apply(attr.clickOutside);
+        });
       }
     };
   });

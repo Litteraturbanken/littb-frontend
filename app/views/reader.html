@@ -37,7 +37,7 @@
                     Sökträff
                 </div>
                 <div>
-                    <span>1</span> av <span>{{searchData.count}}</span>
+                    <span>1</span> av <span>{{searchData.total_hits}}</span>
                 </div>
             </div>
             <div class="ctrls">
@@ -84,7 +84,7 @@
 
         <div ng-show="showPopup" class="triangle"></div>
 
-        <ul class="part_menu" ng-show="showPopup">
+        <ul class="part_menu" ng-show="showPopup" click-outside="showPopup = false">
             <li><a ng-click="gotopage(startpage)">[Start]</a></li>
             <li ng-repeat="part in workinfo.parts">
                 <!-- tooltip="{{part.navtitle}}" -->

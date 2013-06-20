@@ -67,7 +67,7 @@
                 </td>
                 <td class="left_context">{{r.left}}</td>
                 <td><strong>
-                    <a ng-click="save_search()" href="#/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/sida/{{r.item.pagename}}/{{r.item.mediatype}}?{{getHitParams(r.item)}}">{{r.kw}}</a>
+                    <a ng-click="save_search(current_page * num_hits, $index, data)" ng-href="{{r.href}}" >{{r.kw}}</a><!-- href="#/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/sida/{{r.item.pagename}}/{{r.item.mediatype}}?{{getHitParams(r.item)}}"-->
                     
                 </strong></td>
                 <td>{{r.right}}</td>

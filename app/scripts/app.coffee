@@ -191,12 +191,54 @@ littb.run ($rootScope, $location, $rootElement) ->
     $rootScope.appendCrumb = (label) ->
         $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, [{label : label}]
 
-littb.factory "searchData", () ->
-    data = {}
-    save : (input) ->
-        data = input
-    get : () ->
-        data
+littb.service "searchData", (backend, $q) ->
+    NUM_HITS = 20 # how many hits per search?
+    @data = []
+    @total_hits = null
+    @current = null
+
+    parseUrls = (row) ->
+        itm = row.item
+        return "#/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
+            "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
+        
+    @save = (startIndex, currentIndex, input, search_args) ->
+        @searchArgs = search_args
+        @data = new Array(input.count)
+        @appendData startIndex, input
+        @total_hits = input.count
+        @current = currentIndex
+
+    @appendData = (startIndex, data) ->
+        @data[startIndex..data.kwic.length] = _.map data.kwic, parseUrls
+
+
+    @next = () ->
+        @current++
+        @search()
+
+        
+    @prev = () ->
+        @current--
+        @search()
+
+
+    @search = () ->
+        def = $q.defer()
+        if @data[@current]? 
+            def.resolve @data[@current]
+        else
+            current_page = Math.floor(@current / NUM_HITS )
+            args = [].concat @searchArgs, [current_page + 1, NUM_HITS]
+            backend.searchWorks(args...).then (data) ->
+                @appendData @current, data
+                def.resolve(data)
+        return def.promise
+
+
+
+
+
 
 
 littb.filter "setMarkee", () ->

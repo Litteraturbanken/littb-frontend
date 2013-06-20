@@ -10,7 +10,6 @@
   littb.controller("startCtrl", function($scope, $location) {
     return $scope.gotoTitle = function(query) {
       var url;
-
       if (!query) {
         url = "/titlar";
       } else {
@@ -24,7 +23,6 @@
 
   littb.controller("statsCtrl", function($scope, backend) {
     var s;
-
     s = $scope;
     return backend.getStats().then(function(data) {
       return s.data = data;
@@ -32,8 +30,7 @@
   });
 
   littb.controller("searchCtrl", function($scope, backend, $location, util, searchData) {
-    var queryvars, s;
-
+    var getMediatypes, queryvars, s;
     s = $scope;
     s.open = false;
     s.searchProofread = true;
@@ -42,22 +39,22 @@
     s.searching = false;
     s.num_hits = 20;
     s.current_page = 1;
+    getMediatypes = function() {
+      var mediatype;
+      mediatype = [s.searchProofread && "etext", s.searchNonProofread && "faksimil"];
+      if (_.all(mediatype)) {
+        mediatype = "all";
+      } else {
+        mediatype = _.filter(mediatype, Boolean);
+      }
+      return mediatype;
+    };
     s.$watch("selected_author", function(newAuthor, prevVal) {
       if (!newAuthor) {
         return;
       }
       return s.titles = backend.getTitlesByAuthor(newAuthor.authorid);
     });
-    s.getHitParams = function(item) {
-      var obj;
-
-      if (item.mediatype === "faksimil") {
-        obj = _.pick(item, "x", "y", "width", "height");
-        return _(obj).pairs().invoke("join", "=").join("&");
-      } else {
-        return "traff=" + item.nodeid + "&traffslut=" + item.endnodeid;
-      }
-    };
     s.nextPage = function() {
       s.current_page++;
       return s.search(s.query);
@@ -74,32 +71,34 @@
       s.current_page = s.total_pages;
       return s.search(s.query);
     };
-    s.save_search = function() {
-      c.log("search saved");
-      return searchData.save(s.data);
+    s.save_search = function(startIndex, currentIndex, data) {
+      return searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()]);
     };
     s.getItems = function() {
       return _.pluck("item", data.kwic);
     };
     s.search = function(query) {
       var mediatype, q;
-
       q = query || s.query;
       if (q) {
         $location.search("fras", q);
       }
       s.query = q;
       s.searching = true;
-      mediatype = [s.searchProofread && "etext", s.searchNonProofread && "faksimil"];
-      if (_.all(mediatype)) {
-        mediatype = "all";
-      } else {
-        mediatype = _.filter(mediatype, Boolean);
-      }
+      mediatype = getMediatypes();
       return backend.searchWorks(s.query, mediatype, s.current_page, s.num_hits).then(function(data) {
+        var itm, row, _i, _len, _ref, _results;
         s.data = data;
         s.total_pages = Math.ceil(data.count / s.num_hits);
-        return s.searching = false;
+        s.searching = false;
+        _ref = data.kwic;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          row = _ref[_i];
+          itm = row.item;
+          _results.push(row.href = ("#/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm))));
+        }
+        return _results;
       });
     };
     queryvars = $location.search();
@@ -116,7 +115,6 @@
 
   littb.controller("lagerlofCtrl", function($scope, $rootScope, backend) {
     var s;
-
     s = $scope;
     s.author = "LagerlofS";
     return backend.getAuthorInfo(s.author).then(function(data) {
@@ -128,7 +126,6 @@
 
   littb.controller("biblinfoCtrl", function($scope, backend) {
     var limit, s;
-
     s = $scope;
     limit = true;
     s.showHit = 0;
@@ -138,7 +135,6 @@
     };
     s.increment = function() {
       var _ref;
-
       limit = true;
       return ((_ref = s.entries) != null ? _ref[s.showHit + 1] : void 0) && s.showHit++;
     };
@@ -148,7 +144,6 @@
     };
     s.getEntries = function() {
       var _ref;
-
       if (limit) {
         return [(_ref = s.entries) != null ? _ref[s.showHit] : void 0];
       } else {
@@ -157,25 +152,21 @@
     };
     s.getColumn1 = function(entry) {
       var pairs, splitAt;
-
       pairs = _.pairs(entry);
       splitAt = Math.floor(pairs.length / 2);
       return _.object(pairs.slice(0, +splitAt + 1 || 9e9));
     };
     s.getColumn2 = function(entry) {
       var pairs, splitAt;
-
       pairs = _.pairs(entry);
       splitAt = Math.floor(pairs.length / 2);
       return _.object(pairs.slice(splitAt + 1));
     };
     s.submit = function() {
       var names, params, wf, x;
-
       names = ["manus", "tryckt_material", "annat_tryckt", "forskning"];
       params = (function() {
         var _i, _len, _results;
-
         _results = [];
         for (_i = 0, _len = names.length; _i < _len; _i++) {
           x = names[_i];
@@ -200,7 +191,6 @@
 
   littb.controller("authorInfoCtrl", function($scope, $rootScope, backend, $routeParams) {
     var s;
-
     s = $scope;
     _.extend(s, $routeParams);
     return backend.getAuthorInfo(s.author).then(function(data) {
@@ -212,7 +202,6 @@
 
   littb.controller("titleListCtrl", function($scope, backend, util) {
     var s;
-
     s = $scope;
     util.setupHash(s, "mediatypeFilter", "selectedLetter");
     s.sorttuple = ["itemAttrs.showtitle", false];
@@ -245,7 +234,6 @@
 
   littb.controller("epubListCtrl", function($scope, backend, util) {
     var s;
-
     s = $scope;
     window.has = function(one, two) {
       return one.toLowerCase().indexOf(two) !== -1;
@@ -266,7 +254,6 @@
     };
     return backend.getTitles().then(function(titleArray) {
       var authors;
-
       s.rows = _.filter(titleArray, function(item) {
         return __indexOf.call(item.mediatype, "epub") >= 0;
       });
@@ -288,16 +275,13 @@
 
   littb.controller("helpCtrl", function($scope, $http, util, $location) {
     var s, url;
-
     s = $scope;
     url = "/red/om/hjalp/hjalp.html";
     return $http.get(url).success(function(data) {
       var elem;
-
       s.htmlContent = data;
       s.labelArray = (function() {
         var _i, _len, _ref, _results;
-
         _ref = $("[id]", data);
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -323,16 +307,13 @@
 
   littb.controller("presentationCtrl", function($scope, $http, $routeParams, $location, util) {
     var s, url;
-
     s = $scope;
     url = '/red/presentationer/presentationerForfattare.html';
     return $http.get(url).success(function(data) {
       var elem;
-
       s.doc = data;
       s.currentLetters = (function() {
         var _i, _len, _ref, _results;
-
         _ref = $("[id]", data);
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -355,7 +336,6 @@
 
   littb.controller("authorListCtrl", function($scope, backend, util) {
     var s;
-
     s = $scope;
     util.setupHash(s, "authorFilter");
     backend.getAuthorList().then(function(data) {
@@ -367,7 +347,6 @@
     });
     return s.getAuthor = function(row) {
       var first, last, _ref;
-
       _ref = row.nameforindex.split(","), last = _ref[0], first = _ref[1];
       last = last.toUpperCase();
       if (first) {
@@ -381,7 +360,6 @@
   littb.filter("correctLink", function() {
     return function(html) {
       var img, wrapper;
-
       c.log("html", html);
       wrapper = $("<div>").append(html);
       img = $("img", wrapper);
@@ -392,7 +370,6 @@
 
   littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams) {
     var author, mediatype, s, title;
-
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype;
     _.extend(s, $routeParams);
@@ -405,7 +382,6 @@
     };
     s.getOtherMediatypes = function() {
       var x, _i, _len, _ref, _ref1, _results;
-
       _ref1 = ((_ref = s.data) != null ? _ref.mediatypes : void 0) || [];
       _results = [];
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
@@ -424,11 +400,10 @@
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData) {
     var author, loadPage, mediatype, pagename, s, title, watches;
-
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width"));
-    s.searchData = searchData.get();
+    s.searchData = searchData;
     s.pagename = pagename;
     s.opts = {
       backdropFade: true,
@@ -443,7 +418,6 @@
     };
     s.nextPage = function() {
       var newix;
-
       newix = s.pageix + 1;
       if ("ix_" + newix in s.pagemap) {
         return s.setPage(newix);
@@ -453,7 +427,6 @@
     };
     s.prevPage = function() {
       var newix;
-
       newix = s.pageix - 1;
       if ("ix_" + newix in s.pagemap) {
         return s.setPage(newix);
@@ -509,7 +482,6 @@
       s.pagename = val;
       return backend.getPage(author, title, mediatype, s.pagename).then(function(_arg) {
         var data, page, workinfo;
-
         data = _arg[0], workinfo = _arg[1];
         s.workinfo = workinfo;
         s.pagemap = workinfo.pagemap;
@@ -545,7 +517,6 @@
     watches.push(s.$watch("getPage()", loadPage));
     return s.$on("$destroy", function() {
       var w, _i, _len, _results;
-
       _results = [];
       for (_i = 0, _len = watches.length; _i < _len; _i++) {
         w = watches[_i];
@@ -557,7 +528,6 @@
 
   littb.factory("util", function($location) {
     var MOZ_HACK_REGEXP, PREFIX_REGEXP, SPECIAL_CHARS_REGEXP, camelCase, xml2Str;
-
     PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i;
     SPECIAL_CHARS_REGEXP = /([\:\-\_]+(.))/g;
     MOZ_HACK_REGEXP = /^moz([A-Z])/;
@@ -572,7 +542,6 @@
     };
     xml2Str = function(xmlNode) {
       var e;
-
       try {
         return (new XMLSerializer()).serializeToString(xmlNode);
       } catch (_error) {
@@ -589,7 +558,6 @@
     return {
       getInnerXML: function(elem) {
         var child, strArray;
-
         if ("jquery" in elem) {
           if (!elem.length) {
             return null;
@@ -598,7 +566,6 @@
         }
         strArray = (function() {
           var _i, _len, _ref, _results;
-
           _ref = elem.childNodes;
           _results = [];
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -614,11 +581,9 @@
       },
       setupHashComplex: function(scope, config) {
         var obj, watch, _i, _len, _results;
-
         scope.loc = $location;
         scope.$watch('loc.search()', function() {
           var obj, val, _i, _len, _results;
-
           _results = [];
           for (_i = 0, _len = config.length; _i < _len; _i++) {
             obj = config[_i];
@@ -653,7 +618,6 @@
       },
       setupHash: function() {
         var callback, name, nameConfig, names, scope, _i, _len, _ref, _results;
-
         scope = arguments[0], nameConfig = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
         names = _.map(nameConfig, function(item) {
           if (_.isObject(item)) {
@@ -690,10 +654,8 @@
 
   littb.factory('backend', function($http, $q, util) {
     var http, objFromAttrs, parseWorkInfo;
-
     http = function(config) {
       var defaultConfig;
-
       defaultConfig = {
         method: "GET",
         params: {
@@ -701,7 +663,6 @@
         },
         transformResponse: function(data, headers) {
           var output;
-
           output = new DOMParser().parseFromString(data, "text/xml");
           if ($("fel", output).length) {
             c.log("fel:", $("fel", output).text());
@@ -713,13 +674,11 @@
     };
     objFromAttrs = function(elem) {
       var attrib;
-
       if (!elem) {
         return null;
       }
       return _.object((function() {
         var _i, _len, _ref, _results;
-
         _ref = elem.attributes;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -731,7 +690,6 @@
     };
     parseWorkInfo = function(root, xml) {
       var asArray, elem, output, useInnerXML, val, _i, _len, _ref, _ref1, _ref2;
-
       useInnerXML = ["sourcedesc", "license-text"];
       asArray = ["mediatypes"];
       output = {};
@@ -752,9 +710,17 @@
       return output;
     };
     return {
+      getHitParams: function(item) {
+        var obj;
+        if (item.mediatype === "faksimil") {
+          obj = _.pick(item, "x", "y", "width", "height");
+          return _(obj).pairs().invoke("join", "=").join("&");
+        } else {
+          return "traff=" + item.nodeid + "&traffslut=" + item.endnodeid;
+        }
+      },
       getTitles: function() {
         var def;
-
         def = $q.defer();
         http({
           url: "/query/lb-anthology.xql",
@@ -763,7 +729,6 @@
           }
         }).success(function(xml) {
           var elemList, itm, rows, workIdGroups, workid;
-
           workIdGroups = _.groupBy($("item", xml), function(item) {
             return $(item).attr("lbworkid");
           });
@@ -786,17 +751,14 @@
       },
       getAuthorList: function() {
         var def, url;
-
         def = $q.defer();
         url = "/query/lb-authors.xql?action=get-authors";
         http({
           url: url
         }).success(function(xml) {
           var attrArray, item;
-
           attrArray = (function() {
             var _i, _len, _ref, _results;
-
             _ref = $("item", xml);
             _results = [];
             for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -811,7 +773,6 @@
       },
       getSourceInfo: function(author, title, mediatype) {
         var def, params, url;
-
         c.log("getSourceInfo", mediatype);
         def = $q.defer();
         url = "/query/lb-anthology.xql";
@@ -828,7 +789,6 @@
           params: params
         }).success(function(xml) {
           var errata, output, prov, sourcedesc, tr;
-
           output = parseWorkInfo("result", xml);
           prov = $("result provenance-data", xml);
           output["provenance"] = {
@@ -839,7 +799,6 @@
           errata = $("errata", xml);
           output.errata = (function() {
             var _i, _len, _ref, _results;
-
             _ref = $("tr", errata);
             _results = [];
             for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -858,7 +817,6 @@
       },
       getPage: function(author, title, mediatype, pagenum) {
         var def, params, url;
-
         def = $q.defer();
         url = "/query/lb-anthology.xql";
         params = {
@@ -878,7 +836,6 @@
           params: params
         }).success(function(xml) {
           var info, p, page, pgMap, _i, _len, _ref;
-
           info = parseWorkInfo("LBwork", xml);
           info["authorFullname"] = $("author-fullname", xml).text();
           info["showtitle"] = $(":root > showtitle", xml).text();
@@ -899,7 +856,6 @@
       },
       getAuthorInfo: function(author) {
         var def, url;
-
         def = $q.defer();
         url = "/query/lb-authors.xql";
         http({
@@ -910,7 +866,6 @@
           }
         }).success(function(xml) {
           var authorInfo, elem, item, obj, val, works, _i, _j, _len, _len1, _ref, _ref1;
-
           authorInfo = {};
           _ref = $("LBauthor", xml).children();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -936,7 +891,6 @@
       },
       getStats: function() {
         var def, url;
-
         def = $q.defer();
         url = "/query/lb-stats.xql";
         http({
@@ -946,7 +900,6 @@
           }
         }).success(function(xml) {
           var elem, output, parseObj, x, _i, _len, _ref, _ref1;
-
           output = {};
           parseObj = ["pages", "words"];
           _ref = $("result", xml).children();
@@ -955,7 +908,6 @@
             if (elem.tagName === "table") {
               output.titleList = (function() {
                 var _j, _len1, _ref1, _results;
-
                 _ref1 = $("td:nth-child(2) a", elem);
                 _results = [];
                 for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
@@ -979,7 +931,6 @@
       },
       getTitlesByAuthor: function(authorid) {
         var def, url;
-
         def = $q.defer();
         url = "/query/lb-anthology.xql";
         http({
@@ -990,7 +941,6 @@
           }
         }).success(function(xml) {
           var elem, output, _i, _len, _ref;
-
           output = [];
           _ref = $("result", xml).children();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -1003,7 +953,6 @@
       },
       searchWorks: function(query, mediatype, resultitem, resultlength) {
         var def, url;
-
         def = $q.defer();
         url = "/query/lb-search.xql";
         http({
@@ -1018,7 +967,6 @@
           data: "<search>\n    <string-filter>\n        <item type=\"string\">" + query + "|</item>\n    </string-filter>\n<domain-filter>\n<item type=\"all-titles\" mediatype=\"" + mediatype + "\"></item>\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
         }).success(function(data) {
           var ref;
-
           c.log("success", $("result", data).attr("ref"));
           ref = $("result", data).attr("ref");
           return http({
@@ -1031,7 +979,6 @@
             }
           }).success(function(resultset) {
             var elem, kw, left, output, right, work, _i, _len, _ref, _ref1;
-
             c.log("get-result-set success", resultset, $("result", resultset).children());
             output = {
               kwic: [],
@@ -1058,7 +1005,6 @@
       },
       searchLexicon: function(str) {
         var def, url;
-
         def = $q.defer();
         url = "query/so.xql";
         http({
@@ -1068,11 +1014,9 @@
           }
         }).success(function(xml) {
           var article, output;
-
           c.log("searchLexicon", xml);
           output = (function() {
             var _i, _len, _ref, _results;
-
             _ref = $("artikel", xml);
             _results = [];
             for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -1090,7 +1034,6 @@
       },
       getBiblinfo: function(params, wf) {
         var def, url;
-
         def = $q.defer();
         url = "http://demolittb.spraakdata.gu.se/sla-bibliografi/?" + params;
         $http({
@@ -1102,10 +1045,8 @@
           }
         }).success(function(xml) {
           var entry, output;
-
           output = (function() {
             var _i, _len, _ref, _results;
-
             _ref = $("entry", xml);
             _results = [];
             for (_i = 0, _len = _ref.length; _i < _len; _i++) {

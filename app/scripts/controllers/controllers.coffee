@@ -32,18 +32,23 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
     s.searching = false
     s.num_hits = 20
     s.current_page = 1
+
+    getMediatypes = () ->
+        mediatype = [s.searchProofread and "etext", s.searchNonProofread and "faksimil"]
+        # if not _.any mediatype then VALIDATION_ERROR
+        if _.all mediatype
+            mediatype = "all"
+        else 
+            mediatype = _.filter mediatype, Boolean
+
+        return mediatype
     
 
     s.$watch "selected_author", (newAuthor, prevVal) ->
         return unless newAuthor
         s.titles = backend.getTitlesByAuthor(newAuthor.authorid)
 
-    s.getHitParams = (item) ->
-        if item.mediatype == "faksimil"
-            obj = _.pick item, "x", "y", "width", "height"
-            return _(obj).pairs().invoke("join", "=").join("&")
-        else 
-            return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
+    
 
 
     s.nextPage = () ->
@@ -59,11 +64,11 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
     s.lastPage = () ->
         s.current_page = s.total_pages
         s.search(s.query)
-        
+    
 
-    s.save_search = () ->
-        c.log "search saved"
-        searchData.save(s.data)
+    s.save_search = (startIndex, currentIndex, data) ->
+        searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()])
+
 
     s.getItems = () ->
         _.pluck "item", data.kwic
@@ -75,21 +80,22 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
 
         s.query = q
         s.searching = true
-
         
-        mediatype = [s.searchProofread and "etext", s.searchNonProofread and "faksimil"]
-        # if not _.any mediatype then VALIDATION_ERROR
-        if _.all mediatype
-            mediatype = "all"
-        else 
-            mediatype = _.filter mediatype, Boolean
+        mediatype = getMediatypes()
 
         # resultitem = s.current_page * num_hits
         backend.searchWorks(s.query, mediatype, s.current_page, s.num_hits).then (data) ->
             s.data = data
             s.total_pages = Math.ceil(data.count / s.num_hits)
-
             s.searching = false
+
+            for row in data.kwic
+                itm = row.item
+                row.href = "#/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
+                    "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
+
+
+
 
 
     queryvars = $location.search()
@@ -335,7 +341,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width")
-    s.searchData = searchData.get()
+    s.searchData = searchData
     s.pagename = pagename
     s.opts =
         backdropFade: true
@@ -593,6 +599,12 @@ littb.factory 'backend', ($http, $q, util) ->
         return output
 
 
+    getHitParams : (item) ->
+        if item.mediatype == "faksimil"
+            obj = _.pick item, "x", "y", "width", "height"
+            return _(obj).pairs().invoke("join", "=").join("&")
+        else 
+            return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
     getTitles : ->
         def = $q.defer()
@@ -860,7 +872,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     searchLexicon : (str) ->
         def = $q.defer()
-        url = "query/so.xql"
+        url = "/query/so.xql"
         # http://demolittb.spraakdata.gu.se?word=abdikerades
         http(
             url : url

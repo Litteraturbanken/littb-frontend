@@ -1,5 +1,6 @@
 (function() {
-  'use strict';  _.templateSettings = {
+  'use strict';
+  _.templateSettings = {
     interpolate: /\{\{(.+?)\}\}/g
   };
 
@@ -112,7 +113,6 @@
       resolve: {
         r: function($q, $routeParams, $route) {
           var def;
-
           def = $q.defer();
           if (_.isEmpty($routeParams)) {
             def.resolve();
@@ -143,13 +143,11 @@
 
   littb.run(function($rootScope, $location, $rootElement) {
     var item, normalizeUrl;
-
     $rootScope.goto = function(path) {
       return $location.url(path);
     };
     $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
       var classList, title, _ref;
-
       if (newRoute.title) {
         title = "Litteraturbanken v.3 | " + newRoute.title;
       } else {
@@ -171,7 +169,6 @@
     });
     normalizeUrl = function(str) {
       var trans;
-
       trans = _.object(_.zip("åäö", "aao"));
       return _.map(str, function(letter) {
         return trans[letter.toLowerCase()] || letter;
@@ -179,7 +176,6 @@
     };
     $rootScope.breadcrumb = (function() {
       var _i, _len, _ref, _results;
-
       _ref = (typeof newRoute !== "undefined" && newRoute !== null ? newRoute.breadcrumb : void 0) || [];
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -204,24 +200,56 @@
     };
   });
 
-  littb.factory("searchData", function() {
-    var data;
-
-    data = {};
-    return {
-      save: function(input) {
-        return data = input;
-      },
-      get: function() {
-        return data;
+  littb.service("searchData", function(backend, $q) {
+    var NUM_HITS, parseUrls;
+    NUM_HITS = 20;
+    this.data = [];
+    this.total_hits = null;
+    this.current = null;
+    parseUrls = function(row) {
+      var itm;
+      itm = row.item;
+      return ("#/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm)));
+    };
+    this.save = function(startIndex, currentIndex, input, search_args) {
+      this.searchArgs = search_args;
+      this.data = new Array(input.count);
+      this.appendData(startIndex, input);
+      this.total_hits = input.count;
+      return this.current = currentIndex;
+    };
+    this.appendData = function(startIndex, data) {
+      var _ref;
+      return ([].splice.apply(this.data, [startIndex, data.kwic.length - startIndex + 1].concat(_ref = _.map(data.kwic, parseUrls))), _ref);
+    };
+    this.next = function() {
+      this.current++;
+      return this.search();
+    };
+    this.prev = function() {
+      this.current--;
+      return this.search();
+    };
+    return this.search = function() {
+      var args, current_page, def;
+      def = $q.defer();
+      if (this.data[this.current] != null) {
+        def.resolve(this.data[this.current]);
+      } else {
+        current_page = Math.floor(this.current / NUM_HITS);
+        args = [].concat(this.searchArgs, [current_page + 1, NUM_HITS]);
+        backend.searchWorks.apply(backend, args).then(function(data) {
+          this.appendData(this.current, data);
+          return def.resolve(data);
+        });
       }
+      return def.promise;
     };
   });
 
   littb.filter("setMarkee", function() {
     return function(input, fromid, toid) {
       var wrapper;
-
       input = $(input);
       wrapper = $("<div>");
       if (fromid === toid) {
