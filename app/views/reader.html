@@ -4,7 +4,7 @@
 <div ng-switch on="mediatype">
     <img ng-src="{{url}}" ng-show="url" ng-switch-when="faksimil">
 
-    <div ng-switch-when="etext" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
+    <div selection-sniffer ng-switch-when="etext" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
     <div ng-switch-when="faksimil" square x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
 </div>
 
@@ -26,28 +26,30 @@
 
     <hr>
 
-
     <a class="author" href="#/forfattare/{{workinfo.authorid}}">
         {{workinfo.authorFullname}}
     </a>
-    <a class="title" href="#/forfattare/{{workinfo.authorid}}/titlar/{{workinfo.titlepath}}/info">{{workinfo.showtitle}}</a>
+    <a class="title" 
+        href="#/forfattare/{{workinfo.authorid}}/titlar/{{workinfo.titlepath}}/info">
+        {{workinfo.showtitle}}
+    </a>
 
-    <div id="search_nav">
+    <div id="search_nav" ng-show="markee_from && markee_to && searchData.total_hits">
         <div class="box" style="">
             <div class="text">
                 <div>
                     Sökträff
                 </div>
                 <div>
-                    <span>1</span> av <span>{{searchData.total_hits}}</span>
+                    <span>{{searchData.current + 1}}</span> av <span>{{searchData.total_hits}}</span>
                 </div>
             </div>
             <div class="ctrls">
-                <img class="close_btn" src="/bilder/kryssruta.png">
+                <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
                 <div style="clear:both;"></div>
                 <div class="">
-                    <img class="" src="/bilder/v_pil.png"> 
-                    <img class="" src="/bilder/h_pil.png">
+                    <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
+                    <img ng-click="nextHit()" class="" src="/bilder/h_pil.png">
                 </div>
             </div>
         </div>
@@ -61,10 +63,10 @@
 
 
     <div>
-        <img src="bilder/LBstart.png">
+        <a ng-click="firstPage()"><img src="bilder/LBstart.png"></a>
         <a ng-click="prevPage()"><img src="bilder/LBforegaende.png"></a>
         <a ng-click="nextPage()"><img src="bilder/LBnasta.png"></a>
-        <img src="bilder/LBslut.png">
+        <a ng-click="lastPage()"><img src="bilder/LBslut.png"></a>
     </div>
     <form ng-submit="pagenum = displaynum">
         Sida <input class="pageinput" ng-model="displaynum">

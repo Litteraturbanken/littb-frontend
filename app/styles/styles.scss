@@ -32,6 +32,14 @@ body {
 
 }
 
+.search_dict {
+    position : absolute;
+    width : 24px;
+    height : 24px;
+    background-image: url("../img/search_dict.png");
+    cursor : pointer;
+}
+
 // #toolkit:not(:empty) {
 //     border-top : solid 1px grey;
 //     padding-top : 1em;
@@ -307,6 +315,9 @@ $partnav-width : 120px;
         & > div {
             margin : 1em 0;
         }
+        .title, .author {
+            min-height : 1em;
+        }
         .title {
             font-style: italic;
         }
@@ -332,6 +343,9 @@ $partnav-width : 120px;
                 }
                 .ctrls {
                     float : right;
+                    img {
+                        cursor : pointer;
+                    }
                     .close_btn {
                         float : right;
                     }
@@ -580,5 +594,11 @@ grundform-clean {
 }
 
 .so_modal {
-    padding : 1em 1em 1em 3em;
+    padding : 1em 1em 1em 1.5em;
+}
+
+._so_article {
+    max-height : 520px;
+    padding-left : 1.5em;
+    overflow : auto;
 }

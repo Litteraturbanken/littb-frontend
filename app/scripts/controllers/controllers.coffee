@@ -31,7 +31,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
     s.authors = backend.getAuthorList()
     s.searching = false
     s.num_hits = 20
-    s.current_page = 1
+    s.current_page = 0
 
     getMediatypes = () ->
         mediatype = [s.searchProofread and "etext", s.searchNonProofread and "faksimil"]
@@ -59,7 +59,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
         s.search(s.query)
 
     s.firstPage = () ->
-        s.current_page = 1
+        s.current_page = 0
         s.search(s.query)
     s.lastPage = () ->
         s.current_page = s.total_pages
@@ -67,6 +67,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
     
 
     s.save_search = (startIndex, currentIndex, data) ->
+        c.log "save_search", s.current_page
         searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()])
 
 
@@ -92,7 +93,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
             for row in data.kwic
                 itm = row.item
                 row.href = "#/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
-                    "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
+                    "/sida/#{itm.pagename}/#{itm.mediatype}?browse&#{backend.getHitParams(itm)}"
 
 
 
@@ -107,6 +108,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
         [
             scope_name : "current_page"
             key : "traffsida"
+            val_in : Number
         ]
 
 
@@ -340,12 +342,36 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
 littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
-    _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width")
+    _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "browse")
     s.searchData = searchData
+
+    s.nextHit = () ->
+        searchData.next().then (newUrl) ->
+            c.log "newUrl", newUrl
+            $location.url(newUrl)
+    s.prevHit = () ->
+        searchData.prev().then (newUrl) ->
+            c.log "newUrl", newUrl
+            $location.url(newUrl)
+    s.close_hits = () ->
+        searchData.reset()
+        $location.search("traff", null)
+        $location.search("traffslut", null)
     s.pagename = pagename
     s.opts =
         backdropFade: true
         dialogFade:true
+
+    s.$on "search_dict", (event, query) ->
+        c.log "search_dict", query
+        backend.searchLexicon(query).then (data) ->
+            c.log "search_dict", data
+            for obj in data
+                if obj.baseform == query
+                    s.lex_article = obj
+                    break
+
+
 
 
     s.getPage = () ->
@@ -365,6 +391,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.setPage(newix)
         else
             s.setPage(0)
+
+    s.firstPage = () ->
+        c.log "firstPage"
+        s.setPage(0)
+    s.lastPage = () ->
+        c.log "lastPage"
+        ix = s.pagemap["page_" + s.endpage]
+        s.setPage ix
+
 
 
     s.gotopage = (page) ->
@@ -398,7 +433,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             key : "width"
         ,
             key : "height"
+        ,   
+            key : "browse"
+            scope_name : "showBrowser"
+            val_out : (val) -> 
+                c.log "val_out", val
 
+                unless val then return null else return val
 
     ]
         
@@ -421,13 +462,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # c.log "data, workinfo", data, workinfo
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
-            c.log "pagemap", s.pagemap
+            # c.log "pagemap", s.pagemap
             # c.log "parts", workinfo.parts
 
             s.startpage = Number(workinfo.startpagename)
+            s.endpage = Number(workinfo.endpagename)
 
 
-            page = $("page[name=#{pagename}]", data).clone()
+            page = $("page[name=#{pagename}]", data).last().clone()
             if not page.length
                 page = $("page:last", data).clone()
                 s.pagename = page.attr("name")
@@ -525,7 +567,7 @@ littb.factory "util", ($location) ->
 
         for obj in config
             watch = obj.expr or obj.scope_name or obj.key
-            scope.$watch watch, do (obj) ->
+            scope.$watch watch, do (obj, watch) ->
                 (val) ->
                     val = (obj.val_out or _.identity)(val)
                     $location.search obj.key, val or null
@@ -845,7 +887,7 @@ littb.factory 'backend', ($http, $q, util) ->
                     action : "get-result-set"
                     searchref : ref
                     resultlength : resultlength
-                    resultitem : resultitem
+                    resultitem : resultitem + 1
 
             ).success (resultset) ->
                 c.log "get-result-set success", resultset, $("result", resultset).children()

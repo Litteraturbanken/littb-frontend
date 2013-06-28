@@ -38,7 +38,7 @@
     s.authors = backend.getAuthorList();
     s.searching = false;
     s.num_hits = 20;
-    s.current_page = 1;
+    s.current_page = 0;
     getMediatypes = function() {
       var mediatype;
       mediatype = [s.searchProofread && "etext", s.searchNonProofread && "faksimil"];
@@ -64,7 +64,7 @@
       return s.search(s.query);
     };
     s.firstPage = function() {
-      s.current_page = 1;
+      s.current_page = 0;
       return s.search(s.query);
     };
     s.lastPage = function() {
@@ -72,6 +72,7 @@
       return s.search(s.query);
     };
     s.save_search = function(startIndex, currentIndex, data) {
+      c.log("save_search", s.current_page);
       return searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()]);
     };
     s.getItems = function() {
@@ -96,7 +97,7 @@
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           row = _ref[_i];
           itm = row.item;
-          _results.push(row.href = ("#/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm))));
+          _results.push(row.href = ("#/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?browse&" + (backend.getHitParams(itm))));
         }
         return _results;
       });
@@ -108,7 +109,8 @@
     return util.setupHashComplex(s, [
       {
         scope_name: "current_page",
-        key: "traffsida"
+        key: "traffsida",
+        val_in: Number
       }
     ]);
   });
@@ -402,13 +404,48 @@
     var author, loadPage, mediatype, pagename, s, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
-    _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width"));
+    _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "browse"));
     s.searchData = searchData;
+    s.nextHit = function() {
+      return searchData.next().then(function(newUrl) {
+        c.log("newUrl", newUrl);
+        return $location.url(newUrl);
+      });
+    };
+    s.prevHit = function() {
+      return searchData.prev().then(function(newUrl) {
+        c.log("newUrl", newUrl);
+        return $location.url(newUrl);
+      });
+    };
+    s.close_hits = function() {
+      searchData.reset();
+      $location.search("traff", null);
+      return $location.search("traffslut", null);
+    };
     s.pagename = pagename;
     s.opts = {
       backdropFade: true,
       dialogFade: true
     };
+    s.$on("search_dict", function(event, query) {
+      c.log("search_dict", query);
+      return backend.searchLexicon(query).then(function(data) {
+        var obj, _i, _len, _results;
+        c.log("search_dict", data);
+        _results = [];
+        for (_i = 0, _len = data.length; _i < _len; _i++) {
+          obj = data[_i];
+          if (obj.baseform === query) {
+            s.lex_article = obj;
+            break;
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      });
+    });
     s.getPage = function() {
       return $route.current.pathParams.pagename;
     };
@@ -433,6 +470,16 @@
       } else {
         return s.setPage(0);
       }
+    };
+    s.firstPage = function() {
+      c.log("firstPage");
+      return s.setPage(0);
+    };
+    s.lastPage = function() {
+      var ix;
+      c.log("lastPage");
+      ix = s.pagemap["page_" + s.endpage];
+      return s.setPage(ix);
     };
     s.gotopage = function(page) {
       c.log("gotopage", page);
@@ -468,6 +515,17 @@
         key: "width"
       }, {
         key: "height"
+      }, {
+        key: "browse",
+        scope_name: "showBrowser",
+        val_out: function(val) {
+          c.log("val_out", val);
+          if (!val) {
+            return null;
+          } else {
+            return val;
+          }
+        }
       }
     ]);
     watches = [];
@@ -485,9 +543,9 @@
         data = _arg[0], workinfo = _arg[1];
         s.workinfo = workinfo;
         s.pagemap = workinfo.pagemap;
-        c.log("pagemap", s.pagemap);
         s.startpage = Number(workinfo.startpagename);
-        page = $("page[name=" + pagename + "]", data).clone();
+        s.endpage = Number(workinfo.endpagename);
+        page = $("page[name=" + pagename + "]", data).last().clone();
         if (!page.length) {
           page = $("page:last", data).clone();
           s.pagename = page.attr("name");
@@ -606,13 +664,13 @@
         for (_i = 0, _len = config.length; _i < _len; _i++) {
           obj = config[_i];
           watch = obj.expr || obj.scope_name || obj.key;
-          _results.push(scope.$watch(watch, (function(obj) {
+          _results.push(scope.$watch(watch, (function(obj, watch) {
             return function(val) {
               val = (obj.val_out || _.identity)(val);
               $location.search(obj.key, val || null);
               return typeof obj.post_change === "function" ? obj.post_change(val) : void 0;
             };
-          })(obj)));
+          })(obj, watch)));
         }
         return _results;
       },
@@ -975,7 +1033,7 @@
               action: "get-result-set",
               searchref: ref,
               resultlength: resultlength,
-              resultitem: resultitem
+              resultitem: resultitem + 1
             }
           }).success(function(resultset) {
             var elem, kw, left, output, right, work, _i, _len, _ref, _ref1;

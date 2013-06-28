@@ -129,4 +129,46 @@ littb.directive 'clickOutside', ($document) ->
             scope.$apply(attr.clickOutside)
 
         
+littb.directive 'selectionSniffer', ($window) -> 
+    
+    link: (scope, elem, attr) ->
+        box = $("<div>").addClass("search_dict").appendTo("body").hide()
+                
+
+        $("html").on "click", () ->
+            box.remove()
+        $("body").on "mousedown", ".search_dict", () ->
+            c.log "search click!", $window.getSelection().toString()
+            scope.$emit "search_dict", $window.getSelection().toString()
+            return false
+
+        scope.$on "$destroy", () ->
+            $("body").off "mousedown", ".search_dict"
+            $("body > .search_dict").remove()
+
+        showIndicator = (target) ->
+            box.remove()
+            
+            box = $("<div>").addClass("search_dict")
+                .appendTo("body")
+                .position(
+                    my : "left bottom"
+                    at : "right top"
+                    of : target
+                )
+
+
+
+        # we use debounce to account for doubleclick
+        elem.on "mouseup", _.debounce( (event) ->
+            sel = $window.getSelection?().toString()
+            isOneWord = sel and " " not in _.str.trim(sel)
+            c.log "isOneWord", sel, isOneWord, event.target
+            if isOneWord and $(event.target).is("span.w")
+                showIndicator event.target
+                
+        , 500)
+
+
+
     

@@ -1,8 +1,13 @@
 (function() {
   'use strict';
+  var prevRoute,
+    __slice = [].slice;
+
   _.templateSettings = {
     interpolate: /\{\{(.+?)\}\}/g
   };
+
+  prevRoute = null;
 
   window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal", "ui.bootstrap.tooltip", "template/tooltip/tooltip-popup.html"]).config(function($routeProvider) {
     return $routeProvider.when('', {
@@ -112,17 +117,24 @@
       reloadOnSearch: false,
       resolve: {
         r: function($q, $routeParams, $route) {
-          var def;
+          var cmp, current, def, prev;
           def = $q.defer();
           if (_.isEmpty($routeParams)) {
             def.resolve();
-            return def.promise;
           }
-          if ("pagename" in $routeParams) {
-            def.reject();
+          if (prevRoute && $route.current.controller === "readingCtrl") {
+            cmp = ["author", "mediatype", "title"];
+            current = _.pick.apply(_, [$route.current.params].concat(__slice.call(cmp)));
+            prev = _.pick.apply(_, [prevRoute.params].concat(__slice.call(cmp)));
+            if (_.isEqual(current, prev)) {
+              def.reject();
+            } else {
+              def.resolve();
+            }
           } else {
             def.resolve();
           }
+          prevRoute = _.cloneDeep($route.current);
           return def.promise;
         }
       }
@@ -133,7 +145,9 @@
       title: "Kontakt",
       breadcrumb: ["kontakt"]
     }).otherwise({
-      redirectTo: '/'
+      template: "<p>Du har angett en adress som inte finns på Litteraturbanken.</p>                            <p>Använd browserns bakåtknapp för att komma tillbaka till                             sidan du var på innan, eller klicka på någon av                             länkarna till vänster.</p>",
+      breadcrumb: ["fel"],
+      title: "Sidan kan inte hittas"
     });
   });
 
@@ -209,7 +223,7 @@
     parseUrls = function(row) {
       var itm;
       itm = row.item;
-      return ("#/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm)));
+      return ("/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm)));
     };
     this.save = function(startIndex, currentIndex, input, search_args) {
       this.searchArgs = search_args;
@@ -230,8 +244,9 @@
       this.current--;
       return this.search();
     };
-    return this.search = function() {
-      var args, current_page, def;
+    this.search = function() {
+      var args, current_page, def,
+        _this = this;
       def = $q.defer();
       if (this.data[this.current] != null) {
         def.resolve(this.data[this.current]);
@@ -239,11 +254,17 @@
         current_page = Math.floor(this.current / NUM_HITS);
         args = [].concat(this.searchArgs, [current_page + 1, NUM_HITS]);
         backend.searchWorks.apply(backend, args).then(function(data) {
-          this.appendData(this.current, data);
-          return def.resolve(data);
+          _this.appendData(_this.current, data);
+          return def.resolve(_this.data[_this.current]);
         });
       }
       return def.promise;
+    };
+    return this.reset = function() {
+      this.current = null;
+      this.total_hits = null;
+      this.data = [];
+      return this.searchArgs = null;
     };
   });
 

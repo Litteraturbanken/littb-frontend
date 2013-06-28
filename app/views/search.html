@@ -63,11 +63,11 @@
                         href="#/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/{{r.item.mediatype}}">{{r.item.title}}</a>
                 </td>
                 <td>
-                    <a href="#/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/sida/{{r.item.pagename}}/{{r.item.mediatype}}?traff={{r.item.nodeid}}&traffslut={{r.item.endnodeid}}">s. {{r.item.pagename}}</a>
+                    <a ng-href="{{r.href}}">s. {{r.item.pagename}}</a>
                 </td>
                 <td class="left_context">{{r.left}}</td>
                 <td><strong>
-                    <a ng-click="save_search(current_page * num_hits, $index, data)" ng-href="{{r.href}}" >{{r.kw}}</a><!-- href="#/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/sida/{{r.item.pagename}}/{{r.item.mediatype}}?{{getHitParams(r.item)}}"-->
+                    <a ng-click="save_search(current_page * num_hits, $index, data)" ng-href="{{r.href}}" >{{r.kw}}</a>
                     
                 </strong></td>
                 <td>{{r.right}}</td>
@@ -82,7 +82,7 @@
         <div class="littb_pager" ng-show="data && data.count">
             Visar {{current_page  * num_hits + 1}}-{{(current_page  * num_hits + 1) + num_hits}} av 
             {{data.count}} träffar,
-            sida {{current_page}} av {{total_pages}}.
+            sida {{current_page + 1}} av {{total_pages}}.
             <div class="ctrl">
                 <a ng-click="firstPage()"><img src="bilder/LBstart.png"></a>
                 <a ng-click="prevPage()"><img src="bilder/LBforegaende.png"></a>

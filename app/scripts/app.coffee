@@ -3,7 +3,7 @@ _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 
 
-
+prevRoute = null
 
 window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "template/typeahead/typeahead.html"
@@ -122,6 +122,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false,
+
                 resolve :
                     r : ($q, $routeParams, $route) ->
                         def = $q.defer()
@@ -129,13 +130,19 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                         # c.log "route", $route
                         if _.isEmpty($routeParams)
                             def.resolve()
-                            return def.promise
-                        # because we have a pagenum here,
-                        # we're still in the reader and should't leave
-                        if "pagename" of $routeParams
-                            def.reject()
+                            # return def.promise
+                        # if we're only changing pages in the reader, don't change route
+                        if prevRoute and $route.current.controller == "readingCtrl"
+                            cmp = ["author", "mediatype", "title"]
+                            current = _.pick $route.current.params, cmp...
+                            prev = _.pick prevRoute.params, cmp...
+                            if _.isEqual current, prev
+                                def.reject()
+                            else
+                                def.resolve()
                         else
                             def.resolve()
+                        prevRoute = _.cloneDeep $route.current
                         return def.promise
 
             .when '/kontakt',
@@ -145,7 +152,13 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 title : "Kontakt"
                 breadcrumb : ["kontakt"]
             .otherwise
-                redirectTo: '/'
+                template : "<p>Du har angett en adress som inte finns på Litteraturbanken.</p>
+                            <p>Använd browserns bakåtknapp för att komma tillbaka till 
+                            sidan du var på innan, eller klicka på någon av 
+                            länkarna till vänster.</p>"
+                breadcrumb : ["fel"]
+                title : "Sidan kan inte hittas"
+            #     redirectTo: '/'
 
 littb.config ($httpProvider, $locationProvider) ->
     # $locationProvider.hashPrefix('!')
@@ -199,7 +212,7 @@ littb.service "searchData", (backend, $q) ->
 
     parseUrls = (row) ->
         itm = row.item
-        return "#/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
+        return "/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
             "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
         
     @save = (startIndex, currentIndex, input, search_args) ->
@@ -230,13 +243,17 @@ littb.service "searchData", (backend, $q) ->
         else
             current_page = Math.floor(@current / NUM_HITS )
             args = [].concat @searchArgs, [current_page + 1, NUM_HITS]
-            backend.searchWorks(args...).then (data) ->
+            backend.searchWorks(args...).then (data) =>
                 @appendData @current, data
-                def.resolve(data)
+                def.resolve @data[@current]
         return def.promise
 
 
-
+    @reset = () ->
+        @current = null
+        @total_hits = null
+        @data = []
+        @searchArgs = null
 
 
 

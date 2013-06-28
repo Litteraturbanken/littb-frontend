@@ -155,4 +155,42 @@
     };
   });
 
+  littb.directive('selectionSniffer', function($window) {
+    return {
+      link: function(scope, elem, attr) {
+        var box, showIndicator;
+        box = $("<div>").addClass("search_dict").appendTo("body").hide();
+        $("html").on("click", function() {
+          return box.remove();
+        });
+        $("body").on("mousedown", ".search_dict", function() {
+          c.log("search click!", $window.getSelection().toString());
+          scope.$emit("search_dict", $window.getSelection().toString());
+          return false;
+        });
+        scope.$on("$destroy", function() {
+          $("body").off("mousedown", ".search_dict");
+          return $("body > .search_dict").remove();
+        });
+        showIndicator = function(target) {
+          box.remove();
+          return box = $("<div>").addClass("search_dict").appendTo("body").position({
+            my: "left bottom",
+            at: "right top",
+            of: target
+          });
+        };
+        return elem.on("mouseup", _.debounce(function(event) {
+          var isOneWord, sel;
+          sel = typeof $window.getSelection === "function" ? $window.getSelection().toString() : void 0;
+          isOneWord = sel && __indexOf.call(_.str.trim(sel), " ") < 0;
+          c.log("isOneWord", sel, isOneWord, event.target);
+          if (isOneWord && $(event.target).is("span.w")) {
+            return showIndicator(event.target);
+          }
+        }, 500));
+      }
+    };
+  });
+
 }).call(this);
