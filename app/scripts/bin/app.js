@@ -1,13 +1,13 @@
 (function() {
   'use strict';
-  var prevRoute,
+  var routeStartCurrent,
     __slice = [].slice;
 
   _.templateSettings = {
     interpolate: /\{\{(.+?)\}\}/g
   };
 
-  prevRoute = null;
+  routeStartCurrent = null;
 
   window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal", "ui.bootstrap.tooltip", "template/tooltip/tooltip-popup.html"]).config(function($routeProvider) {
     return $routeProvider.when('', {
@@ -116,16 +116,16 @@
       controller: "readingCtrl",
       reloadOnSearch: false,
       resolve: {
-        r: function($q, $routeParams, $route) {
+        r: function($q, $routeParams, $route, $rootScope) {
           var cmp, current, def, prev;
           def = $q.defer();
           if (_.isEmpty($routeParams)) {
             def.resolve();
           }
-          if (prevRoute && $route.current.controller === "readingCtrl") {
+          if (routeStartCurrent && $route.current.controller === "readingCtrl") {
             cmp = ["author", "mediatype", "title"];
             current = _.pick.apply(_, [$route.current.params].concat(__slice.call(cmp)));
-            prev = _.pick.apply(_, [prevRoute.params].concat(__slice.call(cmp)));
+            prev = _.pick.apply(_, [routeStartCurrent.params].concat(__slice.call(cmp)));
             if (_.isEqual(current, prev)) {
               def.reject();
             } else {
@@ -134,7 +134,6 @@
           } else {
             def.resolve();
           }
-          prevRoute = _.cloneDeep($route.current);
           return def.promise;
         }
       }
@@ -151,8 +150,11 @@
     });
   });
 
-  littb.config(function($httpProvider, $locationProvider) {
-    return delete $httpProvider.defaults.headers.common["X-Requested-With"];
+  littb.config(function($httpProvider, $locationProvider, $tooltipProvider) {
+    delete $httpProvider.defaults.headers.common["X-Requested-With"];
+    return $tooltipProvider.options({
+      appendToBody: true
+    });
   });
 
   littb.run(function($rootScope, $location, $rootElement) {
@@ -160,6 +162,9 @@
     $rootScope.goto = function(path) {
       return $location.url(path);
     };
+    $rootScope.$on("$routeChangeStart", function(event, next, current) {
+      return routeStartCurrent = current;
+    });
     $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
       var classList, title, _ref;
       if (newRoute.title) {
@@ -280,6 +285,54 @@
       }
       wrapper.append(input);
       return wrapper.html();
+    };
+  });
+
+  littb.factory("throttle", function($timeout) {
+    return function(func, wait, options) {
+      var args, lastCalled, leading, result, thisArg, timeoutId, trailing, trailingCall;
+      trailingCall = function() {
+        var lastCalled, result, timeoutId;
+        timeoutId = null;
+        if (trailing) {
+          lastCalled = new Date;
+          return result = func.apply(thisArg, args);
+        }
+      };
+      args = void 0;
+      result = void 0;
+      thisArg = void 0;
+      timeoutId = void 0;
+      lastCalled = 0;
+      leading = true;
+      trailing = true;
+      if (options === false) {
+        leading = false;
+      } else if (_.isObject(options)) {
+        leading = ("leading" in options ? options.leading : leading);
+        trailing = ("trailing" in options ? options.trailing : trailing);
+      }
+      return function() {
+        var now, remaining;
+        now = new Date;
+        if (!timeoutId && !leading) {
+          lastCalled = now;
+        }
+        remaining = wait - (now - lastCalled);
+        args = arguments;
+        thisArg = this;
+        if (remaining <= 0) {
+          $timeout.cancel(timeoutId);
+          timeoutId = null;
+          lastCalled = now;
+          result = func.apply(thisArg, args);
+        } else {
+          if (!timeoutId) {
+            timeoutId = $timeout(trailingCall, remaining);
+          }
+        }
+        return result;
+      };
     };
   });
 

@@ -97,7 +97,7 @@
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           row = _ref[_i];
           itm = row.item;
-          _results.push(row.href = ("#/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?browse&" + (backend.getHitParams(itm))));
+          _results.push(row.href = ("#/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm))));
         }
         return _results;
       });
@@ -212,6 +212,11 @@
     };
     s.setDir = function(isAsc) {
       return s.sorttuple[1] = isAsc;
+    };
+    s.getTitleTooltip = function(attrs) {
+      if (attrs.showtitle !== attrs.title) {
+        return attrs.title;
+      }
     };
     util.setupHashComplex(s, [
       {
@@ -400,7 +405,7 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData) {
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, throttle) {
     var author, loadPage, mediatype, pagename, s, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
@@ -490,9 +495,6 @@
       return s.showPopup = true;
     };
     s.getWords = function(val) {
-      if (!val) {
-        return [];
-      }
       return backend.searchLexicon(val);
     };
     s.getTooltip = function(part) {
@@ -1062,17 +1064,19 @@
         return def.promise;
       },
       searchLexicon: function(str) {
-        var def, url;
+        var def, suffix, url;
+        c.log("searchLexicon", str);
         def = $q.defer();
         url = "/query/so.xql";
+        suffix = str.length > 3 ? "*" : "";
         http({
           url: url,
           params: {
-            word: str + "*"
+            word: str + suffix
           }
         }).success(function(xml) {
           var article, output;
-          c.log("searchLexicon", xml);
+          c.log("searchLexicon success", xml);
           output = (function() {
             var _i, _len, _ref, _results;
             _ref = $("artikel", xml);
@@ -1087,6 +1091,8 @@
             return _results;
           })();
           return def.resolve(output);
+        }).error(function() {
+          return def.reject();
         });
         return def.promise;
       },

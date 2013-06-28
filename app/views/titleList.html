@@ -23,7 +23,8 @@
         </thead>
         <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || ''}">
             <td>
-                <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info"><i>{{row.itemAttrs.showtitle}}</i></a>
+                <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
+                    href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info"><i>{{row.itemAttrs.showtitle}}</i></a>
             </td>
             <td><a href="#/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a></td>
             <td>

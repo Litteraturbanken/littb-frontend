@@ -58,9 +58,8 @@
             <tr ng-repeat="r in data.kwic" ng-class="{is_faksimil : r.item.mediatype == 'faksimil'}">
                 <td>{{($index + 1) + (current_page * num_hits)}}</td>
                 <td><a href="#/forfattare/{{r.item.authorid}}">{{r.item.nameforindex}}</a></td>
-                <td class="title">
-                    <a tooltip="{{r.item.title}}" 
-                        href="#/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/{{r.item.mediatype}}">{{r.item.title}}</a>
+                <td class="title" tooltip="{{r.item.title}}">
+                    <a href="#/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/{{r.item.mediatype}}">{{r.item.title}}</a>
                 </td>
                 <td>
                     <a ng-href="{{r.href}}">s. {{r.item.pagename}}</a>

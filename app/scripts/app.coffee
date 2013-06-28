@@ -2,8 +2,7 @@
 _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 
-
-prevRoute = null
+routeStartCurrent = null
 
 window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "template/typeahead/typeahead.html"
@@ -124,25 +123,23 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 reloadOnSearch : false,
 
                 resolve :
-                    r : ($q, $routeParams, $route) ->
+                    r : ($q, $routeParams, $route, $rootScope) ->
                         def = $q.defer()
 
-                        # c.log "route", $route
                         if _.isEmpty($routeParams)
                             def.resolve()
                             # return def.promise
                         # if we're only changing pages in the reader, don't change route
-                        if prevRoute and $route.current.controller == "readingCtrl"
+                        if routeStartCurrent and $route.current.controller == "readingCtrl"
                             cmp = ["author", "mediatype", "title"]
                             current = _.pick $route.current.params, cmp...
-                            prev = _.pick prevRoute.params, cmp...
+                            prev = _.pick routeStartCurrent.params, cmp...
                             if _.isEqual current, prev
                                 def.reject()
                             else
                                 def.resolve()
                         else
                             def.resolve()
-                        prevRoute = _.cloneDeep $route.current
                         return def.promise
 
             .when '/kontakt',
@@ -160,14 +157,19 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 title : "Sidan kan inte hittas"
             #     redirectTo: '/'
 
-littb.config ($httpProvider, $locationProvider) ->
+littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
     # $locationProvider.hashPrefix('!')
     delete $httpProvider.defaults.headers.common["X-Requested-With"]
+    $tooltipProvider.options
+        appendToBody: true
 
 
 littb.run ($rootScope, $location, $rootElement) ->
     $rootScope.goto = (path) ->
         $location.url(path)
+
+    $rootScope.$on "$routeChangeStart", (event, next, current) ->
+        routeStartCurrent = current
 
     $rootScope.$on "$routeChangeSuccess", (event, newRoute, prevRoute) ->
         if newRoute.title
@@ -275,3 +277,43 @@ littb.filter "setMarkee", () ->
         return wrapper.html()
 
 
+
+littb.factory "throttle", ($timeout) ->
+
+    return (func, wait, options) ->
+
+        trailingCall = ->
+            timeoutId = null
+            if trailing
+                lastCalled = new Date
+                result = func.apply(thisArg, args)
+        args = undefined
+        result = undefined
+        thisArg = undefined
+        timeoutId = undefined
+        lastCalled = 0
+        leading = true
+        trailing = true
+
+        if options is false
+            leading = false
+        else if _.isObject options
+            leading = (if "leading" of options then options.leading else leading)
+            trailing = (if "trailing" of options then options.trailing else trailing)
+        ->
+            now = new Date
+            lastCalled = now if not timeoutId and not leading
+            remaining = wait - (now - lastCalled)
+            args = arguments
+            thisArg = this
+            if remaining <= 0
+                $timeout.cancel timeoutId
+                # clearTimeout timeoutId
+                timeoutId = null
+                lastCalled = now
+                result = func.apply(thisArg, args)
+            # else timeoutId = setTimeout(trailingCall, remaining) unless timeoutId
+            else 
+                timeoutId = $timeout trailingCall, remaining unless timeoutId
+                # timeoutId = setTimeout(trailingCall, remaining) unless timeoutId
+            result

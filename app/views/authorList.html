@@ -7,6 +7,9 @@
     <tr ng-repeat="row in rows | filter:authorFilter | orderBy:nameforindex">
         <td><a href="#/forfattare/{{row.authorid}}">{{getAuthor(row)}}</a></td>
         <td>{{row.datestring}}</td>
-        <td><em ng-show="row.pseudonymfor">::: se {{authorIdGroup[row.pseudonymfor][0].nameforindex}}</em></td>
+        <td><em ng-show="row.pseudonymfor">
+            ::: se <a href="#/forfattare/{{row.pseudonymfor}}">{{authorIdGroup[row.pseudonymfor][0].nameforindex}}</a>
+            </em>
+        </td>
     </tr>
 </table>

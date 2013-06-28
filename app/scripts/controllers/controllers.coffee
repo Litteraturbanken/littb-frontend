@@ -93,7 +93,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
             for row in data.kwic
                 itm = row.item
                 row.href = "#/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
-                    "/sida/#{itm.pagename}/#{itm.mediatype}?browse&#{backend.getHitParams(itm)}"
+                    "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
 
 
 
@@ -199,7 +199,8 @@ littb.controller "titleListCtrl", ($scope, backend, util) ->
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
-
+    s.getTitleTooltip = (attrs) ->
+        return attrs.title unless attrs.showtitle == attrs.title
 
     util.setupHashComplex s,
         [
@@ -339,7 +340,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
         s.mediatype = s.data.mediatypes[0]
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, throttle) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "browse")
@@ -411,9 +412,28 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.showPopup = true
 
 
+    # window.getWords = _.debounce( (val) ->
+    # s.getWords = throttle( (val) ->
+    #     unless val then return []
+    #     backend.searchLexicon(val)
+
+    # , 500, {leading : false})
+    # s.getWords = _.throttle( (val) ->
+    #     ret = null
+    #     s.$apply () ->
+    #         unless val then return []
+    #         ret = backend.searchLexicon(val)
+    #         c.log "apply", ret
+    #     c.log "return ret", ret
+    #     return ret
+
+    # , 500, {leading : false})
+
+
+    # c.log "getwords", s.getWords("get")
+
     s.getWords = (val) ->
-        unless val then return []
-        return backend.searchLexicon(val)
+        backend.searchLexicon(val)
 
     s.getTooltip = (part) ->
         return part.navtitle if part.navtitle != part.showtitle
@@ -913,18 +933,20 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
 
     searchLexicon : (str) ->
+        c.log "searchLexicon", str
         def = $q.defer()
         url = "/query/so.xql"
-        # http://demolittb.spraakdata.gu.se?word=abdikerades
+        suffix = if str.length > 3 then "*" else ""
+
         http(
             url : url
             params :
-                word : str + "*"
+                word : str + suffix
             # transformResponse : (data, headers) ->
             #     c.log "transformResponse", data, headers
 
-        ).success (xml) ->
-            c.log "searchLexicon", xml
+        ).success( (xml) ->
+            c.log "searchLexicon success", xml
 
             output = for article in $("artikel", xml)
                 baseform : $("grundform-clean:first", article).text()
@@ -932,6 +954,8 @@ littb.factory 'backend', ($http, $q, util) ->
                 lexemes : util.getInnerXML article
 
             def.resolve output
+        ).error () ->
+            def.reject()
 
 
 

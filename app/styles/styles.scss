@@ -218,7 +218,6 @@ header {
 
 .page-search {
     #mainview {
-        position : relative;
 
         .searching .results {
             opacity : 0.3;
@@ -476,8 +475,11 @@ $partnav-width : 120px;
 }
 
 .page-authorList {
-    table {
+    .contenttable {
         margin-top : 3em;
+        td {
+            text-align: left;
+        }
     }
     #mainview > * {
         margin-bottom : 1em;
@@ -601,4 +603,10 @@ grundform-clean {
     max-height : 520px;
     padding-left : 1.5em;
     overflow : auto;
+}
+
+.typeahead.dropdown-menu {
+    max-height : 300px;
+    overflow-y: auto;
+
 }

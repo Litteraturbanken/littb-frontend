@@ -9,7 +9,7 @@
 </div>
 
 
-<div modal="lex_article" close="close()" options="opts">
+<div modal="lex_article.lexemes" close="close()" options="opts">
     <div class="so_modal">
         <div class="modal-header">
             <h4>Svensk ordbok (2009)</h4>
@@ -76,7 +76,8 @@
         <ul class="work_parts">
             <li><a ng-click="gotopage(startpage)">[Start]</a></li>
             <li ng-repeat="part in workinfo.parts | limitTo:5">
-                <a tooltip="{{getTooltip(part)}}" ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
+                <a  tooltip="{{getTooltip(part)}}" tooltip-append-to-body
+                    ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
             </li>
         </ul>
     </div>
@@ -90,8 +91,8 @@
 
         <ul class="part_menu" ng-show="showPopup" click-outside="showPopup = false">
             <li><a ng-click="gotopage(startpage)">[Start]</a></li>
-            <li ng-repeat="part in workinfo.parts">
-                <!-- tooltip="{{part.navtitle}}" -->
+            <li ng-repeat="part in workinfo.parts" tooltip="{{part.navtitle}}">
+                
                 <a ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
             </li>
         </ul>
