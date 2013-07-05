@@ -412,26 +412,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.showPopup = true
 
 
-    # window.getWords = _.debounce( (val) ->
-    # s.getWords = throttle( (val) ->
-    #     unless val then return []
-    #     backend.searchLexicon(val)
-
-    # , 500, {leading : false})
-    # s.getWords = _.throttle( (val) ->
-    #     ret = null
-    #     s.$apply () ->
-    #         unless val then return []
-    #         ret = backend.searchLexicon(val)
-    #         c.log "apply", ret
-    #     c.log "return ret", ret
-    #     return ret
-
-    # , 500, {leading : false})
-
-
-    # c.log "getwords", s.getWords("get")
-
     s.getWords = (val) ->
         backend.searchLexicon(val)
 
@@ -453,13 +433,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             key : "width"
         ,
             key : "height"
-        ,   
-            key : "browse"
-            scope_name : "showBrowser"
-            val_out : (val) -> 
-                c.log "val_out", val
-
-                unless val then return null else return val
 
     ]
         

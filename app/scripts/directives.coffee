@@ -164,8 +164,12 @@ littb.directive 'selectionSniffer', ($window) ->
             sel = $window.getSelection?().toString()
             isOneWord = sel and " " not in _.str.trim(sel)
             c.log "isOneWord", sel, isOneWord, event.target
+
             if isOneWord and $(event.target).is("span.w")
                 showIndicator event.target
+
+
+
                 
         , 500)
 

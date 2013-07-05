@@ -517,17 +517,6 @@
         key: "width"
       }, {
         key: "height"
-      }, {
-        key: "browse",
-        scope_name: "showBrowser",
-        val_out: function(val) {
-          c.log("val_out", val);
-          if (!val) {
-            return null;
-          } else {
-            return val;
-          }
-        }
       }
     ]);
     watches = [];

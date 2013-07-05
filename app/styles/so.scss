@@ -1,9 +1,9 @@
 @charset "UTF-8";
 ._so_article {
 
-    body,kapitel,so {font-family: serif; max-width: 12cm;}
-    artikel {font-family: "Georgia",serif; display: block; margin-left: 0.5cm; margin-right:0.5cm;padding-left: 0.7cm; max-width: 12cm;} 
-    lemma{display: block; font-size: medium; font-style: normal; font-weight: bold; padding-top: 0.2cm ;}
+    body,kapitel,so {font-family: "Georgia",serif; line-height:16px;}
+    artikel {} 
+    lemma{display: block; font-size: medium; font-style: normal; font-weight: bold; padding-top: 0.2cm ;margin-left: 0.5cm; margin-right:0.5cm;padding-left: 0.7cm;}
     f {font-size: medium; font-style: normal; font-weight: bold;}
     venster {display:inline;position: relative; left: -0.6cm;}
     homonr {display:inline; font-size: x-small; font-style: normal ;vertical-align: super; font-weight: bold; color: #BD362F; position: relative; left: -0.4cm;}
@@ -14,7 +14,7 @@
     alt_uttal {display:inline; font-size: small; font-style: normal; font-weight: normal;}
     boj_uttal {display:inline; font-size: small; font-style: normal; font-weight: normal;}
     avstav {display:block; font-size: small; font-style: normal; font-weight: normal;position: relative; left: -0.4cm;}
-    avstav:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-variant:small-caps; color:gray; content:"Ordled: "}
+    avstav:before {padding-top: 1px ;font-size: x-small; font-style: normal;font-variant:small-caps; color:gray; content:"Ordled: "}
     ordbildn {display:inline; font-size: small; font-weight: bold; }
     ordbprep {display:inline; font-size: small; font-weight: normal; }
     ordbildn:first-child    {padding-left: 5.5em;}
@@ -28,9 +28,9 @@
     utv {display:inline; font-size: x-small; font-style: normal; font-weight: normal; }
     idiomdeft {display:inline; font-size: x-small; font-style: normal; font-weight: normal;padding-left: 0.5em; }   
     sxblocklx {display:block;font-weight: normal ;font-size: x-small;}
-    sxblocklx:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Exempel: ";float:left;}
+    sxblocklx:before {padding-top: 1px ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Exempel: ";float:left;}
     sxblock {display:block;font-weight: normal;padding-bottom: 0.3em;}
-    sxblock:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Exempel: ";float:left;}
+    sxblock:before {padding-top: 1px ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Exempel: ";float:left;}
     syntex {display:inline; font-style: italic;font-size: small;  font-weight: normal;padding-right: 0.2em;}
     aveneller {font-style: normal; font-size: x-small;  padding-left: 0.5em;}
     altkom {font-style: normal; font-size: x-small;  padding-left: 0.5em;  font-weight: normal;}
@@ -66,15 +66,15 @@
     lexem {display: block; font-size: medium; padding-top: 0.3em;}
     cykel {display: block; font-size: medium; padding-bottom: 0.3em;font-weight: normal}
     idiom {display: block; font-size: small; font-weight:bold;padding-bottom: 0.3em;}
-    idiomexblock {display:block;padding-top: 0.3em;}
-    idiomexblock:before {padding-top: 0.3em ;font-size: x-small; font-style: normal;font-variant:small-caps;font-weight: normal; color:gray; content:"Exempel: ";float:left;}
+    idiomexblock {display:block;padding-top: 0.2em;}
+    idiomexblock:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-variant:small-caps;font-weight: normal; color:gray; content:"Exempel: ";float:left;}
     idiomex {display: block; font-weight: normal ; font-size: small; font-style:italic; padding-left: 5.5em;}   
     etymologiblock {display: block;}
-    etymologiblock:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-weight: normal; font-variant:small-caps;color:gray; content:"Hist:";float:left;}
+    etymologiblock:before {padding-top: 1px ;font-size: x-small; font-style: normal;font-weight: normal; font-variant:small-caps;color:gray; content:"Hist:";float:left;}
     etymologi {display: block;  color:black;font-style: normal;font-size: x-small;  position:relative;left:-1em;padding-left: 5.5em;}
     besl {font-style:italic;}
     valens {display: block; font-size: x-small;font-style: normal;}
-    valens:before {padding-top: 0.2em ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Konstr:";float:left;}
+    valens:before {padding-top: 1px ;font-size: x-small; font-style: normal;font-variant:small-caps;color:gray; content:"Konstr:";float:left;}
     vt {display:block; padding-left: 5.5em;margin:0; font-weight: normal ;font-size: small;font-style: italic ;font-variant:normal;color:black;padding-bottom: 0.3em;}
     fras {font-size: small; color:navy;}
     fras:after {content: " ";}
@@ -124,5 +124,4 @@
     cykel>def:not(:last-child):after {content:": ";}
     idiomdef:not(:last-child):after {content:": ";}
     fras:not(:last-child):after {content:" ";}
-
 }

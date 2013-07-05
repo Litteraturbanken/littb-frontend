@@ -83,6 +83,77 @@ angular.module('ui.bootstrap.transition', [])
   return $transition;
 }]);
 
+angular.module('ui.bootstrap.throttle', [])
+
+/** Note: adapted from LoDash, http://lodash.com 
+ * Creates a function that, when executed, will only call the `func` function
+ * at most once per every `wait` milliseconds. Pass an `options` object to
+ * indicate that `func` should be invoked on the leading and/or trailing edge
+ * of the `wait` timeout. Subsequent calls to the throttled function will
+ * return the result of the last `func` call.
+ *
+ * Note: If `leading` and `trailing` options are `true`, `func` will be called
+ * on the trailing edge of the timeout only if the the throttled function is
+ * invoked more than once during the `wait` timeout.
+ *
+ * @param {Function} func The function to throttle.
+ * @param {Number} wait The number of milliseconds to throttle executions to.
+ * @param {Object} options The options object.
+ *  [leading=true] A boolean to specify execution on the leading edge of the timeout.
+ *  [trailing=true] A boolean to specify execution on the trailing edge of the timeout.
+ * @returns {Function} Returns the new throttled function.
+ * @example
+ *
+ * var throttled = $throttle(updatePosition, 100);
+ * angular.element($window).on('scroll', throttled);
+ *
+ */
+.factory("$throttle", ["$timeout", function($timeout) {
+  return function(func, wait, options) {
+    var args,
+        result,
+        thisArg,
+        timeoutDeferred,
+        lastCalled = 0,
+        leading = true,
+        trailing = true;
+
+    function trailingCall() {
+      timeoutDeferred = null;
+      if (trailing) {
+        lastCalled = new Date;
+        result = func.apply(thisArg, args);
+      }
+    }
+    if (options === false) {
+      leading = false;
+    } else if (options && angular.isObject(options)) {
+      leading = 'leading' in options ? options.leading : leading;
+      trailing = 'trailing' in options ? options.trailing : trailing;
+    }
+    return function() {
+      var now = new Date;
+      if (!timeoutDeferred && !leading) {
+        lastCalled = now;
+      }
+      var remaining = wait - (now - lastCalled);
+      args = arguments;
+      thisArg = this;
+
+      if (remaining <= 0) {
+        $timeout.cancel(timeoutDeferred);
+        timeoutDeferred = null;
+        lastCalled = now;
+        result = func.apply(thisArg, args);
+      }
+      else if (!timeoutDeferred) {
+        timeoutDeferred = $timeout(trailingCall, remaining);
+      }
+      return result;
+    };
+  }
+}]);
+
 angular.module('ui.bootstrap.collapse',['ui.bootstrap.transition'])
 
 // The collapsible directive indicates a block of html that will expand and collapse
@@ -2658,7 +2729,7 @@ angular.module('ui.bootstrap.timepicker', [])
     }
   };
 }]);
-angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position'])
+angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap.throttle'])
 
 /**
  * A helper service that can parse typeahead's syntax (string provided by users)
@@ -2689,7 +2760,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position'])
   };
 }])
 
-  .directive('typeahead', ['$compile', '$parse', '$q', '$timeout', '$document', '$position', 'typeaheadParser', function ($compile, $parse, $q, $timeout, $document, $position, typeaheadParser) {
+  .directive('typeahead', ['$compile', '$parse', '$q', '$timeout', '$document', '$position', 'typeaheadParser', '$throttle', function ($compile, $parse, $q, $timeout, $document, $position, typeaheadParser, $throttle) {
 
   var HOT_KEYS = [9, 13, 27, 38, 40];
 
@@ -2704,6 +2775,9 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position'])
 
       //minimal wait time after last character typed before typehead kicks-in
       var waitTime = originalScope.$eval(attrs.typeaheadWaitMs) || 0;
+
+      // typeahead only kicks in after throttleTime milliseconds
+      var throttleTime = originalScope.$eval(attrs.typeaheadThrottleMs);
 
       //expressions used by typeahead
       var parserResult = typeaheadParser.parse(attrs.typeahead);
@@ -2737,7 +2811,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position'])
         scope.activeIdx = -1;
       };
 
-      var old_getMatchesAsync = function(inputValue) {
+      var getMatchesAsync = function(inputValue) {
 
         var locals = {$viewValue: inputValue};
         isLoadingSetter(originalScope, true);
@@ -2777,12 +2851,11 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position'])
           isLoadingSetter(originalScope, false);
         });
       };
-      getMatchesAsync = _.throttle(function(inputValue) {
-        scope.$apply(function() {
-          old_getMatchesAsync(inputValue)
-        })
-      }, 500, {leading : false})
-      c.log("getMatchesAsync write")
+
+      if(throttleTime) {
+        getMatchesAsync = $throttle(getMatchesAsync, throttleTime, {leading : false});
+      }
+
       resetMatches();
 
       //we need to propagate user's query so we can higlight matches
