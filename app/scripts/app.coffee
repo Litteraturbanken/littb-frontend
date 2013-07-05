@@ -35,9 +35,11 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
             .when '/om/aktuellt',
                 templateUrl: '/red/om/aktuellt/aktuellt.html'
                 title : "Aktuellt"
+                breadcrumb : ["aktuellt"]
             .when '/om/rattigheter',
                 templateUrl: '/red/om/rattigheter/rattigheter.html'
                 title : "Rättigheter"
+                breadcrumb : ["rättigheter"]
             .when '/om/ide',
                 templateUrl: '/red/om/ide/omlitteraturbanken.html'
                 title : "Om LB"
@@ -164,10 +166,15 @@ littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
         appendToBody: true
 
 
-littb.run ($rootScope, $location, $rootElement, $q) ->
+littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
-        $rootElement.addClass("ready") #TODO: move me.
+        $rootElement.addClass("ready")
+
+    # just in case the above deferred fails. 
+    $timeout( () -> 
+        $rootElement.addClass("ready")
+    , 1000)
 
     $rootScope.goto = (path) ->
         $location.url(path)
@@ -186,24 +193,21 @@ littb.run ($rootScope, $location, $rootElement, $q) ->
             $("#toolkit").html ""
         $rootScope.prevRoute = prevRoute
 
-        # sync ng-view class name to page
-        # classList = ($("[ng-view]").attr("class") or "").split(" ")
-        # classList = _.filter classList, (item) -> (_.str.startsWith item, "page-")
-        # c.log "classList", classList
-
+        # get rid of old class attr on body
         cls = $rootElement.attr "class"
         cls = cls.replace /\ ?page\-\w+/g, ""
-        c.log "cls", cls
         $rootElement.attr "class", cls
 
-        # $rootElement.addClass classList.join(" ")
         if newRoute.controller?.replace
             $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""))
 
+        $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
+            if _.isObject item 
+                item 
+            else
+                {label : item, url : "#/" + normalizeUrl(item).join("")}
+
         firstRoute.resolve()
-
-
-
 
 
     normalizeUrl = (str) ->
@@ -213,11 +217,7 @@ littb.run ($rootScope, $location, $rootElement, $q) ->
             trans[letter.toLowerCase()] or letter
 
 
-    $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
-        if _.isObject item 
-            item 
-        else
-            {label : item, url : "#/" + normalizeUrl(item).join("")}
+    
 
     $rootScope.appendCrumb = (label) ->
         $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, [{label : label}]

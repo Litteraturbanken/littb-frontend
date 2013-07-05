@@ -30,10 +30,12 @@
       template: '<div style="position:relative;" ng-include="doc"></div>'
     }).when('/om/aktuellt', {
       templateUrl: '/red/om/aktuellt/aktuellt.html',
-      title: "Aktuellt"
+      title: "Aktuellt",
+      breadcrumb: ["aktuellt"]
     }).when('/om/rattigheter', {
       templateUrl: '/red/om/rattigheter/rattigheter.html',
-      title: "Rättigheter"
+      title: "Rättigheter",
+      breadcrumb: ["rättigheter"]
     }).when('/om/ide', {
       templateUrl: '/red/om/ide/omlitteraturbanken.html',
       title: "Om LB",
@@ -157,12 +159,15 @@
     });
   });
 
-  littb.run(function($rootScope, $location, $rootElement, $q) {
-    var firstRoute, item, normalizeUrl;
+  littb.run(function($rootScope, $location, $rootElement, $q, $timeout) {
+    var firstRoute, normalizeUrl;
     firstRoute = $q.defer();
     firstRoute.promise.then(function() {
       return $rootElement.addClass("ready");
     });
+    $timeout(function() {
+      return $rootElement.addClass("ready");
+    }, 1000);
     $rootScope.goto = function(path) {
       return $location.url(path);
     };
@@ -170,7 +175,7 @@
       return routeStartCurrent = current;
     });
     $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
-      var cls, title, _ref;
+      var cls, item, title, _ref;
       if (newRoute.title) {
         title = "Litteraturbanken v.3 | " + newRoute.title;
       } else {
@@ -183,11 +188,27 @@
       $rootScope.prevRoute = prevRoute;
       cls = $rootElement.attr("class");
       cls = cls.replace(/\ ?page\-\w+/g, "");
-      c.log("cls", cls);
       $rootElement.attr("class", cls);
       if ((_ref = newRoute.controller) != null ? _ref.replace : void 0) {
         $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""));
       }
+      $rootScope.breadcrumb = (function() {
+        var _i, _len, _ref1, _results;
+        _ref1 = (newRoute != null ? newRoute.breadcrumb : void 0) || [];
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          item = _ref1[_i];
+          if (_.isObject(item)) {
+            _results.push(item);
+          } else {
+            _results.push({
+              label: item,
+              url: "#/" + normalizeUrl(item).join("")
+            });
+          }
+        }
+        return _results;
+      })();
       return firstRoute.resolve();
     });
     normalizeUrl = function(str) {
@@ -197,23 +218,6 @@
         return trans[letter.toLowerCase()] || letter;
       });
     };
-    $rootScope.breadcrumb = (function() {
-      var _i, _len, _ref, _results;
-      _ref = (typeof newRoute !== "undefined" && newRoute !== null ? newRoute.breadcrumb : void 0) || [];
-      _results = [];
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        item = _ref[_i];
-        if (_.isObject(item)) {
-          _results.push(item);
-        } else {
-          _results.push({
-            label: item,
-            url: "#/" + normalizeUrl(item).join("")
-          });
-        }
-      }
-      return _results;
-    })();
     return $rootScope.appendCrumb = function(label) {
       return $rootScope.breadcrumb = [].concat($rootScope.breadcrumb, [
         {

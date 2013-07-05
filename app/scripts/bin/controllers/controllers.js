@@ -334,15 +334,18 @@
         }
         return _results;
       })();
-      return util.setupHash(s, {
-        "ankare": function(val) {
-          if (!val) {
-            $(window).scrollTop(0);
-            return;
+      return util.setupHashComplex(s, [
+        {
+          "key": "ankare",
+          post_change: function(val) {
+            if (!(val && $("#" + val).length)) {
+              $(window).scrollTop(0);
+              return;
+            }
+            return $(window).scrollTop($("#" + val).offset().top);
           }
-          return $(window).scrollTop($("#" + val).offset().top);
         }
-      });
+      ]);
     });
   });
 

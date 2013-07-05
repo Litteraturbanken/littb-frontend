@@ -3,7 +3,7 @@
 <div toolkit>
     <ul>
         <li ng-repeat="item in labelArray">
-            <span ng-click="ankare = item.id">::: {{item.label}}</span>
+            <a ng-click="$parent.ankare = item.id">::: {{item.label}}</a>
         </li>
     </ul>
 

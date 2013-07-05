@@ -301,13 +301,17 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
         s.labelArray = for elem in $("[id]", data)
             label : $(elem).text()
             id : $(elem).attr("id")
+            
+        
+        util.setupHashComplex s, [
+            "key" : "ankare"
+            post_change : (val) ->
+                unless val and $("##{val}").length
+                    $(window).scrollTop(0)
+                    return
+                $(window).scrollTop($("##{val}").offset().top)
+        ]
 
-        util.setupHash s, {"ankare" : (val) ->
-            unless val
-                $(window).scrollTop(0)
-                return
-            $(window).scrollTop($("##{val}").offset().top)
-        }
 
 littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, util) ->
     s = $scope
