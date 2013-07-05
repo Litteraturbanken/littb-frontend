@@ -22,12 +22,20 @@
     <body ng-app="littbApp" ng-cloak>
         <header>
             <a href="#/"><img id="logo" src="/bilder/LBlogga.svg"></a>
+            <hr>
+            <ul class="start_menu">
+                <li><a href="#/epub">EPUB</a></li>
+                <li><a href="#/titlar?mediatypeFilter=pdf">PDF</a></li>
+                <li><a href="#/titlar?mediatypeFilter=etext">ETEXT</a></li>
+                <li><a href="#/titlar?mediatypeFilter=faksimil">FAKSIMIL</a></li>
+            </ul>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li><a href="#/start">Hem</a> <span class="divider" >></span></li>
                 
                 <li ng-repeat="item in breadcrumb track by $index" ng-class="{active : $last}"><a ng-href="{{item.url}}">{{item.label}}</a> <span class="divider" ng-show="!$last">></span></li>
               <!-- <li class="active">Data</li> -->
             </ul>
+            <div class="clearfix"></div>
         </header>
         <div id="leftCorridor">
             <ul role="navigation" class="mainnav">

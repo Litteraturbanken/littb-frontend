@@ -19,7 +19,41 @@
     };
   });
 
-  littb.controller("contactFormCtrl", function($scope, backend) {});
+  littb.controller("contactFormCtrl", function($scope, backend, $timeout) {
+    var done, err, s;
+    s = $scope;
+    s.showContact = false;
+    s.showNewsletter = false;
+    s.showError = false;
+    done = function() {
+      return $timeout(function() {
+        s.showContact = false;
+        return s.showNewsletter = false;
+      }, 4000);
+    };
+    err = function() {
+      s.showError = true;
+      s.showContact = false;
+      s.showNewsletter = false;
+      return $timeout(function() {
+        return s.showError = false;
+      }, 4000);
+    };
+    s.submitContactForm = function() {
+      return backend.submitContactForm(s.name, s.email, s.message).then(function() {
+        s.showContact = true;
+        return done();
+      }, err);
+    };
+    return s.subscribe = function() {
+      var msg;
+      msg = s.newsletterEmail + " vill bli tillagd på utskickslistan.";
+      return backend.submitContactForm("Utskickslista", s.newsletterEmail, msg).then(function() {
+        s.showNewsletter = true;
+        return done();
+      }, err);
+    };
+  });
 
   littb.controller("statsCtrl", function($scope, backend) {
     var s;
@@ -405,11 +439,11 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, throttle) {
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData) {
     var author, loadPage, mediatype, pagename, s, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
-    _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "browse"));
+    _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
     s.searchData = searchData;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
@@ -502,6 +536,15 @@
         return part.navtitle;
       }
     };
+    s.toggleParallel = function() {
+      return s.isParallel = !s.isParallel;
+    };
+    s.supportsParallel = function() {
+      if (!s.workinfo) {
+        return;
+      }
+      return __indexOf.call(s.workinfo.mediatypes, 'etext') >= 0 && __indexOf.call(s.workinfo.mediatypes, 'faksimil') >= 0;
+    };
     util.setupHashComplex(s, [
       {
         scope_name: "markee_from",
@@ -517,6 +560,9 @@
         key: "width"
       }, {
         key: "height"
+      }, {
+        key: "parallel",
+        scope_name: "isParallel"
       }
     ]);
     watches = [];
@@ -542,12 +588,9 @@
           s.pagename = page.attr("name");
         }
         s.pageix = s.pagemap["page_" + s.pagename];
-        if (mediatype === 'faksimil') {
-          return s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
-        } else {
-          page.children().remove();
-          return s.etext_html = page.text();
-        }
+        s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
+        page.children().remove();
+        return s.etext_html = page.text();
       });
     };
     s.size = 2;
@@ -751,6 +794,7 @@
           val = _.map($(elem).children(), function(child) {
             return $(child).text();
           });
+          c.log("val asArray", val);
         } else {
           val = $(elem).text();
         }
@@ -886,6 +930,7 @@
         }).success(function(xml) {
           var info, p, page, pgMap, _i, _len, _ref;
           info = parseWorkInfo("LBwork", xml);
+          c.log("info", info);
           info["authorFullname"] = $("author-fullname", xml).text();
           info["showtitle"] = $(":root > showtitle", xml).text();
           info["css"] = $("css", xml).text();
@@ -899,6 +944,16 @@
           }
           info.pagemap = pgMap;
           info.parts = _.map($("parts > part", xml), objFromAttrs);
+          info.mediatypes = (function() {
+            var _j, _len1, _ref1, _results;
+            _ref1 = $("mediatypes mediatype", xml);
+            _results = [];
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              mediatype = _ref1[_j];
+              _results.push(util.getInnerXML(mediatype));
+            }
+            return _results;
+          })();
           return def.resolve([xml, info]);
         });
         return def.promise;
@@ -1115,6 +1170,23 @@
           })();
           return def.resolve(output);
         });
+        return def.promise;
+      },
+      submitContactForm: function(name, email, message) {
+        var def, params, url;
+        def = $q.defer();
+        url = "query/lb-contact.xql";
+        params = {
+          action: "contact-test",
+          lang: "swe",
+          ContactName: name,
+          ContactEmail: email,
+          ContactMessage: message
+        };
+        http({
+          url: url,
+          params: params
+        }).success(def.resolve).error(def.reject);
         return def.promise;
       }
     };

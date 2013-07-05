@@ -1,32 +1,36 @@
-Vill du skicka ett meddelande till oss? Då kan du använda formuläret här nedan.
-<div>
-    <div>
-        <label for="nameInput">Namn</label>
-        <label for="emailInput">Epostadress</label>
-    </div>
-    <div>
-        <div>
-            <input id="nameInput" type="text">
+<div ng-hide="showContact || showNewsletter || showError">
+    <div class="header">Vill du skicka ett meddelande till oss? Då kan du använda formuläret här nedan.</div>
+    <form ng-submit="submitContactForm()" name="form" class="contactform" novalidate>
+        <div class="form_head">
+            <div>
+                <label for="nameInput">Namn</label>
+                <input id="nameInput" type="text" ng-model="name" autofocus>
+            </div>
+            <div>
+                <label for="emailInput">Epostadress</label>
+                <input name="uEmail" id="emailInput" type="email" ng-model="email" required>
+                <span class="error_msg">Skiv din epostadress</span>
+            </div>
         </div>
-        <div>
-            <input id="emailInput" type="text">
+        <div class="msg_box">
+            <textarea ng-model="message" required></textarea>
+            <div class="error_msg">Meddelandet är tomt.</div>
+            <div>
+                <span submit-btn ng-disabled="form.$pristine || (form.$dirty && form.$invalid)"></span>
+                <div style="clear:both;"></div>
+            </div>
         </div>
+    </form>
+    <div class="lowersection">
+        <p>
+            Vill du få Litteraturbankens utskick? Skriv in din epostadress här.
+        </p>
+        <form name="subscribeform" class="subscribeform" ng-submit="subscribe()" novalidate>
+            <label for="newsletterEmail">Epostadress</label> <input id="newsletterEmail" ng-model="newsletterEmail" required type="email"> 
+            <span submit-btn ng-disabled="subscribeform.$pristine || (subscribeform.$dirty && subscribeform.$invalid)"></span>
+        </form>
     </div>
 </div>
-<div>
-    <div>
-        <textarea></textarea>
-
-    </div><img src="bilder/LBsubmitknapp.jpeg">
-    <div style="clear:both;"></div>
-</div>
-<div></div>
-<div>
-    <p>
-        Vill du få Litteraturbankens utskick? Skriv in din epostadress här.
-    </p>
-    <div>
-        <span>Epostadress</span> <input type="text"> <img src="bilder/LBsubmitknapp.jpeg">
-    </div>
-    <div></div>
-</div>
+<div ng-show="showContact">Tack för ditt meddelande, vi svarar så fort vi kan.</div>
+<div ng-show="showNewsletter">Tack för din anmälan.</div>
+<div ng-show="showError">Ett fel uppstod. Vänligen försök igen senare.</div>

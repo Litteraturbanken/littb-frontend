@@ -14,8 +14,43 @@ littb.controller "startCtrl", ($scope, $location) ->
 
 
 
-littb.controller "contactFormCtrl", ($scope, backend) ->
-    #TODO: implement me. 
+littb.controller "contactFormCtrl", ($scope, backend, $timeout) ->
+    s = $scope
+
+    s.showContact = false
+    s.showNewsletter = false
+    s.showError = false
+
+    done = () ->
+        $timeout( () ->
+            s.showContact = false
+            s.showNewsletter = false
+        , 4000)
+
+    err = () ->
+        s.showError = true
+        s.showContact = false
+        s.showNewsletter = false
+
+        $timeout( () ->
+            s.showError = false
+        , 4000)
+
+    s.submitContactForm = () ->
+        backend.submitContactForm(s.name, s.email, s.message).then( () ->
+            s.showContact = true
+            done()
+        , err
+        )
+    s.subscribe = () ->
+        msg = s.newsletterEmail + " vill bli tillagd på utskickslistan."
+        backend.submitContactForm("Utskickslista", s.newsletterEmail, msg).then( () ->
+            s.showNewsletter = true
+            done()
+        , err
+        )
+
+
     
 littb.controller "statsCtrl", ($scope, backend) ->
     s = $scope
@@ -340,10 +375,10 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
         s.mediatype = s.data.mediatypes[0]
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, throttle) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
-    _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "browse")
+    _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
     s.searchData = searchData
 
     s.nextHit = () ->
@@ -371,8 +406,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 if obj.baseform == query
                     s.lex_article = obj
                     break
-
-
 
 
     s.getPage = () ->
@@ -418,6 +451,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getTooltip = (part) ->
         return part.navtitle if part.navtitle != part.showtitle
 
+    s.toggleParallel = () ->
+        s.isParallel = !s.isParallel
+
+    s.supportsParallel = () ->
+        unless s.workinfo then return
+        'etext' in s.workinfo.mediatypes and 'faksimil' in s.workinfo.mediatypes
+
 
     util.setupHashComplex s, [
             scope_name : "markee_from"
@@ -433,6 +473,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             key : "width"
         ,
             key : "height"
+        ,
+            key : "parallel"
+            scope_name : "isParallel"
 
     ]
         
@@ -469,11 +512,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             s.pageix = s.pagemap["page_" + s.pagename]
 
-            if mediatype == 'faksimil'
-                s.url = $("faksimil-url[size=#{s.size + 1}]", page).last().text()
-            else
-                page.children().remove()
-                s.etext_html = page.text()
+            # if mediatype == 'faksimil' or isParallel
+            s.url = $("faksimil-url[size=#{s.size + 1}]", page).last().text()
+            # else
+            page.children().remove()
+            s.etext_html = page.text()
 
     s.size = 2
     s.sizes = _.map [0...5], () -> false
@@ -625,8 +668,9 @@ littb.factory 'backend', ($http, $q, util) ->
                 val = util.getInnerXML elem
 
             else if elem.nodeName in asArray
-                 val = _.map $(elem).children(), (child) ->
+                val = _.map $(elem).children(), (child) ->
                     $(child).text()
+                c.log "val asArray", val
             else
                 val = $(elem).text()
 
@@ -745,6 +789,7 @@ littb.factory 'backend', ($http, $q, util) ->
             params : params
         ).success (xml) ->
             info = parseWorkInfo("LBwork", xml)
+            c.log "info", info
 
             info["authorFullname"] = $("author-fullname", xml).text()
             info["showtitle"] = $(":root > showtitle", xml).text()
@@ -760,6 +805,10 @@ littb.factory 'backend', ($http, $q, util) ->
 
             info.parts = _.map $("parts > part", xml), objFromAttrs
 
+
+            info.mediatypes = for mediatype in $("mediatypes mediatype", xml)
+                util.getInnerXML mediatype
+ 
 
             def.resolve [xml, info]
 
@@ -955,3 +1004,27 @@ littb.factory 'backend', ($http, $q, util) ->
 
             def.resolve output
         return def.promise
+
+    submitContactForm : (name, email, message) ->
+        def = $q.defer()
+
+        url = "query/lb-contact.xql"
+
+        params = 
+            action : "contact-test"
+            lang : "swe"
+            ContactName : name
+            ContactEmail : email
+            ContactMessage : message
+
+
+        http(
+            url : url
+            params: params
+
+        ).success(def.resolve)
+        .error def.reject
+        
+        return def.promise
+
+

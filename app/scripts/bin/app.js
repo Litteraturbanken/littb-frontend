@@ -157,8 +157,12 @@
     });
   });
 
-  littb.run(function($rootScope, $location, $rootElement) {
-    var item, normalizeUrl;
+  littb.run(function($rootScope, $location, $rootElement, $q) {
+    var firstRoute, item, normalizeUrl;
+    firstRoute = $q.defer();
+    firstRoute.promise.then(function() {
+      return $rootElement.addClass("ready");
+    });
     $rootScope.goto = function(path) {
       return $location.url(path);
     };
@@ -166,7 +170,7 @@
       return routeStartCurrent = current;
     });
     $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
-      var classList, title, _ref;
+      var cls, title, _ref;
       if (newRoute.title) {
         title = "Litteraturbanken v.3 | " + newRoute.title;
       } else {
@@ -177,14 +181,14 @@
         $("#toolkit").html("");
       }
       $rootScope.prevRoute = prevRoute;
-      classList = ($("[ng-view]").attr("class") || "").split(" ");
-      classList = _.filter(classList, function(item) {
-        return !_.str.startsWith(item, "page-");
-      });
-      $("body").attr("class", classList.join(" "));
+      cls = $rootElement.attr("class");
+      cls = cls.replace(/\ ?page\-\w+/g, "");
+      c.log("cls", cls);
+      $rootElement.attr("class", cls);
       if ((_ref = newRoute.controller) != null ? _ref.replace : void 0) {
-        return $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""));
+        $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""));
       }
+      return firstRoute.resolve();
     });
     normalizeUrl = function(str) {
       var trans;
@@ -276,6 +280,9 @@
   littb.filter("setMarkee", function() {
     return function(input, fromid, toid) {
       var wrapper;
+      if (!(fromid || toid)) {
+        return input;
+      }
       input = $(input);
       wrapper = $("<div>");
       if (fromid === toid) {
@@ -285,54 +292,6 @@
       }
       wrapper.append(input);
       return wrapper.html();
-    };
-  });
-
-  littb.factory("throttle", function($timeout) {
-    return function(func, wait, options) {
-      var args, lastCalled, leading, result, thisArg, timeoutId, trailing, trailingCall;
-      trailingCall = function() {
-        var lastCalled, result, timeoutId;
-        timeoutId = null;
-        if (trailing) {
-          lastCalled = new Date;
-          return result = func.apply(thisArg, args);
-        }
-      };
-      args = void 0;
-      result = void 0;
-      thisArg = void 0;
-      timeoutId = void 0;
-      lastCalled = 0;
-      leading = true;
-      trailing = true;
-      if (options === false) {
-        leading = false;
-      } else if (_.isObject(options)) {
-        leading = ("leading" in options ? options.leading : leading);
-        trailing = ("trailing" in options ? options.trailing : trailing);
-      }
-      return function() {
-        var now, remaining;
-        now = new Date;
-        if (!timeoutId && !leading) {
-          lastCalled = now;
-        }
-        remaining = wait - (now - lastCalled);
-        args = arguments;
-        thisArg = this;
-        if (remaining <= 0) {
-          $timeout.cancel(timeoutId);
-          timeoutId = null;
-          lastCalled = now;
-          result = func.apply(thisArg, args);
-        } else {
-          if (!timeoutId) {
-            timeoutId = $timeout(trailingCall, remaining);
-          }
-        }
-        return result;
-      };
     };
   });
 

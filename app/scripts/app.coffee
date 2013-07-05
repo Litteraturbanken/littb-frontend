@@ -164,7 +164,11 @@ littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
         appendToBody: true
 
 
-littb.run ($rootScope, $location, $rootElement) ->
+littb.run ($rootScope, $location, $rootElement, $q) ->
+    firstRoute = $q.defer()
+    firstRoute.promise.then () ->
+        $rootElement.addClass("ready") #TODO: move me.
+
     $rootScope.goto = (path) ->
         $location.url(path)
 
@@ -183,11 +187,23 @@ littb.run ($rootScope, $location, $rootElement) ->
         $rootScope.prevRoute = prevRoute
 
         # sync ng-view class name to page
-        classList = ($("[ng-view]").attr("class") or "").split(" ")
-        classList = _.filter classList, (item) -> not _.str.startsWith item, "page-"
-        $("body").attr "class", classList.join(" ")
+        # classList = ($("[ng-view]").attr("class") or "").split(" ")
+        # classList = _.filter classList, (item) -> (_.str.startsWith item, "page-")
+        # c.log "classList", classList
+
+        cls = $rootElement.attr "class"
+        cls = cls.replace /\ ?page\-\w+/g, ""
+        c.log "cls", cls
+        $rootElement.attr "class", cls
+
+        # $rootElement.addClass classList.join(" ")
         if newRoute.controller?.replace
-            $("body").addClass("page-" + newRoute.controller.replace("Ctrl", ""))
+            $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""))
+
+        firstRoute.resolve()
+
+
+
 
 
     normalizeUrl = (str) ->
@@ -262,6 +278,7 @@ littb.service "searchData", (backend, $q) ->
 
 littb.filter "setMarkee", () ->
     return (input, fromid, toid) ->
+        if not (fromid or toid) then return input
         input = $(input)
         wrapper = $("<div>")
         if fromid == toid
@@ -276,44 +293,3 @@ littb.filter "setMarkee", () ->
         wrapper.append input
         return wrapper.html()
 
-
-
-littb.factory "throttle", ($timeout) ->
-
-    return (func, wait, options) ->
-
-        trailingCall = ->
-            timeoutId = null
-            if trailing
-                lastCalled = new Date
-                result = func.apply(thisArg, args)
-        args = undefined
-        result = undefined
-        thisArg = undefined
-        timeoutId = undefined
-        lastCalled = 0
-        leading = true
-        trailing = true
-
-        if options is false
-            leading = false
-        else if _.isObject options
-            leading = (if "leading" of options then options.leading else leading)
-            trailing = (if "trailing" of options then options.trailing else trailing)
-        ->
-            now = new Date
-            lastCalled = now if not timeoutId and not leading
-            remaining = wait - (now - lastCalled)
-            args = arguments
-            thisArg = this
-            if remaining <= 0
-                $timeout.cancel timeoutId
-                # clearTimeout timeoutId
-                timeoutId = null
-                lastCalled = now
-                result = func.apply(thisArg, args)
-            # else timeoutId = setTimeout(trailingCall, remaining) unless timeoutId
-            else 
-                timeoutId = $timeout trailingCall, remaining unless timeoutId
-                # timeoutId = setTimeout(trailingCall, remaining) unless timeoutId
-            result
