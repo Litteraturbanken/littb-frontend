@@ -18,7 +18,7 @@
             <th></th>
         </thead>
         <tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{row.author.nameforindex[0].toUpperCase()}}">
-            <td><a href="#!/forfattare/{{row.author.authorid}}">{{getAuthor(row)}}</a></td>
+            <td><a href="#!/forfattare/{{row.author.authorid}}" class="dot_fill">{{getAuthor(row)}}</a></td>
             <td class="title">
                 <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>
             </td>

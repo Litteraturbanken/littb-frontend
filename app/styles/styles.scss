@@ -14,6 +14,62 @@ $mainview-width : $page-width - $main-menu-width - $gutter-width;
 
 $primarycolor : #990000;
 
+
+@media 
+only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px)  {
+    .page-epubList p {
+        max-width : 70%;
+    }
+
+/* Force table to not be like tables anymore */
+    .page-epubList .contenttable,.page-titleList .contenttable {
+        table, 
+        thead, 
+        tbody, 
+        th,
+        td, 
+        tr {
+            display: block; 
+          }
+        tr:first-child {
+            display : none;
+        } 
+        
+        /* Hide table headers (but not display: none;, for accessibility) */
+        thead tr { 
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+        
+        tr:nth-of-type(odd) {
+            background-color : #EDEDED;
+        }
+        
+        td { 
+            /* Behave  like a "row" */
+            border: none;
+            position: relative;
+        }
+        
+        td:before { 
+            /* Now like a table header */
+            position: absolute;
+            /* Top/left values mimic padding */
+            top: 6px;
+            left: 6px;
+            width: 45%; 
+            padding-right: 10px; 
+            white-space: nowrap;
+        }   
+        .dot_fill:after {
+            border : none;
+        }
+    }
+}
+
+
 * {
     @include box-sizing(border-box);
 }
@@ -25,9 +81,9 @@ body {
     padding-left : 40px;
     white-space: nowrap;
     font-family : georgia, serif;
-    line-height : 17.5px;
     width : $page-width;
     background-color: white;
+    line-height : 17.5px;
 
     > * {
         white-space : normal;
@@ -128,7 +184,7 @@ tr:nth-of-type(10n) td {
         vertical-align: top;
     }
     td:nth-child(2) {
-        vertical-align : bottom;
+        // vertical-align : bottom;
     }
     th {
         padding : 5px;
@@ -484,6 +540,7 @@ $partnav-width : 170px;
 .page-reading {
     #mainview {
         position : relative;
+        line-height : normal;
         .faksimilMarkee {
             background-color : $primarycolor;
             opacity : 0.5;
@@ -695,25 +752,49 @@ $partnav-width : 170px;
 }
 
 .page-authorInfo {
-    .author_img {
-        margin-top : 3em;
-        text-align : right;
+    #mainview {
+        .author {
+            min-height : 1em;
+        }
+        // really for authorTitles
+        .contenttable {
+            margin-top : 3em;
+            td {
+                text-align: left;
+                white-space: nowrap;
+            }
+            td:first-child {
+                max-width : 80px;
+            }
+            td:nth-child(2) {
+                vertical-align : top;
+            }
+        }
+        .author_img {
+            margin-top : 3em;
+            text-align : right;
+        }
+    }
+
+    #toolkit {
+        ul {
+            margin-top : 2em;
+            li {
+                margin-bottom : 1em;
+            }
+        }
     }
 }
+
+
 .page-authorList {
     .contenttable {
-        margin-top : 3em;
+        margin-top : 2em;
         td {
-            text-align: left;
-            white-space: nowrap;
-        }
-        td:nth-child(2) {
-            vertical-align : top;
+            max-width : 180px;
         }
     }
-    #mainview > * {
-        margin-bottom : 1em;
-    }
+
 }
 
 .page-titleList {
@@ -785,6 +866,17 @@ $partnav-width : 170px;
         > * {
             margin : 1em 0;
         }
+
+        table td:first-child {
+            max-width : 200px;
+        }
+    }
+}
+
+.page-help {
+    #toolkit {
+        font-size : 0.9em;
+
     }
 }
 

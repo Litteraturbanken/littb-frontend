@@ -14,7 +14,19 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "template/typeahead/typeahead-popup.html"
                                            ])
     .config ($routeProvider) ->
-        $routeProvider
+
+        class Router
+            constructor : () ->
+            when : (route, obj) ->
+                route = [route] if not _.isArray route
+                for r in route
+                    $routeProvider.when r, obj
+                return this
+            otherwise : () -> $routeProvider.otherwise.apply $routeProvider, arguments
+
+        router = new Router()
+
+        router
             .when '',
                 redirectTo : "/start"
             .when '/',
@@ -111,19 +123,22 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 controller : "biblinfoCtrl"
                 reloadOnSearch : false
                 breadcrumb : ["författare", "lagerlöf"]
-            .when "/forfattare/:author",
+            .when ["/forfattare/:author", "/forfattare/:author/titlar"],
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
                 breadcrumb : [
                     label : "författare"
                     url : "#!/forfattare"
                 ]
-            .when "/forfattare/:author/titlar",
-                templateUrl : "views/authorTitles.html"
-                controller : "authorInfoCtrl"
-                reloadOnSearch : false
-                title : "Titlar"
-                breadcrumb : ["författare"]
+                resolve : 
+                    r : ($q, $routeParams, $route) ->
+                        def = $q.defer()
+                        if routeStartCurrent?.controller == "authorInfoCtrl" and
+                         $route.current.controller == "authorInfoCtrl"
+                            def.reject()
+                        else 
+                            def.resolve()
+                        return def.promise
             .when "/forfattare/:author/titlar/:title/info",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"

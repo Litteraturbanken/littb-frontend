@@ -1,6 +1,6 @@
 <div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel}">
     
-    <div css="{{workinfo.css}}" ng-show="mediatype == 'etext' || isParallel"></div>
+    <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
     <div class="etext" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
     

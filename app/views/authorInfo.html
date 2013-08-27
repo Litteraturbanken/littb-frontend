@@ -1,13 +1,33 @@
-<div ng-bind-html-unsafe="authorInfo.intro"></div>
+<h2 ng-show="authorInfo && showtitles">{{authorInfo.fullName}} ({{authorInfo.birth}} - {{authorInfo.death}}): 
+    verk i Litteraturbanken</h2>
 
-<div class="author_img"><img ng-src="{{authorInfo.smallImage}}"></div>
+<div ng-if="!showtitles">
+    <div ng-bind-html-unsafe="authorInfo.intro"></div>
+    <div class="author_img"><img ng-src="{{authorInfo.smallImage}}"></div>
+</div>
+
+<table class="contenttable" ng-if="showtitles">
+    <tr ng-repeat="works in groupedWorks">
+        <td><a class="dot_fill" href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</td>
+        <td >
+            <span ng-repeat="work in works">
+            <span ng-show="!$first">::: </span><a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{work.titlepath}}/info/{{work.mediatype}}">{{work.mediatype}}</a>
+            </span>
+        </td>
+    </tr>
+</table>
 
 <div toolkit>
-    <div>{{authorInfo.fullName}}</div>
+    <hr>
+    <div class="author">{{authorInfo.fullName}}</div>
     
-    <div>
-        <a href="#!/forfattare/{{authorInfo.authorid}}/titlar" ng-if="groupedWorks.length > 1">::: Verk i LB</a>
-        <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{groupedWorks[0][0].titlepath}}/{{groupedWorks[0][0].mediatype}}" ng-if="groupedWorks.length < 2">::: {{groupedWorks[0][0].showtitle}}</a>
-    </div>
+    <ul>
+        <li>
+            <a href="#!/forfattare/{{authorInfo.authorid}}/titlar" ng-if="groupedWorks.length > 1">::: Verk i LB</a>
+        </li>
+        <li>
+            <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{groupedWorks[0][0].titlepath}}/{{groupedWorks[0][0].mediatype}}" ng-if="groupedWorks.length < 2">::: {{groupedWorks[0][0].showtitle}}</a>
+        </li>
+    </ul>
     <div><a href="#!/forfattare/{{authorInfo.authorid}}">::: Introduktion</a></div>
 </div>

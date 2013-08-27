@@ -14,7 +14,31 @@
   };
 
   window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal", "ui.bootstrap.tooltip", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html"]).config(function($routeProvider) {
-    return $routeProvider.when('', {
+    var Router, router;
+    Router = (function() {
+      function Router() {}
+
+      Router.prototype.when = function(route, obj) {
+        var r, _i, _len;
+        if (!_.isArray(route)) {
+          route = [route];
+        }
+        for (_i = 0, _len = route.length; _i < _len; _i++) {
+          r = route[_i];
+          $routeProvider.when(r, obj);
+        }
+        return this;
+      };
+
+      Router.prototype.otherwise = function() {
+        return $routeProvider.otherwise.apply($routeProvider, arguments);
+      };
+
+      return Router;
+
+    })();
+    router = new Router();
+    return router.when('', {
       redirectTo: "/start"
     }).when('/', {
       redirectTo: "/start"
@@ -105,7 +129,7 @@
       controller: "biblinfoCtrl",
       reloadOnSearch: false,
       breadcrumb: ["författare", "lagerlöf"]
-    }).when("/forfattare/:author", {
+    }).when(["/forfattare/:author", "/forfattare/:author/titlar"], {
       templateUrl: "views/authorInfo.html",
       controller: "authorInfoCtrl",
       breadcrumb: [
@@ -113,13 +137,19 @@
           label: "författare",
           url: "#!/forfattare"
         }
-      ]
-    }).when("/forfattare/:author/titlar", {
-      templateUrl: "views/authorTitles.html",
-      controller: "authorInfoCtrl",
-      reloadOnSearch: false,
-      title: "Titlar",
-      breadcrumb: ["författare"]
+      ],
+      resolve: {
+        r: function($q, $routeParams, $route) {
+          var def;
+          def = $q.defer();
+          if ((routeStartCurrent != null ? routeStartCurrent.controller : void 0) === "authorInfoCtrl" && $route.current.controller === "authorInfoCtrl") {
+            def.reject();
+          } else {
+            def.resolve();
+          }
+          return def.promise;
+        }
+      }
     }).when("/forfattare/:author/titlar/:title/info", {
       templateUrl: "views/sourceInfo.html",
       controller: "sourceInfoCtrl",

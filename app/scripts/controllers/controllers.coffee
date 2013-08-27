@@ -212,9 +212,23 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
 
 
 
-littb.controller "authorInfoCtrl", ($scope, $rootScope, backend, $routeParams) ->
+littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams) ->
     s = $scope
+    # [s.author, s.showtitles] = $routeParams.author.split("/")
     _.extend s, $routeParams
+
+    refreshRoute = () ->
+        s.showtitles = (_.last $location.path().split("/")) == "titlar"
+    refreshRoute()
+
+    s.$on "$routeChangeError", (event, current, prev, rejection) ->
+        c.log "change error", current
+        _.extend s, current.pathParams
+
+        refreshRoute()  
+
+
+
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
 
@@ -226,8 +240,6 @@ littb.controller "authorInfoCtrl", ($scope, $rootScope, backend, $routeParams) -
 
 littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location) ->
     s = $scope
-    # unless 'wor' $location.search()
-    # s.workFilter = "works"
     s.searching = false
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
@@ -382,7 +394,7 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
     $http.get(url).success (data) ->
         s.htmlContent = data
         s.labelArray = for elem in $("[id]", data)
-            label : $(elem).text()
+            label : _.str.humanize $(elem).attr("name")
             id : $(elem).attr("id")
             
         
@@ -472,11 +484,6 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
 
     backend.getTitles().then (titleArray) ->
         s.data = titleArray
-
-
-
-
-
 
 
 littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->

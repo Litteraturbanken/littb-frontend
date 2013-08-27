@@ -224,10 +224,19 @@
     return s.submit();
   });
 
-  littb.controller("authorInfoCtrl", function($scope, $rootScope, backend, $routeParams) {
-    var s;
+  littb.controller("authorInfoCtrl", function($scope, $location, $rootScope, backend, $routeParams) {
+    var refreshRoute, s;
     s = $scope;
     _.extend(s, $routeParams);
+    refreshRoute = function() {
+      return s.showtitles = (_.last($location.path().split("/"))) === "titlar";
+    };
+    refreshRoute();
+    s.$on("$routeChangeError", function(event, current, prev, rejection) {
+      c.log("change error", current);
+      _.extend(s, current.pathParams);
+      return refreshRoute();
+    });
     return backend.getAuthorInfo(s.author).then(function(data) {
       s.authorInfo = data;
       s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
@@ -398,7 +407,7 @@
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           elem = _ref[_i];
           _results.push({
-            label: $(elem).text(),
+            label: _.str.humanize($(elem).attr("name")),
             id: $(elem).attr("id")
           });
         }
