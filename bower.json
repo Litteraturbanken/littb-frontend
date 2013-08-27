@@ -10,12 +10,15 @@
     "underscore.string": "git://github.com/epeli/underscore.string.git#2.3.1",
     "font-awesome": "git://github.com/FortAwesome/Font-Awesome.git#3.0.2",
     "lodash": "git://github.com/bestiejs/lodash.git#1.2.1",
-    "bootstrap": "git://github.com/twitter/bootstrap.git#2.2.2",
+    "bootstrap": "git://github.com/twbs/bootstrap.git#2.3.2",
     "jquery-ui": "git://github.com/components/jqueryui#1.8.23",
-    "angular-bootstrap": "~0.4.0"
+    "angular-bootstrap": "~0.5.0"
   },
   "devDependencies": {
     "angular-mocks": "git://github.com/angular/bower-angular-mocks.git#1.0.7",
     "angular-scenario": "git://github.com/angular/bower-angular-scenario.git#1.0.7"
+  },
+  "resolutions": {
+    "jquery": ">=1.8.0 <2.1.0"
   }
 }

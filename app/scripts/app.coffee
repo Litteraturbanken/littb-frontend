@@ -4,11 +4,14 @@ _.templateSettings =
 
 routeStartCurrent = null
 
+window.getScope = () -> $("#mainview").children().scope()
+
 window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "template/typeahead/typeahead.html"
                                            "ui.bootstrap.modal"
                                            "ui.bootstrap.tooltip"
                                            "template/tooltip/tooltip-popup.html"
+                                           "template/typeahead/typeahead-popup.html"
                                            ])
     .config ($routeProvider) ->
         $routeProvider
@@ -27,11 +30,21 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 controller : "presentationCtrl"
                         
             .when '/presentationer/specialomraden/:doc',
-                controller : ($scope, $routeParams) ->
-                    $scope.doc = "/red/presentationer/specialomraden/#{$routeParams.doc}"
+                controller : ($scope, $routeParams, $http, util) ->
+                    $http.get("/red/presentationer/specialomraden/#{$routeParams.doc}").success (data) ->
+                        # c.log "doc", data
+
+                        $scope.doc = data
+                        title = $("<root>#{data}</root>").find("h1").text()
+                        c.log "title", title
+                        title = title.split(" ")[0...5].join(" ")
+                        $scope.setTitle title
+                        $scope.appendCrumb title
                 template : '''
-                        <div style="position:relative;" ng-include="doc"></div>
+                        <div style="position:relative;" ng-bind-html-unsafe="doc"></div>
                     '''
+                breadcrumb : ["presentationer"]
+
             .when '/om/aktuellt',
                 templateUrl: '/red/om/aktuellt/aktuellt.html'
                 title : "Aktuellt"
@@ -62,23 +75,26 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 controller : 'statsCtrl'
                 reloadOnSearch : false
                 title : "Statistik"
-                # breadcrumb : ["statistik"]
+                breadcrumb : ["statistik"]
             .when '/sok',
                 templateUrl: 'views/search.html'
                 controller : 'searchCtrl'
                 reloadOnSearch : false
                 title : "Sök i verkstext"
+                breadcrumb : ["sök"]
 
             .when "/titlar",
                 templateUrl : "views/titleList.html"
                 controller : "titleListCtrl"
                 reloadOnSearch : false
                 title : "Titlar"
+                breadcrumb : ["titlar"]
             .when "/epub",
                 templateUrl : "views/epubList.html"
                 controller : "epubListCtrl"
                 reloadOnSearch : false
                 title : "Gratis titlar för nerladdning i epubformatet"
+                breadcrumb : ["epub"]
             .when "/forfattare",
                 templateUrl : "views/authorList.html"
                 controller : "authorListCtrl"
@@ -89,36 +105,41 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 templateUrl : "views/sla/lagerlof.html"
                 controller : "lagerlofCtrl"
                 reloadOnSearch : false
+                breadcrumb : ["författare", "lagerlöf"]
             .when "/forfattare/LagerlofS/biblinfo",
                 templateUrl : "views/sla/biblinfo.html"
                 controller : "biblinfoCtrl"
                 reloadOnSearch : false
-            .when "/forfattare/:author/titlar",
-                templateUrl : "views/authorTitles.html"
-                controller : "authorInfoCtrl"
-                reloadOnSearch : false
-                title : "Titlar"
+                breadcrumb : ["författare", "lagerlöf"]
             .when "/forfattare/:author",
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
                 breadcrumb : [
                     label : "författare"
-                    url : "#/forfattare"
+                    url : "#!/forfattare"
                 ]
+            .when "/forfattare/:author/titlar",
+                templateUrl : "views/authorTitles.html"
+                controller : "authorInfoCtrl"
+                reloadOnSearch : false
+                title : "Titlar"
+                breadcrumb : ["författare"]
             .when "/forfattare/:author/titlar/:title/info",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"
                 reloadOnSearch : false
                 title : "Verk"
+                breadcrumb : ["författare"]
             .when "/forfattare/:author/titlar/:title/info/:mediatype",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"
                 reloadOnSearch : false
+                breadcrumb : ["författare"]
             .when "/forfattare/:author/titlar/:title/:mediatype",
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false
-            
+                breadcrumb : ["författare"]
             .when "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
@@ -150,6 +171,20 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 reloadOnSearch : false
                 title : "Kontakt"
                 breadcrumb : ["kontakt"]
+            .when "/id/:id",
+                template : """<div ng-class="{searching:!data}"><h1>{{id}}</h1>
+                    <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+                    <div ng-repeat="row in data | filter:{'itemAttrs.lbworkid' : id}">
+                        <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
+                        <span ng-repeat="type in row.mediatype">
+
+                            <span ng-show="!$first">:::</span>
+                            <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info/{{type}}">{{type}}</a>
+                        </span>
+                    </div>
+                </div>
+                            """
+                controller : 'idCtrl'
             .otherwise
                 template : "<p>Du har angett en adress som inte finns på Litteraturbanken.</p>
                             <p>Använd browserns bakåtknapp för att komma tillbaka till 
@@ -160,7 +195,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
             #     redirectTo: '/'
 
 littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
-    # $locationProvider.hashPrefix('!')
+    $locationProvider.hashPrefix('!')
     delete $httpProvider.defaults.headers.common["X-Requested-With"]
     $tooltipProvider.options
         appendToBody: true
@@ -179,16 +214,18 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
     $rootScope.goto = (path) ->
         $location.url(path)
 
+    $rootScope.setTitle = (title) ->
+        if title
+            title = title + " | Litteraturbanken v.3"
+        else
+            title = "Litteraturbanken v.3"
+        $("title:first").text title
+
     $rootScope.$on "$routeChangeStart", (event, next, current) ->
         routeStartCurrent = current
 
     $rootScope.$on "$routeChangeSuccess", (event, newRoute, prevRoute) ->
-        if newRoute.title
-            title = "Litteraturbanken v.3 | " + newRoute.title
-        else
-            title = "Litteraturbanken v.3"
-
-        $("title").text(title)
+        $rootScope.setTitle newRoute.title
         if newRoute.loadedTemplateUrl != prevRoute?.loadedTemplateUrl
             $("#toolkit").html ""
         $rootScope.prevRoute = prevRoute
@@ -205,7 +242,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             if _.isObject item 
                 item 
             else
-                {label : item, url : "#/" + normalizeUrl(item).join("")}
+                {label : item, url : "#!/" + normalizeUrl(item).join("")}
 
         firstRoute.resolve()
 
@@ -219,8 +256,18 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
     
 
-    $rootScope.appendCrumb = (label) ->
-        $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, [{label : label}]
+    $rootScope.appendCrumb = (input) ->
+        if _.isArray input
+            array = input
+        else if _.isString input
+            array = [{label : input}]
+        else if _.isObject input
+            array = [input]
+
+        $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, array
+
+    
+
 
 littb.service "searchData", (backend, $q) ->
     NUM_HITS = 20 # how many hits per search?
@@ -293,3 +340,13 @@ littb.filter "setMarkee", () ->
         wrapper.append input
         return wrapper.html()
 
+littb.filter "numberFmt", () ->
+    return (input) ->
+        unless input then return input
+        input = _.map input.toString().split("").reverse(), (item, i) ->
+            if not i then return item
+            if i % 3 == 0
+              return [item, " "]
+            return item
+
+        _.flatten(input.reverse()).join("")

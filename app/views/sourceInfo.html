@@ -1,44 +1,48 @@
-<h3 class="author">{{data.authorFullname}}</h3>
-<h3 class="title"><em>{{data.title}}</em></h3>
-
-<!-- <div ng-show="mediatype == 'faksimil'">
+<div ng-show="init">
+    <h3 class="author">{{data.authorFullname}}</h3>
+    <h3 class="title"><em>{{data.title}}</em></h3>
+    
+    <!-- <div ng-show="mediatype == 'faksimil'">
+        <div ng-bind-html-unsafe="data.sourcedesc"></div>
+    </div>
+     -->
     <div ng-bind-html-unsafe="data.sourcedesc"></div>
-</div>
- -->
-<div ng-bind-html-unsafe="data.sourcedesc"></div>
-
-<div class="mediatypes">
-    Läs verket som <a class="mediatype" href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}">{{mediatype}}</a>
-</div>
-<div ng-show="data.mediatypes.length > 1">
-    Även tillgängligt som 
-    <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" href="#forfattare/{{author}}/titlar/{{title}}/{{mediatype}}"><span ng-show="!$first">::: </span>{{mediatype}} </a>
-</div>
-
-<div class="provenance">
-    <a ng-href="{{data.provenance.link}}"><img ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
-    <p>{{data.provenance.text}}</p>
-</div>
-
-<div ng-bind-html-unsafe="data.licenseText | correctLink"></div>
-
-<div ng-show="!mediatype || mediatype == 'etext'">
-    <div ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet:</div>
-    <div ng-show="!data.errata">Inga ändringar har gjorts mot orginalet.</div>
-    <table>
-        <tr ng-repeat="tup in data.errata | limitTo:errataLimit">
-            <td><strong>{{tup[0]}}</strong></td>
-            <td>{{tup[1]}}</td>
-        </tr>
-    </table>
-    <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>
-    <a class="toggle" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
-</div>
-
-
-
-<div toolkit>
-    <hr>
-    <div>{{data.authorFullname}}</div>
-    <div><em>{{data.shorttitle}}</em></div>
+    
+    <div class="mediatypes">
+        Läs verket som 
+        <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
+        <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{data[mediatype].file_size}})</span>
+    </div>
+    <div ng-show="data.mediatypes.length > 1">
+        Även tillgängligt som 
+        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" href="#!/forfattare/{{author}}/titlar/{{title}}/{{mediatype}}"><span ng-show="!$first">::: </span>{{mediatype}} </a>
+    </div>
+    
+    <div class="provenance" ng-if="data.provenance.text.length">
+        <a ng-href="{{data.provenance.link}}"><img ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
+        <p>{{data.provenance.text}}</p>
+    </div>
+    
+    <div ng-bind-html-unsafe="data.licenseText | correctLink"></div>
+    
+    <div ng-show="!mediatype || mediatype == 'etext'">
+        <div ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet:</div>
+        <div ng-show="!data.errata">Inga ändringar har gjorts mot orginalet.</div>
+        <table>
+            <tr ng-repeat="tup in data.errata | limitTo:errataLimit">
+                <td><strong>{{tup[0]}}</strong></td>
+                <td>{{tup[1]}}</td>
+            </tr>
+        </table>
+        <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>
+        <a class="toggle" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
+    </div>
+    
+    
+    
+    <div toolkit>
+        <hr>
+        <div>{{data.authorFullname}}</div>
+        <div><em>{{data.shorttitle}}</em></div>
+    </div>
 </div>

@@ -1,6 +1,13 @@
-<div>
+<div ng-class="{searching:searching}">
     <div id="controls">
-
+        <select ng-model="authorFilter" 
+            ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
+            <option value="">Alla författare</option>
+        </select>
+        <select ng-model="workFilter" ng-change="selectWork()">
+            <option value="works">Samtliga verk</option>
+            <option value="titles">Samtliga titlar</option>
+        </select>
         <select ng-model="mediatypeFilter" >
             <option value="">-- Mediatyper --</option>
             <option value="etext">Etext</option>
@@ -8,7 +15,11 @@
             <option value="epub">Epub</option>
             <option value="pdf">PDF</option>
         </select>
-        <label for="filter_input">Filtrera:</label> <input id="filter_input" type="text" ng-model="filter">
+        <div>
+            <label for="filter_input">Filtrera:</label> <input id="filter_input" type="text" ng-model="filter">
+        </div>
+
+        <div class="preloader">Hämtar <span class="dots_blink"></span></div>
 
     </div>
     <table id="table" class="table-striped contenttable" >
@@ -21,17 +32,17 @@
             </th>
             <th></th>
         </thead>
-        <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || ''}">
-            <td>
+        <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
+            <td class="title">
                 <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
-                    href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info"><i>{{row.itemAttrs.showtitle}}</i></a>
+                    href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
             </td>
-            <td><a href="#/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a></td>
+            <td><a href="#!/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a></td>
             <td>
                 <span ng-repeat="type in row.mediatype">
 
                     <span ng-show="!$first">:::</span>
-                    <a href="#/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
+                    <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info/{{type}}">{{type}}</a>
                 </span>
             </td>
         </tr>

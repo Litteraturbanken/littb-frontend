@@ -1,8 +1,8 @@
-# [Twitter Bootstrap v2.2.2](http://twitter.github.com/bootstrap) [![Build Status](https://secure.travis-ci.org/twitter/bootstrap.png)](http://travis-ci.org/twitter/bootstrap)
+# [Bootstrap v2.3.2](http://twbs.github.com/bootstrap) [![Build Status](https://secure.travis-ci.org/twbs/bootstrap.png)](http://travis-ci.org/twbs/bootstrap)
 
 Bootstrap is a sleek, intuitive, and powerful front-end framework for faster and easier web development, created and maintained by [Mark Otto](http://twitter.com/mdo) and [Jacob Thornton](http://twitter.com/fat).
 
-To get started, checkout http://getbootstrap.com!
+To get started, checkout [http://getbootstrap.com](http://getbootstrap.com)!
 
 
 
@@ -10,9 +10,9 @@ To get started, checkout http://getbootstrap.com!
 
 Three quick start options are available:
 
-* [Download the latest release](https://github.com/twitter/bootstrap/zipball/master).
-* Clone the repo: `git clone git://github.com/twitter/bootstrap.git`.
-* Install with Twitter's [Bower](http://twitter.github.com/bower): `bower install bootstrap`.
+* [Download the latest release](https://github.com/twbs/bootstrap/zipball/master).
+* Clone the repo: `git clone git://github.com/twbs/bootstrap.git`.
+* Install with Twitter's [Bower](http://bower.io): `bower install bootstrap`.
 
 
 
@@ -30,13 +30,13 @@ And constructed with the following guidelines:
 * New additions without breaking backward compatibility bumps the minor (and resets the patch)
 * Bug fixes and misc changes bumps the patch
 
-For more information on SemVer, please visit http://semver.org/.
+For more information on SemVer, please visit [http://semver.org/](http://semver.org/).
 
 
 
 ## Bug tracker
 
-Have a bug or a feature request? [Please open a new issue](https://github.com/twitter/bootstrap/issues). Before opening any issue, please search for existing issues and read the [Issue Guidelines](https://github.com/necolas/issue-guidelines), written by [Nicolas Gallagher](https://github.com/necolas/).
+Have a bug or a feature request? [Please open a new issue](https://github.com/twbs/bootstrap/issues). Before opening any issue, please search for existing issues and read the [Issue Guidelines](https://github.com/necolas/issue-guidelines), written by [Nicolas Gallagher](https://github.com/necolas/).
 
 
 
@@ -51,25 +51,26 @@ Keep track of development and community news.
 
 
 
-## Developers
+## Compiling CSS and JavaScript
 
-We have included a makefile with convenience methods for working with the Bootstrap library.
-
-+ **dependencies**
-Our makefile depends on you having recess, connect, uglify.js, and jshint installed. To install, just run the following command in npm:
+Bootstrap includes a [makefile](Makefile) with convenient methods for working with the framework. Before getting started, be sure to install [the necessary local dependencies](package.json):
 
 ```
-$ npm install recess connect uglify-js jshint -g
+$ npm install
 ```
 
-+ **build** - `make`
-Runs the recess compiler to rebuild the `/less` files and compiles the docs pages. Requires recess and uglify-js. <a href="http://twitter.github.com/bootstrap/extend.html#compiling">Read more in our docs &raquo;</a>
+When completed, you'll be able to run the various make commands provided:
 
-+ **test** - `make test`
+#### build - `make`
+Runs the recess compiler to rebuild the `/less` files and compiles the docs. Requires recess and uglify-js.
+
+#### test - `make test`
 Runs jshint and qunit tests headlessly in [phantomjs](http://code.google.com/p/phantomjs/) (used for ci). Depends on having phantomjs installed.
 
-+ **watch** - `make watch`
+#### watch - `make watch`
 This is a convenience method for watching just Less files and automatically building them whenever you save. Requires the Watchr gem.
+
+Should you encounter problems with installing dependencies or running the makefile commands, be sure to first uninstall any previous versions (global and local) you may have installed, and then rerun `npm install`.
 
 
 
@@ -85,13 +86,13 @@ Thanks!
 
 **Mark Otto**
 
-+ http://twitter.com/mdo
-+ http://github.com/mdo
++ [http://twitter.com/mdo](http://twitter.com/mdo)
++ [http://github.com/mdo](http://github.com/mdo)
 
 **Jacob Thornton**
 
-+ http://twitter.com/fat
-+ http://github.com/fat
++ [http://twitter.com/fat](http://twitter.com/fat)
++ [http://github.com/fat](http://github.com/fat)
 
 
 
@@ -103,7 +104,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this work except in compliance with the License.
 You may obtain a copy of the License in the LICENSE file, or at:
 
-   http://www.apache.org/licenses/LICENSE-2.0
+  [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,

@@ -3,12 +3,12 @@
 <div>Litteraturbanken innehåller just nu: </div>
 
 <ul>
-    <li>{{data.works}} verk</li>
-    <li>{{data.authors}} författare</li>
-    <li>{{data.pages.etext}} sidor etext</li>
-    <li>{{data.pages.faksimil}} sidor faksimil</li>
-    <li>{{data.words.etext}} ord</li>
-    <li>{{data.epubs}} epubfiler</li>
+    <li>{{data.works | numberFmt}} verk</li>
+    <li>{{data.authors | numberFmt}} författare</li>
+    <li>{{data.pages.etext | numberFmt}} sidor etext</li>
+    <li>{{data.pages.faksimil | numberFmt}} sidor faksimil</li>
+    <li>{{data.words.etext | numberFmt}} ord</li>
+    <li>{{data.epubs | numberFmt}} epubfiler</li>
 </ul>
 
 <div>De mest lästa verken är:</div>

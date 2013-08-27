@@ -9,7 +9,11 @@
 
   routeStartCurrent = null;
 
-  window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal", "ui.bootstrap.tooltip", "template/tooltip/tooltip-popup.html"]).config(function($routeProvider) {
+  window.getScope = function() {
+    return $("#mainview").children().scope();
+  };
+
+  window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.modal", "ui.bootstrap.tooltip", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html"]).config(function($routeProvider) {
     return $routeProvider.when('', {
       redirectTo: "/start"
     }).when('/', {
@@ -24,10 +28,19 @@
       templateUrl: "views/presentations.html",
       controller: "presentationCtrl"
     }).when('/presentationer/specialomraden/:doc', {
-      controller: function($scope, $routeParams) {
-        return $scope.doc = "/red/presentationer/specialomraden/" + $routeParams.doc;
+      controller: function($scope, $routeParams, $http, util) {
+        return $http.get("/red/presentationer/specialomraden/" + $routeParams.doc).success(function(data) {
+          var title;
+          $scope.doc = data;
+          title = $("<root>" + data + "</root>").find("h1").text();
+          c.log("title", title);
+          title = title.split(" ").slice(0, 5).join(" ");
+          $scope.setTitle(title);
+          return $scope.appendCrumb(title);
+        });
       },
-      template: '<div style="position:relative;" ng-include="doc"></div>'
+      template: '<div style="position:relative;" ng-bind-html-unsafe="doc"></div>',
+      breadcrumb: ["presentationer"]
     }).when('/om/aktuellt', {
       templateUrl: '/red/om/aktuellt/aktuellt.html',
       title: "Aktuellt",
@@ -56,22 +69,26 @@
       templateUrl: 'views/stats.html',
       controller: 'statsCtrl',
       reloadOnSearch: false,
-      title: "Statistik"
+      title: "Statistik",
+      breadcrumb: ["statistik"]
     }).when('/sok', {
       templateUrl: 'views/search.html',
       controller: 'searchCtrl',
       reloadOnSearch: false,
-      title: "Sök i verkstext"
+      title: "Sök i verkstext",
+      breadcrumb: ["sök"]
     }).when("/titlar", {
       templateUrl: "views/titleList.html",
       controller: "titleListCtrl",
       reloadOnSearch: false,
-      title: "Titlar"
+      title: "Titlar",
+      breadcrumb: ["titlar"]
     }).when("/epub", {
       templateUrl: "views/epubList.html",
       controller: "epubListCtrl",
       reloadOnSearch: false,
-      title: "Gratis titlar för nerladdning i epubformatet"
+      title: "Gratis titlar för nerladdning i epubformatet",
+      breadcrumb: ["epub"]
     }).when("/forfattare", {
       templateUrl: "views/authorList.html",
       controller: "authorListCtrl",
@@ -81,38 +98,44 @@
     }).when("/forfattare/LagerlofS", {
       templateUrl: "views/sla/lagerlof.html",
       controller: "lagerlofCtrl",
-      reloadOnSearch: false
+      reloadOnSearch: false,
+      breadcrumb: ["författare", "lagerlöf"]
     }).when("/forfattare/LagerlofS/biblinfo", {
       templateUrl: "views/sla/biblinfo.html",
       controller: "biblinfoCtrl",
-      reloadOnSearch: false
-    }).when("/forfattare/:author/titlar", {
-      templateUrl: "views/authorTitles.html",
-      controller: "authorInfoCtrl",
       reloadOnSearch: false,
-      title: "Titlar"
+      breadcrumb: ["författare", "lagerlöf"]
     }).when("/forfattare/:author", {
       templateUrl: "views/authorInfo.html",
       controller: "authorInfoCtrl",
       breadcrumb: [
         {
           label: "författare",
-          url: "#/forfattare"
+          url: "#!/forfattare"
         }
       ]
+    }).when("/forfattare/:author/titlar", {
+      templateUrl: "views/authorTitles.html",
+      controller: "authorInfoCtrl",
+      reloadOnSearch: false,
+      title: "Titlar",
+      breadcrumb: ["författare"]
     }).when("/forfattare/:author/titlar/:title/info", {
       templateUrl: "views/sourceInfo.html",
       controller: "sourceInfoCtrl",
       reloadOnSearch: false,
-      title: "Verk"
+      title: "Verk",
+      breadcrumb: ["författare"]
     }).when("/forfattare/:author/titlar/:title/info/:mediatype", {
       templateUrl: "views/sourceInfo.html",
       controller: "sourceInfoCtrl",
-      reloadOnSearch: false
+      reloadOnSearch: false,
+      breadcrumb: ["författare"]
     }).when("/forfattare/:author/titlar/:title/:mediatype", {
       templateUrl: "views/reader.html",
       controller: "readingCtrl",
-      reloadOnSearch: false
+      reloadOnSearch: false,
+      breadcrumb: ["författare"]
     }).when("/forfattare/:author/titlar/:title/sida/:pagename/:mediatype", {
       templateUrl: "views/reader.html",
       controller: "readingCtrl",
@@ -145,6 +168,9 @@
       reloadOnSearch: false,
       title: "Kontakt",
       breadcrumb: ["kontakt"]
+    }).when("/id/:id", {
+      template: "<div ng-class=\"{searching:!data}\"><h1>{{id}}</h1>\n    <div class=\"preloader\">Hämtar <span class=\"dots_blink\"></span></div>\n    <div ng-repeat=\"row in data | filter:{'itemAttrs.lbworkid' : id}\">\n        <a href=\"#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info\">{{row.itemAttrs.showtitle}}</a>\n        <span ng-repeat=\"type in row.mediatype\">\n\n            <span ng-show=\"!$first\">:::</span>\n            <a href=\"#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info/{{type}}\">{{type}}</a>\n        </span>\n    </div>\n</div>",
+      controller: 'idCtrl'
     }).otherwise({
       template: "<p>Du har angett en adress som inte finns på Litteraturbanken.</p>                            <p>Använd browserns bakåtknapp för att komma tillbaka till                             sidan du var på innan, eller klicka på någon av                             länkarna till vänster.</p>",
       breadcrumb: ["fel"],
@@ -153,6 +179,7 @@
   });
 
   littb.config(function($httpProvider, $locationProvider, $tooltipProvider) {
+    $locationProvider.hashPrefix('!');
     delete $httpProvider.defaults.headers.common["X-Requested-With"];
     return $tooltipProvider.options({
       appendToBody: true
@@ -171,17 +198,20 @@
     $rootScope.goto = function(path) {
       return $location.url(path);
     };
+    $rootScope.setTitle = function(title) {
+      if (title) {
+        title = title + " | Litteraturbanken v.3";
+      } else {
+        title = "Litteraturbanken v.3";
+      }
+      return $("title:first").text(title);
+    };
     $rootScope.$on("$routeChangeStart", function(event, next, current) {
       return routeStartCurrent = current;
     });
     $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
-      var cls, item, title, _ref;
-      if (newRoute.title) {
-        title = "Litteraturbanken v.3 | " + newRoute.title;
-      } else {
-        title = "Litteraturbanken v.3";
-      }
-      $("title").text(title);
+      var cls, item, _ref;
+      $rootScope.setTitle(newRoute.title);
       if (newRoute.loadedTemplateUrl !== (prevRoute != null ? prevRoute.loadedTemplateUrl : void 0)) {
         $("#toolkit").html("");
       }
@@ -203,7 +233,7 @@
           } else {
             _results.push({
               label: item,
-              url: "#/" + normalizeUrl(item).join("")
+              url: "#!/" + normalizeUrl(item).join("")
             });
           }
         }
@@ -218,12 +248,20 @@
         return trans[letter.toLowerCase()] || letter;
       });
     };
-    return $rootScope.appendCrumb = function(label) {
-      return $rootScope.breadcrumb = [].concat($rootScope.breadcrumb, [
-        {
-          label: label
-        }
-      ]);
+    return $rootScope.appendCrumb = function(input) {
+      var array;
+      if (_.isArray(input)) {
+        array = input;
+      } else if (_.isString(input)) {
+        array = [
+          {
+            label: input
+          }
+        ];
+      } else if (_.isObject(input)) {
+        array = [input];
+      }
+      return $rootScope.breadcrumb = [].concat($rootScope.breadcrumb, array);
     };
   });
 
@@ -296,6 +334,24 @@
       }
       wrapper.append(input);
       return wrapper.html();
+    };
+  });
+
+  littb.filter("numberFmt", function() {
+    return function(input) {
+      if (!input) {
+        return input;
+      }
+      input = _.map(input.toString().split("").reverse(), function(item, i) {
+        if (!i) {
+          return item;
+        }
+        if (i % 3 === 0) {
+          return [item, " "];
+        }
+        return item;
+      });
+      return _.flatten(input.reverse()).join("");
     };
   });
 

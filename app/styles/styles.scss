@@ -45,6 +45,9 @@ body {
 a[ng-click] {
     cursor : pointer;
 }
+p a {
+    border-bottom : thin dotted #990000;
+}
 
 hr {
     border : none;
@@ -107,6 +110,9 @@ tr:nth-of-type(10n) td {
     th {
         padding : 5px;
         text-align : left;
+    }
+    .title {
+        font-style: italic;
     }
 }
 .contenttable td:last-of-type,
@@ -333,6 +339,12 @@ header {
 .page-stats #mainview {
     > * {
         margin-bottom : 1em;
+    }
+    ul li {
+        counter-increment : listcounter;
+        a:before {
+            content : counter(listcounter, decimal) ". ";
+        }
     }
 }
 .preloader {
@@ -676,6 +688,12 @@ $partnav-width : 120px;
             @include inline-block();
             width: 49%;
         }
+    }
+}
+
+.page-epubList {
+    #mainview > * {
+        margin : 1em 0;
     }
 }
 

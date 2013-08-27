@@ -236,10 +236,18 @@
     });
   });
 
-  littb.controller("titleListCtrl", function($scope, backend, util) {
-    var s;
+  littb.controller("titleListCtrl", function($scope, backend, util, $timeout, $location) {
+    var fetchWorks, s;
     s = $scope;
-    util.setupHash(s, "mediatypeFilter", "selectedLetter");
+    s.searching = false;
+    s.getTitleTooltip = function(attrs) {
+      if (!attrs) {
+        return;
+      }
+      if (attrs.showtitle !== attrs.title) {
+        return attrs.title;
+      }
+    };
     s.sorttuple = ["itemAttrs.showtitle", false];
     s.setSort = function(sortstr) {
       return s.sorttuple[0] = sortstr;
@@ -247,30 +255,71 @@
     s.setDir = function(isAsc) {
       return s.sorttuple[1] = isAsc;
     };
-    s.getTitleTooltip = function(attrs) {
-      if (attrs.showtitle !== attrs.title) {
-        return attrs.title;
+    s.selectWork = function() {
+      c.log("selectWork", s.workFilter);
+      if (s.workFilter === "titles") {
+        s.authorFilter = null;
+        s.mediatypeFilter = "";
+        s.filter = null;
       }
+      return fetchWorks();
+    };
+    fetchWorks = function() {
+      s.searching = true;
+      return backend.getTitles(s.workFilter === "titles", s.selectedLetter || "A").then(function(titleArray) {
+        var authors;
+        s.searching = false;
+        window.titleArray = titleArray;
+        s.rowByLetter = _.groupBy(titleArray, function(item) {
+          return item.itemAttrs.showtitle[0];
+        });
+        if (s.workFilter === "titles") {
+          s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("");
+        } else {
+          s.currentLetters = _.keys(s.rowByLetter);
+        }
+        authors = _.pluck(titleArray, "author");
+        return s.authorData = _.unique(authors, false, function(item) {
+          return item.authorid;
+        });
+      });
     };
     util.setupHashComplex(s, [
       {
         expr: "sorttuple[0]",
         scope_func: "setSort",
-        key: "sortering"
+        key: "sortering",
+        "default": "itemAttrs.showtitle"
       }, {
         expr: "sorttuple[1]",
         scope_func: "setDir",
         key: "fallande"
       }, {
         key: "filter"
+      }, {
+        key: "niva",
+        scope_name: "workFilter",
+        "default": "works"
+      }, {
+        key: "mediatypeFilter"
+      }, {
+        key: "index",
+        scope_name: "selectedLetter",
+        "default": "A",
+        post_change: function(val) {
+          c.log("val_in", val);
+          if (s.workFilter === "titles") {
+            fetchWorks();
+          }
+          return val;
+        }
       }
     ]);
-    return backend.getTitles().then(function(titleArray) {
-      s.rowByLetter = _.groupBy(titleArray, function(item) {
-        return item.itemAttrs.showtitle[0];
-      });
-      return s.currentLetters = _.keys(s.rowByLetter);
-    });
+    if (!s.selectedLetter) {
+      s.selectedLetter = "A";
+    }
+    c.log("workfilter", s.workFilter);
+    return fetchWorks();
   });
 
   littb.controller("epubListCtrl", function($scope, backend, util) {
@@ -303,14 +352,9 @@
         return item.authorid;
       });
       s.currentLetters = _.unique(_.map(titleArray, function(item) {
-        return item.itemAttrs.showtitle[0];
+        return item.author.nameforindex[0];
       }));
-      c.log("currentLetters", _.unique(s.currentLetters));
-      return util.setupHash(s, {
-        "selectedLetter": function(val) {
-          return c.log("watch lttr val", val);
-        }
-      });
+      return util.setupHash(s, "selectedLetter");
     });
   });
 
@@ -338,6 +382,7 @@
         {
           "key": "ankare",
           post_change: function(val) {
+            c.log("post_change", val);
             if (!(val && $("#" + val).length)) {
               $(window).scrollTop(0);
               return;
@@ -381,13 +426,37 @@
   littb.controller("authorListCtrl", function($scope, backend, util) {
     var s;
     s = $scope;
-    util.setupHash(s, "authorFilter");
+    s.sorttuple = ["nameforindex", false];
+    s.setSort = function(sortstr) {
+      return s.sorttuple[0] = sortstr;
+    };
+    s.setDir = function(isAsc) {
+      return s.sorttuple[1] = isAsc;
+    };
+    util.setupHashComplex(s, [
+      {
+        expr: "sorttuple[0]",
+        scope_func: "setSort",
+        key: "sortering",
+        "default": "nameforindex"
+      }, {
+        expr: "sorttuple[1]",
+        scope_func: "setDir",
+        key: "fallande"
+      }, {
+        key: "authorFilter"
+      }
+    ]);
     backend.getAuthorList().then(function(data) {
       s.authorIdGroup = _.groupBy(data, function(item) {
         return item.authorid;
       });
       s.authorIdGroup[""] = "";
-      return s.rows = data;
+      s.rows = data;
+      s.rowByLetter = _.groupBy(data, function(item) {
+        return item.nameforindex[0];
+      });
+      return s.currentLetters = _.keys(s.rowByLetter);
     });
     return s.getAuthor = function(row) {
       var first, last, _ref;
@@ -404,7 +473,6 @@
   littb.filter("correctLink", function() {
     return function(html) {
       var img, wrapper;
-      c.log("html", html);
       wrapper = $("<div>").append(html);
       img = $("img", wrapper);
       img.attr("src", "/red/bilder/gemensamt/" + img.attr("src"));
@@ -412,8 +480,17 @@
     };
   });
 
-  littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams) {
-    var author, mediatype, s, title;
+  littb.controller("idCtrl", function($scope, backend, $routeParams) {
+    var s;
+    s = $scope;
+    _.extend(s, $routeParams);
+    return backend.getTitles().then(function(titleArray) {
+      return s.data = titleArray;
+    });
+  });
+
+  littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams, $q) {
+    var author, infoDef, mediatype, s, title;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype;
     _.extend(s, $routeParams);
@@ -423,6 +500,14 @@
     s.toggleErrata = function() {
       s.errataLimit = s.isOpen ? 8 : 1000;
       return s.isOpen = !s.isOpen;
+    };
+    s.getUrl = function(mediatype) {
+      if (mediatype === "epub") {
+        return s.data.epub.url;
+      } else if (mediatype === "pdf") {
+        return s.data.pdf.url;
+      }
+      return "#!/forfattare/" + s.author + "/titlar/" + s.title + "/" + s.mediatype;
     };
     s.getOtherMediatypes = function() {
       var x, _i, _len, _ref, _ref1, _results;
@@ -436,9 +521,39 @@
       }
       return _results;
     };
-    return backend.getSourceInfo(author, title, mediatype).then(function(data) {
+    infoDef = backend.getSourceInfo(author, title, mediatype);
+    infoDef.then(function(data) {
+      s.init = true;
       s.data = data;
-      return s.mediatype = s.data.mediatypes[0];
+      if (!s.mediatype) {
+        return s.mediatype = s.data.mediatypes[0];
+      }
+    });
+    return $q.all([backend.getAuthorList(), infoDef]).then(function(_arg) {
+      var authorData, infoData, item, _i, _len, _results;
+      authorData = _arg[0], infoData = _arg[1];
+      c.log("authorData", arguments);
+      _results = [];
+      for (_i = 0, _len = authorData.length; _i < _len; _i++) {
+        item = authorData[_i];
+        if (item.authorid === author) {
+          s.appendCrumb([
+            {
+              label: item.nameforindex.split(",")[0],
+              url: "#!/forfattare/" + author
+            }, {
+              label: "titlar",
+              url: "#!/forfattare/" + author + "/titlar"
+            }, {
+              label: infoData.titlepath + " info " + (s.mediatype || "")
+            }
+          ]);
+          break;
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
     });
   });
 
@@ -675,16 +790,19 @@
         return camelCase(name.replace(PREFIX_REGEXP, ''));
       },
       setupHashComplex: function(scope, config) {
-        var obj, watch, _i, _len, _results;
-        scope.loc = $location;
-        scope.$watch('loc.search()', function() {
+        var obj, onWatch, watch, _i, _len, _results;
+        onWatch = function() {
           var obj, val, _i, _len, _results;
           _results = [];
           for (_i = 0, _len = config.length; _i < _len; _i++) {
             obj = config[_i];
             val = $location.search()[obj.key];
             if (!val) {
-              continue;
+              if (obj["default"]) {
+                val = obj["default"];
+              } else {
+                continue;
+              }
             }
             val = (obj.val_in || _.identity)(val);
             if ("scope_name" in obj) {
@@ -696,6 +814,11 @@
             }
           }
           return _results;
+        };
+        onWatch();
+        scope.loc = $location;
+        scope.$watch('loc.search()', function() {
+          return onWatch();
         });
         _results = [];
         for (_i = 0, _len = config.length; _i < _len; _i++) {
@@ -704,6 +827,9 @@
           _results.push(scope.$watch(watch, (function(obj, watch) {
             return function(val) {
               val = (obj.val_out || _.identity)(val);
+              if (val === obj["default"]) {
+                val = null;
+              }
               $location.search(obj.key, val || null);
               return typeof obj.post_change === "function" ? obj.post_change(val) : void 0;
             };
@@ -815,14 +941,29 @@
           return "traff=" + item.nodeid + "&traffslut=" + item.endnodeid;
         }
       },
-      getTitles: function() {
-        var def;
+      getTitles: function(allTitles, initial) {
+        var def, params, workAction;
+        if (allTitles == null) {
+          allTitles = false;
+        }
+        if (initial == null) {
+          initial = null;
+        }
         def = $q.defer();
+        workAction = "get-works";
+        if (allTitles) {
+          params = {
+            action: "get-titles-by-string-filter",
+            initial: initial
+          };
+        } else {
+          params = {
+            action: "get-works"
+          };
+        }
         http({
           url: "/query/lb-anthology.xql",
-          params: {
-            action: "get-works"
-          }
+          params: params
         }).success(function(xml) {
           var elemList, itm, rows, workIdGroups, workid;
           workIdGroups = _.groupBy($("item", xml), function(item) {
@@ -832,6 +973,9 @@
           for (workid in workIdGroups) {
             elemList = workIdGroups[workid];
             itm = $(elemList[0]);
+            if (!(objFromAttrs(itm.find("author").get(0)))) {
+              c.log("author failed", workid, itm);
+            }
             rows[workid] = {
               itemAttrs: objFromAttrs(elemList[0]),
               author: (objFromAttrs(itm.find("author").get(0))) || "",
@@ -869,7 +1013,6 @@
       },
       getSourceInfo: function(author, title, mediatype) {
         var def, params, url;
-        c.log("getSourceInfo", mediatype);
         def = $q.defer();
         url = "/query/lb-anthology.xql";
         params = {
@@ -884,7 +1027,7 @@
           url: url,
           params: params
         }).success(function(xml) {
-          var errata, output, prov, sourcedesc, tr;
+          var epub, errata, output, pdf, prov, sourcedesc, tr;
           output = parseWorkInfo("result", xml);
           prov = $("result provenance-data", xml);
           output["provenance"] = {
@@ -904,9 +1047,22 @@
             return _results;
           })();
           sourcedesc = errata.parent().clone();
-          c.log("sourcedesc", sourcedesc);
           sourcedesc.find("errata").remove();
           output.sourcedesc = (util.getInnerXML(sourcedesc)) || "";
+          epub = $("result epub", xml);
+          if (epub.length) {
+            output.epub = {
+              file_size: epub.attr("file-size"),
+              url: util.getInnerXML(epub)
+            };
+          }
+          pdf = $("result pdf", xml);
+          if (pdf.length) {
+            output.pdf = {
+              file_size: pdf.attr("file-size"),
+              url: util.getInnerXML(pdf)
+            };
+          }
           return def.resolve(output);
         });
         return def.promise;
@@ -1009,17 +1165,21 @@
           var elem, output, parseObj, x, _i, _len, _ref, _ref1;
           output = {};
           parseObj = ["pages", "words"];
+          if ($("table", xml).length > 1) {
+            $("table", xml).last().remove();
+          }
           _ref = $("result", xml).children();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             elem = _ref[_i];
             if (elem.tagName === "table") {
+              c.log("table", elem, $("td:nth-child(2) a", elem));
               output.titleList = (function() {
                 var _j, _len1, _ref1, _results;
                 _ref1 = $("td:nth-child(2) a", elem);
                 _results = [];
                 for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
                   x = _ref1[_j];
-                  _results.push("<a href='" + ($(x).attr('href')) + "'>" + ($(x).text()) + "</a>");
+                  _results.push("<a href='#/" + ($(x).attr('href').slice(3)) + "'>" + ($(x).text()) + "</a>");
                 }
                 return _results;
               })();

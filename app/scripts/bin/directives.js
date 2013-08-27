@@ -92,7 +92,7 @@
 
   littb.directive('letterMap', function() {
     return {
-      template: "<table class=\"letters\">\n    <tr ng-repeat=\"row in letterArray\">\n        <td ng-repeat=\"letter in row\"\n            ng-class=\"{disabled: !ifShow(letter), selected: letter == selectedLetter}\"\n            ng-click=\"setLetter(letter)\">{{letter}}</td>\n    </tr>\n</table>",
+      template: "<table class=\"letters\">\n    <tr ng-repeat=\"row in letterArray\">\n        <td ng-repeat=\"letter in row\"\n            ng-class=\"{disabled: !ifShow(letter), selected: letter == selected}\"\n            ng-click=\"setLetter(letter)\">{{letter}}</td>\n    </tr>\n</table>",
       replace: true,
       scope: {
         selected: "=",
@@ -129,7 +129,6 @@
         var coors, s;
         s = scope;
         coors = _.pick(scope, "top", "left", "width", "height");
-        c.log("coors", coors, _.isEmpty(coors));
         if (!_.compact(_.values(coors)).length) {
           return;
         }
@@ -150,6 +149,26 @@
         });
         return $document.on('click', function() {
           return scope.$apply(attr.clickOutside);
+        });
+      }
+    };
+  });
+
+  littb.directive('scrollTo', function($window, $timeout) {
+    return {
+      link: function(scope, elem, attr) {
+        scope._getScroll = function() {
+          return attr.scrollTo;
+        };
+        return scope.$watch('_getScroll()', function(val) {
+          var target;
+          target = elem.find("#" + val);
+          if (!target.length) {
+            return;
+          }
+          return $timeout(function() {
+            return $window.scrollTo(0, target.position().top);
+          });
         });
       }
     };

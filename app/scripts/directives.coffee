@@ -71,7 +71,7 @@ littb.directive 'letterMap', () ->
         <table class="letters">
             <tr ng-repeat="row in letterArray">
                 <td ng-repeat="letter in row"
-                    ng-class="{disabled: !ifShow(letter), selected: letter == selectedLetter}"
+                    ng-class="{disabled: !ifShow(letter), selected: letter == selected}"
                     ng-click="setLetter(letter)">{{letter}}</td>
             </tr>
         </table>
@@ -110,7 +110,6 @@ littb.directive 'square', () ->
     link : (scope, elm, attrs) ->
         s = scope   
         coors = _.pick scope, "top", "left", "width", "height"
-        c.log "coors", coors, _.isEmpty coors
         unless _.compact(_.values(coors)).length then return
         coors = _.object _.map coors, (val, key) ->
             [key, val.split(",")[2] + "px"]
@@ -127,6 +126,21 @@ littb.directive 'clickOutside', ($document) ->
 
         $document.on 'click', () ->
             scope.$apply(attr.clickOutside)
+
+
+littb.directive 'scrollTo', ($window, $timeout) -> 
+    # scope : scrollTo : "="
+    link : (scope, elem, attr) ->
+        scope._getScroll = () ->
+            return attr.scrollTo
+        scope.$watch '_getScroll()', (val) ->
+            target = elem.find("#" + val)
+            if not target.length then return
+            $timeout( () ->
+                $window.scrollTo(0, target.position().top)
+            )   
+
+
 
         
 littb.directive 'selectionSniffer', ($window) -> 

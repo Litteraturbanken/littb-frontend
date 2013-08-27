@@ -3,9 +3,15 @@
 
 <table>
     <tr ng-repeat="works in groupedWorks">
-        <td><a href="#/forfattare/{{authorInfo.authorid}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</td>
+        <td><a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</td>
         <td ng-repeat="work in works">
-            <span ng-show="!$first">::: </span><a href="#/forfattare/{{authorInfo.authorid}}/titlar/{{work.titlepath}}/info/{{work.mediatype}}">{{work.mediatype}}</a>
+            <span ng-show="!$first">::: </span><a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{work.titlepath}}/info/{{work.mediatype}}">{{work.mediatype}}</a>
         </td>
     </tr>
 </table>
+
+<div toolkit>
+    <div>{{authorInfo.fullName}}</div>
+    <div><a href="#!/forfattare/{{authorInfo.authorid}}/titlar">::: Verk i LB</a></div>
+    <div><a href="#!/forfattare/{{authorInfo.authorid}}">::: Introduktion</a></div>
+</div>

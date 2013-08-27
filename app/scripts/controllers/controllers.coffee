@@ -224,18 +224,60 @@ littb.controller "authorInfoCtrl", ($scope, $rootScope, backend, $routeParams) -
         $rootScope.appendCrumb data.surname
 
 
-littb.controller "titleListCtrl", ($scope, backend, util) ->
-    s = $scope
 
-    util.setupHash(s, "mediatypeFilter", "selectedLetter")
+
+littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location) ->
+    s = $scope
+    # unless 'wor' $location.search()
+    # s.workFilter = "works"
+    s.searching = false
+    s.getTitleTooltip = (attrs) ->
+        unless attrs then return
+        return attrs.title unless attrs.showtitle == attrs.title
+    
     s.sorttuple = ["itemAttrs.showtitle", false]
     s.setSort = (sortstr) ->
         s.sorttuple[0] = sortstr
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
-    s.getTitleTooltip = (attrs) ->
-        return attrs.title unless attrs.showtitle == attrs.title
+
+    s.selectWork = () ->
+        c.log "selectWork", s.workFilter
+        if s.workFilter == "titles"
+            s.authorFilter = null
+            s.mediatypeFilter = ""
+            # s.selectedLetter = null
+            s.filter = null
+        fetchWorks()
+
+    # s.getRows = (letter) ->
+    #     if s.workFilter == "works"
+    #         return s.rowByLetter?[s.selectedLetter or "A"]
+    #     else
+    #         fetchWorks()
+
+    fetchWorks = () ->
+        s.searching = true
+        #TODO: what about titles that start with strange chars or non lower case letters?
+        backend.getTitles(s.workFilter == "titles", s.selectedLetter or "A").then (titleArray) ->
+            s.searching = false
+            # c.log "getTitles", titleArray
+            # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
+            window.titleArray = titleArray
+            s.rowByLetter = _.groupBy titleArray, (item) ->
+                item.itemAttrs.showtitle[0]
+            if s.workFilter == "titles"
+                s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("")
+            else
+                s.currentLetters = _.keys s.rowByLetter
+                
+
+            authors = _.pluck titleArray, "author"
+
+            s.authorData = _.unique authors, false, (item) ->
+                item.authorid
+
 
     util.setupHashComplex s,
         [
@@ -243,6 +285,7 @@ littb.controller "titleListCtrl", ($scope, backend, util) ->
             # scope_name : "sortVal"
             scope_func : "setSort"
             key : "sortering"
+            default : "itemAttrs.showtitle"
             # val_in : (val) ->
             # val_out : (val) ->
             # post_change : () ->
@@ -252,19 +295,29 @@ littb.controller "titleListCtrl", ($scope, backend, util) ->
             key : "fallande"
         ,
             key : "filter"
+        ,
+            key : "niva"
+            scope_name : "workFilter"
+            default : "works"
+        ,
+            key : "mediatypeFilter"
+        ,
+            key : "index",
+            scope_name : "selectedLetter"
+            default: "A"
+            post_change : (val) ->
+                c.log "val_in", val
+                if s.workFilter == "titles"
+                    fetchWorks()
+                return val
+
         ]
 
-    # util.setupHash ""
-
-
-
-    #TODO: what about titles that start with strange chars or non lower case letters?
-    backend.getTitles().then (titleArray) ->
-        # c.log "getTitles", titleArray
-        # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
-        s.rowByLetter = _.groupBy titleArray, (item) ->
-            item.itemAttrs.showtitle[0]
-        s.currentLetters = _.keys s.rowByLetter
+    # timeout in order to await the setupHashComplex watch firing.
+    # $timeout () ->
+    unless s.selectedLetter then s.selectedLetter = "A"
+    c.log "workfilter", s.workFilter
+    fetchWorks()
 
 littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope
@@ -285,10 +338,10 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
             item.authorid
 
         s.currentLetters = _.unique _.map titleArray, (item) ->
-            item.itemAttrs.showtitle[0]
-        c.log "currentLetters", _.unique s.currentLetters
+            item.author.nameforindex[0]
 
-        util.setupHash s, {"selectedLetter" : (val) -> c.log "watch lttr val", val}
+        util.setupHash s, "selectedLetter"
+
 
 
 
@@ -306,6 +359,7 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
         util.setupHashComplex s, [
             "key" : "ankare"
             post_change : (val) ->
+                c.log "post_change", val
                 unless val and $("##{val}").length
                     $(window).scrollTop(0)
                     return
@@ -330,12 +384,36 @@ littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, ut
 
 littb.controller "authorListCtrl", ($scope, backend, util) ->
     s = $scope
-    util.setupHash s, "authorFilter"
+    # util.setupHash s, "authorFilter"
+    s.sorttuple = ["nameforindex", false]
+    s.setSort = (sortstr) ->
+        s.sorttuple[0] = sortstr
+    s.setDir = (isAsc) ->
+        s.sorttuple[1] = isAsc
+
+
+    util.setupHashComplex s,
+        [
+            expr : "sorttuple[0]"
+            scope_func : "setSort"
+            key : "sortering"
+            default : "nameforindex"
+        ,
+            expr : "sorttuple[1]"
+            scope_func : "setDir"
+            key : "fallande"
+        ,
+            key : "authorFilter"
+        ]
     backend.getAuthorList().then (data) ->
         s.authorIdGroup = _.groupBy data, (item) ->
             return item.authorid
         s.authorIdGroup[""] = ""
         s.rows = data
+
+        s.rowByLetter = _.groupBy data, (item) ->
+            item.nameforindex[0]
+        s.currentLetters = _.keys s.rowByLetter
 
     s.getAuthor = (row) ->
         [last, first] = row.nameforindex.split(",")
@@ -348,17 +426,28 @@ littb.controller "authorListCtrl", ($scope, backend, util) ->
 
 littb.filter "correctLink", () ->
     (html) ->
-        c.log "html", html
         wrapper = $("<div>").append html
         img = $("img", wrapper)
         img.attr "src", "/red/bilder/gemensamt/" + img.attr("src")
         return wrapper.html()
 
 
-littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
+littb.controller "idCtrl", ($scope, backend, $routeParams) ->
+    s = $scope
+    _.extend s, $routeParams
+
+    backend.getTitles().then (titleArray) ->
+        s.data = titleArray
+
+
+
+
+
+littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
     s = $scope
     {title, author, mediatype} = $routeParams
     _.extend s, $routeParams
+
 
     s.defaultErrataLimit = 8
     s.errataLimit = s.defaultErrataLimit
@@ -368,15 +457,46 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams) ->
         s.errataLimit = if s.isOpen then 8 else 1000
         s.isOpen = !s.isOpen
 
-    
+    s.getUrl = (mediatype) ->
+        if mediatype == "epub" 
+            return s.data.epub.url
+        else if mediatype == "pdf" 
+            return s.data.pdf.url
+
+        return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{s.mediatype}"
 
     s.getOtherMediatypes = () ->
         (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
 
-    backend.getSourceInfo(author, title, mediatype).then (data) ->
-        s.data = data
 
-        s.mediatype = s.data.mediatypes[0]
+
+    infoDef = backend.getSourceInfo(author, title, mediatype)
+    infoDef.then (data) ->
+        s.init = true
+        s.data = data
+        if not s.mediatype
+            s.mediatype = s.data.mediatypes[0]
+
+    $q.all([backend.getAuthorList(), infoDef]).then ([authorData, infoData]) ->
+        c.log "authorData", arguments
+        for item in authorData
+            if item.authorid == author
+                s.appendCrumb [
+                    label : item.nameforindex.split(",")[0]
+                    url : "#!/forfattare/" + author
+                ,
+                    label : "titlar"
+                    url : "#!/forfattare/#{author}/titlar"
+                ,   
+                    label : infoData.titlepath + " info " + (s.mediatype or "")
+                    # url : "#!/forfattare/#{author}/titlar/#{infoData.titlepathnorm}"
+                ]
+                break
+
+
+
+
+
 
 
 littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData) ->
@@ -590,13 +710,15 @@ littb.factory "util", ($location) ->
         #     default : [val : valval]
 
         # ]
-        scope.loc = $location
-        scope.$watch 'loc.search()', ->
+        onWatch = () ->
             for obj in config
                 val = $location.search()[obj.key]
-                unless val then continue
+                unless val 
+                    if obj.default then val = obj.default else continue
+                
 
                 val = (obj.val_in or _.identity)(val)
+                
 
                 if "scope_name" of obj
                     scope[obj.scope_name] = val
@@ -604,12 +726,17 @@ littb.factory "util", ($location) ->
                     scope[obj.scope_func](val)
                 else
                     scope[obj.key] = val
+        onWatch()
+        scope.loc = $location
+        scope.$watch 'loc.search()', ->
+            onWatch()
 
         for obj in config
             watch = obj.expr or obj.scope_name or obj.key
             scope.$watch watch, do (obj, watch) ->
                 (val) ->
                     val = (obj.val_out or _.identity)(val)
+                    if val == obj.default then val = null
                     $location.search obj.key, val or null
                     obj.post_change?(val)
 
@@ -689,12 +816,22 @@ littb.factory 'backend', ($http, $q, util) ->
         else 
             return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
-    getTitles : ->
+    getTitles : (allTitles = false, initial = null) ->
         def = $q.defer()
+        workAction = "get-works"
+        if allTitles
+            params = 
+                action : "get-titles-by-string-filter"
+                initial : initial
+        else 
+            params = 
+                action : "get-works"
+
+
         http(
             url : "/query/lb-anthology.xql"
-            params:
-                action : "get-works"
+            params: params
+
 
         ).success (xml) ->
             # c.log "getTitles success", xml
@@ -704,6 +841,8 @@ littb.factory 'backend', ($http, $q, util) ->
             rows = {}
             for workid, elemList of workIdGroups
                 itm = $(elemList[0])
+                if not (objFromAttrs itm.find("author").get(0))
+                    c.log "author failed", workid, itm
                 rows[workid] =
                     itemAttrs : objFromAttrs elemList[0]
                     author : (objFromAttrs itm.find("author").get(0)) or ""
@@ -729,7 +868,6 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
 
     getSourceInfo : (author, title, mediatype) ->
-        c.log "getSourceInfo", mediatype
         def = $q.defer()
         url = "/query/lb-anthology.xql"
         params = 
@@ -760,15 +898,20 @@ littb.factory 'backend', ($http, $q, util) ->
                 .map(_.str.strip).value()
 
 
-
-            # if errata.length
-            #     output.errata = util.getInnerXML errata
-
             sourcedesc = errata.parent().clone()
-            c.log "sourcedesc", sourcedesc
             sourcedesc.find("errata").remove()
             output.sourcedesc = (util.getInnerXML sourcedesc) or ""
 
+            epub = $("result epub", xml)
+            if epub.length
+                output.epub = 
+                    file_size: epub.attr("file-size")
+                    url : util.getInnerXML epub
+            pdf = $("result pdf", xml)
+            if pdf.length
+                output.pdf = 
+                    file_size: pdf.attr("file-size")
+                    url : util.getInnerXML pdf
 
             def.resolve output
         return def.promise
@@ -862,9 +1005,13 @@ littb.factory 'backend', ($http, $q, util) ->
         ).success (xml) ->
             output = {}
             parseObj = ["pages", "words"]
+            # getting two tables for some reason
+            if $("table", xml).length > 1
+                $("table", xml).last().remove()
             for elem in $("result", xml).children()
                 if elem.tagName == "table"
-                    output.titleList = ("<a href='#{$(x).attr('href')}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", elem))
+                    c.log "table", elem, $("td:nth-child(2) a", elem)
+                    output.titleList = ("<a href='#/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", elem))
                     c.log "titleList", output.titleList
                 else if elem.tagName in parseObj
                     output[elem.tagName] = _.object _.map $(elem).children(), (child) ->
