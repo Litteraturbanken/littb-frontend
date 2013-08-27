@@ -112,8 +112,9 @@
         <div class="word_search">
             <label>Slå upp i svensk ordbok</label>
             <input  ng-model="lex_article"
-                    typeahead-throttle-ms="500"
+                    typeahead-wait-ms="200"
                     typeahead="article as article.baseform for article in getWords($viewValue)">
+            <div ng-show="dict_not_found">Hittade inga uppslag</div>
         </div>
     
     

@@ -15,59 +15,7 @@ $mainview-width : $page-width - $main-menu-width - $gutter-width;
 $primarycolor : #990000;
 
 
-@media 
-only screen and (max-width: 760px),
-(min-device-width: 768px) and (max-device-width: 1024px)  {
-    .page-epubList p {
-        max-width : 70%;
-    }
 
-/* Force table to not be like tables anymore */
-    .page-epubList .contenttable,.page-titleList .contenttable {
-        table, 
-        thead, 
-        tbody, 
-        th,
-        td, 
-        tr {
-            display: block; 
-          }
-        tr:first-child {
-            display : none;
-        } 
-        
-        /* Hide table headers (but not display: none;, for accessibility) */
-        thead tr { 
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-        }
-        
-        tr:nth-of-type(odd) {
-            background-color : #EDEDED;
-        }
-        
-        td { 
-            /* Behave  like a "row" */
-            border: none;
-            position: relative;
-        }
-        
-        td:before { 
-            /* Now like a table header */
-            position: absolute;
-            /* Top/left values mimic padding */
-            top: 6px;
-            left: 6px;
-            width: 45%; 
-            padding-right: 10px; 
-            white-space: nowrap;
-        }   
-        .dot_fill:after {
-            border : none;
-        }
-    }
-}
 
 
 * {
@@ -110,23 +58,6 @@ hr {
     border-top : 1px solid grey;
 }
 
-// table.dotted {
-//     td {
-//         white-space : nowrap;
-//         overflow:hidden;
-//     }
-// }
-
-.dot_fill {
-    &:after {
-        border-bottom: 1px dotted #C0C0C0;
-        display : table-caption;
-        position: relative;
-        content : " ";
-        width : 1000px;
-    }
-
-}
 .search_dict {
     position : absolute;
     width : 24px;
@@ -177,6 +108,24 @@ tr:nth-of-type(10n) td {
 */
 .contenttable {
     min-width : $mainview-width;
+
+    td:first-child {
+        position : relative;
+        vertical-align: bottom;
+        & > *:first-child {
+            background-color : white;
+            display : inline-block;
+            position : relative;
+            z-index : 10;
+        }
+        & > .dots {
+            position : relative;
+            border-bottom: 1px dotted #C0C0C0;
+            display : block;
+            top : -5px;
+        }
+    }
+
     td {
         max-width : 300px;
         padding : 5px;
@@ -950,4 +899,63 @@ grundform-clean {
     max-height : 300px;
     overflow-y: auto;
 
+}
+
+
+@media 
+only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px)  {
+    .page-epubList p {
+        max-width : 70%;
+    }
+
+/* Force table to not be like tables anymore */
+    .page-epubList .contenttable,.page-titleList .contenttable {
+        table, 
+        thead, 
+        tbody, 
+        th,
+        td, 
+        tr {
+            display: block; 
+          }
+        tr:first-child {
+            display : none;
+        } 
+        
+        /* Hide table headers (but not display: none;, for accessibility) */
+        thead tr { 
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+        
+        tr:nth-of-type(odd) {
+            background-color : #EDEDED;
+        }
+        
+        td { 
+            /* Behave  like a "row" */
+            border: none;
+            position: relative;
+            & > *:first-child {
+                background: none;
+            }
+            .dots {
+                display : none;
+            }
+        }
+        
+        td:before { 
+            /* Now like a table header */
+            position: absolute;
+            /* Top/left values mimic padding */
+            top: 6px;
+            left: 6px;
+            width: 45%; 
+            padding-right: 10px; 
+            white-space: nowrap;
+        }   
+        
+    }
 }

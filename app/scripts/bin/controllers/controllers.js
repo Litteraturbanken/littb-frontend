@@ -604,12 +604,13 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce) {
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout) {
     var author, loadPage, mediatype, pagename, s, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
     s.searchData = searchData;
+    s.dict_not_found = false;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
         return $location.url(newUrl);
@@ -632,19 +633,19 @@
     };
     s.$on("search_dict", function(event, query) {
       return backend.searchLexicon(query).then(function(data) {
-        var obj, _i, _len, _results;
+        var dict_not_found, obj, _i, _len;
         c.log("search_dict", data);
-        _results = [];
         for (_i = 0, _len = data.length; _i < _len; _i++) {
           obj = data[_i];
-          if (obj.baseform === query) {
+          if (obj.baseform === query.toLowerCase()) {
             s.lex_article = obj;
-            break;
-          } else {
-            _results.push(void 0);
+            return;
           }
         }
-        return _results;
+        dict_not_found = true;
+        return $timeout(function() {
+          return s.dict_not_found = false;
+        }, 1000);
       });
     });
     s.getPage = function() {

@@ -12,6 +12,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                                            "ui.bootstrap.tooltip"
                                            "template/tooltip/tooltip-popup.html"
                                            "template/typeahead/typeahead-popup.html"
+                                           "template/typeahead/typeahead-match.html"
                                            ])
     .config ($routeProvider) ->
 

@@ -8,7 +8,7 @@
 
 <table class="contenttable" ng-if="showtitles">
     <tr ng-repeat="works in groupedWorks">
-        <td><a class="dot_fill" href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</td>
+        <td><a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a><span class="dots"></span></td>
         <td >
             <span ng-repeat="work in works">
             <span ng-show="!$first">::: </span><a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{work.titlepath}}/info/{{work.mediatype}}">{{work.mediatype}}</a>

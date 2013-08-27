@@ -547,11 +547,12 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
     s.searchData = searchData
+    s.dict_not_found = false
 
     s.nextHit = () ->
         searchData.next().then (newUrl) ->
@@ -572,9 +573,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         backend.searchLexicon(query).then (data) ->
             c.log "search_dict", data
             for obj in data
-                if obj.baseform == query
+                if obj.baseform == query.toLowerCase()
                     s.lex_article = obj
-                    break
+                    return
+
+            # nothing found
+            dict_not_found = true
+            $timeout( () ->
+                s.dict_not_found = false
+            , 1000)
 
 
     s.getPage = () ->
