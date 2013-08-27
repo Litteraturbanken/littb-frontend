@@ -1,20 +1,16 @@
 
-<h1>forfattare</h1>
+<h1>Författare</h1>
 
 <div class="filter_header">Sök efter författare: <input ng-model="authorFilter" autofocus> (Lämna rutan tom för att visa alla)</div>
 
-<table class="table-striped contenttable">
+<table class="contenttable">
     <thead>
-        <th>
-            <div sort-triangles val="nameforindex" tuple="sorttuple"></div>
-        </th>
-        <th>
-            <div sort-triangles val="birth" tuple="sorttuple"></div>
-        </th>
+        <th> <div sort-triangles val="nameforindex" tuple="sorttuple"></div> </th>
+        <th> <div sort-triangles val="birth" tuple="sorttuple"></div> </th>
         <th></th>
     </thead>
     <tr ng-repeat="row in rowByLetter[selectedLetter] || rows | filter:authorFilter | orderBy:sorttuple[0]:sorttuple[1]">
-        <td><a href="#!/forfattare/{{row.authorid}}">{{getAuthor(row)}}</a></td>
+        <td><a href="#!/forfattare/{{row.authorid}}" class="dot_fill">{{getAuthor(row)}}</a></td>
         <td>{{row.datestring}}</td>
         <td><em ng-show="row.pseudonymfor">
             ::: se <a href="#!/forfattare/{{row.pseudonymfor}}">{{authorIdGroup[row.pseudonymfor][0].nameforindex}}</a>
@@ -26,5 +22,5 @@
 <div toolkit>
     <div letter-map selected="selectedLetter" enabled-letters="currentLetters"></div>
 
-    <div><small>Det här är en lista över de författarskap som är representerade på Litteraturbanken. Listan går att sortera alfabetiskt och kronologiskt: klicka på pilarna ovanför kolumnerna för att sortera om i den ordning som passar bäst.</small></div>
+    <p>Det här är en lista över de författarskap som är representerade på Litteraturbanken. Listan går att sortera alfabetiskt och kronologiskt: klicka på pilarna ovanför kolumnerna för att sortera om i den ordning som passar bäst.</p>
 </div>

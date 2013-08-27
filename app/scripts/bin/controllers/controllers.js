@@ -106,7 +106,6 @@
       return s.search(s.query);
     };
     s.save_search = function(startIndex, currentIndex, data) {
-      c.log("save_search", s.current_page);
       return searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()]);
     };
     s.getItems = function() {
@@ -121,7 +120,7 @@
       s.query = q;
       s.searching = true;
       mediatype = getMediatypes();
-      return backend.searchWorks(s.query, mediatype, s.current_page, s.num_hits).then(function(data) {
+      return backend.searchWorks(s.query, mediatype, s.current_page * s.num_hits, s.num_hits).then(function(data) {
         var itm, row, _i, _len, _ref, _results;
         s.data = data;
         s.total_pages = Math.ceil(data.count / s.num_hits);
@@ -131,22 +130,22 @@
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           row = _ref[_i];
           itm = row.item;
-          _results.push(row.href = ("#/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm))));
+          _results.push(row.href = ("#!/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm))));
         }
         return _results;
       });
     };
     queryvars = $location.search();
-    if ("fras" in queryvars) {
-      s.search(queryvars.fras);
-    }
-    return util.setupHashComplex(s, [
+    util.setupHashComplex(s, [
       {
         scope_name: "current_page",
         key: "traffsida",
         val_in: Number
       }
     ]);
+    if ("fras" in queryvars) {
+      return s.search(queryvars.fras);
+    }
   });
 
   littb.controller("lagerlofCtrl", function($scope, $rootScope, backend) {
@@ -325,6 +324,13 @@
   littb.controller("epubListCtrl", function($scope, backend, util) {
     var s;
     s = $scope;
+    s.sorttuple = ["author.nameforindex", false];
+    s.setSort = function(sortstr) {
+      return s.sorttuple[0] = sortstr;
+    };
+    s.setDir = function(isAsc) {
+      return s.sorttuple[1] = isAsc;
+    };
     window.has = function(one, two) {
       return one.toLowerCase().indexOf(two) !== -1;
     };
@@ -342,6 +348,26 @@
       }
       return true;
     };
+    s.getAuthor = function(row) {
+      var first, last, _ref;
+      _ref = row.author.nameforindex.split(","), last = _ref[0], first = _ref[1];
+      return [last.toUpperCase(), first].join(",");
+    };
+    util.setupHashComplex(s, [
+      {
+        expr: "sorttuple[0]",
+        scope_func: "setSort",
+        key: "sortering",
+        "default": "author.nameforindex"
+      }, {
+        expr: "sorttuple[1]",
+        scope_func: "setDir",
+        key: "fallande"
+      }, {
+        key: "filter",
+        scope_name: "filterTxt"
+      }
+    ]);
     return backend.getTitles().then(function(titleArray) {
       var authors;
       s.rows = _.filter(titleArray, function(item) {
@@ -484,6 +510,10 @@
     var s;
     s = $scope;
     _.extend(s, $routeParams);
+    if (!_.str.startsWith(s.id, "lb")) {
+      s.title = s.id;
+      s.id = "";
+    }
     return backend.getTitles().then(function(titleArray) {
       return s.data = titleArray;
     });
@@ -521,6 +551,14 @@
       }
       return _results;
     };
+    s.getMediatypeUrl = function(mediatype) {
+      var _ref;
+      if (mediatype === "epub") {
+        return (_ref = s.data) != null ? _ref.epub.url : void 0;
+      } else {
+        return "#!/forfattare/" + s.author + "/titlar/" + s.title + "/" + mediatype;
+      }
+    };
     infoDef = backend.getSourceInfo(author, title, mediatype);
     infoDef.then(function(data) {
       s.init = true;
@@ -557,7 +595,7 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData) {
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce) {
     var author, loadPage, mediatype, pagename, s, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
@@ -565,13 +603,11 @@
     s.searchData = searchData;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
-        c.log("newUrl", newUrl);
         return $location.url(newUrl);
       });
     };
     s.prevHit = function() {
       return searchData.prev().then(function(newUrl) {
-        c.log("newUrl", newUrl);
         return $location.url(newUrl);
       });
     };
@@ -586,7 +622,6 @@
       dialogFade: true
     };
     s.$on("search_dict", function(event, query) {
-      c.log("search_dict", query);
       return backend.searchLexicon(query).then(function(data) {
         var obj, _i, _len, _results;
         c.log("search_dict", data);
@@ -629,18 +664,17 @@
       }
     };
     s.firstPage = function() {
-      c.log("firstPage");
       return s.setPage(0);
     };
     s.lastPage = function() {
       var ix;
-      c.log("lastPage");
       ix = s.pagemap["page_" + s.endpage];
       return s.setPage(ix);
     };
     s.gotopage = function(page) {
-      c.log("gotopage", page);
-      return s.pagename = Number(page);
+      var ix;
+      ix = s.pagemap["page_" + page];
+      return s.setPage(ix);
     };
     s.mouseover = function() {
       c.log("mouseover");
@@ -685,46 +719,66 @@
     ]);
     watches = [];
     watches.push(s.$watch("pagename", function(val) {
+      var loc, prevpath, url;
       if (val == null) {
         return;
       }
       s.displaynum = val;
-      return $location.path("/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype);
+      url = "/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype;
+      prevpath = $location.path();
+      loc = $location.path(url);
+      if (!_.str.contains(prevpath, "/sida/")) {
+        c.log("replace", prevpath);
+        return loc.replace();
+      }
     }));
+    s.isDefined = angular.isDefined;
     loadPage = function(val) {
+      c.log("loadPage", val);
       s.pagename = val;
       return backend.getPage(author, title, mediatype, s.pagename).then(function(_arg) {
-        var data, page, workinfo;
+        var data, page, url, workinfo, _i, _len, _ref;
         data = _arg[0], workinfo = _arg[1];
         s.workinfo = workinfo;
         s.pagemap = workinfo.pagemap;
         s.startpage = Number(workinfo.startpagename);
         s.endpage = Number(workinfo.endpagename);
-        page = $("page[name=" + pagename + "]", data).last().clone();
+        page = $("page[name=" + s.pagename + "]", data).last().clone();
         if (!page.length) {
           page = $("page:last", data).clone();
           s.pagename = page.attr("name");
         }
         s.pageix = s.pagemap["page_" + s.pagename];
+        s.sizes = new Array(5);
+        _ref = $("faksimil-url", page);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          url = _ref[_i];
+          s.sizes[Number($(url).attr("size")) - 1] = false;
+        }
+        if (s.sizes[s.size] === false) {
+          s.sizes[s.size] = true;
+        }
         s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
         page.children().remove();
         return s.etext_html = page.text();
       });
     };
     s.size = 2;
-    s.sizes = _.map([0, 1, 2, 3, 4], function() {
-      return false;
-    });
-    s.sizes[s.size] = true;
     s.setSize = function(index) {
-      s.sizes = _.map([0, 1, 2, 3, 4], function() {
-        return false;
+      s.sizes = _.map(s.sizes, function(item) {
+        if (item) {
+          return false;
+        } else {
+          return item;
+        }
       });
       s.sizes[index] = true;
       s.size = index;
       return loadPage(s.getPage());
     };
-    watches.push(s.$watch("getPage()", loadPage));
+    watches.push(s.$watch("getPage()", debounce(loadPage, 100, {
+      leading: true
+    })));
     return s.$on("$destroy", function() {
       var w, _i, _len, _results;
       _results = [];
@@ -734,6 +788,43 @@
       }
       return _results;
     });
+  });
+
+  littb.factory("debounce", function($timeout) {
+    return function(func, wait, options) {
+      var args, delayed, inited, leading, result, thisArg, timeoutDeferred, trailing;
+      args = null;
+      inited = null;
+      result = null;
+      thisArg = null;
+      timeoutDeferred = null;
+      trailing = true;
+      delayed = function() {
+        inited = timeoutDeferred = null;
+        if (trailing) {
+          return result = func.apply(thisArg, args);
+        }
+      };
+      if (options === true) {
+        leading = true;
+        trailing = false;
+      } else if (options && angular.isObject(options)) {
+        leading = options.leading;
+        trailing = ("trailing" in options ? options.trailing : trailing);
+      }
+      return function() {
+        args = arguments;
+        thisArg = this;
+        $timeout.cancel(timeoutDeferred);
+        if (!inited && leading) {
+          inited = true;
+          result = func.apply(thisArg, args);
+        } else {
+          timeoutDeferred = $timeout(delayed, wait);
+        }
+        return result;
+      };
+    };
   });
 
   littb.factory("util", function($location) {
@@ -923,7 +1014,6 @@
           val = _.map($(elem).children(), function(child) {
             return $(child).text();
           });
-          c.log("val asArray", val);
         } else {
           val = $(elem).text();
         }
@@ -1035,6 +1125,7 @@
             image: $("image", prov).text(),
             link: $("link", prov).text()
           };
+          sourcedesc = $("sourcedesc", xml);
           errata = $("errata", xml);
           output.errata = (function() {
             var _i, _len, _ref, _results;
@@ -1046,8 +1137,7 @@
             }
             return _results;
           })();
-          sourcedesc = errata.parent().clone();
-          sourcedesc.find("errata").remove();
+          errata.remove();
           output.sourcedesc = (util.getInnerXML(sourcedesc)) || "";
           epub = $("result epub", xml);
           if (epub.length) {
@@ -1091,7 +1181,7 @@
           info = parseWorkInfo("LBwork", xml);
           c.log("info", info);
           info["authorFullname"] = $("author-fullname", xml).text();
-          info["showtitle"] = $(":root > showtitle", xml).text();
+          info["showtitle"] = $("showtitle:first", xml).text();
           info["css"] = $("css", xml).text();
           pgMap = {};
           _ref = $("bok sida", xml);
@@ -1148,6 +1238,8 @@
             works.push(obj);
           }
           authorInfo.works = works;
+          authorInfo.smallImage = util.getInnerXML($("image-small-uri", xml));
+          authorInfo.largeImage = util.getInnerXML($("image-large-uri", xml));
           return def.resolve(authorInfo);
         });
         return def.promise;
@@ -1179,7 +1271,7 @@
                 _results = [];
                 for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
                   x = _ref1[_j];
-                  _results.push("<a href='#/" + ($(x).attr('href').slice(3)) + "'>" + ($(x).text()) + "</a>");
+                  _results.push("<a href='#!/" + ($(x).attr('href').slice(3)) + "'>" + ($(x).text()) + "</a>");
                 }
                 return _results;
               })();

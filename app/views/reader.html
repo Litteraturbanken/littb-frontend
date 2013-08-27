@@ -47,7 +47,7 @@
                 <div class="ctrls">
                     <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
                     <div style="clear:both;"></div>
-                    <div class="">
+                    <div class="arrows">
                         <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
                         <img ng-click="nextHit()" class="" src="/bilder/h_pil.png">
                     </div>
@@ -100,7 +100,7 @@
         </div>
     
         <div class="size_picker" ng-show="mediatype == 'faksimil'">
-            <div ng-class="{selected : size}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
+            <div ng-class="{selected : size, hidden : !isDefined(size)}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
             
         </div>
 
@@ -111,9 +111,9 @@
     
         <div class="word_search">
             <label>Slå upp i svensk ordbok</label>
-            <input ng-model="lex_article"
+            <input  ng-model="lex_article"
                     typeahead-throttle-ms="500"
-                   typeahead="article as article.baseform for article in getWords($viewValue)">
+                    typeahead="article as article.baseform for article in getWords($viewValue)">
         </div>
     
     

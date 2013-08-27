@@ -15,17 +15,17 @@ $mainview-width : $page-width - $main-menu-width - $gutter-width;
 $primarycolor : #990000;
 
 * {
-    box-sizing : border-box;
+    @include box-sizing(border-box);
 }
 
 // bootstrap overrides
 body {
-    font-size : 11px;
+    font-size : 12px;
     padding-top : 20px;
     padding-left : 40px;
     white-space: nowrap;
     font-family : georgia, serif;
-    line-height : 16px;
+    line-height : 17.5px;
     width : $page-width;
     background-color: white;
 
@@ -54,6 +54,23 @@ hr {
     border-top : 1px solid grey;
 }
 
+// table.dotted {
+//     td {
+//         white-space : nowrap;
+//         overflow:hidden;
+//     }
+// }
+
+.dot_fill {
+    &:after {
+        border-bottom: 1px dotted #C0C0C0;
+        display : table-caption;
+        position: relative;
+        content : " ";
+        width : 1000px;
+    }
+
+}
 .search_dict {
     position : absolute;
     width : 24px;
@@ -73,6 +90,7 @@ hr {
     }
 }
 #toolkit {
+    line-height : 15px;
     hr {
         border-top : 1px solid grey;
         margin-bottom : 1em;
@@ -80,6 +98,9 @@ hr {
     }
     input {
         max-width : 100%;
+    }
+    p {
+        font-size: smaller;
     }
 }
 
@@ -99,10 +120,12 @@ tr:nth-of-type(10n) td {
 }
 */
 .contenttable {
-    min-width : 700px;
+    min-width : $mainview-width;
     td {
         max-width : 300px;
         padding : 5px;
+        overflow:hidden;
+        vertical-align: top;
     }
     td:nth-child(2) {
         vertical-align : bottom;
@@ -115,10 +138,10 @@ tr:nth-of-type(10n) td {
         font-style: italic;
     }
 }
-.contenttable td:last-of-type,
-th:last-of-type {
-    text-align:right;
-}
+// .contenttable td:last-of-type,
+// th:last-of-type {
+//     text-align:right;
+// }
 
 
 .letters {
@@ -177,10 +200,9 @@ li {
     line-height : 19px;
 }
 #mainview {
-    @include inline-block();
-    vertical-align: top;
+    @include inline-block(top);
     width : $mainview-width;
-    margin-top : 2em;
+    margin-top : 1em;
 }
 
 label {
@@ -188,8 +210,9 @@ label {
 }
 
 #logo {
-    height: 30px;
+    height: 26px;
     left: -8px;
+    top : 3px;
     position: relative;
 }
 
@@ -200,12 +223,12 @@ header {
     position : relative;
     & > a {
         @include inline-block(bottom);
-        width : 49%;
+        width : 39%;
     }
     .breadcrumb {
         @include inline-block(bottom);
         text-align : right;
-        width : 50%;
+        width : 60%;
         position : relative;
         top : 6px;
         // float : right;
@@ -213,7 +236,7 @@ header {
         padding : 0;
         margin : 0;
         background-color : transparent;
-        font-size : 0.9em;
+        font-size : 0.8em;
     }
 }
 .start_menu {
@@ -241,6 +264,7 @@ header {
             width : 46%;
             @include inline-block(bottom);
             text-align: right;
+            font-size: 0.9em;
             li {
                 @include inline-block();
             }
@@ -365,9 +389,11 @@ header {
         
         .submit_btn {
             float : right;
+            margin-top : 1em;
         }
         .input {
             width : 432px;
+            vertical-align: sub;
         }
         .header {
             position : relative;
@@ -378,6 +404,7 @@ header {
                 bottom : 0;
                 right : 0;
                 cursor : pointer;
+                font-size : smaller;
             }
 
         }
@@ -385,26 +412,45 @@ header {
             margin-bottom: 1em;
         }
         .extended {
+            margin-top : 1em;
             border : 1px lightgrey solid;
-            padding : 8px;
-        }
-        .columns {
-            > div {
-                width : 49%;
-                @include inline-block();
+            padding : 10px;
+            h3 {
+                margin : 0.3em 0;
+            }
+            .columns {
+                > div {
+                    width : 49%;
+                    @include inline-block();
 
-                label {
-                    display : block;
+                    label {
+                        display : block;
+                    }
+                }
+                #title_select {
+                    width : 245px;
+                }
+            }
+            .chks {
+                margin-top : 1em;
+                input {
+                    margin-left : 1em;
                 }
             }
         }
         table {
             white-space : nowrap;
+            td {
+                padding-right : 2px;
+            }
             tr.is_faksimil * {
                 color : grey;
             }
+            td.num {
+                color : grey;
+            }
             td.title {
-                max-width : 100px;
+                max-width : 106px;
                 overflow-x : hidden;
                 text-overflow : ellipsis;
                 font-style: italic;
@@ -434,7 +480,7 @@ header {
         max-width : 247px;
     }
 }
-$partnav-width : 120px;
+$partnav-width : 170px;
 .page-reading {
     #mainview {
         position : relative;
@@ -498,7 +544,13 @@ $partnav-width : 120px;
                         cursor : pointer;
                     }
                     .close_btn {
+                        position: relative;
+                        right : 2px;
                         float : right;
+                    }
+                    .arrows {
+                        position: relative;
+                        top: 18px;
                     }
                 }
             }
@@ -518,7 +570,7 @@ $partnav-width : 120px;
             border-radius : 10px;
             background-color : black;
             color : white;
-            @include box-sizing(border-box);
+            margin-left : 3px;
             padding-left : 4px;
             font-family : "Helvetica", "Arial", sans-serif;
             cursor : pointer;
@@ -526,6 +578,9 @@ $partnav-width : 120px;
             &.selected {
                 background-color : $primarycolor;
                 cursor : normal;
+            }
+            &.hidden {
+                visibility: hidden;
             }
         }
     }
@@ -580,6 +635,9 @@ $partnav-width : 120px;
             li {
                 color : white;
                 cursor : pointer;
+                text-overflow : ellipsis;
+                overflow : hidden;
+                white-space : nowrap;
             }
             a {
                 color : white;
@@ -590,8 +648,11 @@ $partnav-width : 120px;
 
 .page-sourceInfo {
     #mainview {
-        div {
+        div, p {
             margin-bottom : 1em;
+        }
+        p {
+            max-width : 350px;
         }
         .mediatypes {
             margin-bottom : 0;
@@ -612,6 +673,7 @@ $partnav-width : 120px;
             font-variant : small-caps;
         }
         .provenance {
+            margin : 2em 0;
             * {
                 @include inline-block(middle);
             }
@@ -623,14 +685,30 @@ $partnav-width : 120px;
         .toggle {
             cursor : pointer;
         }
+        .errata_table {
+            td {
+                padding-right : 3em;
+            }
+        }
+
     }
 }
 
+.page-authorInfo {
+    .author_img {
+        margin-top : 3em;
+        text-align : right;
+    }
+}
 .page-authorList {
     .contenttable {
         margin-top : 3em;
         td {
             text-align: left;
+            white-space: nowrap;
+        }
+        td:nth-child(2) {
+            vertical-align : top;
         }
     }
     #mainview > * {
@@ -639,8 +717,15 @@ $partnav-width : 120px;
 }
 
 .page-titleList {
-    th {
-        padding-bottom : 1em;
+    #mainview {
+        th {
+            padding-bottom : 1em;
+        }
+        td {
+            max-width : 160px;
+
+        }
+        
     }
 }
 
@@ -692,8 +777,14 @@ $partnav-width : 120px;
 }
 
 .page-epubList {
-    #mainview > * {
-        margin : 1em 0;
+    #mainview {
+        input.filter {
+            margin-left : 1em;
+        }
+        
+        > * {
+            margin : 1em 0;
+        }
     }
 }
 

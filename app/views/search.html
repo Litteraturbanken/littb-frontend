@@ -15,10 +15,10 @@
     <form ng-submit="search()">Ord eller fras: <input class="input" ng-model="query" autofocus></form>
     
     <div class="extended" ng-show="open">
-        <h2>Urval</h2>
+        <h3>Urval</h3>
         <div class="columns">
             <div class="left">
-                <label for="author_select">författare</label>
+                <label for="author_select">Författare</label>
                 <select id="author_select"
                         ng-model="selected_author"
                         ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
@@ -35,11 +35,13 @@
                 <!-- what is the logic searchproofread and searchNonProofread? -->
             </div>
         </div>
-        Sök i:
-        <input type="checkbox" id="proofread" ng-model="searchProofread">
-        <label for="proofread">korrekturläst</label>
-        <input type="checkbox" id="non_proofread" ng-model="searchNonProofread">
-        <label for="non_proofread">ej korrekturläst</label>
+        <div class="chks">
+            Sök i:
+            <input type="checkbox" id="proofread" ng-model="searchProofread">
+            <label for="proofread">korrekturläst</label>
+            <input type="checkbox" id="non_proofread" ng-model="searchNonProofread">
+            <label for="non_proofread">ej korrekturläst</label>
+        </div>
     </div>
     
     <div><span ng-click="search()" submit-btn></span><div style="clear:both;"></div></div>
@@ -56,7 +58,7 @@
         <div ng-if="data.count === 0">Din sökning gav inga träffar</div>
         <table class="results">
             <tr ng-repeat="r in data.kwic" ng-class="{is_faksimil : r.item.mediatype == 'faksimil'}">
-                <td>{{($index + 1) + (current_page * num_hits)}}</td>
+                <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
                 <td><a href="#!/forfattare/{{r.item.authorid}}">{{r.item.nameforindex}}</a></td>
                 <td class="title" tooltip="{{r.item.title}}">
                     <a href="#!/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/{{r.item.mediatype}}">{{r.item.title}}</a>
@@ -90,11 +92,11 @@
             </div>
     
             <label>Gå till träffsida</label>
-            <form ng-submit="current_page = input_page; search()">
+            <form ng-submit="current_page = input_page - 1; search()">
                 <input class="input_page" ng-model="input_page"><span submit-btn></span>
             </form>
         </div>
     
-        Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den forfattaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.
+        <p>Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den forfattaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.</p>
     </div>
 </div>

@@ -3,17 +3,22 @@
     
     <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Listan på verk som finns tillgängliga i formatet kommer att utökas med tiden. Läs mer om epub på <a href="#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
     
-    <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
-        <option value="">Alla författare</option>
-    </select>
-    
     <div>
-        Filtrera: <input ng-model="filterTxt" autofocus placeholder="Filtrera">
+        <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
+            <option value="">Alla författare</option>
+        </select>
+    
+        <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
     </div>
     
     <table class="contenttable" scroll-to="{{selectedLetter || 'A'}}">
-        <tr ng-repeat="row in rows | filter:rowFilter | orderBy:['author.nameforindex', 'itemAttrs.showtitle']" id="{{row.author.nameforindex[0].toUpperCase()}}">
-            <td><a href="#!/forfattare/{{row.author.authorid}}">{{row.author.nameforindex}}</a></td>
+        <thead>
+            <th> <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div> </th>
+            <th> <div sort-triangles val="itemAttrs.showtitle" tuple="sorttuple"></div> </th>
+            <th></th>
+        </thead>
+        <tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{row.author.nameforindex[0].toUpperCase()}}">
+            <td><a href="#!/forfattare/{{row.author.authorid}}">{{getAuthor(row)}}</a></td>
             <td class="title">
                 <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>
             </td>

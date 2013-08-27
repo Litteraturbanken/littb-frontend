@@ -102,7 +102,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
     
 
     s.save_search = (startIndex, currentIndex, data) ->
-        c.log "save_search", s.current_page
         searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()])
 
 
@@ -119,15 +118,14 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
         
         mediatype = getMediatypes()
 
-        # resultitem = s.current_page * num_hits
-        backend.searchWorks(s.query, mediatype, s.current_page, s.num_hits).then (data) ->
+        backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits).then (data) ->
             s.data = data
             s.total_pages = Math.ceil(data.count / s.num_hits)
             s.searching = false
 
             for row in data.kwic
                 itm = row.item
-                row.href = "#/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
+                row.href = "#!/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
                     "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
 
 
@@ -135,9 +133,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
 
 
     queryvars = $location.search()
-    if "fras" of queryvars
-        s.search(queryvars.fras)
-
 
     util.setupHashComplex s,
         [
@@ -145,6 +140,9 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
             key : "traffsida"
             val_in : Number
         ]
+
+    if "fras" of queryvars
+        s.search(queryvars.fras)
 
 
 
@@ -322,6 +320,12 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location) -
 littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope
 
+    s.sorttuple = ["author.nameforindex", false]
+    s.setSort = (sortstr) ->
+        s.sorttuple[0] = sortstr
+    s.setDir = (isAsc) ->
+        s.sorttuple[1] = isAsc
+
     window.has = (one, two) -> one.toLowerCase().indexOf(two) != -1
     s.rowFilter = (item) ->
         if "epub" not in item.mediatype then return false
@@ -329,6 +333,32 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
         if s.filterTxt
             return false if not ((has item.author.fullname, s.filterTxt) or (has item.itemAttrs.showtitle, s.filterTxt))
         return true
+
+    s.getAuthor = (row) ->
+        [last, first] = row.author.nameforindex.split(",")
+
+        [last.toUpperCase(), first].join ","
+
+
+    util.setupHashComplex s,
+        [
+            expr : "sorttuple[0]"
+            # scope_name : "sortVal"
+            scope_func : "setSort"
+            key : "sortering"
+            default : "author.nameforindex"
+            # val_in : (val) ->
+            # val_out : (val) ->
+            # post_change : () ->
+        ,
+            expr : "sorttuple[1]"
+            scope_func : "setDir"
+            key : "fallande"
+        ,
+            key : "filter"
+            scope_name : "filterTxt"
+        ]
+
 
     backend.getTitles().then (titleArray) ->
         s.rows = _.filter titleArray, (item) -> "epub" in item.mediatype
@@ -436,8 +466,14 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
     s = $scope
     _.extend s, $routeParams
 
+    unless _.str.startsWith s.id, "lb"
+        s.title = s.id
+        s.id = ""
+
     backend.getTitles().then (titleArray) ->
         s.data = titleArray
+
+
 
 
 
@@ -468,6 +504,11 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
     s.getOtherMediatypes = () ->
         (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
 
+    s.getMediatypeUrl = (mediatype) ->
+        if mediatype == "epub"
+            return s.data?.epub.url
+        else
+            return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
 
 
     infoDef = backend.getSourceInfo(author, title, mediatype)
@@ -499,7 +540,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
@@ -507,11 +548,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.nextHit = () ->
         searchData.next().then (newUrl) ->
-            c.log "newUrl", newUrl
             $location.url(newUrl)
     s.prevHit = () ->
         searchData.prev().then (newUrl) ->
-            c.log "newUrl", newUrl
             $location.url(newUrl)
     s.close_hits = () ->
         searchData.reset()
@@ -523,7 +562,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         dialogFade:true
 
     s.$on "search_dict", (event, query) ->
-        c.log "search_dict", query
         backend.searchLexicon(query).then (data) ->
             c.log "search_dict", data
             for obj in data
@@ -551,18 +589,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.setPage(0)
 
     s.firstPage = () ->
-        c.log "firstPage"
         s.setPage(0)
     s.lastPage = () ->
-        c.log "lastPage"
         ix = s.pagemap["page_" + s.endpage]
         s.setPage ix
 
 
 
     s.gotopage = (page) ->
-        c.log "gotopage", page
-        s.pagename = Number(page)
+        ix = s.pagemap["page_" + page]
+        s.setPage ix
 
     s.mouseover = () ->
         c.log "mouseover"
@@ -606,14 +642,25 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         
 
     watches = []
+    # watches.push s.$watch "pagename", _.debounce( ( (val) ->
     watches.push s.$watch "pagename", (val) ->
         # c.log "pagename", val
         unless val? then return
         s.displaynum = val
-        $location.path("/forfattare/#{author}/titlar/#{title}/sida/#{val}/#{mediatype}")
+        url = "/forfattare/#{author}/titlar/#{title}/sida/#{val}/#{mediatype}"
 
+        prevpath = $location.path()
+
+        loc = $location.path(url)
+        unless _.str.contains prevpath, "/sida/"
+            c.log "replace", prevpath
+            loc.replace()
+    # ), 300, {leading:true})
+
+    s.isDefined = angular.isDefined
 
     loadPage = (val) ->
+        c.log "loadPage", val
         # unless val? then return
 
 
@@ -629,7 +676,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.endpage = Number(workinfo.endpagename)
 
 
-            page = $("page[name=#{pagename}]", data).last().clone()
+            page = $("page[name=#{s.pagename}]", data).last().clone()
             if not page.length
                 page = $("page:last", data).clone()
                 s.pagename = page.attr("name")
@@ -637,26 +684,66 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pageix = s.pagemap["page_" + s.pagename]
 
             # if mediatype == 'faksimil' or isParallel
+            s.sizes = new Array(5)
+            for url in $("faksimil-url", page)
+                s.sizes[Number($(url).attr("size")) - 1] = false
+            
+            if s.sizes[s.size] is false
+                s.sizes[s.size] = true
+
+
             s.url = $("faksimil-url[size=#{s.size + 1}]", page).last().text()
             # else
             page.children().remove()
             s.etext_html = page.text()
 
     s.size = 2
-    s.sizes = _.map [0...5], () -> false
-    s.sizes[s.size] = true
+    
     s.setSize = (index) ->
-        s.sizes = _.map [0...5], () -> false
+        s.sizes = _.map s.sizes, (item) -> if item then false else item
         s.sizes[index] = true
         s.size = index
         loadPage(s.getPage())
 
 
-    watches.push s.$watch "getPage()", loadPage
+    watches.push s.$watch "getPage()", debounce(loadPage, 100, {leading : true})
+    # watches.push s.$watch "getPage()", loadPage
 
     s.$on "$destroy", () ->
         for w in watches
             w()
+
+
+
+littb.factory "debounce", ($timeout) ->
+    (func, wait, options) ->
+        args = null
+        inited = null
+        result = null
+        thisArg = null
+        timeoutDeferred = null
+        trailing = true
+        
+        delayed = ->
+            inited = timeoutDeferred = null
+            result = func.apply(thisArg, args) if trailing
+        if options is true
+            leading = true
+            trailing = false
+        else if options and angular.isObject(options)
+            leading = options.leading
+            trailing = (if "trailing" of options then options.trailing else trailing)
+        return () ->
+            args = arguments
+            thisArg = this
+            $timeout.cancel timeoutDeferred
+            if not inited and leading
+                inited = true
+                result = func.apply(thisArg, args)
+            else
+                timeoutDeferred = $timeout(delayed, wait)
+            result
+
 
 littb.factory "util", ($location) ->
     PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i
@@ -801,7 +888,6 @@ littb.factory 'backend', ($http, $q, util) ->
             else if elem.nodeName in asArray
                 val = _.map $(elem).children(), (child) ->
                     $(child).text()
-                c.log "val asArray", val
             else
                 val = $(elem).text()
 
@@ -892,14 +978,15 @@ littb.factory 'backend', ($http, $q, util) ->
                 link : $("link", prov).text()
             }
 
+            sourcedesc = $("sourcedesc", xml)
+
+
             errata = $("errata", xml)
             output.errata = for tr in $("tr", errata)
                 _($(tr).find("td")).map(util.getInnerXML)
                 .map(_.str.strip).value()
+            errata.remove()
 
-
-            sourcedesc = errata.parent().clone()
-            sourcedesc.find("errata").remove()
             output.sourcedesc = (util.getInnerXML sourcedesc) or ""
 
             epub = $("result epub", xml)
@@ -939,7 +1026,7 @@ littb.factory 'backend', ($http, $q, util) ->
             c.log "info", info
 
             info["authorFullname"] = $("author-fullname", xml).text()
-            info["showtitle"] = $(":root > showtitle", xml).text()
+            info["showtitle"] = $("showtitle:first", xml).text()
             info["css"] = $("css", xml).text()
             pgMap = {}
             for page in $("bok sida", xml)
@@ -988,6 +1075,10 @@ littb.factory 'backend', ($http, $q, util) ->
                 works.push obj
 
             authorInfo.works = works
+
+            authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
+            authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
+
             def.resolve authorInfo
 
         return def.promise
@@ -1011,7 +1102,7 @@ littb.factory 'backend', ($http, $q, util) ->
             for elem in $("result", xml).children()
                 if elem.tagName == "table"
                     c.log "table", elem, $("td:nth-child(2) a", elem)
-                    output.titleList = ("<a href='#/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", elem))
+                    output.titleList = ("<a href='#!/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", elem))
                     c.log "titleList", output.titleList
                 else if elem.tagName in parseObj
                     output[elem.tagName] = _.object _.map $(elem).children(), (child) ->

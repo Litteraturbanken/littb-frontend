@@ -153,6 +153,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                             def.resolve()
                             # return def.promise
                         # if we're only changing pages in the reader, don't change route
+
                         if routeStartCurrent and $route.current.controller == "readingCtrl"
                             cmp = ["author", "mediatype", "title"]
                             current = _.pick $route.current.params, cmp...
@@ -174,14 +175,21 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
             .when "/id/:id",
                 template : """<div ng-class="{searching:!data}"><h1>{{id}}</h1>
                     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
-                    <div ng-repeat="row in data | filter:{'itemAttrs.lbworkid' : id}">
-                        <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
-                        <span ng-repeat="type in row.mediatype">
-
-                            <span ng-show="!$first">:::</span>
-                            <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info/{{type}}">{{type}}</a>
-                        </span>
-                    </div>
+                    <table class="table-striped">
+                    <tr ng-repeat="row in data | filter:{'itemAttrs.lbworkid' : id, 'itemAttrs.showtitle' : title}">
+                        <td>{{row.itemAttrs.lbworkid}}</td>
+                        <td>
+                            <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
+                        </td>
+                        <td>
+                            <span ng-repeat="type in row.mediatype">
+                            
+                                <span ng-show="!$first">:::</span>
+                                <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info/{{type}}">{{type}}</a>
+                            </span>
+                        </td>
+                    </tr>
+                    </table>
                 </div>
                             """
                 controller : 'idCtrl'

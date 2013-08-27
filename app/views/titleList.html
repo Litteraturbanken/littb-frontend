@@ -1,5 +1,6 @@
 <div ng-class="{searching:searching}">
-    <div id="controls">
+    <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+    <div id="controls" ng-hide="searching">
         <select ng-model="authorFilter" 
             ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
             <option value="">Alla författare</option>
@@ -15,26 +16,20 @@
             <option value="epub">Epub</option>
             <option value="pdf">PDF</option>
         </select>
-        <div>
-            <label for="filter_input">Filtrera:</label> <input id="filter_input" type="text" ng-model="filter">
-        </div>
+        <input id="filter_input" type="text" ng-model="filter" placeholder="Filtrera">
 
-        <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+        
 
     </div>
-    <table id="table" class="table-striped contenttable" >
+    <table id="table" class="table-striped contenttable" ng-hide="searching">
         <thead>
-            <th>
-                <div sort-triangles val="itemAttrs.showtitle" tuple="sorttuple"></div>
-            </th>
-            <th>
-                <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div>
-            </th>
+            <th> <div sort-triangles val="itemAttrs.showtitle" tuple="sorttuple"></div> </th>
+            <th> <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div> </th>
             <th></th>
         </thead>
         <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
             <td class="title">
-                <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
+                <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" class="dot_fill" 
                     href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
             </td>
             <td><a href="#!/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a></td>
@@ -52,9 +47,9 @@
     <div toolkit>
         <div letter-map selected="selectedLetter" enabled-letters="currentLetters"></div>
 
-        <div>
+        <p>
             Det här är en alfabetisk lista över alla de titlar som Litteraturbanken har att erbjuda, med länkar till text, faksimil- eller pdf-versioner av verken. – Samtliga verk visar titlar på hela verk. Samtliga titlar inkluderar titlar på dikter, noveller etc.
-        </div>
+        </p>
     </div>
 </div>
 
