@@ -219,6 +219,10 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     refreshRoute = () ->
         s.showtitles = (_.last $location.path().split("/")) == "titlar"
+    refreshTitle = () ->
+        suffix = if s.showtitles then "Verk i LB" else "Introduktion"
+        s.setTitle "#{s.authorInfo.fullName} - " + suffix
+
     refreshRoute()
 
     s.$on "$routeChangeError", (event, current, prev, rejection) ->
@@ -226,6 +230,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         _.extend s, current.pathParams
 
         refreshRoute()  
+        refreshTitle()
 
 
 
@@ -234,7 +239,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
         $rootScope.appendCrumb data.surname
-
+        refreshTitle()
 
 
 
@@ -536,7 +541,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
                     label : "titlar"
                     url : "#!/forfattare/#{author}/titlar"
                 ,   
-                    label : infoData.titlepath + " info " + (s.mediatype or "")
+                    label : (_.str.humanize infoData.titlepath) + " info " + (s.mediatype or "")
                     # url : "#!/forfattare/#{author}/titlar/#{infoData.titlepathnorm}"
                 ]
                 break
@@ -547,7 +552,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
@@ -578,10 +583,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                     return
 
             # nothing found
-            dict_not_found = true
+            s.dict_not_found = true
             $timeout( () ->
                 s.dict_not_found = false
-            , 1000)
+            , 3000)
 
 
     s.getPage = () ->
@@ -675,7 +680,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     loadPage = (val) ->
         c.log "loadPage", val
-        # unless val? then return
+        unless val? then return
 
 
         s.pagename = val
@@ -710,6 +715,24 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # else
             page.children().remove()
             s.etext_html = page.text()
+
+            $rootScope.breadcrumb = []
+            c.log "write reader breadcrumb"
+            s.appendCrumb [
+                label : "författare"
+                url : "#!/forfattare"
+            ,
+                label : _.str.humanize author[0..-2]
+                url : "#!/forfattare/" + author
+            ,
+                label : "titlar"
+                url : "#!/forfattare/#{author}/titlar"
+            ,   
+                label : (_.str.humanize workinfo.titlepath) + " sidan #{s.pagename} " + (s.mediatype or "")
+                url : "#!/forfattare/#{author}/titlar/#{title}"
+            ]
+
+            s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
 
     s.size = 2
     

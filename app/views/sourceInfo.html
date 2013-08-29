@@ -19,7 +19,7 @@
     </div>
     
     <div class="provenance" ng-if="data.provenance.text.length">
-        <a ng-href="{{data.provenance.link}}"><img ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
+        <a ng-href="{{data.provenance.link}}" ng-if="data.provenance.image"><img ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
         <p>{{data.provenance.text}}</p>
     </div>
     

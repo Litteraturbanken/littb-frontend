@@ -160,7 +160,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false,
-
+                breadcrumb : ["författare"]
                 resolve :
                     r : ($q, $routeParams, $route, $rootScope) ->
                         def = $q.defer()
@@ -262,6 +262,8 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         if newRoute.controller?.replace
             $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""))
 
+
+        c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
         $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
             if _.isObject item 
                 item 

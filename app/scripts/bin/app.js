@@ -170,6 +170,7 @@
       templateUrl: "views/reader.html",
       controller: "readingCtrl",
       reloadOnSearch: false,
+      breadcrumb: ["författare"],
       resolve: {
         r: function($q, $routeParams, $route, $rootScope) {
           var cmp, current, def, prev;
@@ -252,6 +253,7 @@
       if ((_ref = newRoute.controller) != null ? _ref.replace : void 0) {
         $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""));
       }
+      c.log("newRoute?.breadcrumb", newRoute != null ? newRoute.breadcrumb : void 0);
       $rootScope.breadcrumb = (function() {
         var _i, _len, _ref1, _results;
         _ref1 = (newRoute != null ? newRoute.breadcrumb : void 0) || [];
