@@ -80,6 +80,7 @@ littb.directive 'letterMap', () ->
     scope :
         selected : "="
         enabledLetters : "="
+        letterMapChange : "&"
     link : (scope, elm, attrs) ->
         s = scope
 
@@ -98,6 +99,7 @@ littb.directive 'letterMap', () ->
 
         s.setLetter = (l) ->
             s.selected = l
+            s.letterMapChange()
 
 littb.directive 'square', () ->
     template : "<div></div>"
@@ -134,6 +136,7 @@ littb.directive 'scrollTo', ($window, $timeout) ->
         scope._getScroll = () ->
             return attr.scrollTo
         scope.$watch '_getScroll()', (val) ->
+            c.log 'scroll watch', val
             target = elem.find("#" + val)
             if not target.length then return
             $timeout( () ->

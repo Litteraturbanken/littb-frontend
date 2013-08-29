@@ -170,7 +170,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                             # return def.promise
                         # if we're only changing pages in the reader, don't change route
 
-                        if routeStartCurrent and $route.current.controller == "readingCtrl"
+                        if routeStartCurrent?.controller == "readingCtrl" and $route.current.controller == "readingCtrl"
                             cmp = ["author", "mediatype", "title"]
                             current = _.pick $route.current.params, cmp...
                             prev = _.pick routeStartCurrent.params, cmp...
@@ -263,7 +263,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""))
 
 
-        c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
+        # c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
         $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
             if _.isObject item 
                 item 

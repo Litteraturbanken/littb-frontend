@@ -219,9 +219,16 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     refreshRoute = () ->
         s.showtitles = (_.last $location.path().split("/")) == "titlar"
+
     refreshTitle = () ->
         suffix = if s.showtitles then "Verk i LB" else "Introduktion"
         s.setTitle "#{s.authorInfo.fullName} - " + suffix
+
+    refreshBreadcrumb = () ->
+        if s.showtitles
+            s.appendCrumb "titlar"
+        else
+            delete $rootScope.breadcrumb[2] 
 
     refreshRoute()
 
@@ -356,6 +363,9 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
 
         [last.toUpperCase(), first].join ","
 
+    s.letterChange = () ->
+        s.filterTxt = ""
+
 
     util.setupHashComplex s,
         [
@@ -387,7 +397,10 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
         s.currentLetters = _.unique _.map titleArray, (item) ->
             item.author.nameforindex[0]
 
-        util.setupHash s, "selectedLetter"
+        util.setupHashComplex s, [
+            key : "selectedLetter"
+
+        ]
 
 
 
@@ -450,7 +463,9 @@ littb.controller "authorListCtrl", ($scope, backend, util) ->
             scope_func : "setDir"
             key : "fallande"
         ,
-            key : "authorFilter"
+            key : "authorFilter",
+        ,   
+            key : "selectedLetter"
         ]
     backend.getAuthorList().then (data) ->
         s.authorIdGroup = _.groupBy data, (item) ->
@@ -680,7 +695,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     loadPage = (val) ->
         c.log "loadPage", val
-        unless val? then return
+        # unless val? then return
 
 
         s.pagename = val
@@ -722,7 +737,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 label : "författare"
                 url : "#!/forfattare"
             ,
-                label : _.str.humanize author[0..-2]
+                label : (_.str.humanize author).split(" ")[0]
                 url : "#!/forfattare/" + author
             ,
                 label : "titlar"
@@ -746,7 +761,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     watches.push s.$watch "getPage()", debounce(loadPage, 100, {leading : true})
     # watches.push s.$watch "getPage()", loadPage
 
+    # s.$on "$routeChangeSuccess", () ->
+    #     c.log "routeChangeSuccess"
+
     s.$on "$destroy", () ->
+        c.log "destory"
         for w in watches
             w()
 

@@ -1,7 +1,7 @@
 
 <h1>Författare</h1>
 
-<div class="filter_header">Sök efter författare: <input ng-model="authorFilter" autofocus> (Lämna rutan tom för att visa alla)</div>
+<div class="filter_header">Sök efter författare: <input ng-model="authorFilter" autofocus ng-change="selectedLetter = null"> (Lämna rutan tom för att visa alla)</div>
 
 <table class="contenttable">
     <thead>
@@ -20,7 +20,7 @@
 </table>
 
 <div toolkit>
-    <div letter-map selected="selectedLetter" enabled-letters="currentLetters"></div>
+    <div letter-map letter-map-change="authorFilter = null" selected="selectedLetter" enabled-letters="currentLetters"></div>
 
     <p>Det här är en lista över de författarskap som är representerade på Litteraturbanken. Listan går att sortera alfabetiskt och kronologiskt: klicka på pilarna ovanför kolumnerna för att sortera om i den ordning som passar bäst.</p>
 </div>

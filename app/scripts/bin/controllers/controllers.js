@@ -225,7 +225,7 @@
   });
 
   littb.controller("authorInfoCtrl", function($scope, $location, $rootScope, backend, $routeParams) {
-    var refreshRoute, refreshTitle, s;
+    var refreshBreadcrumb, refreshRoute, refreshTitle, s;
     s = $scope;
     _.extend(s, $routeParams);
     refreshRoute = function() {
@@ -235,6 +235,13 @@
       var suffix;
       suffix = s.showtitles ? "Verk i LB" : "Introduktion";
       return s.setTitle(("" + s.authorInfo.fullName + " - ") + suffix);
+    };
+    refreshBreadcrumb = function() {
+      if (s.showtitles) {
+        return s.appendCrumb("titlar");
+      } else {
+        return delete $rootScope.breadcrumb[2];
+      }
     };
     refreshRoute();
     s.$on("$routeChangeError", function(event, current, prev, rejection) {
@@ -369,6 +376,9 @@
       _ref = row.author.nameforindex.split(","), last = _ref[0], first = _ref[1];
       return [last.toUpperCase(), first].join(",");
     };
+    s.letterChange = function() {
+      return s.filterTxt = "";
+    };
     util.setupHashComplex(s, [
       {
         expr: "sorttuple[0]",
@@ -396,7 +406,11 @@
       s.currentLetters = _.unique(_.map(titleArray, function(item) {
         return item.author.nameforindex[0];
       }));
-      return util.setupHash(s, "selectedLetter");
+      return util.setupHashComplex(s, [
+        {
+          key: "selectedLetter"
+        }
+      ]);
     });
   });
 
@@ -487,6 +501,8 @@
         key: "fallande"
       }, {
         key: "authorFilter"
+      }, {
+        key: "selectedLetter"
       }
     ]);
     backend.getAuthorList().then(function(data) {
@@ -752,9 +768,6 @@
     s.isDefined = angular.isDefined;
     loadPage = function(val) {
       c.log("loadPage", val);
-      if (val == null) {
-        return;
-      }
       s.pagename = val;
       return backend.getPage(author, title, mediatype, s.pagename).then(function(_arg) {
         var data, page, url, workinfo, _i, _len, _ref;
@@ -788,7 +801,7 @@
             label: "författare",
             url: "#!/forfattare"
           }, {
-            label: _.str.humanize(author.slice(0, -1)),
+            label: (_.str.humanize(author)).split(" ")[0],
             url: "#!/forfattare/" + author
           }, {
             label: "titlar",
@@ -819,6 +832,7 @@
     })));
     return s.$on("$destroy", function() {
       var w, _i, _len, _results;
+      c.log("destory");
       _results = [];
       for (_i = 0, _len = watches.length; _i < _len; _i++) {
         w = watches[_i];

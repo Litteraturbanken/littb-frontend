@@ -178,7 +178,7 @@
           if (_.isEmpty($routeParams)) {
             def.resolve();
           }
-          if (routeStartCurrent && $route.current.controller === "readingCtrl") {
+          if ((routeStartCurrent != null ? routeStartCurrent.controller : void 0) === "readingCtrl" && $route.current.controller === "readingCtrl") {
             cmp = ["author", "mediatype", "title"];
             current = _.pick.apply(_, [$route.current.params].concat(__slice.call(cmp)));
             prev = _.pick.apply(_, [routeStartCurrent.params].concat(__slice.call(cmp)));
@@ -253,7 +253,6 @@
       if ((_ref = newRoute.controller) != null ? _ref.replace : void 0) {
         $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""));
       }
-      c.log("newRoute?.breadcrumb", newRoute != null ? newRoute.breadcrumb : void 0);
       $rootScope.breadcrumb = (function() {
         var _i, _len, _ref1, _results;
         _ref1 = (newRoute != null ? newRoute.breadcrumb : void 0) || [];

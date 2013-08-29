@@ -21,12 +21,12 @@
     <hr>
     <div class="author">{{authorInfo.fullName}}</div>
     
-    <ul>
-        <li>
-            <a href="#!/forfattare/{{authorInfo.authorid}}/titlar" ng-if="groupedWorks.length > 1">::: Verk i LB</a>
+    <ul ng-if="groupedWorks.length > 1">
+        <li ng-if="groupedWorks.length > 1">
+            <a href="#!/forfattare/{{authorInfo.authorid}}/titlar" >::: Verk i LB</a>
         </li>
-        <li>
-            <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{groupedWorks[0][0].titlepath}}/{{groupedWorks[0][0].mediatype}}" ng-if="groupedWorks.length < 2">::: {{groupedWorks[0][0].showtitle}}</a>
+        <li ng-if="groupedWorks.length < 2">
+            <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{groupedWorks[0][0].titlepath}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
         </li>
     </ul>
     <div><a href="#!/forfattare/{{authorInfo.authorid}}">::: Introduktion</a></div>

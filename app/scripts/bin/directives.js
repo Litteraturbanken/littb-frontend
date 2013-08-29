@@ -96,7 +96,8 @@
       replace: true,
       scope: {
         selected: "=",
-        enabledLetters: "="
+        enabledLetters: "=",
+        letterMapChange: "&"
       },
       link: function(scope, elm, attrs) {
         var s;
@@ -109,7 +110,8 @@
           return __indexOf.call(s.enabledLetters, letter) >= 0;
         };
         return s.setLetter = function(l) {
-          return s.selected = l;
+          s.selected = l;
+          return s.letterMapChange();
         };
       }
     };
@@ -162,6 +164,7 @@
         };
         return scope.$watch('_getScroll()', function(val) {
           var target;
+          c.log('scroll watch', val);
           target = elem.find("#" + val);
           if (!target.length) {
             return;
