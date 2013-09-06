@@ -1,6 +1,7 @@
 @charset "UTF-8";
 @import "compass/css3/inline-block";
 @import "compass/css3/box-sizing";
+@import "triangle";
 
 
 
@@ -510,6 +511,10 @@ $partnav-width : 170px;
             }
 
         }
+
+        .etext {
+            white-space : nowrap;
+        }
     }
     #toolkit {
         & > * {
@@ -750,6 +755,9 @@ $partnav-width : 170px;
 
 .page-titleList {
     #mainview {
+        #filter_input {
+            margin-top : 0.4em;
+        }
         th {
             padding-bottom : 1em;
         }
@@ -831,36 +839,58 @@ $partnav-width : 170px;
     }
 }
 
-$triangle_size : 8px;
+$triangle_size : 10px;
 
 .triangle {
-    width: 0px;
-    height: 0px;
-    border-style: solid;
-    position : relative;
-    margin-right : 3px;
-    cursor : pointer;
+    // width: 0px;
+    // height: 0px;
+    // border-style: solid;
+    // position : relative;
+    // margin-right : 3px;
+    // cursor : pointer;
 
+    // &.disabled {
+    //     cursor: normal;
+    // }
+
+    // &.disabled.up {
+    //     border-color: transparent transparent grey transparent;
+    // }
+    // &.disabled.down {
+    //     border-color: grey transparent transparent transparent;
+    // }
+    // &.up {
+    //     border-width: 0 $triangle_size $triangle_size $triangle_size;
+    //     border-color: transparent transparent $primarycolor transparent;
+    //     bottom : 11px;
+    // }
+
+    // &.down {
+    //     border-width: $triangle_size $triangle_size 0 $triangle_size;
+    //     border-color: $primarycolor transparent transparent transparent;
+    //     top : 11px;
+    // }
+    // @include arrow($triangle_size, $triangle_size, down, $primarycolor);
+    position : relative;
+    cursor : pointer;
+    margin-right : 3px;
     &.disabled {
         cursor: normal;
     }
-
-    &.disabled.up {
-        border-color: transparent transparent grey transparent;
-    }
-    &.disabled.down {
-        border-color: grey transparent transparent transparent;
-    }
     &.up {
-        border-width: 0 $triangle_size $triangle_size $triangle_size;
-        border-color: transparent transparent $primarycolor transparent;
-        bottom : 11px;
+        top : $triangle_size * -1.4;
+        @include arrow($triangle_size * 2, $triangle_size, up, $primarycolor);
+    }
+    &.up.disabled {
+        @include arrow($triangle_size * 2, $triangle_size, up, grey);
     }
 
     &.down {
-        border-width: $triangle_size $triangle_size 0 $triangle_size;
-        border-color: $primarycolor transparent transparent transparent;
-        top : 11px;
+        top : $triangle_size;
+        @include arrow($triangle_size * 2, $triangle_size, down, $primarycolor);
+    }
+    &.down.disabled {
+        @include arrow($triangle_size * 2, $triangle_size, down, grey);
     }
 }
 

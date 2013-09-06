@@ -23,22 +23,22 @@
     </div>
     <table id="table" class="contenttable" ng-hide="searching">
         <thead>
-            <th> <div sort-triangles val="itemAttrs.showtitle" tuple="sorttuple"></div> </th>
+            <th> <div sort-triangles val="{{titlesort}}" tuple="sorttuple"></div> </th>
             <th> <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div> </th>
             <th></th>
         </thead>
         <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
             <td class="title">
                 <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
-                    href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
+                    href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.workshorttitle || row.itemAttrs.showtitle}}</a>
                     <span class="dots"></span>
             </td>
-            <td><a href="#!/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a></td>
+            <td><a href="#!/forfattare/{{getAuthor(row)}}">{{authorsById[getAuthor(row)].nameforindex.split(",")[0]}}</a> <span ng-if="row.itemAttrs.author_type == 'editor'">(red.)</span></td>
             <td>
                 <span ng-repeat="type in row.mediatype">
 
                     <span ng-show="!$first">:::</span>
-                    <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info/{{type}}">{{type}}</a>
+                    <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
                 </span>
             </td>
         </tr>

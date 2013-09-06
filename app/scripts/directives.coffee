@@ -45,11 +45,11 @@ littb.directive 'pagetitle', () ->
 
 littb.directive 'sortTriangles', () ->
     template: '''
-    <span><span ng-click="up()"
+    <div><span ng-click="up()"
                  class="triangle up" ng-class="{'disabled' : active && !enabled[0]}"></span>
            <span ng-click="down()"
                  class="triangle down" ng-class="{'disabled' : active && !enabled[1]}"></span>
-     </span>'''
+     </div>'''
     scope : {tuple : "=", val : "@"}
     link: (scope, elem, iAttrs) ->
         s = scope

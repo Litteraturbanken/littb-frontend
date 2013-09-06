@@ -1,5 +1,4 @@
 <div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel}">
-    
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
     <div class="etext" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
@@ -9,7 +8,7 @@
     <div ng-show="mediatype == 'faksimil'" square x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
     
     
-    <div modal="lex_article.lexemes" close="close()" options="opts">
+    <div modal="lex_article.lexemes" close="closeModal()" options="opts">
         <div class="so_modal">
             <div class="modal-header">
                 <h4>Svensk ordbok (2009)</h4>
@@ -27,7 +26,7 @@
         <hr>
     
         <a class="author" href="#!/forfattare/{{author}}">
-            {{workinfo.authorFullname}}
+            {{workinfo.authorFullname}} <span ng-if="workinfo.author_type == 'editor'">(red.)</span>
         </a>
         <a class="title" 
             href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info">

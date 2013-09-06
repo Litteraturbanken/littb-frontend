@@ -125,7 +125,9 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
 
             for row in data.kwic
                 itm = row.item
-                row.href = "#!/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
+                author = itm.workauthor or itm.authorid
+                [titleid] = itm.titleidNew.split("/")
+                row.href = "#!/forfattare/#{author}/titlar/#{titleid}" + 
                     "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
 
 
@@ -250,19 +252,25 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
 
 
-littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location) ->
+littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $q) ->
     s = $scope
     s.searching = false
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
         return attrs.title unless attrs.showtitle == attrs.title
+
+    s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle"
+    # s.titlesort = "itemAttrs.showtitle"
+
     
-    s.sorttuple = ["itemAttrs.showtitle", false]
+    s.sorttuple = [s.titlesort, false]
     s.setSort = (sortstr) ->
         s.sorttuple[0] = sortstr
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
+    s.getAuthor = (row) ->
+        row.author.workauthor or row.author.authorid
 
     s.selectWork = () ->
         c.log "selectWork", s.workFilter
@@ -273,6 +281,16 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location) -
             s.filter = null
         fetchWorks()
 
+    authorDef = backend.getAuthorList().then (data) ->
+        # s.authorIdGroup = _.groupBy data, (item) ->
+        #     return item.authorid
+
+        s.authorsById = _.object _.map data, (item) ->
+            [item.authorid, item]
+
+        s.authorData = data
+        #     item.authorid
+
     # s.getRows = (letter) ->
     #     if s.workFilter == "works"
     #         return s.rowByLetter?[s.selectedLetter or "A"]
@@ -282,23 +300,30 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location) -
     fetchWorks = () ->
         s.searching = true
         #TODO: what about titles that start with strange chars or non lower case letters?
-        backend.getTitles(s.workFilter == "titles", s.selectedLetter or "A").then (titleArray) ->
+        titleDef = backend.getTitles(s.workFilter == "titles", s.selectedLetter or "A").then (titleArray) ->
             s.searching = false
             # c.log "getTitles", titleArray
             # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
             window.titleArray = titleArray
             s.rowByLetter = _.groupBy titleArray, (item) ->
-                item.itemAttrs.showtitle[0]
+                item.itemAttrs.workshorttitle?[0] or item.itemAttrs.showtitle[0]
             if s.workFilter == "titles"
                 s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("")
             else
                 s.currentLetters = _.keys s.rowByLetter
                 
 
-            authors = _.pluck titleArray, "author"
+            # authors = _.pluck titleArray, "author"
 
-            s.authorData = _.unique authors, false, (item) ->
-                item.authorid
+            # s.authorData = _.unique authors, false, (item) ->
+            #     item.authorid
+
+            # s.authorById = _.groupBy()
+
+        $q.all([titleDef, authorDef]).then ([titleData, authorData]) ->
+
+
+
 
 
     util.setupHashComplex s,
@@ -307,7 +332,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location) -
             # scope_name : "sortVal"
             scope_func : "setSort"
             key : "sortering"
-            default : "itemAttrs.showtitle"
+            default : s.titlesort
             # val_in : (val) ->
             # val_out : (val) ->
             # post_change : () ->
@@ -522,9 +547,9 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
 
     s.getUrl = (mediatype) ->
         if mediatype == "epub" 
-            return s.data.epub.url
+            return s.data?.epub.url
         else if mediatype == "pdf" 
-            return s.data.pdf.url
+            return s.data?.pdf.url
 
         return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{s.mediatype}"
 
@@ -567,7 +592,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
@@ -589,12 +614,18 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         backdropFade: true
         dialogFade:true
 
+
+    s.closeModal = () ->
+        s.lex_article = null
+        $location.search("so", null)
+
     s.$on "search_dict", (event, query) ->
         backend.searchLexicon(query).then (data) ->
             c.log "search_dict", data
             for obj in data
                 if obj.baseform == query.toLowerCase()
                     s.lex_article = obj
+                    $location.search("so", obj.baseform)
                     return
 
             # nothing found
@@ -602,6 +633,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             $timeout( () ->
                 s.dict_not_found = false
             , 3000)
+
+    if $location.search().so
+        s.$emit "search_dict", $location.search().so
+
+    $document.on "keydown", (event) ->
+        # c.log "keypress", event.key, event.keyCode, event.which
+        s.$apply () ->
+            switch event.which
+                when 39 then s.nextPage()
+                when 37 then s.prevPage()
 
 
     s.getPage = () ->
@@ -670,6 +711,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "parallel"
             scope_name : "isParallel"
+        # ,   
+        #     key : "so"
+        #     expr : "lex_article.baseform"
+        #     post_change : (val) ->
+        #         unless val then return
+        #         c.log "val", val
+        #         s.$emit "search_dict", val
+
 
     ]
         
@@ -758,7 +807,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         loadPage(s.getPage())
 
 
-    watches.push s.$watch "getPage()", debounce(loadPage, 100, {leading : true})
+    watches.push s.$watch "getPage()", debounce(loadPage, 200, {leading : false})
     # watches.push s.$watch "getPage()", loadPage
 
     # s.$on "$routeChangeSuccess", () ->
@@ -766,6 +815,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.$on "$destroy", () ->
         c.log "destory"
+        $document.off "keydown"
         for w in watches
             w()
 
@@ -948,6 +998,8 @@ littb.factory 'backend', ($http, $q, util) ->
                 val = $(elem).text()
 
             output[util.normalize(elem.nodeName)] = val
+
+        output.author_type = $(root + " > authorid", xml).attr("type")
         return output
 
 

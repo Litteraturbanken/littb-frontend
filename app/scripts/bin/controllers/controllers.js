@@ -121,7 +121,7 @@
       s.searching = true;
       mediatype = getMediatypes();
       return backend.searchWorks(s.query, mediatype, s.current_page * s.num_hits, s.num_hits).then(function(data) {
-        var itm, row, _i, _len, _ref, _results;
+        var author, itm, row, titleid, _i, _len, _ref, _results;
         s.data = data;
         s.total_pages = Math.ceil(data.count / s.num_hits);
         s.searching = false;
@@ -130,7 +130,9 @@
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           row = _ref[_i];
           itm = row.item;
-          _results.push(row.href = ("#!/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm))));
+          author = itm.workauthor || itm.authorid;
+          titleid = itm.titleidNew.split("/")[0];
+          _results.push(row.href = ("#!/forfattare/" + author + "/titlar/" + titleid) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm))));
         }
         return _results;
       });
@@ -258,8 +260,8 @@
     });
   });
 
-  littb.controller("titleListCtrl", function($scope, backend, util, $timeout, $location) {
-    var fetchWorks, s;
+  littb.controller("titleListCtrl", function($scope, backend, util, $timeout, $location, $q) {
+    var authorDef, fetchWorks, s;
     s = $scope;
     s.searching = false;
     s.getTitleTooltip = function(attrs) {
@@ -270,12 +272,16 @@
         return attrs.title;
       }
     };
-    s.sorttuple = ["itemAttrs.showtitle", false];
+    s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle";
+    s.sorttuple = [s.titlesort, false];
     s.setSort = function(sortstr) {
       return s.sorttuple[0] = sortstr;
     };
     s.setDir = function(isAsc) {
       return s.sorttuple[1] = isAsc;
+    };
+    s.getAuthor = function(row) {
+      return row.author.workauthor || row.author.authorid;
     };
     s.selectWork = function() {
       c.log("selectWork", s.workFilter);
@@ -286,24 +292,31 @@
       }
       return fetchWorks();
     };
+    authorDef = backend.getAuthorList().then(function(data) {
+      s.authorsById = _.object(_.map(data, function(item) {
+        return [item.authorid, item];
+      }));
+      return s.authorData = data;
+    });
     fetchWorks = function() {
+      var titleDef;
       s.searching = true;
-      return backend.getTitles(s.workFilter === "titles", s.selectedLetter || "A").then(function(titleArray) {
-        var authors;
+      titleDef = backend.getTitles(s.workFilter === "titles", s.selectedLetter || "A").then(function(titleArray) {
         s.searching = false;
         window.titleArray = titleArray;
         s.rowByLetter = _.groupBy(titleArray, function(item) {
-          return item.itemAttrs.showtitle[0];
+          var _ref;
+          return ((_ref = item.itemAttrs.workshorttitle) != null ? _ref[0] : void 0) || item.itemAttrs.showtitle[0];
         });
         if (s.workFilter === "titles") {
-          s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("");
+          return s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("");
         } else {
-          s.currentLetters = _.keys(s.rowByLetter);
+          return s.currentLetters = _.keys(s.rowByLetter);
         }
-        authors = _.pluck(titleArray, "author");
-        return s.authorData = _.unique(authors, false, function(item) {
-          return item.authorid;
-        });
+      });
+      return $q.all([titleDef, authorDef]).then(function(_arg) {
+        var authorData, titleData;
+        titleData = _arg[0], authorData = _arg[1];
       });
     };
     util.setupHashComplex(s, [
@@ -311,7 +324,7 @@
         expr: "sorttuple[0]",
         scope_func: "setSort",
         key: "sortering",
-        "default": "itemAttrs.showtitle"
+        "default": s.titlesort
       }, {
         expr: "sorttuple[1]",
         scope_func: "setDir",
@@ -564,10 +577,11 @@
       return s.isOpen = !s.isOpen;
     };
     s.getUrl = function(mediatype) {
+      var _ref, _ref1;
       if (mediatype === "epub") {
-        return s.data.epub.url;
+        return (_ref = s.data) != null ? _ref.epub.url : void 0;
       } else if (mediatype === "pdf") {
-        return s.data.pdf.url;
+        return (_ref1 = s.data) != null ? _ref1.pdf.url : void 0;
       }
       return "#!/forfattare/" + s.author + "/titlar/" + s.title + "/" + s.mediatype;
     };
@@ -627,7 +641,7 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope) {
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document) {
     var author, loadPage, mediatype, pagename, s, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
@@ -654,6 +668,10 @@
       backdropFade: true,
       dialogFade: true
     };
+    s.closeModal = function() {
+      s.lex_article = null;
+      return $location.search("so", null);
+    };
     s.$on("search_dict", function(event, query) {
       return backend.searchLexicon(query).then(function(data) {
         var obj, _i, _len;
@@ -662,6 +680,7 @@
           obj = data[_i];
           if (obj.baseform === query.toLowerCase()) {
             s.lex_article = obj;
+            $location.search("so", obj.baseform);
             return;
           }
         }
@@ -669,6 +688,19 @@
         return $timeout(function() {
           return s.dict_not_found = false;
         }, 3000);
+      });
+    });
+    if ($location.search().so) {
+      s.$emit("search_dict", $location.search().so);
+    }
+    $document.on("keydown", function(event) {
+      return s.$apply(function() {
+        switch (event.which) {
+          case 39:
+            return s.nextPage();
+          case 37:
+            return s.prevPage();
+        }
       });
     });
     s.getPage = function() {
@@ -827,12 +859,13 @@
       s.size = index;
       return loadPage(s.getPage());
     };
-    watches.push(s.$watch("getPage()", debounce(loadPage, 100, {
-      leading: true
+    watches.push(s.$watch("getPage()", debounce(loadPage, 200, {
+      leading: false
     })));
     return s.$on("$destroy", function() {
       var w, _i, _len, _results;
       c.log("destory");
+      $document.off("keydown");
       _results = [];
       for (_i = 0, _len = watches.length; _i < _len; _i++) {
         w = watches[_i];
@@ -1071,6 +1104,7 @@
         }
         output[util.normalize(elem.nodeName)] = val;
       }
+      output.author_type = $(root + " > authorid", xml).attr("type");
       return output;
     };
     return {
