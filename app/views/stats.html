@@ -1,19 +1,21 @@
-<h1>Statistik för Litteraturbanken</h1>
-
-<div>Litteraturbanken innehåller just nu: </div>
-
-<ul>
-    <li>{{data.works | numberFmt}} verk</li>
-    <li>{{data.authors | numberFmt}} författare</li>
-    <li>{{data.pages.etext | numberFmt}} sidor etext</li>
-    <li>{{data.pages.faksimil | numberFmt}} sidor faksimil</li>
-    <li>{{data.words.etext | numberFmt}} ord</li>
-    <li>{{data.epubs | numberFmt}} epubfiler</li>
-</ul>
-
-<div>De mest lästa verken är:</div>
-<ul>
-    <li ng-repeat="title in data.titleList" ng-bind-html-unsafe="title">
-
-    </li>
-</ul>
+<div ng-show="data">
+    <h1>Statistik för Litteraturbanken</h1>
+    
+    <div>Litteraturbanken innehåller just nu: </div>
+    
+    <ul>
+        <li>{{data.works | numberFmt}} verk</li>
+        <li>{{data.authors | numberFmt}} författare</li>
+        <li>{{data.pages.etext | numberFmt}} sidor etext</li>
+        <li>{{data.pages.faksimil | numberFmt}} sidor faksimil</li>
+        <li>{{data.words.etext | numberFmt}} ord</li>
+        <li>{{data.epubs | numberFmt}} epubfiler</li>
+    </ul>
+    
+    <div>De mest lästa verken är:</div>
+    <ul>
+        <li ng-repeat="title in data.titleList" ng-bind-html-unsafe="title">
+    
+        </li>
+    </ul>
+</div>

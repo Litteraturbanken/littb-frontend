@@ -175,6 +175,7 @@ window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
                             current = _.pick $route.current.params, cmp...
                             prev = _.pick routeStartCurrent.params, cmp...
                             if _.isEqual current, prev
+                                c.log "reject reader change"
                                 def.reject()
                             else
                                 def.resolve()
@@ -301,9 +302,11 @@ littb.service "searchData", (backend, $q) ->
     @total_hits = null
     @current = null
 
-    parseUrls = (row) ->
+    @parseUrls = (row) ->
         itm = row.item
-        return "/forfattare/#{itm.authorid}/titlar/#{itm.titleidNew}" + 
+        author = itm.workauthor or itm.authorid
+        [titleid] = itm.titleidNew.split("/")
+        return "/forfattare/#{author}/titlar/#{titleid}" + 
             "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
         
     @save = (startIndex, currentIndex, input, search_args) ->
@@ -314,7 +317,7 @@ littb.service "searchData", (backend, $q) ->
         @current = currentIndex
 
     @appendData = (startIndex, data) ->
-        @data[startIndex..data.kwic.length] = _.map data.kwic, parseUrls
+        @data[startIndex..data.kwic.length] = _.map data.kwic, @parseUrls
 
 
     @next = () ->
@@ -329,6 +332,7 @@ littb.service "searchData", (backend, $q) ->
 
     @search = () ->
         def = $q.defer()
+        c.log "search", @current
         if @data[@current]? 
             def.resolve @data[@current]
         else

@@ -21,14 +21,17 @@
                 <label for="author_select">Författare</label>
                 <select id="author_select"
                         ng-model="selected_author"
+                        ng-change="authorChange()"
                         ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
                     <option value="">Alla författare</option>
                 </select>
             </div>
             <div class="right">
                 <label for="title_select">Titel: (välj författare först)</label>
-                <select id="title_select" ng-model="selected_title"
-                    ng-options="title.showtitle for title in titles | filter:{searchable: 'true', proofread: searchProofread}">
+                <select id="title_select" 
+                        ng-model="selected_title" 
+                        ng-change="titleChange()"
+                        ng-options="title.showtitle for title in titles | filter:{searchable: 'true', proofread: searchProofread} | orderBy:'showtitle' ">
     
                     <option value="">Allt tillgängligt</option>
                 </select>
@@ -61,14 +64,14 @@
                 <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
                 <td><a href="#!/forfattare/{{r.item.authorid}}">{{r.item.nameforindex}}</a></td>
                 <td class="title" tooltip="{{r.item.title}}">
-                    <a href="#!/forfattare/{{r.item.authorid}}/titlar/{{r.item.titleidNew}}/{{r.item.mediatype}}">{{r.item.title}}</a>
+                    <a href="#!/forfattare/{{r.item.workauthor || r.item.authorid}}/titlar/{{r.item.titleidNew.split('/')[0]}}/{{r.item.mediatype}}">{{r.item.title}}</a>
                 </td>
                 <td>
-                    <a ng-href="{{r.href}}">s. {{r.item.pagename}}</a>
+                    <a ng-href="#!{{r.href}}">s. {{r.item.pagename}}</a>
                 </td>
                 <td class="left_context">{{r.left}}</td>
                 <td><strong>
-                    <a ng-click="save_search(current_page * num_hits, $index, data)" ng-href="{{r.href}}" >{{r.kw}}</a>
+                    <a ng-click="save_search(current_page * num_hits, $index, data)" ng-href="#!{{r.href}}" >{{r.kw}}</a>
                     
                 </strong></td>
                 <td>{{r.right}}</td>

@@ -128,16 +128,19 @@
         height: "="
       },
       link: function(scope, elm, attrs) {
-        var coors, s;
+        var s;
         s = scope;
-        coors = _.pick(scope, "top", "left", "width", "height");
-        if (!_.compact(_.values(coors)).length) {
-          return;
-        }
-        coors = _.object(_.map(coors, function(val, key) {
-          return [key, val.split(",")[2] + "px"];
-        }));
-        return elm.css(coors);
+        return s.$watch("left + top + width + height", function() {
+          var coors;
+          coors = _.pick(scope, "top", "left", "width", "height");
+          if (!_.compact(_.values(coors)).length) {
+            return;
+          }
+          coors = _.object(_.map(coors, function(val, key) {
+            return [key, val.split(",")[2] + "px"];
+          }));
+          return elm.css(coors);
+        });
       }
     };
   });

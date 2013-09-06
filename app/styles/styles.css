@@ -93,7 +93,7 @@ tr:nth-of-type(10n) {
 
 /* line 103, styles.scss */
 tr:nth-of-type(10n) td {
-  padding-bottom: 1em;
+  padding-bottom: 1.5em;
 }
 
 /*#table tr:nth-of-type(odd) {
@@ -421,7 +421,7 @@ header .breadcrumb {
 }
 
 /* line 370, styles.scss */
-.page-stats #mainview > * {
+.page-stats #mainview > div > * {
   margin-bottom: 1em;
 }
 /* line 373, styles.scss */

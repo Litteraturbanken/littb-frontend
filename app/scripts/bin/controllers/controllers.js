@@ -64,12 +64,54 @@
   });
 
   littb.controller("searchCtrl", function($scope, backend, $location, util, searchData) {
-    var getMediatypes, queryvars, s;
+    var getMediatypes, initTitle, queryvars, s;
     s = $scope;
     s.open = false;
     s.searchProofread = true;
     s.searchNonProofread = true;
+    initTitle = _.once(function(titlesById) {
+      if (!$location.search().titel) {
+        return;
+      }
+      return s.selected_title = titlesById[$location.search().titel];
+    });
+    s.titleChange = function() {
+      var _ref;
+      return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.titlepath.split("/")[0] : void 0) || null);
+    };
+    s.authorChange = function() {
+      return $location.search("titel", null);
+    };
     s.authors = backend.getAuthorList();
+    s.authors.then(function(authors) {
+      var authorsById, change;
+      authorsById = _.object(_.map(authors, function(item) {
+        return [item.authorid, item];
+      }));
+      change = function(newAuthor) {
+        if (!newAuthor) {
+          return;
+        }
+        return backend.getTitlesByAuthor(newAuthor).then(function(data) {
+          var titlesById;
+          s.titles = data;
+          titlesById = _.object(_.map(data, function(item) {
+            return [item.titlepath, item];
+          }));
+          return initTitle(titlesById);
+        });
+      };
+      if ($location.search().forfattare) {
+        s.selected_author = authorsById[$location.search().forfattare];
+      }
+      return util.setupHashComplex(s, [
+        {
+          key: "forfattare",
+          expr: "selected_author.pseudonymfor || selected_author.authorid",
+          post_change: change
+        }
+      ]);
+    });
     s.searching = false;
     s.num_hits = 20;
     s.current_page = 0;
@@ -83,12 +125,6 @@
       }
       return mediatype;
     };
-    s.$watch("selected_author", function(newAuthor, prevVal) {
-      if (!newAuthor) {
-        return;
-      }
-      return s.titles = backend.getTitlesByAuthor(newAuthor.authorid);
-    });
     s.nextPage = function() {
       s.current_page++;
       return s.search(s.query);
@@ -106,6 +142,7 @@
       return s.search(s.query);
     };
     s.save_search = function(startIndex, currentIndex, data) {
+      c.log("save_search", startIndex, currentIndex, data);
       return searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()]);
     };
     s.getItems = function() {
@@ -120,8 +157,8 @@
       s.query = q;
       s.searching = true;
       mediatype = getMediatypes();
-      return backend.searchWorks(s.query, mediatype, s.current_page * s.num_hits, s.num_hits).then(function(data) {
-        var author, itm, row, titleid, _i, _len, _ref, _results;
+      return backend.searchWorks(s.query, mediatype, s.current_page * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then(function(data) {
+        var row, _i, _len, _ref, _results;
         s.data = data;
         s.total_pages = Math.ceil(data.count / s.num_hits);
         s.searching = false;
@@ -129,10 +166,7 @@
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           row = _ref[_i];
-          itm = row.item;
-          author = itm.workauthor || itm.authorid;
-          titleid = itm.titleidNew.split("/")[0];
-          _results.push(row.href = ("#!/forfattare/" + author + "/titlar/" + titleid) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm))));
+          _results.push(row.href = searchData.parseUrls(row));
         }
         return _results;
       });
@@ -143,6 +177,8 @@
         scope_name: "current_page",
         key: "traffsida",
         val_in: Number
+      }, {
+        key: "open"
       }
     ]);
     if ("fras" in queryvars) {
@@ -272,7 +308,7 @@
         return attrs.title;
       }
     };
-    s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle";
+    s.titlesort = "itemAttrs.showtitle";
     s.sorttuple = [s.titlesort, false];
     s.setSort = function(sortstr) {
       return s.sorttuple[0] = sortstr;
@@ -280,8 +316,10 @@
     s.setDir = function(isAsc) {
       return s.sorttuple[1] = isAsc;
     };
-    s.getAuthor = function(row) {
-      return row.author.workauthor || row.author.authorid;
+    s.getTitleId = function(row) {
+      var collection, title, _ref;
+      _ref = row.itemAttrs.titlepath.split('/'), collection = _ref[0], title = _ref[1];
+      return collection;
     };
     s.selectWork = function() {
       c.log("selectWork", s.workFilter);
@@ -305,8 +343,7 @@
         s.searching = false;
         window.titleArray = titleArray;
         s.rowByLetter = _.groupBy(titleArray, function(item) {
-          var _ref;
-          return ((_ref = item.itemAttrs.workshorttitle) != null ? _ref[0] : void 0) || item.itemAttrs.showtitle[0];
+          return item.itemAttrs.showtitle[0];
         });
         if (s.workFilter === "titles") {
           return s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("");
@@ -642,12 +679,13 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document) {
-    var author, loadPage, mediatype, pagename, s, title, watches;
+    var author, loadPage, mediatype, pagename, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
     s.searchData = searchData;
     s.dict_not_found = false;
+    thisRoute = $route.current;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
         return $location.url(newUrl);
@@ -799,7 +837,11 @@
     }));
     s.isDefined = angular.isDefined;
     loadPage = function(val) {
-      c.log("loadPage", val);
+      c.log("loadPage", $location.path(), $route.current);
+      if ($route.current.controller !== 'readingCtrl') {
+        c.log("resisted page load");
+        return;
+      }
       s.pagename = val;
       return backend.getPage(author, title, mediatype, s.pagename).then(function(_arg) {
         var data, page, url, workinfo, _i, _len, _ref;
@@ -827,7 +869,7 @@
         page.children().remove();
         s.etext_html = page.text();
         $rootScope.breadcrumb = [];
-        c.log("write reader breadcrumb");
+        c.log("write reader breadcrumb", $location.path(), $route.current);
         s.appendCrumb([
           {
             label: "författare",
@@ -864,7 +906,7 @@
     })));
     return s.$on("$destroy", function() {
       var w, _i, _len, _results;
-      c.log("destory");
+      c.log("destroy reader");
       $document.off("keydown");
       _results = [];
       for (_i = 0, _len = watches.length; _i < _len; _i++) {
@@ -1141,26 +1183,25 @@
           url: "/query/lb-anthology.xql",
           params: params
         }).success(function(xml) {
-          var elemList, itm, rows, workIdGroups, workid;
-          workIdGroups = _.groupBy($("item", xml), function(item) {
-            return $(item).attr("lbworkid");
+          var elemList, itm, rows, workGroups, workid;
+          workGroups = _.groupBy($("item", xml), function(item) {
+            return $(item).attr("lbworkid") + $(item).find("author").attr("authorid");
           });
-          rows = {};
-          for (workid in workIdGroups) {
-            elemList = workIdGroups[workid];
+          rows = [];
+          for (workid in workGroups) {
+            elemList = workGroups[workid];
             itm = $(elemList[0]);
             if (!(objFromAttrs(itm.find("author").get(0)))) {
-              c.log("author failed", workid, itm);
+              c.log("author failed", itm);
             }
-            rows[workid] = {
+            rows.push({
               itemAttrs: objFromAttrs(elemList[0]),
               author: (objFromAttrs(itm.find("author").get(0))) || "",
               mediatype: _.unique(_.map(elemList, function(item) {
                 return $(item).attr("mediatype");
               }))
-            };
+            });
           }
-          rows = _.flatten(_.values(rows));
           return def.resolve(rows);
         });
         return def.promise;
@@ -1396,10 +1437,17 @@
         });
         return def.promise;
       },
-      searchWorks: function(query, mediatype, resultitem, resultlength) {
-        var def, url;
+      searchWorks: function(query, mediatype, resultitem, resultlength, selectedAuthor, selectedTitle) {
+        var def, domain, url;
         def = $q.defer();
         url = "/query/lb-search.xql";
+        domain = "<item type='all-titles' mediatype='" + mediatype + "'></item>";
+        if (selectedAuthor) {
+          domain = "<item type='author' mediatype='" + mediatype + "'>" + selectedAuthor + "</item>";
+        }
+        if (selectedTitle) {
+          domain = "<item type='titlepath' mediatype='" + mediatype + "'>" + selectedTitle + "</item>";
+        }
         http({
           method: "POST",
           url: url,
@@ -1409,7 +1457,7 @@
           params: {
             action: "search"
           },
-          data: "<search>\n    <string-filter>\n        <item type=\"string\">" + query + "|</item>\n    </string-filter>\n<domain-filter>\n<item type=\"all-titles\" mediatype=\"" + mediatype + "\"></item>\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
+          data: "<search>\n    <string-filter>\n        <item type=\"string\">" + query + "|</item>\n    </string-filter>\n<domain-filter>\n    " + domain + "\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
         }).success(function(data) {
           var ref;
           c.log("success", $("result", data).attr("ref"));

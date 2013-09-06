@@ -3,7 +3,7 @@
 
 <div ng-if="!showtitles">
     <div ng-bind-html-unsafe="authorInfo.intro"></div>
-    <div class="author_img"><img ng-src="{{authorInfo.smallImage}}"></div>
+    <div ng-if="authorInfo.smallImage" class="author_img"><img ng-src="{{authorInfo.smallImage}}"></div>
 </div>
 
 <table class="contenttable" ng-if="showtitles">

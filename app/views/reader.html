@@ -5,7 +5,7 @@
     
     <img  class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
     
-    <div ng-show="mediatype == 'faksimil'" square x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
+    <div square x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
     
     
     <div modal="lex_article.lexemes" close="closeModal()" options="opts">
@@ -33,8 +33,8 @@
             {{workinfo.showtitle}}
         </a>
     
-        <div id="search_nav" ng-show="markee_from && markee_to && searchData.total_hits">
-            <div class="box" style="">
+        <div id="search_nav" ng-show="searchData.total_hits">
+            <div class="box">
                 <div class="text">
                     <div>
                         Sökträff

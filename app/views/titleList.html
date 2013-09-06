@@ -30,10 +30,10 @@
         <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
             <td class="title">
                 <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
-                    href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.workshorttitle || row.itemAttrs.showtitle}}</a>
+                    href="#!/forfattare/{{row.author.workauthor || row.author.authorid}}/titlar/{{getTitleId(row)}}/info">{{row.itemAttrs.showtitle}}</a>
                     <span class="dots"></span>
             </td>
-            <td><a href="#!/forfattare/{{getAuthor(row)}}">{{authorsById[getAuthor(row)].nameforindex.split(",")[0]}}</a> <span ng-if="row.itemAttrs.author_type == 'editor'">(red.)</span></td>
+            <td><a href="#!/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a> <span ng-if="row.author.authortype == 'editor'">(red.)</span></td>
             <td>
                 <span ng-repeat="type in row.mediatype">
 

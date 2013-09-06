@@ -63,7 +63,43 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
     s.searchProofread = true
     s.searchNonProofread = true
 
+    initTitle = _.once (titlesById) ->
+        unless $location.search().titel then return
+
+        s.selected_title = titlesById[$location.search().titel]
+
+    s.titleChange = () ->
+        $location.search("titel", s.selected_title?.titlepath.split("/")[0] or null)
+
+    s.authorChange = () ->
+        $location.search("titel", null)
+
+
     s.authors = backend.getAuthorList()
+    s.authors.then (authors) ->
+        authorsById = _.object _.map authors, (item) -> [item.authorid, item]
+            
+        change = (newAuthor) ->
+            return unless newAuthor
+            backend.getTitlesByAuthor(newAuthor).then (data) ->
+                s.titles = data
+                titlesById = _.object _.map data, (item) -> [item.titlepath, item]    
+                initTitle titlesById
+
+        
+        if $location.search().forfattare
+            s.selected_author = authorsById[$location.search().forfattare]
+        
+        util.setupHashComplex s, [
+            key : "forfattare"
+            expr : "selected_author.pseudonymfor || selected_author.authorid"
+            # val_in : (val) ->
+            #     authorsById[val]
+            post_change : change
+        ]
+
+        
+
     s.searching = false
     s.num_hits = 20
     s.current_page = 0
@@ -77,12 +113,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
             mediatype = _.filter mediatype, Boolean
 
         return mediatype
-    
-
-    s.$watch "selected_author", (newAuthor, prevVal) ->
-        return unless newAuthor
-        s.titles = backend.getTitlesByAuthor(newAuthor.authorid)
-
     
 
 
@@ -102,6 +132,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
     
 
     s.save_search = (startIndex, currentIndex, data) ->
+        c.log "save_search", startIndex, currentIndex, data
         searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()])
 
 
@@ -118,17 +149,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
         
         mediatype = getMediatypes()
 
-        backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits).then (data) ->
+        backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then (data) ->
             s.data = data
             s.total_pages = Math.ceil(data.count / s.num_hits)
             s.searching = false
 
             for row in data.kwic
-                itm = row.item
-                author = itm.workauthor or itm.authorid
-                [titleid] = itm.titleidNew.split("/")
-                row.href = "#!/forfattare/#{author}/titlar/#{titleid}" + 
-                    "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
+                row.href = searchData.parseUrls row
 
 
 
@@ -141,6 +168,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
             scope_name : "current_page"
             key : "traffsida"
             val_in : Number
+        ,   
+            key : "open"
         ]
 
     if "fras" of queryvars
@@ -259,8 +288,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         unless attrs then return
         return attrs.title unless attrs.showtitle == attrs.title
 
-    s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle"
-    # s.titlesort = "itemAttrs.showtitle"
+    # s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle"
+    s.titlesort = "itemAttrs.showtitle"
 
     
     s.sorttuple = [s.titlesort, false]
@@ -269,8 +298,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
-    s.getAuthor = (row) ->
-        row.author.workauthor or row.author.authorid
+    s.getTitleId = (row) ->
+        [collection, title] = row.itemAttrs.titlepath.split('/')
+        collection
 
     s.selectWork = () ->
         c.log "selectWork", s.workFilter
@@ -306,7 +336,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
             # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
             window.titleArray = titleArray
             s.rowByLetter = _.groupBy titleArray, (item) ->
-                item.itemAttrs.workshorttitle?[0] or item.itemAttrs.showtitle[0]
+                item.itemAttrs.showtitle[0]
             if s.workFilter == "titles"
                 s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("")
             else
@@ -369,6 +399,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope
 
+    # TODO: what about the workauthor issue?
     s.sorttuple = ["author.nameforindex", false]
     s.setSort = (sortstr) ->
         s.sorttuple[0] = sortstr
@@ -598,7 +629,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
     s.searchData = searchData
     s.dict_not_found = false
-
+    thisRoute = $route.current
     s.nextHit = () ->
         searchData.next().then (newUrl) ->
             $location.url(newUrl)
@@ -743,8 +774,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.isDefined = angular.isDefined
 
     loadPage = (val) ->
-        c.log "loadPage", val
-        # unless val? then return
+        c.log "loadPage", $location.path(), $route.current
+        # take care of state hiccup
+        unless $route.current.controller == 'readingCtrl' 
+            c.log "resisted page load"
+            return
 
 
         s.pagename = val
@@ -781,7 +815,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.etext_html = page.text()
 
             $rootScope.breadcrumb = []
-            c.log "write reader breadcrumb"
+            c.log "write reader breadcrumb", $location.path(), $route.current
             s.appendCrumb [
                 label : "författare"
                 url : "#!/forfattare"
@@ -814,7 +848,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     #     c.log "routeChangeSuccess"
 
     s.$on "$destroy", () ->
-        c.log "destory"
+        c.log "destroy reader"
         $document.off "keydown"
         for w in watches
             w()
@@ -911,6 +945,7 @@ littb.factory "util", ($location) ->
                 
 
                 val = (obj.val_in or _.identity)(val)
+                # c.log "obj.val_in", obj.val_in
                 
 
                 if "scope_name" of obj
@@ -928,9 +963,11 @@ littb.factory "util", ($location) ->
             watch = obj.expr or obj.scope_name or obj.key
             scope.$watch watch, do (obj, watch) ->
                 (val) ->
+                    # c.log "before val", scope.$eval watch
                     val = (obj.val_out or _.identity)(val)
                     if val == obj.default then val = null
                     $location.search obj.key, val or null
+                    # c.log "post change", watch, val
                     obj.post_change?(val)
 
 
@@ -1029,20 +1066,20 @@ littb.factory 'backend', ($http, $q, util) ->
 
         ).success (xml) ->
             # c.log "getTitles success", xml
-            workIdGroups = _.groupBy $("item", xml), (item) ->
-                $(item).attr("lbworkid")
+            workGroups = _.groupBy $("item", xml), (item) ->
+                $(item).attr("lbworkid") + $(item).find("author").attr("authorid")
 
-            rows = {}
-            for workid, elemList of workIdGroups
+            rows = []
+            for workid, elemList of workGroups
                 itm = $(elemList[0])
                 if not (objFromAttrs itm.find("author").get(0))
-                    c.log "author failed", workid, itm
-                rows[workid] =
+                    c.log "author failed", itm
+                rows.push
                     itemAttrs : objFromAttrs elemList[0]
                     author : (objFromAttrs itm.find("author").get(0)) or ""
                     mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
 
-            rows = _.flatten _.values rows
+            # rows = _.flatten _.values rows
             def.resolve rows
             # .fail -> def.reject()
         return def.promise
@@ -1243,9 +1280,14 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    searchWorks : (query, mediatype, resultitem, resultlength) ->
+    searchWorks : (query, mediatype, resultitem, resultlength, selectedAuthor, selectedTitle) ->
         def = $q.defer()
         url = "/query/lb-search.xql"
+        domain = "<item type='all-titles' mediatype='#{mediatype}'></item>"
+        if selectedAuthor
+            domain = "<item type='author' mediatype='#{mediatype}'>#{selectedAuthor}</item>"
+        if selectedTitle
+            domain = "<item type='titlepath' mediatype='#{mediatype}'>#{selectedTitle}</item>"
 
         http(
             method : "POST"
@@ -1254,13 +1296,14 @@ littb.factory 'backend', ($http, $q, util) ->
             params :
                 action : "search"
             # <item type="titlepath" mediatype="all">Intradestal1786</item>
+
             data : """
                     <search>
                         <string-filter>
                             <item type="string">#{query}|</item>
                         </string-filter>
                     <domain-filter>
-                    <item type="all-titles" mediatype="#{mediatype}"></item>
+                        #{domain}
                     </domain-filter>
                     <ne-filter>
                         <item type="NUL"></item>

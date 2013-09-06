@@ -183,6 +183,7 @@
             current = _.pick.apply(_, [$route.current.params].concat(__slice.call(cmp)));
             prev = _.pick.apply(_, [routeStartCurrent.params].concat(__slice.call(cmp)));
             if (_.isEqual(current, prev)) {
+              c.log("reject reader change");
               def.reject();
             } else {
               def.resolve();
@@ -297,15 +298,17 @@
   });
 
   littb.service("searchData", function(backend, $q) {
-    var NUM_HITS, parseUrls;
+    var NUM_HITS;
     NUM_HITS = 20;
     this.data = [];
     this.total_hits = null;
     this.current = null;
-    parseUrls = function(row) {
-      var itm;
+    this.parseUrls = function(row) {
+      var author, itm, titleid;
       itm = row.item;
-      return ("/forfattare/" + itm.authorid + "/titlar/" + itm.titleidNew) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm)));
+      author = itm.workauthor || itm.authorid;
+      titleid = itm.titleidNew.split("/")[0];
+      return ("/forfattare/" + author + "/titlar/" + titleid) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm)));
     };
     this.save = function(startIndex, currentIndex, input, search_args) {
       this.searchArgs = search_args;
@@ -316,7 +319,7 @@
     };
     this.appendData = function(startIndex, data) {
       var _ref;
-      return ([].splice.apply(this.data, [startIndex, data.kwic.length - startIndex + 1].concat(_ref = _.map(data.kwic, parseUrls))), _ref);
+      return ([].splice.apply(this.data, [startIndex, data.kwic.length - startIndex + 1].concat(_ref = _.map(data.kwic, this.parseUrls))), _ref);
     };
     this.next = function() {
       this.current++;
@@ -330,6 +333,7 @@
       var args, current_page, def,
         _this = this;
       def = $q.defer();
+      c.log("search", this.current);
       if (this.data[this.current] != null) {
         def.resolve(this.data[this.current]);
       } else {
