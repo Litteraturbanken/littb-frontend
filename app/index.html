@@ -21,7 +21,8 @@
     </head>
     <body ng-app="littbApp" ng-cloak>
         <header>
-            <a href="#!/"><img id="logo" src="/bilder/LBlogga.svg"></a>
+            <i ng-click="_showmenu_mobile = !_showmenu_mobile;" class="icon-list icon-2x" style="display : none;"></i>
+            <a class="logo_link" href="#!/"><img id="logo" src="/bilder/LBlogga.svg"></a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li><a href="#!/start">Hem</a> <span class="divider" >></span></li>
                 
@@ -38,7 +39,7 @@
             
             <div class="clearfix"></div>
         </header>
-        <div id="leftCorridor">
+        <div id="leftCorridor" ng-class="{show : _showmenu_mobile}">
             <ul role="navigation" class="mainnav">
                 <li>
                     <a href="#!/forfattare">Författare</a>
@@ -85,6 +86,7 @@
         <div id="mainview" ng-view>
 
         </div>
+        <div class="nav_footer"></div>
 
 
 
@@ -95,6 +97,7 @@
         <script src="lib/jquery.ui.position.js"></script>
         <script src="components/underscore.string/lib/underscore.string.js"></script>
         <script src="components/unstable-angular-complete/angular.js"></script>
+        <script src="components/unstable-angular-complete/angular-mobile.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
 

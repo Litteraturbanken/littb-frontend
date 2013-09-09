@@ -750,6 +750,9 @@
     };
     s.nextPage = function() {
       var newix;
+      if (Number(s.displaynum) === s.endpage) {
+        return;
+      }
       newix = s.pageix + 1;
       if ("ix_" + newix in s.pagemap) {
         return s.setPage(newix);
@@ -837,7 +840,6 @@
     }));
     s.isDefined = angular.isDefined;
     loadPage = function(val) {
-      c.log("loadPage", $location.path(), $route.current);
       if ($route.current.controller !== 'readingCtrl') {
         c.log("resisted page load");
         return;

@@ -682,6 +682,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.pageix = ix
         s.pagename = s.pagemap["ix_" + s.pageix]
     s.nextPage = () ->
+        if Number(s.displaynum) == s.endpage then return
         newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
@@ -774,7 +775,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.isDefined = angular.isDefined
 
     loadPage = (val) ->
-        c.log "loadPage", $location.path(), $route.current
         # take care of state hiccup
         unless $route.current.controller == 'readingCtrl' 
             c.log "resisted page load"

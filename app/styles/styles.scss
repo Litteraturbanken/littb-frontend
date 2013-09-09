@@ -45,6 +45,8 @@ body {
 
     }
 
+    height: 100%;
+
 }
 
 a[ng-click] {
@@ -229,12 +231,12 @@ header {
     position : relative;
     & > a {
         @include inline-block(bottom);
-        width : 39%;
+        width : 28%;
     }
     .breadcrumb {
         @include inline-block(bottom);
         text-align : right;
-        width : 60%;
+        width : 71%;
         position : relative;
         top : 6px;
         // float : right;
@@ -758,6 +760,9 @@ $partnav-width : 170px;
         #filter_input {
             margin-top : 0.4em;
         }
+        .contenttable {
+            margin-top : 2em;
+        }
         th {
             padding-bottom : 1em;
         }
@@ -933,16 +938,75 @@ grundform-clean {
 
 }
 
+.nav_footer {
+    display : none;
+}
+
 
 @media 
 only screen and (max-width: 760px),
 (min-device-width: 768px) and (max-device-width: 1024px)  {
+
+    
+
+
+    .page-reading {
+        width : 100%;
+        padding-left: 0;
+        #mainview {
+            padding-left : 1em;
+        }
+
+        header {
+            padding-left : 1em;
+        }
+
+        #leftCorridor {
+            display : none;
+        }
+        #leftCorridor.show {
+            display : inline-block;
+            // position : fixed;
+            // margin-left : 2em;
+            // background-color : white;
+            // z-index : 100;
+            // padding-right : 1em;
+        }
+        header .logo_link, hr, .start_menu, .breadcrumb {
+            display : none;
+        }
+
+        header .icon-list {
+            display : inline-block !important;
+        }
+        
+        div.pname {
+            position : static !important;
+        }
+        padding-bottom : 3em;
+        .nav_footer {
+            // display : block;
+            position : fixed;
+            bottom : 0;
+            height : 3em;
+            vertical-align : middle;
+            background-color : $primarycolor;
+            width  : 100%;
+        }
+    }
+    
+
+
+
+
     .page-epubList p {
         max-width : 70%;
     }
 
 /* Force table to not be like tables anymore */
     .page-epubList .contenttable,.page-titleList .contenttable {
+        display : block;
+        margin-top : 2em;
         table, 
         thead, 
         tbody, 

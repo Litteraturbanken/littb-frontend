@@ -6,13 +6,14 @@ routeStartCurrent = null
 
 window.getScope = () -> $("#mainview").children().scope()
 
-window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead"
-                                           "template/typeahead/typeahead.html"
-                                           "ui.bootstrap.modal"
-                                           "ui.bootstrap.tooltip"
-                                           "template/tooltip/tooltip-popup.html"
-                                           "template/typeahead/typeahead-popup.html"
-                                           "template/typeahead/typeahead-match.html"
+window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
+                                            "ngMobile"
+                                            "template/typeahead/typeahead.html"
+                                            "ui.bootstrap.modal"
+                                            "ui.bootstrap.tooltip"
+                                            "template/tooltip/tooltip-popup.html"
+                                            "template/typeahead/typeahead-popup.html"
+                                            "template/typeahead/typeahead-match.html"
                                            ])
     .config ($routeProvider) ->
 
@@ -273,6 +274,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
         firstRoute.resolve()
 
+    $rootScope._showmenu_mobile = false;
 
     normalizeUrl = (str) ->
         trans = _.object _.zip "åäö", "aao"
