@@ -25,7 +25,7 @@
     };
   });
 
-  littb.directive('css', function($compile) {
+  littb.directive('css', function() {
     return {
       restrict: "EA",
       scope: {
@@ -175,6 +175,40 @@
           return $timeout(function() {
             return $window.scrollTo(0, target.position().top);
           });
+        });
+      }
+    };
+  });
+
+  littb.directive('soArticle', function($compile) {
+    return {
+      scope: {
+        soArticle: "="
+      },
+      compile: function(elm, attrs) {
+        return function(scope, iElement, iAttrs) {
+          var cmp;
+          cmp = $compile(scope.soArticle);
+          return cmp(scope, function(clonedElement, scope) {
+            return elm.html(clonedElement);
+          });
+        };
+      }
+    };
+  });
+
+  littb.directive('hvord', function(backend) {
+    return {
+      restrict: "E",
+      link: function(scope, elem, attr) {
+        return elem.on("click", function() {
+          var id;
+          id = elem.prev("hvtag").text();
+          if (id) {
+            return scope.$emit("search_dict", id, true);
+          } else {
+            return scope.$emit("search_dict", _.str.trim(elem.text()));
+          }
         });
       }
     };

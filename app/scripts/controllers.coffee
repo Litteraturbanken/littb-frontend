@@ -69,7 +69,28 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
         s.selected_title = titlesById[$location.search().titel]
 
     s.titleChange = () ->
-        $location.search("titel", s.selected_title?.titlepath.split("/")[0] or null)
+        # $location.search("titel", s.selected_title?.titlepath.split("/")[0] or null)
+        $location.search("titel", s.selected_title?.titlepath or null)
+
+    s.checkProof = () ->
+
+        if s.searchProofread and s.searchNonProofread
+            out = null
+
+        else if !s.searchProofread and s.searchNonProofread
+            out = 'false'
+        # else if searchProofread and !s.searchNonProofread
+
+        else
+            out = 'true'
+
+        c.log "out", out
+        return out
+
+
+        # unless bool
+        #     return 'true'
+
 
     s.authorChange = () ->
         $location.search("titel", null)
@@ -170,6 +191,30 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
             val_in : Number
         ,   
             key : "open"
+        ,   
+            key : "pf"
+            scope_name : "searchProofread"
+            default : true
+            val_in : (val) ->
+                if val == 'false'
+                    return false
+                return val
+            val_out : (val) ->
+                if !val
+                    return 'false'
+                return val
+        ,   
+            key : "npf"
+            scope_name : "searchNonProofread"
+            default : true
+            val_in : (val) ->
+                if val == 'false'
+                    return false
+                return val
+            val_out : (val) ->
+                if !val
+                    return 'false'
+                return val
         ]
 
     if "fras" of queryvars
@@ -650,20 +695,34 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.lex_article = null
         $location.search("so", null)
 
-    s.$on "search_dict", (event, query) ->
-        backend.searchLexicon(query).then (data) ->
-            c.log "search_dict", data
-            for obj in data
-                if obj.baseform == query.toLowerCase()
-                    s.lex_article = obj
-                    $location.search("so", obj.baseform)
-                    return
 
-            # nothing found
-            s.dict_not_found = true
-            $timeout( () ->
-                s.dict_not_found = false
-            , 3000)
+    s.saveSearch = (str) ->
+        c.log "str", str
+        $location.search("so", str)
+
+    s.$on "search_dict", (event, query, searchId) ->
+        backend.searchLexicon(query, false, searchId).then (data) ->
+            c.log "search_dict", data
+
+            unless data.length
+                # nothing found
+                s.dict_not_found = true
+                $timeout( () ->
+                    s.dict_not_found = false
+                , 3000)
+                return
+
+            # c.log "baseform", obj.baseform
+
+            for obj in data
+                if data.length == 1 or (obj.baseform == query) or searchId
+                    s.lex_article = obj
+                    # $templateCache.put "lex_article", obj.lexemes
+                    $location.search("so", obj.baseform)
+                    c.log "location so", obj.baseform
+                    # return
+
+            
 
     if $location.search().so
         s.$emit "search_dict", $location.search().so
@@ -671,6 +730,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     $document.on "keydown", (event) ->
         # c.log "keypress", event.key, event.keyCode, event.which
         s.$apply () ->
+            # TODO: check scroll location before switching page
             switch event.which
                 when 39 then s.nextPage()
                 when 37 then s.prevPage()
@@ -713,7 +773,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
     s.getWords = (val) ->
-        backend.searchLexicon(val)
+        backend.searchLexicon(val, true)
 
     s.getTooltip = (part) ->
         return part.navtitle if part.navtitle != part.showtitle

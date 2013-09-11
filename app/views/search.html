@@ -31,7 +31,7 @@
                 <select id="title_select" 
                         ng-model="selected_title" 
                         ng-change="titleChange()"
-                        ng-options="title.showtitle for title in titles | filter:{searchable: 'true', proofread: searchProofread} | orderBy:'showtitle' ">
+                        ng-options="title.showtitle for title in titles | filter:{searchable: 'true', proofread: checkProof()} | orderBy:'showtitle' ">
     
                     <option value="">Allt tillgängligt</option>
                 </select>

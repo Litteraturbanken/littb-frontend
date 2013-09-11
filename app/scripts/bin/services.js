@@ -592,17 +592,24 @@
         });
         return def.promise;
       },
-      searchLexicon: function(str) {
-        var def, suffix, url;
-        c.log("searchLexicon", str);
+      searchLexicon: function(str, useWildcard, searchId) {
+        var def, params, suffix, url;
         def = $q.defer();
         url = "/query/so.xql";
-        suffix = str.length > 3 ? "*" : "";
+        c.log("searchId", searchId);
+        if (searchId) {
+          params = {
+            id: str
+          };
+        } else {
+          suffix = useWildcard && str.length > 3 ? "*" : "";
+          params = {
+            word: str + suffix
+          };
+        }
         http({
           url: url,
-          params: {
-            word: str + suffix
-          }
+          params: params
         }).success(function(xml) {
           var article, output;
           c.log("searchLexicon success", xml);

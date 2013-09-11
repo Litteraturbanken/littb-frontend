@@ -504,16 +504,23 @@ littb.factory 'backend', ($http, $q, util) ->
             def.reject()
         return def.promise
 
-    searchLexicon : (str) ->
-        c.log "searchLexicon", str
+    searchLexicon : (str, useWildcard, searchId) ->
         def = $q.defer()
         url = "/query/so.xql"
-        suffix = if str.length > 3 then "*" else ""
+        c.log "searchId", searchId
+        if searchId
+            params = 
+                id : str
+        else
+            suffix = if useWildcard and str.length > 3 then "*" else ""
+            params = 
+                word : str + suffix
+            
 
         http(
             url : url
-            params :
-                word : str + suffix
+            params : params
+                
             # transformResponse : (data, headers) ->
             #     c.log "transformResponse", data, headers
 

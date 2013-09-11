@@ -13,7 +13,7 @@
             <div class="modal-header">
                 <h4>Svensk ordbok (2009)</h4>
             </div>
-            <div class="_so_article" ng-bind-html-unsafe="lex_article.lexemes">
+            <div so-article="lex_article.lexemes" class="_so_article" >
             </div>
             <div class="modal-footer">
             </div>
@@ -112,6 +112,7 @@
         <div class="word_search">
             <label>Slå upp i svensk ordbok</label>
             <input  ng-model="lex_article"
+                    typeahead-on-select="saveSearch(lex_article.baseform)"
                     typeahead-wait-ms="200"
                     typeahead="article as article.baseform for article in getWords($viewValue)">
             <div ng-show="dict_not_found">Hittade inga uppslag</div>

@@ -930,6 +930,12 @@ grundform-clean {
     max-height : 520px;
     padding-left : 1.5em;
     overflow : auto;
+    margin-bottom : 0.8em;
+
+    hvord {
+        cursor : pointer;
+        border-bottom : thin dotted #990000;
+    }
 }
 
 .typeahead.dropdown-menu {

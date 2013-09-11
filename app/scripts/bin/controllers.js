@@ -76,7 +76,19 @@
     });
     s.titleChange = function() {
       var _ref;
-      return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.titlepath.split("/")[0] : void 0) || null);
+      return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.titlepath : void 0) || null);
+    };
+    s.checkProof = function() {
+      var out;
+      if (s.searchProofread && s.searchNonProofread) {
+        out = null;
+      } else if (!s.searchProofread && s.searchNonProofread) {
+        out = 'false';
+      } else {
+        out = 'true';
+      }
+      c.log("out", out);
+      return out;
     };
     s.authorChange = function() {
       return $location.search("titel", null);
@@ -178,6 +190,38 @@
         val_in: Number
       }, {
         key: "open"
+      }, {
+        key: "pf",
+        scope_name: "searchProofread",
+        "default": true,
+        val_in: function(val) {
+          if (val === 'false') {
+            return false;
+          }
+          return val;
+        },
+        val_out: function(val) {
+          if (!val) {
+            return 'false';
+          }
+          return val;
+        }
+      }, {
+        key: "npf",
+        scope_name: "searchNonProofread",
+        "default": true,
+        val_in: function(val) {
+          if (val === 'false') {
+            return false;
+          }
+          return val;
+        },
+        val_out: function(val) {
+          if (!val) {
+            return 'false';
+          }
+          return val;
+        }
       }
     ]);
     if ("fras" in queryvars) {
@@ -709,22 +753,33 @@
       s.lex_article = null;
       return $location.search("so", null);
     };
-    s.$on("search_dict", function(event, query) {
-      return backend.searchLexicon(query).then(function(data) {
-        var obj, _i, _len;
+    s.saveSearch = function(str) {
+      c.log("str", str);
+      return $location.search("so", str);
+    };
+    s.$on("search_dict", function(event, query, searchId) {
+      return backend.searchLexicon(query, false, searchId).then(function(data) {
+        var obj, _i, _len, _results;
         c.log("search_dict", data);
+        if (!data.length) {
+          s.dict_not_found = true;
+          $timeout(function() {
+            return s.dict_not_found = false;
+          }, 3000);
+          return;
+        }
+        _results = [];
         for (_i = 0, _len = data.length; _i < _len; _i++) {
           obj = data[_i];
-          if (obj.baseform === query.toLowerCase()) {
+          if (data.length === 1 || (obj.baseform === query) || searchId) {
             s.lex_article = obj;
             $location.search("so", obj.baseform);
-            return;
+            _results.push(c.log("location so", obj.baseform));
+          } else {
+            _results.push(void 0);
           }
         }
-        s.dict_not_found = true;
-        return $timeout(function() {
-          return s.dict_not_found = false;
-        }, 3000);
+        return _results;
       });
     });
     if ($location.search().so) {
@@ -786,7 +841,7 @@
       return s.showPopup = true;
     };
     s.getWords = function(val) {
-      return backend.searchLexicon(val);
+      return backend.searchLexicon(val, true);
     };
     s.getTooltip = function(part) {
       if (part.navtitle !== part.showtitle) {

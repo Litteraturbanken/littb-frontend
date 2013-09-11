@@ -18,7 +18,7 @@ littb.directive 'toolkit', ($compile, $location, $route) ->
             )
 
 
-littb.directive 'css', ($compile) ->
+littb.directive 'css', () ->
     restrict : "EA"
     scope : {css : "@", evalIf : "&if"}
     compile: (elm, attrs) ->
@@ -145,6 +145,30 @@ littb.directive 'scrollTo', ($window, $timeout) ->
                 $window.scrollTo(0, target.position().top)
             )   
 
+
+
+
+littb.directive 'soArticle', ($compile) -> 
+    scope : 
+        soArticle : "="
+    compile: (elm, attrs) ->
+        # elm.remove()
+        return (scope, iElement, iAttrs) ->
+            cmp = $compile(scope.soArticle)
+            cmp(scope, (clonedElement, scope) ->
+                elm.html clonedElement
+            )
+
+littb.directive 'hvord', (backend) -> 
+
+    restrict : "E"
+    link: (scope, elem, attr) ->
+        elem.on "click", () ->
+            id = elem.prev("hvtag").text()
+            if id
+                scope.$emit "search_dict", id, true
+            else
+                scope.$emit "search_dict", _.str.trim elem.text()
 
 
 
