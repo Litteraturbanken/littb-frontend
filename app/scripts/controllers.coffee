@@ -675,6 +675,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.searchData = searchData
     s.dict_not_found = false
     thisRoute = $route.current
+    s.dict_searching = false
     s.nextHit = () ->
         searchData.next().then (newUrl) ->
             $location.url(newUrl)
@@ -701,7 +702,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         $location.search("so", str)
 
     s.$on "search_dict", (event, query, searchId) ->
-        backend.searchLexicon(query, false, searchId).then (data) ->
+        s.dict_searching = true
+        backend.searchLexicon(query, false, searchId, true).then (data) ->
+            s.dict_searching = false
             c.log "search_dict", data
 
             unless data.length
@@ -712,15 +715,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 , 3000)
                 return
 
-            # c.log "baseform", obj.baseform
-
+            result = data[0]
             for obj in data
-                if data.length == 1 or (obj.baseform == query) or searchId
-                    s.lex_article = obj
-                    # $templateCache.put "lex_article", obj.lexemes
-                    $location.search("so", obj.baseform)
-                    c.log "location so", obj.baseform
-                    # return
+                if obj.baseform == query
+                    result = obj
+                    continue
+
+                    
+            s.lex_article = result
+            $location.search("so", result.baseform)
 
             
 

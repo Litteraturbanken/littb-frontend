@@ -592,7 +592,7 @@
         });
         return def.promise;
       },
-      searchLexicon: function(str, useWildcard, searchId) {
+      searchLexicon: function(str, useWildcard, searchId, strict) {
         var def, params, suffix, url;
         def = $q.defer();
         url = "/query/so.xql";
@@ -606,6 +606,9 @@
           params = {
             word: str + suffix
           };
+        }
+        if (strict) {
+          params['strict'] = true;
         }
         http({
           url: url,

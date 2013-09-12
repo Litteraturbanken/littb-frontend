@@ -219,5 +219,17 @@ littb.directive 'selectionSniffer', ($window) ->
         , 500)
 
 
+littb.directive 'nprogress', () -> 
+    scope : 
+        nprogress = "="
+    link: (scope, elem, attr) ->
+        NProgress.configure({ parent :  elem});
+        scope.$watch "nprogress", (val) ->
+            if val
+                NProgress.start()
+            else
+                nProgress.done()
+
+
 
     

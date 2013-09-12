@@ -252,4 +252,23 @@
     };
   });
 
+  littb.directive('nprogress', function() {
+    var nprogress;
+    return {
+      scope: nprogress = "=",
+      link: function(scope, elem, attr) {
+        NProgress.configure({
+          parent: elem
+        });
+        return scope.$watch("nprogress", function(val) {
+          if (val) {
+            return NProgress.start();
+          } else {
+            return nProgress.done();
+          }
+        });
+      }
+    };
+  });
+
 }).call(this);

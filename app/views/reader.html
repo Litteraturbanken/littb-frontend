@@ -11,6 +11,7 @@
     <div modal="lex_article.lexemes" close="closeModal()" options="opts">
         <div class="so_modal">
             <div class="modal-header">
+                <!-- <div nprogress="dict_searching"></div> -->
                 <h4>Svensk ordbok (2009)</h4>
             </div>
             <div so-article="lex_article.lexemes" class="_so_article" >
@@ -20,6 +21,7 @@
         </div>
     </div>
     
+    <div ng-show="dict_not_found">Hittade inga uppslag</div>
     
     
     <toolkit>
@@ -115,7 +117,7 @@
                     typeahead-on-select="saveSearch(lex_article.baseform)"
                     typeahead-wait-ms="200"
                     typeahead="article as article.baseform for article in getWords($viewValue)">
-            <div ng-show="dict_not_found">Hittade inga uppslag</div>
+            
         </div>
     
     

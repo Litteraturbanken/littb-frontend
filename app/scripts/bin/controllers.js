@@ -729,6 +729,7 @@
     s.searchData = searchData;
     s.dict_not_found = false;
     thisRoute = $route.current;
+    s.dict_searching = false;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
         return $location.url(newUrl);
@@ -758,8 +759,10 @@
       return $location.search("so", str);
     };
     s.$on("search_dict", function(event, query, searchId) {
-      return backend.searchLexicon(query, false, searchId).then(function(data) {
-        var obj, _i, _len, _results;
+      s.dict_searching = true;
+      return backend.searchLexicon(query, false, searchId, true).then(function(data) {
+        var obj, result, _i, _len;
+        s.dict_searching = false;
         c.log("search_dict", data);
         if (!data.length) {
           s.dict_not_found = true;
@@ -768,18 +771,16 @@
           }, 3000);
           return;
         }
-        _results = [];
+        result = data[0];
         for (_i = 0, _len = data.length; _i < _len; _i++) {
           obj = data[_i];
-          if (data.length === 1 || (obj.baseform === query) || searchId) {
-            s.lex_article = obj;
-            $location.search("so", obj.baseform);
-            _results.push(c.log("location so", obj.baseform));
-          } else {
-            _results.push(void 0);
+          if (obj.baseform === query) {
+            result = obj;
+            continue;
           }
         }
-        return _results;
+        s.lex_article = result;
+        return $location.search("so", result.baseform);
       });
     });
     if ($location.search().so) {
