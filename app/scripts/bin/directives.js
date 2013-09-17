@@ -114,7 +114,7 @@
         };
         return s.setLetter = function(l) {
           s.selected = l;
-          return s.letterMapChange();
+          return s.letterMapChange(l);
         };
       }
     };

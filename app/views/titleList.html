@@ -16,7 +16,10 @@
             <option value="epub">Epub</option>
             <option value="pdf">PDF</option>
         </select>
-        <input id="filter_input" type="text" ng-model="filter" placeholder="Filtrera">
+        <!-- <input ng-show="workFilter == 'works'" class="filter_input" type="text" ng-model="filter" placeholder="Filtrera verk" ng-change="selectedLetter = null"> -->
+        <form ng-submit="searchTitle()">
+            <input class="filter_input" type="text" ng-model="filter" placeholder="Sök titlar"><span submit-btn></span>
+        </form>
 
         
 
@@ -27,7 +30,7 @@
             <th> <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div> </th>
             <th></th>
         </thead>
-        <tr ng-repeat="row in rowByLetter[selectedLetter || 'A'] | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : filter || '', mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
+        <tr ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.showtitle' : workFilter == 'works' && (rowfilter || ''), mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
             <td class="title">
                 <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
                     href="#!/forfattare/{{row.author.workauthor || row.author.authorid}}/titlar/{{getTitleId(row)}}/info">{{row.itemAttrs.showtitle}}</a>
@@ -46,7 +49,7 @@
 
 
     <div toolkit>
-        <div letter-map selected="selectedLetter" enabled-letters="currentLetters"></div>
+        <div letter-map letter-map-change="letterChange()" selected="selectedLetter" enabled-letters="currentLetters"></div>
 
         <p>
             Det här är en alfabetisk lista över alla de titlar som Litteraturbanken har att erbjuda, med länkar till text, faksimil- eller pdf-versioner av verken. – Samtliga verk visar titlar på hela verk. Samtliga titlar inkluderar titlar på dikter, noveller etc.

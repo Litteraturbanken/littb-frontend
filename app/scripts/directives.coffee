@@ -102,7 +102,7 @@ littb.directive 'letterMap', () ->
 
         s.setLetter = (l) ->
             s.selected = l
-            s.letterMapChange()
+            s.letterMapChange(l)
 
 littb.directive 'square', () ->
     template : "<div></div>"

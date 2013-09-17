@@ -191,13 +191,16 @@ littb.factory 'backend', ($http, $q, util) ->
         else 
             return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
-    getTitles : (allTitles = false, initial = null) ->
+    getTitles : (allTitles = false, initial = null, string = null) ->
         def = $q.defer()
-        workAction = "get-works"
+        c.log "allTitles", allTitles, initial, string
         if allTitles
             params = 
                 action : "get-titles-by-string-filter"
-                initial : initial
+            if initial
+                params.initial = initial
+            if string
+                params.string = string
         else 
             params = 
                 action : "get-works"

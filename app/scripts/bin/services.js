@@ -244,21 +244,29 @@
           return "traff=" + item.nodeid + "&traffslut=" + item.endnodeid;
         }
       },
-      getTitles: function(allTitles, initial) {
-        var def, params, workAction;
+      getTitles: function(allTitles, initial, string) {
+        var def, params;
         if (allTitles == null) {
           allTitles = false;
         }
         if (initial == null) {
           initial = null;
         }
+        if (string == null) {
+          string = null;
+        }
         def = $q.defer();
-        workAction = "get-works";
+        c.log("allTitles", allTitles, initial, string);
         if (allTitles) {
           params = {
-            action: "get-titles-by-string-filter",
-            initial: initial
+            action: "get-titles-by-string-filter"
           };
+          if (initial) {
+            params.initial = initial;
+          }
+          if (string) {
+            params.string = string;
+          }
         } else {
           params = {
             action: "get-works"

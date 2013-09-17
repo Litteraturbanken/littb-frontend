@@ -372,6 +372,7 @@
     var authorDef, fetchWorks, s;
     s = $scope;
     s.searching = false;
+    s.rowByLetter = {};
     s.getTitleTooltip = function(attrs) {
       if (!attrs) {
         return;
@@ -398,7 +399,15 @@
       if (s.workFilter === "titles") {
         s.authorFilter = null;
         s.mediatypeFilter = "";
-        s.filter = null;
+        if (s.filter) {
+          s.selectedLetter = null;
+        }
+        if (s.selectedLetter) {
+          s.filter = null;
+        }
+        if (!(s.filter || s.selectedLetter)) {
+          s.selectedLetter = "A";
+        }
       }
       return fetchWorks();
     };
@@ -408,12 +417,26 @@
       }));
       return s.authorData = data;
     });
+    s.searchTitle = function() {
+      if (s.workFilter === 'titlar') {
+        s.selectedLetter = null;
+        return fetchWorks();
+      } else {
+        if (!s.filter) {
+          s.selectedLetter = "A";
+        } else {
+          s.selectedLetter = null;
+        }
+        return s.rowfilter = s.filter;
+      }
+    };
     fetchWorks = function() {
       var titleDef;
       s.searching = true;
-      titleDef = backend.getTitles(s.workFilter === "titles", s.selectedLetter || "A").then(function(titleArray) {
+      c.log("s.titlefilter", s.filter);
+      titleDef = backend.getTitles(s.workFilter === "titles", s.selectedLetter, s.filter).then(function(titleArray) {
         s.searching = false;
-        window.titleArray = titleArray;
+        s.titleArray = titleArray;
         s.rowByLetter = _.groupBy(titleArray, function(item) {
           return item.itemAttrs.showtitle[0];
         });
@@ -427,6 +450,13 @@
         var authorData, titleData;
         titleData = _arg[0], authorData = _arg[1];
       });
+    };
+    s.getSource = function() {
+      if (s.selectedLetter) {
+        return s.rowByLetter[s.selectedLetter];
+      } else {
+        return s.titleArray;
+      }
     };
     util.setupHashComplex(s, [
       {
@@ -449,17 +479,19 @@
       }, {
         key: "index",
         scope_name: "selectedLetter",
-        "default": "A",
         post_change: function(val) {
-          c.log("val_in", val);
-          if (s.workFilter === "titles") {
+          c.log("val_in val, sl", val, s.selectedLetter);
+          if (val) {
+            s.filter = "";
+          }
+          if (s.workFilter === "titles" && val) {
             fetchWorks();
           }
           return val;
         }
       }
     ]);
-    if (!s.selectedLetter) {
+    if (!s.filter && !s.selectedLetter) {
       s.selectedLetter = "A";
     }
     c.log("workfilter", s.workFilter);

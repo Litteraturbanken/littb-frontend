@@ -768,7 +768,12 @@ $partnav-width : 170px;
 
 .page-titleList {
     #mainview {
-        #filter_input {
+        .submit_btn {
+            vertical-align: bottom;
+            position: relative;
+            top : 1px;
+        }
+        .filter_input {
             margin-top : 0.4em;
         }
         .contenttable {

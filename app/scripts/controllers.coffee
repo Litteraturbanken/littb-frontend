@@ -366,6 +366,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $q) ->
     s = $scope
     s.searching = false
+    s.rowByLetter = {}
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
         return attrs.title unless attrs.showtitle == attrs.title
@@ -389,34 +390,40 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         if s.workFilter == "titles"
             s.authorFilter = null
             s.mediatypeFilter = ""
+            if s.filter
+                s.selectedLetter = null
+            if s.selectedLetter
+                s.filter = null
+            unless s.filter or s.selectedLetter then s.selectedLetter = "A"
             # s.selectedLetter = null
-            s.filter = null
+            # s.filter = null
         fetchWorks()
 
     authorDef = backend.getAuthorList().then (data) ->
-        # s.authorIdGroup = _.groupBy data, (item) ->
-        #     return item.authorid
-
         s.authorsById = _.object _.map data, (item) ->
             [item.authorid, item]
 
         s.authorData = data
-        #     item.authorid
 
-    # s.getRows = (letter) ->
-    #     if s.workFilter == "works"
-    #         return s.rowByLetter?[s.selectedLetter or "A"]
-    #     else
-    #         fetchWorks()
+
+    s.searchTitle = () ->
+        if s.workFilter == 'titlar'
+            s.selectedLetter = null
+            fetchWorks()
+        else
+            unless s.filter then s.selectedLetter = "A" else s.selectedLetter = null
+
+            s.rowfilter = s.filter
 
     fetchWorks = () ->
         s.searching = true
         #TODO: what about titles that start with strange chars or non lower case letters?
-        titleDef = backend.getTitles(s.workFilter == "titles", s.selectedLetter or "A").then (titleArray) ->
+        c.log "s.titlefilter", s.filter
+        titleDef = backend.getTitles(s.workFilter == "titles", s.selectedLetter, s.filter).then (titleArray) ->
             s.searching = false
             # c.log "getTitles", titleArray
             # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
-            window.titleArray = titleArray
+            s.titleArray = titleArray
             s.rowByLetter = _.groupBy titleArray, (item) ->
                 item.itemAttrs.showtitle[0]
             if s.workFilter == "titles"
@@ -425,17 +432,22 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
                 s.currentLetters = _.keys s.rowByLetter
                 
 
-            # authors = _.pluck titleArray, "author"
-
-            # s.authorData = _.unique authors, false, (item) ->
-            #     item.authorid
-
-            # s.authorById = _.groupBy()
 
         $q.all([titleDef, authorDef]).then ([titleData, authorData]) ->
 
 
 
+    # s.letterChange = (letter) ->
+    #     c.log "letterChange", letter
+    #     if s.workFilter == 'titles'
+    #         s.filter = ""
+        # fetchWorks()
+
+    s.getSource = () -> 
+        if s.selectedLetter 
+            return s.rowByLetter[s.selectedLetter]
+        else
+            return s.titleArray
 
 
     util.setupHashComplex s,
@@ -463,10 +475,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         ,
             key : "index",
             scope_name : "selectedLetter"
-            default: "A"
+            # default: "A"
             post_change : (val) ->
-                c.log "val_in", val
-                if s.workFilter == "titles"
+                c.log "val_in val, sl", val, s.selectedLetter
+                s.filter = "" if val
+                if s.workFilter == "titles" and val
                     fetchWorks()
                 return val
 
@@ -474,7 +487,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 
     # timeout in order to await the setupHashComplex watch firing.
     # $timeout () ->
-    unless s.selectedLetter then s.selectedLetter = "A"
+    if not s.filter and not s.selectedLetter then s.selectedLetter = "A"
     c.log "workfilter", s.workFilter
     fetchWorks()
 

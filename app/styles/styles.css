@@ -866,60 +866,66 @@ header .breadcrumb {
 }
 
 /* line 771, styles.scss */
-.page-titleList #mainview #filter_input {
+.page-titleList #mainview .submit_btn {
+  vertical-align: bottom;
+  position: relative;
+  top: 1px;
+}
+/* line 776, styles.scss */
+.page-titleList #mainview .filter_input {
   margin-top: 0.4em;
 }
-/* line 774, styles.scss */
+/* line 779, styles.scss */
 .page-titleList #mainview .contenttable {
   margin-top: 2em;
 }
-/* line 777, styles.scss */
+/* line 782, styles.scss */
 .page-titleList #mainview th {
   padding-bottom: 1em;
 }
-/* line 780, styles.scss */
+/* line 785, styles.scss */
 .page-titleList #mainview td {
   max-width: 160px;
 }
 
-/* line 791, styles.scss */
+/* line 796, styles.scss */
 .page-biblinfo #mainview > * {
   margin-bottom: 1em;
 }
-/* line 794, styles.scss */
+/* line 799, styles.scss */
 .page-biblinfo #mainview li {
   margin-bottom: 0.5em;
 }
-/* line 798, styles.scss */
+/* line 803, styles.scss */
 .page-biblinfo #mainview .search {
   margin-bottom: 1em;
 }
-/* line 800, styles.scss */
+/* line 805, styles.scss */
 .page-biblinfo #mainview .search input {
   width: 300px;
   margin-right: 2px;
 }
-/* line 808, styles.scss */
+/* line 813, styles.scss */
 .page-biblinfo #toolkit .num_hits {
   margin-bottom: 1em;
   height: 1em;
 }
-/* line 815, styles.scss */
+/* line 820, styles.scss */
 .page-biblinfo .results > div {
   margin-bottom: 2em;
   padding: 1em;
 }
-/* line 818, styles.scss */
+/* line 823, styles.scss */
 .page-biblinfo .results > div.even {
   background-color: #E3E3E3;
 }
-/* line 822, styles.scss */
+/* line 827, styles.scss */
 .page-biblinfo .results h4 {
   text-transform: uppercase;
   color: #666;
   font-weight: normal;
 }
-/* line 828, styles.scss */
+/* line 833, styles.scss */
 .page-biblinfo .results .col {
   display: -moz-inline-stack;
   display: inline-block;
@@ -930,35 +936,35 @@ header .breadcrumb {
   width: 49%;
 }
 
-/* line 837, styles.scss */
+/* line 842, styles.scss */
 .page-epubList #mainview input.filter {
   margin-left: 1em;
 }
-/* line 841, styles.scss */
+/* line 846, styles.scss */
 .page-epubList #mainview > * {
   margin: 1em 0;
 }
-/* line 845, styles.scss */
+/* line 850, styles.scss */
 .page-epubList #mainview table td:first-child {
   max-width: 200px;
 }
 
-/* line 852, styles.scss */
+/* line 857, styles.scss */
 .page-help #toolkit {
   font-size: 0.9em;
 }
 
-/* line 860, styles.scss */
+/* line 865, styles.scss */
 .triangle {
   position: relative;
   cursor: pointer;
   margin-right: 3px;
 }
-/* line 864, styles.scss */
+/* line 869, styles.scss */
 .triangle.disabled {
   cursor: normal;
 }
-/* line 867, styles.scss */
+/* line 872, styles.scss */
 .triangle.up {
   top: -14px;
   width: 0;
@@ -967,7 +973,7 @@ header .breadcrumb {
   border-right: 10px solid transparent;
   border-bottom: 10px solid #990000;
 }
-/* line 871, styles.scss */
+/* line 876, styles.scss */
 .triangle.up.disabled {
   width: 0;
   height: 0;
@@ -975,7 +981,7 @@ header .breadcrumb {
   border-right: 10px solid transparent;
   border-bottom: 10px solid grey;
 }
-/* line 875, styles.scss */
+/* line 880, styles.scss */
 .triangle.down {
   top: 10px;
   width: 0;
@@ -984,7 +990,7 @@ header .breadcrumb {
   border-right: 10px solid transparent;
   border-top: 10px solid #990000;
 }
-/* line 879, styles.scss */
+/* line 884, styles.scss */
 .triangle.down.disabled {
   width: 0;
   height: 0;
@@ -993,21 +999,21 @@ header .breadcrumb {
   border-top: 10px solid grey;
 }
 
-/* line 884, styles.scss */
+/* line 889, styles.scss */
 .markee {
   background-color: pink;
 }
 
-/* line 888, styles.scss */
+/* line 893, styles.scss */
 .dots_blink {
   text-decoration: blink;
 }
-/* line 890, styles.scss */
+/* line 895, styles.scss */
 .dots_blink:after {
   content: "...";
 }
 
-/* line 895, styles.scss */
+/* line 900, styles.scss */
 .gratis-ebok {
   font-size: 1em;
   font-variant: small-caps;
@@ -1015,17 +1021,17 @@ header .breadcrumb {
   margin: 0;
 }
 
-/* line 903, styles.scss */
+/* line 908, styles.scss */
 grundform-clean {
   display: none;
 }
 
-/* line 907, styles.scss */
+/* line 912, styles.scss */
 .so_modal {
   padding: 1em 1em 1em 1.5em;
 }
 
-/* line 911, styles.scss */
+/* line 916, styles.scss */
 ._so_article {
   max-height: 520px;
   padding-left: 1.5em;
@@ -1033,40 +1039,40 @@ grundform-clean {
   overflow: auto;
   margin-bottom: 0.8em;
 }
-/* line 918, styles.scss */
+/* line 923, styles.scss */
 ._so_article hvord {
   cursor: pointer;
   border-bottom: thin dotted #990000;
 }
 
-/* line 924, styles.scss */
+/* line 929, styles.scss */
 .typeahead.dropdown-menu {
   max-height: 300px;
   overflow-y: auto;
 }
 
-/* line 930, styles.scss */
+/* line 935, styles.scss */
 .nav_footer {
   display: none;
 }
 
-/* line 934, styles.scss */
+/* line 939, styles.scss */
 .modal {
   border-radius: 0;
   max-height: 90%;
 }
 
-/* line 938, styles.scss */
+/* line 943, styles.scss */
 .modal-footer {
   border-top: none;
 }
 
-/* line 941, styles.scss */
+/* line 946, styles.scss */
 .modal-header {
   font-size: 1.2em;
 }
 
-/* line 946, styles.scss */
+/* line 951, styles.scss */
 .dropdown-menu .active > a, .dropdown-menu .active > a:hover {
   background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #990000), color-stop(100%, #750000));
   background-image: -webkit-linear-gradient(#990000, #750000);
@@ -1075,13 +1081,13 @@ grundform-clean {
   background-image: linear-gradient(#990000, #750000);
 }
 
-/* line 951, styles.scss */
+/* line 956, styles.scss */
 .modal.fade {
   top: 50%;
   transition-duration: 0.1s;
 }
 
-/* line 956, styles.scss */
+/* line 961, styles.scss */
 .alert_popup {
   position: fixed;
   bottom: 1em;
@@ -1096,41 +1102,41 @@ grundform-clean {
 }
 
 @media only screen and (max-width: 760px), (min-device-width: 768px) and (max-device-width: 1024px) {
-  /* line 973, styles.scss */
+  /* line 978, styles.scss */
   .page-reading {
     width: 100%;
     padding-left: 0;
     padding-bottom: 3em;
   }
-  /* line 976, styles.scss */
+  /* line 981, styles.scss */
   .page-reading #mainview {
     padding-left: 1em;
   }
-  /* line 980, styles.scss */
+  /* line 985, styles.scss */
   .page-reading header {
     padding-left: 1em;
   }
-  /* line 984, styles.scss */
+  /* line 989, styles.scss */
   .page-reading #leftCorridor {
     display: none;
   }
-  /* line 987, styles.scss */
+  /* line 992, styles.scss */
   .page-reading #leftCorridor.show {
     display: inline-block;
   }
-  /* line 990, styles.scss */
+  /* line 995, styles.scss */
   .page-reading header .logo_link, .page-reading hr, .page-reading .start_menu, .page-reading .breadcrumb {
     display: none;
   }
-  /* line 994, styles.scss */
+  /* line 999, styles.scss */
   .page-reading header .icon-list {
     display: inline-block !important;
   }
-  /* line 998, styles.scss */
+  /* line 1003, styles.scss */
   .page-reading div.pname {
     position: static !important;
   }
-  /* line 1002, styles.scss */
+  /* line 1007, styles.scss */
   .page-reading .nav_footer {
     position: fixed;
     bottom: 0;
@@ -1140,13 +1146,13 @@ grundform-clean {
     width: 100%;
   }
 
-  /* line 1017, styles.scss */
+  /* line 1022, styles.scss */
   .page-epubList p {
     max-width: 70%;
   }
 
   /* Force table to not be like tables anymore */
-  /* line 1024, styles.scss */
+  /* line 1029, styles.scss */
   .page-epubList .contenttable,
   .page-titleList .contenttable,
   .page-authorInfo .contenttable {
@@ -1154,7 +1160,7 @@ grundform-clean {
     margin-top: 2em;
     /* Hide table headers (but not display: none;, for accessibility) */
   }
-  /* line 1032, styles.scss */
+  /* line 1037, styles.scss */
   .page-epubList .contenttable table,
   .page-epubList .contenttable thead,
   .page-epubList .contenttable tbody,
@@ -1175,13 +1181,13 @@ grundform-clean {
   .page-authorInfo .contenttable tr {
     display: block;
   }
-  /* line 1035, styles.scss */
+  /* line 1040, styles.scss */
   .page-epubList .contenttable tr:first-child,
   .page-titleList .contenttable tr:first-child,
   .page-authorInfo .contenttable tr:first-child {
     display: none;
   }
-  /* line 1040, styles.scss */
+  /* line 1045, styles.scss */
   .page-epubList .contenttable thead tr,
   .page-titleList .contenttable thead tr,
   .page-authorInfo .contenttable thead tr {
@@ -1189,13 +1195,13 @@ grundform-clean {
     top: -9999px;
     left: -9999px;
   }
-  /* line 1046, styles.scss */
+  /* line 1051, styles.scss */
   .page-epubList .contenttable tr:nth-of-type(odd),
   .page-titleList .contenttable tr:nth-of-type(odd),
   .page-authorInfo .contenttable tr:nth-of-type(odd) {
     background-color: #EDEDED;
   }
-  /* line 1050, styles.scss */
+  /* line 1055, styles.scss */
   .page-epubList .contenttable td,
   .page-titleList .contenttable td,
   .page-authorInfo .contenttable td {
@@ -1203,19 +1209,19 @@ grundform-clean {
     border: none;
     position: relative;
   }
-  /* line 1054, styles.scss */
+  /* line 1059, styles.scss */
   .page-epubList .contenttable td > *:first-child,
   .page-titleList .contenttable td > *:first-child,
   .page-authorInfo .contenttable td > *:first-child {
     background: none;
   }
-  /* line 1057, styles.scss */
+  /* line 1062, styles.scss */
   .page-epubList .contenttable td .dots,
   .page-titleList .contenttable td .dots,
   .page-authorInfo .contenttable td .dots {
     display: none;
   }
-  /* line 1062, styles.scss */
+  /* line 1067, styles.scss */
   .page-epubList .contenttable td:before,
   .page-titleList .contenttable td:before,
   .page-authorInfo .contenttable td:before {
