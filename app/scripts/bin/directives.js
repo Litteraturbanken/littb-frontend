@@ -188,14 +188,12 @@
       scope: {
         soArticle: "="
       },
-      compile: function(elm, attrs) {
-        return function(scope, iElement, iAttrs) {
-          var cmp;
-          cmp = $compile(scope.soArticle);
-          return cmp(scope, function(clonedElement, scope) {
-            return elm.html(clonedElement);
-          });
-        };
+      link: function(scope, elem, attrs) {
+        return scope.$watch("soArticle", function(val) {
+          var newElem;
+          newElem = $compile(val)(scope);
+          return elem.html(newElem);
+        });
       }
     };
   });
@@ -260,7 +258,7 @@
       scope: {
         alert: "="
       },
-      template: "<div ng-if=\"alert\" class=\"alert_popup fade\">{{alert}}</div>",
+      template: "<div ng-if=\"alert\" class=\"alert_popup\">{{alert}}</div>",
       link: function(scope, elem, attr) {
         $rootElement.append(elem);
         return scope.$on("$destroy", function() {

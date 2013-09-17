@@ -154,13 +154,12 @@ littb.directive 'scrollTo', ($window, $timeout) ->
 littb.directive 'soArticle', ($compile) -> 
     scope : 
         soArticle : "="
-    compile: (elm, attrs) ->
-        # elm.remove()
-        return (scope, iElement, iAttrs) ->
-            cmp = $compile(scope.soArticle)
-            cmp(scope, (clonedElement, scope) ->
-                elm.html clonedElement
-            )
+    link : (scope, elem, attrs) ->
+        scope.$watch "soArticle", (val) ->
+            newElem = $compile(val)(scope)
+            elem.html newElem
+            
+
 
 littb.directive 'hvord', (backend) -> 
 
@@ -172,7 +171,6 @@ littb.directive 'hvord', (backend) ->
                 scope.$emit "search_dict", id, true
             else
                 scope.$emit "search_dict", _.str.trim elem.text()
-
 
 
 
@@ -234,7 +232,7 @@ littb.directive 'alert', ($rootElement, $timeout) ->
     scope : 
         alert : "="
     template : """
-        <div ng-if="alert" class="alert_popup fade">{{alert}}</div>
+        <div ng-if="alert" class="alert_popup">{{alert}}</div>
     """
     link : (scope, elem, attr) ->
         $rootElement.append elem

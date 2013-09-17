@@ -499,7 +499,7 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
     s.getAuthor = (row) ->
         [last, first] = row.author.nameforindex.split(",")
 
-        [last.toUpperCase(), first].join ","
+        (_.compact [last.toUpperCase(), first]).join ","
 
     s.letterChange = () ->
         s.filterTxt = ""

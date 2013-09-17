@@ -496,7 +496,7 @@
     s.getAuthor = function(row) {
       var first, last, _ref;
       _ref = row.author.nameforindex.split(","), last = _ref[0], first = _ref[1];
-      return [last.toUpperCase(), first].join(",");
+      return (_.compact([last.toUpperCase(), first])).join(",");
     };
     s.letterChange = function() {
       return s.filterTxt = "";

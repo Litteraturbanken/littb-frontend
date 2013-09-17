@@ -19,7 +19,7 @@ $mainview-width : $page-width - $main-menu-width - $gutter-width;
 
 $primarycolor : #990000;
 @mixin primarygradient {
-    @include background-image(linear-gradient(lighten($primarycolor, 7%), $primarycolor));
+    @include background-image(linear-gradient($primarycolor, darken($primarycolor, 7%)));
 }
 
 
