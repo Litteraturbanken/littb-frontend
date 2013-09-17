@@ -362,7 +362,7 @@ littb.factory 'backend', ($http, $q, util) ->
         ).success (xml) ->
             authorInfo = {}
             for elem in $("LBauthor", xml).children()
-                if elem.nodeName == "intro"
+                if elem.nodeName == "intro" 
                     val = util.getInnerXML elem
                 else
                     val = $(elem).text()
@@ -380,6 +380,8 @@ littb.factory 'backend', ($http, $q, util) ->
 
             authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
             authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
+            authorInfo.presentation = util.getInnerXML $("presentation-uri", xml)
+            authorInfo.bibliografi = util.getInnerXML $("bibliography-uri", xml)
 
             def.resolve authorInfo
 
@@ -533,6 +535,11 @@ littb.factory 'backend', ($http, $q, util) ->
                 baseform : $("grundform-clean:first", article).text()
                 # lexemes : (_.map $("lexem", article), util.getInnerXML).join("\n")
                 lexemes : util.getInnerXML article
+
+            window.output = output
+            output = _.sortBy output, (item) ->
+                if item.baseform == str then return "aaaaaaaaa"
+                item.baseform
 
             def.resolve output
         ).error () ->

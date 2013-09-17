@@ -1,27 +1,46 @@
-<h2 ng-show="authorInfo && showtitles">{{authorInfo.fullName}} ({{authorInfo.birth}} - {{authorInfo.death}}): 
-    verk i Litteraturbanken</h2>
+<div ng-switch="showpage">
+    <div ng-switch-when="introduktion">
+        <div ng-bind-html-unsafe="authorInfo.intro"></div>
+        <div ng-if="authorInfo.smallImage" class="author_img"><img ng-src="{{authorInfo.smallImage}}"></div>
+    </div>
+    <div ng-switch-when="titlar">
+        <h2 ng-show="authorInfo">
+            {{authorInfo.fullName}} ({{authorInfo.birth}} - {{authorInfo.death}}): verk i Litteraturbanken
+        </h2>
+            
+        <table class="contenttable">
+            <tr ng-repeat="works in groupedWorks">
+                <td>
+                    <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a>
+                    <span class="dots"></span>
+                </td>
+                <td >
+                    <span ng-repeat="work in getUnique(works)">
+                        <span ng-show="!$first">::: </span>
+                        <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{work.titlepath}}/{{work.mediatype}}">{{work.mediatype}}</a>
+                    </span>
+                </td>
+            </tr>
+        </table>        
+    </div>
 
-<div ng-if="!showtitles">
-    <div ng-bind-html-unsafe="authorInfo.intro"></div>
-    <div ng-if="authorInfo.smallImage" class="author_img"><img ng-src="{{authorInfo.smallImage}}"></div>
+    <div ng-switch-default>
+        <div ng-bind-html-unsafe="externalDoc"></div>
+    </div>
 </div>
 
-<table class="contenttable" ng-if="showtitles">
-    <tr ng-repeat="works in groupedWorks">
-        <td><a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a><span class="dots"></span></td>
-        <td >
-            <span ng-repeat="work in works">
-            <span ng-show="!$first">::: </span><a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{work.titlepath}}/{{work.mediatype}}">{{work.mediatype}}</a>
-            </span>
-        </td>
-    </tr>
-</table>
+
+
+
+
+
+
 
 <div toolkit>
     <hr>
     <div class="author">{{authorInfo.fullName}}</div>
     
-    <ul ng-if="groupedWorks.length > 1">
+    <ul>
         <li ng-if="groupedWorks.length > 1">
             <a href="#!/forfattare/{{authorInfo.authorid}}/titlar" >::: Verk i LB</a>
         </li>
@@ -30,4 +49,6 @@
         </li>
     </ul>
     <div><a href="#!/forfattare/{{authorInfo.authorid}}">::: Introduktion</a></div>
+    <div ng-if="authorInfo.presentation"><a href="#!/forfattare/{{authorInfo.authorid}}/presentation">::: Presentation</a></div>
+    <div ng-if="authorInfo.bibliografi"><a href="#!/forfattare/{{authorInfo.authorid}}/bibliografi">::: Bibliografi</a></div>
 </div>

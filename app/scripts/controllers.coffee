@@ -288,23 +288,55 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
 
 
 
-littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams) ->
+littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, util) ->
     s = $scope
     # [s.author, s.showtitles] = $routeParams.author.split("/")
     _.extend s, $routeParams
-
+    s.showpage = null
     refreshRoute = () ->
-        s.showtitles = (_.last $location.path().split("/")) == "titlar"
+        # s.showtitles = (_.last $location.path().split("/")) == "titlar"
+        s.showpage = (_.last $location.path().split("/")) 
+        s.showpage = "introduktion" if s.author == s.showpage
+        c.log "new route", s.showpage
+        # switch (_.last $location.path().split("/"))
+        #     when "titlar"
+
+
 
     refreshTitle = () ->
-        suffix = if s.showtitles then "Verk i LB" else "Introduktion"
+        suffix = if s.showpage == "titlar" then "Verk i LB" else _.str.capitalize s.showpage
         s.setTitle "#{s.authorInfo.fullName} - " + suffix
+
+
 
     refreshBreadcrumb = () ->
         if s.showtitles
             s.appendCrumb "titlar"
         else
             delete $rootScope.breadcrumb[2] 
+
+    s.getUnique = (worklist) ->
+        _.filter worklist, (item) ->
+            "/" not in item.titlepath 
+
+    refreshExternalDoc = (page) ->
+        c.log "page", page
+        url = s.authorInfo[page]
+        # because the livereload snippet is inserted into the html
+        if location.hostname == "localhost"
+            url = "http://demolittb.spraakdata.gu.se" + s.authorInfo[page]
+
+        unless s.showpage in ["introduktion", "titlar"]
+            $http.get(url).success (xml) ->
+                # c.log $("<div>").html(xml).html()
+                from = xml.indexOf "<body>"
+                to = xml.indexOf "</body>"
+                xml = xml[from..to + "</body>".length]
+                # c.log "xml", xml
+                s.externalDoc =   _.str.trim xml
+                # c.log "success", s.externalDoc
+
+
 
     refreshRoute()
 
@@ -314,15 +346,20 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         refreshRoute()  
         refreshTitle()
+        refreshExternalDoc(s.showpage)
+
+    
 
 
 
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
 
+
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
         $rootScope.appendCrumb data.surname
         refreshTitle()
+        refreshExternalDoc(s.showpage)
 
 
 
@@ -668,12 +705,13 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
     s.searchData = searchData
-    s.dict_not_found = false
+    s.dict_not_found = null
+    # s.dict_not_found = "Hittade inget uppslag"
     thisRoute = $route.current
     s.dict_searching = false
     s.nextHit = () ->
@@ -709,9 +747,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             unless data.length
                 # nothing found
-                s.dict_not_found = true
+                s.dict_not_found = "Hittade inget uppslag"
                 $timeout( () ->
-                    s.dict_not_found = false
+                    s.dict_not_found = null
                 , 3000)
                 return
 
@@ -777,6 +815,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getWords = (val) ->
         backend.searchLexicon(val, true)
+
 
     s.getTooltip = (part) ->
         return part.navtitle if part.navtitle != part.showtitle

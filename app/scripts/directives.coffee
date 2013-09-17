@@ -31,6 +31,9 @@ littb.directive 'css', () ->
                 if scope.evalIf()
                     $("#reading_css").attr("href", val)
 
+            scope.$on "$destroy", () ->
+                $("#reading_css").attr("href", null)
+
 
 
 littb.directive 'pagetitle', () ->
@@ -212,24 +215,29 @@ littb.directive 'selectionSniffer', ($window) ->
 
             if isOneWord and $(event.target).is("span.w")
                 showIndicator event.target
-
-
-
-                
         , 500)
 
 
-littb.directive 'nprogress', () -> 
+# littb.directive 'nprogress', () -> 
+#     scope : 
+#         nprogress = "="
+#     link: (scope, elem, attr) ->
+#         NProgress.configure({ parent :  elem});
+#         scope.$watch "nprogress", (val) ->
+#             if val
+#                 NProgress.start()
+#             else
+#                 nProgress.done()
+
+
+littb.directive 'alert', ($rootElement, $timeout) -> 
     scope : 
-        nprogress = "="
-    link: (scope, elem, attr) ->
-        NProgress.configure({ parent :  elem});
-        scope.$watch "nprogress", (val) ->
-            if val
-                NProgress.start()
-            else
-                nProgress.done()
-
-
+        alert : "="
+    template : """
+        <div ng-if="alert" class="alert_popup fade">{{alert}}</div>
+    """
+    link : (scope, elem, attr) ->
+        $rootElement.append elem
+        scope.$on "$destroy", () -> elem.remove()
 
     

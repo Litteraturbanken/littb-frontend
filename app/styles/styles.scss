@@ -1,7 +1,11 @@
 @charset "UTF-8";
-@import "compass/css3/inline-block";
-@import "compass/css3/box-sizing";
 @import "triangle";
+
+@import "compass";
+// @import "compass/css3/inline-block";
+// @import "compass/css3/box-sizing";
+// @import "compass/css3/transition";
+// @import "compass/css3/gradient";
 
 
 
@@ -14,6 +18,9 @@ $page-width : 670px;
 $mainview-width : $page-width - $main-menu-width - $gutter-width;
 
 $primarycolor : #990000;
+@mixin primarygradient {
+    @include background-image(linear-gradient(lighten($primarycolor, 7%), $primarycolor));
+}
 
 
 
@@ -722,7 +729,8 @@ $partnav-width : 170px;
                 white-space: nowrap;
             }
             td:first-child {
-                max-width : 80px;
+                // max-width : 80px;
+                font-style: italic;
             }
             td:nth-child(2) {
                 vertical-align : top;
@@ -735,6 +743,9 @@ $partnav-width : 170px;
     }
 
     #toolkit {
+        .author {
+            margin-bottom : 2em;
+        }
         ul {
             margin-top : 2em;
             li {
@@ -847,35 +858,6 @@ $partnav-width : 170px;
 $triangle_size : 10px;
 
 .triangle {
-    // width: 0px;
-    // height: 0px;
-    // border-style: solid;
-    // position : relative;
-    // margin-right : 3px;
-    // cursor : pointer;
-
-    // &.disabled {
-    //     cursor: normal;
-    // }
-
-    // &.disabled.up {
-    //     border-color: transparent transparent grey transparent;
-    // }
-    // &.disabled.down {
-    //     border-color: grey transparent transparent transparent;
-    // }
-    // &.up {
-    //     border-width: 0 $triangle_size $triangle_size $triangle_size;
-    //     border-color: transparent transparent $primarycolor transparent;
-    //     bottom : 11px;
-    // }
-
-    // &.down {
-    //     border-width: $triangle_size $triangle_size 0 $triangle_size;
-    //     border-color: $primarycolor transparent transparent transparent;
-    //     top : 11px;
-    // }
-    // @include arrow($triangle_size, $triangle_size, down, $primarycolor);
     position : relative;
     cursor : pointer;
     margin-right : 3px;
@@ -929,6 +911,7 @@ grundform-clean {
 ._so_article {
     max-height : 520px;
     padding-left : 1.5em;
+    padding-top : 1em;
     overflow : auto;
     margin-bottom : 0.8em;
 
@@ -948,6 +931,37 @@ grundform-clean {
     display : none;
 }
 
+.modal {
+    border-radius: 0;
+    max-height : 90%;
+}
+.modal-footer {
+     border-top : none;
+}
+.modal-header {
+    font-size : 1.2em;
+}
+
+.dropdown-menu .active {
+    & > a, & > a:hover {
+        @include primarygradient;
+    }
+}
+
+.modal.fade {
+    top : 50%;
+    transition-duration : 0.1s;
+}
+
+.alert_popup {
+    position: fixed;
+    bottom: 1em;
+    right: 1em;
+    padding: 2em;
+    color: white;
+    @include primarygradient;
+    // font-size: 1em;
+}
 
 @media 
 only screen and (max-width: 760px),
@@ -972,11 +986,6 @@ only screen and (max-width: 760px),
         }
         #leftCorridor.show {
             display : inline-block;
-            // position : fixed;
-            // margin-left : 2em;
-            // background-color : white;
-            // z-index : 100;
-            // padding-right : 1em;
         }
         header .logo_link, hr, .start_menu, .breadcrumb {
             display : none;
@@ -1010,7 +1019,9 @@ only screen and (max-width: 760px),
     }
 
 /* Force table to not be like tables anymore */
-    .page-epubList .contenttable,.page-titleList .contenttable {
+    .page-epubList .contenttable,
+    .page-titleList .contenttable,
+    .page-authorInfo .contenttable {
         display : block;
         margin-top : 2em;
         table, 

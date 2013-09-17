@@ -125,7 +125,12 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                 controller : "biblinfoCtrl"
                 reloadOnSearch : false
                 breadcrumb : ["författare", "lagerlöf"]
-            .when ["/forfattare/:author", "/forfattare/:author/titlar"],
+            .when ["/forfattare/:author"
+                   "/forfattare/:author/titlar"
+                   "/forfattare/:author/bibliografi"
+                   "/forfattare/:author/presentation"
+                   "/forfattare/:author/semer"
+                   ],
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
                 breadcrumb : [

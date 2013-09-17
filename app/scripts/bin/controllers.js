@@ -305,16 +305,21 @@
     return s.submit();
   });
 
-  littb.controller("authorInfoCtrl", function($scope, $location, $rootScope, backend, $routeParams) {
-    var refreshBreadcrumb, refreshRoute, refreshTitle, s;
+  littb.controller("authorInfoCtrl", function($scope, $location, $rootScope, backend, $routeParams, $http, util) {
+    var refreshBreadcrumb, refreshExternalDoc, refreshRoute, refreshTitle, s;
     s = $scope;
     _.extend(s, $routeParams);
+    s.showpage = null;
     refreshRoute = function() {
-      return s.showtitles = (_.last($location.path().split("/"))) === "titlar";
+      s.showpage = _.last($location.path().split("/"));
+      if (s.author === s.showpage) {
+        s.showpage = "introduktion";
+      }
+      return c.log("new route", s.showpage);
     };
     refreshTitle = function() {
       var suffix;
-      suffix = s.showtitles ? "Verk i LB" : "Introduktion";
+      suffix = s.showpage === "titlar" ? "Verk i LB" : _.str.capitalize(s.showpage);
       return s.setTitle(("" + s.authorInfo.fullName + " - ") + suffix);
     };
     refreshBreadcrumb = function() {
@@ -324,18 +329,42 @@
         return delete $rootScope.breadcrumb[2];
       }
     };
+    s.getUnique = function(worklist) {
+      return _.filter(worklist, function(item) {
+        return __indexOf.call(item.titlepath, "/") < 0;
+      });
+    };
+    refreshExternalDoc = function(page) {
+      var url, _ref;
+      c.log("page", page);
+      url = s.authorInfo[page];
+      if (location.hostname === "localhost") {
+        url = "http://demolittb.spraakdata.gu.se" + s.authorInfo[page];
+      }
+      if ((_ref = s.showpage) !== "introduktion" && _ref !== "titlar") {
+        return $http.get(url).success(function(xml) {
+          var from, to;
+          from = xml.indexOf("<body>");
+          to = xml.indexOf("</body>");
+          xml = xml.slice(from, +(to + "</body>".length) + 1 || 9e9);
+          return s.externalDoc = _.str.trim(xml);
+        });
+      }
+    };
     refreshRoute();
     s.$on("$routeChangeError", function(event, current, prev, rejection) {
       c.log("change error", current);
       _.extend(s, current.pathParams);
       refreshRoute();
-      return refreshTitle();
+      refreshTitle();
+      return refreshExternalDoc(s.showpage);
     });
     return backend.getAuthorInfo(s.author).then(function(data) {
       s.authorInfo = data;
       s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
       $rootScope.appendCrumb(data.surname);
-      return refreshTitle();
+      refreshTitle();
+      return refreshExternalDoc(s.showpage);
     });
   });
 
@@ -721,13 +750,13 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document) {
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q) {
     var author, loadPage, mediatype, pagename, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
     s.searchData = searchData;
-    s.dict_not_found = false;
+    s.dict_not_found = null;
     thisRoute = $route.current;
     s.dict_searching = false;
     s.nextHit = function() {
@@ -765,9 +794,9 @@
         s.dict_searching = false;
         c.log("search_dict", data);
         if (!data.length) {
-          s.dict_not_found = true;
+          s.dict_not_found = "Hittade inget uppslag";
           $timeout(function() {
-            return s.dict_not_found = false;
+            return s.dict_not_found = null;
           }, 3000);
           return;
         }

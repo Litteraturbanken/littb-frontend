@@ -35,10 +35,13 @@
       compile: function(elm, attrs) {
         elm.remove();
         return function(scope, iElement, iAttrs) {
-          return scope.$watch('css', function(val) {
+          scope.$watch('css', function(val) {
             if (scope.evalIf()) {
               return $("#reading_css").attr("href", val);
             }
+          });
+          return scope.$on("$destroy", function() {
+            return $("#reading_css").attr("href", null);
           });
         };
       }
@@ -252,20 +255,16 @@
     };
   });
 
-  littb.directive('nprogress', function() {
-    var nprogress;
+  littb.directive('alert', function($rootElement, $timeout) {
     return {
-      scope: nprogress = "=",
+      scope: {
+        alert: "="
+      },
+      template: "<div ng-if=\"alert\" class=\"alert_popup fade\">{{alert}}</div>",
       link: function(scope, elem, attr) {
-        NProgress.configure({
-          parent: elem
-        });
-        return scope.$watch("nprogress", function(val) {
-          if (val) {
-            return NProgress.start();
-          } else {
-            return nProgress.done();
-          }
+        $rootElement.append(elem);
+        return scope.$on("$destroy", function() {
+          return elem.remove();
         });
       }
     };

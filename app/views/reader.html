@@ -8,7 +8,7 @@
     <div square x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
     
     
-    <div modal="lex_article.lexemes" close="closeModal()" options="opts">
+    <div modal="lex_article.lexemes.length > 0" close="closeModal()" options="opts">
         <div class="so_modal">
             <div class="modal-header">
                 <!-- <div nprogress="dict_searching"></div> -->
@@ -20,8 +20,8 @@
             </div>
         </div>
     </div>
-    
-    <div ng-show="dict_not_found">Hittade inga uppslag</div>
+
+    <div alert="dict_not_found"></div>
     
     
     <toolkit>
@@ -119,7 +119,6 @@
                     typeahead="article as article.baseform for article in getWords($viewValue)">
             
         </div>
-    
     
     </toolkit>
 </div>

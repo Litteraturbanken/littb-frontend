@@ -41,7 +41,9 @@ module.exports = function (grunt) {
       },
       livereload: {
         files: [
-          '<%= yeoman.app %>/{,**/}*.html',
+          '<%= yeoman.app %>/index.html',
+          '<%= yeoman.app %>/markup/*.html',
+          '<%= yeoman.app %>/views/*.html',
           '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.css',
           '{.tmp,<%= yeoman.app %>}/scripts/{,*/}*.js',
           '<%= yeoman.app %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'

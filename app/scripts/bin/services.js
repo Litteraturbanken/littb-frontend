@@ -463,6 +463,8 @@
           authorInfo.works = works;
           authorInfo.smallImage = util.getInnerXML($("image-small-uri", xml));
           authorInfo.largeImage = util.getInnerXML($("image-large-uri", xml));
+          authorInfo.presentation = util.getInnerXML($("presentation-uri", xml));
+          authorInfo.bibliografi = util.getInnerXML($("bibliography-uri", xml));
           return def.resolve(authorInfo);
         });
         return def.promise;
@@ -629,6 +631,13 @@
             }
             return _results;
           })();
+          window.output = output;
+          output = _.sortBy(output, function(item) {
+            if (item.baseform === str) {
+              return "aaaaaaaaa";
+            }
+            return item.baseform;
+          });
           return def.resolve(output);
         }).error(function() {
           return def.reject();
