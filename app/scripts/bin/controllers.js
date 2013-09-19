@@ -494,6 +494,9 @@
     if (!s.filter && !s.selectedLetter) {
       s.selectedLetter = "A";
     }
+    if (s.filter) {
+      s.rowfilter = s.filter;
+    }
     c.log("workfilter", s.workFilter);
     return fetchWorks();
   });
@@ -782,7 +785,7 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q) {
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement) {
     var author, loadPage, mediatype, pagename, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
@@ -851,9 +854,14 @@
       return s.$apply(function() {
         switch (event.which) {
           case 39:
-            return s.nextPage();
+            if ($rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") === $($window).width()) {
+              return s.nextPage();
+            }
+            break;
           case 37:
-            return s.prevPage();
+            if ($rootElement.prop("scrollLeft") === 0) {
+              return s.prevPage();
+            }
         }
       });
     });

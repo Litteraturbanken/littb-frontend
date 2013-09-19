@@ -17,11 +17,11 @@
         <link rel="stylesheet" type="text/css" href="styles/bootstrap.css" />
         <link rel="stylesheet" type="text/css" href="styles/styles.css" />
         <link rel="stylesheet" href="components/font-awesome/css/font-awesome.css"/>
-        <link rel="stylesheet" href="components/nprogress/nprogress.js" />
+        <!-- <link rel="stylesheet" href="components/nprogress/nprogress.js" /> -->
 
     </head>
     <body ng-app="littbApp" ng-cloak>
-        <header>
+        <div class="header">
             <i ng-click="_showmenu_mobile = !_showmenu_mobile;" class="icon-list icon-2x" style="display : none;"></i>
             <a class="logo_link" href="#!/"><img id="logo" src="/bilder/LBlogga.svg"></a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
@@ -39,7 +39,7 @@
             </ul>
             
             <div class="clearfix"></div>
-        </header>
+        </div>
         <div id="leftCorridor" ng-class="{show : _showmenu_mobile}">
             <ul role="navigation" class="mainnav">
                 <li>
@@ -101,7 +101,12 @@
         <script src="components/unstable-angular-complete/angular-mobile.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
-        <script src="lib/nprogress.js"></script>
+        
+        <!--[if lte IE 8]>
+            <script src="components/angular-ui-utils/modules/ie-shiv/ie-shiv.js"></script>
+        <![endif]-->
+        
+        <!-- <script src="lib/nprogress.js"></script> -->
 
 
 

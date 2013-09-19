@@ -55,7 +55,8 @@
         <select id="num_hits" ng-model="num_hits" 
             ng-options="num for num in [10, 20, 50, 100, 150]" ng-change="search(query)">
         </select>
-        träffar per sida.</div>
+        träffar per sida.
+    </div>
     
     <div>
         <div ng-if="data.count === 0">Din sökning gav inga träffar</div>
@@ -79,10 +80,9 @@
         </table>
     </div>
     
-    
-    
     <div toolkit>
         <hr>
+
         <div class="littb_pager" ng-show="data && data.count">
             Visar {{current_page  * num_hits + 1}}-{{(current_page  * num_hits + 1) + num_hits}} av 
             {{data.count}} träffar,
@@ -93,13 +93,14 @@
                 <a ng-click="nextPage()"><img src="bilder/LBnasta.png"></a>
                 <a ng-click="lastPage()"><img src="bilder/LBslut.png"></a>
             </div>
-    
+        
             <label>Gå till träffsida</label>
             <form ng-submit="current_page = input_page - 1; search()">
                 <input class="input_page" ng-model="input_page"><span submit-btn></span>
             </form>
         </div>
-    
+
         <p>Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den forfattaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.</p>
     </div>
+    <!-- -->
 </div>

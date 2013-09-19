@@ -231,7 +231,7 @@ label {
     position: relative;
 }
 
-header {
+body > .header {
     // border-bottom : 1px solid grey;
     margin-bottom : 1em;
     padding-bottom : 5px;
@@ -258,7 +258,7 @@ header {
     display : none;
 }
 .page-start {
-    header {
+    .header {
         #logo {
             height: 57px;
             left: -17px;

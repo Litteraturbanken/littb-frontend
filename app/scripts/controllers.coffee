@@ -488,6 +488,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
     # timeout in order to await the setupHashComplex watch firing.
     # $timeout () ->
     if not s.filter and not s.selectedLetter then s.selectedLetter = "A"
+    if s.filter then s.rowfilter = s.filter
     c.log "workfilter", s.workFilter
     fetchWorks()
 
@@ -718,7 +719,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
@@ -784,10 +785,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     $document.on "keydown", (event) ->
         # c.log "keypress", event.key, event.keyCode, event.which
         s.$apply () ->
-            # TODO: check scroll location before switching page
             switch event.which
-                when 39 then s.nextPage()
-                when 37 then s.prevPage()
+                when 39 
+                    if $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") == $($window).width()
+                        s.nextPage()
+                when 37 
+                    if $rootElement.prop("scrollLeft") == 0
+                        s.prevPage()
 
 
     s.getPage = () ->

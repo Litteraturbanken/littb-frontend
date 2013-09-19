@@ -177,7 +177,32 @@
   });
 
   littb.factory('backend', function($http, $q, util) {
-    var http, objFromAttrs, parseWorkInfo;
+    var http, objFromAttrs, parseWorkInfo, parseXML;
+    parseXML = function(data) {
+      var e, tmp, xml;
+      xml = null;
+      tmp = null;
+      if (!data || typeof data !== "string") {
+        return null;
+      }
+      try {
+        if (window.DOMParser) {
+          tmp = new DOMParser();
+          xml = tmp.parseFromString(data, "text/xml");
+        } else {
+          xml = new ActiveXObject("Microsoft.XMLDOM");
+          xml.async = "false";
+          xml.loadXML(data);
+        }
+      } catch (_error) {
+        e = _error;
+        xml = 'undefined';
+      }
+      if (!xml || !xml.documentElement || xml.getElementsByTagName("parsererror").length) {
+        jQuery.error("Invalid XML: " + data);
+      }
+      return xml;
+    };
     http = function(config) {
       var defaultConfig;
       defaultConfig = {
@@ -187,9 +212,9 @@
         },
         transformResponse: function(data, headers) {
           var output;
-          output = new DOMParser().parseFromString(data, "text/xml");
+          output = parseXML(data);
           if ($("fel", output).length) {
-            c.log("fel:", $("fel", output).text());
+            c.log("xml parse error:", $("fel", output).text());
           }
           return output;
         }

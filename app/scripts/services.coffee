@@ -146,15 +146,33 @@ littb.factory "util", ($location) ->
 littb.factory 'backend', ($http, $q, util) ->
     # $http.defaults.transformResponse = (data, headers) ->
 
+    parseXML = (data) ->
+        xml = null
+        tmp = null
+        return null if not data or typeof data isnt "string"
+        try
+            if window.DOMParser # Standard
+                tmp = new DOMParser()
+                xml = tmp.parseFromString(data, "text/xml")
+            else # IE
+                # c.log "data", data.replace /<\?xml.*/, ''
+                xml = new ActiveXObject("Microsoft.XMLDOM")
+                xml.async = "false"
+                xml.loadXML data
+        catch e
+            xml = 'undefined'
+        jQuery.error "Invalid XML: " + data  if not xml or not xml.documentElement or xml.getElementsByTagName("parsererror").length
+        xml
+
     http = (config) ->
         defaultConfig =
             method : "GET"
             params:
                 username : "app"
             transformResponse : (data, headers) ->
-                output = new DOMParser().parseFromString(data, "text/xml")
+                output = parseXML(data)
                 if $("fel", output).length
-                    c.log "fel:", $("fel", output).text()
+                    c.log "xml parse error:", $("fel", output).text()
                 return output
 
         $http(_.merge defaultConfig, config)
@@ -237,7 +255,7 @@ littb.factory 'backend', ($http, $q, util) ->
         # url = "authors.xml"
         http(
             url : url
-            ).success (xml) ->
+        ).success (xml) ->
             attrArray = for item in $("item", xml)
                 objFromAttrs item
 

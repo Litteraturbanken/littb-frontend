@@ -239,13 +239,13 @@ label {
 }
 
 /* line 234, styles.scss */
-header {
+body > .header {
   margin-bottom: 1em;
   padding-bottom: 5px;
   position: relative;
 }
 /* line 239, styles.scss */
-header > a {
+body > .header > a {
   display: -moz-inline-stack;
   display: inline-block;
   vertical-align: bottom;
@@ -255,7 +255,7 @@ header > a {
   width: 28%;
 }
 /* line 243, styles.scss */
-header .breadcrumb {
+body > .header .breadcrumb {
   display: -moz-inline-stack;
   display: inline-block;
   vertical-align: bottom;
@@ -278,18 +278,18 @@ header .breadcrumb {
 }
 
 /* line 262, styles.scss */
-.page-start header #logo {
+.page-start .header #logo {
   height: 57px;
   left: -17px;
   position: relative;
 }
 /* line 267, styles.scss */
-.page-start header a {
+.page-start .header a {
   width: 59%;
   display: block;
 }
 /* line 271, styles.scss */
-.page-start header hr {
+.page-start .header hr {
   width: 53%;
   display: -moz-inline-stack;
   display: inline-block;
@@ -302,7 +302,7 @@ header .breadcrumb {
   border-bottom: 1px solid grey;
 }
 /* line 278, styles.scss */
-.page-start header .start_menu {
+.page-start .header .start_menu {
   width: 46%;
   display: -moz-inline-stack;
   display: inline-block;
@@ -314,7 +314,7 @@ header .breadcrumb {
   font-size: 0.9em;
 }
 /* line 283, styles.scss */
-.page-start header .start_menu li {
+.page-start .header .start_menu li {
   display: -moz-inline-stack;
   display: inline-block;
   vertical-align: top;
@@ -323,7 +323,7 @@ header .breadcrumb {
   *display: inline;
 }
 /* line 286, styles.scss */
-.page-start header .start_menu li:not(:first-child) a:before {
+.page-start .header .start_menu li:not(:first-child) a:before {
   content: "•";
   margin-left: 0.5em;
   margin-right: 0.6em;
