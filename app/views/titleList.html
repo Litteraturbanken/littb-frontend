@@ -41,7 +41,7 @@
                 <span ng-repeat="type in row.mediatype">
 
                     <span ng-show="!$first">:::</span>
-                    <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
+                    <a href="#!/forfattare/{{row.author.workauthor || row.author.authorid}}/titlar/{{getTitleId(row)}}/{{type}}">{{type}}</a>
                 </span>
             </td>
         </tr>
