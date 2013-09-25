@@ -973,9 +973,13 @@ grundform-clean {
     font-size : 1.2em;
 }
 
+.dropdown-menu {
+    border-radius : 2px;
+}
 .dropdown-menu .active {
     & > a, & > a:hover {
-        @include primarygradient;
+        // @include primarygradient;
+        @include background-image(linear-gradient(darkgrey, darken(darkgrey, 7%)));
     }
 }
 

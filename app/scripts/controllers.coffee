@@ -704,7 +704,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
                 s.dict_not_found = "Hittade inget uppslag"
                 $timeout( () ->
                     s.dict_not_found = null
-                , 3000)
+                , 4000)
                 return
 
             result = data[0]
@@ -730,7 +730,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         s.dict_searching = true
         def = backend.searchLexicon(val, true)
         c.log $timeout, $q.all
-        timeout = $timeout(angular.noop, 1000)
+        timeout = $timeout(angular.noop, 800)
         $q.all([def, timeout]).then () ->
             c.log "all"
             s.dict_searching = false

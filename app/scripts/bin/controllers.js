@@ -774,7 +774,7 @@
           s.dict_not_found = "Hittade inget uppslag";
           $timeout(function() {
             return s.dict_not_found = null;
-          }, 3000);
+          }, 4000);
           return;
         }
         result = data[0];
@@ -804,7 +804,7 @@
       s.dict_searching = true;
       def = backend.searchLexicon(val, true);
       c.log($timeout, $q.all);
-      timeout = $timeout(angular.noop, 1000);
+      timeout = $timeout(angular.noop, 800);
       $q.all([def, timeout]).then(function() {
         c.log("all");
         return s.dict_searching = false;

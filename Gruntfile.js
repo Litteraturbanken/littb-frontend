@@ -23,10 +23,6 @@ module.exports = function (grunt) {
   grunt.initConfig({
     yeoman: yeomanConfig,
     watch: {
-      haml : {
-        files: ['<%= yeoman.app %>/{,*/}*.haml'],
-        tasks: ['haml']
-      },
       coffee: {
         files: ['<%= yeoman.app %>/scripts/{,*/}*.coffee'],
         tasks: ['coffee:dist']
@@ -151,19 +147,6 @@ module.exports = function (grunt) {
           dest: 'test/spec',
           ext: '.js'
         }]
-      }
-    },
-    haml: {
-      // compile individually into dest, maintaining folder structure
-      dist: {
-        options : {
-          language : "coffee",
-        },
-        files: grunt.file.expandMapping(['app/*.haml'], './', {
-          rename: function(base, path) {
-            return base + path.replace(/\.haml$/, '.html');
-          }
-        })
       }
     },
     compass: {
@@ -311,7 +294,6 @@ module.exports = function (grunt) {
 
       grunt.task.run([
           'clean:server',
-          'haml:dist',
           'coffee:dist',
           'compass:server',
           'configureProxies',
@@ -324,7 +306,6 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'clean:server',
-    'haml',
     'coffee',
     'compass',
     'connect:test',
@@ -335,7 +316,6 @@ module.exports = function (grunt) {
     'clean:dist',
     // 'jshint',
     // 'test',
-    'haml',
     'coffee',
     'compass:dist',
     'useminPrepare',
