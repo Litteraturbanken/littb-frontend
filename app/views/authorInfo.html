@@ -11,13 +11,13 @@
         <table class="contenttable">
             <tr ng-repeat="works in groupedWorks">
                 <td>
-                    <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a>
+                    <a href="#!/forfattare/{{author}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a>
                     <span class="dots"></span>
                 </td>
                 <td >
                     <span ng-repeat="work in getUnique(works)">
                         <span ng-show="!$first">::: </span>
-                        <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{work.titlepath}}/{{work.mediatype}}">{{work.mediatype}}</a>
+                        <a href="#!/forfattare/{{author}}/titlar/{{work.titlepath}}/{{work.mediatype}}">{{work.mediatype}}</a>
                     </span>
                 </td>
             </tr>
@@ -31,24 +31,25 @@
 
 
 
-
-
-
-
-
 <div toolkit>
     <hr>
     <div class="author">{{authorInfo.fullName}}</div>
     
-    <ul>
+    <ul class="topnav" role="navigation">
         <li ng-if="groupedWorks.length > 1">
-            <a href="#!/forfattare/{{authorInfo.authorid}}/titlar" >::: Verk i LB</a>
+            <a href="#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
         </li>
         <li ng-if="groupedWorks.length < 2">
-            <a href="#!/forfattare/{{authorInfo.authorid}}/titlar/{{groupedWorks[0][0].titlepath}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
+            <a href="#!/forfattare/{{author}}/titlar/{{groupedWorks[0][0].titlepath}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
         </li>
     </ul>
-    <div><a href="#!/forfattare/{{authorInfo.authorid}}">::: Introduktion</a></div>
-    <div ng-if="authorInfo.presentation"><a href="#!/forfattare/{{authorInfo.authorid}}/presentation">::: Presentation</a></div>
-    <div ng-if="authorInfo.bibliografi"><a href="#!/forfattare/{{authorInfo.authorid}}/bibliografi">::: Bibliografi</a></div>
+    <ul class="subnav" role="navigation">
+        <li><a href="#!/forfattare/{{author}}">::: Introduktion</a></li>
+        <li ng-if="authorInfo.presentation"><a href="#!/forfattare/{{author}}/presentation">::: Presentation</a></li>
+        <li ng-if="authorInfo.bibliografi"><a href="#!/forfattare/{{author}}/bibliografi">::: Bibliografi</a></li>
+        <li ng-if="authorInfo.semer"><a href="#!/forfattare/{{author}}/semer">::: Se mer</a></li>
+        <li ng-repeat="ref in authorInfo.externalref">
+            <a href="#!/{{ref.url}}">::: {{ref.label}}</a>
+        </li>
+    </ul>
 </div>

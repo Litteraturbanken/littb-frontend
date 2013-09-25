@@ -29,6 +29,9 @@ littb.factory "debounce", ($timeout) ->
             result
 
 
+
+
+
 littb.factory "util", ($location) ->
     PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i
     SPECIAL_CHARS_REGEXP = /([\:\-\_]+(.))/g
@@ -110,7 +113,8 @@ littb.factory "util", ($location) ->
                     # c.log "before val", scope.$eval watch
                     val = (obj.val_out or _.identity)(val)
                     if val == obj.default then val = null
-                    $location.search obj.key, val or null
+                    loc = $location.search obj.key, val or null
+                    if obj.replace != false then loc.replace()
                     # c.log "post change", watch, val
                     obj.post_change?(val)
 
@@ -185,6 +189,7 @@ littb.factory 'backend', ($http, $q, util) ->
     parseWorkInfo = (root, xml) ->
         useInnerXML = ["sourcedesc", "license-text"]
         asArray = ["mediatypes"]
+
         output = {}
         for elem in $(root, xml).children()
             if elem.nodeName in useInnerXML
@@ -193,12 +198,17 @@ littb.factory 'backend', ($http, $q, util) ->
             else if elem.nodeName in asArray
                 val = _.map $(elem).children(), (child) ->
                     $(child).text()
+            else if elem.nodeName in ["authorid", "authorid-norm"]
+                val = {id : $(elem).text(), type: $(elem).attr("type")}
+                (output[util.normalize(elem.nodeName)]?.push val) or
+                 output[util.normalize(elem.nodeName)] = [val]
+                 continue
             else
                 val = $(elem).text()
 
             output[util.normalize(elem.nodeName)] = val
 
-        output.author_type = $(root + " > authorid", xml).attr("type")
+        # output.author_type = $(root + " > authorid", xml).attr("type")
         return output
 
 
@@ -211,7 +221,6 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getTitles : (allTitles = false, initial = null, string = null) ->
         def = $q.defer()
-        c.log "allTitles", allTitles, initial, string
         if allTitles
             params = 
                 action : "get-titles-by-string-filter"
@@ -249,10 +258,9 @@ littb.factory 'backend', ($http, $q, util) ->
             # .fail -> def.reject()
         return def.promise
 
-    getAuthorList : ->
+    getAuthorList : () ->
         def = $q.defer()
         url = "/query/lb-authors.xql?action=get-authors"
-        # url = "authors.xml"
         http(
             url : url
         ).success (xml) ->
@@ -380,31 +388,38 @@ littb.factory 'backend', ($http, $q, util) ->
                 action : "get-author-data-init"
                 authorid : author
 
-        ).success (xml) ->
-            authorInfo = {}
-            for elem in $("LBauthor", xml).children()
-                if elem.nodeName == "intro" 
-                    val = util.getInnerXML elem
-                else
-                    val = $(elem).text()
+        ).success( (xml) ->
+                    authorInfo = {}
+                    for elem in $("LBauthor", xml).children()
+                        if elem.nodeName == "intro" 
+                            val = util.getInnerXML elem
+                        else
+                            val = $(elem).text()
+        
+                        authorInfo[util.normalize(elem.nodeName)] = val
+        
+                    works = []
+                    for item in $("works item", xml)
+                        obj = objFromAttrs item
+                        # _.extend obj,
+                            # mediatypes : _.unique (_.map $("mediatypes", item).children(), (child) -> $(child).attr("mediatype"))
+                        works.push obj
+        
+                    authorInfo.works = works
+        
+                    authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
+                    authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
+                    authorInfo.presentation = util.getInnerXML $("presentation-uri", xml)
+                    authorInfo.bibliografi = util.getInnerXML $("bibliography-uri", xml)
+                    authorInfo.semer = util.getInnerXML $("see-uri", xml)
+                    authorInfo.externalref = for ref in $("LBauthor external-ref", xml)
+                        label : util.getInnerXML $("label", ref)
+                        url : util.getInnerXML $("url", ref)
 
-                authorInfo[util.normalize(elem.nodeName)] = val
-
-            works = []
-            for item in $("works item", xml)
-                obj = objFromAttrs item
-                # _.extend obj,
-                    # mediatypes : _.unique (_.map $("mediatypes", item).children(), (child) -> $(child).attr("mediatype"))
-                works.push obj
-
-            authorInfo.works = works
-
-            authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
-            authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
-            authorInfo.presentation = util.getInnerXML $("presentation-uri", xml)
-            authorInfo.bibliografi = util.getInnerXML $("bibliography-uri", xml)
-
-            def.resolve authorInfo
+        
+                    def.resolve authorInfo
+        ).error (data, status, headers, config) ->
+            def.reject()
 
         return def.promise
 
@@ -615,3 +630,15 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
 
 
+littb.factory "authors", (backend, $q) ->
+    
+    def = $q.defer()
+    # @promise = def.promise
+    backend.getAuthorList().then (authors) =>
+        authorsById = _.object _.map authors, (item) =>
+            [item.authorid, item]
+        # c.log "authorsById", authorsById
+        def.resolve [authors, authorsById]
+
+
+    return def.promise

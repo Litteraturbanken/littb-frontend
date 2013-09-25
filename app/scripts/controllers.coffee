@@ -57,11 +57,12 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
+littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, authors) ->
     s = $scope
     s.open = false
     s.searchProofread = true
     s.searchNonProofread = true
+    s.proofread = 'all'
 
     initTitle = _.once (titlesById) ->
         unless $location.search().titel then return
@@ -72,39 +73,28 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
         # $location.search("titel", s.selected_title?.titlepath.split("/")[0] or null)
         $location.search("titel", s.selected_title?.titlepath or null)
 
+
     s.checkProof = () ->
-
-        if s.searchProofread and s.searchNonProofread
-            out = null
-
-        else if !s.searchProofread and s.searchNonProofread
-            out = 'false'
-        # else if searchProofread and !s.searchNonProofread
-
+        if s.proofread == 'all'
+            return null
+        else if s.proofread == 'no'
+            return 'false'
         else
-            out = 'true'
-
-        c.log "out", out
-        return out
-
-
-        # unless bool
-        #     return 'true'
+            return 'true'
 
 
     s.authorChange = () ->
         $location.search("titel", null)
 
-
-    s.authors = backend.getAuthorList()
-    s.authors.then (authors) ->
-        authorsById = _.object _.map authors, (item) -> [item.authorid, item]
-            
+    authors.then ([authorList, authorsById]) ->
+        s.authors = authorList
         change = (newAuthor) ->
             return unless newAuthor
+            c.log "change", newAuthor
             backend.getTitlesByAuthor(newAuthor).then (data) ->
-                s.titles = data
-                titlesById = _.object _.map data, (item) -> [item.titlepath, item]    
+                filteredTitles = _.filter data, (item) -> "/" not in item.titlepath
+                s.titles = filteredTitles
+                titlesById = _.object _.map filteredTitles, (item) -> [item.titlepath, item]    
                 initTitle titlesById
 
         
@@ -119,7 +109,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
             post_change : change
         ]
 
-        
 
     s.searching = false
     s.num_hits = 20
@@ -192,29 +181,9 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData) ->
         ,   
             key : "open"
         ,   
-            key : "pf"
-            scope_name : "searchProofread"
-            default : true
-            val_in : (val) ->
-                if val == 'false'
-                    return false
-                return val
-            val_out : (val) ->
-                if !val
-                    return 'false'
-                return val
-        ,   
-            key : "npf"
-            scope_name : "searchNonProofread"
-            default : true
-            val_in : (val) ->
-                if val == 'false'
-                    return false
-                return val
-            val_out : (val) ->
-                if !val
-                    return 'false'
-                return val
+            key : "proofread"
+            default : "all"
+
         ]
 
     if "fras" of queryvars
@@ -363,7 +332,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
 
 
-littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $q) ->
+littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $q, authors) ->
     s = $scope
     s.searching = false
     s.rowByLetter = {}
@@ -399,14 +368,13 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
             # s.filter = null
         fetchWorks()
 
-    authorDef = backend.getAuthorList().then (data) ->
-        s.authorsById = _.object _.map data, (item) ->
-            [item.authorid, item]
-
-        s.authorData = data
+    authors.then ([authorList, authorsById]) ->
+        s.authorsById = authorsById
+        s.authorData = authorList
 
 
     s.searchTitle = () ->
+        c.log "searchTitle"
         if s.workFilter == 'titlar'
             s.selectedLetter = null
             fetchWorks()
@@ -419,7 +387,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         s.searching = true
         #TODO: what about titles that start with strange chars or non lower case letters?
         c.log "s.titlefilter", s.filter
-        titleDef = backend.getTitles(s.workFilter == "titles", s.selectedLetter, s.filter).then (titleArray) ->
+        backend.getTitles(s.workFilter == "titles", s.selectedLetter, s.filter).then (titleArray) ->
             s.searching = false
             # c.log "getTitles", titleArray
             # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
@@ -433,15 +401,6 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
                 
 
 
-        $q.all([titleDef, authorDef]).then ([titleData, authorData]) ->
-
-
-
-    # s.letterChange = (letter) ->
-    #     c.log "letterChange", letter
-    #     if s.workFilter == 'titles'
-    #         s.filter = ""
-        # fetchWorks()
 
     s.getSource = () -> 
         if s.selectedLetter 
@@ -494,7 +453,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 
 littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope
-
+    s.searching = true
     # TODO: what about the workauthor issue?
     s.sorttuple = ["author.nameforindex", false]
     s.setSort = (sortstr) ->
@@ -538,8 +497,9 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
             scope_name : "filterTxt"
         ]
 
-
+    
     backend.getTitles().then (titleArray) ->
+        s.searching = false
         s.rows = _.filter titleArray, (item) -> "epub" in item.mediatype
         authors = _.pluck s.rows, "author"
 
@@ -594,7 +554,7 @@ littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, ut
         }
 
 
-littb.controller "authorListCtrl", ($scope, backend, util) ->
+littb.controller "authorListCtrl", ($scope, backend, util, authors) ->
     s = $scope
     # util.setupHash s, "authorFilter"
     s.sorttuple = ["nameforindex", false]
@@ -619,9 +579,9 @@ littb.controller "authorListCtrl", ($scope, backend, util) ->
         ,   
             key : "selectedLetter"
         ]
-    backend.getAuthorList().then (data) ->
-        s.authorIdGroup = _.groupBy data, (item) ->
-            return item.authorid
+
+    authors.then ([data, authorById]) ->
+        s.authorIdGroup = authorById
         s.authorIdGroup[""] = ""
         s.rows = data
 
@@ -658,7 +618,7 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
         s.data = titleArray
 
 
-littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
+littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors) ->
     s = $scope
     {title, author, mediatype} = $routeParams
     _.extend s, $routeParams
@@ -697,8 +657,9 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
         if not s.mediatype
             s.mediatype = s.data.mediatypes[0]
 
-    $q.all([backend.getAuthorList(), infoDef]).then ([authorData, infoData]) ->
-        c.log "authorData", arguments
+    $q.all([authors, infoDef]).then ([[authorData, authorById], infoData]) ->
+        # c.log "authorData", arguments
+        s.authorById = authorById
         for item in authorData
             if item.authorid == author
                 s.appendCrumb [
@@ -719,7 +680,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q) ->
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
@@ -750,7 +711,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
     s.saveSearch = (str) ->
-        c.log "str", str
+        c.log "so.saveSearch", str
         $location.search("so", str)
 
     s.$on "search_dict", (event, query, searchId) ->
@@ -782,7 +743,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     if $location.search().so
         s.$emit "search_dict", $location.search().so
 
-    $document.on "keydown", (event) ->
+    onKeyDown = (event) ->
         # c.log "keypress", event.key, event.keyCode, event.which
         s.$apply () ->
             switch event.which
@@ -793,6 +754,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                     if $rootElement.prop("scrollLeft") == 0
                         s.prevPage()
 
+    $document.on "keydown", onKeyDown
 
     s.getPage = () ->
         $route.current.pathParams.pagename
@@ -843,6 +805,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.supportsParallel = () ->
         unless s.workinfo then return
         'etext' in s.workinfo.mediatypes and 'faksimil' in s.workinfo.mediatypes
+
+
+    authors.then ([authorData, authorById]) ->
+        s.authorById = authorById
+
 
 
     util.setupHashComplex s, [
@@ -972,7 +939,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.$on "$destroy", () ->
         c.log "destroy reader"
-        $document.off "keydown"
+        $document.off "keydown", onKeyDown
         for w in watches
             w()
 

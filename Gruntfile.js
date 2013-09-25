@@ -141,6 +141,7 @@ module.exports = function (grunt) {
           // dest: '.tmp/scripts',
           dest: '<%= yeoman.app %>/scripts/bin',
           ext: '.js'
+
       },
       test: {
         files: [{

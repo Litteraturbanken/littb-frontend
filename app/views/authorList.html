@@ -13,7 +13,7 @@
         <td><a href="#!/forfattare/{{row.pseudonymfor || row.authorid}}" >{{getAuthor(row)}}</a><span class="dots"></span></td>
         <td>{{row.datestring}}</td>
         <td><em ng-show="row.pseudonymfor">
-            ::: se <a href="#!/forfattare/{{row.pseudonymfor}}">{{authorIdGroup[row.pseudonymfor][0].nameforindex}}</a>
+            ::: se <a href="#!/forfattare/{{row.pseudonymfor}}">{{authorIdGroup[row.pseudonymfor].nameforindex}}</a>
             </em>
         </td>
     </tr>

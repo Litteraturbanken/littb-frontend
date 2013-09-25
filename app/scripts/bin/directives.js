@@ -191,7 +191,7 @@
       link: function(scope, elem, attrs) {
         return scope.$watch("soArticle", function(val) {
           var newElem;
-          newElem = $compile(val)(scope);
+          newElem = $compile(_.str.trim(val))(scope);
           return elem.html(newElem);
         });
       }

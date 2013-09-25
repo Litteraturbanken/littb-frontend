@@ -12,7 +12,9 @@
     </div>
     
     
-    <form ng-submit="search()">Ord eller fras: <input class="input" ng-model="query" autofocus></form>
+    <form ng-submit="search()">
+        Ord eller fras: <input class="input" ng-model="query" autofocus>
+    </form>
     
     <div class="extended" ng-show="open">
         <h3>Urval</h3>
@@ -35,15 +37,20 @@
     
                     <option value="">Allt tillgängligt</option>
                 </select>
-                <!-- what is the logic searchproofread and searchNonProofread? -->
             </div>
         </div>
         <div class="chks">
             Sök i:
-            <input type="checkbox" id="proofread" ng-model="searchProofread">
+            <!-- <input type="checkbox" id="proofread" ng-model="searchProofread">
             <label for="proofread">korrekturläst</label>
             <input type="checkbox" id="non_proofread" ng-model="searchNonProofread">
-            <label for="non_proofread">ej korrekturläst</label>
+            <label for="non_proofread">ej korrekturläst</label> -->
+            <input id="yes" type="radio" ng-model="proofread" value="yes">
+            <label for="yes" ng-click="proofread = 'yes'">korrekturläst</label>
+            <input id="no" type="radio" ng-model="proofread" value="no">
+            <label for="no" ng-click="proofread = 'no'">ej korrekturläst</label>
+            <input id="all" type="radio" ng-model="proofread" value="all">
+            <label for="all" ng-click="proofread = 'all'">allt</label>
         </div>
     </div>
     

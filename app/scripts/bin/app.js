@@ -99,7 +99,7 @@
       templateUrl: 'views/search.html',
       controller: 'searchCtrl',
       reloadOnSearch: false,
-      title: "Sök i verkstext",
+      title: "Sök i verk",
       breadcrumb: ["sök"]
     }).when("/titlar", {
       templateUrl: "views/titleList.html",

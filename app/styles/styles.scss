@@ -721,6 +721,9 @@ $partnav-width : 170px;
         .author {
             min-height : 1em;
         }
+        p {
+            max-width : 400px;    
+        }
         // really for authorTitles
         .contenttable {
             margin-top : 3em;
@@ -746,7 +749,7 @@ $partnav-width : 170px;
         .author {
             margin-bottom : 2em;
         }
-        ul {
+        .topnav {
             margin-top : 2em;
             li {
                 margin-bottom : 1em;
@@ -839,6 +842,13 @@ $partnav-width : 170px;
 
 .page-epubList {
     #mainview {
+        .preloader {
+            text-align : left;
+            margin-top : 1em;
+        }
+        .searching .contenttable {
+            display : none;
+        }
         input.filter {
             margin-left : 1em;
         }

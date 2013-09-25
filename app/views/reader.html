@@ -26,14 +26,16 @@
     <div toolkit>
     
         <hr>
-    
-        <a class="author" href="#!/forfattare/{{author}}">
-            {{workinfo.authorFullname}} <span ng-if="workinfo.author_type == 'editor'">(red.)</span>
-        </a>
+        <span ng-repeat="author in workinfo.authoridNorm">
+            <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
+            <span ng-if="author.type == 'editor'">(red.)</span>
+            <span ng-if="!$last">och</span>
+        </span>
+        
         <a class="title" 
             href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info">
             {{workinfo.showtitle}}
-        </a>
+         </a>
     
         <div id="search_nav" ng-show="searchData.total_hits">
             <div class="box">
@@ -106,12 +108,15 @@
         </div>
 
         <div ng-if="supportsParallel()"><a ng-click="toggleParallel()">
-            <span ng-if="!isParallel">Visa etext parallellt</span>
+            <span ng-if="!isParallel">
+                Visa <span ng-show="mediatype == 'etext'">faksimil</span> 
+                <span ng-show="mediatype == 'faksimil'">etext</span> 
+                parallellt</span>
             <span ng-if="isParallel">Stäng parallelvisningen</span>
         </a></div>
     
         <div class="word_search">
-            <label>Slå upp i svensk ordbok</label>
+            <label>Slå upp i Svensk ordbok</label>
             <input  ng-model="lex_article"
                     typeahead-on-select="saveSearch(lex_article.baseform)"
                     typeahead-wait-ms="200"

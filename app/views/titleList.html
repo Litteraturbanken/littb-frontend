@@ -18,7 +18,7 @@
         </select>
         <!-- <input ng-show="workFilter == 'works'" class="filter_input" type="text" ng-model="filter" placeholder="Filtrera verk" ng-change="selectedLetter = null"> -->
         <form ng-submit="searchTitle()">
-            <input class="filter_input" type="text" ng-model="filter" placeholder="Sök titlar"><span submit-btn></span>
+            <input class="filter_input" type="text" ng-model="filter" placeholder="Sök titlar"><span ng-click="searchTitle()" submit-btn></span>
         </form>
 
         

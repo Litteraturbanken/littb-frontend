@@ -129,11 +129,15 @@
           watch = obj.expr || obj.scope_name || obj.key;
           _results.push(scope.$watch(watch, (function(obj, watch) {
             return function(val) {
+              var loc;
               val = (obj.val_out || _.identity)(val);
               if (val === obj["default"]) {
                 val = null;
               }
-              $location.search(obj.key, val || null);
+              loc = $location.search(obj.key, val || null);
+              if (obj.replace !== false) {
+                loc.replace();
+              }
               return typeof obj.post_change === "function" ? obj.post_change(val) : void 0;
             };
           })(obj, watch)));
@@ -238,7 +242,7 @@
       })());
     };
     parseWorkInfo = function(root, xml) {
-      var asArray, elem, output, useInnerXML, val, _i, _len, _ref, _ref1, _ref2;
+      var asArray, elem, output, useInnerXML, val, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
       useInnerXML = ["sourcedesc", "license-text"];
       asArray = ["mediatypes"];
       output = {};
@@ -251,12 +255,18 @@
           val = _.map($(elem).children(), function(child) {
             return $(child).text();
           });
+        } else if ((_ref3 = elem.nodeName) === "authorid" || _ref3 === "authorid-norm") {
+          val = {
+            id: $(elem).text(),
+            type: $(elem).attr("type")
+          };
+          ((_ref4 = output[util.normalize(elem.nodeName)]) != null ? _ref4.push(val) : void 0) || (output[util.normalize(elem.nodeName)] = [val]);
+          continue;
         } else {
           val = $(elem).text();
         }
         output[util.normalize(elem.nodeName)] = val;
       }
-      output.author_type = $(root + " > authorid", xml).attr("type");
       return output;
     };
     return {
@@ -281,7 +291,6 @@
           string = null;
         }
         def = $q.defer();
-        c.log("allTitles", allTitles, initial, string);
         if (allTitles) {
           params = {
             action: "get-titles-by-string-filter"
@@ -474,7 +483,7 @@
             authorid: author
           }
         }).success(function(xml) {
-          var authorInfo, elem, item, obj, val, works, _i, _j, _len, _len1, _ref, _ref1;
+          var authorInfo, elem, item, obj, ref, val, works, _i, _j, _len, _len1, _ref, _ref1;
           authorInfo = {};
           _ref = $("LBauthor", xml).children();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -498,7 +507,23 @@
           authorInfo.largeImage = util.getInnerXML($("image-large-uri", xml));
           authorInfo.presentation = util.getInnerXML($("presentation-uri", xml));
           authorInfo.bibliografi = util.getInnerXML($("bibliography-uri", xml));
+          authorInfo.semer = util.getInnerXML($("see-uri", xml));
+          authorInfo.externalref = (function() {
+            var _k, _len2, _ref2, _results;
+            _ref2 = $("LBauthor external-ref", xml);
+            _results = [];
+            for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+              ref = _ref2[_k];
+              _results.push({
+                label: util.getInnerXML($("label", ref)),
+                url: util.getInnerXML($("url", ref))
+              });
+            }
+            return _results;
+          })();
           return def.resolve(authorInfo);
+        }).error(function(data, status, headers, config) {
+          return def.reject();
         });
         return def.promise;
       },
@@ -727,6 +752,20 @@
         return def.promise;
       }
     };
+  });
+
+  littb.factory("authors", function(backend, $q) {
+    var def,
+      _this = this;
+    def = $q.defer();
+    backend.getAuthorList().then(function(authors) {
+      var authorsById;
+      authorsById = _.object(_.map(authors, function(item) {
+        return [item.authorid, item];
+      }));
+      return def.resolve([authors, authorsById]);
+    });
+    return def.promise;
   });
 
 }).call(this);

@@ -156,7 +156,7 @@ littb.directive 'soArticle', ($compile) ->
         soArticle : "="
     link : (scope, elem, attrs) ->
         scope.$watch "soArticle", (val) ->
-            newElem = $compile(val)(scope)
+            newElem = $compile(_.str.trim val)(scope)
             elem.html newElem
             
 

@@ -42,7 +42,12 @@
     
     <div toolkit>
         <hr>
-        <div><a href="#!/forfattare/{{data.authorid}}">{{data.authorFullname}}</a></div>
+        <span ng-repeat="author in data.authoridNorm">
+            <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
+            <span ng-if="author.type == 'editor'">(red.)</span>
+            <span ng-if="!$last">och</span>
+        </span>
+        <!-- <div><a href="#!/forfattare/{{data.authorid}}">{{data.authorFullname}}</a></div> -->
         <div><em><a href="#!/forfattare/{{data.authorid}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle}}</a></em></div>
     </div>
 </div>

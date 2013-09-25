@@ -62,12 +62,13 @@
     });
   });
 
-  littb.controller("searchCtrl", function($scope, backend, $location, util, searchData) {
+  littb.controller("searchCtrl", function($scope, backend, $location, util, searchData, authors) {
     var getMediatypes, initTitle, queryvars, s;
     s = $scope;
     s.open = false;
     s.searchProofread = true;
     s.searchNonProofread = true;
+    s.proofread = 'all';
     initTitle = _.once(function(titlesById) {
       if (!$location.search().titel) {
         return;
@@ -79,34 +80,33 @@
       return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.titlepath : void 0) || null);
     };
     s.checkProof = function() {
-      var out;
-      if (s.searchProofread && s.searchNonProofread) {
-        out = null;
-      } else if (!s.searchProofread && s.searchNonProofread) {
-        out = 'false';
+      if (s.proofread === 'all') {
+        return null;
+      } else if (s.proofread === 'no') {
+        return 'false';
       } else {
-        out = 'true';
+        return 'true';
       }
-      c.log("out", out);
-      return out;
     };
     s.authorChange = function() {
       return $location.search("titel", null);
     };
-    s.authors = backend.getAuthorList();
-    s.authors.then(function(authors) {
-      var authorsById, change;
-      authorsById = _.object(_.map(authors, function(item) {
-        return [item.authorid, item];
-      }));
+    authors.then(function(_arg) {
+      var authorList, authorsById, change;
+      authorList = _arg[0], authorsById = _arg[1];
+      s.authors = authorList;
       change = function(newAuthor) {
         if (!newAuthor) {
           return;
         }
+        c.log("change", newAuthor);
         return backend.getTitlesByAuthor(newAuthor).then(function(data) {
-          var titlesById;
-          s.titles = data;
-          titlesById = _.object(_.map(data, function(item) {
+          var filteredTitles, titlesById;
+          filteredTitles = _.filter(data, function(item) {
+            return __indexOf.call(item.titlepath, "/") < 0;
+          });
+          s.titles = filteredTitles;
+          titlesById = _.object(_.map(filteredTitles, function(item) {
             return [item.titlepath, item];
           }));
           return initTitle(titlesById);
@@ -191,37 +191,8 @@
       }, {
         key: "open"
       }, {
-        key: "pf",
-        scope_name: "searchProofread",
-        "default": true,
-        val_in: function(val) {
-          if (val === 'false') {
-            return false;
-          }
-          return val;
-        },
-        val_out: function(val) {
-          if (!val) {
-            return 'false';
-          }
-          return val;
-        }
-      }, {
-        key: "npf",
-        scope_name: "searchNonProofread",
-        "default": true,
-        val_in: function(val) {
-          if (val === 'false') {
-            return false;
-          }
-          return val;
-        },
-        val_out: function(val) {
-          if (!val) {
-            return 'false';
-          }
-          return val;
-        }
+        key: "proofread",
+        "default": "all"
       }
     ]);
     if ("fras" in queryvars) {
@@ -368,8 +339,8 @@
     });
   });
 
-  littb.controller("titleListCtrl", function($scope, backend, util, $timeout, $location, $q) {
-    var authorDef, fetchWorks, s;
+  littb.controller("titleListCtrl", function($scope, backend, util, $timeout, $location, $q, authors) {
+    var fetchWorks, s;
     s = $scope;
     s.searching = false;
     s.rowByLetter = {};
@@ -411,13 +382,14 @@
       }
       return fetchWorks();
     };
-    authorDef = backend.getAuthorList().then(function(data) {
-      s.authorsById = _.object(_.map(data, function(item) {
-        return [item.authorid, item];
-      }));
-      return s.authorData = data;
+    authors.then(function(_arg) {
+      var authorList, authorsById;
+      authorList = _arg[0], authorsById = _arg[1];
+      s.authorsById = authorsById;
+      return s.authorData = authorList;
     });
     s.searchTitle = function() {
+      c.log("searchTitle");
       if (s.workFilter === 'titlar') {
         s.selectedLetter = null;
         return fetchWorks();
@@ -431,10 +403,9 @@
       }
     };
     fetchWorks = function() {
-      var titleDef;
       s.searching = true;
       c.log("s.titlefilter", s.filter);
-      titleDef = backend.getTitles(s.workFilter === "titles", s.selectedLetter, s.filter).then(function(titleArray) {
+      return backend.getTitles(s.workFilter === "titles", s.selectedLetter, s.filter).then(function(titleArray) {
         s.searching = false;
         s.titleArray = titleArray;
         s.rowByLetter = _.groupBy(titleArray, function(item) {
@@ -445,10 +416,6 @@
         } else {
           return s.currentLetters = _.keys(s.rowByLetter);
         }
-      });
-      return $q.all([titleDef, authorDef]).then(function(_arg) {
-        var authorData, titleData;
-        titleData = _arg[0], authorData = _arg[1];
       });
     };
     s.getSource = function() {
@@ -504,6 +471,7 @@
   littb.controller("epubListCtrl", function($scope, backend, util) {
     var s;
     s = $scope;
+    s.searching = true;
     s.sorttuple = ["author.nameforindex", false];
     s.setSort = function(sortstr) {
       return s.sorttuple[0] = sortstr;
@@ -553,6 +521,7 @@
     ]);
     return backend.getTitles().then(function(titleArray) {
       var authors;
+      s.searching = false;
       s.rows = _.filter(titleArray, function(item) {
         return __indexOf.call(item.mediatype, "epub") >= 0;
       });
@@ -636,7 +605,7 @@
     });
   });
 
-  littb.controller("authorListCtrl", function($scope, backend, util) {
+  littb.controller("authorListCtrl", function($scope, backend, util, authors) {
     var s;
     s = $scope;
     s.sorttuple = ["nameforindex", false];
@@ -662,10 +631,10 @@
         key: "selectedLetter"
       }
     ]);
-    backend.getAuthorList().then(function(data) {
-      s.authorIdGroup = _.groupBy(data, function(item) {
-        return item.authorid;
-      });
+    authors.then(function(_arg) {
+      var authorById, data;
+      data = _arg[0], authorById = _arg[1];
+      s.authorIdGroup = authorById;
       s.authorIdGroup[""] = "";
       s.rows = data;
       s.rowByLetter = _.groupBy(data, function(item) {
@@ -708,7 +677,7 @@
     });
   });
 
-  littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams, $q) {
+  littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams, $q, authors) {
     var author, infoDef, mediatype, s, title;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype;
@@ -757,10 +726,10 @@
         return s.mediatype = s.data.mediatypes[0];
       }
     });
-    return $q.all([backend.getAuthorList(), infoDef]).then(function(_arg) {
-      var authorData, infoData, item, _i, _len, _results;
-      authorData = _arg[0], infoData = _arg[1];
-      c.log("authorData", arguments);
+    return $q.all([authors, infoDef]).then(function(_arg) {
+      var authorById, authorData, infoData, item, _i, _len, _ref, _results;
+      (_ref = _arg[0], authorData = _ref[0], authorById = _ref[1]), infoData = _arg[1];
+      s.authorById = authorById;
       _results = [];
       for (_i = 0, _len = authorData.length; _i < _len; _i++) {
         item = authorData[_i];
@@ -785,8 +754,8 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement) {
-    var author, loadPage, mediatype, pagename, s, thisRoute, title, watches;
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
+    var author, loadPage, mediatype, onKeyDown, pagename, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
@@ -819,7 +788,7 @@
       return $location.search("so", null);
     };
     s.saveSearch = function(str) {
-      c.log("str", str);
+      c.log("so.saveSearch", str);
       return $location.search("so", str);
     };
     s.$on("search_dict", function(event, query, searchId) {
@@ -850,7 +819,7 @@
     if ($location.search().so) {
       s.$emit("search_dict", $location.search().so);
     }
-    $document.on("keydown", function(event) {
+    onKeyDown = function(event) {
       return s.$apply(function() {
         switch (event.which) {
           case 39:
@@ -864,7 +833,8 @@
             }
         }
       });
-    });
+    };
+    $document.on("keydown", onKeyDown);
     s.getPage = function() {
       return $route.current.pathParams.pagename;
     };
@@ -927,6 +897,11 @@
       }
       return __indexOf.call(s.workinfo.mediatypes, 'etext') >= 0 && __indexOf.call(s.workinfo.mediatypes, 'faksimil') >= 0;
     };
+    authors.then(function(_arg) {
+      var authorById, authorData;
+      authorData = _arg[0], authorById = _arg[1];
+      return s.authorById = authorById;
+    });
     util.setupHashComplex(s, [
       {
         scope_name: "markee_from",
@@ -1034,7 +1009,7 @@
     return s.$on("$destroy", function() {
       var w, _i, _len, _results;
       c.log("destroy reader");
-      $document.off("keydown");
+      $document.off("keydown", onKeyDown);
       _results = [];
       for (_i = 0, _len = watches.length; _i < _len; _i++) {
         w = watches[_i];

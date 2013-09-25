@@ -1,37 +1,36 @@
-    <!-- for some reason, this breaks if dedented -->
-    <h1>Litteraturbankens epubfiler</h1>
-    
-    <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Listan på verk som finns tillgängliga i formatet kommer att utökas med tiden. Läs mer om epub på <a href="#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
-    
-    <div>
-        <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
-            <option value="">Alla författare</option>
-        </select>
-    
-        <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
+    <div ng-class="{searching : searching}"><!-- for some reason, this breaks if dedented -->
+        <h1>Litteraturbankens epubfiler</h1>
+            
+        <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Listan på verk som finns tillgängliga i formatet kommer att utökas med tiden. Läs mer om epub på <a href="#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
+        
+        <div>
+            <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
+                <option value="">Alla författare</option>
+            </select>
+        
+            <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
+        </div>
+        <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+        <table class="contenttable" scroll-to="{{selectedLetter || 'A'}}">
+            <thead>
+                <th> <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div> </th>
+                <th> <div sort-triangles val="itemAttrs.showtitle" tuple="sorttuple"></div> </th>
+                <th></th>
+            </thead>
+            <tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{row.author.nameforindex[0].toUpperCase()}}">
+                <td>
+                    <a href="#!/forfattare/{{row.author.authorid}}">{{getAuthor(row)}}</a>
+                    <span class="dots"></span>
+                </td>
+                <td class="title">
+                    <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>
+                </td>
+                <td>
+                    <a href="/txt/epub/{{row.author.authorid}}_{{row.itemAttrs.titlepath}}.epub">Hämta</a>
+                </td>
+            </tr>
+        </table>
     </div>
-    
-    <table class="contenttable" scroll-to="{{selectedLetter || 'A'}}">
-        <thead>
-            <th> <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div> </th>
-            <th> <div sort-triangles val="itemAttrs.showtitle" tuple="sorttuple"></div> </th>
-            <th></th>
-        </thead>
-        <tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{row.author.nameforindex[0].toUpperCase()}}">
-            <td>
-                <a href="#!/forfattare/{{row.author.authorid}}">{{getAuthor(row)}}</a>
-                <span class="dots"></span>
-            </td>
-            <td class="title">
-                <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{row.itemAttrs.showtitle}}</a>
-            </td>
-            <td>
-                <a href="/txt/epub/{{row.author.authorid}}_{{row.itemAttrs.titlepath}}.epub">Hämta</a>
-            </td>
-        </tr>
-    </table>
-    
-    
     <div toolkit>
         <div letter-map letter-map-change="letterChange()" selected="selectedLetter" enabled-letters="currentLetters"></div>
     </div>
