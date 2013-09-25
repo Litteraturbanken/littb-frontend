@@ -754,48 +754,21 @@
     });
   });
 
-  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
-    var author, loadPage, mediatype, onKeyDown, pagename, s, thisRoute, title, watches;
+  littb.controller("lexiconCtrl", function($scope, backend, $location, $rootScope, $q, $timeout, $modal, util) {
+    var modal, s;
     s = $scope;
-    title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
-    _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
-    s.searchData = searchData;
     s.dict_not_found = null;
-    thisRoute = $route.current;
     s.dict_searching = false;
-    s.nextHit = function() {
-      return searchData.next().then(function(newUrl) {
-        return $location.url(newUrl);
-      });
-    };
-    s.prevHit = function() {
-      return searchData.prev().then(function(newUrl) {
-        return $location.url(newUrl);
-      });
-    };
-    s.close_hits = function() {
-      searchData.reset();
-      $location.search("traff", null);
-      return $location.search("traffslut", null);
-    };
-    s.pagename = pagename;
-    s.opts = {
-      backdropFade: true,
-      dialogFade: true
-    };
+    modal = null;
     s.closeModal = function() {
-      s.lex_article = null;
-      return $location.search("so", null);
+      return s.lex_article = null;
     };
     s.saveSearch = function(str) {
-      c.log("so.saveSearch", str);
-      return $location.search("so", str);
+      return s.$emit("search_dict", str);
     };
-    s.$on("search_dict", function(event, query, searchId) {
-      s.dict_searching = true;
+    $rootScope.$on("search_dict", function(event, query, searchId) {
       return backend.searchLexicon(query, false, searchId, true).then(function(data) {
         var obj, result, _i, _len;
-        s.dict_searching = false;
         c.log("search_dict", data);
         if (!data.length) {
           s.dict_not_found = "Hittade inget uppslag";
@@ -813,12 +786,66 @@
           }
         }
         s.lex_article = result;
-        return $location.search("so", result.baseform);
+        if (!modal) {
+          modal = $modal.open({
+            templateUrl: "so_modal_template.html",
+            scope: s
+          });
+          return modal.result.then(angular.noop, function() {
+            s.lex_article = null;
+            return modal = null;
+          });
+        }
       });
     });
-    if ($location.search().so) {
-      s.$emit("search_dict", $location.search().so);
-    }
+    s.getWords = function(val) {
+      var def, timeout;
+      c.log("getWords");
+      s.dict_searching = true;
+      def = backend.searchLexicon(val, true);
+      c.log($timeout, $q.all);
+      timeout = $timeout(angular.noop, 1000);
+      $q.all([def, timeout]).then(function() {
+        c.log("all");
+        return s.dict_searching = false;
+      });
+      return def;
+    };
+    return util.setupHashComplex(s, [
+      {
+        key: "so",
+        expr: "lex_article.baseform",
+        val_in: function(val) {
+          return s.$emit("search_dict", val);
+        },
+        replace: false
+      }
+    ]);
+  });
+
+  littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
+    var author, loadPage, mediatype, onKeyDown, pagename, s, thisRoute, title, watches;
+    s = $scope;
+    title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
+    _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
+    s.searchData = searchData;
+    thisRoute = $route.current;
+    s.nextHit = function() {
+      return searchData.next().then(function(newUrl) {
+        return $location.url(newUrl);
+      });
+    };
+    s.prevHit = function() {
+      return searchData.prev().then(function(newUrl) {
+        return $location.url(newUrl);
+      });
+    };
+    s.close_hits = function() {
+      searchData.reset();
+      $location.search("traff", null);
+      return $location.search("traffslut", null);
+    };
+    s.pagename = pagename;
     onKeyDown = function(event) {
       return s.$apply(function() {
         switch (event.which) {
@@ -879,9 +906,6 @@
     s.mouseover = function() {
       c.log("mouseover");
       return s.showPopup = true;
-    };
-    s.getWords = function(val) {
-      return backend.searchLexicon(val, true);
     };
     s.getTooltip = function(part) {
       if (part.navtitle !== part.showtitle) {

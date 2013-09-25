@@ -80,16 +80,40 @@
                 </li>
             </ul>
 
-            <div id="toolkit" >
+            <div class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
+                <label>Slå upp i Svensk ordbok</label>
+                <div class="input_container">
+                    <input  ng-model="lex_article"
+                            typeahead-on-select="saveSearch(lex_article.baseform)"
+                            typeahead-wait-ms="200"
+                            typeahead="article as article.baseform for article in getWords($viewValue)">
+                    
+                    <span class="so_spinner" us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"></span>
+                </div>
             </div>
+
+            <div id="toolkit"></div>
         </div>
 
-        <div id="mainview" ng-view role="main">
+        <div id="mainview" ng-view role="main"></div>
 
-        </div>
         <!-- <div class="nav_footer"></div> -->
+        
+        <script type="text/ng-template" id="so_modal_template.html">
+            <div>
+                <div class="so_modal">
+                    <div class="modal-header">
+                        <h4>Svensk ordbok (2009)</h4>
+                    </div>
+                    <div so-article="lex_article.lexemes" class="_so_article" >
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </script>
 
-
+        <div alert="dict_not_found"></div>
 
 
         <script src="components/jquery/jquery.js"></script>
@@ -102,9 +126,8 @@
         <script src="components/angular-bootstrap/ui-bootstrap.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
         
-        <!--[if lte IE 8]>
-            <script src="components/angular-ui-utils/modules/ie-shiv/ie-shiv.js"></script>
-        <![endif]-->
+        <script src="components/spin.js/dist/spin.js"></script>
+        <script src="components/angular-spinner/angular-spinner.js"></script>
         
         <!-- <script src="lib/nprogress.js"></script> -->
 
@@ -112,6 +135,9 @@
 
 
         <!-- build:js scripts/scripts.js -->
+        <!--[if lte IE 8]>
+            <script src="components/angular-ui-utils/modules/ie-shiv/ie-shiv.js"></script>
+        <![endif]-->
         <script src="scripts/bin/app.js"></script>
 
         <script src="scripts/bin/services.js"></script>

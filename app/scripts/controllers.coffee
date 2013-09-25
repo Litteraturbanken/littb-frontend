@@ -678,46 +678,25 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors) 
 
 
 
-
-
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) ->
+littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $timeout, $modal, util) ->
     s = $scope
-    {title, author, mediatype, pagename} = $routeParams
-    _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
-    s.searchData = searchData
     s.dict_not_found = null
-    # s.dict_not_found = "Hittade inget uppslag"
-    thisRoute = $route.current
     s.dict_searching = false
-    s.nextHit = () ->
-        searchData.next().then (newUrl) ->
-            $location.url(newUrl)
-    s.prevHit = () ->
-        searchData.prev().then (newUrl) ->
-            $location.url(newUrl)
-    s.close_hits = () ->
-        searchData.reset()
-        $location.search("traff", null)
-        $location.search("traffslut", null)
-    s.pagename = pagename
-    s.opts =
-        backdropFade: true
-        dialogFade:true
+
+    modal = null
 
 
     s.closeModal = () ->
         s.lex_article = null
-        $location.search("so", null)
 
 
     s.saveSearch = (str) ->
-        c.log "so.saveSearch", str
-        $location.search("so", str)
+        s.$emit "search_dict", str
 
-    s.$on "search_dict", (event, query, searchId) ->
-        s.dict_searching = true
+    $rootScope.$on "search_dict", (event, query, searchId) ->
+        
+        
         backend.searchLexicon(query, false, searchId, true).then (data) ->
-            s.dict_searching = false
             c.log "search_dict", data
 
             unless data.length
@@ -736,13 +715,66 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
                     
             s.lex_article = result
-            $location.search("so", result.baseform)
+            unless modal
+                modal = $modal.open
+                    templateUrl : "so_modal_template.html"
+                    scope : s
 
+                modal.result.then angular.noop, () ->
+                    s.lex_article = null
+                    modal = null
             
 
-    if $location.search().so
-        s.$emit "search_dict", $location.search().so
+    s.getWords = (val) ->
+        c.log "getWords"
+        s.dict_searching = true
+        def = backend.searchLexicon(val, true)
+        c.log $timeout, $q.all
+        timeout = $timeout(angular.noop, 1000)
+        $q.all([def, timeout]).then () ->
+            c.log "all"
+            s.dict_searching = false
+            
 
+        # def.then () ->
+
+        return def
+
+
+
+    util.setupHashComplex s, [
+        key : "so"
+        expr : "lex_article.baseform"
+        val_in : (val) ->
+            s.$emit "search_dict", val
+        replace : false            
+    ]
+
+
+
+
+
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) ->
+    s = $scope
+    {title, author, mediatype, pagename} = $routeParams
+    _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
+    s.searchData = searchData
+    
+    # s.dict_not_found = "Hittade inget uppslag"
+    thisRoute = $route.current
+    
+    s.nextHit = () ->
+        searchData.next().then (newUrl) ->
+            $location.url(newUrl)
+    s.prevHit = () ->
+        searchData.prev().then (newUrl) ->
+            $location.url(newUrl)
+    s.close_hits = () ->
+        searchData.reset()
+        $location.search("traff", null)
+        $location.search("traffslut", null)
+    s.pagename = pagename
+    
     onKeyDown = (event) ->
         # c.log "keypress", event.key, event.keyCode, event.which
         s.$apply () ->
@@ -791,9 +823,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         c.log "mouseover"
         s.showPopup = true
 
-
-    s.getWords = (val) ->
-        backend.searchLexicon(val, true)
 
 
     s.getTooltip = (part) ->

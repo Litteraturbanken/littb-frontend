@@ -12,9 +12,10 @@
     "lodash": "git://github.com/bestiejs/lodash.git#1.2.1",
     "bootstrap": "git://github.com/twbs/bootstrap.git#2.3.2",
     "jquery-ui": "git://github.com/components/jqueryui#1.8.23",
-    "angular-bootstrap": "~0.5.0",
+    "angular-bootstrap": "~0.6.0",
     "nprogress": "~0.1.2",
-    "angular-ui-utils": "~0.0.4"
+    "angular-ui-utils": "~0.0.4",
+    "angular-spinner": "~0.2.1"
   },
   "devDependencies": {
     "angular-mocks": "git://github.com/angular/bower-angular-mocks.git#1.0.7",
