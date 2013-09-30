@@ -279,10 +279,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
 
     refreshBreadcrumb = () ->
-        if s.showtitles
-            s.appendCrumb "titlar"
+        if s.showpage != "introduktion"
+            s.appendCrumb s.showpage
         else
-            delete $rootScope.breadcrumb[2] 
+            $rootScope.breadcrumb.pop()
+
+             
 
     s.getUnique = (worklist) ->
         _.filter worklist, (item) ->
@@ -316,7 +318,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         refreshRoute()  
         refreshTitle()
         refreshExternalDoc(s.showpage)
-
+        refreshBreadcrumb()
     
 
 
@@ -327,6 +329,8 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
         $rootScope.appendCrumb data.surname
+        if s.showpage != "introduktion"
+            refreshBreadcrumb()
         refreshTitle()
         refreshExternalDoc(s.showpage)
 
@@ -341,7 +345,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         return attrs.title unless attrs.showtitle == attrs.title
 
     # s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle"
-    s.titlesort = "itemAttrs.showtitle"
+    s.titlesort = "itemAttrs.sortkey"
 
     
     s.sorttuple = [s.titlesort, false]
@@ -393,7 +397,15 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
             # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
             s.titleArray = titleArray
             s.rowByLetter = _.groupBy titleArray, (item) ->
-                item.itemAttrs.showtitle[0]
+                firstletter = item.itemAttrs.sortkey[0]
+                # if firstletter in ["(", "[", "”"]
+                #     firstletter = item.itemAttrs.sorttitle[1]
+                if firstletter == "Æ"
+                    firstletter = "A"
+                return firstletter.toUpperCase()
+
+
+
             if s.workFilter == "titles"
                 s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("")
             else
@@ -687,7 +699,10 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
     s.closeModal = () ->
+        modal.close()
         s.lex_article = null
+        modal = null
+
 
 
     s.saveSearch = (str) ->
@@ -721,18 +736,16 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
                     scope : s
 
                 modal.result.then angular.noop, () ->
-                    s.lex_article = null
-                    modal = null
+                    s.closeModal()
             
 
     s.getWords = (val) ->
-        c.log "getWords"
+        c.log "getWords", val
+        unless val then return
         s.dict_searching = true
         def = backend.searchLexicon(val, true)
-        c.log $timeout, $q.all
         timeout = $timeout(angular.noop, 800)
         $q.all([def, timeout]).then () ->
-            c.log "all"
             s.dict_searching = false
             
 

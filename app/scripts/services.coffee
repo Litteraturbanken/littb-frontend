@@ -240,18 +240,25 @@ littb.factory 'backend', ($http, $q, util) ->
 
         ).success (xml) ->
             # c.log "getTitles success", xml
-            workGroups = _.groupBy $("item", xml), (item) ->
-                $(item).attr("lbworkid") + $(item).find("author").attr("authorid")
+
+            pathGroups = _.groupBy $("item", xml), (item) ->
+                author = $(item).find("author").attr("authorid")
+                if "/" in $(item).attr("titlepath")
+                    return author + $(item).attr("titlepath").split("/")[1]
+                else
+                    return author + $(item).attr("titlepath")
+
 
             rows = []
-            for workid, elemList of workGroups
-                itm = $(elemList[0])
-                if not (objFromAttrs itm.find("author").get(0))
+            for path, elemList of pathGroups
+                itm = elemList[0]
+                if not (objFromAttrs $(itm).find("author").get(0))
                     c.log "author failed", itm
                 rows.push
-                    itemAttrs : objFromAttrs elemList[0]
-                    author : (objFromAttrs itm.find("author").get(0)) or ""
+                    itemAttrs : objFromAttrs itm
+                    author : (objFromAttrs $(itm).find("author").get(0)) or ""
                     mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
+                    # mediatype : getMediatypes($(itm).attr("lbworkid"))
 
             # rows = _.flatten _.values rows
             def.resolve rows
@@ -545,7 +552,7 @@ littb.factory 'backend', ($http, $q, util) ->
     searchLexicon : (str, useWildcard, searchId, strict) ->
         def = $q.defer()
         url = "/query/so.xql"
-        c.log "searchId", searchId
+        # c.log "searchId", searchId
         if searchId
             params = 
                 id : str
@@ -575,7 +582,7 @@ littb.factory 'backend', ($http, $q, util) ->
             window.output = output
             output = _.sortBy output, (item) ->
                 if item.baseform == str then return "aaaaaaaaa"
-                item.baseform
+                item.baseform.toLowerCase()
 
             def.resolve output
         ).error () ->

@@ -1,3 +1,4 @@
+//@ sourceMappingURL=controllers.map
 (function() {
   'use strict';
   var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -294,10 +295,10 @@
       return s.setTitle(("" + s.authorInfo.fullName + " - ") + suffix);
     };
     refreshBreadcrumb = function() {
-      if (s.showtitles) {
-        return s.appendCrumb("titlar");
+      if (s.showpage !== "introduktion") {
+        return s.appendCrumb(s.showpage);
       } else {
-        return delete $rootScope.breadcrumb[2];
+        return $rootScope.breadcrumb.pop();
       }
     };
     s.getUnique = function(worklist) {
@@ -328,12 +329,16 @@
       _.extend(s, current.pathParams);
       refreshRoute();
       refreshTitle();
-      return refreshExternalDoc(s.showpage);
+      refreshExternalDoc(s.showpage);
+      return refreshBreadcrumb();
     });
     return backend.getAuthorInfo(s.author).then(function(data) {
       s.authorInfo = data;
       s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
       $rootScope.appendCrumb(data.surname);
+      if (s.showpage !== "introduktion") {
+        refreshBreadcrumb();
+      }
       refreshTitle();
       return refreshExternalDoc(s.showpage);
     });
@@ -352,7 +357,7 @@
         return attrs.title;
       }
     };
-    s.titlesort = "itemAttrs.showtitle";
+    s.titlesort = "itemAttrs.sortkey";
     s.sorttuple = [s.titlesort, false];
     s.setSort = function(sortstr) {
       return s.sorttuple[0] = sortstr;
@@ -409,7 +414,12 @@
         s.searching = false;
         s.titleArray = titleArray;
         s.rowByLetter = _.groupBy(titleArray, function(item) {
-          return item.itemAttrs.showtitle[0];
+          var firstletter;
+          firstletter = item.itemAttrs.sortkey[0];
+          if (firstletter === "Æ") {
+            firstletter = "A";
+          }
+          return firstletter.toUpperCase();
         });
         if (s.workFilter === "titles") {
           return s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("");
@@ -761,7 +771,9 @@
     s.dict_searching = false;
     modal = null;
     s.closeModal = function() {
-      return s.lex_article = null;
+      modal.close();
+      s.lex_article = null;
+      return modal = null;
     };
     s.saveSearch = function(str) {
       return s.$emit("search_dict", str);
@@ -792,21 +804,21 @@
             scope: s
           });
           return modal.result.then(angular.noop, function() {
-            s.lex_article = null;
-            return modal = null;
+            return s.closeModal();
           });
         }
       });
     });
     s.getWords = function(val) {
       var def, timeout;
-      c.log("getWords");
+      c.log("getWords", val);
+      if (!val) {
+        return;
+      }
       s.dict_searching = true;
       def = backend.searchLexicon(val, true);
-      c.log($timeout, $q.all);
       timeout = $timeout(angular.noop, 800);
       $q.all([def, timeout]).then(function() {
-        c.log("all");
         return s.dict_searching = false;
       });
       return def;

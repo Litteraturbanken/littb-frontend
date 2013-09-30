@@ -1,3 +1,4 @@
+//@ sourceMappingURL=services.map
 (function() {
   var __slice = [].slice,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
@@ -310,20 +311,26 @@
           url: "/query/lb-anthology.xql",
           params: params
         }).success(function(xml) {
-          var elemList, itm, rows, workGroups, workid;
-          workGroups = _.groupBy($("item", xml), function(item) {
-            return $(item).attr("lbworkid") + $(item).find("author").attr("authorid");
+          var elemList, itm, path, pathGroups, rows;
+          pathGroups = _.groupBy($("item", xml), function(item) {
+            var author;
+            author = $(item).find("author").attr("authorid");
+            if (__indexOf.call($(item).attr("titlepath"), "/") >= 0) {
+              return author + $(item).attr("titlepath").split("/")[1];
+            } else {
+              return author + $(item).attr("titlepath");
+            }
           });
           rows = [];
-          for (workid in workGroups) {
-            elemList = workGroups[workid];
-            itm = $(elemList[0]);
-            if (!(objFromAttrs(itm.find("author").get(0)))) {
+          for (path in pathGroups) {
+            elemList = pathGroups[path];
+            itm = elemList[0];
+            if (!(objFromAttrs($(itm).find("author").get(0)))) {
               c.log("author failed", itm);
             }
             rows.push({
-              itemAttrs: objFromAttrs(elemList[0]),
-              author: (objFromAttrs(itm.find("author").get(0))) || "",
+              itemAttrs: objFromAttrs(itm),
+              author: (objFromAttrs($(itm).find("author").get(0))) || "",
               mediatype: _.unique(_.map(elemList, function(item) {
                 return $(item).attr("mediatype");
               }))
@@ -656,7 +663,6 @@
         var def, params, suffix, url;
         def = $q.defer();
         url = "/query/so.xql";
-        c.log("searchId", searchId);
         if (searchId) {
           params = {
             id: str
@@ -694,7 +700,7 @@
             if (item.baseform === str) {
               return "aaaaaaaaa";
             }
-            return item.baseform;
+            return item.baseform.toLowerCase();
           });
           return def.resolve(output);
         }).error(function() {

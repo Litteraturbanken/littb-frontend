@@ -79,6 +79,10 @@
                     <a href="#!/sok">Sök i verk</a>
                 </li>
             </ul>
+            
+            <div class="font-small dict_links">
+                <a href="http://g3.spraakdata.gu.se/saob/" target="_blank">SAOB</a> ::: <a href="http://spraakbanken.gu.se/dalin/" target="_blank">Dalin</a>
+            </div>
 
             <div class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
                 <label>Slå upp i Svensk ordbok</label>
@@ -105,10 +109,9 @@
                 <div class="so_modal">
                     <div class="modal-header">
                         <h4>Svensk ordbok (2009)</h4>
+                        <span ng-click="closeModal()" class="sans close-x">X</span>
                     </div>
                     <div so-article="lex_article.lexemes" class="_so_article" >
-                    </div>
-                    <div class="modal-footer">
                     </div>
                 </div>
             </div>
