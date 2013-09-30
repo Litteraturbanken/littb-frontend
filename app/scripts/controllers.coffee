@@ -1,7 +1,7 @@
 'use strict';
 
 window.c = console ? log : _.noop
-
+littb = angular.module('littbApp');
 littb.controller "startCtrl", ($scope, $location) ->
 
     $scope.gotoTitle = (query) ->

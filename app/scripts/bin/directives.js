@@ -1,6 +1,8 @@
-//@ sourceMappingURL=directives.map
 (function() {
-  var __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+  var littb,
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  littb = angular.module('littbApp');
 
   littb.directive('submitBtn', function() {
     return {
@@ -220,7 +222,7 @@
     return {
       link: function(scope, elem, attr) {
         var box, showIndicator;
-        box = $("<div>").addClass("search_dict").appendTo("body").hide();
+        box = $();
         $("html").on("click", function() {
           return box.remove();
         });
@@ -235,7 +237,7 @@
         });
         showIndicator = function(target) {
           box.remove();
-          return box = $("<div>").addClass("search_dict").appendTo("body").position({
+          return box = $("<div><i class='icon-search glass'></i>                        <i class='icon-search shadow'></i>                        <span class='circle'></span></div>").addClass("search_dict").appendTo("body").position({
             my: "left bottom",
             at: "right top",
             of: target
@@ -270,3 +272,7 @@
   });
 
 }).call(this);
+
+/*
+//@ sourceMappingURL=directives.js.map
+*/

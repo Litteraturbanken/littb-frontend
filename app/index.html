@@ -11,12 +11,14 @@
         <meta name="viewport" content="width=device-width"/>
         <link id="reading_css" href="" rel="stylesheet" type="text/css" />
         <!-- <link rel="stylesheet" href="components/bootstrap/docs/assets/css/bootstrap.css"/> -->
-        <link rel="stylesheet" href="styles/red.css"/>
         <link rel="stylesheet" href="/red/css/etext.css"/>
+        <!-- build:css styles/littb.css -->
+        <link rel="stylesheet" href="styles/red.css"/>
         <link rel="stylesheet" type="text/css" href="styles/so.css" />
         <link rel="stylesheet" type="text/css" href="styles/bootstrap.css" />
         <link rel="stylesheet" type="text/css" href="styles/styles.css" />
         <link rel="stylesheet" href="components/font-awesome/css/font-awesome.css"/>
+        <!-- endbuild -->
         <!-- <link rel="stylesheet" href="components/nprogress/nprogress.js" /> -->
 
     </head>
@@ -119,7 +121,7 @@
 
         
 
-
+        <!-- build:js scripts/libs.js -->
         <script src="components/jquery/jquery.js"></script>
 
         <script src="components/lodash/dist/lodash.compat.js"></script>
@@ -132,16 +134,16 @@
         
         <script src="components/spin.js/dist/spin.js"></script>
         <script src="components/angular-spinner/angular-spinner.js"></script>
-        
+        <!-- endbuild -->
+
+
         <!-- <script src="lib/nprogress.js"></script> -->
 
-
-
-
-        <!-- build:js scripts/scripts.js -->
         <!--[if lte IE 8]>
             <script src="components/angular-ui-utils/modules/ie-shiv/ie-shiv.js"></script>
         <![endif]-->
+
+        <!-- build:js scripts/scripts.js -->
         <script src="scripts/bin/app.js"></script>
 
         <script src="scripts/bin/services.js"></script>

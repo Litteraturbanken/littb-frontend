@@ -114,10 +114,35 @@ hr {
 
 .search_dict {
     position : absolute;
-    width : 24px;
-    height : 24px;
-    background-image: url("../img/search_dict.png");
     cursor : pointer;
+    color : $primarycolor;
+    font-size : 1.5em;
+    height : 1.3em;
+    .glass {
+        position : relative;
+        z-index : 10;
+    }
+    .shadow {
+        position: relative;
+        color: white;
+        left: -1em;
+        font-size: 1.3em;
+        top: 0.1em;
+        font-weight: bold;
+        opacity: 0.7;
+    }
+    .circle {
+        position: relative;
+        border-radius: 10px;
+        width: 0.6em;
+        height: 0.6em;
+        background-color: white;
+        display: block;
+        top: -0.9em;
+        left: 1px;
+        opacity: 0.7;
+
+    }
 }
 
 // #toolkit:not(:empty) {

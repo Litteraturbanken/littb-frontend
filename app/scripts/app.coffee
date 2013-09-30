@@ -47,16 +47,18 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                 controller : "presentationCtrl"
                         
             .when '/presentationer/specialomraden/:doc',
-                controller : ($scope, $routeParams, $http, util) ->
-                    $http.get("/red/presentationer/specialomraden/#{$routeParams.doc}").success (data) ->
-                        # c.log "doc", data
-
-                        $scope.doc = data
-                        title = $("<root>#{data}</root>").find("h1").text()
-                        c.log "title", title
-                        title = title.split(" ")[0...5].join(" ")
-                        $scope.setTitle title
-                        $scope.appendCrumb title
+                controller : ["$scope", "$routeParams", "$http", "util", 
+                                ($scope, $routeParams, $http, util) ->
+                                    $http.get("/red/presentationer/specialomraden/#{$routeParams.doc}").success (data) ->
+                                        # c.log "doc", data
+                
+                                        $scope.doc = data
+                                        title = $("<root>#{data}</root>").find("h1").text()
+                                        c.log "title", title
+                                        title = title.split(" ")[0...5].join(" ")
+                                        $scope.setTitle title
+                                        $scope.appendCrumb title
+                ]
                 template : '''
                         <div style="position:relative;" ng-bind-html-unsafe="doc"></div>
                     '''
@@ -141,14 +143,15 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                     url : "#!/forfattare"
                 ]
                 resolve : 
-                    r : ($q, $routeParams, $route) ->
-                        def = $q.defer()
-                        if routeStartCurrent?.controller == "authorInfoCtrl" and
-                         $route.current.controller == "authorInfoCtrl"
-                            def.reject()
-                        else 
-                            def.resolve()
-                        return def.promise
+                    r : ["$q", "$routeParams", "$route",
+                            ($q, $routeParams, $route) ->
+                                def = $q.defer()
+                                if routeStartCurrent?.controller == "authorInfoCtrl" and
+                                 $route.current.controller == "authorInfoCtrl"
+                                    def.reject()
+                                else 
+                                    def.resolve()
+                                return def.promise]
             .when "/forfattare/:author/titlar/:title/info",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"
@@ -171,26 +174,28 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                 reloadOnSearch : false,
                 breadcrumb : ["författare"]
                 resolve :
-                    r : ($q, $routeParams, $route, $rootScope) ->
-                        def = $q.defer()
-
-                        if _.isEmpty($routeParams)
-                            def.resolve()
-                            # return def.promise
-                        # if we're only changing pages in the reader, don't change route
-
-                        if routeStartCurrent?.controller == "readingCtrl" and $route.current.controller == "readingCtrl"
-                            cmp = ["author", "mediatype", "title"]
-                            current = _.pick $route.current.params, cmp...
-                            prev = _.pick routeStartCurrent.params, cmp...
-                            if _.isEqual current, prev
-                                c.log "reject reader change"
-                                def.reject()
-                            else
-                                def.resolve()
-                        else
-                            def.resolve()
-                        return def.promise
+                    r : ["$q", "$routeParams", "$route", "$rootScope",
+                            ($q, $routeParams, $route, $rootScope) ->
+                                def = $q.defer()
+        
+                                if _.isEmpty($routeParams)
+                                    def.resolve()
+                                    # return def.promise
+                                # if we're only changing pages in the reader, don't change route
+        
+                                if routeStartCurrent?.controller == "readingCtrl" and $route.current.controller == "readingCtrl"
+                                    cmp = ["author", "mediatype", "title"]
+                                    current = _.pick $route.current.params, cmp...
+                                    prev = _.pick routeStartCurrent.params, cmp...
+                                    if _.isEqual current, prev
+                                        c.log "reject reader change"
+                                        def.reject()
+                                    else
+                                        def.resolve()
+                                else
+                                    def.resolve()
+                                return def.promise
+                    ]
 
             .when '/kontakt',
                 templateUrl: 'views/contactForm.html'

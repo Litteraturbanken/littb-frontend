@@ -1,4 +1,4 @@
-
+littb = angular.module('littbApp');
 littb.directive 'submitBtn', () ->
 
     replace : true
@@ -178,7 +178,9 @@ littb.directive 'hvord', (backend) ->
 littb.directive 'selectionSniffer', ($window) -> 
     
     link: (scope, elem, attr) ->
-        box = $("<div>").addClass("search_dict").appendTo("body").hide()
+        # box = $("<div><i class='icon-search'></i></div>").addClass("search_dict")
+        #     .appendTo("body").hide()
+        box = $()
                 
 
         $("html").on "click", () ->
@@ -195,7 +197,10 @@ littb.directive 'selectionSniffer', ($window) ->
         showIndicator = (target) ->
             box.remove()
             
-            box = $("<div>").addClass("search_dict")
+            box = $("<div><i class='icon-search glass'></i>
+                        <i class='icon-search shadow'></i>
+                        <span class='circle'></span></div>")
+                .addClass("search_dict")
                 .appendTo("body")
                 .position(
                     my : "left bottom"

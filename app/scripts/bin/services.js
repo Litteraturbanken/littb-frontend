@@ -1,7 +1,9 @@
-//@ sourceMappingURL=services.map
 (function() {
-  var __slice = [].slice,
+  var littb,
+    __slice = [].slice,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  littb = angular.module('littbApp');
 
   littb.factory("debounce", function($timeout) {
     return function(func, wait, options) {
@@ -775,3 +777,7 @@
   });
 
 }).call(this);
+
+/*
+//@ sourceMappingURL=services.js.map
+*/

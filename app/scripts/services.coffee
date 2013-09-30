@@ -1,4 +1,4 @@
-
+littb = angular.module('littbApp');
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->
         args = null

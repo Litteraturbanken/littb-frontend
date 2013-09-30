@@ -1,4 +1,3 @@
-//@ sourceMappingURL=app.map
 (function() {
   'use strict';
   var routeStartCurrent,
@@ -53,17 +52,19 @@
       templateUrl: "views/presentations.html",
       controller: "presentationCtrl"
     }).when('/presentationer/specialomraden/:doc', {
-      controller: function($scope, $routeParams, $http, util) {
-        return $http.get("/red/presentationer/specialomraden/" + $routeParams.doc).success(function(data) {
-          var title;
-          $scope.doc = data;
-          title = $("<root>" + data + "</root>").find("h1").text();
-          c.log("title", title);
-          title = title.split(" ").slice(0, 5).join(" ");
-          $scope.setTitle(title);
-          return $scope.appendCrumb(title);
-        });
-      },
+      controller: [
+        "$scope", "$routeParams", "$http", "util", function($scope, $routeParams, $http, util) {
+          return $http.get("/red/presentationer/specialomraden/" + $routeParams.doc).success(function(data) {
+            var title;
+            $scope.doc = data;
+            title = $("<root>" + data + "</root>").find("h1").text();
+            c.log("title", title);
+            title = title.split(" ").slice(0, 5).join(" ");
+            $scope.setTitle(title);
+            return $scope.appendCrumb(title);
+          });
+        }
+      ],
       template: '<div style="position:relative;" ng-bind-html-unsafe="doc"></div>',
       breadcrumb: ["presentationer"]
     }).when('/om/aktuellt', {
@@ -140,16 +141,18 @@
         }
       ],
       resolve: {
-        r: function($q, $routeParams, $route) {
-          var def;
-          def = $q.defer();
-          if ((routeStartCurrent != null ? routeStartCurrent.controller : void 0) === "authorInfoCtrl" && $route.current.controller === "authorInfoCtrl") {
-            def.reject();
-          } else {
-            def.resolve();
+        r: [
+          "$q", "$routeParams", "$route", function($q, $routeParams, $route) {
+            var def;
+            def = $q.defer();
+            if ((routeStartCurrent != null ? routeStartCurrent.controller : void 0) === "authorInfoCtrl" && $route.current.controller === "authorInfoCtrl") {
+              def.reject();
+            } else {
+              def.resolve();
+            }
+            return def.promise;
           }
-          return def.promise;
-        }
+        ]
       }
     }).when("/forfattare/:author/titlar/:title/info", {
       templateUrl: "views/sourceInfo.html",
@@ -173,27 +176,29 @@
       reloadOnSearch: false,
       breadcrumb: ["författare"],
       resolve: {
-        r: function($q, $routeParams, $route, $rootScope) {
-          var cmp, current, def, prev;
-          def = $q.defer();
-          if (_.isEmpty($routeParams)) {
-            def.resolve();
-          }
-          if ((routeStartCurrent != null ? routeStartCurrent.controller : void 0) === "readingCtrl" && $route.current.controller === "readingCtrl") {
-            cmp = ["author", "mediatype", "title"];
-            current = _.pick.apply(_, [$route.current.params].concat(__slice.call(cmp)));
-            prev = _.pick.apply(_, [routeStartCurrent.params].concat(__slice.call(cmp)));
-            if (_.isEqual(current, prev)) {
-              c.log("reject reader change");
-              def.reject();
+        r: [
+          "$q", "$routeParams", "$route", "$rootScope", function($q, $routeParams, $route, $rootScope) {
+            var cmp, current, def, prev;
+            def = $q.defer();
+            if (_.isEmpty($routeParams)) {
+              def.resolve();
+            }
+            if ((routeStartCurrent != null ? routeStartCurrent.controller : void 0) === "readingCtrl" && $route.current.controller === "readingCtrl") {
+              cmp = ["author", "mediatype", "title"];
+              current = _.pick.apply(_, [$route.current.params].concat(__slice.call(cmp)));
+              prev = _.pick.apply(_, [routeStartCurrent.params].concat(__slice.call(cmp)));
+              if (_.isEqual(current, prev)) {
+                c.log("reject reader change");
+                def.reject();
+              } else {
+                def.resolve();
+              }
             } else {
               def.resolve();
             }
-          } else {
-            def.resolve();
+            return def.promise;
           }
-          return def.promise;
-        }
+        ]
       }
     }).when('/kontakt', {
       templateUrl: 'views/contactForm.html',
@@ -393,3 +398,7 @@
   });
 
 }).call(this);
+
+/*
+//@ sourceMappingURL=app.js.map
+*/
