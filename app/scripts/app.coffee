@@ -151,7 +151,8 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                                     def.reject()
                                 else 
                                     def.resolve()
-                                return def.promise]
+                                return def.promise
+                        ]
             .when "/forfattare/:author/titlar/:title/info",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"

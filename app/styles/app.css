@@ -1,4 +1,6 @@
 @charset "UTF-8";
+
+
 /*
  *  Litteraturbanken and sister projects (LBSP)
  *  Copyright (C) 2008-2011 SprÃ¥kbanken, (The Swedish Language Bank), 
@@ -20,23 +22,28 @@
  *  
  *  $Id: app.css 62131 2012-11-12 15:43:11Z johanrox $
  */
+
 /** Add css rules here for your application. */
+
 @media only screen and (max-width: 760px), (min-device-width: 768px) and (max-device-width: 1024px) {
   /* Force table to not be like tables anymore */
+
   /* line 40, app.scss */
-  .page-titlar-epub, .page-titlar {
+
+  .page-titlar-epub,
+  .page-titlar {
     /* Hide table headers (but not display: none;, for accessibility) */
-   /*.app-titlar-titel {
-    font-size : 8px;
-  }*/
   }
+
   /* line 46, app.scss */
+
   .page-titlar-epub table,
   .page-titlar-epub thead,
   .page-titlar-epub tbody,
   .page-titlar-epub th,
   .page-titlar-epub td,
-  .page-titlar-epub tr, .page-titlar table,
+  .page-titlar-epub tr,
+  .page-titlar table,
   .page-titlar thead,
   .page-titlar tbody,
   .page-titlar th,
@@ -44,32 +51,50 @@
   .page-titlar tr {
     display: block;
   }
+
   /* line 49, app.scss */
-  .page-titlar-epub tr:first-child, .page-titlar tr:first-child {
+
+  .page-titlar-epub tr:first-child,
+  .page-titlar tr:first-child {
     display: none;
   }
+
   /* line 54, app.scss */
-  .page-titlar-epub thead tr, .page-titlar thead tr {
+
+  .page-titlar-epub thead tr,
+  .page-titlar thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
+
   /* line 60, app.scss */
-  .page-titlar-epub tr:nth-of-type(odd), .page-titlar tr:nth-of-type(odd) {
+
+  .page-titlar-epub tr:nth-of-type(odd),
+  .page-titlar tr:nth-of-type(odd) {
     background-color: #EDEDED;
   }
+
   /* line 63, app.scss */
-  .page-titlar-epub .no_hits tr, .page-titlar .no_hits tr {
+
+  .page-titlar-epub .no_hits tr,
+  .page-titlar .no_hits tr {
     background-color: white;
   }
+
   /* line 67, app.scss */
-  .page-titlar-epub td, .page-titlar td {
+
+  .page-titlar-epub td,
+  .page-titlar td {
     /* Behave  like a "row" */
     border: none;
     position: relative;
   }
+
   /* line 73, app.scss */
-  .page-titlar-epub td:before, .page-titlar td:before {
+
+  .page-titlar-epub td:before,
+  .page-titlar td:before {
     /* Now like a table header */
     position: absolute;
     /* Top/left values mimic padding */
@@ -79,20 +104,31 @@
     padding-right: 10px;
     white-space: nowrap;
   }
+
   /* line 84, app.scss */
-  .page-titlar-epub .app-titlar-result, .page-titlar .app-titlar-result {
+
+  .page-titlar-epub .app-titlar-result,
+  .page-titlar .app-titlar-result {
     padding-right: 25px;
   }
+
   /* line 88, app.scss */
-  .page-titlar-epub .app-utfyllt-element, .page-titlar .app-utfyllt-element {
+
+  .page-titlar-epub .app-utfyllt-element,
+  .page-titlar .app-utfyllt-element {
     background-color: transparent;
   }
+
   /* line 91, app.scss */
-  .page-titlar-epub .app-punkt-utfyllnad, .page-titlar .app-punkt-utfyllnad {
+
+  .page-titlar-epub .app-punkt-utfyllnad,
+  .page-titlar .app-punkt-utfyllnad {
     border-bottom: none;
   }
 }
+
 /* line 107, app.scss */
+
 body {
   padding-left: 25px;
   padding-bottom: 2em;
@@ -100,35 +136,44 @@ body {
 }
 
 /* line 113, app.scss */
+
 body > * {
   white-space: normal;
 }
 
 /* IE hack fÃ¶r bugg 1244 */
+
 /* line 120, app.scss */
+
 li a {
   display: inline-block;
 }
 
 /* line 121, app.scss */
+
 li a {
   display: block;
 }
 
 /* GENERELLT */
+
 /* line 124, app.scss */
-ul, ol {
+
+ul,
+ol {
   list-style: none;
   padding-left: 0;
   margin-left: 0;
 }
 
 /* line 130, app.scss */
+
 [role=button] {
   outline: none;
 }
 
 /* line 135, app.scss */
+
 .app-body {
   font-family: georgia,serif;
   color: black;
@@ -139,6 +184,7 @@ ul, ol {
 }
 
 /* line 144, app.scss */
+
 #app-rot-linkbar {
   float: right;
   position: relative;
@@ -148,11 +194,13 @@ ul, ol {
 }
 
 /* line 151, app.scss */
+
 .state-start #app-rot-linkbar {
   display: block;
 }
 
 /* line 155, app.scss */
+
 #app-rot-linkbar li {
   display: -moz-inline-stack;
   display: inline-block;
@@ -163,6 +211,7 @@ ul, ol {
 }
 
 /* line 158, app.scss */
+
 #app-rot-linkbar a {
   color: black;
   font-size: 11px;
@@ -170,16 +219,19 @@ ul, ol {
 }
 
 /* line 163, app.scss */
+
 #app-rot-linkbar a:hover {
   color: #990000;
 }
 
 /* line 168, app.scss */
+
 #app-rot-linkbar li:not(:first-of-type) {
   margin-left: 6px;
 }
 
 /* line 173, app.scss */
+
 #app-rot-linkbar li:not(:first-of-type) a:before {
   content: ".";
   font-weight: bold;
@@ -192,17 +244,20 @@ ul, ol {
 }
 
 /* line 184, app.scss */
+
 #maindiv {
   vertical-align: top;
   position: relative;
 }
 
 /* line 189, app.scss */
+
 .state-not-parallel #maindiv {
   width: 100%;
 }
 
 /* line 193, app.scss */
+
 .app-body-medium {
   font-family: georgia,serif;
   color: black;
@@ -213,6 +268,7 @@ ul, ol {
 }
 
 /* line 202, app.scss */
+
 .app-body-liten {
   font-family: georgia,serif;
   color: black;
@@ -223,6 +279,7 @@ ul, ol {
 }
 
 /* line 211, app.scss */
+
 .app-body-tat {
   font-family: georgia,serif;
   color: black;
@@ -233,6 +290,7 @@ ul, ol {
 }
 
 /* line 220, app.scss */
+
 .app-body-liten-tat {
   font-family: georgia,serif;
   color: black;
@@ -243,6 +301,7 @@ ul, ol {
 }
 
 /* line 229, app.scss */
+
 .app-body-tabell {
   font-family: georgia,serif;
   color: black;
@@ -254,6 +313,7 @@ ul, ol {
 }
 
 /* line 239, app.scss */
+
 .app-body-stor-kursiv {
   font-family: georgia,serif;
   color: black;
@@ -265,11 +325,13 @@ ul, ol {
 }
 
 /* line 249, app.scss */
+
 .app-tat {
   line-height: 13.9833px;
 }
 
 /* line 253, app.scss */
+
 .app-text-medel {
   font-family: georgia,serif;
   font-size: 16px;
@@ -277,6 +339,7 @@ ul, ol {
 }
 
 /* line 259, app.scss */
+
 .app-text-stor {
   font-family: georgia,serif;
   font-size: 18px;
@@ -286,6 +349,7 @@ ul, ol {
 }
 
 /* line 269, app.scss */
+
 .app-body-etext {
   font-family: Georgia, Times,  serif;
   color: black;
@@ -293,22 +357,26 @@ ul, ol {
 }
 
 /* line 275, app.scss */
+
 .app-text {
   font-size: 12px;
 }
 
 /* line 279, app.scss */
+
 .app-text-liten {
   font-size: 10px;
 }
 
 /* line 283, app.scss */
+
 .app-text-rod {
   font-size: 12px;
   color: #990000;
 }
 
 /* line 288, app.scss */
+
 .app-text-fet-rod {
   font-size: 12px;
   font-weight: bold;
@@ -316,28 +384,33 @@ ul, ol {
 }
 
 /* line 294, app.scss */
+
 .app-text-gra {
   color: gray !important;
 }
 
 /* line 298, app.scss */
+
 .app-text-fet {
   font-size: 12px;
   font-weight: bold;
 }
 
 /* line 303, app.scss */
+
 .app-text-kursiv {
   font-style: italic;
 }
 
 /* line 307, app.scss */
+
 .app-text-rod-kursiv {
   color: #990000;
   font-style: italic;
 }
 
 /* line 312, app.scss */
+
 .app-text-kapital {
   font-family: georgia,serif;
   font-variant: small-caps;
@@ -345,11 +418,13 @@ ul, ol {
 }
 
 /* line 318, app.scss */
+
 .app-text-blink {
   text-decoration: blink;
 }
 
 /* line 322, app.scss */
+
 .app-inline {
   display: -moz-inline-stack;
   display: inline-block;
@@ -360,21 +435,25 @@ ul, ol {
 }
 
 /* line 326, app.scss */
+
 #app-rot-huvudmeny {
   vertical-align: middle;
 }
 
 /* line 330, app.scss */
+
 .app-margin-top {
   margin-top: 15px;
 }
 
 /* line 334, app.scss */
+
 .app-undermeny {
   margin-top: 10px;
 }
 
 /* line 338, app.scss */
+
 .app-status-message {
   position: absolute;
   top: 15px;
@@ -382,6 +461,7 @@ ul, ol {
 }
 
 /* line 344, app.scss */
+
 .app-tooltip {
   background-color: #990000;
   font-size: 14px;
@@ -398,6 +478,7 @@ ul, ol {
 }
 
 /* line 359, app.scss */
+
 .app-tooltip-svart {
   background-color: black;
   font-size: 14px;
@@ -413,6 +494,7 @@ ul, ol {
 }
 
 /* line 373, app.scss */
+
 .app-sidhjalp {
   width: 118px;
   margin-top: 35px;
@@ -420,41 +502,49 @@ ul, ol {
 }
 
 /* line 379, app.scss */
+
 .app-sidhjalptext {
   z-index: 1;
 }
 
 /* line 383, app.scss */
+
 .app-sidhjalptext a:link {
   text-decoration: none;
   color: black;
 }
 
 /* line 388, app.scss */
+
 .app-sidhjalptext a:visited {
   text-decoration: none;
   color: black;
 }
 
 /* line 392, app.scss */
+
 .app-sidhjalptext a:active {
   text-decoration: none;
   color: black;
 }
 
 /* line 397, app.scss */
+
 .app-sidhjalptext a:hover {
   text-decoration: underline;
   color: red;
 }
 
 /* line 402, app.scss */
+
 .app-ankarmeny li {
   margin-bottom: 2px;
 }
 
 /* regler fÃ¶r logotyp */
+
 /* line 408, app.scss */
+
 #app-rot-header hr {
   display: none;
   width: 350px;
@@ -464,12 +554,14 @@ ul, ol {
 }
 
 /* line 416, app.scss */
+
 body.site-littb.svg.state-start #app-rot-header hr {
   display: block;
   text-align: left;
 }
 
 /* line 420, app.scss */
+
 body.site-littb.svg #logo_img {
   background-image: url("/bilder/LBlogga.svg");
   background-size: contain;
@@ -479,6 +571,7 @@ body.site-littb.svg #logo_img {
 }
 
 /* line 427, app.scss */
+
 body.site-littb.state-start.svg #logo_img {
   background-image: url("/bilder/LBlogga.svg");
   background-size: contain;
@@ -488,6 +581,7 @@ body.site-littb.state-start.svg #logo_img {
 }
 
 /* line 435, app.scss */
+
 body.state-start #logo_img {
   background-image: url("/bilder/LBloggaochstreckHel.png");
   height: 80px;
@@ -495,12 +589,15 @@ body.state-start #logo_img {
 }
 
 /* relativ positionering fÃ¶r lÃ¤nkens skull */
+
 /* line 441, app.scss */
+
 #app-rot-logga {
   position: relative;
 }
 
 /* line 445, app.scss */
+
 #logo_img {
   background-image: url("/bilder/LBunderloggaochstreck.png");
   background-repeat: no-repeat;
@@ -509,6 +606,7 @@ body.state-start #logo_img {
 }
 
 /* line 451, app.scss */
+
 #app-rot-logga a {
   position: absolute;
   width: 270px;
@@ -517,13 +615,17 @@ body.state-start #logo_img {
 }
 
 /* ingen lÃ¤nk pÃ¥ startsidan */
+
 /* line 458, app.scss */
+
 body.state-start #app-rot-logga a {
   display: none;
 }
 
 /* line 463, app.scss */
-.site-littb #app-rot-arbetsyta, .site-spf #app-rot-arbetsyta {
+
+.site-littb #app-rot-arbetsyta,
+.site-spf #app-rot-arbetsyta {
   margin-top: 10px;
   white-space: normal;
   vertical-align: top;
@@ -531,11 +633,13 @@ body.state-start #app-rot-logga a {
 }
 
 /* line 469, app.scss */
+
 #app-rot-undermeny {
   margin-top: 34px;
 }
 
 /* line 473, app.scss */
+
 #alphabetT {
   width: 102px;
   padding: 20px 0;
@@ -544,6 +648,7 @@ body.state-start #app-rot-logga a {
 }
 
 /* line 480, app.scss */
+
 .app-start-arbetsyta {
   position: relative;
   width: 478px;
@@ -551,11 +656,13 @@ body.state-start #app-rot-logga a {
 }
 
 /* line 486, app.scss */
+
 .app-start-sok {
   margin-top: 220px;
 }
 
 /* line 490, app.scss */
+
 .app-start-skicka {
   position: relative;
   left: 2px;
@@ -563,6 +670,7 @@ body.state-start #app-rot-logga a {
 }
 
 /* line 496, app.scss */
+
 .app-start-status {
   position: relative;
   left: -35px;
@@ -572,11 +680,13 @@ body.state-start #app-rot-logga a {
 }
 
 /* line 504, app.scss */
+
 body.state-start #app-rot-header {
   border: none;
 }
 
 /* line 507, app.scss */
+
 #app-rot-header {
   width: 675px;
   position: relative;
@@ -585,6 +695,7 @@ body.state-start #app-rot-header {
 }
 
 /* line 515, app.scss */
+
 #app-rot-bokmarke {
   bottom: 0;
   right: 0;
@@ -592,6 +703,7 @@ body.state-start #app-rot-header {
 }
 
 /* line 521, app.scss */
+
 #app-rot-meny {
   /*  margin-left:24px; */
   margin-top: 15px;
@@ -599,18 +711,21 @@ body.state-start #app-rot-header {
 }
 
 /* line 527, app.scss */
+
 .app-meny {
   width: 120px;
   margin-right: 40px;
 }
 
 /* line 535, app.scss */
+
 .app-arbetsyta-text {
   width: 437px;
   margin: 1em 0 0 1em;
 }
 
 /* line 540, app.scss */
+
 .app-arbetsyta-lista {
   height: 118px;
   left: 200px;
@@ -619,6 +734,7 @@ body.state-start #app-rot-header {
 }
 
 /* line 547, app.scss */
+
 .app-meddelande {
   left: 200px;
   position: absolute;
@@ -635,6 +751,7 @@ body.state-start #app-rot-header {
 }
 
 /* line 562, app.scss */
+
 .app-skicka {
   position: relative;
   left: 2px;
@@ -644,7 +761,9 @@ body.state-start #app-rot-header {
 }
 
 /* TEXTVISNING_ETEXT */
+
 /* line 571, app.scss */
+
 .app-arbetsyta-etext {
   border: 0px none;
   white-space: nowrap;
@@ -652,6 +771,7 @@ body.state-start #app-rot-header {
 }
 
 /* line 577, app.scss */
+
 .app-kontextmeny {
   background-color: gray;
   border-color: gray gray gray gray;
@@ -661,12 +781,14 @@ body.state-start #app-rot-header {
 }
 
 /* line 585, app.scss */
+
 .app-kontextmenyval {
   font-weight: normal;
   font-size: 80%;
 }
 
 /* line 590, app.scss */
+
 .app-kontext-result-div {
   background-color: white;
   opacity: 0.85;
@@ -676,6 +798,7 @@ body.state-start #app-rot-header {
 }
 
 /* line 598, app.scss */
+
 .app-kontext-result-text {
   background-color: #990000;
   font-size: 14px;
@@ -693,13 +816,16 @@ body.state-start #app-rot-header {
 }
 
 /* KALLINFO */
+
 /* line 615, app.scss */
+
 errata td {
   width: 78px;
   font-weight: bold;
 }
 
 /* line 620, app.scss */
+
 errata td + td {
   width: auto;
   font-weight: normal;
@@ -707,7 +833,9 @@ errata td + td {
 }
 
 /* FORFATTARE */
+
 /* line 627, app.scss */
+
 .app-arbetsyta-forfattare {
   margin-top: 2em;
   width: 520px;
@@ -715,17 +843,20 @@ errata td + td {
 }
 
 /* line 633, app.scss */
+
 .app-forfattare-intro {
   border: 0 none;
   width: 437px;
 }
 
 /* line 638, app.scss */
+
 .app-forfattare-verklank {
   margin-bottom: 20px;
 }
 
 /* line 642, app.scss */
+
 .app-forfattare-portratt {
   border: 0 none;
   right: 0px;
@@ -735,6 +866,7 @@ errata td + td {
 }
 
 /* line 650, app.scss */
+
 .app-forfattare-bildinfo {
   text-align: right;
   padding: 0;
@@ -744,6 +876,7 @@ errata td + td {
 }
 
 /* line 658, app.scss */
+
 .app-forfattare-bild1 {
   text-align: right;
   padding: 0;
@@ -752,13 +885,16 @@ errata td + td {
 }
 
 /* TEXTVISNING_FAKSIMIL */
+
 /* line 668, app.scss */
+
 .app-arbetsyta-faksimil {
   position: relative;
   white-space: nowrap;
 }
 
 /* line 676, app.scss */
+
 .app-status-faksimil {
   /*  height : 1em; */
   margin-bottom: 5px;
@@ -767,10 +903,12 @@ errata td + td {
 }
 
 /* line 683, app.scss */
+
 .app-faksimil-markering {
   position: absolute;
   opacity: 0.6;
   /* ie hack */
+  -webkit-filter: alpha(opacity=60);
   filter: alpha(opacity=60);
   zoom: 1;
   background-color: red;
@@ -778,14 +916,17 @@ errata td + td {
 }
 
 /* line 693, app.scss */
+
 .app-faksimil-storlekar {
   margin-top: 5px;
 }
 
 /* TEXTVISNING - verktygslada */
+
 /* line 698, app.scss */
+
 .app-text-sidnavigator {
-    /*position:absolute;
+  /*position:absolute;
         left:-3px;
 
     */
@@ -795,6 +936,7 @@ errata td + td {
 }
 
 /* line 708, app.scss */
+
 .app-text-pil {
   display: inline;
   border: none;
@@ -802,6 +944,7 @@ errata td + td {
 }
 
 /* line 714, app.scss */
+
 .app-text-sidnavigator:hover {
   text-decoration: none;
   color: #990000;
@@ -810,6 +953,7 @@ errata td + td {
 }
 
 /* line 722, app.scss */
+
 .app-text-sidfalt {
   margin-top: 5px;
   width: 50px;
@@ -817,6 +961,7 @@ errata td + td {
 }
 
 /* line 728, app.scss */
+
 .app-text-fulldelnav {
   color: white;
   min-width: 90px;
@@ -825,16 +970,19 @@ errata td + td {
 }
 
 /* line 736, app.scss */
+
 .fullPartNavigation {
   position: relative;
 }
 
 /* line 740, app.scss */
+
 .fullPartNavigation > img {
   /*  margin : 5px 0; */
 }
 
 /* line 744, app.scss */
+
 .fullPartPopup {
   position: absolute;
   bottom: 0;
@@ -845,11 +993,13 @@ errata td + td {
 }
 
 /* line 753, app.scss */
+
 .app-text-fulldelnav-skroll:hover {
   cursor: pointer;
 }
 
 /* line 757, app.scss */
+
 .app-text-fulldelnav-dek {
   left: -25px;
   position: relative;
@@ -858,6 +1008,7 @@ errata td + td {
 }
 
 /* line 765, app.scss */
+
 .app-text-fulldelnav-td {
   font-size: 12px;
   font-style: italic;
@@ -871,6 +1022,7 @@ errata td + td {
 }
 
 /* line 777, app.scss */
+
 .app-text-fulldelnav-td:hover {
   text-decoration: underline;
   cursor: hand;
@@ -878,6 +1030,7 @@ errata td + td {
 }
 
 /* line 783, app.scss */
+
 .app-text-delnavigation-td {
   font-size: 10px;
   font-style: italic;
@@ -888,6 +1041,7 @@ errata td + td {
 }
 
 /* line 792, app.scss */
+
 .app-text-delnavigation-td:hover {
   text-decoration: none;
   color: #990000;
@@ -896,13 +1050,16 @@ errata td + td {
 }
 
 /* PRESENTATIONER */
+
 /* line 801, app.scss */
+
 .app-arbetsyta-presentationer {
   width: 513px;
   margin: 3em 0 0 2em;
 }
 
 /* line 807, app.scss */
+
 div.txt {
   white-space: nowrap;
   margin-top: 3em;
@@ -913,6 +1070,7 @@ div.txt {
 }
 
 /* line 818, app.scss */
+
 .app-arbetsyta-aktuellpresentation {
   width: 437px;
   margin: 2em 0 0 2em;
@@ -920,7 +1078,9 @@ div.txt {
 }
 
 /* LISTSIDOR (ListPage)*/
+
 /* line 826, app.scss */
+
 .app-arbetsyta-tabell {
   /*  position: absolute; */
   top: 78px;
@@ -930,6 +1090,7 @@ div.txt {
 }
 
 /* line 836, app.scss */
+
 .app-sortbutton {
   border: 0px none;
   font-size: 9pt;
@@ -939,6 +1100,7 @@ div.txt {
 }
 
 /* line 846, app.scss */
+
 .app-sortbutton:hover {
   text-decoration: none;
   color: #990000;
@@ -947,6 +1109,7 @@ div.txt {
 }
 
 /* line 853, app.scss */
+
 .app-table_element {
   font-size: 12px;
   border: 0px none;
@@ -958,11 +1121,13 @@ div.txt {
 }
 
 /* line 863, app.scss */
+
 .app-tomt-tabell_element {
   height: 12px;
 }
 
 /* line 867, app.scss */
+
 .app-utfyllt-element {
   position: relative;
   z-index: 10;
@@ -976,6 +1141,7 @@ div.txt {
 }
 
 /* line 878, app.scss */
+
 .app-punkt-utfyllnad {
   position: relative;
   display: block;
@@ -984,6 +1150,7 @@ div.txt {
 }
 
 /* line 885, app.scss */
+
 .app-td-div {
   position: relative;
   padding: 0;
@@ -992,13 +1159,16 @@ div.txt {
 }
 
 /* LISTSIDOR - TITLAR_A-O */
+
 /* line 895, app.scss */
+
 .app-titlar-status2 {
   width: 512px;
   text-align: right;
 }
 
 /* line 900, app.scss */
+
 .app-titlar-titel {
   width: 457px;
   max-width: 457px;
@@ -1010,6 +1180,7 @@ div.txt {
 }
 
 /* line 910, app.scss */
+
 .app-titlar-forfattare-first {
   width: 246px;
   max-width: 246px;
@@ -1020,28 +1191,33 @@ div.txt {
 }
 
 /* line 920, app.scss */
+
 .app-titlar-forfattare {
   width: 246px;
   vertical-align: bottom;
 }
 
 /* line 925, app.scss */
+
 .app-titlar-intro {
   width: 520px;
 }
 
 /* line 929, app.scss */
+
 .app-titlar-formular-topp {
   left: 1px;
 }
 
 /* line 933, app.scss */
+
 .app-titlar-formular-topp {
   left: 1px;
   top: 0px;
 }
 
 /* line 938, app.scss */
+
 .app-titlar-formular {
   /*  position:absolute; */
   left: 1px;
@@ -1049,6 +1225,7 @@ div.txt {
 }
 
 /* line 944, app.scss */
+
 .app-titlar-mediatyp {
   width: 246px;
   font-size: 12px;
@@ -1056,11 +1233,13 @@ div.txt {
 }
 
 /* line 950, app.scss */
+
 .app-titlar-rad1 {
   margin: 15px 0;
 }
 
 /* line 954, app.scss */
+
 .app-titlar-rad2 {
   position: relative;
   left: 1px;
@@ -1069,23 +1248,27 @@ div.txt {
 }
 
 /* line 961, app.scss */
+
 .app-titlar-rad2 .app-inline {
   vertical-align: baseline;
 }
 
 /* line 965, app.scss */
+
 .app-titlar-fras {
   width: 107px;
   margin-left: 5px;
 }
 
 /* line 970, app.scss */
+
 .app-titlar-result {
   margin: 20px 0;
   position: relative;
 }
 
 /* line 975, app.scss */
+
 .app-titlar-status {
   left: 209px;
   position: relative;
@@ -1095,12 +1278,14 @@ div.txt {
 }
 
 /* line 983, app.scss */
+
 td .app-inga-traffar {
   padding: 0px;
   white-space: nowrap;
 }
 
 /* line 988, app.scss */
+
 .app-verkilb-td1 {
   width: 291px;
   font-size: 12px;
@@ -1111,7 +1296,9 @@ td .app-inga-traffar {
 }
 
 /*Listsidor - Fï¿½RFATTARE A-ï¿½ */
+
 /* line 998, app.scss */
+
 .app-forflista-sok {
   height: 39px;
   left: 0px;
@@ -1121,6 +1308,7 @@ td .app-inga-traffar {
 }
 
 /* line 1006, app.scss */
+
 app-forflista-status {
   left: 344px;
   /*  position:absolute; */
@@ -1129,7 +1317,9 @@ app-forflista-status {
 }
 
 /* SAMMA SOM app-titel-fras */
+
 /* line 1014, app.scss */
+
 .app-forflista-fras {
   width: 107px;
   margin-left: 5px;
@@ -1137,6 +1327,7 @@ app-forflista-status {
 }
 
 /* line 1020, app.scss */
+
 .app-forflista-result {
   left: 0px;
   /*  position:absolute; */
@@ -1147,6 +1338,7 @@ app-forflista-status {
 }
 
 /* line 1029, app.scss */
+
 .app-forflista-td1 {
   width: 235px;
   margin: 0;
@@ -1157,6 +1349,7 @@ app-forflista-status {
 }
 
 /* line 1038, app.scss */
+
 .app-forflista-td2 {
   width: 80px;
   max-width: 80px;
@@ -1168,6 +1361,7 @@ app-forflista-status {
 }
 
 /* line 1048, app.scss */
+
 .app-forflista-td3 {
   margin: 0;
   border: 0px none;
@@ -1177,8 +1371,11 @@ app-forflista-status {
 }
 
 /* UNDERMENY ALLMANT */
+
 /* For alfabetet */
+
 /* line 1060, app.scss */
+
 .app-toppstreck-inbaddat {
   /*  position:absolute; */
   left: -3px;
@@ -1188,6 +1385,7 @@ app-forflista-status {
 }
 
 /* line 1068, app.scss */
+
 .app-bottenstreck-inbaddat {
   /*  position:absolute; */
   left: -4px;
@@ -1197,7 +1395,9 @@ app-forflista-status {
 }
 
 /* t ex AKTUELL_FORFATTARE */
+
 /* line 1077, app.scss */
+
 .app-toppstreck-lagre {
   /*width:116px;
   height:11px;*/
@@ -1205,6 +1405,7 @@ app-forflista-status {
 }
 
 /* line 1083, app.scss */
+
 .app-bottenstreck-lagre {
   /*
   width:116px;
@@ -1215,6 +1416,7 @@ app-forflista-status {
 }
 
 /* line 1092, app.scss */
+
 .app-streck {
   /*  position:absolute; */
   left: -3px;
@@ -1223,7 +1425,9 @@ app-forflista-status {
 }
 
 /* t ex TEXTVISNING */
+
 /* line 1100, app.scss */
+
 .app-toppstreck-hogre {
   /*  position:absolute; */
   left: 29px;
@@ -1233,6 +1437,7 @@ app-forflista-status {
 }
 
 /* line 1108, app.scss */
+
 .app-bottenstreck-hogre {
   /*  position:absolute; */
   top: 388px;
@@ -1242,7 +1447,9 @@ app-forflista-status {
 }
 
 /* UNDERMENY - Alfabetsnavigering */
+
 /* line 1118, app.scss */
+
 .app-alfabet {
   width: 99px;
   height: 80px;
@@ -1252,6 +1459,7 @@ app-forflista-status {
 }
 
 /* line 1126, app.scss */
+
 .app-alfabet-element {
   width: 20px;
   text-align: center;
@@ -1259,7 +1467,9 @@ app-forflista-status {
 }
 
 /* UNDERMENY for ETEXTVISNING */
+
 /* line 1135, app.scss */
+
 .app-undermeny-verkinfo {
   margin-top: 3px;
   margin-bottom: 1em;
@@ -1268,18 +1478,21 @@ app-forflista-status {
 }
 
 /* line 1143, app.scss */
+
 .app-undermeny-kallinfo {
   margin-top: 35px;
   width: 119px;
 }
 
 /* line 1148, app.scss */
+
 .app-etext-fulldelnav-mo {
   margin-top: 15px;
   z-index: 100;
 }
 
 /* line 1153, app.scss */
+
 .app-etext-fulldelnav-mo:hover {
   text-decoration: none;
   color: #990000;
@@ -1288,29 +1501,27 @@ app-forflista-status {
 }
 
 /* line 1160, app.scss */
+
 #parallel_wrapper {
   vertical-align: top;
 }
 
 /* line 1168, app.scss */
+
 #paralleldiv {
   vertical-align: top;
 }
 
 /* line 1176, app.scss */
+
 .state-parallel .app-arbetsyta-faksimil #paralleldiv {
   margin-right: 2em;
 }
 
 /* UNDERMENY for AKTUELL_FÃ–RFATTARE */
-/*.app-undermeny-forfattare {
-    height:166px;
-    left:32px;
-    position:absolute;
-    top:332px;
-    width:120px;
-}*/
+
 /* line 1197, app.scss */
+
 .app-undermeny-aktuell {
   margin-top: 5px;
   margin-bottom: 30px;
@@ -1318,22 +1529,27 @@ app-forflista-status {
 }
 
 /* line 1204, app.scss */
+
 .app-arbetsyta-verkilb {
   margin-top: 1em;
 }
 
 /* line 1208, app.scss */
+
 .app-verkilb-lista {
   margin-top: 4em;
 }
 
 /* SOK_I_ETEXT */
+
 /* line 1213, app.scss */
+
 .app-sok-fras-rad {
   width: 600px;
 }
 
 /* line 1217, app.scss */
+
 .app-sok-konfig {
   background-color: white;
   border: 1px solid lightGrey;
@@ -1344,11 +1560,13 @@ app-forflista-status {
 }
 
 /* line 1226, app.scss */
+
 .internh3 {
   margin: 0px 0px 3px 0px;
 }
 
 /* line 1230, app.scss */
+
 .app-sok-titel {
   left: 250px;
   position: absolute;
@@ -1356,6 +1574,7 @@ app-forflista-status {
 }
 
 /* line 1236, app.scss */
+
 .row {
   left: 15px;
   position: absolute;
@@ -1363,11 +1582,13 @@ app-forflista-status {
 }
 
 /* line 1242, app.scss */
+
 .app-sok-titelval {
   width: 255px;
 }
 
 /* line 1246, app.scss */
+
 .app-sok-status {
   position: absolute;
   text-align: right;
@@ -1376,16 +1597,19 @@ app-forflista-status {
 }
 
 /* line 1253, app.scss */
+
 .app-sok-skicka-aktiv {
   border: none;
 }
 
 /* line 1257, app.scss */
+
 .app-sok-result {
   margin-bottom: 20px;
 }
 
 /* line 1261, app.scss */
+
 .app-sok-index {
   color: grey;
   width: auto;
@@ -1393,6 +1617,7 @@ app-forflista-status {
 }
 
 /* line 1267, app.scss */
+
 .app-td-left {
   text-align: right;
   width: auto;
@@ -1400,35 +1625,41 @@ app-forflista-status {
 }
 
 /* line 1273, app.scss */
+
 .app-sok-forf-td {
   width: auto;
   white-space: nowrap;
 }
 
 /* line 1278, app.scss */
+
 .app-sok-autotd {
   width: auto;
   white-space: nowrap;
 }
 
 /* line 1284, app.scss */
+
 .app-sok-sidnr {
   margin-left: 2px;
   width: 119px;
 }
 
 /* line 1289, app.scss */
+
 .app-sok-textbox {
   margin-left: 2px;
   width: 47px;
 }
 
 /* line 1294, app.scss */
+
 .app-sok-nav-skicka {
   margin-left: 3px;
 }
 
 /* line 1298, app.scss */
+
 .app-sok-etextnavigation {
   background-image: url(bilder/Soknavigering.png);
   width: 113px;
@@ -1437,6 +1668,7 @@ app-forflista-status {
 }
 
 /* line 1306, app.scss */
+
 .app-sok-hit {
   background-color: pink;
   /*     display: inline-block; */
@@ -1446,6 +1678,7 @@ app-forflista-status {
 }
 
 /* line 1313, app.scss */
+
 .app-sok-hit-last {
   /*     display: inline; */
   margin-right: 0;
@@ -1453,18 +1686,22 @@ app-forflista-status {
 }
 
 /* KONTAKT */
+
 /* line 1321, app.scss */
+
 .app-kontakt-text {
   width: 390px;
   height: 234px;
 }
 
 /* line 1326, app.scss */
+
 .app-kontakt-test {
   color: #990000;
 }
 
 /* line 1330, app.scss */
+
 .list-td {
   border: 0px none;
   padding: 0;
@@ -1473,11 +1710,13 @@ app-forflista-status {
 }
 
 /* line 1337, app.scss */
+
 .app-dold {
   visibility: hidden;
 }
 
 /* line 1341, app.scss */
+
 .app-body-statistik {
   font-family: Georgia, Times,  serif;
   color: black;
@@ -1485,26 +1724,31 @@ app-forflista-status {
 }
 
 /* line 1347, app.scss */
+
 .app-errata-closed .overflow {
   display: none;
 }
 
 /* line 1351, app.scss */
+
 [content="â¦"]::after {
   content: "â¦";
 }
 
 /* line 1354, app.scss */
+
 [content="â¦"] img {
   display: none;
 }
 
 /* line 1358, app.scss */
+
 div.pname {
   /*  position : relative !important; */
 }
 
 /* line 1362, app.scss */
+
 div.gloss_label {
   display: inline;
   font-size: 90%;
@@ -1513,6 +1757,7 @@ div.gloss_label {
 }
 
 /* line 1369, app.scss */
+
 div.gloss_item {
   display: inline;
   font-size: 90%;
@@ -1521,32 +1766,38 @@ div.gloss_item {
 }
 
 /* line 1377, app.scss */
+
 .sla-work h3 {
   text-transform: capitalize;
 }
 
 /* line 1381, app.scss */
+
 .sla-work:nth-child(even) {
   background-color: lightgrey;
 }
 
 /* line 1385, app.scss */
+
 .toolkit-link:before {
   content: ":::";
   margin-left: 2px;
 }
 
 /* line 1389, app.scss */
+
 .toolkit-link {
   cursor: pointer;
 }
 
 /* line 1393, app.scss */
+
 body.state-start .app-start-arbetsyta {
   margin-top: 16px;
 }
 
 /* line 1397, app.scss */
+
 .gratis-ebok {
   font-size: 1em;
   font-variant: small-caps;
@@ -1555,38 +1806,53 @@ body.state-start .app-start-arbetsyta {
 }
 
 /* line 1406, app.scss */
+
 .site-spf .app-arbetsyta-etext {
   white-space: nowrap;
 }
+
 /* line 1409, app.scss */
+
 .site-spf .txt {
   white-space: nowrap;
 }
+
 /* line 1413, app.scss */
+
 .site-spf #app-rot-linkbar {
   display: none;
 }
+
 /* line 1417, app.scss */
+
 .site-spf #logo_img {
   background-image: url("/bilder/SpfLogoSmall.png");
   height: 75px;
   width: 110px;
   margin-left: -16px;
 }
+
 /* line 1424, app.scss */
+
 .site-spf #app-rot-header {
   border: none;
 }
+
 /* line 1428, app.scss */
+
 .site-spf .txt {
   width: 20em;
   margin-right: 4em;
 }
+
 /* line 1433, app.scss */
+
 .site-spf .app-arbetsyta-tabell {
   width: 800px;
 }
+
 /* line 1437, app.scss */
+
 .site-spf.svg #logo_img {
   background-image: url("/bilder/spf1800_logotyp.svg");
   height: 75px;
@@ -1594,22 +1860,30 @@ body.state-start .app-start-arbetsyta {
   margin-left: -8px;
   background-size: contain;
 }
+
 /* line 1445, app.scss */
+
 .site-spf .app-titlar-forfattare {
   padding-right: 5px;
 }
+
 /* line 1449, app.scss */
+
 .site-spf .app-forflista-td3 {
   padding-right: 10px;
 }
+
 /* line 1453, app.scss */
+
 .site-spf.state-start #logo_img {
   background-image: url("/bilder/SpfLogoLarge.png");
   height: 95px;
   width: 110px;
   margin-left: -22px;
 }
+
 /* line 1460, app.scss */
+
 .site-spf.state-start.svg #logo_img {
   background-image: url("/bilder/spf1800_logotyp.svg");
   height: 95px;
@@ -1619,12 +1893,15 @@ body.state-start .app-start-arbetsyta {
 }
 
 /* line 1470, app.scss */
+
 .site-sla {
   background-color: #EDEDED;
   background-image: url(/bilder/SLA_grundbild_undersidabild_notext.jpg);
   background-repeat: no-repeat;
 }
+
 /* line 1476, app.scss */
+
 .site-sla .app-td-div {
   position: relative;
   padding: 0;
@@ -1634,12 +1911,16 @@ body.state-start .app-start-arbetsyta {
   overflow: hidden;
   white-space: nowrap;
 }
+
 /* line 1485, app.scss */
+
 .site-sla .app-utfyllt-element {
   vertical-align: text-top;
   white-space: nowrap;
 }
+
 /* line 1490, app.scss */
+
 .site-sla .app-sortbutton {
   border: 0px none;
   font-size: 9pt;
@@ -1647,7 +1928,9 @@ body.state-start .app-start-arbetsyta {
   background-color: transparent;
   margin-bottom: 8px;
 }
+
 /* line 1498, app.scss */
+
 .site-sla .app-meny {
   font-size: 0.9em;
   font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
@@ -1660,7 +1943,9 @@ body.state-start .app-start-arbetsyta {
   line-height: 120%;
   white-space: nowrap;
 }
+
 /* line 1511, app.scss */
+
 .site-sla #app-rot-arbetsyta {
   position: absolute;
   left: 335px;
@@ -1669,7 +1954,9 @@ body.state-start .app-start-arbetsyta {
   height: 368px;
   z-index: -1;
 }
+
 /* line 1520, app.scss */
+
 .site-sla .app-body {
   font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
   font-size: 0.9em;
@@ -1678,20 +1965,28 @@ body.state-start .app-start-arbetsyta {
   line-height: 110%;
   padding: 0;
 }
+
 /* line 1529, app.scss */
-.site-sla a:link, .site-sla a:visited {
+
+.site-sla a:link,
+.site-sla a:visited {
   text-decoration: none;
   /* Dick vill ha det hÃ¤r vitt */
   color: black;
   background-color: transparent;
 }
+
 /* line 1536, app.scss */
-.site-sla a:hover, .site-sla a:active {
+
+.site-sla a:hover,
+.site-sla a:active {
   text-decoration: none;
   color: black;
   background-color: transparent;
 }
+
 /* line 1542, app.scss */
+
 .site-sla .app-text-stor {
   font-size: 1.1em;
   font-family: "adobe-jenson-pro-1","adobe-jenson-pro-2",serif;
@@ -1700,22 +1995,37 @@ body.state-start .app-start-arbetsyta {
   text-align: center;
   padding: 2px;
 }
+
 /* line 1551, app.scss */
+
 .site-sla #logo_img {
   background-image: url("/bilder/SlaLogoSmall.png");
   height: 110px;
 }
+
 /* line 1555, app.scss */
+
 .site-sla.state-start #logo_img {
   height: 105px;
 }
 
 /* line 1565, app.scss */
-.page-kallinfoetext, .page-kallinfofaksimil, .page-kallinfopdf, .page-kallinfozip, .page-kallinfoepub {
+
+.page-kallinfoetext,
+.page-kallinfofaksimil,
+.page-kallinfopdf,
+.page-kallinfozip,
+.page-kallinfoepub {
   width: 500px;
 }
+
 /* line 1568, app.scss */
-.page-kallinfoetext.showing_image .cover, .page-kallinfofaksimil.showing_image .cover, .page-kallinfopdf.showing_image .cover, .page-kallinfozip.showing_image .cover, .page-kallinfoepub.showing_image .cover {
+
+.page-kallinfoetext.showing_image .cover,
+.page-kallinfofaksimil.showing_image .cover,
+.page-kallinfopdf.showing_image .cover,
+.page-kallinfozip.showing_image .cover,
+.page-kallinfoepub.showing_image .cover {
   position: absolute;
   top: 0;
   right: 0;
@@ -1723,76 +2033,182 @@ body.state-start .app-start-arbetsyta {
   bottom: 0;
   background: rgba(255, 255, 255, 0.6);
 }
+
 /* line 1577, app.scss */
-.page-kallinfoetext .largeImage, .page-kallinfofaksimil .largeImage, .page-kallinfopdf .largeImage, .page-kallinfozip .largeImage, .page-kallinfoepub .largeImage {
+
+.page-kallinfoetext .largeImage,
+.page-kallinfofaksimil .largeImage,
+.page-kallinfopdf .largeImage,
+.page-kallinfozip .largeImage,
+.page-kallinfoepub .largeImage {
   position: absolute;
   top: 50px;
   left: 160px;
   width: 500px;
 }
+
 /* line 1582, app.scss */
-.page-kallinfoetext .largeImage img, .page-kallinfofaksimil .largeImage img, .page-kallinfopdf .largeImage img, .page-kallinfozip .largeImage img, .page-kallinfoepub .largeImage img {
+
+.page-kallinfoetext .largeImage img,
+.page-kallinfofaksimil .largeImage img,
+.page-kallinfopdf .largeImage img,
+.page-kallinfozip .largeImage img,
+.page-kallinfoepub .largeImage img {
   display: block;
   margin: 0 auto;
 }
+
 /* line 1588, app.scss */
-.page-kallinfoetext .mainPanel > div, .page-kallinfofaksimil .mainPanel > div, .page-kallinfopdf .mainPanel > div, .page-kallinfozip .mainPanel > div, .page-kallinfoepub .mainPanel > div {
+
+.page-kallinfoetext .mainPanel > div,
+.page-kallinfofaksimil .mainPanel > div,
+.page-kallinfopdf .mainPanel > div,
+.page-kallinfozip .mainPanel > div,
+.page-kallinfoepub .mainPanel > div {
   margin: 20px 0;
 }
+
 /* line 1591, app.scss */
-.page-kallinfoetext .left_column, .page-kallinfofaksimil .left_column, .page-kallinfopdf .left_column, .page-kallinfozip .left_column, .page-kallinfoepub .left_column {
+
+.page-kallinfoetext .left_column,
+.page-kallinfofaksimil .left_column,
+.page-kallinfopdf .left_column,
+.page-kallinfozip .left_column,
+.page-kallinfoepub .left_column {
   float: left;
   width: 358px;
 }
+
 /* line 1595, app.scss */
-.page-kallinfoetext .left_column > div, .page-kallinfofaksimil .left_column > div, .page-kallinfopdf .left_column > div, .page-kallinfozip .left_column > div, .page-kallinfoepub .left_column > div {
+
+.page-kallinfoetext .left_column > div,
+.page-kallinfofaksimil .left_column > div,
+.page-kallinfopdf .left_column > div,
+.page-kallinfozip .left_column > div,
+.page-kallinfoepub .left_column > div {
   margin: 20px 0;
 }
+
 /* line 1598, app.scss */
-.page-kallinfoetext .left_column .header, .page-kallinfofaksimil .left_column .header, .page-kallinfopdf .left_column .header, .page-kallinfozip .left_column .header, .page-kallinfoepub .left_column .header {
+
+.page-kallinfoetext .left_column .header,
+.page-kallinfofaksimil .left_column .header,
+.page-kallinfopdf .left_column .header,
+.page-kallinfozip .left_column .header,
+.page-kallinfoepub .left_column .header {
   margin-top: 0;
 }
+
 /* line 1603, app.scss */
-.page-kallinfoetext .errata, .page-kallinfofaksimil .errata, .page-kallinfopdf .errata, .page-kallinfozip .errata, .page-kallinfoepub .errata {
+
+.page-kallinfoetext .errata,
+.page-kallinfofaksimil .errata,
+.page-kallinfopdf .errata,
+.page-kallinfozip .errata,
+.page-kallinfoepub .errata {
   margin-top: 40px;
 }
+
 /* line 1606, app.scss */
-.page-kallinfoetext .errataHeader, .page-kallinfofaksimil .errataHeader, .page-kallinfopdf .errataHeader, .page-kallinfozip .errataHeader, .page-kallinfoepub .errataHeader {
+
+.page-kallinfoetext .errataHeader,
+.page-kallinfofaksimil .errataHeader,
+.page-kallinfopdf .errataHeader,
+.page-kallinfozip .errataHeader,
+.page-kallinfoepub .errataHeader {
   margin-bottom: 1em;
 }
+
 /* line 1609, app.scss */
-.page-kallinfoetext .errataBody, .page-kallinfofaksimil .errataBody, .page-kallinfopdf .errataBody, .page-kallinfozip .errataBody, .page-kallinfoepub .errataBody {
+
+.page-kallinfoetext .errataBody,
+.page-kallinfofaksimil .errataBody,
+.page-kallinfopdf .errataBody,
+.page-kallinfozip .errataBody,
+.page-kallinfoepub .errataBody {
   margin-bottom: .5em;
 }
+
 /* line 1613, app.scss */
-.page-kallinfoetext .link, .page-kallinfofaksimil .link, .page-kallinfopdf .link, .page-kallinfozip .link, .page-kallinfoepub .link {
+
+.page-kallinfoetext .link,
+.page-kallinfofaksimil .link,
+.page-kallinfopdf .link,
+.page-kallinfozip .link,
+.page-kallinfoepub .link {
   cursor: pointer;
 }
+
 /* line 1618, app.scss */
-.page-kallinfoetext .more, .page-kallinfofaksimil .more, .page-kallinfopdf .more, .page-kallinfozip .more, .page-kallinfoepub .more {
+
+.page-kallinfoetext .more,
+.page-kallinfofaksimil .more,
+.page-kallinfopdf .more,
+.page-kallinfozip .more,
+.page-kallinfoepub .more {
   cursor: pointer;
   float: right;
   margin-top: 10px;
 }
+
 /* line 1623, app.scss */
-.page-kallinfoetext .more:hover, .page-kallinfofaksimil .more:hover, .page-kallinfopdf .more:hover, .page-kallinfozip .more:hover, .page-kallinfoepub .more:hover {
+
+.page-kallinfoetext .more:hover,
+.page-kallinfofaksimil .more:hover,
+.page-kallinfopdf .more:hover,
+.page-kallinfozip .more:hover,
+.page-kallinfoepub .more:hover {
   color: #990000;
 }
+
 /* line 1628, app.scss */
-.page-kallinfoetext .word.truncated:after, .page-kallinfofaksimil .word.truncated:after, .page-kallinfopdf .word.truncated:after, .page-kallinfozip .word.truncated:after, .page-kallinfoepub .word.truncated:after {
+
+.page-kallinfoetext .word.truncated:after,
+.page-kallinfofaksimil .word.truncated:after,
+.page-kallinfopdf .word.truncated:after,
+.page-kallinfozip .word.truncated:after,
+.page-kallinfoepub .word.truncated:after {
   content: "...";
 }
+
 /* line 1631, app.scss */
-.page-kallinfoetext .cover_image, .page-kallinfofaksimil .cover_image, .page-kallinfopdf .cover_image, .page-kallinfozip .cover_image, .page-kallinfoepub .cover_image {
+
+.page-kallinfoetext .cover_image,
+.page-kallinfofaksimil .cover_image,
+.page-kallinfopdf .cover_image,
+.page-kallinfozip .cover_image,
+.page-kallinfoepub .cover_image {
   float: right;
   cursor: pointer;
 }
+
 /* line 1637, app.scss */
-.page-kallinfoetext .cover_image, .page-kallinfoetext .word, .page-kallinfoetext .more, .page-kallinfofaksimil .cover_image, .page-kallinfofaksimil .word, .page-kallinfofaksimil .more, .page-kallinfopdf .cover_image, .page-kallinfopdf .word, .page-kallinfopdf .more, .page-kallinfozip .cover_image, .page-kallinfozip .word, .page-kallinfozip .more, .page-kallinfoepub .cover_image, .page-kallinfoepub .word, .page-kallinfoepub .more {
+
+.page-kallinfoetext .cover_image,
+.page-kallinfoetext .word,
+.page-kallinfoetext .more,
+.page-kallinfofaksimil .cover_image,
+.page-kallinfofaksimil .word,
+.page-kallinfofaksimil .more,
+.page-kallinfopdf .cover_image,
+.page-kallinfopdf .word,
+.page-kallinfopdf .more,
+.page-kallinfozip .cover_image,
+.page-kallinfozip .word,
+.page-kallinfozip .more,
+.page-kallinfoepub .cover_image,
+.page-kallinfoepub .word,
+.page-kallinfoepub .more {
   display: none;
 }
+
 /* line 1642, app.scss */
-.page-kallinfoetext .provenance > *, .page-kallinfofaksimil .provenance > *, .page-kallinfopdf .provenance > *, .page-kallinfozip .provenance > *, .page-kallinfoepub .provenance > * {
+
+.page-kallinfoetext .provenance > *,
+.page-kallinfofaksimil .provenance > *,
+.page-kallinfopdf .provenance > *,
+.page-kallinfozip .provenance > *,
+.page-kallinfoepub .provenance > * {
   display: -moz-inline-stack;
   display: inline-block;
   vertical-align: middle;
@@ -1800,48 +2216,84 @@ body.state-start .app-start-arbetsyta {
   zoom: 1;
   *display: inline;
 }
+
 /* line 1645, app.scss */
-.page-kallinfoetext .provenance a, .page-kallinfofaksimil .provenance a, .page-kallinfopdf .provenance a, .page-kallinfozip .provenance a, .page-kallinfoepub .provenance a {
+
+.page-kallinfoetext .provenance a,
+.page-kallinfofaksimil .provenance a,
+.page-kallinfopdf .provenance a,
+.page-kallinfozip .provenance a,
+.page-kallinfoepub .provenance a {
   border: none;
 }
+
 /* line 1648, app.scss */
-.page-kallinfoetext .provenance .prov_text, .page-kallinfofaksimil .provenance .prov_text, .page-kallinfopdf .provenance .prov_text, .page-kallinfozip .provenance .prov_text, .page-kallinfoepub .provenance .prov_text {
+
+.page-kallinfoetext .provenance .prov_text,
+.page-kallinfofaksimil .provenance .prov_text,
+.page-kallinfopdf .provenance .prov_text,
+.page-kallinfozip .provenance .prov_text,
+.page-kallinfoepub .provenance .prov_text {
   width: 250px;
   margin-left: 20px;
 }
+
 /* line 1651, app.scss */
-.page-kallinfoetext .provenance .prov_text.no_image, .page-kallinfofaksimil .provenance .prov_text.no_image, .page-kallinfopdf .provenance .prov_text.no_image, .page-kallinfozip .provenance .prov_text.no_image, .page-kallinfoepub .provenance .prov_text.no_image {
+
+.page-kallinfoetext .provenance .prov_text.no_image,
+.page-kallinfofaksimil .provenance .prov_text.no_image,
+.page-kallinfopdf .provenance .prov_text.no_image,
+.page-kallinfozip .provenance .prov_text.no_image,
+.page-kallinfoepub .provenance .prov_text.no_image {
   margin-left: 0;
 }
+
 /* line 1655, app.scss */
-.page-kallinfoetext .provenance a.no_image, .page-kallinfofaksimil .provenance a.no_image, .page-kallinfopdf .provenance a.no_image, .page-kallinfozip .provenance a.no_image, .page-kallinfoepub .provenance a.no_image {
+
+.page-kallinfoetext .provenance a.no_image,
+.page-kallinfofaksimil .provenance a.no_image,
+.page-kallinfopdf .provenance a.no_image,
+.page-kallinfozip .provenance a.no_image,
+.page-kallinfoepub .provenance a.no_image {
   display: none;
 }
+
 /* line 1659, app.scss */
-.page-kallinfoetext p + p, .page-kallinfofaksimil p + p, .page-kallinfopdf p + p, .page-kallinfozip p + p, .page-kallinfoepub p + p {
+
+.page-kallinfoetext p + p,
+.page-kallinfofaksimil p + p,
+.page-kallinfopdf p + p,
+.page-kallinfozip p + p,
+.page-kallinfoepub p + p {
   text-indent: 0;
 }
 
 /* line 1665, app.scss */
+
 .page-statistik ol.app-ordnad-lista li {
   counter-increment: listcounter;
 }
+
 /* line 1667, app.scss */
+
 .page-statistik ol.app-ordnad-lista li a:before {
   content: counter(listcounter, decimal) ". ";
 }
 
 /* line 1673, app.scss */
+
 .search_footer {
   margin-top: 10px;
 }
 
 /* line 1676, app.scss */
+
 .search_footer > * {
   margin-right: 1em;
 }
 
 /* line 1680, app.scss */
+
 .site-spf .search_footer {
   display: none;
 }

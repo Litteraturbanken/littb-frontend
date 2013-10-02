@@ -61,9 +61,9 @@ module.exports = function (grunt) {
       dist: {
         files: [{
           expand: true,
-          cwd: '.tmp/styles/',
+          cwd: '<%= yeoman.app %>/styles/',
           src: '{,*/}*.css',
-          dest: '.tmp/styles/'
+          dest: '<%= yeoman.app %>/styles/'
         }]
       }
     },
@@ -170,7 +170,7 @@ module.exports = function (grunt) {
     compass: {
       options: {
         sassDir: '<%= yeoman.app %>/styles',
-        cssDir: ['.tmp/styles', '<%= yeoman.app %>/styles'],
+        cssDir: ['<%= yeoman.app %>/styles'],
         generatedImagesDir: '.tmp/images/generated',
         imagesDir: '<%= yeoman.app %>/images',
         javascriptsDir: '<%= yeoman.app %>/scripts',
@@ -306,28 +306,28 @@ module.exports = function (grunt) {
 
         }]
       },
-      styles: {
-        expand: true,
-        cwd: '<%= yeoman.app %>/styles',
-        dest: '.tmp/styles/',
-        src: '{,*/}*.css'
-      }
+      // styles: {
+      //   expand: true,
+      //   cwd: '<%= yeoman.app %>/styles',
+      //   dest: '.tmp/styles/',
+      //   src: '{,*/}*.css'
+      // }
     },
     concurrent: {
       server: [
         'coffee:dist',
         'compass:server',
-        'copy:styles'
+        // 'copy:styles'
       ],
       test: [
         'coffee',
         'compass',
-        'copy:styles'
+        // 'copy:styles'
       ],
       dist: [
         'coffee',
         'compass:dist',
-        'copy:styles',
+        // 'copy:styles',
         'imagemin',
         'svgmin',
         'htmlmin'
@@ -337,7 +337,12 @@ module.exports = function (grunt) {
       unit: {
         configFile: 'karma.conf.js',
         singleRun: true
+      },
+      e2e: {
+        configFile: 'karma-e2e.conf.js',
+        singleRun: true
       }
+
     },
     // cdnify: {
     //   dist: {

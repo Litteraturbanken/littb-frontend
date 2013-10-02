@@ -690,23 +690,31 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors) 
 
 
 
-littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $timeout, $modal, util) ->
+littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $timeout, $modal, util, $window) ->
     s = $scope
     s.dict_not_found = null
     s.dict_searching = false
 
     modal = null
+    # $($window).bind 'mousewheel', (event, delta) ->
+    #     if modal then return false
 
+
+    s.showModal = () ->
+        c.log "showModal", modal
+        unless modal
+            modal = $modal.open
+                templateUrl : "so_modal_template.html"
+                scope : s
+
+            modal.result.then angular.noop, () ->
+                s.closeModal()
 
     s.closeModal = () ->
         modal.close()
         s.lex_article = null
         modal = null
 
-
-
-    s.saveSearch = (str) ->
-        s.$emit "search_dict", str
 
     $rootScope.$on "search_dict", (event, query, searchId) ->
         
@@ -730,13 +738,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
                     
             s.lex_article = result
-            unless modal
-                modal = $modal.open
-                    templateUrl : "so_modal_template.html"
-                    scope : s
-
-                modal.result.then angular.noop, () ->
-                    s.closeModal()
+            s.showModal()
             
 
     s.getWords = (val) ->
@@ -772,6 +774,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
     s.searchData = searchData
+
+    isInit = true
     
     # s.dict_not_found = "Hittade inget uppslag"
     thisRoute = $route.current
@@ -912,7 +916,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
         s.pagename = val
-        backend.getPage(author, title, mediatype, s.pagename).then ([data, workinfo]) ->
+        backend.getPage(s.pagename, 
+            authorid : author
+            titlepath : title
+            mediatype : mediatype
+        ).then ([data, workinfo]) ->
+            
             # c.log "data, workinfo", data, workinfo
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
@@ -963,6 +972,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             ]
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
+
+        isInit = false
 
     s.size = 2
     

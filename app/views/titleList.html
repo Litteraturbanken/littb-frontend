@@ -30,7 +30,8 @@
             <th> <div sort-triangles val="author.nameforindex" tuple="sorttuple"></div> </th>
             <th></th>
         </thead>
-        <tr ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.title' : workFilter == 'works' && (rowfilter || ''), mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
+        
+        <tbody><tr ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.title' : workFilter == 'works' && (rowfilter || ''), mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
             <td class="title">
                 <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
                     href="#!/forfattare/{{row.author.workauthor || row.author.authorid}}/titlar/{{getTitleId(row)}}/info">{{row.itemAttrs.showtitle}}</a>
@@ -44,7 +45,7 @@
                     <a href="#!/forfattare/{{row.author.workauthor || row.author.authorid}}/titlar/{{getTitleId(row)}}/{{type}}">{{type}}</a>
                 </span>
             </td>
-        </tr>
+        </tr></tbody>
     </table>
 
 

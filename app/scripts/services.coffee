@@ -341,24 +341,22 @@ littb.factory 'backend', ($http, $q, util) ->
         )
 
 
-    getPage : (author, title, mediatype, pagenum) ->
+    getPage : (pagenum, passedParams) ->
         def = $q.defer()
         url = "/query/lb-anthology.xql"
 
         params =
             action : "get-work-data-init"
-            authorid : author
-            titlepath : title
             navinfo : true
             css : true
             workdb : true
-            mediatype: mediatype
+
 
         if pagenum then params["pagename"] = pagenum
 
         http(
             url : url
-            params : params
+            params : _.extend {}, params, passedParams
         ).success (xml) ->
             info = parseWorkInfo("LBwork", xml)
             c.log "info", info
@@ -576,6 +574,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
             output = for article in $("artikel", xml)
                 baseform : $("grundform-clean:first", article).text()
+                id : $("lemma", article).first().attr("id")
                 # lexemes : (_.map $("lexem", article), util.getInnerXML).join("\n")
                 lexemes : util.getInnerXML article
 

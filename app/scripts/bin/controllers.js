@@ -766,19 +766,28 @@
     });
   });
 
-  littb.controller("lexiconCtrl", function($scope, backend, $location, $rootScope, $q, $timeout, $modal, util) {
+  littb.controller("lexiconCtrl", function($scope, backend, $location, $rootScope, $q, $timeout, $modal, util, $window) {
     var modal, s;
     s = $scope;
     s.dict_not_found = null;
     s.dict_searching = false;
     modal = null;
+    s.showModal = function() {
+      c.log("showModal", modal);
+      if (!modal) {
+        modal = $modal.open({
+          templateUrl: "so_modal_template.html",
+          scope: s
+        });
+        return modal.result.then(angular.noop, function() {
+          return s.closeModal();
+        });
+      }
+    };
     s.closeModal = function() {
       modal.close();
       s.lex_article = null;
       return modal = null;
-    };
-    s.saveSearch = function(str) {
-      return s.$emit("search_dict", str);
     };
     $rootScope.$on("search_dict", function(event, query, searchId) {
       return backend.searchLexicon(query, false, searchId, true).then(function(data) {
@@ -800,15 +809,7 @@
           }
         }
         s.lex_article = result;
-        if (!modal) {
-          modal = $modal.open({
-            templateUrl: "so_modal_template.html",
-            scope: s
-          });
-          return modal.result.then(angular.noop, function() {
-            return s.closeModal();
-          });
-        }
+        return s.showModal();
       });
     });
     s.getWords = function(val) {
@@ -838,11 +839,12 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
-    var author, loadPage, mediatype, onKeyDown, pagename, s, thisRoute, title, watches;
+    var author, isInit, loadPage, mediatype, onKeyDown, pagename, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
     s.searchData = searchData;
+    isInit = true;
     thisRoute = $route.current;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
@@ -982,7 +984,11 @@
         return;
       }
       s.pagename = val;
-      return backend.getPage(author, title, mediatype, s.pagename).then(function(_arg) {
+      backend.getPage(s.pagename, {
+        authorid: author,
+        titlepath: title,
+        mediatype: mediatype
+      }).then(function(_arg) {
         var data, page, url, workinfo, _i, _len, _ref;
         data = _arg[0], workinfo = _arg[1];
         s.workinfo = workinfo;
@@ -1027,6 +1033,7 @@
         ]);
         return s.setTitle("" + workinfo.title + " sidan " + s.pagename + " " + s.mediatype);
       });
+      return isInit = false;
     };
     s.size = 2;
     s.setSize = function(index) {

@@ -90,7 +90,7 @@
                 <label>Slå upp i Svensk ordbok</label>
                 <div class="input_container">
                     <input  ng-model="lex_article"
-                            typeahead-on-select="saveSearch(lex_article.baseform)"
+                            typeahead-on-select="showModal(lex_article)"
                             typeahead-wait-ms="200"
                             typeahead="article as article.baseform for article in getWords($viewValue)">
                     

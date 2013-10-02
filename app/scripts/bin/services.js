@@ -431,27 +431,24 @@
           }
         });
       },
-      getPage: function(author, title, mediatype, pagenum) {
+      getPage: function(pagenum, passedParams) {
         var def, params, url;
         def = $q.defer();
         url = "/query/lb-anthology.xql";
         params = {
           action: "get-work-data-init",
-          authorid: author,
-          titlepath: title,
           navinfo: true,
           css: true,
-          workdb: true,
-          mediatype: mediatype
+          workdb: true
         };
         if (pagenum) {
           params["pagename"] = pagenum;
         }
         http({
           url: url,
-          params: params
+          params: _.extend({}, params, passedParams)
         }).success(function(xml) {
-          var info, p, page, pgMap, _i, _len, _ref;
+          var info, mediatype, p, page, pgMap, _i, _len, _ref;
           info = parseWorkInfo("LBwork", xml);
           c.log("info", info);
           info["authorFullname"] = $("author-fullname", xml).text();
@@ -692,6 +689,7 @@
               article = _ref[_i];
               _results.push({
                 baseform: $("grundform-clean:first", article).text(),
+                id: $("lemma", article).first().attr("id"),
                 lexemes: util.getInnerXML(article)
               });
             }
