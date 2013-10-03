@@ -7,7 +7,14 @@ module.exports = function(config) {
     basePath: '',
 
     // testing framework to use (jasmine/mocha/qunit/...)
-    frameworks: ['ng-scenario'],
+    frameworks : ['ng-scenario'],
+
+    plugins : [
+        'karma-ng-scenario',
+        'karma-coffee-preprocessor',
+        'karma-chrome-launcher',
+        'karma-jasmine'
+    ],
 
     // list of files / patterns to load in the browser
     files: [
@@ -42,7 +49,7 @@ module.exports = function(config) {
 
     // Continuous Integration mode
     // if true, it capture browsers, run tests and exit
-    singleRun: false
+    singleRun: true,
 
     // Uncomment the following lines if you are using grunt's server to run the tests
     // proxies: {
@@ -50,5 +57,12 @@ module.exports = function(config) {
     // },
     // URL root prevent conflicts with the site root
     // urlRoot: '_karma_'
+
+    proxies : {
+        // change this if you've changed your grunt server port. default is 9000
+        '/': 'http://localhost:9000' 
+    },
+
+   urlRoot : '/_karma_/'
   });
 };

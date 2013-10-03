@@ -59,6 +59,10 @@ body {
 .sans {
     font-family : $sans;
 }
+.tooltip {
+    font-size : 1em;
+}
+
 #leftCorridor {
     width : $main-menu-width;
     margin-right : $gutter-width;
