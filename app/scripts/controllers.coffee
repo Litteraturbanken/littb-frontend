@@ -355,8 +355,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         s.sorttuple[1] = isAsc
 
     s.getTitleId = (row) ->
-        [collection, title] = row.itemAttrs.titlepath.split('/')
-        collection
+        row.itemAttrs.titlepath.split('/')[0]
 
     s.selectWork = () ->
         c.log "selectWork", s.workFilter
@@ -698,6 +697,12 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
     modal = null
     # $($window).bind 'mousewheel', (event, delta) ->
     #     if modal then return false
+
+    $($window).on "keyup", (event) ->
+        if event.which == 83 and not $("input:focus").length
+            c.log "pressed s"
+            s.$broadcast "focus"
+
 
 
     s.showModal = () ->

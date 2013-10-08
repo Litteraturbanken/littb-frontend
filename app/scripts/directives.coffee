@@ -244,3 +244,7 @@ littb.directive 'alert', ($rootElement, $timeout) ->
         scope.$on "$destroy", () -> elem.remove()
 
     
+littb.directive 'focusable', () ->
+    link : (scope, elem, attr) ->
+        scope.$on "focus", () ->
+            elem.focus()

@@ -29,6 +29,12 @@ $primarycolor : #990000;
 }
 
 // bootstrap overrides
+
+.tooltip {
+    font-size : 1em;
+}
+
+
 body {
     font-size : 12px;
     padding-top : 20px;
@@ -58,9 +64,6 @@ body {
 }
 .sans {
     font-family : $sans;
-}
-.tooltip {
-    font-size : 1em;
 }
 
 #leftCorridor {
@@ -1000,6 +1003,11 @@ grundform-clean {
         cursor : pointer;
         border-bottom : thin dotted #990000;
     }
+    sentens,stilruta {
+        // display : none;
+    }
+    sentens {display: block; border-top: 1px solid; border-bottom: 1px solid; margin-bottom: 1em; font-style: normal; font-weight: normal; font-size: small}
+    stilruta {display: block; background-color: #E4E7EB; font-style: normal; font-weight: normal; font-size: small; line-height: 1.5em;}
 }
 
 .typeahead.dropdown-menu {

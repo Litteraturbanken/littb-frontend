@@ -271,6 +271,16 @@
     };
   });
 
+  littb.directive('focusable', function() {
+    return {
+      link: function(scope, elem, attr) {
+        return scope.$on("focus", function() {
+          return elem.focus();
+        });
+      }
+    };
+  });
+
 }).call(this);
 
 /*

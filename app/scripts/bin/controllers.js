@@ -368,9 +368,7 @@
       return s.sorttuple[1] = isAsc;
     };
     s.getTitleId = function(row) {
-      var collection, title, _ref;
-      _ref = row.itemAttrs.titlepath.split('/'), collection = _ref[0], title = _ref[1];
-      return collection;
+      return row.itemAttrs.titlepath.split('/')[0];
     };
     s.selectWork = function() {
       c.log("selectWork", s.workFilter);
@@ -772,6 +770,12 @@
     s.dict_not_found = null;
     s.dict_searching = false;
     modal = null;
+    $($window).on("keyup", function(event) {
+      if (event.which === 83 && !$("input:focus").length) {
+        c.log("pressed s");
+        return s.$broadcast("focus");
+      }
+    });
     s.showModal = function() {
       c.log("showModal", modal);
       if (!modal) {
