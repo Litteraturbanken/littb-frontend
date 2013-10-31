@@ -298,6 +298,9 @@
     };
     refreshBreadcrumb = function() {
       if (s.showpage !== "introduktion") {
+        if ($rootScope.breadcrumb.length > 2) {
+          $rootScope.breadcrumb.pop();
+        }
         return s.appendCrumb(s.showpage);
       } else {
         return $rootScope.breadcrumb.pop();
@@ -337,7 +340,10 @@
     return backend.getAuthorInfo(s.author).then(function(data) {
       s.authorInfo = data;
       s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
-      $rootScope.appendCrumb(data.surname);
+      $rootScope.appendCrumb({
+        label: data.surname,
+        url: "#!/forfattare/" + s.author
+      });
       if (s.showpage !== "introduktion") {
         refreshBreadcrumb();
       }
@@ -373,7 +379,6 @@
     s.selectWork = function() {
       c.log("selectWork", s.workFilter);
       if (s.workFilter === "titles") {
-        s.authorFilter = null;
         s.mediatypeFilter = "";
         if (s.filter) {
           s.selectedLetter = null;
@@ -381,9 +386,9 @@
         if (s.selectedLetter) {
           s.filter = null;
         }
-        if (!(s.filter || s.selectedLetter)) {
-          s.selectedLetter = "A";
-        }
+      }
+      if (!(s.authorFilter || s.filter || s.selectedLetter)) {
+        s.selectedLetter = "A";
       }
       return fetchWorks();
     };
@@ -405,6 +410,12 @@
           s.selectedLetter = null;
         }
         return s.rowfilter = s.filter;
+      }
+    };
+    s.authorChange = function() {
+      s.selectedLetter = null;
+      if (!(s.authorFilter && !s.selectedLetter)) {
+        return s.selectedLetter = "A";
       }
     };
     fetchWorks = function() {
@@ -446,7 +457,8 @@
         scope_func: "setDir",
         key: "fallande"
       }, {
-        key: "filter"
+        key: "filter",
+        scope_name: "rowfilter"
       }, {
         key: "niva",
         scope_name: "workFilter",
@@ -454,10 +466,13 @@
       }, {
         key: "mediatypeFilter"
       }, {
+        key: "forfattare",
+        scope_name: "authorFilter"
+      }, {
         key: "index",
         scope_name: "selectedLetter",
+        replace: false,
         post_change: function(val) {
-          c.log("val_in val, sl", val, s.selectedLetter);
           if (val) {
             s.filter = "";
           }
@@ -468,11 +483,11 @@
         }
       }
     ]);
-    if (!s.filter && !s.selectedLetter) {
+    if (!s.rowfilter && !s.selectedLetter) {
       s.selectedLetter = "A";
     }
-    if (s.filter) {
-      s.rowfilter = s.filter;
+    if (s.rowfilter) {
+      s.filter = s.rowfilter;
     }
     c.log("workfilter", s.workFilter);
     return fetchWorks();
@@ -580,7 +595,8 @@
               return;
             }
             return $(window).scrollTop($("#" + val).offset().top);
-          }
+          },
+          replace: false
         }
       ]);
     });
@@ -687,7 +703,7 @@
     });
   });
 
-  littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams, $q, authors) {
+  littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams, $q, authors, $document) {
     var author, infoDef, mediatype, s, title;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype;
@@ -695,6 +711,7 @@
     s.defaultErrataLimit = 8;
     s.errataLimit = s.defaultErrataLimit;
     s.isOpen = false;
+    s.show_large = false;
     s.toggleErrata = function() {
       s.errataLimit = s.isOpen ? 8 : 1000;
       return s.isOpen = !s.isOpen;
@@ -727,6 +744,26 @@
       } else {
         return "#!/forfattare/" + s.author + "/titlar/" + s.title + "/" + mediatype;
       }
+    };
+    s.getSourceImage = function() {
+      if (s.data) {
+        return "txt/" + s.data.lbworkid + "/" + s.data.lbworkid + "_small.jpeg";
+      }
+    };
+    s.showLargeImage = function($event) {
+      if (s.show_large) {
+        return;
+      }
+      s.show_large = true;
+      $event.stopPropagation();
+      return $document.one("click", function(event) {
+        if (event.button !== 0) {
+          return;
+        }
+        return s.$apply(function() {
+          return s.show_large = false;
+        });
+      });
     };
     infoDef = backend.getSourceInfo(author, title, mediatype);
     infoDef.then(function(data) {
@@ -779,6 +816,7 @@
     s.showModal = function() {
       c.log("showModal", modal);
       if (!modal) {
+        s.$broadcast("blur");
         modal = $modal.open({
           templateUrl: "so_modal_template.html",
           scope: s
@@ -794,6 +832,7 @@
       return modal = null;
     };
     $rootScope.$on("search_dict", function(event, query, searchId) {
+      c.log("search_dict", query, searchId);
       return backend.searchLexicon(query, false, searchId, true).then(function(data) {
         var obj, result, _i, _len;
         c.log("search_dict", data);
@@ -1032,7 +1071,7 @@
             url: "#!/forfattare/" + author + "/titlar"
           }, {
             label: (_.str.humanize(workinfo.titlepath)) + (" sidan " + s.pagename + " ") + (s.mediatype || ""),
-            url: "#!/forfattare/" + author + "/titlar/" + title
+            url: "#!/forfattare/" + author + "/titlar/" + title + "/info"
           }
         ]);
         return s.setTitle("" + workinfo.title + " sidan " + s.pagename + " " + s.mediatype);

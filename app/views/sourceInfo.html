@@ -1,12 +1,22 @@
-<div ng-show="init">
-    <h3 class="author">{{data.authorFullname}}</h3>
-    <h3 class="title"><em>{{data.title}}</em></h3>
+<div ng-show="init" >
+    <div class="header_left">
+        <h3 class="author">{{data.authorFullname}}</h3>
+        <h3 class="title"><em>{{data.title}}</em></h3>
+    </div>
+    <div class="header_right" >
+        <img ng-show="data.lbworkid" ng-src="{{getSourceImage()}}" ng-click="showLargeImage($event)" onerror="this.style.display = 'none';" >
+    </div>
+
+    <div class="large_img" ng-class="{visible : show_large}">
+        <img ng-show="data.lbworkid" ng-src="txt/{{data.lbworkid}}/{{data.lbworkid}}_large.jpeg">
+        <div class="cover"></div>
+    </div>
     
     <!-- <div ng-show="mediatype == 'faksimil'">
         <div ng-bind-html-unsafe="data.sourcedesc"></div>
     </div>
      -->
-    <p ng-bind-html-unsafe="data.sourcedesc"></p>
+    <p class="clearfix" ng-bind-html-unsafe="data.sourcedesc"></p>
     
     <div class="mediatypes">
         Läs verket som 

@@ -280,6 +280,8 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     refreshBreadcrumb = () ->
         if s.showpage != "introduktion"
+            if $rootScope.breadcrumb.length > 2
+                $rootScope.breadcrumb.pop()
             s.appendCrumb s.showpage
         else
             $rootScope.breadcrumb.pop()
@@ -328,7 +330,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
 
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
-        $rootScope.appendCrumb data.surname
+        $rootScope.appendCrumb 
+            label : data.surname
+            url : "#!/forfattare/" + s.author
         if s.showpage != "introduktion"
             refreshBreadcrumb()
         refreshTitle()
@@ -360,15 +364,17 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
     s.selectWork = () ->
         c.log "selectWork", s.workFilter
         if s.workFilter == "titles"
-            s.authorFilter = null
+            # s.authorFilter = null
             s.mediatypeFilter = ""
             if s.filter
                 s.selectedLetter = null
             if s.selectedLetter
                 s.filter = null
-            unless s.filter or s.selectedLetter then s.selectedLetter = "A"
+            # unless s.filter or s.selectedLetter then s.selectedLetter = "A"
+
             # s.selectedLetter = null
             # s.filter = null
+        unless s.authorFilter or s.filter or s.selectedLetter then s.selectedLetter = "A"
         fetchWorks()
 
     authors.then ([authorList, authorsById]) ->
@@ -385,6 +391,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
             unless s.filter then s.selectedLetter = "A" else s.selectedLetter = null
 
             s.rowfilter = s.filter
+
+    s.authorChange = () ->
+        s.selectedLetter = null
+        unless s.authorFilter and not s.selectedLetter
+            s.selectedLetter = "A"
 
     fetchWorks = () ->
         s.searching = true
@@ -436,6 +447,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
             key : "fallande"
         ,
             key : "filter"
+            scope_name : "rowfilter"
         ,
             key : "niva"
             scope_name : "workFilter"
@@ -443,11 +455,14 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         ,
             key : "mediatypeFilter"
         ,
+            key : "forfattare"
+            scope_name : "authorFilter"
+        ,
             key : "index",
             scope_name : "selectedLetter"
             # default: "A"
+            replace : false
             post_change : (val) ->
-                c.log "val_in val, sl", val, s.selectedLetter
                 s.filter = "" if val
                 if s.workFilter == "titles" and val
                     fetchWorks()
@@ -457,8 +472,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 
     # timeout in order to await the setupHashComplex watch firing.
     # $timeout () ->
-    if not s.filter and not s.selectedLetter then s.selectedLetter = "A"
-    if s.filter then s.rowfilter = s.filter
+    if not s.rowfilter and not s.selectedLetter then s.selectedLetter = "A"
+    if s.rowfilter then s.filter = s.rowfilter
     c.log "workfilter", s.workFilter
     fetchWorks()
 
@@ -547,6 +562,7 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
                     $(window).scrollTop(0)
                     return
                 $(window).scrollTop($("##{val}").offset().top)
+            replace : false
         ]
 
 
@@ -629,7 +645,7 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
         s.data = titleArray
 
 
-littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors) ->
+littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document) ->
     s = $scope
     {title, author, mediatype} = $routeParams
     _.extend s, $routeParams
@@ -638,6 +654,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors) 
     s.defaultErrataLimit = 8
     s.errataLimit = s.defaultErrataLimit
     s.isOpen = false
+    s.show_large = false
 
     s.toggleErrata = () ->
         s.errataLimit = if s.isOpen then 8 else 1000
@@ -659,6 +676,23 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors) 
             return s.data?.epub.url
         else
             return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
+
+    s.getSourceImage = () ->
+        if s.data
+            "txt/#{s.data.lbworkid}/#{s.data.lbworkid}_small.jpeg"
+
+    s.showLargeImage = ($event) ->
+        if s.show_large then return 
+        s.show_large = true
+        $event.stopPropagation()
+
+        $document.one "click", (event) ->
+            if event.button != 0 then return
+            s.$apply () ->
+                s.show_large = false
+
+        
+
 
 
     infoDef = backend.getSourceInfo(author, title, mediatype)
@@ -708,12 +742,16 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
     s.showModal = () ->
         c.log "showModal", modal
         unless modal
+            s.$broadcast "blur"
+
             modal = $modal.open
                 templateUrl : "so_modal_template.html"
                 scope : s
 
             modal.result.then angular.noop, () ->
                 s.closeModal()
+
+
 
     s.closeModal = () ->
         modal.close()
@@ -722,6 +760,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
     $rootScope.$on "search_dict", (event, query, searchId) ->
+        c.log "search_dict", query, searchId    
         
         
         backend.searchLexicon(query, false, searchId, true).then (data) ->
@@ -973,7 +1012,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 url : "#!/forfattare/#{author}/titlar"
             ,   
                 label : (_.str.humanize workinfo.titlepath) + " sidan #{s.pagename} " + (s.mediatype or "")
-                url : "#!/forfattare/#{author}/titlar/#{title}"
+                url : "#!/forfattare/#{author}/titlar/#{title}/info"
             ]
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"

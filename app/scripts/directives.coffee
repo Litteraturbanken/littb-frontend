@@ -1,4 +1,4 @@
-littb = angular.module('littbApp');
+littb = angular.module('littbApp')
 littb.directive 'submitBtn', () ->
 
     replace : true
@@ -187,7 +187,7 @@ littb.directive 'selectionSniffer', ($window) ->
             box.remove()
         $("body").on "mousedown", ".search_dict", () ->
             c.log "search click!", $window.getSelection().toString()
-            scope.$emit "search_dict", $window.getSelection().toString()
+            scope.$emit "search_dict", _.str.trim $window.getSelection().toString()
             return false
 
         scope.$on "$destroy", () ->
@@ -248,3 +248,9 @@ littb.directive 'focusable', () ->
     link : (scope, elem, attr) ->
         scope.$on "focus", () ->
             elem.focus()
+
+        scope.$on "blur", () ->
+            c.log "blur!", elem
+            setTimeout () ->
+                elem.blur()
+            , 100

@@ -1,8 +1,8 @@
 <div ng-class="{searching:searching}">
     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div id="controls" ng-hide="searching">
-        <select ng-model="authorFilter" ng-change="selectedLetter = null"
-            ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
+        <select ng-model="authorFilter" ng-change="authorChange()"
+            ng-options="author.authorid as author.nameforindex for author in authorData | orderBy:'nameforindex'">
             <option value="">Alla författare</option>
         </select>
         <select ng-model="workFilter" ng-change="selectWork()">
@@ -31,7 +31,7 @@
             <th></th>
         </thead>
         
-        <tbody><tr ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.title' : workFilter == 'works' && (rowfilter || ''), mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter.authorid}">
+        <tbody><tr ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.title' : workFilter == 'works' && (rowfilter || ''), mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter}">
             <td class="title">
                 <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
                     href="#!/forfattare/{{row.author.workauthor || row.author.authorid}}/titlar/{{getTitleId(row)}}/info">{{row.itemAttrs.showtitle}}</a>

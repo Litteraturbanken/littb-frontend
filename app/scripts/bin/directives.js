@@ -228,7 +228,7 @@
         });
         $("body").on("mousedown", ".search_dict", function() {
           c.log("search click!", $window.getSelection().toString());
-          scope.$emit("search_dict", $window.getSelection().toString());
+          scope.$emit("search_dict", _.str.trim($window.getSelection().toString()));
           return false;
         });
         scope.$on("$destroy", function() {
@@ -274,8 +274,14 @@
   littb.directive('focusable', function() {
     return {
       link: function(scope, elem, attr) {
-        return scope.$on("focus", function() {
+        scope.$on("focus", function() {
           return elem.focus();
+        });
+        return scope.$on("blur", function() {
+          c.log("blur!", elem);
+          return setTimeout(function() {
+            return elem.blur();
+          }, 100);
         });
       }
     };

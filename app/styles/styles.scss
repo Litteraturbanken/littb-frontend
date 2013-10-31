@@ -12,7 +12,7 @@ $sans : "Helvetica", "Arial", sans-serif;
 
 $main-menu-width : 120px;
 $gutter-width : 40px;
-$page-width : 670px;
+$page-width : 712px;
 $mainview-width : $page-width - $main-menu-width - $gutter-width;
 
 $primarycolor : #990000;
@@ -325,6 +325,7 @@ body > .header {
             height: 57px;
             left: -17px;
             position: relative;
+            cursor : default;
         }
          a {
             width : 59%;
@@ -584,6 +585,7 @@ $partnav-width : 170px;
         }
 
         .etext {
+            width : 500px;
             white-space : nowrap;
         }
     }
@@ -723,6 +725,40 @@ $partnav-width : 170px;
 
 .page-sourceInfo {
     #mainview {
+        .header_left {
+            float : left;
+            width : 360px;
+        }
+        .header_right {
+            float : right;
+            cursor : pointer;
+        }
+        .visible .cover {
+            display : block;
+        }
+        .large_img {
+            &.visible {
+                opacity : 1;
+                transition : opacity 500ms;
+            }
+            opacity : 0;
+            transition : opacity 500ms;
+            .cover {
+                display : none;
+                position : absolute;
+                top: 0;
+                right : 0;
+                left : 0;
+                bottom : 0;
+                background: rgba(255, 255, 255, 0.6);
+            }
+            img {
+                display : block;
+                margin : 0 auto;
+                position: absolute;
+                z-index: 1;
+            }
+        }
         div, p {
             margin-bottom : 1em;
         }
@@ -1006,8 +1042,25 @@ grundform-clean {
     sentens,stilruta {
         // display : none;
     }
-    sentens {display: block; border-top: 1px solid; border-bottom: 1px solid; margin-bottom: 1em; font-style: normal; font-weight: normal; font-size: small}
-    stilruta {display: block; background-color: #E4E7EB; font-style: normal; font-weight: normal; font-size: small; line-height: 1.5em;}
+    sentens {
+        margin-top : 1em;
+        display: block;
+        border-top: 1px solid;
+        border-bottom: 1px solid;
+        margin-bottom: 1em;
+        font-style: normal;
+        font-weight: normal;
+        font-size: small
+    }
+    stilruta {
+        display: block;
+        background-color: #E4E7EB;
+        font-style: normal;
+        font-weight: normal;
+        font-size: small;
+        line-height: 1.5em;
+    }
+
 }
 
 .typeahead.dropdown-menu {
@@ -1023,7 +1076,8 @@ grundform-clean {
 .modal {
     border-radius: 0;
     max-height : 90%;
-    top : 25%;
+    top : 5%;
+    margin-top : 0;
 }
 .modal-footer {
      border-top : none;
@@ -1034,7 +1088,7 @@ grundform-clean {
 .modal.fade {
     transition: opacity 0.1s linear;
     &.in {
-        top : 25%;
+        top : 5%;
     }
 }
 
