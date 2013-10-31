@@ -553,7 +553,6 @@
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             elem = _ref[_i];
             if (elem.tagName === "table") {
-              c.log("table", elem, $("td:nth-child(2) a", elem));
               output.titleList = (function() {
                 var _j, _len1, _ref1, _results;
                 _ref1 = $("td:nth-child(2) a", elem);
@@ -564,7 +563,6 @@
                 }
                 return _results;
               })();
-              c.log("titleList", output.titleList);
             } else if (_ref1 = elem.tagName, __indexOf.call(parseObj, _ref1) >= 0) {
               output[elem.tagName] = _.object(_.map($(elem).children(), function(child) {
                 return [child.tagName, $(child).text()];

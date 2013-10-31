@@ -55,17 +55,15 @@
       controller: [
         "$scope", "$routeParams", "$http", "util", function($scope, $routeParams, $http, util) {
           return $http.get("/red/presentationer/specialomraden/" + $routeParams.doc).success(function(data) {
-            var title;
             $scope.doc = data;
-            title = $("<root>" + data + "</root>").find("h1").text();
-            c.log("title", title);
-            title = title.split(" ").slice(0, 5).join(" ");
-            $scope.setTitle(title);
-            return $scope.appendCrumb(title);
+            $scope.title = $("<root>" + data + "</root>").find("h1").text();
+            $scope.title = $scope.title.split(" ").slice(0, 5).join(" ");
+            $scope.setTitle($scope.title);
+            return $scope.appendCrumb($scope.title);
           });
         }
       ],
-      template: '<div style="position:relative;" ng-bind-html-unsafe="doc"></div>',
+      template: '<meta-desc>{{title}}</meta-desc>\n<div style="position:relative;" ng-bind-html-unsafe="doc"></div>',
       breadcrumb: ["presentationer"]
     }).when('/om/aktuellt', {
       templateUrl: '/red/om/aktuellt/aktuellt.html',
@@ -238,9 +236,9 @@
     };
     $rootScope.setTitle = function(title) {
       if (title) {
-        title = title + " | Litteraturbanken v.3";
+        title = title + " | Litteraturbanken";
       } else {
-        title = "Litteraturbanken v.3";
+        title = "Litteraturbanken";
       }
       return $("title:first").text(title);
     };
@@ -249,7 +247,11 @@
     });
     $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
       var cls, item, _ref;
-      $rootScope.setTitle(newRoute.title);
+      if (newRoute.controller === "startCtrl") {
+        $("title:first").text("Litteraturbanken | " + newRoute.title);
+      } else {
+        $rootScope.setTitle(newRoute.title);
+      }
       if (newRoute.loadedTemplateUrl !== (prevRoute != null ? prevRoute.loadedTemplateUrl : void 0)) {
         $("#toolkit").html("");
       }

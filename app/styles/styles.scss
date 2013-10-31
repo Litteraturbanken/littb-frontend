@@ -13,7 +13,7 @@ $sans : "Helvetica", "Arial", sans-serif;
 $main-menu-width : 120px;
 $gutter-width : 40px;
 $page-width : 712px;
-$mainview-width : $page-width - $main-menu-width - $gutter-width;
+$mainview-width : $page-width - $main-menu-width - ($gutter-width * 2);
 
 $primarycolor : #990000;
 @mixin primarygradient {
@@ -38,7 +38,7 @@ $primarycolor : #990000;
 body {
     font-size : 12px;
     padding-top : 20px;
-    padding-left : 40px;
+    padding-left : $gutter-width;
     white-space: nowrap;
     font-family : georgia, serif;
     width : $page-width;
@@ -79,6 +79,22 @@ body {
     .word_search {
         .input_container {
             position : relative;
+            ::-webkit-input-placeholder {
+               font-size: 0.9em;
+               line-height: 1.6em;
+            }
+
+            :-moz-placeholder { /* Firefox 18- */
+               font-size: 0.8em;  
+            }
+
+            ::-moz-placeholder {  /* Firefox 19+ */
+               font-size: 0.8em;  
+            }
+
+            :-ms-input-placeholder {  
+               font-size: 0.8em;  
+            }
         }
         .so_spinner {
             opacity : 0;
@@ -172,17 +188,17 @@ hr {
     }
 }
 
-tr:nth-of-type(10n) {
-    padding-bottom : 2em;
-}
+// tr:nth-of-type(10n) {
+//     padding-bottom : 2em;
+// }
 
 
 #controls > * {
     vertical-align: top;
 }
-tr:nth-of-type(10n) td {
-    padding-bottom : 1.5em;
-}
+// tr:nth-of-type(10n) td {
+//     padding-bottom : 1.5em;
+// }
 .contenttable {
     min-width : $mainview-width;
     tbody:empty:after {
@@ -460,7 +476,7 @@ body > .header {
 
 .page-search {
     #mainview {
-
+        width : 512px;
         .searching .results {
             opacity : 0.3;
         }
@@ -587,6 +603,12 @@ $partnav-width : 170px;
         .etext {
             width : 500px;
             white-space : nowrap;
+        }
+
+        .searching {
+            .etext, .faksimil {
+                opacity : 0.5;
+            }
         }
     }
     #toolkit {
@@ -725,6 +747,10 @@ $partnav-width : 170px;
 
 .page-sourceInfo {
     #mainview {
+        .searching > div:not(.preloader) {
+            // display : none;
+            visibility: hidden;
+        }
         .header_left {
             float : left;
             width : 360px;

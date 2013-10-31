@@ -1,4 +1,8 @@
-<div ng-show="init" >
+<page-title>{{data.title}} om boken</page-title>
+<meta-desc>{{data.title}} om boken</meta-desc>
+<div class="maincontent" ng-class="{searching:!data}">
+    <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+
     <div class="header_left">
         <h3 class="author">{{data.authorFullname}}</h3>
         <h3 class="title"><em>{{data.title}}</em></h3>
@@ -12,10 +16,6 @@
         <div class="cover"></div>
     </div>
     
-    <!-- <div ng-show="mediatype == 'faksimil'">
-        <div ng-bind-html-unsafe="data.sourcedesc"></div>
-    </div>
-     -->
     <p class="clearfix" ng-bind-html-unsafe="data.sourcedesc"></p>
     
     <div class="mediatypes">
@@ -47,17 +47,15 @@
         <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>
         <a class="toggle" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
     </div>
-    
-    
-    
-    <div toolkit>
-        <hr>
-        <span ng-repeat="author in data.authoridNorm">
-            <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
-            <span ng-if="author.type == 'editor'">(red.)</span>
-            <span ng-if="!$last">och</span>
-        </span>
-        <!-- <div><a href="#!/forfattare/{{data.authorid}}">{{data.authorFullname}}</a></div> -->
-        <div><em><a href="#!/forfattare/{{data.authorid}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle}}</a></em></div>
-    </div>
+</div>
+
+<div toolkit>
+    <hr>
+    <span ng-repeat="author in data.authoridNorm">
+        <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
+        <span ng-if="author.type == 'editor'">(red.)</span>
+        <span ng-if="!$last">och</span>
+    </span>
+    <!-- <div><a href="#!/forfattare/{{data.authorid}}">{{data.authorFullname}}</a></div> -->
+    <div><em><a href="#!/forfattare/{{data.authorid}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle}}</a></em></div>
 </div>

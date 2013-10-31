@@ -1,7 +1,7 @@
 'use strict';
 
 window.c = console ? log : _.noop
-littb = angular.module('littbApp');
+littb = angular.module('littbApp')
 littb.controller "startCtrl", ($scope, $location) ->
 
     $scope.gotoTitle = (query) ->
@@ -85,6 +85,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
     s.authorChange = () ->
         $location.search("titel", null)
+        s.selected_title = ""
 
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
@@ -292,6 +293,11 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         _.filter worklist, (item) ->
             "/" not in item.titlepath 
 
+    s.getPageTitle = (page) ->
+        {
+            "semer" : "Mera om"
+        }[page] or _.str.capitalize page
+
     refreshExternalDoc = (page) ->
         c.log "page", page
         url = s.authorInfo[page]
@@ -337,6 +343,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             refreshBreadcrumb()
         refreshTitle()
         refreshExternalDoc(s.showpage)
+
 
 
 
@@ -472,7 +479,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 
     # timeout in order to await the setupHashComplex watch firing.
     # $timeout () ->
-    if not s.rowfilter and not s.selectedLetter then s.selectedLetter = "A"
+    if not (s.rowfilter or s.selectedLetter or s.mediatypeFilter) then s.selectedLetter = "A"
     if s.rowfilter then s.filter = s.rowfilter
     c.log "workfilter", s.workFilter
     fetchWorks()
@@ -697,7 +704,6 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     infoDef = backend.getSourceInfo(author, title, mediatype)
     infoDef.then (data) ->
-        s.init = true
         s.data = data
         if not s.mediatype
             s.mediatype = s.data.mediatypes[0]
@@ -734,7 +740,6 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
     $($window).on "keyup", (event) ->
         if event.which == 83 and not $("input:focus").length
-            c.log "pressed s"
             s.$broadcast "focus"
 
 
@@ -818,8 +823,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
     s.searchData = searchData
+    s.loading = false
 
-    isInit = true
     
     # s.dict_not_found = "Hittade inget uppslag"
     thisRoute = $route.current
@@ -958,7 +963,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             
 
-
+        s.loading = true
         s.pagename = val
         backend.getPage(s.pagename, 
             authorid : author
@@ -998,9 +1003,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.etext_html = page.text()
 
             backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
-
+            s.loading = false
             $rootScope.breadcrumb = []
-            c.log "write reader breadcrumb", $location.path(), $route.current
             s.appendCrumb [
                 label : "författare"
                 url : "#!/forfattare"
@@ -1017,7 +1021,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
 
-        isInit = false
 
     s.size = 2
     

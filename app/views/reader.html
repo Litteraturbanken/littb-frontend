@@ -1,4 +1,8 @@
-<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel}">
+<meta-desc>
+    {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
+</meta-desc>
+<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading}">
+    <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
     <div class="etext" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
@@ -73,7 +77,9 @@
     
         <div class="partnav" ng-show="workinfo.parts.length > 5">
             <div>
-                <i ng-mouseover="mouseover()" class="arrow_icon icon-play icon-large"></i>
+                <i ng-mouseover="mouseover()" 
+                    ng-touch="mouseover()"
+                    class="arrow_icon icon-play icon-large"></i>
             </div>
     
             <div ng-show="showPopup" class="triangle"></div>
@@ -82,7 +88,7 @@
                 <li><a ng-click="gotopage(startpage)">[Start]</a></li>
                 <li ng-repeat="part in workinfo.parts" tooltip="{{part.navtitle}}">
                     
-                    <a ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
+                    <a ng-touch="gotopage(part.startpagename)" ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
                 </li>
             </ul>
     

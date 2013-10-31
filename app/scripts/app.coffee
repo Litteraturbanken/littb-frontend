@@ -53,13 +53,13 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                                         # c.log "doc", data
                 
                                         $scope.doc = data
-                                        title = $("<root>#{data}</root>").find("h1").text()
-                                        c.log "title", title
-                                        title = title.split(" ")[0...5].join(" ")
-                                        $scope.setTitle title
-                                        $scope.appendCrumb title
+                                        $scope.title = $("<root>#{data}</root>").find("h1").text()
+                                        $scope.title = $scope.title.split(" ")[0...5].join(" ")
+                                        $scope.setTitle $scope.title
+                                        $scope.appendCrumb $scope.title
                 ]
                 template : '''
+                        <meta-desc>{{title}}</meta-desc>
                         <div style="position:relative;" ng-bind-html-unsafe="doc"></div>
                     '''
                 breadcrumb : ["presentationer"]
@@ -256,16 +256,19 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
     $rootScope.setTitle = (title) ->
         if title
-            title = title + " | Litteraturbanken v.3"
+            title = title + " | Litteraturbanken"
         else
-            title = "Litteraturbanken v.3"
+            title = "Litteraturbanken"
         $("title:first").text title
 
     $rootScope.$on "$routeChangeStart", (event, next, current) ->
         routeStartCurrent = current
 
     $rootScope.$on "$routeChangeSuccess", (event, newRoute, prevRoute) ->
-        $rootScope.setTitle newRoute.title
+        if newRoute.controller == "startCtrl"
+            $("title:first").text "Litteraturbanken | " + newRoute.title
+        else
+            $rootScope.setTitle newRoute.title
         if newRoute.loadedTemplateUrl != prevRoute?.loadedTemplateUrl
             $("#toolkit").html ""
         $rootScope.prevRoute = prevRoute

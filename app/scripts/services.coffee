@@ -446,9 +446,7 @@ littb.factory 'backend', ($http, $q, util) ->
                 $("table", xml).last().remove()
             for elem in $("result", xml).children()
                 if elem.tagName == "table"
-                    c.log "table", elem, $("td:nth-child(2) a", elem)
                     output.titleList = ("<a href='#!/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", elem))
-                    c.log "titleList", output.titleList
                 else if elem.tagName in parseObj
                     output[elem.tagName] = _.object _.map $(elem).children(), (child) ->
                         [child.tagName, $(child).text()]

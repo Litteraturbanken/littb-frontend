@@ -287,6 +287,44 @@
     };
   });
 
+  littb.directive('metaDesc', function($interpolate) {
+    return {
+      restrict: "EA",
+      link: function(scope, elm, attrs) {
+        var inpl, wtch;
+        elm.remove();
+        inpl = $interpolate(elm.text());
+        wtch = scope.$watch(function(s) {
+          return inpl(s);
+        }, function(val) {
+          return $("meta[name=description").attr("content", val);
+        });
+        return scope.$on("$destroy", function() {
+          return wtch();
+        });
+      }
+    };
+  });
+
+  littb.directive('pageTitle', function($interpolate) {
+    return {
+      restrict: "EA",
+      link: function(scope, elm, attrs) {
+        var inpl, wtch;
+        elm.remove();
+        inpl = $interpolate(elm.text());
+        wtch = scope.$watch(function(s) {
+          return inpl(s);
+        }, function(val) {
+          return $("head > title").text(val || "");
+        });
+        return scope.$on("$destroy", function() {
+          return wtch();
+        });
+      }
+    };
+  });
+
 }).call(this);
 
 /*

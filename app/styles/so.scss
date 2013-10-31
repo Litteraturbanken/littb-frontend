@@ -124,4 +124,6 @@
     cykel>def:not(:last-child):after {content:": ";}
     idiomdef:not(:last-child):after {content:": ";}
     fras:not(:last-child):after {content:" ";}
+    idiomlexblock {display:block; padding-top: 0.3em;padding-left: 5em;}
+    idiomxnr {font-weight: normal; font-size: normal; font-style:italic; padding-right: 0.2em}
 }

@@ -254,3 +254,34 @@ littb.directive 'focusable', () ->
             setTimeout () ->
                 elem.blur()
             , 100
+
+
+
+littb.directive 'metaDesc', ($interpolate) ->
+    restrict : "EA"
+    link: (scope, elm, attrs) ->
+        elm.remove()
+        inpl = $interpolate(elm.text())
+        wtch = scope.$watch((s) ->
+            inpl(s)
+        , (val) ->
+            $("meta[name=description").attr("content", val)
+        )
+
+        scope.$on "$destroy", () ->
+            wtch()
+
+
+littb.directive 'pageTitle', ($interpolate) ->
+    restrict : "EA"
+    link: (scope, elm, attrs) ->
+        elm.remove()
+        inpl = $interpolate(elm.text())
+        wtch = scope.$watch((s) ->
+            inpl(s)
+        , (val) ->
+            $("head > title").text(val or "")
+        )
+
+        scope.$on "$destroy", () ->
+            wtch()

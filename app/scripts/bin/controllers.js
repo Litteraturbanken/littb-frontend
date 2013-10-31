@@ -92,7 +92,8 @@
       }
     };
     s.authorChange = function() {
-      return $location.search("titel", null);
+      $location.search("titel", null);
+      return s.selected_title = "";
     };
     authors.then(function(_arg) {
       var authorList, authorsById, change;
@@ -311,6 +312,11 @@
         return __indexOf.call(item.titlepath, "/") < 0;
       });
     };
+    s.getPageTitle = function(page) {
+      return {
+        "semer": "Mera om"
+      }[page] || _.str.capitalize(page);
+    };
     refreshExternalDoc = function(page) {
       var url, _ref;
       c.log("page", page);
@@ -483,7 +489,7 @@
         }
       }
     ]);
-    if (!s.rowfilter && !s.selectedLetter) {
+    if (!(s.rowfilter || s.selectedLetter || s.mediatypeFilter)) {
       s.selectedLetter = "A";
     }
     if (s.rowfilter) {
@@ -767,7 +773,6 @@
     };
     infoDef = backend.getSourceInfo(author, title, mediatype);
     infoDef.then(function(data) {
-      s.init = true;
       s.data = data;
       if (!s.mediatype) {
         return s.mediatype = s.data.mediatypes[0];
@@ -809,7 +814,6 @@
     modal = null;
     $($window).on("keyup", function(event) {
       if (event.which === 83 && !$("input:focus").length) {
-        c.log("pressed s");
         return s.$broadcast("focus");
       }
     });
@@ -882,12 +886,12 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
-    var author, isInit, loadPage, mediatype, onKeyDown, pagename, s, thisRoute, title, watches;
+    var author, loadPage, mediatype, onKeyDown, pagename, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
     s.searchData = searchData;
-    isInit = true;
+    s.loading = false;
     thisRoute = $route.current;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
@@ -1026,8 +1030,9 @@
         c.log("resisted page load");
         return;
       }
+      s.loading = true;
       s.pagename = val;
-      backend.getPage(s.pagename, {
+      return backend.getPage(s.pagename, {
         authorid: author,
         titlepath: title,
         mediatype: mediatype
@@ -1057,8 +1062,8 @@
         page.children().remove();
         s.etext_html = page.text();
         backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype);
+        s.loading = false;
         $rootScope.breadcrumb = [];
-        c.log("write reader breadcrumb", $location.path(), $route.current);
         s.appendCrumb([
           {
             label: "författare",
@@ -1076,7 +1081,6 @@
         ]);
         return s.setTitle("" + workinfo.title + " sidan " + s.pagename + " " + s.mediatype);
       });
-      return isInit = false;
     };
     s.size = 2;
     s.setSize = function(index) {
