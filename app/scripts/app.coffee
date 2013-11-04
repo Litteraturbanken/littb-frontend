@@ -120,16 +120,16 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                 title : "Författare"
                 reloadOnSearch : false
                 breadcrumb : ["författare"]
-            .when "/forfattare/LagerlofS",
-                templateUrl : "views/sla/lagerlof.html"
-                controller : "lagerlofCtrl"
-                reloadOnSearch : false
-                breadcrumb : ["författare", "lagerlöf"]
-            .when "/forfattare/LagerlofS/biblinfo",
-                templateUrl : "views/sla/biblinfo.html"
-                controller : "biblinfoCtrl"
-                reloadOnSearch : false
-                breadcrumb : ["författare", "lagerlöf"]
+            # .when "/forfattare/LagerlofS",
+            #     templateUrl : "views/sla/lagerlof.html"
+            #     controller : "lagerlofCtrl"
+            #     reloadOnSearch : false
+            #     breadcrumb : ["författare", "lagerlöf"]
+            # .when "/forfattare/LagerlofS/biblinfo",
+            #     templateUrl : "views/sla/biblinfo.html"
+            #     controller : "biblinfoCtrl"
+            #     reloadOnSearch : false
+            #     breadcrumb : ["författare", "lagerlöf"]
             .when ["/forfattare/:author"
                    "/forfattare/:author/titlar"
                    "/forfattare/:author/bibliografi"

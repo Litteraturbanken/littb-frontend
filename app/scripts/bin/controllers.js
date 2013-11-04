@@ -401,18 +401,18 @@
       return s.authorData = authorList;
     });
     s.searchTitle = function() {
-      c.log("searchTitle");
-      if (s.workFilter === 'titlar') {
+      c.log("searchTitle", s.workFilter);
+      if (s.workFilter === 'titles') {
         s.selectedLetter = null;
-        return fetchWorks();
+        fetchWorks();
       } else {
         if (!s.filter) {
           s.selectedLetter = "A";
         } else {
           s.selectedLetter = null;
         }
-        return s.rowfilter = s.filter;
       }
+      return s.rowfilter = s.filter;
     };
     s.authorChange = function() {
       s.selectedLetter = null;
@@ -714,6 +714,12 @@
     s.errataLimit = s.defaultErrataLimit;
     s.isOpen = false;
     s.show_large = false;
+    s.getValidAuthors = function() {
+      var _ref;
+      return _.filter((_ref = s.data) != null ? _ref.authoridNorm : void 0, function(item) {
+        return item.id in s.authorById;
+      });
+    };
     s.toggleErrata = function() {
       s.errataLimit = s.isOpen ? 8 : 1000;
       return s.isOpen = !s.isOpen;
@@ -740,11 +746,16 @@
       return _results;
     };
     s.getMediatypeUrl = function(mediatype) {
-      var _ref;
       if (mediatype === "epub") {
-        return (_ref = s.data) != null ? _ref.epub.url : void 0;
+        return "#!/forfattare/" + s.author + "/titlar/" + s.title + "/info/" + mediatype;
       } else {
         return "#!/forfattare/" + s.author + "/titlar/" + s.title + "/" + mediatype;
+      }
+    };
+    s.onMediatypeClick = function() {
+      c.log("onMediatypeClick");
+      if (mediatype === "epub") {
+        return window.location.href = s.getUrl(mediatype);
       }
     };
     s.getSourceImage = function() {
@@ -946,7 +957,7 @@
     s.nextPage = function() {
       var newix;
       resetHitMarkings();
-      if (Number(s.displaynum) === s.endpage) {
+      if (s.pageix === s.pagemap["page_" + s.endpage]) {
         return;
       }
       newix = s.pageix + 1;
@@ -996,6 +1007,12 @@
         return;
       }
       return __indexOf.call(s.workinfo.mediatypes, 'etext') >= 0 && __indexOf.call(s.workinfo.mediatypes, 'faksimil') >= 0;
+    };
+    s.getValidAuthors = function() {
+      var _ref;
+      return _.filter((_ref = s.workinfo) != null ? _ref.authoridNorm : void 0, function(item) {
+        return item.id in s.authorById;
+      });
     };
     authors.then(function(_arg) {
       var authorById, authorData;
@@ -1060,8 +1077,8 @@
         data = _arg[0], workinfo = _arg[1];
         s.workinfo = workinfo;
         s.pagemap = workinfo.pagemap;
-        s.startpage = Number(workinfo.startpagename);
-        s.endpage = Number(workinfo.endpagename);
+        s.startpage = workinfo.startpagename;
+        s.endpage = workinfo.endpagename;
         page = $("page[name=" + s.pagename + "]", data).last().clone();
         if (!page.length) {
           page = $("page:last", data).clone();

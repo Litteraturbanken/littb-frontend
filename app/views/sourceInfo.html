@@ -12,7 +12,7 @@
     </div>
 
     <div class="large_img" ng-class="{visible : show_large}">
-        <img ng-show="data.lbworkid" ng-src="txt/{{data.lbworkid}}/{{data.lbworkid}}_large.jpeg">
+        <img ng-show="data.lbworkid && show_large" ng-src="txt/{{data.lbworkid}}/{{data.lbworkid}}_large.jpeg">
         <div class="cover"></div>
     </div>
     
@@ -20,12 +20,12 @@
     
     <div class="mediatypes">
         Läs verket som 
-        <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
+        <a class="mediatype" ng-href="{{getUrl(mediatype)}}" ng-click="onMediatypeClick()">{{mediatype}}</a>
         <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{data[mediatype].file_size}})</span>
     </div>
     <div ng-show="data.mediatypes.length > 1">
         Även tillgängligt som 
-        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" href="{{getMediatypeUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} </a>
+        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getMediatypeUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} </a>
     </div>
     
     <div class="provenance" ng-if="data.provenance.text.length">
@@ -51,11 +51,11 @@
 
 <div toolkit>
     <hr>
-    <span ng-repeat="author in data.authoridNorm">
-        <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
+    <span ng-repeat="author in getValidAuthors()">
+        <a class="author" ng-href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
         <span ng-if="author.type == 'editor'">(red.)</span>
         <span ng-if="!$last">och</span>
     </span>
     <!-- <div><a href="#!/forfattare/{{data.authorid}}">{{data.authorFullname}}</a></div> -->
-    <div><em><a href="#!/forfattare/{{data.authorid}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle}}</a></em></div>
+    <div><em><a ng-href="#!/forfattare/{{author}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle}}</a></em></div>
 </div>

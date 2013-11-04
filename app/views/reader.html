@@ -5,7 +5,7 @@
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
-    <div class="etext" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
+    <div class="etext txt" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
     
     <img  class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
     
@@ -16,7 +16,7 @@
     <div toolkit>
     
         <hr>
-        <span ng-repeat="author in workinfo.authoridNorm">
+        <span ng-repeat="author in getValidAuthors()">
             <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
             <span ng-if="author.type == 'editor'">(red.)</span>
             <span ng-if="!$last">och</span>
@@ -50,7 +50,7 @@
     
         <div style="height: 1em;"></div>
     
-        <div><a href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepath}}/info/{{mediatype}}">::: Om boken</a></div>
+        <div><a href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info/{{mediatype}}">::: Om boken</a></div>
     
         <hr>
     

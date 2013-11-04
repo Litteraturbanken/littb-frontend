@@ -373,7 +373,10 @@ littb.factory 'backend', ($http, $q, util) ->
 
             info.pagemap = pgMap
 
+            # info.parts = _.map $("parts > part", xml), objFromAttrs
             info.parts = _.map $("parts > part", xml), objFromAttrs
+            info.parts = _.filter info.parts, (item) ->
+                return "/" not in item.id
 
 
             info.mediatypes = for mediatype in $("mediatypes mediatype", xml)

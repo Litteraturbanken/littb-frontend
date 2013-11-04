@@ -386,14 +386,15 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 
 
     s.searchTitle = () ->
-        c.log "searchTitle"
-        if s.workFilter == 'titlar'
+        c.log "searchTitle", s.workFilter
+        if s.workFilter == 'titles'
             s.selectedLetter = null
+
             fetchWorks()
         else
             unless s.filter then s.selectedLetter = "A" else s.selectedLetter = null
 
-            s.rowfilter = s.filter
+        s.rowfilter = s.filter
 
     s.authorChange = () ->
         s.selectedLetter = null
@@ -659,6 +660,10 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
     s.isOpen = false
     s.show_large = false
 
+    s.getValidAuthors = () ->
+        _.filter s.data?.authoridNorm, (item) ->
+            item.id of s.authorById
+
     s.toggleErrata = () ->
         s.errataLimit = if s.isOpen then 8 else 1000
         s.isOpen = !s.isOpen
@@ -666,6 +671,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
     s.getUrl = (mediatype) ->
         if mediatype == "epub" 
             return s.data?.epub.url
+            
         else if mediatype == "pdf" 
             return s.data?.pdf.url
 
@@ -676,9 +682,15 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     s.getMediatypeUrl = (mediatype) ->
         if mediatype == "epub"
-            return s.data?.epub.url
+            # return s.data?.epub.url
+            return "#!/forfattare/#{s.author}/titlar/#{s.title}/info/#{mediatype}"
         else
             return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
+
+    s.onMediatypeClick = () ->
+        c.log "onMediatypeClick"
+        if mediatype == "epub"
+            window.location.href = s.getUrl(mediatype)
 
     s.getSourceImage = () ->
         if s.data
@@ -866,7 +878,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.pagename = s.pagemap["ix_" + s.pageix]
     s.nextPage = () ->
         resetHitMarkings()
-        if Number(s.displaynum) == s.endpage then return
+        if s.pageix == s.pagemap["page_" + s.endpage] then return
         newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
@@ -908,6 +920,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         unless s.workinfo then return
         'etext' in s.workinfo.mediatypes and 'faksimil' in s.workinfo.mediatypes
 
+    s.getValidAuthors = () ->
+        _.filter s.workinfo?.authoridNorm, (item) ->
+            item.id of s.authorById
 
     authors.then ([authorData, authorById]) ->
         s.authorById = authorById
@@ -990,8 +1005,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # c.log "pagemap", s.pagemap
             # c.log "parts", workinfo.parts
 
-            s.startpage = Number(workinfo.startpagename)
-            s.endpage = Number(workinfo.endpagename)
+            s.startpage = workinfo.startpagename
+            s.endpage = workinfo.endpagename
 
 
             page = $("page[name=#{s.pagename}]", data).last().clone()

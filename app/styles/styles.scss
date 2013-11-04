@@ -28,6 +28,10 @@ $primarycolor : #990000;
     @include box-sizing(border-box);
 }
 
+.txt {
+    width : 500px;
+}
+
 // bootstrap overrides
 
 .tooltip {
@@ -602,10 +606,11 @@ $partnav-width : 170px;
             }
 
         }
-
         .etext {
-            width : 500px;
             white-space : nowrap;
+            color: black;
+            font-family: Georgia,Times,serif;
+            font-size: 10pt;
         }
 
         .searching {

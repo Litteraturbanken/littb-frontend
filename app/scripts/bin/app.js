@@ -119,16 +119,6 @@
       title: "Författare",
       reloadOnSearch: false,
       breadcrumb: ["författare"]
-    }).when("/forfattare/LagerlofS", {
-      templateUrl: "views/sla/lagerlof.html",
-      controller: "lagerlofCtrl",
-      reloadOnSearch: false,
-      breadcrumb: ["författare", "lagerlöf"]
-    }).when("/forfattare/LagerlofS/biblinfo", {
-      templateUrl: "views/sla/biblinfo.html",
-      controller: "biblinfoCtrl",
-      reloadOnSearch: false,
-      breadcrumb: ["författare", "lagerlöf"]
     }).when(["/forfattare/:author", "/forfattare/:author/titlar", "/forfattare/:author/bibliografi", "/forfattare/:author/presentation", "/forfattare/:author/semer"], {
       templateUrl: "views/authorInfo.html",
       controller: "authorInfoCtrl",
