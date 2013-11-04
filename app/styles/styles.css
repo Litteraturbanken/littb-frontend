@@ -1796,20 +1796,6 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003584;
-  }
-}
-
-.page-reading #mainview .preloader {
-  height: 0;
-}
-
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
     font-family: \00003589;
   }
 }

@@ -465,7 +465,7 @@
           info.pagemap = pgMap;
           info.parts = _.map($("parts > part", xml), objFromAttrs);
           info.parts = _.filter(info.parts, function(item) {
-            return __indexOf.call(item.id, "/") < 0;
+            return __indexOf.call(item.id, "/") >= 0;
           });
           info.mediatypes = (function() {
             var _j, _len1, _ref1, _results;
