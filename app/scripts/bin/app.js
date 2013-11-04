@@ -306,63 +306,6 @@
     };
   });
 
-  littb.service("searchData", function(backend, $q) {
-    var NUM_HITS;
-    NUM_HITS = 20;
-    this.data = [];
-    this.total_hits = null;
-    this.current = null;
-    this.parseUrls = function(row) {
-      var author, itm, titleid;
-      itm = row.item;
-      author = itm.workauthor || itm.authorid;
-      titleid = itm.titleidNew.split("/")[0];
-      return ("/forfattare/" + author + "/titlar/" + titleid) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm)));
-    };
-    this.save = function(startIndex, currentIndex, input, search_args) {
-      this.searchArgs = search_args;
-      this.data = new Array(input.count);
-      this.appendData(startIndex, input);
-      this.total_hits = input.count;
-      return this.current = currentIndex;
-    };
-    this.appendData = function(startIndex, data) {
-      var _ref;
-      return ([].splice.apply(this.data, [startIndex, data.kwic.length - startIndex + 1].concat(_ref = _.map(data.kwic, this.parseUrls))), _ref);
-    };
-    this.next = function() {
-      this.current++;
-      return this.search();
-    };
-    this.prev = function() {
-      this.current--;
-      return this.search();
-    };
-    this.search = function() {
-      var args, current_page, def,
-        _this = this;
-      def = $q.defer();
-      c.log("search", this.current);
-      if (this.data[this.current] != null) {
-        def.resolve(this.data[this.current]);
-      } else {
-        current_page = Math.floor(this.current / NUM_HITS);
-        args = [].concat(this.searchArgs, [current_page + 1, NUM_HITS]);
-        backend.searchWorks.apply(backend, args).then(function(data) {
-          _this.appendData(_this.current, data);
-          return def.resolve(_this.data[_this.current]);
-        });
-      }
-      return def.promise;
-    };
-    return this.reset = function() {
-      this.current = null;
-      this.total_hits = null;
-      this.data = [];
-      return this.searchArgs = null;
-    };
-  });
-
   littb.filter("setMarkee", function() {
     return function(input, fromid, toid) {
       var wrapper;

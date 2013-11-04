@@ -139,11 +139,9 @@
         return s.$watch("left + top + width + height", function() {
           var coors;
           coors = _.pick(scope, "top", "left", "width", "height");
-          if (!_.compact(_.values(coors)).length) {
-            return;
-          }
+          c.log("coors", coors);
           coors = _.object(_.map(coors, function(val, key) {
-            return [key, val.split(",")[2] + "px"];
+            return [key, ((val != null ? val.split(",")[2] : void 0) || 0) + "px"];
           }));
           return elm.css(coors);
         });

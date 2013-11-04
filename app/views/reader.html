@@ -9,7 +9,7 @@
     
     <img  class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
     
-    <div square x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
+    <div square ng-show="height" x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
     
     
     
@@ -85,10 +85,10 @@
             <div ng-show="showPopup" class="triangle"></div>
     
             <ul class="part_menu" ng-show="showPopup" click-outside="showPopup = false">
-                <li><a ng-click="gotopage(startpage)">[Start]</a></li>
+                <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
                 <li ng-repeat="part in workinfo.parts" tooltip="{{part.navtitle}}">
                     
-                    <a ng-touch="gotopage(part.startpagename)" ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
+                    <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.showtitle}}</a>
                 </li>
             </ul>
     

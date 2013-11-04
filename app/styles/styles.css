@@ -1782,7 +1782,21 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003582;
+    font-family: \00003580;
+  }
+}
+
+.page-reading #mainview .preloader {
+  height: 0;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003585;
   }
 }
 
@@ -1798,7 +1812,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003587;
+    font-family: \00003590;
   }
 }
 
@@ -1812,7 +1826,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003591;
+    font-family: \00003594;
   }
 }
 
@@ -1826,7 +1840,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003593;
+    font-family: \00003596;
   }
 }
 
@@ -1846,7 +1860,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003596;
+    font-family: \00003599;
   }
 }
 
@@ -1861,7 +1875,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003603;
+    font-family: \00003606;
   }
 }
 
@@ -1876,7 +1890,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003609;
+    font-family: \00003612;
   }
 }
 
@@ -1895,6 +1909,20 @@ body > .header .breadcrumb {
   }
 }
 
+.page-reading #mainview .searching .faksimilMarkee {
+  display: none;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003622;
+  }
+}
+
 .page-reading #toolkit > * {
   display: block;
 }
@@ -1905,7 +1933,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003618;
+    font-family: \00003625;
   }
 }
 
@@ -1919,7 +1947,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003621;
+    font-family: \00003628;
   }
 }
 
@@ -1934,7 +1962,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003624;
+    font-family: \00003631;
   }
 }
 
@@ -1948,7 +1976,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003627;
+    font-family: \00003634;
   }
 }
 
@@ -1963,7 +1991,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003632;
+    font-family: \00003639;
   }
 }
 
@@ -1981,7 +2009,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003639;
+    font-family: \00003646;
   }
 }
 
@@ -1999,7 +2027,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003647;
+    font-family: \00003654;
   }
 }
 
@@ -2013,7 +2041,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003649;
+    font-family: \00003656;
   }
 }
 
@@ -2027,7 +2055,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003652;
+    font-family: \00003659;
   }
 }
 
@@ -2043,7 +2071,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003657;
+    font-family: \00003664;
   }
 }
 
@@ -2058,7 +2086,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003665;
+    font-family: \00003672;
   }
 }
 
@@ -2086,7 +2114,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003677;
+    font-family: \00003684;
   }
 }
 
@@ -2101,7 +2129,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003681;
+    font-family: \00003688;
   }
 }
 
@@ -2115,7 +2143,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003686;
+    font-family: \00003693;
   }
 }
 
@@ -2129,7 +2157,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003688;
+    font-family: \00003695;
   }
 }
 
@@ -2148,7 +2176,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003697;
+    font-family: \00003704;
   }
 }
 
@@ -2162,7 +2190,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003702;
+    font-family: \00003709;
   }
 }
 
@@ -2176,7 +2204,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003704;
+    font-family: \00003711;
   }
 }
 
@@ -2190,7 +2218,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003708;
+    font-family: \00003715;
   }
 }
 
@@ -2212,7 +2240,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003723;
+    font-family: \00003730;
   }
 }
 
@@ -2235,7 +2263,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003734;
+    font-family: \00003741;
   }
 }
 
@@ -2253,7 +2281,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003741;
+    font-family: \00003748;
   }
 }
 
@@ -2267,7 +2295,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003750;
+    font-family: \00003757;
   }
 }
 
@@ -2281,7 +2309,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003754;
+    font-family: \00003761;
   }
 }
 
@@ -2296,7 +2324,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003758;
+    font-family: \00003765;
   }
 }
 
@@ -2311,7 +2339,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003762;
+    font-family: \00003769;
   }
 }
 
@@ -2325,7 +2353,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003765;
+    font-family: \00003772;
   }
 }
 
@@ -2341,7 +2369,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003766;
+    font-family: \00003773;
   }
 }
 
@@ -2357,7 +2385,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003772;
+    font-family: \00003779;
   }
 }
 
@@ -2377,7 +2405,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003781;
+    font-family: \00003788;
   }
 }
 
@@ -2394,7 +2422,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003788;
+    font-family: \00003795;
   }
 }
 
@@ -2409,7 +2437,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003791;
+    font-family: \00003798;
   }
 }
 
@@ -2423,7 +2451,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003794;
+    font-family: \00003801;
   }
 }
 
@@ -2437,7 +2465,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003798;
+    font-family: \00003805;
   }
 }
 
@@ -2452,7 +2480,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003801;
+    font-family: \00003808;
   }
 }
 
@@ -2466,7 +2494,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003804;
+    font-family: \00003811;
   }
 }
 
@@ -2481,7 +2509,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003809;
+    font-family: \00003816;
   }
 }
 
@@ -2495,7 +2523,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003812;
+    font-family: \00003819;
   }
 }
 
@@ -2509,7 +2537,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003814;
+    font-family: \00003821;
   }
 }
 
@@ -2528,7 +2556,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003817;
+    font-family: \00003824;
   }
 }
 
@@ -2542,7 +2570,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003820;
+    font-family: \00003827;
   }
 }
 
@@ -2556,7 +2584,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003824;
+    font-family: \00003831;
   }
 }
 
@@ -2570,7 +2598,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003828;
+    font-family: \00003835;
   }
 }
 
@@ -2584,7 +2612,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003838;
+    font-family: \00003845;
   }
 }
 
@@ -2598,7 +2626,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003841;
+    font-family: \00003848;
   }
 }
 
@@ -2612,7 +2640,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003845;
+    font-family: \00003852;
   }
 }
 
@@ -2626,7 +2654,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003847;
+    font-family: \00003854;
   }
 }
 
@@ -2641,7 +2669,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003851;
+    font-family: \00003858;
   }
 }
 
@@ -2655,7 +2683,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003855;
+    font-family: \00003862;
   }
 }
 
@@ -2669,7 +2697,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003859;
+    font-family: \00003866;
   }
 }
 
@@ -2684,7 +2712,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003866;
+    font-family: \00003873;
   }
 }
 
@@ -2698,7 +2726,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003869;
+    font-family: \00003876;
   }
 }
 
@@ -2712,7 +2740,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003871;
+    font-family: \00003878;
   }
 }
 
@@ -2726,7 +2754,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003880;
+    font-family: \00003887;
   }
 }
 
@@ -2740,7 +2768,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003882;
+    font-family: \00003889;
   }
 }
 
@@ -2754,7 +2782,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003891;
+    font-family: \00003898;
   }
 }
 
@@ -2770,7 +2798,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003896;
+    font-family: \00003903;
   }
 }
 
@@ -2784,7 +2812,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003899;
+    font-family: \00003906;
   }
 }
 
@@ -2798,7 +2826,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003902;
+    font-family: \00003909;
   }
 }
 
@@ -2812,7 +2840,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003905;
+    font-family: \00003912;
   }
 }
 
@@ -2826,7 +2854,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003915;
+    font-family: \00003922;
   }
 }
 
@@ -2840,7 +2868,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003918;
+    font-family: \00003925;
   }
 }
 
@@ -2854,7 +2882,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003922;
+    font-family: \00003929;
   }
 }
 
@@ -2868,7 +2896,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003924;
+    font-family: \00003931;
   }
 }
 
@@ -2883,7 +2911,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003932;
+    font-family: \00003939;
   }
 }
 
@@ -2898,7 +2926,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003939;
+    font-family: \00003946;
   }
 }
 
@@ -2913,7 +2941,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003942;
+    font-family: \00003949;
   }
 }
 
@@ -2927,7 +2955,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003946;
+    font-family: \00003953;
   }
 }
 
@@ -2943,7 +2971,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003952;
+    font-family: \00003959;
   }
 }
 
@@ -2963,7 +2991,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003961;
+    font-family: \00003968;
   }
 }
 
@@ -2978,7 +3006,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003965;
+    font-family: \00003972;
   }
 }
 
@@ -2992,7 +3020,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003968;
+    font-family: \00003975;
   }
 }
 
@@ -3006,7 +3034,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003972;
+    font-family: \00003979;
   }
 }
 
@@ -3020,7 +3048,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003976;
+    font-family: \00003983;
   }
 }
 
@@ -3034,7 +3062,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003983;
+    font-family: \00003990;
   }
 }
 
@@ -3048,7 +3076,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003991;
+    font-family: \00003998;
   }
 }
 
@@ -3064,7 +3092,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003995;
+    font-family: \000031002;
   }
 }
 
@@ -3078,7 +3106,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003998;
+    font-family: \000031005;
   }
 }
 
@@ -3097,7 +3125,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \000031002;
+    font-family: \000031009;
   }
 }
 
@@ -3115,7 +3143,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \000031006;
+    font-family: \000031013;
   }
 }
 
@@ -3134,7 +3162,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \000031010;
+    font-family: \000031017;
   }
 }
 
@@ -3152,7 +3180,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \000031015;
+    font-family: \000031022;
   }
 }
 
@@ -3166,7 +3194,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \000031019;
+    font-family: \000031026;
   }
 }
 
@@ -3180,7 +3208,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \000031021;
+    font-family: \000031028;
   }
 }
 
@@ -3194,7 +3222,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \000031026;
+    font-family: \000031033;
   }
 }
 
@@ -3211,7 +3239,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \000031034;
+    font-family: \000031041;
   }
 }
 
@@ -3225,7 +3253,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031038;
+    font-family: \000031045;
   }
 }
 
@@ -3239,7 +3267,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031040;
+    font-family: \000031047;
   }
 }
 
@@ -3253,7 +3281,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031042;
+    font-family: \000031049;
   }
 }
 
@@ -3273,7 +3301,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031047;
+    font-family: \000031054;
   }
 }
 
@@ -3290,7 +3318,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031055;
+    font-family: \000031062;
   }
 }
 
@@ -3312,7 +3340,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031064;
+    font-family: \000031071;
   }
 }
 
@@ -3327,7 +3355,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031071;
+    font-family: \000031078;
   }
 }
 
@@ -3348,7 +3376,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031081;
+    font-family: \000031088;
   }
 }
 
@@ -3367,7 +3395,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031092;
+    font-family: \000031099;
   }
 }
 
@@ -3382,7 +3410,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031098;
+    font-family: \000031105;
   }
 }
 
@@ -3396,7 +3424,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031102;
+    font-family: \000031109;
   }
 }
 
@@ -3413,7 +3441,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031108;
+    font-family: \000031115;
   }
 }
 
@@ -3427,7 +3455,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031111;
+    font-family: \000031118;
   }
 }
 
@@ -3441,7 +3469,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031114;
+    font-family: \000031121;
   }
 }
 
@@ -3456,7 +3484,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031116;
+    font-family: \000031123;
   }
 }
 
@@ -3470,7 +3498,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031121;
+    font-family: \000031128;
   }
 }
 
@@ -3484,7 +3512,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031125;
+    font-family: \000031132;
   }
 }
 
@@ -3501,7 +3529,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031133;
+    font-family: \000031140;
   }
 }
 
@@ -3523,7 +3551,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031148;
+      font-family: \000031155;
     }
 }
 
@@ -3542,7 +3570,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031201;
+      font-family: \000031208;
     }
 }
 
@@ -3558,7 +3586,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031208;
+      font-family: \000031215;
     }
 }
 
@@ -3576,7 +3604,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031216;
+      font-family: \000031223;
     }
 }
 
@@ -3607,7 +3635,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031219;
+      font-family: \000031226;
     }
 }
 
@@ -3623,7 +3651,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031224;
+      font-family: \000031231;
     }
 }
 
@@ -3641,7 +3669,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031230;
+      font-family: \000031237;
     }
 }
 
@@ -3657,7 +3685,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031234;
+      font-family: \000031241;
     }
 }
 
@@ -3675,7 +3703,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031238;
+      font-family: \000031245;
     }
 }
 
@@ -3691,7 +3719,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031241;
+      font-family: \000031248;
     }
 }
 
@@ -3707,7 +3735,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031246;
+      font-family: \000031253;
     }
 }
 

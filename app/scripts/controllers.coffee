@@ -60,8 +60,6 @@ littb.controller "statsCtrl", ($scope, backend) ->
 littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, authors) ->
     s = $scope
     s.open = false
-    s.searchProofread = true
-    s.searchNonProofread = true
     s.proofread = 'all'
 
     initTitle = _.once (titlesById) ->
@@ -115,16 +113,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
     s.num_hits = 20
     s.current_page = 0
 
-    getMediatypes = () ->
-        mediatype = [s.searchProofread and "etext", s.searchNonProofread and "faksimil"]
-        # if not _.any mediatype then VALIDATION_ERROR
-        if _.all mediatype
-            mediatype = "all"
-        else 
-            mediatype = _.filter mediatype, Boolean
-
-        return mediatype
     
+    getMediatypes = () ->
+        {
+            yes : "etext"
+            no : "faksimil"
+            all : "all"
+        }[s.proofread]
 
 
     s.nextPage = () ->
@@ -159,6 +154,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         s.searching = true
         
         mediatype = getMediatypes()
+        c.log "search mediatype", mediatype
 
         backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then (data) ->
             s.data = data
@@ -823,8 +819,17 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
     s.searchData = searchData
-    s.loading = false
+    s.loading = true
+    s.showPopup = false
 
+    s.onPartClick = (startpage) ->
+        s.gotopage(startpage)
+        s.showPopup = false
+
+    resetHitMarkings = () ->
+        for key in ["traff", "traffslut", "x", "y", "height", "width"]
+            s[key] = null
+            # $location.search( key, null).replace()
     
     # s.dict_not_found = "Hittade inget uppslag"
     thisRoute = $route.current
@@ -860,6 +865,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.pageix = ix
         s.pagename = s.pagemap["ix_" + s.pageix]
     s.nextPage = () ->
+        resetHitMarkings()
         if Number(s.displaynum) == s.endpage then return
         newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
@@ -867,6 +873,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         else
             s.setPage(0)
     s.prevPage = () ->
+        resetHitMarkings()
         newix = s.pageix - 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
@@ -910,17 +917,23 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     util.setupHashComplex s, [
             scope_name : "markee_from"
             key : "traff"
+            replace : false
         ,
             scope_name : "markee_to"
             key : "traffslut"
+            replace : false
         ,
             key : "x"
+            replace : false
         ,
             key : "y"
+            replace : false
         ,
             key : "width"
+            replace : false
         ,
             key : "height"
+            replace : false
         ,
             key : "parallel"
             scope_name : "isParallel"

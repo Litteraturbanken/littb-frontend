@@ -116,9 +116,16 @@ littb.directive 'square', () ->
         s = scope
         s.$watch "left + top + width + height", () ->
             coors = _.pick scope, "top", "left", "width", "height"
-            unless _.compact(_.values(coors)).length then return
+            c.log "coors", coors
+            # unless _.compact(_.values(coors)).length
+            #     return
+                # coors = 
+                #     left : 0
+                #     top : 0
+                #     right : 0
+                #     bottom : 0
             coors = _.object _.map coors, (val, key) ->
-                [key, val.split(",")[2] + "px"]
+                [key, (val?.split(",")[2] or 0) + "px"]
 
             elm.css coors
             

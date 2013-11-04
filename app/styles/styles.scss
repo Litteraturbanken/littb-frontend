@@ -577,6 +577,9 @@ body > .header {
 $partnav-width : 170px;
 .page-reading {
     #mainview {
+        .preloader {
+            height : 0;
+        }
         position : relative;
         line-height : normal;
         .faksimilMarkee {
@@ -609,7 +612,11 @@ $partnav-width : 170px;
             .etext, .faksimil {
                 opacity : 0.5;
             }
+            .faksimilMarkee {
+                display : none;
+            }
         }
+
     }
     #toolkit {
         & > * {

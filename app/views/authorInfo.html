@@ -15,13 +15,13 @@
             <table class="contenttable">
                 <tr ng-repeat="works in groupedWorks">
                     <td>
-                        <a href="#!/forfattare/{{author}}/titlar/{{works[0].titlepath}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a>
+                        <a href="#!/forfattare/{{author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a>
                         <span class="dots"></span>
                     </td>
                     <td >
                         <span ng-repeat="work in getUnique(works)">
                             <span ng-show="!$first">::: </span>
-                            <a href="#!/forfattare/{{author}}/titlar/{{work.titlepath}}/{{work.mediatype}}">{{work.mediatype}}</a>
+                            <a href="#!/forfattare/{{author}}/titlar/{{work.titlepath.split('/')[0]}}/{{work.mediatype}}">{{work.mediatype}}</a>
                         </span>
                     </td>
                 </tr>

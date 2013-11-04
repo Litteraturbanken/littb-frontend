@@ -69,8 +69,6 @@
     var getMediatypes, initTitle, queryvars, s;
     s = $scope;
     s.open = false;
-    s.searchProofread = true;
-    s.searchNonProofread = true;
     s.proofread = 'all';
     initTitle = _.once(function(titlesById) {
       if (!$location.search().titel) {
@@ -131,14 +129,11 @@
     s.num_hits = 20;
     s.current_page = 0;
     getMediatypes = function() {
-      var mediatype;
-      mediatype = [s.searchProofread && "etext", s.searchNonProofread && "faksimil"];
-      if (_.all(mediatype)) {
-        mediatype = "all";
-      } else {
-        mediatype = _.filter(mediatype, Boolean);
-      }
-      return mediatype;
+      return {
+        yes: "etext",
+        no: "faksimil",
+        all: "all"
+      }[s.proofread];
     };
     s.nextPage = function() {
       s.current_page++;
@@ -172,6 +167,7 @@
       s.query = q;
       s.searching = true;
       mediatype = getMediatypes();
+      c.log("search mediatype", mediatype);
       return backend.searchWorks(s.query, mediatype, s.current_page * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then(function(data) {
         var row, _i, _len, _ref, _results;
         s.data = data;
@@ -886,12 +882,27 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
-    var author, loadPage, mediatype, onKeyDown, pagename, s, thisRoute, title, watches;
+    var author, loadPage, mediatype, onKeyDown, pagename, resetHitMarkings, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
     s.searchData = searchData;
-    s.loading = false;
+    s.loading = true;
+    s.showPopup = false;
+    s.onPartClick = function(startpage) {
+      s.gotopage(startpage);
+      return s.showPopup = false;
+    };
+    resetHitMarkings = function() {
+      var key, _i, _len, _ref, _results;
+      _ref = ["traff", "traffslut", "x", "y", "height", "width"];
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        key = _ref[_i];
+        _results.push(s[key] = null);
+      }
+      return _results;
+    };
     thisRoute = $route.current;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
@@ -934,6 +945,7 @@
     };
     s.nextPage = function() {
       var newix;
+      resetHitMarkings();
       if (Number(s.displaynum) === s.endpage) {
         return;
       }
@@ -946,6 +958,7 @@
     };
     s.prevPage = function() {
       var newix;
+      resetHitMarkings();
       newix = s.pageix - 1;
       if ("ix_" + newix in s.pagemap) {
         return s.setPage(newix);
@@ -992,18 +1005,24 @@
     util.setupHashComplex(s, [
       {
         scope_name: "markee_from",
-        key: "traff"
+        key: "traff",
+        replace: false
       }, {
         scope_name: "markee_to",
-        key: "traffslut"
+        key: "traffslut",
+        replace: false
       }, {
-        key: "x"
+        key: "x",
+        replace: false
       }, {
-        key: "y"
+        key: "y",
+        replace: false
       }, {
-        key: "width"
+        key: "width",
+        replace: false
       }, {
-        key: "height"
+        key: "height",
+        replace: false
       }, {
         key: "parallel",
         scope_name: "isParallel"
