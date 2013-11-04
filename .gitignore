@@ -2,3 +2,5 @@ node_modules
 temp
 .sass-cache
 .DS_Store
+.tmp
+dist
