@@ -270,6 +270,14 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         $rootElement.addClass("ready")
     , 1000)
 
+    stripClass = (prefix) ->
+        re = new RegExp("\\ ?#{prefix}\\-\\w+", "g");
+
+        cls = $rootElement.attr "class"
+        cls = cls.replace re, ""
+        $rootElement.attr "class", cls
+
+
     $rootScope.goto = (path) ->
         $location.url(path)
 
@@ -293,12 +301,14 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         $rootScope.prevRoute = prevRoute
 
         # get rid of old class attr on body
-        cls = $rootElement.attr "class"
-        cls = cls.replace /\ ?page\-\w+/g, ""
-        $rootElement.attr "class", cls
+        stripClass("page")
+        stripClass("site")
 
         if newRoute.controller?.replace
             $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""))
+
+        if newRoute.school
+            $rootElement.addClass("site-school")
 
 
         # c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
@@ -310,7 +320,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
         firstRoute.resolve()
 
-    $rootScope._showmenu_mobile = false;
+    # $rootScope._showmenu_mobile = false;
 
     normalizeUrl = (str) ->
         trans = _.object _.zip "åäö", "aao"

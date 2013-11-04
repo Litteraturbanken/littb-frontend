@@ -328,11 +328,20 @@ label {
     display : inline;
 }
 
-#logo {
-    height: 26px;
-    left: -8px;
-    top : 3px;
-    position: relative;
+// #logo {
+//     height: 26px;
+//     left: -8px;
+//     top : 3px;
+//     position: relative;
+// }
+.logo_link {
+    background-image: url("/bilder/LBlogga.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    height : 29px;
+    left: -10px;
+    margin-bottom: -5px;
+    position : relative;
 }
 
 body > .header {
@@ -370,11 +379,15 @@ body > .header {
 }
 .page-start {
     .header {
-        #logo {
-            height: 57px;
+        // #logo {
+        //     height: 57px;
+        //     left: -17px;
+        //     position: relative;
+        //     cursor : default;
+        // }
+        .logo_link {
+            height: 61px;
             left: -17px;
-            position: relative;
-            cursor : default;
         }
          a {
             width : 59%;
@@ -1501,5 +1514,15 @@ only screen and (max-width: 760px),
             white-space: nowrap;
         }   
         
+    }
+}
+
+.site-school {
+    #leftCorridor {
+        display : none;
+    }
+    .logo_link {
+        background: none;
+        content: "Litteraturbankens skola"
     }
 }
