@@ -441,6 +441,16 @@
         }
       });
     };
+    s.getUrl = function(row, mediatype) {
+      var url;
+      url = "#!/forfattare/" + (row.author.workauthor || row.author.authorid) + "/titlar/" + (s.getTitleId(row)) + "/";
+      if (mediatype === "epub" || mediatype === "pdf") {
+        url += "info/" + mediatype;
+      } else {
+        url += "sida/" + row.itemAttrs.startpagename + "/" + mediatype;
+      }
+      return url;
+    };
     s.getSource = function() {
       if (s.selectedLetter) {
         return s.rowByLetter[s.selectedLetter];
@@ -971,6 +981,7 @@
       var newix;
       resetHitMarkings();
       newix = s.pageix - 1;
+      c.log("newix", newix);
       if ("ix_" + newix in s.pagemap) {
         return s.setPage(newix);
       } else {

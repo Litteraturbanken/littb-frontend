@@ -426,7 +426,14 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
                 s.currentLetters = _.keys s.rowByLetter
                 
 
-
+    s.getUrl = (row, mediatype) ->
+        # unless row then return
+        url = "#!/forfattare/#{row.author.workauthor or row.author.authorid}/titlar/#{s.getTitleId(row)}/"
+        if mediatype == "epub" or mediatype == "pdf"
+            url += "info/#{mediatype}"
+        else
+            url += "sida/#{row.itemAttrs.startpagename}/#{mediatype}"
+        return url
 
     s.getSource = () -> 
         if s.selectedLetter 
@@ -887,6 +894,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.prevPage = () ->
         resetHitMarkings()
         newix = s.pageix - 1
+        c.log "newix", newix
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         else

@@ -5,14 +5,14 @@
 
 <div toolkit>Sök författare
     <form ng-submit="goto('/forfattare?authorFilter=' + author)">
-        <input type="text" ng-model="author"><span submit-btn></span>
+        <input type="text" ng-model="author"><span submit-btn ng-click="goto('/forfattare?authorFilter=' + author)"></span>
     </form>
     Sök titel
     <form ng-submit="gotoTitle(title)">
-        <input type="text" ng-model="title"><span submit-btn></span>
+        <input type="text" ng-model="title"><span submit-btn ng-click="gotoTitle(title)"></span>
     </form>
 
     Sök i texterna
     <form ng-submit="goto('/sok?fras=' + text)">
-        <input type="text" ng-model="text"><span submit-btn></span>
+        <input type="text" ng-model="text"><span submit-btn ng-click="goto('/sok?fras=' + text)"></span>
     </form></div>

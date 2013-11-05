@@ -24,9 +24,12 @@
 
     </head>
     <body ng-app="littbApp" ng-cloak>
+
         <div class="header">
             <i ng-click="_showmenu_mobile = !_showmenu_mobile;" class="icon-list icon-2x" style="display : none;"></i>
-            <a class="logo_link" href="#!/start"><img id="logo" src="/bilder/LBlogga.svg"></a>
+            <a class="logo_link" href="#!/start">
+                <img id="logo" src="/bilder/LBlogga.svg">
+            </a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li><a href="#!/start">Hem</a> <span class="divider" >></span></li>
                 
@@ -122,7 +125,9 @@
             </div>
         </script>
 
-        
+        <script>
+            location.hash = decodeURIComponent(location.hash);
+        </script>        
 
         <!-- build:js scripts/libs.js -->
         <script src="components/jquery/jquery.js"></script>
