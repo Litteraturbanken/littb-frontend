@@ -1518,11 +1518,91 @@ only screen and (max-width: 760px),
 }
 
 .site-school {
+    width : 100%;
+    padding : 5%;
+    font-size : 16px;
+    line-height: 1.4em;
+
+    ul {
+        font-size : 0.8em;
+    }
+    
     #leftCorridor {
         display : none;
     }
+    .header hr {
+        border-color : lightgrey;
+    }
     .logo_link {
-        background: none;
-        content: "Litteraturbankens skola"
+        background-image: url("/img/school_logo.svg");
+        height : 50px;
+        margin-bottom: -5px;
+        width: 100%;
+        margin-bottom : 0.5em;
+    }
+    .breadcrumb {
+    }
+
+    li {
+        text-transform: uppercase;
+        margin-bottom : 0.2em;
+    }
+
+    #mainview {
+        width : auto;
+    }
+    p {
+        max-width: 500px;
+    }
+    #mainview:after {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        background-repeat: no-repeat;
+        opacity : 0.4;
+        content: "";
+        z-index: -1;
+    }
+    &.page-school {
+        
+        #mainview:after {
+            -webkit-clip-path : circle(600px, 600px, 300px);
+            background-image: url("/img/lagerlof_portrait.jpg");
+            top: -90px;
+            left: -280px;
+            filter : url(#f1);
+            
+            
+        }
+    }
+    &.page-teachers  {
+        .header hr {
+            border-color : #999;
+            border-width: 1px;
+        }
+        #mainview:after {
+            position: absolute;
+            background-image: url("/img/lagerlof_portrait.jpg");
+            top: -90px;
+            left: -280px;
+
+        }
+        #mainview {
+            & > div {
+                @include inline-block(top);
+            }
+            .sidebar {
+                margin-right : 80px;
+            }
+            .content {
+                h1 {
+                    color : $primarycolor;
+                    text-transform: uppercase;
+                }
+                width : 450px;
+
+            }
+        }
+        
     }
 }
