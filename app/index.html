@@ -25,7 +25,7 @@
 
         <div class="header">
             <i ng-click="_showmenu_mobile = !_showmenu_mobile;" class="fa fa-list fa fa-2x" style="display : none;"></i>
-            <a class="logo_link" href="#!/start">
+            <a class="logo_link" ng-href="#!{{getLogoUrl()}}">
             </a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li><a href="#!/start">Hem</a></li>

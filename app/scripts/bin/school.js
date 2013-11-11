@@ -1,7 +1,28 @@
 (function() {
-  var littb;
+  var littb, studentCtrl;
 
   littb = angular.module('littbApp');
+
+  studentCtrl = function($scope) {
+    return $scope.list = [
+      {
+        label: "Författarpresentation",
+        url: ""
+      }, {
+        label: "Orientering enskilda verk",
+        url: ""
+      }, {
+        label: "Orientering genrer",
+        url: ""
+      }, {
+        label: "Orientering tema/motiv",
+        url: ""
+      }, {
+        label: "Filmatiseringarna",
+        url: ""
+      }
+    ];
+  };
 
   littb.config(function($routeProvider) {
     var whn;
@@ -16,11 +37,14 @@
     });
     whn("/skola/larare", {
       title: "Lärare",
+      breadcrumb: ["För lärare"],
       templateUrl: "views/school/teachers.html"
     });
     whn("/skola/gymnasium", {
       title: "Gymnasium",
-      templateUrl: "views/school/gym.html"
+      breadcrumb: ["För elever", "Gymnasium"],
+      templateUrl: "views/school/gym.html",
+      controller: studentCtrl
     });
     whn("/skola/f-5", {
       title: "F-5",

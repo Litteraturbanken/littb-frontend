@@ -372,6 +372,7 @@ body > .header {
         & > li:last-of-type a {
             color: grey;
         }
+        box-shadow: none;
     }
 }
 .start_menu {
@@ -1536,14 +1537,16 @@ only screen and (max-width: 760px),
     .logo_link {
         background-image: url("/img/school_logo.svg");
         height : 50px;
-        margin-bottom: -5px;
-        width: 100%;
-        margin-bottom : 0.5em;
+        width: 50%;
+        margin-bottom : 0;
+        @include inline-block();
     }
-    .breadcrumb {
+    & > .header .breadcrumb {
+        width : 49%;
+        @include inline-block(bottom);
     }
 
-    li {
+    #mainview li {
         text-transform: uppercase;
         margin-bottom : 0.2em;
     }
@@ -1563,14 +1566,53 @@ only screen and (max-width: 760px),
         content: "";
         z-index: -1;
     }
+    .content {
+        h1 {
+            color : $primarycolor;
+            text-transform: uppercase;
+        }
+        width : 450px;
+
+        @include inline-block(top);
+    }
+    .sidebar {
+        @include inline-block(top);
+        margin-right : 60px;
+    }
     &.page-school {
-        
+        p {
+            max-width: 400px;
+        }   
+        .teachers, .students {
+            h2 {
+                color : $primarycolor;
+            }
+            position: absolute;
+            text-transform: uppercase;
+
+        }
+        .header hr {
+            position : relative;
+            z-index : -1; 
+            width : 600px;
+            margin : 0;
+
+        }
+        .teachers {
+            top: 170px;
+            left: 550px;
+        }
+        .students {
+            top: 370px;
+            left: 600px;
+        }
+
         #mainview:after {
-            -webkit-clip-path : circle(600px, 600px, 300px);
-            background-image: url("/img/lagerlof_portrait.jpg");
-            top: -90px;
-            left: -280px;
-            filter : url(#f1);
+            background-image: url("/img/selma_circle.png");
+            background-size : 700px;
+            top: 50px;
+            left: 450px;
+            opacity : 1;
             
             
         }
@@ -1594,15 +1636,25 @@ only screen and (max-width: 760px),
             .sidebar {
                 margin-right : 80px;
             }
-            .content {
-                h1 {
-                    color : $primarycolor;
-                    text-transform: uppercase;
-                }
-                width : 450px;
-
-            }
+            
         }
-        
+    }
+    &.page-gym {
+        // background-repeat: no-repeat;
+        // opacity : 0.4;
+        .header hr {
+            border-color : #999;
+        }
+        .header .breadcrumb {
+        }
+        #mainview:after {
+            background-image : url("/img/selma_young.jpg");
+            background-size : 80%;
+            left : 0;
+            top : 0;
+        }
+        .content {
+            width : 400px;
+        }
     }
 }

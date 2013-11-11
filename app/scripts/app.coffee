@@ -265,6 +265,9 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
     firstRoute.promise.then () ->
         $rootElement.addClass("ready")
 
+    $rootScope.getLogoUrl = () ->
+        if $rootScope.isSchool then "/skola" else "/start"
+
     # just in case the above deferred fails. 
     $timeout( () -> 
         $rootElement.addClass("ready")
@@ -308,9 +311,12 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""))
 
         if newRoute.school
+            $rootScope.isSchool = true
             $rootElement.addClass("site-school")
             className = (_.last newRoute.templateUrl.split("/")).split(".")[0]
             $rootElement.addClass("page-" + className)
+        else 
+            delete $rootElement.isSchool
 
 
         # c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
