@@ -33,7 +33,8 @@
     };
     whn("/skola", {
       title: "Skola",
-      templateUrl: "views/school/school.html"
+      templateUrl: "views/school/school.html",
+      controller: function($scope) {}
     });
     whn("/skola/larare", {
       title: "Lärare",
@@ -54,6 +55,25 @@
       title: "6-9",
       templateUrl: "views/school/6_9.html"
     });
+  });
+
+  littb.directive("scFile", function($routeParams, $http) {
+    return {
+      template: "<div ng-bind-html-unsafe=\"doc\"></div>",
+      replace: true,
+      link: function($scope, elem, attr) {
+        return $http({
+          method: "GET",
+          url: "/red/skola/" + attr.scFile || $routeParams.doc
+        }).success(function(data) {
+          return $scope.doc = data;
+        });
+      }
+    };
+  });
+
+  littb.directive("fileGetter", function($routeParams) {
+    return $routeParams.doc;
   });
 
 }).call(this);
