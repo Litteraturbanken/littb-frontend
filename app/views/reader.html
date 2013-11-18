@@ -3,6 +3,7 @@
 </meta-desc>
 <div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading}">
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
+    <div class="">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
     <div class="etext txt" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>

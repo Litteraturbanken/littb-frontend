@@ -293,7 +293,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         [].concat s.groupedTitles, s.groupedWorks
 
     s.getUrl = (work) ->
-        url = "#!/forfattare/#{s.author}/titlar/#{work.titlepath.split('/')[0]}/"
+        url = "#!/forfattare/#{work.workauthor or s.author}/titlar/#{work.titlepath.split('/')[0]}/"
         if work.mediatype == "epub" or work.mediatype == "pdf"
             url += "info/#{work.mediatype}"
         else
@@ -362,7 +362,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         
 
     s.filterTitle = (row) ->    
-        filter = s.workFilter == 'works' && (s.rowfilter || '')
+        if not s.rowfilter then return true
+        filter = (s.rowfilter || '')
         return new RegExp(filter, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle))
         
 
@@ -857,6 +858,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.searchData = searchData
     s.loading = true
     s.showPopup = false
+    s.error = false
 
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)
@@ -1016,6 +1018,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             
 
         s.loading = true
+        s.error = false
         s.pagename = val
         backend.getPage(s.pagename, 
             authorid : author
@@ -1033,7 +1036,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.endpage = workinfo.endpagename
 
 
-            page = $("page[name=#{s.pagename}]", data).last().clone()
+            page = $("page[name='#{s.pagename}']", data).last().clone()
             if not page.length
                 page = $("page:last", data).clone()
                 s.pagename = page.attr("name")
@@ -1072,6 +1075,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             ]
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
+        , (data) ->
+            c.log "fail", data
+            s.error = true
+            s.loading = false
+            
+
 
 
     s.size = 2

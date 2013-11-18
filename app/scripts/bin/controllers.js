@@ -317,7 +317,7 @@
     };
     s.getUrl = function(work) {
       var url;
-      url = "#!/forfattare/" + s.author + "/titlar/" + (work.titlepath.split('/')[0]) + "/";
+      url = "#!/forfattare/" + (work.workauthor || s.author) + "/titlar/" + (work.titlepath.split('/')[0]) + "/";
       if (work.mediatype === "epub" || work.mediatype === "pdf") {
         url += "info/" + work.mediatype;
       } else {
@@ -383,7 +383,10 @@
     };
     s.filterTitle = function(row) {
       var filter;
-      filter = s.workFilter === 'works' && (s.rowfilter || '');
+      if (!s.rowfilter) {
+        return true;
+      }
+      filter = s.rowfilter || '';
       return new RegExp(filter, "i").test(row.itemAttrs.title + " " + row.itemAttrs.shorttitle);
     };
     s.titlesort = "itemAttrs.sortkey";
@@ -930,6 +933,7 @@
     s.searchData = searchData;
     s.loading = true;
     s.showPopup = false;
+    s.error = false;
     s.onPartClick = function(startpage) {
       s.gotopage(startpage);
       return s.showPopup = false;
@@ -1098,6 +1102,7 @@
         return;
       }
       s.loading = true;
+      s.error = false;
       s.pagename = val;
       return backend.getPage(s.pagename, {
         authorid: author,
@@ -1110,7 +1115,7 @@
         s.pagemap = workinfo.pagemap;
         s.startpage = workinfo.startpagename;
         s.endpage = workinfo.endpagename;
-        page = $("page[name=" + s.pagename + "]", data).last().clone();
+        page = $("page[name='" + s.pagename + "']", data).last().clone();
         if (!page.length) {
           page = $("page:last", data).clone();
           s.pagename = page.attr("name");
@@ -1147,6 +1152,10 @@
           }
         ]);
         return s.setTitle("" + workinfo.title + " sidan " + s.pagename + " " + s.mediatype);
+      }, function(data) {
+        c.log("fail", data);
+        s.error = true;
+        return s.loading = false;
       });
     };
     s.size = 2;

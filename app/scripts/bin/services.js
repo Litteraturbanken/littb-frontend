@@ -474,6 +474,8 @@
             return _results;
           })();
           return def.resolve([xml, info]);
+        }).error(function() {
+          return def.reject.apply(def, arguments);
         });
         return def.promise;
       },

@@ -359,7 +359,7 @@ littb.factory 'backend', ($http, $q, util) ->
         http(
             url : url
             params : _.extend {}, params, passedParams
-        ).success (xml) ->
+        ).success( (xml) ->
             info = parseWorkInfo("LBwork", xml)
             c.log "info", info
 
@@ -383,9 +383,12 @@ littb.factory 'backend', ($http, $q, util) ->
 
             info.mediatypes = for mediatype in $("mediatypes mediatype", xml)
                 util.getInnerXML mediatype
+
  
 
             def.resolve [xml, info]
+        ).error () ->
+            def.reject(arguments...)
 
         return def.promise
 
