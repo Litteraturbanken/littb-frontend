@@ -187,11 +187,12 @@ littb.factory 'backend', ($http, $q, util) ->
         _.object ([util.normalize(attrib.name), attrib.value] for attrib in elem.attributes)
 
     parseWorkInfo = (root, xml) ->
-        useInnerXML = ["sourcedesc", "license-text"]
+        useInnerXML = ["sourcedesc", "workintro", "license-text"]
         asArray = ["mediatypes"]
 
         output = {}
         for elem in $(root, xml).children()
+            # c.log "parseWorkInfo", elem.nodeName
             if elem.nodeName in useInnerXML
                 val = util.getInnerXML elem
 
@@ -313,6 +314,7 @@ littb.factory 'backend', ($http, $q, util) ->
             errata.remove()
 
             output.sourcedesc = (util.getInnerXML sourcedesc) or ""
+            # output.workintro = (util.getInnerXML workintro) or ""
 
             epub = $("result epub", xml)
             if epub.length
@@ -409,11 +411,16 @@ littb.factory 'backend', ($http, $q, util) ->
                     works = []
                     for item in $("works item", xml)
                         obj = objFromAttrs item
-                        # _.extend obj,
-                            # mediatypes : _.unique (_.map $("mediatypes", item).children(), (child) -> $(child).attr("mediatype"))
                         works.push obj
         
                     authorInfo.works = works
+                    
+                    titles = []
+                    for item in $("titles item", xml)
+                        obj = objFromAttrs item
+                        titles.push obj
+        
+                    authorInfo.titles = titles
         
                     authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
                     authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)

@@ -313,6 +313,19 @@
         "semer": "Mera om"
       }[page] || _.str.capitalize(page);
     };
+    s.getAllTitles = function() {
+      return [].concat(s.groupedTitles, s.groupedWorks);
+    };
+    s.getUrl = function(work) {
+      var url;
+      url = "#!/forfattare/" + s.author + "/titlar/" + (work.titlepath.split('/')[0]) + "/" + work.mediatype + "/";
+      if (work.mediatype === "epub" || work.mediatype === "pdf") {
+        url += "info/" + work.mediatype;
+      } else {
+        url += "sida/" + work.startpagename + "/" + work.mediatype;
+      }
+      return url;
+    };
     refreshExternalDoc = function(page) {
       var url, _ref;
       c.log("page", page);
@@ -342,6 +355,7 @@
     return backend.getAuthorInfo(s.author).then(function(data) {
       s.authorInfo = data;
       s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
+      s.groupedTitles = _.values(_.groupBy(s.authorInfo.titles, "titlepath"));
       $rootScope.appendCrumb({
         label: data.surname,
         url: "#!/forfattare/" + s.author

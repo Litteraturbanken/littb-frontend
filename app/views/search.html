@@ -100,7 +100,7 @@
         
             <label>Gå till träffsida</label>
             <form ng-submit="current_page = input_page - 1; search()">
-                <input class="input_page" ng-model="input_page"><span submit-btn></span>
+                <input class="input_page" ng-model="input_page"><span ng-click="current_page = input_page - 1; search()" submit-btn></span>
             </form>
         </div>
 

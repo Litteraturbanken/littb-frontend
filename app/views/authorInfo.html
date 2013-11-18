@@ -13,15 +13,15 @@
             </h2>
                 
             <table class="contenttable">
-                <tr ng-repeat="works in groupedWorks">
+                <tr ng-repeat="works in getAllTitles() track by $index">
                     <td>
                         <a href="#!/forfattare/{{author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a>
                         <span class="dots"></span>
                     </td>
                     <td >
-                        <span ng-repeat="work in getUnique(works)">
+                        <span ng-repeat="work in works">
                             <span ng-show="!$first">::: </span>
-                            <a href="#!/forfattare/{{author}}/titlar/{{work.titlepath.split('/')[0]}}/{{work.mediatype}}">{{work.mediatype}}</a>
+                            <a ng-href="{{getUrl(work)}}">{{work.mediatype}}</a>
                         </span>
                     </td>
                 </tr>
@@ -43,7 +43,10 @@
         <li ng-if="groupedWorks.length > 1">
             <a href="#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
         </li>
-        <li ng-if="groupedWorks.length < 2">
+        <li ng-if="groupedTitles.length">
+            <a href="#!/forfattare/{{author}}/titlar" >::: Titlar i LB</a>
+        </li>
+        <li ng-if="groupedWorks.length == 1">
             <a href="#!/forfattare/{{author}}/titlar/{{groupedWorks[0][0].titlepath}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
         </li>
     </ul>

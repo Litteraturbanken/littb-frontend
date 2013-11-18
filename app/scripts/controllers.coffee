@@ -294,6 +294,17 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             "semer" : "Mera om"
         }[page] or _.str.capitalize page
 
+    s.getAllTitles = () ->
+        [].concat s.groupedTitles, s.groupedWorks
+
+    s.getUrl = (work) ->
+        url = "#!/forfattare/#{s.author}/titlar/#{work.titlepath.split('/')[0]}/#{work.mediatype}/"
+        if work.mediatype == "epub" or work.mediatype == "pdf"
+            url += "info/#{work.mediatype}"
+        else
+            url += "sida/#{work.startpagename}/#{work.mediatype}"
+        return url
+
     refreshExternalDoc = (page) ->
         c.log "page", page
         url = s.authorInfo[page]
@@ -332,6 +343,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
 
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
+        s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
         $rootScope.appendCrumb 
             label : data.surname
             url : "#!/forfattare/" + s.author
@@ -714,7 +726,6 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
                 s.show_large = false
 
         
-
 
 
     infoDef = backend.getSourceInfo(author, title, mediatype)

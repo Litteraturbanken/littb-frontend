@@ -70,6 +70,10 @@ body {
     font-family : $sans;
 }
 
+.bold { 
+    font-weight: bold;
+}
+
 #leftCorridor {
     width : $main-menu-width;
     margin-right : $gutter-width;

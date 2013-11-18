@@ -246,7 +246,7 @@
     };
     parseWorkInfo = function(root, xml) {
       var asArray, elem, output, useInnerXML, val, _i, _len, _ref, _ref1, _ref2, _ref3, _ref4;
-      useInnerXML = ["sourcedesc", "license-text"];
+      useInnerXML = ["sourcedesc", "workintro", "license-text"];
       asArray = ["mediatypes"];
       output = {};
       _ref = $(root, xml).children();
@@ -492,7 +492,7 @@
             authorid: author
           }
         }).success(function(xml) {
-          var authorInfo, elem, item, obj, ref, val, works, _i, _j, _len, _len1, _ref, _ref1;
+          var authorInfo, elem, item, obj, ref, titles, val, works, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
           authorInfo = {};
           _ref = $("LBauthor", xml).children();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -512,17 +512,25 @@
             works.push(obj);
           }
           authorInfo.works = works;
+          titles = [];
+          _ref2 = $("titles item", xml);
+          for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+            item = _ref2[_k];
+            obj = objFromAttrs(item);
+            titles.push(obj);
+          }
+          authorInfo.titles = titles;
           authorInfo.smallImage = util.getInnerXML($("image-small-uri", xml));
           authorInfo.largeImage = util.getInnerXML($("image-large-uri", xml));
           authorInfo.presentation = util.getInnerXML($("presentation-uri", xml));
           authorInfo.bibliografi = util.getInnerXML($("bibliography-uri", xml));
           authorInfo.semer = util.getInnerXML($("see-uri", xml));
           authorInfo.externalref = (function() {
-            var _k, _len2, _ref2, _results;
-            _ref2 = $("LBauthor external-ref", xml);
+            var _l, _len3, _ref3, _results;
+            _ref3 = $("LBauthor external-ref", xml);
             _results = [];
-            for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-              ref = _ref2[_k];
+            for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+              ref = _ref3[_l];
               _results.push({
                 label: util.getInnerXML($("label", ref)),
                 url: util.getInnerXML($("url", ref))

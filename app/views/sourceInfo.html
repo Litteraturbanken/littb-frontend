@@ -17,8 +17,11 @@
     </div>
     
     <p class="clearfix" ng-bind-html-unsafe="data.sourcedesc"></p>
+
+    <!-- <p class="workintro" ng-bind-html-unsafe="data.workintro"></p> -->
+
     
-    <div class="mediatypes">
+    <div class="mediatypes" ng-class="{bold : data.workintro}">
         Läs verket som 
         <a class="mediatype" ng-href="{{getUrl(mediatype)}}" ng-click="onMediatypeClick()">{{mediatype}}</a>
         <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{data[mediatype].file_size}})</span>
