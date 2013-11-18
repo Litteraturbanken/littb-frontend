@@ -585,8 +585,12 @@ body > .header {
 $partnav-width : 170px;
 .page-reading {
     #mainview {
+
+        .searching .preloader {
+            display : block;
+        }
         .preloader {
-            // height : 0;
+            display : none;
         }
         position : relative;
         line-height : normal;
