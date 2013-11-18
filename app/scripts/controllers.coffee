@@ -359,6 +359,14 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         unless attrs then return
         return attrs.title unless attrs.showtitle == attrs.title
 
+        
+
+    s.filterTitle = (row) ->    
+        filter = s.workFilter == 'works' && (s.rowfilter || '')
+        return new RegExp(filter, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle))
+        
+
+
     # s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle"
     s.titlesort = "itemAttrs.sortkey"
 
@@ -569,7 +577,9 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
     $http.get(url).success (data) ->
         s.htmlContent = data
         s.labelArray = for elem in $("[id]", data)
-            label : _.str.humanize $(elem).attr("name")
+            label = _.str.humanize($(elem).attr("name").replace(/([A-Z])/g, " $1"))
+
+            label : label
             id : $(elem).attr("id")
             
         
@@ -873,11 +883,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.pagename = pagename
     
     onKeyDown = (event) ->
-        # c.log "keypress", event.key, event.keyCode, event.which
         s.$apply () ->
             switch event.which
                 when 39 
-                    if $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") == $($window).width()
+                    if navigator.userAgent.indexOf("Firefox") != -1 or $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") == $($window).width()
                         s.nextPage()
                 when 37 
                     if $rootElement.prop("scrollLeft") == 0

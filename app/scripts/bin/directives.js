@@ -295,7 +295,7 @@
         wtch = scope.$watch(function(s) {
           return inpl(s);
         }, function(val) {
-          return $("meta[name=description").attr("content", val);
+          return $("meta[name=description]").attr("content", val);
         });
         return scope.$on("$destroy", function() {
           return wtch();
@@ -318,6 +318,23 @@
         });
         return scope.$on("$destroy", function() {
           return wtch();
+        });
+      }
+    };
+  });
+
+  littb.directive('linkFix', function($location) {
+    return {
+      link: function($scope, elem, attrs) {
+        return elem.on("click", "a[href]", function(event) {
+          var t;
+          c.log("event.target", event.target);
+          t = $(event.target);
+          if (t.attr("target") === "_blank") {
+            return window.open(t.attr("href"), "_blank");
+          } else if (t.attr("href").slice(0, 7) === "mailto:") {
+            return location.href = t.attr("href");
+          }
         });
       }
     };

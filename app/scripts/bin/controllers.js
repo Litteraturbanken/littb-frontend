@@ -381,6 +381,11 @@
         return attrs.title;
       }
     };
+    s.filterTitle = function(row) {
+      var filter;
+      filter = s.workFilter === 'works' && (s.rowfilter || '');
+      return new RegExp(filter, "i").test(row.itemAttrs.title + " " + row.itemAttrs.shorttitle);
+    };
     s.titlesort = "itemAttrs.sortkey";
     s.sorttuple = [s.titlesort, false];
     s.setSort = function(sortstr) {
@@ -596,7 +601,7 @@
     s = $scope;
     url = "/red/om/hjalp/hjalp.html";
     return $http.get(url).success(function(data) {
-      var elem;
+      var elem, label;
       s.htmlContent = data;
       s.labelArray = (function() {
         var _i, _len, _ref, _results;
@@ -604,8 +609,9 @@
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           elem = _ref[_i];
+          label = _.str.humanize($(elem).attr("name").replace(/([A-Z])/g, " $1"));
           _results.push({
-            label: _.str.humanize($(elem).attr("name")),
+            label: label,
             id: $(elem).attr("id")
           });
         }
@@ -959,7 +965,7 @@
       return s.$apply(function() {
         switch (event.which) {
           case 39:
-            if ($rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") === $($window).width()) {
+            if (navigator.userAgent.indexOf("Firefox") !== -1 || $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") === $($window).width()) {
               return s.nextPage();
             }
             break;

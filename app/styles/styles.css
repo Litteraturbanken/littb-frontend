@@ -272,7 +272,7 @@ body.ready {
 }
 
 #leftCorridor .word_search .so_spinner {
-  opacity: 0;
+  display: none;
   position: absolute;
   top: 10px;
   right: 13px;
@@ -289,7 +289,7 @@ body.ready {
 }
 
 #leftCorridor .word_search.searching .so_spinner {
-  opacity: 1;
+  display: block;
 }
 
 @media -sass-debug-info {

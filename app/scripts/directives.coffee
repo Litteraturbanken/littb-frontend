@@ -272,7 +272,7 @@ littb.directive 'metaDesc', ($interpolate) ->
         wtch = scope.$watch((s) ->
             inpl(s)
         , (val) ->
-            $("meta[name=description").attr("content", val)
+            $("meta[name=description]").attr("content", val)
         )
 
         scope.$on "$destroy", () ->
@@ -292,3 +292,20 @@ littb.directive 'pageTitle', ($interpolate) ->
 
         scope.$on "$destroy", () ->
             wtch()
+
+
+littb.directive 'linkFix', ($location) ->
+    link : ($scope, elem, attrs) ->
+        elem.on "click", "a[href]", (event) ->
+            c.log "event.target", event.target
+            t = $(event.target)
+            if t.attr("target") == "_blank"
+                window.open t.attr("href"), "_blank"
+            else if t.attr("href")[..6] == "mailto:"
+                location.href = t.attr("href")
+
+        # loc = attrs.href
+        # elem.click () ->
+
+
+

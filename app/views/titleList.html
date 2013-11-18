@@ -11,7 +11,7 @@
             <option value="titles">Samtliga titlar</option>
         </select>
         <select ng-model="mediatypeFilter" ng-change="selectedLetter = null" >
-            <option value="">Alla Mediatyper</option>
+            <option value="">Alla mediatyper</option>
             <option value="etext">Etext</option>
             <option value="faksimil">Faksimil</option>
             <option value="epub">Epub</option>
@@ -32,7 +32,7 @@
             <th></th>
         </thead>
         
-        <tbody><tr ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{'itemAttrs.title' : workFilter == 'works' && (rowfilter || ''), mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter}">
+        <tbody><tr ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || '', 'author.authorid' : authorFilter} | filter:filterTitle">
             <td class="title">
                 <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
                     href="#!/forfattare/{{row.author.workauthor || row.author.authorid}}/titlar/{{getTitleId(row)}}/info">{{row.itemAttrs.showtitle}}</a>
