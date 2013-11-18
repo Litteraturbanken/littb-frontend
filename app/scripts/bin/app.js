@@ -133,7 +133,8 @@
           "$q", "$routeParams", "$route", function($q, $routeParams, $route) {
             var def;
             def = $q.defer();
-            if ((routeStartCurrent != null ? routeStartCurrent.controller : void 0) === "authorInfoCtrl" && $route.current.controller === "authorInfoCtrl") {
+            c.log("resolve", $routeParams, $route);
+            if ((routeStartCurrent != null ? routeStartCurrent.controller : void 0) === "authorInfoCtrl" && $route.current.controller === "authorInfoCtrl" && $route.current.params.author === $routeParams.author) {
               def.reject();
             } else {
               def.resolve();

@@ -263,11 +263,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         # s.showtitles = (_.last $location.path().split("/")) == "titlar"
         s.showpage = (_.last $location.path().split("/")) 
         s.showpage = "introduktion" if s.author == s.showpage
-        c.log "new route", s.showpage
-        # switch (_.last $location.path().split("/"))
-        #     when "titlar"
-
-
 
     refreshTitle = () ->
         suffix = if s.showpage == "titlar" then "Verk i LB" else _.str.capitalize s.showpage
@@ -342,8 +337,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         s.authorInfo = data
 
 
-        s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
+        s.groupedWorks = _.values _.groupBy s.authorInfo.works, "titlepath"
         s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
+        c.log "data.surname", data.surname
         $rootScope.appendCrumb 
             label : data.surname
             url : "#!/forfattare/" + s.author

@@ -146,8 +146,10 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                     r : ["$q", "$routeParams", "$route",
                             ($q, $routeParams, $route) ->
                                 def = $q.defer()
-                                if routeStartCurrent?.controller == "authorInfoCtrl" and
-                                 $route.current.controller == "authorInfoCtrl"
+                                c.log "resolve", $routeParams, $route
+                                if routeStartCurrent?.controller == "authorInfoCtrl" and 
+                                        $route.current.controller == "authorInfoCtrl" and
+                                        $route.current.params.author == $routeParams.author
                                     def.reject()
                                 else 
                                     def.resolve()

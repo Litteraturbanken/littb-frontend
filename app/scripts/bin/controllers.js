@@ -284,9 +284,8 @@
     refreshRoute = function() {
       s.showpage = _.last($location.path().split("/"));
       if (s.author === s.showpage) {
-        s.showpage = "introduktion";
+        return s.showpage = "introduktion";
       }
-      return c.log("new route", s.showpage);
     };
     refreshTitle = function() {
       var suffix;
@@ -354,8 +353,9 @@
     });
     return backend.getAuthorInfo(s.author).then(function(data) {
       s.authorInfo = data;
-      s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "lbworkid"));
+      s.groupedWorks = _.values(_.groupBy(s.authorInfo.works, "titlepath"));
       s.groupedTitles = _.values(_.groupBy(s.authorInfo.titles, "titlepath"));
+      c.log("data.surname", data.surname);
       $rootScope.appendCrumb({
         label: data.surname,
         url: "#!/forfattare/" + s.author

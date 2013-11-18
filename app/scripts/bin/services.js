@@ -492,7 +492,7 @@
             authorid: author
           }
         }).success(function(xml) {
-          var authorInfo, elem, item, obj, ref, titles, val, works, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+          var authorInfo, elem, parseWorks, ref, val, _i, _len, _ref;
           authorInfo = {};
           _ref = $("LBauthor", xml).children();
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -504,33 +504,30 @@
             }
             authorInfo[util.normalize(elem.nodeName)] = val;
           }
-          works = [];
-          _ref1 = $("works item", xml);
-          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-            item = _ref1[_j];
-            obj = objFromAttrs(item);
-            works.push(obj);
-          }
-          authorInfo.works = works;
-          titles = [];
-          _ref2 = $("titles item", xml);
-          for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-            item = _ref2[_k];
-            obj = objFromAttrs(item);
-            titles.push(obj);
-          }
-          authorInfo.titles = titles;
+          parseWorks = function(selector) {
+            var item, obj, titles, _j, _len1, _ref1;
+            titles = [];
+            _ref1 = $(selector, xml);
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              item = _ref1[_j];
+              obj = objFromAttrs(item);
+              titles.push(_.extend(obj, objFromAttrs($(item).find("author").get(0))));
+            }
+            return titles;
+          };
+          authorInfo.works = parseWorks("works item");
+          authorInfo.titles = parseWorks("titles item");
           authorInfo.smallImage = util.getInnerXML($("image-small-uri", xml));
           authorInfo.largeImage = util.getInnerXML($("image-large-uri", xml));
           authorInfo.presentation = util.getInnerXML($("presentation-uri", xml));
           authorInfo.bibliografi = util.getInnerXML($("bibliography-uri", xml));
           authorInfo.semer = util.getInnerXML($("see-uri", xml));
           authorInfo.externalref = (function() {
-            var _l, _len3, _ref3, _results;
-            _ref3 = $("LBauthor external-ref", xml);
+            var _j, _len1, _ref1, _results;
+            _ref1 = $("LBauthor external-ref", xml);
             _results = [];
-            for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
-              ref = _ref3[_l];
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              ref = _ref1[_j];
               _results.push({
                 label: util.getInnerXML($("label", ref)),
                 url: util.getInnerXML($("url", ref))

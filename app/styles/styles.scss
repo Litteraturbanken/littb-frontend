@@ -859,17 +859,19 @@ $partnav-width : 170px;
         }
         // really for authorTitles
         .contenttable {
+
             margin-top : 3em;
             td {
                 text-align: left;
-                white-space: nowrap;
             }
             td:first-child {
                 // max-width : 80px;
                 font-style: italic;
+                width : 100%;
             }
             td:nth-child(2) {
                 vertical-align : top;
+                white-space: nowrap;
             }
         }
         .author_img {
@@ -1052,13 +1054,20 @@ grundform-clean {
 }
 
 .so_modal {
-    padding : 1em 1em 2em 1.5em;
+    padding : 1em 1em 1em 1.5em;
     .modal-header {
         padding : 1em 0;
         & > h4 {
             @include inline-block(bottom);
             margin : 0;
         }
+    }
+    .modal-footer {
+        border-top: 1px solid #eee;
+        padding-bottom : 0;
+        padding-top : 10px;
+        text-align: left;
+        font-size: 0.8em;
     }
     .close-x {
         color : $primarycolor;

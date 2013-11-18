@@ -399,40 +399,38 @@ littb.factory 'backend', ($http, $q, util) ->
                 authorid : author
 
         ).success( (xml) ->
-                    authorInfo = {}
-                    for elem in $("LBauthor", xml).children()
-                        if elem.nodeName == "intro" 
-                            val = util.getInnerXML elem
-                        else
-                            val = $(elem).text()
-        
-                        authorInfo[util.normalize(elem.nodeName)] = val
-        
-                    works = []
-                    for item in $("works item", xml)
-                        obj = objFromAttrs item
-                        works.push obj
-        
-                    authorInfo.works = works
-                    
-                    titles = []
-                    for item in $("titles item", xml)
-                        obj = objFromAttrs item
-                        titles.push obj
-        
-                    authorInfo.titles = titles
-        
-                    authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
-                    authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
-                    authorInfo.presentation = util.getInnerXML $("presentation-uri", xml)
-                    authorInfo.bibliografi = util.getInnerXML $("bibliography-uri", xml)
-                    authorInfo.semer = util.getInnerXML $("see-uri", xml)
-                    authorInfo.externalref = for ref in $("LBauthor external-ref", xml)
-                        label : util.getInnerXML $("label", ref)
-                        url : util.getInnerXML $("url", ref)
+            authorInfo = {}
+            for elem in $("LBauthor", xml).children()
+                if elem.nodeName == "intro" 
+                    val = util.getInnerXML elem
+                else
+                    val = $(elem).text()
 
-        
-                    def.resolve authorInfo
+                authorInfo[util.normalize(elem.nodeName)] = val
+
+
+            parseWorks = (selector) ->
+                titles = []
+                for item in $(selector, xml)
+                    obj = objFromAttrs item
+                    titles.push _.extend obj, (objFromAttrs $(item).find("author").get(0))
+                return titles
+
+
+            authorInfo.works = parseWorks("works item")
+            authorInfo.titles = parseWorks("titles item")
+
+            authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
+            authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
+            authorInfo.presentation = util.getInnerXML $("presentation-uri", xml)
+            authorInfo.bibliografi = util.getInnerXML $("bibliography-uri", xml)
+            authorInfo.semer = util.getInnerXML $("see-uri", xml)
+            authorInfo.externalref = for ref in $("LBauthor external-ref", xml)
+                label : util.getInnerXML $("label", ref)
+                url : util.getInnerXML $("url", ref)
+
+
+            def.resolve authorInfo
         ).error (data, status, headers, config) ->
             def.reject()
 

@@ -9,23 +9,29 @@
         </div>
         <div ng-switch-when="titlar">
             <h2 ng-show="authorInfo">
-                {{authorInfo.fullName}} ({{authorInfo.birth}} - {{authorInfo.death}}): verk i Litteraturbanken
+                {{authorInfo.fullName}}<span ng-if="Number(authorInfo.birth)"> ({{authorInfo.birth}} - {{authorInfo.death}})</span>: verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
             </h2>
-                
-            <table class="contenttable">
-                <tr ng-repeat="works in getAllTitles() track by $index">
-                    <td>
-                        <a href="#!/forfattare/{{author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info/{{works[0].mediatype}}">{{works[0].showtitle}}</a>
-                        <span class="dots"></span>
-                    </td>
-                    <td >
-                        <span ng-repeat="work in works">
-                            <span ng-show="!$first">::: </span>
-                            <a ng-href="{{getUrl(work)}}">{{work.mediatype}}</a>
-                        </span>
-                    </td>
-                </tr>
-            </table>        
+            
+            <div ng-repeat="worklist in [groupedWorks, groupedTitles] track by $index">
+                <table class="contenttable">
+                    <tr ng-repeat="works in worklist track by $index">
+                        <td>
+                            <a href="#!/forfattare/{{author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info/{{works[0].mediatype}}">
+                                {{works[0].showtitle}}
+                                <span ng-if="$parent.$index == 1">[i {{works[0].workshorttitle}}]</span>
+                            </a>
+                            
+                            <span class="dots"></span>
+                        </td>
+                        <td >
+                            <span ng-repeat="work in works track by $index">
+                                <span ng-show="!$first">::: </span>
+                                <a ng-href="{{getUrl(work)}}">{{work.mediatype}}</a>
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
         </div>
     
         <div ng-switch-default>
@@ -43,11 +49,11 @@
         <li ng-if="groupedWorks.length > 1">
             <a href="#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
         </li>
-        <li ng-if="groupedTitles.length">
+        <li ng-if="groupedTitles.length && !groupedWorks.length">
             <a href="#!/forfattare/{{author}}/titlar" >::: Titlar i LB</a>
         </li>
         <li ng-if="groupedWorks.length == 1">
-            <a href="#!/forfattare/{{author}}/titlar/{{groupedWorks[0][0].titlepath}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
+            <a href="#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
         </li>
     </ul>
     <ul class="subnav" role="navigation">
