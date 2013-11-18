@@ -57,23 +57,17 @@
     });
   });
 
-  littb.directive("scFile", function($routeParams, $http) {
+  littb.directive("scFile", function($routeParams, $http, util, backend) {
     return {
       template: "<div ng-bind-html-unsafe=\"doc\"></div>",
       replace: true,
       link: function($scope, elem, attr) {
-        return $http({
-          method: "GET",
-          url: "/red/skola/" + attr.scFile || $routeParams.doc
-        }).success(function(data) {
-          return $scope.doc = data;
+        return backend.getHtmlFile("/red/skola/" + attr.scFile || $routeParams.doc).success(function(data) {
+          c.log("data", $("body", data).get(0), typeof data);
+          return $scope.doc = util.getInnerXML($("body > .article > :not(.titlepage)", data).get(0));
         });
       }
     };
-  });
-
-  littb.directive("fileGetter", function($routeParams) {
-    return $routeParams.doc;
   });
 
 }).call(this);

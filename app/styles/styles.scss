@@ -1520,7 +1520,7 @@ only screen and (max-width: 760px),
 
 .site-school {
     width : 100%;
-    padding : 5%;
+    padding : 50px;
     font-size : 16px;
     line-height: 1.4em;
 
@@ -1554,7 +1554,7 @@ only screen and (max-width: 760px),
     #mainview {
         width : auto;
     }
-    p {
+    p, #{headers()} {
         max-width: 500px;
     }
     #mainview:after {
@@ -1566,6 +1566,13 @@ only screen and (max-width: 760px),
         content: "";
         z-index: -1;
     }
+
+    .titlepage {
+        font-weight: normal;
+        font-style: italic;
+        font-size : 20px;
+    }
+
     .content {
         h1 {
             color : $primarycolor;
@@ -1580,7 +1587,7 @@ only screen and (max-width: 760px),
         margin-right : 60px;
     }
     &.page-school {
-        p {
+        p, #{headers()} {
             max-width: 400px;
         }   
         .teachers, .students {

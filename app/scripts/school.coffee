@@ -48,17 +48,14 @@ littb.config ($routeProvider) ->
         templateUrl : "views/school/6_9.html"
 
 
-littb.directive "scFile", ($routeParams, $http) ->
+littb.directive "scFile", ($routeParams, $http, util, backend) ->
     template: """<div ng-bind-html-unsafe="doc"></div>"""
     replace : true
     link : ($scope, elem, attr) ->
         # $scope.doc = $routeParams.doc
-        $http(
-            method : "GET"
-            url : "/red/skola/" + attr.scFile or $routeParams.doc
-        ).success (data) ->
-            $scope.doc = data
+        backend.getHtmlFile("/red/skola/" + attr.scFile or $routeParams.doc).success (data) ->
+            c.log "data", $("body", data).get(0), typeof data
+            $scope.doc =  util.getInnerXML $("body > .article > :not(.titlepage)", data).get(0)
+            
 
 
-littb.directive "fileGetter", ($routeParams) ->
-    $routeParams.doc

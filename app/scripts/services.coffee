@@ -213,6 +213,11 @@ littb.factory 'backend', ($http, $q, util) ->
         return output
 
 
+    getHtmlFile : (url) ->
+        return http(
+            url : url
+        )
+    
     getHitParams : (item) ->
         if item.mediatype == "faksimil"
             obj = _.pick item, "x", "y", "width", "height"
