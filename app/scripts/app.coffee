@@ -46,10 +46,10 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
                 templateUrl : "views/presentations.html"
                 controller : "presentationCtrl"
                         
-            .when '/presentationer/specialomraden/:doc',
+            .when '/presentationer/:folder/:doc',
                 controller : ["$scope", "$routeParams", "$http", "util", 
                                 ($scope, $routeParams, $http, util) ->
-                                    $http.get("/red/presentationer/specialomraden/#{$routeParams.doc}").success (data) ->
+                                    $http.get("/red/presentationer/#{$routeParams.folder}/#{$routeParams.doc}").success (data) ->
                                         # c.log "doc", data
                 
                                         $scope.doc = data

@@ -317,7 +317,7 @@
     };
     s.getUrl = function(work) {
       var url;
-      url = "#!/forfattare/" + s.author + "/titlar/" + (work.titlepath.split('/')[0]) + "/" + work.mediatype + "/";
+      url = "#!/forfattare/" + s.author + "/titlar/" + (work.titlepath.split('/')[0]) + "/";
       if (work.mediatype === "epub" || work.mediatype === "pdf") {
         url += "info/" + work.mediatype;
       } else {

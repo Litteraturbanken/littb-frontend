@@ -293,7 +293,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         [].concat s.groupedTitles, s.groupedWorks
 
     s.getUrl = (work) ->
-        url = "#!/forfattare/#{s.author}/titlar/#{work.titlepath.split('/')[0]}/#{work.mediatype}/"
+        url = "#!/forfattare/#{s.author}/titlar/#{work.titlepath.split('/')[0]}/"
         if work.mediatype == "epub" or work.mediatype == "pdf"
             url += "info/#{work.mediatype}"
         else

@@ -51,10 +51,10 @@
       breadcrumb: ["presentationer"],
       templateUrl: "views/presentations.html",
       controller: "presentationCtrl"
-    }).when('/presentationer/specialomraden/:doc', {
+    }).when('/presentationer/:folder/:doc', {
       controller: [
         "$scope", "$routeParams", "$http", "util", function($scope, $routeParams, $http, util) {
-          return $http.get("/red/presentationer/specialomraden/" + $routeParams.doc).success(function(data) {
+          return $http.get("/red/presentationer/" + $routeParams.folder + "/" + $routeParams.doc).success(function(data) {
             $scope.doc = data;
             $scope.title = $("<root>" + data + "</root>").find("h1").text();
             $scope.title = $scope.title.split(" ").slice(0, 5).join(" ");
