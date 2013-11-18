@@ -244,10 +244,10 @@ littb.factory 'backend', ($http, $q, util) ->
 
             pathGroups = _.groupBy $("item", xml), (item) ->
                 author = $(item).find("author").attr("authorid")
-                if "/" in $(item).attr("titlepath")
-                    return author + $(item).attr("titlepath").split("/")[1]
-                else
-                    return author + $(item).attr("titlepath")
+                # if "/" in $(item).attr("titlepath")
+                return author + $(item).attr("titlepath").split("/")
+                # else
+                #     return author + $(item).attr("titlepath")
 
 
             rows = []

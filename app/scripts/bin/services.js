@@ -317,11 +317,7 @@
           pathGroups = _.groupBy($("item", xml), function(item) {
             var author;
             author = $(item).find("author").attr("authorid");
-            if (__indexOf.call($(item).attr("titlepath"), "/") >= 0) {
-              return author + $(item).attr("titlepath").split("/")[1];
-            } else {
-              return author + $(item).attr("titlepath");
-            }
+            return author + $(item).attr("titlepath").split("/");
           });
           rows = [];
           for (path in pathGroups) {
