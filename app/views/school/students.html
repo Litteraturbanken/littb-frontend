@@ -1,0 +1,26 @@
+<div class="sidebar">
+    <div class="fixed">
+        <ul class="top_menu">
+            <li>{{id}}</li>
+            <li ng-repeat="item in list"><a ng-href="{{item.url}}">{{item.label}}</a>
+                <ul ng-if="item.sublist">
+                    <li ng-repeat="sub in item.sublist"><a ng-href="{{sub.url}}">{{sub.label}}</a>
+                </ul> 
+            </li>
+        </ul>
+        
+        <ul class="lower_menu">
+            <li ng-if="id != 'f-5'"><a href="/#!/skola/f-5">Upp till årskurs 5</a></li>
+            <li ng-if="id != '6-9'"><a href="/#!/skola/6-9">Årskurs 6 till 9</a></li>
+            <li ng-if="id != 'gymnasium'"><a href="/#!/skola/gymnasium">Gymnasium</a></li>
+            
+            <li><a href="/#!/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
+            <li><a href="/#!/forfattare/LagerlofS">Selma Lagerlöf-arkivet</a></li>
+            <li><a href="/#!/start">Litteraturbanken</a></li>
+        </ul>
+    </div>
+</div>
+
+<div class="content">
+    <p sc-file="{{docurl || defaultUrl}}"></p>
+</div>
