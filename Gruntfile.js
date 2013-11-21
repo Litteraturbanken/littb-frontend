@@ -48,8 +48,8 @@ module.exports = function (grunt) {
         },
         files: [
           '<%= yeoman.app %>/index.html',
-          '<%= yeoman.app %>/markup/*.html',
-          '<%= yeoman.app %>/views/**/*.html',
+          '<%= yeoman.app %>/views/*.html',
+          '<%= yeoman.app %>/views/school/*.html',
           '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.css',
           '{.tmp,<%= yeoman.app %>}/scripts/{,*/}*.js',
           '<%= yeoman.app %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
@@ -92,8 +92,8 @@ module.exports = function (grunt) {
         hostname: '0.0.0.0',
       },
       proxies : ["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb"].map(function(item) {
-        // var host = 'demolittb.spraakdata.gu.se'
-        var host = 'litteraturbanken.se'
+        var host = 'demolittb.spraakdata.gu.se'
+        // var host = 'litteraturbanken.se'
         return {
                       context: '/' + item,
                       host: host,

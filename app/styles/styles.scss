@@ -33,6 +33,9 @@ $primarycolor : #990000;
 .tooltip {
     font-size : 1em;
 }
+.fixed {
+    position : fixed;
+}
 
 body {
     font-size : 12px;
@@ -1404,6 +1407,213 @@ grundform-clean {
     // font-size: 1em;
 }
 
+
+.site-school {
+    width : 100%;
+    padding : 50px;
+    font-size : 16px;
+    line-height: 1.4em;
+
+    .italics {
+        font-style: italic;
+    }
+    #leftCorridor {
+        display : none;
+    }
+    .header hr {
+        border-color : lightgrey;
+    }
+    .logo_link {
+        background: url("/img/school_logo.svg");
+        height : 50px;
+        width: 370px;
+        margin-bottom : 0;
+        @include inline-block();
+        position: relative;
+        top: 20px;
+        // margin-bottom : -40px;
+    }
+    & > .header .breadcrumb {
+        // width : 49%;
+        // @include inline-block(bottom);
+        display : block;
+        width : auto;
+    }
+
+    #mainview .sidebar li {
+        text-transform: uppercase;
+        margin-bottom : 0.2em;
+    }
+
+    #mainview {
+        width : auto;
+    }
+    p, #{headers()} {
+        max-width: 500px;
+    }
+    #mainview:after {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        background-repeat: no-repeat;
+        opacity : 0.3;
+        content: "";
+        z-index: -1;
+        // white-space: nowrap;
+    }
+    .ulink, .firstterm, .glossterm {
+        // font-variant: small-caps;
+        font-size : 0.9em;
+        // text-transform: capitalize;
+        font-style: italic;
+        
+    }
+    .titlepage {
+        font-weight: normal;
+        font-style: italic;
+        font-size : 20px;
+    }
+
+    .content {
+        h1 {
+            // color : $primarycolor;
+            text-transform: uppercase;
+        }
+        ul li {
+            list-style-type : disc;
+            margin-left : 2em;
+        }
+        @include inline-block(top);
+        .sect2 {
+            margin-top: 2em;
+        }
+    }
+    .sidebar {
+        width : 170px;
+        @include inline-block(top);
+
+        margin-right : 60px;
+        font-size : 11px;
+        .top_menu {
+            margin-top: 1.3em;
+        }
+
+    }
+    ul ul li {
+        margin-left : 1em;
+    }
+
+    .lower_menu {
+        margin-top : 6em;
+        font-size : 0.8em;
+        ul {
+            font-size : inherit;
+        }
+    }
+
+
+    &.page-school {
+        ul {
+            font-size : 0.8em;  
+        }
+        .logo_link {
+            top: 0;
+        }
+        p, #{headers()} {
+            // max-width: 400px;
+        }   
+        
+        .teachers, .students {
+            h2 {
+                color : $primarycolor;
+            }
+            position: absolute;
+            text-transform: uppercase;
+
+        }
+        .header hr {
+            position : relative;
+            z-index : -1; 
+            width : 600px;
+            margin : 0;
+
+        }
+
+        .img_circle {
+            float : right;
+        }
+
+        .teachers {
+            top: 220px;
+            left: 550px;
+        }
+        .students {
+            top: 420px;
+            left: 600px;
+        }
+
+        #mainview:after {
+            background-image: url("/img/selma_circle.png");
+            background-size : 700px;
+            top: 50px;
+            left: 450px;
+            opacity : 1;
+        }
+        h1, p:first-of-type, p:nth-of-type(2) {
+            max-width : 400px;
+        }
+    }
+    &.page-teachers  {
+        .header hr {
+            border-color : #999;
+            border-width: 1px;
+        }
+        #mainview:after {
+            position: absolute;
+            background-image: url("/img/lagerlof_portrait.jpg");
+            top: -90px;
+            left: -280px;
+
+        }
+        #mainview {
+            & > div {
+                @include inline-block(top);
+            }
+            .sidebar {
+                margin-right : 80px;
+            }
+            
+        }
+    }
+    &.page-students {
+        // background-repeat: no-repeat;
+        // opacity : 0.4;
+        .header hr {
+            border-color : #999;
+        }
+        .header .breadcrumb {
+        }
+
+
+        #mainview:after {
+            background : url("/img/selma_young.jpg") no-repeat;
+            // background: url("/img/selma_young.jpg") no-repeat center center; 
+            height : 1230px;
+            width : 100%;
+            // overflow : visible;
+        }
+        .content {
+        }
+
+    }
+}
+
+
+
+
+
+
+
 @media 
 only screen and (max-width: 760px),
 (min-device-width: 768px) and (max-device-width: 1024px)  {
@@ -1480,6 +1690,9 @@ only screen and (max-width: 760px),
         tr {
             display: block; 
           }
+        tr:first-child {
+            display : none;
+        } 
         
         /* Hide table headers (but not display: none;, for accessibility) */
         thead tr { 
@@ -1516,152 +1729,27 @@ only screen and (max-width: 760px),
         }   
         
     }
+
+    .site-school {
+
+        &.page-school {
+            #mainview:after {
+                display : none;
+            }
+            .teachers, .students {
+                position : static;
+                
+            }
+        }
+        
+        .sidebar {
+            margin-bottom : 2em;   
+            width : auto;
+            .fixed {
+                position : static;
+            }
+        }
+    }    
+
 }
 
-.site-school {
-    width : 100%;
-    padding : 50px;
-    font-size : 16px;
-    line-height: 1.4em;
-
-    ul {
-        font-size : 0.8em;
-    }
-    
-    #leftCorridor {
-        display : none;
-    }
-    .header hr {
-        border-color : lightgrey;
-    }
-    .logo_link {
-        background-image: url("/img/school_logo.svg");
-        height : 50px;
-        width: 50%;
-        margin-bottom : 0;
-        @include inline-block();
-    }
-    & > .header .breadcrumb {
-        width : 49%;
-        @include inline-block(bottom);
-    }
-
-    #mainview li {
-        text-transform: uppercase;
-        margin-bottom : 0.2em;
-    }
-
-    #mainview {
-        width : auto;
-    }
-    p, #{headers()} {
-        max-width: 500px;
-    }
-    #mainview:after {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        background-repeat: no-repeat;
-        opacity : 0.4;
-        content: "";
-        z-index: -1;
-    }
-
-    .titlepage {
-        font-weight: normal;
-        font-style: italic;
-        font-size : 20px;
-    }
-
-    .content {
-        h1 {
-            color : $primarycolor;
-            text-transform: uppercase;
-        }
-        width : 450px;
-
-        @include inline-block(top);
-    }
-    .sidebar {
-        @include inline-block(top);
-        margin-right : 60px;
-    }
-    &.page-school {
-        p, #{headers()} {
-            max-width: 400px;
-        }   
-        .teachers, .students {
-            h2 {
-                color : $primarycolor;
-            }
-            position: absolute;
-            text-transform: uppercase;
-
-        }
-        .header hr {
-            position : relative;
-            z-index : -1; 
-            width : 600px;
-            margin : 0;
-
-        }
-        .teachers {
-            top: 170px;
-            left: 550px;
-        }
-        .students {
-            top: 370px;
-            left: 600px;
-        }
-
-        #mainview:after {
-            background-image: url("/img/selma_circle.png");
-            background-size : 700px;
-            top: 50px;
-            left: 450px;
-            opacity : 1;
-            
-            
-        }
-    }
-    &.page-teachers  {
-        .header hr {
-            border-color : #999;
-            border-width: 1px;
-        }
-        #mainview:after {
-            position: absolute;
-            background-image: url("/img/lagerlof_portrait.jpg");
-            top: -90px;
-            left: -280px;
-
-        }
-        #mainview {
-            & > div {
-                @include inline-block(top);
-            }
-            .sidebar {
-                margin-right : 80px;
-            }
-            
-        }
-    }
-    &.page-gym {
-        // background-repeat: no-repeat;
-        // opacity : 0.4;
-        .header hr {
-            border-color : #999;
-        }
-        .header .breadcrumb {
-        }
-        #mainview:after {
-            background-image : url("/img/selma_young.jpg");
-            background-size : 80%;
-            left : 0;
-            top : 0;
-        }
-        .content {
-            width : 400px;
-        }
-    }
-}

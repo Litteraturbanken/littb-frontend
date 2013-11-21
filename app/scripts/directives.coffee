@@ -318,3 +318,8 @@ littb.directive 'insert', () ->
         scope.watch "doc", () ->
             c.log "insert doc", scope.doc
             elem.html(scope.doc or "")
+
+littb.directive "affix", () ->
+    restrict : "EA"
+    link : (scope, elem, attrs) ->
+        elem.affix()

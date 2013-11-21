@@ -18,7 +18,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                            ])
     .config ($routeProvider) ->
 
-        class Router
+        class window.Router
             constructor : () ->
             when : (route, obj) ->
 
