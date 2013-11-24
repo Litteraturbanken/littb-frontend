@@ -1511,6 +1511,24 @@ grundform-clean {
         }
     }
 
+    &.page-teachers, &.page-students {
+        .logos {
+            margin-top : 4em;
+            & > * {
+                display : block;
+                margin-top : 1em;
+            }
+            .lb {
+                height : 33px;
+            }
+            .sla {
+                height : 33px;
+                // margin-left: 29px;
+                margin-top: 7px;
+            }
+        }
+    }
+
 
     &.page-school {
         ul {
@@ -1518,6 +1536,20 @@ grundform-clean {
         }
         .logo_link {
             top: 0;
+            cursor: pointer;
+        }
+        .logos {
+            margin-top : 5em;
+            .lb{
+                height : 40px;
+            }
+            .amp{
+                height : 16px;
+                margin : 0 8px;
+            }
+            .sla{
+                height : 40px;
+            }
         }
         p, #{headers()} {
             // max-width: 400px;

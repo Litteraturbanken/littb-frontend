@@ -7,20 +7,65 @@ getStudentCtrl = (id) ->
     ($scope, $routeParams) ->
         getFileName($scope, $routeParams)
         $scope.id = id
-        $scope.defaultUrl = {
-            "f-5" : "ValkommenAk5.html"
-            "6-9" : "Valkommen6-9.html"
-            "gymnasium" : "ValkommenGY.html"
+        sfx = {
+            "f-5" : "F-5"
+            "6-9" : "6-9"
+            "gymnasium" : "GY"
         }[id]
+        $scope.defaultUrl = "Valkommen#{sfx}.html"
+
+        
+        c.log "id", id
+        works =  [
+            {
+                label : "Drottningar i Kongahälla", 
+                url : "/#!/skola/#{id}/Drottningar#{sfx}.html"
+            }
+            {
+                label : "En herrgårdssägen", 
+                url : "/#!/skola/#{id}/HerrArne#{sfx}.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Herr Arnes penningar", 
+                url : "/#!/skola/#{id}/HerrArne#{sfx}.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Kejsarn av Portugallien", 
+                url : "/#!/skola/#{id}/Kejsarn#{sfx}.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Mårbacka", 
+                url : "/#!/skola/#{id}/Marbacka#{sfx}.html"
+                if : ["f-5", "6-9"]
+            }
+            {
+                label : "Osynliga Länkar", 
+                url : "/#!/skola/#{id}/OsynligaLankar#{sfx}.html"
+                if: ["f-5"]
+            }
+            {
+                label : "Troll och människor", 
+                url : "/#!/skola/#{id}/TrollManniskor#{sfx}.html"
+                if : ["6-9", "gymnasium"]
+            }
+
+            
+
+        ]
+
+        works = _.filter works, (obj) ->
+            unless obj.if then return true
+            return id in obj.if
 
         $scope.list = [
                 label: "Författarpresentation", url : "/#!/skola/#{id}/ForfattarpresentationElever.html"
             ,
-                label: "Orientering enskilda verk", url : "", sublist : [
-                    # alla
-                    {label : "Drottningar i Kongahälla", url : "DrottningarF-5.html"}
-                    {label : "Mårbacka", url : "MarbackaF5.html"}
-                ]
+                label: "Orientering enskilda verk", 
+                url : "", 
+                sublist : works
             ,
                 label: "Orientering genrer", 
                 url : "/#!/skola/#{id}/Genrer.html", 
@@ -62,12 +107,22 @@ littb.config () ->
     
     whn ["/skola/f-5/:docurl", "/skola/f-5"],
         title : "F-5"
+        breadcrumb : [
+                label : "För elever"
+                url : ""
+            ,
+            "F-5"
+        ]
         templateUrl : "views/school/students.html"
         controller : getStudentCtrl("f-5")
     whn ["/skola/6-9/:docurl", "/skola/6-9"],
         title : "6-9"
+        breadcrumb : [
+            "För elever",
+            "6-9"
+        ]
         templateUrl : "views/school/students.html"
-        controller : getStudentCtrl("6_9")
+        controller : getStudentCtrl("6-9")
     whn ["/skola/gymnasium/:docurl", "/skola/gymnasium"],
         title : "Gymnasium"
         breadcrumb : [
@@ -86,7 +141,6 @@ littb.directive "scFile", ($routeParams, $http, util, backend) ->
     link : ($scope, elem, attr) ->
         # $scope.doc = $routeParams.doc
         backend.getHtmlFile("/red/skola/" + attr.scFile or $routeParams.doc).success (data) ->
-            c.log "data", $("body", data).get(0), typeof data
             innerxmls = _.map $("body > div > :not(.titlepage)", data), util.getInnerXML
             $scope.doc = innerxmls.join("\n")
             $("[xmlns]", $scope.doc).attr("xmlns", null)

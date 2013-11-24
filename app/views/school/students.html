@@ -1,8 +1,10 @@
 <div class="sidebar">
     <div class="fixed">
         <ul class="top_menu">
-            <li>{{id}}</li>
-            <li ng-repeat="item in list"><a ng-href="{{item.url}}">{{item.label}}</a>
+            <li><a ng-href="/#!/skola/{{id}}">{{id}}</a></li>
+            <li ng-repeat="item in list">
+                <a ng-if="item.url" ng-href="{{item.url}}">{{item.label}}</a>
+                <span ng-if="!item.url">{{item.label}}</span>
                 <ul ng-if="item.sublist">
                     <li ng-repeat="sub in item.sublist"><a ng-href="{{sub.url}}">{{sub.label}}</a>
                 </ul> 
@@ -10,14 +12,18 @@
         </ul>
         
         <ul class="lower_menu">
-            <li ng-if="id != 'f-5'"><a href="/#!/skola/f-5">Upp till årskurs 5</a></li>
-            <li ng-if="id != '6-9'"><a href="/#!/skola/6-9">Årskurs 6 till 9</a></li>
-            <li ng-if="id != 'gymnasium'"><a href="/#!/skola/gymnasium">Gymnasium</a></li>
+            <li ng-if="id != 'f-5'"><a ng-href="/#!/skola/f-5">Upp till årskurs 5</a></li>
+            <li ng-if="id != '6-9'"><a ng-href="/#!/skola/6-9">Årskurs 6 till 9</a></li>
+            <li ng-if="id != 'gymnasium'"><a ng-href="/#!/skola/gymnasium">Gymnasium</a></li>
             
-            <li><a href="/#!/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
-            <li><a href="/#!/forfattare/LagerlofS">Selma Lagerlöf-arkivet</a></li>
-            <li><a href="/#!/start">Litteraturbanken</a></li>
+            <li><a ng-href="/#!/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
+            <li><a ng-href="/#!/forfattare/LagerlofS">Selma Lagerlöf-arkivet</a></li>
+            <li><a ng-href="/#!/start">Litteraturbanken</a></li>
         </ul>
+        <div class="logos">
+            <a href="/#!/start"><img class="lb" src="/img/lb_full.svg"></a>
+            <a href="/#!/forfattare/LagerlofS"><img class="sla" src="/img/sla.svg"></a>
+        </div>
     </div>
 </div>
 
