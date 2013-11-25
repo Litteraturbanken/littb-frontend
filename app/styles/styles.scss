@@ -1535,7 +1535,6 @@ grundform-clean {
             font-size : 0.8em;  
         }
         .logo_link {
-            top: 0;
             cursor: pointer;
         }
         .logos {
@@ -1568,7 +1567,7 @@ grundform-clean {
             z-index : -1; 
             width : 600px;
             margin : 0;
-
+            margin-top: 31px;
         }
 
         .img_circle {
@@ -1591,7 +1590,7 @@ grundform-clean {
             left: 450px;
             opacity : 1;
         }
-        h1, p:first-of-type, p:nth-of-type(2) {
+        h1, p {
             max-width : 400px;
         }
     }
@@ -1749,7 +1748,7 @@ only screen and (max-width: 760px),
             }
         }
         
-        td:before { 
+        td:before {  
             /* Now like a table header */
             position: absolute;
             /* Top/left values mimic padding */
