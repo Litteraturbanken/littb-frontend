@@ -1,11 +1,14 @@
 littb = angular.module('littbApp')
 
-getFileName = ($scope, $routeParams) ->
+filenameFunc = ($scope, $routeParams) ->
     $scope.docurl = $routeParams.docurl
 
+getFileName = ["$scope", "$routeParams", filenameFunc]
+
+
 getStudentCtrl = (id) ->
-    ($scope, $routeParams) ->
-        getFileName($scope, $routeParams)
+    ["$scope", "$routeParams", ($scope, $routeParams) ->
+        filenameFunc($scope, $routeParams)
         $scope.id = id
         sfx = {
             "f-5" : "F-5"
@@ -15,7 +18,6 @@ getStudentCtrl = (id) ->
         $scope.defaultUrl = "Valkommen#{sfx}.html"
 
         
-        c.log "id", id
         works =  [
             {
                 label : "Drottningar i Kongahälla", 
@@ -56,6 +58,8 @@ getStudentCtrl = (id) ->
 
         ]
 
+    
+
         works = _.filter works, (obj) ->
             unless obj.if then return true
             return id in obj.if
@@ -80,6 +84,8 @@ getStudentCtrl = (id) ->
 
 
         ]
+
+    ]
 
 
 

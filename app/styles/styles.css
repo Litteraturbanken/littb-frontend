@@ -1,6 +1,7 @@
 @charset "UTF-8";
 
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -10,12 +11,16 @@
     font-family: \0000323;
   }
 }
+=======
+/* line 27, styles.scss */
+>>>>>>> fixed gruntfile
 
 * {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -25,11 +30,15 @@
     font-family: \0000327;
   }
 }
+=======
+/* line 31, styles.scss */
+>>>>>>> fixed gruntfile
 
 .txt {
   width: 500px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -39,11 +48,15 @@
     font-family: \0000333;
   }
 }
+=======
+/* line 37, styles.scss */
+>>>>>>> fixed gruntfile
 
 .tooltip {
   font-size: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -56,11 +69,15 @@
     font-family: \0000340;
   }
 }
+=======
+/* line 40, styles.scss */
+>>>>>>> fixed gruntfile
 
 .fixed {
   position: fixed;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -71,6 +88,9 @@
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 45, styles.scss */
+>>>>>>> fixed gruntfile
 
 body {
   font-size: 12px;
@@ -86,6 +106,7 @@ body {
   height: 100%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -103,11 +124,15 @@ body {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 55, styles.scss */
+>>>>>>> fixed gruntfile
 
 body > * {
   white-space: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -125,6 +150,9 @@ body > * {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 60, styles.scss */
+>>>>>>> fixed gruntfile
 
 body.ready {
   opacity: 1;
@@ -132,6 +160,7 @@ body.ready {
   transition: opacity 100ms;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -168,11 +197,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 69, styles.scss */
+>>>>>>> fixed gruntfile
 
 .font-small {
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -190,11 +223,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 72, styles.scss */
+>>>>>>> fixed gruntfile
 
 .sans {
   font-family: "Helvetica", "Arial", sans-serif;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -212,11 +249,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 76, styles.scss */
+>>>>>>> fixed gruntfile
 
 .bold {
   font-weight: bold;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -248,6 +289,9 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 80, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor {
   width: 120px;
@@ -260,6 +304,7 @@ h6 {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -277,11 +322,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 84, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor > * {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -299,11 +348,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 87, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .dict_links {
   margin-bottom: 0.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -321,11 +374,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 91, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search .input_container {
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -343,6 +400,9 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 93, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search .input_container input {
   font-family: "Helvetica", "Arial", sans-serif;
@@ -363,6 +423,7 @@ h6 {
   letter-spacing: 0.5px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -384,12 +445,16 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 98, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search .input_container input :-moz-placeholder {
   /* Firefox 18- */
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -411,12 +476,16 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 102, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search .input_container input ::-moz-placeholder {
   /* Firefox 19+ */
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -438,11 +507,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 106, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search .input_container input :-ms-input-placeholder {
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -483,6 +556,9 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 110, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search .so_spinner {
   display: none;
@@ -491,6 +567,7 @@ h6 {
   right: 13px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -512,11 +589,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 116, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search.searching .so_spinner {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -538,12 +619,16 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 119, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search label {
   display: block;
   font-size: .9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -565,11 +650,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 123, styles.scss */
+>>>>>>> fixed gruntfile
 
 #leftCorridor .word_search input {
   width: 117px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -591,11 +680,15 @@ h6 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 132, styles.scss */
+>>>>>>> fixed gruntfile
 
 a[ng-click] {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -617,11 +710,15 @@ a[ng-click] {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 135, styles.scss */
+>>>>>>> fixed gruntfile
 
 p a {
   border-bottom: thin dotted #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -643,6 +740,9 @@ p a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 139, styles.scss */
+>>>>>>> fixed gruntfile
 
 hr {
   border: none;
@@ -651,6 +751,7 @@ hr {
   margin-bottom: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -669,6 +770,9 @@ hr {
     font-family: \00003144;
   }
 }
+=======
+/* line 144, styles.scss */
+>>>>>>> fixed gruntfile
 
 h1 {
   font-size: 22px;
@@ -726,6 +830,7 @@ h3 {
   height: 1.3em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -751,12 +856,16 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 150, styles.scss */
+>>>>>>> fixed gruntfile
 
 .search_dict .glass {
   position: relative;
   z-index: 10;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -782,6 +891,9 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 154, styles.scss */
+>>>>>>> fixed gruntfile
 
 .search_dict .shadow {
   position: relative;
@@ -793,6 +905,7 @@ h3 {
   opacity: 0.7;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -818,6 +931,9 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 163, styles.scss */
+>>>>>>> fixed gruntfile
 
 .search_dict .circle {
   position: relative;
@@ -831,6 +947,7 @@ h3 {
   opacity: 0.7;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -856,11 +973,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 181, styles.scss */
+>>>>>>> fixed gruntfile
 
 [submit-btn] {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -886,11 +1007,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 183, styles.scss */
+>>>>>>> fixed gruntfile
 
 [submit-btn][disabled=disabled] {
   opacity: 0.5;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -916,11 +1041,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 187, styles.scss */
+>>>>>>> fixed gruntfile
 
 #toolkit {
   line-height: 15px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -946,6 +1075,9 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 189, styles.scss */
+>>>>>>> fixed gruntfile
 
 #toolkit hr {
   border-top: 1px solid grey;
@@ -953,6 +1085,7 @@ h3 {
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -978,11 +1111,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 194, styles.scss */
+>>>>>>> fixed gruntfile
 
 #toolkit input {
   max-width: 100%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1026,11 +1163,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 197, styles.scss */
+>>>>>>> fixed gruntfile
 
 #toolkit p {
   font-size: smaller;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1056,11 +1197,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 207, styles.scss */
+>>>>>>> fixed gruntfile
 
 #controls > * {
   vertical-align: top;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1086,11 +1231,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 213, styles.scss */
+>>>>>>> fixed gruntfile
 
 .contenttable {
   min-width: 512px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1116,11 +1265,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 215, styles.scss */
+>>>>>>> fixed gruntfile
 
 .contenttable tbody:empty:after {
   content: "Din sökning gav inga träffar.";
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1146,12 +1299,16 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 218, styles.scss */
+>>>>>>> fixed gruntfile
 
 .contenttable td:first-child {
   position: relative;
   vertical-align: bottom;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1177,6 +1334,9 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 221, styles.scss */
+>>>>>>> fixed gruntfile
 
 .contenttable td:first-child > *:first-child {
   background-color: white;
@@ -1185,6 +1345,7 @@ h3 {
   z-index: 10;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1210,6 +1371,9 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 227, styles.scss */
+>>>>>>> fixed gruntfile
 
 .contenttable td:first-child > .dots {
   position: relative;
@@ -1218,6 +1382,7 @@ h3 {
   top: -5px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1243,6 +1408,9 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 235, styles.scss */
+>>>>>>> fixed gruntfile
 
 .contenttable td {
   max-width: 300px;
@@ -1251,6 +1419,7 @@ h3 {
   vertical-align: top;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1276,12 +1445,16 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 244, styles.scss */
+>>>>>>> fixed gruntfile
 
 .contenttable th {
   padding: 5px;
   text-align: left;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1307,11 +1480,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 248, styles.scss */
+>>>>>>> fixed gruntfile
 
 .contenttable .title {
   font-style: italic;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1337,11 +1514,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 258, styles.scss */
+>>>>>>> fixed gruntfile
 
 .letters {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1367,6 +1548,9 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 260, styles.scss */
+>>>>>>> fixed gruntfile
 
 .letters td {
   font-weight: bold;
@@ -1377,6 +1561,7 @@ h3 {
   width: 20px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1402,12 +1587,16 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 269, styles.scss */
+>>>>>>> fixed gruntfile
 
 .letters td.disabled {
   font-weight: normal !important;
   cursor: default !important;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1433,11 +1622,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 277, styles.scss */
+>>>>>>> fixed gruntfile
 
 .letters td.selected {
   color: #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1463,11 +1656,15 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 280, styles.scss */
+>>>>>>> fixed gruntfile
 
 .letters td:first-child {
   padding-left: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1493,12 +1690,16 @@ h3 {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 286, styles.scss */
+>>>>>>> fixed gruntfile
 
 a {
   color: black;
   text-decoration: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1524,12 +1725,16 @@ a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 290, styles.scss */
+>>>>>>> fixed gruntfile
 
 a:hover {
   color: #990000;
   text-decoration: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1555,12 +1760,16 @@ a:hover {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 294, styles.scss */
+>>>>>>> fixed gruntfile
 
 ul {
   padding: 0;
   margin: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1586,11 +1795,15 @@ ul {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 298, styles.scss */
+>>>>>>> fixed gruntfile
 
 li {
   list-style: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1616,12 +1829,16 @@ li {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 302, styles.scss */
+>>>>>>> fixed gruntfile
 
 .mainnav {
   vertical-align: top;
   line-height: 19px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1647,6 +1864,9 @@ li {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 306, styles.scss */
+>>>>>>> fixed gruntfile
 
 #mainview {
   display: -moz-inline-stack;
@@ -1658,6 +1878,7 @@ li {
   width: 512px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1683,11 +1904,15 @@ li {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 312, styles.scss */
+>>>>>>> fixed gruntfile
 
 label {
   display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1717,6 +1942,9 @@ label {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 322, styles.scss */
+>>>>>>> fixed gruntfile
 
 #logo {
   height: 26px;
@@ -1725,6 +1953,7 @@ label {
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1754,6 +1983,9 @@ label {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 332, styles.scss */
+>>>>>>> fixed gruntfile
 
 body > .header {
   margin-bottom: 1.5em;
@@ -1761,6 +1993,7 @@ body > .header {
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1790,6 +2023,9 @@ body > .header {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 337, styles.scss */
+>>>>>>> fixed gruntfile
 
 body > .header > a {
   display: -moz-inline-stack;
@@ -1801,6 +2037,7 @@ body > .header > a {
   width: 28%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1830,6 +2067,9 @@ body > .header > a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 341, styles.scss */
+>>>>>>> fixed gruntfile
 
 body > .header .breadcrumb {
   display: -moz-inline-stack;
@@ -1848,6 +2088,7 @@ body > .header .breadcrumb {
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1862,7 +2103,11 @@ body > .header .breadcrumb {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 356, styles.scss */
+>>>>>>> fixed gruntfile
 
+<<<<<<< HEAD
 body > .header .breadcrumb li {
   display: -moz-inline-stack;
   display: inline-block;
@@ -1930,10 +2175,16 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 
+=======
+>>>>>>> fixed gruntfile
 .start_menu {
   display: none;
 }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> fixed gruntfile
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1963,6 +2214,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 367, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start .header #logo {
   height: 57px;
@@ -1971,6 +2225,7 @@ body > .header .breadcrumb > li:last-of-type a {
   cursor: default;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2000,12 +2255,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 371, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start .header a {
   width: 59%;
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2035,6 +2294,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 375, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start .header hr {
   width: 53%;
@@ -2049,6 +2311,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-bottom: 1px solid grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2078,6 +2341,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 382, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start .header .start_menu {
   width: 46%;
@@ -2091,6 +2357,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-size: 0.9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2120,6 +2387,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 387, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start .header .start_menu li {
   display: -moz-inline-stack;
@@ -2130,6 +2400,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2159,6 +2430,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 390, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start .header .start_menu li:not(:first-child) a:before {
   content: "•";
@@ -2170,6 +2444,7 @@ body > .header .breadcrumb > li:last-of-type a {
   left: -1px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2199,11 +2474,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 402, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start .breadcrumb {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2233,12 +2512,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 405, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start #toolkit {
   margin-top: 15em;
   font-size: 0.9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2268,12 +2551,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 408, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start #toolkit input[type=text] {
   font-size: 1.1em;
   width: 90px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2303,11 +2590,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 412, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-start #toolkit form {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2356,11 +2647,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 419, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview {
   width: 400px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2390,11 +2685,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 421, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .header {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2424,12 +2723,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 424, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .form_head {
   margin-bottom: 2em;
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2459,11 +2762,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 427, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .form_head > div {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2493,6 +2800,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 431, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview label {
   width: 70px;
@@ -2504,6 +2814,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2533,11 +2844,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 435, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .contactform {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2567,12 +2882,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 437, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .contactform input[type=text],
 .page-contactForm #mainview .contactform input[type=email] {
   width: 60%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2602,11 +2921,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 441, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .contactform .msg_box .error_msg {
   float: left;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2636,12 +2959,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 444, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .contactform .msg_box textarea {
   width: 390px;
   height: 234px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2671,12 +2998,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 448, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .contactform .msg_box .submit_btn {
   margin-top: 1em;
   float: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2706,11 +3037,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 454, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .error_msg {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2740,11 +3075,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 458, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .ng-dirty.ng-invalid:not(:focus) + div.error_msg {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2774,11 +3113,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 461, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .ng-dirty.ng-invalid:not(:focus) + span.error_msg {
   display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2808,11 +3151,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 468, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .lowersection p {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2842,11 +3189,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 474, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-contactForm #mainview .subscribeform input[type=email] {
   width: 55%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2876,11 +3227,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 483, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-stats #mainview > div > * {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2910,11 +3265,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 486, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-stats #mainview ul li {
   counter-increment: listcounter;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2944,11 +3303,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 488, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-stats #mainview ul li a:before {
   content: counter(listcounter, decimal) ". ";
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2978,6 +3341,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 493, styles.scss */
+>>>>>>> fixed gruntfile
 
 .preloader {
   visibility: hidden;
@@ -2985,6 +3351,7 @@ body > .header .breadcrumb > li:last-of-type a {
   text-align: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3014,11 +3381,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 498, styles.scss */
+>>>>>>> fixed gruntfile
 
 .searching .preloader {
   visibility: visible;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3048,11 +3419,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 503, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview {
   width: 512px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3082,11 +3457,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 505, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .searching .results {
   opacity: 0.3;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3134,12 +3513,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 509, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .submit_btn {
   float: right;
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3169,12 +3552,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 513, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .input {
   width: 432px;
   vertical-align: sub;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3204,11 +3591,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 517, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .header {
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3238,6 +3629,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 521, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .header .open_toggle {
   position: absolute;
@@ -3247,6 +3641,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-size: smaller;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3276,11 +3671,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 530, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .n_pages {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3310,6 +3709,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 533, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .extended {
   margin-top: 1em;
@@ -3317,6 +3719,7 @@ body > .header .breadcrumb > li:last-of-type a {
   padding: 10px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3346,11 +3749,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 537, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .extended h3 {
   margin: 0.3em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3380,6 +3787,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 541, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .extended .columns > div {
   width: 49%;
@@ -3391,6 +3801,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3420,11 +3831,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 545, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .extended .columns > div label {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3454,11 +3869,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 549, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .extended .columns #title_select {
   width: 245px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3488,11 +3907,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 553, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .extended .chks {
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3522,11 +3945,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 555, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview .extended .chks input {
   margin-left: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3574,11 +4001,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 560, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview table {
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3608,11 +4039,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 562, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview table td {
   padding-right: 2px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3642,11 +4077,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 565, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview table tr.is_faksimil * {
   color: grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3676,11 +4115,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 568, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview table td.num {
   color: grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3710,6 +4153,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 571, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview table td.title {
   max-width: 106px;
@@ -3718,6 +4164,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-style: italic;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3747,11 +4194,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 577, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #mainview table td.left_context {
   text-align: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3781,11 +4232,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 582, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #toolkit {
   font-size: .9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3815,12 +4270,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 584, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #toolkit .littb_pager {
   margin-top: 1em;
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3850,11 +4309,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 587, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #toolkit .littb_pager .input_page {
   width: 60px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3884,11 +4347,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 590, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #toolkit .littb_pager .ctrl {
   margin: 10px 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3918,11 +4385,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 592, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #toolkit .littb_pager .ctrl > * {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3952,11 +4423,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 598, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-search #title_select {
   max-width: 247px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3986,12 +4461,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 604, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview {
   position: relative;
   line-height: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4143,6 +4622,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 610, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview .faksimilMarkee {
   background-color: #990000;
@@ -4176,6 +4658,7 @@ body > .header .breadcrumb > li:last-of-type a {
   transform: rotate(1deg);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4204,11 +4687,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 615, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview img {
   max-width: inherit;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4238,11 +4725,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 619, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview .state-parallel {
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4272,6 +4763,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 621, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview .state-parallel .etext,
 .page-reading #mainview .state-parallel .faksimil {
@@ -4283,6 +4777,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4312,12 +4807,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 624, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview .state-parallel .etext {
   white-space: normal;
   margin-right: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4347,6 +4846,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 630, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview .etext {
   white-space: nowrap;
@@ -4355,6 +4857,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-size: 10pt;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4384,12 +4887,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 638, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview .searching .etext,
 .page-reading #mainview .searching .faksimil {
   opacity: 0.5;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4419,11 +4926,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 641, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #mainview .searching .faksimilMarkee {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4453,11 +4964,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 648, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit > * {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4487,11 +5002,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 651, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit > div {
   margin: 1em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4521,12 +5040,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 654, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit .title,
 .page-reading #toolkit .author {
   min-height: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4556,11 +5079,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 657, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit .title {
   font-style: italic;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4590,12 +5117,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 660, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pageinput {
   width: 50px;
   margin-left: 5px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4625,6 +5156,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 665, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit #search_nav .box {
   background-image: url(/bilder/Soknavigering.png);
@@ -4634,6 +5168,7 @@ body > .header .breadcrumb > li:last-of-type a {
   padding-top: 0.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4663,6 +5198,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 672, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit #search_nav .box .text {
   float: left;
@@ -4672,6 +5210,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-left: 30px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4701,11 +5240,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 680, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit #search_nav .box .ctrls {
   float: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4735,11 +5278,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 682, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit #search_nav .box .ctrls img {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4769,6 +5316,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 685, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit #search_nav .box .ctrls .close_btn {
   position: relative;
@@ -4776,6 +5326,7 @@ body > .header .breadcrumb > li:last-of-type a {
   float: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4805,12 +5356,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 690, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit #search_nav .box .ctrls .arrows {
   position: relative;
   top: 18px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4840,11 +5395,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 698, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pager_ctrls {
   margin-bottom: 0.8em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4874,11 +5433,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 710, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pager_ctrls a {
   margin: 0 3px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4908,6 +5471,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 714, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pager_ctrls a:first-of-type,
 .page-reading #toolkit .pager_ctrls a:first-of-type * {
@@ -4915,6 +5481,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-left: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4944,12 +5511,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 719, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pager_ctrls span.triangle {
   display: inline-block;
   vertical-align: top;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4979,6 +5550,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 721, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pager_ctrls span.triangle.left {
   width: 0;
@@ -4988,6 +5562,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-right: 0.9em solid #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5333,11 +5908,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 730, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading .work_parts li .tooltip {
   white-space: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5367,12 +5946,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 735, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading .partnav {
   margin-top: 1em;
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5402,12 +5985,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 737, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading .partnav .arrow_icon {
   color: #990000;
   font-size: 1.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5437,6 +6024,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 741, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading .partnav .triangle {
   width: 0px;
@@ -5450,6 +6040,7 @@ body > .header .breadcrumb > li:last-of-type a {
   bottom: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5479,6 +6070,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 756, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading .partnav .part_menu {
   background-color: #990000;
@@ -5493,6 +6087,7 @@ body > .header .breadcrumb > li:last-of-type a {
   overflow-y: auto;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5522,6 +6117,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 767, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading .partnav .part_menu li {
   color: white;
@@ -5531,6 +6129,7 @@ body > .header .breadcrumb > li:last-of-type a {
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5560,11 +6159,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 774, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-reading .partnav .part_menu a {
   color: white;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5594,11 +6197,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 783, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .searching > div:not(.preloader) {
   visibility: hidden;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5628,12 +6235,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 787, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .header_left {
   float: left;
   width: 360px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5663,12 +6274,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 791, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .header_right {
   float: right;
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5698,11 +6313,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 795, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .visible .cover {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5732,6 +6351,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 798, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .large_img {
   opacity: 0;
@@ -5739,6 +6361,7 @@ body > .header .breadcrumb > li:last-of-type a {
   transition: opacity 500ms;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5768,6 +6391,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 799, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .large_img.visible {
   opacity: 1;
@@ -5775,6 +6401,7 @@ body > .header .breadcrumb > li:last-of-type a {
   transition: opacity 500ms;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5804,6 +6431,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 805, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .large_img .cover {
   display: none;
@@ -5815,6 +6445,7 @@ body > .header .breadcrumb > li:last-of-type a {
   background: rgba(255, 255, 255, 0.6);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5844,6 +6475,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 814, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .large_img img {
   display: block;
@@ -5852,6 +6486,7 @@ body > .header .breadcrumb > li:last-of-type a {
   z-index: 1;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5881,12 +6516,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 821, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview div,
 .page-sourceInfo #mainview p {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5916,11 +6555,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 824, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview p {
   max-width: 350px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5950,11 +6593,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 827, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .mediatypes {
   margin-bottom: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5984,12 +6631,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 831, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview h3 {
   margin: 0;
   line-height: inherit;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6019,11 +6670,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 834, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview h3.author {
   font-variant: small-caps;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6053,12 +6708,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 837, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview h3.title {
   margin-bottom: 2em;
   max-width: 400px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6088,11 +6747,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 842, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .mediatype {
   font-variant: small-caps;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6122,11 +6785,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 845, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .provenance {
   margin: 2em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6156,6 +6823,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 847, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .provenance * {
   display: -moz-inline-stack;
@@ -6166,6 +6836,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6195,11 +6866,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 850, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .provenance img {
   margin-right: 10px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6229,11 +6904,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 853, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .provenance p {
   width: 250px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6263,11 +6942,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 857, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .toggle {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6297,11 +6980,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 861, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-sourceInfo #mainview .errata_table td {
   padding-right: 3em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6331,11 +7018,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 871, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #mainview .author {
   min-height: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6365,11 +7056,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 874, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #mainview p {
   max-width: 400px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6399,11 +7094,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 878, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #mainview .contenttable {
   margin-top: 3em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6433,11 +7132,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 881, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #mainview .contenttable td {
   text-align: left;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6467,12 +7170,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 884, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #mainview .contenttable td:first-child {
   font-style: italic;
   width: 100%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6502,12 +7209,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 889, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #mainview .contenttable td:nth-child(2) {
   vertical-align: top;
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6537,12 +7248,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 894, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #mainview .author_img {
   margin-top: 3em;
   text-align: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6572,11 +7287,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 901, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #toolkit .author {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6606,11 +7325,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 904, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #toolkit .topnav {
   margin-top: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6640,11 +7363,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 906, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorInfo #toolkit .topnav li {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6674,11 +7401,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 915, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorList .contenttable {
   margin-top: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6708,11 +7439,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 917, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-authorList .contenttable td {
   max-width: 180px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6742,6 +7477,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 926, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-titleList #mainview .submit_btn {
   vertical-align: bottom;
@@ -6749,6 +7487,7 @@ body > .header .breadcrumb > li:last-of-type a {
   top: 1px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6778,11 +7517,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 931, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-titleList #mainview .filter_input {
   margin-top: 0.4em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6812,11 +7555,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 934, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-titleList #mainview .contenttable {
   margin-top: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6846,11 +7593,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 937, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-titleList #mainview th {
   padding-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6880,11 +7631,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 940, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-titleList #mainview td {
   max-width: 160px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6914,11 +7669,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 950, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo #mainview > * {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6948,11 +7707,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 953, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo #mainview li {
   margin-bottom: 0.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6982,11 +7745,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 957, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo #mainview .search {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7016,12 +7783,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 959, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo #mainview .search input {
   width: 300px;
   margin-right: 2px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7051,12 +7822,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 967, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo #toolkit .num_hits {
   margin-bottom: 1em;
   height: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7086,12 +7861,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 974, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo .results > div {
   margin-bottom: 2em;
   padding: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7121,11 +7900,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 977, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo .results > div.even {
   background-color: #E3E3E3;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7155,6 +7938,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 981, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo .results h4 {
   text-transform: uppercase;
@@ -7162,6 +7948,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-weight: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7191,6 +7978,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 987, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-biblinfo .results .col {
   display: -moz-inline-stack;
@@ -7202,6 +7992,7 @@ body > .header .breadcrumb > li:last-of-type a {
   width: 49%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7231,12 +8022,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 996, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-epubList #mainview .preloader {
   text-align: left;
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7266,11 +8061,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1000, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-epubList #mainview .searching .contenttable {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7300,11 +8099,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1003, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-epubList #mainview input.filter {
   margin-left: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7334,11 +8137,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1007, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-epubList #mainview > * {
   margin: 1em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7368,11 +8175,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1011, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-epubList #mainview table td:first-child {
   max-width: 200px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7402,11 +8213,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1018, styles.scss */
+>>>>>>> fixed gruntfile
 
 .page-help #toolkit {
   font-size: 0.9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7454,6 +8269,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1026, styles.scss */
+>>>>>>> fixed gruntfile
 
 .triangle {
   position: relative;
@@ -7461,6 +8279,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-right: 3px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7494,11 +8313,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1030, styles.scss */
+>>>>>>> fixed gruntfile
 
 .triangle.disabled {
   cursor: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7532,6 +8355,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1033, styles.scss */
+>>>>>>> fixed gruntfile
 
 .triangle.up {
   top: -14px;
@@ -7542,6 +8368,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-bottom: 10px solid #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7575,6 +8402,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1037, styles.scss */
+>>>>>>> fixed gruntfile
 
 .triangle.up.disabled {
   width: 0;
@@ -7584,6 +8414,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-bottom: 10px solid grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7617,6 +8448,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1041, styles.scss */
+>>>>>>> fixed gruntfile
 
 .triangle.down {
   top: 10px;
@@ -7627,6 +8461,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-top: 10px solid #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7660,6 +8495,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1045, styles.scss */
+>>>>>>> fixed gruntfile
 
 .triangle.down.disabled {
   width: 0;
@@ -7669,6 +8507,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-top: 10px solid grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7700,11 +8539,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1050, styles.scss */
+>>>>>>> fixed gruntfile
 
 .markee {
   background-color: pink;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7732,11 +8575,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1054, styles.scss */
+>>>>>>> fixed gruntfile
 
 .dots_blink {
   text-decoration: blink;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7770,11 +8617,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1056, styles.scss */
+>>>>>>> fixed gruntfile
 
 .dots_blink:after {
   content: "...";
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7804,6 +8655,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1061, styles.scss */
+>>>>>>> fixed gruntfile
 
 .gratis-ebok {
   font-size: 1em;
@@ -7812,6 +8666,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7845,11 +8700,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1069, styles.scss */
+>>>>>>> fixed gruntfile
 
 grundform-clean {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7905,11 +8764,15 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1073, styles.scss */
+>>>>>>> fixed gruntfile
 
 .so_modal {
   padding: 1em 1em 1em 1.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7943,11 +8806,15 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1075, styles.scss */
+>>>>>>> fixed gruntfile
 
 .so_modal .modal-header {
   padding: 1em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7981,6 +8848,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1077, styles.scss */
+>>>>>>> fixed gruntfile
 
 .so_modal .modal-header > h4 {
   display: -moz-inline-stack;
@@ -7992,6 +8862,7 @@ grundform-clean {
   margin: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8025,6 +8896,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1082, styles.scss */
+>>>>>>> fixed gruntfile
 
 .so_modal .modal-footer {
   padding-bottom: 7px;
@@ -8036,6 +8910,7 @@ grundform-clean {
   border-bottom-right-radius: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8069,6 +8944,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1089, styles.scss */
+>>>>>>> fixed gruntfile
 
 .so_modal .close-x {
   color: #990000;
@@ -8078,6 +8956,7 @@ grundform-clean {
   font-size: 1.3em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8111,6 +8990,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1097, styles.scss */
+>>>>>>> fixed gruntfile
 
 ._so_article {
   padding-left: 1.5em;
@@ -8124,6 +9006,7 @@ grundform-clean {
   user-select: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8157,10 +9040,14 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1106, styles.scss */
+>>>>>>> fixed gruntfile
 
 ._so_article hvord {
   cursor: pointer;
   border-bottom: thin dotted #990000;
+<<<<<<< HEAD
 }
 
 @media -sass-debug-info {
@@ -8195,7 +9082,11 @@ grundform-clean {
 >>>>>>> fiddled around with the school
 >>>>>>> fiddled around with the school
   }
+=======
+>>>>>>> fixed gruntfile
 }
+
+/* line 1113, styles.scss */
 
 ._so_article sentens {
   margin-top: 1em;
@@ -8208,6 +9099,7 @@ grundform-clean {
   font-size: small;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8241,6 +9133,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1123, styles.scss */
+>>>>>>> fixed gruntfile
 
 ._so_article stilruta {
   display: block;
@@ -8251,6 +9146,7 @@ grundform-clean {
   line-height: 1.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8284,11 +9180,15 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1134, styles.scss */
+>>>>>>> fixed gruntfile
 
 .nav_footer {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8322,6 +9222,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1140, styles.scss */
+>>>>>>> fixed gruntfile
 
 .modal.fade .modal-dialog {
   -webkit-transform: translate(0, 0);
@@ -8329,6 +9232,7 @@ grundform-clean {
   transform: translate(0, 0);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8362,6 +9266,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1144, styles.scss */
+>>>>>>> fixed gruntfile
 
 .modal-dialog {
   border-radius: 0;
@@ -8370,6 +9277,7 @@ grundform-clean {
   margin-top: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8403,11 +9311,15 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1150, styles.scss */
+>>>>>>> fixed gruntfile
 
 .modal-footer {
   border-top: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8441,11 +9353,15 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1153, styles.scss */
+>>>>>>> fixed gruntfile
 
 .modal-header {
   font-size: 1.2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8483,12 +9399,16 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1156, styles.scss */
+>>>>>>> fixed gruntfile
 
 .modal.fade {
   -webkit-transition: opacity 0.1s linear;
   transition: opacity 0.1s linear;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8510,12 +9430,16 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1158, styles.scss */
+>>>>>>> fixed gruntfile
 
 .modal.fade.in {
   top: 5%;
 >>>>>>> fiddled around with the school
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8549,11 +9473,15 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1163, styles.scss */
+>>>>>>> fixed gruntfile
 
 .dropdown-menu {
   border-radius: 2px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8587,6 +9515,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1167, styles.scss */
+>>>>>>> fixed gruntfile
 
 .dropdown-menu .active > a,
 .dropdown-menu .active > a:hover {
@@ -8595,6 +9526,7 @@ grundform-clean {
   background-image: linear-gradient(#a9a9a9, #979797);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8628,6 +9560,9 @@ grundform-clean {
 >>>>>>> fiddled around with the school
   }
 }
+=======
+/* line 1175, styles.scss */
+>>>>>>> fixed gruntfile
 
 .alert_popup {
   position: fixed;
@@ -8640,6 +9575,7 @@ grundform-clean {
   background-image: linear-gradient(#990000, #750000);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8659,6 +9595,9 @@ grundform-clean {
   }
 >>>>>>> fiddled around with the school
 }
+=======
+/* line 1187, styles.scss */
+>>>>>>> fixed gruntfile
 
 .site-school {
   width: 100%;
@@ -8667,6 +9606,7 @@ grundform-clean {
   line-height: 1.4em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
 <<<<<<< HEAD
     filename {
@@ -8694,11 +9634,15 @@ grundform-clean {
     font-family: \000031193;
   }
 }
+=======
+/* line 1193, styles.scss */
+>>>>>>> fixed gruntfile
 
 .site-school .italics {
   font-style: italic;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8718,11 +9662,15 @@ grundform-clean {
   }
 >>>>>>> fiddled around with the school
 }
+=======
+/* line 1196, styles.scss */
+>>>>>>> fixed gruntfile
 
 .site-school #leftCorridor {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8742,11 +9690,15 @@ grundform-clean {
   }
 >>>>>>> fiddled around with the school
 }
+=======
+/* line 1199, styles.scss */
+>>>>>>> fixed gruntfile
 
 .site-school .header hr {
   border-color: lightgrey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8765,9 +9717,12 @@ grundform-clean {
     font-family: \000031202;
   }
 }
+=======
+/* line 1202, styles.scss */
+>>>>>>> fixed gruntfile
 
 .site-school .logo_link {
-  background: url("/img/school_logo.svg");
+  background: url("../img/school_logo.svg");
   height: 50px;
   width: 370px;
   margin-bottom: 0;
@@ -8781,6 +9736,7 @@ grundform-clean {
   top: 20px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8791,12 +9747,16 @@ grundform-clean {
   }
 >>>>>>> fiddled around with the school
 }
+=======
+/* line 1212, styles.scss */
+>>>>>>> fixed gruntfile
 
 .site-school > .header .breadcrumb {
   display: block;
   width: auto;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
 <<<<<<< HEAD
     filename {
@@ -8881,6 +9841,9 @@ grundform-clean {
     font-family: \000031219;
   }
 }
+=======
+/* line 1219, styles.scss */
+>>>>>>> fixed gruntfile
 
 .site-school #mainview .sidebar li {
   text-transform: uppercase;
@@ -8888,6 +9851,7 @@ grundform-clean {
 >>>>>>> fiddled around with the school
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8908,20 +9872,15 @@ grundform-clean {
     font-family: \000031224;
   }
 }
+=======
+/* line 1224, styles.scss */
+>>>>>>> fixed gruntfile
 
 .site-school #mainview {
   width: auto;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031227;
-  }
-}
+/* line 1227, styles.scss */
 
 .site-school p,
 .site-school h1,
@@ -8933,15 +9892,7 @@ grundform-clean {
   max-width: 500px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031230;
-  }
-}
+/* line 1230, styles.scss */
 
 .site-school #mainview:after {
   position: absolute;
@@ -8953,15 +9904,7 @@ grundform-clean {
   z-index: -1;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031240;
-  }
-}
+/* line 1240, styles.scss */
 
 .site-school .ulink,
 .site-school .firstterm,
@@ -8970,15 +9913,7 @@ grundform-clean {
   font-style: italic;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031247;
-  }
-}
+/* line 1247, styles.scss */
 
 .site-school .titlepage {
   font-weight: normal;
@@ -8986,15 +9921,7 @@ grundform-clean {
   font-size: 20px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031253;
-  }
-}
+/* line 1253, styles.scss */
 
 .site-school .content {
   display: -moz-inline-stack;
@@ -9005,58 +9932,26 @@ grundform-clean {
   *display: inline;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031254;
-  }
-}
+/* line 1254, styles.scss */
 
 .site-school .content h1 {
   text-transform: uppercase;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031258;
-  }
-}
+/* line 1258, styles.scss */
 
 .site-school .content ul li {
   list-style-type: disc;
   margin-left: 2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031263;
-  }
-}
+/* line 1263, styles.scss */
 
 .site-school .content .sect2 {
   margin-top: 2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031267;
-  }
-}
+/* line 1267, styles.scss */
 
 .site-school .sidebar {
   width: 170px;
@@ -9070,87 +9965,39 @@ grundform-clean {
   font-size: 11px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031273;
-  }
-}
+/* line 1273, styles.scss */
 
 .site-school .sidebar .top_menu {
   margin-top: 1.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031278;
-  }
-}
+/* line 1278, styles.scss */
 
 .site-school ul ul li {
   margin-left: 1em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031282;
-  }
-}
+/* line 1282, styles.scss */
 
 .site-school .lower_menu {
   margin-top: 6em;
   font-size: 0.8em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031285;
-  }
-}
+/* line 1285, styles.scss */
 
 .site-school .lower_menu ul {
   font-size: inherit;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031291;
-  }
-}
+/* line 1291, styles.scss */
 
 .site-school.page-teachers .logos,
 .site-school.page-students .logos {
   margin-top: 4em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031293;
-  }
-}
+/* line 1293, styles.scss */
 
 .site-school.page-teachers .logos > *,
 .site-school.page-students .logos > * {
@@ -9158,30 +10005,14 @@ grundform-clean {
   margin-top: 1em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031297;
-  }
-}
+/* line 1297, styles.scss */
 
 .site-school.page-teachers .logos .lb,
 .site-school.page-students .logos .lb {
   height: 33px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031300;
-  }
-}
+/* line 1300, styles.scss */
 
 .site-school.page-teachers .logos .sla,
 .site-school.page-students .logos .sla {
@@ -9189,101 +10020,45 @@ grundform-clean {
   margin-top: 7px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031310;
-  }
-}
+/* line 1310, styles.scss */
 
 .site-school.page-school ul {
   font-size: 0.8em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031313;
-  }
-}
+/* line 1313, styles.scss */
 
 .site-school.page-school .logo_link {
   top: 0;
   cursor: pointer;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031317;
-  }
-}
+/* line 1317, styles.scss */
 
 .site-school.page-school .logos {
   margin-top: 5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031319;
-  }
-}
+/* line 1319, styles.scss */
 
 .site-school.page-school .logos .lb {
   height: 40px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031322;
-  }
-}
+/* line 1322, styles.scss */
 
 .site-school.page-school .logos .amp {
   height: 16px;
   margin: 0 8px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031326;
-  }
-}
+/* line 1326, styles.scss */
 
 .site-school.page-school .logos .sla {
   height: 40px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031334;
-  }
-}
+/* line 1334, styles.scss */
 
 .site-school.page-school .teachers,
 .site-school.page-school .students {
@@ -9291,30 +10066,14 @@ grundform-clean {
   text-transform: uppercase;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031335;
-  }
-}
+/* line 1335, styles.scss */
 
 .site-school.page-school .teachers h2,
 .site-school.page-school .students h2 {
   color: #990000;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031342;
-  }
-}
+/* line 1342, styles.scss */
 
 .site-school.page-school .header hr {
   position: relative;
@@ -9323,77 +10082,37 @@ grundform-clean {
   margin: 0;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031350;
-  }
-}
+/* line 1350, styles.scss */
 
 .site-school.page-school .img_circle {
   float: right;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031354;
-  }
-}
+/* line 1354, styles.scss */
 
 .site-school.page-school .teachers {
   top: 220px;
   left: 550px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031358;
-  }
-}
+/* line 1358, styles.scss */
 
 .site-school.page-school .students {
   top: 420px;
   left: 600px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031363;
-  }
-}
+/* line 1363, styles.scss */
 
 .site-school.page-school #mainview:after {
-  background-image: url("/img/selma_circle.png");
+  background-image: url("../img/selma_circle.png");
   background-size: 700px;
   top: 50px;
   left: 450px;
   opacity: 1;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031370;
-  }
-}
+/* line 1370, styles.scss */
 
 .site-school.page-school h1,
 .site-school.page-school p:first-of-type,
@@ -9401,47 +10120,23 @@ grundform-clean {
   max-width: 400px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031375;
-  }
-}
+/* line 1375, styles.scss */
 
 .site-school.page-teachers .header hr {
   border-color: #999;
   border-width: 1px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031379;
-  }
-}
+/* line 1379, styles.scss */
 
 .site-school.page-teachers #mainview:after {
   position: absolute;
-  background-image: url("/img/lagerlof_portrait.jpg");
+  background-image: url("../img/lagerlof_portrait.jpg");
   top: -90px;
   left: -280px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031387;
-  }
-}
+/* line 1387, styles.scss */
 
 .site-school.page-teachers #mainview > div {
   display: -moz-inline-stack;
@@ -9452,51 +10147,28 @@ grundform-clean {
   *display: inline;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031390;
-  }
-}
+/* line 1390, styles.scss */
 
 .site-school.page-teachers #mainview .sidebar {
   margin-right: 80px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031399;
-  }
-}
+/* line 1399, styles.scss */
 
 .site-school.page-students .header hr {
   border-color: #999;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031406;
-  }
-}
+/* line 1406, styles.scss */
 
 .site-school.page-students #mainview:after {
-  background: url("/img/selma_young.jpg") no-repeat;
+  background: url("../img/selma_young.jpg") no-repeat;
   height: 1230px;
   width: 100%;
 }
 
 @media only screen and (max-width: 760px), (min-device-width: 768px) and (max-device-width: 1024px) {
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9511,6 +10183,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1430, styles.scss */
+>>>>>>> fixed gruntfile
 
   .modal {
     position: fixed;
@@ -9521,6 +10196,7 @@ grundform-clean {
     margin: 0;
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9546,6 +10222,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1483, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList p {
     max-width: 70%;
@@ -9553,6 +10232,7 @@ grundform-clean {
 
   /* Force table to not be like tables anymore */
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9570,6 +10250,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1490, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList .contenttable,
   .page-titleList .contenttable,
@@ -9579,6 +10262,7 @@ grundform-clean {
     /* Hide table headers (but not display: none;, for accessibility) */
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9596,6 +10280,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1498, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList .contenttable table,
   .page-epubList .contenttable thead,
@@ -9618,6 +10305,7 @@ grundform-clean {
     display: block;
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9634,6 +10322,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1501, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList .contenttable tr:first-child,
   .page-titleList .contenttable tr:first-child,
@@ -9641,6 +10332,7 @@ grundform-clean {
     display: none;
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9655,6 +10347,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1506, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList .contenttable thead tr,
   .page-titleList .contenttable thead tr,
@@ -9664,6 +10359,7 @@ grundform-clean {
     left: -9999px;
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9686,6 +10382,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1512, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList .contenttable tr:nth-of-type(odd),
   .page-titleList .contenttable tr:nth-of-type(odd),
@@ -9693,6 +10392,7 @@ grundform-clean {
     background-color: #EDEDED;
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9719,6 +10419,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1516, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList .contenttable td,
   .page-titleList .contenttable td,
@@ -9728,6 +10431,7 @@ grundform-clean {
     position: relative;
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9754,6 +10458,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1520, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList .contenttable td > *:first-child,
   .page-titleList .contenttable td > *:first-child,
@@ -9761,6 +10468,7 @@ grundform-clean {
     background: none;
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9787,6 +10495,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1523, styles.scss */
+>>>>>>> fixed gruntfile
 
   .page-epubList .contenttable td .dots,
   .page-titleList .contenttable td .dots,
@@ -9794,6 +10505,7 @@ grundform-clean {
     display: none;
   }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9820,6 +10532,9 @@ grundform-clean {
 >>>>>>> more work on school
     }
 }
+=======
+  /* line 1528, styles.scss */
+>>>>>>> fixed gruntfile
 
 >>>>>>> fiddled around with the school
   .page-epubList .contenttable td:before,
@@ -9837,59 +10552,27 @@ grundform-clean {
 <<<<<<< HEAD
 =======
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031544;
-    }
-}
+  /* line 1544, styles.scss */
 
   .site-school.page-school #mainview:after {
     display: none;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031547;
-    }
-}
+  /* line 1547, styles.scss */
 
   .site-school.page-school .teachers,
   .site-school.page-school .students {
     position: static;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031553;
-    }
-}
+  /* line 1553, styles.scss */
 
   .site-school .sidebar {
     margin-bottom: 2em;
     width: auto;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031556;
-    }
-}
+  /* line 1556, styles.scss */
 
   .site-school .sidebar .fixed {
     position: static;

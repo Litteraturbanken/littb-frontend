@@ -1424,7 +1424,7 @@ grundform-clean {
         border-color : lightgrey;
     }
     .logo_link {
-        background: url("/img/school_logo.svg");
+        background: url("../img/school_logo.svg");
         height : 50px;
         width: 370px;
         margin-bottom : 0;
@@ -1585,7 +1585,7 @@ grundform-clean {
         }
 
         #mainview:after {
-            background-image: url("/img/selma_circle.png");
+            background-image: url("../img/selma_circle.png");
             background-size : 700px;
             top: 50px;
             left: 450px;
@@ -1602,7 +1602,7 @@ grundform-clean {
         }
         #mainview:after {
             position: absolute;
-            background-image: url("/img/lagerlof_portrait.jpg");
+            background-image: url("../img/lagerlof_portrait.jpg");
             top: -90px;
             left: -280px;
 
@@ -1628,8 +1628,8 @@ grundform-clean {
 
 
         #mainview:after {
-            background : url("/img/selma_young.jpg") no-repeat;
-            // background: url("/img/selma_young.jpg") no-repeat center center; 
+            background : url("../img/selma_young.jpg") no-repeat;
+            // background: url("../img/selma_young.jpg") no-repeat center center; 
             height : 1230px;
             width : 100%;
             // overflow : visible;
