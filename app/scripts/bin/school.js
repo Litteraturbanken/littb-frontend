@@ -1,20 +1,13 @@
 (function() {
-  var filenameFunc, getFileName, getStudentCtrl, littb,
+  var getStudentCtrl, littb,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   littb = angular.module('littbApp');
-
-  filenameFunc = function($scope, $routeParams) {
-    return $scope.docurl = $routeParams.docurl;
-  };
-
-  getFileName = ["$scope", "$routeParams", filenameFunc];
 
   getStudentCtrl = function(id) {
     return [
       "$scope", "$routeParams", function($scope, $routeParams) {
         var sfx, works;
-        filenameFunc($scope, $routeParams);
         $scope.id = id;
         sfx = {
           "f-5": "F-5",
@@ -28,7 +21,7 @@
             url: "/#!/skola/" + id + "/Drottningar" + sfx + ".html"
           }, {
             label: "En herrgårdssägen",
-            url: "/#!/skola/" + id + "/HerrArne" + sfx + ".html",
+            url: "/#!/skola/" + id + "/EnHerrgardssagen" + sfx + ".html",
             "if": ["6-9", "gymnasium"]
           }, {
             label: "Herr Arnes penningar",
@@ -39,7 +32,7 @@
             url: "/#!/skola/" + id + "/Kejsarn" + sfx + ".html",
             "if": ["6-9", "gymnasium"]
           }, {
-            label: "Mårbacka",
+            label: "Mårbackasviten",
             url: "/#!/skola/" + id + "/Marbacka" + sfx + ".html",
             "if": ["f-5", "6-9"]
           }, {
@@ -97,13 +90,10 @@
     };
     whn("/skola", {
       title: "Skola",
-      templateUrl: "views/school/school.html",
-      controller: getFileName
+      templateUrl: "views/school/school.html"
     });
     whn(["/skola/larare/:docurl", "/skola/larare"], {
       title: "Lärare",
-      breadcrumb: ["För lärare"],
-      controller: getFileName,
       templateUrl: "views/school/teachers.html"
     });
     whn(["/skola/f-5/:docurl", "/skola/f-5"], {
@@ -131,17 +121,72 @@
     });
   });
 
-  littb.directive("scFile", function($routeParams, $http, util, backend) {
+  littb.controller("fileCtrl", function($scope, $routeParams, $anchorScroll, $q, $timeout) {
+    var def;
+    $scope.docurl = $routeParams.docurl;
+    def = $q.defer();
+    def.promise.then(function() {
+      return $timeout(function() {
+        return $anchorScroll();
+      }, 500);
+    });
+    return $scope.fileDef = def;
+  });
+
+  littb.directive("scFile", function($routeParams, $http, $compile, util, backend) {
     return {
-      template: "<div ng-bind-html-unsafe=\"doc\"></div>",
+      template: "<div link-fix></div>",
       replace: true,
       link: function($scope, elem, attr) {
+        $scope.setName = function(name) {
+          return $scope.currentName = name;
+        };
         return backend.getHtmlFile("/red/skola/" + attr.scFile || $routeParams.doc).success(function(data) {
-          var innerxmls;
+          var innerxmlStr, innerxmls, newElem;
           innerxmls = _.map($("body > div > :not(.titlepage)", data), util.getInnerXML);
-          $scope.doc = innerxmls.join("\n");
-          return $("[xmlns]", $scope.doc).attr("xmlns", null);
+          innerxmlStr = innerxmls.join("\n");
+          newElem = $compile(innerxmlStr)($scope);
+          elem.html(newElem);
+          return $scope.fileDef.resolve();
         });
+      }
+    };
+  });
+
+  littb.directive("sidebar", function() {
+    return {
+      restrict: "C",
+      link: function($scope, elem, attr) {
+        var h;
+        h = elem.prev().addClass("before_sidebar").height();
+        return elem.height(h);
+      }
+    };
+  });
+
+  littb.directive("activeStyle", function($routeParams, $timeout) {
+    return {
+      link: function($scope, elem, attr) {
+        var selected;
+        selected = elem.find("a[href$='html']").removeClass("selected").filter("[href$='" + $scope.docurl + "']").addClass("selected");
+        return $timeout(function() {
+          return $scope.setName(selected.text());
+        }, 0);
+      }
+    };
+  });
+
+  littb.directive("selectable", function($interpolate, $timeout) {
+    return {
+      link: function($scope, elem, attr) {
+        var href;
+        href = ($interpolate(elem.attr("ng-href")))($scope);
+        if (_.str.endsWith(href, $scope.docurl)) {
+          elem.addClass("selected");
+          return $timeout(function() {
+            return $scope.setName(($interpolate(elem.text()))($scope));
+          }, 0);
+        }
       }
     };
   });

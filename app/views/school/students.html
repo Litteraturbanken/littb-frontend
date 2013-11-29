@@ -1,32 +1,41 @@
-<div class="sidebar">
-    <div class="fixed">
-        <ul class="top_menu">
-            <li><a ng-href="/#!/skola/{{id}}">{{id}}</a></li>
-            <li ng-repeat="item in list">
-                <a ng-if="item.url" ng-href="{{item.url}}">{{item.label}}</a>
-                <span ng-if="!item.url">{{item.label}}</span>
-                <ul ng-if="item.sublist">
-                    <li ng-repeat="sub in item.sublist"><a ng-href="{{sub.url}}">{{sub.label}}</a>
-                </ul> 
-            </li>
-        </ul>
-        
-        <ul class="lower_menu">
-            <li ng-if="id != 'f-5'"><a ng-href="/#!/skola/f-5">Upp till årskurs 5</a></li>
-            <li ng-if="id != '6-9'"><a ng-href="/#!/skola/6-9">Årskurs 6 till 9</a></li>
-            <li ng-if="id != 'gymnasium'"><a ng-href="/#!/skola/gymnasium">Gymnasium</a></li>
+<div ng-controller="fileCtrl">
+    <breadcrumb>
+        <a href="/#!/skola">Skola</a>
+        <a href="/#!/skola/{{id}}">{{id}}</a>
+        <a>{{currentName}}</a>
+    </breadcrumb>
+    <div class="nav_sidebar">
+        <div affix>
+            <ul class="top_menu">
+                <li><a selectable ng-href="/#!/skola/{{id}}">{{id}}</a></li>
+                <li><a selectable ng-href="/#!/skola/{{id}}/LitteraturvetenskapligaBegrepp.html">Begrepp</a></li>
+    
+                <li ng-repeat="item in list">
+                    <a selectable ng-if="item.url" ng-href="{{item.url}}">{{item.label}}</a>
+                    <span ng-if="!item.url">{{item.label}}</span>
+                    <ul ng-if="item.sublist">
+                        <li ng-repeat="sub in item.sublist"><a selectable ng-href="{{sub.url}}">{{sub.label}}</a>
+                    </ul> 
+                </li>
+            </ul>
             
-            <li><a ng-href="/#!/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
-            <li><a ng-href="/#!/forfattare/LagerlofS">Selma Lagerlöf-arkivet</a></li>
-            <li><a ng-href="/#!/start">Litteraturbanken</a></li>
-        </ul>
-        <div class="logos">
-            <a href="/#!/start"><img class="lb" src="/img/lb_full.svg"></a>
-            <a href="/#!/forfattare/LagerlofS"><img class="sla" src="/img/sla.svg"></a>
+            <ul class="lower_menu">
+                <li ng-if="id != 'f-5'"><a ng-href="/#!/skola/f-5">Upp till årskurs 5</a></li>
+                <li ng-if="id != '6-9'"><a ng-href="/#!/skola/6-9">Årskurs 6 till 9</a></li>
+                <li ng-if="id != 'gymnasium'"><a ng-href="/#!/skola/gymnasium">Gymnasium</a></li>
+                
+                <li><a ng-href="/#!/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
+                <li><a ng-href="/#!/forfattare/LagerlofS">Selma Lagerlöf-arkivet</a></li>
+                <li><a ng-href="/#!/start">Litteraturbanken</a></li>
+            </ul>
+            <div class="logos">
+                <a href="/#!/start"><img class="lb" src="/img/lb_full.svg"></a>
+                <a href="/#!/forfattare/LagerlofS"><img class="sla" src="/img/sla.svg"></a>
+            </div>
         </div>
     </div>
-</div>
-
-<div class="content">
-    <p sc-file="{{docurl || defaultUrl}}"></p>
+    
+    <div class="content">
+        <p sc-file="{{docurl || defaultUrl}}"></p>
+    </div>
 </div>

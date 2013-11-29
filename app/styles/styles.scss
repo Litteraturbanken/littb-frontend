@@ -350,6 +350,7 @@ label {
 body > .header {
     margin-bottom : 1.5em;
     padding-bottom : 5px;
+    padding-right : 0.5em;
     position : relative;
     & > a {
         @include inline-block(bottom);
@@ -376,6 +377,7 @@ body > .header {
             color: grey;
         }
         box-shadow: none;
+
     }
 }
 .start_menu {
@@ -1410,11 +1412,43 @@ grundform-clean {
 
 .site-school {
     width : 100%;
-    padding : 50px;
+    // padding : 50px;
+    padding-left : 40px;
     font-size : 16px;
     line-height: 1.4em;
+    $column_width : 500px;
+    h2 {
+        margin-top : 2.5em;
+    }
+    h3 {
+        font-weight: bold;
+        margin-top : 2.5em;
+        font-size : 0.8em;
+        line-height : 0.5;
+    }
 
-    .italics {
+    blockquote {
+        font-size : 0.8em;
+        border-left : 1px grey dotted;
+        padding-left : 25px;
+        margin-left : 1em;
+
+        max-width : $column_width - 60px;
+    }
+
+    .before_sidebar {
+        @include inline-block(top);
+    }
+    .sidebar {
+        @include inline-block(top);
+
+        width: 210px;
+        margin-left: 8em;
+        font-size: 0.8em;
+
+    }
+
+    .italics, .italic {
         font-style: italic;
     }
     #leftCorridor {
@@ -1440,16 +1474,20 @@ grundform-clean {
         width : auto;
     }
 
-    #mainview .sidebar li {
+    #mainview .nav_sidebar li {
         text-transform: uppercase;
-        margin-bottom : 0.2em;
+        // margin-bottom : 0.2em;
+        line-height: 1.5em;
+    }
+    .nav_sidebar .selected {
+        color : $primarycolor;
     }
 
     #mainview {
         width : auto;
     }
     p, #{headers()} {
-        max-width: 500px;
+        max-width: $column_width;
     }
     #mainview:after {
         position: absolute;
@@ -1461,23 +1499,41 @@ grundform-clean {
         z-index: -1;
         // white-space: nowrap;
     }
-    .ulink, .firstterm, .glossterm {
+    .ulink {
+        // font-style: italic;
+    }
+    .firstterm, .glossterm {
         // font-variant: small-caps;
         font-size : 0.9em;
         // text-transform: capitalize;
         font-style: italic;
         
     }
+    
+    dt {
+        margin-top: 0.8em;
+        margin-bottom : 0.5em;
+        .glossterm {
+            font-style: normal;
+            font-weight: bold;       
+        }
+    }
+    dd {
+        margin-bottom : 1.5em;
+    }
+    dd p {
+        margin-top : 0;
+    }
     .titlepage {
         font-weight: normal;
-        font-style: italic;
+        // font-style: italic;
         font-size : 20px;
     }
 
     .content {
         h1 {
             // color : $primarycolor;
-            text-transform: uppercase;
+            // text-transform: uppercase;
         }
         ul li {
             list-style-type : disc;
@@ -1488,14 +1544,18 @@ grundform-clean {
             margin-top: 2em;
         }
     }
-    .sidebar {
-        width : 170px;
+    .nav_sidebar {
         @include inline-block(top);
 
+        width : 195px;
         margin-right : 60px;
-        font-size : 11px;
+        font-size : 12px;
         .top_menu {
             margin-top: 1.3em;
+        }
+
+        & > .affix {
+            top : 0;
         }
 
     }
@@ -1504,8 +1564,8 @@ grundform-clean {
     }
 
     .lower_menu {
-        margin-top : 6em;
-        font-size : 0.8em;
+        margin-top : 1em;
+        // font-size : 0.8em;
         ul {
             font-size : inherit;
         }
@@ -1550,9 +1610,11 @@ grundform-clean {
                 height : 40px;
             }
         }
-        p, #{headers()} {
-            // max-width: 400px;
-        }   
+        
+        .content {
+            min-height : 380px;
+        }
+        
         
         .teachers, .students {
             h2 {
@@ -1589,11 +1651,25 @@ grundform-clean {
             top: 50px;
             left: 450px;
             opacity : 1;
+            height : 710px;
         }
         h1, p {
-            max-width : 400px;
+            max-width : 380px;
         }
     }
+    &.page-teachers, &.page-students {
+        #mainview > div {
+            white-space : nowrap;
+            & > * {
+                white-space : normal;
+            }
+        }
+        .content {
+            margin-bottom : 5em;
+        }
+    }
+
+
     &.page-teachers  {
         .header hr {
             border-color : #999;
@@ -1604,13 +1680,14 @@ grundform-clean {
             background-image: url("../img/lagerlof_portrait.jpg");
             top: -90px;
             left: -280px;
+            height : 1200px;   
 
         }
         #mainview {
             & > div {
                 @include inline-block(top);
             }
-            .sidebar {
+            .nav_sidebar {
                 margin-right : 80px;
             }
             
@@ -1627,15 +1704,19 @@ grundform-clean {
 
 
         #mainview:after {
+            position: absolute;
             background : url("../img/selma_young.jpg") no-repeat;
             // background: url("../img/selma_young.jpg") no-repeat center center; 
             height : 1230px;
-            width : 100%;
+            top : -100px;
+            left : 0;
+            content : " ";
+            // width : 100%;
             // overflow : visible;
         }
         .content {
         }
-
+        
     }
 }
 
@@ -1762,8 +1843,19 @@ only screen and (max-width: 760px),
     }
 
     .site-school {
+        // p, #{headers()} {
+        //     max-width: 100%;
+        //     width: 100%;
+        // }
 
+        // .logo_link {
+        //     height : 30px;
+        // }
+        padding : 5%;
         &.page-school {
+            .header hr {
+                width : 100%;
+            }
             #mainview:after {
                 display : none;
             }
@@ -1771,15 +1863,45 @@ only screen and (max-width: 760px),
                 position : static;
                 
             }
+            h1, p {
+                width: 100%;
+                max-width : 100%;
+            }
         }
+
+        &.page-teachers, &.page-students {
+            #mainview > div {
+                white-space : normal;
+            }
+        }
+
         
-        .sidebar {
+        .nav_sidebar {
             margin-bottom : 2em;   
             width : auto;
-            .fixed {
+            .affix {
                 position : static;
             }
         }
+
+        .before_sidebar {
+            display : block;
+        }
+        .sidebar {
+            display : block;
+            background-color : lightgrey;
+            margin-left : 0;
+            width : 100%;
+            padding : 3%;
+            margin : 0 auto;
+            // margin-left : 5%;
+        }
+        // .sidebar:before {
+        //     content: "Not";
+        //     background-color : lightgrey;
+        //     font-variant: small-caps;
+        //     color : $primarycolor;
+        // }
     }    
 
 }

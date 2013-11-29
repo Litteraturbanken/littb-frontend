@@ -1,14 +1,11 @@
 littb = angular.module('littbApp')
 
-filenameFunc = ($scope, $routeParams) ->
-    $scope.docurl = $routeParams.docurl
-
-getFileName = ["$scope", "$routeParams", filenameFunc]
+    
 
 
 getStudentCtrl = (id) ->
     ["$scope", "$routeParams", ($scope, $routeParams) ->
-        filenameFunc($scope, $routeParams)
+        # filenameFunc($scope, $routeParams)
         $scope.id = id
         sfx = {
             "f-5" : "F-5"
@@ -25,7 +22,7 @@ getStudentCtrl = (id) ->
             }
             {
                 label : "En herrgårdssägen", 
-                url : "/#!/skola/#{id}/HerrArne#{sfx}.html"
+                url : "/#!/skola/#{id}/EnHerrgardssagen#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             }
             {
@@ -39,7 +36,7 @@ getStudentCtrl = (id) ->
                 if : ["6-9", "gymnasium"]
             }
             {
-                label : "Mårbacka", 
+                label : "Mårbackasviten", 
                 url : "/#!/skola/#{id}/Marbacka#{sfx}.html"
                 if : ["f-5", "6-9"]
             }
@@ -99,16 +96,23 @@ littb.config () ->
     whn "/skola",
         title : "Skola"
         templateUrl : "views/school/school.html"
-        controller : getFileName
+        # controller : getFileName
 
+    # whn "/skola/:page/LitteraturvetenskapligaBegrepp.html",
+    #     title : "Begrepp"
+    #     templateUrl
 
     whn ["/skola/larare/:docurl", "/skola/larare"],
         title : "Lärare"
-        breadcrumb : [
-            "För lärare"
-        ]
+        # breadcrumb : [
+        #     label : "skola"
+        #     url : "/#!/skola"
+        # ,
+        #     label : "För lärare"
+        #     url : "/#!/skola/larare"
+        # ]
 
-        controller : getFileName
+        # controller : getFileName
         templateUrl : "views/school/teachers.html"
     
     whn ["/skola/f-5/:docurl", "/skola/f-5"],
@@ -141,14 +145,63 @@ littb.config () ->
 
 
 
-littb.directive "scFile", ($routeParams, $http, util, backend) ->
-    template: """<div ng-bind-html-unsafe="doc"></div>"""
+littb.controller "fileCtrl", ($scope, $routeParams, $anchorScroll, $q, $timeout) ->
+    $scope.docurl = $routeParams.docurl
+    def = $q.defer()
+    def.promise.then () ->
+        $timeout(() ->
+            $anchorScroll()
+        , 500)
+        
+        
+    $scope.fileDef = def
+
+
+littb.directive "scFile", ($routeParams, $http, $compile, util, backend) ->
+    template: """<div link-fix></div>"""
     replace : true
     link : ($scope, elem, attr) ->
         # $scope.doc = $routeParams.doc
+        $scope.setName = (name) ->
+            $scope.currentName = name
         backend.getHtmlFile("/red/skola/" + attr.scFile or $routeParams.doc).success (data) ->
             innerxmls = _.map $("body > div > :not(.titlepage)", data), util.getInnerXML
-            $scope.doc = innerxmls.join("\n")
-            $("[xmlns]", $scope.doc).attr("xmlns", null)
+            innerxmlStr = innerxmls.join("\n")
+            # innerxmlStr = $("[xmlns]", innerxmlStr).attr("xmlns", null)
 
+            newElem = $compile(innerxmlStr)($scope)
+            elem.html newElem
+
+            $scope.fileDef.resolve()
+
+
+littb.directive "sidebar", () ->
+    restrict : "C"
+    link : ($scope, elem, attr) ->
+        h = elem.prev().addClass("before_sidebar").height()
+        elem.height(h)
+
+
+
+littb.directive "activeStyle", ($routeParams, $timeout) ->
+    link : ($scope, elem, attr) ->
+        selected = elem.find("a[href$='html']").removeClass("selected")
+        .filter("[href$='#{$scope.docurl}']").addClass("selected")
+
+        
+        $timeout(() ->
+            $scope.setName selected.text()
+        , 0)
+
+
+
+littb.directive "selectable", ($interpolate, $timeout) ->
+    link : ($scope, elem, attr) ->
+        href = ($interpolate elem.attr("ng-href"))($scope)
+        if _.str.endsWith href, $scope.docurl
+            elem.addClass("selected")
+            # broken for some odd reason
+            $timeout(() ->
+                $scope.setName ($interpolate elem.text())($scope)
+            , 0)
 

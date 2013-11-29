@@ -287,6 +287,42 @@ littb.directive 'pageTitle', ($interpolate) ->
         scope.$on "$destroy", () ->
             wtch()
 
+littb.directive 'breadcrumb', ($interpolate, $rootScope) ->
+    restrict : "EA"
+    link: (scope, elem, attrs) ->
+        elem.remove()
+        watches = []
+        for a, i in elem.children()
+            do (a, i) ->
+                inplText = $interpolate($(a).text())
+                if $(a).attr("href")
+                    inplHref = $interpolate($(a).attr("href"))
+                watches.push scope.$watch((s) ->
+                    # c.log "inplText(s)", inplText(s)
+                    inplText(s)
+                , (label) ->
+                    unless label then return
+                    unless $rootScope.breadcrumb[i]
+                        $rootScope.breadcrumb[i] = {}
+                    $rootScope.breadcrumb[i].label = label
+                )
+                if inplHref
+                    watches.push scope.$watch((s) ->
+                        inplHref(s)
+                    , (url) ->
+                        unless $rootScope.breadcrumb[i]
+                            $rootScope.breadcrumb[i] = {}
+                        $rootScope.breadcrumb[i].url = url
+                    )
+                
+
+            
+
+
+        scope.$on "$destroy", () ->
+            for wtch in watches
+                wtch()
+
 
 littb.directive 'kwicWord', ->
     replace: true
@@ -312,7 +348,6 @@ littb.directive 'kwicWord', ->
             return (x for [x, y] in _.pairs output when y).join " "
 
 
-
 littb.directive 'insert', () ->
     (scope, elem, attr) ->
         scope.watch "doc", () ->
@@ -322,4 +357,9 @@ littb.directive 'insert', () ->
 littb.directive "affix", () ->
     restrict : "EA"
     link : (scope, elem, attrs) ->
-        elem.affix()
+        elem.affix(
+            offset : {
+                top : elem.offset().top
+            }
+        )
+
