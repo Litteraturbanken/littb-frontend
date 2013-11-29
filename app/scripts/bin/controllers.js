@@ -1031,7 +1031,7 @@
     };
     s.getTooltip = function(part) {
       if (part.navtitle !== part.showtitle) {
-        return part.navtitle;
+        return part.showtitle;
       }
     };
     s.toggleParallel = function() {

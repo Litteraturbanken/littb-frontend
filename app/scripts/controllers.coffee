@@ -937,7 +937,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
     s.getTooltip = (part) ->
-        return part.navtitle if part.navtitle != part.showtitle
+        return part.showtitle if part.navtitle != part.showtitle
 
     s.toggleParallel = () ->
         s.isParallel = !s.isParallel

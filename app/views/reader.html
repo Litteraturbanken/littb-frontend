@@ -71,7 +71,7 @@
                 <li><a ng-click="gotopage(startpage)">[Start]</a></li>
                 <li ng-repeat="part in workinfo.parts | limitTo:5">
                     <a  tooltip="{{getTooltip(part)}}" tooltip-append-to-body
-                        ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
+                        ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
                 </li>
             </ul>
         </div>
@@ -87,9 +87,9 @@
     
             <ul class="part_menu" ng-show="showPopup" click-outside="showPopup = false">
                 <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
-                <li ng-repeat="part in workinfo.parts" tooltip="{{part.navtitle}}">
+                <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
                     
-                    <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.showtitle}}</a>
+                    <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
                 </li>
             </ul>
     
