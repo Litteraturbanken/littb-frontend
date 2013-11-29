@@ -361,7 +361,7 @@ littb.factory 'backend', ($http, $q, util) ->
             params : _.extend {}, params, passedParams
         ).success( (xml) ->
             info = parseWorkInfo("LBwork", xml)
-            c.log "info", info
+            # c.log "info", info
 
             info["authorFullname"] = $("author-fullname", xml).text()
             info["showtitle"] = $("showtitle:first", xml).text()

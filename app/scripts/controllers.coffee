@@ -854,7 +854,10 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) ->
     s = $scope
     {title, author, mediatype, pagename} = $routeParams
-    _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
+    # _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
+    _.extend s, (_.pick $routeParams, "title", "author", "mediatype")
+    s.pageToLoad = pagename
+    
     s.searchData = searchData
     s.loading = true
     s.showPopup = false
@@ -882,7 +885,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         searchData.reset()
         $location.search("traff", null)
         $location.search("traffslut", null)
-    s.pagename = pagename
+    # s.pagename = pagename
     
     onKeyDown = (event) ->
         s.$apply () ->
@@ -900,7 +903,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         $route.current.pathParams.pagename
     s.setPage = (ix) ->
         s.pageix = ix
-        s.pagename = s.pagemap["ix_" + s.pageix]
+        s.pageToLoad = s.pagemap["ix_" + s.pageix]
     s.nextPage = () ->
         resetHitMarkings()
         if s.pageix == s.pagemap["page_" + s.endpage] then return
@@ -993,7 +996,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     watches = []
     # watches.push s.$watch "pagename", _.debounce( ( (val) ->
-    watches.push s.$watch "pagename", (val) ->
+    watches.push s.$watch "pageToLoad", (val) ->
         # c.log "pagename", val
         unless val? then return
         s.displaynum = val
@@ -1015,32 +1018,33 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             c.log "resisted page load"
             return
 
-            
+        c.log "loadPage", val
+        # if val == s.pagename then return
 
         s.loading = true
         s.error = false
-        s.pagename = val
-        backend.getPage(s.pagename, 
+        # s.pagename = val
+        backend.getPage(val, 
             authorid : author
             titlepath : title
             mediatype : mediatype
         ).then ([data, workinfo]) ->
             
-            # c.log "data, workinfo", data, workinfo
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
-            # c.log "pagemap", s.pagemap
-            # c.log "parts", workinfo.parts
 
             s.startpage = workinfo.startpagename
             s.endpage = workinfo.endpagename
 
 
-            page = $("page[name='#{s.pagename}']", data).last().clone()
+            page = $("page[name='#{val}']", data).last().clone()
             if not page.length
                 page = $("page:last", data).clone()
                 s.pagename = page.attr("name")
+            else
+                s.pagename = val
 
+            s.displaynum = s.pagename
             s.pageix = s.pagemap["page_" + s.pagename]
 
             # if mediatype == 'faksimil' or isParallel

@@ -929,7 +929,8 @@
     var author, loadPage, mediatype, onKeyDown, pagename, resetHitMarkings, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
-    _.extend(s, _.omit($routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel"));
+    _.extend(s, _.pick($routeParams, "title", "author", "mediatype"));
+    s.pageToLoad = pagename;
     s.searchData = searchData;
     s.loading = true;
     s.showPopup = false;
@@ -964,7 +965,6 @@
       $location.search("traff", null);
       return $location.search("traffslut", null);
     };
-    s.pagename = pagename;
     onKeyDown = function(event) {
       return s.$apply(function() {
         switch (event.which) {
@@ -986,7 +986,7 @@
     };
     s.setPage = function(ix) {
       s.pageix = ix;
-      return s.pagename = s.pagemap["ix_" + s.pageix];
+      return s.pageToLoad = s.pagemap["ix_" + s.pageix];
     };
     s.nextPage = function() {
       var newix;
@@ -1081,7 +1081,7 @@
       }
     ]);
     watches = [];
-    watches.push(s.$watch("pagename", function(val) {
+    watches.push(s.$watch("pageToLoad", function(val) {
       var loc, prevpath, url;
       if (val == null) {
         return;
@@ -1101,10 +1101,10 @@
         c.log("resisted page load");
         return;
       }
+      c.log("loadPage", val);
       s.loading = true;
       s.error = false;
-      s.pagename = val;
-      return backend.getPage(s.pagename, {
+      return backend.getPage(val, {
         authorid: author,
         titlepath: title,
         mediatype: mediatype
@@ -1115,11 +1115,14 @@
         s.pagemap = workinfo.pagemap;
         s.startpage = workinfo.startpagename;
         s.endpage = workinfo.endpagename;
-        page = $("page[name='" + s.pagename + "']", data).last().clone();
+        page = $("page[name='" + val + "']", data).last().clone();
         if (!page.length) {
           page = $("page:last", data).clone();
           s.pagename = page.attr("name");
+        } else {
+          s.pagename = val;
         }
+        s.displaynum = s.pagename;
         s.pageix = s.pagemap["page_" + s.pagename];
         s.sizes = new Array(5);
         _ref = $("faksimil-url", page);

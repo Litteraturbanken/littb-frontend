@@ -587,14 +587,19 @@ $partnav-width : 170px;
 .page-reading {
     #mainview {
 
-        .searching .preloader {
-            display : block;
-        }
-        .preloader {
-            display : none;
-        }
+        // .searching .preloader {
+        //     display : block;
+        // }
+        // .preloader {
+        //     display : none;
+        // }
         position : relative;
         line-height : normal;
+        .preloader {
+            position : absolute;
+            right : 0;
+            top : 0;
+        }
         .faksimilMarkee {
             background-color : $primarycolor;
             opacity : 0.5;

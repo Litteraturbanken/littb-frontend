@@ -446,7 +446,6 @@
         }).success(function(xml) {
           var info, mediatype, p, page, pgMap, _i, _len, _ref;
           info = parseWorkInfo("LBwork", xml);
-          c.log("info", info);
           info["authorFullname"] = $("author-fullname", xml).text();
           info["showtitle"] = $("showtitle:first", xml).text();
           info["css"] = $("css", xml).text();
