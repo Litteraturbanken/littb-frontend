@@ -3698,23 +3698,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031248;
-    }
-}
-
-  .page-epubList .contenttable tr:first-child,
-  .page-titleList .contenttable tr:first-child,
-  .page-authorInfo .contenttable tr:first-child {
-    display: none;
-  }
-
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031253;
+      font-family: \000031250;
     }
 }
 
@@ -3732,7 +3716,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031259;
+      font-family: \000031256;
     }
 }
 
@@ -3748,7 +3732,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031263;
+      font-family: \000031260;
     }
 }
 
@@ -3766,7 +3750,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031267;
+      font-family: \000031264;
     }
 }
 
@@ -3782,7 +3766,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031270;
+      font-family: \000031267;
     }
 }
 
@@ -3798,7 +3782,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031275;
+      font-family: \000031272;
     }
 }
 
