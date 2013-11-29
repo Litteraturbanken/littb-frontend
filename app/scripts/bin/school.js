@@ -7,7 +7,7 @@
   getStudentCtrl = function(id) {
     return [
       "$scope", "$routeParams", function($scope, $routeParams) {
-        var sfx, works;
+        var sfx, workfilter, works;
         $scope.id = id;
         sfx = {
           "f-5": "F-5",
@@ -28,54 +28,33 @@
             url: "/#!/skola/" + id + "/HerrArne" + sfx + ".html",
             "if": ["6-9", "gymnasium"]
           }, {
-            label: "Kejsarn av Portugallien",
-            url: "/#!/skola/" + id + "/Kejsarn" + sfx + ".html",
-            "if": ["6-9", "gymnasium"]
-          }, {
-            label: "Mårbackasviten",
-            url: "/#!/skola/" + id + "/Marbacka" + sfx + ".html",
-            "if": ["f-5", "6-9"]
-          }, {
             label: "Osynliga Länkar",
             url: "/#!/skola/" + id + "/OsynligaLankar" + sfx + ".html",
-            "if": ["f-5"]
+            "if": ["6-9"]
           }, {
             label: "Troll och människor",
             url: "/#!/skola/" + id + "/TrollManniskor" + sfx + ".html",
             "if": ["6-9", "gymnasium"]
           }
         ];
-        works = _.filter(works, function(obj) {
+        workfilter = function(obj) {
           if (!obj["if"]) {
             return true;
           }
           return __indexOf.call(obj["if"], id) >= 0;
-        });
-        return $scope.list = [
+        };
+        works = _.filter(works, workfilter);
+        return $scope.list = _.filter([
           {
             label: "Författarpresentation",
-            url: "/#!/skola/" + id + "/ForfattarpresentationElever.html"
+            url: "/#!/skola/" + id + "/ForfattarpresentationElever.html",
+            "if": ["6-9", "gymnasium"]
           }, {
-            label: "Orientering enskilda verk",
+            label: "Uppgifter",
             url: "",
             sublist: works
-          }, {
-            label: "Orientering genrer",
-            url: "/#!/skola/" + id + "/Genrer.html",
-            sublist: [
-              {
-                label: "Romaner",
-                url: "/#!/skola/" + id + "/Romaner.html"
-              }, {
-                label: "Noveller",
-                url: "/#!/skola/" + id + "/Noveller.html"
-              }
-            ]
-          }, {
-            label: "I andra medier",
-            url: "/#!/skola/" + id + "/SLiAndraMedier.html"
           }
-        ];
+        ], workfilter);
       }
     ];
   };

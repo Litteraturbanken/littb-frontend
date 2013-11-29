@@ -14,7 +14,6 @@ getStudentCtrl = (id) ->
         }[id]
         $scope.defaultUrl = "Valkommen#{sfx}.html"
 
-        
         works =  [
             {
                 label : "Drottningar i Kongahälla", 
@@ -30,57 +29,57 @@ getStudentCtrl = (id) ->
                 url : "/#!/skola/#{id}/HerrArne#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             }
-            {
-                label : "Kejsarn av Portugallien", 
-                url : "/#!/skola/#{id}/Kejsarn#{sfx}.html"
-                if : ["6-9", "gymnasium"]
-            }
-            {
-                label : "Mårbackasviten", 
-                url : "/#!/skola/#{id}/Marbacka#{sfx}.html"
-                if : ["f-5", "6-9"]
-            }
+            # {
+            #     label : "Kejsarn av Portugallien", 
+            #     url : "/#!/skola/#{id}/Kejsarn#{sfx}.html"
+            #     if : ["6-9", "gymnasium"]
+            # }
+            # {
+            #     label : "Mårbackasviten", 
+            #     url : "/#!/skola/#{id}/Marbacka#{sfx}.html"
+            #     if : ["f-5", "6-9"]
+            # }
             {
                 label : "Osynliga Länkar", 
                 url : "/#!/skola/#{id}/OsynligaLankar#{sfx}.html"
-                if: ["f-5"]
+                if: ["6-9"]
             }
             {
                 label : "Troll och människor", 
                 url : "/#!/skola/#{id}/TrollManniskor#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             }
-
-            
-
         ]
 
-    
-
-        works = _.filter works, (obj) ->
+        workfilter = (obj) ->
             unless obj.if then return true
             return id in obj.if
 
-        $scope.list = [
-                label: "Författarpresentation", url : "/#!/skola/#{id}/ForfattarpresentationElever.html"
+
+        works = _.filter works, workfilter
+
+        $scope.list = _.filter [
+                label: "Författarpresentation", 
+                url : "/#!/skola/#{id}/ForfattarpresentationElever.html"
+                if : ["6-9", "gymnasium"]
             ,
-                label: "Orientering enskilda verk", 
+                label: "Uppgifter", 
                 url : "", 
                 sublist : works
-            ,
-                label: "Orientering genrer", 
-                url : "/#!/skola/#{id}/Genrer.html", 
-                sublist : [
-                    {label : "Romaner", url: "/#!/skola/#{id}/Romaner.html"}
-                    {label : "Noveller", url: "/#!/skola/#{id}/Noveller.html"}
-                ]
+            # ,
+            #     label: "Orientering genrer", 
+            #     url : "/#!/skola/#{id}/Genrer.html", 
+            #     sublist : [
+            #         {label : "Romaner", url: "/#!/skola/#{id}/Romaner.html"}
+            #         {label : "Noveller", url: "/#!/skola/#{id}/Noveller.html"}
+            #     ]
             # ,
                 # label: "Orientering tema/motiv", url : "/#!/skola/#{id}/Genrer.html"
-            ,
-                label: "I andra medier", url : "/#!/skola/#{id}/SLiAndraMedier.html"
+            # ,
+            #     label: "I andra medier", url : "/#!/skola/#{id}/SLiAndraMedier.html"
 
 
-        ]
+        ], workfilter
 
     ]
 

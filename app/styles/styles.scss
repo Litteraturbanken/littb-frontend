@@ -1458,7 +1458,7 @@ grundform-clean {
         border-color : lightgrey;
     }
     .logo_link {
-        background: url("../img/school_logo.svg");
+        background: url("../img/school_logo.svg") no-repeat;
         height : 50px;
         width: 370px;
         margin-bottom : 0;
@@ -1848,10 +1848,18 @@ only screen and (max-width: 760px),
         //     width: 100%;
         // }
 
-        // .logo_link {
-        //     height : 30px;
-        // }
+        .logo_link {
+            // height : 30px;
+            width: 100%;
+            background-size: 100%;
+        }
         padding : 5%;
+
+        .header .breadcrumb {
+            text-align: left;
+            margin-top : 0.5em;
+        }
+
         &.page-school {
             .header hr {
                 width : 100%;
@@ -1861,11 +1869,28 @@ only screen and (max-width: 760px),
             }
             .teachers, .students {
                 position : static;
-                
+            }
+            .students {
+                margin-bottom : 2em;
             }
             h1, p {
                 width: 100%;
                 max-width : 100%;
+            }
+
+            .lb{
+                display : block;
+                margin-bottom : 2em;
+            }
+            .amp{
+                display : none;
+            }
+            .sla{
+                display : block;
+            }
+
+            h2 { 
+                margin-top : 1em;
             }
         }
 
@@ -1873,6 +1898,10 @@ only screen and (max-width: 760px),
             #mainview > div {
                 white-space : normal;
             }
+            #mainview:after {
+                background-image: none;
+            }
+
         }
 
         
@@ -1894,14 +1923,9 @@ only screen and (max-width: 760px),
             width : 100%;
             padding : 3%;
             margin : 0 auto;
+            height : auto !important;
             // margin-left : 5%;
         }
-        // .sidebar:before {
-        //     content: "Not";
-        //     background-color : lightgrey;
-        //     font-variant: small-caps;
-        //     color : $primarycolor;
-        // }
     }    
 
 }
