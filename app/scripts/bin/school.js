@@ -32,6 +32,10 @@
             url: "/#!/skola/" + id + "/OsynligaLankar" + sfx + ".html",
             "if": ["6-9"]
           }, {
+            label: "Nils Holgersson",
+            url: "/#!/skola/" + id + "/NilsHolgerssonUppgifter.html",
+            "if": ["6-9"]
+          }, {
             label: "Troll och människor",
             url: "/#!/skola/" + id + "/TrollManniskor" + sfx + ".html",
             "if": ["6-9", "gymnasium"]

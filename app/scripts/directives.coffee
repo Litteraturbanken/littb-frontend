@@ -344,7 +344,6 @@ littb.directive 'kwicWord', ->
             for struct in (wd._close or [])
                 output["close_" + struct] = true
 
-
             return (x for [x, y] in _.pairs output when y).join " "
 
 
