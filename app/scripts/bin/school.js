@@ -4,6 +4,12 @@
 
   littb = angular.module('littbApp');
 
+  littb.controller("MenuCtrl", function($scope) {
+    var s, _base;
+    s = $scope;
+    return (_base = s.$root).collapsed != null ? (_base = s.$root).collapsed : _base.collapsed = [true, true, true, true];
+  });
+
   getStudentCtrl = function(id) {
     return [
       "$scope", "$routeParams", function($scope, $routeParams) {
@@ -15,10 +21,14 @@
           "gymnasium": "GY"
         }[id];
         $scope.defaultUrl = "Valkommen" + sfx + ".html";
+        $scope.capitalize = function(str) {
+          return str[0].toUpperCase() + str.slice(1);
+        };
         works = [
           {
             label: "Drottningar i Kongahälla",
-            url: "/#!/skola/" + id + "/Drottningar" + sfx + ".html"
+            url: "/#!/skola/" + id + "/Drottningar" + sfx + ".html",
+            "if": ["6-9", "gymnasium"]
           }, {
             label: "En herrgårdssägen",
             url: "/#!/skola/" + id + "/EnHerrgardssagen" + sfx + ".html",
@@ -27,10 +37,6 @@
             label: "Herr Arnes penningar",
             url: "/#!/skola/" + id + "/HerrArne" + sfx + ".html",
             "if": ["6-9", "gymnasium"]
-          }, {
-            label: "Osynliga Länkar",
-            url: "/#!/skola/" + id + "/OsynligaLankar" + sfx + ".html",
-            "if": ["6-9"]
           }, {
             label: "Nils Holgersson",
             url: "/#!/skola/" + id + "/NilsHolgerssonUppgifter.html",
@@ -50,13 +56,25 @@
         works = _.filter(works, workfilter);
         return $scope.list = _.filter([
           {
+            label: "Begrepp",
+            url: "/#!/skola/" + id + "/LitteraturvetenskapligaBegrepp.html",
+            "if": ["6-9", "gymnasium"]
+          }, {
             label: "Författarpresentation",
             url: "/#!/skola/" + id + "/ForfattarpresentationElever.html",
             "if": ["6-9", "gymnasium"]
           }, {
             label: "Uppgifter",
-            url: "",
-            sublist: works
+            sublist: works,
+            "if": ["6-9", "gymnasium"]
+          }, {
+            label: "Uppgifter",
+            url: "/#!/skola/" + id + "/NilsHolgerssonUppgifter.html",
+            "if": ["f-5"]
+          }, {
+            label: "Den heliga natten",
+            url: "/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil",
+            "if": ["f-5"]
           }
         ], workfilter);
       }
@@ -81,36 +99,38 @@
     });
     whn(["/skola/f-5/:docurl", "/skola/f-5"], {
       title: "F-5",
-      breadcrumb: [
-        {
-          label: "För elever",
-          url: ""
-        }, "F-5"
-      ],
       templateUrl: "views/school/students.html",
       controller: getStudentCtrl("f-5")
     });
     whn(["/skola/6-9/:docurl", "/skola/6-9"], {
       title: "6-9",
-      breadcrumb: ["För elever", "6-9"],
       templateUrl: "views/school/students.html",
       controller: getStudentCtrl("6-9")
     });
     return whn(["/skola/gymnasium/:docurl", "/skola/gymnasium"], {
       title: "Gymnasium",
-      breadcrumb: ["För elever", "Gymnasium"],
       templateUrl: "views/school/students.html",
       controller: getStudentCtrl("gymnasium")
     });
   });
 
-  littb.controller("fileCtrl", function($scope, $routeParams, $anchorScroll, $q, $timeout) {
+  littb.controller("fileCtrl", function($scope, $routeParams, $location, $anchorScroll, $q, $timeout) {
     var def;
     $scope.docurl = $routeParams.docurl;
     def = $q.defer();
     def.promise.then(function() {
       return $timeout(function() {
-        return $anchorScroll();
+        var a;
+        a = $location.search().ankare;
+        if (a) {
+          if (!(a && $("#" + a).length)) {
+            $(window).scrollTop(0);
+            return;
+          }
+          return $(window).scrollTop($("#" + a).offset().top);
+        } else {
+          return $anchorScroll();
+        }
       }, 500);
     });
     return $scope.fileDef = def;
@@ -152,8 +172,9 @@
       link: function($scope, elem, attr) {
         var selected;
         selected = elem.find("a[href$='html']").removeClass("selected").filter("[href$='" + $scope.docurl + "']").addClass("selected");
+        c.log("selected", selected);
         return $timeout(function() {
-          return $scope.setName(selected.text());
+          return $scope.setName(selected.last().text());
         }, 0);
       }
     };
@@ -169,6 +190,19 @@
           return $timeout(function() {
             return $scope.setName(($interpolate(elem.text()))($scope));
           }, 0);
+        }
+      }
+    };
+  });
+
+  littb.directive("ulink", function($location) {
+    return {
+      restrict: "C",
+      link: function($scope, elem, attr) {
+        var reg;
+        reg = new RegExp("/?#!/");
+        if ((attr.href.match(reg)) && !_.str.startsWith(attr.href.replace(reg, ""), "skola")) {
+          return elem.attr("target", "_blank");
         }
       }
     };

@@ -150,7 +150,6 @@ littb.directive 'scrollTo', ($window, $timeout) ->
 
 
 
-
 littb.directive 'soArticle', ($compile) -> 
     scope : 
         soArticle : "="
@@ -159,7 +158,6 @@ littb.directive 'soArticle', ($compile) ->
             newElem = $compile(_.str.trim val)(scope)
             elem.html newElem
             
-
 
 littb.directive 'hvord', (backend) -> 
 

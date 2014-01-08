@@ -1,7 +1,9 @@
 littb = angular.module('littbApp')
 
     
-
+littb.controller "MenuCtrl", ($scope) ->
+    s = $scope
+    s.$root.collapsed ?= [true, true, true, true]
 
 getStudentCtrl = (id) ->
     ["$scope", "$routeParams", ($scope, $routeParams) ->
@@ -14,10 +16,13 @@ getStudentCtrl = (id) ->
         }[id]
         $scope.defaultUrl = "Valkommen#{sfx}.html"
 
+        $scope.capitalize = (str) -> str[0].toUpperCase() + str[1..]
+
         works =  [
             {
                 label : "Drottningar i Kongahälla", 
                 url : "/#!/skola/#{id}/Drottningar#{sfx}.html"
+                if : ["6-9", "gymnasium"]
             }
             {
                 label : "En herrgårdssägen", 
@@ -39,11 +44,11 @@ getStudentCtrl = (id) ->
             #     url : "/#!/skola/#{id}/Marbacka#{sfx}.html"
             #     if : ["f-5", "6-9"]
             # }
-            {
-                label : "Osynliga Länkar", 
-                url : "/#!/skola/#{id}/OsynligaLankar#{sfx}.html"
-                if: ["6-9"]
-            }
+            # {
+            #     label : "Osynliga Länkar", 
+            #     url : "/#!/skola/#{id}/OsynligaLankar#{sfx}.html"
+            #     if: ["6-9"]
+            # }
             {
                 label : "Nils Holgersson", 
                 url : "/#!/skola/#{id}/NilsHolgerssonUppgifter.html"
@@ -64,13 +69,25 @@ getStudentCtrl = (id) ->
         works = _.filter works, workfilter
 
         $scope.list = _.filter [
+                label: "Begrepp", 
+                url : "/#!/skola/#{id}/LitteraturvetenskapligaBegrepp.html"
+                if : ["6-9", "gymnasium"]
+            ,
                 label: "Författarpresentation", 
                 url : "/#!/skola/#{id}/ForfattarpresentationElever.html"
                 if : ["6-9", "gymnasium"]
             ,
                 label: "Uppgifter", 
-                url : "", 
                 sublist : works
+                if : ["6-9", "gymnasium"]
+            ,
+                label: "Uppgifter", 
+                url : "/#!/skola/#{id}/NilsHolgerssonUppgifter.html"
+                if : ["f-5"]
+            ,
+                label: "Den heliga natten", 
+                url : "/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil"
+                if : ["f-5"]
             # ,
             #     label: "Orientering genrer", 
             #     url : "/#!/skola/#{id}/Genrer.html", 
@@ -108,53 +125,38 @@ littb.config () ->
 
     whn ["/skola/larare/:docurl", "/skola/larare"],
         title : "Lärare"
-        # breadcrumb : [
-        #     label : "skola"
-        #     url : "/#!/skola"
-        # ,
-        #     label : "För lärare"
-        #     url : "/#!/skola/larare"
-        # ]
-
         # controller : getFileName
         templateUrl : "views/school/teachers.html"
     
     whn ["/skola/f-5/:docurl", "/skola/f-5"],
         title : "F-5"
-        breadcrumb : [
-                label : "För elever"
-                url : ""
-            ,
-            "F-5"
-        ]
         templateUrl : "views/school/students.html"
         controller : getStudentCtrl("f-5")
     whn ["/skola/6-9/:docurl", "/skola/6-9"],
         title : "6-9"
-        breadcrumb : [
-            "För elever",
-            "6-9"
-        ]
         templateUrl : "views/school/students.html"
         controller : getStudentCtrl("6-9")
     whn ["/skola/gymnasium/:docurl", "/skola/gymnasium"],
         title : "Gymnasium"
-        breadcrumb : [
-            "För elever",
-            "Gymnasium"
-        ]
         templateUrl : "views/school/students.html"
         controller : getStudentCtrl("gymnasium")
 
 
 
 
-littb.controller "fileCtrl", ($scope, $routeParams, $anchorScroll, $q, $timeout) ->
+littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q, $timeout) ->
     $scope.docurl = $routeParams.docurl
     def = $q.defer()
     def.promise.then () ->
         $timeout(() ->
-            $anchorScroll()
+            a = $location.search().ankare
+            if a
+                unless a and $("##{a}").length
+                    $(window).scrollTop(0)
+                    return
+                $(window).scrollTop($("##{a}").offset().top)
+            else
+                $anchorScroll()
         , 500)
         
         
@@ -191,10 +193,11 @@ littb.directive "activeStyle", ($routeParams, $timeout) ->
     link : ($scope, elem, attr) ->
         selected = elem.find("a[href$='html']").removeClass("selected")
         .filter("[href$='#{$scope.docurl}']").addClass("selected")
+        c.log "selected", selected
 
         
         $timeout(() ->
-            $scope.setName selected.text()
+            $scope.setName selected.last().text()
         , 0)
 
 
@@ -208,4 +211,12 @@ littb.directive "selectable", ($interpolate, $timeout) ->
             $timeout(() ->
                 $scope.setName ($interpolate elem.text())($scope)
             , 0)
+
+
+littb.directive "ulink", ($location) ->
+    restrict : "C"
+    link : ($scope, elem, attr) ->
+        reg = new RegExp "/?#!/"
+        if (attr.href.match reg) and not _.str.startsWith attr.href.replace(reg, ""), "skola"
+            elem.attr("target", "_blank")
 

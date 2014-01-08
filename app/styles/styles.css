@@ -3,6 +3,7 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> minor css changes
 @media -sass-debug-info {
@@ -23,12 +24,16 @@
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 27, styles.scss */
+>>>>>>> just small bug fixes
 
 * {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -51,11 +56,15 @@
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 31, styles.scss */
+>>>>>>> just small bug fixes
 
 .txt {
   width: 500px;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -78,11 +87,15 @@
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 37, styles.scss */
+>>>>>>> just small bug fixes
 
 .tooltip {
   font-size: 1em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -108,11 +121,15 @@
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 40, styles.scss */
+>>>>>>> just small bug fixes
 
 .fixed {
   position: fixed;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -135,11 +152,15 @@
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 45, styles.scss */
+>>>>>>> just small bug fixes
 
 body {
   font-size: 12px;
   padding-top: 20px;
   padding-left: 40px;
+  padding-right: 1%;
   white-space: nowrap;
   font-family: georgia, serif;
   width: 712px;
@@ -150,6 +171,7 @@ body {
   height: 100%;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -182,11 +204,15 @@ body {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 56, styles.scss */
+>>>>>>> just small bug fixes
 
 body > * {
   white-space: normal;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -219,6 +245,9 @@ body > * {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 61, styles.scss */
+>>>>>>> just small bug fixes
 
 body.ready {
   opacity: 1;
@@ -226,6 +255,7 @@ body.ready {
   transition: opacity 100ms;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -277,11 +307,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 70, styles.scss */
+>>>>>>> just small bug fixes
 
 .font-small {
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -314,11 +348,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 73, styles.scss */
+>>>>>>> just small bug fixes
 
 .sans {
   font-family: "Helvetica", "Arial", sans-serif;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -351,11 +389,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 77, styles.scss */
+>>>>>>> just small bug fixes
 
 .bold {
   font-weight: bold;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -402,6 +444,9 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 81, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor {
   width: 120px;
@@ -414,6 +459,7 @@ h6 {
   *display: inline;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -446,11 +492,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 85, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor > * {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -483,11 +533,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 88, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .dict_links {
   margin-bottom: 0.5em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -520,11 +574,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 92, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search .input_container {
   position: relative;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -557,6 +615,9 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 94, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search .input_container input {
   font-family: "Helvetica", "Arial", sans-serif;
@@ -577,6 +638,7 @@ h6 {
   letter-spacing: 0.5px;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -615,12 +677,16 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 99, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search .input_container input :-moz-placeholder {
   /* Firefox 18- */
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -659,12 +725,16 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 103, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search .input_container input ::-moz-placeholder {
   /* Firefox 19+ */
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -703,11 +773,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 107, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search .input_container input :-ms-input-placeholder {
   font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -765,6 +839,9 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 111, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search .so_spinner {
   display: none;
@@ -773,6 +850,7 @@ h6 {
   right: 13px;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -811,11 +889,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 117, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search.searching .so_spinner {
   display: block;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -854,12 +936,16 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 120, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search label {
   display: block;
   font-size: .9em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -898,11 +984,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 124, styles.scss */
+>>>>>>> just small bug fixes
 
 #leftCorridor .word_search input {
   width: 117px;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -941,11 +1031,15 @@ h6 {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 133, styles.scss */
+>>>>>>> just small bug fixes
 
 a[ng-click] {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -984,11 +1078,15 @@ a[ng-click] {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 136, styles.scss */
+>>>>>>> just small bug fixes
 
 p a {
   border-bottom: thin dotted #990000;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -1027,6 +1125,9 @@ p a {
   }
 }
 >>>>>>> minor css changes
+=======
+/* line 140, styles.scss */
+>>>>>>> just small bug fixes
 
 hr {
   border: none;
@@ -1035,6 +1136,7 @@ hr {
   margin-bottom: 0;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -1132,6 +1234,9 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 146, styles.scss */
+>>>>>>> just small bug fixes
 
 .search_dict {
   position: absolute;
@@ -1141,6 +1246,7 @@ h3 {
   height: 1.3em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1188,12 +1294,16 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 152, styles.scss */
+>>>>>>> just small bug fixes
 
 .search_dict .glass {
   position: relative;
   z-index: 10;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1241,6 +1351,9 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 156, styles.scss */
+>>>>>>> just small bug fixes
 
 .search_dict .shadow {
   position: relative;
@@ -1252,6 +1365,7 @@ h3 {
   opacity: 0.7;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1299,6 +1413,9 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 165, styles.scss */
+>>>>>>> just small bug fixes
 
 .search_dict .circle {
   position: relative;
@@ -1312,6 +1429,7 @@ h3 {
   opacity: 0.7;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1359,11 +1477,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 183, styles.scss */
+>>>>>>> just small bug fixes
 
 [submit-btn] {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1412,11 +1534,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 185, styles.scss */
+>>>>>>> just small bug fixes
 
 [submit-btn][disabled=disabled] {
   opacity: 0.5;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1465,11 +1591,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 189, styles.scss */
+>>>>>>> just small bug fixes
 
 #toolkit {
   line-height: 15px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1517,6 +1647,9 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 191, styles.scss */
+>>>>>>> just small bug fixes
 
 #toolkit hr {
   border-top: 1px solid grey;
@@ -1524,6 +1657,7 @@ h3 {
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1571,11 +1705,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 196, styles.scss */
+>>>>>>> just small bug fixes
 
 #toolkit input {
   max-width: 100%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1641,11 +1779,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 199, styles.scss */
+>>>>>>> just small bug fixes
 
 #toolkit p {
   font-size: smaller;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1691,11 +1833,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 209, styles.scss */
+>>>>>>> just small bug fixes
 
 #controls > * {
   vertical-align: top;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1741,11 +1887,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 215, styles.scss */
+>>>>>>> just small bug fixes
 
 .contenttable {
   min-width: 512px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1794,11 +1944,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 217, styles.scss */
+>>>>>>> just small bug fixes
 
 .contenttable tbody:empty:after {
   content: "Din sökning gav inga träffar.";
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1844,12 +1998,16 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 220, styles.scss */
+>>>>>>> just small bug fixes
 
 .contenttable td:first-child {
   position: relative;
   vertical-align: bottom;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1897,6 +2055,9 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 223, styles.scss */
+>>>>>>> just small bug fixes
 
 .contenttable td:first-child > *:first-child {
   background-color: white;
@@ -1905,6 +2066,7 @@ h3 {
   z-index: 10;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -1952,6 +2114,9 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 229, styles.scss */
+>>>>>>> just small bug fixes
 
 .contenttable td:first-child > .dots {
   position: relative;
@@ -1960,6 +2125,7 @@ h3 {
   top: -5px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2005,6 +2171,9 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 237, styles.scss */
+>>>>>>> just small bug fixes
 
 .contenttable td {
   max-width: 300px;
@@ -2013,6 +2182,7 @@ h3 {
   vertical-align: top;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2060,12 +2230,16 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 246, styles.scss */
+>>>>>>> just small bug fixes
 
 .contenttable th {
   padding: 5px;
   text-align: left;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2112,11 +2286,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 250, styles.scss */
+>>>>>>> just small bug fixes
 
 .contenttable .title {
   font-style: italic;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2156,11 +2334,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 260, styles.scss */
+>>>>>>> just small bug fixes
 
 .letters {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2208,6 +2390,9 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 262, styles.scss */
+>>>>>>> just small bug fixes
 
 .letters td {
   font-weight: bold;
@@ -2218,6 +2403,7 @@ h3 {
   width: 20px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2265,12 +2451,16 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 271, styles.scss */
+>>>>>>> just small bug fixes
 
 .letters td.disabled {
   font-weight: normal !important;
   cursor: default !important;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2318,11 +2508,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 279, styles.scss */
+>>>>>>> just small bug fixes
 
 .letters td.selected {
   color: #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2370,11 +2564,15 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 282, styles.scss */
+>>>>>>> just small bug fixes
 
 .letters td:first-child {
   padding-left: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2422,12 +2620,16 @@ h3 {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 288, styles.scss */
+>>>>>>> just small bug fixes
 
 a {
   color: black;
   text-decoration: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2476,12 +2678,16 @@ a {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 292, styles.scss */
+>>>>>>> just small bug fixes
 
 a:hover {
   color: #990000;
   text-decoration: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2530,12 +2736,16 @@ a:hover {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 296, styles.scss */
+>>>>>>> just small bug fixes
 
 ul {
   padding: 0;
   margin: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2583,11 +2793,15 @@ ul {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 300, styles.scss */
+>>>>>>> just small bug fixes
 
 li {
   list-style: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2635,12 +2849,16 @@ li {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 304, styles.scss */
+>>>>>>> just small bug fixes
 
 .mainnav {
   vertical-align: top;
   line-height: 19px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2688,6 +2906,9 @@ li {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 308, styles.scss */
+>>>>>>> just small bug fixes
 
 #mainview {
   display: -moz-inline-stack;
@@ -2699,6 +2920,7 @@ li {
   width: 512px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2746,11 +2968,15 @@ li {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 314, styles.scss */
+>>>>>>> just small bug fixes
 
 label {
   display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2813,6 +3039,9 @@ label {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 324, styles.scss */
+>>>>>>> just small bug fixes
 
 .logo_link {
   background-image: url("/bilder/LBlogga.svg");
@@ -2824,6 +3053,7 @@ label {
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2886,6 +3116,9 @@ label {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 334, styles.scss */
+>>>>>>> just small bug fixes
 
 body > .header {
 <<<<<<< HEAD
@@ -2897,6 +3130,7 @@ body > .header {
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -2959,6 +3193,9 @@ body > .header {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 339, styles.scss */
+>>>>>>> just small bug fixes
 
 body > .header > a {
   display: -moz-inline-stack;
@@ -2970,6 +3207,7 @@ body > .header > a {
   width: 28%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3032,6 +3270,9 @@ body > .header > a {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 343, styles.scss */
+>>>>>>> just small bug fixes
 
 body > .header .breadcrumb {
   display: -moz-inline-stack;
@@ -3051,6 +3292,7 @@ body > .header .breadcrumb {
   box-shadow: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3172,6 +3414,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 359, styles.scss */
+>>>>>>> just small bug fixes
 
 >>>>>>> minor css changes
 .start_menu {
@@ -3180,11 +3425,14 @@ body > .header .breadcrumb > li:last-of-type a {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 <<<<<<< HEAD
 >>>>>>> fixed gruntfile
 =======
 >>>>>>> minor css changes
+=======
+>>>>>>> just small bug fixes
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3261,12 +3509,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 370, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start .header .logo_link {
   height: 61px;
   left: -17px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3343,12 +3595,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 374, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start .header a {
   width: 59%;
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3427,6 +3683,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 378, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start .header hr {
   width: 53%;
@@ -3441,6 +3700,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-bottom: 1px solid grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3517,6 +3777,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 385, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start .header .start_menu {
   width: 46%;
@@ -3530,6 +3793,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-size: 0.9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3606,6 +3870,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 390, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start .header .start_menu li {
   display: -moz-inline-stack;
@@ -3616,6 +3883,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3692,6 +3960,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 393, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start .header .start_menu li:not(:first-child) a:before {
   content: "•";
@@ -3703,6 +3974,7 @@ body > .header .breadcrumb > li:last-of-type a {
   left: -1px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3779,11 +4051,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 405, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start .breadcrumb {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3860,12 +4136,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 408, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start #toolkit {
   margin-top: 15em;
   font-size: 0.9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -3942,12 +4222,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 411, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start #toolkit input[type=text] {
   font-size: 1.1em;
   width: 90px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4024,11 +4308,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 415, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-start #toolkit form {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4124,11 +4412,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 422, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview {
   width: 400px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4205,11 +4497,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 424, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .header {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4286,12 +4582,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 427, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .form_head {
   margin-bottom: 2em;
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4368,11 +4668,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 430, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .form_head > div {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4449,6 +4753,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 434, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview label {
   width: 70px;
@@ -4460,6 +4767,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4536,11 +4844,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 438, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .contactform {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4617,12 +4929,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 440, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .contactform input[type=text],
 .page-contactForm #mainview .contactform input[type=email] {
   width: 60%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4699,11 +5015,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 444, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .contactform .msg_box .error_msg {
   float: left;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4780,12 +5100,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 447, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .contactform .msg_box textarea {
   width: 390px;
   height: 234px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4862,12 +5186,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 451, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .contactform .msg_box .submit_btn {
   margin-top: 1em;
   float: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -4944,11 +5272,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 457, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .error_msg {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5025,11 +5357,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 461, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .ng-dirty.ng-invalid:not(:focus) + div.error_msg {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5106,11 +5442,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 464, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .ng-dirty.ng-invalid:not(:focus) + span.error_msg {
   display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5187,11 +5527,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 471, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .lowersection p {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5268,11 +5612,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 477, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-contactForm #mainview .subscribeform input[type=email] {
   width: 55%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5349,11 +5697,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 486, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-stats #mainview > div > * {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5430,11 +5782,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 489, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-stats #mainview ul li {
   counter-increment: listcounter;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5511,11 +5867,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 491, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-stats #mainview ul li a:before {
   content: counter(listcounter, decimal) ". ";
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5592,6 +5952,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 496, styles.scss */
+>>>>>>> just small bug fixes
 
 .preloader {
   visibility: hidden;
@@ -5599,6 +5962,7 @@ body > .header .breadcrumb > li:last-of-type a {
   text-align: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5675,11 +6039,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 501, styles.scss */
+>>>>>>> just small bug fixes
 
 .searching .preloader {
   visibility: visible;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5756,11 +6124,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 506, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview {
   width: 512px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5837,11 +6209,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 508, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .searching .results {
   opacity: 0.3;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -5936,12 +6312,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 512, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .submit_btn {
   float: right;
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6018,12 +6398,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 516, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .input {
   width: 432px;
   vertical-align: sub;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6100,11 +6484,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 520, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .header {
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6181,6 +6569,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 524, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .header .open_toggle {
   position: absolute;
@@ -6190,6 +6581,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-size: smaller;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6266,11 +6658,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 533, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .n_pages {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6347,6 +6743,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 536, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .extended {
   margin-top: 1em;
@@ -6354,6 +6753,7 @@ body > .header .breadcrumb > li:last-of-type a {
   padding: 10px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6430,11 +6830,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 540, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .extended h3 {
   margin: 0.3em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6511,6 +6915,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 544, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .extended .columns > div {
   width: 49%;
@@ -6522,6 +6929,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6598,11 +7006,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 548, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .extended .columns > div label {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6679,11 +7091,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 552, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .extended .columns #title_select {
   width: 245px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6760,11 +7176,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 556, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .extended .chks {
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6841,11 +7261,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 558, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview .extended .chks input {
   margin-left: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -6940,11 +7364,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 563, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview table {
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7021,11 +7449,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 565, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview table td {
   padding-right: 2px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7102,11 +7534,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 568, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview table tr.is_faksimil * {
   color: grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7183,11 +7619,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 571, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview table td.num {
   color: grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7264,6 +7704,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 574, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview table td.title {
   max-width: 106px;
@@ -7272,6 +7715,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-style: italic;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7348,11 +7792,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 580, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #mainview table td.left_context {
   text-align: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7429,11 +7877,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 585, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #toolkit {
   font-size: .9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7510,12 +7962,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 587, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #toolkit .littb_pager {
   margin-top: 1em;
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7592,11 +8048,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 590, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #toolkit .littb_pager .input_page {
   width: 60px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7673,11 +8133,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 593, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #toolkit .littb_pager .ctrl {
   margin: 10px 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7754,11 +8218,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 595, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #toolkit .littb_pager .ctrl > * {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7835,11 +8303,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 601, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-search #title_select {
   max-width: 247px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7918,12 +8390,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 607, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview {
   position: relative;
   line-height: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -7973,11 +8449,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 609, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .searching .preloader {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8023,6 +8503,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 612, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .preloader {
   position: absolute;
@@ -8030,6 +8513,7 @@ body > .header .breadcrumb > li:last-of-type a {
   top: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8205,6 +8689,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 617, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .faksimilMarkee {
   background-color: #990000;
@@ -8217,6 +8704,7 @@ body > .header .breadcrumb > li:last-of-type a {
   transform: rotate(2deg);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8303,11 +8791,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 622, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview img {
   max-width: inherit;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8384,11 +8876,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 626, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .state-parallel {
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8461,6 +8957,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 628, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .state-parallel .etext,
 .page-reading #mainview .state-parallel .faksimil {
@@ -8472,6 +8971,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8548,12 +9048,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 631, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .state-parallel .etext {
   white-space: normal;
   margin-right: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8630,6 +9134,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 637, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .etext {
   white-space: nowrap;
@@ -8638,6 +9145,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-size: 10pt;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8714,12 +9222,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 645, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .searching .etext,
 .page-reading #mainview .searching .faksimil {
   opacity: 0.5;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8796,11 +9308,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 648, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #mainview .searching .faksimilMarkee {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -8877,11 +9393,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 655, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit > * {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9038,13 +9558,22 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
   }
+=======
+/* line 658, styles.scss */
+
+.page-reading #toolkit > div {
+  margin: 1em 0;
+>>>>>>> just small bug fixes
 }
+
+/* line 661, styles.scss */
 
 .page-reading #toolkit .title,
 .page-reading #toolkit .author {
   min-height: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9121,11 +9650,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 664, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit .title {
   font-style: italic;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9202,12 +9735,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 667, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit .pageinput {
   width: 50px;
   margin-left: 5px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9284,6 +9821,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 672, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit #search_nav .box {
   background-image: url(/bilder/Soknavigering.png);
@@ -9293,6 +9833,7 @@ body > .header .breadcrumb > li:last-of-type a {
   padding-top: 0.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9369,6 +9910,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 679, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit #search_nav .box .text {
   float: left;
@@ -9378,6 +9922,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-left: 30px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9454,11 +9999,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 687, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit #search_nav .box .ctrls {
   float: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9535,11 +10084,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 689, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit #search_nav .box .ctrls img {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9616,6 +10169,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 692, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit #search_nav .box .ctrls .close_btn {
   position: relative;
@@ -9623,6 +10179,7 @@ body > .header .breadcrumb > li:last-of-type a {
   float: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9699,12 +10256,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 697, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit #search_nav .box .ctrls .arrows {
   position: relative;
   top: 18px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -9777,8 +10338,13 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 =======
+<<<<<<< HEAD
 /* line 698, styles.scss */
 >>>>>>> fixed gruntfile
+=======
+/* line 705, styles.scss */
+>>>>>>> just small bug fixes
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit .pager_ctrls {
   margin-bottom: 0.8em;
@@ -9833,8 +10399,13 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 =======
+<<<<<<< HEAD
 /* line 710, styles.scss */
 >>>>>>> fixed gruntfile
+=======
+/* line 717, styles.scss */
+>>>>>>> just small bug fixes
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit .pager_ctrls a {
   margin: 0 3px;
@@ -10431,11 +11002,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 721, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading #toolkit .size_picker > div.hidden {
   visibility: hidden;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -10484,11 +11059,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 726, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .work_parts {
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -10537,6 +11116,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 728, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .work_parts li {
   font-size: smaller;
@@ -10547,6 +11129,7 @@ body > .header .breadcrumb > li:last-of-type a {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -10609,11 +11192,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> brought back red
   }
 }
+=======
+/* line 737, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .work_parts li .tooltip {
   white-space: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -10690,12 +11277,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 742, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .partnav {
   margin-top: 1em;
   position: relative;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -10772,12 +11363,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 744, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .partnav .arrow_icon {
   color: #990000;
   font-size: 1.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -10854,6 +11449,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 748, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .partnav .triangle {
   width: 0px;
@@ -10867,6 +11465,7 @@ body > .header .breadcrumb > li:last-of-type a {
   bottom: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -10943,6 +11542,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 763, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .partnav .part_menu {
   background-color: #990000;
@@ -10957,6 +11559,7 @@ body > .header .breadcrumb > li:last-of-type a {
   overflow-y: auto;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11033,6 +11636,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 774, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .partnav .part_menu li {
   color: white;
@@ -11042,6 +11648,7 @@ body > .header .breadcrumb > li:last-of-type a {
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11118,11 +11725,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 781, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-reading .partnav .part_menu a {
   color: white;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11199,11 +11810,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 790, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .searching > div:not(.preloader) {
   visibility: hidden;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11280,12 +11895,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 794, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .header_left {
   float: left;
   width: 360px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11362,12 +11981,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 798, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .header_right {
   float: right;
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11444,11 +12067,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 802, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .visible .cover {
   display: block;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11525,6 +12152,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 805, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .large_img {
   opacity: 0;
@@ -11532,6 +12162,7 @@ body > .header .breadcrumb > li:last-of-type a {
   transition: opacity 500ms;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11608,6 +12239,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 806, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .large_img.visible {
   opacity: 1;
@@ -11615,6 +12249,7 @@ body > .header .breadcrumb > li:last-of-type a {
   transition: opacity 500ms;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11691,6 +12326,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 812, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .large_img .cover {
   display: none;
@@ -11702,6 +12340,7 @@ body > .header .breadcrumb > li:last-of-type a {
   background: rgba(255, 255, 255, 0.6);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11778,6 +12417,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 821, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .large_img img {
   display: block;
@@ -11786,6 +12428,7 @@ body > .header .breadcrumb > li:last-of-type a {
   z-index: 1;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11862,12 +12505,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 828, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview div,
 .page-sourceInfo #mainview p {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -11944,11 +12591,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 831, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview p {
   max-width: 350px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12025,11 +12676,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 834, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .mediatypes {
   margin-bottom: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12106,12 +12761,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 838, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview h3 {
   margin: 0;
   line-height: inherit;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12188,11 +12847,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 841, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview h3.author {
   font-variant: small-caps;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12269,12 +12932,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 844, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview h3.title {
   margin-bottom: 2em;
   max-width: 400px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12351,11 +13018,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 849, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .mediatype {
   font-variant: small-caps;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12432,11 +13103,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 852, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .provenance {
   margin: 2em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12513,6 +13188,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 854, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .provenance * {
   display: -moz-inline-stack;
@@ -12523,6 +13201,7 @@ body > .header .breadcrumb > li:last-of-type a {
   *display: inline;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12599,11 +13278,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 857, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .provenance img {
   margin-right: 10px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12680,11 +13363,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 860, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .provenance p {
   width: 250px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12761,11 +13448,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 864, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .toggle {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12842,11 +13533,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 868, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-sourceInfo #mainview .errata_table td {
   padding-right: 3em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12923,11 +13618,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 878, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #mainview .author {
   min-height: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13004,11 +13703,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 881, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #mainview p {
   max-width: 400px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13085,11 +13788,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 885, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #mainview .contenttable {
   margin-top: 3em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13166,11 +13873,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 888, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #mainview .contenttable td {
   text-align: left;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13247,12 +13958,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 891, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #mainview .contenttable td:first-child {
   font-style: italic;
   width: 100%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13329,12 +14044,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 896, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #mainview .contenttable td:nth-child(2) {
   vertical-align: top;
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13411,12 +14130,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 901, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #mainview .author_img {
   margin-top: 3em;
   text-align: right;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13493,11 +14216,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 908, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #toolkit .author {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13574,11 +14301,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 911, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #toolkit .topnav {
   margin-top: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13655,11 +14386,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 913, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorInfo #toolkit .topnav li {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13736,11 +14471,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 922, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorList .contenttable {
   margin-top: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13817,11 +14556,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 924, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-authorList .contenttable td {
   max-width: 180px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13898,6 +14641,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 933, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-titleList #mainview .submit_btn {
   vertical-align: bottom;
@@ -13905,6 +14651,7 @@ body > .header .breadcrumb > li:last-of-type a {
   top: 1px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -13981,11 +14728,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 938, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-titleList #mainview .filter_input {
   margin-top: 0.4em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14062,11 +14813,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 941, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-titleList #mainview .contenttable {
   margin-top: 2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14143,11 +14898,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 944, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-titleList #mainview th {
   padding-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14224,11 +14983,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 947, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-titleList #mainview td {
   max-width: 160px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14305,11 +15068,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 957, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo #mainview > * {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14386,11 +15153,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 960, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo #mainview li {
   margin-bottom: 0.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14467,11 +15238,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 964, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo #mainview .search {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14548,12 +15323,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 966, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo #mainview .search input {
   width: 300px;
   margin-right: 2px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14630,12 +15409,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 974, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo #toolkit .num_hits {
   margin-bottom: 1em;
   height: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14712,12 +15495,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 981, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo .results > div {
   margin-bottom: 2em;
   padding: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14794,11 +15581,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 984, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo .results > div.even {
   background-color: #E3E3E3;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14875,6 +15666,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 988, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo .results h4 {
   text-transform: uppercase;
@@ -14882,6 +15676,7 @@ body > .header .breadcrumb > li:last-of-type a {
   font-weight: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -14958,6 +15753,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 994, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-biblinfo .results .col {
   display: -moz-inline-stack;
@@ -14969,6 +15767,7 @@ body > .header .breadcrumb > li:last-of-type a {
   width: 49%;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15045,12 +15844,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1003, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-epubList #mainview .preloader {
   text-align: left;
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15127,11 +15930,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1007, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-epubList #mainview .searching .contenttable {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15208,11 +16015,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1010, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-epubList #mainview input.filter {
   margin-left: 1em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15289,11 +16100,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1014, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-epubList #mainview > * {
   margin: 1em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15370,11 +16185,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1018, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-epubList #mainview table td:first-child {
   max-width: 200px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15451,11 +16270,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1025, styles.scss */
+>>>>>>> just small bug fixes
 
 .page-help #toolkit {
   font-size: 0.9em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15565,6 +16388,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1033, styles.scss */
+>>>>>>> just small bug fixes
 
 .triangle {
   position: relative;
@@ -15572,6 +16398,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-right: 3px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15667,11 +16494,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1037, styles.scss */
+>>>>>>> just small bug fixes
 
 .triangle.disabled {
   cursor: normal;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15767,6 +16598,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1040, styles.scss */
+>>>>>>> just small bug fixes
 
 .triangle.up {
   top: -14px;
@@ -15777,6 +16611,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-bottom: 10px solid #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15872,6 +16707,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1044, styles.scss */
+>>>>>>> just small bug fixes
 
 .triangle.up.disabled {
   width: 0;
@@ -15881,6 +16719,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-bottom: 10px solid grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -15976,6 +16815,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1048, styles.scss */
+>>>>>>> just small bug fixes
 
 .triangle.down {
   top: 10px;
@@ -15986,6 +16828,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-top: 10px solid #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16081,6 +16924,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1052, styles.scss */
+>>>>>>> just small bug fixes
 
 .triangle.down.disabled {
   width: 0;
@@ -16090,6 +16936,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-top: 10px solid grey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16165,11 +17012,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1057, styles.scss */
+>>>>>>> just small bug fixes
 
 .markee {
   background-color: pink;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16247,11 +17098,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1061, styles.scss */
+>>>>>>> just small bug fixes
 
 .dots_blink {
   text-decoration: blink;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16347,11 +17202,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1063, styles.scss */
+>>>>>>> just small bug fixes
 
 .dots_blink:after {
   content: "...";
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16428,6 +17287,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1068, styles.scss */
+>>>>>>> just small bug fixes
 
 .gratis-ebok {
   font-size: 1em;
@@ -16436,6 +17298,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16531,11 +17394,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1076, styles.scss */
+>>>>>>> just small bug fixes
 
 grundform-clean {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16653,11 +17520,15 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1080, styles.scss */
+>>>>>>> just small bug fixes
 
 .so_modal {
   padding: 1em 1em 1em 1.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16753,11 +17624,15 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1082, styles.scss */
+>>>>>>> just small bug fixes
 
 .so_modal .modal-header {
   padding: 1em 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16853,6 +17728,9 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1084, styles.scss */
+>>>>>>> just small bug fixes
 
 .so_modal .modal-header > h4 {
   display: -moz-inline-stack;
@@ -16864,6 +17742,7 @@ grundform-clean {
   margin: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -16959,12 +17838,16 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1089, styles.scss */
+>>>>>>> just small bug fixes
 
 .so_modal .modal-footer {
   padding-bottom: 7px;
   padding-top: 10px;
   text-align: left;
   font-size: 0.8em;
+<<<<<<< HEAD
   margin-top: 3em;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
@@ -17065,6 +17948,11 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+}
+
+/* line 1096, styles.scss */
+>>>>>>> just small bug fixes
 
 .so_modal .close-x {
   color: #990000;
@@ -17074,6 +17962,7 @@ grundform-clean {
   font-size: 1.3em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17169,6 +18058,9 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1104, styles.scss */
+>>>>>>> just small bug fixes
 
 ._so_article {
   padding-left: 1.5em;
@@ -17182,6 +18074,7 @@ grundform-clean {
   user-select: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17277,12 +18170,16 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1113, styles.scss */
+>>>>>>> just small bug fixes
 
 ._so_article hvord {
   cursor: pointer;
   border-bottom: thin dotted #990000;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17352,6 +18249,9 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1120, styles.scss */
+>>>>>>> just small bug fixes
 
 ._so_article sentens {
   margin-top: 1em;
@@ -17364,6 +18264,7 @@ grundform-clean {
   font-size: small;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17459,6 +18360,9 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1130, styles.scss */
+>>>>>>> just small bug fixes
 
 ._so_article stilruta {
   display: block;
@@ -17469,6 +18373,7 @@ grundform-clean {
   line-height: 1.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17564,11 +18469,15 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1141, styles.scss */
+>>>>>>> just small bug fixes
 
 .nav_footer {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17664,6 +18573,9 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1147, styles.scss */
+>>>>>>> just small bug fixes
 
 .modal.fade .modal-dialog {
   -webkit-transform: translate(0, 0);
@@ -17671,6 +18583,7 @@ grundform-clean {
   transform: translate(0, 0);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17766,6 +18679,9 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1151, styles.scss */
+>>>>>>> just small bug fixes
 
 .modal-dialog {
   border-radius: 0;
@@ -17774,6 +18690,7 @@ grundform-clean {
   margin-top: 0;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17869,11 +18786,15 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1157, styles.scss */
+>>>>>>> just small bug fixes
 
 .modal-footer {
   border-top: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -17969,11 +18890,15 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1160, styles.scss */
+>>>>>>> just small bug fixes
 
 .modal-header {
   font-size: 1.2em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18046,12 +18971,16 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1163, styles.scss */
+>>>>>>> just small bug fixes
 
 .modal.fade {
   -webkit-transition: opacity 0.1s linear;
   transition: opacity 0.1s linear;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18090,12 +19019,16 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1165, styles.scss */
+>>>>>>> just small bug fixes
 
 .modal.fade.in {
   top: 5%;
 >>>>>>> fiddled around with the school
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18191,11 +19124,15 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1170, styles.scss */
+>>>>>>> just small bug fixes
 
 .dropdown-menu {
   border-radius: 2px;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18291,6 +19228,9 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1174, styles.scss */
+>>>>>>> just small bug fixes
 
 .dropdown-menu .active > a,
 .dropdown-menu .active > a:hover {
@@ -18299,6 +19239,7 @@ grundform-clean {
   background-image: linear-gradient(#a9a9a9, #979797);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18394,6 +19335,9 @@ grundform-clean {
 >>>>>>> rewrote school html loading
   }
 }
+=======
+/* line 1182, styles.scss */
+>>>>>>> just small bug fixes
 
 .alert_popup {
   position: fixed;
@@ -18406,6 +19350,7 @@ grundform-clean {
   background-image: linear-gradient(#990000, #750000);
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18430,6 +19375,9 @@ grundform-clean {
     font-family: \000031192;
   }
 }
+=======
+/* line 1193, styles.scss */
+>>>>>>> just small bug fixes
 
 .site-school {
   width: 100%;
@@ -18438,6 +19386,7 @@ grundform-clean {
   line-height: 1.4em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18470,20 +19419,15 @@ grundform-clean {
     font-family: \000031199;
   }
 }
+=======
+/* line 1200, styles.scss */
+>>>>>>> just small bug fixes
 
 .site-school h2 {
   margin-top: 2.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031202;
-  }
-}
+/* line 1203, styles.scss */
 
 .site-school h3 {
   font-weight: bold;
@@ -18492,15 +19436,7 @@ grundform-clean {
   line-height: 0.5;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031209;
-  }
-}
+/* line 1210, styles.scss */
 
 .site-school blockquote {
   font-size: 0.8em;
@@ -18510,15 +19446,68 @@ grundform-clean {
   max-width: 440px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
+/* line 1219, styles.scss */
 
-  line {
-    font-family: \000031218;
-  }
+.site-school .itemizedlist p {
+  margin: 0;
 }
+
+/* line 1223, styles.scss */
+
+.site-school .top_menu .icon {
+  cursor: pointer;
+  margin-left: -16px;
+  color: #666;
+}
+
+/* line 1232, styles.scss */
+
+.site-school .minus:after {
+  content: "−";
+  font-size: 1.6em;
+  height: 100%;
+}
+
+/* line 1239, styles.scss */
+
+.site-school .plus:after {
+  content: "+";
+  font-size: 1.6em;
+}
+
+/* line 1244, styles.scss */
+
+.site-school .next_prev {
+  height: 1em;
+  font-size: 0.8em;
+  margin-top: 3em;
+}
+
+/* line 1248, styles.scss */
+
+.site-school .next_prev a:first-child:not(.empty) {
+  float: left;
+}
+
+/* line 1250, styles.scss */
+
+.site-school .next_prev a:first-child:not(.empty):before {
+  content: "← ";
+}
+
+/* line 1254, styles.scss */
+
+.site-school .next_prev a:last-child:not(.empty) {
+  float: right;
+}
+
+/* line 1256, styles.scss */
+
+.site-school .next_prev a:last-child:not(.empty):after {
+  content: " →";
+}
+
+/* line 1262, styles.scss */
 
 .site-school .before_sidebar {
   display: -moz-inline-stack;
@@ -18529,15 +19518,7 @@ grundform-clean {
   *display: inline;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031221;
-  }
-}
+/* line 1265, styles.scss */
 
 .site-school .sidebar {
   display: -moz-inline-stack;
@@ -18551,21 +19532,14 @@ grundform-clean {
   font-size: 0.8em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031230;
-  }
-}
+/* line 1274, styles.scss */
 
 .site-school .italics,
 .site-school .italic {
   font-style: italic;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18590,11 +19564,15 @@ grundform-clean {
     font-family: \000031233;
   }
 }
+=======
+/* line 1277, styles.scss */
+>>>>>>> just small bug fixes
 
 .site-school #leftCorridor {
   display: none;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18619,11 +19597,15 @@ grundform-clean {
     font-family: \000031236;
   }
 }
+=======
+/* line 1280, styles.scss */
+>>>>>>> just small bug fixes
 
 .site-school .header hr {
   border-color: lightgrey;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18648,6 +19630,9 @@ grundform-clean {
     font-family: \000031239;
   }
 }
+=======
+/* line 1283, styles.scss */
+>>>>>>> just small bug fixes
 
 .site-school .logo_link {
   background: url("../img/school_logo.svg") no-repeat;
@@ -18664,21 +19649,14 @@ grundform-clean {
   top: 20px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031249;
-  }
-}
+/* line 1293, styles.scss */
 
 .site-school > .header .breadcrumb {
   display: block;
   width: auto;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18769,12 +19747,16 @@ grundform-clean {
     font-family: \000031256;
   }
 }
+=======
+/* line 1300, styles.scss */
+>>>>>>> just small bug fixes
 
 .site-school #mainview .nav_sidebar li {
   text-transform: uppercase;
   line-height: 1.5em;
 }
 
+<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -18801,34 +19783,21 @@ grundform-clean {
     font-family: \000031261;
   }
 }
+=======
+/* line 1305, styles.scss */
+>>>>>>> just small bug fixes
 
 .site-school .nav_sidebar .selected {
   color: #990000;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031265;
-  }
-}
+/* line 1309, styles.scss */
 
 .site-school #mainview {
   width: auto;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031268;
-  }
-}
+/* line 1312, styles.scss */
 
 .site-school p,
 .site-school h1,
@@ -18840,15 +19809,7 @@ grundform-clean {
   max-width: 500px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031271;
-  }
-}
+/* line 1315, styles.scss */
 
 .site-school #mainview:after {
   position: absolute;
@@ -18860,104 +19821,60 @@ grundform-clean {
   z-index: -1;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031284;
-  }
-}
+/* line 1328, styles.scss */
 
 .site-school .firstterm,
 .site-school .glossterm {
   font-size: 0.9em;
-  font-style: italic;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
+/* line 1334, styles.scss */
 
-  line {
-    font-family: \000031292;
-  }
+.site-school .firstterm {
+  font-style: normal;
 }
+
+/* line 1338, styles.scss */
+
+.site-school .separator {
+  text-align: center;
+  margin-top: 2em;
+}
+
+/* line 1343, styles.scss */
 
 .site-school dt {
   margin-top: 0.8em;
   margin-bottom: 0.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031295;
-  }
-}
+/* line 1346, styles.scss */
 
 .site-school dt .glossterm {
   font-style: normal;
   font-weight: bold;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031300;
-  }
-}
+/* line 1351, styles.scss */
 
 .site-school dd {
   margin-bottom: 1.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031303;
-  }
-}
+/* line 1354, styles.scss */
 
 .site-school dd p {
   margin-top: 0;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031306;
-  }
-}
+/* line 1357, styles.scss */
 
 .site-school .titlepage {
   font-weight: normal;
   font-size: 20px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031312;
-  }
-}
+/* line 1363, styles.scss */
 
 .site-school .content {
   display: -moz-inline-stack;
@@ -18968,44 +19885,20 @@ grundform-clean {
   *display: inline;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031317;
-  }
-}
+/* line 1368, styles.scss */
 
 .site-school .content ul li {
   list-style-type: disc;
   margin-left: 2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031322;
-  }
-}
+/* line 1373, styles.scss */
 
 .site-school .content .sect2 {
   margin-top: 2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031326;
-  }
-}
+/* line 1377, styles.scss */
 
 .site-school .nav_sidebar {
   display: -moz-inline-stack;
@@ -19019,100 +19912,44 @@ grundform-clean {
   font-size: 12px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031332;
-  }
-}
+/* line 1383, styles.scss */
 
 .site-school .nav_sidebar .top_menu {
   margin-top: 1.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031336;
-  }
-}
+/* line 1387, styles.scss */
 
 .site-school .nav_sidebar > .affix {
   top: 0;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031341;
-  }
-}
+/* line 1392, styles.scss */
 
 .site-school ul ul li {
   margin-left: 1em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031345;
-  }
-}
+/* line 1396, styles.scss */
 
 .site-school .lower_menu {
   margin-top: 1em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031348;
-  }
-}
+/* line 1399, styles.scss */
 
 .site-school .lower_menu ul {
   font-size: inherit;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031354;
-  }
-}
+/* line 1406, styles.scss */
 
 .site-school.page-teachers .logos,
 .site-school.page-students .logos {
   margin-top: 4em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031356;
-  }
-}
+/* line 1408, styles.scss */
 
 .site-school.page-teachers .logos > *,
 .site-school.page-students .logos > * {
@@ -19120,30 +19957,14 @@ grundform-clean {
   margin-top: 1em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031360;
-  }
-}
+/* line 1412, styles.scss */
 
 .site-school.page-teachers .logos .lb,
 .site-school.page-students .logos .lb {
   height: 33px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031363;
-  }
-}
+/* line 1415, styles.scss */
 
 .site-school.page-teachers .logos .sla,
 .site-school.page-students .logos .sla {
@@ -19151,114 +19972,50 @@ grundform-clean {
   margin-top: 7px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031373;
-  }
-}
+/* line 1425, styles.scss */
 
 .site-school.page-school ul {
   font-size: 0.8em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031376;
-  }
-}
+/* line 1428, styles.scss */
 
 .site-school.page-school .logo_link {
   cursor: pointer;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031379;
-  }
-}
+/* line 1431, styles.scss */
 
 .site-school.page-school .logos {
   margin-top: 5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031381;
-  }
-}
+/* line 1433, styles.scss */
 
 .site-school.page-school .logos .lb {
   height: 40px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031384;
-  }
-}
+/* line 1436, styles.scss */
 
 .site-school.page-school .logos .amp {
   height: 16px;
   margin: 0 8px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031388;
-  }
-}
+/* line 1440, styles.scss */
 
 .site-school.page-school .logos .sla {
   height: 40px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031393;
-  }
-}
+/* line 1445, styles.scss */
 
 .site-school.page-school .content {
   min-height: 380px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031398;
-  }
-}
+/* line 1450, styles.scss */
 
 .site-school.page-school .teachers,
 .site-school.page-school .students {
@@ -19266,30 +20023,14 @@ grundform-clean {
   text-transform: uppercase;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031399;
-  }
-}
+/* line 1451, styles.scss */
 
 .site-school.page-school .teachers h2,
 .site-school.page-school .students h2 {
   color: #990000;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031406;
-  }
-}
+/* line 1458, styles.scss */
 
 .site-school.page-school .header hr {
   position: relative;
@@ -19299,59 +20040,27 @@ grundform-clean {
   margin-top: 31px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031414;
-  }
-}
+/* line 1466, styles.scss */
 
 .site-school.page-school .img_circle {
   float: right;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031418;
-  }
-}
+/* line 1470, styles.scss */
 
 .site-school.page-school .teachers {
   top: 220px;
   left: 550px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031422;
-  }
-}
+/* line 1474, styles.scss */
 
 .site-school.page-school .students {
   top: 420px;
   left: 600px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031427;
-  }
-}
+/* line 1479, styles.scss */
 
 .site-school.page-school #mainview:after {
   background-image: url("../img/selma_circle.png");
@@ -19362,90 +20071,42 @@ grundform-clean {
   height: 710px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031435;
-  }
-}
+/* line 1487, styles.scss */
 
 .site-school.page-school h1,
 .site-school.page-school p {
   max-width: 380px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031440;
-  }
-}
+/* line 1492, styles.scss */
 
 .site-school.page-teachers #mainview > div,
 .site-school.page-students #mainview > div {
   white-space: nowrap;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031442;
-  }
-}
+/* line 1494, styles.scss */
 
 .site-school.page-teachers #mainview > div > *,
 .site-school.page-students #mainview > div > * {
   white-space: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031446;
-  }
-}
+/* line 1498, styles.scss */
 
 .site-school.page-teachers .content,
 .site-school.page-students .content {
   margin-bottom: 5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031453;
-  }
-}
+/* line 1505, styles.scss */
 
 .site-school.page-teachers .header hr {
   border-color: #999;
   border-width: 1px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031457;
-  }
-}
+/* line 1509, styles.scss */
 
 .site-school.page-teachers #mainview:after {
   position: absolute;
@@ -19455,15 +20116,7 @@ grundform-clean {
   height: 1200px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031466;
-  }
-}
+/* line 1518, styles.scss */
 
 .site-school.page-teachers #mainview > div {
   display: -moz-inline-stack;
@@ -19474,43 +20127,39 @@ grundform-clean {
   *display: inline;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031469;
-  }
-}
+/* line 1521, styles.scss */
 
 .site-school.page-teachers #mainview .nav_sidebar {
   margin-right: 80px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
+/* line 1526, styles.scss */
 
-  line {
-    font-family: \000031478;
-  }
+.site-school.page-teachers .authorinfo {
+  margin-top: 5em;
+  font-size: 0.8em;
 }
+
+/* line 1528, styles.scss */
+
+.site-school.page-teachers .authorinfo:last-child {
+  margin-top: inherit;
+}
+
+/* line 1539, styles.scss */
+
+.site-school.page-students .top_menu .page {
+  margin-bottom: 0.5em;
+  font-weight: bold;
+}
+
+/* line 1546, styles.scss */
 
 .site-school.page-students .header hr {
   border-color: #999;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031485;
-  }
-}
+/* line 1553, styles.scss */
 
 .site-school.page-students #mainview:after {
   position: absolute;
@@ -19522,6 +20171,7 @@ grundform-clean {
 }
 
 @media only screen and (max-width: 760px), (min-device-width: 768px) and (max-device-width: 1024px) {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19557,6 +20207,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1581, styles.scss */
+>>>>>>> just small bug fixes
 
   .modal {
     position: fixed;
@@ -19567,6 +20220,7 @@ grundform-clean {
     margin: 0;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19619,6 +20273,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1634, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList p {
     max-width: 70%;
@@ -19626,6 +20283,7 @@ grundform-clean {
 
   /* Force table to not be like tables anymore */
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19664,6 +20322,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1641, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable,
   .page-titleList .contenttable,
@@ -19673,6 +20334,7 @@ grundform-clean {
     /* Hide table headers (but not display: none;, for accessibility) */
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19711,6 +20373,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1649, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable table,
   .page-epubList .contenttable thead,
@@ -19733,6 +20398,7 @@ grundform-clean {
     display: block;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19770,6 +20436,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1652, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable tr:first-child,
   .page-titleList .contenttable tr:first-child,
@@ -19777,6 +20446,7 @@ grundform-clean {
     display: none;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19812,6 +20482,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1657, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable thead tr,
   .page-titleList .contenttable thead tr,
@@ -19821,6 +20494,7 @@ grundform-clean {
     left: -9999px;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19870,6 +20544,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1663, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable tr:nth-of-type(odd),
   .page-titleList .contenttable tr:nth-of-type(odd),
@@ -19877,6 +20554,7 @@ grundform-clean {
     background-color: #EDEDED;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19930,6 +20608,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1667, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable td,
   .page-titleList .contenttable td,
@@ -19939,6 +20620,7 @@ grundform-clean {
     position: relative;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -19992,6 +20674,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1671, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable td > *:first-child,
   .page-titleList .contenttable td > *:first-child,
@@ -19999,6 +20684,7 @@ grundform-clean {
     background: none;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -20052,6 +20738,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1674, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable td .dots,
   .page-titleList .contenttable td .dots,
@@ -20059,6 +20748,7 @@ grundform-clean {
     display: none;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -20112,6 +20802,9 @@ grundform-clean {
     }
 }
 >>>>>>> minor css changes
+=======
+  /* line 1679, styles.scss */
+>>>>>>> just small bug fixes
 
   .page-epubList .contenttable td:before,
   .page-titleList .contenttable td:before,
@@ -20126,116 +20819,45 @@ grundform-clean {
     white-space: nowrap;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031624;
-    }
-}
+  /* line 1692, styles.scss */
 
   .site-school {
     padding: 5%;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031630;
-    }
-}
-
-  .site-school .logo_link {
-    width: 100%;
-    background-size: 100%;
-  }
-
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031637;
-    }
-}
+  /* line 1705, styles.scss */
 
   .site-school .header .breadcrumb {
     text-align: left;
     margin-top: 0.5em;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031643;
-    }
-}
+  /* line 1711, styles.scss */
 
   .site-school.page-school .header hr {
     width: 100%;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031646;
-    }
-}
+  /* line 1714, styles.scss */
 
   .site-school.page-school #mainview:after {
     display: none;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031649;
-    }
-}
+  /* line 1717, styles.scss */
 
   .site-school.page-school .teachers,
   .site-school.page-school .students {
     position: static;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031652;
-    }
-}
+  /* line 1720, styles.scss */
 
   .site-school.page-school .students {
     margin-bottom: 2em;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031655;
-    }
-}
+  /* line 1723, styles.scss */
 
   .site-school.page-school h1,
   .site-school.page-school p {
@@ -20243,145 +20865,66 @@ grundform-clean {
     max-width: 100%;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031660;
-    }
-}
+  /* line 1728, styles.scss */
 
   .site-school.page-school .lb {
     display: block;
     margin-bottom: 2em;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031664;
-    }
-}
+  /* line 1732, styles.scss */
 
   .site-school.page-school .amp {
     display: none;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031667;
-    }
-}
+  /* line 1735, styles.scss */
 
   .site-school.page-school .sla {
     display: block;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031671;
-    }
-}
+  /* line 1739, styles.scss */
 
   .site-school.page-school h2 {
     margin-top: 1em;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031677;
-    }
-}
+  /* line 1745, styles.scss */
 
   .site-school.page-teachers #mainview > div,
   .site-school.page-students #mainview > div {
     white-space: normal;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031680;
-    }
-}
+  /* line 1748, styles.scss */
 
   .site-school.page-teachers #mainview:after,
   .site-school.page-students #mainview:after {
     background-image: none;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031687;
-    }
-}
+  /* line 1755, styles.scss */
 
   .site-school .nav_sidebar {
     margin-bottom: 2em;
+    margin-left: 1em;
     width: auto;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031690;
-    }
-}
+  /* line 1759, styles.scss */
 
   .site-school .nav_sidebar .affix {
     position: static;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031695;
-    }
-}
+  /* line 1764, styles.scss */
 
   .site-school .before_sidebar {
     display: block;
   }
 
-@media -sass-debug-info {
-    filename {
-      font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-    }
-
-    line {
-      font-family: \000031698;
-    }
-}
+  /* line 1767, styles.scss */
 
   .site-school .sidebar {
     display: block;

@@ -28,7 +28,10 @@
             <a class="logo_link" ng-href="#!{{getLogoUrl()}}">
             </a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
-                <li><a href="#!/start">Hem</a></li>
+                <li>
+                    <a ng-if="!isSchool" href="#!/start">Hem</a> 
+                    <a ng-if="isSchool" href="#!/start">Litteraturbanken</a> 
+                    <span class="divider" >></span></li>
                 
                 <li ng-repeat="item in breadcrumb track by $index" ng-class="{active : $last}"><a ng-href="{{item.url}}">{{item.label}}</a></li>
               <!-- <li class="active">Data</li> -->

@@ -316,7 +316,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             className = (_.last newRoute.templateUrl.split("/")).split(".")[0]
             $rootElement.addClass("page-" + className)
         else 
-            delete $rootElement.isSchool
+            delete $rootScope.isSchool
 
 
         # c.log "newRoute?.breadcrumb", newRoute?.breadcrumb

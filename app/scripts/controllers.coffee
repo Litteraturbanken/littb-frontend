@@ -4,6 +4,8 @@ window.c = console ? log : _.noop
 littb = angular.module('littbApp')
 littb.controller "startCtrl", ($scope, $location) ->
 
+    $scope.item = "a,b,c,d,e".split(",")
+
     $scope.gotoTitle = (query) ->
         unless query
             url = "/titlar"
@@ -52,9 +54,13 @@ littb.controller "contactFormCtrl", ($scope, backend, $timeout) ->
 
 
     
+
 littb.controller "statsCtrl", ($scope, backend) ->
     s = $scope
+
+
     backend.getStats().then (data) ->
+        c.log "data", data
         s.data = data
 
 littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, authors) ->

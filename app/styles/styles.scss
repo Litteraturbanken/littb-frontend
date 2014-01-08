@@ -41,6 +41,7 @@ body {
     font-size : 12px;
     padding-top : 20px;
     padding-left : $gutter-width;
+    padding-right : 1%;
     white-space: nowrap;
     font-family : georgia, serif;
     width : $page-width;
@@ -1435,6 +1436,49 @@ grundform-clean {
 
         max-width : $column_width - 60px;
     }
+    .itemizedlist {
+        p {
+            margin : 0;
+        }
+    }
+    .top_menu .icon {
+        cursor: pointer;
+        margin-left : -16px;
+
+        color : #666;
+    }
+    .collapse {
+        // margin-left : 1.5em;
+    }
+    .minus:after {
+        // content : "–";
+        content : "−";
+        font-size : 1.6em;
+        height : 100%;
+
+    }
+    .plus:after {
+        content : "+";
+        font-size : 1.6em;
+    }
+
+    .next_prev {
+        height : 1em;
+        font-size : 0.8em;
+        margin-top : 3em;
+        a:first-child:not(.empty) {
+            float : left;
+            &:before {
+                content : "← ";
+            }
+        }
+        a:last-child:not(.empty) {
+            float : right;
+            &:after {
+                content : " →";
+            }
+        }
+    }
 
     .before_sidebar {
         @include inline-block(top);
@@ -1506,8 +1550,15 @@ grundform-clean {
         // font-variant: small-caps;
         font-size : 0.9em;
         // text-transform: capitalize;
-        font-style: italic;
         
+    }
+    .firstterm {
+        font-style: normal;
+
+    }
+    .separator {
+        text-align: center;
+        margin-top: 2em;
     }
     
     dt {
@@ -1572,6 +1623,7 @@ grundform-clean {
     }
 
     &.page-teachers, &.page-students {
+
         .logos {
             margin-top : 4em;
             & > * {
@@ -1692,10 +1744,26 @@ grundform-clean {
             }
             
         }
+        .authorinfo {
+            margin-top : 5em;
+            &:last-child {
+                margin-top : inherit;
+            }
+            font-size : 0.8em;
+
+        }
     }
     &.page-students {
         // background-repeat: no-repeat;
         // opacity : 0.4;
+        .top_menu {
+            .page {
+                margin-bottom : 0.5em;
+                // font-size : 1.1em;
+                font-weight: bold;
+            }
+            
+        }
         .header hr {
             border-color : #999;
         }
@@ -1850,8 +1918,8 @@ only screen and (max-width: 760px),
 
         .logo_link {
             // height : 30px;
-            width: 100%;
-            background-size: 100%;
+            // width: 100%;
+            // background-size: 100%;
         }
         padding : 5%;
 
@@ -1906,7 +1974,8 @@ only screen and (max-width: 760px),
 
         
         .nav_sidebar {
-            margin-bottom : 2em;   
+            margin-bottom : 2em;  
+            margin-left : 1em; 
             width : auto;
             .affix {
                 position : static;
