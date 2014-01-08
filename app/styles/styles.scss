@@ -48,6 +48,7 @@ body {
     width : $page-width;
     background-color: white;
     line-height : 17.5px;
+    padding-bottom : 3em;
 
     > * {
         white-space : normal;
@@ -1073,17 +1074,22 @@ grundform-clean {
         }
     }
     .modal-footer {
-        border-top: 1px solid #eee;
-        padding-bottom : 0;
+        padding-bottom : 7px;
         padding-top : 10px;
         text-align: left;
         font-size: 0.8em;
+        margin-top : 3em;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+
+
     }
     .close-x {
         color : $primarycolor;
         float : right;
         cursor : pointer;
         margin-right : 9px;
+        font-size : 1.3em;
     }
 }
 
