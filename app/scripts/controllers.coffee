@@ -4,8 +4,6 @@ window.c = console ? log : _.noop
 littb = angular.module('littbApp')
 littb.controller "startCtrl", ($scope, $location) ->
 
-    $scope.item = "a,b,c,d,e".split(",")
-
     $scope.gotoTitle = (query) ->
         unless query
             url = "/titlar"

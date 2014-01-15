@@ -34,21 +34,6 @@ getStudentCtrl = (id) ->
                 url : "/#!/skola/#{id}/HerrArne#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             }
-            # {
-            #     label : "Kejsarn av Portugallien", 
-            #     url : "/#!/skola/#{id}/Kejsarn#{sfx}.html"
-            #     if : ["6-9", "gymnasium"]
-            # }
-            # {
-            #     label : "Mårbackasviten", 
-            #     url : "/#!/skola/#{id}/Marbacka#{sfx}.html"
-            #     if : ["f-5", "6-9"]
-            # }
-            # {
-            #     label : "Osynliga Länkar", 
-            #     url : "/#!/skola/#{id}/OsynligaLankar#{sfx}.html"
-            #     if: ["6-9"]
-            # }
             {
                 label : "Nils Holgersson", 
                 url : "/#!/skola/#{id}/NilsHolgerssonUppgifter.html"
@@ -77,17 +62,22 @@ getStudentCtrl = (id) ->
                 url : "/#!/skola/#{id}/ForfattarpresentationElever.html"
                 if : ["6-9", "gymnasium"]
             ,
+                label: "I andra medier", 
+                url : "/#!/skola/#{id}/SLiAndraMedier.html"
+                sublist : [
+                        label : "Uppgifter medier"
+                        url : "/#!/skola/#{id}/UppgifterMedierGY.html"
+                ]
+                if : ["gymnasium"]
+            ,
                 label: "Uppgifter", 
                 sublist : works
                 if : ["6-9", "gymnasium"]
             ,
-                label: "Uppgifter", 
-                url : "/#!/skola/#{id}/NilsHolgerssonUppgifter.html"
-                if : ["f-5"]
-            ,
                 label: "Den heliga natten", 
                 url : "/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil"
                 if : ["f-5"]
+
             # ,
             #     label: "Orientering genrer", 
             #     url : "/#!/skola/#{id}/Genrer.html", 
@@ -144,7 +134,7 @@ littb.config () ->
 
 
 
-littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q, $timeout) ->
+littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q, $timeout, $rootScope) ->
     $scope.docurl = $routeParams.docurl
     def = $q.defer()
     def.promise.then () ->
@@ -155,11 +145,20 @@ littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q
                     $(window).scrollTop(0)
                     return
                 $(window).scrollTop($("##{a}").offset().top)
+
+                $("##{a}").parent().addClass("highlight")
+            else if $rootScope.scrollPos[$location.path()]
+                $(window).scrollTop ($rootScope.scrollPos[$location.path()] or 0)
+            
             else
                 $anchorScroll()
+
+            c.log "$rootScope.scrollPos", $rootScope.scrollPos
+            # $rootScope.okSaveScroll = true
+
         , 500)
         
-        
+    
     $scope.fileDef = def
 
 

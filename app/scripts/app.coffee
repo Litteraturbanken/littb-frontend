@@ -328,6 +328,30 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
         firstRoute.resolve()
 
+
+
+    $rootScope.scrollPos = {} # scroll position of each view
+    $(window).on "scroll", ->
+        # false between $routeChangeStart and $routeChangeSuccess
+        if $rootScope.okSaveScroll
+            if $(window).scrollTop()
+                $rootScope.scrollPos[$location.path()] = $(window).scrollTop()
+
+
+    #console.log($rootScope.scrollPos);
+    $rootScope.scrollClear = (path) ->
+        $rootScope.scrollPos[path] = 0
+
+    $rootScope.$on "$routeChangeStart", ->
+        $rootScope.okSaveScroll = false
+
+    $rootScope.$on "$routeChangeSuccess", ->
+        $rootScope.okSaveScroll = true
+        #     c.log "$routeChangeSuccess"
+        #     $timeout (-> # wait for DOM, then restore scroll position
+                
+        #     ), 0
+
     # $rootScope._showmenu_mobile = false;
 
     normalizeUrl = (str) ->

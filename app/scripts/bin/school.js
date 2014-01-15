@@ -64,13 +64,19 @@
             url: "/#!/skola/" + id + "/ForfattarpresentationElever.html",
             "if": ["6-9", "gymnasium"]
           }, {
+            label: "I andra medier",
+            url: "/#!/skola/" + id + "/SLiAndraMedier.html",
+            sublist: [
+              {
+                label: "Uppgifter medier",
+                url: "/#!/skola/" + id + "/UppgifterMedierGY.html"
+              }
+            ],
+            "if": ["gymnasium"]
+          }, {
             label: "Uppgifter",
             sublist: works,
             "if": ["6-9", "gymnasium"]
-          }, {
-            label: "Uppgifter",
-            url: "/#!/skola/" + id + "/NilsHolgerssonUppgifter.html",
-            "if": ["f-5"]
           }, {
             label: "Den heliga natten",
             url: "/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil",
@@ -114,7 +120,7 @@
     });
   });
 
-  littb.controller("fileCtrl", function($scope, $routeParams, $location, $anchorScroll, $q, $timeout) {
+  littb.controller("fileCtrl", function($scope, $routeParams, $location, $anchorScroll, $q, $timeout, $rootScope) {
     var def;
     $scope.docurl = $routeParams.docurl;
     def = $q.defer();
@@ -127,10 +133,14 @@
             $(window).scrollTop(0);
             return;
           }
-          return $(window).scrollTop($("#" + a).offset().top);
+          $(window).scrollTop($("#" + a).offset().top);
+          $("#" + a).parent().addClass("highlight");
+        } else if ($rootScope.scrollPos[$location.path()]) {
+          $(window).scrollTop($rootScope.scrollPos[$location.path()] || 0);
         } else {
-          return $anchorScroll();
+          $anchorScroll();
         }
+        return c.log("$rootScope.scrollPos", $rootScope.scrollPos);
       }, 500);
     });
     return $scope.fileDef = def;

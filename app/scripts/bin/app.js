@@ -314,6 +314,23 @@
       })();
       return firstRoute.resolve();
     });
+    $rootScope.scrollPos = {};
+    $(window).on("scroll", function() {
+      if ($rootScope.okSaveScroll) {
+        if ($(window).scrollTop()) {
+          return $rootScope.scrollPos[$location.path()] = $(window).scrollTop();
+        }
+      }
+    });
+    $rootScope.scrollClear = function(path) {
+      return $rootScope.scrollPos[path] = 0;
+    };
+    $rootScope.$on("$routeChangeStart", function() {
+      return $rootScope.okSaveScroll = false;
+    });
+    $rootScope.$on("$routeChangeSuccess", function() {
+      return $rootScope.okSaveScroll = true;
+    });
     normalizeUrl = function(str) {
       var trans;
       trans = _.object(_.zip("åäö", "aao"));

@@ -10,7 +10,6 @@
   littb = angular.module('littbApp');
 
   littb.controller("startCtrl", function($scope, $location) {
-    $scope.item = "a,b,c,d,e".split(",");
     return $scope.gotoTitle = function(query) {
       var url;
       if (!query) {

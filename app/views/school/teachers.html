@@ -48,7 +48,15 @@
                         
                     </ul>
                 </li>
-                <li><a href="/#!/skola/larare/SLiAndraMedier.html">I andra medier</a></li>
+                <li>
+                    <i class="icon" ng-class="{'minus' : !collapsed[4], 'plus' : collapsed[4]}" ng-click="collapsed[4] = !collapsed[4]"></i>
+                    <a href="/#!/skola/larare/SLiAndraMedier.html">I andra medier</a>
+                    <ul collapse="collapsed[4]">
+                        <li><a href="/#!/skola/larare/UppgifterMedier6-9.html">Uppgifter medier 6-9</a></li>
+                        <li><a href="/#!/skola/larare/UppgifterMedierGY.html">Uppgifter medier GY</a></li>
+                    </ul>
+
+                </li>
                 <li>
                     <i class="icon" ng-class="{'minus' : !collapsed[2], 'plus' : collapsed[2]}" ng-click="collapsed[2] = !collapsed[2]"></i>
                     <a ng-click="collapsed[2] = false" href="/#!/skola/larare/Lashandledningar.html">Läshandledningar</a>
@@ -63,6 +71,7 @@
                 
                         </ul>    
                 </li>
+                <li><a href="/#!/skola/larare/Hjalp.html">Hjälp</a></li>
             </ul>
             
             <ul class="lower_menu">
