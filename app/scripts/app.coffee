@@ -23,8 +23,17 @@ window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
         class Router
             constructor : () ->
             when : (route, obj) ->
+
+                    
+
                 route = [route] if not _.isArray route
                 for r in route
+                    if r.split("/")[1] == "forfattare"
+                        shortRoute = r.replace(/^\/forfattare\//, "/f/").replace("/titlar/", "/t/")
+                        $routeProvider.when shortRoute, obj
+                        
+                    
+
                     $routeProvider.when r, obj
                 return this
             otherwise : () -> $routeProvider.otherwise.apply $routeProvider, arguments
