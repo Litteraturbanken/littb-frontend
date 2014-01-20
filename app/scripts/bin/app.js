@@ -13,7 +13,7 @@
     return $("#mainview").children().scope();
   };
 
-  window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "ngMobile", "template/typeahead/typeahead.html", "ui.bootstrap.tooltip", "ui.bootstrap.modal", "template/modal/backdrop.html", "template/modal/window.html", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html", "template/typeahead/typeahead-match.html", "angularSpinner"]).config(function($routeProvider) {
+  window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.tooltip", "ui.bootstrap.modal", "template/modal/backdrop.html", "template/modal/window.html", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html", "template/typeahead/typeahead-match.html", "angularSpinner"]).config(function($routeProvider) {
     var Router, router;
     Router = (function() {
       function Router() {}

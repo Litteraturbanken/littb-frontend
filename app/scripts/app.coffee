@@ -7,7 +7,6 @@ routeStartCurrent = null
 window.getScope = () -> $("#mainview").children().scope()
 
 window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
-                                            "ngMobile"
                                             "template/typeahead/typeahead.html"
                                             "ui.bootstrap.tooltip"
                                             "ui.bootstrap.modal"

@@ -515,7 +515,7 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
-    window.has = (one, two) -> one.toLowerCase().indexOf(two) != -1
+    window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
     s.rowFilter = (item) ->
         if "epub" not in item.mediatype then return false
         if s.authorFilter and s.authorFilter.authorid != item.author.authorid then return false
