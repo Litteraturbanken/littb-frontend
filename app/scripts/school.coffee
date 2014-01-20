@@ -3,7 +3,7 @@ littb = angular.module('littbApp')
     
 littb.controller "MenuCtrl", ($scope) ->
     s = $scope
-    s.$root.collapsed ?= [true, true, true, true]
+    s.$root.collapsed ?= [true, true, true, true, true]
 
 getStudentCtrl = (id) ->
     ["$scope", "$routeParams", ($scope, $routeParams) ->
@@ -30,6 +30,11 @@ getStudentCtrl = (id) ->
                 if : ["6-9", "gymnasium"]
             }
             {
+                label : "Gösta Berlings saga", 
+                url : "/#!/skola/#{id}/GostaBerlingGY.html"
+                if : ["gymnasium"]
+            }
+            {
                 label : "Herr Arnes penningar", 
                 url : "/#!/skola/#{id}/HerrArne#{sfx}.html"
                 if : ["6-9", "gymnasium"]
@@ -38,6 +43,11 @@ getStudentCtrl = (id) ->
                 label : "Nils Holgersson", 
                 url : "/#!/skola/#{id}/NilsHolgerssonUppgifter.html"
                 if: ["6-9"]
+            }
+            {
+                label : "Osynliga länkar", 
+                url : "/#!/skola/#{id}/OsynligaLankar#{sfx}.html"
+                if: ["6-9", "gymnasium"]
             }
             {
                 label : "Troll och människor", 
@@ -54,7 +64,7 @@ getStudentCtrl = (id) ->
         works = _.filter works, workfilter
 
         $scope.list = _.filter [
-                label: "Begrepp", 
+                label: "Termer och begrepp", 
                 url : "/#!/skola/#{id}/LitteraturvetenskapligaBegrepp.html"
                 if : ["6-9", "gymnasium"]
             ,
@@ -109,10 +119,6 @@ littb.config () ->
         templateUrl : "views/school/school.html"
         # controller : getFileName
 
-    # whn "/skola/:page/LitteraturvetenskapligaBegrepp.html",
-    #     title : "Begrepp"
-    #     templateUrl
-
     whn ["/skola/larare/:docurl", "/skola/larare"],
         title : "Lärare"
         # controller : getFileName
@@ -152,9 +158,6 @@ littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q
             
             else
                 $anchorScroll()
-
-            c.log "$rootScope.scrollPos", $rootScope.scrollPos
-            # $rootScope.okSaveScroll = true
 
         , 500)
         

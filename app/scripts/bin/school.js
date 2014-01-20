@@ -7,7 +7,7 @@
   littb.controller("MenuCtrl", function($scope) {
     var s, _base;
     s = $scope;
-    return (_base = s.$root).collapsed != null ? (_base = s.$root).collapsed : _base.collapsed = [true, true, true, true];
+    return (_base = s.$root).collapsed != null ? (_base = s.$root).collapsed : _base.collapsed = [true, true, true, true, true];
   });
 
   getStudentCtrl = function(id) {
@@ -34,6 +34,10 @@
             url: "/#!/skola/" + id + "/EnHerrgardssagen" + sfx + ".html",
             "if": ["6-9", "gymnasium"]
           }, {
+            label: "Gösta Berlings saga",
+            url: "/#!/skola/" + id + "/GostaBerlingGY.html",
+            "if": ["gymnasium"]
+          }, {
             label: "Herr Arnes penningar",
             url: "/#!/skola/" + id + "/HerrArne" + sfx + ".html",
             "if": ["6-9", "gymnasium"]
@@ -41,6 +45,10 @@
             label: "Nils Holgersson",
             url: "/#!/skola/" + id + "/NilsHolgerssonUppgifter.html",
             "if": ["6-9"]
+          }, {
+            label: "Osynliga länkar",
+            url: "/#!/skola/" + id + "/OsynligaLankar" + sfx + ".html",
+            "if": ["6-9", "gymnasium"]
           }, {
             label: "Troll och människor",
             url: "/#!/skola/" + id + "/TrollManniskor" + sfx + ".html",
@@ -56,7 +64,7 @@
         works = _.filter(works, workfilter);
         return $scope.list = _.filter([
           {
-            label: "Begrepp",
+            label: "Termer och begrepp",
             url: "/#!/skola/" + id + "/LitteraturvetenskapligaBegrepp.html",
             "if": ["6-9", "gymnasium"]
           }, {
@@ -134,13 +142,12 @@
             return;
           }
           $(window).scrollTop($("#" + a).offset().top);
-          $("#" + a).parent().addClass("highlight");
+          return $("#" + a).parent().addClass("highlight");
         } else if ($rootScope.scrollPos[$location.path()]) {
-          $(window).scrollTop($rootScope.scrollPos[$location.path()] || 0);
+          return $(window).scrollTop($rootScope.scrollPos[$location.path()] || 0);
         } else {
-          $anchorScroll();
+          return $anchorScroll();
         }
-        return c.log("$rootScope.scrollPos", $rootScope.scrollPos);
       }, 500);
     });
     return $scope.fileDef = def;
