@@ -888,6 +888,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     # s.pagename = pagename
     
     onKeyDown = (event) ->
+        if event.metaKey or event.ctrlKey or event.altKey then return
         s.$apply () ->
             switch event.which
                 when 39 

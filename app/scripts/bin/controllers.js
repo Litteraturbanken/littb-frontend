@@ -966,6 +966,9 @@
       return $location.search("traffslut", null);
     };
     onKeyDown = function(event) {
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
       return s.$apply(function() {
         switch (event.which) {
           case 39:
