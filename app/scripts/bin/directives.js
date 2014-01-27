@@ -412,21 +412,16 @@
           if (t.attr("target") === "_blank") {
             window.open(t.attr("href"), "_blank");
           } else if (t.attr("href").slice(0, 7) === "mailto:") {
-<<<<<<< HEAD
-            return location.href = t.attr("href");
-<<<<<<< HEAD
+            location.href = t.attr("href");
           } else if (_.str.endsWith(t.attr("href"), ".epub")) {
-            return location.href = t.attr("href");
-=======
-=======
             location.href = t.attr("href");
           } else if (_.str.startsWith(t.attr("href"), "http://")) {
             location.href = t.attr("href");
->>>>>>> only minor changes
           } else {
             $scope.$apply(function() {
               return $location.url(decodeURIComponent(t.attr("href")).replace("/#!/", ""));
             });
+<<<<<<< HEAD
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
           }
@@ -434,6 +429,8 @@
           for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
             struct = _ref2[_k];
             output["close_" + struct] = true;
+=======
+>>>>>>> adding new compiled files
           }
 <<<<<<< HEAD
           return ((function() {

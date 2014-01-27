@@ -15,6 +15,7 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   window.littb = angular.module('littbApp', ["ngRoute", "ui.bootstrap", "template/modal/backdrop.html", "template/modal/window.html", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html", "template/typeahead/typeahead-match.html", "angularSpinner", "pasvaz.bindonce"]).config(function($routeProvider) {
 =======
 =======
@@ -29,9 +30,11 @@
 =======
   window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "ngMobile", "template/typeahead/typeahead.html", "ui.bootstrap.tooltip", "ui.bootstrap.modal", "ui.bootstrap.collapse", "template/modal/backdrop.html", "template/modal/window.html", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html", "template/typeahead/typeahead-match.html", "angularSpinner"]).config(function($routeProvider) {
 >>>>>>> just small bug fixes
+=======
+  window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.tooltip", "ui.bootstrap.modal", "ui.bootstrap.collapse", "template/modal/backdrop.html", "template/modal/window.html", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html", "template/typeahead/typeahead-match.html", "angularSpinner"]).config(function($routeProvider) {
+>>>>>>> adding new compiled files
     var router;
     window.Router = (function() {
->>>>>>> fiddled around with the school
       function Router() {}
 
       Router.prototype.when = function(route, obj) {
