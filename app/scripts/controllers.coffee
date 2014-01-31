@@ -208,10 +208,10 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
     
     s.increment = () ->
         limit = true
-        s.entries?[s.showHit + 1] && s.showHit++
+        s.entries?[s.showHit + 1] and s.showHit++
     s.decrement = () ->
         limit = true
-        s.showHit && s.showHit--
+        s.showHit and s.showHit--
 
     s.getEntries = () ->
         if limit
@@ -420,17 +420,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 
     fetchWorks = () ->
         s.searching = true
-        #TODO: what about titles that start with strange chars or non lower case letters?
-        c.log "s.titlefilter", s.filter
         backend.getTitles(s.workFilter == "titles", s.selectedLetter, s.filter).then (titleArray) ->
             s.searching = false
-            # c.log "getTitles", titleArray
-            # titleArray should be like [{author : ..., mediatype : [...], title : ...} more...]
             s.titleArray = titleArray
             s.rowByLetter = _.groupBy titleArray, (item) ->
                 firstletter = item.itemAttrs.sortkey[0]
-                # if firstletter in ["(", "[", "”"]
-                #     firstletter = item.itemAttrs.sorttitle[1]
                 if firstletter == "Æ"
                     firstletter = "A"
                 return firstletter.toUpperCase()
@@ -772,7 +766,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
     #     if modal then return false
 
     $($window).on "keyup", (event) ->
-        if event.which == 83 and not $("input:focus").length
+        if event.which == 83 and not $("input:focus,textarea:focus,select:focus").length
             s.$broadcast "focus"
 
 

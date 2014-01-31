@@ -853,7 +853,7 @@
     s.dict_searching = false;
     modal = null;
     $($window).on("keyup", function(event) {
-      if (event.which === 83 && !$("input:focus").length) {
+      if (event.which === 83 && !$("input:focus,textarea:focus,select:focus").length) {
         return s.$broadcast("focus");
       }
     });

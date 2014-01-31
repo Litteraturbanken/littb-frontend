@@ -131,17 +131,18 @@
         left: "=x",
         top: "=y",
         width: "=",
-        height: "="
+        height: "=",
+        size: "="
       },
       link: function(scope, elm, attrs) {
         var s;
         s = scope;
-        return s.$watch("left + top + width + height", function() {
+        return s.$watch("left + top + width + height + size", function() {
           var coors;
           coors = _.pick(scope, "top", "left", "width", "height");
           c.log("coors", coors);
           coors = _.object(_.map(coors, function(val, key) {
-            return [key, ((val != null ? val.split(",")[2] : void 0) || 0) + "px"];
+            return [key, ((val != null ? val.split(",")[s.size] : void 0) || 0) + "px"];
           }));
           return elm.css(coors);
         });
