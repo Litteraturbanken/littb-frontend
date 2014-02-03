@@ -614,6 +614,7 @@ littb.controller "authorListCtrl", ($scope, backend, util, authors) ->
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
+    s.authorDef = authors
 
     util.setupHashComplex s,
         [
