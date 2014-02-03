@@ -147,20 +147,6 @@
     };
   });
 
-  littb.directive('clickOutside', function($document) {
-    return {
-      restrict: 'A',
-      link: function(scope, elem, attr, ctrl) {
-        elem.bind('click', function(e) {
-          return e.stopPropagation();
-        });
-        return $document.on('click', function() {
-          return scope.$apply(attr.clickOutside);
-        });
-      }
-    };
-  });
-
   littb.directive('scrollTo', function($window, $timeout) {
     return {
       link: function(scope, elem, attr) {
@@ -252,10 +238,10 @@
     };
   });
 
-  littb.directive('alert', function($rootElement, $timeout) {
+  littb.directive('alertPopup', function($rootElement, $timeout) {
     return {
       scope: {
-        alert: "="
+        alertPopup: "=alert"
       },
       template: "<div ng-if=\"alert\" class=\"alert_popup\">{{alert}}</div>",
       link: function(scope, elem, attr) {
@@ -316,25 +302,6 @@
         });
         return scope.$on("$destroy", function() {
           return wtch();
-        });
-      }
-    };
-  });
-
-  littb.directive('linkFix', function($location) {
-    return {
-      link: function($scope, elem, attrs) {
-        return elem.on("click", "a[href]", function(event) {
-          var t;
-          c.log("event.target", event.target);
-          t = $(event.target);
-          if (t.attr("target") === "_blank") {
-            return window.open(t.attr("href"), "_blank");
-          } else if (t.attr("href").slice(0, 7) === "mailto:") {
-            return location.href = t.attr("href");
-          } else if (_.str.endsWith(t.attr("href"), ".epub")) {
-            return location.href = t.attr("href");
-          }
         });
       }
     };

@@ -139,6 +139,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
     s.save_search = (startIndex, currentIndex, data) ->
         c.log "save_search", startIndex, currentIndex, data
+
+        c.log "searchData", searchData
         searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()])
 
 
@@ -154,13 +156,14 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         s.searching = true
         
         mediatype = getMediatypes()
-        c.log "search mediatype", mediatype
+
+        # c.log "search mediatype", mediatype
 
         backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then (data) ->
             s.data = data
             s.total_pages = Math.ceil(data.count / s.num_hits)
             s.searching = false
-
+            c.log "searchworks", searchData, searchData.parseUrls
             for row in data.kwic
                 row.href = searchData.parseUrls row
 
@@ -781,13 +784,21 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
                 templateUrl : "so_modal_template.html"
                 scope : s
 
-            modal.result.then angular.noop, () ->
+            modal.result.then () ->
                 s.closeModal()
+            , () ->
+                s.closeModal()
+
+
+    s.clickX = () ->
+        modal.close()
+        # s.lex_article = null
+            
 
 
 
     s.closeModal = () ->
-        modal.close()
+        # modal.close()
         s.lex_article = null
         modal = null
 
@@ -929,10 +940,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ix = s.pagemap["page_" + page]
         s.setPage ix
 
-    s.mouseover = () ->
+    s.mouseover = (event) ->
         c.log "mouseover"
         s.showPopup = true
 
+
+    onClickOutside = () ->
+        s.$apply () ->
+            s.showPopup = false
+
+    $document.on "click", onClickOutside
 
 
     s.getTooltip = (part) ->
@@ -1101,6 +1118,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.$on "$destroy", () ->
         c.log "destroy reader"
         $document.off "keydown", onKeyDown
+        $document.off "click", onClickOutside
         for w in watches
             w()
 

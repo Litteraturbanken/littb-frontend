@@ -126,14 +126,14 @@ littb.directive 'square', () ->
 
 
         
-littb.directive 'clickOutside', ($document) -> 
-    restrict: 'A',
-    link: (scope, elem, attr, ctrl) ->
-        elem.bind 'click', (e) ->
-            e.stopPropagation()
+# littb.directive 'clickOutside', ($document) -> 
+#     restrict: 'A',
+#     link: (scope, elem, attr, ctrl) ->
+#         elem.bind 'click', (e) ->
+#             e.stopPropagation()
 
-        $document.on 'click', () ->
-            scope.$apply(attr.clickOutside)
+#         $document.on 'click', () ->
+#             scope.$apply(attr.clickOutside)
 
 
 littb.directive 'scrollTo', ($window, $timeout) -> 
@@ -234,9 +234,9 @@ littb.directive 'selectionSniffer', ($window) ->
 #                 nProgress.done()
 
 
-littb.directive 'alert', ($rootElement, $timeout) -> 
+littb.directive 'alertPopup', ($rootElement, $timeout) -> 
     scope : 
-        alert : "="
+        alertPopup : "=alert"
     template : """
         <div ng-if="alert" class="alert_popup">{{alert}}</div>
     """
@@ -288,17 +288,17 @@ littb.directive 'pageTitle', ($interpolate) ->
             wtch()
 
 
-littb.directive 'linkFix', ($location) ->
-    link : ($scope, elem, attrs) ->
-        elem.on "click", "a[href]", (event) ->
-            c.log "event.target", event.target
-            t = $(event.target)
-            if t.attr("target") == "_blank"
-                window.open t.attr("href"), "_blank"
-            else if t.attr("href")[..6] == "mailto:"
-                location.href = t.attr("href")
-            else if _.str.endsWith(t.attr("href"), ".epub")
-                location.href = t.attr("href")
+# littb.directive 'linkFix', ($location) ->
+#     link : ($scope, elem, attrs) ->
+#         elem.on "click", "a[href]", (event) ->
+#             c.log "event.target", event.target
+#             t = $(event.target)
+#             if t.attr("target") == "_blank"
+#                 window.open t.attr("href"), "_blank"
+#             else if t.attr("href")[..6] == "mailto:"
+#                 location.href = t.attr("href")
+#             else if _.str.endsWith(t.attr("href"), ".epub")
+#                 location.href = t.attr("href")
                 
 
         # loc = attrs.href

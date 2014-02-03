@@ -660,60 +660,63 @@ littb.factory "authors", (backend, $q) ->
 
 
 
-littb.service "searchData", (backend, $q) ->
+littb.factory "searchData", (backend, $q) ->
     NUM_HITS = 20 # how many hits per search?
-    @data = []
-    @total_hits = null
-    @current = null
+    class SearchData
+        constructor: () ->
+            @data = []
+            @total_hits = null
+            @current = null
 
-    @parseUrls = (row) ->
-        itm = row.item
-        author = itm.workauthor or itm.authorid
-        [titleid] = itm.titleidNew.split("/")
-        return "/forfattare/#{author}/titlar/#{titleid}" + 
-            "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
-        
-    @save = (startIndex, currentIndex, input, search_args) ->
-        @searchArgs = search_args
-        @data = new Array(input.count)
-        @appendData startIndex, input
-        @total_hits = input.count
-        @current = currentIndex
+        parseUrls : (row) ->
+            itm = row.item
+            author = itm.workauthor or itm.authorid
+            [titleid] = itm.titleidNew.split("/")
+            return "/forfattare/#{author}/titlar/#{titleid}" + 
+                "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
+            
+        save : (startIndex, currentIndex, input, search_args) ->
+            @searchArgs = search_args
+            @data = new Array(input.count)
+            @appendData startIndex, input
+            @total_hits = input.count
+            @current = currentIndex
 
-    @appendData = (startIndex, data) ->
-        @data[startIndex..data.kwic.length] = _.map data.kwic, @parseUrls
-
-
-    @next = () ->
-        @current++
-        @search()
-
-        
-    @prev = () ->
-        @current--
-        @search()
+        appendData : (startIndex, data) ->
+            @data[startIndex..data.kwic.length] = _.map data.kwic, @parseUrls
 
 
-    @search = () ->
-        def = $q.defer()
-        c.log "search", @current
-        if @data[@current]? 
-            def.resolve @data[@current]
-        else
-            current_page = Math.floor(@current / NUM_HITS )
-            args = [].concat @searchArgs, [current_page + 1, NUM_HITS]
-            backend.searchWorks(args...).then (data) =>
-                @appendData @current, data
+        next : () ->
+            @current++
+            @search()
+
+            
+        prev : () ->
+            @current--
+            @search()
+
+
+        search : () ->
+            def = $q.defer()
+            c.log "search", @current
+            if @data[@current]? 
                 def.resolve @data[@current]
-        return def.promise
+            else
+                current_page = Math.floor(@current / NUM_HITS )
+                args = [].concat @searchArgs, [current_page + 1, NUM_HITS]
+                backend.searchWorks(args...).then (data) =>
+                    @appendData @current, data
+                    def.resolve @data[@current]
+            return def.promise
 
 
-    @reset = () ->
-        @current = null
-        @total_hits = null
-        @data = []
-        @searchArgs = null
+        reset : () ->
+            @current = null
+            @total_hits = null
+            @data = []
+            @searchArgs = null
 
 
+    return new SearchData()
         
 

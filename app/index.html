@@ -13,6 +13,7 @@
         <!-- <link rel="stylesheet" href="styles/red.css"/> -->
         <!-- build:css styles/littb.css -->
         <link rel="stylesheet" type="text/css" href="styles/so.css" />
+        <!-- <link rel="stylesheet" type="text/css" href="components/sass-bootstrap/dist/css/bootstrap.css" /> -->
         <link rel="stylesheet" type="text/css" href="styles/bootstrap.css" />
         <link rel="stylesheet" type="text/css" href="styles/styles.css" />
         <link rel="stylesheet" href="components/font-awesome/css/font-awesome.css"/>
@@ -29,9 +30,9 @@
                 <img id="logo" src="/bilder/LBlogga.svg">
             </a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
-                <li><a href="#!/start">Hem</a> <span class="divider" >></span></li>
+                <li><a href="#!/start">Hem</a></li>
                 
-                <li ng-repeat="item in breadcrumb track by $index" ng-class="{active : $last}"><a ng-href="{{item.url}}">{{item.label}}</a> <span class="divider" ng-show="!$last">></span></li>
+                <li ng-repeat="item in breadcrumb track by $index" ng-class="{active : $last}"><a ng-href="{{item.url}}">{{item.label}}</a></li>
               <!-- <li class="active">Data</li> -->
             </ul>
             <hr>
@@ -100,7 +101,7 @@
                     
                     <span class="so_spinner" us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"></span>
                 </div>
-                <div alert="dict_not_found"></div>
+                <div alert-popup="dict_not_found"></div>
             </div>
 
             <div id="toolkit"></div>
@@ -115,7 +116,7 @@
                 <div class="so_modal">
                     <div class="modal-header">
                         <h4>Svensk ordbok utgiven av Svenska Akademien (2009)</h4>
-                        <span ng-click="closeModal()" class="sans close-x">×</span>
+                        <span ng-click="clickX()" class="sans close-x">×</span>
                     </div>
                     <div so-article="lex_article.lexemes" class="_so_article" >
                     </div>
@@ -139,8 +140,10 @@
         <script src="components/lodash/dist/lodash.compat.js"></script>
         <script src="lib/jquery.ui.position.js"></script>
         <script src="components/underscore.string/lib/underscore.string.js"></script>
-        <script src="components/unstable-angular-complete/angular.js"></script>
-        <script src="components/unstable-angular-complete/angular-mobile.js"></script>
+        <script src="components/angular/angular.js"></script>
+        <script src="components/angular-route/angular-route.js"></script>
+
+        <!-- // <script src="components/angular/angular-mobile.js"></script> -->
         <script src="components/angular-bootstrap/ui-bootstrap.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
         

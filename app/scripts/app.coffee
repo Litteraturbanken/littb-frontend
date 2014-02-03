@@ -6,10 +6,9 @@ routeStartCurrent = null
 
 window.getScope = () -> $("#mainview").children().scope()
 
-window.littb = angular.module('littbApp', [ "ui.bootstrap.typeahead"
-                                            "template/typeahead/typeahead.html"
-                                            "ui.bootstrap.tooltip"
-                                            "ui.bootstrap.modal"
+window.littb = angular.module('littbApp', [ "ngRoute",
+                                           "ui.bootstrap"
+                                            # "template/typeahead/typeahead.html"
                                             "template/modal/backdrop.html"
                                             "template/modal/window.html"
                                             "template/tooltip/tooltip-popup.html"
@@ -251,6 +250,7 @@ littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
         appendToBody: true
 
 
+
 littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
@@ -353,3 +353,10 @@ littb.filter "numberFmt", () ->
             return item
 
         _.flatten(input.reverse()).join("")
+
+
+littb.filter "trust", ($sce) ->
+    return (input) ->
+        $sce.trustAsHtml input
+
+

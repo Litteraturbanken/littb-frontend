@@ -153,6 +153,7 @@
     };
     s.save_search = function(startIndex, currentIndex, data) {
       c.log("save_search", startIndex, currentIndex, data);
+      c.log("searchData", searchData);
       return searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()]);
     };
     s.getItems = function() {
@@ -167,12 +168,12 @@
       s.query = q;
       s.searching = true;
       mediatype = getMediatypes();
-      c.log("search mediatype", mediatype);
       return backend.searchWorks(s.query, mediatype, s.current_page * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then(function(data) {
         var row, _i, _len, _ref, _results;
         s.data = data;
         s.total_pages = Math.ceil(data.count / s.num_hits);
         s.searching = false;
+        c.log("searchworks", searchData, searchData.parseUrls);
         _ref = data.kwic;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -865,13 +866,17 @@
           templateUrl: "so_modal_template.html",
           scope: s
         });
-        return modal.result.then(angular.noop, function() {
+        return modal.result.then(function() {
+          return s.closeModal();
+        }, function() {
           return s.closeModal();
         });
       }
     };
+    s.clickX = function() {
+      return modal.close();
+    };
     s.closeModal = function() {
-      modal.close();
       s.lex_article = null;
       return modal = null;
     };
@@ -926,7 +931,7 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
-    var author, loadPage, mediatype, onKeyDown, pagename, resetHitMarkings, s, thisRoute, title, watches;
+    var author, loadPage, mediatype, onClickOutside, onKeyDown, pagename, resetHitMarkings, s, thisRoute, title, watches;
     s = $scope;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.pick($routeParams, "title", "author", "mediatype"));
@@ -1028,10 +1033,16 @@
       ix = s.pagemap["page_" + page];
       return s.setPage(ix);
     };
-    s.mouseover = function() {
+    s.mouseover = function(event) {
       c.log("mouseover");
       return s.showPopup = true;
     };
+    onClickOutside = function() {
+      return s.$apply(function() {
+        return s.showPopup = false;
+      });
+    };
+    $document.on("click", onClickOutside);
     s.getTooltip = function(part) {
       if (part.navtitle !== part.showtitle) {
         return part.showtitle;
@@ -1184,6 +1195,7 @@
       var w, _i, _len, _results;
       c.log("destroy reader");
       $document.off("keydown", onKeyDown);
+      $document.off("click", onClickOutside);
       _results = [];
       for (_i = 0, _len = watches.length; _i < _len; _i++) {
         w = watches[_i];
