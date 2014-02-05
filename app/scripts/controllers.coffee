@@ -69,21 +69,30 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
     s.titleChange = () ->
         # $location.search("titel", s.selected_title?.titlepath.split("/")[0] or null)
-        $location.search("titel", s.selected_title?.titlepath or null)
+        $location.search("titel", s.selected_title?.lbworkid or null)
 
 
-    s.checkProof = () ->
+    s.checkProof = (obj) ->
         if s.proofread == 'all'
-            return null
-        else if s.proofread == 'no'
-            return 'false'
+            return true
+        else if s.proofread == "no" and obj.proofread == "false"
+            return true
+        else if s.proofread == "yes" and obj.proofread == "true"
+            return true
         else
-            return 'true'
+            return false
 
 
     s.authorChange = () ->
         $location.search("titel", null)
         s.selected_title = ""
+
+
+    util.setupHashComplex s, [
+            scope_name : "num_hits"
+            key : "per_sida"
+            val_in : Number
+    ]
 
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
@@ -110,7 +119,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
 
     s.searching = false
-    s.num_hits = 20
+    s.num_hits ?= 20
     s.current_page = 0
 
     
@@ -133,7 +142,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         s.current_page = 0
         s.search(s.query)
     s.lastPage = () ->
-        s.current_page = s.total_pages
+        s.current_page = s.total_pages - 1
         s.search(s.query)
     
 
@@ -144,8 +153,28 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()])
 
 
-    s.getItems = () ->
-        _.pluck "item", data.kwic
+    s.getSetVal = (sent, val) ->
+        _.str.trim( sent.structs[val], "|").split("|")[0]
+
+    # s.getItems = () ->
+    #     _.pluck "item", data.kwic
+
+
+    s.selectLeft = (sentence) ->
+        if not sentence.match then return
+        # c.log "left", sentence.tokens.slice 0, sentence.match.start
+        sentence.tokens.slice 0, sentence.match.start
+
+    s.selectMatch = (sentence) ->
+        if not sentence.match then return
+        from = sentence.match.start
+        sentence.tokens.slice from, sentence.match.end
+
+    s.selectRight = (sentence) ->
+        if not sentence.match then return
+        from = sentence.match.end
+        len = sentence.tokens.length
+        sentence.tokens.slice from, len
 
 
     s.search = (query) ->
@@ -159,13 +188,28 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
         # c.log "search mediatype", mediatype
 
-        backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then (data) ->
-            s.data = data
-            s.total_pages = Math.ceil(data.count / s.num_hits)
+
+        from = s.current_page  * s.num_hits
+        to = (from + s.num_hits) - 1
+        backend.searchWorksKorp(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then (data) ->
+            c.log "search data", data
+
+            s.kwic = data.kwic
+            s.hits = data.hits
             s.searching = false
-            c.log "searchworks", searchData, searchData.parseUrls
+            s.total_pages = Math.ceil(s.hits / s.num_hits)
+
             for row in data.kwic
                 row.href = searchData.parseUrls row
+
+
+        # backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then (data) ->
+        #     s.data = data
+        #     s.total_pages = Math.ceil(data.count / s.num_hits)
+        #     s.searching = false
+        #     c.log "searchworks", searchData, searchData.parseUrls
+        #     for row in data.kwic
+        #         row.href = searchData.parseUrls row
 
 
 
@@ -177,7 +221,11 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         [
             scope_name : "current_page"
             key : "traffsida"
-            val_in : Number
+            val_in : (val) ->
+                Number(val) - 1
+            val_out : (val) ->
+                val + 1
+            default : 1
         ,   
             key : "open"
         ,   

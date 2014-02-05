@@ -307,6 +307,50 @@
     };
   });
 
+  littb.directive('kwicWord', function() {
+    return {
+      replace: true,
+      template: "<span class=\"word\" ng-class=\"getClassObj(wd)\"\nbo-text=\"wd.word + ' '\" ></span>",
+      link: function(scope, element) {
+        return scope.getClassObj = function(wd) {
+          var output, struct, x, y, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+          output = {
+            reading_match: wd._match,
+            punct: wd._punct,
+            match_sentence: wd._matchSentence
+          };
+          _ref = wd._struct || [];
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            struct = _ref[_i];
+            output["struct_" + struct] = true;
+          }
+          _ref1 = wd._open || [];
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            struct = _ref1[_j];
+            output["open_" + struct] = true;
+          }
+          _ref2 = wd._close || [];
+          for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+            struct = _ref2[_k];
+            output["close_" + struct] = true;
+          }
+          return ((function() {
+            var _l, _len3, _ref3, _ref4, _results;
+            _ref3 = _.pairs(output);
+            _results = [];
+            for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+              _ref4 = _ref3[_l], x = _ref4[0], y = _ref4[1];
+              if (y) {
+                _results.push(x);
+              }
+            }
+            return _results;
+          })()).join(" ");
+        };
+      }
+    };
+  });
+
 }).call(this);
 
 /*

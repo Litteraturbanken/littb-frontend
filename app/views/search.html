@@ -34,7 +34,7 @@
                 <select id="title_select" 
                         ng-model="selected_title" 
                         ng-change="titleChange()"
-                        ng-options="title.showtitle for title in titles | filter:{searchable: 'true', proofread: checkProof()} | orderBy:'showtitle' ">
+                        ng-options="title.showtitle for title in titles | filter:{searchable: 'true'} | filter: checkProof | orderBy:'showtitle' ">
     
                     <option value="">Allt tillgängligt</option>
                 </select>
@@ -56,15 +56,59 @@
     
     
     <div class="n_pages">Visa
-        <select id="num_hits" ng-model="num_hits" 
-            ng-options="num for num in [10, 20, 50, 100, 150]" ng-change="search(query)">
+        <select id="num_hits" ng-model="num_hits" ng-change="current_page = 0"
+            ng-options="num for num in [10, 20, 50, 100, 250, 500]" ng-change="search(query)">
         </select>
         träffar per sida.
     </div>
     
     <div>
-        <div ng-if="data.count === 0">Din sökning gav inga träffar</div>
-        <table class="results">
+        <div ng-if="data && hits === 0">Din sökning gav inga träffar</div>
+        
+        <!-- <table class="results">
+            <tr ng-repeat="r in data.kwic" ng-class="{is_faksimil : r.item.mediatype == 'faksimil'}">
+                
+            </tr>
+            
+        </table> -->
+
+        <!--
+        page_n: "24"
+        text_author: "|Johan Runius|"
+        text_authorid: "|RuniusJ|"
+        text_date: "1934"
+        text_lbworkid: "lb7752"
+        text_mediatype: "faksimil"
+        text_nameforindex: "Runius, Johan"
+        text_shorttitle: "Samlade skrifter II"
+        text_title: "Samlade skrifter av Johan Runius. Andra delen"
+        text_titlepath: "SamladeSkrifter2"
+        -->
+
+
+          <table cellspacing="0" class="results">
+            <tr bindonce ng-repeat="sent in kwic" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
+                <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
+                <td><a bo-text="sent.structs.text_nameforindex" 
+                    href="/#!/forfattare/{{getSetVal(sent, 'text_authorid')}}"></a></td>
+                <td class="title">
+                    <a bo-text="sent.structs.text_shorttitle" 
+                    href="/#!/forfattare/{{getSetVal(sent, 'text_authorid')}}/titlar/{{sent.structs.text_titlepath}}/{{sent.structs.text_mediatype}}"></a>
+                </td>
+
+                <td class="left_context"><span kwic-word="kwic-word" ng-repeat="wd in selectLeft(sent)"></span></td>
+                <td class="match">
+                    <a bo-href="sent.href">
+                        <strong><span kwic-word="kwic-word" ng-repeat="wd in selectMatch(sent)"></span></strong>
+                    </a>
+                </td>
+                <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td>
+            </tr>
+          </table>
+
+
+
+        <!-- <table class="results">
             <tr ng-repeat="r in data.kwic" ng-class="{is_faksimil : r.item.mediatype == 'faksimil'}">
                 <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
                 <td><a href="#!/forfattare/{{r.item.authorid}}">{{r.item.nameforindex}}</a></td>
@@ -83,25 +127,32 @@
             </tr>
         </table>
     </div>
-    
+    -->
     <div toolkit>
         <hr>
 
-        <div class="littb_pager" ng-show="data && data.count">
-            Visar {{current_page  * num_hits + 1}}-{{(current_page  * num_hits + 1) + num_hits}} av 
-            {{data.count}} träffar,
-            sida {{current_page + 1}} av {{total_pages}}.
-            <div class="ctrl">
-                <a ng-click="firstPage()"><img src="bilder/LBstart.png"></a>
-                <a ng-click="prevPage()"><img src="bilder/LBforegaende.png"></a>
-                <a ng-click="nextPage()"><img src="bilder/LBnasta.png"></a>
-                <a ng-click="lastPage()"><img src="bilder/LBslut.png"></a>
+        <div class="littb_pager" ng-show="kwic && hits">
+            <div ng-if="hits > num_hits">
+                Visar {{current_page  * num_hits + 1}}-{{(current_page  * num_hits) + kwic.length}} av 
+                {{hits}} träffar,
+                sida {{current_page + 1}} av {{total_pages}}.
+
+                <div class="ctrl">
+                    <a ng-click="firstPage()"><img src="bilder/LBstart.png"></a>
+                    <a ng-click="prevPage()"><img src="bilder/LBforegaende.png"></a>
+                    <a ng-click="nextPage()"><img src="bilder/LBnasta.png"></a>
+                    <a ng-click="lastPage()"><img src="bilder/LBslut.png"></a>
+                </div>
+            
+                <label>Gå till träffsida</label>
+                <form ng-submit="current_page = input_page - 1; search()">
+                    <input class="input_page" ng-model="input_page"><span ng-click="current_page = input_page - 1; search()" submit-btn></span>
+                </form>
             </div>
-        
-            <label>Gå till träffsida</label>
-            <form ng-submit="current_page = input_page - 1; search()">
-                <input class="input_page" ng-model="input_page"><span ng-click="current_page = input_page - 1; search()" submit-btn></span>
-            </form>
+            
+            <div ng-if="hits <= num_hits">
+                Visar alla {{hits}} träffar.
+            </div>
         </div>
 
         <p>Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den forfattaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.</p>

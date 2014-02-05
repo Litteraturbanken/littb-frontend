@@ -556,6 +556,48 @@ littb.factory 'backend', ($http, $q, util) ->
             def.reject()
         return def.promise
 
+    searchWorksKorp : (query, mediatype, from, to, selectedAuthor, selectedTitle) ->
+        c.log "searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle
+        # http://spraakbanken.gu.se/ws/korp?command=query&corpus=LBSOK&start=0&end=20&cqp=%5Bword=%22katastrof%22+%26+_.text_mediatype=%22faksimil%22+%26+_.text_authorid+contains+%22RunebergJL%22%5D&defaultwithin=sentence&defaultcontext=sentence&show_struct=page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date&show=wid,x,y,width,height
+        def = $q.defer()
+
+        tokenList = []
+
+        for wd in query.split(" ")
+            tokenList.push "word = '#{wd}'"
+
+        if selectedAuthor
+            tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"
+        if selectedTitle
+            tokenList[0] += " & _.text_lbworkid = '#{selectedTitle}'"
+        if mediatype == "all"
+            tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
+        else
+            tokenList[0] += " & _.text_mediatype = '#{mediatype}'"
+
+
+
+        $http(
+            url : "http://spraakbanken.gu.se/ws/korp"
+            method : "GET"
+            params : 
+                command : "query"
+                cqp : "[#{tokenList.join('] [')}]"
+                show: "wid,x,y,width,height"
+                show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
+                corpus : "LBSOK"
+                start: from
+                end : to
+        ).success (data) ->
+            def.resolve data
+
+        return def.promise
+
+
+
+
+
+
     searchLexicon : (str, useWildcard, searchId, strict) ->
         def = $q.defer()
         url = "/query/so.xql"
@@ -668,12 +710,53 @@ littb.factory "searchData", (backend, $q) ->
             @total_hits = null
             @current = null
 
-        parseUrls : (row) ->
-            itm = row.item
-            author = itm.workauthor or itm.authorid
-            [titleid] = itm.titleidNew.split("/")
-            return "/forfattare/#{author}/titlar/#{titleid}" + 
-                "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
+        parseUrls : (row, matches) ->
+            # page_n: "24"
+            # text_author: "|Johan Runius|"
+            # text_authorid: "|RuniusJ|"
+            # text_date: "1934"
+            # text_lbworkid: "lb7752"
+            # text_mediatype: "faksimil"
+            # text_nameforindex: "Runius, Johan"
+            # text_shorttitle: "Samlade skrifter II"
+            # text_title: "Samlade skrifter av Johan Runius. Andra delen"
+            # text_titlepath: "SamladeSkrifter2"
+            itm = row.structs
+            mediatype = itm.text_mediatype
+
+            matches = row.tokens[row.match.start..row.match.end]
+            matchParams = {}
+            if mediatype == "faksimil"
+                # obj = _.pick item, "x", "y", "width", "height"
+                matchParams.x = Math.round matches[0].x
+                matchParams.y = Math.round matches[0].y
+                matchParams.height = Math.round matches[0].height
+                for m in matches
+                    unless matchParams.width
+                        matchParams.width = Number(m.width)
+                    else
+                        matchParams.width += Number(m.width)
+                    matchParams.width = Math.round matchParams.width
+                    # matchParams.width ?= m.width
+
+                    # matchParams.width = m.width unless matchParams?
+
+                    # matchParams.height ?= m.height
+            else 
+                matchParams.traff = matches[0].wid
+                matchParams.traffslut = matches[..-1][0].wid
+
+            matchParams = _(matchParams).pairs().invoke("join", "=").join("&")
+
+
+            # matchParams = matchParams.
+
+            author = _.str.trim(itm.text_authorid, "|").split("|")[0]
+            titleid = itm.text_titlepath
+            # author = itm.workauthor or itm.authorid
+            # [titleid] = itm.titleidNew.split("/")
+            return "/#!/forfattare/#{author}/titlar/#{titleid}" + 
+                "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{matchParams}" # ?#{backend.getHitParams(itm)}
             
         save : (startIndex, currentIndex, input, search_args) ->
             @searchArgs = search_args

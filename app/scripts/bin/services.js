@@ -661,6 +661,44 @@
         });
         return def.promise;
       },
+      searchWorksKorp: function(query, mediatype, from, to, selectedAuthor, selectedTitle) {
+        var def, tokenList, wd, _i, _len, _ref;
+        c.log("searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle);
+        def = $q.defer();
+        tokenList = [];
+        _ref = query.split(" ");
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          wd = _ref[_i];
+          tokenList.push("word = '" + wd + "'");
+        }
+        if (selectedAuthor) {
+          tokenList[0] += " & _.text_authorid contains '" + selectedAuthor + "'";
+        }
+        if (selectedTitle) {
+          tokenList[0] += " & _.text_lbworkid = '" + selectedTitle + "'";
+        }
+        if (mediatype === "all") {
+          tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')";
+        } else {
+          tokenList[0] += " & _.text_mediatype = '" + mediatype + "'";
+        }
+        $http({
+          url: "http://spraakbanken.gu.se/ws/korp",
+          method: "GET",
+          params: {
+            command: "query",
+            cqp: "[" + (tokenList.join('] [')) + "]",
+            show: "wid,x,y,width,height",
+            show_struct: "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date",
+            corpus: "LBSOK",
+            start: from,
+            end: to
+          }
+        }).success(function(data) {
+          return def.resolve(data);
+        });
+        return def.promise;
+      },
       searchLexicon: function(str, useWildcard, searchId, strict) {
         var def, params, suffix, url;
         def = $q.defer();
@@ -787,12 +825,33 @@
         this.current = null;
       }
 
-      SearchData.prototype.parseUrls = function(row) {
-        var author, itm, titleid;
-        itm = row.item;
-        author = itm.workauthor || itm.authorid;
-        titleid = itm.titleidNew.split("/")[0];
-        return ("/forfattare/" + author + "/titlar/" + titleid) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm)));
+      SearchData.prototype.parseUrls = function(row, matches) {
+        var author, itm, m, matchParams, mediatype, titleid, _i, _len;
+        itm = row.structs;
+        mediatype = itm.text_mediatype;
+        matches = row.tokens.slice(row.match.start, +row.match.end + 1 || 9e9);
+        matchParams = {};
+        if (mediatype === "faksimil") {
+          matchParams.x = Math.round(matches[0].x);
+          matchParams.y = Math.round(matches[0].y);
+          matchParams.height = Math.round(matches[0].height);
+          for (_i = 0, _len = matches.length; _i < _len; _i++) {
+            m = matches[_i];
+            if (!matchParams.width) {
+              matchParams.width = Number(m.width);
+            } else {
+              matchParams.width += Number(m.width);
+            }
+            matchParams.width = Math.round(matchParams.width);
+          }
+        } else {
+          matchParams.traff = matches[0].wid;
+          matchParams.traffslut = matches.slice(0)[0].wid;
+        }
+        matchParams = _(matchParams).pairs().invoke("join", "=").join("&");
+        author = _.str.trim(itm.text_authorid, "|").split("|")[0];
+        titleid = itm.text_titlepath;
+        return ("/#!/forfattare/" + author + "/titlar/" + titleid) + ("/sida/" + itm.page_n + "/" + itm.text_mediatype + "?" + matchParams);
       };
 
       SearchData.prototype.save = function(startIndex, currentIndex, input, search_args) {

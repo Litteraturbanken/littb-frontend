@@ -78,21 +78,30 @@
     });
     s.titleChange = function() {
       var _ref;
-      return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.titlepath : void 0) || null);
+      return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.lbworkid : void 0) || null);
     };
-    s.checkProof = function() {
+    s.checkProof = function(obj) {
       if (s.proofread === 'all') {
-        return null;
-      } else if (s.proofread === 'no') {
-        return 'false';
+        return true;
+      } else if (s.proofread === "no" && obj.proofread === "false") {
+        return true;
+      } else if (s.proofread === "yes" && obj.proofread === "true") {
+        return true;
       } else {
-        return 'true';
+        return false;
       }
     };
     s.authorChange = function() {
       $location.search("titel", null);
       return s.selected_title = "";
     };
+    util.setupHashComplex(s, [
+      {
+        scope_name: "num_hits",
+        key: "per_sida",
+        val_in: Number
+      }
+    ]);
     authors.then(function(_arg) {
       var authorList, authorsById, change;
       authorList = _arg[0], authorsById = _arg[1];
@@ -126,7 +135,9 @@
       ]);
     });
     s.searching = false;
-    s.num_hits = 20;
+    if (s.num_hits == null) {
+      s.num_hits = 20;
+    }
     s.current_page = 0;
     getMediatypes = function() {
       return {
@@ -148,7 +159,7 @@
       return s.search(s.query);
     };
     s.lastPage = function() {
-      s.current_page = s.total_pages;
+      s.current_page = s.total_pages - 1;
       return s.search(s.query);
     };
     s.save_search = function(startIndex, currentIndex, data) {
@@ -156,11 +167,34 @@
       c.log("searchData", searchData);
       return searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()]);
     };
-    s.getItems = function() {
-      return _.pluck("item", data.kwic);
+    s.getSetVal = function(sent, val) {
+      return _.str.trim(sent.structs[val], "|").split("|")[0];
+    };
+    s.selectLeft = function(sentence) {
+      if (!sentence.match) {
+        return;
+      }
+      return sentence.tokens.slice(0, sentence.match.start);
+    };
+    s.selectMatch = function(sentence) {
+      var from;
+      if (!sentence.match) {
+        return;
+      }
+      from = sentence.match.start;
+      return sentence.tokens.slice(from, sentence.match.end);
+    };
+    s.selectRight = function(sentence) {
+      var from, len;
+      if (!sentence.match) {
+        return;
+      }
+      from = sentence.match.end;
+      len = sentence.tokens.length;
+      return sentence.tokens.slice(from, len);
     };
     s.search = function(query) {
-      var mediatype, q;
+      var from, mediatype, q, to;
       q = query || s.query;
       if (q) {
         $location.search("fras", q);
@@ -168,12 +202,15 @@
       s.query = q;
       s.searching = true;
       mediatype = getMediatypes();
-      return backend.searchWorks(s.query, mediatype, s.current_page * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then(function(data) {
+      from = s.current_page * s.num_hits;
+      to = (from + s.num_hits) - 1;
+      return backend.searchWorksKorp(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then(function(data) {
         var row, _i, _len, _ref, _results;
-        s.data = data;
-        s.total_pages = Math.ceil(data.count / s.num_hits);
+        c.log("search data", data);
+        s.kwic = data.kwic;
+        s.hits = data.hits;
         s.searching = false;
-        c.log("searchworks", searchData, searchData.parseUrls);
+        s.total_pages = Math.ceil(s.hits / s.num_hits);
         _ref = data.kwic;
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -188,7 +225,13 @@
       {
         scope_name: "current_page",
         key: "traffsida",
-        val_in: Number
+        val_in: function(val) {
+          return Number(val) - 1;
+        },
+        val_out: function(val) {
+          return val + 1;
+        },
+        "default": 1
       }, {
         key: "open"
       }, {
