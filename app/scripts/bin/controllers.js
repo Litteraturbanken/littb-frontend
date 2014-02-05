@@ -1138,7 +1138,7 @@
         }
         s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
         page.children().remove();
-        s.etext_html = page.text();
+        s.etext_html = _.str.trim(page.text());
         backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype);
         s.loading = false;
         $rootScope.breadcrumb = [];
