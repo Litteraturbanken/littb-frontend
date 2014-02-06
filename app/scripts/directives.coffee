@@ -1,21 +1,16 @@
 littb = angular.module('littbApp')
 littb.directive 'submitBtn', () ->
-
     replace : true
     template : '<input type="image" class="submit_btn" ng-src="/bilder/LBsubmitknapp.jpeg">'
-    # link: (scope, elm, attrs) ->
 
 littb.directive 'toolkit', ($compile, $location, $route) ->
     restrict : "EA"
     compile: (elm, attrs) ->
         elm.remove()
         cmp = $compile("<div>#{elm.html()}</div>")
-        return (scope, iElement, iAttrs) ->
-            cmp(scope, (clonedElement, scope) ->
-                $("#toolkit").html(clonedElement)
 
-                $(clonedElement.get(0)).unwrap().attr("id", "toolkit")
-            )
+        return (scope, iElement, iAttrs) ->
+            $("#toolkit").html(cmp(scope))
 
 
 littb.directive 'css', () ->
@@ -23,9 +18,7 @@ littb.directive 'css', () ->
     scope : {css : "@", evalIf : "&if"}
     compile: (elm, attrs) ->
         elm.remove()
-        # cmp = $compile("<div>#{elm.html()}</div>")
         return (scope, iElement, iAttrs) ->
-            # c.log "css", scope, _.pairs(scope), attrs.css, iAttrs.css, iElement.attr("css")
 
             scope.$watch 'css', (val) ->
                 if scope.evalIf()

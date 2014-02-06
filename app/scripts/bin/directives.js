@@ -19,10 +19,7 @@
         elm.remove();
         cmp = $compile("<div>" + (elm.html()) + "</div>");
         return function(scope, iElement, iAttrs) {
-          return cmp(scope, function(clonedElement, scope) {
-            $("#toolkit").html(clonedElement);
-            return $(clonedElement.get(0)).unwrap().attr("id", "toolkit");
-          });
+          return $("#toolkit").html(cmp(scope));
         };
       }
     };
