@@ -81,6 +81,9 @@
       return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.lbworkid : void 0) || null);
     };
     s.checkProof = function(obj) {
+      if (obj.searchable !== 'true') {
+        return false;
+      }
       if (s.proofread === 'all') {
         return true;
       } else if (s.proofread === "no" && obj.proofread === "false") {

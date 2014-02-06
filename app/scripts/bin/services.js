@@ -669,7 +669,7 @@
         _ref = query.split(" ");
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           wd = _ref[_i];
-          tokenList.push("word = '" + wd + "'");
+          tokenList.push("word = '" + wd + "' %c");
         }
         if (selectedAuthor) {
           tokenList[0] += " & _.text_authorid contains '" + selectedAuthor + "'";
@@ -689,7 +689,7 @@
             command: "query",
             cqp: "[" + (tokenList.join('] [')) + "]",
             show: "wid,x,y,width,height",
-            show_struct: "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date",
+            show_struct: "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size",
             corpus: "LBSOK",
             start: from,
             end: to

@@ -73,6 +73,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
 
     s.checkProof = (obj) ->
+        if obj.searchable != 'true' then return false
         if s.proofread == 'all'
             return true
         else if s.proofread == "no" and obj.proofread == "false"

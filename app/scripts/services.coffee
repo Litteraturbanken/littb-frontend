@@ -564,7 +564,7 @@ littb.factory 'backend', ($http, $q, util) ->
         tokenList = []
 
         for wd in query.split(" ")
-            tokenList.push "word = '#{wd}'"
+            tokenList.push "word = '#{wd}' %c"
 
         if selectedAuthor
             tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"
