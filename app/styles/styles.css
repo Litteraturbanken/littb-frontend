@@ -23089,7 +23089,21 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031243;
+    font-family: \000031240;
+  }
+}
+
+.site-school .collapse {
+  overflow: hidden;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \000031244;
   }
 }
 
@@ -23105,7 +23119,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031250;
+    font-family: \000031251;
   }
 }
 
@@ -23120,7 +23134,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031255;
+    font-family: \000031256;
   }
 }
 
@@ -23134,7 +23148,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031259;
+    font-family: \000031260;
   }
 }
 
@@ -23150,7 +23164,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031263;
+    font-family: \000031264;
   }
 }
 
@@ -23164,7 +23178,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031265;
+    font-family: \000031266;
   }
 }
 
@@ -23178,7 +23192,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031269;
+    font-family: \000031270;
   }
 }
 
@@ -23192,7 +23206,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031271;
+    font-family: \000031272;
   }
 }
 
@@ -23206,7 +23220,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031277;
+    font-family: \000031278;
   }
 }
 
@@ -23225,7 +23239,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031280;
+    font-family: \000031281;
   }
 }
 
@@ -23247,7 +23261,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031289;
+    font-family: \000031290;
   }
 }
 
@@ -23289,7 +23303,7 @@ grundform-clean {
 =======
 >>>>>>> adding new compiled files
   line {
-    font-family: \000031292;
+    font-family: \000031293;
   }
 }
 
@@ -23330,7 +23344,7 @@ grundform-clean {
 =======
 >>>>>>> adding new compiled files
   line {
-    font-family: \000031295;
+    font-family: \000031296;
   }
 }
 
@@ -23371,7 +23385,7 @@ grundform-clean {
 =======
 >>>>>>> adding new compiled files
   line {
-    font-family: \000031298;
+    font-family: \000031299;
   }
 }
 
@@ -23396,7 +23410,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031308;
+    font-family: \000031309;
   }
 }
 
@@ -23499,7 +23513,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031315;
+    font-family: \000031316;
   }
 }
 
@@ -23543,7 +23557,7 @@ grundform-clean {
 =======
 >>>>>>> adding new compiled files
   line {
-    font-family: \000031320;
+    font-family: \000031321;
   }
 }
 
@@ -23557,7 +23571,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031324;
+    font-family: \000031325;
   }
 }
 
@@ -23571,7 +23585,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031327;
+    font-family: \000031328;
   }
 }
 
@@ -23591,7 +23605,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031330;
+    font-family: \000031331;
   }
 }
 
@@ -23611,7 +23625,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031343;
+    font-family: \000031344;
   }
 }
 
@@ -23626,7 +23640,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031349;
+    font-family: \000031350;
   }
 }
 
@@ -23640,7 +23654,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031353;
+    font-family: \000031354;
   }
 }
 
@@ -23655,7 +23669,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031358;
+    font-family: \000031359;
   }
 }
 
@@ -23670,7 +23684,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031361;
+    font-family: \000031362;
   }
 }
 
@@ -23685,7 +23699,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031366;
+    font-family: \000031367;
   }
 }
 
@@ -23699,7 +23713,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031369;
+    font-family: \000031370;
   }
 }
 
@@ -23713,7 +23727,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031372;
+    font-family: \000031373;
   }
 }
 
@@ -23728,7 +23742,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031378;
+    font-family: \000031379;
   }
 }
 
@@ -23747,7 +23761,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031383;
+    font-family: \000031384;
   }
 }
 
@@ -23762,7 +23776,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031388;
+    font-family: \000031389;
   }
 }
 
@@ -23776,7 +23790,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031392;
+    font-family: \000031393;
   }
 }
 
@@ -23798,7 +23812,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031398;
+    font-family: \000031399;
   }
 }
 
@@ -23812,7 +23826,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031402;
+    font-family: \000031403;
   }
 }
 
@@ -23826,7 +23840,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031407;
+    font-family: \000031408;
   }
 }
 
@@ -23840,7 +23854,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031411;
+    font-family: \000031412;
   }
 }
 
@@ -23854,7 +23868,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031414;
+    font-family: \000031415;
   }
 }
 
@@ -23868,7 +23882,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031421;
+    font-family: \000031422;
   }
 }
 
@@ -23883,7 +23897,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031423;
+    font-family: \000031424;
   }
 }
 
@@ -23899,7 +23913,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031427;
+    font-family: \000031428;
   }
 }
 
@@ -23914,7 +23928,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031430;
+    font-family: \000031431;
   }
 }
 
@@ -23930,7 +23944,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031440;
+    font-family: \000031441;
   }
 }
 
@@ -23944,7 +23958,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031443;
+    font-family: \000031444;
   }
 }
 
@@ -23958,7 +23972,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031446;
+    font-family: \000031447;
   }
 }
 
@@ -23972,7 +23986,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031448;
+    font-family: \000031449;
   }
 }
 
@@ -23986,7 +24000,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031451;
+    font-family: \000031452;
   }
 }
 
@@ -24001,7 +24015,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031455;
+    font-family: \000031456;
   }
 }
 
@@ -24015,7 +24029,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031460;
+    font-family: \000031461;
   }
 }
 
@@ -24029,7 +24043,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031465;
+    font-family: \000031466;
   }
 }
 
@@ -24045,7 +24059,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031466;
+    font-family: \000031467;
   }
 }
 
@@ -24060,7 +24074,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031473;
+    font-family: \000031474;
   }
 }
 
@@ -24078,7 +24092,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031481;
+    font-family: \000031482;
   }
 }
 
@@ -24092,7 +24106,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031485;
+    font-family: \000031486;
   }
 }
 
@@ -24107,7 +24121,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031489;
+    font-family: \000031490;
   }
 }
 
@@ -24122,7 +24136,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031494;
+    font-family: \000031495;
   }
 }
 
@@ -24141,7 +24155,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031502;
+    font-family: \000031503;
   }
 }
 
@@ -24156,7 +24170,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031507;
+    font-family: \000031508;
   }
 }
 
@@ -24171,7 +24185,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031509;
+    font-family: \000031510;
   }
 }
 
@@ -24186,7 +24200,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031513;
+    font-family: \000031514;
   }
 }
 
@@ -24201,7 +24215,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031520;
+    font-family: \000031521;
   }
 }
 
@@ -24216,7 +24230,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031524;
+    font-family: \000031525;
   }
 }
 
@@ -24234,7 +24248,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031533;
+    font-family: \000031534;
   }
 }
 
@@ -24253,7 +24267,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031536;
+    font-family: \000031537;
   }
 }
 
@@ -24267,7 +24281,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031541;
+    font-family: \000031542;
   }
 }
 
@@ -24282,7 +24296,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031543;
+    font-family: \000031544;
   }
 }
 
@@ -24296,7 +24310,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031554;
+    font-family: \000031555;
   }
 }
 
@@ -24311,7 +24325,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031561;
+    font-family: \000031562;
   }
 }
 
@@ -24325,7 +24339,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031568;
+    font-family: \000031569;
   }
 }
 
@@ -24353,6 +24367,7 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24388,6 +24403,9 @@ grundform-clean {
 =======
       font-family: \000031596;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031597;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -24422,6 +24440,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       font-family: \000031445;
 =======
 =======
@@ -24436,6 +24455,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> quick fix to overlay issue for ie9
 <<<<<<< HEAD
       font-family: \000031469;
 =======
@@ -24471,6 +24492,9 @@ grundform-clean {
 =======
       font-family: \000031649;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031650;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -24495,6 +24519,7 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24533,6 +24558,9 @@ grundform-clean {
 =======
       font-family: \000031656;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031657;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -24559,6 +24587,7 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24597,6 +24626,9 @@ grundform-clean {
 =======
       font-family: \000031664;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031665;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -24643,6 +24675,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       font-family: \000031465;
 =======
       font-family: \000031469;
@@ -24673,6 +24706,9 @@ grundform-clean {
 =======
       font-family: \000031667;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031668;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -24697,6 +24733,7 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24732,6 +24769,9 @@ grundform-clean {
 =======
       font-family: \000031672;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031673;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -24765,6 +24805,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       font-family: \000031471;
 =======
       font-family: \000031480;
@@ -24781,6 +24822,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> quick fix to overlay issue for ie9
       font-family: \000031480;
 >>>>>>> fiddled around with the school
 =======
@@ -24811,6 +24854,9 @@ grundform-clean {
 =======
       font-family: \000031678;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031679;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -24842,6 +24888,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       font-family: \000031475;
 =======
 =======
@@ -24856,6 +24903,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> quick fix to overlay issue for ie9
 <<<<<<< HEAD
       font-family: \000031473;
 =======
@@ -24892,6 +24941,9 @@ grundform-clean {
 =======
       font-family: \000031682;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031683;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -24925,6 +24977,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       font-family: \000031479;
 =======
 =======
@@ -24939,6 +24992,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> quick fix to overlay issue for ie9
 <<<<<<< HEAD
       font-family: \000031477;
 =======
@@ -24975,6 +25030,9 @@ grundform-clean {
 =======
       font-family: \000031686;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031687;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -25006,6 +25064,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       font-family: \000031482;
 =======
 =======
@@ -25020,6 +25079,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> quick fix to overlay issue for ie9
 <<<<<<< HEAD
       font-family: \000031480;
 =======
@@ -25056,6 +25117,9 @@ grundform-clean {
 =======
       font-family: \000031689;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031690;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -25087,6 +25151,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       font-family: \000031487;
 =======
 =======
@@ -25101,6 +25166,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> quick fix to overlay issue for ie9
 <<<<<<< HEAD
       font-family: \000031485;
 =======
@@ -25137,6 +25204,9 @@ grundform-clean {
 =======
       font-family: \000031694;
 >>>>>>> adding new compiled files
+=======
+      font-family: \000031695;
+>>>>>>> quick fix to overlay issue for ie9
     }
 }
 >>>>>>> continually improving school
@@ -25160,7 +25230,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031707;
+      font-family: \000031708;
     }
 }
 
@@ -25174,7 +25244,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031720;
+      font-family: \000031721;
     }
 }
 
@@ -25189,7 +25259,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031726;
+      font-family: \000031727;
     }
 }
 
@@ -25203,7 +25273,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031729;
+      font-family: \000031730;
     }
 }
 
@@ -25217,7 +25287,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031732;
+      font-family: \000031733;
     }
 }
 
@@ -25232,7 +25302,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031735;
+      font-family: \000031736;
     }
 }
 
@@ -25246,7 +25316,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031738;
+      font-family: \000031739;
     }
 }
 
@@ -25262,7 +25332,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031743;
+      font-family: \000031744;
     }
 }
 
@@ -25277,7 +25347,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031747;
+      font-family: \000031748;
     }
 }
 
@@ -25291,7 +25361,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031750;
+      font-family: \000031751;
     }
 }
 
@@ -25305,7 +25375,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031754;
+      font-family: \000031755;
     }
 }
 
@@ -25319,7 +25389,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031760;
+      font-family: \000031761;
     }
 }
 
@@ -25334,7 +25404,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031763;
+      font-family: \000031764;
     }
 }
 
@@ -25349,7 +25419,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031770;
+      font-family: \000031771;
     }
 }
 
@@ -25365,7 +25435,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031774;
+      font-family: \000031775;
     }
 }
 
@@ -25379,7 +25449,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031779;
+      font-family: \000031780;
     }
 }
 
@@ -25393,7 +25463,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031782;
+      font-family: \000031783;
     }
 }
 
