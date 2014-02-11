@@ -444,7 +444,6 @@
     };
     fetchWorks = function() {
       s.searching = true;
-      c.log("s.titlefilter", s.filter);
       return backend.getTitles(s.workFilter === "titles", s.selectedLetter, s.filter).then(function(titleArray) {
         s.searching = false;
         s.titleArray = titleArray;
@@ -676,6 +675,7 @@
     s.setDir = function(isAsc) {
       return s.sorttuple[1] = isAsc;
     };
+    s.authorDef = authors;
     util.setupHashComplex(s, [
       {
         expr: "sorttuple[0]",

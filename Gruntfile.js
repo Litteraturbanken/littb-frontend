@@ -67,6 +67,24 @@ module.exports = function (grunt) {
         }]
       }
     },
+
+    protractor: {
+      options: {
+        configFile: "node_modules/protractor/referenceConf.js", // Default config file
+        keepAlive: true, // If false, the grunt process stops when the test fails.
+        noColor: false, // If true, protractor will not use colors in its output.
+        args: {
+          // Arguments passed to the command
+        }
+      },
+      test: {
+        options: {
+          configFile: "test/e2e/conf_e2e.js", // Target-specific config file
+          args: {} // Target-specific arguments
+        }
+      }
+    },
+
     connect: {
       options: {
         port: 9000,
@@ -100,6 +118,7 @@ module.exports = function (grunt) {
         options: {
           middleware: function (connect) {
             return [
+              proxySnippet, 
               mountFolder(connect, '.tmp'),
               mountFolder(connect, 'test')
             ];
@@ -339,11 +358,11 @@ module.exports = function (grunt) {
       unit: {
         configFile: 'karma.conf.js',
         singleRun: true
-      },
-      e2e: {
-        configFile: 'karma-e2e.conf.js'
-        // singleRun: true
       }
+      // e2e: {
+      //   configFile: 'karma-e2e.conf.js'
+      //   // singleRun: true
+      // }
 
     },
     // cdnify: {
@@ -394,6 +413,8 @@ module.exports = function (grunt) {
     'autoprefixer',
     'connect:test',
     'karma'
+
+    // 'protractor'
   ]);
 
 
