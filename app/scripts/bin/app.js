@@ -19,12 +19,16 @@
       function Router() {}
 
       Router.prototype.when = function(route, obj) {
-        var r, _i, _len;
+        var r, shortRoute, _i, _len;
         if (!_.isArray(route)) {
           route = [route];
         }
         for (_i = 0, _len = route.length; _i < _len; _i++) {
           r = route[_i];
+          if (r.split("/")[1] === "forfattare") {
+            shortRoute = r.replace(/^\/forfattare\//, "/f/").replace("/titlar/", "/t/");
+            $routeProvider.when(shortRoute, obj);
+          }
           $routeProvider.when(r, obj);
         }
         return this;
