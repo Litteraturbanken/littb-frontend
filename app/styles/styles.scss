@@ -75,6 +75,10 @@ body {
     font-weight: bold;
 }
 
+.etext table {
+    width: 90%;
+}
+
 #leftCorridor {
     width : $main-menu-width;
     margin-right : $gutter-width;
