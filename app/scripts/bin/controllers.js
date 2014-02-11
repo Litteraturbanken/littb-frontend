@@ -539,7 +539,7 @@
       return s.sorttuple[1] = isAsc;
     };
     window.has = function(one, two) {
-      return one.toLowerCase().indexOf(two) !== -1;
+      return one.toLowerCase().indexOf(two.toLowerCase()) !== -1;
     };
     s.rowFilter = function(item) {
       if (__indexOf.call(item.mediatype, "epub") < 0) {

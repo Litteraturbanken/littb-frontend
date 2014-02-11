@@ -303,6 +303,9 @@ littb.directive 'linkFix', ($location) ->
                 window.open t.attr("href"), "_blank"
             else if t.attr("href")[..6] == "mailto:"
                 location.href = t.attr("href")
+            else if _.str.endsWith(t.attr("href"), ".epub")
+                location.href = t.attr("href")
+                
 
         # loc = attrs.href
         # elem.click () ->

@@ -334,6 +334,8 @@
             return window.open(t.attr("href"), "_blank");
           } else if (t.attr("href").slice(0, 7) === "mailto:") {
             return location.href = t.attr("href");
+          } else if (_.str.endsWith(t.attr("href"), ".epub")) {
+            return location.href = t.attr("href");
           }
         });
       }
