@@ -195,12 +195,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         backend.searchWorksKorp(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then (data) ->
             c.log "search data", data
 
-            s.kwic = data.kwic
+            s.kwic = data.kwic or []
             s.hits = data.hits
             s.searching = false
             s.total_pages = Math.ceil(s.hits / s.num_hits)
 
-            for row in data.kwic
+
+            for row in (data.kwic or [])
                 row.href = searchData.parseUrls row
 
 
@@ -1019,6 +1020,22 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.authorById = authorById
 
 
+    # savedVal = []
+    # s.getCoors = () ->
+    #     # if savedVal.length then return savedVal
+    #     unless s.x then return []
+    #     for item, i in s.x.split("|")
+    #         pairs = _.pairs _.pick s, "x", "y", "height", "width"
+    #         _.object _.map pairs, ([key, val]) ->
+    #             [key, val.split("|")[i].split(",")[s.size]]
+    #     c.log("getCoors", objs)
+    #     savedVal[..] = objs
+    #     # if objs.length 
+    #         # savedVal = objs
+    #     savedVal
+
+
+    s.size = $location.search().size or 2
 
     util.setupHashComplex s, [
             scope_name : "markee_from"
@@ -1031,6 +1048,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "x"
             replace : false
+            # post_change : () ->
+                
         ,
             key : "y"
             replace : false
@@ -1043,6 +1062,18 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "parallel"
             scope_name : "isParallel"
+        ,
+            key: "storlek"
+            scope_name : "size"
+            val_in : Number
+            post_change: () ->
+                c.log "x post change"
+                s.coors = for item, i in s.x.split("|")
+                    pairs = _.pairs _.pick s, "x", "y", "height", "width"
+                    # c.log "pairs", pairs
+                    _.object _.map pairs, ([key, val]) ->
+                        [key, val.split("|")[i].split(",")[s.size]]
+
         # ,   
         #     key : "so"
         #     expr : "lex_article.baseform"
@@ -1117,6 +1148,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             if s.sizes[s.size] is false
                 s.sizes[s.size] = true
 
+            c.log "loadpage result", s.size
 
             s.url = $("faksimil-url[size=#{s.size + 1}]", page).last().text()
             # else
@@ -1149,7 +1181,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
 
-    s.size = 2
     
     s.setSize = (index) ->
         s.sizes = _.map s.sizes, (item) -> if item then false else item
@@ -1157,6 +1188,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.size = index
         loadPage(s.getPage())
 
+    # s.size = s.setSize($location.search().size or 2)
 
     watches.push s.$watch "getPage()", debounce(loadPage, 200, {leading : false})
     # watches.push s.$watch "getPage()", loadPage

@@ -63,29 +63,8 @@
     </div>
     
     <div>
-        <div ng-if="data && hits === 0">Din sökning gav inga träffar</div>
+        <div ng-if="kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
         
-        <!-- <table class="results">
-            <tr ng-repeat="r in data.kwic" ng-class="{is_faksimil : r.item.mediatype == 'faksimil'}">
-                
-            </tr>
-            
-        </table> -->
-
-        <!--
-        page_n: "24"
-        text_author: "|Johan Runius|"
-        text_authorid: "|RuniusJ|"
-        text_date: "1934"
-        text_lbworkid: "lb7752"
-        text_mediatype: "faksimil"
-        text_nameforindex: "Runius, Johan"
-        text_shorttitle: "Samlade skrifter II"
-        text_title: "Samlade skrifter av Johan Runius. Andra delen"
-        text_titlepath: "SamladeSkrifter2"
-        -->
-
-
           <table cellspacing="0" class="results">
             <tr bindonce ng-repeat="sent in kwic" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
                 <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
@@ -107,27 +86,6 @@
           </table>
 
 
-
-        <!-- <table class="results">
-            <tr ng-repeat="r in data.kwic" ng-class="{is_faksimil : r.item.mediatype == 'faksimil'}">
-                <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
-                <td><a href="#!/forfattare/{{r.item.authorid}}">{{r.item.nameforindex}}</a></td>
-                <td class="title" tooltip="{{r.item.title}}">
-                    <a href="#!/forfattare/{{r.item.workauthor || r.item.authorid}}/titlar/{{r.item.titleidNew.split('/')[0]}}/{{r.item.mediatype}}">{{r.item.title}}</a>
-                </td>
-                <td>
-                    <a ng-href="#!{{r.href}}">s. {{r.item.pagename}}</a>
-                </td>
-                <td class="left_context">{{r.left}}</td>
-                <td><strong>
-                    <a ng-click="save_search(current_page * num_hits, $index, data)" ng-href="#!{{r.href}}" >{{r.kw}}</a>
-                    
-                </strong></td>
-                <td>{{r.right}}</td>
-            </tr>
-        </table>
-    </div>
-    -->
     <div toolkit>
         <hr>
 

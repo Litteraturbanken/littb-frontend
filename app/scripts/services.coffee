@@ -562,9 +562,39 @@ littb.factory 'backend', ($http, $q, util) ->
         def = $q.defer()
 
         tokenList = []
+        regescape = (s) ->
+            s.replace(/[\.|\?|\+|\*|\|\'|\"\(\)\^\$]/g, "\\$&")
 
-        for wd in query.split(" ")
-            tokenList.push "word = '#{wd}' %c"
+        tokenize = (str) ->
+            # Excludes some characters from starting word tokens
+            # _re_word_start = /[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]/
+
+            # Characters that cannot appear within words
+            # _re_non_word_chars = /(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])/ #@
+
+            # Excludes some characters from ending word tokens
+            # _re_word_end = /[\(\"\`{\[:;&\#\*@\)}\],]/
+
+            # Multi-character punctuation
+            # _re_multi_char_punct = /(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)/
+
+
+            wdlist = for wd in query.split(/\s+/)
+                extras = []
+                if wd.match(/\.\.\./)
+                    extras.push "..."
+                    wd = wd.replace(/(\.\.\.)/, "")
+                wd = wd.replace(/([\.,;:])/g, " $1")
+                wd = wd.replace(/([-])/g, " $1 ")
+                wd = wd.replace(/([»])/g, "$1 ")
+                wd.split(" ")
+
+
+            _.compact [].concat (_.flatten wdlist), extras
+
+
+        for wd in tokenize(query)
+            tokenList.push "word = '#{regescape wd}' %c"
 
         if selectedAuthor
             tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"
@@ -711,52 +741,56 @@ littb.factory "searchData", (backend, $q) ->
             @current = null
 
         parseUrls : (row, matches) ->
-            # page_n: "24"
-            # text_author: "|Johan Runius|"
-            # text_authorid: "|RuniusJ|"
-            # text_date: "1934"
-            # text_lbworkid: "lb7752"
-            # text_mediatype: "faksimil"
-            # text_nameforindex: "Runius, Johan"
-            # text_shorttitle: "Samlade skrifter II"
-            # text_title: "Samlade skrifter av Johan Runius. Andra delen"
-            # text_titlepath: "SamladeSkrifter2"
             itm = row.structs
             mediatype = itm.text_mediatype
 
-            matches = row.tokens[row.match.start..row.match.end]
-            matchParams = {}
+            matches = row.tokens[row.match.start...row.match.end]
+            matchParams = []
             if mediatype == "faksimil"
                 # obj = _.pick item, "x", "y", "width", "height"
-                matchParams.x = Math.round matches[0].x
-                matchParams.y = Math.round matches[0].y
-                matchParams.height = Math.round matches[0].height
-                for m in matches
-                    unless matchParams.width
-                        matchParams.width = Number(m.width)
-                    else
-                        matchParams.width += Number(m.width)
-                    matchParams.width = Math.round matchParams.width
-                    # matchParams.width ?= m.width
+                matchGroups = _.groupBy matches, "y"
 
-                    # matchParams.width = m.width unless matchParams?
+                makeParams = (group) ->
+                    params = _.pick group[0], "x", "y", "height"
 
-                    # matchParams.height ?= m.height
+                    for match in group
+                        unless params.width
+                            params.width = Number(match.width)
+                        else
+                            params.width += Number(match.width)
+
+                    max = Math.max itm.page_size.split("x")...
+                    sizeVals = [625, 750, 1100, 1500, 2050]
+                    factors = _.map sizeVals, (val) -> val / max
+
+                    for key, val of params
+                        params[key] = _(factors).map( (fact) ->
+                            Math.round fact * val).join(",")
+
+                    return params
+                
+                for group in _.values matchGroups
+                    matchParams.push makeParams group
+
+
             else 
-                matchParams.traff = matches[0].wid
-                matchParams.traffslut = matches[..-1][0].wid
+                matchParams.push
+                    traff : matches[0].wid
+                    traffslut : matches[..-1][0].wid
+                
 
-            matchParams = _(matchParams).pairs().invoke("join", "=").join("&")
-
-
-            # matchParams = matchParams.
+            merged = _(matchParams).reduce( (obj1, obj2) -> 
+                if not obj1 then return {}
+                _.merge {}, obj1, obj2, (a,b) -> 
+                    unless a then return b
+                    a + "|" + b
+            )
+            merged = _(merged).pairs().invoke("join", "=").join("&")
 
             author = _.str.trim(itm.text_authorid, "|").split("|")[0]
             titleid = itm.text_titlepath
-            # author = itm.workauthor or itm.authorid
-            # [titleid] = itm.titleidNew.split("/")
             return "/#!/forfattare/#{author}/titlar/#{titleid}" + 
-                "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{matchParams}" # ?#{backend.getHitParams(itm)}
+                "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{merged}" # ?#{backend.getHitParams(itm)}
             
         save : (startIndex, currentIndex, input, search_args) ->
             @searchArgs = search_args

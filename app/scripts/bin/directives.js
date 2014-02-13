@@ -132,17 +132,26 @@
         size: "="
       },
       link: function(scope, elm, attrs) {
-        var s;
+        var EXPAND_SIZE, Y_OFFSET, coors, s;
         s = scope;
-        return s.$watch("left + top + width + height + size", function() {
-          var coors;
-          coors = _.pick(scope, "top", "left", "width", "height");
-          c.log("coors", coors);
-          coors = _.object(_.map(coors, function(val, key) {
-            return [key, ((val != null ? val.split(",")[s.size] : void 0) || 0) + "px"];
-          }));
-          return elm.css(coors);
-        });
+        EXPAND_SIZE = 4;
+        Y_OFFSET = -3;
+        coors = _.pick(scope, "top", "left", "width", "height");
+        coors = _.object(_.map(coors, function(val, key) {
+          var expand;
+          val = Number(val);
+          expand = function(val) {
+            var n;
+            n = key === "top" || key === "left" ? EXPAND_SIZE * -1 : EXPAND_SIZE * 2;
+            return val + n;
+          };
+          c.log("coors", val, key, expand(val));
+          if (key === "top") {
+            val += Y_OFFSET;
+          }
+          return [key, expand(val) + "px"];
+        }));
+        return elm.css(coors);
       }
     };
   });

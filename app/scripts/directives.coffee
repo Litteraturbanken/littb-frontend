@@ -108,22 +108,23 @@ littb.directive 'square', () ->
         size : "="
     link : (scope, elm, attrs) ->
         s = scope
-        s.$watch "left + top + width + height + size", () ->
-            coors = _.pick scope, "top", "left", "width", "height"
-            c.log "coors", coors
-            # unless _.compact(_.values(coors)).length
-            #     return
-                # coors = 
-                #     left : 0
-                #     top : 0
-                #     right : 0
-                #     bottom : 0
-            coors = _.object _.map coors, (val, key) ->
-                [key, (val?.split(",")[s.size] or 0) + "px"]
+        EXPAND_SIZE = 4
+        Y_OFFSET = -3
+        coors = _.pick scope, "top", "left", "width", "height"
+        coors = _.object _.map coors, (val, key) ->
+            val = Number(val)
+            expand = (val) ->
+                n = if key in ["top", "left"] then EXPAND_SIZE * -1 else EXPAND_SIZE * 2
+                # dir = if key in ["top", "left"] then -1 else 1
+                val + n
+            c.log "coors", val, key, expand(val)
+            if key == "top"
+                val += Y_OFFSET
+            [key, expand(val) + "px"]
+                # [key, (val) + "px"]
 
-            elm.css coors
+        elm.css coors
             
-
 
         
 # littb.directive 'clickOutside', ($document) -> 

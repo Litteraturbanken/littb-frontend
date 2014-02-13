@@ -210,11 +210,11 @@
       return backend.searchWorksKorp(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then(function(data) {
         var row, _i, _len, _ref, _results;
         c.log("search data", data);
-        s.kwic = data.kwic;
+        s.kwic = data.kwic || [];
         s.hits = data.hits;
         s.searching = false;
         s.total_pages = Math.ceil(s.hits / s.num_hits);
-        _ref = data.kwic;
+        _ref = data.kwic || [];
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           row = _ref[_i];
@@ -1114,6 +1114,7 @@
       authorData = _arg[0], authorById = _arg[1];
       return s.authorById = authorById;
     });
+    s.size = $location.search().size || 2;
     util.setupHashComplex(s, [
       {
         scope_name: "markee_from",
@@ -1138,6 +1139,29 @@
       }, {
         key: "parallel",
         scope_name: "isParallel"
+      }, {
+        key: "storlek",
+        scope_name: "size",
+        val_in: Number,
+        post_change: function() {
+          var i, item, pairs;
+          c.log("x post change");
+          return s.coors = (function() {
+            var _i, _len, _ref, _results;
+            _ref = s.x.split("|");
+            _results = [];
+            for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+              item = _ref[i];
+              pairs = _.pairs(_.pick(s, "x", "y", "height", "width"));
+              _results.push(_.object(_.map(pairs, function(_arg) {
+                var key, val;
+                key = _arg[0], val = _arg[1];
+                return [key, val.split("|")[i].split(",")[s.size]];
+              })));
+            }
+            return _results;
+          })();
+        }
       }
     ]);
     watches = [];
@@ -1193,6 +1217,7 @@
         if (s.sizes[s.size] === false) {
           s.sizes[s.size] = true;
         }
+        c.log("loadpage result", s.size);
         s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
         page.children().remove();
         s.etext_html = _.str.trim(page.text());
@@ -1221,7 +1246,6 @@
         return s.loading = false;
       });
     };
-    s.size = 2;
     s.setSize = function(index) {
       s.sizes = _.map(s.sizes, function(item) {
         if (item) {
