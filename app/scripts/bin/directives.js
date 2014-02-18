@@ -135,7 +135,7 @@
         var EXPAND_SIZE, Y_OFFSET, coors, s;
         s = scope;
         EXPAND_SIZE = 4;
-        Y_OFFSET = -3;
+        Y_OFFSET = -2;
         coors = _.pick(scope, "top", "left", "width", "height");
         coors = _.object(_.map(coors, function(val, key) {
           var expand;
