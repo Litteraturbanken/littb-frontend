@@ -69,7 +69,7 @@ getStudentCtrl = (id) ->
                 if : ["6-9", "gymnasium"]
             ,
                 label: "Författarpresentation", 
-                url : "/#!/skola/#{id}/ForfattarpresentationElever.html"
+                url : "/#!/skola/#{id}/ForfattarpresentationElever#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             ,
                 label: "I andra medier", 
@@ -80,7 +80,7 @@ getStudentCtrl = (id) ->
                 ]
                 if : ["gymnasium"]
             ,
-                label: "Uppgifter", 
+                label: "Läshandledningar", 
                 sublist : works
                 if : ["6-9", "gymnasium"]
             ,

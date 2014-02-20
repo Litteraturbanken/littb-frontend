@@ -1452,15 +1452,19 @@ grundform-clean {
         overflow: hidden;
     }
     .minus:after {
-        // content : "–";
         content : "−";
-        font-size : 1.6em;
+        font-size : 1.4em;
         height : 100%;
-
     }
     .plus:after {
         content : "+";
-        font-size : 1.6em;
+        font-size : 1.4em;
+    }
+    .minus:hover, .plus:hover {
+        color : $primarycolor;
+    }
+    .minus:active, .plus:active {
+        color: lighten($primarycolor, 5%);
     }
     
     .highlight {
@@ -1530,6 +1534,7 @@ grundform-clean {
     }
     .nav_sidebar .selected {
         color : $primarycolor;
+        cursor: default;
     }
 
     #mainview {
