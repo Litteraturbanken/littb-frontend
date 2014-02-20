@@ -163,7 +163,7 @@
       controller: "readingCtrl",
       reloadOnSearch: false,
       breadcrumb: ["författare"]
-    }).when("/forfattare/:author/titlar/:title/sida/:pagename/:mediatype", {
+    }).when(["/forfattare/:author/titlar/:title/sida/:pagename/:mediatype", "/editor/:lbid/ix/:ix/:mediatype"], {
       templateUrl: "views/reader.html",
       controller: "readingCtrl",
       reloadOnSearch: false,

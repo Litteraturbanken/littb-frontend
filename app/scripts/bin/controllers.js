@@ -926,10 +926,18 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
-    var author, loadPage, mediatype, onKeyDown, pagename, resetHitMarkings, s, thisRoute, title, watches;
+    var author, loadPage, mediatype, onKeyDown, pagename, parseEditorPage, resetHitMarkings, s, thisRoute, title, watches;
     s = $scope;
+    s.isEditor = false;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
     _.extend(s, _.pick($routeParams, "title", "author", "mediatype"));
+    if ("ix" in $routeParams) {
+      s.isEditor = true;
+      mediatype = s.mediatype = {
+        'f': 'faksimil',
+        'e': 'etext'
+      }[s.mediatype];
+    }
     s.pageToLoad = pagename;
     s.searchData = searchData;
     s.loading = true;
@@ -1099,7 +1107,11 @@
       }
     }));
     s.isDefined = angular.isDefined;
+    parseEditorPage = function(data) {
+      return c.log("parseEditorPage", data);
+    };
     loadPage = function(val) {
+      var params;
       if ($route.current.controller !== 'readingCtrl') {
         c.log("resisted page load");
         return;
@@ -1107,13 +1119,26 @@
       c.log("loadPage", val);
       s.loading = true;
       s.error = false;
-      return backend.getPage(val, {
-        authorid: author,
-        titlepath: title,
-        mediatype: mediatype
-      }).then(function(_arg) {
+      if (s.isEditor) {
+        params = {
+          lbworkid: $routeParams.lbid,
+          mediatype: mediatype,
+          pageix: $routeParams.ix
+        };
+      } else {
+        params = {
+          authorid: author,
+          titlepath: title,
+          mediatype: mediatype
+        };
+      }
+      return backend.getPage(val, params).then(function(_arg) {
         var data, page, url, workinfo, _i, _len, _ref;
         data = _arg[0], workinfo = _arg[1];
+        if (s.isEditor) {
+          parseEditorPage(data);
+          return;
+        }
         s.workinfo = workinfo;
         s.pagemap = workinfo.pagemap;
         s.startpage = workinfo.startpagename;
@@ -1139,7 +1164,9 @@
         s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
         page.children().remove();
         s.etext_html = _.str.trim(page.text());
-        backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype);
+        if (!s.isEditor) {
+          backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype);
+        }
         s.loading = false;
         $rootScope.breadcrumb = [];
         s.appendCrumb([

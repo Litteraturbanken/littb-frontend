@@ -848,11 +848,17 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) ->
     s = $scope
+    s.isEditor = false
+        
     {title, author, mediatype, pagename} = $routeParams
-    # _.extend s, (_.omit $routeParams, "traff", "traffslut", "x", "y", "height", "width", "parallel")
     _.extend s, (_.pick $routeParams, "title", "author", "mediatype")
+
+    if "ix" of $routeParams
+        s.isEditor = true
+        mediatype = s.mediatype = {'f' : 'faksimil', 'e' : 'etext'}[s.mediatype]
+
     s.pageToLoad = pagename
-    
+
     s.searchData = searchData
     s.loading = true
     s.showPopup = false
@@ -1008,6 +1014,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.isDefined = angular.isDefined
 
+    parseEditorPage = (data) ->
+        c.log "parseEditorPage", data
+
     loadPage = (val) ->
         # take care of state hiccup
         unless $route.current.controller == 'readingCtrl' 
@@ -1019,13 +1028,24 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
         s.loading = true
         s.error = false
+        
+        if s.isEditor
+            params = 
+                lbworkid : $routeParams.lbid
+                mediatype : mediatype
+                pageix : $routeParams.ix
+        else
+            params = 
+                authorid : author
+                titlepath : title
+                mediatype : mediatype
+
+
         # s.pagename = val
-        backend.getPage(val, 
-            authorid : author
-            titlepath : title
-            mediatype : mediatype
-        ).then ([data, workinfo]) ->
-            
+        backend.getPage(val, params).then ([data, workinfo]) ->
+            if s.isEditor
+                parseEditorPage data
+                return 
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
 
@@ -1056,8 +1076,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # else
             page.children().remove()
             s.etext_html = _.str.trim page.text()
-
-            backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
+            unless s.isEditor
+                backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
             s.loading = false
             $rootScope.breadcrumb = []
             s.appendCrumb [
