@@ -554,6 +554,78 @@ littb.factory 'backend', ($http, $q, util) ->
             def.reject()
         return def.promise
 
+    searchWorksKorp : (query, mediatype, from, to, selectedAuthor, selectedTitle) ->
+        c.log "searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle
+        # http://spraakbanken.gu.se/ws/korp?command=query&corpus=LBSOK&start=0&end=20&cqp=%5Bword=%22katastrof%22+%26+_.text_mediatype=%22faksimil%22+%26+_.text_authorid+contains+%22RunebergJL%22%5D&defaultwithin=sentence&defaultcontext=sentence&show_struct=page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date&show=wid,x,y,width,height
+        def = $q.defer()
+
+        tokenList = []
+        regescape = (s) ->
+            s.replace(/[\.|\?|\+|\*|\|\'|\"\(\)\^\$]/g, "\\$&")
+
+        tokenize = (str) ->
+            # Excludes some characters from starting word tokens
+            # _re_word_start = /[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]/
+
+            # Characters that cannot appear within words
+            # _re_non_word_chars = /(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])/ #@
+
+            # Excludes some characters from ending word tokens
+            # _re_word_end = /[\(\"\`{\[:;&\#\*@\)}\],]/
+
+            # Multi-character punctuation
+            # _re_multi_char_punct = /(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)/
+
+
+            wdlist = for wd in query.split(/\s+/)
+                extras = []
+                if wd.match(/\.\.\./)
+                    extras.push "..."
+                    wd = wd.replace(/(\.\.\.)/, "")
+                wd = wd.replace(/([\.,;:])/g, " $1")
+                wd = wd.replace(/([-])/g, " $1 ")
+                wd = wd.replace(/([»])/g, "$1 ")
+                wd.split(" ")
+
+
+            _.compact [].concat (_.flatten wdlist), extras
+
+
+        for wd in tokenize(query)
+            tokenList.push "word = '#{regescape wd}' %c"
+
+        if selectedAuthor
+            tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"
+        if selectedTitle
+            tokenList[0] += " & _.text_lbworkid = '#{selectedTitle}'"
+        if mediatype == "all"
+            tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
+        else
+            tokenList[0] += " & _.text_mediatype = '#{mediatype}'"
+
+
+
+        $http(
+            url : "http://spraakbanken.gu.se/ws/korp"
+            method : "GET"
+            params : 
+                command : "query"
+                cqp : "[#{tokenList.join('] [')}]"
+                show: "wid,x,y,width,height"
+                show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
+                corpus : "LBSOK"
+                start: from
+                end : to
+        ).success (data) ->
+            def.resolve data
+
+        return def.promise
+
+
+
+
+
+
     searchLexicon : (str, useWildcard, searchId, strict) ->
         def = $q.defer()
         url = "/query/so.xql"
@@ -658,60 +730,108 @@ littb.factory "authors", (backend, $q) ->
 
 
 
-littb.service "searchData", (backend, $q) ->
+littb.factory "searchData", (backend, $q) ->
     NUM_HITS = 20 # how many hits per search?
-    @data = []
-    @total_hits = null
-    @current = null
+    class SearchData
+        constructor: () ->
+            @data = []
+            @total_hits = null
+            @current = null
 
-    @parseUrls = (row) ->
-        itm = row.item
-        author = itm.workauthor or itm.authorid
-        [titleid] = itm.titleidNew.split("/")
-        return "/forfattare/#{author}/titlar/#{titleid}" + 
-            "/sida/#{itm.pagename}/#{itm.mediatype}?#{backend.getHitParams(itm)}"
-        
-    @save = (startIndex, currentIndex, input, search_args) ->
-        @searchArgs = search_args
-        @data = new Array(input.count)
-        @appendData startIndex, input
-        @total_hits = input.count
-        @current = currentIndex
+        parseUrls : (row, matches) ->
+            itm = row.structs
+            mediatype = itm.text_mediatype
 
-    @appendData = (startIndex, data) ->
-        @data[startIndex..data.kwic.length] = _.map data.kwic, @parseUrls
+            matches = row.tokens[row.match.start...row.match.end]
+            matchParams = []
+            if mediatype == "faksimil"
+                # obj = _.pick item, "x", "y", "width", "height"
+                matchGroups = _.groupBy matches, "y"
+
+                makeParams = (group) ->
+                    params = _.pick group[0], "x", "y", "height"
+
+                    for match in group
+                        unless params.width
+                            params.width = Number(match.width)
+                        else
+                            params.width += Number(match.width)
+
+                    max = Math.max itm.page_size.split("x")...
+                    sizeVals = [625, 750, 1100, 1500, 2050]
+                    factors = _.map sizeVals, (val) -> val / max
+
+                    for key, val of params
+                        params[key] = _(factors).map( (fact) ->
+                            Math.round fact * val).join(",")
+
+                    return params
+                
+                for group in _.values matchGroups
+                    matchParams.push makeParams group
 
 
-    @next = () ->
-        @current++
-        @search()
+            else 
+                matchParams.push
+                    traff : matches[0].wid
+                    traffslut : matches[..-1][0].wid
+                
 
-        
-    @prev = () ->
-        @current--
-        @search()
+            merged = _(matchParams).reduce( (obj1, obj2) -> 
+                if not obj1 then return {}
+                _.merge {}, obj1, obj2, (a,b) -> 
+                    unless a then return b
+                    a + "|" + b
+            )
+            merged = _(merged).pairs().invoke("join", "=").join("&")
+
+            author = _.str.trim(itm.text_authorid, "|").split("|")[0]
+            titleid = itm.text_titlepath
+            return "/#!/forfattare/#{author}/titlar/#{titleid}" + 
+                "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{merged}" # ?#{backend.getHitParams(itm)}
+            
+        save : (startIndex, currentIndex, input, search_args) ->
+            @searchArgs = search_args
+            @data = new Array(input.count)
+            @appendData startIndex, input
+            @total_hits = input.count
+            @current = currentIndex
+
+        appendData : (startIndex, data) ->
+            @data[startIndex..data.kwic.length] = _.map data.kwic, @parseUrls
 
 
-    @search = () ->
-        def = $q.defer()
-        c.log "search", @current
-        if @data[@current]? 
-            def.resolve @data[@current]
-        else
-            current_page = Math.floor(@current / NUM_HITS )
-            args = [].concat @searchArgs, [current_page + 1, NUM_HITS]
-            backend.searchWorks(args...).then (data) =>
-                @appendData @current, data
+        next : () ->
+            @current++
+            @search()
+
+            
+        prev : () ->
+            @current--
+            @search()
+
+
+        search : () ->
+            def = $q.defer()
+            c.log "search", @current
+            if @data[@current]? 
                 def.resolve @data[@current]
-        return def.promise
+            else
+                current_page = Math.floor(@current / NUM_HITS )
+                args = [].concat @searchArgs, [current_page + 1, NUM_HITS]
+                backend.searchWorks(args...).then (data) =>
+                    @appendData @current, data
+                    def.resolve @data[@current]
+            return def.promise
 
 
-    @reset = () ->
-        @current = null
-        @total_hits = null
-        @data = []
-        @searchArgs = null
+        reset : () ->
+            @current = null
+            @total_hits = null
+            @data = []
+            @searchArgs = null
 
 
+    return new SearchData()
         
 

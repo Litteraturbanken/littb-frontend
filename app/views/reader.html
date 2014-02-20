@@ -6,12 +6,11 @@
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
-    <div class="etext txt" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html-unsafe="etext_html | setMarkee:markee_from:markee_to" ></div>
+    <div class="etext txt" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
-    <img  class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
-    
-    <div square ng-show="height" size="size" x="x" y="y" width="width" height="height" class="faksimilMarkee"></div>
-    
+    <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
+
+    <div square ng-repeat="obj in coors" ng-show="height" size="size" x="obj.x" y="obj.y" width="obj.width" height="obj.height" class="faksimilMarkee" ></div>
     
     
     <div toolkit>
@@ -87,7 +86,7 @@
     
             <div ng-show="showPopup" class="triangle"></div>
     
-            <ul class="part_menu" ng-show="showPopup" click-outside="showPopup = false">
+            <ul class="part_menu" ng-show="showPopup" >
                 <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
                 <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
                     

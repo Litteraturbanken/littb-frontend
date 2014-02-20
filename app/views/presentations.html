@@ -1,5 +1,5 @@
 <meta-desc>Litteraturbankens presentationer.</meta-desc>
-<div ng-bind-html-unsafe="doc"></div>
+<div ng-bind-html="doc | trust"></div>
 <div toolkit>
     <hr>
     <div letter-map selected="ankare" enabled-letters="currentLetters"></div>
