@@ -868,7 +868,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.gotopage(startpage)
         s.showPopup = false
 
-    resetHitMarkings = () ->
+    s.resetHitMarkings = () ->
         for key in ["traff", "traffslut", "x", "y", "height", "width"]
             s[key] = null
             # $location.search( key, null).replace()
@@ -894,7 +894,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             switch event.which
                 when 39 
                     if navigator.userAgent.indexOf("Firefox") != -1 or $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") == $($window).width()
-                        s.nextPage()
+                        $location.path _.str.ltrim s.getNextPageUrl(), "/#!"
+                        # s.nextPage()
                 when 37 
                     if $rootElement.prop("scrollLeft") == 0
                         s.prevPage()
@@ -902,33 +903,56 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     $document.on "keydown", onKeyDown
 
     s.getPage = () ->
-        $route.current.pathParams.pagename
+        if s.isEditor
+            $route.current.pathParams.ix
+        else
+            $route.current.pathParams.pagename
+    
+
     s.setPage = (ix) ->
         s.pageix = ix
         s.pageToLoad = s.pagemap["ix_" + s.pageix]
-    s.nextPage = () ->
-        resetHitMarkings()
+    
+    s.nextPage = (event) ->
+        event.preventDefault()
+        unless s.endpage then return
         if s.pageix == s.pagemap["page_" + s.endpage] then return
         newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         else
             s.setPage(0)
-    s.prevPage = () ->
-        resetHitMarkings()
+    
+    s.prevPage = (event) ->
+        event.preventDefault()
         newix = s.pageix - 1
-        c.log "newix", newix
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         else
             s.setPage(0)
 
-    s.firstPage = () ->
-        s.setPage(0)
-    s.lastPage = () ->
-        ix = s.pagemap["page_" + s.endpage]
-        s.setPage ix
 
+    s.getFirstPageUrl = () ->
+        "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.startpage}/#{mediatype}"
+    
+    s.getPrevPageUrl = () ->
+        unless s.pagemap then return
+        newix = s.pageix - 1
+        if "ix_" + newix of s.pagemap
+            page = s.pagemap["ix_" + newix]
+            "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
+    
+    s.getNextPageUrl = () ->
+        unless s.endpage then return
+        if s.pageix == s.pagemap["page_" + s.endpage] then return
+        newix = s.pageix + 1
+        if "ix_" + newix of s.pagemap
+            page = s.pagemap["ix_" + newix]
+            "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
+
+    
+    s.getLastPageUrl = () ->
+        "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.endpage}/#{mediatype}"
 
 
     s.gotopage = (page) ->
@@ -1016,6 +1040,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     parseEditorPage = (data) ->
         c.log "parseEditorPage", data
+        # for page in $("sida", data)
+        #     $(page).attr("sidn")
+        #     $(page).attr("sidn")
+
+        s.loading = false
 
     loadPage = (val) ->
         # take care of state hiccup
@@ -1033,19 +1062,26 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             params = 
                 lbworkid : $routeParams.lbid
                 mediatype : mediatype
-                pageix : $routeParams.ix
+                pageix : val
+            pageQuery = "page[ix='#{val}']"
         else
+            pageQuery = "page[name='#{val}']"
             params = 
                 authorid : author
                 titlepath : title
                 mediatype : mediatype
 
+            if val then params["pagename"] = val
+
 
         # s.pagename = val
-        backend.getPage(val, params).then ([data, workinfo]) ->
-            if s.isEditor
-                parseEditorPage data
-                return 
+        backend.getPage(params).then ([data, workinfo]) ->
+
+
+
+            # if s.isEditor
+            #     parseEditorPage data
+            #     return 
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
 
@@ -1053,7 +1089,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.endpage = workinfo.endpagename
 
 
-            page = $("page[name='#{val}']", data).last().clone()
+            page = $(pageQuery, data).last().clone()
             if not page.length
                 page = $("page:last", data).clone()
                 s.pagename = page.attr("name")
