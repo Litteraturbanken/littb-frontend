@@ -333,13 +333,14 @@ littb.filter "setMarkee", () ->
         input = $(input)
         wrapper = $("<div>")
         if fromid == toid
-            $("#" + fromid, input).addClass "markee"
+            $("#" + fromid, input).addClass("markee")
         else
             $("#" + fromid, input)
                 .nextUntil("#" + toid, "span")
                 .andSelf()
                 .add("#" + toid, input)
                 .addClass("markee")
+                .filter(":odd").addClass("flip")
 
         wrapper.append input
         return wrapper.html()

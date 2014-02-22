@@ -599,66 +599,7 @@
         });
         return def.promise;
       },
-      searchWorks: function(query, mediatype, resultitem, resultlength, selectedAuthor, selectedTitle) {
-        var def, domain, url;
-        def = $q.defer();
-        url = "/query/lb-search.xql";
-        domain = "<item type='all-titles' mediatype='" + mediatype + "'></item>";
-        if (selectedAuthor) {
-          domain = "<item type='author' mediatype='" + mediatype + "'>" + selectedAuthor + "</item>";
-        }
-        if (selectedTitle) {
-          domain = "<item type='titlepath' mediatype='" + mediatype + "'>" + selectedTitle + "</item>";
-        }
-        http({
-          method: "POST",
-          url: url,
-          headers: {
-            "Content-Type": "text/xml; charset=utf-8"
-          },
-          params: {
-            action: "search"
-          },
-          data: "<search>\n    <string-filter>\n        <item type=\"string\">" + query + "|</item>\n    </string-filter>\n<domain-filter>\n    " + domain + "\n</domain-filter>\n<ne-filter>\n    <item type=\"NUL\"></item>\n</ne-filter>\n</search>"
-        }).success(function(data) {
-          var ref;
-          c.log("success", $("result", data).attr("ref"));
-          ref = $("result", data).attr("ref");
-          return http({
-            url: url,
-            params: {
-              action: "get-result-set",
-              searchref: ref,
-              resultlength: resultlength,
-              resultitem: resultitem + 1
-            }
-          }).success(function(resultset) {
-            var elem, kw, left, output, right, work, _i, _len, _ref, _ref1;
-            c.log("get-result-set success", resultset, $("result", resultset).children());
-            output = {
-              kwic: [],
-              count: parseInt($("result", resultset).attr("count"))
-            };
-            _ref = $("result", resultset).children();
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              elem = _ref[_i];
-              _ref1 = _.map($(elem).children(), $), left = _ref1[0], kw = _ref1[1], right = _ref1[2], work = _ref1[3];
-              output.kwic.push({
-                left: left.text(),
-                kw: kw.text(),
-                right: right.text(),
-                item: objFromAttrs(work.get(0))
-              });
-            }
-            return def.resolve(output);
-          });
-        }).error(function(data) {
-          c.log("error", arguments);
-          return def.reject();
-        });
-        return def.promise;
-      },
-      searchWorksKorp: function(query, mediatype, from, to, selectedAuthor, selectedTitle) {
+      searchWorks: function(query, mediatype, from, to, selectedAuthor, selectedTitle) {
         var def, regescape, tokenList, tokenize, wd, _i, _len, _ref;
         c.log("searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle);
         def = $q.defer();
@@ -707,6 +648,7 @@
         $http({
           url: "http://spraakbanken.gu.se/ws/korp",
           method: "GET",
+          cache: true,
           params: {
             command: "query",
             cqp: "[" + (tokenList.join('] [')) + "]",
@@ -718,6 +660,9 @@
           }
         }).success(function(data) {
           return def.resolve(data);
+        }).error(function(data) {
+          c.log("error", arguments);
+          return def.reject();
         });
         return def.promise;
       },
@@ -887,7 +832,7 @@
         } else {
           matchParams.push({
             traff: matches[0].wid,
-            traffslut: matches.slice(0)[0].wid
+            traffslut: _.last(matches).wid
           });
         }
         merged = _(matchParams).reduce(function(obj1, obj2) {
