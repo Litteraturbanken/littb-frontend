@@ -56,10 +56,22 @@
     
     
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
-            <a ng-href="{{getFirstPageUrl()}}"><img src="/bilder/LBstart.png"></a>
-            <a rel="prev" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)"><img src="/bilder/LBforegaende.png"></a>
-            <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)"><img src="/bilder/LBnasta.png"></a>
-            <a ng-href="{{getLastPageUrl()}}"><img src="/bilder/LBslut.png"></a>
+            <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : pagename == startpage}">
+                <!-- <i class="fa fa-backward"></i> -->
+                <i class="fa fa-fast-backward"></i>
+            </a>
+            <a rel="prev" ng-class="{disabled : pagename == startpage}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
+                <i class="fa fa-backward"></i>
+                <!-- <span class="triangle left"></span> -->
+            </a>
+            <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+                <i class="fa fa-forward"></i>
+                <!-- <span class="triangle right"></span> -->
+            </a>
+            <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}">
+                <!-- <i class="fa fa-forward"></i> -->
+                <i class="fa fa-fast-forward"></i>
+            </a>
         </div>
         <form ng-submit="pageToLoad = displaynum">
             <span ng-if="isEditor">Index</span> 
@@ -81,7 +93,7 @@
             <div>
                 <i ng-mouseover="mouseover()" 
                     ng-touch="mouseover()"
-                    class="arrow_icon icon-play icon-large"></i>
+                    class="arrow_icon fa fa-play"></i>
             </div>
     
             <div ng-show="showPopup" class="triangle"></div>

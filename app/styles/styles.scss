@@ -564,6 +564,11 @@ body > .header {
                     margin-left : 1em;
                 }
             }
+            .also_include {
+                input {
+                    margin-left : 1em;
+                }    
+            }
         }
         table {
             white-space : nowrap;
@@ -753,22 +758,131 @@ $partnav-width : 170px;
                 
         }
         .pager_ctrls {
-            margin-bottom: 0.7em;
+            margin-bottom: 0.8em;
+            // .fa-backward.single {
+            //     width: 14px;
+            //     overflow: hidden;
+            //     position: relative;
+            //     top: 3px;
+            // }
+            // .fa-forward.single {
+            //     width: 14px;
+            //     overflow: hidden;
+            //     position: relative;
+            //     top: 3px;
+            // }
+            // .fa-caret-right {
+            //     text-shadow:
+            //         3px 3px 0 #000,
+            //       -1px -1px 0 #000,  
+            //        1px -1px 0 #000,
+            //        -1px 1px 0 #000,
+            //         1px 1px 0 #000;
+            // }
+            a {
+                margin: 0 3px;
+                &:first-of-type, &:first-of-type * {
+                    padding-left : 0;
+                    margin-left : 0;
+                }
+            }
+
+            $hover : desaturate($primarycolor, 50%);
+            $activate : lighten($primarycolor, 10%);
+            $disabled : grey;
+            @mixin disabled {
+                cursor : default;
+                opacity : 0.7;
+                @content;
+            }
+            
+            span.triangle {
+                display : inline-block;
+                vertical-align : top;
+                
+            }
+            $triangle_h : 1.8em;
+            span.triangle.left {
+                @include arrow($triangle_h / 2, $triangle_h, left, $primarycolor);
+
+                &:hover {
+                    border-right-color : $hover;
+                }
+                &:active {
+                    border-right-color : $activate;
+                }
+
+            }
+            span.triangle.right {
+                @include arrow($triangle_h / 2, $triangle_h, right, $primarycolor);
+                &:hover {
+                    border-left-color : $hover;
+                }
+                &:active {
+                    border-left-color : $activate;
+                }
+                
+            }
+            i {
+                cursor : pointer;
+                font-size : 1.8em;
+                padding : 0 1px;
+                &:before {
+                    color : $primarycolor;
+                    transition : color 200ms;
+                }
+                &:hover {
+                    &:before {
+                        color : $hover;
+                        transition : color 200ms;
+                    }
+                }
+                &:active {
+                    &:before {
+                        color : $activate;
+                    }
+                }
+
+
+            }
+            .disabled span.triangle.left {
+                @include disabled {
+                    border-right-color : $disabled;
+                }
+            }
+            .disabled span.triangle.right {
+                @include disabled {
+                    border-left-color : $disabled;
+                }
+            }
+            .disabled i {
+                @include disabled {
+                    &:before {
+                        color : $disabled;
+                    }
+                }
+            }
         }
         .size_picker {
             margin-top : 1em;
         }
         .size_picker > div {
             @include inline-block();
-            width : 15px;
-            height : 15px;
+            width : 20px;
+            height : 20px;
             border-radius : 10px;
             background-color : black;
             color : white;
             margin-left : 3px;
             padding-left : 4px;
-            font-family : $sans;
+            padding-top: 2px;
+            padding-left: 7px;
+            // font-family : $sans;
             cursor : pointer;
+
+            &:first-of-type {
+                margin-left : 0;
+            }
             
             &.selected {
                 background-color : $primarycolor;
@@ -796,9 +910,11 @@ $partnav-width : 170px;
         }
     }
     .partnav {
+        margin-top: 1em;
         position : relative;
         .arrow_icon {
             color : $primarycolor;
+            font-size : 1.5em;
         }
 
         .triangle {

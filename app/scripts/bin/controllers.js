@@ -103,6 +103,10 @@
         scope_name: "num_hits",
         key: "per_sida",
         val_in: Number
+      }, {
+        key: "prefix"
+      }, {
+        key: "suffix"
       }
     ]);
     authors.then(function(_arg) {
@@ -197,7 +201,7 @@
       return sentence.tokens.slice(from, len);
     };
     s.search = function(query) {
-      var from, mediatype, q, to;
+      var from, mediatype, params, q, to;
       q = query || s.query;
       if (q) {
         $location.search("fras", q);
@@ -207,7 +211,7 @@
       mediatype = getMediatypes();
       from = s.current_page * s.num_hits;
       to = (from + s.num_hits) - 1;
-      return backend.searchWorks(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then(function(data) {
+      return params = backend.searchWorks(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel, s.prefix, s.suffix).then(function(data) {
         var row, _i, _len, _ref, _results;
         c.log("search data", data);
         s.kwic = data.kwic || [];
@@ -984,6 +988,7 @@
     _.extend(s, _.pick($routeParams, "title", "author", "mediatype"));
     if ("ix" in $routeParams) {
       s.isEditor = true;
+      s.pageix = Number($routeParams.ix);
       mediatype = s.mediatype = {
         'f': 'faksimil',
         'e': 'etext'
@@ -1056,8 +1061,15 @@
     };
     s.nextPage = function(event) {
       var newix;
-      event.preventDefault();
+      if (event != null) {
+        event.preventDefault();
+      }
       if (!s.endpage) {
+        return;
+      }
+      if (s.isEditor) {
+        s.pageix = s.pageix + 1;
+        s.pageToLoad = s.pageix;
         return;
       }
       if (s.pageix === s.pagemap["page_" + s.endpage]) {
@@ -1072,7 +1084,17 @@
     };
     s.prevPage = function(event) {
       var newix;
-      event.preventDefault();
+      if (event != null) {
+        event.preventDefault();
+      }
+      if (!s.pagemap) {
+        return;
+      }
+      if (s.isEditor) {
+        s.pageix = s.pageix - 1;
+        s.pageToLoad = s.pageix;
+        return;
+      }
       newix = s.pageix - 1;
       if ("ix_" + newix in s.pagemap) {
         return s.setPage(newix);
@@ -1176,33 +1198,39 @@
       }, {
         key: "parallel",
         scope_name: "isParallel"
-      }, {
-        key: "storlek",
-        scope_name: "size",
-        val_in: Number,
-        post_change: function() {
-          var i, item, pairs;
-          if (!s.x) {
-            return;
-          }
-          return s.coors = (function() {
-            var _i, _len, _ref, _results;
-            _ref = s.x.split("|");
-            _results = [];
-            for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-              item = _ref[i];
-              pairs = _.pairs(_.pick(s, "x", "y", "height", "width"));
-              _results.push(_.object(_.map(pairs, function(_arg) {
-                var key, val;
-                key = _arg[0], val = _arg[1];
-                return [key, val.split("|")[i].split(",")[s.size]];
-              })));
-            }
-            return _results;
-          })();
-        }
       }
     ]);
+    if (mediatype === "faksimil") {
+      util.setupHashComplex(s, [
+        {
+          key: "storlek",
+          scope_name: "size",
+          val_in: Number,
+          "default": 2,
+          post_change: function() {
+            var i, item, pairs;
+            if (!s.x) {
+              return;
+            }
+            return s.coors = (function() {
+              var _i, _len, _ref, _results;
+              _ref = s.x.split("|");
+              _results = [];
+              for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+                item = _ref[i];
+                pairs = _.pairs(_.pick(s, "x", "y", "height", "width"));
+                _results.push(_.object(_.map(pairs, function(_arg) {
+                  var key, val;
+                  key = _arg[0], val = _arg[1];
+                  return [key, val.split("|")[i].split(",")[s.size]];
+                })));
+              }
+              return _results;
+            })();
+          }
+        }
+      ]);
+    }
     watches = [];
     watches.push(s.$watch("pageToLoad", function(val) {
       var loc, prevpath, url;
@@ -1210,10 +1238,14 @@
         return;
       }
       s.displaynum = val;
-      url = "/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype;
+      if (s.isEditor) {
+        url = "/editor/" + $routeParams.lbid + "/ix/" + val + "/" + $routeParams.mediatype;
+      } else {
+        url = "/forfattare/" + author + "/titlar/" + title + "/sida/" + val + "/" + mediatype;
+      }
       prevpath = $location.path();
       loc = $location.path(url);
-      if (!_.str.contains(prevpath, "/sida/")) {
+      if (!s.isEditor && !_.str.contains(prevpath, "/sida/")) {
         c.log("replace", prevpath);
         return loc.replace();
       }
@@ -1224,7 +1256,7 @@
       return s.loading = false;
     };
     loadPage = function(val) {
-      var pageQuery, params;
+      var overWriteIx, pageQuery, params;
       if ($route.current.controller !== 'readingCtrl') {
         c.log("resisted page load");
         return;
@@ -1239,12 +1271,16 @@
           pageix: val
         };
         pageQuery = "page[ix='" + val + "']";
+        overWriteIx = function() {};
       } else {
         pageQuery = "page[name='" + val + "']";
         params = {
           authorid: author,
           titlepath: title,
           mediatype: mediatype
+        };
+        overWriteIx = function(val) {
+          return s.pageix = s.pagemap["page_" + val];
         };
         if (val) {
           params["pagename"] = val;
@@ -1258,6 +1294,7 @@
         s.startpage = workinfo.startpagename;
         s.endpage = workinfo.endpagename;
         page = $(pageQuery, data).last().clone();
+        c.log("page", page);
         if (!page.length) {
           page = $("page:last", data).clone();
           s.pagename = page.attr("name");
@@ -1265,7 +1302,7 @@
           s.pagename = val;
         }
         s.displaynum = s.pagename;
-        s.pageix = s.pagemap["page_" + s.pagename];
+        overWriteIx(s.pagename);
         s.sizes = new Array(5);
         _ref = $("faksimil-url", page);
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {

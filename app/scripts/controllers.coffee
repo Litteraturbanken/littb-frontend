@@ -93,6 +93,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
             scope_name : "num_hits"
             key : "per_sida"
             val_in : Number
+        ,
+            key: "prefix"
+        ,   
+            key : "suffix"
     ]
 
     authors.then ([authorList, authorsById]) ->
@@ -111,11 +115,12 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
             s.selected_author = authorsById[$location.search().forfattare]
         
         util.setupHashComplex s, [
-            key : "forfattare"
-            expr : "selected_author.pseudonymfor || selected_author.authorid"
-            # val_in : (val) ->
-            #     authorsById[val]
-            post_change : change
+                key : "forfattare"
+                expr : "selected_author.pseudonymfor || selected_author.authorid"
+                # val_in : (val) ->
+                #     authorsById[val]
+                post_change : change
+
         ]
 
 
@@ -188,17 +193,26 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
-        backend.searchWorks(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then (data) ->
-            c.log "search data", data
+        params =
 
-            s.kwic = data.kwic or []
-            s.hits = data.hits
-            s.searching = false
-            s.total_pages = Math.ceil(s.hits / s.num_hits)
+        backend.searchWorks(s.query,
+            mediatype,
+            from,
+            to,
+            $location.search().forfattare,
+            $location.search().titel,
+            s.prefix,
+            s.suffix).then (data) ->
+                c.log "search data", data
+
+                s.kwic = data.kwic or []
+                s.hits = data.hits
+                s.searching = false
+                s.total_pages = Math.ceil(s.hits / s.num_hits)
 
 
-            for row in (data.kwic or [])
-                row.href = searchData.parseUrls row
+                for row in (data.kwic or [])
+                    row.href = searchData.parseUrls row
 
 
 
@@ -901,6 +915,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     if "ix" of $routeParams
         s.isEditor = true
+        s.pageix = Number $routeParams.ix
         mediatype = s.mediatype = {'f' : 'faksimil', 'e' : 'etext'}[s.mediatype]
 
     s.pageToLoad = pagename
@@ -959,8 +974,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.pageToLoad = s.pagemap["ix_" + s.pageix]
     
     s.nextPage = (event) ->
-        event.preventDefault()
+        event?.preventDefault()
         unless s.endpage then return
+        if s.isEditor
+            # s.setPage(s.pageix + 1)
+            s.pageix = s.pageix + 1
+            s.pageToLoad = s.pageix
+            return
         if s.pageix == s.pagemap["page_" + s.endpage] then return
         newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
@@ -969,7 +989,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.setPage(0)
     
     s.prevPage = (event) ->
-        event.preventDefault()
+        event?.preventDefault()
+        unless s.pagemap then return
+        if s.isEditor
+            s.pageix = s.pageix - 1
+            s.pageToLoad = s.pageix
+            return
         newix = s.pageix - 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
@@ -1076,17 +1101,21 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "parallel"
             scope_name : "isParallel"
-        ,
-            key: "storlek"
-            scope_name : "size"
-            val_in : Number
-            post_change: () ->
-                unless s.x then return
-                s.coors = for item, i in s.x.split("|")
-                    pairs = _.pairs _.pick s, "x", "y", "height", "width"
-                    # c.log "pairs", pairs
-                    _.object _.map pairs, ([key, val]) ->
-                        [key, val.split("|")[i].split(",")[s.size]]
+    ]
+    if mediatype == "faksimil"
+        util.setupHashComplex s, [
+                key: "storlek"
+                scope_name : "size"
+                val_in : Number
+                default : 2
+                post_change: () ->
+                    unless s.x then return
+                    s.coors = for item, i in s.x.split("|")
+                        pairs = _.pairs _.pick s, "x", "y", "height", "width"
+                        # c.log "pairs", pairs
+                        _.object _.map pairs, ([key, val]) ->
+                            [key, val.split("|")[i].split(",")[s.size]]
+        ]
 
         # ,   
         #     key : "so"
@@ -1097,7 +1126,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         #         s.$emit "search_dict", val
 
 
-    ]
+    
         
         
 
@@ -1107,12 +1136,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         # c.log "pagename", val
         unless val? then return
         s.displaynum = val
-        url = "/forfattare/#{author}/titlar/#{title}/sida/#{val}/#{mediatype}"
+        if s.isEditor
+            url = "/editor/#{$routeParams.lbid}/ix/#{val}/#{$routeParams.mediatype}"
+        else
+            url = "/forfattare/#{author}/titlar/#{title}/sida/#{val}/#{mediatype}"
 
         prevpath = $location.path()
 
         loc = $location.path(url)
-        unless _.str.contains prevpath, "/sida/"
+        if !s.isEditor and not _.str.contains prevpath, "/sida/"
             c.log "replace", prevpath
             loc.replace()
     # ), 300, {leading:true})
@@ -1145,12 +1177,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 mediatype : mediatype
                 pageix : val
             pageQuery = "page[ix='#{val}']"
+            overWriteIx = () ->
         else
             pageQuery = "page[name='#{val}']"
             params = 
                 authorid : author
                 titlepath : title
                 mediatype : mediatype
+
+            overWriteIx = (val) ->
+                s.pageix = s.pagemap["page_" + val]
 
             if val then params["pagename"] = val
 
@@ -1171,6 +1207,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
             page = $(pageQuery, data).last().clone()
+            c.log "page", page
             if not page.length
                 page = $("page:last", data).clone()
                 s.pagename = page.attr("name")
@@ -1178,7 +1215,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 s.pagename = val
 
             s.displaynum = s.pagename
-            s.pageix = s.pagemap["page_" + s.pagename]
+
+            overWriteIx(s.pagename)
 
             # if mediatype == 'faksimil' or isParallel
             s.sizes = new Array(5)
