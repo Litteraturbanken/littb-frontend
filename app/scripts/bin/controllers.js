@@ -102,7 +102,8 @@
       {
         scope_name: "num_hits",
         key: "per_sida",
-        val_in: Number
+        val_in: Number,
+        "default": 20
       }, {
         key: "prefix"
       }, {
@@ -200,9 +201,15 @@
       len = sentence.tokens.length;
       return sentence.tokens.slice(from, len);
     };
+    s.setPageNum = function(num) {
+      c.log("setPageNum", num);
+      s.current_page = num;
+      return s.search();
+    };
     s.search = function(query) {
-      var from, mediatype, params, q, to;
+      var from, mediatype, q, to;
       q = query || s.query;
+      c.log("search", q);
       if (q) {
         $location.search("fras", q);
       }
@@ -211,7 +218,7 @@
       mediatype = getMediatypes();
       from = s.current_page * s.num_hits;
       to = (from + s.num_hits) - 1;
-      return params = backend.searchWorks(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel, s.prefix, s.suffix).then(function(data) {
+      return backend.searchWorks(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel, s.prefix, s.suffix).then(function(data) {
         var row, _i, _len, _ref, _results;
         c.log("search data", data);
         s.kwic = data.kwic || [];

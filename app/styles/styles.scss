@@ -59,6 +59,10 @@ body {
     height: 100%;
 
 }
+
+h1,h2,h3,h4,h5,h6 {
+    font-family: inherit;
+}
 .font-small {
     font-size : 0.8em;
 }
@@ -513,7 +517,9 @@ body > .header {
         .searching .results {
             opacity : 0.3;
         }
-        
+        .query_label {
+            vertical-align: middle;
+        }
         .submit_btn {
             float : right;
             margin-top : 1em;

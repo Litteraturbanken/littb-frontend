@@ -13,8 +13,8 @@
     </div>
     
     
-    <form ng-submit="search()">
-        Ord eller fras: <input class="input" ng-model="query" autofocus>
+    <form ng-submit="current_page = 0; search()">
+        <label class="query_label" for="query">Ord eller fras:</label> <input id="query" class="input" ng-model="query" autofocus>
     </form>
     
     <div class="extended" ng-show="open">
@@ -54,7 +54,7 @@
         </div>
     </div>
     
-    <div><span ng-click="search()" submit-btn></span><div style="clear:both;"></div></div>
+    <div><span ng-click="current_page = 0; search()" submit-btn></span><div style="clear:both;"></div></div>
     
     
     
@@ -106,8 +106,8 @@
                 </div>
             
                 <label>Gå till träffsida</label>
-                <form ng-submit="current_page = input_page - 1; search()">
-                    <input class="input_page" ng-model="input_page"><span ng-click="current_page = input_page - 1; search()" submit-btn></span>
+                <form ng-submit="setPageNum(input_page - 1)">
+                    <input class="input_page" ng-model="input_page"><span ng-click="setPageNum(input_page - 1)" submit-btn></span>
                 </form>
             </div>
             

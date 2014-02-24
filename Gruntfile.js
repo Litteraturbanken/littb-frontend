@@ -92,8 +92,8 @@ module.exports = function (grunt) {
         hostname: '0.0.0.0',
       },
       proxies : ["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb"].map(function(item) {
-        var host = 'demolittb.spraakdata.gu.se'
-        // var host = 'litteraturbanken.se'
+        // var host = 'demolittb.spraakdata.gu.se'
+        var host = 'litteraturbanken.se'
         return {
                       context: '/' + item,
                       host: host,
@@ -296,7 +296,15 @@ module.exports = function (grunt) {
     },
     copy: {
       dist: {
-        files: [{
+        files: [
+        {
+          expand: true,
+          cwd: '<%= yeoman.app %>',
+          src: ['components/font-awesome/fonts/*'],
+          dest: '<%= yeoman.dist %>/fonts',
+          flatten: true
+        },
+        {
           expand: true,
           dot: true,
           cwd: '<%= yeoman.app %>',
@@ -316,16 +324,18 @@ module.exports = function (grunt) {
           src: [
             'generated/*'
           ]
-        }, {
-          expand : true,
-          cwd: '<%= yeoman.app %>/components/font-awesome/font',
-          dest: '<%= yeoman.dist %>/font',
-          src : [
-            '*'
-          ]
+        }, 
+        // {
+        //   expand : true,
+        //   cwd: '<%= yeoman.app %>/components/font-awesome/font',
+        //   dest: '<%= yeoman.dist %>/font',
+        //   src : [
+        //     '*'
+        //   ]
 
 
-        }]
+        // }
+        ]
       },
       // styles: {
       //   expand: true,
@@ -427,7 +437,7 @@ module.exports = function (grunt) {
     'copy:dist',
     // 'cdnify',
     'ngmin',
-    'cssmin',
+    // 'cssmin',
     'uglify',
     'rev',
     'usemin'
