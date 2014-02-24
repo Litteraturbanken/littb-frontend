@@ -636,15 +636,15 @@
           pre = suf = "";
           or_block = [];
           if (prefix) {
-            or_block.push("word = '" + (regescape(wd)) + ".*'");
+            or_block.push("word = '" + (regescape(wd)) + ".*' %c");
           }
           if (suffix) {
-            or_block.push("word = '.*" + (regescape(wd)) + "'");
+            or_block.push("word = '.*" + (regescape(wd)) + "' %c");
           }
           if (!prefix && !suffix) {
-            or_block.push("word = '" + (regescape(wd)) + "'");
+            or_block.push("word = '" + (regescape(wd)) + "' %c");
           }
-          tokenList.push("" + (or_block.join(' | ')) + " %c");
+          tokenList.push("(" + (or_block.join(' | ')) + ")");
         }
         if (selectedAuthor) {
           tokenList[0] += " & _.text_authorid contains '" + selectedAuthor + "'";
@@ -866,15 +866,18 @@
 
       SearchData.prototype.save = function(startIndex, currentIndex, input, search_args) {
         this.searchArgs = search_args;
-        this.data = new Array(input.count);
+        this.data = new Array(input.hits);
         this.appendData(startIndex, input);
-        this.total_hits = input.count;
+        this.total_hits = input.hits;
         return this.current = currentIndex;
       };
 
       SearchData.prototype.appendData = function(startIndex, data) {
-        var _ref;
-        return ([].splice.apply(this.data, [startIndex, data.kwic.length - startIndex + 1].concat(_ref = _.map(data.kwic, this.parseUrls))), _ref);
+        var _ref,
+          _this = this;
+        return ([].splice.apply(this.data, [startIndex, data.kwic.length - startIndex + 1].concat(_ref = _.map(data.kwic, function(itm) {
+          return _.str.ltrim(_this.parseUrls(itm), "/#!");
+        }))), _ref);
       };
 
       SearchData.prototype.next = function() {

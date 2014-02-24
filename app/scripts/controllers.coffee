@@ -187,7 +187,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
     s.search = (query) ->
         q = query or s.query
-        c.log "search", q
+        unless q then return
         $location.search("fras", q) if q
 
         s.query = q
@@ -211,7 +211,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
             s.prefix,
             s.suffix).then (data) ->
                 c.log "search data", data
-
+                s.data = data
                 s.kwic = data.kwic or []
                 s.hits = data.hits
                 s.searching = false
@@ -946,6 +946,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     
     s.nextHit = () ->
         searchData.next().then (newUrl) ->
+            c.log "newUrl", newUrl
             $location.url(newUrl)
     s.prevHit = () ->
         searchData.prev().then (newUrl) ->

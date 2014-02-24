@@ -59,6 +59,7 @@
       controller: [
         "$scope", "$routeParams", "$http", "util", function($scope, $routeParams, $http, util) {
           return $http.get("/red/presentationer/" + $routeParams.folder + "/" + $routeParams.doc).success(function(data) {
+            c.log("doc", data);
             $scope.doc = data;
             $scope.title = $("<root>" + data + "</root>").find("h1").text();
             $scope.title = $scope.title.split(" ").slice(0, 5).join(" ");
@@ -67,7 +68,7 @@
           });
         }
       ],
-      template: '<meta-desc>{{title}}</meta-desc>\n<div style="position:relative;" ng-bind-html-unsafe="doc"></div>',
+      template: '<meta-desc>{{title}}</meta-desc>\n<div style="position:relative;" ng-bind-html="doc | trust"></div>',
       breadcrumb: ["presentationer"]
     }).when('/om/aktuellt', {
       templateUrl: '/red/om/aktuellt/aktuellt.html',

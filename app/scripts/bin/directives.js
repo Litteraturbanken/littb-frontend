@@ -360,6 +360,15 @@
     };
   });
 
+  littb.directive('insert', function() {
+    return function(scope, elem, attr) {
+      return scope.watch("doc", function() {
+        c.log("insert doc", scope.doc);
+        return elem.html(scope.doc || "");
+      });
+    };
+  });
+
 }).call(this);
 
 /*

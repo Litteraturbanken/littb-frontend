@@ -530,13 +530,13 @@ littb.factory 'backend', ($http, $q, util) ->
             or_block = []
 
             if prefix
-                or_block.push "word = '#{regescape wd}.*'"
+                or_block.push "word = '#{regescape wd}.*' %c"
             if suffix
-                or_block.push "word = '.*#{regescape wd}'"
+                or_block.push "word = '.*#{regescape wd}' %c"
             if not prefix and not suffix
-                or_block.push "word = '#{regescape wd}'"
+                or_block.push "word = '#{regescape wd}' %c"
 
-            tokenList.push "#{or_block.join(' | ')} %c"
+            tokenList.push "(#{or_block.join(' | ')})"
 
         if selectedAuthor
             tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"
@@ -740,13 +740,14 @@ littb.factory "searchData", (backend, $q) ->
             
         save : (startIndex, currentIndex, input, search_args) ->
             @searchArgs = search_args
-            @data = new Array(input.count)
+            @data = new Array(input.hits)
             @appendData startIndex, input
-            @total_hits = input.count
+            @total_hits = input.hits
             @current = currentIndex
 
         appendData : (startIndex, data) ->
-            @data[startIndex..data.kwic.length] = _.map data.kwic, @parseUrls
+            @data[startIndex..data.kwic.length] = _.map data.kwic, (itm) => 
+                _.str.ltrim @parseUrls(itm), "/#!"
 
 
         next : () ->
