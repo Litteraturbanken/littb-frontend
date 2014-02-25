@@ -69,7 +69,7 @@
             "if": ["6-9", "gymnasium"]
           }, {
             label: "Författarpresentation",
-            url: "/#!/skola/" + id + "/ForfattarpresentationElever" + sfx + ".html",
+            url: "/#!/skola/" + id + "/Forfattarpresentation" + sfx + ".html",
             "if": ["6-9", "gymnasium"]
           }, {
             label: "I andra medier",
