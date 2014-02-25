@@ -1470,7 +1470,12 @@ grundform-clean {
     .highlight {
         color : $primarycolor;
     }
-
+    .file_parent {
+        white-space : nowrap;
+        & > * {
+            white-space: normal;
+        }
+    }
     .next_prev {
         height : 1em;
         font-size : 0.8em;

@@ -166,7 +166,7 @@ littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q
 
 
 littb.directive "scFile", ($routeParams, $http, $compile, util, backend) ->
-    template: """<div link-fix></div>"""
+    template: """<div class="file_parent"></div>"""
     replace : true
     link : ($scope, elem, attr) ->
         # $scope.doc = $routeParams.doc

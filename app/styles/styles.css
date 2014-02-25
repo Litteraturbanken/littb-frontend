@@ -1,204 +1,72 @@
 @charset "UTF-8";
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
     font-family: \0000323;
   }
 }
-=======
-/* line 27, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000327;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 27, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000327;
-  }
-}
->>>>>>> continually improving school
 
 * {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
     font-family: \0000327;
   }
 }
-=======
-/* line 31, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000331;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 31, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000331;
-  }
-}
->>>>>>> continually improving school
 
 .txt {
   width: 500px;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
     font-family: \0000333;
   }
 }
-=======
-/* line 37, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000337;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 37, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000337;
-  }
-}
->>>>>>> continually improving school
 
 .tooltip {
   font-size: 1em;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000337;
-=======
-    font-family: \0000340;
+    font-family: \0000336;
   }
 }
-=======
-/* line 40, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000340;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 40, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000340;
-  }
-}
->>>>>>> continually improving school
 
 .fixed {
   position: fixed;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
-    font-family: \0000345;
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> fiddled around with the school
+    font-family: \0000340;
   }
 }
-=======
-/* line 45, styles.scss */
->>>>>>> fixed gruntfile
-=======
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 45, styles.scss */
->>>>>>> just small bug fixes
-=======
-  }
-}
->>>>>>> continually improving school
 
 body {
   font-size: 12px;
@@ -221,25 +89,7 @@ body {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000348;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000353;
-=======
-    font-family: \0000355;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-=======
-    font-family: \0000357;
->>>>>>> adding new compiled files
+    font-family: \0000352;
   }
 }
 
@@ -253,40 +103,7 @@ body > * {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000353;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000358;
-=======
-    font-family: \0000360;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-  }
-}
-=======
-/* line 60, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000360;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 61, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000361;
-=======
-    font-family: \0000362;
->>>>>>> adding new compiled files
+    font-family: \0000357;
   }
 }
 
@@ -302,11 +119,7 @@ body.ready {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000363;
+    font-family: \0000367;
   }
 }
 
@@ -325,21 +138,7 @@ h6 {
   }
 
   line {
-    font-family: \0000366;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000367;
-=======
-    font-family: \0000369;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-=======
-    font-family: \0000371;
->>>>>>> adding new compiled files
+    font-family: \0000370;
   }
 }
 
@@ -353,40 +152,7 @@ h6 {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000369;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000370;
-=======
-    font-family: \0000372;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-  }
-}
-=======
-/* line 72, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000372;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 73, styles.scss */
->>>>>>> just small bug fixes
-=======
     font-family: \0000373;
-=======
-    font-family: \0000374;
->>>>>>> adding new compiled files
   }
 }
 
@@ -400,40 +166,7 @@ h6 {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000373;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000374;
-=======
-    font-family: \0000376;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-  }
-}
-=======
-/* line 76, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000376;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 77, styles.scss */
->>>>>>> just small bug fixes
-=======
     font-family: \0000377;
-=======
-    font-family: \0000378;
->>>>>>> adding new compiled files
   }
 }
 
@@ -447,11 +180,7 @@ h6 {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000377;
+    font-family: \0000381;
   }
 }
 
@@ -465,36 +194,7 @@ h6 {
   }
 
   line {
-    font-family: \0000381;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000378;
-=======
-    font-family: \0000380;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-  }
-}
-=======
-/* line 80, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000380;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 81, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000381;
-=======
-    font-family: \0000382;
->>>>>>> adding new compiled files
+    font-family: \0000385;
   }
 }
 
@@ -515,32 +215,7 @@ h6 {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000385;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000382;
-=======
-    font-family: \0000384;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-  }
-}
-=======
-/* line 84, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000384;
-=======
-    font-family: \0000386;
->>>>>>> adding new compiled files
+    font-family: \0000389;
   }
 }
 
@@ -554,40 +229,7 @@ h6 {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000388;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000385;
-=======
-    font-family: \0000387;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-  }
-}
-=======
-/* line 87, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000387;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 88, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000388;
-=======
-    font-family: \0000389;
->>>>>>> adding new compiled files
+    font-family: \0000392;
   }
 }
 
@@ -601,40 +243,7 @@ h6 {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000392;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000389;
-=======
-    font-family: \0000391;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-  }
-}
-=======
-/* line 91, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000391;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 92, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000392;
-=======
-    font-family: \0000393;
->>>>>>> adding new compiled files
+    font-family: \0000396;
   }
 }
 
@@ -648,40 +257,7 @@ h6 {
   }
 
   line {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    font-family: \0000395;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \0000391;
-=======
-    font-family: \0000393;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-  }
-}
-=======
-/* line 93, styles.scss */
->>>>>>> fixed gruntfile
-=======
-    font-family: \0000393;
-  }
-}
->>>>>>> minor css changes
-=======
-/* line 94, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \0000394;
-=======
-    font-family: \0000395;
->>>>>>> adding new compiled files
+    font-family: \0000399;
   }
 }
 
@@ -710,6 +286,7 @@ h6 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -754,6 +331,9 @@ h6 {
 =======
     font-family: \00003100;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003105;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -768,6 +348,7 @@ h6 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -812,6 +393,9 @@ h6 {
 =======
     font-family: \00003104;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003109;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -826,6 +410,7 @@ h6 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -870,6 +455,9 @@ h6 {
 =======
     font-family: \00003108;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003113;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -887,6 +475,7 @@ h6 {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \00003115;
 =======
 =======
@@ -898,6 +487,9 @@ h6 {
 <<<<<<< HEAD
     font-family: \00003113;
 >>>>>>> fiddled around with the school
+=======
+    font-family: \00003117;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -912,6 +504,7 @@ h6 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003120;
 =======
@@ -946,6 +539,9 @@ h6 {
 =======
     font-family: \00003112;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003122;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -962,6 +558,7 @@ h6 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1006,6 +603,9 @@ h6 {
 =======
     font-family: \00003118;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003128;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1019,6 +619,7 @@ h6 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1063,6 +664,9 @@ h6 {
 =======
     font-family: \00003121;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003131;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1077,6 +681,7 @@ h6 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1121,6 +726,9 @@ h6 {
 =======
     font-family: \00003125;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003135;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1134,6 +742,7 @@ h6 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1178,6 +787,9 @@ h6 {
 =======
     font-family: \00003134;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003144;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1191,6 +803,7 @@ a[ng-click] {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1235,6 +848,9 @@ a[ng-click] {
 =======
     font-family: \00003137;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003147;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1248,6 +864,7 @@ p a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1294,6 +911,9 @@ p a {
 =======
     font-family: \00003141;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003151;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1304,6 +924,7 @@ hr {
   margin-bottom: 0;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1388,12 +1009,15 @@ h3 {
 
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003157;
 >>>>>>> fiddled around with the school
@@ -1414,6 +1038,9 @@ h3 {
     font-family: \00003147;
 >>>>>>> adding new compiled files
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003159;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1431,6 +1058,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1488,6 +1116,9 @@ h3 {
 =======
     font-family: \00003153;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003165;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1502,6 +1133,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1559,6 +1191,9 @@ h3 {
 =======
     font-family: \00003157;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003169;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1578,6 +1213,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1635,6 +1271,9 @@ h3 {
 =======
     font-family: \00003166;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003178;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1656,6 +1295,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1713,6 +1353,9 @@ h3 {
 =======
     font-family: \00003184;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003196;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1726,6 +1369,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1784,6 +1428,9 @@ h3 {
 =======
     font-family: \00003186;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003198;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1797,6 +1444,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1855,6 +1503,9 @@ h3 {
 =======
     font-family: \00003190;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003202;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1868,6 +1519,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1925,6 +1577,9 @@ h3 {
 =======
     font-family: \00003192;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003204;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -1940,6 +1595,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1997,6 +1653,9 @@ h3 {
 =======
     font-family: \00003197;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003209;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2015,6 +1674,7 @@ h3 {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \00003210;
 =======
 =======
@@ -2028,6 +1688,9 @@ h3 {
 <<<<<<< HEAD
     font-family: \00003208;
 >>>>>>> fiddled around with the school
+=======
+    font-family: \00003212;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2041,6 +1704,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003213;
 =======
@@ -2085,6 +1749,9 @@ h3 {
 =======
     font-family: \00003200;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003215;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2098,6 +1765,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2153,6 +1821,9 @@ h3 {
 =======
     font-family: \00003210;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003225;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2166,6 +1837,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2221,6 +1893,9 @@ h3 {
 =======
     font-family: \00003216;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003231;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2234,6 +1909,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2292,6 +1968,9 @@ h3 {
 =======
     font-family: \00003218;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003233;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2305,6 +1984,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2360,6 +2040,9 @@ h3 {
 =======
     font-family: \00003221;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003236;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2374,6 +2057,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2432,6 +2116,9 @@ h3 {
 =======
     font-family: \00003224;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003239;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2448,6 +2135,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2507,6 +2195,9 @@ h3 {
 =======
     font-family: \00003230;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003245;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2523,6 +2214,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2578,6 +2270,9 @@ h3 {
 =======
     font-family: \00003238;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003253;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2594,6 +2289,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2651,6 +2347,9 @@ h3 {
 =======
     font-family: \00003247;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003262;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2665,6 +2364,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2721,6 +2421,9 @@ h3 {
 =======
     font-family: \00003251;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003266;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2734,6 +2437,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2783,6 +2487,9 @@ h3 {
 =======
     font-family: \00003261;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003276;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2796,6 +2503,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2853,6 +2561,9 @@ h3 {
 =======
     font-family: \00003263;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003278;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2871,6 +2582,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -2928,6 +2640,9 @@ h3 {
 =======
     font-family: \00003272;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003287;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -2942,6 +2657,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3001,6 +2717,9 @@ h3 {
 =======
     font-family: \00003280;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003295;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3014,6 +2733,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3071,6 +2791,9 @@ h3 {
 =======
     font-family: \00003283;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003298;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3084,6 +2807,7 @@ h3 {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3143,6 +2867,9 @@ h3 {
 =======
     font-family: \00003289;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003304;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3157,6 +2884,7 @@ a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3215,6 +2943,9 @@ a {
 =======
     font-family: \00003293;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003308;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3229,6 +2960,7 @@ a:hover {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3280,6 +3012,9 @@ a:hover {
 =======
     font-family: \00003297;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003312;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3294,6 +3029,7 @@ ul {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3351,6 +3087,9 @@ ul {
 =======
     font-family: \00003301;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003316;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3364,6 +3103,7 @@ li {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3421,6 +3161,9 @@ li {
 =======
     font-family: \00003305;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003320;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3435,6 +3178,7 @@ li {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3492,6 +3236,9 @@ li {
 =======
     font-family: \00003309;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003324;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3511,6 +3258,7 @@ li {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3568,6 +3316,9 @@ li {
 =======
     font-family: \00003315;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003329;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3581,6 +3332,7 @@ label {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3655,9 +3407,11 @@ label {
 >>>>>>> continually improving school
 =======
     font-family: \00003325;
+=======
+    font-family: \00003339;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .logo_link {
   background-image: url("/bilder/LBlogga.svg");
@@ -3675,6 +3429,7 @@ label {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3747,14 +3502,14 @@ label {
 =======
     font-family: \00003335;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003349;
+>>>>>>> merge complete, small style fix
   }
 }
 
 body > .header {
-<<<<<<< HEAD
   margin-bottom: 1.5em;
-=======
->>>>>>> rewrote school html loading
   padding-bottom: 5px;
   padding-right: 0.5em;
   position: relative;
@@ -3766,6 +3521,7 @@ body > .header {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3840,9 +3596,11 @@ body > .header {
 >>>>>>> continually improving school
 =======
     font-family: \00003340;
+=======
+    font-family: \00003354;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 body > .header > a {
   display: -moz-inline-stack;
@@ -3860,6 +3618,7 @@ body > .header > a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -3932,6 +3691,9 @@ body > .header > a {
 =======
     font-family: \00003344;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003358;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -3965,6 +3727,7 @@ body > .header .breadcrumb {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \00003356;
 =======
 =======
@@ -3980,13 +3743,12 @@ body > .header .breadcrumb {
 <<<<<<< HEAD
     font-family: \00003354;
 >>>>>>> fiddled around with the school
+=======
+    font-family: \00003368;
+>>>>>>> merge complete, small style fix
   }
 }
-=======
-/* line 356, styles.scss */
->>>>>>> fixed gruntfile
 
-<<<<<<< HEAD
 body > .header .breadcrumb li {
   display: -moz-inline-stack;
   display: inline-block;
@@ -4002,7 +3764,11 @@ body > .header .breadcrumb li {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003359;
+=======
+    font-family: \00003371;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4017,7 +3783,11 @@ body > .header .breadcrumb > li + li:before {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003363;
+=======
+    font-family: \00003375;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4031,6 +3801,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003368;
 =======
@@ -4090,38 +3861,23 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003360;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003382;
+>>>>>>> merge complete, small style fix
   }
 }
 
->>>>>>> minor css changes
 .start_menu {
   display: none;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> fixed gruntfile
-=======
->>>>>>> minor css changes
-=======
->>>>>>> just small bug fixes
-=======
-=======
->>>>>>> continually improving school
->>>>>>> continually improving school
-=======
->>>>>>> adding new compiled files
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -4208,6 +3964,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003371;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003393;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4222,6 +3981,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -4308,6 +4068,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003375;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003397;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4322,6 +4085,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -4410,6 +4174,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003379;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003401;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4432,6 +4199,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -4518,6 +4286,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003386;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003408;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4539,6 +4310,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -4630,6 +4402,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003413;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-start .header .start_menu li {
   display: -moz-inline-stack;
@@ -4646,6 +4423,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -4732,6 +4510,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003394;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003416;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4751,6 +4532,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -4839,6 +4621,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003406;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003428;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4849,14 +4634,18 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -4947,6 +4736,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003409;
+=======
+    font-family: \00003431;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -4961,6 +4753,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5047,6 +4840,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003412;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003434;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5061,6 +4857,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5147,6 +4944,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003416;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003438;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5160,6 +4960,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5181,6 +4982,9 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
     font-family: \00003423;
 >>>>>>> fiddled around with the school
+=======
+    font-family: \00003443;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5195,6 +4999,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003433;
 =======
@@ -5265,6 +5070,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003423;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003451;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5278,6 +5086,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5364,6 +5173,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003425;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003453;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5377,6 +5189,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5463,6 +5276,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003428;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003456;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5477,6 +5293,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5563,6 +5380,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003431;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003459;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5576,6 +5396,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5662,6 +5483,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003435;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003463;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5681,6 +5505,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5767,6 +5592,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003439;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003467;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5774,6 +5602,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-bottom: 2em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5867,14 +5696,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003441;
+    font-family: \00003469;
   }
 }
 
@@ -5889,6 +5719,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -5975,6 +5806,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003445;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003473;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -5982,17 +5816,13 @@ body > .header .breadcrumb > li:last-of-type a {
   float: left;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6083,6 +5913,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003448;
+=======
+    font-family: \00003476;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -6097,6 +5930,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6183,6 +6017,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003452;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003480;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -6197,6 +6034,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6285,9 +6123,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003458;
+=======
+    font-family: \00003486;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-contactForm #mainview .error_msg {
   display: none;
@@ -6299,6 +6139,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6385,6 +6226,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003462;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003490;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -6392,6 +6236,7 @@ body > .header .breadcrumb > li:last-of-type a {
   display: block;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6485,14 +6330,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003465;
+    font-family: \00003493;
   }
 }
 
@@ -6506,6 +6352,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6592,6 +6439,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003472;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003500;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -6605,6 +6455,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6691,6 +6542,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003478;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003506;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -6704,6 +6558,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6790,6 +6645,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003487;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003515;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -6797,6 +6655,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6887,14 +6746,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003490;
+    font-family: \00003518;
   }
 }
 
@@ -6908,6 +6768,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -6994,6 +6855,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003492;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003520;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -7007,6 +6871,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7095,9 +6960,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003497;
+=======
+    font-family: \00003525;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .preloader {
   visibility: hidden;
@@ -7111,6 +6978,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7201,9 +7069,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003502;
+=======
+    font-family: \00003530;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .searching .preloader {
   visibility: visible;
@@ -7215,6 +7085,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7303,9 +7174,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003507;
+=======
+    font-family: \00003535;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-search #mainview {
   width: 512px;
@@ -7317,6 +7190,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7403,6 +7277,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003509;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003537;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -7416,6 +7293,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7437,6 +7315,9 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
     font-family: \00003520;
 >>>>>>> fiddled around with the school
+=======
+    font-family: \00003540;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -7450,6 +7331,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003525;
 =======
@@ -7520,6 +7402,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003513;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003543;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -7534,6 +7419,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7620,6 +7506,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003517;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003547;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -7634,6 +7523,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7720,6 +7610,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003521;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003551;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -7733,6 +7626,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7819,6 +7713,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003525;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003555;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -7836,6 +7733,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -7924,14 +7822,17 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003534;
+=======
+    font-family: \00003564;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-search #mainview .n_pages {
   margin-bottom: 1em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8025,14 +7926,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003537;
+    font-family: \00003567;
   }
 }
 
@@ -8048,6 +7950,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8134,6 +8037,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003541;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003571;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8147,6 +8053,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8233,6 +8140,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003545;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003575;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8252,6 +8162,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8338,6 +8249,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003549;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003579;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8351,6 +8265,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8437,6 +8352,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003553;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003583;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8450,6 +8368,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8536,6 +8455,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003557;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003587;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8543,17 +8465,13 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-top: 1em;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8644,6 +8562,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003559;
+=======
+    font-family: \00003589;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8657,6 +8578,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8678,6 +8600,9 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
     font-family: \00003574;
 >>>>>>> fiddled around with the school
+=======
+    font-family: \00003594;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8691,6 +8616,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003581;
 =======
@@ -8763,9 +8689,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003564;
+=======
+    font-family: \00003599;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-search #mainview table {
   white-space: nowrap;
@@ -8777,6 +8705,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8863,6 +8792,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003566;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003601;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8876,6 +8808,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -8962,6 +8895,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003569;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003604;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -8975,6 +8911,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9061,6 +8998,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003572;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003607;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -9068,6 +9008,7 @@ body > .header .breadcrumb > li:last-of-type a {
   color: grey;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9161,14 +9102,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003575;
+    font-family: \00003610;
   }
 }
 
@@ -9185,6 +9127,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9271,6 +9214,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003581;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003616;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -9284,6 +9230,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9372,9 +9319,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003586;
+=======
+    font-family: \00003621;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-search #toolkit {
   font-size: .9em;
@@ -9386,6 +9335,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9472,6 +9422,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003588;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003623;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -9486,6 +9439,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9572,6 +9526,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003591;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003626;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -9585,6 +9542,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9671,6 +9629,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003594;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003629;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -9684,6 +9645,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9770,6 +9732,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003596;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003631;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -9783,6 +9748,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9871,9 +9837,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003602;
+=======
+    font-family: \00003637;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-search #title_select {
   max-width: 247px;
@@ -9885,6 +9853,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -9973,6 +9942,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003608;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003643;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -9987,6 +9959,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -10111,9 +10084,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003618;
+=======
+    font-family: \00003653;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-reading #mainview .preloader {
   position: absolute;
@@ -10127,6 +10102,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -10180,6 +10156,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
+=======
+    font-family: \00003663;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10195,11 +10174,15 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \00003650;
 =======
 <<<<<<< HEAD
     font-family: \00003648;
 >>>>>>> rewrote school html loading
+=======
+    font-family: \00003668;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10226,7 +10209,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003664;
+=======
+    font-family: \00003682;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10240,7 +10227,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003668;
+=======
+    font-family: \00003686;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10256,6 +10247,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003672;
 =======
@@ -10312,6 +10304,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003623;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003690;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10334,6 +10329,7 @@ body > .header .breadcrumb > li:last-of-type a {
   line {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \00003680;
 =======
 =======
@@ -10341,6 +10337,9 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
     font-family: \00003678;
 >>>>>>> fiddled around with the school
+=======
+    font-family: \00003698;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10356,6 +10355,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003685;
 =======
@@ -10426,9 +10426,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003628;
+=======
+    font-family: \00003703;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-reading #mainview img {
   max-width: inherit;
@@ -10440,6 +10442,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -10526,6 +10529,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003632;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003707;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10539,6 +10545,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -10621,6 +10628,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003634;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003709;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10640,6 +10650,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -10726,6 +10737,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003637;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003712;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10740,6 +10754,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -10828,6 +10843,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003643;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003718;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10844,6 +10862,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -10930,6 +10949,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003651;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003726;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -10944,6 +10966,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11035,6 +11058,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003729;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-reading #mainview .searching .faksimilMarkee {
   display: none;
@@ -11046,6 +11074,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11132,6 +11161,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003661;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003736;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -11145,6 +11177,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11227,6 +11260,9 @@ body > .header .breadcrumb > li:last-of-type a {
     font-family: \00003664;
 >>>>>>> adding new compiled files
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003739;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -11240,6 +11276,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11335,6 +11372,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003667;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003742;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -11349,6 +11389,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11435,6 +11476,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003670;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003745;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -11448,6 +11492,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11534,6 +11579,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003673;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003748;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -11542,17 +11590,13 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-left: 5px;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11643,6 +11687,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003678;
+=======
+    font-family: \00003753;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -11657,14 +11704,18 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11755,6 +11806,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003685;
+=======
+    font-family: \00003760;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -11772,6 +11826,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11860,6 +11915,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003693;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003768;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -11873,6 +11931,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -11961,9 +12020,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003695;
+=======
+    font-family: \00003770;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-reading #toolkit #search_nav .box .ctrls img {
   cursor: pointer;
@@ -11975,6 +12036,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12063,9 +12125,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003698;
+=======
+    font-family: \00003773;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-reading #toolkit #search_nav .box .ctrls .close_btn {
   position: relative;
@@ -12079,6 +12143,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12162,9 +12227,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> just small bug fixes
 =======
     font-family: \00003703;
+=======
+    font-family: \00003778;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-reading #toolkit #search_nav .box .ctrls .arrows {
   position: relative;
@@ -12173,14 +12240,18 @@ body > .header .breadcrumb > li:last-of-type a {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -12257,18 +12328,27 @@ body > .header .breadcrumb > li:last-of-type a {
 /* line 705, styles.scss */
 >>>>>>> just small bug fixes
 >>>>>>> just small bug fixes
+=======
+    font-family: \00003786;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-reading #toolkit .pager_ctrls {
   margin-bottom: 0.8em;
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003790;
 =======
@@ -12323,19 +12403,23 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003808;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-reading #toolkit .pager_ctrls a {
   margin: 0 3px;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003792;
 =======
@@ -12375,11 +12459,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
+=======
+    font-family: \00003810;
+>>>>>>> merge complete, small style fix
   }
 }
-=======
-/* line 714, styles.scss */
->>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pager_ctrls a:first-of-type,
 .page-reading #toolkit .pager_ctrls a:first-of-type * {
@@ -12387,13 +12471,13 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-left: 0;
 }
 
-<<<<<<< HEAD
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003807;
 =======
@@ -12435,11 +12519,11 @@ body > .header .breadcrumb > li:last-of-type a {
     font-family: \00003725;
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
+=======
+    font-family: \00003825;
+>>>>>>> merge complete, small style fix
   }
 }
-=======
-/* line 719, styles.scss */
->>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pager_ctrls span.triangle {
   display: inline-block;
@@ -12447,14 +12531,18 @@ body > .header .breadcrumb > li:last-of-type a {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003813;
@@ -12497,11 +12585,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
+=======
+    font-family: \00003831;
+>>>>>>> merge complete, small style fix
   }
 }
-=======
-/* line 721, styles.scss */
->>>>>>> fixed gruntfile
 
 .page-reading #toolkit .pager_ctrls span.triangle.left {
   width: 0;
@@ -12512,12 +12600,16 @@ body > .header .breadcrumb > li:last-of-type a {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003816;
 =======
@@ -12556,6 +12648,9 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
+=======
+    font-family: \00003834;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12570,11 +12665,15 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \00003819;
 =======
 <<<<<<< HEAD
     font-family: \00003817;
 >>>>>>> rewrote school html loading
+=======
+    font-family: \00003837;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12588,7 +12687,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003824;
+=======
+    font-family: \00003842;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12606,7 +12709,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003826;
+=======
+    font-family: \00003844;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12620,6 +12727,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003829;
   }
 }
@@ -12630,22 +12738,16 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> just small bug fixes
 =======
     font-family: \00003697;
+=======
+    font-family: \00003847;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> continually improving school
->>>>>>> continually improving school
 
 .page-reading #toolkit .pager_ctrls span.triangle.right:active {
   border-left-color: #cc0000;
 }
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12653,11 +12755,15 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \00003834;
 =======
 <<<<<<< HEAD
     font-family: \00003832;
 >>>>>>> continually improving school
+=======
+    font-family: \00003852;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12673,7 +12779,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003838;
+=======
+    font-family: \00003856;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12689,7 +12799,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003843;
+=======
+    font-family: \00003861;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12705,7 +12819,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003849;
+=======
+    font-family: \00003867;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12719,7 +12837,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003856;
+=======
+    font-family: \00003874;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12735,7 +12857,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003861;
+=======
+    font-family: \00003879;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12751,7 +12877,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003866;
+=======
+    font-family: \00003884;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12766,7 +12896,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003868;
+=======
+    font-family: \00003886;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12780,7 +12914,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003874;
+=======
+    font-family: \00003892;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12794,6 +12932,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003877;
 =======
@@ -12831,10 +12970,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> just small bug fixes
 =======
     font-family: \00003705;
+=======
+    font-family: \00003895;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> continually improving school
->>>>>>> continually improving school
 
 .page-reading #toolkit .size_picker > div {
   display: -moz-inline-stack;
@@ -12855,13 +12995,6 @@ body > .header .breadcrumb > li:last-of-type a {
   cursor: pointer;
 }
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
@@ -12869,11 +13002,15 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \00003891;
 =======
 <<<<<<< HEAD
     font-family: \00003889;
 >>>>>>> minor css changes
+=======
+    font-family: \00003909;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -12887,6 +13024,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003895;
 =======
@@ -12942,15 +13080,18 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003723;
+=======
+    font-family: \00003913;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-reading #toolkit .size_picker > div.selected {
   background-color: #990000;
   cursor: normal;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -13011,16 +13152,15 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> brought back red
 >>>>>>> brought back red
 >>>>>>> brought back red
+=======
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+>>>>>>> merge complete, small style fix
   }
-}
-=======
-/* line 721, styles.scss */
->>>>>>> just small bug fixes
-=======
-    font-family: \00003721;
-=======
-    font-family: \00003727;
->>>>>>> adding new compiled files
+
+  line {
+    font-family: \00003917;
   }
 }
 
@@ -13034,6 +13174,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     font-family: \00003904;
@@ -13089,6 +13230,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003732;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003922;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -13096,6 +13240,7 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-top: 1em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13157,14 +13302,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003734;
+    font-family: \00003924;
   }
 }
 
@@ -13183,6 +13329,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13251,6 +13398,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003743;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003933;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -13264,6 +13414,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13346,6 +13497,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003748;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003938;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -13354,6 +13508,7 @@ body > .header .breadcrumb > li:last-of-type a {
   position: relative;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13444,14 +13599,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003750;
+    font-family: \00003941;
   }
 }
 
@@ -13463,16 +13619,20 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13561,6 +13721,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003754;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003946;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -13582,6 +13745,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13670,9 +13834,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003769;
+=======
+    font-family: \00003961;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-reading .partnav .part_menu {
   background-color: #990000;
@@ -13693,6 +13859,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13781,9 +13948,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003780;
+=======
+    font-family: \00003972;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-reading .partnav .part_menu li {
   color: white;
@@ -13793,6 +13962,7 @@ body > .header .breadcrumb > li:last-of-type a {
   white-space: nowrap;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13886,14 +14056,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003787;
+    font-family: \00003979;
   }
 }
 
@@ -13907,6 +14078,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -13993,6 +14165,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003796;
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003988;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -14006,6 +14181,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14097,12 +14273,18 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 >>>>>>> adding new compiled files
+=======
+    font-family: \00003992;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-sourceInfo #mainview .header_left {
   float: left;
   width: 360px;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14195,14 +14377,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003798;
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003804;
+    font-family: \00003996;
   }
 }
 
@@ -14211,6 +14394,7 @@ body > .header .breadcrumb > li:last-of-type a {
   cursor: pointer;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14308,10 +14492,15 @@ body > .header .breadcrumb > li:last-of-type a {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
 >>>>>>> adding new compiled files
+=======
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+>>>>>>> merge complete, small style fix
   }
 
   line {
-    font-family: \00003808;
+    font-family: \000031000;
   }
 }
 
@@ -14322,14 +14511,18 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14417,6 +14610,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003811;
+=======
+    font-family: \000031003;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -14426,6 +14622,7 @@ body > .header .breadcrumb > li:last-of-type a {
   transition: opacity 500ms;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14519,14 +14716,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003812;
+    font-family: \000031004;
   }
 }
 
@@ -14542,6 +14740,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14628,6 +14827,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003818;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031010;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -14647,6 +14849,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14733,6 +14936,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003827;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031019;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -14749,6 +14955,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14835,6 +15042,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003834;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031026;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -14849,6 +15059,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -14937,9 +15148,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003837;
+=======
+    font-family: \000031029;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-sourceInfo #mainview p {
   max-width: 350px;
@@ -14951,6 +15164,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15037,6 +15251,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003840;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031032;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -15050,6 +15267,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15136,6 +15354,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003844;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031036;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -15150,6 +15371,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15236,6 +15458,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003847;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031039;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -15249,6 +15474,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15335,6 +15561,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003850;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031042;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -15343,6 +15572,7 @@ body > .header .breadcrumb > li:last-of-type a {
   max-width: 400px;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15433,14 +15663,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003855;
+    font-family: \000031047;
   }
 }
 
@@ -15451,14 +15682,18 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15549,6 +15784,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003858;
+=======
+    font-family: \000031050;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -15562,6 +15800,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15650,9 +15889,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003860;
+=======
+    font-family: \000031052;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-sourceInfo #mainview .provenance * {
   display: -moz-inline-stack;
@@ -15669,6 +15910,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15755,6 +15997,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003863;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031055;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -15768,6 +16013,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15854,6 +16100,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003866;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031058;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -15867,6 +16116,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -15954,6 +16204,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003870;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031062;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -15967,6 +16220,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16055,6 +16309,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003874;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031066;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -16068,6 +16325,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16156,9 +16414,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003884;
+=======
+    font-family: \000031076;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-authorInfo #mainview .author {
   min-height: 1em;
@@ -16170,6 +16430,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16258,14 +16519,17 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003887;
+=======
+    font-family: \000031079;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-authorInfo #mainview p {
   max-width: 400px;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16359,14 +16623,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003891;
+    font-family: \000031083;
   }
 }
 
@@ -16380,6 +16645,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16466,6 +16732,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003894;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031086;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -16479,6 +16748,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16565,6 +16835,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003897;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031089;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -16573,17 +16846,13 @@ body > .header .breadcrumb > li:last-of-type a {
   width: 100%;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16671,6 +16940,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003902;
+=======
+    font-family: \000031094;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -16685,6 +16957,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16776,23 +17049,24 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031099;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-authorInfo #mainview .author_img {
   margin-top: 3em;
   text-align: right;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16880,6 +17154,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003914;
+=======
+    font-family: \000031106;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -16893,6 +17170,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -16981,9 +17259,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003917;
+=======
+    font-family: \000031109;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-authorInfo #toolkit .topnav {
   margin-top: 2em;
@@ -16995,6 +17275,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17081,6 +17362,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003919;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031111;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -17094,6 +17378,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17180,6 +17465,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003928;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031120;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -17193,6 +17481,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17283,9 +17572,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \00003930;
+=======
+    font-family: \000031122;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-authorList .contenttable td {
   max-width: 180px;
@@ -17297,6 +17588,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17383,6 +17675,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003939;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031131;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -17398,6 +17693,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17484,6 +17780,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003944;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031136;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -17497,6 +17796,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17583,6 +17883,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003947;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031139;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -17590,19 +17893,13 @@ body > .header .breadcrumb > li:last-of-type a {
   margin-top: 2em;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
-=======
->>>>>>> adding new compiled files
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17689,6 +17986,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003950;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031142;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -17702,6 +18002,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17788,6 +18089,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003953;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031145;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -17801,6 +18105,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17892,6 +18197,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031155;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-biblinfo #mainview > * {
   margin-bottom: 1em;
@@ -17903,6 +18213,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -17994,6 +18305,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031158;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-biblinfo #mainview li {
   margin-bottom: 0.5em;
@@ -18005,6 +18321,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18091,6 +18408,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003970;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031162;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -18104,6 +18424,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18190,6 +18511,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003972;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031164;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -18204,6 +18528,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18290,6 +18615,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \00003980;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031172;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -18298,6 +18626,7 @@ body > .header .breadcrumb > li:last-of-type a {
   height: 1em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18391,14 +18720,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \00003987;
+    font-family: \000031179;
   }
 }
 
@@ -18413,6 +18743,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18506,6 +18837,11 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 }
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031182;
+  }
+}
+>>>>>>> merge complete, small style fix
 
 .page-biblinfo .results > div.even {
   background-color: #E3E3E3;
@@ -18514,14 +18850,18 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18612,6 +18952,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \00003994;
+=======
+    font-family: \000031186;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -18627,6 +18970,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18713,6 +19057,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031000;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031192;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -18732,6 +19079,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18818,6 +19166,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031009;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031201;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -18832,6 +19183,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -18915,14 +19267,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> just small bug fixes
 =======
     font-family: \000031007;
-  }
-}
->>>>>>> continually improving school
 =======
-    font-family: \000031013;
+    font-family: \000031205;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .page-epubList #mainview .searching .contenttable {
   display: none;
@@ -18934,6 +19283,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -19020,6 +19370,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031016;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031208;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -19033,6 +19386,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -19119,6 +19473,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031020;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031212;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -19129,14 +19486,18 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -19224,6 +19585,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \000031024;
+=======
+    font-family: \000031216;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -19234,14 +19598,18 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -19332,6 +19700,9 @@ body > .header .breadcrumb > li:last-of-type a {
 
   line {
     font-family: \000031031;
+=======
+    font-family: \000031223;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -19345,6 +19716,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -19377,6 +19749,8 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031213;
 =======
@@ -19468,6 +19842,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031039;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031231;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -19489,6 +19866,7 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031223;
 =======
 =======
@@ -19501,6 +19879,8 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031217;
 =======
@@ -19594,9 +19974,11 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
     font-family: \000031043;
+=======
+    font-family: \000031235;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .triangle.disabled {
   cursor: normal;
@@ -19608,6 +19990,7 @@ body > .header .breadcrumb > li:last-of-type a {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -19626,6 +20009,8 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031220;
 =======
@@ -19717,6 +20102,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031046;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031238;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -19741,6 +20129,7 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031230;
 =======
 =======
@@ -19753,6 +20142,8 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031224;
 =======
@@ -19844,6 +20235,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031050;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031242;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -19855,6 +20249,7 @@ body > .header .breadcrumb > li:last-of-type a {
   border-bottom: 10px solid grey;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -19969,14 +20364,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \000031054;
+    font-family: \000031246;
   }
 }
 
@@ -20001,6 +20397,7 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031238;
 =======
 =======
@@ -20013,6 +20410,8 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031232;
 =======
@@ -20104,6 +20503,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031058;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031250;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -20127,6 +20529,7 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031244;
 =======
 =======
@@ -20139,6 +20542,8 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031238;
 =======
@@ -20308,6 +20713,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031067;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031256;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -20327,6 +20735,7 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031251;
 =======
 =======
@@ -20339,6 +20748,8 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031240;
 =======
@@ -20430,6 +20841,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031069;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031258;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -20437,6 +20851,7 @@ body > .header .breadcrumb > li:last-of-type a {
   content: "...";
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -20527,14 +20942,15 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
 >>>>>>> adding new compiled files
 =======
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
   }
 
   line {
-    font-family: \000031074;
+    font-family: \000031263;
   }
 }
 
@@ -20557,6 +20973,7 @@ body > .header .breadcrumb > li:last-of-type a {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031259;
 =======
 =======
@@ -20569,6 +20986,8 @@ body > .header .breadcrumb > li:last-of-type a {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031253;
 =======
@@ -20660,6 +21079,9 @@ body > .header .breadcrumb > li:last-of-type a {
 =======
     font-family: \000031082;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031271;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -20679,6 +21101,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031263;
 =======
 =======
@@ -20691,6 +21114,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031257;
 =======
@@ -20707,7 +21132,13 @@ grundform-clean {
 <<<<<<< HEAD
     font-family: \000031255;
 >>>>>>> fiddled around with the school
+<<<<<<< HEAD
 >>>>>>> fiddled around with the school
+=======
+=======
+    font-family: \000031275;
+>>>>>>> merge complete, small style fix
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -20722,8 +21153,11 @@ grundform-clean {
 
   line {
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031267;
 =======
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031261;
 =======
@@ -20806,9 +21240,11 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
     font-family: \000031086;
+=======
+    font-family: \000031279;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .so_modal {
   padding: 1em 1em 1em 1.5em;
@@ -20820,6 +21256,7 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -20838,6 +21275,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031263;
 =======
@@ -20929,6 +21368,9 @@ grundform-clean {
 =======
     font-family: \000031088;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031281;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -20936,17 +21378,13 @@ grundform-clean {
   padding: 1em 0;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -20962,6 +21400,8 @@ grundform-clean {
 >>>>>>> rewrote school html loading
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031265;
 =======
@@ -21058,6 +21498,9 @@ grundform-clean {
 
   line {
     font-family: \000031090;
+=======
+    font-family: \000031283;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -21083,6 +21526,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031276;
 =======
 =======
@@ -21095,6 +21539,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031270;
 =======
@@ -21186,6 +21632,9 @@ grundform-clean {
 =======
     font-family: \000031095;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031288;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -21210,6 +21659,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031287;
 =======
 =======
@@ -21220,6 +21670,8 @@ grundform-clean {
 >>>>>>> rewrote school html loading
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031281;
 =======
@@ -21316,6 +21768,9 @@ grundform-clean {
 =======
     font-family: \000031106;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031299;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -21339,6 +21794,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031296;
 =======
 =======
@@ -21351,6 +21807,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031290;
 =======
@@ -21442,6 +21900,9 @@ grundform-clean {
 =======
     font-family: \000031115;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031308;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -21469,6 +21930,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031305;
 =======
 =======
@@ -21481,6 +21943,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031299;
 =======
@@ -21576,9 +22040,11 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
     font-family: \000031124;
+=======
+    font-family: \000031317;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 ._so_article hvord {
   cursor: pointer;
@@ -21597,6 +22063,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031312;
 =======
 =======
@@ -21609,6 +22076,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031306;
 =======
@@ -21674,6 +22143,9 @@ grundform-clean {
 =======
     font-family: \000031131;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031324;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -21700,6 +22172,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031322;
 =======
 =======
@@ -21712,6 +22185,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031316;
 =======
@@ -21803,6 +22278,9 @@ grundform-clean {
 =======
     font-family: \000031141;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031334;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -21815,6 +22293,7 @@ grundform-clean {
   line-height: 1.5em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -21926,6 +22405,7 @@ grundform-clean {
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
 >>>>>>> rewrote school html loading
+<<<<<<< HEAD
 >>>>>>> rewrote school html loading
   }
 }
@@ -21935,8 +22415,16 @@ grundform-clean {
 =======
     font-family: \000031141;
 =======
-    font-family: \000031152;
->>>>>>> adding new compiled files
+>>>>>>> merge complete, small style fix
+=======
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+>>>>>>> merge complete, small style fix
+  }
+
+  line {
+    font-family: \000031345;
   }
 }
 
@@ -21956,6 +22444,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031343;
 =======
 =======
@@ -21968,6 +22457,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031337;
 =======
@@ -22059,6 +22550,9 @@ grundform-clean {
 =======
     font-family: \000031158;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031355;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -22080,6 +22574,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031348;
 =======
 =======
@@ -22092,6 +22587,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031342;
 =======
@@ -22185,9 +22682,11 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
     font-family: \000031162;
+=======
+    font-family: \000031360;
+>>>>>>> merge complete, small style fix
   }
 }
->>>>>>> adding new compiled files
 
 .modal-dialog {
   border-radius: 0;
@@ -22208,6 +22707,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031354;
 =======
 =======
@@ -22220,6 +22720,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031348;
 =======
@@ -22311,6 +22813,9 @@ grundform-clean {
 =======
     font-family: \000031168;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031366;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -22330,6 +22835,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031357;
 =======
 =======
@@ -22342,6 +22848,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031351;
 =======
@@ -22433,6 +22941,9 @@ grundform-clean {
 =======
     font-family: \000031171;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031369;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -22440,17 +22951,13 @@ grundform-clean {
   font-size: 1.2em;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -22466,6 +22973,8 @@ grundform-clean {
 >>>>>>> rewrote school html loading
 =======
 >>>>>>> continually improving school
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031361;
 =======
@@ -22480,63 +22989,18 @@ grundform-clean {
 <<<<<<< HEAD
     font-family: \000031359;
 >>>>>>> fiddled around with the school
+<<<<<<< HEAD
 >>>>>>> fiddled around with the school
+=======
+=======
+    font-family: \000031379;
+>>>>>>> merge complete, small style fix
+>>>>>>> merge complete, small style fix
   }
 }
 
 .modal-backdrop.in {
   opacity: 0.8;
-=======
-=======
->>>>>>> minor css changes
-=======
->>>>>>> brought back red
-=======
->>>>>>> rewrote school html loading
-=======
->>>>>>> continually improving school
-<<<<<<< HEAD
-    font-family: \000031155;
-=======
-=======
->>>>>>> minor css changes
-<<<<<<< HEAD
-    font-family: \000031159;
-=======
-<<<<<<< HEAD
-    font-family: \000031143;
-=======
-    font-family: \000031156;
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-<<<<<<< HEAD
->>>>>>> fiddled around with the school
-=======
-=======
-    font-family: \000031160;
->>>>>>> minor css changes
->>>>>>> minor css changes
-=======
-    font-family: \000031161;
->>>>>>> brought back red
-=======
-    font-family: \000031162;
->>>>>>> rewrote school html loading
-=======
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
->>>>>>> adding new compiled files
-  }
-
-  line {
-    font-family: \000031174;
-  }
-}
-
-.modal.fade {
-  -webkit-transition: opacity 0.1s linear;
-  transition: opacity 0.1s linear;
 }
 
 @media -sass-debug-info {
@@ -22545,21 +23009,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031176;
-  }
-}
-
-.modal.fade.in {
-  top: 5%;
->>>>>>> fiddled around with the school
-}
-
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -22578,6 +23028,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031365;
 =======
@@ -22669,6 +23121,9 @@ grundform-clean {
 =======
     font-family: \000031181;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031383;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -22688,6 +23143,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031375;
 =======
 =======
@@ -22700,6 +23156,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031369;
 =======
@@ -22791,6 +23249,9 @@ grundform-clean {
 =======
     font-family: \000031185;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031387;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -22813,6 +23274,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     font-family: \000031383;
 =======
 =======
@@ -22825,6 +23287,8 @@ grundform-clean {
 >>>>>>> continually improving school
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 <<<<<<< HEAD
     font-family: \000031377;
 =======
@@ -22916,6 +23380,9 @@ grundform-clean {
 =======
     font-family: \000031193;
 >>>>>>> adding new compiled files
+=======
+    font-family: \000031395;
+>>>>>>> merge complete, small style fix
   }
 }
 
@@ -22935,6 +23402,7 @@ grundform-clean {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -22962,8 +23430,10 @@ grundform-clean {
 =======
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
   line {
-    font-family: \000031204;
+    font-family: \000031406;
   }
 }
 
@@ -22974,6 +23444,7 @@ grundform-clean {
   line-height: 1.4em;
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -23004,13 +23475,15 @@ grundform-clean {
 =======
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
 @media -sass-debug-info {
   filename {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
   line {
-    font-family: \000031211;
+    font-family: \000031413;
   }
 }
 
@@ -23024,7 +23497,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031214;
+    font-family: \000031416;
   }
 }
 
@@ -23041,7 +23514,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031221;
+    font-family: \000031423;
   }
 }
 
@@ -23059,7 +23532,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031230;
+    font-family: \000031432;
   }
 }
 
@@ -23073,7 +23546,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031234;
+    font-family: \000031436;
   }
 }
 
@@ -23089,7 +23562,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031240;
+    font-family: \000031442;
   }
 }
 
@@ -23103,7 +23576,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031244;
+    font-family: \000031446;
   }
 }
 
@@ -23119,7 +23592,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031249;
+    font-family: \000031451;
   }
 }
 
@@ -23134,7 +23607,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031253;
+    font-family: \000031455;
   }
 }
 
@@ -23149,7 +23622,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031256;
+    font-family: \000031458;
   }
 }
 
@@ -23164,7 +23637,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031260;
+    font-family: \000031462;
   }
 }
 
@@ -23178,7 +23651,35 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031264;
+    font-family: \000031465;
+  }
+}
+
+.site-school .file_parent {
+  white-space: nowrap;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \000031467;
+  }
+}
+
+.site-school .file_parent > * {
+  white-space: normal;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \000031471;
   }
 }
 
@@ -23194,7 +23695,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031268;
+    font-family: \000031475;
   }
 }
 
@@ -23208,7 +23709,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031270;
+    font-family: \000031477;
   }
 }
 
@@ -23222,7 +23723,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031274;
+    font-family: \000031481;
   }
 }
 
@@ -23236,7 +23737,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031276;
+    font-family: \000031483;
   }
 }
 
@@ -23250,7 +23751,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031282;
+    font-family: \000031489;
   }
 }
 
@@ -23269,7 +23770,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031285;
+    font-family: \000031492;
   }
 }
 
@@ -23291,7 +23792,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031294;
+    font-family: \000031501;
   }
 }
 
@@ -23305,6 +23806,7 @@ grundform-clean {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -23332,8 +23834,10 @@ grundform-clean {
 =======
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
   line {
-    font-family: \000031297;
+    font-family: \000031504;
   }
 }
 
@@ -23346,6 +23850,7 @@ grundform-clean {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -23373,8 +23878,10 @@ grundform-clean {
 =======
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
   line {
-    font-family: \000031300;
+    font-family: \000031507;
   }
 }
 
@@ -23387,6 +23894,7 @@ grundform-clean {
     font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -23414,8 +23922,10 @@ grundform-clean {
 =======
 =======
 >>>>>>> adding new compiled files
+=======
+>>>>>>> merge complete, small style fix
   line {
-    font-family: \000031303;
+    font-family: \000031510;
   }
 }
 
@@ -23440,7 +23950,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031313;
+    font-family: \000031520;
   }
 }
 
@@ -23543,7 +24053,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031320;
+    font-family: \000031527;
   }
 }
 
@@ -23587,7 +24097,7 @@ grundform-clean {
 =======
 >>>>>>> adding new compiled files
   line {
-    font-family: \000031325;
+    font-family: \000031532;
   }
 }
 
@@ -23602,7 +24112,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031330;
+    font-family: \000031537;
   }
 }
 
@@ -23616,7 +24126,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031333;
+    font-family: \000031540;
   }
 }
 
@@ -23636,7 +24146,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031336;
+    font-family: \000031543;
   }
 }
 
@@ -23656,7 +24166,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031349;
+    font-family: \000031556;
   }
 }
 
@@ -23671,7 +24181,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031355;
+    font-family: \000031562;
   }
 }
 
@@ -23685,7 +24195,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031359;
+    font-family: \000031566;
   }
 }
 
@@ -23700,7 +24210,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031364;
+    font-family: \000031571;
   }
 }
 
@@ -23715,7 +24225,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031367;
+    font-family: \000031574;
   }
 }
 
@@ -23730,7 +24240,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031372;
+    font-family: \000031579;
   }
 }
 
@@ -23744,7 +24254,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031375;
+    font-family: \000031582;
   }
 }
 
@@ -23758,7 +24268,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031378;
+    font-family: \000031585;
   }
 }
 
@@ -23773,7 +24283,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031384;
+    font-family: \000031591;
   }
 }
 
@@ -23792,7 +24302,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031389;
+    font-family: \000031596;
   }
 }
 
@@ -23807,7 +24317,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031394;
+    font-family: \000031601;
   }
 }
 
@@ -23821,7 +24331,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031398;
+    font-family: \000031605;
   }
 }
 
@@ -23843,7 +24353,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031404;
+    font-family: \000031611;
   }
 }
 
@@ -23857,7 +24367,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031408;
+    font-family: \000031615;
   }
 }
 
@@ -23871,7 +24381,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031413;
+    font-family: \000031620;
   }
 }
 
@@ -23885,7 +24395,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031417;
+    font-family: \000031624;
   }
 }
 
@@ -23899,7 +24409,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031420;
+    font-family: \000031627;
   }
 }
 
@@ -23913,7 +24423,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031427;
+    font-family: \000031634;
   }
 }
 
@@ -23928,7 +24438,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031429;
+    font-family: \000031636;
   }
 }
 
@@ -23944,7 +24454,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031433;
+    font-family: \000031640;
   }
 }
 
@@ -23959,7 +24469,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031436;
+    font-family: \000031643;
   }
 }
 
@@ -23975,7 +24485,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031446;
+    font-family: \000031653;
   }
 }
 
@@ -23989,7 +24499,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031449;
+    font-family: \000031656;
   }
 }
 
@@ -24003,7 +24513,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031452;
+    font-family: \000031659;
   }
 }
 
@@ -24017,7 +24527,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031454;
+    font-family: \000031661;
   }
 }
 
@@ -24031,7 +24541,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031457;
+    font-family: \000031664;
   }
 }
 
@@ -24046,7 +24556,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031461;
+    font-family: \000031668;
   }
 }
 
@@ -24060,7 +24570,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031466;
+    font-family: \000031673;
   }
 }
 
@@ -24074,7 +24584,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031471;
+    font-family: \000031678;
   }
 }
 
@@ -24090,7 +24600,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031472;
+    font-family: \000031679;
   }
 }
 
@@ -24105,7 +24615,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031479;
+    font-family: \000031686;
   }
 }
 
@@ -24123,7 +24633,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031487;
+    font-family: \000031694;
   }
 }
 
@@ -24137,7 +24647,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031491;
+    font-family: \000031698;
   }
 }
 
@@ -24152,7 +24662,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031495;
+    font-family: \000031702;
   }
 }
 
@@ -24167,7 +24677,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031500;
+    font-family: \000031707;
   }
 }
 
@@ -24186,7 +24696,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031508;
+    font-family: \000031715;
   }
 }
 
@@ -24201,7 +24711,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031513;
+    font-family: \000031720;
   }
 }
 
@@ -24216,7 +24726,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031515;
+    font-family: \000031722;
   }
 }
 
@@ -24231,7 +24741,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031519;
+    font-family: \000031726;
   }
 }
 
@@ -24246,7 +24756,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031526;
+    font-family: \000031733;
   }
 }
 
@@ -24261,7 +24771,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031530;
+    font-family: \000031737;
   }
 }
 
@@ -24279,7 +24789,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031539;
+    font-family: \000031746;
   }
 }
 
@@ -24298,7 +24808,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031542;
+    font-family: \000031749;
   }
 }
 
@@ -24312,7 +24822,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031547;
+    font-family: \000031754;
   }
 }
 
@@ -24327,7 +24837,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031549;
+    font-family: \000031756;
   }
 }
 
@@ -24341,7 +24851,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031560;
+    font-family: \000031767;
   }
 }
 
@@ -24356,7 +24866,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031567;
+    font-family: \000031774;
   }
 }
 
@@ -24370,7 +24880,7 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031574;
+    font-family: \000031781;
   }
 }
 
@@ -24398,6 +24908,7 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24441,6 +24952,9 @@ grundform-clean {
 =======
       font-family: \000031602;
 >>>>>>> a few minor link updates
+=======
+      font-family: \000031809;
+>>>>>>> merge complete, small style fix
     }
 }
 >>>>>>> continually improving school
@@ -24454,20 +24968,13 @@ grundform-clean {
     margin: 0;
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24506,39 +25013,11 @@ grundform-clean {
       font-family: \000031483;
 >>>>>>> more work on school
 >>>>>>> more work on school
+=======
+      font-family: \000031862;
+>>>>>>> merge complete, small style fix
     }
 }
-=======
-  /* line 1483, styles.scss */
->>>>>>> fixed gruntfile
-=======
-      font-family: \000031485;
-=======
-      font-family: \000031486;
->>>>>>> brought back red
-=======
-      font-family: \000031566;
->>>>>>> rewrote school html loading
-    }
-}
->>>>>>> minor css changes
-=======
-  /* line 1634, styles.scss */
->>>>>>> just small bug fixes
-=======
-      font-family: \000031638;
-=======
-      font-family: \000031649;
->>>>>>> adding new compiled files
-=======
-      font-family: \000031650;
->>>>>>> quick fix to overlay issue for ie9
-=======
-      font-family: \000031655;
->>>>>>> a few minor link updates
-    }
-}
->>>>>>> continually improving school
 
   .page-epubList p {
     max-width: 70%;
@@ -24560,6 +25039,7 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24606,6 +25086,9 @@ grundform-clean {
 =======
       font-family: \000031662;
 >>>>>>> a few minor link updates
+=======
+      font-family: \000031869;
+>>>>>>> merge complete, small style fix
     }
 }
 >>>>>>> continually improving school
@@ -24632,6 +25115,7 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24678,6 +25162,9 @@ grundform-clean {
 =======
       font-family: \000031670;
 >>>>>>> a few minor link updates
+=======
+      font-family: \000031877;
+>>>>>>> merge complete, small style fix
     }
 }
 >>>>>>> continually improving school
@@ -24726,6 +25213,7 @@ grundform-clean {
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       font-family: \000031465;
 =======
       font-family: \000031469;
@@ -24762,6 +25250,9 @@ grundform-clean {
 =======
       font-family: \000031673;
 >>>>>>> a few minor link updates
+=======
+      font-family: \000031880;
+>>>>>>> merge complete, small style fix
     }
 }
 >>>>>>> continually improving school
@@ -24786,6 +25277,7 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24829,6 +25321,9 @@ grundform-clean {
 =======
       font-family: \000031678;
 >>>>>>> a few minor link updates
+=======
+      font-family: \000031885;
+>>>>>>> merge complete, small style fix
     }
 }
 >>>>>>> continually improving school
@@ -24841,20 +25336,13 @@ grundform-clean {
     left: -9999px;
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24920,9 +25408,11 @@ grundform-clean {
 =======
       font-family: \000031684;
 >>>>>>> a few minor link updates
+=======
+      font-family: \000031891;
+>>>>>>> merge complete, small style fix
     }
 }
->>>>>>> continually improving school
 
   .page-epubList .contenttable tr:nth-of-type(odd),
   .page-titleList .contenttable tr:nth-of-type(odd),
@@ -24930,20 +25420,13 @@ grundform-clean {
     background-color: #EDEDED;
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -24983,39 +25466,11 @@ grundform-clean {
       font-family: \000031516;
 >>>>>>> more work on school
 >>>>>>> more work on school
+=======
+      font-family: \000031895;
+>>>>>>> merge complete, small style fix
     }
 }
-=======
-  /* line 1516, styles.scss */
->>>>>>> fixed gruntfile
-=======
-      font-family: \000031518;
-=======
-      font-family: \000031519;
->>>>>>> brought back red
-=======
-      font-family: \000031599;
->>>>>>> rewrote school html loading
-    }
-}
->>>>>>> minor css changes
-=======
-  /* line 1667, styles.scss */
->>>>>>> just small bug fixes
-=======
-      font-family: \000031671;
-=======
-      font-family: \000031682;
->>>>>>> adding new compiled files
-=======
-      font-family: \000031683;
->>>>>>> quick fix to overlay issue for ie9
-=======
-      font-family: \000031688;
->>>>>>> a few minor link updates
-    }
-}
->>>>>>> continually improving school
 
   .page-epubList .contenttable td,
   .page-titleList .contenttable td,
@@ -25025,20 +25480,13 @@ grundform-clean {
     position: relative;
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -25108,9 +25556,11 @@ grundform-clean {
 =======
       font-family: \000031692;
 >>>>>>> a few minor link updates
+=======
+      font-family: \000031899;
+>>>>>>> merge complete, small style fix
     }
 }
->>>>>>> continually improving school
 
   .page-epubList .contenttable td > *:first-child,
   .page-titleList .contenttable td > *:first-child,
@@ -25118,20 +25568,13 @@ grundform-clean {
     background: none;
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -25171,39 +25614,11 @@ grundform-clean {
       font-family: \000031523;
 >>>>>>> more work on school
 >>>>>>> more work on school
+=======
+      font-family: \000031902;
+>>>>>>> merge complete, small style fix
     }
 }
-=======
-  /* line 1523, styles.scss */
->>>>>>> fixed gruntfile
-=======
-      font-family: \000031525;
-=======
-      font-family: \000031526;
->>>>>>> brought back red
-=======
-      font-family: \000031606;
->>>>>>> rewrote school html loading
-    }
-}
->>>>>>> minor css changes
-=======
-  /* line 1674, styles.scss */
->>>>>>> just small bug fixes
-=======
-      font-family: \000031678;
-=======
-      font-family: \000031689;
->>>>>>> adding new compiled files
-=======
-      font-family: \000031690;
->>>>>>> quick fix to overlay issue for ie9
-=======
-      font-family: \000031695;
->>>>>>> a few minor link updates
-    }
-}
->>>>>>> continually improving school
 
   .page-epubList .contenttable td .dots,
   .page-titleList .contenttable td .dots,
@@ -25211,20 +25626,13 @@ grundform-clean {
     display: none;
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
->>>>>>> continually improving school
 @media -sass-debug-info {
     filename {
       font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
     }
 
     line {
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -25294,9 +25702,11 @@ grundform-clean {
 =======
       font-family: \000031700;
 >>>>>>> a few minor link updates
+=======
+      font-family: \000031907;
+>>>>>>> merge complete, small style fix
     }
 }
->>>>>>> continually improving school
 
   .page-epubList .contenttable td:before,
   .page-titleList .contenttable td:before,
@@ -25317,7 +25727,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031713;
+      font-family: \000031920;
     }
 }
 
@@ -25331,7 +25741,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031726;
+      font-family: \000031933;
     }
 }
 
@@ -25346,7 +25756,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031732;
+      font-family: \000031939;
     }
 }
 
@@ -25360,7 +25770,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031735;
+      font-family: \000031942;
     }
 }
 
@@ -25374,7 +25784,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031738;
+      font-family: \000031945;
     }
 }
 
@@ -25389,7 +25799,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031741;
+      font-family: \000031948;
     }
 }
 
@@ -25403,7 +25813,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031744;
+      font-family: \000031951;
     }
 }
 
@@ -25419,7 +25829,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031749;
+      font-family: \000031956;
     }
 }
 
@@ -25434,7 +25844,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031753;
+      font-family: \000031960;
     }
 }
 
@@ -25448,7 +25858,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031756;
+      font-family: \000031963;
     }
 }
 
@@ -25462,7 +25872,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031760;
+      font-family: \000031967;
     }
 }
 
@@ -25476,7 +25886,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031766;
+      font-family: \000031973;
     }
 }
 
@@ -25491,7 +25901,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031769;
+      font-family: \000031976;
     }
 }
 
@@ -25506,7 +25916,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031776;
+      font-family: \000031983;
     }
 }
 
@@ -25522,7 +25932,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031780;
+      font-family: \000031987;
     }
 }
 
@@ -25536,7 +25946,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031785;
+      font-family: \000031992;
     }
 }
 
@@ -25550,7 +25960,7 @@ grundform-clean {
     }
 
     line {
-      font-family: \000031788;
+      font-family: \000031995;
     }
 }
 

@@ -317,15 +317,6 @@
     };
   });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  littb.directive('kwicWord', function() {
-=======
-<<<<<<< HEAD
-=======
->>>>>>> minor css changes
-=======
   littb.directive('breadcrumb', function($interpolate, $rootScope) {
     return {
       restrict: "EA",
@@ -379,11 +370,8 @@
     };
   });
 
->>>>>>> rewrote school html loading
-  littb.directive('linkFix', function($location) {
->>>>>>> fiddled around with the school
+  littb.directive('kwicWord', function() {
     return {
-<<<<<<< HEAD
       replace: true,
       template: "<span class=\"word\" ng-class=\"getClassObj(wd)\"\nbo-text=\"wd.word + ' '\" ></span>",
       link: function(scope, element) {
@@ -399,40 +387,16 @@
             struct = _ref[_i];
             output["struct_" + struct] = true;
           }
-<<<<<<< HEAD
           _ref1 = wd._open || [];
           for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
             struct = _ref1[_j];
             output["open_" + struct] = true;
-=======
-      link: function($scope, elem, attrs) {
-        return elem.on("click", "a[href]", function(event) {
-          var t;
-          t = $(event.currentTarget);
-          if (t.attr("target") === "_blank") {
-            window.open(t.attr("href"), "_blank");
-          } else if (t.attr("href").slice(0, 7) === "mailto:") {
-            location.href = t.attr("href");
-          } else if (_.str.endsWith(t.attr("href"), ".epub")) {
-            location.href = t.attr("href");
-          } else if (_.str.startsWith(t.attr("href"), "http://")) {
-            location.href = t.attr("href");
-          } else {
-            $scope.$apply(function() {
-              return $location.url(decodeURIComponent(t.attr("href")).replace("/#!/", ""));
-            });
-<<<<<<< HEAD
->>>>>>> rewrote school html loading
->>>>>>> rewrote school html loading
           }
           _ref2 = wd._close || [];
           for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
             struct = _ref2[_k];
             output["close_" + struct] = true;
-=======
->>>>>>> adding new compiled files
           }
-<<<<<<< HEAD
           return ((function() {
             var _l, _len3, _ref3, _ref4, _results;
             _ref3 = _.pairs(output);
@@ -446,33 +410,6 @@
             return _results;
           })()).join(" ");
         };
-=======
-=======
-          return false;
->>>>>>> only minor changes
-        });
-      }
-    };
-  });
-
-  littb.directive("affix", function() {
-    return {
-      restrict: "EA",
-      link: function(scope, elem, attrs) {
-<<<<<<< HEAD
-        return elem.affix();
-<<<<<<< HEAD
->>>>>>> fiddled around with the school
->>>>>>> fiddled around with the school
-=======
->>>>>>> minor css changes
-=======
-        return elem.affix({
-          offset: {
-            top: elem.offset().top
-          }
-        });
->>>>>>> rewrote school html loading
       }
     };
   });
@@ -483,6 +420,19 @@
         c.log("insert doc", scope.doc);
         return elem.html(scope.doc || "");
       });
+    };
+  });
+
+  littb.directive("affix", function() {
+    return {
+      restrict: "EA",
+      link: function(scope, elem, attrs) {
+        return elem.affix({
+          offset: {
+            top: elem.offset().top
+          }
+        });
+      }
     };
   });
 

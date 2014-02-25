@@ -155,7 +155,7 @@
 
   littb.directive("scFile", function($routeParams, $http, $compile, util, backend) {
     return {
-      template: "<div link-fix></div>",
+      template: "<div class=\"file_parent\"></div>",
       replace: true,
       link: function($scope, elem, attr) {
         $scope.setName = function(name) {
