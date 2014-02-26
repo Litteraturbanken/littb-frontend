@@ -195,10 +195,11 @@ littb.directive 'selectionSniffer', ($window) ->
             $("body > .search_dict").remove()
 
         showIndicator = (target) ->
+            c.log "showIndicator", target
             box.remove()
             
-            box = $("<div><i class='icon-search glass'></i>
-                        <i class='icon-search shadow'></i>
+            box = $("<div><i class='fa fa-search glass'></i>
+                        <i class='fa fa-search shadow'></i>
                         <span class='circle'></span></div>")
                 .addClass("search_dict")
                 .appendTo("body")
