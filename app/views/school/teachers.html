@@ -8,6 +8,8 @@
         <div affix >
             <ul class="top_menu" active-style ng-controller="MenuCtrl">
                 <li><a href="/#!/skola/larare">Välkommen</a></li>
+                <li><br></li>
+                <li class="menu_heading">Allmänt</li>
                 <li>
                     <i class="icon" ng-class="{'minus' : !collapsed[3], 'plus' : collapsed[3]}" ng-click="collapsed[3] = !collapsed[3]"></i>
                     <a ng-click="collapsed[3] = false" href="/#!/skola/larare/DidaktikOchMetodik.html">Didaktik och metodik</a></li>
@@ -24,8 +26,30 @@
                 <li><a href="/#!/skola/larare/Genrer.html">Litterära genrer</a></li>
                 <li><a href="/#!/skola/larare/Hjalp.html">Hjälp</a></li>                
                 <li><br></li>
-                <li><a href="/#!/skola/larare/LasaLitteraturISkolan.html">Läsa litteratur i skolan</a></li>
+                <li class="menu_heading">Specifikt</li>
+                <li><a href="/#!/skola/larare/LasaLitteraturISkolan.html">Litteratur att läsa i skolan</a></li>
+                
+                <li>
+                    <i class="icon" ng-class="{'minus' : !collapsed[2], 'plus' : collapsed[2]}" ng-click="collapsed[2] = !collapsed[2]"></i>
+                    <a ng-click="collapsed[2] = false" href="/#!/skola/larare/Lashandledningar.html">Läshandledningar</a>
+                    <ul collapse="collapsed[2]">
 
+                         <li><a href="/#!/skola/larare/DrottningarGY.html">Drottningar i Kungahälla</a></li>
+                         <li><a href="/#!/skola/larare/EnHerrgardssagenLarare.html">En Herrgårdssägen</a></li>
+                         <li><a href="/#!/skola/larare/GostaBerlingLarare.html">Gösta Berlings saga</a></li>
+                         <li><a href="/#!/skola/larare/HerrArneLarare.html">Herr Arnes penningar</a></li>
+                         <li><a href="/#!/skola/larare/JerusalemLarare.html">Jerusalem</a></li>
+                         <li><a href="/#!/skola/larare/KejsarnLarare.html">Kejsarn av Portugallien</a></li>
+                         <li><a href="/#!/skola/larare/KorkarlenLarare.html">Körkarlen</a></li>
+                         <li><a href="/#!/skola/larare/LowenskoldskaRingenLarare.html">Löwensköldstrilogin</a></li>
+                         <li><a href="/#!/skola/larare/MarbackaLarare.html">Mårbackasviten</a></li>
+                         <li><a href="/#!/skola/larare/NilsHolgerssonFordjupning.html">Nils Holgersson</a></li>
+                         <li><a href="/#!/skola/larare/OsynligaLankarLarare.html">Osynliga länkar</a></li>
+                         <li><a href="/#!/skola/larare/TrollManniskorLarare.html">Troll och människor</a></li>
+                
+                        </ul>    
+                </li>
+                
                 <li>
                     <i class="icon" ng-class="{'minus' : !collapsed[0], 'plus' : collapsed[0]}" ng-click="collapsed[0] = !collapsed[0]"></i>
                     <a ng-click="collapsed[0] = false" href="/#!/skola/larare/OrienteringGenrer.html">Orientering genrer</a>
@@ -60,32 +84,12 @@
                     </ul>
 
                 </li>
-                <li>
-                    <i class="icon" ng-class="{'minus' : !collapsed[2], 'plus' : collapsed[2]}" ng-click="collapsed[2] = !collapsed[2]"></i>
-                    <a ng-click="collapsed[2] = false" href="/#!/skola/larare/Lashandledningar.html">Läshandledningar</a>
-                    <ul collapse="collapsed[2]">
-
-                         <li><a href="/#!/skola/larare/DrottningarGY.html">Drottningar i Kungahälla</a></li>
-                         <li><a href="/#!/skola/larare/EnHerrgardssagenLarare.html">En Herrgårdssägen</a></li>
-                         <li><a href="/#!/skola/larare/GostaBerlingLarare.html">Gösta Berlings saga</a></li>
-                         <li><a href="/#!/skola/larare/HerrArneLarare.html">Herr Arnes penningar</a></li>
-                         <li><a href="/#!/skola/larare/JerusalemLarare.html">Jerusalem</a></li>
-                         <li><a href="/#!/skola/larare/KejsarnLarare.html">Kejsarn av Portugallien</a></li>
-                         <li><a href="/#!/skola/larare/KorkarlenLarare.html">Körkarlen</a></li>
-                         <li><a href="/#!/skola/larare/LowenskoldskaRingenLarare.html">Löwensköldstrilogin</a></li>
-                         <li><a href="/#!/skola/larare/MarbackaLarare.html">Mårbackasviten</a></li>
-                         <li><a href="/#!/skola/larare/NilsHolgerssonFordjupning.html">Nils Holgersson</a></li>
-                         <li><a href="/#!/skola/larare/OsynligaLankarLarare.html">Osynliga länkar</a></li>
-                         <li><a href="/#!/skola/larare/TrollManniskorLarare.html">Troll och människor</a></li>
                 
-                        </ul>    
-                </li>
                 
             </ul>
             
             <ul class="lower_menu">
-                <!-- <li>Resurser för elever -->
-                    <!-- <ul> -->
+                <li class="menu_heading">Elevernas sidor</li>
                 <li><a href="/#!/skola/f-5">Elevsidor f–5</a></li>
                 <!-- <li><a href="/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil">För de yngre</a></li> -->
                 <li><a href="/#!/skola/6-9">Elevsidor 6–9</a></li>

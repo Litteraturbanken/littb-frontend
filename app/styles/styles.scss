@@ -1418,6 +1418,9 @@ grundform-clean {
     font-size : 16px;
     line-height: 1.4em;
     $column_width : 500px;
+    h1 {
+        line-height : 1.1;
+    }
     h2 {
         margin-top : 2.5em;
     }
@@ -1536,6 +1539,9 @@ grundform-clean {
         text-transform: uppercase;
         // margin-bottom : 0.2em;
         line-height: 1.5em;
+        &.menu_heading {
+            color : #666;
+        }
     }
     .nav_sidebar .selected {
         color : $primarycolor;
