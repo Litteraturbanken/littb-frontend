@@ -1113,6 +1113,14 @@
         return s.setPage(0);
       }
     };
+    s.isBeforeStartpage = function() {
+      var startix;
+      if (!s.pagemap) {
+        return;
+      }
+      startix = s.pagemap["page_" + s.startpage];
+      return s.pageix <= startix;
+    };
     s.getFirstPageUrl = function() {
       return "/#!/forfattare/" + author + "/titlar/" + title + "/sida/" + s.startpage + "/" + mediatype;
     };
@@ -1305,7 +1313,6 @@
         s.startpage = workinfo.startpagename;
         s.endpage = workinfo.endpagename;
         page = $(pageQuery, data).last().clone();
-        c.log("page", page);
         if (!page.length) {
           page = $("page:last", data).clone();
           s.pagename = page.attr("name");
