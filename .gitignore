@@ -4,3 +4,5 @@ temp
 .DS_Store
 .tmp
 dist
+app/scripts/bin
+app/styles/styles.css
