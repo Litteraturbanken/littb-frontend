@@ -165,6 +165,7 @@
           var innerxmlStr, innerxmls, newElem;
           innerxmls = _.map($("body > div > :not(.titlepage)", data), util.getInnerXML);
           innerxmlStr = innerxmls.join("\n");
+          innerxmlStr = innerxmlStr.replace(/#%21/g, "#!");
           newElem = $compile(innerxmlStr)($scope);
           elem.html(newElem);
           return $scope.fileDef.resolve();

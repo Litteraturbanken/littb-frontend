@@ -175,7 +175,8 @@ littb.directive "scFile", ($routeParams, $http, $compile, util, backend) ->
         backend.getHtmlFile("/red/skola/" + attr.scFile or $routeParams.doc).success (data) ->
             innerxmls = _.map $("body > div > :not(.titlepage)", data), util.getInnerXML
             innerxmlStr = innerxmls.join("\n")
-            # innerxmlStr = $("[xmlns]", innerxmlStr).attr("xmlns", null)
+            # bug fix for firefox
+            innerxmlStr = innerxmlStr.replace(/#%21/g, "#!")
 
             newElem = $compile(innerxmlStr)($scope)
             elem.html newElem
