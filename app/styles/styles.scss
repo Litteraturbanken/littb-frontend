@@ -1229,6 +1229,12 @@ $partnav-width : 170px;
 }
 
 .page-id {
+    td {
+        padding : 3px 5px;
+        &:last-of-type {
+            white-space : nowrap;
+        }
+    }
     table {
         min-width : 100%;
     }
