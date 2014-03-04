@@ -3,6 +3,6 @@ temp
 .sass-cache
 .DS_Store
 .tmp
-dist
+/dist
 app/scripts/bin
 app/styles/styles.css
