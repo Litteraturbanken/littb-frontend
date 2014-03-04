@@ -790,6 +790,7 @@
     var s;
     s = $scope;
     _.extend(s, $routeParams);
+    s.id = s.id.toLowerCase();
     if (!_.str.startsWith(s.id, "lb")) {
       s.title = s.id;
       s.id = "";
