@@ -356,6 +356,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
         http(
             url : url
+            cache : true
             params : _.extend {}, params, passedParams
         ).success( (xml) ->
             info = parseWorkInfo("LBwork", xml)
@@ -488,7 +489,7 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
 
 
-    searchWorks : (query, mediatype, from, to, selectedAuthor, selectedTitle) ->
+    searchWorks : (query, mediatype, from, to, selectedAuthor, selectedTitle, prefix, suffix) ->
         c.log "searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle
         def = $q.defer()
 
@@ -525,7 +526,13 @@ littb.factory 'backend', ($http, $q, util) ->
 
 
         for wd in tokenize(query)
-            tokenList.push "word = '#{regescape wd}' %c"
+            pre = suf = ""
+            if prefix
+                pre = ".*"
+            if suffix
+                suf = ".*"
+
+            tokenList.push "word = '#{suf}#{regescape wd}#{pre}' %c"
 
         if selectedAuthor
             tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"

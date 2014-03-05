@@ -309,3 +309,4 @@ littb.directive 'kwicWord', ->
 
 
             return (x for [x, y] in _.pairs output when y).join " "
+

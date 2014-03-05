@@ -49,6 +49,9 @@
             <input id="all" type="radio" ng-model="proofread" value="all">
             <label for="all" ng-click="proofread = 'all'">allt</label>
         </div>
+        <div class="also_include">
+            Även som: <input type="checkbox" ng-model="prefix" id="prefix"> <label for="prefix">förled</label> <input type="checkbox" id="suffix" ng-model="suffix"> <label for="suffix">efterled</label>
+        </div>
     </div>
     
     <div><span ng-click="search()" submit-btn></span><div style="clear:both;"></div></div>

@@ -178,6 +178,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 controller : "readingCtrl"
                 reloadOnSearch : false
                 breadcrumb : ["författare"]
+            # .when "/editor/:lbid",
+                
             .when [ "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
                     "/editor/:lbid/ix/:ix/:mediatype"],
                 templateUrl : "views/reader.html"
