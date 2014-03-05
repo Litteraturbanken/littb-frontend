@@ -227,8 +227,9 @@
           return $("body > .search_dict").remove();
         });
         showIndicator = function(target) {
+          c.log("showIndicator", target);
           box.remove();
-          return box = $("<div><i class='icon-search glass'></i>                        <i class='icon-search shadow'></i>                        <span class='circle'></span></div>").addClass("search_dict").appendTo("body").position({
+          return box = $("<div><i class='fa fa-search glass'></i>                        <i class='fa fa-search shadow'></i>                        <span class='circle'></span></div>").addClass("search_dict").appendTo("body").position({
             my: "left bottom",
             at: "right top",
             of: target
