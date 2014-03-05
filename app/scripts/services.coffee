@@ -527,12 +527,16 @@ littb.factory 'backend', ($http, $q, util) ->
 
         for wd in tokenize(query)
             pre = suf = ""
-            if prefix
-                pre = ".*"
-            if suffix
-                suf = ".*"
+            or_block = []
 
-            tokenList.push "word = '#{suf}#{regescape wd}#{pre}' %c"
+            if prefix
+                or_block.push "word = '#{regescape wd}.*'"
+            if suffix
+                or_block.push "word = '.*#{regescape wd}'"
+            if not prefix and not suffix
+                or_block.push "word = '#{regescape wd}'"
+
+            tokenList.push "#{or_block.join(' | ')} %c"
 
         if selectedAuthor
             tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"

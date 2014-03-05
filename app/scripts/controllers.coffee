@@ -93,6 +93,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
             scope_name : "num_hits"
             key : "per_sida"
             val_in : Number
+            default : 20
         ,
             key: "prefix"
         ,   
@@ -178,9 +179,15 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         len = sentence.tokens.length
         sentence.tokens.slice from, len
 
+    s.setPageNum = (num) ->
+        c.log "setPageNum", num
+        s.current_page = num
+        s.search()
+
 
     s.search = (query) ->
         q = query or s.query
+        c.log "search", q
         $location.search("fras", q) if q
 
         s.query = q
@@ -193,7 +200,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
-        params =
+        # params =
 
         backend.searchWorks(s.query,
             mediatype,

@@ -601,7 +601,7 @@
         return def.promise;
       },
       searchWorks: function(query, mediatype, from, to, selectedAuthor, selectedTitle, prefix, suffix) {
-        var def, pre, regescape, suf, tokenList, tokenize, wd, _i, _len, _ref;
+        var def, or_block, pre, regescape, suf, tokenList, tokenize, wd, _i, _len, _ref;
         c.log("searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle);
         def = $q.defer();
         tokenList = [];
@@ -634,13 +634,17 @@
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           wd = _ref[_i];
           pre = suf = "";
+          or_block = [];
           if (prefix) {
-            pre = ".*";
+            or_block.push("word = '" + (regescape(wd)) + ".*'");
           }
           if (suffix) {
-            suf = ".*";
+            or_block.push("word = '.*" + (regescape(wd)) + "'");
           }
-          tokenList.push("word = '" + suf + (regescape(wd)) + pre + "' %c");
+          if (!prefix && !suffix) {
+            or_block.push("word = '" + (regescape(wd)) + "'");
+          }
+          tokenList.push("" + (or_block.join(' | ')) + " %c");
         }
         if (selectedAuthor) {
           tokenList[0] += " & _.text_authorid contains '" + selectedAuthor + "'";
