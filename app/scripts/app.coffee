@@ -217,11 +217,17 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Kontakt"
                 breadcrumb : ["kontakt"]
             .when "/id/:id",
-                template : """<div ng-class="{searching:!data}"><h1>{{id}}</h1>
+                template : """
+                <div ng-class="{searching:!data}">
+                    <input ng-model="id" placeholder="lbid" autofocus ng-change="title = null"> 
+                    <input ng-model="title" placeholder="titel" ng-change="id = null">
                     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
                     <table class="table-striped">
                     <tr ng-repeat="row in data | filter:{'itemAttrs.lbworkid' : id, 'itemAttrs.showtitle' : title}">
                         <td>{{row.itemAttrs.lbworkid}}</td>
+                        <td>
+                            <a href="#!/forfattare/{{row.author.authorid}}}}/info">{{row.author.surname}}</a>
+                        </td>
                         <td>
                             <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
                         </td>

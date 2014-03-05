@@ -720,10 +720,13 @@ littb.filter "correctLink", () ->
 littb.controller "idCtrl", ($scope, backend, $routeParams) ->
     s = $scope
     _.extend s, $routeParams
+    s.id = s.id.toLowerCase()
 
     unless _.str.startsWith s.id, "lb"
         s.title = s.id
         s.id = ""
+    # else
+    #     s.id
 
     backend.getTitles().then (titleArray) ->
         s.data = titleArray
