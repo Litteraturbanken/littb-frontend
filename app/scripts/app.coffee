@@ -57,7 +57,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 controller : ["$scope", "$routeParams", "$http", "util", 
                                 ($scope, $routeParams, $http, util) ->
                                     $http.get("/red/presentationer/#{$routeParams.folder}/#{$routeParams.doc}").success (data) ->
-                                        # c.log "doc", data
+                                        c.log "doc", data
                 
                                         $scope.doc = data
                                         $scope.title = $("<root>#{data}</root>").find("h1").text()
@@ -67,7 +67,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 ]
                 template : '''
                         <meta-desc>{{title}}</meta-desc>
-                        <div style="position:relative;" ng-bind-html-unsafe="doc"></div>
+                        <div style="position:relative;" ng-bind-html="doc | trust"></div>
                     '''
                 breadcrumb : ["presentationer"]
 
@@ -179,7 +179,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 reloadOnSearch : false
                 breadcrumb : ["författare"]
             # .when "/editor/:lbid",
-                
+
             .when [ "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
                     "/editor/:lbid/ix/:ix/:mediatype"],
                 templateUrl : "views/reader.html"

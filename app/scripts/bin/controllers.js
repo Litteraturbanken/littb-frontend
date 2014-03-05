@@ -209,7 +209,9 @@
     s.search = function(query) {
       var from, mediatype, q, to;
       q = query || s.query;
-      c.log("search", q);
+      if (!q) {
+        return;
+      }
       if (q) {
         $location.search("fras", q);
       }
@@ -221,6 +223,7 @@
       return backend.searchWorks(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel, s.prefix, s.suffix).then(function(data) {
         var row, _i, _len, _ref, _results;
         c.log("search data", data);
+        s.data = data;
         s.kwic = data.kwic || [];
         s.hits = data.hits;
         s.searching = false;
@@ -1023,6 +1026,7 @@
     thisRoute = $route.current;
     s.nextHit = function() {
       return searchData.next().then(function(newUrl) {
+        c.log("newUrl", newUrl);
         return $location.url(newUrl);
       });
     };

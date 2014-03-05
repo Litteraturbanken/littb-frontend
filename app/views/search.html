@@ -80,7 +80,7 @@
 
                 <td class="left_context"><span kwic-word="kwic-word" ng-repeat="wd in selectLeft(sent)"></span></td>
                 <td class="match">
-                    <a bo-href="sent.href">
+                    <a bo-href="sent.href" ng-click="save_search(current_page * num_hits, $index, data)">
                         <strong><span kwic-word="kwic-word" ng-repeat="wd in selectMatch(sent)"></span></strong>
                     </a>
                 </td>

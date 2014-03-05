@@ -310,3 +310,10 @@ littb.directive 'kwicWord', ->
 
             return (x for [x, y] in _.pairs output when y).join " "
 
+
+
+littb.directive 'insert', () ->
+    (scope, elem, attr) ->
+        scope.watch "doc", () ->
+            c.log "insert doc", scope.doc
+            elem.html(scope.doc or "")

@@ -232,7 +232,7 @@ h6 {
   }
 }
 
-#leftCorridor .word_search .input_container {
+#leftCorridor .word_search .input_container input {
   font-family: "Helvetica", "Arial", sans-serif;
   position: relative;
 }
@@ -247,7 +247,7 @@ h6 {
   }
 }
 
-#leftCorridor .word_search .input_container ::-webkit-input-placeholder {
+#leftCorridor .word_search .input_container input ::-webkit-input-placeholder {
   font-size: 0.9em;
   letter-spacing: 0.5px;
 }
@@ -262,7 +262,7 @@ h6 {
   }
 }
 
-#leftCorridor .word_search .input_container :-moz-placeholder {
+#leftCorridor .word_search .input_container input :-moz-placeholder {
   /* Firefox 18- */
   font-size: 0.8em;
 }
@@ -277,7 +277,7 @@ h6 {
   }
 }
 
-#leftCorridor .word_search .input_container ::-moz-placeholder {
+#leftCorridor .word_search .input_container input ::-moz-placeholder {
   /* Firefox 19+ */
   font-size: 0.8em;
 }
@@ -292,7 +292,7 @@ h6 {
   }
 }
 
-#leftCorridor .word_search .input_container :-ms-input-placeholder {
+#leftCorridor .word_search .input_container input :-ms-input-placeholder {
   font-size: 0.8em;
 }
 
