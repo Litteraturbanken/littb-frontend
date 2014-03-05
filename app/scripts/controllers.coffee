@@ -1009,6 +1009,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         else
             s.setPage(0)
 
+    s.isBeforeStartpage = () ->
+        unless s.pagemap then return
+        startix = s.pagemap["page_" + s.startpage]
+        s.pageix <= startix
 
     s.getFirstPageUrl = () ->
         "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.startpage}/#{mediatype}"
@@ -1201,12 +1205,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
         # s.pagename = val
         backend.getPage(params).then ([data, workinfo]) ->
-
-
-
-            # if s.isEditor
-            #     parseEditorPage data
-            #     return 
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
 
@@ -1215,7 +1213,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
             page = $(pageQuery, data).last().clone()
-            c.log "page", page
             if not page.length
                 page = $("page:last", data).clone()
                 s.pagename = page.attr("name")
