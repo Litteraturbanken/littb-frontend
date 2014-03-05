@@ -309,7 +309,6 @@ li {
 #mainview {
     @include inline-block(top);
     width : $mainview-width;
-    margin-top : 1em;
 }
 
 label {
@@ -324,8 +323,7 @@ label {
 }
 
 body > .header {
-    // border-bottom : 1px solid grey;
-    margin-bottom : 1em;
+    margin-bottom : 1.5em;
     padding-bottom : 5px;
     position : relative;
     & > a {
@@ -338,8 +336,6 @@ body > .header {
         width : 71%;
         position : relative;
         top : 6px;
-        // float : right;
-        // position : absolute;
         padding : 0;
         margin : 0;
         background-color : transparent;
@@ -692,6 +688,12 @@ $partnav-width : 170px;
                 }
             }
                 
+        }
+        .pager_ctrls {
+            margin-bottom: 0.7em;
+        }
+        .size_picker {
+            margin-top : 1em;
         }
         .size_picker > div {
             @include inline-block();

@@ -427,7 +427,7 @@
           }
         });
       },
-      getPage: function(pagenum, passedParams) {
+      getPage: function(passedParams) {
         var def, params, url;
         def = $q.defer();
         url = "/query/lb-anthology.xql";
@@ -437,9 +437,6 @@
           css: true,
           workdb: true
         };
-        if (pagenum) {
-          params["pagename"] = pagenum;
-        }
         http({
           url: url,
           params: _.extend({}, params, passedParams)

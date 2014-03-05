@@ -343,7 +343,7 @@ littb.factory 'backend', ($http, $q, util) ->
         )
 
 
-    getPage : (pagenum, passedParams) ->
+    getPage : (passedParams) ->
         def = $q.defer()
         url = "/query/lb-anthology.xql"
 
@@ -353,8 +353,6 @@ littb.factory 'backend', ($http, $q, util) ->
             css : true
             workdb : true
 
-
-        if pagenum then params["pagename"] = pagenum
 
         http(
             url : url

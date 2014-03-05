@@ -56,17 +56,19 @@
         <hr>
     
     
-        <div class="pager_ctrls">
-            <a ng-click="firstPage()"><img src="/bilder/LBstart.png"></a>
-            <a ng-click="prevPage()"><img src="/bilder/LBforegaende.png"></a>
-            <a ng-click="nextPage()"><img src="/bilder/LBnasta.png"></a>
-            <a ng-click="lastPage()"><img src="/bilder/LBslut.png"></a>
+        <div class="pager_ctrls" ng-click="resetHitMarkings()">
+            <a ng-href="{{getFirstPageUrl()}}"><img src="/bilder/LBstart.png"></a>
+            <a rel="prev" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)"><img src="/bilder/LBforegaende.png"></a>
+            <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)"><img src="/bilder/LBnasta.png"></a>
+            <a ng-href="{{getLastPageUrl()}}"><img src="/bilder/LBslut.png"></a>
         </div>
         <form ng-submit="pageToLoad = displaynum">
-            Sida <input class="pageinput" ng-model="displaynum">
+            <span ng-if="isEditor">Index</span> 
+            <span ng-if="!isEditor">Sida</span> 
+            <input class="pageinput" ng-model="displaynum">
         </form>
     
-        <div>
+        <div ng-if="!isEditor">
             <ul class="work_parts">
                 <li><a ng-click="gotopage(startpage)">[Start]</a></li>
                 <li ng-repeat="part in workinfo.parts | limitTo:5">

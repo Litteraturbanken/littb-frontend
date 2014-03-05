@@ -926,7 +926,7 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
-    var author, loadPage, mediatype, onKeyDown, pagename, parseEditorPage, resetHitMarkings, s, thisRoute, title, watches;
+    var author, loadPage, mediatype, onKeyDown, pagename, parseEditorPage, s, thisRoute, title, watches;
     s = $scope;
     s.isEditor = false;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
@@ -947,7 +947,7 @@
       s.gotopage(startpage);
       return s.showPopup = false;
     };
-    resetHitMarkings = function() {
+    s.resetHitMarkings = function() {
       var key, _i, _len, _ref, _results;
       _ref = ["traff", "traffslut", "x", "y", "height", "width"];
       _results = [];
@@ -981,7 +981,7 @@
         switch (event.which) {
           case 39:
             if (navigator.userAgent.indexOf("Firefox") !== -1 || $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") === $($window).width()) {
-              return s.nextPage();
+              return $location.path(_.str.ltrim(s.getNextPageUrl(), "/#!"));
             }
             break;
           case 37:
@@ -993,15 +993,22 @@
     };
     $document.on("keydown", onKeyDown);
     s.getPage = function() {
-      return $route.current.pathParams.pagename;
+      if (s.isEditor) {
+        return $route.current.pathParams.ix;
+      } else {
+        return $route.current.pathParams.pagename;
+      }
     };
     s.setPage = function(ix) {
       s.pageix = ix;
       return s.pageToLoad = s.pagemap["ix_" + s.pageix];
     };
-    s.nextPage = function() {
+    s.nextPage = function(event) {
       var newix;
-      resetHitMarkings();
+      event.preventDefault();
+      if (!s.endpage) {
+        return;
+      }
       if (s.pageix === s.pagemap["page_" + s.endpage]) {
         return;
       }
@@ -1012,24 +1019,46 @@
         return s.setPage(0);
       }
     };
-    s.prevPage = function() {
+    s.prevPage = function(event) {
       var newix;
-      resetHitMarkings();
+      event.preventDefault();
       newix = s.pageix - 1;
-      c.log("newix", newix);
       if ("ix_" + newix in s.pagemap) {
         return s.setPage(newix);
       } else {
         return s.setPage(0);
       }
     };
-    s.firstPage = function() {
-      return s.setPage(0);
+    s.getFirstPageUrl = function() {
+      return "/#!/forfattare/" + author + "/titlar/" + title + "/sida/" + s.startpage + "/" + mediatype;
     };
-    s.lastPage = function() {
-      var ix;
-      ix = s.pagemap["page_" + s.endpage];
-      return s.setPage(ix);
+    s.getPrevPageUrl = function() {
+      var newix, page;
+      if (!s.pagemap) {
+        return;
+      }
+      newix = s.pageix - 1;
+      if ("ix_" + newix in s.pagemap) {
+        page = s.pagemap["ix_" + newix];
+        return "/#!/forfattare/" + author + "/titlar/" + title + "/sida/" + page + "/" + mediatype;
+      }
+    };
+    s.getNextPageUrl = function() {
+      var newix, page;
+      if (!s.endpage) {
+        return;
+      }
+      if (s.pageix === s.pagemap["page_" + s.endpage]) {
+        return;
+      }
+      newix = s.pageix + 1;
+      if ("ix_" + newix in s.pagemap) {
+        page = s.pagemap["ix_" + newix];
+        return "/#!/forfattare/" + author + "/titlar/" + title + "/sida/" + page + "/" + mediatype;
+      }
+    };
+    s.getLastPageUrl = function() {
+      return "/#!/forfattare/" + author + "/titlar/" + title + "/sida/" + s.endpage + "/" + mediatype;
     };
     s.gotopage = function(page) {
       var ix;
@@ -1108,10 +1137,11 @@
     }));
     s.isDefined = angular.isDefined;
     parseEditorPage = function(data) {
-      return c.log("parseEditorPage", data);
+      c.log("parseEditorPage", data);
+      return s.loading = false;
     };
     loadPage = function(val) {
-      var params;
+      var pageQuery, params;
       if ($route.current.controller !== 'readingCtrl') {
         c.log("resisted page load");
         return;
@@ -1123,27 +1153,28 @@
         params = {
           lbworkid: $routeParams.lbid,
           mediatype: mediatype,
-          pageix: $routeParams.ix
+          pageix: val
         };
+        pageQuery = "page[ix='" + val + "']";
       } else {
+        pageQuery = "page[name='" + val + "']";
         params = {
           authorid: author,
           titlepath: title,
           mediatype: mediatype
         };
+        if (val) {
+          params["pagename"] = val;
+        }
       }
-      return backend.getPage(val, params).then(function(_arg) {
+      return backend.getPage(params).then(function(_arg) {
         var data, page, url, workinfo, _i, _len, _ref;
         data = _arg[0], workinfo = _arg[1];
-        if (s.isEditor) {
-          parseEditorPage(data);
-          return;
-        }
         s.workinfo = workinfo;
         s.pagemap = workinfo.pagemap;
         s.startpage = workinfo.startpagename;
         s.endpage = workinfo.endpagename;
-        page = $("page[name='" + val + "']", data).last().clone();
+        page = $(pageQuery, data).last().clone();
         if (!page.length) {
           page = $("page:last", data).clone();
           s.pagename = page.attr("name");
