@@ -4,7 +4,7 @@
     <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
     <div ng-switch="showpage">
         <div ng-switch-when="introduktion">
-            <div ng-bind-html-unsafe="authorInfo.intro"></div>
+            <div ng-bind-html="authorInfo.intro | trust"></div>
             <div ng-if="authorInfo.smallImage" class="author_img"><img ng-src="{{authorInfo.smallImage}}"></div>
         </div>
         <div ng-switch-when="titlar">
@@ -35,7 +35,7 @@
         </div>
     
         <div ng-switch-default>
-            <div ng-bind-html-unsafe="externalDoc"></div>
+            <div ng-bind-html="externalDoc | trust"></div>
         </div>
     </div>
 </div>

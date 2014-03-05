@@ -13,7 +13,11 @@
     return $("#mainview").children().scope();
   };
 
+<<<<<<< HEAD
   window.littb = angular.module('littbApp', ["ui.bootstrap.typeahead", "template/typeahead/typeahead.html", "ui.bootstrap.tooltip", "ui.bootstrap.modal", "template/modal/backdrop.html", "template/modal/window.html", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html", "template/typeahead/typeahead-match.html", "angularSpinner"]).config(function($routeProvider) {
+=======
+  window.littb = angular.module('littbApp', ["ngRoute", "ui.bootstrap", "template/modal/backdrop.html", "template/modal/window.html", "template/tooltip/tooltip-popup.html", "template/typeahead/typeahead-popup.html", "template/typeahead/typeahead-match.html", "angularSpinner", "pasvaz.bindonce"]).config(function($routeProvider) {
+>>>>>>> search
     var Router, router;
     Router = (function() {
       function Router() {}
@@ -334,6 +338,12 @@
         return item;
       });
       return _.flatten(input.reverse()).join("");
+    };
+  });
+
+  littb.filter("trust", function($sce) {
+    return function(input) {
+      return $sce.trustAsHtml(input);
     };
   });
 

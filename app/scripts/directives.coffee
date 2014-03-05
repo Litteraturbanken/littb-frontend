@@ -108,32 +108,31 @@ littb.directive 'square', () ->
         size : "="
     link : (scope, elm, attrs) ->
         s = scope
-        s.$watch "left + top + width + height + size", () ->
-            coors = _.pick scope, "top", "left", "width", "height"
-            c.log "coors", coors
-            # unless _.compact(_.values(coors)).length
-            #     return
-                # coors = 
-                #     left : 0
-                #     top : 0
-                #     right : 0
-                #     bottom : 0
-            coors = _.object _.map coors, (val, key) ->
-                [key, (val?.split(",")[s.size] or 0) + "px"]
+        EXPAND_SIZE = 4
+        Y_OFFSET = -2
+        coors = _.pick scope, "top", "left", "width", "height"
+        coors = _.object _.map coors, (val, key) ->
+            val = Number(val)
+            expand = (val) ->
+                n = if key in ["top", "left"] then EXPAND_SIZE * -1 else EXPAND_SIZE * 2
+                # dir = if key in ["top", "left"] then -1 else 1
+                val + n
+            c.log "coors", val, key, expand(val)
+            if key == "top"
+                val += Y_OFFSET
+            [key, expand(val) + "px"]
+                # [key, (val) + "px"]
 
-            elm.css coors
-            
-
-
+        elm.css coors
         
-littb.directive 'clickOutside', ($document) -> 
-    restrict: 'A',
-    link: (scope, elem, attr, ctrl) ->
-        elem.bind 'click', (e) ->
-            e.stopPropagation()
+# littb.directive 'clickOutside', ($document) -> 
+#     restrict: 'A',
+#     link: (scope, elem, attr, ctrl) ->
+#         elem.bind 'click', (e) ->
+#             e.stopPropagation()
 
-        $document.on 'click', () ->
-            scope.$apply(attr.clickOutside)
+#         $document.on 'click', () ->
+#             scope.$apply(attr.clickOutside)
 
 
 littb.directive 'scrollTo', ($window, $timeout) -> 
@@ -234,9 +233,9 @@ littb.directive 'selectionSniffer', ($window) ->
 #                 nProgress.done()
 
 
-littb.directive 'alert', ($rootElement, $timeout) -> 
+littb.directive 'alertPopup', ($rootElement, $timeout) -> 
     scope : 
-        alert : "="
+        alertPopup : "=alert"
     template : """
         <div ng-if="alert" class="alert_popup">{{alert}}</div>
     """
@@ -288,21 +287,25 @@ littb.directive 'pageTitle', ($interpolate) ->
             wtch()
 
 
-littb.directive 'linkFix', ($location) ->
-    link : ($scope, elem, attrs) ->
-        elem.on "click", "a[href]", (event) ->
-            c.log "event.target", event.target
-            t = $(event.target)
-            if t.attr("target") == "_blank"
-                window.open t.attr("href"), "_blank"
-            else if t.attr("href")[..6] == "mailto:"
-                location.href = t.attr("href")
-            else if _.str.endsWith(t.attr("href"), ".epub")
-                location.href = t.attr("href")
-                
+littb.directive 'kwicWord', ->
+    replace: true
+    template : """<span class="word" ng-class="getClassObj(wd)"
+                    bo-text="wd.word + ' '" ></span>
+                """ #ng-click="wordClick($event, wd, sentence)"
+    link : (scope, element) ->
+        scope.getClassObj = (wd) ->
+            output =
+                reading_match : wd._match
+                punct : wd._punct
+                match_sentence : wd._matchSentence
 
-        # loc = attrs.href
-        # elem.click () ->
+            for struct in (wd._struct or [])
+                output["struct_" + struct] = true
+
+            for struct in (wd._open or [])
+                output["open_" + struct] = true
+            for struct in (wd._close or [])
+                output["close_" + struct] = true
 
 
-
+            return (x for [x, y] in _.pairs output when y).join " "

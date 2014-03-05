@@ -7,7 +7,7 @@
   }
 
   line {
-    font-family: \0000327;
+    font-family: \0000323;
   }
 }
 
@@ -22,7 +22,7 @@
   }
 
   line {
-    font-family: \0000331;
+    font-family: \0000327;
   }
 }
 
@@ -36,7 +36,7 @@
   }
 
   line {
-    font-family: \0000337;
+    font-family: \0000333;
   }
 }
 
@@ -50,7 +50,7 @@
   }
 
   line {
-    font-family: \0000342;
+    font-family: \0000337;
   }
 }
 
@@ -74,7 +74,7 @@ body {
   }
 
   line {
-    font-family: \0000353;
+    font-family: \0000348;
   }
 }
 
@@ -88,7 +88,7 @@ body > * {
   }
 
   line {
-    font-family: \0000358;
+    font-family: \0000353;
   }
 }
 
@@ -104,7 +104,7 @@ body.ready {
   }
 
   line {
-    font-family: \0000367;
+    font-family: \0000362;
   }
 }
 
@@ -118,7 +118,7 @@ body.ready {
   }
 
   line {
-    font-family: \0000370;
+    font-family: \0000365;
   }
 }
 
@@ -132,7 +132,7 @@ body.ready {
   }
 
   line {
-    font-family: \0000374;
+    font-family: \0000369;
   }
 }
 
@@ -146,7 +146,21 @@ body.ready {
   }
 
   line {
-    font-family: \0000378;
+    font-family: \0000373;
+  }
+}
+
+.etext table {
+  width: 90%;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \0000377;
   }
 }
 
@@ -181,7 +195,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \0000386;
+=======
+    font-family: \0000381;
+>>>>>>> search
   }
 }
 
@@ -195,7 +213,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \0000389;
+=======
+    font-family: \0000384;
+>>>>>>> search
   }
 }
 
@@ -209,11 +231,16 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \0000393;
+=======
+    font-family: \0000388;
+>>>>>>> search
   }
 }
 
 #leftCorridor .word_search .input_container {
+  font-family: "Helvetica", "Arial", sans-serif;
   position: relative;
 }
 
@@ -229,7 +256,7 @@ body.ready {
 
 #leftCorridor .word_search .input_container ::-webkit-input-placeholder {
   font-size: 0.9em;
-  line-height: 1.6em;
+  letter-spacing: 0.5px;
 }
 
 @media -sass-debug-info {
@@ -238,7 +265,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003100;
+=======
+    font-family: \0000397;
+>>>>>>> search
   }
 }
 
@@ -253,7 +284,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003104;
+=======
+    font-family: \00003101;
+>>>>>>> search
   }
 }
 
@@ -268,7 +303,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003108;
+=======
+    font-family: \00003105;
+>>>>>>> search
   }
 }
 
@@ -282,7 +321,26 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003112;
+=======
+    font-family: \00003109;
+  }
+}
+
+#leftCorridor .word_search .dropdown-menu {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003114;
+>>>>>>> search
   }
 }
 
@@ -299,7 +357,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003118;
+=======
+    font-family: \00003120;
+>>>>>>> search
   }
 }
 
@@ -313,7 +375,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003121;
+=======
+    font-family: \00003123;
+>>>>>>> search
   }
 }
 
@@ -328,7 +394,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003125;
+=======
+    font-family: \00003127;
+>>>>>>> search
   }
 }
 
@@ -342,7 +412,11 @@ body.ready {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003134;
+=======
+    font-family: \00003136;
+>>>>>>> search
   }
 }
 
@@ -356,7 +430,11 @@ a[ng-click] {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003137;
+=======
+    font-family: \00003139;
+>>>>>>> search
   }
 }
 
@@ -370,13 +448,19 @@ p a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003141;
+=======
+    font-family: \00003143;
+>>>>>>> search
   }
 }
 
 hr {
   border: none;
   border-top: 1px solid grey;
+  margin-top: 5px;
+  margin-bottom: 0;
 }
 
 @media -sass-debug-info {
@@ -385,7 +469,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003147;
+=======
+    font-family: \00003151;
+>>>>>>> search
   }
 }
 
@@ -403,7 +491,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003153;
+=======
+    font-family: \00003157;
+>>>>>>> search
   }
 }
 
@@ -418,7 +510,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003157;
+=======
+    font-family: \00003161;
+>>>>>>> search
   }
 }
 
@@ -438,7 +534,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003166;
+=======
+    font-family: \00003170;
+>>>>>>> search
   }
 }
 
@@ -460,7 +560,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003184;
+=======
+    font-family: \00003188;
+>>>>>>> search
   }
 }
 
@@ -474,7 +578,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003186;
+=======
+    font-family: \00003190;
+>>>>>>> search
   }
 }
 
@@ -488,7 +596,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003190;
+=======
+    font-family: \00003194;
+>>>>>>> search
   }
 }
 
@@ -502,7 +614,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003192;
+=======
+    font-family: \00003196;
+>>>>>>> search
   }
 }
 
@@ -518,7 +634,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003197;
+=======
+    font-family: \00003201;
+>>>>>>> search
   }
 }
 
@@ -532,7 +652,25 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003200;
+=======
+    font-family: \00003204;
+  }
+}
+
+#toolkit [submit-btn] {
+  vertical-align: bottom;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003207;
+>>>>>>> search
   }
 }
 
@@ -546,7 +684,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003210;
+=======
+    font-family: \00003217;
+>>>>>>> search
   }
 }
 
@@ -560,7 +702,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003216;
+=======
+    font-family: \00003223;
+>>>>>>> search
   }
 }
 
@@ -574,7 +720,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003218;
+=======
+    font-family: \00003225;
+>>>>>>> search
   }
 }
 
@@ -588,7 +738,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003221;
+=======
+    font-family: \00003228;
+>>>>>>> search
   }
 }
 
@@ -603,7 +757,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003224;
+=======
+    font-family: \00003231;
+>>>>>>> search
   }
 }
 
@@ -620,7 +778,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003230;
+=======
+    font-family: \00003237;
+>>>>>>> search
   }
 }
 
@@ -637,7 +799,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003238;
+=======
+    font-family: \00003245;
+>>>>>>> search
   }
 }
 
@@ -654,7 +820,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003247;
+=======
+    font-family: \00003254;
+>>>>>>> search
   }
 }
 
@@ -669,7 +839,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003251;
+=======
+    font-family: \00003258;
+>>>>>>> search
   }
 }
 
@@ -683,7 +857,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003261;
+=======
+    font-family: \00003268;
+>>>>>>> search
   }
 }
 
@@ -697,7 +875,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003263;
+=======
+    font-family: \00003270;
+>>>>>>> search
   }
 }
 
@@ -716,7 +898,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003272;
+=======
+    font-family: \00003279;
+>>>>>>> search
   }
 }
 
@@ -731,7 +917,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003280;
+=======
+    font-family: \00003287;
+>>>>>>> search
   }
 }
 
@@ -745,7 +935,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003283;
+=======
+    font-family: \00003290;
+>>>>>>> search
   }
 }
 
@@ -759,7 +953,11 @@ hr {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003289;
+=======
+    font-family: \00003296;
+>>>>>>> search
   }
 }
 
@@ -774,7 +972,11 @@ a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003293;
+=======
+    font-family: \00003300;
+>>>>>>> search
   }
 }
 
@@ -789,7 +991,11 @@ a:hover {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003297;
+=======
+    font-family: \00003304;
+>>>>>>> search
   }
 }
 
@@ -804,7 +1010,11 @@ ul {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003301;
+=======
+    font-family: \00003308;
+>>>>>>> search
   }
 }
 
@@ -818,7 +1028,11 @@ li {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003305;
+=======
+    font-family: \00003312;
+>>>>>>> search
   }
 }
 
@@ -833,7 +1047,11 @@ li {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003309;
+=======
+    font-family: \00003316;
+>>>>>>> search
   }
 }
 
@@ -853,7 +1071,11 @@ li {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003314;
+=======
+    font-family: \00003322;
+>>>>>>> search
   }
 }
 
@@ -867,7 +1089,11 @@ label {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003318;
+=======
+    font-family: \00003326;
+>>>>>>> search
   }
 }
 
@@ -884,7 +1110,11 @@ label {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003325;
+=======
+    font-family: \00003333;
+>>>>>>> search
   }
 }
 
@@ -900,7 +1130,11 @@ body > .header {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003329;
+=======
+    font-family: \00003338;
+>>>>>>> search
   }
 }
 
@@ -920,7 +1154,11 @@ body > .header > a {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003333;
+=======
+    font-family: \00003342;
+>>>>>>> search
   }
 }
 
@@ -947,7 +1185,55 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003345;
+    font-family: \00003354;
+  }
+}
+
+body > .header .breadcrumb li {
+  display: -moz-inline-stack;
+  display: inline-block;
+  vertical-align: bottom;
+  *vertical-align: auto;
+  zoom: 1;
+  *display: inline;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003357;
+  }
+}
+
+body > .header .breadcrumb > li + li:before {
+  content: ">";
+  padding: 0 5px;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003361;
+  }
+}
+
+body > .header .breadcrumb > li:last-of-type a {
+  color: grey;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003366;
   }
 }
 
@@ -961,7 +1247,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003350;
+    font-family: \00003371;
   }
 }
 
@@ -978,7 +1264,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003356;
+    font-family: \00003377;
   }
 }
 
@@ -993,7 +1279,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003360;
+    font-family: \00003381;
   }
 }
 
@@ -1016,7 +1302,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003367;
+    font-family: \00003388;
   }
 }
 
@@ -1038,7 +1324,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003372;
+    font-family: \00003393;
   }
 }
 
@@ -1057,7 +1343,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003375;
+    font-family: \00003396;
   }
 }
 
@@ -1077,7 +1363,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003387;
+    font-family: \00003408;
   }
 }
 
@@ -1091,7 +1377,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003390;
+    font-family: \00003411;
   }
 }
 
@@ -1106,7 +1392,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003393;
+    font-family: \00003414;
   }
 }
 
@@ -1121,7 +1407,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003397;
+    font-family: \00003418;
   }
 }
 
@@ -1135,7 +1421,22 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003404;
+    font-family: \00003423;
+  }
+}
+
+.page-start + li:before .breadcrumb > li + li:before {
+  content: ">";
+  padding: 0 5px;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003431;
   }
 }
 
@@ -1149,7 +1450,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003406;
+    font-family: \00003433;
   }
 }
 
@@ -1163,7 +1464,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003409;
+    font-family: \00003436;
   }
 }
 
@@ -1178,7 +1479,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003412;
+    font-family: \00003439;
   }
 }
 
@@ -1192,7 +1493,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003416;
+    font-family: \00003443;
   }
 }
 
@@ -1212,7 +1513,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003420;
+    font-family: \00003447;
   }
 }
 
@@ -1226,7 +1527,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003422;
+    font-family: \00003449;
   }
 }
 
@@ -1241,7 +1542,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003426;
+    font-family: \00003453;
   }
 }
 
@@ -1255,7 +1556,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003429;
+    font-family: \00003456;
   }
 }
 
@@ -1270,7 +1571,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003433;
+    font-family: \00003460;
   }
 }
 
@@ -1285,7 +1586,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003439;
+    font-family: \00003466;
   }
 }
 
@@ -1299,7 +1600,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003443;
+    font-family: \00003470;
   }
 }
 
@@ -1313,7 +1614,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003446;
+    font-family: \00003473;
   }
 }
 
@@ -1327,7 +1628,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003453;
+    font-family: \00003480;
   }
 }
 
@@ -1341,7 +1642,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003459;
+    font-family: \00003486;
   }
 }
 
@@ -1355,7 +1656,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003468;
+    font-family: \00003495;
   }
 }
 
@@ -1369,7 +1670,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003471;
+    font-family: \00003498;
   }
 }
 
@@ -1383,7 +1684,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003473;
+    font-family: \00003500;
   }
 }
 
@@ -1397,7 +1698,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003478;
+    font-family: \00003505;
   }
 }
 
@@ -1413,7 +1714,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003483;
+    font-family: \00003510;
   }
 }
 
@@ -1427,7 +1728,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003488;
+    font-family: \00003515;
   }
 }
 
@@ -1441,7 +1742,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003490;
+    font-family: \00003517;
   }
 }
 
@@ -1455,7 +1756,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003494;
+    font-family: \00003521;
   }
 }
 
@@ -1470,7 +1771,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003498;
+    font-family: \00003525;
   }
 }
 
@@ -1485,7 +1786,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003502;
+    font-family: \00003529;
   }
 }
 
@@ -1499,7 +1800,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003506;
+    font-family: \00003533;
   }
 }
 
@@ -1517,7 +1818,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003515;
+    font-family: \00003542;
   }
 }
 
@@ -1531,7 +1832,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003518;
+    font-family: \00003545;
   }
 }
 
@@ -1547,7 +1848,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003522;
+    font-family: \00003549;
   }
 }
 
@@ -1561,7 +1862,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003526;
+    font-family: \00003553;
   }
 }
 
@@ -1581,7 +1882,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003530;
+    font-family: \00003557;
   }
 }
 
@@ -1595,7 +1896,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003534;
+    font-family: \00003561;
   }
 }
 
@@ -1609,7 +1910,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003538;
+    font-family: \00003565;
   }
 }
 
@@ -1623,7 +1924,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003540;
+    font-family: \00003567;
   }
 }
 
@@ -1637,7 +1938,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003545;
+    font-family: \00003572;
   }
 }
 
@@ -1651,7 +1952,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003547;
+    font-family: \00003574;
   }
 }
 
@@ -1665,7 +1966,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003550;
+    font-family: \00003577;
   }
 }
 
@@ -1679,7 +1980,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003553;
+    font-family: \00003580;
   }
 }
 
@@ -1693,7 +1994,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003556;
+    font-family: \00003583;
   }
 }
 
@@ -1710,7 +2011,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003562;
+    font-family: \00003589;
   }
 }
 
@@ -1724,7 +2025,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003567;
+    font-family: \00003594;
   }
 }
 
@@ -1738,7 +2039,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003569;
+    font-family: \00003596;
   }
 }
 
@@ -1753,7 +2054,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003572;
+    font-family: \00003599;
   }
 }
 
@@ -1767,7 +2068,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003575;
+    font-family: \00003602;
   }
 }
 
@@ -1781,7 +2082,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003577;
+    font-family: \00003604;
   }
 }
 
@@ -1795,7 +2096,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003583;
+    font-family: \00003610;
   }
 }
 
@@ -1809,7 +2110,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003589;
+    font-family: \00003616;
   }
 }
 
@@ -1824,7 +2125,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003599;
+    font-family: \00003626;
   }
 }
 
@@ -1840,7 +2141,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003604;
+    font-family: \00003631;
   }
 }
 
@@ -1848,6 +2149,11 @@ body > .header .breadcrumb {
   background-color: #990000;
   opacity: 0.5;
   position: absolute;
+  border-radius: 4px;
+  -webkit-transform: rotate(2deg);
+  -ms-transform: rotate(2deg);
+  transform: rotate(2deg);
+  box-shadow: 0px 0px 9px 2px #990000;
 }
 
 @media -sass-debug-info {
@@ -1856,7 +2162,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003609;
+    font-family: \00003643;
   }
 }
 
@@ -1870,7 +2176,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003613;
+    font-family: \00003647;
   }
 }
 
@@ -1884,7 +2190,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003615;
+    font-family: \00003649;
   }
 }
 
@@ -1904,7 +2210,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003618;
+    font-family: \00003652;
   }
 }
 
@@ -1919,7 +2225,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003624;
+    font-family: \00003658;
   }
 }
 
@@ -1936,7 +2242,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003632;
+    font-family: \00003666;
   }
 }
 
@@ -1951,7 +2257,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003635;
+    font-family: \00003669;
   }
 }
 
@@ -1965,7 +2271,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003642;
+    font-family: \00003676;
   }
 }
 
@@ -1979,7 +2285,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003645;
+    font-family: \00003679;
   }
 }
 
@@ -1993,7 +2299,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003648;
+    font-family: \00003682;
   }
 }
 
@@ -2008,7 +2314,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003651;
+    font-family: \00003685;
   }
 }
 
@@ -2022,7 +2328,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003654;
+    font-family: \00003688;
   }
 }
 
@@ -2037,7 +2343,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003659;
+    font-family: \00003693;
   }
 }
 
@@ -2055,7 +2361,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003666;
+    font-family: \00003700;
   }
 }
 
@@ -2073,7 +2379,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003674;
+    font-family: \00003708;
   }
 }
 
@@ -2087,7 +2393,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003676;
+    font-family: \00003710;
   }
 }
 
@@ -2101,7 +2407,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003679;
+    font-family: \00003713;
   }
 }
 
@@ -2117,7 +2423,7 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003684;
+    font-family: \00003718;
   }
 }
 
@@ -2132,7 +2438,21 @@ body > .header .breadcrumb {
   }
 
   line {
-    font-family: \00003692;
+    font-family: \00003726;
+  }
+}
+
+.page-reading #toolkit .size_picker {
+  margin-top: 1em;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \00003729;
   }
 }
 
@@ -2188,7 +2508,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003710;
+=======
+    font-family: \00003741;
+>>>>>>> search
   }
 }
 
@@ -2203,7 +2527,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003714;
+=======
+    font-family: \00003745;
+>>>>>>> search
   }
 }
 
@@ -2217,7 +2545,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003719;
+=======
+    font-family: \00003750;
+>>>>>>> search
   }
 }
 
@@ -2231,7 +2563,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003721;
+=======
+    font-family: \00003752;
+>>>>>>> search
   }
 }
 
@@ -2250,7 +2586,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003730;
+=======
+    font-family: \00003761;
+>>>>>>> search
   }
 }
 
@@ -2264,7 +2604,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003735;
+=======
+    font-family: \00003766;
+>>>>>>> search
   }
 }
 
@@ -2278,7 +2622,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003737;
+=======
+    font-family: \00003768;
+>>>>>>> search
   }
 }
 
@@ -2292,7 +2640,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003741;
+=======
+    font-family: \00003772;
+>>>>>>> search
   }
 }
 
@@ -2314,7 +2666,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003756;
+=======
+    font-family: \00003787;
+>>>>>>> search
   }
 }
 
@@ -2337,7 +2693,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003767;
+=======
+    font-family: \00003798;
+>>>>>>> search
   }
 }
 
@@ -2355,7 +2715,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003774;
+=======
+    font-family: \00003805;
+>>>>>>> search
   }
 }
 
@@ -2369,7 +2733,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003783;
+=======
+    font-family: \00003814;
+>>>>>>> search
   }
 }
 
@@ -2383,7 +2751,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003787;
+=======
+    font-family: \00003818;
+>>>>>>> search
   }
 }
 
@@ -2398,7 +2770,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003791;
+=======
+    font-family: \00003822;
+>>>>>>> search
   }
 }
 
@@ -2413,7 +2789,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003795;
+=======
+    font-family: \00003826;
+>>>>>>> search
   }
 }
 
@@ -2427,7 +2807,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003798;
+=======
+    font-family: \00003829;
+>>>>>>> search
   }
 }
 
@@ -2443,7 +2827,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003799;
+=======
+    font-family: \00003830;
+>>>>>>> search
   }
 }
 
@@ -2459,7 +2847,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003805;
+=======
+    font-family: \00003836;
+>>>>>>> search
   }
 }
 
@@ -2479,7 +2871,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003814;
+=======
+    font-family: \00003845;
+>>>>>>> search
   }
 }
 
@@ -2496,7 +2892,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003821;
+=======
+    font-family: \00003852;
+>>>>>>> search
   }
 }
 
@@ -2511,7 +2911,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003824;
+=======
+    font-family: \00003855;
+>>>>>>> search
   }
 }
 
@@ -2525,7 +2929,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003827;
+=======
+    font-family: \00003858;
+>>>>>>> search
   }
 }
 
@@ -2539,7 +2947,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003831;
+=======
+    font-family: \00003862;
+>>>>>>> search
   }
 }
 
@@ -2554,7 +2966,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003834;
+=======
+    font-family: \00003865;
+>>>>>>> search
   }
 }
 
@@ -2568,7 +2984,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003837;
+=======
+    font-family: \00003868;
+>>>>>>> search
   }
 }
 
@@ -2583,7 +3003,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003842;
+=======
+    font-family: \00003873;
+>>>>>>> search
   }
 }
 
@@ -2597,7 +3021,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003845;
+=======
+    font-family: \00003876;
+>>>>>>> search
   }
 }
 
@@ -2611,7 +3039,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003847;
+=======
+    font-family: \00003878;
+>>>>>>> search
   }
 }
 
@@ -2630,7 +3062,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003850;
+=======
+    font-family: \00003881;
+>>>>>>> search
   }
 }
 
@@ -2644,7 +3080,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003853;
+=======
+    font-family: \00003884;
+>>>>>>> search
   }
 }
 
@@ -2658,7 +3098,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003857;
+=======
+    font-family: \00003888;
+>>>>>>> search
   }
 }
 
@@ -2672,7 +3116,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003861;
+=======
+    font-family: \00003892;
+>>>>>>> search
   }
 }
 
@@ -2686,7 +3134,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003871;
+=======
+    font-family: \00003902;
+>>>>>>> search
   }
 }
 
@@ -2700,7 +3152,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003874;
+=======
+    font-family: \00003905;
+>>>>>>> search
   }
 }
 
@@ -2714,7 +3170,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003878;
+=======
+    font-family: \00003909;
+>>>>>>> search
   }
 }
 
@@ -2728,7 +3188,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003881;
+=======
+    font-family: \00003912;
+>>>>>>> search
   }
 }
 
@@ -2742,7 +3206,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003884;
+=======
+    font-family: \00003915;
+>>>>>>> search
   }
 }
 
@@ -2757,7 +3225,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003889;
+=======
+    font-family: \00003920;
+>>>>>>> search
   }
 }
 
@@ -2772,7 +3244,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003894;
+=======
+    font-family: \00003925;
+>>>>>>> search
   }
 }
 
@@ -2787,7 +3263,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003901;
+=======
+    font-family: \00003932;
+>>>>>>> search
   }
 }
 
@@ -2801,7 +3281,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003904;
+=======
+    font-family: \00003935;
+>>>>>>> search
   }
 }
 
@@ -2815,7 +3299,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003906;
+=======
+    font-family: \00003937;
+>>>>>>> search
   }
 }
 
@@ -2829,7 +3317,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003915;
+=======
+    font-family: \00003946;
+>>>>>>> search
   }
 }
 
@@ -2843,7 +3335,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003917;
+=======
+    font-family: \00003948;
+>>>>>>> search
   }
 }
 
@@ -2857,7 +3353,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003926;
+=======
+    font-family: \00003957;
+>>>>>>> search
   }
 }
 
@@ -2873,7 +3373,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003931;
+=======
+    font-family: \00003962;
+>>>>>>> search
   }
 }
 
@@ -2887,7 +3391,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003934;
+=======
+    font-family: \00003965;
+>>>>>>> search
   }
 }
 
@@ -2901,7 +3409,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003937;
+=======
+    font-family: \00003968;
+>>>>>>> search
   }
 }
 
@@ -2915,7 +3427,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003940;
+=======
+    font-family: \00003971;
+>>>>>>> search
   }
 }
 
@@ -2929,7 +3445,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003950;
+=======
+    font-family: \00003981;
+>>>>>>> search
   }
 }
 
@@ -2943,7 +3463,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003953;
+=======
+    font-family: \00003984;
+>>>>>>> search
   }
 }
 
@@ -2957,7 +3481,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003957;
+=======
+    font-family: \00003988;
+>>>>>>> search
   }
 }
 
@@ -2971,7 +3499,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003959;
+=======
+    font-family: \00003990;
+>>>>>>> search
   }
 }
 
@@ -2986,7 +3518,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003967;
+=======
+    font-family: \00003998;
+>>>>>>> search
   }
 }
 
@@ -3001,7 +3537,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003974;
+=======
+    font-family: \000031005;
+>>>>>>> search
   }
 }
 
@@ -3016,7 +3556,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003977;
+=======
+    font-family: \000031008;
+>>>>>>> search
   }
 }
 
@@ -3030,7 +3574,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003981;
+=======
+    font-family: \000031012;
+>>>>>>> search
   }
 }
 
@@ -3046,7 +3594,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003987;
+=======
+    font-family: \000031018;
+>>>>>>> search
   }
 }
 
@@ -3066,7 +3618,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \00003996;
+=======
+    font-family: \000031027;
+>>>>>>> search
   }
 }
 
@@ -3081,7 +3637,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031000;
+=======
+    font-family: \000031031;
+>>>>>>> search
   }
 }
 
@@ -3095,7 +3655,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031003;
+=======
+    font-family: \000031034;
+>>>>>>> search
   }
 }
 
@@ -3109,7 +3673,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031007;
+=======
+    font-family: \000031038;
+>>>>>>> search
   }
 }
 
@@ -3123,7 +3691,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031011;
+=======
+    font-family: \000031042;
+>>>>>>> search
   }
 }
 
@@ -3137,7 +3709,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031018;
+=======
+    font-family: \000031049;
+>>>>>>> search
   }
 }
 
@@ -3151,7 +3727,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031026;
+=======
+    font-family: \000031057;
+>>>>>>> search
   }
 }
 
@@ -3167,7 +3747,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031030;
+=======
+    font-family: \000031061;
+>>>>>>> search
   }
 }
 
@@ -3181,7 +3765,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031033;
+=======
+    font-family: \000031064;
+>>>>>>> search
   }
 }
 
@@ -3200,7 +3788,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031037;
+=======
+    font-family: \000031068;
+>>>>>>> search
   }
 }
 
@@ -3218,7 +3810,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031041;
+=======
+    font-family: \000031072;
+>>>>>>> search
   }
 }
 
@@ -3237,7 +3833,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031045;
+=======
+    font-family: \000031076;
+>>>>>>> search
   }
 }
 
@@ -3255,7 +3855,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031050;
+=======
+    font-family: \000031081;
+>>>>>>> search
   }
 }
 
@@ -3269,7 +3873,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031054;
+=======
+    font-family: \000031085;
+>>>>>>> search
   }
 }
 
@@ -3283,7 +3891,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031056;
+=======
+    font-family: \000031087;
+>>>>>>> search
   }
 }
 
@@ -3297,7 +3909,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031061;
+=======
+    font-family: \000031092;
+>>>>>>> search
   }
 }
 
@@ -3314,7 +3930,11 @@ body > .header .breadcrumb {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031069;
+=======
+    font-family: \000031100;
+>>>>>>> search
   }
 }
 
@@ -3328,7 +3948,25 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031073;
+=======
+    font-family: \000031104;
+  }
+}
+
+.modal-content {
+  border-radius: 0px;
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+    font-family: \000031108;
+>>>>>>> search
   }
 }
 
@@ -3342,7 +3980,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031075;
+=======
+    font-family: \000031110;
+>>>>>>> search
   }
 }
 
@@ -3356,7 +3998,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031077;
+=======
+    font-family: \000031112;
+>>>>>>> search
   }
 }
 
@@ -3376,7 +4022,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031082;
+=======
+    font-family: \000031117;
+>>>>>>> search
   }
 }
 
@@ -3396,7 +4046,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031093;
+=======
+    font-family: \000031128;
+>>>>>>> search
   }
 }
 
@@ -3414,7 +4068,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031102;
+=======
+    font-family: \000031137;
+>>>>>>> search
   }
 }
 
@@ -3436,7 +4094,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031111;
+=======
+    font-family: \000031146;
+>>>>>>> search
   }
 }
 
@@ -3451,7 +4113,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031118;
+=======
+    font-family: \000031153;
+>>>>>>> search
   }
 }
 
@@ -3472,7 +4138,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031128;
+=======
+    font-family: \000031163;
+>>>>>>> search
   }
 }
 
@@ -3491,22 +4161,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031139;
-  }
-}
-
-.typeahead.dropdown-menu {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
-  }
-
-  line {
-    font-family: \000031145;
+=======
+    font-family: \000031174;
+>>>>>>> search
   }
 }
 
@@ -3520,11 +4179,35 @@ grundform-clean {
   }
 
   line {
-    font-family: \000031149;
+<<<<<<< HEAD
+    font-family: \000031145;
+=======
+    font-family: \000031184;
+>>>>>>> search
   }
 }
 
-.modal {
+.modal.fade .modal-dialog {
+  -webkit-transform: translate(0, 0);
+  -ms-transform: translate(0, 0);
+  transform: translate(0, 0);
+}
+
+@media -sass-debug-info {
+  filename {
+    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/styles\.scss;
+  }
+
+  line {
+<<<<<<< HEAD
+    font-family: \000031149;
+=======
+    font-family: \000031189;
+>>>>>>> search
+  }
+}
+
+.modal-dialog {
   border-radius: 0;
   max-height: 90%;
   top: 5%;
@@ -3537,7 +4220,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031155;
+=======
+    font-family: \000031195;
+>>>>>>> search
   }
 }
 
@@ -3551,7 +4238,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031158;
+=======
+    font-family: \000031198;
+>>>>>>> search
   }
 }
 
@@ -3565,6 +4256,7 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031161;
   }
 }
@@ -3586,6 +4278,14 @@ grundform-clean {
 
 .modal.fade.in {
   top: 5%;
+=======
+    font-family: \000031208;
+  }
+}
+
+.modal-backdrop.in {
+  opacity: 0.8;
+>>>>>>> search
 }
 
 @media -sass-debug-info {
@@ -3594,7 +4294,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031168;
+=======
+    font-family: \000031212;
+>>>>>>> search
   }
 }
 
@@ -3608,7 +4312,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031172;
+=======
+    font-family: \000031216;
+>>>>>>> search
   }
 }
 
@@ -3625,7 +4333,11 @@ grundform-clean {
   }
 
   line {
+<<<<<<< HEAD
     font-family: \000031180;
+=======
+    font-family: \000031224;
+>>>>>>> search
   }
 }
 
@@ -3647,7 +4359,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031195;
+=======
+      font-family: \000031239;
+>>>>>>> search
     }
 }
 
@@ -3666,7 +4382,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031248;
+=======
+      font-family: \000031292;
+>>>>>>> search
     }
 }
 
@@ -3682,7 +4402,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031255;
+=======
+      font-family: \000031299;
+>>>>>>> search
     }
 }
 
@@ -3700,7 +4424,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031263;
+=======
+      font-family: \000031307;
+>>>>>>> search
     }
 }
 
@@ -3731,7 +4459,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031268;
+=======
+      font-family: \000031312;
+>>>>>>> search
     }
 }
 
@@ -3749,7 +4481,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031274;
+=======
+      font-family: \000031318;
+>>>>>>> search
     }
 }
 
@@ -3765,7 +4501,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031278;
+=======
+      font-family: \000031322;
+>>>>>>> search
     }
 }
 
@@ -3783,7 +4523,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031282;
+=======
+      font-family: \000031326;
+>>>>>>> search
     }
 }
 
@@ -3799,7 +4543,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031285;
+=======
+      font-family: \000031329;
+>>>>>>> search
     }
 }
 
@@ -3815,7 +4563,11 @@ grundform-clean {
     }
 
     line {
+<<<<<<< HEAD
       font-family: \000031290;
+=======
+      font-family: \000031334;
+>>>>>>> search
     }
 }
 

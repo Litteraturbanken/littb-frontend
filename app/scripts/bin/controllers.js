@@ -78,21 +78,33 @@
     });
     s.titleChange = function() {
       var _ref;
-      return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.titlepath : void 0) || null);
+      return $location.search("titel", ((_ref = s.selected_title) != null ? _ref.lbworkid : void 0) || null);
     };
-    s.checkProof = function() {
+    s.checkProof = function(obj) {
+      if (obj.searchable !== 'true') {
+        return false;
+      }
       if (s.proofread === 'all') {
-        return null;
-      } else if (s.proofread === 'no') {
-        return 'false';
+        return true;
+      } else if (s.proofread === "no" && obj.proofread === "false") {
+        return true;
+      } else if (s.proofread === "yes" && obj.proofread === "true") {
+        return true;
       } else {
-        return 'true';
+        return false;
       }
     };
     s.authorChange = function() {
       $location.search("titel", null);
       return s.selected_title = "";
     };
+    util.setupHashComplex(s, [
+      {
+        scope_name: "num_hits",
+        key: "per_sida",
+        val_in: Number
+      }
+    ]);
     authors.then(function(_arg) {
       var authorList, authorsById, change;
       authorList = _arg[0], authorsById = _arg[1];
@@ -126,7 +138,9 @@
       ]);
     });
     s.searching = false;
-    s.num_hits = 20;
+    if (s.num_hits == null) {
+      s.num_hits = 20;
+    }
     s.current_page = 0;
     getMediatypes = function() {
       return {
@@ -148,18 +162,42 @@
       return s.search(s.query);
     };
     s.lastPage = function() {
-      s.current_page = s.total_pages;
+      s.current_page = s.total_pages - 1;
       return s.search(s.query);
     };
     s.save_search = function(startIndex, currentIndex, data) {
       c.log("save_search", startIndex, currentIndex, data);
+      c.log("searchData", searchData);
       return searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()]);
     };
-    s.getItems = function() {
-      return _.pluck("item", data.kwic);
+    s.getSetVal = function(sent, val) {
+      return _.str.trim(sent.structs[val], "|").split("|")[0];
+    };
+    s.selectLeft = function(sentence) {
+      if (!sentence.match) {
+        return;
+      }
+      return sentence.tokens.slice(0, sentence.match.start);
+    };
+    s.selectMatch = function(sentence) {
+      var from;
+      if (!sentence.match) {
+        return;
+      }
+      from = sentence.match.start;
+      return sentence.tokens.slice(from, sentence.match.end);
+    };
+    s.selectRight = function(sentence) {
+      var from, len;
+      if (!sentence.match) {
+        return;
+      }
+      from = sentence.match.end;
+      len = sentence.tokens.length;
+      return sentence.tokens.slice(from, len);
     };
     s.search = function(query) {
-      var mediatype, q;
+      var from, mediatype, q, to;
       q = query || s.query;
       if (q) {
         $location.search("fras", q);
@@ -167,13 +205,16 @@
       s.query = q;
       s.searching = true;
       mediatype = getMediatypes();
-      c.log("search mediatype", mediatype);
-      return backend.searchWorks(s.query, mediatype, s.current_page * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then(function(data) {
+      from = s.current_page * s.num_hits;
+      to = (from + s.num_hits) - 1;
+      return backend.searchWorksKorp(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then(function(data) {
         var row, _i, _len, _ref, _results;
-        s.data = data;
-        s.total_pages = Math.ceil(data.count / s.num_hits);
+        c.log("search data", data);
+        s.kwic = data.kwic || [];
+        s.hits = data.hits;
         s.searching = false;
-        _ref = data.kwic;
+        s.total_pages = Math.ceil(s.hits / s.num_hits);
+        _ref = data.kwic || [];
         _results = [];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           row = _ref[_i];
@@ -187,7 +228,13 @@
       {
         scope_name: "current_page",
         key: "traffsida",
-        val_in: Number
+        val_in: function(val) {
+          return Number(val) - 1;
+        },
+        val_out: function(val) {
+          return val + 1;
+        },
+        "default": 1
       }, {
         key: "open"
       }, {
@@ -865,13 +912,17 @@
           templateUrl: "so_modal_template.html",
           scope: s
         });
-        return modal.result.then(angular.noop, function() {
+        return modal.result.then(function() {
+          return s.closeModal();
+        }, function() {
           return s.closeModal();
         });
       }
     };
+    s.clickX = function() {
+      return modal.close();
+    };
     s.closeModal = function() {
-      modal.close();
       s.lex_article = null;
       return modal = null;
     };
@@ -926,7 +977,11 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
+<<<<<<< HEAD
     var author, loadPage, mediatype, onKeyDown, pagename, parseEditorPage, s, thisRoute, title, watches;
+=======
+    var author, loadPage, mediatype, onClickOutside, onKeyDown, pagename, resetHitMarkings, s, thisRoute, title, watches;
+>>>>>>> search
     s = $scope;
     s.isEditor = false;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
@@ -1065,10 +1120,16 @@
       ix = s.pagemap["page_" + page];
       return s.setPage(ix);
     };
-    s.mouseover = function() {
+    s.mouseover = function(event) {
       c.log("mouseover");
       return s.showPopup = true;
     };
+    onClickOutside = function() {
+      return s.$apply(function() {
+        return s.showPopup = false;
+      });
+    };
+    $document.on("click", onClickOutside);
     s.getTooltip = function(part) {
       if (part.navtitle !== part.showtitle) {
         return part.showtitle;
@@ -1094,6 +1155,7 @@
       authorData = _arg[0], authorById = _arg[1];
       return s.authorById = authorById;
     });
+    s.size = $location.search().size || 2;
     util.setupHashComplex(s, [
       {
         scope_name: "markee_from",
@@ -1118,6 +1180,29 @@
       }, {
         key: "parallel",
         scope_name: "isParallel"
+      }, {
+        key: "storlek",
+        scope_name: "size",
+        val_in: Number,
+        post_change: function() {
+          var i, item, pairs;
+          c.log("x post change");
+          return s.coors = (function() {
+            var _i, _len, _ref, _results;
+            _ref = s.x.split("|");
+            _results = [];
+            for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+              item = _ref[i];
+              pairs = _.pairs(_.pick(s, "x", "y", "height", "width"));
+              _results.push(_.object(_.map(pairs, function(_arg) {
+                var key, val;
+                key = _arg[0], val = _arg[1];
+                return [key, val.split("|")[i].split(",")[s.size]];
+              })));
+            }
+            return _results;
+          })();
+        }
       }
     ]);
     watches = [];
@@ -1192,12 +1277,17 @@
         if (s.sizes[s.size] === false) {
           s.sizes[s.size] = true;
         }
+        c.log("loadpage result", s.size);
         s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
         page.children().remove();
         s.etext_html = _.str.trim(page.text());
+<<<<<<< HEAD
         if (!s.isEditor) {
           backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype);
         }
+=======
+        backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype);
+>>>>>>> search
         s.loading = false;
         $rootScope.breadcrumb = [];
         s.appendCrumb([
@@ -1222,7 +1312,6 @@
         return s.loading = false;
       });
     };
-    s.size = 2;
     s.setSize = function(index) {
       s.sizes = _.map(s.sizes, function(item) {
         if (item) {
@@ -1242,6 +1331,7 @@
       var w, _i, _len, _results;
       c.log("destroy reader");
       $document.off("keydown", onKeyDown);
+      $document.off("click", onClickOutside);
       _results = [];
       for (_i = 0, _len = watches.length; _i < _len; _i++) {
         w = watches[_i];

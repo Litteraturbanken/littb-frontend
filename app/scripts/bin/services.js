@@ -658,6 +658,69 @@
         });
         return def.promise;
       },
+      searchWorksKorp: function(query, mediatype, from, to, selectedAuthor, selectedTitle) {
+        var def, regescape, tokenList, tokenize, wd, _i, _len, _ref;
+        c.log("searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle);
+        def = $q.defer();
+        tokenList = [];
+        regescape = function(s) {
+          return s.replace(/[\.|\?|\+|\*|\|\'|\"\(\)\^\$]/g, "\\$&");
+        };
+        tokenize = function(str) {
+          var extras, wd, wdlist;
+          wdlist = (function() {
+            var _i, _len, _ref, _results;
+            _ref = query.split(/\s+/);
+            _results = [];
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              wd = _ref[_i];
+              extras = [];
+              if (wd.match(/\.\.\./)) {
+                extras.push("...");
+                wd = wd.replace(/(\.\.\.)/, "");
+              }
+              wd = wd.replace(/([\.,;:])/g, " $1");
+              wd = wd.replace(/([-])/g, " $1 ");
+              wd = wd.replace(/([»])/g, "$1 ");
+              _results.push(wd.split(" "));
+            }
+            return _results;
+          })();
+          return _.compact([].concat(_.flatten(wdlist), extras));
+        };
+        _ref = tokenize(query);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          wd = _ref[_i];
+          tokenList.push("word = '" + (regescape(wd)) + "' %c");
+        }
+        if (selectedAuthor) {
+          tokenList[0] += " & _.text_authorid contains '" + selectedAuthor + "'";
+        }
+        if (selectedTitle) {
+          tokenList[0] += " & _.text_lbworkid = '" + selectedTitle + "'";
+        }
+        if (mediatype === "all") {
+          tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')";
+        } else {
+          tokenList[0] += " & _.text_mediatype = '" + mediatype + "'";
+        }
+        $http({
+          url: "http://spraakbanken.gu.se/ws/korp",
+          method: "GET",
+          params: {
+            command: "query",
+            cqp: "[" + (tokenList.join('] [')) + "]",
+            show: "wid,x,y,width,height",
+            show_struct: "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size",
+            corpus: "LBSOK",
+            start: from,
+            end: to
+          }
+        }).success(function(data) {
+          return def.resolve(data);
+        });
+        return def.promise;
+      },
       searchLexicon: function(str, useWildcard, searchId, strict) {
         var def, params, suffix, url;
         def = $q.defer();
@@ -774,61 +837,128 @@
     return def.promise;
   });
 
-  littb.service("searchData", function(backend, $q) {
-    var NUM_HITS;
+  littb.factory("searchData", function(backend, $q) {
+    var NUM_HITS, SearchData;
     NUM_HITS = 20;
-    this.data = [];
-    this.total_hits = null;
-    this.current = null;
-    this.parseUrls = function(row) {
-      var author, itm, titleid;
-      itm = row.item;
-      author = itm.workauthor || itm.authorid;
-      titleid = itm.titleidNew.split("/")[0];
-      return ("/forfattare/" + author + "/titlar/" + titleid) + ("/sida/" + itm.pagename + "/" + itm.mediatype + "?" + (backend.getHitParams(itm)));
-    };
-    this.save = function(startIndex, currentIndex, input, search_args) {
-      this.searchArgs = search_args;
-      this.data = new Array(input.count);
-      this.appendData(startIndex, input);
-      this.total_hits = input.count;
-      return this.current = currentIndex;
-    };
-    this.appendData = function(startIndex, data) {
-      var _ref;
-      return ([].splice.apply(this.data, [startIndex, data.kwic.length - startIndex + 1].concat(_ref = _.map(data.kwic, this.parseUrls))), _ref);
-    };
-    this.next = function() {
-      this.current++;
-      return this.search();
-    };
-    this.prev = function() {
-      this.current--;
-      return this.search();
-    };
-    this.search = function() {
-      var args, current_page, def,
-        _this = this;
-      def = $q.defer();
-      c.log("search", this.current);
-      if (this.data[this.current] != null) {
-        def.resolve(this.data[this.current]);
-      } else {
-        current_page = Math.floor(this.current / NUM_HITS);
-        args = [].concat(this.searchArgs, [current_page + 1, NUM_HITS]);
-        backend.searchWorks.apply(backend, args).then(function(data) {
-          _this.appendData(_this.current, data);
-          return def.resolve(_this.data[_this.current]);
-        });
+    SearchData = (function() {
+      function SearchData() {
+        this.data = [];
+        this.total_hits = null;
+        this.current = null;
       }
-      return def.promise;
-    };
-    return this.reset = function() {
-      this.current = null;
-      this.total_hits = null;
-      this.data = [];
-      return this.searchArgs = null;
-    };
+
+      SearchData.prototype.parseUrls = function(row, matches) {
+        var author, group, itm, makeParams, matchGroups, matchParams, mediatype, merged, titleid, _i, _len, _ref;
+        itm = row.structs;
+        mediatype = itm.text_mediatype;
+        matches = row.tokens.slice(row.match.start, row.match.end);
+        matchParams = [];
+        if (mediatype === "faksimil") {
+          matchGroups = _.groupBy(matches, "y");
+          makeParams = function(group) {
+            var factors, key, match, max, params, sizeVals, val, _i, _len;
+            params = _.pick(group[0], "x", "y", "height");
+            for (_i = 0, _len = group.length; _i < _len; _i++) {
+              match = group[_i];
+              if (!params.width) {
+                params.width = Number(match.width);
+              } else {
+                params.width += Number(match.width);
+              }
+            }
+            max = Math.max.apply(Math, itm.page_size.split("x"));
+            sizeVals = [625, 750, 1100, 1500, 2050];
+            factors = _.map(sizeVals, function(val) {
+              return val / max;
+            });
+            for (key in params) {
+              val = params[key];
+              params[key] = _(factors).map(function(fact) {
+                return Math.round(fact * val);
+              }).join(",");
+            }
+            return params;
+          };
+          _ref = _.values(matchGroups);
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            group = _ref[_i];
+            matchParams.push(makeParams(group));
+          }
+        } else {
+          matchParams.push({
+            traff: matches[0].wid,
+            traffslut: matches.slice(0)[0].wid
+          });
+        }
+        merged = _(matchParams).reduce(function(obj1, obj2) {
+          if (!obj1) {
+            return {};
+          }
+          return _.merge({}, obj1, obj2, function(a, b) {
+            if (!a) {
+              return b;
+            }
+            return a + "|" + b;
+          });
+        });
+        merged = _(merged).pairs().invoke("join", "=").join("&");
+        author = _.str.trim(itm.text_authorid, "|").split("|")[0];
+        titleid = itm.text_titlepath;
+        return ("/#!/forfattare/" + author + "/titlar/" + titleid) + ("/sida/" + itm.page_n + "/" + itm.text_mediatype + "?" + merged);
+      };
+
+      SearchData.prototype.save = function(startIndex, currentIndex, input, search_args) {
+        this.searchArgs = search_args;
+        this.data = new Array(input.count);
+        this.appendData(startIndex, input);
+        this.total_hits = input.count;
+        return this.current = currentIndex;
+      };
+
+      SearchData.prototype.appendData = function(startIndex, data) {
+        var _ref;
+        return ([].splice.apply(this.data, [startIndex, data.kwic.length - startIndex + 1].concat(_ref = _.map(data.kwic, this.parseUrls))), _ref);
+      };
+
+      SearchData.prototype.next = function() {
+        this.current++;
+        return this.search();
+      };
+
+      SearchData.prototype.prev = function() {
+        this.current--;
+        return this.search();
+      };
+
+      SearchData.prototype.search = function() {
+        var args, current_page, def,
+          _this = this;
+        def = $q.defer();
+        c.log("search", this.current);
+        if (this.data[this.current] != null) {
+          def.resolve(this.data[this.current]);
+        } else {
+          current_page = Math.floor(this.current / NUM_HITS);
+          args = [].concat(this.searchArgs, [current_page + 1, NUM_HITS]);
+          backend.searchWorks.apply(backend, args).then(function(data) {
+            _this.appendData(_this.current, data);
+            return def.resolve(_this.data[_this.current]);
+          });
+        }
+        return def.promise;
+      };
+
+      SearchData.prototype.reset = function() {
+        this.current = null;
+        this.total_hits = null;
+        this.data = [];
+        return this.searchArgs = null;
+      };
+
+      return SearchData;
+
+    })();
+    return new SearchData();
   });
 
 }).call(this);

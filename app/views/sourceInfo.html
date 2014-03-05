@@ -16,9 +16,7 @@
         <div class="cover"></div>
     </div>
     
-    <p class="clearfix" ng-bind-html-unsafe="data.sourcedesc"></p>
-
-    <!-- <p class="workintro" ng-bind-html-unsafe="data.workintro"></p> -->
+    <p class="clearfix" ng-bind-html="data.sourcedesc | trust"></p>
 
     
     <div class="mediatypes" ng-class="{bold : data.workintro}">
@@ -36,7 +34,7 @@
         <p>{{data.provenance.text}}</p>
     </div>
     
-    <div ng-bind-html-unsafe="data.licenseText | correctLink"></div>
+    <div ng-bind-html="data.licenseText | correctLink | trust"></div>
     
     <div ng-show="!mediatype || mediatype == 'etext'">
         <div ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet:</div>

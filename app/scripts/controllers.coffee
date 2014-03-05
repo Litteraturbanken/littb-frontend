@@ -69,21 +69,31 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
     s.titleChange = () ->
         # $location.search("titel", s.selected_title?.titlepath.split("/")[0] or null)
-        $location.search("titel", s.selected_title?.titlepath or null)
+        $location.search("titel", s.selected_title?.lbworkid or null)
 
 
-    s.checkProof = () ->
+    s.checkProof = (obj) ->
+        if obj.searchable != 'true' then return false
         if s.proofread == 'all'
-            return null
-        else if s.proofread == 'no'
-            return 'false'
+            return true
+        else if s.proofread == "no" and obj.proofread == "false"
+            return true
+        else if s.proofread == "yes" and obj.proofread == "true"
+            return true
         else
-            return 'true'
+            return false
 
 
     s.authorChange = () ->
         $location.search("titel", null)
         s.selected_title = ""
+
+
+    util.setupHashComplex s, [
+            scope_name : "num_hits"
+            key : "per_sida"
+            val_in : Number
+    ]
 
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
@@ -110,7 +120,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
 
     s.searching = false
-    s.num_hits = 20
+    s.num_hits ?= 20
     s.current_page = 0
 
     
@@ -133,17 +143,39 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         s.current_page = 0
         s.search(s.query)
     s.lastPage = () ->
-        s.current_page = s.total_pages
+        s.current_page = s.total_pages - 1
         s.search(s.query)
     
 
     s.save_search = (startIndex, currentIndex, data) ->
         c.log "save_search", startIndex, currentIndex, data
+
+        c.log "searchData", searchData
         searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()])
 
 
-    s.getItems = () ->
-        _.pluck "item", data.kwic
+    s.getSetVal = (sent, val) ->
+        _.str.trim( sent.structs[val], "|").split("|")[0]
+
+    # s.getItems = () ->
+    #     _.pluck "item", data.kwic
+
+
+    s.selectLeft = (sentence) ->
+        if not sentence.match then return
+        # c.log "left", sentence.tokens.slice 0, sentence.match.start
+        sentence.tokens.slice 0, sentence.match.start
+
+    s.selectMatch = (sentence) ->
+        if not sentence.match then return
+        from = sentence.match.start
+        sentence.tokens.slice from, sentence.match.end
+
+    s.selectRight = (sentence) ->
+        if not sentence.match then return
+        from = sentence.match.end
+        len = sentence.tokens.length
+        sentence.tokens.slice from, len
 
 
     s.search = (query) ->
@@ -154,15 +186,32 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         s.searching = true
         
         mediatype = getMediatypes()
-        c.log "search mediatype", mediatype
 
-        backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then (data) ->
-            s.data = data
-            s.total_pages = Math.ceil(data.count / s.num_hits)
+        # c.log "search mediatype", mediatype
+
+
+        from = s.current_page  * s.num_hits
+        to = (from + s.num_hits) - 1
+        backend.searchWorksKorp(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then (data) ->
+            c.log "search data", data
+
+            s.kwic = data.kwic or []
+            s.hits = data.hits
             s.searching = false
+            s.total_pages = Math.ceil(s.hits / s.num_hits)
 
-            for row in data.kwic
+
+            for row in (data.kwic or [])
                 row.href = searchData.parseUrls row
+
+
+        # backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then (data) ->
+        #     s.data = data
+        #     s.total_pages = Math.ceil(data.count / s.num_hits)
+        #     s.searching = false
+        #     c.log "searchworks", searchData, searchData.parseUrls
+        #     for row in data.kwic
+        #         row.href = searchData.parseUrls row
 
 
 
@@ -174,7 +223,11 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         [
             scope_name : "current_page"
             key : "traffsida"
-            val_in : Number
+            val_in : (val) ->
+                Number(val) - 1
+            val_out : (val) ->
+                val + 1
+            default : 1
         ,   
             key : "open"
         ,   
@@ -781,13 +834,21 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
                 templateUrl : "so_modal_template.html"
                 scope : s
 
-            modal.result.then angular.noop, () ->
+            modal.result.then () ->
                 s.closeModal()
+            , () ->
+                s.closeModal()
+
+
+    s.clickX = () ->
+        modal.close()
+        # s.lex_article = null
+            
 
 
 
     s.closeModal = () ->
-        modal.close()
+        # modal.close()
         s.lex_article = null
         modal = null
 
@@ -959,10 +1020,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ix = s.pagemap["page_" + page]
         s.setPage ix
 
-    s.mouseover = () ->
+    s.mouseover = (event) ->
         c.log "mouseover"
         s.showPopup = true
 
+
+    onClickOutside = () ->
+        s.$apply () ->
+            s.showPopup = false
+
+    $document.on "click", onClickOutside
 
 
     s.getTooltip = (part) ->
@@ -983,6 +1050,22 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.authorById = authorById
 
 
+    # savedVal = []
+    # s.getCoors = () ->
+    #     # if savedVal.length then return savedVal
+    #     unless s.x then return []
+    #     for item, i in s.x.split("|")
+    #         pairs = _.pairs _.pick s, "x", "y", "height", "width"
+    #         _.object _.map pairs, ([key, val]) ->
+    #             [key, val.split("|")[i].split(",")[s.size]]
+    #     c.log("getCoors", objs)
+    #     savedVal[..] = objs
+    #     # if objs.length 
+    #         # savedVal = objs
+    #     savedVal
+
+
+    s.size = $location.search().size or 2
 
     util.setupHashComplex s, [
             scope_name : "markee_from"
@@ -995,6 +1078,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "x"
             replace : false
+            # post_change : () ->
+                
         ,
             key : "y"
             replace : false
@@ -1007,6 +1092,18 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "parallel"
             scope_name : "isParallel"
+        ,
+            key: "storlek"
+            scope_name : "size"
+            val_in : Number
+            post_change: () ->
+                c.log "x post change"
+                s.coors = for item, i in s.x.split("|")
+                    pairs = _.pairs _.pick s, "x", "y", "height", "width"
+                    # c.log "pairs", pairs
+                    _.object _.map pairs, ([key, val]) ->
+                        [key, val.split("|")[i].split(",")[s.size]]
+
         # ,   
         #     key : "so"
         #     expr : "lex_article.baseform"
@@ -1107,6 +1204,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             if s.sizes[s.size] is false
                 s.sizes[s.size] = true
 
+            c.log "loadpage result", s.size
 
             s.url = $("faksimil-url[size=#{s.size + 1}]", page).last().text()
             # else
@@ -1114,6 +1212,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.etext_html = _.str.trim page.text()
             unless s.isEditor
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
+
             s.loading = false
             $rootScope.breadcrumb = []
             s.appendCrumb [
@@ -1139,7 +1238,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
 
-    s.size = 2
     
     s.setSize = (index) ->
         s.sizes = _.map s.sizes, (item) -> if item then false else item
@@ -1147,6 +1245,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.size = index
         loadPage(s.getPage())
 
+    # s.size = s.setSize($location.search().size or 2)
 
     watches.push s.$watch "getPage()", debounce(loadPage, 200, {leading : false})
     # watches.push s.$watch "getPage()", loadPage
@@ -1157,6 +1256,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.$on "$destroy", () ->
         c.log "destroy reader"
         $document.off "keydown", onKeyDown
+        $document.off "click", onClickOutside
         for w in watches
             w()
 

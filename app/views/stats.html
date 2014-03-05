@@ -15,7 +15,7 @@
     
     <div>De mest lästa verken är:</div>
     <ul>
-        <li ng-repeat="title in data.titleList" ng-bind-html-unsafe="title">
+        <li ng-repeat="title in data.titleList" ng-bind-html="title | trust">
     
         </li>
     </ul>
