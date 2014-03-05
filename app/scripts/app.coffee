@@ -219,8 +219,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when "/id/:id",
                 template : """
                 <div ng-class="{searching:!data}">
-                    <input ng-model="id" placeholder="lbid" autofocus ng-change="title = null"> 
-                    <input ng-model="title" placeholder="titel" ng-change="id = null">
+                    <input ng-model="id" placeholder="lbid" autofocus ng-change="title = ''"> 
+                    <input ng-model="title" placeholder="titel" ng-change="id = ''">
                     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
                     <table class="table-striped">
                     <tr ng-repeat="row in data | filter:{'itemAttrs.lbworkid' : id, 'itemAttrs.showtitle' : title}">
