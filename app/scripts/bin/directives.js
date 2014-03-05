@@ -134,31 +134,6 @@
       link: function(scope, elm, attrs) {
         var EXPAND_SIZE, Y_OFFSET, coors, s;
         s = scope;
-<<<<<<< HEAD
-        return s.$watch("left + top + width + height + size", function() {
-          var coors;
-          coors = _.pick(scope, "top", "left", "width", "height");
-          c.log("coors", coors);
-          coors = _.object(_.map(coors, function(val, key) {
-            return [key, ((val != null ? val.split(",")[s.size] : void 0) || 0) + "px"];
-          }));
-          return elm.css(coors);
-        });
-      }
-    };
-  });
-
-  littb.directive('clickOutside', function($document) {
-    return {
-      restrict: 'A',
-      link: function(scope, elem, attr, ctrl) {
-        elem.bind('click', function(e) {
-          return e.stopPropagation();
-        });
-        return $document.on('click', function() {
-          return scope.$apply(attr.clickOutside);
-        });
-=======
         EXPAND_SIZE = 4;
         Y_OFFSET = -2;
         coors = _.pick(scope, "top", "left", "width", "height");
@@ -177,7 +152,6 @@
           return [key, expand(val) + "px"];
         }));
         return elm.css(coors);
->>>>>>> search
       }
     };
   });
@@ -344,19 +318,6 @@
 
   littb.directive('kwicWord', function() {
     return {
-<<<<<<< HEAD
-      link: function($scope, elem, attrs) {
-        return elem.on("click", "a[href]", function(event) {
-          var t;
-          c.log("event.target", event.target);
-          t = $(event.target);
-          if (t.attr("target") === "_blank") {
-            return window.open(t.attr("href"), "_blank");
-          } else if (t.attr("href").slice(0, 7) === "mailto:") {
-            return location.href = t.attr("href");
-          } else if (_.str.endsWith(t.attr("href"), ".epub")) {
-            return location.href = t.attr("href");
-=======
       replace: true,
       template: "<span class=\"word\" ng-class=\"getClassObj(wd)\"\nbo-text=\"wd.word + ' '\" ></span>",
       link: function(scope, element) {
@@ -371,7 +332,6 @@
           for (_i = 0, _len = _ref.length; _i < _len; _i++) {
             struct = _ref[_i];
             output["struct_" + struct] = true;
->>>>>>> search
           }
           _ref1 = wd._open || [];
           for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {

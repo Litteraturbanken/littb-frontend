@@ -487,76 +487,9 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    searchWorks : (query, mediatype, resultitem, resultlength, selectedAuthor, selectedTitle) ->
-        def = $q.defer()
-        url = "/query/lb-search.xql"
-        domain = "<item type='all-titles' mediatype='#{mediatype}'></item>"
-        if selectedAuthor
-            domain = "<item type='author' mediatype='#{mediatype}'>#{selectedAuthor}</item>"
-        if selectedTitle
-            domain = "<item type='titlepath' mediatype='#{mediatype}'>#{selectedTitle}</item>"
 
-        http(
-            method : "POST"
-            url : url
-            headers : {"Content-Type" : "text/xml; charset=utf-8"}
-            params :
-                action : "search"
-            # <item type="titlepath" mediatype="all">Intradestal1786</item>
-
-            data : """
-                    <search>
-                        <string-filter>
-                            <item type="string">#{query}|</item>
-                        </string-filter>
-                    <domain-filter>
-                        #{domain}
-                    </domain-filter>
-                    <ne-filter>
-                        <item type="NUL"></item>
-                    </ne-filter>
-                    </search>
-                """
-        ).success((data) ->
-            c.log "success", $("result", data).attr("ref")
-            ref = $("result", data).attr("ref")
-
-
-            http(
-
-                url : url
-                params :
-                    action : "get-result-set"
-                    searchref : ref
-                    resultlength : resultlength
-                    resultitem : resultitem + 1
-
-            ).success (resultset) ->
-                c.log "get-result-set success", resultset, $("result", resultset).children()
-
-                output = {kwic : [], count : parseInt($("result", resultset).attr("count"))}
-
-                for elem in $("result", resultset).children()
-                    [left, kw, right, work] = _.map $(elem).children(), $
-                    # c.log "elem", work.get(0), work.get(0).attributes
-                    output.kwic.push
-                        left : left.text()
-                        kw : kw.text()
-                        right : right.text()
-                        item : objFromAttrs work.get(0)
-
-                def.resolve output
-
-
-
-        ).error (data) ->
-            c.log "error", arguments
-            def.reject()
-        return def.promise
-
-    searchWorksKorp : (query, mediatype, from, to, selectedAuthor, selectedTitle) ->
+    searchWorks : (query, mediatype, from, to, selectedAuthor, selectedTitle) ->
         c.log "searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle
-        # http://spraakbanken.gu.se/ws/korp?command=query&corpus=LBSOK&start=0&end=20&cqp=%5Bword=%22katastrof%22+%26+_.text_mediatype=%22faksimil%22+%26+_.text_authorid+contains+%22RunebergJL%22%5D&defaultwithin=sentence&defaultcontext=sentence&show_struct=page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date&show=wid,x,y,width,height
         def = $q.defer()
 
         tokenList = []
@@ -608,6 +541,7 @@ littb.factory 'backend', ($http, $q, util) ->
         $http(
             url : "http://spraakbanken.gu.se/ws/korp"
             method : "GET"
+            cache: true
             params : 
                 command : "query"
                 cqp : "[#{tokenList.join('] [')}]"
@@ -616,8 +550,11 @@ littb.factory 'backend', ($http, $q, util) ->
                 corpus : "LBSOK"
                 start: from
                 end : to
-        ).success (data) ->
+        ).success( (data) ->
             def.resolve data
+        ).error (data) ->
+            c.log "error", arguments
+            def.reject()
 
         return def.promise
 
@@ -774,7 +711,7 @@ littb.factory "searchData", (backend, $q) ->
             else 
                 matchParams.push
                     traff : matches[0].wid
-                    traffslut : matches[..-1][0].wid
+                    traffslut : _.last(matches).wid
                 
 
             merged = _(matchParams).reduce( (obj1, obj2) -> 

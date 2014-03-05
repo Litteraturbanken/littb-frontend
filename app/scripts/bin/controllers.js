@@ -207,7 +207,7 @@
       mediatype = getMediatypes();
       from = s.current_page * s.num_hits;
       to = (from + s.num_hits) - 1;
-      return backend.searchWorksKorp(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then(function(data) {
+      return backend.searchWorks(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then(function(data) {
         var row, _i, _len, _ref, _results;
         c.log("search data", data);
         s.kwic = data.kwic || [];
@@ -977,11 +977,7 @@
   });
 
   littb.controller("readingCtrl", function($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) {
-<<<<<<< HEAD
-    var author, loadPage, mediatype, onKeyDown, pagename, parseEditorPage, s, thisRoute, title, watches;
-=======
-    var author, loadPage, mediatype, onClickOutside, onKeyDown, pagename, resetHitMarkings, s, thisRoute, title, watches;
->>>>>>> search
+    var author, loadPage, mediatype, onClickOutside, onKeyDown, pagename, parseEditorPage, s, thisRoute, title, watches;
     s = $scope;
     s.isEditor = false;
     title = $routeParams.title, author = $routeParams.author, mediatype = $routeParams.mediatype, pagename = $routeParams.pagename;
@@ -1036,7 +1032,7 @@
         switch (event.which) {
           case 39:
             if (navigator.userAgent.indexOf("Firefox") !== -1 || $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") === $($window).width()) {
-              return $location.path(_.str.ltrim(s.getNextPageUrl(), "/#!"));
+              return s.nextPage();
             }
             break;
           case 37:
@@ -1186,7 +1182,9 @@
         val_in: Number,
         post_change: function() {
           var i, item, pairs;
-          c.log("x post change");
+          if (!s.x) {
+            return;
+          }
           return s.coors = (function() {
             var _i, _len, _ref, _results;
             _ref = s.x.split("|");
@@ -1281,13 +1279,9 @@
         s.url = $("faksimil-url[size=" + (s.size + 1) + "]", page).last().text();
         page.children().remove();
         s.etext_html = _.str.trim(page.text());
-<<<<<<< HEAD
         if (!s.isEditor) {
           backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype);
         }
-=======
-        backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype);
->>>>>>> search
         s.loading = false;
         $rootScope.breadcrumb = [];
         s.appendCrumb([

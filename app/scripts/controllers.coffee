@@ -157,10 +157,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
     s.getSetVal = (sent, val) ->
         _.str.trim( sent.structs[val], "|").split("|")[0]
 
-    # s.getItems = () ->
-    #     _.pluck "item", data.kwic
-
-
     s.selectLeft = (sentence) ->
         if not sentence.match then return
         # c.log "left", sentence.tokens.slice 0, sentence.match.start
@@ -192,7 +188,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
-        backend.searchWorksKorp(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then (data) ->
+        backend.searchWorks(s.query, mediatype, from, to, $location.search().forfattare, $location.search().titel).then (data) ->
             c.log "search data", data
 
             s.kwic = data.kwic or []
@@ -203,17 +199,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
             for row in (data.kwic or [])
                 row.href = searchData.parseUrls row
-
-
-        # backend.searchWorks(s.query, mediatype, s.current_page  * s.num_hits, s.num_hits, $location.search().forfattare, $location.search().titel).then (data) ->
-        #     s.data = data
-        #     s.total_pages = Math.ceil(data.count / s.num_hits)
-        #     s.searching = false
-        #     c.log "searchworks", searchData, searchData.parseUrls
-        #     for row in data.kwic
-        #         row.href = searchData.parseUrls row
-
-
 
 
 
@@ -955,8 +940,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             switch event.which
                 when 39 
                     if navigator.userAgent.indexOf("Firefox") != -1 or $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") == $($window).width()
-                        $location.path _.str.ltrim s.getNextPageUrl(), "/#!"
-                        # s.nextPage()
+                        s.nextPage()
                 when 37 
                     if $rootElement.prop("scrollLeft") == 0
                         s.prevPage()
@@ -1097,7 +1081,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             scope_name : "size"
             val_in : Number
             post_change: () ->
-                c.log "x post change"
+                unless s.x then return
                 s.coors = for item, i in s.x.split("|")
                     pairs = _.pairs _.pick s, "x", "y", "height", "width"
                     # c.log "pairs", pairs
