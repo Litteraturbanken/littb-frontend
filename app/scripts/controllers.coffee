@@ -720,7 +720,7 @@ littb.filter "correctLink", () ->
 littb.controller "idCtrl", ($scope, backend, $routeParams) ->
     s = $scope
     _.extend s, $routeParams
-    s.id = s.id.toLowerCase()
+    s.id = s.id?.toLowerCase()
 
     unless _.str.startsWith s.id, "lb"
         s.title = s.id
@@ -730,6 +730,12 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
 
     backend.getTitles().then (titleArray) ->
         s.data = titleArray
+
+    s.rowFilter = (row) ->
+        unless s.title then return true
+        # (s.title in row.itemAttrs.showtitle.toLowerCase()) or 
+        c.log "rowfilter", row, row.itemAttrs.titlepath
+        (s.title in row.itemAttrs.titlepath.toLowerCase())
 
 
 littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document) ->
