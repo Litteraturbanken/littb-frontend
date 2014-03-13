@@ -718,6 +718,11 @@ $partnav-width : 170px;
 
     }
     #toolkit {
+        .editor .pager_ctrls .disabled i {
+            &:before {
+                color : $primarycolor;
+            }
+        }
         & > * {
             display : block;
         }
@@ -873,6 +878,7 @@ $partnav-width : 170px;
                     }
                 }
             }
+            
         }
         .size_picker {
             margin-top : 1em;

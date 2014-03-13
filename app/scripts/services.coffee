@@ -358,7 +358,7 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
         http(
             url : url
-            cache : localStorageCache
+            # cache : localStorageCache
             params : _.extend {}, params, passedParams
         ).success( (xml) ->
             info = parseWorkInfo("LBwork", xml)

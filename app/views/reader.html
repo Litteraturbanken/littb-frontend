@@ -1,7 +1,7 @@
 <meta-desc>
     {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
-<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading}">
+<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor}">
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
@@ -14,115 +14,115 @@
     
     
     <div toolkit>
-    
-        <hr>
-        <span ng-repeat="author in getValidAuthors()">
-            <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
-            <span ng-if="author.type == 'editor'">(red.)</span>
-            <span ng-if="!$last">och</span>
-        </span>
+        <div ng-class="{editor: isEditor}">
+            <hr>
+            <span ng-repeat="author in getValidAuthors()">
+                <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
+                <span ng-if="author.type == 'editor'">(red.)</span>
+                <span ng-if="!$last">och</span>
+            </span>
+            
+            <a class="title" 
+                href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info">
+                {{workinfo.showtitle}}
+             </a>
         
-        <a class="title" 
-            href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info">
-            {{workinfo.showtitle}}
-         </a>
-    
-        <div id="search_nav" ng-show="searchData.total_hits">
-            <div class="box">
-                <div class="text">
-                    <div>
-                        Sökträff
+            <div id="search_nav" ng-show="searchData.total_hits">
+                <div class="box">
+                    <div class="text">
+                        <div>
+                            Sökträff
+                        </div>
+                        <div>
+                            <span>{{searchData.current + 1}}</span> av <span>{{searchData.total_hits}}</span>
+                        </div>
                     </div>
-                    <div>
-                        <span>{{searchData.current + 1}}</span> av <span>{{searchData.total_hits}}</span>
-                    </div>
-                </div>
-                <div class="ctrls">
-                    <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
-                    <div style="clear:both;"></div>
-                    <div class="arrows">
-                        <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
-                        <img ng-click="nextHit()" class="" src="/bilder/h_pil.png">
+                    <div class="ctrls">
+                        <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
+                        <div style="clear:both;"></div>
+                        <div class="arrows">
+                            <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
+                            <img ng-click="nextHit()" class="" src="/bilder/h_pil.png">
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    
-        <div style="height: 1em;"></div>
-    
-        <div><a href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info/{{mediatype}}">::: Om boken</a></div>
-    
-        <hr>
-    
-    
-        <div class="pager_ctrls" ng-click="resetHitMarkings()">
-            <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}">
-                <!-- <i class="fa fa-backward"></i> -->
-                <i class="fa fa-fast-backward"></i>
-            </a>
-            <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
-                <i class="fa fa-backward"></i>
-                <!-- <span class="triangle left"></span> -->
-            </a>
-            <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
-                <i class="fa fa-forward"></i>
-                <!-- <span class="triangle right"></span> -->
-            </a>
-            <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}">
-                <!-- <i class="fa fa-forward"></i> -->
-                <i class="fa fa-fast-forward"></i>
-            </a>
-        </div>
-        <form ng-submit="pageToLoad = displaynum">
-            <span ng-if="isEditor">Index</span> 
-            <span ng-if="!isEditor">Sida</span> 
-            <input class="pageinput" ng-model="displaynum">
-        </form>
-    
-        <div ng-if="!isEditor">
-            <ul class="work_parts">
-                <li><a ng-click="gotopage(startpage)">[Start]</a></li>
-                <li ng-repeat="part in workinfo.parts | limitTo:5">
-                    <a  tooltip="{{getTooltip(part)}}" tooltip-append-to-body
-                        ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
-                </li>
-            </ul>
-        </div>
-    
-        <div class="partnav" ng-show="workinfo.parts.length > 5">
-            <div>
-                <i ng-mouseover="mouseover()" 
-                    ng-touch="mouseover()"
-                    class="arrow_icon fa fa-play"></i>
+        
+            <div style="height: 1em;"></div>
+        
+            <div><a href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info/{{mediatype}}">::: Om boken</a></div>
+        
+            <hr>
+        
+        
+            <div class="pager_ctrls" ng-click="resetHitMarkings()">
+                <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}">
+                    <!-- <i class="fa fa-backward"></i> -->
+                    <i class="fa fa-fast-backward"></i>
+                </a>
+                <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
+                    <i class="fa fa-backward"></i>
+                    <!-- <span class="triangle left"></span> -->
+                </a>
+                <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+                    <i class="fa fa-forward"></i>
+                    <!-- <span class="triangle right"></span> -->
+                </a>
+                <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}">
+                    <!-- <i class="fa fa-forward"></i> -->
+                    <i class="fa fa-fast-forward"></i>
+                </a>
+            </div>
+            <form ng-submit="pageToLoad = displaynum">
+                <span ng-if="isEditor">Index</span> 
+                <span ng-if="!isEditor">Sida</span> 
+                <input class="pageinput" ng-model="displaynum">
+            </form>
+        
+            <div ng-if="!isEditor">
+                <ul class="work_parts">
+                    <li><a ng-click="gotopage(startpage)">[Start]</a></li>
+                    <li ng-repeat="part in workinfo.parts | limitTo:5">
+                        <a  tooltip="{{getTooltip(part)}}" tooltip-append-to-body
+                            ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
+                    </li>
+                </ul>
+            </div>
+        
+            <div class="partnav" ng-show="workinfo.parts.length > 5">
+                <div>
+                    <i ng-mouseover="mouseover()" 
+                        ng-touch="mouseover()"
+                        class="arrow_icon fa fa-play"></i>
+                </div>
+        
+                <div ng-show="showPopup" class="triangle"></div>
+        
+                <ul class="part_menu" ng-show="showPopup" >
+                    <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
+                    <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
+                        
+                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
+                    </li>
+                </ul>
+        
+            </div>
+        
+            <div class="size_picker" ng-show="mediatype == 'faksimil'">
+                <div ng-class="{selected : size, hidden : !isDefined(size)}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
+                
             </div>
     
-            <div ng-show="showPopup" class="triangle"></div>
-    
-            <ul class="part_menu" ng-show="showPopup" >
-                <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
-                <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
-                    
-                    <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
-                </li>
-            </ul>
-    
-        </div>
-    
-        <div class="size_picker" ng-show="mediatype == 'faksimil'">
-            <div ng-class="{selected : size, hidden : !isDefined(size)}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
+            <div ng-if="supportsParallel()"><a ng-click="toggleParallel()">
+                <span ng-if="!isParallel">
+                    Visa <span ng-show="mediatype == 'etext'">faksimil</span> 
+                    <span ng-show="mediatype == 'faksimil'">etext</span> 
+                    parallellt</span>
+                <span ng-if="isParallel">Stäng parallelvisningen</span>
+            </a></div>
+        
             
         </div>
-
-        <div ng-if="supportsParallel()"><a ng-click="toggleParallel()">
-            <span ng-if="!isParallel">
-                Visa <span ng-show="mediatype == 'etext'">faksimil</span> 
-                <span ng-show="mediatype == 'faksimil'">etext</span> 
-                parallellt</span>
-            <span ng-if="isParallel">Stäng parallelvisningen</span>
-        </a></div>
-    
-        
-    
     </div>
     <!-- -->
 </div>

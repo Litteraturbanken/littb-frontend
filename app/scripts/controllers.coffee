@@ -991,12 +991,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     
     s.nextPage = (event) ->
         event?.preventDefault()
-        unless s.endpage then return
         if s.isEditor
             # s.setPage(s.pageix + 1)
             s.pageix = s.pageix + 1
             s.pageToLoad = s.pageix
             return
+        unless s.endpage then return
         if s.pageix == s.pagemap["page_" + s.endpage] then return
         newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
@@ -1023,7 +1023,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.pageix <= startix
 
     s.getFirstPageUrl = () ->
-        "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.startpage}/#{mediatype}"
+        if s.isEditor
+            "/#!/editor/#{$routeParams.lbid}/ix/0/#{$routeParams.mediatype}"
+        else
+            "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.startpage}/#{mediatype}"
     
     s.getPrevPageUrl = () ->
         unless s.pagemap then return
@@ -1042,7 +1045,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     
     s.getLastPageUrl = () ->
-        "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.endpage}/#{mediatype}"
+        if s.isEditor
+            "/#!/editor/#{$routeParams.lbid}/ix/#{s.endIx}/#{$routeParams.mediatype}"
+        else
+            "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.endpage}/#{mediatype}"
 
 
     s.gotopage = (page) ->
@@ -1171,13 +1177,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.isDefined = angular.isDefined
 
-    parseEditorPage = (data) ->
-        c.log "parseEditorPage", data
-        # for page in $("sida", data)
-        #     $(page).attr("sidn")
-        #     $(page).attr("sidn")
-
-        s.loading = false
 
     loadPage = (val) ->
         # take care of state hiccup
@@ -1197,7 +1196,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 mediatype : mediatype
                 pageix : val
             pageQuery = "page[ix='#{val}']"
-            overWriteIx = () ->
+            setPages = (page) ->
+                s.pageix = Number val
+
         else
             pageQuery = "page[name='#{val}']"
             params = 
@@ -1205,7 +1206,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 titlepath : title
                 mediatype : mediatype
 
-            overWriteIx = (val) ->
+            setPages = (page) ->
+                if not page.length
+                    page = $("page:last", data).clone()
+                    s.pagename = page.attr("name")
+                else
+                    s.pagename = val
                 s.pageix = s.pagemap["page_" + val]
 
             if val then params["pagename"] = val
@@ -1221,15 +1227,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
             page = $(pageQuery, data).last().clone()
-            if not page.length
-                page = $("page:last", data).clone()
-                s.pagename = page.attr("name")
-            else
-                s.pagename = val
+
 
             s.displaynum = s.pagename
 
-            overWriteIx(s.pagename)
+            setPages(page)
+            ixes = _.map $("sida", data), (item) ->
+                Number $(item).attr("ix")
+
+            s.endIx = Math.max ixes...
 
             # if mediatype == 'faksimil' or isParallel
             s.sizes = new Array(5)
