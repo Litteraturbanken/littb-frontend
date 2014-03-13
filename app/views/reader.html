@@ -19,13 +19,16 @@
             <span ng-repeat="author in getValidAuthors()">
                 <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
                 <span ng-if="author.type == 'editor'">(red.)</span>
+                <span ng-if="author.type == 'translator'">(övers.)</span>
                 <span ng-if="!$last">och</span>
             </span>
             
-            <a class="title" 
-                href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info">
-                {{workinfo.showtitle}}
-             </a>
+            <div>
+                <a class="title" 
+                    href="#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info">
+                    {{workinfo.showtitle}}
+                 </a>
+            </div>
         
             <div id="search_nav" ng-show="searchData.total_hits">
                 <div class="box">
@@ -50,7 +53,7 @@
         
             <div style="height: 1em;"></div>
         
-            <div><a href="#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm}}/info/{{mediatype}}">::: Om boken</a></div>
+            <div><a href="#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info/{{mediatype}}">::: Om boken</a></div>
         
             <hr>
         
@@ -82,9 +85,9 @@
             <div ng-if="!isEditor">
                 <ul class="work_parts">
                     <li><a ng-click="gotopage(startpage)">[Start]</a></li>
-                    <li ng-repeat="part in workinfo.parts | limitTo:5">
-                        <a  tooltip="{{getTooltip(part)}}" tooltip-append-to-body
-                            ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
+                    <li ng-repeat="part in workinfo.parts | limitTo:5" 
+                        tooltip="{{getTooltip(part)}}" tooltip-append-to-body>
+                        <a ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
                     </li>
                 </ul>
             </div>

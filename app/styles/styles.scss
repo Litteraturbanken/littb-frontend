@@ -576,9 +576,15 @@ body > .header {
                 }
             }
             .also_include {
-                input {
-                    margin-left : 1em;
+                label {
+                    margin-right : 1em;
                 }    
+                #prefix {
+                    margin-left : 1em;
+                }
+                #infix {
+                    margin-left : 1em;
+                }
             }
         }
         table {

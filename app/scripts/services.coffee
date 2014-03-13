@@ -272,7 +272,7 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         url = "/query/lb-authors.xql?action=get-authors"
         http(
             url : url
-            cache: localStorageCache
+            # cache: localStorageCache
         ).success (xml) ->
             attrArray = for item in $("item", xml)
                 objFromAttrs item
@@ -358,6 +358,7 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
         http(
             url : url
+            cache : true
             # cache : localStorageCache
             params : _.extend {}, params, passedParams
         ).success( (xml) ->
@@ -491,7 +492,7 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         return def.promise
 
 
-    searchWorks : (query, mediatype, from, to, selectedAuthor, selectedTitle, prefix, suffix) ->
+    searchWorks : (query, mediatype, from, to, selectedAuthor, selectedTitle, prefix, suffix, infix) ->
         c.log "searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle
         def = $q.defer()
 
@@ -535,6 +536,8 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
                 or_block.push "word = '#{regescape wd}.*' %c"
             if suffix
                 or_block.push "word = '.*#{regescape wd}' %c"
+            if infix and not (prefix or suffix)
+                or_block.push "word = '.*#{regescape wd}.*' %c"
             if not prefix and not suffix
                 or_block.push "word = '#{regescape wd}' %c"
 
@@ -554,7 +557,8 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         $http(
             url : "http://spraakbanken.gu.se/ws/korp"
             method : "GET"
-            cache: localStorageCache
+            # cache: localStorageCache
+            cache: true
             params : 
                 command : "query"
                 cqp : "[#{tokenList.join('] [')}]"

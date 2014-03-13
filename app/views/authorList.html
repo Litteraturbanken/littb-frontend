@@ -6,12 +6,12 @@
 <table class="contenttable">
     <thead>
         <th> <div sort-triangles val="nameforindex" tuple="sorttuple"></div> </th>
-        <th> <div sort-triangles val="birth" tuple="sorttuple"></div> </th>
+        <th> <div sort-triangles val="sortyear" tuple="sorttuple"></div> </th>
         <th></th>
     </thead>
     <tbody><tr ng-repeat="row in rowByLetter[selectedLetter] || rows | filter:authorFilter | orderBy:sorttuple[0]:sorttuple[1]">
             <td><a href="#!/forfattare/{{row.pseudonymfor || row.authorid}}" >{{getAuthor(row)}}</a><span class="dots"></span></td>
-            <td>{{row.datestring}}</td>
+            <td>{{row | authorYear}}</td>
             <td><em ng-show="row.pseudonymfor">
                 ::: se <a href="#!/forfattare/{{row.pseudonymfor}}">{{authorIdGroup[row.pseudonymfor].nameforindex}}</a>
                 </em>

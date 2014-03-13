@@ -9,7 +9,7 @@
         </div>
         <div ng-switch-when="titlar">
             <h2 ng-show="authorInfo">
-                {{authorInfo.fullName}}<span ng-if="Number(authorInfo.birth)"> ({{authorInfo.birth}} - {{authorInfo.death}})</span>: verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
+                {{authorInfo.fullName}}<span ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span>: verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
             </h2>
             
             <div ng-repeat="worklist in [groupedWorks, groupedTitles] track by $index">
@@ -43,7 +43,10 @@
 
 <div toolkit>
     <hr>
-    <div class="author">{{authorInfo.fullName}}</div>
+    <div class="author">
+        {{authorInfo.fullName}}
+        <div>{{authorInfo | authorYear}}</div>
+    </div>
     
     <ul class="topnav" role="navigation">
         <li ng-if="groupedWorks.length > 1">
@@ -57,7 +60,7 @@
         </li>
     </ul>
     <ul class="subnav" role="navigation">
-        <li><a ng-href="#!/forfattare/{{author}}">::: Introduktion</a></li>
+        <li><a ng-href="#!/forfattare/{{author}}" ng-if="authorInfo.intro">::: Introduktion</a></li>
         <li ng-if="authorInfo.presentation"><a ng-href="#!/forfattare/{{author}}/presentation">::: Presentation</a></li>
         <li ng-if="authorInfo.bibliografi"><a ng-href="#!/forfattare/{{author}}/bibliografi">::: Bibliografi</a></li>
         <li ng-if="authorInfo.semer"><a ng-href="#!/forfattare/{{author}}/semer">::: Se mer</a></li>

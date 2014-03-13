@@ -2,6 +2,23 @@
 
 window.c = console ? log : _.noop
 littb = angular.module('littbApp')
+
+
+littb.filter "authorYear", () ->
+    (obj) ->
+        unless obj then return
+        isFalsy = (val) ->
+            not val or (val == "0000")
+
+        if (isFalsy obj.birth) and (isFalsy obj.death) then return ""
+        if isFalsy obj.death then return "f. #{obj.birth}"
+        if isFalsy obj.birth then return "d. #{obj.death}"
+        return "#{obj.birth} – #{obj.death}"
+
+
+
+
+
 littb.controller "startCtrl", ($scope, $location) ->
 
     $scope.gotoTitle = (query) ->
@@ -98,6 +115,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
             key: "prefix"
         ,   
             key : "suffix"
+        ,   
+            key : "infix"
     ]
 
     authors.then ([authorList, authorsById]) ->
@@ -209,7 +228,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
             $location.search().forfattare,
             $location.search().titel,
             s.prefix,
-            s.suffix).then (data) ->
+            s.suffix,
+            s.infix).then (data) ->
                 c.log "search data", data
                 s.data = data
                 s.kwic = data.kwic or []
@@ -406,6 +426,11 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             refreshBreadcrumb()
         refreshTitle()
         refreshExternalDoc(s.showpage)
+
+        c.log "loaded", s.showpage
+        unless s.authorInfo.intro and s.showpage == "introduktion"
+            $location.path "/forfattare/#{s.author}/titlar"
+
 
 
 
@@ -1053,7 +1078,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.gotopage = (page) ->
         ix = s.pagemap["page_" + page]
-        s.setPage ix
+        if s.isEditor
+            s.pageix = ix
+            s.pageToLoad = ix
+        else
+            s.setPage ix
 
     s.mouseover = (event) ->
         c.log "mouseover"
@@ -1198,6 +1227,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             pageQuery = "page[ix='#{val}']"
             setPages = (page) ->
                 s.pageix = Number val
+                s.displaynum = s.pageix
 
         else
             pageQuery = "page[name='#{val}']"
@@ -1206,13 +1236,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 titlepath : title
                 mediatype : mediatype
 
-            setPages = (page) ->
+            setPages = (page, data) ->
                 if not page.length
                     page = $("page:last", data).clone()
                     s.pagename = page.attr("name")
                 else
                     s.pagename = val
-                s.pageix = s.pagemap["page_" + val]
+                s.pageix = s.pagemap["page_" + s.pagename]
+                s.displaynum = s.pagename
 
             if val then params["pagename"] = val
 
@@ -1229,9 +1260,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             page = $(pageQuery, data).last().clone()
 
 
-            s.displaynum = s.pagename
 
-            setPages(page)
+            setPages(page, data)
+            
             ixes = _.map $("sida", data), (item) ->
                 Number $(item).attr("ix")
 
@@ -1252,6 +1283,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             page.children().remove()
             s.etext_html = _.str.trim page.text()
             unless s.isEditor
+                c.log "log pageix", s.pageix
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
 
             s.loading = false

@@ -50,7 +50,9 @@
             <label for="all" ng-click="proofread = 'all'">allt</label>
         </div>
         <div class="also_include">
-            Även som: <input type="checkbox" ng-model="prefix" id="prefix"> <label for="prefix">förled</label> <input type="checkbox" id="suffix" ng-model="suffix"> <label for="suffix">efterled</label>
+            Även som: <input ng-change="infix = false" type="checkbox" ng-model="prefix" id="prefix"> <label for="prefix">ordbörjan</label> <input ng-change="infix = false" type="checkbox" id="suffix" ng-model="suffix"> <label for="suffix">ordslut</label>
+            eller <input type="checkbox" id="infix" ng-model="infix" ng-change="prefix = false; suffix = false"> 
+            <label for="infix">del av ord</label>
         </div>
     </div>
     
