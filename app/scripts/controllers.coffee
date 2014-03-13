@@ -733,9 +733,8 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
 
     s.rowFilter = (row) ->
         unless s.title then return true
-        # (s.title in row.itemAttrs.showtitle.toLowerCase()) or 
-        c.log "rowfilter", row, row.itemAttrs.titlepath
-        (s.title in row.itemAttrs.titlepath.toLowerCase())
+        _.str.contains(row.itemAttrs.titlepath.toLowerCase(), s.title) or
+            _.str.contains(row.itemAttrs.title.toLowerCase(), s.title)
 
 
 littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document) ->
