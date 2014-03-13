@@ -2,7 +2,7 @@
 <div ng-class="{searching:searching}">
     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div id="controls" ng-hide="searching">
-        <select ng-model="authorFilter" ng-change="authorChange()"
+        <select class="authorselect" ng-model="authorFilter" ng-change="authorChange()"
             ng-options="author.authorid as author.nameforindex for author in authorData | orderBy:'nameforindex'">
             <option value="">Alla författare</option>
         </select>
