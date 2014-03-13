@@ -147,9 +147,10 @@ littb.factory "util", ($location) ->
 
 
 
-littb.factory 'backend', ($http, $q, util) ->
+littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
     # $http.defaults.transformResponse = (data, headers) ->
-
+    localStorageCache = $angularCacheFactory "localStorageCache", 
+        storageMode: 'localStorage'
     parseXML = (data) ->
         xml = null
         tmp = null
@@ -271,6 +272,7 @@ littb.factory 'backend', ($http, $q, util) ->
         url = "/query/lb-authors.xql?action=get-authors"
         http(
             url : url
+            cache: localStorageCache
         ).success (xml) ->
             attrArray = for item in $("item", xml)
                 objFromAttrs item
@@ -356,7 +358,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
         http(
             url : url
-            cache : true
+            cache : localStorageCache
             params : _.extend {}, params, passedParams
         ).success( (xml) ->
             info = parseWorkInfo("LBwork", xml)
@@ -552,7 +554,7 @@ littb.factory 'backend', ($http, $q, util) ->
         $http(
             url : "http://spraakbanken.gu.se/ws/korp"
             method : "GET"
-            cache: true
+            cache: localStorageCache
             params : 
                 command : "query"
                 cqp : "[#{tokenList.join('] [')}]"
