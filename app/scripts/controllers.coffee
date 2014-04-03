@@ -1220,6 +1220,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "parallel"
             scope_name : "isParallel"
+        ,   
+            key : "isReading"
+
+
     ]
     if mediatype == "faksimil"
         util.setupHashComplex s, [
