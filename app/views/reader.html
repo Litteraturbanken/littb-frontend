@@ -6,7 +6,8 @@
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
-    <div class="etext txt" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
+    <div class="etext txt" ng-class="{reading : isReading}"
+         selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
 

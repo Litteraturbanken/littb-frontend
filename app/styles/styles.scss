@@ -746,6 +746,25 @@ $partnav-width : 170px;
             color: black;
             font-family: Georgia,Times,serif;
             font-size: 10pt;
+
+            &.reading {
+                white-space : normal;
+
+                br {
+                    display : none;
+                }
+                br + br {
+                    display : block;
+                }
+                div + br {
+                    display : block;
+                }
+                .pname {
+                    position : static;
+                    width : auto;
+                    left : initial;
+                }
+            }
         }
 
         .searching {
@@ -979,7 +998,7 @@ $partnav-width : 170px;
             left : $main-menu-width + $gutter-width;
             padding : 2em;
             z-index : 100;
-            max-height : 300px;
+            max-height : 355px;
             overflow-y: auto;
             li {
                 color : white;
