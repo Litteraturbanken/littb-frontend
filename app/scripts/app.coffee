@@ -23,6 +23,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "pasvaz.bindonce"
                                             "jmdobry.angular-cache"
                                             "ngAnimate"
+                                            "ngTouch"
                                            ])
     .config ($routeProvider) ->
 

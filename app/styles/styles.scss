@@ -666,6 +666,37 @@ body > .header {
 }
 $partnav-width : 170px;
 .page-reading {
+    .bottomBar {
+        position : absolute;
+        bottom : 0;
+        right : 0;
+        left : 0;
+        // height : 8%;
+        background-color : grey;
+        padding : 1em;
+        font-size : 3em;
+        border-top : 1px solid #666;
+        text-align : center;
+        & > * {
+            margin-right : 2em;
+        }
+
+    }
+    .leftCover, .rightCover {
+        position : absolute;
+        width : 10%;
+        top : 0;
+        bottom : 0;
+    }
+
+    .leftCover {
+        left : 0;
+
+    }
+    .rightCover {
+        right : 0;
+    }
+
     #mainview {
 
         // .searching .preloader {

@@ -27,8 +27,8 @@
     <body id="ng-app" class="ng-app: littbApp;" ng-cloak>
 
         <div class="header">
-            <i ng-click="_showmenu_mobile = !_showmenu_mobile;" class="fa fa-list fa fa-2x" style="display : none;"></i>
             <a class="logo_link" ng-href="#!{{getLogoUrl()}}">
+                <img id="logo" src="/bilder/LBlogga.svg">
             </a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li>
@@ -49,7 +49,7 @@
             
             <div class="clearfix"></div>
         </div>
-        <div id="leftCorridor" ng-class="{show : _showmenu_mobile}">
+        <div id="leftCorridor" ng-if="_showmenu_mobile">
             <ul role="navigation" class="mainnav">
                 <li>
                     <a href="#!/forfattare">Författare</a>
@@ -156,7 +156,7 @@
         <script src="components/angular-cache/dist/angular-cache.js"></script>
 
 
-        <!-- // <script src="components/angular/angular-mobile.js"></script> -->
+        <script src="components/angular-touch/angular-touch.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
         

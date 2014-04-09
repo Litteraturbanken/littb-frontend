@@ -1,12 +1,12 @@
 <meta-desc>
     {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
-<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor}">
+<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus}" >
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
-    <div class="etext txt" ng-class="{reading : isReading}"
+    <div class="etext txt"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
@@ -125,9 +125,28 @@
                     parallellt</span>
                 <span ng-if="isParallel">Stäng parallelvisningen</span>
             </a></div>
+
+            <div>
+                <a ng-click="setFocusMode()">Fokusläge</a>
+            </div>
+        
         
             
         </div>
     </div>
+    <div ng-show="isFocus" class="leftCover" ng-click="prevPage($event)" to-body></div>
+    <div ng-show="isFocus" class="rightCover" ng-click="nextPage($event)" to-body></div>
+    <div ng-show="isFocus" class="bottomBar" to-body>
+        <span class="size">aA</span>
+        <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
+            <i class="fa fa-backward"></i>
+        </a>
+        <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+            <i class="fa fa-forward"></i>
+        </a>
+
+        <a ng-click=""><i class="fa fa-list-ul"></i></a>
+    </div>
+
     <!-- -->
 </div>

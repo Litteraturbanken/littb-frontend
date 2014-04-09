@@ -39,6 +39,21 @@ littb.directive 'pagetitle', () ->
                 $("title").text(val)
 
 
+littb.directive 'toBody', ($compile) ->
+    restrict : "A"
+    compile : (elm, attrs) ->
+        elm.remove()
+        elm.attr("to-body", null)
+        wrapper = $("<div>").append(elm)
+        cmp = $compile(wrapper.html())
+
+        return (scope, iElement, iAttrs) ->
+            newElem = cmp(scope)
+            $("body").append(newElem)
+            scope.$on "$destroy", () ->
+                newElem.remove()
+
+
 littb.directive 'sortTriangles', () ->
     template: '''
     <div><span ng-click="up()"

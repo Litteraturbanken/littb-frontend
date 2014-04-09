@@ -1051,6 +1051,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         $location.search("traffslut", null)
     # s.pagename = pagename
     
+
     onKeyDown = (event) ->
         if event.metaKey or event.ctrlKey or event.altKey then return
         s.$apply () ->
@@ -1104,6 +1105,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.setPage(newix)
         else
             s.setPage(0)
+
+    # s.onTouchLeft = () ->
+    #     c.log "touchleft!"
+
+    # s.onTouchRight = () ->
+    #     c.log "touchright!"
+
+    s.setFocusMode = () ->
+        s.isFocus = true
+        $rootScope._showmenu_mobile = true
 
     s.isBeforeStartpage = () ->
         unless s.pagemap then return
@@ -1221,7 +1232,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             key : "parallel"
             scope_name : "isParallel"
         ,   
-            key : "isReading"
+            key : "fokus"
+            scope_name : "isFocus"
 
 
     ]
