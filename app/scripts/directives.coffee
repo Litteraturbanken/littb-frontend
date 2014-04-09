@@ -351,6 +351,23 @@ littb.directive 'insert', () ->
             c.log "insert doc", scope.doc
             elem.html(scope.doc or "")
 
+
+littb.directive 'downloadBtn', () ->
+    restrict : "AE"
+    replace : true
+    scope :
+        file : "="
+    template : """
+    <a class="download" ng-href="{{getUrl(file)}}">
+        <i class="fa fa-file-text "></i>
+        <span class="">Ladda ner <br>som PDF</span> 
+    </a>
+    """
+    link : (scope, elem, attr) ->
+        scope.getUrl = (filename) ->
+            "/red/skola/pdf/" + filename.replace(".html", ".pdf")
+
+
 littb.directive "affix", () ->
     restrict : "EA"
     link : (scope, elem, attrs) ->

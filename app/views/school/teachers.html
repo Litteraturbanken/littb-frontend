@@ -106,9 +106,11 @@
                 <a href="/#!/start"><img class="lb" src="/img/lb_full.svg"></a>
                 <a href="/#!/forfattare/LagerlofS"><img class="sla" src="/img/sla.svg"></a>
             </div> -->
+            <download-btn ng-if="docurl" file="docurl"></download-btn>
         </div>
     </div>
     <div class="content">
         <p sc-file="{{docurl || 'ValkommenStartsida.html'}}"></p>
     </div>
+
 </div>
