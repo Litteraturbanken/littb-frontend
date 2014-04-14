@@ -117,6 +117,11 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             key : "infix"
     ]
 
+    s.nHitsChange = () ->
+        s.current_page = 0
+        if s.data
+          s.search()  
+
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
         change = (newAuthor) ->
@@ -478,6 +483,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
         if not s.rowfilter then return true
         filter = (s.rowfilter || '')
         return new RegExp(filter, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle))
+
+    s.filterAuthor = (row) ->
+        unless s.authorFilter then return true
+        row.author.authorid == s.authorFilter
+
         
 
 
@@ -598,7 +608,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
             # default: "A"
             replace : false
             post_change : (val) ->
-                s.filter = "" if val
+                if val
+                    s.filter = "" 
+                    s.rowfilter = ""
                 if s.workFilter == "titles" and val
                     fetchWorks()
                 return val
@@ -784,6 +796,10 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
 
     backend.getTitles().then (titleArray) ->
         s.data = titleArray
+
+    s.idFilter = (row) ->
+        unless s.id then return true
+        row.itemAttrs.lbworkid == s.id
 
     s.rowFilter = (row) ->
         unless s.title then return true
@@ -1191,7 +1207,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 key: "storlek"
                 scope_name : "size"
                 val_in : Number
-                default : 2
+                # val_out : (val) ->
+                #     val + 1
+                default : 3
                 post_change: recalcCoors
                     
         ]
@@ -1286,14 +1304,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # if mediatype == 'faksimil' or isParallel
             s.sizes = new Array(5)
             for url in $("faksimil-url", page)
-                s.sizes[Number($(url).attr("size")) - 1] = false
+                s.sizes[Number($(url).attr("size"))] = false
             
             if s.sizes[s.size] is false
                 s.sizes[s.size] = true
 
             c.log "loadpage result", s.size
 
-            s.url = $("faksimil-url[size=#{s.size + 1}]", page).last().text()
+            s.url = $("faksimil-url[size=#{s.size}]", page).last().text()
             # else
             page.children().remove()
             s.etext_html = _.str.trim page.text()

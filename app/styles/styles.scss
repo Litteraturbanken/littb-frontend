@@ -790,28 +790,9 @@ $partnav-width : 170px;
         }
         .pager_ctrls {
             margin-bottom: 0.8em;
-            // .fa-backward.single {
-            //     width: 14px;
-            //     overflow: hidden;
-            //     position: relative;
-            //     top: 3px;
-            // }
-            // .fa-forward.single {
-            //     width: 14px;
-            //     overflow: hidden;
-            //     position: relative;
-            //     top: 3px;
-            // }
-            // .fa-caret-right {
-            //     text-shadow:
-            //         3px 3px 0 #000,
-            //       -1px -1px 0 #000,  
-            //        1px -1px 0 #000,
-            //        -1px 1px 0 #000,
-            //         1px 1px 0 #000;
-            // }
             a {
-                margin: 0 3px;
+                margin-right : 3px;
+                margin-right : 2px;
                 &:first-of-type, &:first-of-type * {
                     padding-left : 0;
                     margin-left : 0;
@@ -827,33 +808,33 @@ $partnav-width : 170px;
                 @content;
             }
             
-            span.triangle {
-                display : inline-block;
-                vertical-align : top;
+            // span.triangle {
+            //     display : inline-block;
+            //     vertical-align : top;
                 
-            }
-            $triangle_h : 1.8em;
-            span.triangle.left {
-                @include arrow($triangle_h / 2, $triangle_h, left, $primarycolor);
+            // }
+            // $triangle_h : 1.8em;
+            // span.triangle.left {
+            //     @include arrow($triangle_h / 2, $triangle_h, left, $primarycolor);
 
-                &:hover {
-                    border-right-color : $hover;
-                }
-                &:active {
-                    border-right-color : $activate;
-                }
+            //     &:hover {
+            //         border-right-color : $hover;
+            //     }
+            //     &:active {
+            //         border-right-color : $activate;
+            //     }
 
-            }
-            span.triangle.right {
-                @include arrow($triangle_h / 2, $triangle_h, right, $primarycolor);
-                &:hover {
-                    border-left-color : $hover;
-                }
-                &:active {
-                    border-left-color : $activate;
-                }
+            // }
+            // span.triangle.right {
+            //     @include arrow($triangle_h / 2, $triangle_h, right, $primarycolor);
+            //     &:hover {
+            //         border-left-color : $hover;
+            //     }
+            //     &:active {
+            //         border-left-color : $activate;
+            //     }
                 
-            }
+            // }
             i {
                 cursor : pointer;
                 font-size : 1.8em;
@@ -876,16 +857,16 @@ $partnav-width : 170px;
 
 
             }
-            .disabled span.triangle.left {
-                @include disabled {
-                    border-right-color : $disabled;
-                }
-            }
-            .disabled span.triangle.right {
-                @include disabled {
-                    border-left-color : $disabled;
-                }
-            }
+            // .disabled span.triangle.left {
+            //     @include disabled {
+            //         border-right-color : $disabled;
+            //     }
+            // }
+            // .disabled span.triangle.right {
+            //     @include disabled {
+            //         border-left-color : $disabled;
+            //     }
+            // }
             .disabled i {
                 @include disabled {
                     &:before {

@@ -112,7 +112,8 @@
             </div>
         
             <div class="size_picker" ng-show="mediatype == 'faksimil'">
-                <div ng-class="{selected : size, hidden : !isDefined(size)}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
+                <div ng-class="{selected : size, hidden : !isDefined(size)}" 
+                     ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div>
                 
             </div>
     

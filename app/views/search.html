@@ -61,7 +61,7 @@
     
     
     <div class="n_pages">Visa
-        <select id="num_hits" ng-model="num_hits" ng-change="current_page = 0"
+        <select id="num_hits" ng-model="num_hits" ng-change="nHitsChange()"
             ng-options="num for num in [10, 20, 50, 100, 250, 500]" ng-change="search(query)">
         </select>
         träffar per sida.

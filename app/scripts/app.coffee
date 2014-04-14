@@ -225,7 +225,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <input ng-model="title" placeholder="titel" ng-change="id = ''">
                     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
                     <table class="table-striped">
-                    <tr ng-repeat="row in data | filter:{'itemAttrs.lbworkid' : id} | filter:rowFilter">
+                    <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter">
                         <td>{{row.itemAttrs.lbworkid}}</td>
                         <td>
                             <a href="#!/forfattare/{{row.author.authorid}}/info">{{row.author.surname}}</a>
