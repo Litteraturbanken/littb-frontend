@@ -65,7 +65,7 @@ getStudentCtrl = (id) ->
 
         $scope.list = _.filter [
                 label: "Termer och begrepp", 
-                url : "/#!/skola/#{id}/LitteraturvetenskapligaBegrepp.html"
+                url : "/#!/skola/#{id}/TermerOchBegrepp.html"
                 if : ["6-9", "gymnasium"]
             ,
                 label: "Författarpresentation", 

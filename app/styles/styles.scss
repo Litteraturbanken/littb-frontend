@@ -1867,50 +1867,6 @@ only screen and (max-width: 760px),
         width: auto; 
         margin: 0; 
     }
-    /*
-    .page-reading {
-        width : 100%;
-        padding-left: 0;
-        #mainview {
-            padding-left : 1em;
-        }
-
-        header {
-            padding-left : 1em;
-        }
-
-        #leftCorridor {
-            display : none;
-        }
-        #leftCorridor.show {
-            display : inline-block;
-        }
-        header .logo_link, hr, .start_menu, .breadcrumb {
-            display : none;
-        }
-
-        header .icon-list {
-            display : inline-block !important;
-        }
-        
-        div.pname {
-            position : static !important;
-        }
-        padding-bottom : 3em;
-        .nav_footer {
-            // display : block;
-            position : fixed;
-            bottom : 0;
-            height : 3em;
-            vertical-align : middle;
-            background-color : $primarycolor;
-            width  : 100%;
-        }
-    }
-    */
-
-
-
 
     .page-epubList p {
         max-width : 70%;
@@ -1971,10 +1927,6 @@ only screen and (max-width: 760px),
     }
 
     .site-school {
-        // p, #{headers()} {
-        //     max-width: 100%;
-        //     width: 100%;
-        // }
 
         .logo_link {
             // height : 30px;
@@ -1986,6 +1938,10 @@ only screen and (max-width: 760px),
         .header .breadcrumb {
             text-align: left;
             margin-top : 0.5em;
+        }
+        .download {
+            position : static;
+            margin-top : 2em;
         }
 
         &.page-school {
