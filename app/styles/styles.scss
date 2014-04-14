@@ -37,6 +37,9 @@ $primarycolor : #990000;
     position : fixed;
 }
 
+html {
+    height : 100%;
+}
 body {
     font-size : 12px;
     padding-top : 20px;
@@ -666,6 +669,32 @@ body > .header {
 }
 $partnav-width : 170px;
 .page-reading {
+    &.focus-add, &.focus-remove {
+      transition: opacity 300ms;
+    }
+    &.focus-add {opacity : 0 }
+    &.focus-add-active {opacity : 1 } 
+    &.focus-remove {opacity : 0 }        
+    &.focus-remove-active {opacity : 1 } 
+    &.focus {
+        width : auto;
+        .etext {
+            margin : 0 auto;
+        }
+        .header {
+            display : none;
+        }
+        #mainview {
+            width : auto;
+            display : block;
+        }
+        #leftCorridor {
+            display : none;
+        }
+    }
+    .focusBtn {
+        margin-top : 1em;
+    }
     .bottomBar {
         position : absolute;
         bottom : 0;
@@ -680,7 +709,27 @@ $partnav-width : 170px;
         & > * {
             margin-right : 2em;
         }
+    }
+    .popper_menu.text {
+        width : 150px;
+        .popover_inner {
+            padding : 0.5em;
+        }
+    }
+    .popper_menu.parts {
+        .popover_inner {
+            padding : 0.5em;
+        }
 
+        ul {
+            max-height : 400px;
+            overflow-y : auto;
+            font-size : 1.1em;
+        }
+        li {
+            padding : 0.5em;
+        }
+        
     }
     .leftCover, .rightCover {
         position : absolute;

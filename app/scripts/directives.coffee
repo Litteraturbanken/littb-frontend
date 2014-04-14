@@ -288,6 +288,8 @@ littb.directive 'metaDesc', ($interpolate) ->
             wtch()
 
 
+
+
 littb.directive 'pageTitle', ($interpolate) ->
     restrict : "EA"
     link: (scope, elm, attrs) ->
@@ -337,6 +339,37 @@ littb.directive 'breadcrumb', ($interpolate, $rootScope) ->
         scope.$on "$destroy", () ->
             for wtch in watches
                 wtch()
+
+
+littb.directive "popper", ($rootElement) ->
+    scope: {}
+    link : (scope, elem, attrs) ->
+        popup = elem.next()
+        popup.appendTo("body").hide()
+        closePopup = () ->
+            popup.hide()
+        
+        popup.on "click", (event) ->
+            closePopup()
+            return false
+
+        elem.on "click", (event) ->
+            if popup.is(":visible") then closePopup()
+            else popup.show()
+
+            pos = 
+                my : attrs.my or "right top"
+                at : attrs.at or "bottom right"
+                of : elem
+            if scope.offset
+                pos.offset = scope.offset
+
+            popup.position pos
+
+            return false
+
+        $rootElement.on "click", () ->
+            closePopup()
 
 
 littb.directive 'kwicWord', ->

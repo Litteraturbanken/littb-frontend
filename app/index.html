@@ -24,7 +24,7 @@
         <!-- <link rel="stylesheet" href="components/nprogress/nprogress.js" /> -->
 
     </head>
-    <body id="ng-app" class="ng-app: littbApp;" ng-cloak>
+    <body id="ng-app" class="ng-app: littbApp;" ng-cloak ng-class="{focus : _focus_mode}">
 
         <div class="header">
             <a class="logo_link" ng-href="#!{{getLogoUrl()}}">
@@ -49,7 +49,7 @@
             
             <div class="clearfix"></div>
         </div>
-        <div id="leftCorridor" ng-if="_showmenu_mobile">
+        <div id="leftCorridor">
             <ul role="navigation" class="mainnav">
                 <li>
                     <a href="#!/forfattare">Författare</a>

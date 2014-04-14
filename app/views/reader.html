@@ -7,6 +7,7 @@
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
     <div class="etext txt"
+         ng-style="{'font-size' : fontSizeFactor + 'em'}"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
@@ -126,8 +127,8 @@
                 <span ng-if="isParallel">Stäng parallelvisningen</span>
             </a></div>
 
-            <div>
-                <a ng-click="setFocusMode()">Fokusläge</a>
+            <div class="focusBtn">
+                <button class="btn btn-small" ng-click="setFocusMode()">Fokusläge</button>
             </div>
         
         
@@ -137,7 +138,21 @@
     <div ng-show="isFocus" class="leftCover" ng-click="prevPage($event)" to-body></div>
     <div ng-show="isFocus" class="rightCover" ng-click="nextPage($event)" to-body></div>
     <div ng-show="isFocus" class="bottomBar" to-body>
-        <span class="size">aA</span>
+        
+        <a class="" popper my="middle bottom-25" at="bottom middle" >
+            <span class="size">aA</span>
+        </a>
+        <div class="popper_menu popover top text">
+            <div class="arrow"></div>
+            <div class="popover_inner">
+                <ul>
+                    <li><button ng-click="incrFontSize($event, -0.3)" class="btn btn-small">a</button> 
+                    <button ng-click="incrFontSize($event, 0.3)" class="btn btn-small pull-right">A</button></li>
+                </ul>
+            </div>
+        </div>
+
+
         <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
             <i class="fa fa-backward"></i>
         </a>
@@ -145,7 +160,24 @@
             <i class="fa fa-forward"></i>
         </a>
 
-        <a ng-click=""><i class="fa fa-list-ul"></i></a>
+        <a class="" popper my="middle bottom-25" at="bottom middle" >
+            <i class="fa fa-list-ul"></i>
+        </a>
+
+        <div class="popper_menu popover top parts">
+            <div class="arrow"></div>
+            <div class="popover_inner">
+                <ul class="work_parts">
+                    <li><a ng-click="gotopage(startpage)">[Start]</a></li>
+                    <li ng-repeat="part in workinfo.parts">
+                        <a ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <a ng-click="isFocus = false;">
+            <i class="close_btn fa fa-times"></i>
+        </a>
     </div>
 
     <!-- -->

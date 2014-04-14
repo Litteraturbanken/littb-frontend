@@ -1026,6 +1026,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.showPopup = false
     s.error = false
 
+    s.fontSizeFactor = 1
+
+    s.incrFontSize = (event, fac) ->
+        event.stopPropagation()
+        s.fontSizeFactor += fac
+
+
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)
         s.showPopup = false
@@ -1106,15 +1113,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         else
             s.setPage(0)
 
-    # s.onTouchLeft = () ->
-    #     c.log "touchleft!"
-
-    # s.onTouchRight = () ->
-    #     c.log "touchright!"
-
+    
+    s.isFocus = false
     s.setFocusMode = () ->
         s.isFocus = true
-        $rootScope._showmenu_mobile = true
 
     s.isBeforeStartpage = () ->
         unless s.pagemap then return
@@ -1234,6 +1236,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,   
             key : "fokus"
             scope_name : "isFocus"
+            post_change : (val) ->
+                $rootScope._focus_mode = val
 
 
     ]
