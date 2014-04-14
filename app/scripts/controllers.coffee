@@ -7,16 +7,14 @@ littb = angular.module('littbApp')
 littb.filter "authorYear", () ->
     (obj) ->
         unless obj then return
+        # c.log "obj", obj
         isFalsy = (val) ->
             not val or (val == "0000")
-
-        if (isFalsy obj.birth) and (isFalsy obj.death) then return ""
-        if isFalsy obj.death then return "f. #{obj.birth}"
-        if isFalsy obj.birth then return "d. #{obj.death}"
-        return "#{obj.birth}–#{obj.death}"
-
-
-
+        death = obj.death or obj.datestring.split("–")[1]
+        if (isFalsy obj.birth) and (isFalsy death) then return ""
+        if isFalsy death then return "f. #{obj.birth}"
+        if isFalsy obj.birth then return "d. #{death}"
+        return "#{obj.birth}–#{death}"
 
 
 littb.controller "startCtrl", ($scope, $location) ->
@@ -429,7 +427,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         c.log "loaded", s.showpage
         unless s.authorInfo.intro and s.showpage == "introduktion"
-            $location.path "/forfattare/#{s.author}/titlar"
+            $location.path("/forfattare/#{s.author}/titlar").replace()
 
 
 
@@ -1225,6 +1223,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                     s.pagename = val
                 s.pageix = s.pagemap["page_" + s.pagename]
                 s.displaynum = s.pagename
+
+                unless s.pageToLoad then s.pageToLoad = s.pagename
 
             if val then params["pagename"] = val
 
