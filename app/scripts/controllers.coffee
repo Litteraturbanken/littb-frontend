@@ -6,11 +6,11 @@ littb = angular.module('littbApp')
 
 littb.filter "authorYear", () ->
     (obj) ->
-        unless obj?.datestring? then return
+        unless obj then return
         # c.log "obj", obj
         isFalsy = (val) ->
             not val or (val == "0000")
-        death = obj.death or obj.datestring.split("–")[1]
+        death = obj.death # or obj.datestring.split("–")[1]
         if (isFalsy obj.birth) and (isFalsy death) then return ""
         if isFalsy death then return "f. #{obj.birth}"
         if isFalsy obj.birth then return "d. #{death}"
@@ -349,11 +349,24 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
 
 
 
-littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, util) ->
+littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util) ->
     s = $scope
     # [s.author, s.showtitles] = $routeParams.author.split("/")
     _.extend s, $routeParams
     s.showpage = null
+    s.show_large = false
+
+    s.showLargeImage = ($event) ->
+        if s.show_large then return 
+        s.show_large = true
+        $event.stopPropagation()
+
+        $document.one "click", (event) ->
+            if event.button != 0 then return
+            s.$apply () ->
+                s.show_large = false
+        return
+
     refreshRoute = () ->
         # s.showtitles = (_.last $location.path().split("/")) == "titlar"
         s.showpage = (_.last $location.path().split("/")) 

@@ -1079,6 +1079,7 @@ $partnav-width : 170px;
 
 .page-authorInfo {
     #mainview {
+        // position : relative;
         .author {
             min-height : 1em;
         }
@@ -1106,16 +1107,33 @@ $partnav-width : 170px;
             margin-top : 3em;
             text-align : right;
             opacity : 1;
+            img {
+                cursor : pointer;
+            }
+        }
+        .img_large {
+            opacity : 1;
+            position : absolute;
+            top : 0;
+            bottom : 0;
+            right : 0;
+            left : 0;
+            padding-top : 10%;
+            cursor : pointer;
+            background-color : rgba(255,255,255,0.8);
+            img {
+                display : block;
+                margin : 0 auto;
+            }
         }
         
-        // .author_img.ng-enter, .author_img.ng-leave {
-        //   -webkit-transition:0.5s linear all;
-        //   transition:0.5s linear all;
-        // }
-        // .author_img.ng-enter {opacity : 0 }        /* starting animations for enter */
-        // .author_img.ng-enter-active {opacity : 1 } /* terminal animations for enter */
-        // .author_img.ng-leave { }        /* starting animations for leave */
-        // .author_img.ng-leave-active { } /* terminal animations for leave */
+        .img_large.ng-enter, .img_large.ng-leave {
+          transition: opacity 300ms;
+        }
+        .img_large.ng-enter {opacity : 0 }        
+        .img_large.ng-enter-active {opacity : 1 } 
+        .img_large.ng-leave {opacity : 1 }        
+        .img_large.ng-leave-active {opacity : 0 } 
 
     }
 
