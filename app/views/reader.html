@@ -7,7 +7,7 @@
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
     <div class="etext txt"
-         ng-style="{'font-size' : fontSizeFactor + 'em'}"
+         ng-style="{'font-size' : getFontSizeFactor() + 'em'}"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
@@ -128,7 +128,7 @@
             </a></div>
 
             <div class="focusBtn">
-                <button class="btn btn-small" ng-click="setFocusMode()">Fokusläge</button>
+                <a ng-click="setFocusMode()">Fokusläge</a>
             </div>
         
         

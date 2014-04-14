@@ -1032,6 +1032,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         event.stopPropagation()
         s.fontSizeFactor += fac
 
+    s.getFontSizeFactor = () ->
+        if s.isFocus then s.fontSizeFactor else 1
+
 
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)

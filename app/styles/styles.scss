@@ -16,6 +16,7 @@ $page-width : 712px;
 $mainview-width : $page-width - $main-menu-width - ($gutter-width * 2);
 
 $primarycolor : #990000;
+$dotted : thin dotted #990000;
 @mixin primarygradient {
     @include background-image(linear-gradient($primarycolor, darken($primarycolor, 7%)));
 }
@@ -150,7 +151,7 @@ a[ng-click] {
     cursor : pointer;
 }
 p a {
-    border-bottom : thin dotted #990000;
+    border-bottom : $dotted;
 }
 
 hr {
@@ -678,8 +679,11 @@ $partnav-width : 170px;
     &.focus-remove-active {opacity : 1 } 
     &.focus {
         width : auto;
+        padding : 0;
+        height : 100%;
+        overflow : hidden;
         .etext {
-            margin : 0 auto;
+            margin : 5% auto 0 auto;
         }
         .header {
             display : none;
@@ -694,20 +698,27 @@ $partnav-width : 170px;
     }
     .focusBtn {
         margin-top : 1em;
+        a {
+            font-size : 1.1em;
+            // border-bottom : $dotted;
+        }
     }
     .bottomBar {
-        position : absolute;
+        position : fixed;
         bottom : 0;
         right : 0;
         left : 0;
         // height : 8%;
         background-color : grey;
-        padding : 1em;
+        padding : 5%;
         font-size : 3em;
         border-top : 1px solid #666;
         text-align : center;
         & > * {
-            margin-right : 2em;
+            margin-right : 5%;
+        }
+        a {
+            cursor : pointer;
         }
     }
     .popper_menu.text {
@@ -1470,7 +1481,7 @@ grundform-clean {
 
     hvord {
         cursor : pointer;
-        border-bottom : thin dotted #990000;
+        border-bottom : $dotted;
     }
     sentens,stilruta {
         // display : none;
