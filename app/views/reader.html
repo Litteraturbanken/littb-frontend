@@ -61,20 +61,18 @@
         
         
             <div class="pager_ctrls" ng-click="resetHitMarkings()">
-                <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}">
-                    <!-- <i class="fa fa-backward"></i> -->
+                <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
+                    ng-click="gotopage(startpage, $event)">
                     <i class="fa fa-fast-backward"></i>
                 </a>
                 <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
                     <i class="fa fa-backward"></i>
-                    <!-- <span class="triangle left"></span> -->
                 </a>
                 <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
                     <i class="fa fa-forward"></i>
-                    <!-- <span class="triangle right"></span> -->
                 </a>
-                <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}">
-                    <!-- <i class="fa fa-forward"></i> -->
+                <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}"
+                    ng-click="gotopage(endpage, $event)">
                     <i class="fa fa-fast-forward"></i>
                 </a>
             </div>

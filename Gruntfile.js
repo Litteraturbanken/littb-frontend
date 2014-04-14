@@ -42,6 +42,9 @@ module.exports = function (grunt) {
         files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
         tasks: ['compass:server', 'autoprefixer']
       },
+      gruntfile: {
+        files: ['Gruntfile.js']
+      },
       livereload: {
         options: {
           livereload: LIVERELOAD_PORT

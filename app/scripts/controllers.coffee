@@ -1106,7 +1106,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.endpage}/#{mediatype}"
 
 
-    s.gotopage = (page) ->
+    s.gotopage = (page, event) ->
+        c.log "preventDefault", page
+        event?.preventDefault()
         ix = s.pagemap["page_" + page]
         if s.isEditor
             s.pageix = ix
