@@ -72,7 +72,7 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, authors) ->
+littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, util, searchData, authors, debounce) ->
     s = $scope
     s.open = false
     s.proofread = 'all'
@@ -156,9 +156,11 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
 
 
     s.nextPage = () ->
-        s.current_page++
-        s.search(s.query)
+        if (s.current_page  * s.num_hits) + s.kwic.length < s.hits
+            s.current_page++
+            s.search(s.query)
     s.prevPage = () ->
+        unless s.current_page then return
         s.current_page--
         s.search(s.query)
 
@@ -201,8 +203,28 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         s.current_page = num
         s.search()
 
+    s.getMaxHit = () ->
+        Math.min s.hits, (s.current_page  * s.num_hits) + s.kwic.length
 
-    s.search = (query) ->
+
+    onKeyDown = (event) ->
+        if event.metaKey or event.ctrlKey or event.altKey or $("input:focus").length then return
+        s.$apply () ->
+            switch event.which
+                when 39 
+                    if navigator.userAgent.indexOf("Firefox") != -1 or $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") == $($window).width()
+                        s.nextPage()
+                when 37 
+                    if $rootElement.prop("scrollLeft") == 0
+                        s.prevPage()
+
+    $document.on "keydown", onKeyDown
+
+    s.$on "$destroy", () ->
+        $document.off "keydown", onKeyDown
+
+
+    s.search = debounce((query) ->
         q = query or s.query
         unless q then return
         $location.search("fras", q) if q
@@ -212,12 +234,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
         
         mediatype = getMediatypes()
 
-        # c.log "search mediatype", mediatype
-
-
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
-        # params =
 
         backend.searchWorks(s.query,
             mediatype,
@@ -239,7 +257,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, util, searchData, au
                 for row in (data.kwic or [])
                     row.href = searchData.parseUrls row
 
-
+    , 200)
 
     queryvars = $location.search()
 

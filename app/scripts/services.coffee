@@ -169,6 +169,8 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         jQuery.error "Invalid XML: " + data  if not xml or not xml.documentElement or xml.getElementsByTagName("parsererror").length
         xml
 
+    querydata = null
+
     http = (config) ->
         defaultConfig =
             method : "GET"
@@ -554,20 +556,27 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
 
 
+        params = 
+            command : "query"
+            cqp : "[#{tokenList.join('] [')}]"
+            show: "wid,x,y,width,height"
+            show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
+            corpus : "LBSOK"
+            start: from
+            end : to
+
+        if querydata
+            params.querydata = querydata
+
         $http(
             url : "http://spraakbanken.gu.se/ws/korp"
             method : "GET"
             # cache: localStorageCache
             cache: true
-            params : 
-                command : "query"
-                cqp : "[#{tokenList.join('] [')}]"
-                show: "wid,x,y,width,height"
-                show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
-                corpus : "LBSOK"
-                start: from
-                end : to
+            params : params
+                
         ).success( (data) ->
+            querydata = data.querydata
             def.resolve data
         ).error (data) ->
             c.log "error", arguments

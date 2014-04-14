@@ -516,7 +516,12 @@ body > .header {
 .page-search {
     #mainview {
         width : 512px;
+        .results {
+            transition : opacity 100ms;
+            opacity : 1;
+        }
         .searching .results {
+            transition : opacity 100ms;
             opacity : 0.3;
         }
         .query_label {
@@ -577,7 +582,7 @@ body > .header {
             }
             .also_include {
                 label {
-                    margin-right : 1em;
+                    margin-right : 0.9em;
                 }    
                 #prefix {
                     margin-left : 1em;

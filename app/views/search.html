@@ -96,7 +96,7 @@
 
         <div class="littb_pager" ng-show="kwic && hits">
             <div ng-if="hits > num_hits">
-                Visar {{current_page  * num_hits + 1}}-{{(current_page  * num_hits) + kwic.length}} av 
+                Visar {{current_page  * num_hits + 1}}-{{getMaxHit()}} av 
                 {{hits}} träffar,
                 sida {{current_page + 1}} av {{total_pages}}.
 
