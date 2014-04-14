@@ -6,8 +6,7 @@ littb = angular.module('littbApp')
 
 littb.filter "authorYear", () ->
     (obj) ->
-        unless obj then return
-        # c.log "obj", obj
+        unless obj?.datestring? then return
         isFalsy = (val) ->
             not val or (val == "0000")
         death = obj.death or obj.datestring.split("–")[1]
