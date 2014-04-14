@@ -7,6 +7,7 @@ littb = angular.module('littbApp')
 littb.filter "authorYear", () ->
     (obj) ->
         unless obj?.datestring? then return
+        # c.log "obj", obj
         isFalsy = (val) ->
             not val or (val == "0000")
         death = obj.death or obj.datestring.split("–")[1]
@@ -833,6 +834,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
             if event.button != 0 then return
             s.$apply () ->
                 s.show_large = false
+        return
 
         
 

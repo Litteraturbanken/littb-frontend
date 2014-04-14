@@ -16,6 +16,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "angularSpinner"
                                             "pasvaz.bindonce"
                                             "jmdobry.angular-cache"
+                                            "ngAnimate"
                                            ])
     .config ($routeProvider) ->
 

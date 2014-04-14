@@ -307,6 +307,10 @@ a:hover {
     color : $primarycolor;
     text-decoration: none;
 }
+a:focus {
+    color : $primarycolor;
+    text-decoration: none;
+}
 ul {
     padding : 0;
     margin : 0;
@@ -1101,7 +1105,18 @@ $partnav-width : 170px;
         .author_img {
             margin-top : 3em;
             text-align : right;
+            opacity : 1;
         }
+        
+        // .author_img.ng-enter, .author_img.ng-leave {
+        //   -webkit-transition:0.5s linear all;
+        //   transition:0.5s linear all;
+        // }
+        // .author_img.ng-enter {opacity : 0 }        /* starting animations for enter */
+        // .author_img.ng-enter-active {opacity : 1 } /* terminal animations for enter */
+        // .author_img.ng-leave { }        /* starting animations for leave */
+        // .author_img.ng-leave-active { } /* terminal animations for leave */
+
     }
 
     #toolkit {
