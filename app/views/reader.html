@@ -10,7 +10,9 @@
     
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
 
-    <div square ng-repeat="obj in coors" ng-show="height" size="size" x="obj.x" y="obj.y" width="obj.width" height="obj.height" class="faksimilMarkee" ng-class="{long : obj.width > 150}" ></div>
+    <div square ng-repeat="obj in coors" ng-show="height" x="obj.x" 
+         y="obj.y" width="obj.width" height="obj.height" 
+         class="faksimilMarkee" ng-class="{long : obj.width > 150}"></div>
     
     
     <div toolkit>

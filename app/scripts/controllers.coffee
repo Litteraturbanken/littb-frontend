@@ -13,7 +13,7 @@ littb.filter "authorYear", () ->
         if (isFalsy obj.birth) and (isFalsy obj.death) then return ""
         if isFalsy obj.death then return "f. #{obj.birth}"
         if isFalsy obj.birth then return "d. #{obj.death}"
-        return "#{obj.birth} – #{obj.death}"
+        return "#{obj.birth}–#{obj.death}"
 
 
 
@@ -1107,6 +1107,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         'etext' in s.workinfo.mediatypes and 'faksimil' in s.workinfo.mediatypes
 
     s.getValidAuthors = () ->
+        unless s.authorById then return
         _.filter s.workinfo?.authoridNorm, (item) ->
             item.id of s.authorById
 
@@ -1114,22 +1115,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.authorById = authorById
 
 
-    # savedVal = []
-    # s.getCoors = () ->
-    #     # if savedVal.length then return savedVal
-    #     unless s.x then return []
-    #     for item, i in s.x.split("|")
-    #         pairs = _.pairs _.pick s, "x", "y", "height", "width"
-    #         _.object _.map pairs, ([key, val]) ->
-    #             [key, val.split("|")[i].split(",")[s.size]]
-    #     c.log("getCoors", objs)
-    #     savedVal[..] = objs
-    #     # if objs.length 
-    #         # savedVal = objs
-    #     savedVal
-
-
     s.size = $location.search().size or 2
+
+    recalcCoors = () ->
+        unless s.x then return
+        s.coors = for item, i in s.x.split("|")
+            pairs = _.pairs _.pick s, "x", "y", "height", "width"
+            # c.log "pairs", pairs
+            _.object _.map pairs, ([key, val]) ->
+                [key, val.split("|")[i].split(",")[s.size]]
 
     util.setupHashComplex s, [
             scope_name : "markee_from"
@@ -1142,17 +1136,20 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "x"
             replace : false
-            # post_change : () ->
+            post_change: recalcCoors
                 
         ,
             key : "y"
             replace : false
+            post_change: recalcCoors
         ,
             key : "width"
             replace : false
+            post_change: recalcCoors
         ,
             key : "height"
             replace : false
+            post_change: recalcCoors
         ,
             key : "parallel"
             scope_name : "isParallel"
@@ -1163,27 +1160,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 scope_name : "size"
                 val_in : Number
                 default : 2
-                post_change: () ->
-                    unless s.x then return
-                    s.coors = for item, i in s.x.split("|")
-                        pairs = _.pairs _.pick s, "x", "y", "height", "width"
-                        # c.log "pairs", pairs
-                        _.object _.map pairs, ([key, val]) ->
-                            [key, val.split("|")[i].split(",")[s.size]]
+                post_change: recalcCoors
+                    
         ]
 
-        # ,   
-        #     key : "so"
-        #     expr : "lex_article.baseform"
-        #     post_change : (val) ->
-        #         unless val then return
-        #         c.log "val", val
-        #         s.$emit "search_dict", val
 
-
-    
-        
-        
 
     watches = []
     # watches.push s.$watch "pagename", _.debounce( ( (val) ->
