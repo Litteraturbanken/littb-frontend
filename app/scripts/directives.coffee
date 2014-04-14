@@ -256,6 +256,12 @@ littb.directive 'focusable', () ->
                 elem.blur()
             , 100
 
+littb.directive "typeaheadTrigger", () ->
+    require: ["ngModel"]
+    link: (scope, element, attr, ctrls) ->
+        scope.$on 'open', (event, value) ->
+
+            ctrls[0].$setViewValue(value)
 
 
 littb.directive 'metaDesc', ($interpolate) ->

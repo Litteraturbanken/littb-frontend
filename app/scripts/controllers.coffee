@@ -908,6 +908,13 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         if event.which == 83 and not $("input:focus,textarea:focus,select:focus").length
             s.$broadcast "focus"
 
+    s.keydown = (event) ->
+        c.log event.keyCode
+        if event.keyCode == 40 # down arrow
+            # TODO: this is pretty bad but couldn't be done using the typeahead directive
+            if $(".input_container .dropdown-menu").is(":hidden")
+                #typeaheadTrigger directive
+                s.$broadcast "open", s.lex_article
 
 
     s.showModal = () ->
@@ -1059,17 +1066,20 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.setPage = (ix) ->
         s.pageix = ix
         s.pageToLoad = s.pagemap["ix_" + s.pageix]
+
+    s.getStep = (ix) ->
+        s.stepmap[ix] or s.pagestep or 1
+
     
     s.nextPage = (event) ->
         event?.preventDefault()
         if s.isEditor
-            # s.setPage(s.pageix + 1)
-            s.pageix = s.pageix + 1
+            s.pageix = s.pageix + s.getStep()
             s.pageToLoad = s.pageix
             return
         unless s.endpage then return
         if s.pageix == s.pagemap["page_" + s.endpage] then return
-        newix = s.pageix + 1
+        newix = s.pageix + s.getStep()
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         else
@@ -1079,10 +1089,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         event?.preventDefault()
         unless s.pagemap then return
         if s.isEditor
-            s.pageix = s.pageix - 1
+            s.pageix = s.pageix - s.getStep()
             s.pageToLoad = s.pageix
             return
-        newix = s.pageix - 1
+        newix = s.pageix - s.getStep()
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         else
@@ -1101,7 +1111,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     
     s.getPrevPageUrl = () ->
         unless s.pagemap then return
-        newix = s.pageix - 1
+        newix = s.pageix - s.getStep()
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
@@ -1109,7 +1119,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getNextPageUrl = () ->
         unless s.endpage then return
         if s.pageix == s.pagemap["page_" + s.endpage] then return
-        newix = s.pageix + 1
+        newix = s.pageix + s.getStep()
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
@@ -1286,13 +1296,19 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
 
+            steps = for page in $("page", data) when $(page).attr "pagestep"
+                [($(page).attr "pageix"), Number($(page).attr "pagestep")]
+
+            s.stepmap = _.object steps
+            s.pagestep = Number $("pagestep", data).text()
+
             s.startpage = workinfo.startpagename
             s.endpage = workinfo.endpagename
 
 
             page = $(pageQuery, data).last().clone()
 
-
+            c.log "s.pagestep", s.pagestep
 
             setPages(page, data)
             
