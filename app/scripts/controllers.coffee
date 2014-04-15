@@ -1026,7 +1026,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.showPopup = false
     s.error = false
 
-    s.fontSizeFactor = 1
+    s.fontSizeInit = 1
+    s.fontSizeFactor = s.fontSizeInit
 
     s.incrFontSize = (event, fac) ->
         event.stopPropagation()
