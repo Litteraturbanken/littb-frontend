@@ -119,6 +119,13 @@ littb.config () ->
         templateUrl : "views/school/school.html"
         # controller : getFileName
 
+    # whn '/skola/larare/kontakt',
+    #     templateUrl: 'views/contactForm.html'
+    #     controller : 'contactFormCtrl'
+    #     reloadOnSearch : false
+    #     title : "Kontakt"
+    #     breadcrumb : ["kontakt"]
+
     whn ["/skola/larare/:docurl", "/skola/larare"],
         title : "Lärare"
         # controller : getFileName
@@ -136,6 +143,8 @@ littb.config () ->
         title : "Gymnasium"
         templateUrl : "views/school/students.html"
         controller : getStudentCtrl("gymnasium")
+
+
 
 
 

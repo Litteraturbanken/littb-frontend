@@ -1426,9 +1426,14 @@ grundform-clean {
     $column_width : 500px;
     h1 {
         line-height : 1.1;
+        font-size : 1.6em;
     }
     h2 {
         margin-top : 2.5em;
+        font-size : 1.2em;
+        a {
+            border-bottom : 1px dotted $primarycolor;
+        }
     }
     h3 {
         font-weight: bold;
@@ -1438,19 +1443,17 @@ grundform-clean {
     }
 
     blockquote {
-        font-size : 0.8em;
-        border-left : 1px grey dotted;
+        font-size : 0.85em;
         padding-left : 25px;
         margin-left : 1em;
-
         max-width : $column_width - 60px;
+        line-height : 1.4em;
     }
 
     .download {
         line-height : 1.1;
         // margin-top : 2em;
-        position: fixed;
-        bottom : 3em;
+        margin-top : 4em;
         vertical-align : middle;
         display : inline-block;
         padding : 3px;
@@ -1458,13 +1461,14 @@ grundform-clean {
         cursor: pointer;
         transition : border 200ms;
         border-radius: 4px;
+        font-size : 0.9em;
         * {
             display : inline-block;
         }
         i {
-            font-size : 2.2em;
+            font-size : 2em;
             margin-right: 3px;
-            vertical-align: top;
+            vertical-align: bottom;
         }
         &:hover {
             border : 1px solid grey;
@@ -1543,8 +1547,9 @@ grundform-clean {
         @include inline-block(top);
 
         width: 210px;
-        margin-left: 8em;
-        font-size: 0.8em;
+        margin-left: 5em;
+        font-size: 0.85em;
+        line-height : 1.2;
 
     }
 
