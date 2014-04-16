@@ -719,6 +719,7 @@ $partnav-width : 170px;
         font-size : 3em;
         border-top : 1px solid #666;
         text-align : center;
+        box-shadow: 1px 1px 9px 1px black;
         & > * {
             margin-right : 5%;
         }
@@ -738,7 +739,7 @@ $partnav-width : 170px;
         }
 
         ul {
-            max-height : 400px;
+            max-height : 415px;
             overflow-y : auto;
             font-size : 1.5em;
         }

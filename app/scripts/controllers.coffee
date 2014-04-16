@@ -1026,7 +1026,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.showPopup = false
     s.error = false
 
-    s.fontSizeInit = 1
+    h = $(window).height()
+    w = $(window).width()
+
+    s.fontSizeInit = h / 700
     s.fontSizeFactor = s.fontSizeInit
 
     s.incrFontSize = (event, fac) ->

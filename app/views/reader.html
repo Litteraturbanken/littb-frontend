@@ -7,7 +7,7 @@
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     
     <div class="etext txt"
-         ng-style="{'font-size' : getFontSizeFactor() + 'em !important'}"
+         ng-style="{'font-size' : getFontSizeFactor() + 'em'}"
          ng-class="{'font-size-change' : isFocus && getFontSizeFactor() != fontSizeInit }"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
