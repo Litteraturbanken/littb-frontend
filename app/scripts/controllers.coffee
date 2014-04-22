@@ -1029,15 +1029,29 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     h = $(window).height()
     w = $(window).width()
 
-    s.fontSizeInit = h / 700
+    # s.fontSizeInit = h / 700
+    # s.fontSizeFactor = s.fontSizeInit
+    s.fontSizeInit = 1
     s.fontSizeFactor = s.fontSizeInit
+    $rootScope._night_mode = false
+
+
 
     s.incrFontSize = (event, fac) ->
         event.stopPropagation()
+        if (s.fontSizeFactor + fac) < 1 or (s.fontSizeFactor + fac) > 10 then return
         s.fontSizeFactor += fac
 
     s.getFontSizeFactor = () ->
         if s.isFocus then s.fontSizeFactor else 1
+
+    s.getSizeClasses = () ->
+        out = 
+            'font-size-change' : s.isFocus && s.getFontSizeFactor() != s.fontSizeInit
+        
+        out[('size-' + s.getFontSizeFactor())] = s.isFocus
+        out
+
 
 
     s.onPartClick = (startpage) ->

@@ -1,14 +1,16 @@
 <meta-desc>
     {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
-<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus}" >
+<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel,
+                 searching:loading, editor: isEditor, focus : isFocus,
+                 'type-faksimil' : mediatype == 'faksimil'}" >
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
-    
+    <!-- ng-style="{'font-size' : getFontSizeFactor() + 'em'}" -->
     <div class="etext txt"
-         ng-style="{'font-size' : getFontSizeFactor() + 'em'}"
-         ng-class="{'font-size-change' : isFocus && getFontSizeFactor() != fontSizeInit }"
+         
+         ng-class="getSizeClasses()"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
@@ -143,13 +145,20 @@
         <a class="" popper my="middle bottom-25" at="bottom middle" >
             <span class="size">aA</span>
         </a>
-        <div class="popper_menu popover top text">
+        <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
             <div class="arrow"></div>
             <div class="popover_inner">
-                <ul>
-                    <li><button ng-click="incrFontSize($event, -0.3)" class="btn btn-small">a</button> 
-                    <button ng-click="incrFontSize($event, 0.3)" class="btn btn-small pull-right">A</button></li>
+
+                <ul ng-show="mediatype == 'etext'">
+                    <li><button ng-click="incrFontSize($event, -1)" class="btn btn-small">a</button> 
+                    <button ng-click="incrFontSize($event, 1)" class="btn btn-small pull-right">A</button></li>
                 </ul>
+                <div class="size_picker" ng-show="mediatype == 'faksimil'">
+                    <div ng-class="{selected : size, hidden : !isDefined(size)}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
+                    
+                </div>
+                <div class="night_switch on" ng-if="!$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Mörkt <br> läge</div></div>
+                <div class="night_switch off" ng-if="$root._night_mode" ng-click="$root._night_mode = false"><span class="icon"></span> <div class="label">Ljus <br> läge</div></div>
             </div>
         </div>
 

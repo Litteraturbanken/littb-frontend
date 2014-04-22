@@ -691,15 +691,37 @@ $partnav-width : 170px;
         #mainview {
             width : auto;
             display : block;
+            .preloader {
+                right : 1em;
+            }
+        }
+        &.night {
+            background-color : #333;
+            #mainview .etext {
+                color : darken(white, 5%);
+            }
         }
         #leftCorridor {
             display : none;
         }
-        // .font-size-change {
-        //     .big {
-        //         font-size : 120%;
-        //     }
-        // }
+        @for $i from 0 to 10 {
+          .size-#{$i + 1} { 
+            -webkit-transform : scaleX(1 + ($i / 5)) scaleY(1 + ($i / 5));
+            -webkit-transform-origin : top;
+            // font-size: 1em + ($i / 5);
+            // .big {
+            //     font-size: 1.2em + ($i / 5)
+            // }
+          }
+        }
+        .size_picker > div {
+            font-size : 1.3em;
+            height : 30px;
+            width : 30px;
+            border-radius : 40px;
+            padding-top: 5px;
+            padding-left: 11px;
+        }
     }
     .focusBtn {
         margin-top : 1em;
@@ -726,11 +748,47 @@ $partnav-width : 170px;
         a {
             cursor : pointer;
         }
+
+    }
+    .type-faksimil.text.popper_menu {
+        width : 190px;
+        padding : 0.5em;
+        .size_picker {
+            margin-top : 0;
+        }
+
     }
     .popper_menu.text {
         width : 150px;
         .popover_inner {
             padding : 0.5em;
+        }
+        .night_switch {
+            margin-top : 0.5em;
+            font-size : 1.2em;
+            cursor : pointer;
+            .label {
+                display : inline-block;
+                vertical-align: top;
+                margin-left : 0.5em;
+            }
+            .icon {
+                height : 2.3em;
+                width : 2.3em;
+                display : inline-block;
+                border: 1px solid grey;
+                border-radius : 4px;
+            }
+            &.on {
+                .icon {
+                    background-color : #333;
+                }
+            }
+            &.off {
+                .icon {
+                    background-color : white;
+                }
+            }
         }
     }
     .popper_menu.parts {
@@ -761,6 +819,37 @@ $partnav-width : 170px;
     }
     .rightCover {
         right : 0;
+    }
+
+    .size_picker {
+        margin-top : 1em;
+    }
+    
+    .size_picker > div {
+        @include inline-block();
+        width : 20px;
+        height : 20px;
+        border-radius : 10px;
+        background-color : black;
+        color : white;
+        margin-left : 3px;
+        padding-left : 4px;
+        padding-top: 2px;
+        padding-left: 7px;
+        // font-family : $sans;
+        cursor : pointer;
+
+        &:first-of-type {
+            margin-left : 0;
+        }
+        
+        &.selected {
+            background-color : $primarycolor;
+            cursor : normal;
+        }
+        &.hidden {
+            visibility: hidden;
+        }
     }
 
     #mainview {
@@ -1017,35 +1106,7 @@ $partnav-width : 170px;
                 }
             }
         }
-        .size_picker {
-            margin-top : 1em;
-        }
-        .size_picker > div {
-            @include inline-block();
-            width : 20px;
-            height : 20px;
-            border-radius : 10px;
-            background-color : black;
-            color : white;
-            margin-left : 3px;
-            padding-left : 4px;
-            padding-top: 2px;
-            padding-left: 7px;
-            // font-family : $sans;
-            cursor : pointer;
-
-            &:first-of-type {
-                margin-left : 0;
-            }
-            
-            &.selected {
-                background-color : $primarycolor;
-                cursor : normal;
-            }
-            &.hidden {
-                visibility: hidden;
-            }
-        }
+        
     }
     .work_parts {
         margin-top : 1em;
