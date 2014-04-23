@@ -1,3 +1,3 @@
 #!/bin/sh
-rsync --delete -r dist/* johanrox@ra.spraakdata.gu.se:/export/htdocs_littb
+rsync --delete -tr dist/* johanrox@ra.spraakdata.gu.se:/export/htdocs_littb
 # 

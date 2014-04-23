@@ -150,7 +150,6 @@ littb.directive 'scrollTo', ($window, $timeout) ->
 
 
 
-
 littb.directive 'soArticle', ($compile) -> 
     scope : 
         soArticle : "="
@@ -159,7 +158,6 @@ littb.directive 'soArticle', ($compile) ->
             newElem = $compile(_.str.trim val)(scope)
             elem.html newElem
             
-
 
 littb.directive 'hvord', (backend) -> 
 
@@ -293,6 +291,42 @@ littb.directive 'pageTitle', ($interpolate) ->
         scope.$on "$destroy", () ->
             wtch()
 
+littb.directive 'breadcrumb', ($interpolate, $rootScope) ->
+    restrict : "EA"
+    link: (scope, elem, attrs) ->
+        elem.remove()
+        watches = []
+        for a, i in elem.children()
+            do (a, i) ->
+                inplText = $interpolate($(a).text())
+                if $(a).attr("href")
+                    inplHref = $interpolate($(a).attr("href"))
+                watches.push scope.$watch((s) ->
+                    # c.log "inplText(s)", inplText(s)
+                    inplText(s)
+                , (label) ->
+                    unless label then return
+                    unless $rootScope.breadcrumb[i]
+                        $rootScope.breadcrumb[i] = {}
+                    $rootScope.breadcrumb[i].label = label
+                )
+                if inplHref
+                    watches.push scope.$watch((s) ->
+                        inplHref(s)
+                    , (url) ->
+                        unless $rootScope.breadcrumb[i]
+                            $rootScope.breadcrumb[i] = {}
+                        $rootScope.breadcrumb[i].url = url
+                    )
+                
+
+            
+
+
+        scope.$on "$destroy", () ->
+            for wtch in watches
+                wtch()
+
 
 littb.directive 'kwicWord', ->
     replace: true
@@ -314,9 +348,7 @@ littb.directive 'kwicWord', ->
             for struct in (wd._close or [])
                 output["close_" + struct] = true
 
-
             return (x for [x, y] in _.pairs output when y).join " "
-
 
 
 littb.directive 'insert', () ->
@@ -324,3 +356,29 @@ littb.directive 'insert', () ->
         scope.watch "doc", () ->
             c.log "insert doc", scope.doc
             elem.html(scope.doc or "")
+
+littb.directive 'downloadBtn', () ->
+    restrict : "AE"
+    replace : true
+    scope :
+        file : "="
+    template : """
+    <a class="download" ng-href="{{getUrl(file)}}">
+        <i class="fa fa-file-text "></i>
+        <span class="">Ladda ner <br>som PDF</span> 
+    </a>
+    """
+    link : (scope, elem, attr) ->
+        scope.getUrl = (filename) ->
+            "/red/skola/pdf/" + filename.replace(".html", ".pdf")
+
+
+littb.directive "affix", () ->
+    restrict : "EA"
+    link : (scope, elem, attrs) ->
+        elem.affix(
+            offset : {
+                top : elem.offset().top
+            }
+        )
+

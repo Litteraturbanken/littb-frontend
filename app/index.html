@@ -28,11 +28,13 @@
 
         <div class="header">
             <i ng-click="_showmenu_mobile = !_showmenu_mobile;" class="fa fa-list fa fa-2x" style="display : none;"></i>
-            <a class="logo_link" href="#!/start">
-                <img id="logo" src="/bilder/LBlogga.svg">
+            <a class="logo_link" ng-href="#!{{getLogoUrl()}}">
             </a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
-                <li><a href="#!/start">Hem</a></li>
+                <li>
+                    <a ng-if="!isSchool" href="#!/start">Hem</a> 
+                    <a ng-if="isSchool" href="#!/start">Litteraturbanken</a> 
+                </li>
                 
                 <li ng-repeat="item in breadcrumb track by $index" ng-class="{active : $last}"><a ng-href="{{item.url}}">{{item.label}}</a></li>
               <!-- <li class="active">Data</li> -->
@@ -83,11 +85,14 @@
                     <a href="#!/statistik">Statistik</a>
                 </li>
                 <li>
+                    <a href="#!/skola">LB:s skola</a>
+                </li>
+                <li>
                     <a href="#!/sok">Sök i verk</a>
                 </li>
             </ul>
             
-            <div class="font-small dict_links" link-fix>
+            <div class="font-small dict_links">
                 <a href="http://g3.spraakdata.gu.se/saob/" target="_blank">SAOB</a> ::: <a href="http://spraakbanken.gu.se/karp/#lexicon=dalinm,dalin,dalin-base" target="_blank">Dalin</a>
             </div>
 
@@ -155,6 +160,7 @@
         <script src="components/angular-bootstrap/ui-bootstrap.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
         
+        <script src="components/bootstrap/js/bootstrap-affix.js"></script>
         <script src="components/spin.js/dist/spin.js"></script>
         <script src="components/angular-spinner/angular-spinner.js"></script>
         <!-- endbuild -->
@@ -172,6 +178,7 @@
         <script src="scripts/bin/services.js"></script>
         <script src="scripts/bin/directives.js"></script>
         <script src="scripts/bin/controllers.js"></script>
+        <script src="scripts/bin/school.js"></script>
         <!-- endbuild -->
     </body>
 </html>

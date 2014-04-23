@@ -1,5 +1,5 @@
 @charset "UTF-8";
-@import "triangle";
+@import "triangle"; 
 
 @import "compass/css3";
 @import "compass/css3/user-interface";
@@ -33,11 +33,15 @@ $primarycolor : #990000;
 .tooltip {
     font-size : 1em;
 }
+.fixed {
+    position : fixed;
+}
 
 body {
     font-size : 12px;
     padding-top : 20px;
     padding-left : $gutter-width;
+    padding-right : 1%;
     white-space: nowrap;
     font-family : georgia, serif;
     width : $page-width;
@@ -300,7 +304,7 @@ hr {
 }
 
 a {
-    color : black;
+    color : #333;
     text-decoration: none;
 }
 a:hover {
@@ -332,16 +336,26 @@ label {
     display : inline;
 }
 
-#logo {
-    height: 26px;
-    left: -8px;
-    top : 3px;
-    position: relative;
+// #logo {
+//     height: 26px;
+//     left: -8px;
+//     top : 3px;
+//     position: relative;
+// }
+.logo_link {
+    background-image: url("/bilder/LBlogga.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    height : 29px;
+    left: -10px;
+    margin-bottom: -5px;
+    position : relative;
 }
 
 body > .header {
     margin-bottom : 1.5em;
     padding-bottom : 5px;
+    padding-right : 0.5em;
     position : relative;
     & > a {
         @include inline-block(bottom);
@@ -367,6 +381,8 @@ body > .header {
         & > li:last-of-type a {
             color: grey;
         }
+        box-shadow: none;
+
     }
 }
 .start_menu {
@@ -374,11 +390,15 @@ body > .header {
 }
 .page-start {
     .header {
-        #logo {
-            height: 57px;
+        // #logo {
+        //     height: 57px;
+        //     left: -17px;
+        //     position: relative;
+        //     cursor : default;
+        // }
+        .logo_link {
+            height: 61px;
             left: -17px;
-            position: relative;
-            cursor : default;
         }
          a {
             width : 59%;
@@ -463,6 +483,9 @@ body > .header {
                     width : 390px;
                     height : 234px;
                 }
+                .submit_container {
+                    width : 392px;
+                }
                 .submit_btn {
                     margin-top : 1em;
                     float : right;
@@ -485,6 +508,9 @@ body > .header {
         .lowersection {
             p {
                 margin-bottom : 1em;
+            }
+            .submit_btn {
+                vertical-align: bottom;
             }
         }
 
@@ -874,7 +900,6 @@ $partnav-width : 170px;
                     }
                 }
             }
-            
         }
         .size_picker {
             margin-top : 1em;
@@ -1432,6 +1457,449 @@ grundform-clean {
     // font-size: 1em;
 }
 
+
+.site-school {
+    width : 100%;
+    // padding : 50px;
+    padding-left : 40px;
+    font-size : 16px;
+    line-height: 1.4em;
+    $column_width : 500px;
+    h1 {
+        line-height : 1.1;
+        font-size : 1.6em;
+    }
+    h2 {
+        margin-top : 2.5em;
+        font-size : 1.2em;
+        a {
+            border-bottom : 1px dotted $primarycolor;
+        }
+    }
+    h3 {
+        font-weight: bold;
+        margin-top : 2.5em;
+        font-size : 0.8em;
+        line-height : 0.5;
+    }
+
+    blockquote {
+        font-size : 0.85em;
+        padding-left : 25px;
+        margin-left : 1em;
+        max-width : $column_width - 60px;
+        line-height : 1.4em;
+    }
+
+    .download {
+        line-height : 1.1;
+        // margin-top : 2em;
+        margin-top : 4em;
+        vertical-align : middle;
+        display : inline-block;
+        padding : 3px;
+        border : 1px solid transparent;
+        cursor: pointer;
+        transition : border 200ms;
+        border-radius: 4px;
+        font-size : 0.9em;
+        * {
+            display : inline-block;
+        }
+        i {
+            font-size : 2em;
+            margin-right: 3px;
+            vertical-align: bottom;
+        }
+        &:hover {
+            border : 1px solid grey;
+            transition : border 200ms;
+        }
+        &:active {
+            color : grey;
+        }
+        &:hover {
+            color : initial;
+        }
+    }
+
+    .itemizedlist {
+        p {
+            margin : 0;
+        }
+    }
+    .top_menu .icon {
+        cursor: pointer;
+        margin-left : -16px;
+
+        color : #666;
+    }
+    .collapse {
+        // margin-left : 1.5em;
+        overflow: hidden;
+    }
+    .minus:after {
+        content : "−";
+        font-size : 1.4em;
+        height : 100%;
+    }
+    .plus:after {
+        content : "+";
+        font-size : 1.4em;
+    }
+    .minus:hover, .plus:hover {
+        color : $primarycolor;
+    }
+    .minus:active, .plus:active {
+        color: lighten($primarycolor, 5%);
+    }
+    
+    .highlight {
+        color : $primarycolor;
+    }
+    .file_parent {
+        white-space : nowrap;
+        & > * {
+            white-space: normal;
+        }
+    }
+    .next_prev {
+        height : 1em;
+        font-size : 0.8em;
+        margin-top : 3em;
+        a:first-child:not(.empty) {
+            float : left;
+            &:before {
+                content : "← ";
+            }
+        }
+        a:last-child:not(.empty) {
+            float : right;
+            &:after {
+                content : " →";
+            }
+        }
+    }
+
+    .before_sidebar {
+        @include inline-block(top);
+    }
+    .sidebar {
+        @include inline-block(top);
+
+        width: 210px;
+        margin-left: 5em;
+        font-size: 0.85em;
+        line-height : 1.2;
+
+    }
+
+    .italics, .italic {
+        font-style: italic;
+    }
+    #leftCorridor {
+        display : none;
+    }
+    .header hr {
+        border-color : lightgrey;
+    }
+    .logo_link {
+        background: url("../img/school_logo.svg") no-repeat;
+        height : 50px;
+        width: 370px;
+        margin-bottom : 0;
+        @include inline-block();
+        position: relative;
+        top: 20px;
+        // margin-bottom : -40px;
+    }
+    & > .header .breadcrumb {
+        // width : 49%;
+        // @include inline-block(bottom);
+        display : block;
+        width : auto;
+    }
+
+    #mainview .nav_sidebar li {
+        text-transform: uppercase;
+        // margin-bottom : 0.2em;
+        line-height: 1.5em;
+        &.menu_heading {
+            color : #666;
+        }
+    }
+    .nav_sidebar .selected {
+        color : $primarycolor;
+        cursor: default;
+    }
+
+    #mainview {
+        width : auto;
+    }
+    p, #{headers()} {
+        max-width: $column_width;
+    }
+    #mainview:after {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        background-repeat: no-repeat;
+        opacity : 0.3;
+        content: "";
+        z-index: -1;
+        // white-space: nowrap;
+    }
+    .ulink {
+        // font-style: italic;
+    }
+    .firstterm, .glossterm {
+        // font-variant: small-caps;
+        font-size : 0.9em;
+        // text-transform: capitalize;
+        
+    }
+    .firstterm {
+        font-style: normal;
+
+    }
+    .separator {
+        text-align: center;
+        margin-top: 2em;
+    }
+    
+    dt {
+        margin-top: 0.8em;
+        margin-bottom : 0.5em;
+        .glossterm {
+            font-style: normal;
+            font-weight: bold;       
+        }
+    }
+    dd {
+        margin-bottom : 1.5em;
+    }
+    dd p {
+        margin-top : 0;
+    }
+    .titlepage {
+        font-weight: normal;
+        // font-style: italic;
+        font-size : 20px;
+    }
+
+    .content {
+        h1 {
+            // color : $primarycolor;
+            // text-transform: uppercase;
+        }
+        ul li {
+            list-style-type : disc;
+            margin-left : 2em;
+        }
+        @include inline-block(top);
+        .sect2 {
+            margin-top: 2em;
+        }
+    }
+    .nav_sidebar {
+        @include inline-block(top);
+
+        width : 195px;
+        margin-right : 60px;
+        font-size : 12px;
+        .top_menu {
+            margin-top: 1.3em;
+        }
+
+        & > .affix {
+            top : 0;
+        }
+
+    }
+    ul ul li {
+        margin-left : 1em;
+    }
+
+    .lower_menu {
+        margin-top : 1em;
+        // font-size : 0.8em;
+        ul {
+            font-size : inherit;
+        }
+    }
+
+    &.page-teachers, &.page-students {
+
+        .logos {
+            margin-top : 4em;
+            & > * {
+                display : block;
+                margin-top : 1em;
+            }
+            .lb {
+                height : 33px;
+            }
+            .sla {
+                height : 33px;
+                // margin-left: 29px;
+                margin-top: 7px;
+            }
+        }
+    }
+
+
+    &.page-school {
+        ul {
+            font-size : 0.8em;  
+        }
+        .logo_link {
+            cursor: pointer;
+        }
+        .logos {
+            margin-top : 5em;
+            .lb{
+                height : 40px;
+            }
+            .amp{
+                height : 16px;
+                margin : 0 8px;
+            }
+            .sla{
+                height : 40px;
+            }
+        }
+        
+        .content {
+            min-height : 380px;
+        }
+        
+        
+        .teachers, .students {
+            h2 {
+                color : $primarycolor;
+            }
+            position: absolute;
+            text-transform: uppercase;
+
+        }
+        .header hr {
+            position : relative;
+            z-index : -1; 
+            width : 600px;
+            margin : 0;
+            margin-top: 31px;
+        }
+
+        .img_circle {
+            float : right;
+        }
+
+        .teachers {
+            top: 220px;
+            left: 550px;
+        }
+        .students {
+            top: 420px;
+            left: 600px;
+        }
+
+        #mainview:after {
+            background-image: url("../img/selma_circle.png");
+            background-size : 700px;
+            top: 50px;
+            left: 450px;
+            opacity : 1;
+            height : 710px;
+        }
+        h1, p {
+            max-width : 380px;
+        }
+    }
+    &.page-teachers, &.page-students {
+        #mainview > div {
+            white-space : nowrap;
+            & > * {
+                white-space : normal;
+            }
+        }
+        .content {
+            margin-bottom : 5em;
+        }
+    }
+
+
+    &.page-teachers  {
+        .header hr {
+            border-color : #999;
+            border-width: 1px;
+        }
+        #mainview:after {
+            position: absolute;
+            background-image: url("../img/lagerlof_portrait.jpg");
+            top: -90px;
+            left: -280px;
+            height : 1200px;   
+
+        }
+        #mainview {
+            & > div {
+                @include inline-block(top);
+            }
+            .nav_sidebar {
+                margin-right : 80px;
+            }
+            
+        }
+        .authorinfo {
+            margin-top : 5em;
+            &:last-child {
+                margin-top : inherit;
+            }
+            font-size : 0.8em;
+
+        }
+    }
+    &.page-students {
+        // background-repeat: no-repeat;
+        // opacity : 0.4;
+        .top_menu {
+            .page {
+                margin-bottom : 0.5em;
+                // font-size : 1.1em;
+                font-weight: bold;
+            }
+            
+        }
+        .header hr {
+            border-color : #999;
+        }
+        .header .breadcrumb {
+        }
+
+
+        #mainview:after {
+            position: absolute;
+            background : url("../img/selma_young.jpg") no-repeat;
+            // background: url("../img/selma_young.jpg") no-repeat center center; 
+            height : 1230px;
+            top : -100px;
+            left : 0;
+            content : " ";
+            // width : 100%;
+            // overflow : visible;
+        }
+        .content {
+        }
+        
+    }
+}
+
+
+
+
+
+
+
 @media 
 only screen and (max-width: 760px),
 (min-device-width: 768px) and (max-device-width: 1024px)  {
@@ -1445,50 +1913,6 @@ only screen and (max-width: 760px),
         width: auto; 
         margin: 0; 
     }
-    /*
-    .page-reading {
-        width : 100%;
-        padding-left: 0;
-        #mainview {
-            padding-left : 1em;
-        }
-
-        header {
-            padding-left : 1em;
-        }
-
-        #leftCorridor {
-            display : none;
-        }
-        #leftCorridor.show {
-            display : inline-block;
-        }
-        header .logo_link, hr, .start_menu, .breadcrumb {
-            display : none;
-        }
-
-        header .icon-list {
-            display : inline-block !important;
-        }
-        
-        div.pname {
-            position : static !important;
-        }
-        padding-bottom : 3em;
-        .nav_footer {
-            // display : block;
-            position : fixed;
-            bottom : 0;
-            height : 3em;
-            vertical-align : middle;
-            background-color : $primarycolor;
-            width  : 100%;
-        }
-    }
-    */
-
-
-
 
     .page-epubList p {
         max-width : 70%;
@@ -1508,6 +1932,9 @@ only screen and (max-width: 760px),
         tr {
             display: block; 
           }
+        tr:first-child {
+            display : none;
+        } 
         
         /* Hide table headers (but not display: none;, for accessibility) */
         thead tr { 
@@ -1532,7 +1959,7 @@ only screen and (max-width: 760px),
             }
         }
         
-        td:before { 
+        td:before {  
             /* Now like a table header */
             position: absolute;
             /* Top/left values mimic padding */
@@ -1544,4 +1971,93 @@ only screen and (max-width: 760px),
         }   
         
     }
+
+    .site-school {
+
+        .logo_link {
+            // height : 30px;
+            // width: 100%;
+            // background-size: 100%;
+        }
+        padding : 5%;
+
+        .header .breadcrumb {
+            text-align: left;
+            margin-top : 0.5em;
+        }
+        .download {
+            position : static;
+            margin-top : 2em;
+        }
+
+        &.page-school {
+            .header hr {
+                width : 100%;
+            }
+            #mainview:after {
+                display : none;
+            }
+            .teachers, .students {
+                position : static;
+            }
+            .students {
+                margin-bottom : 2em;
+            }
+            h1, p {
+                width: 100%;
+                max-width : 100%;
+            }
+
+            .lb{
+                display : block;
+                margin-bottom : 2em;
+            }
+            .amp{
+                display : none;
+            }
+            .sla{
+                display : block;
+            }
+
+            h2 { 
+                margin-top : 1em;
+            }
+        }
+
+        &.page-teachers, &.page-students {
+            #mainview > div {
+                white-space : normal;
+            }
+            #mainview:after {
+                background-image: none;
+            }
+
+        }
+
+        
+        .nav_sidebar {
+            margin-bottom : 2em;  
+            margin-left : 1em; 
+            width : auto;
+            .affix {
+                position : static;
+            }
+        }
+
+        .before_sidebar {
+            display : block;
+        }
+        .sidebar {
+            display : block;
+            background-color : lightgrey;
+            margin-left : 0;
+            width : 100%;
+            padding : 3%;
+            margin : 0 auto;
+            height : auto !important;
+            // margin-left : 5%;
+        }
+    }    
+
 }
+

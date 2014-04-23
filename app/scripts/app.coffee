@@ -2,6 +2,8 @@
 _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 
+window.isDev = location.hostname != "litteraturbanken.se"
+
 routeStartCurrent = null
 
 window.getScope = () -> $("#mainview").children().scope()
@@ -20,7 +22,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                            ])
     .config ($routeProvider) ->
 
-        class Router
+        class window.Router
             constructor : () ->
             when : (route, obj) ->
 
@@ -267,10 +269,21 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
     firstRoute.promise.then () ->
         $rootElement.addClass("ready")
 
+    $rootScope.getLogoUrl = () ->
+        if $rootScope.isSchool then "/skola" else "/start"
+
     # just in case the above deferred fails. 
     $timeout( () -> 
         $rootElement.addClass("ready")
     , 1000)
+
+    stripClass = (prefix) ->
+        re = new RegExp("\\ ?#{prefix}\\-\\w+", "g");
+
+        cls = $rootElement.attr "class"
+        cls = cls.replace re, ""
+        $rootElement.attr "class", cls
+
 
     $rootScope.goto = (path) ->
         $location.url(path)
@@ -295,12 +308,19 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         $rootScope.prevRoute = prevRoute
 
         # get rid of old class attr on body
-        cls = $rootElement.attr "class"
-        cls = cls.replace /\ ?page\-\w+/g, ""
-        $rootElement.attr "class", cls
+        stripClass("page")
+        stripClass("site")
 
         if newRoute.controller?.replace
             $rootElement.addClass("page-" + newRoute.controller.replace("Ctrl", ""))
+
+        if newRoute.school
+            $rootScope.isSchool = true
+            $rootElement.addClass("site-school")
+            className = (_.last newRoute.templateUrl.split("/")).split(".")[0]
+            $rootElement.addClass("page-" + className)
+        else 
+            delete $rootScope.isSchool
 
 
         # c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
@@ -312,7 +332,31 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
         firstRoute.resolve()
 
-    $rootScope._showmenu_mobile = false;
+
+
+    $rootScope.scrollPos = {} # scroll position of each view
+    $(window).on "scroll", ->
+        # false between $routeChangeStart and $routeChangeSuccess
+        if $rootScope.okSaveScroll
+            if $(window).scrollTop()
+                $rootScope.scrollPos[$location.path()] = $(window).scrollTop()
+
+
+    #console.log($rootScope.scrollPos);
+    $rootScope.scrollClear = (path) ->
+        $rootScope.scrollPos[path] = 0
+
+    $rootScope.$on "$routeChangeStart", ->
+        $rootScope.okSaveScroll = false
+
+    $rootScope.$on "$routeChangeSuccess", ->
+        $rootScope.okSaveScroll = true
+        #     c.log "$routeChangeSuccess"
+        #     $timeout (-> # wait for DOM, then restore scroll position
+                
+        #     ), 0
+
+    # $rootScope._showmenu_mobile = false;
 
     normalizeUrl = (str) ->
         trans = _.object _.zip "åäö", "aao"

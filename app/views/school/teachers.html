@@ -1,0 +1,117 @@
+<div ng-controller="fileCtrl">
+    <breadcrumb>
+        <a href="/#!/skola">Skolan</a>
+        <a href="/#!/skola/larare">Lärare</a>
+        <a>{{currentName}}</a>
+    </breadcrumb>
+    <div class="nav_sidebar">
+        <div affix >
+            <ul class="top_menu" active-style ng-controller="MenuCtrl">
+                <li><a href="/#!/skola/larare">Välkommen</a></li>
+                <li><br></li>
+                <li class="menu_heading">Allmänt</li>
+                <li>
+                    <i class="icon" ng-class="{'minus' : !collapsed[3], 'plus' : collapsed[3]}" ng-click="collapsed[3] = !collapsed[3]"></i>
+                    <a ng-click="collapsed[3] = false" href="/#!/skola/larare/DidaktikOchMetodik.html">Didaktik och metodik</a></li>
+                    <ul collapse="collapsed[3]">
+                        <!-- <li><a href="/#!/skola/larare/DidaktikOchMetodik.html">Didaktisk introduktion</a></li> -->
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik.html">1. Introduktion</a></li>
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik2.html">2. Litteratursamtal</a></li>
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik3.html">3. Genreläsning mm.</a></li>
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik4.html">4. Metodiska idéer</a></li>
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik5.html">5. Analysmodeller</a></li>
+                        <li><a href="/#!/skola/larare/Litteraturlista.html">Litteraturlista</a></li>
+                        
+                    </ul>
+                <li><a href="/#!/skola/larare/TermerOchBegrepp.html">Termer och begrepp</a></li>
+                <li><a href="/#!/skola/larare/Genrer.html">Litterära genrer</a></li>
+                <li><a href="/#!/skola/larare/Hjalp.html">Hjälp</a></li>                
+                <li><br></li>
+                <li class="menu_heading">Specifikt</li>
+                <li><a href="/#!/skola/larare/LitteraturAttLasaISkolan.html">Litteratur att läsa i skolan</a></li>
+                
+                <li>
+                    <i class="icon" ng-class="{'minus' : !collapsed[2], 'plus' : collapsed[2]}" ng-click="collapsed[2] = !collapsed[2]"></i>
+                    <a ng-click="collapsed[2] = false" href="/#!/skola/larare/Lashandledningar.html">Läshandledningar</a>
+                    <ul collapse="collapsed[2]">
+
+                         <li><a href="/#!/skola/larare/DrottningarGY.html">Drottningar i Kungahälla</a></li>
+                         <li><a href="/#!/skola/larare/EnHerrgardssagenLarare.html">En Herrgårdssägen</a></li>
+                         <li><a href="/#!/skola/larare/GostaBerlingLarare.html">Gösta Berlings saga</a></li>
+                         <li><a href="/#!/skola/larare/HerrArneLarare.html">Herr Arnes penningar</a></li>
+                         <li><a href="/#!/skola/larare/JerusalemLarare.html">Jerusalem</a></li>
+                         <li><a href="/#!/skola/larare/KejsarnLarare.html">Kejsarn av Portugallien</a></li>
+                         <li><a href="/#!/skola/larare/KorkarlenLarare.html">Körkarlen</a></li>
+                         <li><a href="/#!/skola/larare/LowenskoldskaRingenLarare.html">Löwensköldstrilogin</a></li>
+                         <li><a href="/#!/skola/larare/MarbackaLarare.html">Mårbackasviten</a></li>
+                         <li><a href="/#!/skola/larare/NilsHolgerssonFordjupning.html">Nils Holgersson</a></li>
+                         <li><a href="/#!/skola/larare/OsynligaLankarLarare.html">Osynliga länkar</a></li>
+                         <li><a href="/#!/skola/larare/TrollManniskorLarare.html">Troll och människor</a></li>
+                
+                        </ul>    
+                </li>
+                
+                <li>
+                    <i class="icon" ng-class="{'minus' : !collapsed[0], 'plus' : collapsed[0]}" ng-click="collapsed[0] = !collapsed[0]"></i>
+                    <a ng-click="collapsed[0] = false" href="/#!/skola/larare/OrienteringGenrer.html">Orientering genrer</a>
+                    <ul collapse="collapsed[0]">
+                        <li><a href="/#!/skola/larare/Romaner.html">Romaner</a></li>
+                        <li><a href="/#!/skola/larare/Noveller.html">Noveller</a></li>
+                        <li><a href="/#!/skola/larare/Sagner.html">Sägner</a></li>
+                        <li><a href="/#!/skola/larare/Legender.html">Legender</a></li>
+                        <li><a href="/#!/skola/larare/Konstsagor.html">Konstsagor</a></li>
+                    </ul>
+                </li>
+                
+                
+                <li>
+                    <i class="icon" ng-class="{'minus' : !collapsed[1], 'plus' : collapsed[1]}" ng-click="collapsed[1] = !collapsed[1]"></i>
+                    <a ng-click="collapsed[1] = false" href="/#!/skola/larare/OrienteringTemaMotiv.html">Orientering tema/motiv</a>
+                    <ul collapse="collapsed[1]">
+                        <li><a href="/#!/skola/larare/Krig.html">Krig</a></li>
+                        <li><a href="/#!/skola/larare/NordiskFolktro.html">Nordisk folktro</a></li>
+                        <li><a href="/#!/skola/larare/Skrack.html">Skräck</a></li>
+                        <li><a href="/#!/skola/larare/Karlek.html">Kärlek</a></li>
+                        <li><a href="/#!/skola/larare/Kvinnosak.html">Kvinnosak</a></li>
+                        
+                    </ul>
+                </li>
+                <li>
+                    <i class="icon" ng-class="{'minus' : !collapsed[4], 'plus' : collapsed[4]}" ng-click="collapsed[4] = !collapsed[4]"></i>
+                    <a href="/#!/skola/larare/SLiAndraMedier.html">I andra medier</a>
+                    <ul collapse="collapsed[4]">
+                        <li><a href="/#!/skola/larare/UppgifterMedier6-9.html">Uppgifter medier 6-9</a></li>
+                        <li><a href="/#!/skola/larare/UppgifterMedierGY.html">Uppgifter medier GY</a></li>
+                    </ul>
+
+                </li>
+                
+                
+            </ul>
+            
+            <ul class="lower_menu">
+                <li class="menu_heading">Elevernas sidor</li>
+                <li><a href="/#!/skola/f-5">Elevsidor f–5</a></li>
+                <!-- <li><a href="/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil">För de yngre</a></li> -->
+                <li><a href="/#!/skola/6-9">Elevsidor 6–9</a></li>
+                <li><a href="/#!/skola/gymnasium">Elevsidor gymnasium</a></li>
+                    <!-- </ul> -->
+                <!-- </li> -->
+                <li><br></li>
+                <li><a href="/#!/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
+                <li><a href="/#!/forfattare/LagerlofS/presentation">Mer om Lagerlöf</a></li>
+                <!-- <li><a href="/#!/forfattare/LagerlofS">Selma Lagerlöf-arkivet</a></li> -->
+                <!-- <li><a href="/#!/start">Litteraturbanken</a></li> -->
+            </ul>
+            <!-- <div class="logos">
+                <a href="/#!/start"><img class="lb" src="/img/lb_full.svg"></a>
+                <a href="/#!/forfattare/LagerlofS"><img class="sla" src="/img/sla.svg"></a>
+            </div> -->
+            <download-btn ng-if="docurl" file="docurl"></download-btn>
+        </div>
+    </div>
+    <div class="content">
+        <p sc-file="{{docurl || 'ValkommenStartsida.html'}}"></p>
+    </div>
+
+</div>

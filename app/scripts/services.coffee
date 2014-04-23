@@ -216,6 +216,11 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         return output
 
 
+    getHtmlFile : (url) ->
+        return http(
+            url : url
+        )
+    
     getHitParams : (item) ->
         if item.mediatype == "faksimil"
             obj = _.pick item, "x", "y", "width", "height"
@@ -361,7 +366,6 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         http(
             url : url
             cache : true
-            # cache : localStorageCache
             params : _.extend {}, params, passedParams
         ).success( (xml) ->
             info = parseWorkInfo("LBwork", xml)
@@ -659,9 +663,14 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         def = $q.defer()
 
         url = "query/lb-contact.xql"
+        
+        if window.isDev
+            action = "contact-test"
+        else
+            action = "contact"
 
         params = 
-            action : "contact-test"
+            action : action
             lang : "swe"
             ContactName : name
             ContactEmail : email

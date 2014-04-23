@@ -29,8 +29,10 @@ littb.controller "startCtrl", ($scope, $location) ->
 
 
 
-littb.controller "contactFormCtrl", ($scope, backend, $timeout) ->
+littb.controller "contactFormCtrl", ($scope, backend, $timeout, $location) ->
     s = $scope
+
+    fromSchool = $location.search().skola?
 
     s.showContact = false
     s.showNewsletter = false
@@ -52,7 +54,11 @@ littb.controller "contactFormCtrl", ($scope, backend, $timeout) ->
         , 4000)
 
     s.submitContactForm = () ->
-        backend.submitContactForm(s.name, s.email, s.message).then( () ->
+        if fromSchool
+            msg = "[skola] " + s.message
+        else
+            msg = s.message
+        backend.submitContactForm(s.name, s.email, msg).then( () ->
             s.showContact = true
             done()
         , err
@@ -67,9 +73,13 @@ littb.controller "contactFormCtrl", ($scope, backend, $timeout) ->
 
 
     
+
 littb.controller "statsCtrl", ($scope, backend) ->
     s = $scope
+
+
     backend.getStats().then (data) ->
+        c.log "data", data
         s.data = data
 
 littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, util, searchData, authors, debounce) ->
@@ -241,6 +251,22 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
+        # params =
+
+        backend.searchWorks(s.query,
+            mediatype,
+            from,
+            to,
+            $location.search().forfattare,
+            $location.search().titel,
+            s.prefix,
+            s.suffix).then (data) ->
+                c.log "search data", data
+                s.data = data
+                s.kwic = data.kwic or []
+                s.hits = data.hits
+                s.searching = false
+                s.total_pages = Math.ceil(s.hits / s.num_hits)
 
         backend.searchWorks(s.query,
             mediatype,
@@ -258,6 +284,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 s.searching = false
                 s.total_pages = Math.ceil(s.hits / s.num_hits)
 
+                for row in (data.kwic or [])
+                    row.href = searchData.parseUrls row
 
                 for row in (data.kwic or [])
                     row.href = searchData.parseUrls row
@@ -1078,7 +1106,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pageToLoad = s.pageix
             return
         unless s.endpage then return
-        if s.pageix == s.pagemap["page_" + s.endpage] then return
         newix = s.pageix + s.getStep()
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
@@ -1123,7 +1150,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
-
     
     s.getLastPageUrl = () ->
         if s.isEditor
