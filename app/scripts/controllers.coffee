@@ -14,8 +14,10 @@ littb.controller "startCtrl", ($scope, $location) ->
 
 
 
-littb.controller "contactFormCtrl", ($scope, backend, $timeout) ->
+littb.controller "contactFormCtrl", ($scope, backend, $timeout, $location) ->
     s = $scope
+
+    fromSchool = $location.search().skola?
 
     s.showContact = false
     s.showNewsletter = false
@@ -37,7 +39,11 @@ littb.controller "contactFormCtrl", ($scope, backend, $timeout) ->
         , 4000)
 
     s.submitContactForm = () ->
-        backend.submitContactForm(s.name, s.email, s.message).then( () ->
+        if fromSchool
+            msg = "[skola] " + s.message
+        else
+            msg = s.message
+        backend.submitContactForm(s.name, s.email, msg).then( () ->
             s.showContact = true
             done()
         , err

@@ -2,6 +2,8 @@
 _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 
+window.isDev = location.hostname != "litteraturbanken.se"
+
 routeStartCurrent = null
 
 window.getScope = () -> $("#mainview").children().scope()

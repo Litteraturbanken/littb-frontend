@@ -649,9 +649,14 @@ littb.factory 'backend', ($http, $q, util) ->
         def = $q.defer()
 
         url = "query/lb-contact.xql"
+        
+        if window.isDev
+            action = "contact-test"
+        else
+            action = "contact"
 
         params = 
-            action : "contact-test"
+            action : action
             lang : "swe"
             ContactName : name
             ContactEmail : email

@@ -479,6 +479,9 @@ body > .header {
                     width : 390px;
                     height : 234px;
                 }
+                .submit_container {
+                    width : 392px;
+                }
                 .submit_btn {
                     margin-top : 1em;
                     float : right;
@@ -501,6 +504,9 @@ body > .header {
         .lowersection {
             p {
                 margin-bottom : 1em;
+            }
+            .submit_btn {
+                vertical-align: bottom;
             }
         }
 
