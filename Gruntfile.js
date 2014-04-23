@@ -204,7 +204,12 @@ module.exports = function (grunt) {
         httpFontsPath: '/styles/fonts',
         relativeAssets: false
       },
-      dist: {},
+      dist: {
+        options: {
+          debugInfo: false,
+          outputStyle: 'compressed'
+        }
+      },
       server: {
         options: {
           debugInfo: true
@@ -440,7 +445,7 @@ module.exports = function (grunt) {
     'copy:dist',
     // 'cdnify',
     'ngmin',
-    // 'cssmin',
+    'cssmin',
     'uglify',
     'rev',
     'usemin'
