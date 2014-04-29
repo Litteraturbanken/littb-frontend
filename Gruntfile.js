@@ -32,18 +32,27 @@ module.exports = function (grunt) {
     watch: {
       coffee: {
         files: ['<%= yeoman.app %>/scripts/{,*/}*.coffee'],
-        tasks: ['coffee:dist']
+        tasks: ['newer:coffee:dist']
       },
       coffeeTest: {
         files: ['test/spec/{,*/}*.coffee'],
-        tasks: ['coffee:test']
+        tasks: ['newer:coffee:test']
       },
       compass: {
         files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
-        tasks: ['compass:server', 'autoprefixer']
+        tasks: ['compass:server', 'newer:autoprefixer'],
       },
       gruntfile: {
         files: ['Gruntfile.js']
+      },
+      css: {
+        options: {
+          livereload: LIVERELOAD_PORT
+        },
+        files: [
+          '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.css'
+        ],
+        tasks: []
       },
       livereload: {
         options: {
@@ -51,9 +60,8 @@ module.exports = function (grunt) {
         },
         files: [
           '<%= yeoman.app %>/index.html',
-          '<%= yeoman.app %>/views/*.html',
-          '<%= yeoman.app %>/views/school/*.html',
-          '{.tmp,<%= yeoman.app %>}/styles/styles.css',
+          '<%= yeoman.app %>/views/{,*/}*.html',
+          //'{.tmp,<%= yeoman.app %>}/styles/styles.css', // keep css watch in separate reload so we dont reload whole page on css change
           '{.tmp,<%= yeoman.app %>}/scripts/{,*/}*.js',
           '<%= yeoman.app %>/img/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
         ]
@@ -94,9 +102,16 @@ module.exports = function (grunt) {
         // Change this to '0.0.0.0' to access the server from outside.
         hostname: '0.0.0.0',
       },
-      proxies : ["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb"].map(function(item) {
-        var host = 'demolittb.spraakdata.gu.se'
-        // var host = 'litteraturbanken.se'
+      proxies : ["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "ws"].map(function(item) {
+        //var host = 'demolittb.spraakdata.gu.se'
+        var host = 'litteraturbanken.se'
+        //var host;
+        //if ( item == "css") {
+        //    host = 'litteraturbanken.se';
+        //    }
+        //else {
+        //    host = 'demo.selmalagerlofarkivet.se';
+        //    }
         return {
                       context: '/' + item,
                       host: host,
@@ -206,8 +221,8 @@ module.exports = function (grunt) {
       },
       dist: {
         options: {
-          debugInfo: false,
-          outputStyle: 'compressed'
+          outputStyle: 'compressed',
+          force: true
         }
       },
       server: {
@@ -232,7 +247,7 @@ module.exports = function (grunt) {
           src: [
             '<%= yeoman.dist %>/scripts/{,*/}*.js',
             '<%= yeoman.dist %>/styles/{,*/}*.css',
-            '<%= yeoman.dist %>/img/{,*/}*.{png,jpg,jpeg,gif,webp}',
+            '<%= yeoman.dist %>/img/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
             '<%= yeoman.dist %>/styles/fonts/*'
           ]
         }
@@ -253,6 +268,9 @@ module.exports = function (grunt) {
     },
     imagemin: {
       dist: {
+        options: {
+          optimizationLevel: 1, // could optimize pngs more (up to 7) for slightly smaller size, but can be very slow with bigger files. Or use a cache + grunt-newer
+        },
         files: [{
           expand: true,
           cwd: '<%= yeoman.app %>/img',
@@ -271,7 +289,7 @@ module.exports = function (grunt) {
         }]
       }
     },
-    cssmin: {
+    // cssmin: {
       // dist: {
       //   files: {
       //     '<%= yeoman.dist %>/styles/main.css': [
@@ -280,7 +298,7 @@ module.exports = function (grunt) {
       //     ]
       //   }
       // }
-    },
+    // },
     htmlmin: {
       dist: {
         options: {
@@ -297,7 +315,7 @@ module.exports = function (grunt) {
         files: [{
           expand: true,
           cwd: '<%= yeoman.app %>',
-          src: ['*.html', 'views/*.html', 'views/school/*.html'],
+          src: ['*.html', 'views/{,*/}*.html'],
           dest: '<%= yeoman.dist %>'
         }]
       }
@@ -340,9 +358,12 @@ module.exports = function (grunt) {
         //   src : [
         //     '*'
         //   ]
-
-
-        // }
+        { // xml-filer för kollationeringen
+            expand : true,
+            cwd : '<%= yeoman.app %>',
+            dest: '<%= yeoman.dist %>',
+            src : ['views/sla/*.xml'],
+        }
         ]
       },
       // styles: {
@@ -354,7 +375,7 @@ module.exports = function (grunt) {
     },
     concurrent: {
       server: [
-        'coffee:dist',
+        'newer:coffee:dist',
         'compass:server',
         // 'copy:styles'
       ],
@@ -398,15 +419,7 @@ module.exports = function (grunt) {
         }]
       }
     },
-    uglify: {
-      dist: {
-        files: {
-          '<%= yeoman.dist %>/scripts/scripts.js': [
-            '<%= yeoman.dist %>/scripts/scripts.js'
-          ],
-        }
-      }
-    },
+    uglify: {}, // generated by usemin
   });
 
   grunt.registerTask('server', function (target) {

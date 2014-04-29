@@ -14,6 +14,7 @@ $main-menu-width : 120px;
 $gutter-width : 40px;
 $page-width : 712px;
 $mainview-width : $page-width - $main-menu-width - ($gutter-width * 2);
+$right-corridor-width : 160px;
 
 $primarycolor : #990000;
 @mixin primarygradient {
@@ -45,10 +46,15 @@ body {
     white-space: nowrap;
     font-family : georgia, serif;
     width : $page-width;
-    background-color: white;
+    /*background-color: white;*/
+    color: #333;
     line-height : 17.5px;
     padding-bottom : 3em;
-
+    
+    a:link, a:visited {
+        color: inherit; /* rgb(51, 51, 51) */
+    }
+    
     > * {
         white-space : normal;
     }
@@ -80,6 +86,15 @@ h1,h2,h3,h4,h5,h6 {
 
 .etext table {
     width: 90%;
+}
+
+#rightCorridor{
+    @include inline-block;
+    margin-left: 5px;
+    width : $right-corridor-width;
+    #toolkit-right {
+        margin-top: 2em;
+    }
 }
 
 #leftCorridor {
@@ -322,7 +337,9 @@ ul {
 li {
     list-style: none;
 }
-
+form {
+    margin-bottom : 1em;
+}
 .mainnav {
     vertical-align: top;
     line-height : 19px;
@@ -361,8 +378,19 @@ body > .header {
         @include inline-block(bottom);
         width : 28%;
     }
+    
     .breadcrumb {
         @include inline-block(bottom);
+        > li {
+            display: inline;
+            &.active a {
+                color: #999999;
+            }
+        }
+        .divider {
+            color: #CCC;
+            padding: 0px 5px;
+        }
         text-align : right;
         width : 71%;
         position : relative;
@@ -441,9 +469,6 @@ body > .header {
             font-size : 1.1em;
             width : 90px;
         }
-        form {
-            margin-bottom : 1em;
-        }
     }
     & + li:before {
         .breadcrumb > li + li:before {
@@ -451,7 +476,7 @@ body > .header {
             padding: 0 5px;
         }
     }
-} 
+}
 
 .page-contactForm {
     #mainview {
@@ -627,7 +652,7 @@ body > .header {
             td {
                 padding-right : 2px;
             }
-            tr.is_faksimil * {
+            tr.is_faksimil {
                 color : grey;
             }
             td.num {
@@ -1061,14 +1086,12 @@ $partnav-width : 170px;
         }
         .provenance {
             margin : 2em 0;
-            * {
-                @include inline-block(middle);
-            }
-            img {
+            > a {
                 margin-right : 10px;
             }
-            p {
+            > p {
                 width : 250px;
+                @include inline-block(middle);
             }
         }
         .toggle {
@@ -1278,6 +1301,124 @@ $partnav-width : 170px;
     }
     table {
         min-width : 100%;
+    }
+}
+
+#koll-text {
+    .changed {
+        background-color: pink;
+    }
+    > .context {
+        cursor: pointer;
+        &:hover {
+        }
+        /* this is done manually in javascipt, because performance reasons in chrome( as of v.34) */
+        /*&.highlight { 
+            background-color: rgba(yellow, 0.4) !important; // override hover
+        }*/
+    }    
+    > p {
+        line-height: 2em;
+    }
+}
+#koll-text.hide-bulk {
+    > .bulk, p {
+       display: none;
+    }
+    > .context {
+        display: block;
+        padding: 10px;
+        border-bottom: 1px solid lightgrey;
+        cursor: pointer;
+        
+        &.odd {
+            background-color: rgba(black, 0.05);
+        }
+        &:after {
+            content: ' ...';
+        }
+        &:before {
+            content: '... ';
+        }
+        &:first-child:before {
+            content: '';
+        }
+        &:last-child:after {
+            content: '';
+        }
+        &:hover {
+            background-color: rgba(yellow, 0.2); 
+        }
+    }
+}
+#context-versions-div {
+    border: 1px solid #bbb;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+    background-clip: padding-box;
+    border-radius: 6px;
+    padding: 6px 3px;
+    position: absolute;
+    background-color: white;
+    .control {
+        cursor: pointer;
+        &:not(:first-child) {
+            margin-left: 10px;
+        }
+        &:hover, &.hover {
+            color: $primarycolor;
+        }
+    }
+    .context-version {
+        padding: 3px;
+        .well {
+            margin-bottom: 0px;
+        }
+    }
+    .title {
+        font-weight: bold;
+    }
+    .base {
+        .title {
+            font-style: italic;
+        }
+        /* css alternativ till inbäddad i textjamforelse.html
+        .title:after {
+            content: ' ☆';
+        } */
+        .change-base {
+            opacity: 0.5;
+            cursor: default;
+            color: inherit;
+        }
+    }
+    .changed {
+        background-color: pink;
+    }
+    .highlight {
+         background-color: rgba(yellow, 0.4);
+    }
+}
+#diff-div {
+    background-color: white;
+    /* padding: 5px 10px; */
+    display: none;
+    position: absolute;
+    border: solid gray;
+    border-width: 1px 1px 0px 0px;
+    border-radius: 3px;
+    
+    .version {
+        padding: 2px 5px;
+        border-left: 1px solid grey;
+        border-bottom: 1px solid grey;
+        border-radius: 2px;
+        .title {
+            font-weight: bold;
+            font-size: 0.8em;
+            &.base {
+                font-style: italic;
+            }
+        }
     }
 }
 
@@ -2061,3 +2202,34 @@ only screen and (max-width: 760px),
 
 }
 
+#ord-och-sak {
+    padding: 10px;
+    border-left: 1px solid grey;
+    div:not(:first-child) {
+        border-top: thin solid lightgray;
+    }
+    div:hover .oos-ord {
+        background-color: pink;
+    }
+    div {
+        font-size: small;
+        padding: 5px 10px;
+        font-size: 0.8em;
+        .oos-ord {
+            font-style: italic;
+        }
+        .oos-forklaring {
+            font-size: smaller;
+        }
+    }
+}
+
+#omtexterna-doc {
+    /* .para {
+        position: relative; # override red.css
+        padding: none; # override red.css
+    }
+    a.para {
+        border-bottom : inherit; # override style.scss
+    } */
+}

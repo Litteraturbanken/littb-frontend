@@ -74,7 +74,9 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                         <div style="position:relative;" ng-bind-html="doc | trust"></div>
                     '''
                 breadcrumb : ["presentationer"]
-
+            .when '/omtexterna/:doc.html', # TODO: remove if the doc links are updated
+                redirectTo: ($routeParams) ->
+                    '/forfattare/LagerlofS/omtexterna/' + $routeParams.doc
             .when '/om/aktuellt',
                 templateUrl: '/red/om/aktuellt/aktuellt.html'
                 title : "Aktuellt"
@@ -131,21 +133,15 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Författare"
                 reloadOnSearch : false
                 breadcrumb : ["författare"]
-            # .when "/forfattare/LagerlofS",
-            #     templateUrl : "views/sla/lagerlof.html"
-            #     controller : "lagerlofCtrl"
-            #     reloadOnSearch : false
-            #     breadcrumb : ["författare", "lagerlöf"]
-            # .when "/forfattare/LagerlofS/biblinfo",
-            #     templateUrl : "views/sla/biblinfo.html"
-            #     controller : "biblinfoCtrl"
-            #     reloadOnSearch : false
-            #     breadcrumb : ["författare", "lagerlöf"]
             .when ["/forfattare/:author"
                    "/forfattare/:author/titlar"
                    "/forfattare/:author/bibliografi"
                    "/forfattare/:author/presentation"
                    "/forfattare/:author/semer"
+                   "/forfattare/:author/biblinfo"
+                   "/forfattare/:author/jamfor"
+                   "/forfattare/:author/omtexterna"
+                   "/forfattare/:author/omtexterna/:omtexternaDoc"
                    ],
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
@@ -162,7 +158,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                         $route.current.controller == "authorInfoCtrl" and
                                         $route.current.params.author == $routeParams.author
                                     def.reject()
-                                else 
+                                else
                                     def.resolve()
                                 return def.promise
                         ]
@@ -303,8 +299,9 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             $("title:first").text "Litteraturbanken | " + newRoute.title
         else
             $rootScope.setTitle newRoute.title
-        if newRoute.loadedTemplateUrl != prevRoute?.loadedTemplateUrl
-            $("#toolkit").html ""
+        # is done automatically by directive on scope $destroy
+		#if newRoute.loadedTemplateUrl != prevRoute?.loadedTemplateUrl
+        #    $("#toolkit").html ""
         $rootScope.prevRoute = prevRoute
 
         # get rid of old class attr on body

@@ -252,7 +252,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
         # params =
-
+        
         backend.searchWorks(s.query,
             mediatype,
             from,
@@ -324,12 +324,521 @@ littb.controller "lagerlofCtrl", ($scope, $rootScope, backend) ->
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
         $rootScope.appendCrumb data.surname
 
+        
+littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location, $modal, backend, $window, $timeout) ->
+    s = $scope
+    s.loading = false
+    s.error = false
+    s.work = null
+    s.worksToCompare = []
+    s.showBulk = false
+    s.witTitles = []
+    s.contextVersions = null
+    myWits = []
+    contextVersionsContext = null
+    showInTextContext = null
+    
+    backend.getKollatWorks().then (works) ->
+        s.works = works
+    
+    $animate.enabled(false)
+    
+    makeHTMLold = (data, myWits) ->
+        
+        myWitsStr = myWits.join(' ')
+    
+        cleanAppsNew = (data, myWits) ->
+            appPat = /^\s*<app>/
+            rdgPat = /^\s*<rdg wit="(.*?)"(?:>(.*?)<\/rdg>)?/
+            pPat = /^\s*<p>/
+            
+            skipToAppEnd = false
+            c0 = c1 = c2 = c3 = c4 = c5 = 0
+            
+            apps = []
+            app = null
+            prevApp = []
+                
+            filterCache = {}
+            splitCache = {}
+            
+            endIndex = -1
+            loop
+                startIndex = endIndex + 1
+                endIndex = data.indexOf('\n', startIndex)
+                if endIndex == -1
+                    break
+                line = data.substr(startIndex, endIndex - startIndex)
+                
+                if app == null
+                    if appPat.test(line) # test for <app>
+                        app = []
+                    else if pPat.test(line) # test for <p>
+                        x = []
+                        x.p = true
+                        apps.push x
+                        prevApp = x
+                else
+                    if skipToAppEnd
+                        result = null
+                        skipToAppEnd = false
+                    else
+                        result = rdgPat.exec(line)
+                        
+                    if result == null
+                        # TODO find </app> ?
+                        # end app
+                        
+                        if app.length == 1 and prevApp.length == 1
+                            c0++
+                            prevApp[0].text += app[0].text
+                        else if app.length > 1 and prevApp.length > 1
+                            c1++
+                            merged = []
+                            for rdg1 in prevApp
+                                rdg1text = rdg1.text
+                                wit1 = rdg1.wit
+                                if (rdg2 = _.find(app, (rdg)-> rdg.wit == wit1))
+                                    c2++
+                                    # the simple merge
+                                    merged.push {'wit': wit1, 'text': rdg1text + rdg2.text}
+                                else
+                                    c3++
+                                    # w1split = w1.split(' ')
+                                    w1split = splitCache[wit1]
+                                    if w1split == undefined
+                                        splitCache[wit1] = w1split = wit1.split(' ')
+                                    for rdg2 in app
+                                        # maybe can check for equality before split?, if w1split.length == 1 ...
+                                        # w2split = w2.split(' ')
+                                        w2split = splitCache[rdg2.wit]
+                                        if w2split == undefined
+                                            splitCache[rdg2.wit] = w2split = rdg2.wit.split(' ')
+                                        # partition rdg1 and rdg2 wits into common and uncommon wits
+                                        commonWits = []
+                                        uncommonWits = []
+                                        for w in w1split
+                                            if w in w2split
+                                                commonWits.push w
+                                            else
+                                                uncommonWits.push w
+                                                
+                                        w1split = uncommonWits # keep uncommon for next iteration
+                                        
+                                        if commonWits.length != 0
+                                            merged.push
+                                                'wit': commonWits.join(' ')
+                                                'text': rdg1text + rdg2.text
+                                        
+                                        if w1split.length == 0
+                                            break # found all wits of w1
+                                    
+                                    if w1split.length > 0
+                                        c.log prevApp, merged, app
+                                        throw 'w1split.length != 0'
+                             
+                             # replace prevApp with the new merged app
+                             prevApp = apps[apps.length-1] = merged
+                        else
+                            c4++
+                            apps.push app
+                            prevApp = app
+                        app = null
+                    else
+                        wits = result[1]
+                        text = result[2]
+                        
+                        cached = filterCache[wits]
+                        
+                        if cached != undefined
+                            wits = cached
+                        else
+                            filterCache[wits] = wits = (wit for wit in wits.split(' ') when wit in myWits).join(' ')
+                            
+                        if wits.length != 0
+                            # if this reading contains all our choosen wits (should be most of the time)
+                            # then we're done with his app
+                            if wits == myWitsStr
+                                if text is undefined # check for empty reading
+                                    app = null # skip this app completely
+                                    continue
+                                
+                                skipToAppEnd = true
+                            
+                            if text is undefined
+                                text = ''
+                                
+                            # add reading to app
+                            app.push {'wit': wits, 'text': text}
+            c.log 'c0', c0, 'c1', c1, 'c2', c2, 'c3', c3, 'c4', c4, 'c5', c5
+            return apps
+            
+        makeHtmlFromApps = (apps) ->
+            # make html
+            html = ''
+            
+            # how many words to show before and after in context
+            nWords = 4
+            
+            hasContext = false
+            
+            appsLen = apps.length
+            
+            oddContext = false
+            
+            startContext = () ->
+                oddContext = !oddContext
+                if oddContext
+                    html += "<span class='context odd'>"
+                else
+                    html += "<span class='context'>"
+                hasContext = true
+                return
+            endContext = () ->
+                html += "</span>"
+                hasContext = false
+                return
+            
+            for app, appIndex in apps
+                if app.length == 0 # special app/formatting
+                    if hasContext
+                        endContext()
+                    if 'p' of app
+                        html += "<p></p>" # abuse <p> to simplify element tree for styling, i.a.
+                        continue
+                else if app.length > 1  # diff
+                    if !hasContext
+                        startContext()
+                    html += "<span class='changed'>"
+                    
+                    for rdg in app
+                        ## start rdg span
+                        text = rdg.text
+                        html += "<span class='#{rdg.wit}'>"
+                        html += if text.length != 0 then text else "&nbsp;" # add a hard space in place of empty rdg/removed word
+                        html += "</span>"
+                        ## end rdg span
+                    
+                    html += "</span>" ## end changed span
+                    
+                else # no diff
+                    text = app[0].text
+                    
+                    prevIsDiff = hasContext
+                    pre = bulk = post = null
+                    
+                    nextIsDiff = appIndex+1 != appsLen and apps[appIndex+1].length > 1
+                    
+                    if !prevIsDiff and !nextIsDiff
+                        # all is bulk
+                        bulk = text
+                    else if (prevIsDiff and nextIsDiff)
+                        # create pre + bulk + post
+                        if (bulkStartIndex = nthIndexOf(text, ' ', nWords)) != -1 and
+                           (bulkEndIndex = lastNthIndexOf(text, ' ', nWords+1)) > bulkStartIndex
+                            pre = text.substr(0, bulkStartIndex)
+                            bulk = text.substr(bulkStartIndex, bulkEndIndex - bulkStartIndex)
+                            post = text.substr(bulkEndIndex)
+                        else
+                            # text has too few words to put in bulk. add to context
+                            html += text
+                    else if prevIsDiff #and !nextIsDiff
+                        # create pre + (bulk)
+                        bulkStartIndex = nthIndexOf(text, ' ', nWords)
+                        if bulkStartIndex != -1
+                            pre = text.substr(0, bulkStartIndex)
+                            bulk = text.substr(bulkStartIndex)
+                        else
+                            pre = text
+                    else # !prevIsDiff and nextIsDiff
+                        # create (bulk) + post
+                        bulkEndIndex = lastNthIndexOf(text, ' ', nWords+1)
+                        if bulkEndIndex != -1 # if has bulk
+                            bulk = text.substr(0, bulkEndIndex)
+                            post = text.substr(bulkEndIndex)
+                        else # all post
+                            post = text
+                    
+                    if pre != null
+                        html += pre
+                        endContext()
+                    if bulk != null
+                        html += "<span class='bulk'>" + bulk + "</span>"
+                    if post != null
+                        startContext()
+                        html += post
+            
+            if hasContext
+                endContext()
+            
+            return html
+            
+        c.time 'cleanApps'
+        # c.profile 'cleanApps'
+        apps = cleanAppsNew(data, myWits)
+        # c.profileEnd 'cleanApps'
+        c.timeEnd 'cleanApps'
+        
+        c.time 'make html'
+        html = makeHtmlFromApps(apps)
+        c.timeEnd 'make html'
+        
+        return html
+    
+    s.submit = () ->
+        c.log "submit textjamforelse"
+        c.log "title", s.work.title
+        c.log "workgroup", s.work.workgroup
+        c.log "utgåvor:"
+        c.log ((w.title + ", id:" + w.id) for w in s.worksToCompare).join("\n")
+        
+        workgroup = s.work.workgroup
+        ids = []
+        s.witTitles = {}
+        myWits = []
+        for work, i in s.work.works
+            if work in s.worksToCompare
+                wit = 'w' + (i+1)
+                myWits.push wit
+                ids.push work.id
+                s.witTitles[wit] = work.title
+        
+        backend.getDiff( workgroup, myWits, ids... ).then (data) ->
+            c.time 'makeHTML all'
+            #c.profile 'makeHTML all'
+            
+            html = makeHTMLold data, myWits
+            s.loading = false
+            s.haveText = true
+            
+            c.time 'parse html'
+            $('#koll-text')[0].innerHTML = html
+            c.timeEnd 'parse html'
+            
+            #c.profileEnd 'makeHTML all'
+            c.timeEnd('makeHTML all');
+            
+        , (reason) ->
+            s.loading = false
+            s.error = true
+        
+        # $('#koll-text').fadeOut 500, () ->
+        $('#koll-text')[0].innerHTML = '' # do this while getDiff is loading 
+        s.haveText = false
+        s.loading = true
+        s.error = false
+        
+        if s.baseWit not in myWits # reset baseWit?
+            s.baseWit = myWits[0]
+        # s.showBulk = false # reset showBulk
+        
+    
+    nthIndexOf = (ss, s, n) ->
+        c = 0
+        i = -1
+        while true
+            i = ss.indexOf(s, i+1)
+            if ++c >= n || i == -1
+                return i
+                
+    lastNthIndexOf = (ss, s, n) ->
+        c = 0
+        i = ss.length
+        while true
+            i = ss.lastIndexOf(s, i-1)
+            if ++c >= n || i == -1
+                return i
+    
+    s.changeBaseWit = (wit) ->
+        if contextVersionsContext
+            # keep track of the context offset to adjust window scrollTop after change
+            preWitChangeOffset = getViewportOffset contextVersionsContext
+            #$('#context-versions-div')
+            # interested in top or bottom of context? or middle of context
+        
+        s.baseWit = wit
+        
+        if contextVersionsContext
+            # adjust scrollTop after base wit change takes place
+            $timeout () ->
+                # scroll context at same offset as before
+                scrollToElem(contextVersionsContext, preWitChangeOffset)
+                repositionContextVersionsDiv()
+    
+    getViewportOffset = (elem) ->
+        elem.offset().top - $(window).scrollTop()
+    
+    scrollToElem = (elem, offset) ->
+        $($window).scrollTop elem.offset().top - offset
+    
+    s.onClickOutsideContextVersionsDiv = (evt) ->
+        if s.contextVersions # first click outside
+            s.closeContextVersionsDiv()
+        else if contextVersionsContext and evt.target != contextVersionsContext[0] # other click outside
+            removeContextHighlightStyle(contextVersionsContext[0])
+            contextVersionsContext = null
+    
+    s.closeContextVersionsDiv = () ->
+        if s.contextVersions
+            $('#context-versions-div').hide()
+            s.contextVersions = null
+    
+    s.showContextVersionsDiv = (contextSpan) ->
+        contextVersionsHtml = () ->
+            changeIndex = 0
+            result = ({wit: wit, title: s.witTitles[wit], html: ''} for wit in myWits)
+            
+            for node in contextSpan[0].childNodes
+                $node = $(node)
+                if node.nodeType == 3 # text
+                    for i in result
+                        i.html += node.textContent
+                else if node.nodeType == 1 and $node.hasClass 'changed'
+                    for i in result
+                        html = $node.find('.' + i.wit).html()
+                        i.html += "<span class=\"changed\" data-changeindex=\"#{ changeIndex }\">#{ html }</span>"
+                    changeIndex += 1
+            return result
+        
+        div = $('#context-versions-div')
+        contextRect = contextSpan[0].getBoundingClientRect()
+        
+        contextVersions = contextVersionsHtml()
+        
+        s.$apply ->
+            s.contextVersions = contextVersions
+        
+        c.log s.contextVersions
+        
+        repositionContextVersionsDiv (contextRect)
+        # div[0].style.display = ""
+        # div.show()
+        div.fadeIn(200)
+    
+        # apply highlighting
+        if contextVersionsContext
+            removeContextHighlightStyle(contextVersionsContext[0])
+        applyContextHighlightStyle(contextSpan[0])
+        
+        contextVersionsContext = contextSpan
+    
+    ## some browsers recalculate styles for all elems (slow, ~350ms for instance) when changing 
+    ## class of context even though the it only changes background-color.
+    ## so we do it manually here...
+    ## todo: its not very nice; maybe remove 
+    applyContextHighlightStyle = (elem) ->
+        elem.style.backgroundColor = 'rgba(255, 255, 0, 0.4)'
+        # $(elem).addClass('highlight')
+    removeContextHighlightStyle = (elem) ->
+        elem.style.backgroundColor = ''
+        # $(elem).removeClass('highlight')
+        
+    repositionContextVersionsDiv = (contextRect) ->
+        div = $('#context-versions-div')
+        if !contextRect
+            contextRect = contextVersionsContext[0].getBoundingClientRect()
+        
+        windowTop = $($window).scrollTop()
+        
+        kolltextBounds = $('#koll-text')[0].getBoundingClientRect()
+        margin = 20;
+        # if contextRect.left >= kolltextBounds.left + margin
+            # div[0].style.left = contextRect.left + "px"
+        # else
+        div[0].style.left = kolltextBounds.left + margin + "px"
+        # if contextRect.right <= kolltextBounds.right - 30
+            # div[0].style.right = $(document).width() - contextRect.right + "px"
+        # else 
+        div[0].style.right = $(document).width() - kolltextBounds.right + 30 + "px"            
+        
+        if contextRect.top > $($window).height() - contextRect.bottom
+            div[0].style.top = windowTop + contextRect.top - div.outerHeight() + 'px'
+        else
+            div[0].style.top = windowTop + contextRect.bottom + 'px'
+        
+    s.highlightVersionsDivChanges = (evt) ->
+        index = evt.target.dataset.changeindex
+        changed = $('#context-versions-div').find(".changed[data-changeindex=#{ index }]")
+        changed.toggleClass('highlight')
+        
+    s.unhighlightVersionsDivChanges = (evt) ->
+        $('#context-versions-div .changed.highlight').removeClass('highlight')
+    
+    s.showInText = (evt, doShow=true) ->
+        # c.log 'showInText', evt
+        showInTextContext = contextVersionsContext
+        window = $($window)
+        # save selected context offset before it moves
+        viewOffset = contextVersionsContext.offset().top - window.scrollTop()
+        # c.log contextVersionsContext.offset().top + '-' + window.scrollTop() + '=' + viewOffset
+        s.showBulk = doShow
+        # s.closeContextVersionsDiv()
+        # showInTextContext.addClass 'highlight'
+        $timeout () ->
+            # scroll to place context at same offset as before
+            # c.log contextVersionsContext.offset().top + '-' + viewOffset + '=' + (contextVersionsContext.offset().top - viewOffset)
+            window.scrollTop showInTextContext.offset().top - viewOffset
+    
+    hideDiffDiv = () ->
+        $("#diff-div").hide()
+    
+    showDiffDiv = () ->
+        # c.log 'showDiffDiv', this
+        div = $("#diff-div")
+        changedSpan = $(this)
+        div.empty()
+            
+        changedSpan.children().each () ->
+            rdg = $(this)[0]
+            text = rdg.textContent
+            versionDiv = $("<div class='version'>")
+            editionList = $("<ul>")
+            
+            rdgWits = (wit for wit in rdg.className.split(" ") when wit in myWits)
+            for wit in rdgWits
+                title = s.witTitles[wit]
+                if wit == s.baseWit
+                    editionList.append("<li class='title base'>" + title + "</li>")
+                else
+                    editionList.append("<li class='title'>" + title + "</li>")
+                    
+            versionDiv.append(editionList, "<div class='quote'>" + text + "</div>")
+            div.append(versionDiv)
+        
+        # position and show diff-div
+        # put div just under the first line of the target span
+        position = changedSpan.position()
+        # div.css 'top', offset.top + parseInt($(this).css 'line-height')
+        div.css 'top', position.top + changedSpan.innerHeight()
+        div.css 'left', position.left
+        
+        div.show()
+        
+    setupTextJquery = () ->
+        ## setup the jquery event handlers for displaying differences in the text, once on page load
+        $("#koll-text")
+            .on("click", ".context", (evt) ->
+                target = evt.currentTarget
+                if contextVersionsContext == null or contextVersionsContext[0] != target or s.contextVersions == null
+                    s.showContextVersionsDiv($(target))
+                    evt.stopPropagation() # keep ContextVersionsDiv from immediately hiding again
+            )
+            .on("mouseover", ".changed", showDiffDiv)
+            .on("mouseout", ".changed", hideDiffDiv)
+        
+        # for highlighting differences in #context-versions-div
+        $('#context-versions-div')
+            .on( "mouseover", '.changed', s.highlightVersionsDivChanges )
+            .on( "mouseout", '.changed', s.unhighlightVersionsDivChanges )
+        
+    setupTextJquery()
 
 littb.controller "biblinfoCtrl", ($scope, backend) ->
     s = $scope
     limit = true
     s.showHit = 0
     s.searching = false
+    s.wf = ""
 
     s.showAll = () ->
         limit = false
@@ -356,31 +865,19 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
         pairs = _.pairs entry
         splitAt = Math.floor pairs.length / 2
         _.object pairs[(splitAt + 1)..]
-
-
-
-
     
     s.submit = () ->
         names = ["manus", "tryckt_material", "annat_tryckt", "forskning"]
         params = ("resurs=" + x for x in names when s[x])
-
         wf = s.wf if wf
-
         s.searching = true
 
         backend.getBiblinfo(params.join("&"), wf).then (data) ->
             s.entries = data
             s.num_hits = data.length
             s.searching = false
-
-
-
+            
     s.submit()
-
-
-
-
 
 littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util) ->
     s = $scope
@@ -401,15 +898,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         return
 
     refreshRoute = () ->
-        # s.showtitles = (_.last $location.path().split("/")) == "titlar"
         s.showpage = (_.last $location.path().split("/")) 
         s.showpage = "introduktion" if s.author == s.showpage
 
     refreshTitle = () ->
         suffix = if s.showpage == "titlar" then "Verk i LB" else _.str.capitalize s.showpage
         s.setTitle "#{s.authorInfo.fullName} - " + suffix
-
-
 
     refreshBreadcrumb = () ->
         if s.showpage != "introduktion"
@@ -418,8 +912,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             s.appendCrumb s.showpage
         else
             $rootScope.breadcrumb.pop()
-
-             
 
     s.getUnique = (worklist) ->
         _.filter worklist, (item) ->
@@ -442,23 +934,26 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         return url
 
     refreshExternalDoc = (page) ->
-        c.log "page", page
-        url = s.authorInfo[page]
+        # sla hack
+        if s.slaMode
+            doc = if page == 'omtexterna' then page else $routeParams.omtexternaDoc
+            if doc
+                url = '/red/om/omtexterna/' + doc + '.html'
+        else    
+            url = s.authorInfo[page]
+        return if url is undefined
+        c.log "page external", page, url
+        
         # because the livereload snippet is inserted into the html
-        if location.hostname == "localhost"
-            url = "http://demolittb.spraakdata.gu.se" + s.authorInfo[page]
+        # if location.hostname == "localhost"
+            # url = "http://demolittb.spraakdata.gu.se" + s.authorInfo[page]
 
-        unless s.showpage in ["introduktion", "titlar"]
-            $http.get(url).success (xml) ->
-                # c.log $("<div>").html(xml).html()
-                from = xml.indexOf "<body>"
-                to = xml.indexOf "</body>"
-                xml = xml[from..to + "</body>".length]
-                # c.log "xml", xml
-                s.externalDoc =   _.str.trim xml
-                # c.log "success", s.externalDoc
-
-
+        # unless s.showpage in ["introduktion", "titlar"]
+        $http.get(url).success (xml) ->
+            extDoc = $(xml)
+            $('#author-info-external').empty().append(extDoc)
+        .error (data, status) ->
+            $('#author-info-external').empty().append('Felaktigt dokument')
 
     refreshRoute()
 
@@ -471,13 +966,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         refreshExternalDoc(s.showpage)
         refreshBreadcrumb()
     
-
-
-
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
-
-
+        
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "titlepath"
         s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
         c.log "data.surname", data.surname
@@ -490,13 +981,14 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         refreshExternalDoc(s.showpage)
 
         c.log "loaded", s.showpage
-        unless s.authorInfo.intro and s.showpage == "introduktion"
+        
+        # show titlar page if the author doesnt have an intro
+        if s.showpage == "introduktion" and !s.authorInfo.intro
             $location.path("/forfattare/#{s.author}/titlar").replace()
-
-
-
-
-
+    
+    
+    s.slaMode = s.author == "LagerlofS"
+    
 littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $q, authors) ->
     s = $scope
     s.searching = false
@@ -504,8 +996,6 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
         return attrs.title unless attrs.showtitle == attrs.title
-
-        
 
     s.filterTitle = (row) ->    
         if not s.rowfilter then return true
@@ -515,13 +1005,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
     s.filterAuthor = (row) ->
         unless s.authorFilter then return true
         row.author.authorid == s.authorFilter
-
-        
-
-
+    
     # s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle"
     s.titlesort = "itemAttrs.sortkey"
-
     
     s.sorttuple = [s.titlesort, false]
     s.setSort = (sortstr) ->
@@ -757,6 +1243,29 @@ littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, ut
             $(window).scrollTop($("##{val}").offset().top)
         }
 
+littb.controller "omtexternaCtrl", ($scope, $routeParams) ->
+    docPath = '/red/om/omtexterna/'
+    $scope.doc = docPath + ($routeParams['doc'] or 'omtexterna.html')
+    
+    $scope.$on '$includeContentLoaded', (e) ->
+        docTitle = $('#omtexterna-doc title').text()
+        $scope.setTitle docTitle
+        c.log $scope
+        $scope.appendCrumb
+            label: docTitle
+            url: window.location.hash
+        c.log $scope.breadcrumb
+    
+    # $http.get(url).success (data) ->
+        # s.doc = data
+        # s.currentLetters = for elem in $("[id]", data)
+            # $(elem).attr("id")
+        # util.setupHash s, {"ankare" : (val) ->
+            # unless val
+                # $(window).scrollTop(0)
+                # return
+            # $(window).scrollTop($("##{val}").offset().top)
+        # }
 
 littb.controller "authorListCtrl", ($scope, backend, util, authors) ->
     s = $scope

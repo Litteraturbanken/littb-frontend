@@ -3,16 +3,21 @@ littb.directive 'submitBtn', () ->
     replace : true
     template : '<input type="image" class="submit_btn" ng-src="/bilder/LBsubmitknapp.jpeg">'
 
-littb.directive 'toolkit', ($compile, $location, $route) ->
+littb.directive 'toolkit', () ->
     restrict : "EA"
-    compile: (elm, attrs) ->
-        elm.remove()
-        cmp = $compile("<div>#{elm.html()}</div>")
-
-        return (scope, iElement, iAttrs) ->
-            $("#toolkit").html(cmp(scope))
-
-
+    link: (scope, element, attrs, controller) ->
+        id = attrs.toolkitId || "toolkit" # default to id 'toolkit'
+        if not attrs.toolkitReplace
+            $("##{id}").append element
+        else
+            replaced = $("##{id} > *").replaceWith element
+        scope.$on "$destroy", () ->
+            c.log 'toolkit scope $destroy'
+            if attrs.toolkitReplace
+                element.replaceWith replaced
+            else
+                element.remove()
+        
 littb.directive 'css', () ->
     restrict : "EA"
     scope : {css : "@", evalIf : "&if"}
@@ -124,16 +129,25 @@ littb.directive 'square', () ->
                 # [key, (val) + "px"]
 
         elm.css coors
-        
-# littb.directive 'clickOutside', ($document) -> 
-#     restrict: 'A',
-#     link: (scope, elem, attr, ctrl) ->
-#         elem.bind 'click', (e) ->
-#             e.stopPropagation()
 
-#         $document.on 'click', () ->
-#             scope.$apply(attr.clickOutside)
-
+littb.directive 'clickOutside', ($document) ->
+    restrict: 'A'
+    link: (scope, elem, attr, ctrl) ->
+        skip = false
+        elem.bind 'click', handler1 = (e) ->
+            skip = true
+            return
+            
+        $document.bind 'click', handler = (e) ->
+            unless skip
+                scope.$eval attr.clickOutside, {$event:e} # event object can be accessed as $event, as with ng-click 
+            skip = false
+            return ## HO! watch out! not to implicitly return false
+            
+        elem.on "$destroy", () ->
+            $document.off('click', handler)
+            return
+        return
 
 littb.directive 'scrollTo', ($window, $timeout) -> 
     # scope : scrollTo : "="
@@ -327,6 +341,18 @@ littb.directive 'breadcrumb', ($interpolate, $rootScope) ->
             for wtch in watches
                 wtch()
 
+littb.directive "sticky", () ->
+    link: (scope, element, attrs) ->
+        element.origTop = element.offset().top
+        $(document).on "scroll.sticky", (evt) ->
+            #c.log "scroll", $(document).scrollTop(), element.origTop
+            if $(document).scrollTop() >= element.origTop
+                element.addClass "sticky"
+            else
+                element.removeClass "sticky"
+            
+        scope.$on "$destroy", () ->
+            $(document).off "scroll.sticky"
 
 littb.directive 'kwicWord', ->
     replace: true

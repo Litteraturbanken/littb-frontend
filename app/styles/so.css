@@ -1,15 +1,7 @@
 @charset "UTF-8";
 
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \000034;
-  }
-}
+/* line 4, so.scss */
 
 ._so_article body,
 ._so_article kapitel,
@@ -18,15 +10,7 @@
   line-height: 16px;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \000036;
-  }
-}
+/* line 6, so.scss */
 
 ._so_article lemma {
   display: block;
@@ -39,15 +23,7 @@
   padding-left: 0.7cm;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \000037;
-  }
-}
+/* line 7, so.scss */
 
 ._so_article f {
   font-size: medium;
@@ -55,15 +31,7 @@
   font-weight: bold;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \000038;
-  }
-}
+/* line 8, so.scss */
 
 ._so_article venster {
   display: inline;
@@ -71,15 +39,7 @@
   left: -0.6cm;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \000039;
-  }
-}
+/* line 9, so.scss */
 
 ._so_article homonr {
   display: inline;
@@ -92,15 +52,7 @@
   left: -0.4cm;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000310;
-  }
-}
+/* line 10, so.scss */
 
 ._so_article hvhomo {
   display: inline;
@@ -109,15 +61,7 @@
   vertical-align: super;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000311;
-  }
-}
+/* line 11, so.scss */
 
 ._so_article grundform {
   display: inline;
@@ -129,15 +73,7 @@
   left: -0.4cm;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000312;
-  }
-}
+/* line 12, so.scss */
 
 ._so_article uttal {
   display: inline;
@@ -146,15 +82,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000313;
-  }
-}
+/* line 13, so.scss */
 
 ._so_article uttalstext {
   display: inline;
@@ -163,15 +91,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000314;
-  }
-}
+/* line 14, so.scss */
 
 ._so_article alt_uttal {
   display: inline;
@@ -180,15 +100,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000315;
-  }
-}
+/* line 15, so.scss */
 
 ._so_article boj_uttal {
   display: inline;
@@ -197,15 +109,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000316;
-  }
-}
+/* line 16, so.scss */
 
 ._so_article avstav {
   display: block;
@@ -216,15 +120,7 @@
   left: -0.4cm;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000317;
-  }
-}
+/* line 17, so.scss */
 
 ._so_article avstav:before {
   padding-top: 1px;
@@ -235,15 +131,7 @@
   content: "Ordled: ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000318;
-  }
-}
+/* line 18, so.scss */
 
 ._so_article ordbildn {
   display: inline;
@@ -251,15 +139,7 @@
   font-weight: bold;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000319;
-  }
-}
+/* line 19, so.scss */
 
 ._so_article ordbprep {
   display: inline;
@@ -267,29 +147,13 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000320;
-  }
-}
+/* line 20, so.scss */
 
 ._so_article ordbildn:first-child {
   padding-left: 5.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000321;
-  }
-}
+/* line 21, so.scss */
 
 ._so_article ordbildnx {
   font-size: small;
@@ -300,15 +164,7 @@
   padding-top: 0.2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000322;
-  }
-}
+/* line 22, so.scss */
 
 ._so_article ordbildnx:before {
   padding-top: 0.2em;
@@ -320,15 +176,7 @@
   float: left;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000323;
-  }
-}
+/* line 23, so.scss */
 
 ._so_article ordbtxt {
   display: none;
@@ -342,15 +190,7 @@
   left: -1em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000324;
-  }
-}
+/* line 24, so.scss */
 
 ._so_article bt {
   display: inline;
@@ -359,15 +199,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000325;
-  }
-}
+/* line 25, so.scss */
 
 ._so_article def {
   display: inline;
@@ -376,15 +208,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000326;
-  }
-}
+/* line 26, so.scss */
 
 ._so_article idiomdef {
   display: inline;
@@ -393,15 +217,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000327;
-  }
-}
+/* line 27, so.scss */
 
 ._so_article deft {
   display: inline;
@@ -411,15 +227,7 @@
   padding-left: 0.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000328;
-  }
-}
+/* line 28, so.scss */
 
 ._so_article utv {
   display: inline;
@@ -428,15 +236,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000329;
-  }
-}
+/* line 29, so.scss */
 
 ._so_article idiomdeft {
   display: inline;
@@ -446,15 +246,7 @@
   padding-left: 0.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000330;
-  }
-}
+/* line 30, so.scss */
 
 ._so_article sxblocklx {
   display: block;
@@ -462,15 +254,7 @@
   font-size: x-small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000331;
-  }
-}
+/* line 31, so.scss */
 
 ._so_article sxblocklx:before {
   padding-top: 1px;
@@ -482,15 +266,7 @@
   float: left;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000332;
-  }
-}
+/* line 32, so.scss */
 
 ._so_article sxblock {
   display: block;
@@ -498,15 +274,7 @@
   padding-bottom: 0.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000333;
-  }
-}
+/* line 33, so.scss */
 
 ._so_article sxblock:before {
   padding-top: 1px;
@@ -518,15 +286,7 @@
   float: left;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000334;
-  }
-}
+/* line 34, so.scss */
 
 ._so_article syntex {
   display: inline;
@@ -536,15 +296,7 @@
   padding-right: 0.2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000335;
-  }
-}
+/* line 35, so.scss */
 
 ._so_article aveneller {
   font-style: normal;
@@ -552,15 +304,7 @@
   padding-left: 0.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000336;
-  }
-}
+/* line 36, so.scss */
 
 ._so_article altkom {
   font-style: normal;
@@ -569,15 +313,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000337;
-  }
-}
+/* line 37, so.scss */
 
 ._so_article hkom {
   display: inline;
@@ -586,15 +322,7 @@
   font-size: x-small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000338;
-  }
-}
+/* line 38, so.scss */
 
 ._so_article ikom {
   display: inline;
@@ -603,15 +331,7 @@
   font-size: x-small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000339;
-  }
-}
+/* line 39, so.scss */
 
 ._so_article idiomcyk {
   display: inline;
@@ -620,15 +340,7 @@
   font-size: x-small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000340;
-  }
-}
+/* line 40, so.scss */
 
 ._so_article ukom {
   display: inline;
@@ -639,15 +351,7 @@
   padding-right: 0.2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000341;
-  }
-}
+/* line 41, so.scss */
 
 ._so_article fkom {
   display: inline;
@@ -656,15 +360,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000342;
-  }
-}
+/* line 42, so.scss */
 
 ._so_article fkomblock {
   display: inline;
@@ -674,43 +370,19 @@
   padding-right: 0.4em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000343;
-  }
-}
+/* line 43, so.scss */
 
 ._so_article komxx:before {
   content: "(";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000344;
-  }
-}
+/* line 44, so.scss */
 
 ._so_article fkomxx:after {
   content: ")";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000345;
-  }
-}
+/* line 45, so.scss */
 
 ._so_article fkom2 {
   display: inline;
@@ -720,15 +392,7 @@
   padding-left: 0.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000346;
-  }
-}
+/* line 46, so.scss */
 
 ._so_article fkom3 {
   display: inline;
@@ -737,29 +401,13 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000347;
-  }
-}
+/* line 47, so.scss */
 
 ._so_article k {
   font-style: italic;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000348;
-  }
-}
+/* line 48, so.scss */
 
 ._so_article anm {
   display: inline;
@@ -769,15 +417,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000349;
-  }
-}
+/* line 49, so.scss */
 
 ._so_article bojning {
   display: inline;
@@ -787,15 +427,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000350;
-  }
-}
+/* line 50, so.scss */
 
 ._so_article tempus,
 ._so_article tempmm {
@@ -803,15 +435,7 @@
   font-size: x-small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000351;
-  }
-}
+/* line 51, so.scss */
 
 ._so_article pt {
   display: inline;
@@ -820,15 +444,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000352;
-  }
-}
+/* line 52, so.scss */
 
 ._so_article ordklass {
   display: inline;
@@ -837,15 +453,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000353;
-  }
-}
+/* line 53, so.scss */
 
 ._so_article punkt {
   display: inline;
@@ -855,29 +463,13 @@
   left: -1em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000354;
-  }
-}
+/* line 54, so.scss */
 
 ._so_article defxx:before {
   content: "•";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000355;
-  }
-}
+/* line 55, so.scss */
 
 ._so_article fm {
   display: inline;
@@ -885,15 +477,7 @@
   font-size: small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000356;
-  }
-}
+/* line 56, so.scss */
 
 ._so_article alt {
   display: inline;
@@ -902,15 +486,7 @@
   padding-right: 0.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000357;
-  }
-}
+/* line 57, so.scss */
 
 ._so_article pm {
   display: inline;
@@ -918,15 +494,7 @@
   font-size: small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000358;
-  }
-}
+/* line 58, so.scss */
 
 ._so_article fk {
   display: inline;
@@ -934,15 +502,7 @@
   font-size: small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000359;
-  }
-}
+/* line 59, so.scss */
 
 ._so_article fb {
   display: inline;
@@ -950,29 +510,13 @@
   font-size: small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000360;
-  }
-}
+/* line 60, so.scss */
 
 ._so_article fb:not(:last-child):after {
   content: "; ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000361;
-  }
-}
+/* line 61, so.scss */
 
 ._so_article et {
   display: inline;
@@ -981,45 +525,21 @@
   padding-left: 0.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000362;
-  }
-}
+/* line 62, so.scss */
 
 ._so_article vinkel {
   font-size: small;
   font-style: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000363;
-  }
-}
+/* line 63, so.scss */
 
 ._so_article bruk {
   font-size: small;
   font-style: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000364;
-  }
-}
+/* line 64, so.scss */
 
 ._so_article fack {
   display: none;
@@ -1027,30 +547,14 @@
   font-style: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000365;
-  }
-}
+/* line 65, so.scss */
 
 ._so_article tanke {
   font-size: small;
   font-style: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000366;
-  }
-}
+/* line 66, so.scss */
 
 ._so_article lexem {
   display: block;
@@ -1058,15 +562,7 @@
   padding-top: 0.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000367;
-  }
-}
+/* line 67, so.scss */
 
 ._so_article cykel {
   display: block;
@@ -1075,15 +571,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000368;
-  }
-}
+/* line 68, so.scss */
 
 ._so_article idiom {
   display: block;
@@ -1092,30 +580,14 @@
   padding-bottom: 0.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000369;
-  }
-}
+/* line 69, so.scss */
 
 ._so_article idiomexblock {
   display: block;
   padding-top: 0.2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000370;
-  }
-}
+/* line 70, so.scss */
 
 ._so_article idiomexblock:before {
   padding-top: 0.2em;
@@ -1128,15 +600,7 @@
   float: left;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000371;
-  }
-}
+/* line 71, so.scss */
 
 ._so_article idiomex {
   display: block;
@@ -1146,29 +610,13 @@
   padding-left: 5.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000372;
-  }
-}
+/* line 72, so.scss */
 
 ._so_article etymologiblock {
   display: block;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000373;
-  }
-}
+/* line 73, so.scss */
 
 ._so_article etymologiblock:before {
   padding-top: 1px;
@@ -1181,15 +629,7 @@
   float: left;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000374;
-  }
-}
+/* line 74, so.scss */
 
 ._so_article etymologi {
   display: block;
@@ -1201,29 +641,13 @@
   padding-left: 5.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000375;
-  }
-}
+/* line 75, so.scss */
 
 ._so_article besl {
   font-style: italic;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000376;
-  }
-}
+/* line 76, so.scss */
 
 ._so_article valens {
   display: block;
@@ -1231,15 +655,7 @@
   font-style: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000377;
-  }
-}
+/* line 77, so.scss */
 
 ._so_article valens:before {
   padding-top: 1px;
@@ -1251,15 +667,7 @@
   float: left;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000378;
-  }
-}
+/* line 78, so.scss */
 
 ._so_article vt {
   display: block;
@@ -1273,103 +681,47 @@
   padding-bottom: 0.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000379;
-  }
-}
+/* line 79, so.scss */
 
 ._so_article fras {
   font-size: small;
   color: navy;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000380;
-  }
-}
+/* line 80, so.scss */
 
 ._so_article fras:after {
   content: " ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000381;
-  }
-}
+/* line 81, so.scss */
 
 ._so_article kastas {
   display: none;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000382;
-  }
-}
+/* line 82, so.scss */
 
 ._so_article fon {
   font-style: italic;
   font-weight: bold;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000383;
-  }
-}
+/* line 83, so.scss */
 
 ._so_article ls {
   font-style: italic;
   font-weight: bold;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000384;
-  }
-}
+/* line 84, so.scss */
 
 ._so_article ms {
   font-size: small;
   font-style: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000385;
-  }
-}
+/* line 85, so.scss */
 
 ._so_article hv {
   display: inline;
@@ -1380,15 +732,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000386;
-  }
-}
+/* line 86, so.scss */
 
 ._so_article hvtyp {
   font-size: x-small;
@@ -1399,15 +743,7 @@
   left: -0.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000387;
-  }
-}
+/* line 87, so.scss */
 
 ._so_article hvtyp2 {
   display: none;
@@ -1415,15 +751,7 @@
   padding-left: 0.4em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000388;
-  }
-}
+/* line 88, so.scss */
 
 ._so_article hv1 {
   display: block;
@@ -1435,15 +763,7 @@
   padding-top: 0.2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000389;
-  }
-}
+/* line 89, so.scss */
 
 ._so_article hv1:before {
   padding-top: 0.2em;
@@ -1454,15 +774,7 @@
   content: "Synonym:";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000390;
-  }
-}
+/* line 90, so.scss */
 
 ._so_article hv2 {
   display: block;
@@ -1474,15 +786,7 @@
   padding-top: 0.2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000391;
-  }
-}
+/* line 91, so.scss */
 
 ._so_article hv2:before {
   padding-top: 0.2em;
@@ -1493,15 +797,7 @@
   content: "Motsats:";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000392;
-  }
-}
+/* line 92, so.scss */
 
 ._so_article hv3 {
   display: block;
@@ -1513,15 +809,7 @@
   padding-top: 0.2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000393;
-  }
-}
+/* line 93, so.scss */
 
 ._so_article hv3:before {
   padding-top: 0.2em;
@@ -1532,15 +820,7 @@
   content: "Se";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000394;
-  }
-}
+/* line 94, so.scss */
 
 ._so_article hv4 {
   display: block;
@@ -1552,15 +832,7 @@
   padding-top: 0.2em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000395;
-  }
-}
+/* line 95, so.scss */
 
 ._so_article hv4:before {
   padding-top: 0.2em;
@@ -1571,15 +843,7 @@
   content: "Jämför:";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000396;
-  }
-}
+/* line 96, so.scss */
 
 ._so_article mx {
   display: inline;
@@ -1587,15 +851,7 @@
   font-style: italic;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000397;
-  }
-}
+/* line 97, so.scss */
 
 ._so_article mxblock {
   display: block;
@@ -1603,15 +859,7 @@
   padding-bottom: 0.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000398;
-  }
-}
+/* line 98, so.scss */
 
 ._so_article mxblock:before {
   padding-top: 0.2em;
@@ -1622,15 +870,7 @@
   content: "Sammansättn.: ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \0000399;
-  }
-}
+/* line 99, so.scss */
 
 ._so_article mxblocklx {
   display: block;
@@ -1639,15 +879,7 @@
   font-weight: normal;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003100;
-  }
-}
+/* line 100, so.scss */
 
 ._so_article mxblocklx:before {
   padding-top: 0.2em;
@@ -1658,58 +890,26 @@
   content: "Sammansättn.: ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003101;
-  }
-}
+/* line 101, so.scss */
 
 ._so_article b {
   font-weight: bold;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003102;
-  }
-}
+/* line 102, so.scss */
 
 ._so_article ur {
   display: inline;
   font-size: x-small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003103;
-  }
-}
+/* line 103, so.scss */
 
 ._so_article detaljer {
   display: block;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003104;
-  }
-}
+/* line 104, so.scss */
 
 ._so_article scriptonly {
   display: block;
@@ -1719,44 +919,20 @@
   text-align: right;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003105;
-  }
-}
+/* line 105, so.scss */
 
 ._so_article h4 {
   margin-bottom: 0em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003106;
-  }
-}
+/* line 106, so.scss */
 
 ._so_article hvlnk:link {
   text-decoration: underline;
   color: #BD362F;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003107;
-  }
-}
+/* line 107, so.scss */
 
 ._so_article a {
   font-variant: normal;
@@ -1764,30 +940,14 @@
   color: black;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003108;
-  }
-}
+/* line 108, so.scss */
 
 ._so_article a {
   font-variant: normal;
   padding-left: 0.5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003109;
-  }
-}
+/* line 109, so.scss */
 
 ._so_article a.mer:link {
   text-decoration: none;
@@ -1795,254 +955,110 @@
   font-size: x-small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003110;
-  }
-}
+/* line 110, so.scss */
 
 ._so_article ljudblock {
   display: none;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003111;
-  }
-}
+/* line 111, so.scss */
 
 ._so_article ljud {
   display: inline;
   font-size: small;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003112;
-  }
-}
+/* line 112, so.scss */
 
 ._so_article hvtag {
   display: none;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003113;
-  }
-}
+/* line 113, so.scss */
 
 ._so_article mxref {
   display: inline;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003114;
-  }
-}
+/* line 114, so.scss */
 
 ._so_article mxref:after {
   content: ">";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003115;
-  }
-}
+/* line 115, so.scss */
 
 ._so_article hv > hvord {
   font-weight: bold;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003116;
-  }
-}
+/* line 116, so.scss */
 
 ._so_article et > hvord {
   font-weight: bold;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003117;
-  }
-}
+/* line 117, so.scss */
 
 ._so_article hvgrupp > hvord:not(:last-child):after {
   content: ", ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003118;
-  }
-}
+/* line 118, so.scss */
 
 ._so_article mx:not(:last-child):after {
   content: "; ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003119;
-  }
-}
+/* line 119, so.scss */
 
 ._so_article syntex:not(:last-child):after {
   content: "; ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003120;
-  }
-}
+/* line 120, so.scss */
 
 ._so_article syntex:first-child {
   padding-left: 2.3em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003121;
-  }
-}
+/* line 121, so.scss */
 
 ._so_article hvgrupp {
   padding-right: 1em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003122;
-  }
-}
+/* line 122, so.scss */
 
 ._so_article hvid {
   display: none;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003123;
-  }
-}
+/* line 123, so.scss */
 
 ._so_article utv:not(:last-child):after {
   content: " ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003124;
-  }
-}
+/* line 124, so.scss */
 
 ._so_article cykel > def:not(:last-child):after {
   content: ": ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003125;
-  }
-}
+/* line 125, so.scss */
 
 ._so_article idiomdef:not(:last-child):after {
   content: ": ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003126;
-  }
-}
+/* line 126, so.scss */
 
 ._so_article fras:not(:last-child):after {
   content: " ";
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003127;
-  }
-}
+/* line 127, so.scss */
 
 ._so_article idiomlexblock {
   display: block;
@@ -2050,15 +1066,7 @@
   padding-left: 5em;
 }
 
-@media -sass-debug-info {
-  filename {
-    font-family: file\:\/\/\/Users\/johan\/Dropbox\/Development\/workspace_juno\/littb\/app\/styles\/so\.scss;
-  }
-
-  line {
-    font-family: \00003128;
-  }
-}
+/* line 128, so.scss */
 
 ._so_article idiomxnr {
   font-weight: normal;
