@@ -658,6 +658,83 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
             def.resolve output
         return def.promise
+        
+    
+    getKollatWorks : () ->
+        def = $q.defer()
+        
+        kollatWorks = [
+            title: "Gösta Berlings saga 1"
+            workgroup: "GBS1"
+            works: [
+                title: "Gösta Berlings saga 1 (1891)"
+                id: "lb1492249"
+            ,
+                title: "Gösta Berlings saga 1 (1895)"
+                id: "lb3312560"
+            ,
+                title: "Gösta Berlings saga (1910)"
+                id: "lb3312973"
+            ,
+                title: "Gösta Berlings saga (1933)"
+                id: "lb491569"
+            ]
+        ,
+            title: "Gösta Berlings saga 2"
+            workgroup: "GBS2"
+            works: [
+                title:"Gösta Berlings saga 2 (1891)"
+                id: "lb1492250"
+            ,
+                title:"Gösta Berlings saga 2 (1895)"
+                id: "lb3312561"
+            ,
+                title: "Gösta Berlings saga (1910)"
+                id: "lb3312973"
+            ,
+                title: "Gösta Berlings saga (1933)"
+                id: "lb491569"
+            ]
+        ,
+            title: "Osynliga Länkar"
+            workgroup: "OL"
+            works: [
+                title:"Osynliga länkar (1894)"
+                id: "lb31869"
+            ,
+                title:"Osynliga länkar (1904)"
+                id: "lb2169911"
+            ,
+                title: "Osynliga länkar (1909)"
+                id: "lb1615111"
+            ,
+                title: "Osynliga länkar (1933)"
+                id: "lb8233075"
+            ]
+        ]
+        
+        def.resolve kollatWorks
+        
+        return def.promise
+        
+        
+    getDiff : (workgroup, myWits, ids...) ->
+        def = $q.defer()
+        ## release
+        #url = "/ws/kollationering/" + "?workgroup=" + workgroup + ("&lbworkid="+id for id in ids).join("")
+        ## dev
+        url = "/views/sla/kollationering-"+workgroup.toLowerCase()+".xml"
+        
+        http(
+            url: url
+            transformResponse: null
+        ).success( (xml) ->
+            output = xml
+            def.resolve output
+        ).error (why) ->
+            def.reject(why)
+            
+        return def.promise
 
     submitContactForm : (name, email, message) ->
         def = $q.defer()
@@ -683,6 +760,43 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
         ).success(def.resolve)
         .error def.reject
+        
+        return def.promise
+        
+    ordOchSak : (author, title) ->
+        def = $q.defer()
+        
+        titlemap = 
+            'OsynligaLankar2012' : '/views/sla/OLOrdSak-output.xml'
+            'GostaBerlingsSagaForraDelen2012' : '/views/sla/GBOrdSakFörstaDel-output.xml'
+            'GostaBerlingsSagaSenareDelen2012' : '/views/sla/GBOrdSakAndraDel-output.xml'
+        
+        url = titlemap[title]
+        
+        if not url
+           c.log "ordOchSak: tillåtna titlar är " + (t for t of titlemap)
+           def.reject("#{title} not of #{t for t of titlemap}")
+           
+        else
+            http(
+                url : url
+                params: ""
+            ).success( (xml) ->
+                data = []
+                for entry in $("glossentry", xml)
+                    pages = []
+                    try
+                        for page in $("page", entry)
+                            pages.push page.textContent
+                        data.push
+                            pages: pages
+                            ord: $("glossterm", entry)[0].textContent
+                            forklaring:  $("glossdef para", entry)[0].textContent
+                    catch ex
+                        c.error "invalid entry?", entry
+                
+                def.resolve data
+            ).error(def.reject)
         
         return def.promise
 

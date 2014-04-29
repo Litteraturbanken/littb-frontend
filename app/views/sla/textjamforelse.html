@@ -1,0 +1,96 @@
+<div id="textjamforelse" 
+     ng-controller="textjamforelseCtrl">
+     
+<h1>
+    Textkritisk verkstad
+</h1>
+
+<form ng-submit="submit()">
+    <div class="form-group">
+        <select class="form-control" 
+                ng-model="work"
+                ng-options="work as work.title for work in works">
+            <option value="">--Välj ett verk att jämföra--</option>
+        </select>
+    </div>
+    <br>
+    <div class="form-group" ng-show="work">
+        <label for="versionsList">Markera de utgåvor du vill jämföra:</label><br>
+        <select multiple 
+                id="versionsList" 
+                ng-model="worksToCompare" 
+                ng-options="version as version.title for version in work.works">
+            <option value="">Välj versioner att jämföra</option>
+        </select>
+        ({{worksToCompare.length}} av {{work.works.length}} valda)
+    </div><br>
+    <button class='btn btn-default'
+            type="submit"
+            ng-class="loading ? 'active' : null"
+            ng-show="work"
+            ng-disabled="worksToCompare.length < 2"
+            submit="submit">Jämför</button>
+</form>
+<div ng-show="haveText">
+    <hr><p>
+    <label for="baseText">Välj grundutgåva: </label>
+    <select id="baseText"
+            ng-model="baseWit"
+            ng-options="wit as title for (wit,title) in witTitles"></select>
+    </p><p>
+    <label for="showBulk">Visa hela texten: </label>
+    <input type="checkbox" id="showBulk" ng-model="showBulk"></input>
+    </p>
+</div>
+<div class='panel'
+     toolkit 
+     toolkit-id="toolkit-right">
+    <div class='panel-body'>
+        <h2>Instruktioner</h2>
+        <p>Välj ett av verken i listan. Markera sedan två eller fler utgåvor av verket du vill jämföra.
+        <p>Du kan välja icke-efterföljande utgåvor genom att hålla in Ctrl och klicka på den önskade utgåvan.
+        <p>Klicka på "Jämför"-knappen och vänta på jämförelsen att laddas. 
+    </div>
+</div>
+
+<div>
+    <style scoped 
+           id="showBaseWitStyle"
+           ng-bind-template=".changed > :not(.{{ baseWit }}) { display:none; }"></style>
+    <div id="koll-text" 
+         ng-class="showBulk ? null : 'hide-bulk'" />
+</div>
+<div id="diff-div"></div>
+<div ng-if="loading">Laddar <span class="dots_blink"></span></div>
+<div ng-if="error">Ett fel inträffade.</div>
+
+
+<div id="context-versions-div"
+     style="display: none;"
+     click-outside="onClickOutsideContextVersionsDiv($event)">
+    <div class="context-version" 
+         ng-class="baseWit == version.wit ? 'base' : myHover"  
+         ng-repeat="version in contextVersions" >
+        <span class="title">{{ version.title }}
+            <span ng-if="baseWit == version.wit" 
+                  tooltip="Denna utgåva är vald som grundutgåva" >☆</span>
+            <i ng-show="baseWit != version.wit && myHover">★</i>
+        </span>
+        <div id="context-versions-controls" >
+            <span class="control show-in-text" 
+                  ng-class="" 
+                  ng-click="changeBaseWit(version.wit); showInText($event, !showBulk)" 
+                  ng-bind="showBulk ? 'Visa i sammanfattning' : 'Visa i hela texten'" 
+                  ng-mouseenter="myHover = 'hover'" 
+                  ng-mouseleave="myHover = null" ></span>
+            <span class="control change-base" 
+                  ng-class="myHover" 
+                  ng-click="changeBaseWit(version.wit)"
+                  ng-mouseenter="myHover = 'hover'" 
+                  ng-mouseleave="myHover = null" >Välj som grundutgåva</span>
+        </div>
+        <div class="context well well-sm"
+             ng-bind-html="version.html | trust"></div>
+    </div>
+</div>
+</div>

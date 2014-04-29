@@ -1,27 +1,29 @@
+<div ng-controller="biblinfoCtrl">
+
 <div ng-class="{searching:searching}">
     <h1>
         Bibliografisk databas
     </h1>
     <div class="preloader">Söker <span class="dots_blink"></span></div>
-    <div class="search">
-        <input ng-model="wf" placeholder="Fritextsökning i hela databasen"><button>Sök</button>
+    <form class="search" ng-submit="submit()">
+        <input ng-model="wf" placeholder="Fritextsökning i hela databasen"/><button type="submit">Sök</button>
         <select>
             <option value="">Alla verk</option>
         </select>
-    </div>
+    </form>
     
     <ul>
         <li>
-            <input type="checkbox" ng-model="manus" value="manus" id="manuscriptChk"> <label for="manuscriptChk">Visa information om alla manuskript</label>
+            <input type="checkbox" ng-model="manus" value="manus" id="manuscriptChk"/> <label for="manuscriptChk">Visa information om alla manuskript</label>
         </li>
         <li>
-            <input type="checkbox" ng-model="tryckt_material" value="tryckt_material" id="printedChk"> <label for="printedChk">Visa information om alla tryckta upplagor</label>
+            <input type="checkbox" ng-model="tryckt_material" value="tryckt_material" id="printedChk"/> <label for="printedChk">Visa information om alla tryckta upplagor</label>
         </li>
         <li>
-            <input type="checkbox" ng-model="annat_tryckt" value="annat_tryckt" id="publicationChk"> <label for="publicationChk">Visa information om andra publikationsformer</label>
+            <input type="checkbox" ng-model="annat_tryckt" value="annat_tryckt" id="publicationChk"/> <label for="publicationChk">Visa information om andra publikationsformer</label>
         </li>
         <li>
-            <input type="checkbox" ng-model="forskning" value="forskning" id="researchChk"> <label for="researchChk">Visa information om forskning</label>
+            <input type="checkbox" ng-model="forskning" value="forskning" id="researchChk"/> <label for="researchChk">Visa information om forskning</label>
         </li>
     </ul>
     
@@ -46,12 +48,20 @@
     </div>
     
     
-    <div toolkit>
-        <div class="num_hits" ng-show="num_hits">{{num_hits}} träffar</div>
-        <ul>
-            <li><a href="javascript:" ng-click="increment()">Visa nästa sökträff</a></li>
-            <li><a href="javascript:" ng-click="decrement()">Visa föregående sökträff</a></li>
-            <li><a href="javascript:" ng-click="showAll()">Visa alla sökträffar</a></li>
-        </ul>
+    <div id='toolkit-biblinfo' toolkit toolkit-id="toolkit"> <!--toolkit-replace='yes'-->
+        <!--<a class='author' href='#!/forfattare/LagerlofS'>Tillbaka till Selma Lagerlöf</a>
+        -->
+        <hr>
+<!--        <div style="margin-bottom: 1em;">Bibliografisk databas</div> -->
+<!--        <div ng-if='num_hits != null'> -->
+            <div class="num_hits" ng-show="num_hits">{{num_hits}} träffar</div>
+            <div class="num_hits" ng-hide="num_hits">Inga träffar</div>
+            <ul>
+                <li><a href="javascript:" ng-click="increment()">Visa nästa sökträff</a></li>
+                <li><a href="javascript:" ng-click="decrement()">Visa föregående sökträff</a></li>
+                <li><a href="javascript:" ng-click="showAll()">Visa alla sökträffar</a></li>
+            </ul>
     </div>
+</div>
+
 </div>
