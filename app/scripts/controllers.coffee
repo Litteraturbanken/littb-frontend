@@ -1029,11 +1029,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     h = $(window).height()
     w = $(window).width()
 
-    # s.fontSizeInit = h / 700
-    # s.fontSizeFactor = s.fontSizeInit
-    s.fontSizeInit = 1
-    s.fontSizeFactor = s.fontSizeInit
+    s.fontSizeInit = h / 700
+    # s.fontSizeInit = 1
+    s.fontSizeFactor = Math.ceil s.fontSizeInit
     $rootScope._night_mode = false
+    s.showFocusBar = true
 
 
 

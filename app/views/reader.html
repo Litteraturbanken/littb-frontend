@@ -1,9 +1,10 @@
 <meta-desc>
     {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
-<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel,
+<div class="reader_main" ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel,
                  searching:loading, editor: isEditor, focus : isFocus,
-                 'type-faksimil' : mediatype == 'faksimil'}" >
+                 'type-faksimil' : mediatype == 'faksimil'}"
+     ng-click="showFocusBar = !showFocusBar">
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
@@ -127,7 +128,7 @@
                     Visa <span ng-show="mediatype == 'etext'">faksimil</span> 
                     <span ng-show="mediatype == 'faksimil'">etext</span> 
                     parallellt</span>
-                <span ng-if="isParallel">Stäng parallelvisningen</span>
+                <span ng-if="isParallel">Stäng parallellvisningen</span>
             </a></div>
 
             <div class="focusBtn">
@@ -140,10 +141,10 @@
     </div>
     <div ng-show="isFocus" class="leftCover" ng-click="prevPage($event)" to-body></div>
     <div ng-show="isFocus" class="rightCover" ng-click="nextPage($event)" to-body></div>
-    <div ng-show="isFocus" class="bottomBar" to-body>
+    <div ng-show="isFocus && showFocusBar" class="bottomBar" to-body>
         
         <a class="" popper my="middle bottom-25" at="bottom middle" >
-            <span class="size">aA</span>
+            <img src="img/focus_letters.svg" class="sizeBtn">
         </a>
         <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
             <div class="arrow"></div>

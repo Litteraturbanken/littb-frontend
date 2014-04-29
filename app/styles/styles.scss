@@ -691,6 +691,7 @@ $partnav-width : 170px;
         #mainview {
             width : auto;
             display : block;
+            height : 100%;
             .preloader {
                 right : 1em;
             }
@@ -706,8 +707,8 @@ $partnav-width : 170px;
         }
         @for $i from 0 to 10 {
           .size-#{$i + 1} { 
-            -webkit-transform : scaleX(1 + ($i / 5)) scaleY(1 + ($i / 5));
-            -webkit-transform-origin : top;
+            transform : scaleX(1 + ($i / 5)) scaleY(1 + ($i / 5));
+            transform-origin : top;
             // font-size: 1em + ($i / 5);
             // .big {
             //     font-size: 1.2em + ($i / 5)
@@ -722,7 +723,15 @@ $partnav-width : 170px;
             padding-top: 5px;
             padding-left: 11px;
         }
+        .sizeBtn {
+            height : 35px;
+            vertical-align: sub;
+        }
+        .reader_main {
+            height : 100%;
+        }
     }
+    
     .focusBtn {
         margin-top : 1em;
         a {
@@ -737,19 +746,34 @@ $partnav-width : 170px;
         left : 0;
         // height : 8%;
         background-color : grey;
-        padding : 5%;
+        padding : 4%;
         font-size : 3em;
         border-top : 1px solid #666;
         text-align : center;
         box-shadow: 1px 1px 9px 1px black;
+        max-height: 130px;
         & > * {
             margin-right : 5%;
         }
         a {
             cursor : pointer;
         }
+        opacity : 1;
+
 
     }
+
+    .bottomBar.ng-hide-add, .bottomBar.ng-hide-remove {
+        transition : all 300ms;
+        // transition : bottom 500ms;
+        display:block!important;
+    }
+
+    .bottomBar.ng-hide-add {opacity : 1; bottom : 0; }
+    .bottomBar.ng-hide-add-active {opacity : 0; bottom : -130px;} 
+    .bottomBar.ng-hide-remove {opacity : 0; bottom : -130px; }        
+    .bottomBar.ng-hide-remove-active {opacity : 1; bottom : 0; } 
+
     .type-faksimil.text.popper_menu {
         width : 190px;
         padding : 0.5em;
@@ -807,10 +831,11 @@ $partnav-width : 170px;
         
     }
     .leftCover, .rightCover {
-        position : absolute;
+        position : fixed;
         width : 10%;
         top : 0;
         bottom : 0;
+        // background-color: black;
     }
 
     .leftCover {
