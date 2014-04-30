@@ -252,21 +252,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
         # params =
-        
-        backend.searchWorks(s.query,
-            mediatype,
-            from,
-            to,
-            $location.search().forfattare,
-            $location.search().titel,
-            s.prefix,
-            s.suffix).then (data) ->
-                c.log "search data", data
-                s.data = data
-                s.kwic = data.kwic or []
-                s.hits = data.hits
-                s.searching = false
-                s.total_pages = Math.ceil(s.hits / s.num_hits)
 
         backend.searchWorks(s.query,
             mediatype,
@@ -283,9 +268,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 s.hits = data.hits
                 s.searching = false
                 s.total_pages = Math.ceil(s.hits / s.num_hits)
-
-                for row in (data.kwic or [])
-                    row.href = searchData.parseUrls row
 
                 for row in (data.kwic or [])
                     row.href = searchData.parseUrls row
@@ -363,11 +345,10 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
             splitCache = {}
             
             endIndex = -1
-            loop
+            dataLen = data.length
+            while endIndex + 1 < dataLen
                 startIndex = endIndex + 1
                 endIndex = data.indexOf('\n', startIndex)
-                if endIndex == -1
-                    break
                 line = data.substr(startIndex, endIndex - startIndex)
                 
                 if app == null
@@ -802,7 +783,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 else
                     editionList.append("<li class='title'>" + title + "</li>")
                     
-            versionDiv.append(editionList, "<div class='quote'>" + text + "</div>")
+            versionDiv.append(editionList, "<p>" + text + "</p>")
             div.append(versionDiv)
         
         # position and show diff-div

@@ -9,38 +9,42 @@
     <div class="form-group">
         <select class="form-control" 
                 ng-model="work"
-                ng-options="work as work.title for work in works">
+                ng-options="work as work.title for work in works"
+                ng-change="worksToCompare = []">
             <option value="">--Välj ett verk att jämföra--</option>
         </select>
     </div>
-    <br>
-    <div class="form-group" ng-show="work">
-        <label for="versionsList">Markera de utgåvor du vill jämföra:</label><br>
+    <div ng-show="work">
+        <p>
+        <label for="versionsList">Markera de utgåvor du vill jämföra:</label><br style="line-height:1.5em">
         <select multiple 
                 id="versionsList" 
                 ng-model="worksToCompare" 
                 ng-options="version as version.title for version in work.works">
             <option value="">Välj versioner att jämföra</option>
         </select>
-        ({{worksToCompare.length}} av {{work.works.length}} valda)
-    </div><br>
-    <button class='btn btn-default'
-            type="submit"
-            ng-class="loading ? 'active' : null"
-            ng-show="work"
-            ng-disabled="worksToCompare.length < 2"
-            submit="submit">Jämför</button>
+        <span style="font-size:0.9em;">({{worksToCompare.length}} av {{work.works.length}} valda)</span>
+        </p>
+        <button type="{{worksToCompare.length >= 2 ? 'submit':'button'}}"
+                class="btn btn-default btn-small"
+                ng-class="{active: loading, disabled: worksToCompare.length < 2}"
+                tooltip="{{worksToCompare.length < 2 ? 'Välj åtminstone två utgåvor att jämföra först!' : null}}"
+                tooltip-placement="right">Jämför</button>
+    </div>
 </form>
 <div ng-show="haveText">
-    <hr><p>
-    <label for="baseText">Välj grundutgåva: </label>
-    <select id="baseText"
-            ng-model="baseWit"
-            ng-options="wit as title for (wit,title) in witTitles"></select>
-    </p><p>
-    <label for="showBulk">Visa hela texten: </label>
-    <input type="checkbox" id="showBulk" ng-model="showBulk"></input>
-    </p>
+    <hr>
+    <div style="margin: 1em 0em">
+        <label for="baseText">Välj grundutgåva: </label>
+        <select id="baseText"
+                ng-model="baseWit"
+                ng-options="wit as title for (wit,title) in witTitles"></select>
+        &nbsp;&nbsp;
+        <span style="white-space: nowrap">
+            <input type="checkbox" id="showBulk" ng-model="showBulk"></input>
+            <label for="showBulk">Visa hela texten</label>
+        </span>
+    </div>
 </div>
 <div class='panel'
      toolkit 
