@@ -345,11 +345,10 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
             splitCache = {}
             
             endIndex = -1
-            loop
+            dataLen = data.length
+            while endIndex + 1 < dataLen
                 startIndex = endIndex + 1
                 endIndex = data.indexOf('\n', startIndex)
-                if endIndex == -1
-                    break
                 line = data.substr(startIndex, endIndex - startIndex)
                 
                 if app == null
@@ -784,7 +783,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 else
                     editionList.append("<li class='title'>" + title + "</li>")
                     
-            versionDiv.append(editionList, "<div class='quote'>" + text + "</div>")
+            versionDiv.append(editionList, "<p>" + text + "</p>")
             div.append(versionDiv)
         
         # position and show diff-div
