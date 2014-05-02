@@ -920,29 +920,30 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             doc = if page == 'omtexterna' then page else $routeParams.omtexternaDoc
             if doc
                 url = '/red/om/omtexterna/' + doc + '.html'
+            else 
+                url = s.authorInfo[page]
         else    
             url = s.authorInfo[page]
-        return if url is undefined
-        c.log "page external", page, url
+        
+        return unless url
         
         # because the livereload snippet is inserted into the html
-        # TODO: test this
         # if location.hostname == "localhost"
         #     url = "http://demolittb.spraakdata.gu.se" + s.authorInfo[page]
 
+        # if s.showpage == "omtexterna"
+        #     $http.get(url).success (xml) ->
+        #         c.log "xml", xml
+        #         s.externalDoc = _.str.trim xml
+                
+
+        # TODO: fix parsing of 'omtexterna' after body attrs have been removed
         unless s.showpage in ["introduktion", "titlar"]
             $http.get(url).success (xml) ->
                 from = xml.indexOf "<body>"
                 to = xml.indexOf "</body>"
                 xml = xml[from..to + "</body>".length]
-                s.externalDoc =  _.str.trim xml
-
-        # unless s.showpage in ["introduktion", "titlar"]
-        $http.get(url).success (xml) ->
-            extDoc = $(xml)
-            $('#author-info-external').empty().append(extDoc)
-        .error (data, status) ->
-            $('#author-info-external').empty().append('Felaktigt dokument')
+                s.externalDoc = _.str.trim xml
 
     refreshRoute()
 

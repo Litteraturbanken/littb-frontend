@@ -41,7 +41,10 @@
     
     <div ng-switch-when="jamfor"><div ng-include="'views/sla/textjamforelse.html'"></div></div>
     
-    <div ng-switch-default id="author-info-external"></div>
+    <!-- <div ng-switch-default id="author-info-external"></div> -->
+    <div ng-switch-default>
+       <div ng-bind-html="externalDoc | trust"></div>
+   </div>
 </div>
 
 <div toolkit>
