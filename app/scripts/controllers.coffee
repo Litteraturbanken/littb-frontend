@@ -450,14 +450,10 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         unless s.showpage in ["introduktion", "titlar"]
             $http.get(url).success (xml) ->
-                # c.log $("<div>").html(xml).html()
                 from = xml.indexOf "<body>"
                 to = xml.indexOf "</body>"
                 xml = xml[from..to + "</body>".length]
-                # c.log "xml", xml
                 s.externalDoc =   _.str.trim xml
-                # c.log "success", s.externalDoc
-
 
 
     refreshRoute()
@@ -490,7 +486,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         refreshExternalDoc(s.showpage)
 
         c.log "loaded", s.showpage
-        unless s.authorInfo.intro and s.showpage == "introduktion"
+        if not s.authorInfo.intro and s.showpage == "introduktion"
             $location.path("/forfattare/#{s.author}/titlar").replace()
 
 
@@ -1105,12 +1101,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pageix = s.pageix + s.getStep()
             s.pageToLoad = s.pageix
             return
-        unless s.endpage then return
+        if s.endpage then return
         newix = s.pageix + s.getStep()
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
-        else
-            s.setPage(0)
+        # else
+        #     s.setPage(0)
     
     s.prevPage = (event) ->
         event?.preventDefault()
@@ -1142,6 +1138,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
+        else
+            ""
     
     s.getNextPageUrl = () ->
         unless s.endpage then return
@@ -1150,6 +1148,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
+        else
+            ""
     
     s.getLastPageUrl = () ->
         if s.isEditor
