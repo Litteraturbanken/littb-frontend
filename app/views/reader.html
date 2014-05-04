@@ -143,7 +143,7 @@
     <div ng-show="isFocus" class="rightCover" ng-click="nextPage($event)" to-body></div>
     <div ng-show="isFocus && showFocusBar" class="bottomBar" to-body>
         
-        <a class="" popper my="middle bottom-25" at="bottom middle" >
+        <a popper my="middle bottom-25" at="bottom middle" >
             <img src="img/focus_letters.svg" class="sizeBtn">
         </a>
         <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
@@ -158,8 +158,8 @@
                     <div ng-class="{selected : size, hidden : !isDefined(size)}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
                     
                 </div>
-                <div class="night_switch on" ng-if="!$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Mörkt <br> läge</div></div>
-                <div class="night_switch off" ng-if="$root._night_mode" ng-click="$root._night_mode = false"><span class="icon"></span> <div class="label">Ljus <br> läge</div></div>
+                <div class="night_switch on" ng-if="mediatype!= 'faksimil' && !$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Mörkt <br> läge</div></div>
+                <div class="night_switch off" ng-if="mediatype!= 'faksimil' && $root._night_mode" ng-click="$root._night_mode = false"><span class="icon"></span> <div class="label">Ljus <br> läge</div></div>
             </div>
         </div>
 
@@ -171,7 +171,7 @@
             <i class="fa fa-forward"></i>
         </a>
 
-        <a class="" popper my="middle bottom-25" at="bottom middle" >
+        <a popper my="middle bottom-25" at="bottom middle" >
             <i class="fa fa-list-ul"></i>
         </a>
 

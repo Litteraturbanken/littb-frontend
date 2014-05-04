@@ -68,6 +68,13 @@ body {
 
 }
 
+input {
+    -webkit-appearance: none;
+    border : 1px solid lightgrey;
+    border-radius : 0;
+}
+
+
 h1,h2,h3,h4,h5,h6 {
     font-family: inherit;
 }
@@ -685,6 +692,10 @@ $partnav-width : 170px;
         .etext {
             margin : 5% auto 0 auto;
         }
+        .faksimil {
+            margin : 0 auto;
+            display : block;
+        }
         .header {
             display : none;
         }
@@ -734,9 +745,9 @@ $partnav-width : 170px;
     
     .focusBtn {
         margin-top : 1em;
+        padding : 1em 0;
         a {
             font-size : 1.1em;
-            // border-bottom : $dotted;
         }
     }
     .bottomBar {
@@ -745,12 +756,12 @@ $partnav-width : 170px;
         right : 0;
         left : 0;
         // height : 8%;
-        background-color : grey;
+        // background-color : grey;
         padding : 4%;
         font-size : 3em;
-        border-top : 1px solid #666;
+        border-top : 1px solid #999;
         text-align : center;
-        box-shadow: 1px 1px 9px 1px black;
+        box-shadow: 1px 1px 9px 1px #666;
         max-height: 130px;
         & > * {
             margin-right : 5%;
@@ -760,6 +771,10 @@ $partnav-width : 170px;
         }
         opacity : 1;
 
+
+        background-color: rgb(255,255,255); // Old browsers
+        @include filter-gradient(#ffffff, #d1d1d1, horizontal); // IE6-9 fallback on horizontal gradient
+        @include background-image(radial-gradient(center, ellipse cover, rgba(255,255,255,1) 0%,rgba(209,209,209,1) 100%));
 
     }
 
@@ -1659,7 +1674,6 @@ grundform-clean {
     // font-size: 1em;
 }
 
-
 .site-school {
     width : 100%;
     // padding : 50px;
@@ -1759,6 +1773,7 @@ grundform-clean {
     .highlight {
         color : $primarycolor;
     }
+
     .file_parent {
         white-space : nowrap;
         & > * {
@@ -2099,13 +2114,22 @@ grundform-clean {
 
 
 
-
-
-
 @media 
 only screen and (max-width: 760px),
 (min-device-width: 768px) and (max-device-width: 1024px)  {
 
+    a:hover {
+        color : inherit;
+    }
+    a:active {
+        color : $primarycolor;
+    }
+
+    .page-reading {
+        #toolkit .pager_ctrls a {
+            margin-right : 2px;
+        }
+    }    
     
     .modal { 
         position: fixed; 
