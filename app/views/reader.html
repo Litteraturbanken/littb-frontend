@@ -144,7 +144,8 @@
     <div ng-show="isFocus && showFocusBar" class="bottomBar" to-body>
         
         <a popper my="middle bottom-25" at="bottom middle" >
-            <img src="img/focus_letters.svg" class="sizeBtn">
+            <!-- <img src="img/focus_letters.svg" class="sizeBtn"> -->
+            <span ng-include="'img/focus_letters.svg'" class="sizeBtn">
         </a>
         <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
             <div class="arrow"></div>
@@ -155,7 +156,8 @@
                     <button ng-click="incrFontSize($event, 1)" class="btn btn-small pull-right">A</button></li>
                 </ul>
                 <div class="size_picker" ng-show="mediatype == 'faksimil'">
-                    <div ng-class="{selected : size, hidden : !isDefined(size)}" ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index + 1}}</div>
+                    <div ng-class="{selected : size, hidden : !isDefined(size)}" 
+                         ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div>
                     
                 </div>
                 <div class="night_switch on" ng-if="mediatype!= 'faksimil' && !$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Mörkt <br> läge</div></div>

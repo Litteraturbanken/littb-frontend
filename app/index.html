@@ -97,7 +97,8 @@
             <div class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
                 <!-- <label>Slå upp i Svensk ordbok</label> -->
                 <div class="input_container">
-                    <input  ng-model="lex_article"
+                    <input  type="text"
+                            ng-model="lex_article"
                             focusable
                             placeholder="Slå i Svensk ordbok"
                             typeahead-on-select="showModal(lex_article)"

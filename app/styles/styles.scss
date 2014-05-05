@@ -68,13 +68,6 @@ body {
 
 }
 
-input {
-    -webkit-appearance: none;
-    border : 1px solid lightgrey;
-    border-radius : 0;
-}
-
-
 h1,h2,h3,h4,h5,h6 {
     font-family: inherit;
 }
@@ -735,6 +728,7 @@ $partnav-width : 170px;
             padding-left: 11px;
         }
         .sizeBtn {
+            fill : #333;
             height : 35px;
             vertical-align: sub;
         }
@@ -790,7 +784,7 @@ $partnav-width : 170px;
     .bottomBar.ng-hide-remove-active {opacity : 1; bottom : 0; } 
 
     .type-faksimil.text.popper_menu {
-        width : 190px;
+        width : 191px;
         padding : 0.5em;
         .size_picker {
             margin-top : 0;
@@ -2123,6 +2117,12 @@ only screen and (max-width: 760px),
     }
     a:active {
         color : $primarycolor;
+    }
+
+    input[type=text] {
+        -webkit-appearance: none;
+        border : 1px solid lightgrey;
+        border-radius : 0;
     }
 
     .page-reading {
