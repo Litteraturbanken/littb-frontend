@@ -1,5 +1,4 @@
-<div id="textjamforelse" 
-     ng-controller="textjamforelseCtrl">
+<div id="textjamforelse" ng-controller="textjamforelseCtrl">
      
 <h1>
     Textkritisk verkstad
@@ -28,7 +27,7 @@
         <button type="{{worksToCompare.length >= 2 ? 'submit':'button'}}"
                 class="btn btn-default btn-small"
                 ng-class="{active: loading, disabled: worksToCompare.length < 2}"
-                tooltip="{{worksToCompare.length < 2 ? 'Välj åtminstone två utgåvor att jämföra först!' : null}}"
+                tooltip="{{worksToCompare.length < 2 ? 'Välj åtminstone två utgåvor för jämförelsen' : null}}"
                 tooltip-placement="right">Jämför</button>
     </div>
 </form>
@@ -52,17 +51,18 @@
     <div class='panel-body'>
         <h2>Instruktioner</h2>
         <p>Välj ett av verken i listan. Markera sedan två eller fler utgåvor av verket du vill jämföra.
-        <p>Du kan välja icke-efterföljande utgåvor genom att hålla in Ctrl och klicka på den önskade utgåvan.
-        <p>Klicka på "Jämför"-knappen och vänta på jämförelsen att laddas. 
+        <p>Du kan välja icke-efterföljande utgåvor genom att hålla in Ctrl (Cmd på Mac) och klicka på den önskade utgåvan.
+        <!-- <p>Klicka på "Jämför"-knappen och vänta på jämförelsen att laddas.  -->
     </div>
 </div>
 
 <div>
-    <style scoped 
-           id="showBaseWitStyle"
-           ng-bind-template=".changed > :not(.{{ baseWit }}) { display:none; }"></style>
-    <div id="koll-text" 
-         ng-class="showBulk ? null : 'hide-bulk'" />
+    <style scoped id="showBaseWitStyle">
+      .changed > :not(.{{ baseWit }}) {
+        display:none; 
+      }
+    </style>
+    <div id="koll-text" ng-class="showBulk ? null : 'hide-bulk'" />
 </div>
 <div id="diff-div"></div>
 <div ng-if="loading">Laddar <span class="dots_blink"></span></div>
@@ -82,7 +82,6 @@
         </span>
         <div id="context-versions-controls" >
             <span class="control show-in-text" 
-                  ng-class="" 
                   ng-click="changeBaseWit(version.wit); showInText($event, !showBulk)" 
                   ng-bind="showBulk ? 'Visa i sammanfattning' : 'Visa i hela texten'" 
                   ng-mouseenter="myHover = 'hover'" 

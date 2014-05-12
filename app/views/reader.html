@@ -18,7 +18,8 @@
     <div toolkit toolkit-id="toolkit-right">
         <!--h2>Ord- och sakförklaringar</h2>-->
         <div id="ord-och-sak" ng-show="ordOchSakPage">
-            <div ng-repeat="entry in ordOchSakPage" ng-mouseenter="markOosEntry(entry)" ng-mouseleave="unmarkOosEntries()"">
+            <div ng-repeat="entry in ordOchSakPage" ng-mouseenter="markOosEntry(entry)" 
+                 ng-mouseleave="unmarkOosEntries()">
                 <span class="oos-ord">{{entry.ord}}</span><br>
                 <span class="oos-forklaring">{{entry.forklaring}}</span>
             </div>

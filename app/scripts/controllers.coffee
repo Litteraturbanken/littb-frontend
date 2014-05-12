@@ -307,7 +307,7 @@ littb.controller "lagerlofCtrl", ($scope, $rootScope, backend) ->
         $rootScope.appendCrumb data.surname
 
         
-littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location, $modal, backend, $window, $timeout) ->
+littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location, backend, $window, $timeout) ->
     s = $scope
     s.loading = false
     s.error = false
@@ -882,17 +882,17 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         s.showpage = (_.last $location.path().split("/")) 
         s.showpage = "introduktion" if s.author == s.showpage
 
-    refreshTitle = () ->
-        suffix = if s.showpage == "titlar" then "Verk i LB" else _.str.capitalize s.showpage
-        s.setTitle "#{s.authorInfo.fullName} - " + suffix
+    # refreshTitle = () ->
+        # suffix = if s.showpage == "titlar" then "Verk i LB" else _.str.capitalize s.showpage
+        # s.setTitle "#{s.authorInfo.fullName} - " + suffix
 
-    refreshBreadcrumb = () ->
-        if s.showpage != "introduktion"
-            if $rootScope.breadcrumb.length > 2
-                $rootScope.breadcrumb.pop()
-            s.appendCrumb s.showpage
-        else
-            $rootScope.breadcrumb.pop()
+    # refreshBreadcrumb = () ->
+        # if s.showpage != "introduktion"
+        #     if $rootScope.breadcrumb.length > 2
+        #         $rootScope.breadcrumb.pop()
+        #     s.appendCrumb s.showpage
+        # else
+        #     $rootScope.breadcrumb.pop()
 
     s.getUnique = (worklist) ->
         _.filter worklist, (item) ->
@@ -901,6 +901,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     s.getPageTitle = (page) ->
         {
             "semer" : "Mera om"
+            "omtexterna" : "Om texterna"
         }[page] or _.str.capitalize page
 
     s.getAllTitles = () ->
@@ -937,10 +938,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         #         s.externalDoc = _.str.trim xml
                 
 
-        # TODO: fix parsing of 'omtexterna' after body attrs have been removed
         unless s.showpage in ["introduktion", "titlar"]
             $http.get(url).success (xml) ->
-                from = xml.indexOf "<body>"
+                from = xml.search /<body.*?>/
                 to = xml.indexOf "</body>"
                 xml = xml[from..to + "</body>".length]
                 s.externalDoc = _.str.trim xml
@@ -952,9 +952,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         _.extend s, current.pathParams
 
         refreshRoute()  
-        refreshTitle()
+        # refreshTitle()
         refreshExternalDoc(s.showpage)
-        refreshBreadcrumb()
+        # refreshBreadcrumb()
     
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
@@ -962,12 +962,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "titlepath"
         s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
         c.log "data.surname", data.surname
-        $rootScope.appendCrumb 
-            label : data.surname
-            url : "#!/forfattare/" + s.author
-        if s.showpage != "introduktion"
-            refreshBreadcrumb()
-        refreshTitle()
+        # $rootScope.appendCrumb 
+        #     label : data.surname
+        #     url : "#!/forfattare/" + s.author
+        # if s.showpage != "introduktion"
+        #     refreshBreadcrumb()
+        # refreshTitle()
         refreshExternalDoc(s.showpage)
 
         c.log "loaded", s.showpage
@@ -1239,12 +1239,12 @@ littb.controller "omtexternaCtrl", ($scope, $routeParams) ->
     
     $scope.$on '$includeContentLoaded', (e) ->
         docTitle = $('#omtexterna-doc title').text()
-        $scope.setTitle docTitle
-        c.log $scope
-        $scope.appendCrumb
-            label: docTitle
-            url: window.location.hash
-        c.log $scope.breadcrumb
+        # $scope.setTitle docTitle
+        # c.log $scope
+        # $scope.appendCrumb
+        #     label: docTitle
+        #     url: window.location.hash
+        # c.log $scope.breadcrumb
     
     # $http.get(url).success (data) ->
         # s.doc = data

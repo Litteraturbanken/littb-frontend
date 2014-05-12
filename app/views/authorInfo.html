@@ -1,6 +1,13 @@
 <meta-desc>{{authorInfo.fullName}}, {{getPageTitle(showpage)}}</meta-desc>
+<page-title>{{authorInfo.fullName}}, {{getPageTitle(showpage)}}</page-title>
+<breadcrumb>
+    <a href="/#!/forfattare">författare</a>
+    <a href="/#!/forfattare/{{author}}">{{authorInfo.fullName}}</a>
+    <a href="">{{getPageTitle(showpage)}}</a>
+    <!-- {{authorInfo.fullName}}, {{getPageTitle(showpage)}} -->
+</breadcrumb>
 
-<div ng-class="{searching:!authorInfo, show_large : show_large}" 
+<div ng-class="{sla : slaMode, searching:!authorInfo, show_large : show_large}" 
      ng-switch="showpage">
     <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
     

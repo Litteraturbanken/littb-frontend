@@ -90,7 +90,7 @@ h1,h2,h3,h4,h5,h6 {
 
 #rightCorridor{
     @include inline-block;
-    margin-left: 5px;
+    margin-left: 2em;
     width : $right-corridor-width;
     #toolkit-right {
         margin-top: 2em;
@@ -1163,7 +1163,34 @@ $partnav-width : 170px;
         .img_large.ng-enter-active {opacity : 1 } 
         .img_large.ng-leave {opacity : 1 }        
         .img_large.ng-leave-active {opacity : 0 } 
+        
 
+        .sla {
+            .toc {
+                display : none;
+            }
+            .toc + .titlepage {
+                h2.title {
+                    display : none;
+                }
+            }
+            h3.author:before {
+                content: "Av ";
+                display : inline;
+            }
+            .titlepage {
+                hr {
+                    display: none;
+                }
+                h2.title {
+                    display: none;
+                }
+            }
+            p {
+                max-width : inherit;
+            }
+
+        }
     }
 
     #toolkit {
@@ -1400,7 +1427,7 @@ $partnav-width : 170px;
 }
 #diff-div {
     background-color: white;
-    padding: 2px; 
+    padding: 8px; 
     display: none;
     position: absolute;
     margin-top: 5px;
@@ -1419,6 +1446,7 @@ $partnav-width : 170px;
       margin: 5px 5px 5px 10px;
     }
 }
+
 
 $triangle_size : 10px;
 
