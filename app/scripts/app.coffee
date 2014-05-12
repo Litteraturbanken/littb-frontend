@@ -206,6 +206,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
         
                                 if routeStartCurrent?.controller == "readingCtrl" and $route.current.controller == "readingCtrl"
                                     cmp = ["author", "mediatype", "title"]
+                                    if "lbid" of $route.current.params
+                                        cmp.push "lbid"
                                     current = _.pick $route.current.params, cmp...
                                     prev = _.pick routeStartCurrent.params, cmp...
                                     if _.isEqual current, prev
