@@ -681,7 +681,7 @@ $partnav-width : 170px;
         width : auto;
         padding : 0;
         height : 100%;
-        overflow : hidden;
+        // overflow : hidden;
         .etext {
             margin : 5% auto 0 auto;
         }
@@ -751,12 +751,12 @@ $partnav-width : 170px;
         left : 0;
         // height : 8%;
         // background-color : grey;
-        padding : 4%;
+        padding : 3%;
         font-size : 3em;
         border-top : 1px solid #999;
         text-align : center;
         box-shadow: 1px 1px 9px 1px #666;
-        max-height: 130px;
+        max-height: 100px;
         & > * {
             margin-right : 5%;
         }
