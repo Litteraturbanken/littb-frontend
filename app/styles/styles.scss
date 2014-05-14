@@ -1182,12 +1182,16 @@ $partnav-width : 170px;
                 hr {
                     display: none;
                 }
-                h2.title {
-                    display: none;
-                }
+                // h2.title {
+                //     display: none;
+                // }
             }
             p {
                 max-width : inherit;
+            }
+
+            .italic {
+                font-style: italic;
             }
 
         }

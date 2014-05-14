@@ -3,6 +3,8 @@
 window.c = console ? log : _.noop
 littb = angular.module('littbApp')
 
+c.time = angular.noop
+c.timeEnd = angular.noop
 
 littb.filter "authorYear", () ->
     (obj) ->
