@@ -1,16 +1,12 @@
 @charset "UTF-8";
 
 
-/* line 4, so.scss */
-
 ._so_article body,
 ._so_article kapitel,
 ._so_article so {
   font-family: "Georgia",serif;
   line-height: 16px;
 }
-
-/* line 6, so.scss */
 
 ._so_article lemma {
   display: block;
@@ -23,23 +19,17 @@
   padding-left: 0.7cm;
 }
 
-/* line 7, so.scss */
-
 ._so_article f {
   font-size: medium;
   font-style: normal;
   font-weight: bold;
 }
 
-/* line 8, so.scss */
-
 ._so_article venster {
   display: inline;
   position: relative;
   left: -0.6cm;
 }
-
-/* line 9, so.scss */
 
 ._so_article homonr {
   display: inline;
@@ -52,16 +42,12 @@
   left: -0.4cm;
 }
 
-/* line 10, so.scss */
-
 ._so_article hvhomo {
   display: inline;
   font-size: xx-small;
   font-style: normal;
   vertical-align: super;
 }
-
-/* line 11, so.scss */
 
 ._so_article grundform {
   display: inline;
@@ -73,16 +59,12 @@
   left: -0.4cm;
 }
 
-/* line 12, so.scss */
-
 ._so_article uttal {
   display: inline;
   font-size: small;
   font-style: normal;
   font-weight: normal;
 }
-
-/* line 13, so.scss */
 
 ._so_article uttalstext {
   display: inline;
@@ -91,8 +73,6 @@
   font-weight: normal;
 }
 
-/* line 14, so.scss */
-
 ._so_article alt_uttal {
   display: inline;
   font-size: small;
@@ -100,16 +80,12 @@
   font-weight: normal;
 }
 
-/* line 15, so.scss */
-
 ._so_article boj_uttal {
   display: inline;
   font-size: small;
   font-style: normal;
   font-weight: normal;
 }
-
-/* line 16, so.scss */
 
 ._so_article avstav {
   display: block;
@@ -120,8 +96,6 @@
   left: -0.4cm;
 }
 
-/* line 17, so.scss */
-
 ._so_article avstav:before {
   padding-top: 1px;
   font-size: x-small;
@@ -131,15 +105,11 @@
   content: "Ordled: ";
 }
 
-/* line 18, so.scss */
-
 ._so_article ordbildn {
   display: inline;
   font-size: small;
   font-weight: bold;
 }
-
-/* line 19, so.scss */
 
 ._so_article ordbprep {
   display: inline;
@@ -147,13 +117,9 @@
   font-weight: normal;
 }
 
-/* line 20, so.scss */
-
 ._so_article ordbildn:first-child {
   padding-left: 5.5em;
 }
-
-/* line 21, so.scss */
 
 ._so_article ordbildnx {
   font-size: small;
@@ -164,8 +130,6 @@
   padding-top: 0.2em;
 }
 
-/* line 22, so.scss */
-
 ._so_article ordbildnx:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -175,8 +139,6 @@
   content: "Subst:\a0";
   float: left;
 }
-
-/* line 23, so.scss */
 
 ._so_article ordbtxt {
   display: none;
@@ -190,16 +152,12 @@
   left: -1em;
 }
 
-/* line 24, so.scss */
-
 ._so_article bt {
   display: inline;
   font-size: medium;
   font-style: normal;
   font-weight: normal;
 }
-
-/* line 25, so.scss */
 
 ._so_article def {
   display: inline;
@@ -208,16 +166,12 @@
   font-weight: normal;
 }
 
-/* line 26, so.scss */
-
 ._so_article idiomdef {
   display: inline;
   font-size: small;
   font-style: normal;
   font-weight: normal;
 }
-
-/* line 27, so.scss */
 
 ._so_article deft {
   display: inline;
@@ -227,16 +181,12 @@
   padding-left: 0.5em;
 }
 
-/* line 28, so.scss */
-
 ._so_article utv {
   display: inline;
   font-size: x-small;
   font-style: normal;
   font-weight: normal;
 }
-
-/* line 29, so.scss */
 
 ._so_article idiomdeft {
   display: inline;
@@ -246,15 +196,11 @@
   padding-left: 0.5em;
 }
 
-/* line 30, so.scss */
-
 ._so_article sxblocklx {
   display: block;
   font-weight: normal;
   font-size: x-small;
 }
-
-/* line 31, so.scss */
 
 ._so_article sxblocklx:before {
   padding-top: 1px;
@@ -266,15 +212,11 @@
   float: left;
 }
 
-/* line 32, so.scss */
-
 ._so_article sxblock {
   display: block;
   font-weight: normal;
   padding-bottom: 0.3em;
 }
-
-/* line 33, so.scss */
 
 ._so_article sxblock:before {
   padding-top: 1px;
@@ -286,8 +228,6 @@
   float: left;
 }
 
-/* line 34, so.scss */
-
 ._so_article syntex {
   display: inline;
   font-style: italic;
@@ -296,15 +236,11 @@
   padding-right: 0.2em;
 }
 
-/* line 35, so.scss */
-
 ._so_article aveneller {
   font-style: normal;
   font-size: x-small;
   padding-left: 0.5em;
 }
-
-/* line 36, so.scss */
 
 ._so_article altkom {
   font-style: normal;
@@ -313,16 +249,12 @@
   font-weight: normal;
 }
 
-/* line 37, so.scss */
-
 ._so_article hkom {
   display: inline;
   font-style: normal;
   font-weight: normal;
   font-size: x-small;
 }
-
-/* line 38, so.scss */
 
 ._so_article ikom {
   display: inline;
@@ -331,16 +263,12 @@
   font-size: x-small;
 }
 
-/* line 39, so.scss */
-
 ._so_article idiomcyk {
   display: inline;
   font-style: normal;
   font-weight: normal;
   font-size: x-small;
 }
-
-/* line 40, so.scss */
 
 ._so_article ukom {
   display: inline;
@@ -351,16 +279,12 @@
   padding-right: 0.2em;
 }
 
-/* line 41, so.scss */
-
 ._so_article fkom {
   display: inline;
   font-size: x-small;
   font-style: normal;
   font-weight: normal;
 }
-
-/* line 42, so.scss */
 
 ._so_article fkomblock {
   display: inline;
@@ -370,19 +294,13 @@
   padding-right: 0.4em;
 }
 
-/* line 43, so.scss */
-
 ._so_article komxx:before {
   content: "(";
 }
 
-/* line 44, so.scss */
-
 ._so_article fkomxx:after {
   content: ")";
 }
-
-/* line 45, so.scss */
 
 ._so_article fkom2 {
   display: inline;
@@ -392,8 +310,6 @@
   padding-left: 0.3em;
 }
 
-/* line 46, so.scss */
-
 ._so_article fkom3 {
   display: inline;
   font-size: x-small;
@@ -401,13 +317,9 @@
   font-weight: normal;
 }
 
-/* line 47, so.scss */
-
 ._so_article k {
   font-style: italic;
 }
-
-/* line 48, so.scss */
 
 ._so_article anm {
   display: inline;
@@ -417,8 +329,6 @@
   font-weight: normal;
 }
 
-/* line 49, so.scss */
-
 ._so_article bojning {
   display: inline;
   font-size: small;
@@ -427,15 +337,11 @@
   font-weight: normal;
 }
 
-/* line 50, so.scss */
-
 ._so_article tempus,
 ._so_article tempmm {
   font-style: normal;
   font-size: x-small;
 }
-
-/* line 51, so.scss */
 
 ._so_article pt {
   display: inline;
@@ -444,16 +350,12 @@
   font-weight: normal;
 }
 
-/* line 52, so.scss */
-
 ._so_article ordklass {
   display: inline;
   font-size: x-small;
   font-style: normal;
   font-weight: normal;
 }
-
-/* line 53, so.scss */
 
 ._so_article punkt {
   display: inline;
@@ -463,21 +365,15 @@
   left: -1em;
 }
 
-/* line 54, so.scss */
-
 ._so_article defxx:before {
   content: "•";
 }
-
-/* line 55, so.scss */
 
 ._so_article fm {
   display: inline;
   font-weight: bold;
   font-size: small;
 }
-
-/* line 56, so.scss */
 
 ._so_article alt {
   display: inline;
@@ -486,15 +382,11 @@
   padding-right: 0.5em;
 }
 
-/* line 57, so.scss */
-
 ._so_article pm {
   display: inline;
   font-weight: bold;
   font-size: small;
 }
-
-/* line 58, so.scss */
 
 ._so_article fk {
   display: inline;
@@ -502,21 +394,15 @@
   font-size: small;
 }
 
-/* line 59, so.scss */
-
 ._so_article fb {
   display: inline;
   font-weight: normal;
   font-size: small;
 }
 
-/* line 60, so.scss */
-
 ._so_article fb:not(:last-child):after {
   content: "; ";
 }
-
-/* line 61, so.scss */
 
 ._so_article et {
   display: inline;
@@ -525,21 +411,15 @@
   padding-left: 0.5em;
 }
 
-/* line 62, so.scss */
-
 ._so_article vinkel {
   font-size: small;
   font-style: normal;
 }
 
-/* line 63, so.scss */
-
 ._so_article bruk {
   font-size: small;
   font-style: normal;
 }
-
-/* line 64, so.scss */
 
 ._so_article fack {
   display: none;
@@ -547,22 +427,16 @@
   font-style: normal;
 }
 
-/* line 65, so.scss */
-
 ._so_article tanke {
   font-size: small;
   font-style: normal;
 }
-
-/* line 66, so.scss */
 
 ._so_article lexem {
   display: block;
   font-size: medium;
   padding-top: 0.3em;
 }
-
-/* line 67, so.scss */
 
 ._so_article cykel {
   display: block;
@@ -571,8 +445,6 @@
   font-weight: normal;
 }
 
-/* line 68, so.scss */
-
 ._so_article idiom {
   display: block;
   font-size: small;
@@ -580,14 +452,10 @@
   padding-bottom: 0.3em;
 }
 
-/* line 69, so.scss */
-
 ._so_article idiomexblock {
   display: block;
   padding-top: 0.2em;
 }
-
-/* line 70, so.scss */
 
 ._so_article idiomexblock:before {
   padding-top: 0.2em;
@@ -600,8 +468,6 @@
   float: left;
 }
 
-/* line 71, so.scss */
-
 ._so_article idiomex {
   display: block;
   font-weight: normal;
@@ -610,13 +476,9 @@
   padding-left: 5.5em;
 }
 
-/* line 72, so.scss */
-
 ._so_article etymologiblock {
   display: block;
 }
-
-/* line 73, so.scss */
 
 ._so_article etymologiblock:before {
   padding-top: 1px;
@@ -629,8 +491,6 @@
   float: left;
 }
 
-/* line 74, so.scss */
-
 ._so_article etymologi {
   display: block;
   color: black;
@@ -641,21 +501,15 @@
   padding-left: 5.5em;
 }
 
-/* line 75, so.scss */
-
 ._so_article besl {
   font-style: italic;
 }
-
-/* line 76, so.scss */
 
 ._so_article valens {
   display: block;
   font-size: x-small;
   font-style: normal;
 }
-
-/* line 77, so.scss */
 
 ._so_article valens:before {
   padding-top: 1px;
@@ -666,8 +520,6 @@
   content: "Konstr:";
   float: left;
 }
-
-/* line 78, so.scss */
 
 ._so_article vt {
   display: block;
@@ -681,47 +533,33 @@
   padding-bottom: 0.3em;
 }
 
-/* line 79, so.scss */
-
 ._so_article fras {
   font-size: small;
   color: navy;
 }
 
-/* line 80, so.scss */
-
 ._so_article fras:after {
   content: " ";
 }
 
-/* line 81, so.scss */
-
 ._so_article kastas {
   display: none;
 }
-
-/* line 82, so.scss */
 
 ._so_article fon {
   font-style: italic;
   font-weight: bold;
 }
 
-/* line 83, so.scss */
-
 ._so_article ls {
   font-style: italic;
   font-weight: bold;
 }
 
-/* line 84, so.scss */
-
 ._so_article ms {
   font-size: small;
   font-style: normal;
 }
-
-/* line 85, so.scss */
 
 ._so_article hv {
   display: inline;
@@ -732,8 +570,6 @@
   font-weight: normal;
 }
 
-/* line 86, so.scss */
-
 ._so_article hvtyp {
   font-size: x-small;
   font-variant: small-caps;
@@ -743,15 +579,11 @@
   left: -0.5em;
 }
 
-/* line 87, so.scss */
-
 ._so_article hvtyp2 {
   display: none;
   font-style: italic;
   padding-left: 0.4em;
 }
-
-/* line 88, so.scss */
 
 ._so_article hv1 {
   display: block;
@@ -763,8 +595,6 @@
   padding-top: 0.2em;
 }
 
-/* line 89, so.scss */
-
 ._so_article hv1:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -773,8 +603,6 @@
   color: gray;
   content: "Synonym:";
 }
-
-/* line 90, so.scss */
 
 ._so_article hv2 {
   display: block;
@@ -786,8 +614,6 @@
   padding-top: 0.2em;
 }
 
-/* line 91, so.scss */
-
 ._so_article hv2:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -796,8 +622,6 @@
   color: gray;
   content: "Motsats:";
 }
-
-/* line 92, so.scss */
 
 ._so_article hv3 {
   display: block;
@@ -809,8 +633,6 @@
   padding-top: 0.2em;
 }
 
-/* line 93, so.scss */
-
 ._so_article hv3:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -819,8 +641,6 @@
   color: gray;
   content: "Se";
 }
-
-/* line 94, so.scss */
 
 ._so_article hv4 {
   display: block;
@@ -832,8 +652,6 @@
   padding-top: 0.2em;
 }
 
-/* line 95, so.scss */
-
 ._so_article hv4:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -843,23 +661,17 @@
   content: "Jämför:";
 }
 
-/* line 96, so.scss */
-
 ._so_article mx {
   display: inline;
   font-size: small;
   font-style: italic;
 }
 
-/* line 97, so.scss */
-
 ._so_article mxblock {
   display: block;
   font-weight: normal;
   padding-bottom: 0.3em;
 }
-
-/* line 98, so.scss */
 
 ._so_article mxblock:before {
   padding-top: 0.2em;
@@ -870,16 +682,12 @@
   content: "Sammansättn.: ";
 }
 
-/* line 99, so.scss */
-
 ._so_article mxblocklx {
   display: block;
   padding-bottom: 0.3em;
   font-size: x-small;
   font-weight: normal;
 }
-
-/* line 100, so.scss */
 
 ._so_article mxblocklx:before {
   padding-top: 0.2em;
@@ -890,26 +698,18 @@
   content: "Sammansättn.: ";
 }
 
-/* line 101, so.scss */
-
 ._so_article b {
   font-weight: bold;
 }
-
-/* line 102, so.scss */
 
 ._so_article ur {
   display: inline;
   font-size: x-small;
 }
 
-/* line 103, so.scss */
-
 ._so_article detaljer {
   display: block;
 }
-
-/* line 104, so.scss */
 
 ._so_article scriptonly {
   display: block;
@@ -919,20 +719,14 @@
   text-align: right;
 }
 
-/* line 105, so.scss */
-
 ._so_article h4 {
   margin-bottom: 0em;
 }
-
-/* line 106, so.scss */
 
 ._so_article hvlnk:link {
   text-decoration: underline;
   color: #BD362F;
 }
-
-/* line 107, so.scss */
 
 ._so_article a {
   font-variant: normal;
@@ -940,14 +734,10 @@
   color: black;
 }
 
-/* line 108, so.scss */
-
 ._so_article a {
   font-variant: normal;
   padding-left: 0.5em;
 }
-
-/* line 109, so.scss */
 
 ._so_article a.mer:link {
   text-decoration: none;
@@ -955,118 +745,80 @@
   font-size: x-small;
 }
 
-/* line 110, so.scss */
-
 ._so_article ljudblock {
   display: none;
 }
-
-/* line 111, so.scss */
 
 ._so_article ljud {
   display: inline;
   font-size: small;
 }
 
-/* line 112, so.scss */
-
 ._so_article hvtag {
   display: none;
 }
-
-/* line 113, so.scss */
 
 ._so_article mxref {
   display: inline;
 }
 
-/* line 114, so.scss */
-
 ._so_article mxref:after {
   content: ">";
 }
 
-/* line 115, so.scss */
-
-._so_article hv > hvord {
+._so_article hv>hvord {
   font-weight: bold;
 }
 
-/* line 116, so.scss */
-
-._so_article et > hvord {
+._so_article et>hvord {
   font-weight: bold;
 }
 
-/* line 117, so.scss */
-
-._so_article hvgrupp > hvord:not(:last-child):after {
+._so_article hvgrupp>hvord:not(:last-child):after {
   content: ", ";
 }
-
-/* line 118, so.scss */
 
 ._so_article mx:not(:last-child):after {
   content: "; ";
 }
 
-/* line 119, so.scss */
-
 ._so_article syntex:not(:last-child):after {
   content: "; ";
 }
-
-/* line 120, so.scss */
 
 ._so_article syntex:first-child {
   padding-left: 2.3em;
 }
 
-/* line 121, so.scss */
-
 ._so_article hvgrupp {
   padding-right: 1em;
 }
-
-/* line 122, so.scss */
 
 ._so_article hvid {
   display: none;
 }
 
-/* line 123, so.scss */
-
 ._so_article utv:not(:last-child):after {
   content: " ";
 }
 
-/* line 124, so.scss */
-
-._so_article cykel > def:not(:last-child):after {
+._so_article cykel>def:not(:last-child):after {
   content: ": ";
 }
-
-/* line 125, so.scss */
 
 ._so_article idiomdef:not(:last-child):after {
   content: ": ";
 }
 
-/* line 126, so.scss */
-
 ._so_article fras:not(:last-child):after {
   content: " ";
 }
-
-/* line 127, so.scss */
 
 ._so_article idiomlexblock {
   display: block;
   padding-top: 0.3em;
   padding-left: 5em;
 }
-
-/* line 128, so.scss */
 
 ._so_article idiomxnr {
   font-weight: normal;
