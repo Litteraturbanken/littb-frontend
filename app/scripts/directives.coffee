@@ -426,3 +426,13 @@ littb.directive "affix", () ->
             }
         )
 
+littb.directive "setClass", () ->
+    link : (scope, elem, attrs) ->
+        obj = scope.$eval attrs.setClass
+        for key, val of obj
+            if val
+                elem.addClass key
+            else
+                elem.removeClass key
+
+

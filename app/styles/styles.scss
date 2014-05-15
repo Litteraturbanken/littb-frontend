@@ -679,7 +679,7 @@ $partnav-width : 170px;
     &.focus-remove-active {opacity : 1 } 
     &.focus {
         width : auto;
-        padding : 0;
+        padding : 2%;
         height : 100%;
         // overflow : hidden;
         .etext {
@@ -731,6 +731,14 @@ $partnav-width : 170px;
             fill : #333;
             height : 35px;
             vertical-align: sub;
+
+            width: 59px;
+            position: relative;
+            left: 10px;
+
+        }
+        .sizeBtn:hover {
+            fill : $primarycolor;
         }
         .reader_main {
             height : 100%;
@@ -751,7 +759,7 @@ $partnav-width : 170px;
         left : 0;
         // height : 8%;
         // background-color : grey;
-        padding : 3%;
+        padding : 1%;
         font-size : 3em;
         border-top : 1px solid #999;
         text-align : center;
@@ -764,11 +772,15 @@ $partnav-width : 170px;
             cursor : pointer;
         }
         opacity : 1;
+        
+        width: 380px;
+        margin: 0 auto;
+        border-radius: 0px;
 
-
-        background-color: rgb(255,255,255); // Old browsers
-        @include filter-gradient(#ffffff, #d1d1d1, horizontal); // IE6-9 fallback on horizontal gradient
-        @include background-image(radial-gradient(center, ellipse cover, rgba(255,255,255,1) 0%,rgba(209,209,209,1) 100%));
+        background-color : white;
+        // background-color: rgb(255,255,255); // Old browsers
+        // @include filter-gradient(#ffffff, #d1d1d1, horizontal); // IE6-9 fallback on horizontal gradient
+        // @include background-image(radial-gradient(center, ellipse cover, rgba(255,255,255,1) 0%,rgba(209,209,209,1) 100%));
 
     }
 
@@ -779,8 +791,8 @@ $partnav-width : 170px;
     }
 
     .bottomBar.ng-hide-add {opacity : 1; bottom : 0; }
-    .bottomBar.ng-hide-add-active {opacity : 0; bottom : -130px;} 
-    .bottomBar.ng-hide-remove {opacity : 0; bottom : -130px; }        
+    .bottomBar.ng-hide-add-active {opacity : 0; bottom : -100px;} 
+    .bottomBar.ng-hide-remove {opacity : 0; bottom : -100px; }        
     .bottomBar.ng-hide-remove-active {opacity : 1; bottom : 0; } 
 
     .type-faksimil.text.popper_menu {

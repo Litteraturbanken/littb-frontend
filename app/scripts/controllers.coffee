@@ -1033,8 +1033,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     # s.fontSizeInit = 1
     s.fontSizeFactor = Math.ceil s.fontSizeInit
     $rootScope._night_mode = false
+    s.isFocus = false
     s.showFocusBar = true
 
+    s.closeFocus = (event) ->
+        # event.stopPropagation()
+        s.isFocus = false
 
 
     s.incrFontSize = (event, fac) ->
@@ -1135,10 +1139,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.setPage(0)
 
     
-    s.isFocus = false
-    s.setFocusMode = () ->
-        s.isFocus = true
-
     s.isBeforeStartpage = () ->
         unless s.pagemap then return
         startix = s.pagemap["page_" + s.startpage]
@@ -1262,6 +1262,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
     ]
+    # s.showFocusBar = s.isFocus
     if mediatype == "faksimil"
         util.setupHashComplex s, [
                 key: "storlek"
@@ -1357,8 +1358,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
             page = $(pageQuery, data).last().clone()
-
-            c.log "s.pagestep", s.pagestep
 
             setPages(page, data)
             
