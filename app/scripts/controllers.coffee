@@ -128,6 +128,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     ]
 
     s.nHitsChange = () ->
+        c.log "nHitsChange", s.data
         s.current_page = 0
         if s.data
           s.search()  
@@ -173,6 +174,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.nextPage = () ->
         if (s.current_page  * s.num_hits) + s.kwic.length < s.hits
             s.current_page++
+            c.log "nextpage search"
             s.search(s.query)
     s.prevPage = () ->
         if not s.current_page or s.current_page == 0 then return
@@ -251,22 +253,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
-        # params =
-
-        backend.searchWorks(s.query,
-            mediatype,
-            from,
-            to,
-            $location.search().forfattare,
-            $location.search().titel,
-            s.prefix,
-            s.suffix).then (data) ->
-                c.log "search data", data
-                s.data = data
-                s.kwic = data.kwic or []
-                s.hits = data.hits
-                s.searching = false
-                s.total_pages = Math.ceil(s.hits / s.num_hits)
 
         backend.searchWorks(s.query,
             mediatype,
@@ -286,10 +272,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
                 for row in (data.kwic or [])
                     row.href = searchData.parseUrls row
-
-                for row in (data.kwic or [])
-                    row.href = searchData.parseUrls row
-
     , 200)
 
     queryvars = $location.search()
