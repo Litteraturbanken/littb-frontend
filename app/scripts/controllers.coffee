@@ -917,12 +917,17 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             url += "sida/#{work.startpagename}/#{work.mediatype}"
         return url
 
-    refreshExternalDoc = (page) ->
+    refreshExternalDoc = (page, routeParams) ->
         # sla hack
+        c.log "refreshExternalDoc", page, routeParams.omtexternaDoc, $routeParams.omtexternaDoc
         if s.slaMode
-            doc = if page == 'omtexterna' then page else $routeParams.omtexternaDoc
+            if page == 'omtexterna' and not routeParams.omtexternaDoc
+                doc = 'omtexterna.html'
+            else if _.str.endsWith $routeParams.omtexternaDoc, ".html"
+                doc = page
+            
             if doc
-                url = '/red/om/omtexterna/' + doc + '.html'
+                url = '/red/sla/' + doc
             else 
                 url = s.authorInfo[page]
         else    
@@ -955,7 +960,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         refreshRoute()  
         # refreshTitle()
-        refreshExternalDoc(s.showpage)
+        refreshExternalDoc(s.showpage, current.pathParams)
         # refreshBreadcrumb()
     
     backend.getAuthorInfo(s.author).then (data) ->
@@ -970,7 +975,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         # if s.showpage != "introduktion"
         #     refreshBreadcrumb()
         # refreshTitle()
-        refreshExternalDoc(s.showpage)
+        refreshExternalDoc(s.showpage, $routeParams)
 
         c.log "loaded", s.showpage
         if not s.authorInfo.intro and s.showpage == "introduktion"
@@ -1236,11 +1241,11 @@ littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, ut
         }
 
 littb.controller "omtexternaCtrl", ($scope, $routeParams) ->
-    docPath = '/red/om/omtexterna/'
+    docPath = '/red/sla/omtexterna/'
     $scope.doc = docPath + ($routeParams['doc'] or 'omtexterna.html')
     
-    $scope.$on '$includeContentLoaded', (e) ->
-        docTitle = $('#omtexterna-doc title').text()
+    # $scope.$on '$includeContentLoaded', (e) ->
+    #     docTitle = $('#omtexterna-doc title').text()
         # $scope.setTitle docTitle
         # c.log $scope
         # $scope.appendCrumb

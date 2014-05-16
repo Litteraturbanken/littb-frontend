@@ -78,7 +78,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                         <div style="position:relative;" ng-bind-html="doc | trust"></div>
                     '''
                 breadcrumb : ["presentationer"]
-            .when '/omtexterna/:doc.html', # TODO: remove if the doc links are updated
+            .when '/omtexterna/:doc', # TODO: remove if the doc links are updated
                 redirectTo: ($routeParams) ->
                     '/forfattare/LagerlofS/omtexterna/' + $routeParams.doc
             .when '/om/aktuellt',
