@@ -7,10 +7,9 @@
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
-    <!-- ng-style="{'font-size' : getFontSizeFactor() + 'em'}" -->
     <div class="etext txt"
          
-         ng-class="getSizeClasses()"
+         ng-style="{'font-size' : getFontSizeFactor() + 'em'}"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
@@ -131,7 +130,7 @@
             </a></div>
 
             <div class="focusBtn">
-                <a ng-click="isFocus = true; showFocusBar = true">Fokusläge</a>
+                <a ng-click="activateFocus()">Fokusläge</a>
             </div>
         
         
@@ -151,8 +150,8 @@
             <div class="popover_inner">
 
                 <ul ng-show="mediatype == 'etext'">
-                    <li><button ng-click="incrFontSize($event, -1)" class="btn btn-small">a</button> 
-                    <button ng-click="incrFontSize($event, 1)" class="btn btn-small pull-right">A</button></li>
+                    <li><button ng-click="incrFontSize($event, -0.2)" class="btn btn-small">a</button> 
+                    <button ng-click="incrFontSize($event, 0.2)" class="btn btn-small pull-right">A</button></li>
                 </ul>
                 <div class="size_picker" ng-show="mediatype == 'faksimil'">
                     <div ng-class="{selected : size, hidden : !isDefined(size)}" 

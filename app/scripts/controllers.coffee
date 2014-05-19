@@ -1031,10 +1031,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.fontSizeInit = h / 700
     # s.fontSizeInit = 1
-    s.fontSizeFactor = Math.ceil s.fontSizeInit
+    s.fontSizeFactor = s.fontSizeInit
     $rootScope._night_mode = false
     s.isFocus = false
     s.showFocusBar = true
+
+    s.activateFocus = () ->
+        s.isFocus = true
+        s.showFocusBar = true
 
     s.closeFocus = (event) ->
         # event.stopPropagation()
@@ -1043,20 +1047,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.incrFontSize = (event, fac) ->
         event.stopPropagation()
-        if (s.fontSizeFactor + fac) < 1 or (s.fontSizeFactor + fac) > 10 then return
         s.fontSizeFactor += fac
 
     s.getFontSizeFactor = () ->
         if s.isFocus then s.fontSizeFactor else 1
-
-    s.getSizeClasses = () ->
-        out = 
-            'font-size-change' : s.isFocus && s.getFontSizeFactor() != s.fontSizeInit
-        
-        out[('size-' + s.getFontSizeFactor())] = s.isFocus
-        out
-
-
 
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)
@@ -1065,9 +1059,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.resetHitMarkings = () ->
         for key in ["traff", "traffslut", "x", "y", "height", "width"]
             s[key] = null
-            # $location.search( key, null).replace()
     
-    # s.dict_not_found = "Hittade inget uppslag"
     thisRoute = $route.current
     
     s.nextHit = () ->
