@@ -435,7 +435,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
                 from = xml.indexOf "<body>"
                 to = xml.indexOf "</body>"
                 xml = xml[from..to + "</body>".length]
-                s.externalDoc =   _.str.trim xml
+                s.externalDoc =  _.str.trim xml
 
 
     refreshRoute()
@@ -523,7 +523,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 
             # s.selectedLetter = null
             # s.filter = null
-        unless s.authorFilter or s.filter or s.selectedLetter then s.selectedLetter = "A"
+        if not s.authorFilter and not s.filter and not s.selectedLetter 
+            s.selectedLetter = "A"
         fetchWorks()
 
     authors.then ([authorList, authorsById]) ->
@@ -625,7 +626,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $
 
     # timeout in order to await the setupHashComplex watch firing.
     # $timeout () ->
-    if not (s.rowfilter or s.selectedLetter or s.mediatypeFilter) then s.selectedLetter = "A"
+    if not (s.authorFilter or s.rowfilter or s.selectedLetter or s.mediatypeFilter) 
+        s.selectedLetter = "A"
     if s.rowfilter then s.filter = s.rowfilter
     c.log "workfilter", s.workFilter
     fetchWorks()
