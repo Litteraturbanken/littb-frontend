@@ -298,16 +298,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     if "fras" of queryvars
         s.search(queryvars.fras)
 
-
-
-littb.controller "lagerlofCtrl", ($scope, $rootScope, backend) ->
-    s = $scope
-    s.author = "LagerlofS"
-    backend.getAuthorInfo(s.author).then (data) ->
-        s.authorInfo = data
-        s.groupedWorks = _.values _.groupBy s.authorInfo.works, "lbworkid"
-        $rootScope.appendCrumb data.surname
-
         
 littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location, backend, $window, $timeout) ->
     s = $scope
@@ -862,10 +852,15 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
             
     s.submit()
 
-littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util) ->
+littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route) ->
     s = $scope
     # [s.author, s.showtitles] = $routeParams.author.split("/")
     _.extend s, $routeParams
+
+    if $route.current.$$route.isSla
+        s.slaMode = true
+        s.author = "LagerlofS"
+        
     s.showpage = null
     s.show_large = false
 
@@ -919,11 +914,11 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     refreshExternalDoc = (page, routeParams) ->
         # sla hack
-        c.log "refreshExternalDoc", page, routeParams.omtexternaDoc, $routeParams.omtexternaDoc
+        c.log "refreshExternalDoc", page, routeParams.omtexternaDoc
         if s.slaMode
             if page == 'omtexterna' and not routeParams.omtexternaDoc
                 doc = 'omtexterna.html'
-            else if _.str.endsWith $routeParams.omtexternaDoc, ".html"
+            else if _.str.endsWith routeParams.omtexternaDoc, ".html"
                 doc = page
             
             if doc
@@ -955,7 +950,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     refreshRoute()
 
     s.$on "$routeChangeError", (event, current, prev, rejection) ->
-        c.log "change error", current
         _.extend s, current.pathParams
 
         refreshRoute()  
@@ -968,21 +962,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "titlepath"
         s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
-        c.log "data.surname", data.surname
-        # $rootScope.appendCrumb 
-        #     label : data.surname
-        #     url : "#!/forfattare/" + s.author
-        # if s.showpage != "introduktion"
-        #     refreshBreadcrumb()
-        # refreshTitle()
         refreshExternalDoc(s.showpage, $routeParams)
 
-        c.log "loaded", s.showpage
         if not s.authorInfo.intro and s.showpage == "introduktion"
             $location.path("/forfattare/#{s.author}/titlar").replace()
     
     
-    s.slaMode = s.author == "LagerlofS"
     
 littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $q, authors) ->
     s = $scope

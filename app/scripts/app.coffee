@@ -10,6 +10,20 @@ routeStartCurrent = null
 if(location.hash.length && location.hash[1] != "!")
     location.hash = "#!" + _.str.lstrip(location.hash, "#")
 
+
+authorResolve = ["$q", "$routeParams", "$route",
+                            ($q, $routeParams, $route) ->
+                                def = $q.defer()
+                                c.log "resolve", $routeParams, $route
+                                if routeStartCurrent?.controller == "authorInfoCtrl" and 
+                                        $route.current.controller == "authorInfoCtrl" and
+                                        $route.current.params.author == $routeParams.author
+                                    def.reject()
+                                else
+                                    def.resolve()
+                                return def.promise
+                        ]
+
 window.getScope = () -> $("#mainview").children().scope()
 
 window.littb = angular.module('littbApp', [ "ngRoute",
@@ -78,9 +92,9 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                         <div style="position:relative;" ng-bind-html="doc | trust"></div>
                     '''
                 breadcrumb : ["presentationer"]
-            .when '/omtexterna/:doc', # TODO: remove if the doc links are updated
-                redirectTo: ($routeParams) ->
-                    '/forfattare/LagerlofS/omtexterna/' + $routeParams.doc
+            # .when '/omtexterna/:doc', # TODO: remove if the doc links are updated
+                # redirectTo: ($routeParams) ->
+                    # '/forfattare/LagerlofS/omtexterna/' + $routeParams.doc
             .when '/om/aktuellt',
                 templateUrl: '/red/om/aktuellt/aktuellt.html'
                 title : "Aktuellt"
@@ -137,35 +151,39 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Författare"
                 reloadOnSearch : false
                 breadcrumb : ["författare"]
+
+            .when ["/forfattare/LagerlofS"
+                   "/forfattare/LagerlofS/titlar"
+                   "/forfattare/LagerlofS/bibliografi"
+                   "/forfattare/LagerlofS/presentation"
+                   "/forfattare/LagerlofS/biblinfo"
+                   "/forfattare/LagerlofS/jamfor"
+                   "/forfattare/LagerlofS/omtexterna"
+                   "/forfattare/LagerlofS/omtexterna/:omtexternaDoc"
+                   ],
+                templateUrl : "views/authorInfo.html"
+                controller : "authorInfoCtrl"
+                isSla : true
+                # breadcrumb : [
+                #     label : "författare"
+                #     url : "#!/forfattare"
+                # ]
+                resolve : 
+                    r : authorResolve
             .when ["/forfattare/:author"
                    "/forfattare/:author/titlar"
                    "/forfattare/:author/bibliografi"
                    "/forfattare/:author/presentation"
                    "/forfattare/:author/semer"
-                   "/forfattare/:author/biblinfo"
-                   "/forfattare/:author/jamfor"
-                   "/forfattare/:author/omtexterna"
-                   "/forfattare/:author/omtexterna/:omtexternaDoc"
                    ],
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
-                breadcrumb : [
-                    label : "författare"
-                    url : "#!/forfattare"
-                ]
+                # breadcrumb : [
+                #     label : "författare"
+                #     url : "#!/forfattare"
+                # ]
                 resolve : 
-                    r : ["$q", "$routeParams", "$route",
-                            ($q, $routeParams, $route) ->
-                                def = $q.defer()
-                                c.log "resolve", $routeParams, $route
-                                if routeStartCurrent?.controller == "authorInfoCtrl" and 
-                                        $route.current.controller == "authorInfoCtrl" and
-                                        $route.current.params.author == $routeParams.author
-                                    def.reject()
-                                else
-                                    def.resolve()
-                                return def.promise
-                        ]
+                    r : authorResolve
             .when "/forfattare/:author/titlar/:title/info",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"
@@ -272,7 +290,12 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         $rootElement.addClass("ready")
 
     $rootScope.getLogoUrl = () ->
-        if $rootScope.isSchool then "/skola" else "/start"
+        if $rootScope.isSchool 
+            return "/skola"
+        else if $rootScope.isSla
+            return "/forfattare/LagerlofS"
+        else
+            return "/start"
 
     # just in case the above deferred fails. 
     $timeout( () -> 
@@ -324,6 +347,14 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             $rootElement.addClass("page-" + className)
         else 
             delete $rootScope.isSchool
+        
+        if newRoute.isSla
+            $rootScope.isSla = true
+            $rootElement.addClass("site-sla")
+            # className = (_.last newRoute.templateUrl.split("/")).split(".")[0]
+            # $rootElement.addClass("page-" + className)
+        else 
+            delete $rootScope.isSla
 
 
         # c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
@@ -331,7 +362,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             if _.isObject item 
                 item 
             else
-                {label : item, url : "#!/" + normalizeUrl(item).join("")}
+                {label : item, url : "/#!/" + normalizeUrl(item).join("")}
 
         firstRoute.resolve()
 

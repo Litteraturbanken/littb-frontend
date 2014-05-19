@@ -1165,36 +1165,7 @@ $partnav-width : 170px;
         .img_large.ng-leave-active {opacity : 0 } 
         
 
-        .sla {
-            .toc {
-                display : none;
-            }
-            .toc + .titlepage {
-                h2.title {
-                    display : none;
-                }
-            }
-            h3.author:before {
-                content: "Av ";
-                display : inline;
-            }
-            .titlepage {
-                hr {
-                    display: none;
-                }
-                // h2.title {
-                //     display: none;
-                // }
-            }
-            p {
-                max-width : inherit;
-            }
-
-            .italic {
-                font-style: italic;
-            }
-
-        }
+        
     }
 
     #toolkit {
@@ -1628,6 +1599,60 @@ grundform-clean {
     // font-size: 1em;
 }
 
+.site-sla {
+
+
+    .logo_link {
+        background: url("../img/sla.svg") no-repeat;
+        height : 50px;
+        width : 170px;
+        margin-bottom : 0;
+        @include inline-block();
+        // position: relative;
+        // top: 20px;
+        // margin-bottom : -40px;
+        background-size : contain;
+        margin-left : 8px;
+    }
+
+
+    .toc {
+        display : none;
+    }
+    .titlepage {
+        .title {
+            // display : none;
+        }
+        hr {
+            display: none;
+        }
+    }
+    h3.author {
+        margin-bottom : 3em;
+    }
+    h3.author:before {
+        content: "Av ";
+        display : inline;
+    }
+    .sect1 {
+    
+        .titlepage .title {
+            display: none;
+        }
+        .sect2 .titlepage .title {
+            display: block;
+        }
+        
+    }
+    p {
+        max-width : inherit;
+    }
+
+    .italic {
+        font-style: italic;
+    }
+
+}
 
 .site-school {
     width : 100%;

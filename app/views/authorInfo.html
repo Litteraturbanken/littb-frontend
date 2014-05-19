@@ -7,7 +7,7 @@
     <!-- {{authorInfo.fullName}}, {{getPageTitle(showpage)}} -->
 </breadcrumb>
 
-<div ng-class="{sla : slaMode, searching:!authorInfo, show_large : show_large}" 
+<div ng-class="{searching:!authorInfo, show_large : show_large}" 
      ng-switch="showpage">
     <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
     
@@ -26,7 +26,7 @@
             <table class="contenttable">
                 <tr ng-repeat="works in worklist track by $index">
                     <td>
-                        <a ng-href="#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info/{{works[0].mediatype}}">
+                        <a ng-href="/#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info/{{works[0].mediatype}}">
                             {{works[0].showtitle}}
                             <span ng-if="$parent.$index == 1">[i {{works[0].workshorttitle}}]</span>
                         </a>
@@ -63,27 +63,27 @@
     
     <ul class="topnav" role="navigation">
         <li ng-if="groupedWorks.length > 1">
-            <a ng-href="#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
+            <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
         </li>
         <li ng-if="groupedTitles.length && !groupedWorks.length">
-            <a ng-href="#!/forfattare/{{author}}/titlar" >::: Titlar i LB</a>
+            <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Titlar i LB</a>
         </li>
         <li ng-if="groupedWorks.length == 1">
-            <a ng-href="#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
+            <a ng-href="/#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
         </li>
     </ul>
     <ul class="subnav" role="navigation" ng-show="authorInfo">
-        <li><a ng-href="#!/forfattare/{{author}}" ng-if="authorInfo.intro">::: Introduktion</a></li>
-        <li ng-if="authorInfo.presentation"><a ng-href="#!/forfattare/{{author}}/presentation">::: Presentation</a></li>
-        <li ng-if="authorInfo.bibliografi"><a ng-href="#!/forfattare/{{author}}/bibliografi">::: Bibliografi</a></li>
-        <li ng-if="authorInfo.semer"><a ng-href="#!/forfattare/{{author}}/semer">::: Se mer</a></li>
+        <li><a ng-href="/#!/forfattare/{{author}}" ng-if="authorInfo.intro">::: Introduktion</a></li>
+        <li ng-if="authorInfo.presentation"><a ng-href="/#!/forfattare/{{author}}/presentation">::: Presentation</a></li>
+        <li ng-if="authorInfo.bibliografi"><a ng-href="/#!/forfattare/{{author}}/bibliografi">::: Bibliografi</a></li>
+        <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">::: Se mer</a></li>
         <li ng-repeat="ref in authorInfo.externalref">
-            <a ng-href="#!/{{ref.url}}">::: {{ref.label}}</a>
+            <a ng-href="/#!/{{ref.url}}">::: {{ref.label}}</a>
         </li>
         <ul ng-if="slaMode">
-            <li><a ng-href="#!/forfattare/{{author}}/biblinfo">::: Bibliografisk databas</a></li>
-            <li><a ng-href="#!/forfattare/{{author}}/jamfor">::: Textkritisk verkstad</a></li>
-            <li><a ng-href="#!/forfattare/{{author}}/omtexterna">::: Om texterna</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/biblinfo">::: Bibliografisk databas</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/jamfor">::: Textkritisk verkstad</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/omtexterna">::: Om texterna</a></li>
         </ul>
     </ul>
 </div>
