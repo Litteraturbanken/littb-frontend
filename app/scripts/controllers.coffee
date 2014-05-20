@@ -876,8 +876,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         return
 
     refreshRoute = () ->
-        s.showpage = (_.last $location.path().split("/")) 
-        s.showpage = "introduktion" if s.author == s.showpage
+        s.showpage = $location.path().split("/")[3]
+        unless s.showpage then s.showpage = "introduktion"
+        # s.showpage = "introduktion" if s.author == s.showpage
 
     # refreshTitle = () ->
         # suffix = if s.showpage == "titlar" then "Verk i LB" else _.str.capitalize s.showpage
@@ -919,8 +920,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             if page == 'omtexterna' and not routeParams.omtexternaDoc
                 doc = 'omtexterna.html'
             else if _.str.endsWith routeParams.omtexternaDoc, ".html"
-                doc = page
-            
+                doc = routeParams.omtexternaDoc
             if doc
                 url = '/red/sla/' + doc
             else 
@@ -934,18 +934,28 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         # if location.hostname == "localhost"
         #     url = "http://demolittb.spraakdata.gu.se" + s.authorInfo[page]
 
-        # if s.showpage == "omtexterna"
-        #     $http.get(url).success (xml) ->
-        #         c.log "xml", xml
-        #         s.externalDoc = _.str.trim xml
-                
-
         unless s.showpage in ["introduktion", "titlar"]
             $http.get(url).success (xml) ->
-                from = xml.search /<body.*?>/
+                # from = xml.search /<body.*?>/
+                from = xml.indexOf "<body>"
                 to = xml.indexOf "</body>"
-                xml = xml[from..to + "</body>".length]
+                xml = xml[from...to + "</body>".length]
                 s.externalDoc = _.str.trim xml
+
+                c.log "s.showpage", s.showpage
+                if s.showpage == "omtexterna"
+                    s.pagelinks = harvestLinks(s.externalDoc)
+                else
+                    s.pagelinks = null
+
+    harvestLinks = (doc) ->
+        elemsTuples = for elem in $(".footnotes .footnote[id^=ftn]", doc)
+            [$(elem).attr("id"), $(elem).html()]
+
+        s.noteMapping = _.object elemsTuples
+
+
+
 
     refreshRoute()
 

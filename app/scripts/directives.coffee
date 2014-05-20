@@ -304,6 +304,7 @@ littb.directive 'pageTitle', ($interpolate) ->
 littb.directive 'breadcrumb', ($interpolate, $rootScope) ->
     restrict : "EA"
     link: (scope, elem, attrs) ->
+        $rootScope.breadcrumb.splice(1, $rootScope.breadcrumb.length)
         elem.remove()
         watches = []
         for a, i in elem.children()
@@ -403,4 +404,9 @@ littb.directive "affix", () ->
                 top : elem.offset().top
             }
         )
+
+littb.directive "footnote", () ->
+    restrict : "EA"
+    link : (scope, elem, attrs) ->
+        elem.css("color", "red")
 

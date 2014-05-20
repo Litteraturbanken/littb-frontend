@@ -73,17 +73,17 @@
         </li>
     </ul>
     <ul class="subnav" role="navigation" ng-show="authorInfo">
-        <li><a ng-href="/#!/forfattare/{{author}}" ng-if="authorInfo.intro">::: Introduktion</a></li>
-        <li ng-if="authorInfo.presentation"><a ng-href="/#!/forfattare/{{author}}/presentation">::: Presentation</a></li>
-        <li ng-if="authorInfo.bibliografi"><a ng-href="/#!/forfattare/{{author}}/bibliografi">::: Bibliografi</a></li>
-        <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">::: Se mer</a></li>
+        <li><a ng-href="/#!/forfattare/{{author}}" ng-if="authorInfo.intro">Introduktion</a></li>
+        <li ng-if="authorInfo.presentation"><a ng-href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
+        <li ng-if="authorInfo.bibliografi"><a ng-href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
+        <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">Se mer</a></li>
         <li ng-repeat="ref in authorInfo.externalref">
-            <a ng-href="/#!/{{ref.url}}">::: {{ref.label}}</a>
+            <a ng-href="/#!/{{ref.url}}">{{ref.label}}</a>
         </li>
         <ul ng-if="slaMode">
-            <li><a ng-href="/#!/forfattare/{{author}}/biblinfo">::: Bibliografisk databas</a></li>
-            <li><a ng-href="/#!/forfattare/{{author}}/jamfor">::: Textkritisk verkstad</a></li>
-            <li><a ng-href="/#!/forfattare/{{author}}/omtexterna">::: Om texterna</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/biblinfo">Bibliografisk databas</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/jamfor">Textkritisk verkstad</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/omtexterna">Om texterna</a></li>
         </ul>
     </ul>
 </div>
