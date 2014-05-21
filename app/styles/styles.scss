@@ -1644,7 +1644,18 @@ grundform-clean {
     .literallayout {
         margin-left : 1em;
     }
-    
+
+    .listitem p {
+        margin : 0;
+    }
+
+    ol.orderedlist li {
+        margin-bottom : 0.5em;
+        list-style-type: decimal;
+        max-width : 420px;
+        margin-right : 1em;
+    }
+
     .logo_link {
         background: url("../img/sla.svg") no-repeat;
         height : 50px;
@@ -1684,11 +1695,15 @@ grundform-clean {
                 border-bottom : none;
                 cursor : default;
                 pointer-events : none;
+
+                &:first-of-type {
+                    margin-right : 1px;
+                }
             }
         }
         &:before {
             content : "Noter";
-            margin-top : 2em;
+            margin-top : 4em;
             display : block;
             font-size : 1.5em;
         }
@@ -1696,6 +1711,20 @@ grundform-clean {
             display : none;
         }   
     }
+
+    .note_popover {
+      transition: opacity linear 100ms;
+      opacity : 1;
+
+      &.ng-hide-add,
+      &.ng-hide-remove {
+        display:block!important;
+      }  
+      &.ng-hide {
+        opacity:0;
+      }
+    }
+
     .sect1 {
     
         .titlepage .title {

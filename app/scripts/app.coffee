@@ -164,6 +164,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
                 isSla : true
+                reloadOnSearch : false
                 # breadcrumb : [
                 #     label : "författare"
                 #     url : "#!/forfattare"

@@ -404,36 +404,52 @@ littb.directive "affix", () ->
             }
         )
 
-littb.directive "footnotePopup", () ->
+littb.directive "footnotePopup", ($window, $location, $compile) ->
     restrict : "EA"
     scope : 
         mapping : "=footnotePopup"
     link : (s, elem, attrs) ->
 
-        popupTmpl = $ """
-            <div class="popover fade bottom in">
+        popupTmpl = """
+            <div class="note_popover popover bottom" ng-show="show">
                 <div class="arrow"></div>
-                <div class="popover-content"></div>
+                <div class="popover-content" ng-bind-html="content | trust"></div>
             </div>
         """
 
+        popupTmpl = $compile(popupTmpl)(s)
+        .appendTo("body")
+        .click((event) -> 
+            target = $(event.target)
+            event.preventDefault()
+            
+            if target.is("sup") 
+                id = _.str.lstrip target.parent().attr("href"), "#"
+                scrollTarget = elem.find(".footnotes .footnote[id='ftn.#{id}']")
+                $location.search("upp", $("body").prop("scrollTop"))
+                $("body").animate({scrollTop : scrollTarget.position().top})
+            else
+                event.stopPropagation()    
 
-        # mapping = s.$eval attrs.footnotePopup
-        c.log "elem before", elem, s.mapping, attrs
-        # unless (_.keys s.mapping).length then return
-        # TODO: off?
+        )
+        .show()
+        s.show = false
+
         elem.on "click", "a.footnote[href^=#ftn]", (event) ->
-            c.log "event", event
+            if s.show
+                $(document).click()
+                return false
             event.preventDefault()
             event.stopPropagation()
+
             target = $(event.currentTarget)
             id = _.str.lstrip target.attr("href"), "#"
-            c.log "footnote click", target, id
-            content = s.mapping[id]
+            
+            s.$apply () ->
+                s.content = s.mapping[id]
+                s.show = true
+
             popupTmpl
-            .find(".popover-content").html(content).end()
-            .appendTo("body")
-            .show()
             .position(
                 my : "middle top+10px"
                 at : "bottom middle"
@@ -441,7 +457,7 @@ littb.directive "footnotePopup", () ->
             )
 
             $(document).one "click", () ->
-                popupTmpl.remove()
-
+                s.$apply () ->
+                    s.show = false
 
 
