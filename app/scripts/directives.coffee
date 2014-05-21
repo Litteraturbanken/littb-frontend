@@ -12,7 +12,6 @@ littb.directive 'toolkit', () ->
         else
             replaced = $("##{id} > *").replaceWith element
         scope.$on "$destroy", () ->
-            c.log 'toolkit scope $destroy'
             if attrs.toolkitReplace
                 element.replaceWith replaced
             else
@@ -405,8 +404,44 @@ littb.directive "affix", () ->
             }
         )
 
-littb.directive "footnote", () ->
+littb.directive "footnotePopup", () ->
     restrict : "EA"
-    link : (scope, elem, attrs) ->
-        elem.css("color", "red")
+    scope : 
+        mapping : "=footnotePopup"
+    link : (s, elem, attrs) ->
+
+        popupTmpl = $ """
+            <div class="popover fade bottom in">
+                <div class="arrow"></div>
+                <div class="popover-content"></div>
+            </div>
+        """
+
+
+        # mapping = s.$eval attrs.footnotePopup
+        c.log "elem before", elem, s.mapping, attrs
+        # unless (_.keys s.mapping).length then return
+        # TODO: off?
+        elem.on "click", "a.footnote[href^=#ftn]", (event) ->
+            c.log "event", event
+            event.preventDefault()
+            event.stopPropagation()
+            target = $(event.currentTarget)
+            id = _.str.lstrip target.attr("href"), "#"
+            c.log "footnote click", target, id
+            content = s.mapping[id]
+            popupTmpl
+            .find(".popover-content").html(content).end()
+            .appendTo("body")
+            .show()
+            .position(
+                my : "middle top+10px"
+                at : "bottom middle"
+                of : target
+            )
+
+            $(document).one "click", () ->
+                popupTmpl.remove()
+
+
 
