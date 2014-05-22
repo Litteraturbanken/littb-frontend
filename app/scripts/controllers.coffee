@@ -1029,9 +1029,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     h = $(window).height()
     w = $(window).width()
 
-    s.fontSizeInit = h / 700
-    # s.fontSizeInit = 1
-    s.fontSizeFactor = s.fontSizeInit
+    s.fontSizeFactor = h / 900
     $rootScope._night_mode = false
     s.isFocus = false
     s.showFocusBar = true
@@ -1051,6 +1049,24 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getFontSizeFactor = () ->
         if s.isFocus then s.fontSizeFactor else 1
+
+    s.getTransform = () ->
+        unless s.isFocus then return {}
+        prefixes = ["", "-webkit-", "-o-", "-moz-", "-ms-"]
+        # "-webkit-transform" : scaleX(1 + ($i / 5)) scaleY(1 + ($i / 5))
+        val = "scaleX(#{s.fontSizeFactor}) scaleY(#{s.fontSizeFactor})"
+        addPrefixes = (rule) ->
+            _.map prefixes, (p) -> p + rule
+
+        out = {}
+        for [to, t] in _.zip (addPrefixes "transform-origin"), (addPrefixes "transform")
+            out[t] = val
+            out[to] = "top"
+
+        c.log "return out", out
+        return out
+
+
 
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)
