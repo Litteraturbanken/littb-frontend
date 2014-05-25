@@ -1053,7 +1053,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getTransform = () ->
         unless s.isFocus then return {}
         prefixes = ["", "-webkit-", "-o-", "-moz-", "-ms-"]
-        # "-webkit-transform" : scaleX(1 + ($i / 5)) scaleY(1 + ($i / 5))
         val = "scaleX(#{s.fontSizeFactor}) scaleY(#{s.fontSizeFactor})"
         addPrefixes = (rule) ->
             _.map prefixes, (p) -> p + rule
@@ -1063,7 +1062,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             out[t] = val
             out[to] = "top"
 
-        c.log "return out", out
         return out
 
 
