@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 window.c = console ? log : _.noop
 littb = angular.module('littbApp')
@@ -861,15 +861,29 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
             window.scrollTop showInTextContext.offset().top - viewOffset
     
     showDiffDiv = (changedSpan) ->
+        diffVersions = []
+        changedSpan
+            .nextUntil(':not(.koll-changed), .koll-changed.'+myWits[0]).addBack()
+            .prevUntil(':not(.koll-changed), .koll-changed.'+myWits[myWits.length-1]).addBack()
+        .each () ->
+            version = {titles: [], html: null}
+            $this = $(this)
+            for wit in myWits
+                if $this.hasClass(wit)
+                    version.titles.push
+                        title: s.witTitles[wit]
+                        isBase: wit == s.baseWit
+            version.html = $this.html()
+            diffVersions.push version
+        
         html = ''
-        for wit in myWits
-            text = changedSpan.data()[wit]
-            title = s.witTitles[wit]
-            html += "<span class='title"
-            if wit == s.baseWit
-                html += " base"
-            html += "'>#{ title }</span>"
-            html += "<p>#{ text }</p>"
+        for version in diffVersions
+            for title in version.titles
+                html += "<span class='title"
+                if title.isBase
+                    html += " base"
+                html += "'>#{ title.title }</span>"
+            html += "<p>#{ version.html }</p>"
         
         div = $("#diff-div")
         div.html(html)
@@ -887,8 +901,8 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                     s.showContextVersionsDiv($(target))
                     evt.stopPropagation() # keep ContextVersionsDiv from immediately hiding again
             )
-            # .on("mouseover", ".koll-changed", -> showDiffDiv $(this))  ## todo enable when fixed
-            # .on("mouseout", ".koll-changed", -> $("#diff-div").hide())
+            .on("mouseover", ".koll-changed", -> showDiffDiv $(this))  ## todo enable when fixed
+            .on("mouseout", ".koll-changed", -> $("#diff-div").hide())
         
         # for highlighting differences in #context-versions-div
         $('#context-versions-div')

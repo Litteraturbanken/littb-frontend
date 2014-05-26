@@ -1425,13 +1425,19 @@ $partnav-width : 170px;
     border-width: 1px 1px 1px 1px;
     border-radius: 3px;
     > .title {
+        display: block;
         font-weight: bold;
         &.base {
+            &:before {
+                content: '☆ ';
+            }
             font-style: italic;
         }
     }
     > p {
-      margin: 5px 5px 5px 10px;
+        /* border-left: 1px dotted gray; */
+        padding-left: 5px;
+        margin: 5px 5px 5px 5px;
     }
 }
 
