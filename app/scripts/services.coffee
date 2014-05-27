@@ -791,7 +791,11 @@ littb.factory "searchData", (backend, $q) ->
                 def.resolve @data[@current]
             else
                 current_page = Math.floor(@current / NUM_HITS )
-                args = [].concat @searchArgs, [current_page + 1, NUM_HITS]
+                args = [].concat @searchArgs
+                # replace from and to args
+                args[2] = current_page + 1
+                args[3] = NUM_HITS
+
                 backend.searchWorks(args...).then (data) =>
                     @appendData @current, data
                     def.resolve @data[@current]

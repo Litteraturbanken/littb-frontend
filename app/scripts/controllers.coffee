@@ -188,12 +188,26 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.current_page = s.total_pages - 1
         s.search(s.query)
     
+    getSearchArgs = () ->
+        from = s.current_page  * s.num_hits
+        to = (from + s.num_hits) - 1
+        
+        [s.query,
+        getMediatypes(),
+        from,
+        to,
+        $location.search().forfattare,
+        $location.search().titel,
+        s.prefix,
+        s.suffix,
+        s.infix]    
 
     s.save_search = (startIndex, currentIndex, data) ->
         c.log "save_search", startIndex, currentIndex, data
 
         c.log "searchData", searchData
-        searchData.save(startIndex, currentIndex, data, [s.query, getMediatypes()])
+
+        searchData.save(startIndex, currentIndex, data, getSearchArgs())
 
 
     s.getSetVal = (sent, val) ->
@@ -240,7 +254,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.$on "$destroy", () ->
         $document.off "keydown", onKeyDown
 
-
     s.search = debounce((query) ->
         q = query or s.query
         unless q then return
@@ -249,29 +262,20 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.query = q
         s.searching = true
         
-        mediatype = getMediatypes()
 
-        from = s.current_page  * s.num_hits
-        to = (from + s.num_hits) - 1
+        
 
-        backend.searchWorks(s.query,
-            mediatype,
-            from,
-            to,
-            $location.search().forfattare,
-            $location.search().titel,
-            s.prefix,
-            s.suffix,
-            s.infix).then (data) ->
-                c.log "search data", data
-                s.data = data
-                s.kwic = data.kwic or []
-                s.hits = data.hits
-                s.searching = false
-                s.total_pages = Math.ceil(s.hits / s.num_hits)
+        args = getSearchArgs()
+        backend.searchWorks(args...).then (data) ->
+            c.log "search data", data
+            s.data = data
+            s.kwic = data.kwic or []
+            s.hits = data.hits
+            s.searching = false
+            s.total_pages = Math.ceil(s.hits / s.num_hits)
 
-                for row in (data.kwic or [])
-                    row.href = searchData.parseUrls row
+            for row in (data.kwic or [])
+                row.href = searchData.parseUrls row
     , 200)
 
     queryvars = $location.search()
