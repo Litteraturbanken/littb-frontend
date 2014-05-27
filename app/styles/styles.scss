@@ -1932,9 +1932,6 @@ only screen and (max-width: 760px),
         tr {
             display: block; 
           }
-        tr:first-child {
-            display : none;
-        } 
         
         /* Hide table headers (but not display: none;, for accessibility) */
         thead tr { 
@@ -1970,9 +1967,6 @@ only screen and (max-width: 760px),
             white-space: nowrap;
         }   
         
-    }
-    .page-authorInfo .contenttable tr:first-child {
-        display: table-cell;
     }
     .site-school {
 
