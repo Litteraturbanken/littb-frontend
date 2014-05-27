@@ -1101,7 +1101,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pageix = s.pageix + s.getStep()
             s.pageToLoad = s.pageix
             return
-        if s.endpage then return
+        unless s.endpage then return
         newix = s.pageix + s.getStep()
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
