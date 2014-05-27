@@ -1971,7 +1971,9 @@ only screen and (max-width: 760px),
         }   
         
     }
-
+    .page-authorInfo .contenttable tr:first-child {
+        display: table-cell;
+    }
     .site-school {
 
         .logo_link {
@@ -1988,6 +1990,10 @@ only screen and (max-width: 760px),
         .download {
             position : static;
             margin-top : 2em;
+        }
+
+        img {
+            max-width : 100%;
         }
 
         &.page-school {

@@ -6,6 +6,10 @@ window.isDev = location.hostname != "litteraturbanken.se"
 
 routeStartCurrent = null
 
+# rewrite for libris
+if(location.hash.length && location.hash[1] != "!")
+    location.hash = "#!" + _.str.lstrip(location.hash, "#")
+
 window.getScope = () -> $("#mainview").children().scope()
 
 window.littb = angular.module('littbApp', [ "ngRoute",
