@@ -175,7 +175,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             s.current_page++
             s.search(s.query)
     s.prevPage = () ->
-        unless s.current_page then return
+        if not s.current_page or s.current_page == 0 then return
         s.current_page--
         s.search(s.query)
 
