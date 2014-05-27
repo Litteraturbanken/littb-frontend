@@ -1205,9 +1205,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         unless s.x then return
         s.coors = for item, i in s.x.split("|")
             pairs = _.pairs _.pick s, "x", "y", "height", "width"
-            # c.log "pairs", pairs
             _.object _.map pairs, ([key, val]) ->
-                [key, val.split("|")[i].split(",")[s.size]]
+                [key, val.split("|")[i].split(",")[s.size - 1]]
 
     util.setupHashComplex s, [
             scope_name : "markee_from"
@@ -1388,6 +1387,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     
     s.setSize = (index) ->
+        c.log "setsize", index
         s.sizes = _.map s.sizes, (item) -> if item then false else item
         s.sizes[index] = true
         s.size = index

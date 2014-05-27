@@ -105,7 +105,6 @@ littb.directive 'square', () ->
         top : "=y"
         width : "="
         height : "="
-        size : "="
     link : (scope, elm, attrs) ->
         s = scope
         EXPAND_SIZE = 4
@@ -115,13 +114,10 @@ littb.directive 'square', () ->
             val = Number(val)
             expand = (val) ->
                 n = if key in ["top", "left"] then EXPAND_SIZE * -1 else EXPAND_SIZE * 2
-                # dir = if key in ["top", "left"] then -1 else 1
                 val + n
-            c.log "coors", val, key, expand(val)
             if key == "top"
                 val += Y_OFFSET
             [key, expand(val) + "px"]
-                # [key, (val) + "px"]
 
         elm.css coors
         
