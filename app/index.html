@@ -24,12 +24,10 @@
         <!-- <link rel="stylesheet" href="components/nprogress/nprogress.js" /> -->
 
     </head>
-    <body id="ng-app" class="ng-app: littbApp;" ng-cloak>
+    <body id="ng-app" class="ng-app: littbApp;" ng-cloak ng-class="{focus : _focus_mode, night : _night_mode}">
 
         <div class="header">
-            <i ng-click="_showmenu_mobile = !_showmenu_mobile;" class="fa fa-list fa fa-2x" style="display : none;"></i>
-            <a class="logo_link" ng-href="#!{{getLogoUrl()}}">
-            </a>
+            <a class="logo_link" ng-href="#!{{getLogoUrl()}}"></a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li>
                     <a ng-if="!isSchool" href="#!/start">Hem</a> 
@@ -49,7 +47,7 @@
             
             <div class="clearfix"></div>
         </div>
-        <div id="leftCorridor" ng-class="{show : _showmenu_mobile}">
+        <div id="leftCorridor">
             <ul role="navigation" class="mainnav">
                 <li>
                     <a href="#!/forfattare">Författare</a>
@@ -99,7 +97,8 @@
             <div class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
                 <!-- <label>Slå upp i Svensk ordbok</label> -->
                 <div class="input_container">
-                    <input  ng-model="lex_article"
+                    <input  type="text"
+                            ng-model="lex_article"
                             focusable
                             placeholder="Slå i Svensk ordbok"
                             typeahead-on-select="showModal(lex_article)"
@@ -141,6 +140,7 @@
         <script>
             if(decodeURIComponent(location.hash))
                 location.hash = decodeURIComponent(location.hash);
+            // TODO: # rewrite to #!
         </script>        
 
         <!-- build:js scripts/libs.js -->
@@ -156,7 +156,7 @@
         <script src="components/angular-cache/dist/angular-cache.js"></script>
 
 
-        <!-- // <script src="components/angular/angular-mobile.js"></script> -->
+        <script src="components/angular-touch/angular-touch.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
         

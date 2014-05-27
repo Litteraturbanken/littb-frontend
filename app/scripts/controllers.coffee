@@ -1030,6 +1030,46 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.showPopup = false
     s.error = false
 
+    h = $(window).height()
+    w = $(window).width()
+
+    s.fontSizeFactor = h / 900
+    $rootScope._night_mode = false
+    s.isFocus = false
+    s.showFocusBar = true
+
+    s.activateFocus = () ->
+        s.isFocus = true
+        s.showFocusBar = true
+
+    s.closeFocus = (event) ->
+        # event.stopPropagation()
+        s.isFocus = false
+
+
+    s.incrFontSize = (event, fac) ->
+        event.stopPropagation()
+        s.fontSizeFactor += fac
+
+    s.getFontSizeFactor = () ->
+        if s.isFocus then s.fontSizeFactor else 1
+
+    s.getTransform = () ->
+        unless s.isFocus then return {}
+        prefixes = ["", "-webkit-", "-o-", "-moz-", "-ms-"]
+        val = "scaleX(#{s.fontSizeFactor}) scaleY(#{s.fontSizeFactor})"
+        addPrefixes = (rule) ->
+            _.map prefixes, (p) -> p + rule
+
+        out = {}
+        for [to, t] in _.zip (addPrefixes "transform-origin"), (addPrefixes "transform")
+            out[t] = val
+            out[to] = "top"
+
+        return out
+
+
+
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)
         s.showPopup = false
@@ -1037,9 +1077,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.resetHitMarkings = () ->
         for key in ["traff", "traffslut", "x", "y", "height", "width"]
             s[key] = null
-            # $location.search( key, null).replace()
     
-    # s.dict_not_found = "Hittade inget uppslag"
     thisRoute = $route.current
     
     s.nextHit = () ->
@@ -1055,6 +1093,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         $location.search("traffslut", null)
     # s.pagename = pagename
     
+
     onKeyDown = (event) ->
         if event.metaKey or event.ctrlKey or event.altKey then return
         s.$apply () ->
@@ -1109,6 +1148,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         else
             s.setPage(0)
 
+    
     s.isBeforeStartpage = () ->
         unless s.pagemap then return
         startix = s.pagemap["page_" + s.startpage]
@@ -1224,7 +1264,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "parallel"
             scope_name : "isParallel"
+        ,   
+            key : "fokus"
+            scope_name : "isFocus"
+            post_change : (val) ->
+                $rootScope._focus_mode = val
+
+
     ]
+    # s.showFocusBar = s.isFocus
     if mediatype == "faksimil"
         util.setupHashComplex s, [
                 key: "storlek"
@@ -1320,8 +1368,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
             page = $(pageQuery, data).last().clone()
-
-            c.log "s.pagestep", s.pagestep
 
             setPages(page, data)
             

@@ -1,12 +1,14 @@
 <meta-desc>
     {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
-<div ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor}">
+<div class="reader_main" 
+     ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil'}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
+
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
-    
-    <div class="etext txt" selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
+    <div class="etext txt"
+         selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
 
@@ -122,11 +124,70 @@
                     Visa <span ng-show="mediatype == 'etext'">faksimil</span> 
                     <span ng-show="mediatype == 'faksimil'">etext</span> 
                     parallellt</span>
-                <span ng-if="isParallel">Stäng parallelvisningen</span>
+                <span ng-if="isParallel">Stäng parallellvisningen</span>
             </a></div>
+
+            <div class="focusBtn">
+                <a ng-click="activateFocus()">Fokusläge</a>
+            </div>
+        
         
             
         </div>
     </div>
+    <div ng-show="isFocus" class="leftCover" ng-click="prevPage($event)" to-body></div>
+    <div ng-show="isFocus" class="rightCover" ng-click="nextPage($event)" to-body></div>
+    <div ng-show="isFocus && showFocusBar" class="bottomBar" set-class="{'ng-hide-remove' : !isFocus}" to-body>
+        
+        <a popper my="middle bottom-25" at="bottom middle" >
+            <!-- <img src="img/focus_letters.svg" class="sizeBtn"> -->
+            <span ng-include="'img/focus_letters.svg'" class="sizeBtn">
+        </a>
+        <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
+            <div class="arrow"></div>
+            <div class="popover_inner">
+
+                <ul ng-show="mediatype == 'etext'">
+                    <li><button ng-click="incrFontSize($event, -0.1)" class="btn btn-small">a</button> 
+                    <button ng-click="incrFontSize($event, 0.1)" class="btn btn-small pull-right">A</button></li>
+                </ul>
+                <div class="size_picker" ng-show="mediatype == 'faksimil'">
+                    <div ng-class="{selected : size, hidden : !isDefined(size)}" 
+                         ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div>
+                    
+                </div>
+                <div class="night_switch on" ng-if="mediatype!= 'faksimil' && !$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Mörkt <br> läge</div></div>
+                <div class="night_switch off" ng-if="mediatype!= 'faksimil' && $root._night_mode" ng-click="$root._night_mode = false"><span class="icon"></span> <div class="label">Ljus <br> läge</div></div>
+            </div>
+        </div>
+
+
+        <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
+            <i class="fa fa-backward"></i>
+        </a>
+        <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+            <i class="fa fa-forward"></i>
+        </a>
+
+        <a popper my="middle bottom-25" at="bottom middle" >
+            <i class="fa fa-list-ul"></i>
+        </a>
+
+        <div class="popper_menu popover top parts">
+            <div class="arrow"></div>
+            <div class="popover_inner">
+                <ul class="work_parts">
+                    <li><a ng-click="gotopage(startpage)">[Start]</a></li>
+                    <li ng-repeat="part in workinfo.parts">
+                        <a ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <a ng-click="closeFocus($event)">
+            <i class="close_btn fa fa-times"></i>
+        </a>
+    </div>
+
     <!-- -->
 </div>

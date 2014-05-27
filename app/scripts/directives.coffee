@@ -39,6 +39,21 @@ littb.directive 'pagetitle', () ->
                 $("title").text(val)
 
 
+littb.directive 'toBody', ($compile) ->
+    restrict : "A"
+    compile : (elm, attrs) ->
+        elm.remove()
+        elm.attr("to-body", null)
+        wrapper = $("<div>").append(elm)
+        cmp = $compile(wrapper.html())
+
+        return (scope, iElement, iAttrs) ->
+            newElem = cmp(scope)
+            $("body").append(newElem)
+            scope.$on "$destroy", () ->
+                newElem.remove()
+
+
 littb.directive 'sortTriangles', () ->
     template: '''
     <div><span ng-click="up()"
@@ -273,6 +288,8 @@ littb.directive 'metaDesc', ($interpolate) ->
             wtch()
 
 
+
+
 littb.directive 'pageTitle', ($interpolate) ->
     restrict : "EA"
     link: (scope, elm, attrs) ->
@@ -322,6 +339,37 @@ littb.directive 'breadcrumb', ($interpolate, $rootScope) ->
         scope.$on "$destroy", () ->
             for wtch in watches
                 wtch()
+
+
+littb.directive "popper", ($rootElement) ->
+    scope: {}
+    link : (scope, elem, attrs) ->
+        popup = elem.next()
+        popup.appendTo("body").hide()
+        closePopup = () ->
+            popup.hide()
+        
+        popup.on "click", (event) ->
+            closePopup()
+            return false
+
+        elem.on "click", (event) ->
+            if popup.is(":visible") then closePopup()
+            else popup.show()
+
+            pos = 
+                my : attrs.my or "right top"
+                at : attrs.at or "bottom right"
+                of : elem
+            if scope.offset
+                pos.offset = scope.offset
+
+            popup.position pos
+
+            return false
+
+        $rootElement.on "click", () ->
+            closePopup()
 
 
 littb.directive 'kwicWord', ->
@@ -377,4 +425,14 @@ littb.directive "affix", () ->
                 top : elem.offset().top
             }
         )
+
+littb.directive "setClass", () ->
+    link : (scope, elem, attrs) ->
+        obj = scope.$eval attrs.setClass
+        for key, val of obj
+            if val
+                elem.addClass key
+            else
+                elem.removeClass key
+
 

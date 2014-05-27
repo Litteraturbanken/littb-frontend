@@ -23,6 +23,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "pasvaz.bindonce"
                                             "jmdobry.angular-cache"
                                             "ngAnimate"
+                                            "ngTouch"
                                            ])
     .config ($routeProvider) ->
 
@@ -339,7 +340,6 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         firstRoute.resolve()
 
 
-
     $rootScope.scrollPos = {} # scroll position of each view
     $(window).on "scroll", ->
         # false between $routeChangeStart and $routeChangeSuccess
@@ -363,6 +363,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         #     ), 0
 
     # $rootScope._showmenu_mobile = false;
+    $rootScope._focus_mode = true
 
     normalizeUrl = (str) ->
         trans = _.object _.zip "åäö", "aao"
