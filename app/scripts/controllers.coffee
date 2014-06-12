@@ -360,7 +360,18 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 if app1len == 1 == app2len # both not diff. can merge
                     c0++
                     app1[0].text += app2[0].text
-                else if app2len > 1 and app2len == app1len
+                else if app2len > 1 and app2len == app1len and (
+                  app2len == 2 or ( ->
+                    for rdg1 in app1
+                        appHasWit = false
+                        for rdg2 in app2
+                            if rdg1.wit == rdg2.wit
+                                appHasWit = true
+                                break
+                        return false if not appHasWit
+                    return true
+                  )()
+                  )
                     c5++
                     for rdg1 in app1
                         for rdg2 in app2
@@ -564,7 +575,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 
                 else if app.page
                     # html += app[0].text
-                    html += '<span class="koll-pb wit '+app.wit+'">s '+app.n+'</span>'
+                    html += '<span class="koll-pb wit '+app.wit+'">'+app.n+'</span>'
                     for page in pages
                         if app.wit is page.wit
                             page.n = app.n
@@ -581,13 +592,14 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                         doAddPageToContext = false
                         for page in pages
                             if !page.usedInContext
-                                html += '<span class="koll-context-pb wit '+page.wit+'">s '+page.n+'</span>'
+                                html += '<span class="koll-context-pb wit '+page.wit+'">'+page.n+'</span>'
                                 page.usedInContext = true
-                                
+                    html += "<span class='koll-changed'>"
                     for rdg in app
-                        html += "<span class='koll-changed wit #{rdg.wit}'>"
+                        html += "<span class='wit #{rdg.wit}'>"
                         html += rdg.text || '&nbsp;'
                         html += "</span>"
+                    html += "</span>" # .koll-changed
                     
                 else # no diff
                     text = app[0].text
@@ -674,7 +686,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 s.witUrls[wit] = "#!/forfattare/LagerlofS/titlar/#{work.path}/info/"
         
         s.haveText = false
-        $('#koll-text')[0].innerHTML = '' # do this while getDiff is loading 
+        $('#koll-text').html('') # do this while getDiff is loading 
         s.loading = true
         s.error = false
         
@@ -687,7 +699,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
             s.haveText = true
             
             # c.time 'parse html'
-            $('#koll-text')[0].innerHTML = html
+            $('#koll-text').html(html)
             # snippet = substr10bulks(0, html)
             # $('#koll-text')[0].innerHTML = snippet
             # c.timeEnd 'parse html'
@@ -715,19 +727,19 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
         
         return html.substr(start, end)
         
-    nthIndexOf = (ss, s, n) ->
+    nthIndexOf = (str, subStr, n) ->
         c = 0
         i = -1
         while true
-            i = ss.indexOf(s, i+1)
+            i = str.indexOf(subStr, i+1)
             if ++c >= n || i == -1
                 return i
                 
-    lastNthIndexOf = (ss, s, n) ->
+    lastNthIndexOf = (str, subStr, n) ->
         c = 0
-        i = ss.length
+        i = str.length
         while true
-            i = ss.lastIndexOf(s, i-1)
+            i = str.lastIndexOf(subStr, i-1)
             if ++c >= n || i == -1
                 return i
     
@@ -777,8 +789,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                         i.html += node.textContent
                 else if node.nodeType == 1 and $node.hasClass 'koll-changed'
                     for i in result
-                        if $node.hasClass i.wit
-                            i.html += '<span class="koll-changed">' + $node.html() + '</span>'
+                        i.html += '<span class="koll-changed">' + $node.children('.'+i.wit).html() + '</span>'
             return result
         
         div = $('#context-versions-div')
@@ -861,29 +872,15 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
             window.scrollTop showInTextContext.offset().top - viewOffset
     
     showDiffDiv = (changedSpan) ->
-        diffVersions = []
-        changedSpan
-            .nextUntil(':not(.koll-changed), .koll-changed.'+myWits[0]).addBack()
-            .prevUntil(':not(.koll-changed), .koll-changed.'+myWits[myWits.length-1]).addBack()
-        .each () ->
-            version = {titles: [], html: null}
-            $this = $(this)
-            for wit in myWits
-                if $this.hasClass(wit)
-                    version.titles.push
-                        title: s.witTitles[wit]
-                        isBase: wit == s.baseWit
-            version.html = $this.html()
-            diffVersions.push version
-        
         html = ''
-        for version in diffVersions
-            for title in version.titles
-                html += "<span class='title"
-                if title.isBase
-                    html += " base"
-                html += "'>#{ title.title }</span>"
-            html += "<p>#{ version.html }</p>"
+        sorted  = _.sortBy(changedSpan.children(), 'className')
+        for witElem in sorted
+            for wit in myWits
+                if $(witElem).hasClass(wit)
+                    html += "<span class='title" + 
+                      (if wit == s.baseWit then " base'>" else "'>") +
+                      s.witTitles[wit] + "</span>"
+            html += "<p>#{ witElem.innerHTML }</p>"
         
         div = $("#diff-div")
         div.html(html)
@@ -891,25 +888,102 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
         position = changedSpan.offset()
         div.css {top: position.top + changedSpan.innerHeight(), left: position.left}
         div.show()
-        
-    setupTextJquery = () ->
-        ## setup the jquery event handlers for displaying differences in the text, once on page load
-        $("#koll-text")
-            .on("click", ".koll-context", (evt) ->
-                target = evt.currentTarget
-                if contextVersionsContext == null or contextVersionsContext[0] != target or s.contextVersions == null
-                    s.showContextVersionsDiv($(target))
-                    evt.stopPropagation() # keep ContextVersionsDiv from immediately hiding again
-            )
-            .on("mouseover", ".koll-changed", -> showDiffDiv $(this))  ## todo enable when fixed
-            .on("mouseout", ".koll-changed", -> $("#diff-div").hide())
-        
-        # for highlighting differences in #context-versions-div
-        $('#context-versions-div')
-            .on( "mouseover", '.koll-changed', s.highlightVersionsDivChanges )
-            .on( "mouseout", '.koll-changed', s.unhighlightVersionsDivChanges )
-        
-    setupTextJquery()
+    
+    s.saveToFile = () ->
+        # order wits but with base wit first
+        orderedWits = [s.baseWit]
+        for wit in myWits
+            if wit != s.baseWit
+                orderedWits.push wit
+        # prepare html table
+        data = '''
+            <head>
+            <meta charset="utf-8"/>
+            <style>
+            .marker { font-weight: bold; color: #69698B }
+            .page { font-weight: bold; color: #69698B }
+            body { padding: 10px; font-size: 17px; font-family: sans-serif; } 
+            h1 { font-size: 1.5em; } 
+            h2 { font-size: 1.25em; }
+            h3 { font-size: 1em; margin: 1em 0em 0em 1em}
+            h3 + p { margin-left: 1.5em; }
+            .wit { color: #8C1717; }
+            a.wit { vertical-align: super; font-size: small; }
+            </style>
+            </head>
+            <body>
+            '''
+        data += """
+            <h1>Kollation av #{s.work.title}</h1>
+            <h2 id="om">Om textjämförelsen</h2>
+            <p>Kollationen är gjord med eXist-db-appen text-collation som använt
+            CollateX för kollationeringssteget.</p>
+            <p>Jämförelsen gjordes #{new Date()}</p>
+            <h2 id="biblio">Bibliografi</h2>
+            """
+        # backend.getSourceInfo(s.author, s.worksToCompare[0].path).then (result) ->
+            # result.authorFullname
+            # result.title
+            # result.showTitle
+            # result.imported
+        # add the ordered wit titles as column headers
+        for wit, i in orderedWits
+            title = s.witTitles[wit]
+            data += '<h3 id="' + ('w'+i) + '">' +
+                title + 
+                ' <span class=\"wit\">(' + 
+                ( if i == 0 then 'Grundutgåva' else ('w'+i) ) +
+                ')</a>' +
+                '</h3>\n' +
+                '<p>' +
+                'Författare: ' + s.authorInfo.fullName
+                + '</p>'
+        data += "<h2 id=\"app\">Textkritisk apparat</h2>\n"
+        # add all the rows
+        rdgs = {}
+        for e in $('.koll-changed, .koll-pb')
+            if $(e).hasClass('koll-pb') # for keeping track of what page we are on
+                # page = $(change).prev('.koll-pb-pb').text()
+                if $(e).hasClass(s.baseWit)
+                    page = $(e).text()
+            else # koll-changed 
+                # add a row for the wit
+                for rdg in $(e).children()
+                    text = $(rdg).text()
+                    for wit in myWits
+                        if $(rdg).hasClass(wit)
+                            rdgs[wit] = text
+                data += '<div class="app">'
+                data += "<span class=\"page\">s #{page}</span> "
+                for wit, i in orderedWits
+                    data += rdgs[wit]
+                    if i != 0
+                        wstr = 'w' + i
+                        data += " <a class=\"wit\" href=\"##{wstr}\">#{wstr}</a>"
+                    if i + 1 != orderedWits.length
+                        data += '<span class="marker"> | </span>'
+                # data += (rdgs[wit] for wit in orderedWits).join('<span class="marker"> |</span>')
+                data += "</div>\n"
+        data += "</div>\n"
+        # save to file
+        blob = new Blob([data], {type: "text/plain;charset=utf-8"})
+        saveAs blob, 'Kollation - ' + s.work.title + '.html'
+
+    ## setup jquery event handlers for displaying differences in the text, etc.
+    $("#koll-text")
+        .on("click", ".koll-context", (evt) ->
+            target = evt.currentTarget
+            if contextVersionsContext == null or contextVersionsContext[0] != target or s.contextVersions == null
+                s.showContextVersionsDiv($(target))
+                evt.stopPropagation() # keep ContextVersionsDiv from immediately hiding again
+        )
+        .on("mouseover", ".koll-changed", -> showDiffDiv $(this))
+        .on("mouseout", ".koll-changed", -> $("#diff-div").hide())
+        # .on 'mouseover', '.koll-context-pb', -> # show tooltip. how?
+    # for highlighting differences in #context-versions-div
+    $('#context-versions-div')
+        .on( "mouseover", '.koll-changed', s.highlightVersionsDivChanges )
+        .on( "mouseout", '.koll-changed', s.unhighlightVersionsDivChanges )
 
 littb.controller "biblinfoCtrl", ($scope, backend) ->
     s = $scope
@@ -959,9 +1033,8 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
 
 littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util) ->
     s = $scope
-    # [s.author, s.showtitles] = $routeParams.author.split("/")
     _.extend s, $routeParams
-    s.showpage = null
+    s.showpage = $location.path().split("/")[3] || "introduktion"
     s.show_large = false
 
     s.showLargeImage = ($event) ->
@@ -975,13 +1048,8 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
                 s.show_large = false
         return
 
-    refreshRoute = () ->
-        s.showpage = (_.last $location.path().split("/")) 
-        s.showpage = "introduktion" if s.author == s.showpage
-
     refreshTitle = () ->
-        suffix = if s.showpage == "titlar" then "Verk i LB" else _.str.capitalize s.showpage
-        s.setTitle "#{s.authorInfo.fullName} - " + suffix
+        s.setTitle s.authorInfo.fullName + " - " + getPageTitle(s.showpage)
 
     refreshBreadcrumb = () ->
         if s.showpage != "introduktion"
@@ -994,10 +1062,14 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     s.getUnique = (worklist) ->
         _.filter worklist, (item) ->
             "/" not in item.titlepath 
-
-    s.getPageTitle = (page) ->
+    
+    getPageTitle = (page) ->
         {
-            "semer" : "Mera om"
+            "titlar": "Verk i LB"
+            "semer": "Mera om"
+            "biblinfo": "Bibliografisk databas"
+            "jamfor": "Textkritisk verkstad"
+            "omtexterna": "Om texterna"
         }[page] or _.str.capitalize page
 
     s.getAllTitles = () ->
@@ -1013,12 +1085,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     refreshExternalDoc = (page) ->
         # sla hack
-        if s.slaMode and (page == 'omtexterna' or $routeParams.omtexternaDoc)
-            url = '/red/om/omtexterna/' + ($routeParams.omtexternaDoc || page) + '.html'
-        else    
+        if s.slaMode and page == 'omtexterna'
+            url = '/red/sla/' + (s.omtexternaDoc || page)
+        else
             url = s.authorInfo[page]
+        
         return if url is undefined
-        c.log "page external", page, url
         
         # because the livereload snippet is inserted into the html
         # if location.hostname == "localhost"
@@ -1031,17 +1103,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         .error (data, status) ->
             $('#author-info-external').empty().append('Felaktigt dokument')
 
-    refreshRoute()
-
-    s.$on "$routeChangeError", (event, current, prev, rejection) ->
-        c.log "change error", current
-        _.extend s, current.pathParams
-
-        refreshRoute()  
-        refreshTitle()
-        refreshExternalDoc(s.showpage)
-        refreshBreadcrumb()
-    
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
         
@@ -1318,30 +1379,6 @@ littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, ut
                 return
             $(window).scrollTop($("##{val}").offset().top)
         }
-
-littb.controller "omtexternaCtrl", ($scope, $routeParams) ->
-    docPath = '/red/om/omtexterna/'
-    $scope.doc = docPath + ($routeParams['doc'] or 'omtexterna.html')
-    
-    $scope.$on '$includeContentLoaded', (e) ->
-        docTitle = $('#omtexterna-doc title').text()
-        $scope.setTitle docTitle
-        c.log $scope
-        $scope.appendCrumb
-            label: docTitle
-            url: window.location.hash
-        c.log $scope.breadcrumb
-    
-    # $http.get(url).success (data) ->
-        # s.doc = data
-        # s.currentLetters = for elem in $("[id]", data)
-            # $(elem).attr("id")
-        # util.setupHash s, {"ankare" : (val) ->
-            # unless val
-                # $(window).scrollTop(0)
-                # return
-            # $(window).scrollTop($("##{val}").offset().top)
-        # }
 
 littb.controller "authorListCtrl", ($scope, backend, util, authors) ->
     s = $scope
@@ -1993,4 +2030,28 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         for w in watches
             w()
 
+## ORD OCH SAK
+    backend.ordOchSak(author, title).then (ordOchSak) ->
+        s.ordOchSakAll = ordOchSak
+        s.$watch "pagename", updateOrdOchSak
+        updateOrdOchSak()
+    , (error) ->
+        c.log 'failed to get ord och sak', error
+    
+    updateOrdOchSak = () ->
+        if not s.ordOchSakAll or not s.pagename then return
+        s.ordOchSakPage = (entry for entry in s.ordOchSakAll when entry.forklaring and s.pagename in entry.pages)
+    
+    ## TODO
+    #s.markOosEntry = (entry) ->
+    #    for id in entry.ids
+    #        fromSpan = $(".etext #"+id.from)
+    #        toSpan = $(".etext #"+id.to)
+    #        all = fromSpan.nextUntil(toSpan).add(fromSpan).add(toSpan)
+    #        all.addClass("markee")
+    #
+    #s.unmarkOosEntries = () ->
+    #    $(".etext .markee").removeClass("markee")
+    
+## END ORD OCH SAK
 

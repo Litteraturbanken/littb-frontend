@@ -405,6 +405,8 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         url = "/query/lb-authors.xql"
         http(
             url : url
+            # cache: 
+            cache: true #localStorageCache
             params :
                 action : "get-author-data-init"
                 authorid : author
@@ -779,9 +781,9 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         def = $q.defer()
         
         titlemap = 
-            'OsynligaLankar2012' : '/views/sla/OLOrdSak-output.xml'
-            'GostaBerlingsSagaForraDelen2012' : '/views/sla/GBOrdSakFörstaDel-output.xml'
-            'GostaBerlingsSagaSenareDelen2012' : '/views/sla/GBOrdSakAndraDel-output.xml'
+            'OsynligaLankarSLA' : '/views/sla/OLOrdSak-output.xml'
+            'GostaBerlingsSaga1SLA' : '/views/sla/GBOrdSakForstaDel-output.xml'
+            'GostaBerlingsSaga2SLA' : '/views/sla/GBOrdSakAndraDel-output.xml'
         
         url = titlemap[title]
         

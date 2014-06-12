@@ -140,8 +140,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                    "/forfattare/:author/semer"
                    "/forfattare/:author/biblinfo"
                    "/forfattare/:author/jamfor"
-                   "/forfattare/:author/omtexterna"
-                   "/forfattare/:author/omtexterna/:omtexternaDoc"
+                   "/forfattare/:author/omtexterna/:omtexternaDoc?"
                    ],
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
@@ -149,19 +148,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     label : "författare"
                     url : "#!/forfattare"
                 ]
-                resolve : 
-                    r : ["$q", "$routeParams", "$route",
-                            ($q, $routeParams, $route) ->
-                                def = $q.defer()
-                                c.log "resolve", $routeParams, $route
-                                if routeStartCurrent?.controller == "authorInfoCtrl" and 
-                                        $route.current.controller == "authorInfoCtrl" and
-                                        $route.current.params.author == $routeParams.author
-                                    def.reject()
-                                else
-                                    def.resolve()
-                                return def.promise
-                        ]
             .when "/forfattare/:author/titlar/:title/info",
                 templateUrl : "views/sourceInfo.html"
                 controller : "sourceInfoCtrl"

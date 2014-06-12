@@ -1,5 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
 <glossary>
-    <glossaryinfo>
+    <!--lb99907002.xml OLOrdSak.xml, 2014-06-09 19:06:43.063000 --><glossaryinfo>
         <editor>
             <firstname>Ilaria</firstname>
             <surname>Tedde</surname>
@@ -8,41 +9,11 @@
         <releaseinfo>påbörjad fil</releaseinfo>
     </glossaryinfo>
     <glossentry>
-        <glossterm><firstterm>Patriark</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>4</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>försyn</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>4</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>krambod</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>4</page><page>7</page><page>12</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>sladderaktig</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>4</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>domestik</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>6</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>Whittington</firstterm></glossterm>
         <glossdef>
             <para>Dick Whittington var huvudkaraktären i brittiska pantomimer populära under
                 1800-talet om en fattig pojke som kom till London och blev mycket framgångsrik;
-                karaktären baseras på Richard Whittingtons (ca 1354–1423), som var borgmästare i
+                karaktären baseras på Richard Whittington (ca 1354–1423), som var borgmästare i
                 London och donerade en stor förmögenhet till välgörande ändamål. </para>
         </glossdef>
     <page>7</page></glossentry>
@@ -63,7 +34,7 @@
     <glossentry>
         <glossterm baseform="grundplåt"><firstterm>grundplåten</firstterm></glossterm>
         <glossdef>
-            <para><glossterm>pänningsumma som utgör första början till ett för något visst ändamål
+            <para><glossterm>penningsumma som utgör första början till ett för något visst ändamål
                     avsett kapital o. d.</glossterm></para>
         </glossdef>
     <page>8</page></glossentry>
@@ -74,48 +45,12 @@
         </glossdef>
     <page>8</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>allmosa</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>8</page></glossentry>
-    <glossentry>
-        <glossterm baseform="dukat"><firstterm>dukater</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>8</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>karm</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>9</page></glossentry>
-    <glossentry>
         <glossterm baseform="fastlagsbal"><firstterm>Fastlagsbalen</firstterm></glossterm>
         <glossdef>
             <para>Som inledning på fastetiden arrangerades i småstäder ofta en fest för bättre
                 bemedlade där intäkterna gick till välgörenhet. </para>
         </glossdef>
-    <page>9</page></glossentry>
-    <glossentry>
-        <glossterm baseform="tumstjock"><firstterm>tumstjocka</firstterm></glossterm>
-        <glossdef>
-            <para>tumme</para>
-        </glossdef>
-    <page>11</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>gunstling</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>5</page><page>12</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>girigbuk</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>13</page></glossentry>
+    <page>9</page><page>9</page></glossentry>
     <glossentry>
         <glossterm><firstterm>sjunde bud</firstterm></glossterm>
         <glossdef>
@@ -126,7 +61,7 @@
     <glossentry>
         <glossterm>tjugu par spö</glossterm>
         <glossdef>
-            <para>vanligt straff vid stöld i 1734 års lagstiftningsemikolon spöstraff avskaffades år
+            <para>vanligt straff vid stöld i 1734 års lagstiftning; spöstraff avskaffades år
                 1855</para>
         </glossdef>
     <page>13</page></glossentry>
@@ -137,24 +72,12 @@
         </glossdef>
     <page>15</page></glossentry>
     <glossentry>
-        <glossterm baseform="fiskal"><firstterm>fiskalen</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>15</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>sjåare</firstterm></glossterm>
         <glossdef>
-            <para>stuveriarbetare, hamnarbetare; även allmännare, om person som arbetar såsom
+            <para>stuveriarbetare, hamnarbetare; även allmännare, om person som arbetar som
                 daglönare eller lever på tillfälliga arbeten</para>
         </glossdef>
     <page>18</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>fastlagsris</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>19</page></glossentry>
     <glossentry>
         <glossterm><firstterm>kyffe</firstterm></glossterm>
         <glossdef>
@@ -168,12 +91,6 @@
         </glossdef>
     <page>20</page></glossentry>
     <glossentry>
-        <glossterm baseform="undfägna"><firstterm>undfägnade</firstterm></glossterm>
-        <glossdef>
-            <para>se undfägna i SAOL</para>
-        </glossdef>
-    <page>92</page></glossentry>
-    <glossentry>
         <glossterm baseform="högt akta"><firstterm>högt aktadt</firstterm></glossterm>
         <glossdef>
             <para>högt ansedd</para>
@@ -185,18 +102,6 @@
             <para>retsamt; irriterande</para>
         </glossdef>
     <page>22</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>allestädes</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>22</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>oblid</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>23</page></glossentry>
     <glossentry>
         <glossterm><firstterm>resolut</firstterm></glossterm>
         <glossdef>
@@ -242,31 +147,6 @@
         </glossdef>
     <page>27</page></glossentry>
     <glossentry>
-        <glossterm baseform="gitta"><firstterm>gitte</firstterm></glossterm>
-        <glossdef>
-            <para>gitta</para>
-        </glossdef>
-    <page>13</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>vistparti</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>31</page></glossentry>
-    <glossentry id="midnattstoddy">
-        <glossterm><firstterm>midnattstoddy</firstterm></glossterm>
-        <glossdef>
-            <para />
-            <glossseealso otherterm="toddy">toddy</glossseealso>
-        </glossdef>
-    <page>32</page></glossentry>
-    <glossentry>
-        <glossterm baseform="harmsen"><firstterm>harmsna</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>34</page></glossentry>
-    <glossentry>
         <glossterm baseform="bredskyggig"><firstterm>bredskyggiga</firstterm></glossterm>
         <glossdef>
             <para>hatt med breda brätten; bredbrättade</para>
@@ -276,8 +156,9 @@
         <glossterm><firstterm>Meliska Afrodite</firstterm></glossterm>
         <glossdef>
             <para>åsyftar en berömd grekisk staty föreställande skönhetens gudinna Afrodite
-                återfunnen år 1820 delvis skadad och utan armar på den grekiska ön Milos eller Melos
-                länka till bild? </para>
+                återfunnen år 1820 delvis skadad och utan armar på den grekiska ön Milos eller Melos;
+				idag mer känd som Venus från Milo
+            </para>
         </glossdef>
     <page>34</page></glossentry>
     <glossentry>
@@ -294,18 +175,6 @@
         </glossdef>
     <page>38</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>lyte</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>38</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>löje</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>39</page></glossentry>
-    <glossentry>
         <glossterm>hafva redt sig</glossterm>
         <glossdef>
             <para>har klarat sig</para>
@@ -318,48 +187,17 @@
         </glossdef>
     <page>41</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>nesa</firstterm></glossterm>
-        
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>42</page></glossentry>
-    <glossentry>
         <glossterm baseform="gå tvungen"><firstterm>gått tvungen</firstterm></glossterm>
         <glossdef>
             <para>blivit tvingad</para>
         </glossdef>
     <page>42</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>risa</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>42</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>fördrag</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>45</page></glossentry>
-    <glossentry>
         <glossterm baseform="avskeda"><firstterm>afskedade</firstterm></glossterm>
         <glossdef>
             <para>avvisa</para>
         </glossdef>
     <page>46</page></glossentry>
-    <glossentry>
-        <glossterm baseform="skälm"><firstterm>skälmarna</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>47</page></glossentry>
-    <glossentry>
-        <glossterm baseform="rämna"><firstterm>remnor</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>48</page></glossentry>
     <glossentry>
         <glossterm><firstterm>ändtligen</firstterm></glossterm>
         
@@ -368,48 +206,12 @@
         </glossdef>
     <page>48</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>mastträd</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>49</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>vigda grunden</firstterm></glossterm>
         <glossdef>
             <para>Kyrkogården var helig mark, jord vigd åt Gud, och endast den som begravdes i vigd
                 jord kunde nå himmelens salighet. </para>
         </glossdef>
     <page>50</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>misskundsam</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>51</page></glossentry>
-    <glossentry>
-        <glossterm baseform="tarflig"><firstterm>tarfligt</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>53</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>föga</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>53</page></glossentry>
-    <glossentry>
-        <glossterm baseform="talrik"><firstterm>talrikt</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>53</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>martyr</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>54</page><page>287</page></glossentry>
     <glossentry>
         <glossterm baseform="välva"><firstterm>hvälfde</firstterm></glossterm>
         
@@ -457,7 +259,7 @@
         <glossdef>
             <para />
         </glossdef>
-    <page>63</page><page>65</page></glossentry>
+    <page>65</page></glossentry>
     <glossentry id="domensdag">
         <glossterm><firstterm>domens dag</firstterm></glossterm>
         <glossdef>
@@ -505,12 +307,6 @@
         </glossdef>
     <page>64</page></glossentry>
     <glossentry>
-        <glossterm baseform="stäcka"><firstterm>stäckt</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>65</page></glossentry>
-    <glossentry>
         <glossterm baseform="visthus"><firstterm>visthuset</firstterm></glossterm>
         <glossdef>
             <para>förvaringshus för mat</para>
@@ -535,7 +331,7 @@
         <glossdef>
             <para>bristande</para>
         </glossdef>
-    <page>66</page></glossentry>
+    </glossentry>
     <glossentry>
         <glossterm><firstterm>anlete</firstterm></glossterm>
         <glossdef>
@@ -566,35 +362,17 @@
         </glossdef>
     <page>71</page></glossentry>
     <glossentry>
-        <glossterm baseform="läderlapp"><firstterm>läderlappar</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>72</page></glossentry>
-    <glossentry>
         <glossterm baseform="hälleberg"><firstterm>hällebergen</firstterm></glossterm>
         <glossdef>
             <para>åsyftar ofta stark kristen tro</para>
         </glossdef>
     <page>73</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>sandmon</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>77</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>hvarest</firstterm></glossterm>
         <glossdef>
             <para>ålderdomligt för där; var</para>
         </glossdef>
     <page>77</page><page>178</page></glossentry>
-    <glossentry>
-        <glossterm baseform="mo"><firstterm>mon</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>77</page></glossentry>
     <glossentry>
         <glossterm><firstterm>stenkummel</firstterm></glossterm>
         <glossdef>
@@ -604,7 +382,7 @@
     <glossentry>
         <glossterm><firstterm>Myrlejon</firstterm></glossterm>
         <glossdef>
-            <para>larv av myrlejonslända lever i små hålor i sand</para>
+            <para>larv av myrlejonslända, lever i små hålor i sand</para>
         </glossdef>
     <page>78</page></glossentry>
     <glossentry>
@@ -630,17 +408,11 @@
         <glossdef>
             <para>löpte, sprang</para>
         </glossdef>
-    <page>81</page></glossentry>
+    <page>81</page><page>83</page></glossentry>
     <glossentry>
         <glossterm>bortemot trettitalet</glossterm>
         <glossdef>
             <para>närmare 30 år</para>
-        </glossdef>
-    <page>82</page></glossentry>
-    <glossentry>
-        <glossterm baseform="träl"><firstterm>trälar</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>82</page></glossentry>
     <glossentry>
@@ -649,28 +421,10 @@
             <para>tallved med mycket kåda använd som vedbloss för belysning</para>
         </glossdef>
     <page>83</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>tjära</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>83</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>fnöske</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>83</page></glossentry>
-    <glossentry>
-        <glossterm baseform="pors"><firstterm>porsen</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>83</page></glossentry>
     <glossentry id="lupo">
         <glossterm baseform="löpa"><firstterm>lupo</firstterm></glossterm>
         <glosssee>lopp</glosssee>
-    <page>83</page></glossentry>
+    <page>81</page><page>83</page></glossentry>
     <glossentry>
         <glossterm><firstterm>David, Israels konung</firstterm></glossterm>
         <glossdef>
@@ -678,12 +432,6 @@
                 rikedomar till Jerusalems tempel.</para>
         </glossdef>
     <page>83</page></glossentry>
-    <glossentry>
-        <glossterm baseform="ungersven"><firstterm>ungersvens</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>84</page><page>115</page></glossentry>
     <glossentry>
         <glossterm><firstterm>hjärtelag</firstterm></glossterm>
         <glossdef>
@@ -698,11 +446,10 @@
     <page>85</page></glossentry>
     <glossentry>
         <glossterm baseform="led"><firstterm>Ledt</firstterm></glossterm>
-        
         <glossdef>
-            <para>säkert</para>
+            <para>obehagligt; illa</para>
         </glossdef>
-    <page>86</page></glossentry>
+    <page>86</page><page>113</page></glossentry>
     <glossentry id="hugnesam">
         <glossterm><firstterm>hugnesam</firstterm></glossterm>
         <glossdef>
@@ -725,21 +472,9 @@
     <glossentry>
         <glossterm baseform="skeppundstung"><firstterm>skeppundstunga</firstterm></glossterm>
         <glossdef>
-            <para>skeppund är gammal viktenhet, c a ca 170 kilo</para>
+            <para>skeppund är gammal viktenhet, ca 170 kilo</para>
         </glossdef>
     <page>89</page></glossentry>
-    <glossentry>
-        <glossterm baseform="såda"><firstterm>sådor</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>90</page></glossentry>
-    <glossentry>
-        <glossterm baseform="stånka"><firstterm>stånkor</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>90</page></glossentry>
     <glossentry>
         <glossterm><firstterm>I</firstterm></glossterm>
         <glossdef>
@@ -753,19 +488,6 @@
             <glossseealso otherterm="hugnesam">hugnesam</glossseealso>
         </glossdef>
     <page>90</page><page>190</page></glossentry>
-    <glossentry>
-        <glossterm baseform="åstunda"><firstterm>åstundade</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    </glossentry>
-    <glossentry>
-        <glossterm><firstterm>förkofran</firstterm></glossterm>
-        
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>91</page></glossentry>
     <glossentry>
         <glossterm baseform="gravöl"><firstterm>graföl</firstterm></glossterm>
         <glossdef>
@@ -804,12 +526,6 @@
             <para>piska med gissel</para>
         </glossdef>
     <page>95</page></glossentry>
-    <glossentry>
-        <glossterm baseform="båta"><firstterm>båtar</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>95</page></glossentry>
     <glossentry id="fullmansbot">
         <glossterm><firstterm>full mansbot</firstterm></glossterm>
         <glossdef>
@@ -842,36 +558,6 @@
         </glossdef>
     <page>98</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>stenbeläte</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>99</page></glossentry>
-    <glossentry>
-        <glossterm baseform="harneskklädd"><firstterm>harneskklädda</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>103</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>fredlös</firstterm></glossterm>
-        <glossdef>
-            <para>fridlös</para>
-        </glossdef>
-    <page>107</page></glossentry>
-    <glossentry>
-        <glossterm baseform="skär"><firstterm>skären</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>107</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>jordkula</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>107</page></glossentry>
-    <glossentry>
         <glossterm baseform="skäfta"><firstterm>skäftade</firstterm></glossterm>
         <glossdef>
             <para>se <glossterm>tillverkade</glossterm></para>
@@ -884,29 +570,10 @@
         </glossdef>
     <page>107</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>skall</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>108</page></glossentry>
-    <glossentry>
         <glossterm baseform="sjufalt"><firstterm>sjufaldt</firstterm></glossterm>
         <glossdef>
             <para>sju gånger; summan sju är ofta återkommande i muntligt berättande och i
                 Bibeln</para>
-        </glossdef>
-    <page>108</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>eggelse</firstterm></glossterm>
-        
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>108</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>fordom</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>108</page></glossentry>
     <glossentry>
@@ -916,45 +583,15 @@
         </glossdef>
     <page>108</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>pojkstreck</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>109</page></glossentry>
-    <glossentry>
-        <glossterm baseform="härad"><firstterm>häradet</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>110</page><page>137</page></glossentry>
-    <glossentry>
-        <glossterm baseform="ljuslätt"><firstterm>ljuslett</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>110</page></glossentry>
-    <glossentry>
-        <glossterm baseform="bränning"><firstterm>bränningen</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>110</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>stigmanslif</firstterm></glossterm>
         <glossdef>
             <para>luffarliv</para>
         </glossdef>
     <page>111</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>ofärd</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>111</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>villebråd</firstterm></glossterm>
         <glossdef>
-            <para>se <glossterm>vildbråd</glossterm></para>
+            <para>dödade djur; byte</para>
         </glossdef>
     <page>110</page></glossentry>
     <glossentry>
@@ -970,12 +607,6 @@
         </glossdef>
     <page>111</page></glossentry>
     <glossentry>
-        <glossterm baseform="gungfly"><firstterm>gungflyen</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>111</page></glossentry>
-    <glossentry>
         <glossterm>oheliga hästköttet</glossterm>
         <glossdef>
             <para>Att äta hästkött har betraktats som hedniskt och ansetts otillåtet inom
@@ -987,7 +618,7 @@
         <glossdef>
             <para>obehagligt</para>
         </glossdef>
-    <page>113</page></glossentry>
+    <page>86</page><page>113</page></glossentry>
     <glossentry>
         <glossterm><firstterm>frände</firstterm></glossterm>
         <glossdef>
@@ -1007,47 +638,17 @@
         </glossdef>
     <page>113</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>mjöd</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>113</page></glossentry>
-    <glossentry>
         <glossterm baseform="gentaga"><firstterm>gentog</firstterm></glossterm>
         <glossdef>
-            <para>underströk</para>
+            <para>tog till orda igen; upprepade</para>
         </glossdef>
     <page>115</page></glossentry>
     <glossentry>
         <glossterm><firstterm>tjärn</firstterm></glossterm>
         <glossdef>
-            <para>se <glossterm>kärn</glossterm></para>
+            <para>liten skogssjö</para>
         </glossdef>
     <page>116</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>tillstädes</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>117</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>pläga</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>117</page></glossentry>
-    <glossentry>
-        <glossterm baseform="blid"><firstterm>blidt</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>119</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>rus</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>119</page></glossentry>
     <glossentry>
         <glossterm><firstterm>eljes</firstterm></glossterm>
         <glossdef>
@@ -1061,23 +662,11 @@
         </glossdef>
     <page>121</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>förehålla</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>121</page></glossentry>
-    <glossentry>
         <glossterm baseform="drapa"><firstterm>drap</firstterm></glossterm>
         <glossdef>
             <para>dräpte</para>
         </glossdef>
     <page>122</page></glossentry>
-    <glossentry>
-        <glossterm baseform="gast"><firstterm>gastar</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>123</page></glossentry>
     <glossentry>
         <glossterm><firstterm>eviga pinorummen</firstterm></glossterm>
         <glossdef>
@@ -1104,7 +693,7 @@
     <glossentry>
         <glossterm baseform="dona"><firstterm>donor</firstterm></glossterm>
         <glossdef>
-            <para>verktyg</para>
+            <para>verktyg för att fånga fåglar</para>
             
         </glossdef>
     <page>124</page></glossentry>
@@ -1151,12 +740,6 @@
         </glossdef>
     <page>126</page></glossentry>
     <glossentry>
-        <glossterm baseform="mäkta"><firstterm>mäktade</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>127</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>intagen under lagens</firstterm></glossterm>
         <glossdef>
             <para><glossterm>hägn</glossterm>; omskrivning för att dömas till fängelse</para>
@@ -1171,12 +754,6 @@
             <glossseealso otherterm="skärseld">skärseld</glossseealso>
         </glossdef>
     <page>127</page></glossentry>
-    <glossentry>
-        <glossterm baseform="kåpa"><firstterm>kåpan</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>129</page></glossentry>
     <glossentry>
         <glossterm baseform="fiskare"><firstterm>fiskrarnas</firstterm></glossterm>
         <glossdef>
@@ -1229,15 +806,15 @@
         </glossdef>
     <page>131</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>Väl</firstterm></glossterm>
+        <glossterm><firstterm>Väl den</firstterm></glossterm>
         <glossdef>
-            <para>den lycklig den</para>
+            <para>lycklig den</para>
         </glossdef>
-    <page>131</page></glossentry>
+    </glossentry>
     <glossentry>
         <glossterm><firstterm>undfår</firstterm></glossterm>
         <glossdef>
-            <para>undkommer</para>
+            <para>tar emot</para>
         </glossdef>
     <page>131</page></glossentry>
     <glossentry>
@@ -1261,21 +838,9 @@
         </glossdef>
     <page>132</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>grundval</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>133</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>kung Olof</firstterm></glossterm>
         <glossdef>
             <para>Olof Skötkonung(ca 980–1022) var den förste svenske kung som lät döpa sig. </para>
-        </glossdef>
-    <page>137</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>friboren</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>137</page></glossentry>
     <glossentry>
@@ -1292,12 +857,6 @@
         </glossdef>
     <page>139</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>fastmer</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>141</page></glossentry>
-    <glossentry>
         <glossterm baseform="älvadans"><firstterm>älfvedansen</firstterm></glossterm>
         <glossdef>
             <para>I folktron kunde kvinnliga naturväsen i skydd av mörker ses dansa
@@ -1312,23 +871,11 @@
         </glossdef>
     <page>142</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>tungomål</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>142</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>ohöljd</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>142</page></glossentry>
-    <glossentry>
         <glossterm baseform="rista"><firstterm>riste</firstterm></glossterm>
         <glossdef>
             <para>skakade</para>
         </glossdef>
-    <page>142</page></glossentry>
+    <page>142</page><page>263</page></glossentry>
     <glossentry>
         <glossterm>hvita ormen, som ger tomtebolycka</glossterm>
         <glossdef>
@@ -1340,27 +887,15 @@
         <glossterm>Hellqvists stora tafvla</glossterm>
         <glossdef>
             <para>Carl Gustaf Hellqvist (1851–1890) var en känd historiemålare som 1882 blev mycket
-                uppmärksammad för sin skildring av hur den danske kung Valdermar Atterdag år 1361
+                uppmärksammad för sin skildring av hur den danske kung Valdemar Atterdag år 1361
                 ockuperade Gotland och tvingade av Visbyborna deras värdesaker i utbyte mot öns
                 fortsatta självbestämmande. </para>
         </glossdef>
     </glossentry>
     <glossentry>
-        <glossterm baseform="page"><firstterm>pagen</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>147</page></glossentry>
-    <glossentry>
         <glossterm baseform="borgare"><firstterm>borgarena</firstterm></glossterm>
         <glossdef>
             <para>borgarna; ålderdomlig böjningsform av bestämd form pluralis</para>
-        </glossdef>
-    <page>148</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>gamman</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>148</page></glossentry>
     <glossentry>
@@ -1371,25 +906,12 @@
         </glossdef>
     <page>149</page></glossentry>
     <glossentry>
-        <glossterm baseform="relikskrin"><firstterm>relikskrinet</firstterm></glossterm>
-        <glossdef>
-            <para />
-            <glossseealso otherterm="relik">reliker</glossseealso>
-        </glossdef>
-    <page>149</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>Ung-Hanses dotter</firstterm></glossterm>
         <glossdef>
-            <para>Dottern till en rik landsdomare ska enligt legenden ha hjälpt Valdemar Atterdag
+            <para>Dottern till en rik landsdomare, ska enligt legenden ha hjälpt Valdemar Atterdag
                 och hans trupper att ta sig in i Visby. </para>
         </glossdef>
     <page>149</page><page>152</page><page>152</page></glossentry>
-    <glossentry id="guldsmedsgesäll">
-        <glossterm baseform="guldsmedsgesäll"><firstterm>guldsmedsgesällen</firstterm></glossterm>
-        <glossdef>
-            <para>gesäll</para>
-        </glossdef>
-    <page>150</page></glossentry>
     <glossentry>
         <glossterm baseform="karbunkel"><firstterm>karbunklarna</firstterm></glossterm>
         <glossdef>
@@ -1469,36 +991,6 @@
         </glossdef>
     <page>157</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>gångare</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>157</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>plym</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>157</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>sällspord</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>157</page></glossentry>
-    <glossentry>
-        <glossterm baseform="erinring"><firstterm>erinringen</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>158</page></glossentry>
-    <glossentry id="relik">
-        <glossterm baseform="relik"><firstterm>reliker</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>158</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>Jerikorosen</firstterm></glossterm>
         <glossdef>
             <para>ökenväxt som enligt österländsk tradition endast blommar på årstimmen av Jesus
@@ -1538,22 +1030,10 @@
         </glossdef>
     <page>159</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>enlevera</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>161</page></glossentry>
-    <glossentry>
         <glossterm>kvinnan i sagan</glossterm>
         <glossdef>
             <para>åsyftar en känd spökhistoria om slottsfrun Brita Bååt på Engsö slott som väckts i
                 förtid på julnatten och hamnade på de dödas julmässa </para>
-        </glossdef>
-    <page>162</page></glossentry>
-    <glossentry>
-        <glossterm baseform="mantilj"><firstterm>mantiljer</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>162</page></glossentry>
     <glossentry>
@@ -1567,7 +1047,7 @@
         <glossterm>två släta ringar</glossterm>
         <glossdef>
             <para>traditionellt har gifta kvinnor i Sverige burit två släta guldringar på
-                vänsterhand</para>
+                vänster hand</para>
         </glossdef>
     <page>162</page></glossentry>
     <glossentry>
@@ -1582,18 +1062,6 @@
             <para>tilldelat av försynen eller ödet</para>
         </glossdef>
     <page>162</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>högmodig</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>164</page></glossentry>
-    <glossentry>
-        <glossterm baseform="nådehjon"><firstterm>nådehjonen</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>164</page></glossentry>
     <glossentry>
         <glossterm><firstterm>skälmaktigt</firstterm></glossterm>
         <glossdef>
@@ -1658,8 +1126,8 @@
         <glossterm><firstterm>snar</firstterm></glossterm>
         <glossdef>
             <para>Tidig; i uppsatsen ”Min dröm” i <emphasis role="italic">Sjelfbiografiska
-                    anteckningar, bref och efterlemnade skrifter 2</emphasis> referedade Bremer till
-                att hon vid 45-års ålder i en dröm förebådats om att hon skulle dö vid 66-års ålder
+                    anteckningar, bref och efterlemnade skrifter 2</emphasis> refererade Bremer till
+                att hon vid 45-års ålder i en dröm förebådats om att hon skulle dö vid 66 års ålder
                 och att hon planerade sin verksamhet efter det.</para>
         </glossdef>
     <page>167</page></glossentry>
@@ -1710,15 +1178,9 @@
     <glossentry>
         <glossterm baseform="vidhänga"><firstterm>vidhängande</firstterm></glossterm>
         <glossdef>
-            <para>fasthängande ; kardborrar utvecklar taggar som fäster vid tyg</para>
+            <para>fasthängande; kardborrar utvecklar taggar som fäster vid tyg</para>
         </glossdef>
     <page>172</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>äreport</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>175</page></glossentry>
     <glossentry>
         <glossterm><firstterm>landlof</firstterm></glossterm>
         <glossdef>
@@ -1728,7 +1190,7 @@
     <glossentry>
         <glossterm baseform="fäladsmarker"><firstterm>fäladsmarkerna</firstterm></glossterm>
         <glossdef>
-            <para> se <glossterm>fälad</glossterm>; allmänning; allmänna betesmarker; gemensama
+            <para> se <glossterm>fälad</glossterm>; allmänning; allmänna betesmarker; gemensamma
                 betesmarker</para>
         </glossdef>
     <page>178</page></glossentry>
@@ -1747,27 +1209,9 @@
         </glossdef>
     <page>182</page></glossentry>
     <glossentry>
-        <glossterm baseform="lots"><firstterm>lotsen</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>187</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>besinna</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>189</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>tackling</firstterm></glossterm>
         <glossdef>
             <para>mastuppsättning</para>
-        </glossdef>
-    <page>189</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>taft</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>189</page></glossentry>
     <glossentry>
@@ -1784,12 +1228,6 @@
         </glossdef>
     <page>190</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>konsistorium</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>190</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>förbidan</firstterm></glossterm>
         <glossdef>
             <para>väntan</para>
@@ -1802,7 +1240,7 @@
                 härskaren i Spanien, förlorar sin makt och tvingas lämna sitt palats Alhambra; i
                 dikten blir Bobadils förlust en parallell till den förlorade diktarförmågan </para>
         </glossdef>
-    <page>197</page></glossentry>
+    </glossentry>
     <glossentry>
         <glossterm><firstterm>Snoilsky</firstterm></glossterm>
         <glossdef>
@@ -1817,44 +1255,12 @@
         </glossdef>
     <page>197</page></glossentry>
     <glossentry>
-        <glossterm baseform="tornväktare"><firstterm>tornväktaren</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>197</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>alnsbred</firstterm></glossterm>
         <glossdef>
             <para>längdmått som ungefärligen motsvarar armslängden från armbågen till
                 långfingret</para>
         </glossdef>
     <page>198</page></glossentry>
-    <glossentry>
-        <glossterm baseform="boské">boskeer</glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>198</page></glossentry>
-    <glossentry>
-        <glossterm baseform="gesäll"><firstterm>gesällen</firstterm></glossterm>
-        <glossdef>
-            <para />
-            <glossseealso otherterm="guldsmedsgesäll">guldsmedsgesäll</glossseealso>
-        </glossdef>
-    <page>198</page></glossentry>
-    <glossentry>
-        <glossterm baseform="mästare"><firstterm>Mästarens</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>198</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>risade</firstterm></glossterm>
-        
-        <glossdef>
-            <para />
-        </glossdef>
-    </glossentry>
     <glossentry>
         <glossterm baseform="kväda"><firstterm>kväden</firstterm></glossterm>
         <glossdef>
@@ -1906,12 +1312,6 @@
         </glossdef>
     <page>203</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>ge sig till pris</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>204</page></glossentry>
-    <glossentry>
         <glossterm baseform="schaggmöbel"><firstterm>schaggmöbler</firstterm></glossterm>
         <glossdef>
             <para>stoppade möbler av enklare slag klädda med ylletyg; schagg</para>
@@ -1931,18 +1331,6 @@
         </glossdef>
     <page>205</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>pöbel</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>206</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>estrad</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>206</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>Stridsropet</firstterm></glossterm>
         <glossdef>
             <para>Frälsningsarméns tidning</para>
@@ -1952,12 +1340,6 @@
         <glossterm><firstterm>bådo</firstterm></glossterm>
         <glossdef>
             <para>bad; äldre pluralböjning av preteritum</para>
-        </glossdef>
-    <page>207</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>parterr</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>207</page></glossentry>
     <glossentry>
@@ -2016,12 +1398,6 @@
         </glossdef>
     <page>211</page></glossentry>
     <glossentry>
-        <glossterm baseform="äska"><firstterm>äskade</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>212</page></glossentry>
-    <glossentry>
         <glossterm baseform="goodtemplartåg"><firstterm>goodtemplartåget</firstterm></glossterm>
         <glossdef>
             <para>skara av godtemplare, d.v.s. medlemmar i Godtemplarordern, en internationell
@@ -2032,12 +1408,6 @@
         <glossterm baseform="efterbliven"><firstterm>efterblifna</firstterm></glossterm>
         <glossdef>
             <para>som kommit efter</para>
-        </glossdef>
-    <page>213</page></glossentry>
-    <glossentry>
-        <glossterm baseform="tornister"><firstterm>tornistrar</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>213</page></glossentry>
     <glossentry>
@@ -2073,12 +1443,6 @@
         <glossterm><firstterm>Juda</firstterm></glossterm>
         <glossdef>
             <para>Israel</para>
-        </glossdef>
-    <page>217</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>klut</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>217</page></glossentry>
     <glossentry id="kval">
@@ -2153,15 +1517,9 @@
         </glossdef>
     <page>220</page></glossentry>
     <glossentry>
-        <glossterm baseform="kostlig"><firstterm>kostligaste</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>224</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>transponera noter</firstterm></glossterm>
         <glossdef>
-            <para>skriva om ett musikstycket i en annan tonart</para>
+            <para>skriva om ett musikstycke i en annan tonart</para>
         </glossdef>
     <page>227</page></glossentry>
     <glossentry>
@@ -2171,15 +1529,9 @@
         </glossdef>
     <page>227</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>karriol</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>227</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>rödmåladt matsäcksskrin</firstterm></glossterm>
         <glossdef>
-            <para>färgglada och vackert dekorerade trälådor att förvara matsäck var en
+            <para>färgglada och vackert dekorerade trälådor att förvara matsäcken i var en
                 statussymbol</para>
         </glossdef>
     <page>227</page></glossentry>
@@ -2195,13 +1547,6 @@
             <para>vart år som gick; ålderdomlig presensparticipform av gå</para>
         </glossdef>
     <page>227</page></glossentry>
-    <glossentry id="toddy">
-        <glossterm><firstterm>toddy</firstterm></glossterm>
-        <glossdef>
-            <para />
-            <glossseealso otherterm="midnattstoddy">midnattstoddy</glossseealso>
-        </glossdef>
-    <page>228</page></glossentry>
     <glossentry>
         <glossterm><firstterm>törstickor</firstterm></glossterm>
         <glossdef>
@@ -2243,7 +1588,7 @@
     <glossentry>
         <glossterm baseform="tänka"><firstterm>tänkten</firstterm></glossterm>
         <glossdef>
-            <para>tänkte; ålderdomligt pronomen och pluralböjning av preteritum</para>
+            <para>tänkte; ålderdomligt pronomen I och pluralböjning av preteritum</para>
         </glossdef>
     <page>232</page><page>232</page></glossentry>
     <glossentry>
@@ -2257,11 +1602,11 @@
         <glossdef>
             <para>ålderdomlig slang för munter och oansvarig man</para>
         </glossdef>
-    <page>232</page></glossentry>
+    <page>232</page><page>241</page></glossentry>
     <glossentry>
         <glossterm><firstterm>ej håller stämning</firstterm></glossterm>
         <glossdef>
-            <para>stämmer ur sig och ger falska toner</para>
+            <para>blir ostämd och ger falska toner</para>
         </glossdef>
     <page>234</page></glossentry>
     <glossentry>
@@ -2273,7 +1618,8 @@
     <glossentry id="skärseld">
         <glossterm><firstterm>skärseld</firstterm></glossterm>
         <glossdef>
-            <para />
+            <para>reningseld eller reningsstadium för själar efter döden enligt
+			den romersk-katolska läran</para>
         </glossdef>
     <page>236</page></glossentry>
     <glossentry>
@@ -2291,7 +1637,7 @@
     <glossentry>
         <glossterm>fyr</glossterm>
         <glosssee>fyren</glosssee>
-    <page>241</page></glossentry>
+    <page>232</page><page>241</page></glossentry>
     <glossentry>
         <glossterm><firstterm>styng</firstterm></glossterm>
         <glossdef>
@@ -2299,29 +1645,11 @@
         </glossdef>
     <page>27</page><page>243</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>möda</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>243</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>omak</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>243</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>runstycke</firstterm></glossterm>
         <glossdef>
             <para>se <glossterm>rundstycke</glossterm></para>
         </glossdef>
     <page>244</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>stenbalustrad</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>247</page></glossentry>
     <glossentry>
         <glossterm><firstterm>Grane</firstterm></glossterm>
         <glossdef>
@@ -2336,12 +1664,6 @@
         </glossdef>
     <page>247</page></glossentry>
     <glossentry>
-        <glossterm baseform="anlopp"><firstterm>anloppet</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>247</page></glossentry>
-    <glossentry>
         <glossterm>Sankt Görans strid med draken</glossterm>
         <glossdef>
             <para>Sankt Göran var en kristen martyr och helgon inom katolska kyrkan; han dog omkring
@@ -2350,12 +1672,6 @@
                 träskulptur från 1400-taet i Storkyrkan i Stockholm. </para>
         </glossdef>
     <page>247</page></glossentry>
-    <glossentry>
-        <glossterm baseform="hädisk"><firstterm>hädiskt</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>248</page></glossentry>
     <glossentry>
         <glossterm baseform="nihilist"><firstterm>nihilister</firstterm></glossterm>
         <glossdef>
@@ -2371,7 +1687,7 @@
     <glossentry>
         <glossterm baseform="brokar"><firstterm>brokaren</firstterm></glossterm>
         <glossdef>
-            <para>brokista</para>
+            <para>brokista; stenfylld timrad kista som utgör underlag till en bro</para>
         </glossdef>
     <page>250</page></glossentry>
     <glossentry>
@@ -2389,37 +1705,19 @@
     <glossentry>
         <glossterm><firstterm>kung Karls porträtt</firstterm></glossterm>
         <glossdef>
-            <para>åsyftar Karl XII (16821718)</para>
+            <para>åsyftar Karl XII (1682–1718)</para>
         </glossdef>
     <page>251</page></glossentry>
     <glossentry>
         <glossterm><firstterm>ett mod</firstterm></glossterm>
         <glossdef>
-            <para>en nyck; en trend</para>
-        </glossdef>
-    <page>251</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>begabbare</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>251</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>sockel</firstterm></glossterm>
-        <glossdef>
-            <para />
+            <para>en nyck; en trend, ett mode</para>
         </glossdef>
     <page>251</page></glossentry>
     <glossentry>
         <glossterm><firstterm>storm</firstterm></glossterm>
         <glossdef>
             <para>cylinderformad tygklädd herrhatt</para>
-        </glossdef>
-    <page>255</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>spännhalsduk</firstterm></glossterm>
-        <glossdef>
-            <para />
         </glossdef>
     <page>255</page></glossentry>
     <glossentry>
@@ -2452,13 +1750,7 @@
     <glossentry>
         <glossterm baseform="gesäll">gesäller</glossterm>
         <glosssee>gesällen</glosssee>
-    <page>256</page></glossentry>
-    <glossentry>
-        <glossterm baseform="lärling"><firstterm>lärlingar</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>256</page></glossentry>
+    <page>198</page><page>256</page></glossentry>
     <glossentry>
         <glossterm><firstterm>nicka god mening</firstterm></glossterm>
         <glossdef>
@@ -2490,12 +1782,6 @@
         </glossdef>
     <page>259</page></glossentry>
     <glossentry>
-        <glossterm baseform="riksdal"><firstterm>riksdaler</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>260</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>bruk</firstterm></glossterm>
         <glossdef>
             <para>anläggning där råämnen förädlas; här åsyftas bergsbruk</para>
@@ -2514,17 +1800,11 @@
         </glossdef>
     <page>263</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>krås</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>263</page></glossentry>
-    <glossentry>
         <glossterm baseform="rista"><firstterm>rister</firstterm></glossterm>
         <glossdef>
-            <para>skakar rista</para>
+            <para>skakar</para>
         </glossdef>
-    <page>263</page></glossentry>
+    <page>142</page><page>263</page></glossentry>
     <glossentry>
         <glossterm><firstterm>rotrista</firstterm></glossterm>
         <glossdef>
@@ -2548,7 +1828,7 @@
         <glossdef>
             <para>medeltida sägen om den vackra men fattiga flickan Sigrid som lagman Bengt
                 Magnusson gifte sig med mot sin brors, den mäktiga Birger Jarls vilja, och som
-                därefter vann Birger Jarls hjärta och lyckades medla mellan bröderna tack vara sin
+                därefter vann Birger Jarls hjärta och lyckades medla mellan bröderna tack vare sin
                 skönhet och vishet </para>
         </glossdef>
     <page>267</page></glossentry>
@@ -2570,16 +1850,17 @@
     <glossentry>
         <glossterm>detta, att Bengt Lagman lät sy pärlor öfver vadmalsvåden</glossterm>
         <glossdef>
-            <para>Bengt Lagman uppvaktade den fattiga Sigrid, klädd i enkelt vadmalstyg, med dyrbara
-                pärlor</para>
+            <para>Enligt Anders Fryxells <emphasis role="italic">Berättelser ur svenska historien</emphasis>
+			var Sigrid visserligen adlig,
+			men varken av rik eller förnäm släkt, och Bengt Lagman gifte sig med henne utan att
+			fråga släkten till råds. När hans bror Birger Jarl fick höra talas om äktenskapet lät
+			han sy en kappa som till hälften var gjord av dyrbart tyg, till hälften av grov
+			vadmal, och skickade den till honom för att visa sitt missnöje. Då lät Bengt
+			Lagman brodera vadmalsdelen med pärlor och guldtråd så att den blev dyrbarare än
+			den andra delen, och skickade tillbaka kappan.
+</para>
         </glossdef>
     <page>268</page></glossentry>
-    <glossentry>
-        <glossterm><firstterm>manhaftig</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>270</page></glossentry>
     <glossentry>
         <glossterm><firstterm>mjölkkammare</firstterm></glossterm>
         <glossdef>
@@ -2607,7 +1888,7 @@
     <glossentry>
         <glossterm><firstterm>spann</firstterm></glossterm>
         <glossdef>
-            <para>egna hästar som komplement till draghästarna vid en transport; statussymbol</para>
+            <para>grupp om två eller fler hästar för att dra ett fordon</para>
         </glossdef>
     <page>280</page></glossentry>
     <glossentry>
@@ -2643,9 +1924,9 @@
     <glossentry>
         <glossterm><firstterm>svarta seglen</firstterm></glossterm>
         <glossdef>
-            <para>Teseus skepp hade svarta sorgesegel hissade och glömde vid hemkomsten från Kreta
-                att byta ut till vita segerskepp såsom han kommit överens om med sin far, om
-                befrielsen lyckats, varpå fadern, kung Egeus, kastade sig i havet i tron att Teseus
+            <para>Teseus skepp hade svarta sorgesegel hissade då han seglade ut. Han hade lovat sin
+				far att byta till vita segerskepp om befrielsen lyckades. Men när han seglade hem
+				glömde han löftet, och fadern, kung Egeus, kastade sig i havet i tron att Teseus
                 var död.</para>
             <glossseealso otherterm="Teseus">Teseus</glossseealso>
         </glossdef>
@@ -2683,7 +1964,7 @@
     <glossentry>
         <glossterm>bart ljus i krutkällaren</glossterm>
         <glossdef>
-            <para>ordspråk för att beskriva aningslös dumdristighet</para>
+            <para>talesätt för att beskriva aningslös dumdristighet</para>
         </glossdef>
     <page>287</page></glossentry>
     <glossentry>

@@ -1,5 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
 <glossary>
-    <glossaryinfo>
+    <!--lb99907003.xml GBOrdSakForstaDel.xml, 2014-06-09 19:06:43.398000 --><glossaryinfo>
         <editor>
             <firstname>Jenny</firstname>
             <surname>Bergenmar</surname>
@@ -410,7 +411,7 @@
     <glossentry>
         <glossterm baseform="blid"><firstterm>den blide</firstterm></glossterm>
         <glossdef>
-            <para>jfr milde, snälle, gode (adjektivattribut böjt i maskulinum)</para>
+            <para>milde, snälle, gode (adjektivattribut böjt i maskulinum)</para>
         </glossdef>
     <page>41</page></glossentry>
     <glossentry>
@@ -432,18 +433,6 @@
         </glossdef>
     <page>54</page></glossentry>
     <glossentry>
-        <glossterm baseform="yvas"><firstterm>yfves</firstterm></glossterm>
-        <glossdef>
-            <para>yvas</para>
-        </glossdef>
-    <page>55</page></glossentry>
-    <glossentry>
-        <glossterm baseform="bäva"><firstterm>bäfva</firstterm></glossterm>
-        <glossdef>
-            <para>bäva</para>
-        </glossdef>
-    <page>57</page></glossentry>
-    <glossentry>
         <glossterm baseform="bärgning"><firstterm>bergning</firstterm></glossterm>
         <glossdef>
             <para>försörjning</para>
@@ -452,7 +441,7 @@
     <glossentry>
         <glossterm>Må du förnekas som jag förnekas</glossterm>
         <glossdef>
-            <para>åsyftar att majorskan förnekas såsom hon själv förnekat sin mor, jfr s. 26;
+            <para>åsyftar att majorskan förnekas såsom hon själv förnekat sin mor, jfr kapitlet ”Tiggaren”;
                 uttrycket kan anspela på aposteln Paulus uppmaningen i 2 Tim. 2:12 att den som
                 förnekar Jesus Kristus också skall förnekas</para>
         </glossdef>
@@ -590,12 +579,6 @@
         </glossdef>
     <page>90</page></glossentry>
     <glossentry>
-        <glossterm baseform="golftilja"><firstterm>golftiljor</firstterm></glossterm>
-        <glossdef>
-            <para>tilja</para>
-        </glossdef>
-    <page>87</page></glossentry>
-    <glossentry>
         <glossterm baseform="morisk arkad"><firstterm>moriska arkader</firstterm></glossterm>
         <glossdef>
             <para>se <glossterm>mor</glossterm> och <glossterm>arkad</glossterm> Betydande delar av
@@ -709,18 +692,6 @@
         </glossdef>
     <page>102</page></glossentry>
     <glossentry>
-        <glossterm baseform="sexstyver"><firstterm>sexstyfrar</firstterm></glossterm>
-        <glossdef>
-            <para>styfver</para>
-        </glossdef>
-    <page>102</page></glossentry>
-    <glossentry>
-        <glossterm baseform="tolvskilling"><firstterm>tolfskillingar</firstterm></glossterm>
-        <glossdef>
-            <para>tolvskilling</para>
-        </glossdef>
-    <page>102</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>gröna banksedlarne</firstterm></glossterm>
         <glossdef>
             <para>under 1800-talet blev grön färg vanlig i sedeltryck</para>
@@ -776,12 +747,6 @@
             <para>den första kyssen</para>
         </glossdef>
     <page>115</page></glossentry>
-    <glossentry>
-        <glossterm baseform="oavlåtlig"><firstterm>oaflåtligt</firstterm></glossterm>
-        <glossdef>
-            <para>oavlåtlig</para>
-        </glossdef>
-    <page>121</page></glossentry>
     <glossentry>
         <glossterm baseform="dombjällra"><firstterm>dombjällror</firstterm></glossterm>
         <glossdef>
@@ -885,12 +850,6 @@
         <glosssee otherterm="kolryssar">kolryssar</glosssee>
     <page>16</page><page>131</page></glossentry>
     <glossentry>
-        <glossterm baseform="uv"><firstterm>ufvarne</firstterm></glossterm>
-        <glossdef>
-            <para>uvarna</para>
-        </glossdef>
-    <page>137</page></glossentry>
-    <glossentry>
         <glossterm>blott kan fällas med silfverkula</glossterm>
         <glossdef>
             <para>i folktron kunde endast en silverkula döda en varulv</para>
@@ -939,18 +898,6 @@
         </glossdef>
     <page>149</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>måst åstad</firstterm></glossterm>
-        <glossdef>
-            <para>åstad</para>
-        </glossdef>
-    <page>149</page></glossentry>
-    <glossentry>
-        <glossterm baseform="slaga"><firstterm>slagors</firstterm></glossterm>
-        <glossdef>
-            <para>slaga</para>
-        </glossdef>
-    <page>158</page></glossentry>
-    <glossentry>
         <glossterm>de åttafotade hästarnas hofvar</glossterm>
         <glossdef>
             <para>Åttafotade hästar åsyftar att hästarna var magiska och ovanligt snabba likt Odens
@@ -971,13 +918,6 @@
             <para>vad är det med honom</para>
         </glossdef>
     <page>169</page></glossentry>
-    <glossentry>
-        <glossterm baseform="huvudgärd"><firstterm>hufvudgärd</firstterm></glossterm>
-        
-        <glossdef>
-            <para>huvudgärd</para>
-        </glossdef>
-    <page>175</page></glossentry>
     <glossentry>
         <glossterm baseform="skaffare"><firstterm>skaffarna</firstterm></glossterm>
         <glossdef>
@@ -1165,12 +1105,6 @@
         <glossterm><firstterm>roskvarter</firstterm></glossterm>
         <glossdef>
             <para>rosenträdgård</para>
-        </glossdef>
-    <page>273</page></glossentry>
-    <glossentry>
-        <glossterm baseform="varv"><firstterm>hvarf</firstterm></glossterm>
-        <glossdef>
-            <para>varv</para>
         </glossdef>
     <page>273</page></glossentry>
     <glossentry>
