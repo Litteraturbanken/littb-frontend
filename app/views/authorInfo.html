@@ -57,7 +57,7 @@
 <div toolkit>
     <hr>
     <div class="author">
-        {{authorInfo.fullName}}
+        <a href="/#!/forfattare/{{author}}">{{authorInfo.fullName}}</a>
         <div>{{authorInfo | authorYear}}</div>
     </div>
     
@@ -73,7 +73,7 @@
         </li>
     </ul>
     <ul class="subnav" role="navigation" ng-show="authorInfo">
-        <li><a ng-href="/#!/forfattare/{{author}}" ng-if="authorInfo.intro">Introduktion</a></li>
+        <li ng-if="authorInfo.intro"><a ng-href="/#!/forfattare/{{author}}" >Introduktion</a></li>
         <li ng-if="authorInfo.presentation"><a ng-href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
         <li ng-if="authorInfo.bibliografi"><a ng-href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
         <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">Se mer</a></li>

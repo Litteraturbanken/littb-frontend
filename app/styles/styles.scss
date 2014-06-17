@@ -14,11 +14,7 @@ $main-menu-width : 120px;
 $gutter-width : 40px;
 $page-width : 712px;
 $mainview-width : $page-width - $main-menu-width - ($gutter-width * 2);
-<<<<<<< HEAD
 $right-corridor-width : 200px;
-=======
-$right-corridor-width : 160px;
->>>>>>> remotes/sammanslagning-20140428
 
 $primarycolor : #990000;
 $dotted : thin dotted #990000;
@@ -99,11 +95,7 @@ h1,h2,h3,h4,h5,h6 {
 
 #rightCorridor{
     @include inline-block;
-<<<<<<< HEAD
-    margin-left: 2em;
-=======
     margin-left: 5px;
->>>>>>> remotes/sammanslagning-20140428
     width : $right-corridor-width;
     #toolkit-right {
         margin-top: 2em;
@@ -391,7 +383,7 @@ body > .header {
         @include inline-block(bottom);
         width : 28%;
     }
-    
+
     .breadcrumb {
         @include inline-block(bottom);
         > li {
@@ -1924,6 +1916,16 @@ grundform-clean {
         margin-left : 8px;
     }
     
+    .logo_link_monogram {
+        background: url("../img/lb_monogram.svg") no-repeat;
+        background-size: contain;
+        height : 60px;
+        width : 100px;
+        // left: -10px;
+        margin-bottom: -5px;
+        position : relative;
+        
+    }
 
     .toc {
         display : none;

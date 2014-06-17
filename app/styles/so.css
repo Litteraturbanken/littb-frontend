@@ -1,11 +1,6 @@
 @charset "UTF-8";
 
 
-<<<<<<< HEAD
-=======
-/* line 4, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article body,
 ._so_article kapitel,
 ._so_article so {
@@ -13,11 +8,6 @@
   line-height: 16px;
 }
 
-<<<<<<< HEAD
-=======
-/* line 6, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article lemma {
   display: block;
   font-size: medium;
@@ -29,33 +19,18 @@
   padding-left: 0.7cm;
 }
 
-<<<<<<< HEAD
-=======
-/* line 7, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article f {
   font-size: medium;
   font-style: normal;
   font-weight: bold;
 }
 
-<<<<<<< HEAD
-=======
-/* line 8, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article venster {
   display: inline;
   position: relative;
   left: -0.6cm;
 }
 
-<<<<<<< HEAD
-=======
-/* line 9, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article homonr {
   display: inline;
   font-size: x-small;
@@ -67,11 +42,6 @@
   left: -0.4cm;
 }
 
-<<<<<<< HEAD
-=======
-/* line 10, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hvhomo {
   display: inline;
   font-size: xx-small;
@@ -79,11 +49,6 @@
   vertical-align: super;
 }
 
-<<<<<<< HEAD
-=======
-/* line 11, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article grundform {
   display: inline;
   font-size: medium;
@@ -94,11 +59,6 @@
   left: -0.4cm;
 }
 
-<<<<<<< HEAD
-=======
-/* line 12, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article uttal {
   display: inline;
   font-size: small;
@@ -106,11 +66,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 13, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article uttalstext {
   display: inline;
   font-size: small;
@@ -118,11 +73,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 14, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article alt_uttal {
   display: inline;
   font-size: small;
@@ -130,11 +80,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 15, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article boj_uttal {
   display: inline;
   font-size: small;
@@ -142,11 +87,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 16, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article avstav {
   display: block;
   font-size: small;
@@ -156,11 +96,6 @@
   left: -0.4cm;
 }
 
-<<<<<<< HEAD
-=======
-/* line 17, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article avstav:before {
   padding-top: 1px;
   font-size: x-small;
@@ -170,42 +105,22 @@
   content: "Ordled: ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 18, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ordbildn {
   display: inline;
   font-size: small;
   font-weight: bold;
 }
 
-<<<<<<< HEAD
-=======
-/* line 19, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ordbprep {
   display: inline;
   font-size: small;
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 20, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ordbildn:first-child {
   padding-left: 5.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 21, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ordbildnx {
   font-size: small;
   font-weight: normal;
@@ -215,11 +130,6 @@
   padding-top: 0.2em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 22, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ordbildnx:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -230,11 +140,6 @@
   float: left;
 }
 
-<<<<<<< HEAD
-=======
-/* line 23, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ordbtxt {
   display: none;
   font-size: x-small;
@@ -247,11 +152,6 @@
   left: -1em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 24, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article bt {
   display: inline;
   font-size: medium;
@@ -259,11 +159,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 25, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article def {
   display: inline;
   font-size: small;
@@ -271,11 +166,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 26, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomdef {
   display: inline;
   font-size: small;
@@ -283,11 +173,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 27, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article deft {
   display: inline;
   font-size: x-small;
@@ -296,11 +181,6 @@
   padding-left: 0.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 28, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article utv {
   display: inline;
   font-size: x-small;
@@ -308,11 +188,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 29, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomdeft {
   display: inline;
   font-size: x-small;
@@ -321,22 +196,12 @@
   padding-left: 0.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 30, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article sxblocklx {
   display: block;
   font-weight: normal;
   font-size: x-small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 31, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article sxblocklx:before {
   padding-top: 1px;
   font-size: x-small;
@@ -347,22 +212,12 @@
   float: left;
 }
 
-<<<<<<< HEAD
-=======
-/* line 32, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article sxblock {
   display: block;
   font-weight: normal;
   padding-bottom: 0.3em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 33, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article sxblock:before {
   padding-top: 1px;
   font-size: x-small;
@@ -373,11 +228,6 @@
   float: left;
 }
 
-<<<<<<< HEAD
-=======
-/* line 34, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article syntex {
   display: inline;
   font-style: italic;
@@ -386,22 +236,12 @@
   padding-right: 0.2em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 35, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article aveneller {
   font-style: normal;
   font-size: x-small;
   padding-left: 0.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 36, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article altkom {
   font-style: normal;
   font-size: x-small;
@@ -409,11 +249,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 37, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hkom {
   display: inline;
   font-style: normal;
@@ -421,11 +256,6 @@
   font-size: x-small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 38, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ikom {
   display: inline;
   font-style: normal;
@@ -433,11 +263,6 @@
   font-size: x-small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 39, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomcyk {
   display: inline;
   font-style: normal;
@@ -445,11 +270,6 @@
   font-size: x-small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 40, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ukom {
   display: inline;
   font-style: normal;
@@ -459,11 +279,6 @@
   padding-right: 0.2em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 41, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fkom {
   display: inline;
   font-size: x-small;
@@ -471,11 +286,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 42, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fkomblock {
   display: inline;
   font-size: x-small;
@@ -484,29 +294,14 @@
   padding-right: 0.4em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 43, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article komxx:before {
   content: "(";
 }
 
-<<<<<<< HEAD
-=======
-/* line 44, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fkomxx:after {
   content: ")";
 }
 
-<<<<<<< HEAD
-=======
-/* line 45, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fkom2 {
   display: inline;
   font-size: x-small;
@@ -515,11 +310,6 @@
   padding-left: 0.3em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 46, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fkom3 {
   display: inline;
   font-size: x-small;
@@ -527,20 +317,10 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 47, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article k {
   font-style: italic;
 }
 
-<<<<<<< HEAD
-=======
-/* line 48, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article anm {
   display: inline;
   font-size: small;
@@ -549,11 +329,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 49, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article bojning {
   display: inline;
   font-size: small;
@@ -562,22 +337,12 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 50, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article tempus,
 ._so_article tempmm {
   font-style: normal;
   font-size: x-small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 51, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article pt {
   display: inline;
   font-size: small;
@@ -585,11 +350,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 52, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ordklass {
   display: inline;
   font-size: x-small;
@@ -597,11 +357,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 53, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article punkt {
   display: inline;
   font-weight: bold;
@@ -610,31 +365,16 @@
   left: -1em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 54, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article defxx:before {
   content: "•";
 }
 
-<<<<<<< HEAD
-=======
-/* line 55, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fm {
   display: inline;
   font-weight: bold;
   font-size: small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 56, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article alt {
   display: inline;
   font-weight: bold;
@@ -642,53 +382,28 @@
   padding-right: 0.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 57, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article pm {
   display: inline;
   font-weight: bold;
   font-size: small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 58, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fk {
   display: inline;
   font-weight: normal;
   font-size: small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 59, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fb {
   display: inline;
   font-weight: normal;
   font-size: small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 60, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fb:not(:last-child):after {
   content: "; ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 61, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article et {
   display: inline;
   font-weight: normal;
@@ -696,63 +411,33 @@
   padding-left: 0.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 62, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article vinkel {
   font-size: small;
   font-style: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 63, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article bruk {
   font-size: small;
   font-style: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 64, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fack {
   display: none;
   font-size: small;
   font-style: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 65, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article tanke {
   font-size: small;
   font-style: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 66, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article lexem {
   display: block;
   font-size: medium;
   padding-top: 0.3em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 67, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article cykel {
   display: block;
   font-size: medium;
@@ -760,11 +445,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 68, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiom {
   display: block;
   font-size: small;
@@ -772,21 +452,11 @@
   padding-bottom: 0.3em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 69, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomexblock {
   display: block;
   padding-top: 0.2em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 70, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomexblock:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -798,11 +468,6 @@
   float: left;
 }
 
-<<<<<<< HEAD
-=======
-/* line 71, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomex {
   display: block;
   font-weight: normal;
@@ -811,20 +476,10 @@
   padding-left: 5.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 72, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article etymologiblock {
   display: block;
 }
 
-<<<<<<< HEAD
-=======
-/* line 73, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article etymologiblock:before {
   padding-top: 1px;
   font-size: x-small;
@@ -836,11 +491,6 @@
   float: left;
 }
 
-<<<<<<< HEAD
-=======
-/* line 74, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article etymologi {
   display: block;
   color: black;
@@ -851,31 +501,16 @@
   padding-left: 5.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 75, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article besl {
   font-style: italic;
 }
 
-<<<<<<< HEAD
-=======
-/* line 76, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article valens {
   display: block;
   font-size: x-small;
   font-style: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 77, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article valens:before {
   padding-top: 1px;
   font-size: x-small;
@@ -886,11 +521,6 @@
   float: left;
 }
 
-<<<<<<< HEAD
-=======
-/* line 78, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article vt {
   display: block;
   padding-left: 5.5em;
@@ -903,69 +533,34 @@
   padding-bottom: 0.3em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 79, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fras {
   font-size: small;
   color: navy;
 }
 
-<<<<<<< HEAD
-=======
-/* line 80, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fras:after {
   content: " ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 81, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article kastas {
   display: none;
 }
 
-<<<<<<< HEAD
-=======
-/* line 82, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fon {
   font-style: italic;
   font-weight: bold;
 }
 
-<<<<<<< HEAD
-=======
-/* line 83, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ls {
   font-style: italic;
   font-weight: bold;
 }
 
-<<<<<<< HEAD
-=======
-/* line 84, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ms {
   font-size: small;
   font-style: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 85, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv {
   display: inline;
   padding-left: 0.5em;
@@ -975,11 +570,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 86, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hvtyp {
   font-size: x-small;
   font-variant: small-caps;
@@ -989,22 +579,12 @@
   left: -0.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 87, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hvtyp2 {
   display: none;
   font-style: italic;
   padding-left: 0.4em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 88, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv1 {
   display: block;
   font-size: small;
@@ -1015,11 +595,6 @@
   padding-top: 0.2em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 89, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv1:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -1029,11 +604,6 @@
   content: "Synonym:";
 }
 
-<<<<<<< HEAD
-=======
-/* line 90, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv2 {
   display: block;
   font-size: x-small;
@@ -1044,11 +614,6 @@
   padding-top: 0.2em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 91, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv2:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -1058,11 +623,6 @@
   content: "Motsats:";
 }
 
-<<<<<<< HEAD
-=======
-/* line 92, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv3 {
   display: block;
   font-size: x-small;
@@ -1073,11 +633,6 @@
   padding-top: 0.2em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 93, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv3:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -1087,11 +642,6 @@
   content: "Se";
 }
 
-<<<<<<< HEAD
-=======
-/* line 94, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv4 {
   display: block;
   font-size: x-small;
@@ -1102,11 +652,6 @@
   padding-top: 0.2em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 95, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hv4:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -1116,33 +661,18 @@
   content: "Jämför:";
 }
 
-<<<<<<< HEAD
-=======
-/* line 96, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article mx {
   display: inline;
   font-size: small;
   font-style: italic;
 }
 
-<<<<<<< HEAD
-=======
-/* line 97, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article mxblock {
   display: block;
   font-weight: normal;
   padding-bottom: 0.3em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 98, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article mxblock:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -1152,11 +682,6 @@
   content: "Sammansättn.: ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 99, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article mxblocklx {
   display: block;
   padding-bottom: 0.3em;
@@ -1164,11 +689,6 @@
   font-weight: normal;
 }
 
-<<<<<<< HEAD
-=======
-/* line 100, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article mxblocklx:before {
   padding-top: 0.2em;
   font-size: x-small;
@@ -1178,39 +698,19 @@
   content: "Sammansättn.: ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 101, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article b {
   font-weight: bold;
 }
 
-<<<<<<< HEAD
-=======
-/* line 102, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ur {
   display: inline;
   font-size: x-small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 103, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article detaljer {
   display: block;
 }
 
-<<<<<<< HEAD
-=======
-/* line 104, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article scriptonly {
   display: block;
   max-width: 12cm;
@@ -1219,104 +719,53 @@
   text-align: right;
 }
 
-<<<<<<< HEAD
-=======
-/* line 105, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article h4 {
   margin-bottom: 0em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 106, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hvlnk:link {
   text-decoration: underline;
   color: #BD362F;
 }
 
-<<<<<<< HEAD
-=======
-/* line 107, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article a {
   font-variant: normal;
   text-decoration: none;
   color: black;
 }
 
-<<<<<<< HEAD
-=======
-/* line 108, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article a {
   font-variant: normal;
   padding-left: 0.5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 109, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article a.mer:link {
   text-decoration: none;
   color: blue;
   font-size: x-small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 110, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ljudblock {
   display: none;
 }
 
-<<<<<<< HEAD
-=======
-/* line 111, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article ljud {
   display: inline;
   font-size: small;
 }
 
-<<<<<<< HEAD
-=======
-/* line 112, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hvtag {
   display: none;
 }
 
-<<<<<<< HEAD
-=======
-/* line 113, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article mxref {
   display: inline;
 }
 
-<<<<<<< HEAD
-=======
-/* line 114, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article mxref:after {
   content: ">";
 }
 
-<<<<<<< HEAD
 ._so_article hv>hvord {
   font-weight: bold;
 }
@@ -1329,121 +778,48 @@
   content: ", ";
 }
 
-=======
-/* line 115, so.scss */
-
-._so_article hv > hvord {
-  font-weight: bold;
-}
-
-/* line 116, so.scss */
-
-._so_article et > hvord {
-  font-weight: bold;
-}
-
-/* line 117, so.scss */
-
-._so_article hvgrupp > hvord:not(:last-child):after {
-  content: ", ";
-}
-
-/* line 118, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article mx:not(:last-child):after {
   content: "; ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 119, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article syntex:not(:last-child):after {
   content: "; ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 120, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article syntex:first-child {
   padding-left: 2.3em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 121, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hvgrupp {
   padding-right: 1em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 122, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article hvid {
   display: none;
 }
 
-<<<<<<< HEAD
-=======
-/* line 123, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article utv:not(:last-child):after {
   content: " ";
 }
 
-<<<<<<< HEAD
 ._so_article cykel>def:not(:last-child):after {
   content: ": ";
 }
 
-=======
-/* line 124, so.scss */
-
-._so_article cykel > def:not(:last-child):after {
-  content: ": ";
-}
-
-/* line 125, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomdef:not(:last-child):after {
   content: ": ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 126, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article fras:not(:last-child):after {
   content: " ";
 }
 
-<<<<<<< HEAD
-=======
-/* line 127, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomlexblock {
   display: block;
   padding-top: 0.3em;
   padding-left: 5em;
 }
 
-<<<<<<< HEAD
-=======
-/* line 128, so.scss */
-
->>>>>>> remotes/sammanslagning-20140428
 ._so_article idiomxnr {
   font-weight: normal;
   font-size: normal;

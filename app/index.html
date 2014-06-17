@@ -24,12 +24,11 @@
         <!-- <link rel="stylesheet" href="components/nprogress/nprogress.js" /> -->
 
     </head>
-    <body id="ng-app" class="ng-app: littbApp;" ng-cloak>
+    <body id="ng-app" class="ng-app: littbApp;" ng-cloak ng-class="{focus : _focus_mode, night : _night_mode}">
 
         <div class="header">
-            <i ng-click="_showmenu_mobile = !_showmenu_mobile;" class="fa fa-list fa fa-2x" style="display : none;"></i>
-            <a class="logo_link" ng-href="#!{{getLogoUrl()}}">
-            </a>
+            <a ng-if="isSla" class="logo_link_monogram" ng-href="/#!/start"></a>
+            <a class="logo_link" ng-href="#!{{getLogoUrl()}}"></a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li>
                     <a ng-if="!isSchool" href="#!/start">Hem</a> 
@@ -49,49 +48,49 @@
             
             <div class="clearfix"></div>
         </div>
-        <div id="leftCorridor" ng-class="{show : _showmenu_mobile}">
+        <div id="leftCorridor">
             <ul role="navigation" class="mainnav">
                 <li>
-                    <a href="/#!/forfattare">Författare</a>
+                    <a href="#!/forfattare">Författare</a>
                 </li>
                 <li>
-                    <a href="/#!/titlar">Titlar</a>
+                    <a href="#!/titlar">Titlar</a>
                 </li>
                 <li>
-                    <a href="/#!/epub">Epub-filer</a>
+                    <a href="#!/epub">Epub-filer</a>
                 </li>
                 <li>
-                    <a href="/#!/presentationer">Presentationer</a>
+                    <a ng-href="#!/presentationer">Presentationer</a>
                 </li>
                 <li>
-                    <a href="/#!/om/aktuellt">Aktuellt</a>
+                    <a href="#!/om/aktuellt">Aktuellt</a>
                 </li>
                 <li>
-                    <a href="/#!/om/rattigheter">Rättigheter</a>
+                    <a href="#!/om/rattigheter">Rättigheter</a>
                 </li>
                 <li>
-                    <a href="/#!/om/ide">Om LB</a>
+                    <a href="#!/om/ide">Om LB</a>
                 </li>
                 <li>
-                    <a href="/#!/om/inenglish">In English</a>
+                    <a href="#!/om/inenglish">In English</a>
                 </li>
                 <li>
-                    <a href="/#!/kontakt">Kontakt</a>
+                    <a href="#!/kontakt">Kontakt</a>
                 </li>
                 <li>
-                    <a href="/#!/om/hjalp">Hjälp</a>
+                    <a href="#!/om/hjalp">Hjälp</a>
                 </li>
                 <li>
-                    <a href="/#!/statistik">Statistik</a>
+                    <a href="#!/statistik">Statistik</a>
                 </li>
                 <li>
                     <a href="/#!/forfattare/LagerlofS">Lagerlöfarkivet</a>
                 </li>
                 <li>
-                    <a href="/#!/skola">LB:s skola</a>
+                    <a href="#!/skola">LB:s skola</a>
                 </li>
                 <li>
-                    <a href="/#!/sok">Sök i verk</a>
+                    <a href="#!/sok">Sök i verk</a>
                 </li>
             </ul>
             
@@ -102,7 +101,8 @@
             <div class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
                 <!-- <label>Slå upp i Svensk ordbok</label> -->
                 <div class="input_container">
-                    <input  ng-model="lex_article"
+                    <input  type="text"
+                            ng-model="lex_article"
                             focusable
                             placeholder="Slå i Svensk ordbok"
                             typeahead-on-select="showModal(lex_article)"
@@ -120,11 +120,9 @@
         </div>
 
         <div id="mainview" ng-view role="main"></div>
-        
         <div id="rightCorridor">
             <div id="toolkit-right"></div>
         </div>
-
         <!-- <div class="nav_footer"></div> -->
         
         <script type="text/ng-template" id="so_modal_template.html">
@@ -148,6 +146,7 @@
         <script>
             if(decodeURIComponent(location.hash))
                 location.hash = decodeURIComponent(location.hash);
+            // TODO: # rewrite to #!
         </script>        
 
         <!-- build:js scripts/libs.js -->
@@ -155,22 +154,23 @@
 
         <script src="components/lodash/dist/lodash.compat.js"></script>
         <script src="lib/jquery.ui.position.js"></script>
-        <script src="lib/FileSaver.js"></script>
         <script src="components/underscore.string/lib/underscore.string.js"></script>
         <script src="components/angular/angular.js"></script>
+        <script src="lib/angular-locale_sv-se.js"></script>
         <script src="components/angular-animate/angular-animate.js"></script>
         <script src="components/angular-route/angular-route.js"></script>
         <script src="components/angular-bindonce/bindonce.js"></script>
         <script src="components/angular-cache/dist/angular-cache.js"></script>
 
 
-        <!-- // <script src="components/angular/angular-mobile.js"></script> -->
+        <script src="components/angular-touch/angular-touch.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap.js"></script>
         <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
         
         <script src="components/bootstrap/js/bootstrap-affix.js"></script>
         <script src="components/spin.js/dist/spin.js"></script>
         <script src="components/angular-spinner/angular-spinner.js"></script>
+        <script src="lib/FileSaver.js"></script>
         <!-- endbuild -->
 
 
