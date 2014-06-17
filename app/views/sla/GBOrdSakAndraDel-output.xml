@@ -1,5 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
 <glossary>
-    <glossaryinfo>
+    <!--lb99907004.xml GBOrdSakAndraDel.xml, 2014-06-09 19:06:43.670000 --><glossaryinfo>
         <editor>
             <firstname>Jenny</firstname>
             <surname>Bergenmar</surname>
@@ -27,12 +28,6 @@
                 armé, utsågs 1810 till svensk kronprins. </para>
         </glossdef>
     <page>1</page></glossentry>
-    <glossentry>
-        <glossterm baseform="lager"><firstterm>lagrar</firstterm></glossterm>
-        <glossdef>
-            <para>se <glossterm>lager</glossterm></para>
-        </glossdef>
-    <page>4</page></glossentry>
     <glossentry>
         <glossterm><firstterm>Svea rikes sigill</firstterm></glossterm>
         <glossdef>
@@ -147,12 +142,6 @@
         </glossdef>
     <page>28</page></glossentry>
     <glossentry>
-        <glossterm baseform="gissel"><firstterm>gisslet</firstterm></glossterm>
-        <glossdef>
-            <para>gissel</para>
-        </glossdef>
-    <page>28</page></glossentry>
-    <glossentry>
         <glossterm baseform="varda"><firstterm>vorden</firstterm></glossterm>
         <glossdef>
             <para>perfekt particip av varda i betydelsen vara, bli</para>
@@ -225,13 +214,13 @@
     <glossentry>
         <glossterm baseform="byggning"><firstterm>byggningen</firstterm></glossterm>
         <glossdef>
-            <para>se <glossterm>byggnaden</glossterm></para>
+            <para>byggnaden</para>
         </glossdef>
     <page>62</page><page>219</page><page>220</page></glossentry>
     <glossentry>
         <glossterm baseform="havrebrodden"><firstterm>hafrebrodden</firstterm></glossterm>
         <glossdef>
-            <para>se <glossterm>brodd</glossterm></para>
+            <para>havre som nyss kommit upp ur marken, jfr. grodd.</para>
         </glossdef>
     <page>63</page></glossentry>
     <glossentry>
@@ -258,7 +247,7 @@
     <glossentry>
         <glossterm baseform="kalvkätte"><firstterm>kalfkättar</firstterm></glossterm>
         <glossdef>
-            <para>se <glossterm>kätte</glossterm></para>
+            <para>avbalkning i ladugård, avsedd för kalvar</para>
         </glossdef>
     <page>66</page></glossentry>
     <glossentry>
@@ -310,7 +299,7 @@
     <glossentry>
         <glossterm><firstterm>sejd</firstterm></glossterm>
         <glossdef>
-            <para>trolldomsdryck innehållande onda krafter</para>
+            <para>här: trolldomsdryck innehållande onda krafter</para>
         </glossdef>
     <page>69</page></glossentry>
     <glossentry>
@@ -391,7 +380,7 @@
     <glossentry>
         <glossterm><firstterm>Engageanter</firstterm></glossterm>
         <glossdef>
-            <para>halvlänga spetsbeprydda skjort- och blusärmar vanliga under rokokon, kommer av
+            <para>halvlånga spetsbeprydda skjort- och blusärmar vanliga under rokokon, kommer av
                 franskans ’engageant’, intagande</para>
         </glossdef>
     <page>85</page></glossentry>
@@ -401,18 +390,6 @@
             <para>hårprydnad gjord av fjädrar</para>
         </glossdef>
     <page>85</page></glossentry>
-    <glossentry>
-        <glossterm baseform="andante"><firstterm>andanten</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>87</page></glossentry>
-    <glossentry>
-        <glossterm baseform="scherzo"><firstterm>scherzon</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>87</page></glossentry>
     <glossentry>
         <glossterm><firstterm>Bellmansmelodier</firstterm></glossterm>
         <glossdef>
@@ -444,7 +421,7 @@
     <glossentry>
         <glossterm><firstterm>kägelklot</firstterm></glossterm>
         <glossdef>
-            <para>klot som används i kägel, ett bowlingliknande spel</para>
+            <para>klot som används i kägelspel, ett bowlingliknande spel</para>
         </glossdef>
     <page>101</page></glossentry>
     <glossentry>
@@ -473,7 +450,7 @@
     <glossentry>
         <glossterm>svanen, som dör i sång</glossterm>
         <glossdef>
-            <para>enligt spridd folktro och ofta litterärt och konstnärligt återgive är knölsvanen
+            <para>enligt spridd folktro, ofta litterärt och konstnärligt återgiven, är knölsvanen
                 stum men brister ut i vacker sång i dödsögonblicket </para>
         </glossdef>
     <page>103</page></glossentry>
@@ -507,7 +484,7 @@
     <glossentry>
         <glossterm baseform="dråpelig"><firstterm>dråplig</firstterm></glossterm>
         <glossdef>
-            <para> makalös, förträfflig</para>
+            <para>makalös, förträfflig</para>
         </glossdef>
     <page>108</page></glossentry>
     <glossentry>
@@ -553,7 +530,7 @@
     <glossentry>
         <glossterm><firstterm>S:t Kristoffer</firstterm></glossterm>
         <glossdef>
-            <para>skyddshelgon för pilgrimer och resande; bar enligt legenden Jesusbarnen med
+            <para>skyddshelgon för pilgrimer och resande; bar enligt legenden Jesusbarnet med
                 mänsklighetens synder och avbildas ofta med en grönskande stav symboliserande Guds
                 välsignelse över mänskligheten i enlighet med skildringen av Arons blomstrande stav
                 i 4 Mos. 17 </para>
@@ -584,12 +561,6 @@
         </glossdef>
     <page>117</page></glossentry>
     <glossentry>
-        <glossterm>en af Guds vandringsmän på jorden</glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>120</page></glossentry>
-    <glossentry>
         <glossterm><firstterm>missrand</firstterm></glossterm>
         <glossdef>
             <para>en tråd som inte följer mönstret i en vävs inslag</para>
@@ -619,7 +590,7 @@
     <glossentry>
         <glossterm baseform="speciedaler"><firstterm>speciedalrar</firstterm></glossterm>
         <glossdef>
-            <para>var myntenhet i Norge före den skandinaviska monetära unionen 1876 och använd
+            <para>var myntenhet i Norge före den skandinaviska monetära unionen 1876 och användes
                 parallellt med danska och svenska riksdaler </para>
         </glossdef>
     <page>131</page></glossentry>
@@ -752,12 +723,6 @@
         </glossdef>
     <page>163</page></glossentry>
     <glossentry>
-        <glossterm><firstterm>barett</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>163</page></glossentry>
-    <glossentry>
         <glossterm baseform="roskvarter"><firstterm>roskvarteret</firstterm></glossterm>
         <glossdef>
             <para>blomsterträdgård</para>
@@ -770,14 +735,6 @@
         </glossdef>
     <page>164</page></glossentry>
     <glossentry>
-        <glossterm baseform="sjörå"><firstterm>sjörået</firstterm></glossterm>
-        
-        
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>172</page></glossentry>
-    <glossentry>
         <glossterm baseform="bråte"><firstterm>bråtar</firstterm></glossterm>
         <glossdef>
             <para>rishög och hög av grenar och rötter efter timmerfällning och skogsvedning</para>
@@ -787,7 +744,7 @@
         <glossterm>nödåren aderton hundra åtta och nio</glossterm>
         <glossdef>
             <para>Under Finska kriget 1808–1809, då Sverige i krig med Ryssland förlorade Finland,
-                led folket dessutom av missväxt och epidemier och dödligheten bland befolkning steg
+                led folket dessutom av missväxt och epidemier och dödligheten bland befolkningen steg
                 kraftigt. </para>
         </glossdef>
     <page>174</page></glossentry>
@@ -841,14 +798,14 @@
     <glossentry>
         <glossterm>Labor vincit omnia</glossterm>
         <glossdef>
-            <para>latinskt ordspråk som betyder att arbetet övervinner allt</para>
+            <para>latinskt ordspråk som betyder ”arbetet övervinner allt”</para>
         </glossdef>
     <page>199</page></glossentry>
     <glossentry>
         <glossterm>österns gudar, de starke hjältar, som förde blixten som vapen, de, som på de
             heliga flodernas stränder togo offer af honung och mjölk</glossterm>
         <glossdef>
-            <para>åsyftar den rika mytologin i forntidens högskulturer runt Medelhavet, i Nordafrika
+            <para>åsyftar den rika mytologin i forntidens högkulturer runt Medelhavet, i Nordafrika
                 och Främre Asien</para>
         </glossdef>
     <page>200</page></glossentry>
@@ -907,12 +864,6 @@
         </glossdef>
     <page>204</page></glossentry>
     <glossentry>
-        <glossterm baseform="vedkast"><firstterm>vedkaster</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>216</page></glossentry>
-    <glossentry>
         <glossterm baseform="arkadisk"><firstterm>arkadiska</firstterm></glossterm>
         <glossdef>
             <para>paradisiska; landskapet Arkadien i det antika Grekland blev en litterär symbol för
@@ -935,29 +886,11 @@
         </glossdef>
     <page>227</page></glossentry>
     <glossentry>
-        <glossterm baseform="frustuga"><firstterm>frustugan</firstterm></glossterm>
-        <glossdef>
-            <para><glossterm>frustuga</glossterm></para>
-        </glossdef>
-    <page>227</page></glossentry>
-    <glossentry>
-        <glossterm baseform="ränsel"><firstterm>renseln</firstterm></glossterm>
-        <glossdef>
-            <para>se <glossterm>ränsel</glossterm></para>
-        </glossdef>
-    <page>228</page></glossentry>
-    <glossentry>
         <glossterm baseform="skogsfru"><firstterm>skogsfrun</firstterm></glossterm>
         <glossdef>
-            <para>se <glossterm>skogsrå</glossterm></para>
+            <para>skogsrå; kvinnligt naturväsen</para>
         </glossdef>
     <page>228</page><page>237</page></glossentry>
-    <glossentry>
-        <glossterm baseform="strid"><firstterm>stridt</firstterm></glossterm>
-        <glossdef>
-            <para />
-        </glossdef>
-    <page>228</page></glossentry>
     <glossentry>
         <glossterm>skaka på rapphöna</glossterm>
         <glossdef>

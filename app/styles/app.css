@@ -1,6 +1,33 @@
 @charset "UTF-8";
 
 
+<<<<<<< HEAD
+=======
+/*
+ *  Litteraturbanken and sister projects (LBSP)
+ *  Copyright (C) 2008-2011 SprÃ¥kbanken, (The Swedish Language Bank), 
+ *  University of Gothenburg, <http://spraakbanken.gu.se/>.
+ *  This file is part of SprÃ¥kbanken's Corpus Infrastructure, especially LBSP.
+ *
+ *  LBSP is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  LBSP is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with LBSP.  If not, see <http://www.gnu.org/licenses/>.
+ *  
+ *  $Id: app.css 963 2014-01-13 07:28:19Z ljo $
+ */
+
+/** Add css rules here for your application. */
+
+>>>>>>> remotes/sammanslagning-20140428
 @media only screen and (max-width: 760px), (min-device-width: 768px) and (max-device-width: 1024px) {
   .page-titlar-epub table,
   .page-titlar-epub thead,

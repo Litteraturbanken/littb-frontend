@@ -405,6 +405,8 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         url = "/query/lb-authors.xql"
         http(
             url : url
+            # cache: 
+            cache: true #localStorageCache
             params :
                 action : "get-author-data-init"
                 authorid : author
@@ -669,15 +671,19 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             works: [
                 title: "Gösta Berlings saga 1 (1891)"
                 id: "lb1492249"
+                path: "GostaBerling1"
             ,
                 title: "Gösta Berlings saga 1 (1895)"
                 id: "lb3312560"
+                path: "GostaBerlingsSagaForraDelen1895"
             ,
                 title: "Gösta Berlings saga (1910)"
                 id: "lb3312973"
+                path: "GostaBerlingsSaga1910"
             ,
                 title: "Gösta Berlings saga (1933)"
                 id: "lb491569"
+                path: "GostaBerlingsSaga1933"
             ]
         ,
             title: "Gösta Berlings saga 2"
@@ -685,15 +691,19 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             works: [
                 title:"Gösta Berlings saga 2 (1891)"
                 id: "lb1492250"
+                path: "GostaBerling2"
             ,
                 title:"Gösta Berlings saga 2 (1895)"
                 id: "lb3312561"
+                path: "GostaBerlingsSagaSenareDelen1895"
             ,
                 title: "Gösta Berlings saga (1910)"
                 id: "lb3312973"
+                path: "GostaBerlingsSaga1910"
             ,
                 title: "Gösta Berlings saga (1933)"
                 id: "lb491569"
+                path: "GostaBerlingsSaga1933"
             ]
         ,
             title: "Osynliga Länkar"
@@ -701,15 +711,19 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             works: [
                 title:"Osynliga länkar (1894)"
                 id: "lb31869"
+                path: "OsynligaLankar"
             ,
                 title:"Osynliga länkar (1904)"
                 id: "lb2169911"
+                path: "OsynligaLankar1904"
             ,
                 title: "Osynliga länkar (1909)"
                 id: "lb1615111"
+                path: "OsynligaLankar1909"
             ,
                 title: "Osynliga länkar (1933)"
                 id: "lb8233075"
+                path: "OsynligaLankar1933"
             ]
         ]
         
@@ -767,9 +781,9 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         def = $q.defer()
         
         titlemap = 
-            'OsynligaLankar2012' : '/views/sla/OLOrdSak-output.xml'
-            'GostaBerlingsSagaForraDelen2012' : '/views/sla/GBOrdSakFörstaDel-output.xml'
-            'GostaBerlingsSagaSenareDelen2012' : '/views/sla/GBOrdSakAndraDel-output.xml'
+            'OsynligaLankarSLA' : '/views/sla/OLOrdSak-output.xml'
+            'GostaBerlingsSaga1SLA' : '/views/sla/GBOrdSakForstaDel-output.xml'
+            'GostaBerlingsSaga2SLA' : '/views/sla/GBOrdSakAndraDel-output.xml'
         
         url = titlemap[title]
         

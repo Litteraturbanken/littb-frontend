@@ -92,9 +92,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                         <div style="position:relative;" ng-bind-html="doc | trust"></div>
                     '''
                 breadcrumb : ["presentationer"]
-            # .when '/omtexterna/:doc', # TODO: remove if the doc links are updated
-                # redirectTo: ($routeParams) ->
-                    # '/forfattare/LagerlofS/omtexterna/' + $routeParams.doc
             .when '/om/aktuellt',
                 templateUrl: '/red/om/aktuellt/aktuellt.html'
                 title : "Aktuellt"
@@ -176,13 +173,12 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                    "/forfattare/:author/bibliografi"
                    "/forfattare/:author/presentation"
                    "/forfattare/:author/semer"
+                   "/forfattare/:author/biblinfo"
+                   "/forfattare/:author/jamfor"
+                   "/forfattare/:author/omtexterna/:omtexternaDoc?"
                    ],
                 templateUrl : "views/authorInfo.html"
                 controller : "authorInfoCtrl"
-                # breadcrumb : [
-                #     label : "författare"
-                #     url : "#!/forfattare"
-                # ]
                 resolve : 
                     r : authorResolve
             .when "/forfattare/:author/titlar/:title/info",
