@@ -11,25 +11,30 @@
 
         <div ng-switch-when="titlar">
             <h1 ng-show="authorInfo">
-                {{authorInfo.fullName}}<span ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span>: verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
+                {{authorInfo.fullName}}<span ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span>:
+                <br>
+                verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
             </h1>
             <div ng-repeat="titleobj in titleStruct" ng-show="authorInfo && titleobj.data.length">
                 <h2>{{titleobj.label}}</h2>
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                     <tr ng-repeat="works in titleobj.data track by $index">
+                        <td ng-if="$parent.$index > 1">
+                            <a href="/#!/forfattare/{{works[0].authors[0].authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
+                        </td>
+                        <td>
                         <!-- <td ng-if="titleobj.showAuthor">
                             <a href="/#!/forfattare/{{works[0].authors[0].authorid}}">{{works[0].authors[0].nameforindex}}</a>
                         </td> -->
-                        <td>
-                            <a ng-href="#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
+                            <a class="title" ng-href="#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
                                 {{works[0].showtitle}}
                             </a>
                             <span class="extras" ng-if="$parent.$index == 1">i
-                                    <a class="author" href="/#!/forfattare/{{works[0].authors[0].authorid}}">
-                                        {{getWorkAuthor(works[0].authors).surname}}s
-                                    </a> 
-                                    <span class="title">{{works[0].workshorttitle}}</span></span>
+                                <a class="author" href="/#!/forfattare/{{works[0].authors[0].authorid}}">
+                                    {{getWorkAuthor(works[0].authors).surname}}:
+                                </a> 
+                                <span class="title">{{works[0].workshorttitle}}</span></span>
                             
                                     
                             <!-- <span ng-if="titleobj.showAuthor">[{{getWorkAuthor(works[0].authors).nameforindex}}]</span> -->

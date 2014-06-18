@@ -1336,38 +1336,34 @@ $partnav-width : 170px;
             margin-top: 2em;
             margin-bottom: 0.5em;
             font-size: 1.25em;
-            font-variant: small-caps;
+            // font-variant: small-caps;
+            text-transform : uppercase;
             // &:after {
             //     content : ":";
             // }
         }
         // really for authorTitles
         .contenttable {
-
+            width : 100%;
             margin-bottom : 3em;
-            margin-left : 0.2em;
+            // margin-left : 0.2em;
             td {
                 text-align: left;
+                vertical-align : bottom;
             }
             td:first-child {
-                // max-width : 80px;
-                font-style: italic;
-                width : 100%;
-                * {
-                    // display : inline-block;
-                    // margin-right : 2px;
-                }
+                padding-left : 0;
+                // width : 100%;
             }
             td:nth-child(2) {
-                vertical-align : top;
                 white-space: nowrap;
+            }
+            .title {
+                font-style: italic;
             }
             .extras {
                 .author {
                     font-style : normal;
-                }
-                .title {
-
                 }
                 &:before {
                     content : "[";
