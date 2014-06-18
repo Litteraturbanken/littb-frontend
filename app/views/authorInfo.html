@@ -14,7 +14,7 @@
                 {{authorInfo.fullName}}<span ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span>: verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
             </h2>
             
-            <div ng-repeat="worklist in [groupedWorks, groupedTitles] track by $index">
+            <div ng-repeat="worklist in [groupedWorks, groupedTitles, groupedEditorWorks] track by $index">
                 <table class="contenttable">
                     <tr ng-repeat="works in worklist track by $index">
                         <td>

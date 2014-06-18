@@ -5,16 +5,16 @@ littb = angular.module('littbApp')
 
 littb.filter "formatAuthors", (authors) ->
     (authorlist, authorsById) ->
-        if not authorlist or not authorlist.length then return
+        if not authorlist or not authorlist.length or not authorsById then return
 
         stringify = (auth) ->
             suffix = {
-                editor : "(red.)"
-                translator : "(övers.)"
+                editor : " (red.)"
+                translator : " (övers.)"
+                scholar : " (red.)"
 
 
             }[auth.type] or ""
-
             authorsById[auth.id].fullname + suffix
         
         strings = _.map authorlist, stringify
@@ -441,7 +441,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         }[page] or _.str.capitalize page
 
     s.getAllTitles = () ->
-        [].concat s.groupedTitles, s.groupedWorks
+        [].concat s.groupedTitles, s.groupedWorks, s.groupedEditorWorks
 
     s.getUrl = (work) ->
         url = "#!/forfattare/#{work.workauthor or s.author}/titlar/#{work.titlepath.split('/')[0]}/"
@@ -486,6 +486,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "titlepath"
         s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
+        s.groupedEditorWorks = _.values _.groupBy s.authorInfo.editorWorks, "titlepath"
         c.log "data.surname", data.surname
         $rootScope.appendCrumb 
             label : data.surname
@@ -904,7 +905,15 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
                 s.show_large = false
         return
 
-        
+    
+    s.getFileSize = (mediatype) ->
+        unless s.data then return
+        size = s.data[mediatype].file_size
+
+        kb = size / 1024
+
+        return kb
+
 
 
     infoDef = backend.getSourceInfo(author, title) #TODO: REMOVE!

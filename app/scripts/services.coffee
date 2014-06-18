@@ -399,14 +399,14 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
         return def.promise
 
-    getAuthorInfo : (author) ->
+    getAuthorInfo : (authorid) ->
         def = $q.defer()
         url = "/query/lb-authors.xql"
         http(
             url : url
             params :
                 action : "get-author-data-init"
-                authorid : author
+                authorid : authorid
 
         ).success( (xml) ->
             authorInfo = {}
@@ -421,14 +421,33 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
             parseWorks = (selector) ->
                 titles = []
+                editorTitles = []
                 for item in $(selector, xml)
                     obj = objFromAttrs item
-                    titles.push _.extend obj, (objFromAttrs $(item).find("author").get(0))
-                return titles
+                    obj.authors = []
+                    isEditor = false
+                    for author in $(item).find("author")
+                        authObj = objFromAttrs author
+                        obj.authors.push authObj
+                        if authorid == authObj.authorid and authObj.authortype == 'editor'
+                            isEditor = true
+
+                        
+                    if isEditor
+                        editorTitles.push obj
+                    else
+                        titles.push obj
+                
+                c.log "titles, editorTitles", titles, editorTitles
+                return [titles, editorTitles]
 
 
-            authorInfo.works = parseWorks("works item")
-            authorInfo.titles = parseWorks("titles item")
+            [works, editorWorks] = parseWorks("works item")
+            [titles, editorTitles] = parseWorks("titles item")
+
+            authorInfo.works = works
+            authorInfo.titles = titles
+            authorInfo.editorWorks = [].concat editorWorks, editorTitles
 
             authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
             authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)

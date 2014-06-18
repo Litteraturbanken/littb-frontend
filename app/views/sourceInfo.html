@@ -23,11 +23,12 @@
     <div class="mediatypes" ng-class="{bold : data.workintro}">
         Läs verket som 
         <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
+        <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)
     </div>
     <div ng-show="data.mediatypes.length > 1">
         Även tillgängligt som 
         
-        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{data[mediatype].file_size}})</span> </a>
+        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)</span> </a>
     </div>
     
     <div class="provenance" ng-if="data.provenance.text.length">
