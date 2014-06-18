@@ -1949,6 +1949,12 @@ grundform-clean {
             margin-top : 1em;
         }
     }
+    .sla_intro {
+        margin-top : 2em;
+        h1 {
+            font-size : 1.4em;
+        }
+    }
 
     table {
         border : none;
@@ -1960,9 +1966,18 @@ grundform-clean {
         }
 
     }
-
+    .contenttable td:first-child > *:first-child {
+        background-color: transparent;
+    }
     .literallayout {
         margin-left : 1em;
+        p {
+            margin-top : 0;
+            margin-bottom: 0.1em;
+        }
+        & + p {
+            display : none;
+        }
     }
 
     .listitem p {

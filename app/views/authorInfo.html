@@ -10,8 +10,8 @@
     <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
     <div ng-switch="showpage">
         <div ng-switch-when="introduktion">
-            <div ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div ng-bind-html="authorInfo.intro | trust"></div>
+            <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div ng-show="authorInfo.smallImage" class="author_img"><img ng-src="{{authorInfo.smallImage}}" ng-click="showLargeImage($event)"></div>
             <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div>
         </div>
@@ -102,7 +102,7 @@
         <ul ng-if="slaMode">
             <!-- <li><a ng-href="/#!/forfattare/{{author}}/biblinfo">Bibliografisk databas</a></li> -->
             <li><a ng-href="/#!/forfattare/{{author}}/jamfor">Textkritisk verkstad</a></li>
-            <li><a ng-href="/#!/forfattare/{{author}}/omtexterna">Om texterna</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/omtexterna">Vetenskapliga texter</a></li>
         </ul>
     </ul>
 </div>

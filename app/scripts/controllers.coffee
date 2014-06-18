@@ -1131,7 +1131,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     getHtml = (url) ->
         def = $q.defer()
         $http.get(url).success (xml) ->
-            c.log "gethtml", xml
             from = xml.indexOf "<body>"
             to = xml.indexOf "</body>"
             xml = xml[from...to + "</body>".length]
