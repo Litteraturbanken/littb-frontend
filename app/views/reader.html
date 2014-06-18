@@ -20,13 +20,6 @@
     <div toolkit>
         <div ng-class="{editor: isEditor}">
             <hr>
-            <!-- <span ng-repeat="author in getValidAuthors()">
-                <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
-                <span ng-if="author.type == 'editor'">(red.)</span>
-                <span ng-if="author.type == 'translator'">(övers.)</span>
-                <span ng-if="!$last">och</span>
-            </span> -->
-
             <span>{{getValidAuthors() | formatAuthors:authorById}}</span>
             
             <div>

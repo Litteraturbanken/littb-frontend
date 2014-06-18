@@ -1353,10 +1353,28 @@ $partnav-width : 170px;
                 // max-width : 80px;
                 font-style: italic;
                 width : 100%;
+                * {
+                    // display : inline-block;
+                    // margin-right : 2px;
+                }
             }
             td:nth-child(2) {
                 vertical-align : top;
                 white-space: nowrap;
+            }
+            .extras {
+                .author {
+                    font-style : normal;
+                }
+                .title {
+
+                }
+                &:before {
+                    content : "[";
+                }
+                &:after {
+                    content : "]";
+                }
             }
         }
         .author_img {

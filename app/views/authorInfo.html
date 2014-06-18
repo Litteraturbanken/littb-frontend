@@ -24,9 +24,15 @@
                         <td>
                             <a ng-href="#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
                                 {{works[0].showtitle}}
-                                <span ng-if="$parent.$index == 1">[i {{works[0].workshorttitle}}]</span>
                             </a>
-                            <span ng-if="titleobj.showAuthor">[{{getWorkAuthor(works[0].authors).nameforindex}}]</span>
+                            <span class="extras" ng-if="$parent.$index == 1">i
+                                    <a class="author" href="/#!/forfattare/{{works[0].authors[0].authorid}}">
+                                        {{getWorkAuthor(works[0].authors).surname}}s
+                                    </a> 
+                                    <span class="title">{{works[0].workshorttitle}}</span></span>
+                            
+                                    
+                            <!-- <span ng-if="titleobj.showAuthor">[{{getWorkAuthor(works[0].authors).nameforindex}}]</span> -->
                             <span class="dots"></span>
                         </td>
                         <td >
