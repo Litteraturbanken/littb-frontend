@@ -1,4 +1,4 @@
-<meta-desc>{{authorInfo.fullName}}, {{getPageTitle(showpage)}}</meta-desc>
+<meta-desc>{{authorInfo.fullName}}, {{getPageTitle(showpage).toLowerCase()}}</meta-desc>
 
 <div ng-class="{searching:!authorInfo, show_large : show_large}">
     <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
@@ -10,19 +10,23 @@
         </div>
 
         <div ng-switch-when="titlar">
-            <h2 ng-show="authorInfo">
+            <h1 ng-show="authorInfo">
                 {{authorInfo.fullName}}<span ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span>: verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
-            </h2>
-            
-            <div ng-repeat="worklist in [groupedWorks, groupedTitles, groupedEditorWorks] track by $index">
-                <table class="contenttable">
-                    <tr ng-repeat="works in worklist track by $index">
+            </h1>
+            <div ng-repeat="titleobj in titleStruct" ng-show="authorInfo && titleobj.data.length">
+                <h2>{{titleobj.label}}</h2>
+
+                <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
+                    <tr ng-repeat="works in titleobj.data track by $index">
+                        <!-- <td ng-if="titleobj.showAuthor">
+                            <a href="/#!/forfattare/{{works[0].authors[0].authorid}}">{{works[0].authors[0].nameforindex}}</a>
+                        </td> -->
                         <td>
                             <a ng-href="#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
                                 {{works[0].showtitle}}
                                 <span ng-if="$parent.$index == 1">[i {{works[0].workshorttitle}}]</span>
                             </a>
-                            
+                            <span ng-if="titleobj.showAuthor">[{{getWorkAuthor(works[0].authors).nameforindex}}]</span>
                             <span class="dots"></span>
                         </td>
                         <td >
@@ -51,15 +55,19 @@
     </div>
     
     <ul class="topnav" role="navigation">
-        <li ng-if="groupedWorks.length > 1">
+        <li ng-if="hasTitles()">
+            <a ng-href="#!/forfattare/{{author}}/titlar" >::: Verk och titlar i LB</a>
+        </li>
+        <li ng-if="groupedWorks.length == 1">
+            <a ng-href="#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
+        </li>
+        <!-- <li ng-if="groupedWorks.length > 1">
             <a ng-href="#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
         </li>
         <li ng-if="groupedTitles.length && !groupedWorks.length">
             <a ng-href="#!/forfattare/{{author}}/titlar" >::: Titlar i LB</a>
         </li>
-        <li ng-if="groupedWorks.length == 1">
-            <a ng-href="#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
-        </li>
+         -->
     </ul>
     <ul class="subnav" role="navigation">
         <li><a ng-href="#!/forfattare/{{author}}" ng-if="authorInfo.intro">::: Introduktion</a></li>

@@ -392,12 +392,15 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
 
 
 
-littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util) ->
+littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, authors) ->
     s = $scope
     # [s.author, s.showtitles] = $routeParams.author.split("/")
     _.extend s, $routeParams
     s.showpage = null
     s.show_large = false
+
+    authors.then ([authorList, authorsById]) ->
+        s.authorsById = authorsById
 
     s.showLargeImage = ($event) ->
         if s.show_large then return 
@@ -479,6 +482,19 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
 
 
+    s.hasTitles = () ->
+        _.any [
+            s.authorInfo?.works.length
+            s.authorInfo?.titles.length
+            s.authorInfo?.editorWorks.length
+            s.authorInfo?.translatorWorks.length
+        ]
+
+    s.getWorkAuthor = (authors) ->
+        wa = authors[0].workauthor
+        if wa
+            return s.authorsById[wa]
+        else return authors[0]
 
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
@@ -486,7 +502,28 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "titlepath"
         s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
+        # c.log "editorWorks", s.authorInfo.editorWorks
         s.groupedEditorWorks = _.values _.groupBy s.authorInfo.editorWorks, "titlepath"
+        s.groupedTranslatorWorks = _.values _.groupBy s.authorInfo.translatorWorks, "titlepath"
+
+        s.titleStruct = [
+                label : "Verk"
+                data : s.groupedWorks
+                showAuthor : false
+            ,
+                label : "Titlar som ingår i andra verk"
+                data : s.groupedTitles
+                showAuthor : true
+            ,
+                label : "Som utgivare"
+                data : s.groupedEditorWorks
+                showAuthor : true
+            ,
+                label : "Som översättare"
+                data : s.groupedTranslatorWorks
+                showAuthor : true
+        ]
+
         c.log "data.surname", data.surname
         $rootScope.appendCrumb 
             label : data.surname
