@@ -178,10 +178,11 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Verk"
                 breadcrumb : ["författare"]
             .when "/forfattare/:author/titlar/:title/info/:mediatype",
-                templateUrl : "views/sourceInfo.html"
-                controller : "sourceInfoCtrl"
-                reloadOnSearch : false
-                breadcrumb : ["författare"]
+                # templateUrl : "views/sourceInfo.html"
+                # controller : "sourceInfoCtrl"
+                # reloadOnSearch : false
+                # breadcrumb : ["författare"]
+                redirectTo : "/forfattare/:author/titlar/:title/info",
             .when "/forfattare/:author/titlar/:title/:mediatype",
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
@@ -246,7 +247,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                             <span ng-repeat="type in row.mediatype">
                             
                                 <span ng-show="!$first">:::</span>
-                                <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info/{{type}}">{{type}}</a>
+                                <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{type}}</a>
                             </span>
                         </td>
                     </tr>

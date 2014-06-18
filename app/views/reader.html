@@ -20,12 +20,14 @@
     <div toolkit>
         <div ng-class="{editor: isEditor}">
             <hr>
-            <span ng-repeat="author in getValidAuthors()">
+            <!-- <span ng-repeat="author in getValidAuthors()">
                 <a class="author" href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
                 <span ng-if="author.type == 'editor'">(red.)</span>
                 <span ng-if="author.type == 'translator'">(övers.)</span>
                 <span ng-if="!$last">och</span>
-            </span>
+            </span> -->
+
+            <span>{{getValidAuthors() | formatAuthors:authorById}}</span>
             
             <div>
                 <a class="title" 
@@ -34,7 +36,7 @@
                  </a>
             </div>
         
-            <div id="search_nav" ng-show="searchData.total_hits">
+            <div id="search_nav" ng-show="searchData.total_hits && (x || markee_from)">
                 <div class="box">
                     <div class="text">
                         <div>
@@ -57,7 +59,7 @@
         
             <div style="height: 1em;"></div>
         
-            <div><a href="#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info/{{mediatype}}">::: Om boken</a></div>
+            <div><a href="#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info">::: Om boken</a></div>
         
             <hr>
         

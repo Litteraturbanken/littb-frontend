@@ -3,6 +3,32 @@
 window.c = console ? log : _.noop
 littb = angular.module('littbApp')
 
+littb.filter "formatAuthors", (authors) ->
+    (authorlist, authorsById) ->
+        if not authorlist or not authorlist.length then return
+
+        stringify = (auth) ->
+            suffix = {
+                editor : "(red.)"
+                translator : "(övers.)"
+
+
+            }[auth.type] or ""
+
+            authorsById[auth.id].fullname + suffix
+        
+        strings = _.map authorlist, stringify
+        
+
+        firsts = strings[...-1]
+        last = _.last strings
+
+        if firsts.length then return "#{firsts.join(', ')} och #{last}"
+        else return last
+        
+
+        
+
 
 littb.filter "authorYear", () ->
     (obj) ->
@@ -128,7 +154,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     ]
 
     s.nHitsChange = () ->
-        c.log "nHitsChange", s.data
         s.current_page = 0
         if s.data
           s.search()  
@@ -137,11 +162,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.authors = authorList
         change = (newAuthor) ->
             return unless newAuthor
-            c.log "change", newAuthor
             backend.getTitlesByAuthor(newAuthor).then (data) ->
                 filteredTitles = _.filter data, (item) -> "/" not in item.titlepath
                 s.titles = filteredTitles
-                titlesById = _.object _.map filteredTitles, (item) -> [item.titlepath, item]    
+                titlesById = _.object _.map filteredTitles, (item) -> [item.lbworkid, item]    
                 initTitle titlesById
 
         
@@ -207,7 +231,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         c.log "searchData", searchData
 
-        searchData.save(startIndex, currentIndex, data, getSearchArgs())
+        searchData.save(startIndex, currentIndex + s.current_page  * s.num_hits, data, getSearchArgs())
 
 
     s.getSetVal = (sent, val) ->
@@ -422,7 +446,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     s.getUrl = (work) ->
         url = "#!/forfattare/#{work.workauthor or s.author}/titlar/#{work.titlepath.split('/')[0]}/"
         if work.mediatype == "epub" or work.mediatype == "pdf"
-            url += "info/#{work.mediatype}"
+            url += "info"
         else
             url += "sida/#{work.startpagename}/#{work.mediatype}"
         return url
@@ -821,8 +845,10 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
 
 littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document) ->
     s = $scope
-    {title, author, mediatype} = $routeParams
-    _.extend s, $routeParams
+    {title, author} = $routeParams
+    # _.extend s, $routeParams
+    s.title = $routeParams.title
+    s.author = $routeParams.author
 
 
     s.defaultErrataLimit = 8
@@ -845,22 +871,23 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
         else if mediatype == "pdf" 
             return s.data?.pdf.url
 
-        return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{s.mediatype}"
+        return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
 
     s.getOtherMediatypes = () ->
         (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
 
-    s.getMediatypeUrl = (mediatype) ->
-        if mediatype == "epub"
-            # return s.data?.epub.url
-            return "#!/forfattare/#{s.author}/titlar/#{s.title}/info/#{mediatype}"
-        else
-            return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
+    # s.getMediatypeUrl = (mediatype) ->
+    #     if mediatype == "epub"
+    #         # return s.data?.epub.url
+    #         s.getUrl(mediatype)
+    #         return "#!/forfattare/#{s.author}/titlar/#{s.title}/info/#{mediatype}"
+    #     else
+    #         return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
 
-    s.onMediatypeClick = () ->
-        c.log "onMediatypeClick"
-        if mediatype == "epub"
-            window.location.href = s.getUrl(mediatype)
+    # s.onMediatypeClick = () ->
+    #     c.log "onMediatypeClick"
+    #     if mediatype == "epub"
+    #         window.location.href = s.getUrl(mediatype)
 
     s.getSourceImage = () ->
         if s.data
@@ -880,7 +907,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
         
 
 
-    infoDef = backend.getSourceInfo(author, title, mediatype)
+    infoDef = backend.getSourceInfo(author, title) #TODO: REMOVE!
     infoDef.then (data) ->
         s.data = data
         if not s.mediatype
@@ -898,7 +925,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
                     label : "titlar"
                     url : "#!/forfattare/#{author}/titlar"
                 ,   
-                    label : (_.str.humanize infoData.titlepath) + " info " + (s.mediatype or "")
+                    label : (infoData.shorttitle or _.str.humanize infoData.titlepath.split("/")[0]) + " info"
                     # url : "#!/forfattare/#{author}/titlar/#{infoData.titlepathnorm}"
                 ]
                 break

@@ -371,7 +371,6 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             info = parseWorkInfo("LBwork", xml)
             # c.log "info", info
 
-            info["authorFullname"] = $("author-fullname", xml).text()
             info["showtitle"] = $("showtitle:first", xml).text()
             info["css"] = $("css", xml).text()
             pgMap = {}
@@ -768,6 +767,7 @@ littb.factory "searchData", (backend, $q) ->
             @appendData startIndex, input
             @total_hits = input.hits
             @current = currentIndex
+            c.log "save currentIndex", currentIndex
 
         appendData : (startIndex, data) ->
             @data[startIndex..data.kwic.length] = _.map data.kwic, (itm) => 
@@ -775,11 +775,13 @@ littb.factory "searchData", (backend, $q) ->
 
 
         next : () ->
+            if @current + 1 == @total_hits then return {then : angular.noop}
             @current++
             @search()
 
             
         prev : () ->
+            if @current == 0 then return {then : angular.noop}
             @current--
             @search()
 
@@ -790,11 +792,12 @@ littb.factory "searchData", (backend, $q) ->
             if @data[@current]? 
                 def.resolve @data[@current]
             else
-                current_page = Math.floor(@current / NUM_HITS )
+                # current_page = Math.floor(@current / NUM_HITS )
                 args = [].concat @searchArgs
                 # replace from and to args
-                args[2] = current_page + 1
-                args[3] = NUM_HITS
+                args[2] = @current
+                args[3] = @current + NUM_HITS
+                c.log "fetch and append", args
 
                 backend.searchWorks(args...).then (data) =>
                     @appendData @current, data

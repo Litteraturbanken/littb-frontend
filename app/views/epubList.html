@@ -21,16 +21,16 @@
                 <th> <div sort-triangles val="itemAttrs.sortkey" tuple="sorttuple"></div> </th>
                 <th></th>
             </thead>
-            <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{row.author.nameforindex[0].toUpperCase()}}">
+            <tbody><tr bindonce ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" bo-id="row.author.nameforindex[0].toUpperCase()">
                     <td>
-                        <a href="#!/forfattare/{{row.author.authorid}}">{{getAuthor(row)}}</a>
+                        <a bo-href="'#!/forfattare/' + row.author.authorid" bo-text="getAuthor(row)"></a>
                         <span class="dots"></span>
                     </td>
                     <td class="title">
-                        <a href="#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
+                        <a bo-href="'#!/forfattare/' + row.author.authorid + '/titlar/' + row.itemAttrs.titlepath.split('/')[0] + '/info'" bo-text="row.itemAttrs.showtitle"></a>
                     </td>
                     <td link-fix>
-                        <a href="/txt/epub/{{row.author.authorid}}_{{row.itemAttrs.titlepath.split('/')[0]}}.epub">Hämta</a>
+                        <a bo-href="'/txt/epub/' + row.author.authorid +'_' + row.itemAttrs.titlepath.split('/')[0] + '.epub'">Hämta</a>
                     </td>
                 </tr></tbody>
         </table>

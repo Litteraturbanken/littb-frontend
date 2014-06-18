@@ -3,6 +3,7 @@ describe('authors', function() {
   beforeEach(function() {
     browser.get('http://localhost:9000/#!/forfattare');
     rows = element.all(by.repeater('row in rowByLetter[selectedLetter] || rows | filter:authorFilter'))
+    
   })
   it('should show the correct amount of authors', function() {
 
@@ -15,7 +16,7 @@ describe('authors', function() {
   it('should filter using the input', function() {
     element(by.model('authorFilter')).sendKeys('adel');
     rows.then(function() {
-      expect(rows.count()).toEqual(1)
+      expect(rows.count()).toEqual(5)
     })
   })
 

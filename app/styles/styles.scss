@@ -330,6 +330,9 @@ li {
 .mainnav {
     vertical-align: top;
     line-height : 19px;
+    a:hover, a:active {
+        color : $primarycolor;
+    }
 }
 #mainview {
     @include inline-block(top);
@@ -746,6 +749,13 @@ $partnav-width : 170px;
         }
         .reader_main {
             height : 100%;
+        }
+
+
+        // fix for bad etext styling rule
+        div.pname {
+            position : static !important;
+            width : inherit !important;
         }
     }
     
@@ -1299,7 +1309,8 @@ $partnav-width : 170px;
             }
         }
         .toggle {
-            cursor : pointer;
+            display : block;
+            margin-top : 1em;            
         }
         .errata_table {
             td {
@@ -2138,10 +2149,13 @@ only screen and (max-width: 760px),
     // .reader_main.focus {
     //     background-color : red;
     // }
+    a:active {
+        color : inherit;
+    }
     a:hover {
         color : inherit;
     }
-    a:active {
+    a.ng-click-active, a:focus {
         color : $primarycolor;
     }
 

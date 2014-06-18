@@ -1,10 +1,10 @@
-<page-title>{{data.authorFullname}} – {{data.title}}. Om boken</page-title>
-<meta-desc>{{data.authorFullname}} – {{data.title}}. Om boken</meta-desc>
+<page-title>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</page-title>
+<meta-desc>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</meta-desc>
 <div class="maincontent" ng-class="{searching:!data}">
     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
 
     <div class="header_left">
-        <h3 class="author">{{data.authorFullname}}</h3>
+        <h3 class="author">{{getValidAuthors() | formatAuthors:authorById}}</h3>
         <h3 class="title"><em>{{data.title}}</em></h3>
     </div>
     <div class="header_right" >
@@ -22,12 +22,12 @@
     
     <div class="mediatypes" ng-class="{bold : data.workintro}">
         Läs verket som 
-        <a class="mediatype" ng-href="{{getUrl(mediatype)}}" ng-click="onMediatypeClick()">{{mediatype}}</a>
-        <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{data[mediatype].file_size}})</span>
+        <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
     </div>
     <div ng-show="data.mediatypes.length > 1">
         Även tillgängligt som 
-        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getMediatypeUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} </a>
+        
+        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{data[mediatype].file_size}})</span> </a>
     </div>
     
     <div class="provenance" ng-if="data.provenance.text.length">
@@ -37,7 +37,7 @@
     
     <div ng-bind-html="data.licenseText | correctLink | trust"></div>
     
-    <div ng-show="!mediatype || mediatype == 'etext'">
+    <div ng-show="mediatype == 'etext'">
         <div ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet:</div>
         <div ng-show="!data.errata">Inga ändringar har gjorts mot orginalet.</div>
         <table class="errata_table">
@@ -53,10 +53,11 @@
 
 <div toolkit>
     <hr>
-    <span ng-repeat="author in getValidAuthors()">
+    <span>{{getValidAuthors() | formatAuthors:authorById}}</span>
+    <!-- <span ng-repeat="author in getValidAuthors()">
         <a class="author" ng-href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
         <span ng-if="author.type == 'editor'">(red.)</span>
         <span ng-if="!$last">och</span>
-    </span>
-    <div><em><a ng-href="#!/forfattare/{{author}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle}}</a></em></div>
+    </span> -->
+    <div><em><a ng-href="#!/forfattare/{{author}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle || data.showtitle || data.title}}</a></em></div>
 </div>

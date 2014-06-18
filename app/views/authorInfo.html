@@ -18,7 +18,7 @@
                 <table class="contenttable">
                     <tr ng-repeat="works in worklist track by $index">
                         <td>
-                            <a ng-href="#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info/{{works[0].mediatype}}">
+                            <a ng-href="#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
                                 {{works[0].showtitle}}
                                 <span ng-if="$parent.$index == 1">[i {{works[0].workshorttitle}}]</span>
                             </a>
