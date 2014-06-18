@@ -56,9 +56,9 @@
     <hr>
     <span>{{getValidAuthors() | formatAuthors:authorById}}</span>
     <!-- <span ng-repeat="author in getValidAuthors()">
-        <a class="author" ng-href="#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
+        <a class="author" ng-href="/#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
         <span ng-if="author.type == 'editor'">(red.)</span>
         <span ng-if="!$last">och</span>
     </span> -->
-    <div><em><a ng-href="#!/forfattare/{{author}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle || data.showtitle || data.title}}</a></em></div>
+    <div><em><a ng-href="/#!/forfattare/{{author}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle || data.showtitle || data.title}}</a></em></div>
 </div>

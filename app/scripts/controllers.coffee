@@ -712,7 +712,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 myWits.push wit
                 ids.push work.id
                 s.witTitles[wit] = work.title
-                s.witUrls[wit] = "#!/forfattare/LagerlofS/titlar/#{work.path}/info/"
+                s.witUrls[wit] = "/#!/forfattare/LagerlofS/titlar/#{work.path}/info/"
         
         s.haveText = false
         $('#koll-text').html('') # do this while getDiff is loading 
@@ -1120,7 +1120,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         [].concat s.groupedTitles, s.groupedWorks, s.groupedEditorWorks
 
     s.getUrl = (work) ->
-        url = "#!/forfattare/#{work.workauthor or s.author}/titlar/#{work.titlepath.split('/')[0]}/"
+        url = "/#!/forfattare/#{work.workauthor or s.author}/titlar/#{work.titlepath.split('/')[0]}/"
         if work.mediatype == "epub" or work.mediatype == "pdf"
             url += "info"
         else
@@ -1337,7 +1337,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     s.getUrl = (row, mediatype) ->
         # unless row then return
-        url = "#!/forfattare/#{row.author.workauthor or row.author.authorid}/titlar/#{s.getTitleId(row)}/"
+        url = "/#!/forfattare/#{row.author.workauthor or row.author.authorid}/titlar/#{s.getTitleId(row)}/"
         if mediatype == "epub" or mediatype == "pdf"
             url += "info/#{mediatype}"
         else
@@ -1634,7 +1634,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
         else if mediatype == "pdf" 
             return s.data?.pdf.url
 
-        return "#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
+        return "/#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
 
     s.getOtherMediatypes = () ->
         (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
@@ -1654,7 +1654,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     s.getSourceImage = () ->
         if s.data
-            "txt/#{s.data.lbworkid}/#{s.data.lbworkid}_small.jpeg"
+            "/txt/#{s.data.lbworkid}/#{s.data.lbworkid}_small.jpeg"
 
     s.showLargeImage = ($event) ->
         if s.show_large then return 
@@ -1691,10 +1691,10 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
             if item.authorid == author
                 s.appendCrumb [
                     label : item.nameforindex.split(",")[0]
-                    url : "#!/forfattare/" + author
+                    url : "/#!/forfattare/" + author
                 ,
                     label : "titlar"
-                    url : "#!/forfattare/#{author}/titlar"
+                    url : "/#!/forfattare/#{author}/titlar"
                 ,   
                     label : (infoData.shorttitle or _.str.humanize infoData.titlepath.split("/")[0]) + " info"
                     # url : "#!/forfattare/#{author}/titlar/#{infoData.titlepathnorm}"
@@ -2196,16 +2196,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             $rootScope.breadcrumb = []
             s.appendCrumb [
                 label : "författare"
-                url : "#!/forfattare"
+                url : "/#!/forfattare"
             ,
                 label : (_.str.humanize author).split(" ")[0]
-                url : "#!/forfattare/" + author
+                url : "/#!/forfattare/" + author
             ,
                 label : "titlar"
-                url : "#!/forfattare/#{author}/titlar"
+                url : "/#!/forfattare/#{author}/titlar"
             ,   
                 label : (_.str.humanize workinfo.titlepath) + " sidan #{s.pagename} " + (s.mediatype or "")
-                url : "#!/forfattare/#{author}/titlar/#{title}/info"
+                url : "/#!/forfattare/#{author}/titlar/#{title}/info"
             ]
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"

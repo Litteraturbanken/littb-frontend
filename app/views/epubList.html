@@ -5,7 +5,7 @@
     <div ng-class="{searching : searching}"><!-- for some reason, this breaks if dedented -->
         <h1>Litteraturbankens epubfiler</h1>
             
-        <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Listan på verk som finns tillgängliga i formatet kommer att utökas med tiden. Läs mer om epub på <a href="#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
+        <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Listan på verk som finns tillgängliga i formatet kommer att utökas med tiden. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
         
         <div>
             <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">

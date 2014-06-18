@@ -34,7 +34,7 @@
                         <!-- <td ng-if="titleobj.showAuthor">
                             <a href="/#!/forfattare/{{works[0].authors[0].authorid}}">{{works[0].authors[0].nameforindex}}</a>
                         </td> -->
-                            <a class="title" ng-href="#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
+                            <a class="title" ng-href="/#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
                                 {{works[0].showtitle}}
                             </a>
                             <span class="extras" ng-if="$parent.$index == 1">i
@@ -78,13 +78,13 @@
     
     <ul class="topnav" role="navigation">
         <li ng-if="hasTitles()">
-            <a ng-href="#!/forfattare/{{author}}/titlar" >::: Verk och titlar i LB</a>
+            <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Verk och titlar i LB</a>
         </li>
         <li ng-if="groupedWorks.length == 1">
-            <a ng-href="#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
+            <a ng-href="/#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
         </li>
         <!-- <li ng-if="groupedWorks.length > 1">
-            <a ng-href="#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
+            <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
         </li>
         <li ng-if="groupedTitles.length && !groupedWorks.length">
             <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Titlar i LB</a>
