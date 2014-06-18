@@ -41,7 +41,7 @@
     "grunt-connect-proxy": "~0.1.6",
     "grunt-protractor-runner": "~0.2.1",
     "requirejs": "^2.1.12",
-    "grunt-protractor-webdriver": "^0.1.8"
+    "grunt-protractor-webdriver": "^0.1.8",
     "grunt-newer": "^0"
   },
   "engines": {

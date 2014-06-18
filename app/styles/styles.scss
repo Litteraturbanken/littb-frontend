@@ -1356,14 +1356,19 @@ $partnav-width : 170px;
             max-width : 400px;    
         }
         h2 {
-            margin-top: 2em;
+            margin-top: 1.5em;
             margin-bottom: 0.5em;
-            font-size: 1.25em;
+            // font-size: 1.25em;
             // font-variant: small-caps;
-            text-transform : uppercase;
+            
             // &:after {
             //     content : ":";
             // }
+        }
+        .page-authorInfo {
+            h2 {
+                text-transform : uppercase;
+            }
         }
         // really for authorTitles
         .contenttable {
@@ -1899,7 +1904,22 @@ grundform-clean {
 }
 
 .site-sla {
-    
+    &:after {
+        position: absolute;
+        background: url("../img/selma_young.jpg") no-repeat;
+        top: 0;
+        right : 0;
+        // bottom: 0;
+        content: " ";
+        display: block;
+        height: 1203px;
+        width: 1149px;
+        z-index: -1;
+        opacity: 0.4;
+        transform: scale(-1, 1);
+        // margin-left: auto;
+        
+    }
     h2 {
         margin-top : 4em;
     }
@@ -1910,10 +1930,24 @@ grundform-clean {
     &.page-authorInfo #mainview p {
         max-width : 450px;
     }
-
+    .separator {
+        text-align : center;
+    }
     table, table * {
         border-color : #999;
         border-collapse: collapse;
+    }
+    .header .breadcrumb li:before {
+        color : black !important;
+    }
+    .author_img {
+        display : none;
+    }
+    .panel.jamfor {
+        background-color : fade-out(#fff, 0.6);
+        h2 {
+            margin-top : 1em;
+        }
     }
 
     table {
@@ -1942,25 +1976,31 @@ grundform-clean {
         margin-right : 1em;
     }
 
-    .logo_link {
-        background: url("../img/sla.svg") no-repeat;
-        height : 50px;
-        width : 170px;
-        margin-bottom : 0;
-        @include inline-block();
-        background-size : contain;
-        margin-left : 8px;
-    }
-    
-    .logo_link_monogram {
-        background: url("../img/lb_monogram.svg") no-repeat;
-        background-size: contain;
-        height : 60px;
-        width : 100px;
-        // left: -10px;
-        margin-bottom: -5px;
-        position : relative;
+    .header {
+        .breadcrumb {
+            width : 56%;
+        }
+        .logo_link {
+            background: url("../img/sla.svg") no-repeat;
+            height : 55px;
+            width : 170px;
+            margin-bottom : 0;
+            @include inline-block(bottom);
+            background-size : contain;
+            // margin-left : 8px;
+
+        }
         
+        .logo_link_monogram {
+            background: url("../img/lb_monogram.svg") no-repeat;
+            background-size: contain;
+            height : 70px;
+            width : 100px;
+            left: -22px;
+            margin-bottom: 0px;
+            position : relative;
+            
+        }
     }
 
     .toc {

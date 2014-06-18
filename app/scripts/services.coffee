@@ -449,7 +449,6 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
                     else
                         titles.push obj
                 
-                c.log "titles, editorTitles", titles, editorTitles
                 return [titles, editorTitles, translatorTitles]
 
 

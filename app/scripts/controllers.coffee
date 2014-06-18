@@ -1061,7 +1061,7 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
     s.submit()
 
 
-littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route, authors) ->
+littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route, authors, $q) ->
     s = $scope
     _.extend s, $routeParams
 
@@ -1109,8 +1109,11 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
     getPageTitle = (page) ->
         {
-            "semer" : "Mera om"
-            "omtexterna" : "Om texterna"
+           "titlar": "Verk i LB"
+           "semer": "Mera om"
+           "biblinfo": "Bibliografisk databas"
+           "jamfor": "Textkritisk verkstad"
+           "omtexterna": "Om texterna"
         }[page] or _.str.capitalize page
 
     s.getAllTitles = () ->
@@ -1123,6 +1126,22 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         else
             url += "sida/#{work.startpagename}/#{work.mediatype}"
         return url
+
+
+    getHtml = (url) ->
+        def = $q.defer()
+        $http.get(url).success (xml) ->
+            c.log "gethtml", xml
+            from = xml.indexOf "<body>"
+            to = xml.indexOf "</body>"
+            xml = xml[from...to + "</body>".length]
+            def.resolve(_.str.trim xml)
+        return def.promise
+
+
+    if s.slaMode
+        getHtml('/red/sla/OmSelmaLagerlofArkivet.html').then (xml) ->
+            s.slaIntro = xml
 
     refreshExternalDoc = (page, routeParams) ->
         # sla hack
@@ -1146,18 +1165,15 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         #     url = "http://demolittb.spraakdata.gu.se" + s.authorInfo[page]
 
         unless s.showpage in ["introduktion", "titlar"]
-            $http.get(url).success (xml) ->
-                # from = xml.search /<body.*?>/
-                from = xml.indexOf "<body>"
-                to = xml.indexOf "</body>"
-                xml = xml[from...to + "</body>".length]
-                s.externalDoc = _.str.trim xml
-
+            getHtml(url).then (xml) ->
+                s.externalDoc = xml
                 c.log "s.showpage", s.showpage
                 if s.showpage == "omtexterna"
                     s.pagelinks = harvestLinks(s.externalDoc)
                 else
                     s.pagelinks = null
+
+
 
     harvestLinks = (doc) ->
         elemsTuples = for elem in $(".footnotes .footnote[id^=ftn]", doc)
@@ -1221,12 +1237,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         ]
 
         c.log "data.surname", data.surname
-        $rootScope.appendCrumb 
-            label : data.surname
-            url : "#!/forfattare/" + s.author
-        if s.showpage != "introduktion"
-            refreshBreadcrumb()
-        refreshTitle()
+        # $rootScope.appendCrumb 
+        #     label : data.surname
+        #     url : "#!/forfattare/" + s.author
+        # if s.showpage != "introduktion"
+        #     refreshBreadcrumb()
+        # refreshTitle()
         refreshExternalDoc(s.showpage, $routeParams)
 
         if not s.authorInfo.intro and s.showpage == "introduktion"
@@ -1234,7 +1250,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
     
     
-littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, $q, authors) ->
+littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, authors) ->
     s = $scope
     s.searching = false
     s.rowByLetter = {}
@@ -1794,7 +1810,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $q, $window, $rootElement, authors) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors) ->
     s = $scope
     s.isEditor = false
         
