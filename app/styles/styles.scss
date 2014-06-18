@@ -1604,6 +1604,10 @@ $partnav-width : 170px;
     &:before {
         content: 's ';
     }
+    // fix for page numbers
+    // &.w1 + &.w2 {
+    //     display : none;
+    // }
 }
 .koll-context {
     cursor: pointer;
