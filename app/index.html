@@ -27,6 +27,7 @@
     <body id="ng-app" class="ng-app: littbApp;" ng-cloak ng-class="{focus : _focus_mode, night : _night_mode}">
 
         <div class="header">
+            <a ng-if="isSla" class="logo_link_monogram" ng-href="/#!/start"></a>
             <a class="logo_link" ng-href="#!{{getLogoUrl()}}"></a>
             <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li>
@@ -83,6 +84,9 @@
                     <a href="#!/statistik">Statistik</a>
                 </li>
                 <li>
+                    <a href="/#!/forfattare/LagerlofS">Lagerlöfarkivet</a>
+                </li>
+                <li>
                     <a href="#!/skola">LB:s skola</a>
                 </li>
                 <li>
@@ -116,7 +120,9 @@
         </div>
 
         <div id="mainview" ng-view role="main"></div>
-
+        <div id="rightCorridor">
+            <div id="toolkit-right"></div>
+        </div>
         <!-- <div class="nav_footer"></div> -->
         
         <script type="text/ng-template" id="so_modal_template.html">
@@ -164,6 +170,7 @@
         <script src="components/bootstrap/js/bootstrap-affix.js"></script>
         <script src="components/spin.js/dist/spin.js"></script>
         <script src="components/angular-spinner/angular-spinner.js"></script>
+        <script src="lib/FileSaver.js"></script>
         <!-- endbuild -->
 
 

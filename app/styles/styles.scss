@@ -14,6 +14,7 @@ $main-menu-width : 120px;
 $gutter-width : 40px;
 $page-width : 712px;
 $mainview-width : $page-width - $main-menu-width - ($gutter-width * 2);
+$right-corridor-width : 200px;
 
 $primarycolor : #990000;
 $dotted : thin dotted #990000;
@@ -49,10 +50,16 @@ body {
     white-space: nowrap;
     font-family : georgia, serif;
     width : $page-width;
-    background-color: white;
+    /*background-color: white;*/
+    color: #333;
     line-height : 17.5px;
     padding-bottom : 3em;
-
+    
+    a:visited {
+        // color: inherit; /* rgb(51, 51, 51) */
+        // color : grey;
+    }
+    
     > * {
         white-space : normal;
     }
@@ -84,6 +91,15 @@ h1,h2,h3,h4,h5,h6 {
 
 .etext table {
     width: 90%;
+}
+
+#rightCorridor{
+    @include inline-block;
+    margin-left: 5px;
+    width : $right-corridor-width;
+    #toolkit-right {
+        margin-top: 2em;
+    }
 }
 
 #leftCorridor {
@@ -326,7 +342,9 @@ ul {
 li {
     list-style: none;
 }
-
+form {
+    margin-bottom : 1em;
+}
 .mainnav {
     vertical-align: top;
     line-height : 19px;
@@ -368,8 +386,19 @@ body > .header {
         @include inline-block(bottom);
         width : 28%;
     }
+
     .breadcrumb {
         @include inline-block(bottom);
+        > li {
+            display: inline;
+            &.active a {
+                color: #999999;
+            }
+        }
+        .divider {
+            color: #CCC;
+            padding: 0px 5px;
+        }
         text-align : right;
         width : 71%;
         position : relative;
@@ -448,9 +477,6 @@ body > .header {
             font-size : 1.1em;
             width : 90px;
         }
-        form {
-            margin-bottom : 1em;
-        }
     }
     & + li:before {
         .breadcrumb > li + li:before {
@@ -458,7 +484,7 @@ body > .header {
             padding: 0 5px;
         }
     }
-} 
+}
 
 .page-contactForm {
     #mainview {
@@ -635,7 +661,7 @@ body > .header {
             td {
                 padding-right : 2px;
             }
-            tr.is_faksimil * {
+            tr.is_faksimil {
                 color : grey;
             }
             td.num {
@@ -751,7 +777,6 @@ $partnav-width : 170px;
         .reader_main {
             height : 100%;
         }
-
 
         // fix for bad etext styling rule
         div.pname {
@@ -1299,14 +1324,12 @@ $partnav-width : 170px;
         }
         .provenance {
             margin : 2em 0;
-            * {
-                @include inline-block(middle);
-            }
-            img {
+            > a {
                 margin-right : 10px;
             }
-            p {
+            > p {
                 width : 250px;
+                @include inline-block(middle);
             }
         }
         .toggle {
@@ -1404,7 +1427,9 @@ $partnav-width : 170px;
         .img_large.ng-enter-active {opacity : 1 } 
         .img_large.ng-leave {opacity : 1 }        
         .img_large.ng-leave-active {opacity : 0 } 
+        
 
+        
     }
 
     #toolkit {
@@ -1415,6 +1440,18 @@ $partnav-width : 170px;
             margin-top : 2em;
             li {
                 margin-bottom : 1em;
+            }
+        }
+        .subnav {
+            li:before {
+                content : ":::";
+                display : inline-block;
+                vertical-align: top;
+                margin-right : 3px;
+            }
+            li a {
+                display : inline-block;
+                width : 85%;
             }
         }
     }
@@ -1542,6 +1579,146 @@ $partnav-width : 170px;
     }
     table {
         min-width : 100%;
+    }
+}
+
+.koll-changed {
+    background-color: pink;
+    &.fmt {
+        background-color: #E1FFD6;
+    }
+}
+.koll-context-pb {
+    display:none;
+}
+.koll-context-pb, .koll-pb {
+    white-space: nowrap;
+    right: $mainview-width + 6px;
+    position: absolute;
+    font-size: smaller;
+    &:before {
+        content: 's ';
+    }
+}
+.koll-context {
+    cursor: pointer;
+    /* this is done manually in javascipt, because performance reasons in chrome( as of v.34) */
+    /*&.highlight { 
+        background-color: rgba(yellow, 0.4) !important; // override hover
+    }*/
+}
+.koll-p {
+    margin-top: 0;
+}
+#koll-text {
+    position: relative;
+}
+.hide-bulk {
+    >.bulk, .koll-pb, >.koll-p {
+       display: none;
+    }
+    .koll-context-pb {
+        display: inline;
+    }
+    >.koll-context {
+        display: block;
+        padding: 10px;
+        border-bottom: 1px solid lightgrey;
+        cursor: pointer;
+        max-height: 100px; // 5em;
+        overflow: hidden;
+        
+        &.odd {
+            background-color: rgba(black, 0.05);
+        }
+        &:after {
+            content: ' ...';
+        }
+        &:before {
+            content: '... ';
+        }
+        &:first-child:before {
+            content: '';
+        }
+        &:last-child:after {
+            content: '';
+        }
+        &:hover {
+            background-color: rgba(yellow, 0.2); 
+        }
+    }
+}
+#context-versions-div {
+    border: 1px solid #bbb;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
+    background-clip: padding-box;
+    border-radius: 6px;
+    padding: 6px 3px;
+    position: absolute;
+    background-color: white;
+    .control {
+        cursor: pointer;
+        &:not(:first-child) {
+            margin-left: 10px;
+        }
+        &:hover, &.hover {
+            color: $primarycolor;
+        }
+    }
+    .context-version {
+        padding: 3px;
+        .well {
+            margin-bottom: 0px;
+            padding: 10px;
+        }
+    }
+    .title {
+        font-weight: bold;
+    }
+    .base {
+        .title {
+            font-style: italic;
+        }
+        /* css alternativ till inbäddad i textjamforelse.html
+        .title:after {
+            content: ' ☆';
+        } */
+        .change-base {
+            opacity: 0.5;
+            cursor: default;
+            color: inherit;
+        }
+    }
+    .koll-changed {
+        background-color: pink;
+    }
+    .highlight {
+         background-color: rgba(yellow, 0.4);
+    }
+}
+#diff-div {
+    background-color: white;
+    padding: 8px; 
+    display: none;
+    position: absolute;
+    margin-top: 5px;
+    border: solid gray;
+    border-width: 1px 1px 1px 1px;
+    border-radius: 3px;
+    .version {
+        .title {
+            font-weight: bold;
+            &.base {
+                &:before {
+                    content: '☆ ';
+                }
+                font-style: italic;
+            }
+        }
+    }
+    p {
+      margin: 5px 5px 5px 10px;
+      padding-left: 5px;
     }
 }
 
@@ -1719,6 +1896,149 @@ grundform-clean {
     color: white;
     @include primarygradient;
     // font-size: 1em;
+}
+
+.site-sla {
+    
+    h2 {
+        margin-top : 4em;
+    }
+    h3 {
+        margin-top : 2em;
+        font-size : 1.2em;
+    }
+    &.page-authorInfo #mainview p {
+        max-width : 450px;
+    }
+
+    table, table * {
+        border-color : #999;
+        border-collapse: collapse;
+    }
+
+    table {
+        border : none;
+        border-collapse: collapse;
+        width : 450px;
+        max-width : 100%;
+        td {
+            padding : 4px;
+        }
+
+    }
+
+    .literallayout {
+        margin-left : 1em;
+    }
+
+    .listitem p {
+        margin : 0;
+    }
+
+    ol.orderedlist li {
+        margin-bottom : 0.5em;
+        list-style-type: decimal;
+        max-width : 420px;
+        margin-right : 1em;
+    }
+
+    .logo_link {
+        background: url("../img/sla.svg") no-repeat;
+        height : 50px;
+        width : 170px;
+        margin-bottom : 0;
+        @include inline-block();
+        background-size : contain;
+        margin-left : 8px;
+    }
+    
+    .logo_link_monogram {
+        background: url("../img/lb_monogram.svg") no-repeat;
+        background-size: contain;
+        height : 60px;
+        width : 100px;
+        // left: -10px;
+        margin-bottom: -5px;
+        position : relative;
+        
+    }
+
+    .toc {
+        display : none;
+    }
+    .titlepage {
+        .title {
+            // display : none;
+        }
+        hr {
+            display: none;
+        }
+    }
+    h3.author {
+        margin-bottom : 3em;
+    }
+    h3.author:before {
+        content: "Av ";
+        display : inline;
+    }
+    .blockquote {
+        width : 85%;
+    }
+    .footnotes {
+        .footnote {
+            a {
+                color : inherit;
+                border-bottom : none;
+                cursor : default;
+                pointer-events : none;
+
+                &:first-of-type {
+                    margin-right : 1px;
+                }
+            }
+        }
+        &:before {
+            content : "Noter";
+            margin-top : 4em;
+            display : block;
+            font-size : 1.5em;
+        }
+        hr {
+            display : none;
+        }   
+    }
+
+    .note_popover {
+      transition: opacity linear 100ms;
+      opacity : 1;
+
+      &.ng-hide-add,
+      &.ng-hide-remove {
+        display:block!important;
+      }  
+      &.ng-hide {
+        opacity:0;
+      }
+    }
+
+    .sect1 {
+    
+        .titlepage .title {
+            display: none;
+        }
+        .sect2 .titlepage .title {
+            display: block;
+        }
+        
+    }
+    p {
+        max-width : inherit;
+    }
+
+    .italic {
+        font-style: italic;
+    }
+
 }
 
 .site-school {
@@ -2184,7 +2504,6 @@ only screen and (max-width: 760px),
     a.ng-click-active, a:focus {
         color : $primarycolor;
     }
-
     input[type=text] {
         -webkit-appearance: none;
         border : 1px solid lightgrey;
@@ -2353,3 +2672,33 @@ only screen and (max-width: 760px),
 
 }
 
+#ord-och-sak {
+    padding: 10px;
+    border-left: 1px solid grey;
+    div:not(:first-child) {
+        border-top: thin solid lightgray;
+    }
+    /* div:hover .oos-ord {
+        background-color: pink;
+    } */
+    div {
+        padding: 5px 10px;
+        font-size: 0.8em;
+        .oos-ord {
+            font-weight: bold;
+        }
+        .oos-forklaring {
+            /* font-size: smaller; */
+        }
+    }
+}
+
+#omtexterna-doc {
+    /* .para {
+        position: relative; # override red.css
+        padding: none; # override red.css
+    }
+    a.para {
+        border-bottom : inherit; # override style.scss
+    } */
+}

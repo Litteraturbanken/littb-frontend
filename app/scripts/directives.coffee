@@ -3,16 +3,20 @@ littb.directive 'submitBtn', () ->
     replace : true
     template : '<input type="image" class="submit_btn" ng-src="/bilder/LBsubmitknapp.jpeg">'
 
-littb.directive 'toolkit', ($compile, $location, $route) ->
+littb.directive 'toolkit', () ->
     restrict : "EA"
-    compile: (elm, attrs) ->
-        elm.remove()
-        cmp = $compile("<div>#{elm.html()}</div>")
-
-        return (scope, iElement, iAttrs) ->
-            $("#toolkit").html(cmp(scope))
-
-
+    link: (scope, element, attrs, controller) ->
+        id = attrs.toolkitId || "toolkit" # default to id 'toolkit'
+        if not attrs.toolkitReplace
+            $("##{id}").append element
+        else
+            replaced = $("##{id} > *").replaceWith element
+        scope.$on "$destroy", () ->
+            if attrs.toolkitReplace
+                element.replaceWith replaced
+            else
+                element.remove()
+        
 littb.directive 'css', () ->
     restrict : "EA"
     scope : {css : "@", evalIf : "&if"}
@@ -135,16 +139,25 @@ littb.directive 'square', () ->
             [key, expand(val) + "px"]
 
         elm.css coors
-        
-# littb.directive 'clickOutside', ($document) -> 
-#     restrict: 'A',
-#     link: (scope, elem, attr, ctrl) ->
-#         elem.bind 'click', (e) ->
-#             e.stopPropagation()
 
-#         $document.on 'click', () ->
-#             scope.$apply(attr.clickOutside)
-
+littb.directive 'clickOutside', ($document) ->
+    restrict: 'A'
+    link: (scope, elem, attr, ctrl) ->
+        skip = false
+        elem.bind 'click', handler1 = (e) ->
+            skip = true
+            return
+            
+        $document.bind 'click', handler = (e) ->
+            unless skip
+                scope.$eval attr.clickOutside, {$event:e} # event object can be accessed as $event, as with ng-click 
+            skip = false
+            return ## HO! watch out! not to implicitly return false
+            
+        elem.on "$destroy", () ->
+            $document.off('click', handler)
+            return
+        return
 
 littb.directive 'scrollTo', ($window, $timeout) -> 
     # scope : scrollTo : "="
@@ -307,6 +320,7 @@ littb.directive 'pageTitle', ($interpolate) ->
 littb.directive 'breadcrumb', ($interpolate, $rootScope) ->
     restrict : "EA"
     link: (scope, elem, attrs) ->
+        $rootScope.breadcrumb.splice(1, $rootScope.breadcrumb.length)
         elem.remove()
         watches = []
         for a, i in elem.children()
@@ -340,6 +354,18 @@ littb.directive 'breadcrumb', ($interpolate, $rootScope) ->
             for wtch in watches
                 wtch()
 
+littb.directive "sticky", () ->
+    link: (scope, element, attrs) ->
+        element.origTop = element.offset().top
+        $(document).on "scroll.sticky", (evt) ->
+            #c.log "scroll", $(document).scrollTop(), element.origTop
+            if $(document).scrollTop() >= element.origTop
+                element.addClass "sticky"
+            else
+                element.removeClass "sticky"
+            
+        scope.$on "$destroy", () ->
+            $(document).off "scroll.sticky"
 
 littb.directive "popper", ($rootElement) ->
     scope: {}
@@ -434,5 +460,61 @@ littb.directive "setClass", () ->
                 elem.addClass key
             else
                 elem.removeClass key
+
+littb.directive "footnotePopup", ($window, $location, $compile) ->
+    restrict : "EA"
+    scope : 
+        mapping : "=footnotePopup"
+    link : (s, elem, attrs) ->
+
+        popupTmpl = """
+            <div class="note_popover popover bottom" ng-show="show">
+                <div class="arrow"></div>
+                <div class="popover-content" ng-bind-html="content | trust"></div>
+            </div>
+        """
+
+        popupTmpl = $compile(popupTmpl)(s)
+        .appendTo("body")
+        .click((event) -> 
+            target = $(event.target)
+            event.preventDefault()
+            
+            if target.is("sup") 
+                id = _.str.lstrip target.parent().attr("href"), "#"
+                scrollTarget = elem.find(".footnotes .footnote[id='ftn.#{id}']")
+                $location.search("upp", $("body").prop("scrollTop"))
+                $("body").animate({scrollTop : scrollTarget.position().top})
+            else
+                event.stopPropagation()    
+
+        )
+        .show()
+        s.show = false
+
+        elem.on "click", "a.footnote[href^=#ftn]", (event) ->
+            if s.show
+                $(document).click()
+                return false
+            event.preventDefault()
+            event.stopPropagation()
+
+            target = $(event.currentTarget)
+            id = _.str.lstrip target.attr("href"), "#"
+            
+            s.$apply () ->
+                s.content = s.mapping[id]
+                s.show = true
+
+            popupTmpl
+            .position(
+                my : "middle top+10px"
+                at : "bottom middle"
+                of : target
+            )
+
+            $(document).one "click", () ->
+                s.$apply () ->
+                    s.show = false
 
 
