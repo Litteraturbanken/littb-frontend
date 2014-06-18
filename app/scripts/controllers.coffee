@@ -11,7 +11,7 @@ littb.filter "formatAuthors", (authors) ->
             suffix = {
                 editor : " (red.)"
                 translator : " (övers.)"
-                scholar : " (red.)"
+                # scholar : " (red.)"
 
 
             }[auth.type] or ""
