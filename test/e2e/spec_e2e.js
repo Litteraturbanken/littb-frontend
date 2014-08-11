@@ -1,8 +1,8 @@
 describe('authors', function() {
   var rows;
   beforeEach(function() {
-    // browser.get('http://localhost:9000/#!/forfattare');
-    browser.get('http://demolittb.spraakdata.gu.se/#!/forfattare');
+    browser.get('http://localhost:9000/#!/forfattare');
+    // browser.get('http://demolittb.spraakdata.gu.se/#!/forfattare');
     rows = element.all(by.repeater('row in rowByLetter[selectedLetter] || rows | filter:authorFilter'))
 
   })
