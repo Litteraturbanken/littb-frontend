@@ -1606,7 +1606,7 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
             _.str.contains(row.itemAttrs.title.toLowerCase(), s.title)
 
 
-littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document) ->
+littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document, $location) ->
     s = $scope
     {title, author} = $routeParams
     # _.extend s, $routeParams
@@ -1680,9 +1680,13 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     infoDef = backend.getSourceInfo(author, title) #TODO: REMOVE!
     infoDef.then (data) ->
+        s.error = false
         s.data = data
         if not s.mediatype
             s.mediatype = s.data.mediatypes[0]
+    , (reason) -> # reject callback 
+        s.data = {}
+        s.error = true
 
     $q.all([authors, infoDef]).then ([[authorData, authorById], infoData]) ->
         # c.log "authorData", arguments

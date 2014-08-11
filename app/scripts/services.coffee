@@ -303,7 +303,9 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             url : url
             params : params
 
-        ).success (xml) ->
+        ).success( (xml) ->
+            if $("fel", xml).length
+                def.reject $("fel", xml).text()
             output = parseWorkInfo("result", xml)
 
             prov = $("result provenance-data", xml)
@@ -337,7 +339,11 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
                     url : util.getInnerXML pdf
 
             def.resolve output
+        ).error (xml) ->
+            def.reject xml
+        
         return def.promise
+
 
     logPage : (pageix, lbworkid, mediatype) ->
             

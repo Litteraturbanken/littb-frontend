@@ -2,6 +2,7 @@
 <meta-desc>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</meta-desc>
 <div class="maincontent" ng-class="{searching:!data}">
     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+    <div ng-if="error" class="error">Ett fel har uppstått.</div>
 
     <div class="header_left">
         <h3 class="author">{{getValidAuthors() | formatAuthors:authorById}}</h3>
@@ -20,7 +21,7 @@
 
     <p class="clearfix" ng-bind-html="data.workintro | trust"></p>
     
-    <div class="mediatypes" ng-class="{bold : data.workintro}">
+    <div ng-show="data.mediatype" class="mediatypes" ng-class="{bold : data.workintro}">
         Läs verket som 
         <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
         <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)

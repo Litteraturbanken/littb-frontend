@@ -65,12 +65,17 @@
 </div>
 
 <div>
-    <style scoped id="showBaseWitStyle">
+    <!-- <style scoped id="showBaseWitStyle">
       .changed > :not(.{{ baseWit }}) {
         display:none; 
       }
     </style>
-    <div id="koll-text" ng-class="showBulk ? null : 'hide-bulk'" />
+    <div id="koll-text" ng-class="showBulk ? null : 'hide-bulk'" /> -->
+
+    <style id="showBaseWitStyle"
+           ng-bind-template=".wit:not(.{{baseWit}}){display:none} "></style>
+    <div id="koll-text" 
+         ng-class="showBulk ? null : 'hide-bulk'" />
 </div>
 <div id="diff-div"></div>
 <div ng-if="loading">Laddar <span class="dots_blink"></span></div>

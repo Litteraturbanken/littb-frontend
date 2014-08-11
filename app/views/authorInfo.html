@@ -28,17 +28,17 @@
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                     <tr ng-repeat="works in titleobj.data track by $index">
                         <td ng-if="$parent.$index > 1">
-                            <a href="/#!/forfattare/{{works[0].authors[0].authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
+                            <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
                         </td>
                         <td>
                         <!-- <td ng-if="titleobj.showAuthor">
                             <a href="/#!/forfattare/{{works[0].authors[0].authorid}}">{{works[0].authors[0].nameforindex}}</a>
                         </td> -->
-                            <a class="title" ng-href="/#!/forfattare/{{works[0].workauthor || author}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
+                            <a class="title" ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
                                 {{works[0].showtitle}}
                             </a>
                             <span class="extras" ng-if="$parent.$index == 1">i
-                                <a class="author" href="/#!/forfattare/{{works[0].authors[0].authorid}}">
+                                <a class="author" href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">
                                     {{getWorkAuthor(works[0].authors).surname}}:
                                 </a> 
                                 <span class="title">{{works[0].workshorttitle}}</span></span>

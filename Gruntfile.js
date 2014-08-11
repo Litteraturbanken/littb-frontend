@@ -258,6 +258,7 @@ module.exports = function (grunt) {
             '<%= yeoman.dist %>/scripts/{,*/}*.js',
             '<%= yeoman.dist %>/styles/{,*/}*.css',
             '<%= yeoman.dist %>/img/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
+            '!<%= yeoman.dist %>/img/focus_letters.svg',
             '<%= yeoman.dist %>/styles/fonts/*'
           ]
         }
@@ -362,6 +363,14 @@ module.exports = function (grunt) {
           ]
         }, 
         // {
+        //   expand: true,
+        //   cwd: 'app/img',
+        //   dest: '<%= yeoman.dist %>/img',
+        //   src: [
+        //     'focus_letters.svg'
+        //   ]
+        // }, 
+        // {
         //   expand : true,
         //   cwd: '<%= yeoman.app %>/components/font-awesome/font',
         //   dest: '<%= yeoman.dist %>/font',
@@ -387,17 +396,14 @@ module.exports = function (grunt) {
       server: [
         'newer:coffee:dist',
         'compass:server',
-        // 'copy:styles'
       ],
       test: [
         'coffee',
         'compass',
-        // 'copy:styles'
       ],
       dist: [
         'coffee',
         'compass:dist',
-        // 'copy:styles',
         'imagemin',
         'svgmin',
         'htmlmin'

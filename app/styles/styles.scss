@@ -1714,17 +1714,28 @@ $partnav-width : 170px;
     border: solid gray;
     border-width: 1px 1px 1px 1px;
     border-radius: 3px;
-    .version {
-        .title {
-            font-weight: bold;
-            &.base {
-                &:before {
-                    content: '☆ ';
-                }
-                font-style: italic;
+    > .title {
+        display: block;
+        font-weight: bold;
+        &.base {
+            &:before {
+                content: '☆ ';
             }
+            font-style: italic;
         }
     }
+
+    // .version {
+    //     .title {
+    //         font-weight: bold;
+    //         &.base {
+    //             &:before {
+    //                 content: '☆ ';
+    //             }
+    //             font-style: italic;
+    //         }
+    //     }
+    // }
     p {
       margin: 5px 5px 5px 10px;
       padding-left: 5px;
