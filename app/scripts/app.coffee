@@ -11,6 +11,11 @@ if(location.hash.length && location.hash[1] != "!")
     location.hash = "#!" + _.str.lstrip(location.hash, "#")
 
 
+
+$.fn.outerHTML = () ->
+    return $(this).clone().wrap('<div></div>').parent().html()
+
+
 authorResolve = ["$q", "$routeParams", "$route",
                             ($q, $routeParams, $route) ->
                                 def = $q.defer()

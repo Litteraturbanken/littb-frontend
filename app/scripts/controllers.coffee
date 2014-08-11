@@ -4,7 +4,7 @@ window.c = console ? log : _.noop
 littb = angular.module('littbApp')
 
 littb.filter "formatAuthors", (authors) ->
-    (authorlist, authorsById) ->
+    (authorlist, authorsById, makeLink) ->
         if not authorlist or not authorlist.length or not authorsById then return
 
         stringify = (auth) ->
@@ -17,11 +17,21 @@ littb.filter "formatAuthors", (authors) ->
             }[auth.type] or ""
             authorsById[auth.id].fullname + suffix
         
-        strings = _.map authorlist, stringify
+        linkify = (auth) ->
+            $("<a>").attr "href", "/#!/forfattare/#{auth.id}"
+                .text stringify auth
+                .outerHTML()
+
+        if makeLink
+            strings = _.map authorlist, linkify
+        else
+            strings = _.map authorlist, stringify
         
 
         firsts = strings[...-1]
         last = _.last strings
+
+
 
         if firsts.length then return "#{firsts.join(', ')} och #{last}"
         else return last
@@ -1361,22 +1371,30 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             # val_in : (val) ->
             # val_out : (val) ->
             # post_change : () ->
+            replace : false
         ,
             expr : "sorttuple[1]"
             scope_func : "setDir"
             key : "fallande"
+            replace : false
         ,
             key : "filter"
             scope_name : "rowfilter"
+            replace : false
         ,
             key : "niva"
             scope_name : "workFilter"
             default : "works"
+            replace : false
         ,
+            # TODO: history recall issue with back btn
             key : "mediatypeFilter"
+            replace : false
+
         ,
             key : "forfattare"
             scope_name : "authorFilter"
+            replace : false
         ,
             key : "index",
             scope_name : "selectedLetter"

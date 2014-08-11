@@ -31,7 +31,7 @@
     <div toolkit>
         <div ng-class="{editor: isEditor}">
             <hr>
-            <span>{{getValidAuthors() | formatAuthors:authorById}}</span>
+            <span ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
             
             <div>
                 <a class="title" 

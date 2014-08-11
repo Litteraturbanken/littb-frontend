@@ -5,7 +5,7 @@
     <div ng-if="error" class="error">Ett fel har uppstått.</div>
 
     <div class="header_left">
-        <h3 class="author">{{getValidAuthors() | formatAuthors:authorById}}</h3>
+        <h3 class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></h3>
         <h3 class="title"><em>{{data.title}}</em></h3>
     </div>
     <div class="header_right" >
@@ -55,7 +55,7 @@
 
 <div toolkit>
     <hr>
-    <span>{{getValidAuthors() | formatAuthors:authorById}}</span>
+    <span ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
     <!-- <span ng-repeat="author in getValidAuthors()">
         <a class="author" ng-href="/#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
         <span ng-if="author.type == 'editor'">(red.)</span>
