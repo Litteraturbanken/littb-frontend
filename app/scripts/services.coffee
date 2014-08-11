@@ -539,7 +539,7 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
         tokenList = []
         regescape = (s) ->
-            s.replace(/[\.|\?|\+|\*|\|\'|\"\(\)\^\$]/g, "\\$&")
+            s.replace(/[\.|\?|\+|\*|\|\"\(\)\^\$]/g, "\\$&")
 
         tokenize = (str) ->
             # Excludes some characters from starting word tokens
@@ -555,14 +555,17 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             # _re_multi_char_punct = /(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)/
 
 
+
             wdlist = for wd in query.split(/\s+/)
                 extras = []
                 if wd.match(/\.\.\./)
                     extras.push "..."
                     wd = wd.replace(/(\.\.\.)/, "")
                 wd = wd.replace(/([\.,;:])/g, " $1")
-                wd = wd.replace(/([-])/g, " $1 ")
+                wd = wd.replace(/([-’])/g, " $1 ")
+                wd = wd.replace(/(['])/g, " $1$1 ") # double quote for escaping
                 wd = wd.replace(/([»])/g, "$1 ")
+                c.log "wd", wd
                 wd.split(" ")
 
 
