@@ -151,6 +151,15 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         $location.search("titel", null)
         s.selected_title = ""
 
+    s.titleSort = (a) ->
+        _.map a.shorttitle.split(/(\d+)/), (item) -> 
+            if Number(item)
+                zeroes = (_.map [0..(10 - item.toString().length)], () -> "0").join("")
+
+                return zeroes + item.toString()
+            else 
+                return item
+        
 
     util.setupHashComplex s, [
             scope_name : "num_hits"

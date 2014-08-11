@@ -34,7 +34,7 @@
                 <select id="title_select" 
                         ng-model="selected_title" 
                         ng-change="titleChange()"
-                        ng-options="title.showtitle for title in titles | filter:{searchable: 'true'} | filter: checkProof | orderBy:'showtitle' ">
+                        ng-options="title.showtitle for title in titles | filter:{searchable: 'true'} | filter: checkProof | orderBy:titleSort ">
     
                     <option value="">Allt tillgängligt</option>
                 </select>
@@ -75,8 +75,8 @@
                 <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
                 <td><a bo-text="sent.structs.text_nameforindex" 
                     href="/#!/forfattare/{{getSetVal(sent, 'text_authorid')}}"></a></td>
-                <td class="title">
-                    <a bo-text="sent.structs.text_shorttitle" 
+                <td class="title" tooltip="{{sent.structs.text_title}}">
+                    <a bo-text="sent.structs.text_shorttitle"
                     href="/#!/forfattare/{{getSetVal(sent, 'text_authorid')}}/titlar/{{sent.structs.text_titlepath}}/{{sent.structs.text_mediatype}}"></a>
                 </td>
 
