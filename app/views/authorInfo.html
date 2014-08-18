@@ -8,6 +8,7 @@
 
 <div ng-class="{searching:!authorInfo, show_large : show_large}">
     <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
+    <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
     <div ng-switch="showpage">
         <div ng-switch-when="introduktion">
             <div ng-bind-html="authorInfo.intro | trust"></div>

@@ -61,5 +61,5 @@
         <span ng-if="author.type == 'editor'">(red.)</span>
         <span ng-if="!$last">och</span>
     </span> -->
-    <div><em><a ng-href="/#!/forfattare/{{author}}/titlar/{{data.titleid}}/{{data.mediatypes[0]}}">{{data.shorttitle || data.showtitle || data.title}}</a></em></div>
+    <div><em><a ng-href="/#!/forfattare/{{author}}/titlar/{{data.titlepathNorm.split('/')[0]}}/{{data.mediatypes[0]}}">{{data.shorttitle || data.showtitle || data.title}}</a></em></div>
 </div>

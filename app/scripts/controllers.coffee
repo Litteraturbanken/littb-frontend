@@ -1093,6 +1093,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
+        s.authorError = s.author not of s.authorsById
 
     s.showLargeImage = ($event) ->
         if s.show_large then return 
@@ -1334,10 +1335,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         s.selectedLetter = null
         unless s.authorFilter and not s.selectedLetter
             s.selectedLetter = "A"
+            fetchWorks()
 
     fetchWorks = () ->
         s.searching = true
-        backend.getTitles(s.workFilter == "titles", s.selectedLetter, s.filter).then (titleArray) ->
+        backend.getTitles(s.workFilter == "titles", s.authorFilter, s.selectedLetter, s.filter).then (titleArray) ->
             s.searching = false
             s.titleArray = titleArray
             s.rowByLetter = _.groupBy titleArray, (item) ->
@@ -1750,7 +1752,6 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
             s.$broadcast "focus"
 
     s.keydown = (event) ->
-        c.log event.keyCode
         if event.keyCode == 40 # down arrow
             # TODO: this is pretty bad but couldn't be done using the typeahead directive
             if $(".input_container .dropdown-menu").is(":hidden")

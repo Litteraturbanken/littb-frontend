@@ -1,0 +1,23 @@
+{
+  "author": "Ben Atkin <ben@benatkin.com> (http://benatkin.com/)",
+  "name": "naturalsort",
+  "description": "sort string keys with numbers inside of them naturally",
+  "version": "0.0.1",
+  "homepage": "http://naturalsort.com/",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/benatkin/naturalsort.git"
+  },
+  "main": "naturalsort.js",
+  "scripts": {
+    "test": "vows test/test-original.js"
+  },
+  "engines": {
+    "node": ">=v0.4.7"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vows": "0.5.9",
+    "underscore": "1.1.7"
+  }
+}

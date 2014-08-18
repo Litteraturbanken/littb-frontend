@@ -228,9 +228,13 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         else 
             return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
-    getTitles : (allTitles = false, initial = null, string = null) ->
+    getTitles : (allTitles = false, author = null, initial = null, string = null) ->
         def = $q.defer()
-        if allTitles
+        if author
+            params = 
+                action : "get-titles-by-author"
+                authorid : author
+        else if allTitles
             params = 
                 action : "get-titles-by-string-filter"
             if initial
@@ -248,7 +252,6 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
 
         ).success (xml) ->
-            # c.log "getTitles success", xml
 
             pathGroups = _.groupBy $("item", xml), (item) ->
                 author = $(item).find("author").attr("authorid")
