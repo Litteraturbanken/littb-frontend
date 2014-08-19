@@ -305,8 +305,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         $location.search("fras", q) if q
 
         s.query = q
+        s.pageTitle = q
         s.searching = true
         
+
 
         from = s.current_page  * s.num_hits
         to = (from + s.num_hits) - 1
@@ -340,11 +342,17 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         ,   
             key : "proofread"
             default : "all"
+        ,
+            key : "fras"
+            post_change : (val) ->
+                if val
+                    s.search val
+
 
         ]
 
-    if "fras" of queryvars
-        s.search(queryvars.fras)
+    # if "fras" of queryvars
+    #     s.search(queryvars.fras)
 
 littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location, $modal, backend, $window, $timeout) ->
     s = $scope
@@ -1127,7 +1135,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         _.filter worklist, (item) ->
             "/" not in item.titlepath 
     
-    getPageTitle = (page) ->
+    s.getPageTitle = (page) ->
         {
            "titlar": "Verk i LB"
            "semer": "Mera om"
@@ -1285,7 +1293,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.filterAuthor = (row) ->
         unless s.authorFilter then return true
         row.author.authorid == s.authorFilter
-    
+
     # s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle"
     s.titlesort = "itemAttrs.sortkey"
     
@@ -1335,6 +1343,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         s.selectedLetter = null
         unless s.authorFilter and not s.selectedLetter
             s.selectedLetter = "A"
+        if s.workFilter == "titles"
             fetchWorks()
 
     fetchWorks = () ->

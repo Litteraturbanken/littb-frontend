@@ -211,7 +211,14 @@ module.exports = function (grunt) {
           expand: true,
           cwd: 'test/spec',
           src: '*.coffee',
-          dest: '.tmp/spec',
+          dest: 'test/spec',
+          ext: '.js'
+        },
+        {
+          expand: true,
+          cwd: 'test/e2e',
+          src: '*.coffee',
+          dest: 'test/e2e',
           ext: '.js'
         }]
       }
@@ -258,8 +265,8 @@ module.exports = function (grunt) {
           src: [
             '<%= yeoman.dist %>/scripts/{,*/}*.js',
             '<%= yeoman.dist %>/styles/{,*/}*.css',
-            '<%= yeoman.dist %>/img/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
-            '!<%= yeoman.dist %>/img/focus_letters.svg',
+            '<%= yeoman.dist %>/img/{,*/}*.{png,jpg,jpeg,gif,webp}',
+            // '!<%= yeoman.dist %>/img/focus_letters.svg',
             '<%= yeoman.dist %>/styles/fonts/*'
           ]
         }
@@ -363,21 +370,6 @@ module.exports = function (grunt) {
             'generated/*'
           ]
         }, 
-        // {
-        //   expand: true,
-        //   cwd: 'app/img',
-        //   dest: '<%= yeoman.dist %>/img',
-        //   src: [
-        //     'focus_letters.svg'
-        //   ]
-        // }, 
-        // {
-        //   expand : true,
-        //   cwd: '<%= yeoman.app %>/components/font-awesome/font',
-        //   dest: '<%= yeoman.dist %>/font',
-        //   src : [
-        //     '*'
-        //   ]
         { // xml-filer för kollationeringen
             expand : true,
             cwd : '<%= yeoman.app %>',
@@ -386,12 +378,6 @@ module.exports = function (grunt) {
         }
         ]
       },
-      // styles: {
-      //   expand: true,
-      //   cwd: '<%= yeoman.app %>/styles',
-      //   dest: '.tmp/styles/',
-      //   src: '{,*/}*.css'
-      // }
     },
     concurrent: {
       server: [
@@ -399,7 +385,7 @@ module.exports = function (grunt) {
         'compass:server',
       ],
       test: [
-        'coffee',
+        'newer:coffee',
         'compass',
       ],
       dist: [
@@ -458,6 +444,7 @@ module.exports = function (grunt) {
   grunt.registerTask('test', [
     'clean:server',
     'configureProxies',
+    'concurrent:test',
     'concurrent:server',
     'autoprefixer',
     // 'connect:test',
@@ -470,6 +457,7 @@ module.exports = function (grunt) {
 
 
   grunt.registerTask('build', [
+    'test',
     'clean:dist',
     'useminPrepare',
     'concurrent:dist',

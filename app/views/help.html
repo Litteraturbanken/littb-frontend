@@ -1,7 +1,7 @@
 <div link-fix ng-bind-html="htmlContent | trust"></div>
 
 <div toolkit>
-    <ul>
+    <ul affix>
         <li ng-repeat="item in labelArray">
             <a ng-click="$parent.ankare = item.id">::: {{item.label}}</a>
         </li>
