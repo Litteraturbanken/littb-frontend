@@ -1295,12 +1295,18 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         unless s.authorFilter then return true
         row.author.authorid == s.authorFilter
 
-    # s.titlesort = "itemAttrs.workshorttitle || itemAttrs.showtitle"
-    s.titlesort = "itemAttrs.sortkey"
+    titlesort = "itemAttrs.sortkey"
     
-    s.sorttuple = [s.titlesort, false]
-    s.setSort = (sortstr) ->
-        s.sorttuple[0] = sortstr
+    s.sorttuple = [[titlesort, 'author.nameforindex'], false]
+    s.setSort = ([sortstr]) ->
+
+        alternate = _.object([
+            [titlesort, "author.nameforindex"],
+            ["author.nameforindex", titlesort]
+        ])[sortstr]
+
+        s.sorttuple[0] = [sortstr, alternate]
+
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
@@ -1388,9 +1394,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             # scope_name : "sortVal"
             scope_func : "setSort"
             key : "sortering"
-            default : s.titlesort
-            # val_in : (val) ->
-            # val_out : (val) ->
+            default : titlesort + ",author.nameforindex"
+            val_in : (val) ->
+                val?.split(",")
+            val_out : (val) ->
+                val?.join(",")
             # post_change : () ->
             replace : false
         ,
@@ -1443,9 +1451,13 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope
     s.searching = true
     # TODO: what about the workauthor issue?
-    s.sorttuple = ["author.nameforindex", false]
-    s.setSort = (sortstr) ->
-        s.sorttuple[0] = sortstr
+    s.sorttuple = [["author.nameforindex", "itemAttrs.sortkey"], false]
+    s.setSort = ([sortstr]) ->
+        alternate = {
+            "author.nameforindex" : "itemAttrs.sortkey"
+            "itemAttrs.sortkey" : "author.nameforindex"
+        }[sortstr]
+        s.sorttuple[0] = [sortstr, alternate]
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
@@ -1472,9 +1484,11 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
             # scope_name : "sortVal"
             scope_func : "setSort"
             key : "sortering"
-            default : "author.nameforindex"
-            # val_in : (val) ->
-            # val_out : (val) ->
+            default : "author.nameforindex,itemAttrs.sortkey"
+            val_in : (val) ->
+                val?.split(",")
+            val_out : (val) ->
+                val?.join(",")
             # post_change : () ->
         ,
             expr : "sorttuple[1]"
@@ -2235,7 +2249,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             # if mediatype == 'faksimil' or isParallel
             s.sizes = new Array(5)
-            for url in $("faksimil-url", page)
+            for url in $("pages faksimil-url", data)
                 s.sizes[Number($(url).attr("size"))] = false
             
             if s.sizes[s.size] is false

@@ -68,17 +68,20 @@ littb.directive 'sortTriangles', () ->
     scope : {tuple : "=", val : "@"}
     link: (scope, elem, iAttrs) ->
         s = scope
-        scope.sorttuple = [iAttrs.val, 1]
+        val = scope.$eval scope.val
+        
+        s.sorttuple = [val, 1]
         s.enabled = [true, true]
-
+        tupMatches = (tup1, tup2) -> _.all _.map _.zip(tup1, tup2), ([item1, item2]) ->
+            item1 == item2
         s.$watch "tuple", (newtup) ->
             [newval, dir] = newtup
-            s.active = s.val == newval
+            s.active = tupMatches(val, newval)
             s.enabled = [!dir, dir]
         s.up = () ->
-            scope.tuple = [s.val, true]
+            s.tuple = [val, true]
         s.down = () ->
-            scope.tuple = [s.val, false]
+            s.tuple = [val, false]
 
 
 littb.directive 'letterMap', () ->
