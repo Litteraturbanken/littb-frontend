@@ -1868,6 +1868,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors) ->
     s = $scope
     s.isEditor = false
+    s._ = {humanize : _.humanize}
         
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.pick $routeParams, "title", "author", "mediatype")
@@ -2265,20 +2266,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
 
             s.loading = false
-            $rootScope.breadcrumb = []
-            s.appendCrumb [
-                label : "författare"
-                url : "/#!/forfattare"
-            ,
-                label : (_.str.humanize author).split(" ")[0]
-                url : "/#!/forfattare/" + author
-            ,
-                label : "titlar"
-                url : "/#!/forfattare/#{author}/titlar"
-            ,   
-                label : (_.str.humanize workinfo.titlepath) + " sidan #{s.pagename} " + (s.mediatype or "")
-                url : "/#!/forfattare/#{author}/titlar/#{title}/info"
-            ]
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
         , (data) ->
@@ -2318,7 +2305,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.$watch "pagename", updateOrdOchSak
         updateOrdOchSak()
     , (error) ->
-        c.log 'failed to get ord och sak', error
+        # c.log 'failed to get ord och sak', error
     
     updateOrdOchSak = () ->
         if not s.ordOchSakAll or not s.pagename then return
