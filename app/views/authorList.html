@@ -5,8 +5,8 @@
 
 <table class="contenttable">
     <thead>
-        <th> <div sort-triangles val="nameforindex" tuple="sorttuple"></div> </th>
-        <th> <div sort-triangles val="sortyear" tuple="sorttuple"></div> </th>
+        <th> <div sort-triangles val="['nameforindex']" tuple="sorttuple"></div> </th>
+        <th> <div sort-triangles val="['sortyear']" tuple="sorttuple"></div> </th>
         <th></th>
     </thead>
     <tbody><tr ng-repeat="row in rowByLetter[selectedLetter] || rows | filter:authorFilter | orderBy:sorttuple[0]:sorttuple[1]">
