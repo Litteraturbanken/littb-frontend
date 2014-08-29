@@ -29,8 +29,8 @@
                     <td class="title">
                         <a bo-href="'/#!/forfattare/' + row.author.authorid + '/titlar/' + row.itemAttrs.titlepath.split('/')[0] + '/info'" bo-text="row.itemAttrs.showtitle"></a>
                     </td>
-                    <td link-fix>
-                        <a bo-href="'/txt/epub/' + row.author.authorid +'_' + row.itemAttrs.titlepath.split('/')[0] + '.epub'">Hämta</a>
+                    <td>
+                        <a ng-click="log(getFilename(row))" bo-href="'/txt/epub/' +  getFilename(row) + '.epub'">Hämta</a>
                     </td>
                 </tr></tbody>
         </table>
