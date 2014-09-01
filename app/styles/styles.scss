@@ -1048,6 +1048,18 @@ $partnav-width : 170px;
             }
         }
 
+        .overlay {
+            position : absolute;
+            height : 673px;
+            width : 430px;
+            top : 0;
+            // color : blue;
+            color : transparent;
+            & > div {
+                position : absolute;
+            }
+        }
+
     }
     #toolkit {
         .editor .pager_ctrls .disabled i {

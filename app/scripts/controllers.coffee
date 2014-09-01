@@ -2173,6 +2173,17 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.isDefined = angular.isDefined
 
+    s.getOverlayCss = (obj) ->
+        unless s.overlayFactors then return {}
+        fac = s.overlayFactors[s.size - 1]
+        {
+            left: (fac * obj.x) + 'px'
+            top: fac * obj.y + 'px'
+            width : fac * obj.width
+            height : fac * obj.height
+        }
+
+
 
     loadPage = (val) ->
         # take care of state hiccup
@@ -2213,6 +2224,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
                 unless s.pageToLoad then s.pageToLoad = s.pagename
 
+                backend.fetchOverlayData(s.pageix).then ([data, overlayFactors]) ->
+                    s.overlaydata = data
+                    s.overlayFactors = overlayFactors
+                                       
+                    # s.overlayWidth = width
+                    # s.overlayHeight = height
+
             if val then params["pagename"] = val
 
 
@@ -2227,6 +2245,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             return
             
         s.loading = true
+
 
         # s.pagename = val
         backend.getPage(params).then ([data, workinfo]) ->

@@ -1,4 +1,5 @@
 littb = angular.module('littbApp');
+SIZE_VALS = [625, 750, 1100, 1500, 2050]
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->
         args = null
@@ -856,6 +857,33 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         
         return def.promise
 
+    fetchOverlayData : (ix) ->
+        def = $q.defer()
+        http(
+            # url : "https://svn.spraakdata.gu.se/repos/littb/trunk/red/texter/lb9845666/lb9845666-faksimil.merge"
+            url : "test.merge"
+        ).success( (data) ->
+            dimensions = _.map $("pb[ix=#{ix}]", data).attr("rend").split("x"), Number
+
+            max = _.max dimensions
+            factors = _.map SIZE_VALS, (val) -> val / max
+
+            out = []
+            for elem in $("pb[ix=#{ix}]", data).next().find("word")
+                obj = objFromAttrs elem
+                obj.word = $(elem).find("w").text()
+                out.push obj
+
+            def.resolve [out, factors]
+
+
+        ).error def.reject
+
+
+        return def.promise
+
+            
+
 
 littb.factory "authors", (backend, $q) ->
     
@@ -900,8 +928,7 @@ littb.factory "searchData", (backend, $q) ->
                             params.width += Number(match.width)
 
                     max = Math.max itm.page_size.split("x")...
-                    sizeVals = [625, 750, 1100, 1500, 2050]
-                    factors = _.map sizeVals, (val) -> val / max
+                    factors = _.map SIZE_VALS, (val) -> val / max
 
                     for key, val of params
                         params[key] = _(factors).map( (fact) ->
