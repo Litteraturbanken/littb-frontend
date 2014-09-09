@@ -957,7 +957,9 @@ $partnav-width : 170px;
         .markee, .faksimilMarkee {
 
         }
-        
+        img.faksimil {
+            @include user-select(none);
+        }
         .markee {
             position: relative;
             overflow : hidden;
@@ -1047,17 +1049,31 @@ $partnav-width : 170px;
                 display : none;
             }
         }
-
+        .ocr {
+            .overlay {
+                color : black;
+            }
+            .faksimil {
+                display : none;
+            }
+        }
         .overlay {
             position : absolute;
-            height : 673px;
-            width : 430px;
-            top : 0;
+            // height : 673px;
+            // width : 430px;
+            top : -5px;
             // color : blue;
             color : transparent;
-            & > div {
+            // user-select : none;
+            .w {
                 position : absolute;
+                user-select : initial;
+                white-space: nowrap;
+                display : inline-block;
             }
+        }
+        .selecting .overlay {
+            color : black;
         }
 
     }

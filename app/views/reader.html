@@ -7,7 +7,7 @@
     <a href="/#!/forfattare/{{author}}/titlar/{{workinfo.titlepath.split('/')[0]}}/info">{{workinfo.shorttitle}} s. {{pagename}} {{mediatype || ''}}</a>
 </breadcrumb>
 <div class="reader_main" 
-     ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil'}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
+     ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr()}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
 
     <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
@@ -16,8 +16,10 @@
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
          <!-- ng-style="{height : overlayHeight, width : overlayWidth}"  -->
-     <div class="overlay" ng-show="mediatype == 'faksimil' && overlaydata.length">
-         <div big-text="obj.word" ng-repeat="obj in overlaydata" ng-style="getOverlayCss(obj)"></div>
+     <div selection-sniffer class="overlay" ng-show="mediatype == 'faksimil' && overlaydata.length">
+         <div ng-repeat="list in overlaydata" >
+             <span big-text="obj" class="w" ng-repeat="obj in list" ng-style="getOverlayCss(obj)"> </span>
+         </div>
      </div>
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
 

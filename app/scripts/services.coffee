@@ -661,7 +661,11 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             #     c.log "transformResponse", data, headers
 
         ).success( (xml) ->
-            c.log "searchLexicon success", xml
+            c.log "searchLexicon success", xml, $(xml).text()
+
+            if $(xml).text() == "Inga träffar"
+                def.reject()
+                return
 
             output = for article in $("artikel", xml)
                 baseform : $("grundform-clean:first", article).text()
@@ -857,22 +861,41 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
         
         return def.promise
 
-    fetchOverlayData : (ix) ->
+    fetchOverlayData : (workid, ix) ->
         def = $q.defer()
         http(
-            # url : "https://svn.spraakdata.gu.se/repos/littb/trunk/red/texter/lb9845666/lb9845666-faksimil.merge"
-            url : "test.merge"
+            url : "/query/lb-anthology.xql"
+            # url : "test.merge"
+            params:
+                action: "get-ocr"
+                pageix : ix
+                lbworkid : workid
         ).success( (data) ->
-            dimensions = _.map $("pb[ix=#{ix}]", data).attr("rend").split("x"), Number
+            # dimensions = _.map $(data).attr("rend").split("x"), Number
+            root = $("result page", data)
+            dimensions = _.map [root.attr("w"), root.attr("h")], Number
 
             max = _.max dimensions
+            c.log "max", max
             factors = _.map SIZE_VALS, (val) -> val / max
 
             out = []
-            for elem in $("pb[ix=#{ix}]", data).next().find("word")
+            prevY = 0
+            TOLERANCE = 3
+            isInsideTolerence = (thisVal, ofThatVal) ->
+                Math.abs(thisVal - ofThatVal) < TOLERANCE
+
+            for elem in root.children()
                 obj = objFromAttrs elem
-                obj.word = $(elem).find("w").text()
-                out.push obj
+                obj.word = $(elem).text()
+
+                # if ( (Number obj.y) > (prevY)) or ( (Number obj.y) > (prevY - TOLERANCE))
+                if not isInsideTolerence (Number obj.y), prevY
+                    out.push [obj]
+                else
+                    (_.last out).push obj
+
+                prevY = Number obj.y
 
             def.resolve [out, factors]
 

@@ -523,13 +523,24 @@ littb.directive "footnotePopup", ($window, $location, $compile) ->
 
 littb.directive "bigText", () ->
     link : (scope, elem, attr) ->
-        child = $("<span>").text(scope.$eval attr.bigText)
-        elem.append(child)
-        if scope.$last
-        #     c.log("elem", elem.find(".wd").text())
-            # scope.$apply()
-            _.defer () ->
-                elem.parent().find("div").bigtext()
-            # c.log "parent", elem.parent().find("div")
+        obj = scope.$eval attr.bigText
+        elem.text obj.word
+        size = 1
+        elem.css("font-size", size + "px")
+        w = Number obj.w
+        while elem.width() < w
+            size += 1
+            elem.css("font-size", size + "px")
+            if size > 1000 then break
+
+        elem.css("font-size", size * (1.7) + "px")
+        elem.text elem.text() + " "
+        # elem.bigtext()
+        # child = $("<span>").text(scope.$eval attr.bigText)
+        # elem.append(child)
+        # if scope.$last
+        # _.defer () ->
+            # elem.css("display", "block").bigtext()
+                # elem.parent().bigtext()
 
 
