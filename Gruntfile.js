@@ -372,7 +372,8 @@ module.exports = function (grunt) {
           expand: true,
           cwd: '<%= yeoman.app %>',
           src: ['components/font-awesome/fonts/*'],
-          dest: '<%= yeoman.dist %>/fonts',
+          // dest: '<%= yeoman.dist %>/fonts',
+          dest: '<%= yeoman.dist %>/components/font-awesome/fonts/',
           flatten: true
         },
         {
@@ -496,7 +497,7 @@ module.exports = function (grunt) {
 
 
   grunt.registerTask('build', [
-    // 'test',
+    'test',
     'clean:dist',
     'wiredep',
     'useminPrepare',
@@ -504,12 +505,9 @@ module.exports = function (grunt) {
     'autoprefixer',
     'concat',
     'copy:dist',
-    // 'cdnify',
     'ngAnnotate',
-    // 'ngmin',
     'cssmin',
     'uglify',
-    // 'rev',
     'filerev',
     'usemin'
   ]);

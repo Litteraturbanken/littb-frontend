@@ -1979,7 +1979,7 @@ grundform-clean {
 .site-sla {
     &:after {
         position: absolute;
-        background: url("../img/selma_young.jpg") no-repeat;
+        background: url("../img/selma_young_reverse.jpg") no-repeat;
         top: 0;
         right : 0;
         // bottom: 0;
@@ -1989,7 +1989,6 @@ grundform-clean {
         width: 1149px;
         z-index: -1;
         opacity: 0.4;
-        transform: scale(-1, 1);
         // margin-left: auto;
         
     }
@@ -2066,7 +2065,7 @@ grundform-clean {
 
     .header {
         .breadcrumb {
-            width : 56%;
+            width : 55%;
         }
         .logo_link {
             background: url("../img/sla.svg") no-repeat;
