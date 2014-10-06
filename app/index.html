@@ -106,7 +106,7 @@
                             focusable
                             placeholder="Slå i Svensk ordbok"
                             typeahead-on-select="showModal(lex_article)"
-                            typeahead-wait-ms="200"
+                            typeahead-wait-ms="300"
                             typeahead="article as article.baseform for article in getWords($viewValue)"
                             ng-keydown="keydown($event)"
                             typeahead-trigger>
@@ -128,10 +128,11 @@
         
         <script type="text/ng-template" id="so_modal_template.html">
             <div role="dialog">
-                <div class="so_modal">
+                <div class="so_modal" ng-class="{loading : $parent.$parent.dict_searching}">
                     <div class="modal-header">
                         <h4>Svensk ordbok utgiven av Svenska Akademien (2009)</h4>
-                        <span ng-click="clickX()" class="sans close-x">×</span>
+                        <span ng-show="$parent.$parent.dict_searching" class="so_spinner" us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"></span>
+                        <span ng-click="clickX()" class="close-x">×</span>
                     </div>
                     <div so-article="lexemes" class="_so_article" >
                     </div>
@@ -166,7 +167,7 @@
         <script src="lib/angular-locale_sv-se.js"></script>
         <script src="components/angular-animate/angular-animate.js"></script>
         <script src="components/angular-route/angular-route.js"></script>
-        <script src="components/angular-cache/dist/angular-cache.min.js"></script>
+        <!-- <script src="components/angular-cache/dist/angular-cache.min.js"></script> -->
 
 
         <script src="components/angular-touch/angular-touch.js"></script>

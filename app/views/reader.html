@@ -15,8 +15,10 @@
     <div class="etext txt"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
     
-         <!-- ng-style="{height : overlayHeight, width : overlayWidth}"  -->
-     <div selection-sniffer class="overlay" ng-show="mediatype == 'faksimil' && overlaydata.length">
+         <!-- ng-style="{height : overlayHeight, width : overlayWidth}" 
+
+          -->
+     <div selection-sniffer class="overlay" ng-if="mediatype == 'faksimil' && overlaydata.length">
          <div ng-repeat="list in overlaydata" >
              <!-- <div class="parent" ng-style="getOverlayCss(obj)" ng-repeat="obj in list">
                  <span class="w" big-text-alt="obj"  ></span>

@@ -1803,6 +1803,9 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
                 #typeaheadTrigger directive
                 s.$broadcast "open", s.lex_article
 
+        else if event.keyCode == 27 # escape
+            s.lex_article = null    
+
 
     s.showModal = () ->
         c.log "showModal", modal
@@ -1831,35 +1834,38 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
     reportDictError = () ->
         s.$emit "notify", "Hittade inget uppslag"
+        s.dict_searching = false
 
     s.lexid = null
 
-    $rootScope.$on "search_dict", (event, query, searchId) ->
-        c.log "search_dict event", query, searchId    
-        
 
-        
-        def = backend.searchLexicon(query, false, searchId, true)
+    $rootScope.$on "search_dict", (event, lemma, id, doSearchId) ->
+        c.log "search_dict event", lemma, id, doSearchId
+        if doSearchId then s.lexid = false
+
+        s.dict_searching = true
+
+        def = backend.searchLexicon(lemma, id, false, doSearchId, true)
         def.catch () ->
+            c.log "searchLexicon catch"
             reportDictError()
 
         def.then (data) ->
-            c.log "search_dict", data
-
-            unless data.length
-                # nothing found
-                reportDictError()
-                return
+            c.log "searchLexicon then", data
+            s.dict_searching = false
 
             result = data[0]
             for obj in data
-                if obj.baseform == query
+                if obj.baseform == lemma
                     result = obj
                     continue
 
                     
-            s.lexid = if searchId then query else null
+            # c.log "searchId", id
+            # s.lexid = if searchId then searchId else null
             s.lex_article = result
+            if id
+                s.lexid = id
             s.showModal()
             
 
@@ -1867,7 +1873,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         c.log "getWords", val
         unless val then return
         s.dict_searching = true
-        def = backend.searchLexicon(val, true)
+        def = backend.searchLexicon(val, null, true)
         timeout = $timeout(angular.noop, 800)
         def.catch () ->
             s.dict_searching = false
@@ -1885,7 +1891,10 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         key : "so"
         expr : "lex_article.baseform"
         val_in : (val) ->
-            s.$emit "search_dict", val
+            id = $location.search().lex
+            # event = if id then "search_id" else "search_dict"
+            c.log "val_in", val, id
+            s.$emit "search_dict", val, id, false
         replace : false            
     ,
         key : "lex"
@@ -2199,7 +2208,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     # ), 300, {leading:true})
 
     s.isDefined = angular.isDefined
-
     s.getOverlayCss = (obj) ->
         unless s.overlayFactors then return {}
         fac = s.overlayFactors[s.size - 1]

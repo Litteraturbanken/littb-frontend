@@ -69,7 +69,7 @@
     </div>
     
     <div>
-        <div ng-if="kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
+        <div ng-if="!searching && kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
         
           <table cellspacing="0" class="results">
             <tr ng-repeat="sent in kwic" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">

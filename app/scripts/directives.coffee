@@ -185,19 +185,16 @@ littb.directive 'soArticle', ($compile, $location, $window) ->
         scope.$watch "soArticle", (val) ->
             newElem = $compile(_.str.trim val)(scope)
             elem.html newElem
-            # c.log "soArticle", $location.search().lex
 
         scope.lex = () -> $location.search().lex
 
-
-        
-
         scope.$watch "lex()", (val) ->
             unless val then return
-            c.log "val", val, elem
-            # c.log "top", elem.find("#" + val).offset().top
-            # elem.closest("[modal-window]").scrollTop(top)
             elem.find("#" + val).get(0)?.scrollIntoView()
+
+
+
+
 
 
             
@@ -210,10 +207,12 @@ littb.directive 'hvord', (backend, $location) ->
             id = elem.prev("hvtag").text()
             if id
                 # $location.search("lex", id)
-                scope.$emit "search_dict", id, true
+                c.log "click id", id
+                scope.$emit "search_dict", null, id, true
             else
-                $location.search("lex", null)
-                scope.$emit "search_dict", _.str.trim elem.text()
+                # $location.search("lex", null)
+                c.log "click not id", elem
+                scope.$emit "search_dict", _.str.trim elem.text(), null, false
 
 
 
@@ -616,10 +615,12 @@ littb.directive "bigText", () ->
         size = 4
         elem.css("font-size", size + "px")
         w = fac * (Number obj.w)
-        while elem.width() < w
-            size += 1
-            elem.css("font-size", size + "px")
-            if size > 300 then break
+        # c.log "elem.width()", elem.width()  
+        if elem.width() 
+            while elem.width() < w
+                size += 1
+                elem.css("font-size", size + "px")
+                if size > 300 then break
 
         # elem.css("font-size", size * (1.2) + "px")
         elem.text elem.text() + " "

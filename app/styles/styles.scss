@@ -153,6 +153,7 @@ h1,h2,h3,h4,h5,h6 {
             position : absolute;
             top : 10px;
             right: 13px;
+            z-index: 1045;
         }
         &.searching .so_spinner {
             display : block;
@@ -259,6 +260,9 @@ hr {
 // }
 .contenttable {
     min-width : $mainview-width;
+    .searching tbody:empty:after {
+        display : none;
+    }
     tbody:empty:after {
         content : "Din sökning gav inga träffar."
     }
@@ -1840,11 +1844,22 @@ grundform-clean {
 
 .so_modal {
     padding : 1em 1em 1em 1.5em;
+    transition : opacity 400ms;
+    &.loading {
+        opacity : 0.5;
+    }
     .modal-header {
         padding : 1em 0;
         & > h4 {
             @include inline-block(bottom);
             margin : 0;
+        }
+
+        .so_spinner {
+            display: inline-block;
+            vertical-align: bottom;
+            margin-bottom: 9px;
+            margin-left: 20px;
         }
     }
     .modal-footer {

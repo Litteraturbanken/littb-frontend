@@ -148,10 +148,10 @@ littb.factory "util", ($location) ->
 
 
 
-littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
+littb.factory 'backend', ($http, $q, util) ->
     # $http.defaults.transformResponse = (data, headers) ->
-    localStorageCache = $angularCacheFactory "localStorageCache", 
-        storageMode: 'localStorage'
+    # localStorageCache = $angularCacheFactory "localStorageCache", 
+    #     storageMode: 'localStorage'
     parseXML = (data) ->
         xml = null
         tmp = null
@@ -648,13 +648,13 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
 
 
-    searchLexicon : (str, useWildcard, searchId, strict) ->
+    searchLexicon : (str, id, useWildcard, doSearchId, strict) ->
         def = $q.defer()
         url = "/query/so.xql"
         # c.log "searchId", searchId
-        if searchId
+        if doSearchId
             params = 
-                id : str
+                id : id
         else
             suffix = if useWildcard and str.length > 3 then "*" else ""
             params = 
@@ -676,17 +676,23 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             if $(xml).text() == "Inga träffar"
                 def.reject()
                 return
-
+            
+            
             output = for article in $("artikel", xml)
                 baseform : $("grundform-clean:first", article).text()
                 id : $("lemma", article).first().attr("id")
                 # lexemes : (_.map $("lexem", article), util.getInnerXML).join("\n")
                 lexemes : util.getInnerXML article
 
-            window.output = output
+            # window.output = output
             output = _.sortBy output, (item) ->
                 if item.baseform == str then return "aaaaaaaaa"
                 item.baseform.toLowerCase()
+
+            c.log "lexicon def resolve"
+
+            unless output.length
+                def.reject()
 
             def.resolve output
         ).error () ->

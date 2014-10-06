@@ -39,7 +39,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "template/typeahead/typeahead-popup.html"
                                             "template/typeahead/typeahead-match.html"
                                             "angularSpinner"
-                                            "jmdobry.angular-cache"
+                                            # "jmdobry.angular-cache"
                                             "ngAnimate"
                                             "ngTouch"
                                            ])
