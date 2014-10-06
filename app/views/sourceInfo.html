@@ -32,9 +32,9 @@
         <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)</span> </a>
     </div>
     
-    <div class="provenance" ng-if="data.provenance.text.length">
-        <a ng-href="{{data.provenance.link}}" ng-if="data.provenance.image"><img ng-src="red/bilder/gemensamt/{{data.provenance.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
-        <p>{{data.provenance.text}}</p>
+    <div ng-repeat="prov in data.provenance" class="provenance">
+        <a ng-href="{{prov.link}}" ng-if="prov.image"><img ng-src="red/bilder/gemensamt/{{prov.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
+        <p>{{prov.text}}</p>
     </div>
     
     <div ng-bind-html="data.licenseText | correctLink | trust"></div>

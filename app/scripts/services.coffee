@@ -315,12 +315,17 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
                 def.reject $("fel", xml).text()
             output = parseWorkInfo("result", xml)
 
+
             prov = $("result provenance-data", xml)
-            output["provenance"] = {
-                text : $("text", prov).text()
-                image : $("image", prov).text()
-                link : $("link", prov).text()
-            }
+
+
+            output["provenance"] = for item in prov
+                {
+                    text : $("text", item).text()
+                    image : $("image", item).text()
+                    link : $("link", item).text()
+                }
+
 
             sourcedesc = $("sourcedesc", xml)
 

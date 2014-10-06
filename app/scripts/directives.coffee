@@ -473,9 +473,26 @@ littb.directive 'downloadBtn', () ->
             "/red/skola/pdf/" + filename.replace(".html", ".pdf")
 
 
-littb.directive "affix", () ->
+littb.directive "affix", ($window) ->
     restrict : "EA"
     link : (scope, elem, attrs) ->
+        # TODO: this is a major pain
+        # scope.getHeight = () -> elem.height()
+        # scope.$watch "getHeight()", (height) ->
+        #     c.log "elem.height", height
+
+        #     if (height > $(window).height()) and (window.scrollY > $(".nav_sidebar").offset().top)
+        #         elem.addClass "affix-disable"
+        #         elem.css 
+        #             "top" : window.scrollY + 5
+        #             left : $(".nav_sidebar").offset().left
+        #     else
+        #         elem.removeClass "affix-disable"
+
+
+
+
+
         elem.affix(
             offset : {
                 top : elem.offset().top
