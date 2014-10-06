@@ -11,19 +11,35 @@ describe "authors", () ->
             expect(rows.count()).toEqual 1
 
 
-describe "titles", () ->
+describe "works", () ->
     rows = null
+    testFilter = () ->
     beforeEach () ->
         browser.get "http://localhost:9000/#!/titlar"
         rows = element.all(By.repeater("row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor"))
 
 
-    it "should filter using the input", () ->
+    it "should filter works using the input", () ->
         filter = element(By.model("filter"))
         filter.sendKeys("constru")
         filter.sendKeys(protractor.Key.ENTER)
         rows.then () ->
             expect(rows.count()).toEqual 1
+
+describe "titles", () ->
+    rows = null
+    testFilter = () ->
+    beforeEach () ->
+        browser.get "http://localhost:9000/#!/titlar?niva=titles"
+        rows = element.all(By.repeater("row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor"))
+
+
+    it "should filter titles using the input", () ->
+        filter = element(By.model("filter"))
+        filter.sendKeys("psalm")
+        filter.sendKeys(protractor.Key.ENTER)
+        rows.then () ->
+            expect(rows.count()).toEqual 779
 
 
 describe "epubList", () ->

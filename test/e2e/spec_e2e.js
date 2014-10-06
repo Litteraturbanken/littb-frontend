@@ -14,20 +14,40 @@
     });
   });
 
-  describe("titles", function() {
-    var rows;
+  describe("works", function() {
+    var rows, testFilter;
     rows = null;
+    testFilter = function() {};
     beforeEach(function() {
       browser.get("http://localhost:9000/#!/titlar");
       return rows = element.all(By.repeater("row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor"));
     });
-    return it("should filter using the input", function() {
+    return it("should filter works using the input", function() {
       var filter;
       filter = element(By.model("filter"));
       filter.sendKeys("constru");
       filter.sendKeys(protractor.Key.ENTER);
       return rows.then(function() {
         return expect(rows.count()).toEqual(1);
+      });
+    });
+  });
+
+  describe("titles", function() {
+    var rows, testFilter;
+    rows = null;
+    testFilter = function() {};
+    beforeEach(function() {
+      browser.get("http://localhost:9000/#!/titlar?niva=titles");
+      return rows = element.all(By.repeater("row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor"));
+    });
+    return it("should filter titles using the input", function() {
+      var filter;
+      filter = element(By.model("filter"));
+      filter.sendKeys("psalm");
+      filter.sendKeys(protractor.Key.ENTER);
+      return rows.then(function() {
+        return expect(rows.count()).toEqual(779);
       });
     });
   });
