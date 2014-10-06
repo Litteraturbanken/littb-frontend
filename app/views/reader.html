@@ -4,7 +4,7 @@
 <breadcrumb>
     <a href="/#!/forfattare">författare</a>
     <a href="/#!/forfattare/{{author}}">{{authorById[author].surname}}</a>
-    <a href="/#!/forfattare/{{author}}/titlar/{{workinfo.titlepath.split('/')[0]}}/info">{{workinfo.shorttitle}} sidan {{pagename}} {{mediatype || ''}}</a>
+    <a href="/#!/forfattare/{{author}}/titlar/{{workinfo.titlepath.split('/')[0]}}/info">{{workinfo.shorttitle}} s. {{pagename}} {{mediatype || ''}}</a>
 </breadcrumb>
 <div class="reader_main" 
      ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil'}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">

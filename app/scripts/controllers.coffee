@@ -1585,9 +1585,9 @@ littb.controller "omtexternaCtrl", ($scope, $routeParams) ->
 littb.controller "authorListCtrl", ($scope, backend, util, authors) ->
     s = $scope
     # util.setupHash s, "authorFilter"
-    s.sorttuple = ["nameforindex", false]
-    s.setSort = (sortstr) ->
-        s.sorttuple[0] = sortstr
+    s.sorttuple = [["nameforindex"], false]
+    s.setSort = ([sortstr]) ->
+        s.sorttuple[0] = [sortstr]
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
@@ -1598,6 +1598,10 @@ littb.controller "authorListCtrl", ($scope, backend, util, authors) ->
             expr : "sorttuple[0]"
             scope_func : "setSort"
             key : "sortering"
+            val_in : (val) ->
+                val?.split(",")
+            val_out : (val) ->
+                val?.join(",")
             default : "nameforindex"
         ,
             expr : "sorttuple[1]"
