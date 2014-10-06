@@ -285,7 +285,10 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             # cache: localStorageCache
         ).success (xml) ->
             attrArray = for item in $("item", xml)
-                objFromAttrs item
+                obj = objFromAttrs item
+                obj.sortyear = Number(obj.sortyear)
+                obj
+                
 
             def.resolve attrArray
 
