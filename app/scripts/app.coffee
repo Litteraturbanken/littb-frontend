@@ -68,13 +68,9 @@ window.littb = angular.module('littbApp', [ "ngRoute",
 
         router
             .when '',
-                templateUrl: 'views/start.html'
-                controller: 'startCtrl'
-                title : "Svenska klassiker som e-bok och epub"
+                redirectTo : "/start"
             .when '/',
-                templateUrl: 'views/start.html'
-                controller: 'startCtrl'
-                title : "Svenska klassiker som e-bok och epub"
+                redirectTo : "/start"
             .when '/start',
                 templateUrl: 'views/start.html'
                 controller: 'startCtrl'

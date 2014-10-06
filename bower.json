@@ -4,10 +4,10 @@
   "dependencies": {
     "angular": "~1.2.24",
     "angular-route": "1.2.6",
-    "json3": "git://github.com/bestiejs/json3.git#3.2.4",
+    "json3": "~3.3.1",
     "es5-shim": "git://github.com/kriskowal/es5-shim#2.0.11",
-    "jquery": "git://github.com/components/jquery.git#1.9.1",
-    "underscore.string": "git://github.com/epeli/underscore.string.git#2.3.1",
+    "jquery": "1.11.1",
+    "underscore.string": "^2.3.3",
     "lodash": "~2.4.1",
     "sass-bootstrap": "~3.0.2",
     "jquery-ui": "git://github.com/components/jqueryui#1.8.23",
@@ -16,18 +16,17 @@
     "angular-ui-utils": "~0.0.4",
     "angular-spinner": "~0.2.1",
     "angular-bindonce": "~0.3.0",
-    "font-awesome": "~4.0.3",
+    "font-awesome": "~4.2.0",
     "angular-cache": "~2.3.3",
     "angular-animate": "~1.2.24",
-    "angular-touch": "~1.2.16",
-    "naturalsort": "https://github.com/benatkin/naturalsort.git",
+    "angular-touch": "~1.2.16"
   },
   "devDependencies": {
     "angular-mocks": "git://github.com/angular/bower-angular-mocks.git#1.0.7",
     "angular-scenario": "git://github.com/angular/bower-angular-scenario.git#1.0.7"
   },
   "resolutions": {
-    "angular": "~1.2.10",
-    "jquery": "1.9.1"
+    "angular": "~1.2.25",
+    "jquery": "1.11.1"
   }
 }

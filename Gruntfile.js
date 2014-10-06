@@ -192,6 +192,22 @@ module.exports = function (grunt) {
         '<%= yeoman.app %>/scripts/{,*/}*.js'
       ]
     },
+    // Automatically inject Bower components into the app
+    wiredep: {
+      dist: {
+        src: ['<%= yeoman.app %>/index.html'],
+        ignorePath:  /\.\.\//,
+        exclude : [
+          "<%= yeoman.app %>/components/sass-bootstrap", 
+          "<%= yeoman.app %>/components/angular-cache",
+          "<%= yeoman.app %>/components/angular-ui-utils"
+        ]
+      },
+      // sass: {
+      //   src: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
+      //   ignorePath: /(\.\.\/){1,2}components\//
+      // }
+    },
     coffee: {
       options : {
         sourceMap: true,
@@ -249,17 +265,7 @@ module.exports = function (grunt) {
         }
       }
     },
-    // concat: {
-    //   dist: {
-    //     files: {
-    //       '<%= yeoman.dist %>/scripts/scripts.js': [
-    //         '.tmp/scripts/{,*/}*.js',
-    //         '<%= yeoman.app %>/scripts/{,*/}*.js'
-    //       ]
-    //     }
-    //   }
-    // },
-    rev: {
+    filerev: {
       dist: {
         files: {
           src: [
@@ -270,7 +276,8 @@ module.exports = function (grunt) {
             '<%= yeoman.dist %>/styles/fonts/*'
           ]
         }
-      }
+          
+        }
     },
     useminPrepare: {
       html: '<%= yeoman.app %>/index.html',
@@ -282,7 +289,7 @@ module.exports = function (grunt) {
       html: ['<%= yeoman.dist %>/{,*/}*.html'],
       css: ['<%= yeoman.dist %>/styles/{,*/}*.css'],
       options: {
-        dirs: ['<%= yeoman.dist %>']
+        assetsDirs: ['<%= yeoman.dist %>', '<%= yeoman.dist %>/img']
       }
     },
     imagemin: {
@@ -432,6 +439,7 @@ module.exports = function (grunt) {
 
       grunt.task.run([
         'clean:server',
+        'wiredep',
         'configureProxies',
         'concurrent:server',
         'autoprefixer',
@@ -457,8 +465,9 @@ module.exports = function (grunt) {
 
 
   grunt.registerTask('build', [
-    'test',
+    // 'test',
     'clean:dist',
+    'wiredep',
     'useminPrepare',
     'concurrent:dist',
     'autoprefixer',
@@ -468,7 +477,8 @@ module.exports = function (grunt) {
     'ngmin',
     // 'cssmin',
     'uglify',
-    'rev',
+    // 'rev',
+    'filerev',
     'usemin'
   ]);
 
