@@ -278,8 +278,8 @@ hr {
         overflow:hidden;
         vertical-align: top;
     }
-    td:nth-child(2) {
-        // vertical-align : bottom;
+    td:nth-child(3) {
+        white-space: nowrap;
     }
     th {
         padding : 5px;
