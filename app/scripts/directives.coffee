@@ -526,13 +526,13 @@ littb.directive "bigText", () ->
         obj = scope.$eval attr.bigText
         fac = scope.$eval attr.fac
         elem.text obj.word
-        size = 1
+        size = 4
         elem.css("font-size", size + "px")
-        w = fac * (Number obj.h)
-        while elem.height() < w
+        w = fac * (Number obj.w)
+        while elem.width() < w
             size += 1
             elem.css("font-size", size + "px")
-            if size > 1000 then break
+            if size > 300 then break
 
         # elem.css("font-size", size * (1.2) + "px")
         elem.text elem.text() + " "
