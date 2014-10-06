@@ -2157,7 +2157,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         c.log "loadPage", val
         # if val == s.pagename then return
 
-        s.loading = true
         s.error = false
         
         if s.isEditor
@@ -2191,9 +2190,17 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             if val then params["pagename"] = val
 
 
-        # if s.faksimilPageMapping
-        #     setPages
-        #     return
+        if s.faksimilPageMapping
+            setPages {length : 1}
+
+            filename = s.faksimilPageMapping[s.pageix]
+            id = s.workinfo.lbworkid
+            s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}"
+            unless s.isEditor
+                backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
+            return
+            
+        s.loading = true
 
         # s.pagename = val
         backend.getPage(params).then ([data, workinfo]) ->
@@ -2214,11 +2221,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             setPages(page, data)
 
-            # if s.mediatype == "faksimil"
-            #     faksimilPageMapping = for item in $("bok sida[src]", data)
-            #         [$(item).attr("ix"), $(item).attr("src")]
+            if s.mediatype == "faksimil"
+                faksimilPageMapping = for item in $("bok sida[src]", data)
+                    [$(item).attr("ix"), $(item).attr("src")]
 
-            #     s.faksimilPageMapping = _.object faksimilPageMapping
+                s.faksimilPageMapping = _.object faksimilPageMapping
             
             ixes = _.map $("sida", data), (item) ->
                 Number $(item).attr("ix")
@@ -2240,7 +2247,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             page.children().remove()
             s.etext_html = _.str.trim page.text()
             unless s.isEditor
-                c.log "log pageix", s.pageix
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
 
             s.loading = false
