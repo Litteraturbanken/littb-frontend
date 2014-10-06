@@ -87,6 +87,20 @@
     });
   });
 
+  describe("editor", function() {
+    var ptor;
+    ptor = null;
+    beforeEach(function() {
+      return ptor = protractor.getInstance();
+    });
+    return it("should change page on click", function() {
+      browser.get("http://localhost:9000/#!/editor/lb238704/ix/3/f");
+      element(By.css(".pager_ctrls a[rel=next]")).click();
+      expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f");
+      return expect(element(By.css("img.faksimil")).getAttribute("src")).toEqual("http://litteraturbanken.se/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg");
+    });
+  });
+
   describe("search", function() {
     var ptor;
     ptor = null;

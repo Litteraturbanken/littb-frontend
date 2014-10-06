@@ -65,13 +65,36 @@ describe "reader", () ->
     it "should change page on click", () ->
         browser.get "http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/3/etext"
         element(By.css ".pager_ctrls a[rel=next]").click()
-        expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext");
+        expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext")
     
     it "should correctly handle pagestep", () ->
         browser.get "http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
         element(By.css ".pager_ctrls a[rel=next]").click()
 
-        expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil");
+        expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
+
+describe "editor", () ->
+    ptor = null
+    beforeEach () ->
+        ptor = protractor.getInstance()
+
+    it "should change page on click", () ->
+        browser.get "http://localhost:9000/#!/editor/lb238704/ix/3/f"
+        element(By.css ".pager_ctrls a[rel=next]").click()
+        expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f")
+
+        expect(element(By.css "img.faksimil").getAttribute("src"))
+            .toEqual("http://litteraturbanken.se/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg")
+
+
+    
+    # it "should correctly handle pagestep", () ->
+    #     browser.get "http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
+    #     element(By.css ".pager_ctrls a[rel=next]").click()
+
+    #     expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
+
+
 
 
 

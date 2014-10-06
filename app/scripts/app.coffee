@@ -84,7 +84,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 controller : ["$scope", "$routeParams", "$http", "util", 
                                 ($scope, $routeParams, $http, util) ->
                                     $http.get("/red/presentationer/#{$routeParams.folder}/#{$routeParams.doc}").success (data) ->
-                                        c.log "doc", data
                 
                                         $scope.doc = data
                                         $scope.title = $("<root>#{data}</root>").find("h1").text()

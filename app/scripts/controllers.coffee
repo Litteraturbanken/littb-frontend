@@ -1806,6 +1806,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
     s.showModal = () ->
         c.log "showModal", modal
+        s.lexemes = s.lex_article.lexemes
         unless modal
             s.$broadcast "blur"
 
@@ -1821,13 +1822,8 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
     s.clickX = () ->
         modal.close()
-        # s.lex_article = null
-            
-
-
 
     s.closeModal = () ->
-        # modal.close()
         s.lex_article = null
         s.lexid = null
         modal = null
