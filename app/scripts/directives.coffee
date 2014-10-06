@@ -473,26 +473,71 @@ littb.directive 'downloadBtn', () ->
             "/red/skola/pdf/" + filename.replace(".html", ".pdf")
 
 
-littb.directive "affix", ($window) ->
+littb.directive "schoolAffix", ($window) ->
+
     restrict : "EA"
     link : (scope, elem, attrs) ->
-        # TODO: this is a major pain
-        # scope.getHeight = () -> elem.height()
-        # scope.$watch "getHeight()", (height) ->
-        #     c.log "elem.height", height
+        detectScrollDir = (fDown, fUp) ->
+            lastScrollTop = 0
+            delta = 5
+            f = (event) ->
+                st = $(this).scrollTop()
+                return if Math.abs(lastScrollTop - st) <= delta
+                if st > lastScrollTop
+                    fDown?()
+                else
+                    fUp?()
+                lastScrollTop = st
+            $(window).on "scroll", f
 
-        #     if (height > $(window).height()) and (window.scrollY > $(".nav_sidebar").offset().top)
-        #         elem.addClass "affix-disable"
-        #         elem.css 
-        #             "top" : window.scrollY + 5
-        #             left : $(".nav_sidebar").offset().left
-        #     else
-        #         elem.removeClass "affix-disable"
+            return () -> $(window).off "scroll", f
+
+
+        reset = () ->
+            elem.removeClass "affix-disable"
+            elem.css 
+                top : ""
+                left : ""
+
+
+        detach = (height) ->
+            isTooTall = height > $(window).height()
+            hasScrolledFromTop = window.scrollY > $(".nav_sidebar").offset().top
+
+            if isTooTall and hasScrolledFromTop and not elem.is(".affix-disable")
+                elem.addClass "affix-disable"
+                elem.css 
+                    top : window.scrollY + 5
+                    left : $(".nav_sidebar").offset().left
 
 
 
+        killDetect = detectScrollDir () -> 
+            detach elem.height()
+        , reset
+
+        scope.$on "$destroy", () ->
+            killDetect()
+
+        onWatch = (height) ->
+            detach(height)
+            
+
+        scope.getHeight = () -> elem.height()
+        scope.$watch "getHeight()", onWatch
 
 
+        onWatch()
+        
+        elem.affix(
+            offset : {
+                top : elem.offset().top
+            }
+        )
+littb.directive "affix", ($window) ->
+
+    restrict : "EA"
+    link : (scope, elem, attrs) ->
         elem.affix(
             offset : {
                 top : elem.offset().top

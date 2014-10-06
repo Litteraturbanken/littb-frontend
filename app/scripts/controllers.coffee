@@ -1100,7 +1100,19 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
-        s.authorError = s.author not of s.authorsById
+
+        normalize = (auth) ->
+            from = "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ".split("") 
+            to = "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy".split("") 
+            trans = (letter) ->
+                i = _.indexOf from, letter
+                to[i] or letter
+
+            (_.map auth.split(""), trans).join("")
+                
+        c.log "s.author", s.author, normalize s.author
+
+        s.authorError = (normalize s.author) not of s.authorsById
 
     s.showLargeImage = ($event) ->
         if s.show_large then return 
