@@ -8,7 +8,7 @@
     "es5-shim": "git://github.com/kriskowal/es5-shim#2.0.11",
     "jquery": "git://github.com/components/jquery.git#1.9.1",
     "underscore.string": "git://github.com/epeli/underscore.string.git#2.3.1",
-    "lodash": "git://github.com/bestiejs/lodash.git#1.2.1",
+    "lodash": "~2.4.1",
     "sass-bootstrap": "~3.0.2",
     "jquery-ui": "git://github.com/components/jqueryui#1.8.23",
     "angular-bootstrap": "~0.11.0",
