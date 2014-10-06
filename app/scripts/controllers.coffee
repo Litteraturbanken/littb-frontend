@@ -1477,6 +1477,12 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
     s.letterChange = () ->
         s.filterTxt = ""
 
+    s.log = (filename) ->
+        backend.logPage("0", filename, "epub")
+
+    s.getFilename = (row) ->
+        row.author.authorid + '_' + row.itemAttrs.titlepath.split('/')[0]
+
 
     util.setupHashComplex s,
         [
