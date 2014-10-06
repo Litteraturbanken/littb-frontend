@@ -1820,19 +1820,26 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         modal = null
 
 
+    reportDictError = () ->
+        s.dict_not_found = "Hittade inget uppslag"
+        $timeout( () ->
+            s.dict_not_found = null
+        , 4000)
+
     $rootScope.$on "search_dict", (event, query, searchId) ->
         c.log "search_dict", query, searchId    
         
         
-        backend.searchLexicon(query, false, searchId, true).then (data) ->
+        def = backend.searchLexicon(query, false, searchId, true)
+        def.catch () ->
+            reportDictError()
+
+        def.then (data) ->
             c.log "search_dict", data
 
             unless data.length
                 # nothing found
-                s.dict_not_found = "Hittade inget uppslag"
-                $timeout( () ->
-                    s.dict_not_found = null
-                , 4000)
+                reportDictError()
                 return
 
             result = data[0]
@@ -1852,6 +1859,12 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         s.dict_searching = true
         def = backend.searchLexicon(val, true)
         timeout = $timeout(angular.noop, 800)
+        c.log "def", def
+        def.catch () ->
+            c.log "oops"
+            s.dict_searching = false
+            reportDictError()
+
         $q.all([def, timeout]).then () ->
             s.dict_searching = false
             
@@ -1901,6 +1914,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     $rootScope._night_mode = false
     s.isFocus = false
     s.showFocusBar = true
+    s.isOcr = () ->
+        $location.search().ocr?
 
     s.activateFocus = () ->
         s.isFocus = true
@@ -2135,6 +2150,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 $rootScope._focus_mode = val
 
 
+
+
     ]
     # s.showFocusBar = s.isFocus
     if mediatype == "faksimil"
@@ -2171,6 +2188,17 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     # ), 300, {leading:true})
 
     s.isDefined = angular.isDefined
+
+    s.getOverlayCss = (obj) ->
+        unless s.overlayFactors then return {}
+        fac = s.overlayFactors[s.size - 1]
+        {
+            left: (fac * obj.x) + 'px'
+            top: fac * obj.y + 'px'
+            # width : fac * obj.width
+            # height : fac * obj.height
+        }
+
 
 
     loadPage = (val) ->
@@ -2212,6 +2240,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
                 unless s.pageToLoad then s.pageToLoad = s.pagename
 
+                backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
+                    s.overlaydata = data
+                    s.overlayFactors = overlayFactors
+                                       
+                    # s.overlayWidth = width
+                    # s.overlayHeight = height
+
             if val then params["pagename"] = val
 
 
@@ -2226,6 +2261,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             return
             
         s.loading = true
+
 
         # s.pagename = val
         backend.getPage(params).then ([data, workinfo]) ->
