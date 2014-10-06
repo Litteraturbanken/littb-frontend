@@ -2191,6 +2191,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             if val then params["pagename"] = val
 
 
+        # if s.faksimilPageMapping
+        #     setPages
+        #     return
+
         # s.pagename = val
         backend.getPage(params).then ([data, workinfo]) ->
             s.workinfo = workinfo
@@ -2209,6 +2213,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             page = $(pageQuery, data).last().clone()
 
             setPages(page, data)
+
+            # if s.mediatype == "faksimil"
+            #     faksimilPageMapping = for item in $("bok sida[src]", data)
+            #         [$(item).attr("ix"), $(item).attr("src")]
+
+            #     s.faksimilPageMapping = _.object faksimilPageMapping
             
             ixes = _.map $("sida", data), (item) ->
                 Number $(item).attr("ix")
