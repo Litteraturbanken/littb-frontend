@@ -72,7 +72,7 @@
         <div ng-if="kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
         
           <table cellspacing="0" class="results">
-            <tr bindonce ng-repeat="sent in kwic" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
+            <tr ng-repeat="sent in kwic" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
                 <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
                 <td><a bo-text="sent.structs.text_nameforindex" 
                     href="/#!/forfattare/{{getSetVal(sent, 'text_authorid')}}"></a></td>

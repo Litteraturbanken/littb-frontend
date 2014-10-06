@@ -4,7 +4,7 @@
 <breadcrumb>
     <a href="/#!/forfattare">författare</a>
     <a href="/#!/forfattare/{{author}}">{{authorById[author].surname}}</a>
-    <a href="/#!/forfattare/{{author}}/titlar/{{workinfo.titlepath.split('/')[0]}}/info">{{workinfo.shorttitle}} s. {{pagename}} {{mediatype || ''}}</a>
+    <a href="/#!/forfattare/{{author}}/titlar/{{workinfo.titlepath.split('/')[0]}}/info">{{workinfo.shorttitle || workinfo.showtitle}} s. {{pagename}} {{mediatype || ''}}</a>
 </breadcrumb>
 <div class="reader_main" 
      ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr()}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
@@ -168,7 +168,6 @@
     <div ng-show="isFocus && showFocusBar" class="bottomBar" set-class="{'ng-hide-remove' : !isFocus}" to-body>
         
         <a popper my="middle bottom-25" at="bottom middle" >
-            <!-- <img src="img/focus_letters.svg" class="sizeBtn"> -->
             <span ng-include="'img/focus_letters.svg'" class="sizeBtn">
         </a>
         <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">

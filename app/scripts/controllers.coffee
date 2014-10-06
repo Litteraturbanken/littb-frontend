@@ -370,7 +370,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
     backend.getKollatWorks().then (works) ->
         s.works = works
     
-    $animate.enabled(false)
+    # $animate.enabled(false)
     
     makeHTMLold = (data, myWits) ->
         cleanAppsNew = (data, myWits) ->
