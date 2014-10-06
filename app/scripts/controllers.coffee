@@ -2220,7 +2220,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             setPages {length : 1}
 
             filename = s.faksimilPageMapping[s.pageix]
-            id = s.workinfo.lbworkid
+            id = $routeParams.lbid
             s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}"
             unless s.isEditor
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
