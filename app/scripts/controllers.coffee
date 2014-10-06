@@ -121,7 +121,7 @@ littb.controller "statsCtrl", ($scope, backend) ->
 
 littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, util, searchData, authors, debounce) ->
     s = $scope
-    s.open = false
+    s.open = true
     s.proofread = 'all'
 
     initTitle = _.once (titlesById) ->
@@ -336,8 +336,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             val_out : (val) ->
                 val + 1
             default : 1
-        ,   
-            key : "open"
+        # ,   
+        #     key : "open"
         ,   
             key : "proofread"
             default : "all"

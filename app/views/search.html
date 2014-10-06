@@ -3,13 +3,13 @@
 <div ng-class="{searching:searching}">
     <div class="preloader">Söker <span class="dots_blink"></span></div>
     <div class="header">
-        <h1>Sök i texten</h1>
-        <a class="open_toggle" ng-click="open = !open">
+        <h1>Sök i texterna</h1>
+        <!-- <a class="open_toggle" ng-click="open = !open">
             <em ng-show="!open">visa sökalternativ >></em>
             <em ng-show="open">&lt;&lt; dölj sökalternativ</em>
     
     
-        </a>
+        </a> -->
         <div style="clear:both;"></div>
     </div>
     
@@ -18,7 +18,7 @@
         <label class="query_label" for="query">Ord eller fras:</label> <input id="query" class="input" ng-model="query" autofocus>
     </form>
     
-    <div class="extended" ng-show="open">
+    <div class="extended">
         <h3>Urval</h3>
         <div class="columns">
             <div class="left">
