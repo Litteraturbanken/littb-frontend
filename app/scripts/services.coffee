@@ -502,11 +502,16 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             output = {}
             parseObj = ["pages", "words"]
             # getting two tables for some reason
-            if $("table", xml).length > 1
-                $("table", xml).last().remove()
+            # if $("table", xml).length > 1
+            #     $("table", xml).last().remove()
+            parseTable = (table) ->
+                return ("<a href='/#!/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", table))
+            output.titleList = parseTable($("table", xml)[0])
+            output.epubList = parseTable($("table", xml)[1])
             for elem in $("result", xml).children()
                 if elem.tagName == "table"
-                    output.titleList = ("<a href='#!/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", elem))
+                    continue
+                    
                 else if elem.tagName in parseObj
                     output[elem.tagName] = _.object _.map $(elem).children(), (child) ->
                         [child.tagName, $(child).text()]

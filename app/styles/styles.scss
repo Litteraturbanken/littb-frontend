@@ -557,8 +557,8 @@ body > .header {
 }
 
 .page-stats #mainview {
-    > div > * {
-        margin-bottom : 1em;
+    h3 {
+        margin-top : 2em;
     }
     ul li {
         counter-increment : listcounter;

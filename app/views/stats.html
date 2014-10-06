@@ -2,7 +2,7 @@
 <div ng-show="data">
     <h1>Statistik för Litteraturbanken</h1>
     
-    <div>Litteraturbanken innehåller just nu: </div>
+    <h3>Litteraturbanken innehåller just nu: </h3>
     
     <ul>
         <li>{{data.works | numberFmt}} verk</li>
@@ -13,9 +13,15 @@
         <li>{{data.epubs | numberFmt}} epubfiler</li>
     </ul>
     
-    <div>De mest lästa verken är:</div>
+    <h3>De mest lästa verken:</h3>
     <ul>
         <li ng-repeat="title in data.titleList" ng-bind-html="title | trust">
+    
+        </li>
+    </ul>
+    <h3>De mest nedladdade epubarna:</h3>
+    <ul>
+        <li ng-repeat="title in data.epubList" ng-bind-html="title | trust">
     
         </li>
     </ul>
