@@ -230,7 +230,7 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
 
     getTitles : (allTitles = false, author = null, initial = null, string = null) ->
         def = $q.defer()
-        if author
+        if author and allTitles
             params = 
                 action : "get-titles-by-author"
                 authorid : author
@@ -564,7 +564,7 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
                 if wd.match(/\.\.\./)
                     extras.push "..."
                     wd = wd.replace(/(\.\.\.)/, "")
-                wd = wd.replace(/([\.,;:])/g, " $1")
+                wd = wd.replace(/([\.,;:!?])/g, " $1")
                 wd = wd.replace(/([-’])/g, " $1 ")
                 wd = wd.replace(/(['])/g, " $1$1 ") # double quote for escaping
                 wd = wd.replace(/([»])/g, "$1 ")

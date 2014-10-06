@@ -133,7 +133,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 templateUrl: 'views/search.html'
                 controller : 'searchCtrl'
                 reloadOnSearch : false
-                title : "Sök i verk"
                 breadcrumb : ["sök"]
 
             .when "/titlar",
@@ -254,7 +253,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter">
                         <td>{{row.itemAttrs.lbworkid}}</td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author.authorid}}/info">{{row.author.surname}}</a>
+                            <a href="/#!/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a>
                         </td>
                         <td>
                             <a href="/#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
