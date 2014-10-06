@@ -881,7 +881,6 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             dimensions = _.map [root.attr("w"), root.attr("h")], Number
 
             max = _.max dimensions
-            c.log "max", max
             factors = _.map SIZE_VALS, (val) -> val / max
 
             out = []

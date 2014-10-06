@@ -23,7 +23,8 @@
     "naturalsort": "https://github.com/benatkin/naturalsort.git",
     "ngFitText": "~2.4.0",
     "fittext": "*",
-    "bigtext": "~0.1.6"
+    "bigtext": "~0.1.6",
+    "fit.js": "*"
   },
   "devDependencies": {
     "angular-mocks": "git://github.com/angular/bower-angular-mocks.git#1.0.7",

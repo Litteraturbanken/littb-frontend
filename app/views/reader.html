@@ -18,9 +18,20 @@
          <!-- ng-style="{height : overlayHeight, width : overlayWidth}"  -->
      <div selection-sniffer class="overlay" ng-show="mediatype == 'faksimil' && overlaydata.length">
          <div ng-repeat="list in overlaydata" >
-             <span big-text="obj" class="w" ng-repeat="obj in list" ng-style="getOverlayCss(obj)"> </span>
+             <!-- <div class="parent" ng-style="getOverlayCss(obj)" ng-repeat="obj in list">
+                 <span class="w" big-text-alt="obj"  ></span>
+             </div> -->
+             <span big-text="obj" fac="overlayFactors[size - 1]" class="w parent" ng-repeat="obj in list" ng-style="getOverlayCss(obj)"> </span>
+
          </div>
      </div>
+
+         <!-- <span class="word" ng-repeat="obj in list" ng-style="getOverlayCss(obj)" big-text="obj.word"></span> -->
+         <!-- <span big-text class="word" ng-repeat="obj in list" ng-style="getOverlayCss(obj)">{{obj.word}} </span> -->
+     
+     <!-- <div ng-repeat="obj in overlaydata" big-text="obj.word" ng-style="getOverlayCss(obj)" ng-mousedown="overlayMousedown()" ng-mouseup="overlayMouseup()"></div> -->
+     <!-- <span ng-repeat="obj in overlaydata" ng-style="getOverlayCss(obj)">{{obj.word}}</span> -->
+
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
 
     <div square ng-repeat="obj in coors" ng-show="height" x="obj.x" 

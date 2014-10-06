@@ -1065,11 +1065,14 @@ $partnav-width : 170px;
             // color : blue;
             color : transparent;
             // user-select : none;
-            .w {
+
+            .parent {
+                // overflow-x : hidden;
                 position : absolute;
                 user-select : initial;
                 white-space: nowrap;
                 display : inline-block;
+                // float : left;
             }
         }
         .selecting .overlay {

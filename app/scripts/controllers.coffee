@@ -2195,8 +2195,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         {
             left: (fac * obj.x) + 'px'
             top: fac * obj.y + 'px'
-            # width : fac * obj.width
-            # height : fac * obj.height
+            # width : fac * obj.w
+            # height : fac * obj.h
         }
 
 
@@ -2254,7 +2254,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             setPages {length : 1}
 
             filename = s.faksimilPageMapping[s.pageix]
-            id = $routeParams.lbid
+            id = $routeParams.lbid or s.workinfo.lbworkid
             s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}"
             unless s.isEditor
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
