@@ -117,7 +117,6 @@ littb.controller "statsCtrl", ($scope, backend) ->
 
 
     backend.getStats().then (data) ->
-        c.log "data", data
         s.data = data
 
 littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, util, searchData, authors, debounce) ->
