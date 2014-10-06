@@ -10,7 +10,7 @@
     
     
         </a> -->
-        <div style="clear:both;"></div>
+        <div class="clearfix"></div>
     </div>
     
     
@@ -73,17 +73,15 @@
         
           <table cellspacing="0" class="results">
             <tr ng-repeat="sent in kwic" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
-                <td class="num">{{($index + 1) + (current_page * num_hits)}}</td>
-                <td><a bo-text="sent.structs.text_nameforindex" 
-                    href="/#!/forfattare/{{getSetVal(sent, 'text_authorid')}}"></a></td>
-                <td class="title" tooltip="{{sent.structs.text_title}}">
-                    <a bo-text="sent.structs.text_shorttitle"
-                    href="/#!/forfattare/{{getSetVal(sent, 'text_authorid')}}/titlar/{{sent.structs.text_titlepath}}/{{sent.structs.text_mediatype}}"></a>
+                <td class="num">{{::($index + 1) + (current_page * num_hits)}}</td>
+                <td><a ng-href="/#!/forfattare/{{::getSetVal(sent, 'text_authorid')}}">{{::sent.structs.text_nameforindex}}</a></td>
+                <td class="title" tooltip="{{::sent.structs.text_title}}">
+                    <a ng-href="/#!/forfattare/{{::getSetVal(sent, 'text_authorid')}}/titlar/{{::sent.structs.text_titlepath}}/{{::sent.structs.text_mediatype}}">{{::sent.structs.text_shorttitle}}</a>
                 </td>
 
                 <td class="left_context"><span kwic-word="kwic-word" ng-repeat="wd in selectLeft(sent)"></span></td>
                 <td class="match">
-                    <a bo-href="sent.href" ng-click="save_search(current_page * num_hits, $index, data)">
+                    <a ng-href="{{::sent.href}}" ng-click="save_search(current_page * num_hits, $index, data)">
                         <strong><span kwic-word="kwic-word" ng-repeat="wd in selectMatch(sent)"></span></strong>
                     </a>
                 </td>

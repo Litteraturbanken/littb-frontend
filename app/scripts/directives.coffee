@@ -430,8 +430,7 @@ littb.directive "popper", ($rootElement) ->
 
 littb.directive 'kwicWord', ->
     replace: true
-    template : """<span class="word" ng-class="getClassObj(wd)"
-                    bo-text="wd.word + ' '" ></span>
+    template : """<span class="word" ng-class="getClassObj(wd)">{{::wd.word}} </span>
                 """ #ng-click="wordClick($event, wd, sentence)"
     link : (scope, element) ->
         scope.getClassObj = (wd) ->
@@ -528,7 +527,7 @@ littb.directive "schoolAffix", ($window) ->
 
 
         onWatch()
-        
+
         elem.affix(
             offset : {
                 top : elem.offset().top
