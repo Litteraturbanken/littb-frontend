@@ -666,7 +666,7 @@ littb.factory 'backend', ($http, $q, util, $angularCacheFactory) ->
             #     c.log "transformResponse", data, headers
 
         ).success( (xml) ->
-            c.log "searchLexicon success", xml, $(xml).text()
+            c.log "searchLexicon success", xml
 
             if $(xml).text() == "Inga träffar"
                 def.reject()

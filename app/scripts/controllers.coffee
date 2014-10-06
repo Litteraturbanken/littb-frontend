@@ -1817,15 +1817,19 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
     s.closeModal = () ->
         # modal.close()
         s.lex_article = null
+        s.lexid = null
         modal = null
 
 
     reportDictError = () ->
         s.$emit "notify", "Hittade inget uppslag"
 
+    s.lexid = null
+
     $rootScope.$on "search_dict", (event, query, searchId) ->
-        c.log "search_dict", query, searchId    
+        c.log "search_dict event", query, searchId    
         
+
         
         def = backend.searchLexicon(query, false, searchId, true)
         def.catch () ->
@@ -1846,6 +1850,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
                     continue
 
                     
+            s.lexid = if searchId then query else null
             s.lex_article = result
             s.showModal()
             
@@ -1874,6 +1879,11 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         val_in : (val) ->
             s.$emit "search_dict", val
         replace : false            
+    ,
+        key : "lex"
+        scope_name : "lexid"
+        replace : false
+
     ]
 
 
@@ -2233,14 +2243,18 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
                 unless s.pageToLoad then s.pageToLoad = s.pagename
 
-                backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
-                    s.overlaydata = data
-                    s.overlayFactors = overlayFactors
+                if s.mediatype == "faksimil"
+                    backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
+                        s.overlaydata = data
+                        s.overlayFactors = overlayFactors
                                        
-                    # s.overlayWidth = width
-                    # s.overlayHeight = height
+            if val
+                params["pagename"] = val
+            if val and s.pagemap
+                ix = s.pagemap["page_" + val]
+                plusFive = s.pagemap["ix_" + (ix + 5)] or s.endpage
 
-            if val then params["pagename"] = val
+                params["pagename"] = [val, plusFive]
 
 
         if s.faksimilPageMapping
@@ -2252,6 +2266,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             unless s.isEditor
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
             return
+        else if s.etextPageMapping?[val]
+            setPages {length : 1}
+            s.etext_html = s.etextPageMapping[val]
+            backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
+            return
             
         s.loading = true
 
@@ -2261,8 +2280,20 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
 
-            steps = for page in $("page", data) when $(page).attr "pagestep"
-                [($(page).attr "pageix"), Number($(page).attr "pagestep")]
+            steps = []
+            s.etextPageMapping ?= {}
+            steps = for page in $("page", data)
+                if $(page).attr("pagestep")
+                    steps.append [($(page).attr "pageix"), Number($(page).attr "pagestep")]
+                s.etextPageMapping[$(page).attr("name")] = _.str.trim $(page).text()
+
+            # avoid etextPageMapping memory bloat
+            pairs = _.pairs s.etextPageMapping
+            if pairs.length > 100
+                pairs = pairs[30..]
+                s.etextPageMapping = _.object pairs
+
+
 
             s.stepmap = _.object steps
             s.pagestep = Number $("pagestep", data).text()

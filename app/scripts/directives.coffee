@@ -178,24 +178,41 @@ littb.directive 'scrollTo', ($window, $timeout) ->
 
 
 
-littb.directive 'soArticle', ($compile) -> 
+littb.directive 'soArticle', ($compile, $location, $window) -> 
     scope : 
         soArticle : "="
     link : (scope, elem, attrs) ->
         scope.$watch "soArticle", (val) ->
             newElem = $compile(_.str.trim val)(scope)
             elem.html newElem
+            # c.log "soArticle", $location.search().lex
+
+        scope.lex = () -> $location.search().lex
+
+
+        
+
+        scope.$watch "lex()", (val) ->
+            unless val then return
+            c.log "val", val, elem
+            # c.log "top", elem.find("#" + val).offset().top
+            # elem.closest("[modal-window]").scrollTop(top)
+            elem.find("#" + val).get(0)?.scrollIntoView()
+
+
             
 
-littb.directive 'hvord', (backend) -> 
+littb.directive 'hvord', (backend, $location) -> 
 
     restrict : "E"
     link: (scope, elem, attr) ->
         elem.on "click", () ->
             id = elem.prev("hvtag").text()
             if id
+                # $location.search("lex", id)
                 scope.$emit "search_dict", id, true
             else
+                $location.search("lex", null)
                 scope.$emit "search_dict", _.str.trim elem.text()
 
 
@@ -266,8 +283,7 @@ littb.directive 'alertPopup', ($rootElement, $timeout, $rootScope) ->
     template : """
         <div ng-show="show" class="alert_popup">{{text}}</div>
     """
-    # compile : (elem) ->
-        
+    replace : true        
     link : (scope, elem, attr) ->
         scope.text = null
         scope.show = false
@@ -276,12 +292,9 @@ littb.directive 'alertPopup', ($rootElement, $timeout, $rootScope) ->
             scope.show = true
             $timeout () ->
                 scope.show = false
-                # scope.text = null
             , 4000
 
 
-        # $rootElement.append elem
-        # scope.$on "$destroy", () -> elem.remove()
 
     
 littb.directive 'focusable', () ->
