@@ -72,8 +72,10 @@ littb.directive 'sortTriangles', () ->
         
         s.sorttuple = [val, 1]
         s.enabled = [true, true]
-        tupMatches = (tup1, tup2) -> _.all _.map _.zip(tup1, tup2), ([item1, item2]) ->
-            item1 == item2
+        tupMatches = (tup1, tup2) ->
+            if not tup?.length or not tup2?.length then return 
+            _.all _.map _.zip(tup1, tup2), ([item1, item2]) ->
+                item1 == item2
         s.$watch "tuple", (newtup) ->
             [newval, dir] = newtup
             s.active = tupMatches(val, newval)
