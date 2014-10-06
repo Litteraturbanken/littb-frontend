@@ -2256,21 +2256,21 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
                 params["pagename"] = [val, plusFive]
 
+        unless s.isEditor
+            if s.faksimilPageMapping
+                setPages {length : 1}
 
-        if s.faksimilPageMapping
-            setPages {length : 1}
-
-            filename = s.faksimilPageMapping[s.pageix]
-            id = $routeParams.lbid or s.workinfo.lbworkid
-            s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}"
-            unless s.isEditor
+                filename = s.faksimilPageMapping[s.pageix]
+                id = $routeParams.lbid or s.workinfo.lbworkid
+                s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}"
+                unless s.isEditor
+                    backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
+                return
+            else if s.etextPageMapping?[val]
+                setPages {length : 1}
+                s.etext_html = s.etextPageMapping[val]
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
-            return
-        else if s.etextPageMapping?[val]
-            setPages {length : 1}
-            s.etext_html = s.etextPageMapping[val]
-            backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
-            return
+                return
             
         s.loading = true
 

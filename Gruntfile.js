@@ -110,8 +110,8 @@ module.exports = function (grunt) {
         hostname: '0.0.0.0',
       },
       proxies : ["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "ws"].map(function(item) {
-        // var host = 'demolittb.spraakdata.gu.se'
-        var host = 'litteraturbanken.se'
+        var host = 'demolittb.spraakdata.gu.se'
+        // var host = 'litteraturbanken.se'
         return {
                       context: '/' + item,
                       host: host,
@@ -465,7 +465,7 @@ module.exports = function (grunt) {
 
 
   grunt.registerTask('build', [
-    // 'test',
+    'test',
     'clean:dist',
     'wiredep',
     'useminPrepare',
