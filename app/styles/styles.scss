@@ -1954,7 +1954,19 @@ grundform-clean {
     padding: 2em;
     color: white;
     @include primarygradient;
-    // font-size: 1em;
+    opacity : 1;
+
+    transition: opacity ease-in-out 200ms;
+
+    &.ng-hide-add,
+    &.ng-hide-remove {
+      display:block!important;
+    }  
+    &.ng-hide {
+      opacity:0;
+    }
+
+
 }
 
 .site-sla {

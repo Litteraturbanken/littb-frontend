@@ -1821,10 +1821,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
     reportDictError = () ->
-        s.dict_not_found = "Hittade inget uppslag"
-        $timeout( () ->
-            s.dict_not_found = null
-        , 4000)
+        s.$emit "notify", "Hittade inget uppslag"
 
     $rootScope.$on "search_dict", (event, query, searchId) ->
         c.log "search_dict", query, searchId    
@@ -1859,17 +1856,13 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         s.dict_searching = true
         def = backend.searchLexicon(val, true)
         timeout = $timeout(angular.noop, 800)
-        c.log "def", def
         def.catch () ->
-            c.log "oops"
             s.dict_searching = false
             reportDictError()
 
         $q.all([def, timeout]).then () ->
             s.dict_searching = false
             
-
-        # def.then () ->
 
         return def
 

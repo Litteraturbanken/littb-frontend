@@ -260,15 +260,28 @@ littb.directive 'selectionSniffer', ($window) ->
 #                 nProgress.done()
 
 
-littb.directive 'alertPopup', ($rootElement, $timeout) -> 
-    scope : 
-        alertPopup : "=alert"
+littb.directive 'alertPopup', ($rootElement, $timeout, $rootScope) -> 
+    scope : {}
+    restrict : "EA"
     template : """
-        <div ng-if="alert" class="alert_popup">{{alert}}</div>
+        <div ng-show="show" class="alert_popup">{{text}}</div>
     """
+    # compile : (elem) ->
+        
     link : (scope, elem, attr) ->
-        $rootElement.append elem
-        scope.$on "$destroy", () -> elem.remove()
+        scope.text = null
+        scope.show = false
+        $rootScope.$on "notify", (event, text) ->
+            scope.text = text
+            scope.show = true
+            $timeout () ->
+                scope.show = false
+                # scope.text = null
+            , 4000
+
+
+        # $rootElement.append elem
+        # scope.$on "$destroy", () -> elem.remove()
 
     
 littb.directive 'focusable', () ->
