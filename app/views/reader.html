@@ -42,129 +42,72 @@
     
     
     <div toolkit toolkit-id="toolkit-right">
-        <!--h2>Ord- och sakförklaringar</h2>-->
-        <div id="ord-och-sak" ng-show="ordOchSakPage">
+        <!-- <div id="ord-och-sak" ng-show="ordOchSakPage">
             <div ng-repeat="entry in ordOchSakPage" ng-mouseenter="markOosEntry(entry)" 
                  ng-mouseleave="unmarkOosEntries()">
                 <span class="oos-ord">{{entry.ord}}</span><br>
                 <span class="oos-forklaring">{{entry.forklaring}}</span>
             </div>
-        </div>
-    </div>
-    
-    <div toolkit>
-        <div ng-class="{editor: isEditor}">
-            <hr>
-            <span ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
-            
-            <div>
-                <a class="title" 
-                    href="/#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info">
-                    {{workinfo.showtitle}}
-                 </a>
-            </div>
-        
-            <div id="search_nav" ng-show="searchData.total_hits && (x || markee_from)">
-                <div class="box">
-                    <div class="text">
-                        <div>
-                            Sökträff
-                        </div>
-                        <div>
-                            <span>{{searchData.current + 1}}</span> av <span>{{searchData.total_hits}}</span>
-                        </div>
-                    </div>
-                    <div class="ctrls">
-                        <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
-                        <div style="clear:both;"></div>
-                        <div class="arrows">
-                            <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
-                            <img ng-click="nextHit()" class="" src="/bilder/h_pil.png">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-            <div style="height: 1em;"></div>
-        
-            <div><a href="/#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm || title}}/info">::: Om boken</a></div>
-        
-            <hr>
-        
-        
-            <div class="pager_ctrls" ng-click="resetHitMarkings()">
-                <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
-                    ng-click="toStartPage($event)">
-                    <i class="fa fa-fast-backward"></i>
-                </a>
-                <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
-                    <i class="fa fa-backward"></i>
-                </a>
-                <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
-                    <i class="fa fa-forward"></i>
-                </a>
-                <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}"
-                    ng-click="gotopage(endpage, $event)">
-                    <i class="fa fa-fast-forward"></i>
-                </a>
-            </div>
-            <form ng-submit="pageToLoad = displaynum">
-                <span ng-if="isEditor">Index</span> 
-                <span ng-if="!isEditor">Sida</span> 
-                <input class="pageinput" ng-model="displaynum">
-            </form>
-        
-            <div ng-if="!isEditor">
-                <ul class="work_parts">
-                    <li><a ng-click="gotopage(startpage)">[Start]</a></li>
-                    <li ng-repeat="part in workinfo.parts | limitTo:5" 
-                        tooltip="{{getTooltip(part)}}" tooltip-append-to-body>
-                        <a ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
-                    </li>
-                </ul>
-            </div>
-        
-            <div class="partnav" ng-show="workinfo.parts.length > 5">
-                <div>
-                    <i ng-mouseover="mouseover()" 
-                        ng-touch="mouseover()"
-                        class="arrow_icon fa fa-play"></i>
-                </div>
-        
-                <div ng-show="showPopup" class="triangle"></div>
-        
-                <ul class="part_menu" ng-show="showPopup" >
-                    <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
-                    <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
-                        
-                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
-                    </li>
-                </ul>
-        
-            </div>
-        
-            <div class="size_picker" ng-show="mediatype == 'faksimil'">
-                <div ng-class="{selected : size, hidden : !isDefined(size)}" 
-                     ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div>
-                
-            </div>
-    
-            <div ng-if="supportsParallel()"><a ng-click="toggleParallel()">
-                <span ng-if="!isParallel">
-                    Visa <span ng-show="mediatype == 'etext'">faksimil</span> 
-                    <span ng-show="mediatype == 'faksimil'">etext</span> 
-                    parallellt</span>
-                <span ng-if="isParallel">Stäng parallellvisningen</span>
-            </a></div>
+        </div> -->
 
-            <div class="focusBtn">
-                <a ng-click="activateFocus()">Fokusläge</a>
-            </div>
         
-        
-            
+        <div>
+            <span class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
+            <br>
+            <a class="title" 
+                href="/#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info">
+                {{workinfo.showtitle}}
+             </a>
         </div>
+        
+        <hr>
+        <ul class="part_menu" >
+            <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
+            <li ng-repeat="part in workinfo.parts | limitTo:6" tooltip="{{part.showtitle}}">
+                
+                <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
+            </li>
+        </ul>
+        <div class="arrows">
+            <div class="up fa fa-play"></div>
+            <br>
+            <div class="down fa fa-play"></div>
+        </div>
+
+
+        <div class="pager_ctrls small" ng-click="resetHitMarkings()">
+            <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
+                ng-click="gotopage(startpage, $event)">
+                Gå framåt en sida
+            </a>
+            <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
+                Gå bakåt en sida
+            </a>
+            <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+                Gå till första sidan
+            </a>
+            <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}"
+                ng-click="gotopage(endpage, $event)">
+                Gå till sista sidan
+            </a>
+        </div>
+        <span class="small">Du kan också bläddra med tangentbordets piltangenter</span>
+        
+        <div class="subnav">
+            <ul>
+                <li>Mer om boken</li>
+                <li>Visa som helskräm</li>
+                <li>Visa som bokomslag</li>
+                <li>Parallelltextvisning</li>
+                <li>Sök i verket</li>
+                <li>Sök i författarens texter</li>
+                <li>Dela boken</li>
+            </ul>
+        </div>
+
+        
     </div>
+    
     <div ng-show="isFocus" class="leftCover" ng-click="prevPage($event)" to-body></div>
     <div ng-show="isFocus" class="rightCover" ng-click="nextPage($event)" to-body></div>
     <div ng-show="isFocus && showFocusBar" class="bottomBar" set-class="{'ng-hide-remove' : !isFocus}" to-body>

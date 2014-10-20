@@ -2,9 +2,48 @@
     På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis.
 </meta-desc>
 
-<div ng-include="'/red/om/start/startsida.html'"></div>
+<div class="center_col">
+    <h1>Litteraturbanken</h1>
+    <h2 class="caps">Nytt <i class="no-caps">och</i> anmärkningsvärt</h2>
+    
+    <ul class="news">
+        <li>Per Stam <i>om</i> August Strindberg</li>
+        <li>Strindbergs samlade verk</li>
+        <li>Ellen Key <i>om</i> barnets århundrade</li>
+        <li>Selma Lagerlöfs brev</li>
+        <li>Essä: Om svenska sagor</li>
+        <li>Skolan: nya uppgifter</li>
+        <li>Förbättrad sökfunktion</li>
+        <li>Atterboms <i>Siare och och skalder</i> komplett</li>
+    </ul>
+    
+    
+    <div class="buttons">
+        <button>Sök författare</button>
+        <button>Sök efter titel</button>
+        <button>Sök i texterna</button>
+    </div>
 
-<div toolkit>Sök författare
+    <div class="about">Om månadens bakgrundsbild</div>
+</div>
+
+<div class="start-quote-block">
+
+  <div class="start-quote">”Husen, dem vi bebo,<br>
+      äro urtidskojor i jämförelse <br>
+      med den conception av en <br> 
+      människoboning vi bära <br> 
+      inom oss”  
+  </div>
+
+      <div class="start-quote-source">
+        <span class="author">Edith Södergran,</span>
+        <span class="title">Brokiga iaktagelser</span>
+      </div>
+</div>
+
+<!-- <div toolkit>
+Sök författare
     <form ng-submit="goto('/forfattare?authorFilter=' + author)">
         <input type="text" ng-model="author"><span submit-btn ng-click="goto('/forfattare?authorFilter=' + author)"></span>
     </form>
@@ -17,3 +56,4 @@
     <form ng-submit="goto('/sok?fras=' + text)">
         <input type="text" ng-model="text"><span submit-btn ng-click="goto('/sok?fras=' + text)"></span>
     </form></div>
+ -->

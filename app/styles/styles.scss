@@ -7,6 +7,21 @@
 $fa-font-path: "/components/font-awesome/fonts";
 @import "font-awesome/scss/font-awesome";
 
+@font-face {
+    font-family: "Requiem";
+    src: url("requiem/RequiemDisplay-HTF-Roman.otf");
+    font-style: normal;
+    font-weight: normal;
+}                     
+@font-face {
+    font-family: "Requiem";
+    src: url("requiem/RequiemDisplay-HTF-Italic.otf");
+    font-style: italic;
+}
+@font-face {
+    font-family: "RequiemSC";
+    src: url("requiem/RequiemDisplay-HTF-SmallCaps.otf");
+}
 
 
 
@@ -14,10 +29,13 @@ $inline-block-alignment : top;
 $sans : "Helvetica", "Arial", sans-serif;
 
 $main-menu-width : 120px;
-$gutter-width : 40px;
-$page-width : 712px;
-$mainview-width : $page-width - $main-menu-width - ($gutter-width * 2);
-$right-corridor-width : 200px;
+$left-gutter-width : 40px;
+$right-gutter-width : 80px;
+$page-width : 900px;
+$right-corridor-width : 210px;
+$mainview-width : $page-width - $main-menu-width - ($left-gutter-width + $right-gutter-width + $right-corridor-width);
+
+$content-top-margin : 5em;
 
 $primarycolor : #990000;
 $dotted : thin dotted #990000;
@@ -33,6 +51,13 @@ $dotted : thin dotted #990000;
     width : 500px;
 }
 
+.caps {
+    text-transform: uppercase;
+}
+.no-caps {
+    text-transform: initial;
+}
+
 // bootstrap overrides
 
 .tooltip {
@@ -46,13 +71,13 @@ html {
     height : 100%;
 }
 body {
-    font-size : 12px;
+    font-size : 16px;
     padding-top : 20px;
-    padding-left : $gutter-width;
-    padding-right : $gutter-width;
+    padding-left : $left-gutter-width;
+    padding-right : $left-gutter-width;
     white-space: nowrap;
-    font-family : georgia, serif;
-    width : $page-width;
+    font-family : "Requiem", georgia, serif;
+    // width : $page-width;
     /*background-color: white;*/
     color: #333;
     line-height : 17.5px;
@@ -102,8 +127,9 @@ h1,h2,h3,h4,h5,h6 {
 
 #rightCorridor{
     @include inline-block;
-    margin-left: 5px;
-    // width : $right-corridor-width;
+    margin-top : $content-top-margin;
+    margin-left: 8em;
+    width : $right-corridor-width;
     #toolkit-right {
         margin-top: 2em;
     }
@@ -111,7 +137,7 @@ h1,h2,h3,h4,h5,h6 {
 
 #leftCorridor {
     width : $main-menu-width;
-    margin-right : $gutter-width;
+    margin-right : $right-gutter-width;
     @include inline-block();
     > * {
         margin-bottom : 2em;
@@ -357,15 +383,25 @@ form {
     margin-bottom : 1em;
 }
 .mainnav {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
     vertical-align: top;
     line-height : 19px;
     a:hover, a:active {
         color : $primarycolor;
     }
+    text-align : right;
+    text-transform: uppercase;
+    .sla {
+        height: 35px;
+        margin-top: 0.5em;
+    }
 }
 #mainview {
     @include inline-block(top);
-    width : $mainview-width;
+    // width : $mainview-width;
+    margin-top : $content-top-margin;
 }
 
 label {
@@ -431,7 +467,22 @@ body > .header {
         box-shadow: none;
 
     }
+
+    
 }
+
+.logo_link_monogram {
+    background: url("../img/lb_monogram.svg") no-repeat;
+    background-size: contain;
+    height: 150px;
+    width: 190px;
+    left: -20px;
+    margin-bottom: 0px;
+    position : relative;
+    display: block;
+    
+}
+
 .start_menu {
     display : none;
 }
@@ -443,12 +494,14 @@ body > .header {
         //     position: relative;
         //     cursor : default;
         // }
+
+
         .logo_link {
             height: 61px;
             left: -17px;
         }
          a {
-            width : 59%;
+            // width : 59%;
             display: block;
         }
         hr {
@@ -477,9 +530,106 @@ body > .header {
             }
         }
     }
+    #leftCorridor {
+        width : 160px;
+    }
+    .logo_link_monogram {
+        margin-top : 2em;
+        height: 240px;
+        width: 330px;
+        left : -70px;
+    }
+    .mainnav {
+        font-size : 1.3em;
+        line-height : 24px;
+        a {
+            color : white;
+        }
+        .sla {
+            margin-top: 3em;
+            height : 55px;
+        }
+    }
 
     .breadcrumb {
         display : none;
+    }
+    
+    background: url(../img/background_start.png) no-repeat;
+    background-position-x : -5px;
+    #mainview {
+        // width : 30%;
+        // margin: 0 auto;
+        font-size : 1.5em;
+        line-height : 1.1em;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+
+
+        text-align : center;
+
+        .center_col {
+            display: inline-block;
+            vertical-align: top;
+            margin-left : 7em;
+            color : darken(white, 0%);
+            h1 {
+                margin-bottom : 0;
+                font-size : 2.31em;
+            }
+            h2 {
+                color : black;
+                font-size : 1.0em;
+            }
+        }
+        .news {
+        }
+        .buttons {
+            
+            margin-top : 5em;
+
+            // display : inline-block;
+        }
+        .buttons > button {
+            display: block;
+            text-transform: uppercase;
+            margin: 0 auto;
+            background-color: rgba(255,255,255,0.5);
+            border: 1px inset #666;
+            margin-top: 5px;
+            padding: 0.5em 1.1em;
+            font-size: 0.5em;
+            width: 12em;
+            &:hover {
+
+            }
+        }
+
+        .about {
+            margin-top: 11em;
+            text-transform: uppercase;
+            font-size: 0.6em;
+        }
+
+        .start-quote-block {
+            color : black;
+            margin-top : 5.5em;
+            margin-left : 4em;
+            // line-height : 1.2;
+            text-align: center;
+            display: inline-block;
+            vertical-align: top;
+            .start-quote {
+                // font-size : 1.6em;
+                width : 11em;
+            }            
+            .start-quote-source {
+                
+                .title {
+                    font-style: italic;
+                }
+            }
+        }
     }
     #toolkit {
         margin-top : 15em;
@@ -1030,7 +1180,7 @@ $partnav-width : 170px;
             white-space : nowrap;
             color: black;
             font-family: Georgia,Times,serif;
-            font-size: 10pt;
+            // font-size: 10pt;
 
             &.reading {
                 white-space : normal;
@@ -1091,14 +1241,23 @@ $partnav-width : 170px;
         }
 
     }
-    #toolkit {
+
+
+
+    #toolkit-right {
+        // max-width : 150px;
+        .subnav {
+            text-transform: uppercase;
+        }
         .editor .pager_ctrls .disabled i {
             &:before {
                 color : $primarycolor;
             }
         }
-        & > * {
+        & [toolkit] > * {
             display : block;
+            margin-bottom : 2em;
+
         }
         & > div {
             margin : 1em 0;
@@ -1106,13 +1265,56 @@ $partnav-width : 170px;
         .title, .author {
             min-height : 1em;
         }
+        .author {
+            text-transform: uppercase;
+        }
         .title {
-            font-style: italic;
+            // font-style: italic;
+            font-size : 1.2em;
         }
         .pageinput {
             width : 50px;
             margin-left: 5px;
         }
+
+        .part_menu {
+            // height: 300px;
+            // width: 300px;
+            display : inline-block;
+            vertical-align: middle;
+            position : relative;
+            &:before {
+                content : " ";
+                position: absolute;
+                top : 0;
+                left : 0;
+                right : 0;
+                bottom : 0;
+                // needs latest Compass, add '@import "compass"' to your scss
+                @include filter-gradient(#ffffff, #ffffff, vertical); // IE6-8
+                // IE9 SVG, needs conditional override of 'filter' to 'none'
+                $experimental-support-for-svg: true;
+                @include background-image(linear-gradient(top, white 0%,rgba(255,255,255,0) 50%,white 100%));
+                pointer-events : none;
+                
+            }
+            width : 118px;
+        }
+        .arrows {
+            display : inline-block;
+            vertical-align: middle;
+            margin-left : 1em;
+            color : $primarycolor;
+            // margin-bottom : 0;
+            .up {
+                transform : rotate(-90deg);
+                margin-bottom : 1em;
+            }
+            .down {
+                transform : rotate(90deg);
+            }
+        }
+
         #search_nav {
             .box {
                 background-image : url(/bilder/Soknavigering.png);
@@ -1150,6 +1352,8 @@ $partnav-width : 170px;
         .pager_ctrls {
             margin-bottom: 0.8em;
             a {
+                display : block;
+                text-transform: uppercase;
                 margin-right : 3px;
                 margin-right : 2px;
                 &:first-of-type, &:first-of-type * {
@@ -1269,7 +1473,7 @@ $partnav-width : 170px;
             opacity : 0.8;
 
             position : absolute;
-            left : ($main-menu-width + $gutter-width) - 25;
+            left : ($main-menu-width + $right-gutter-width) - 25;
             bottom : 0;
 
 
@@ -1281,7 +1485,7 @@ $partnav-width : 170px;
             width : $partnav-width;
             position : absolute;
             bottom : 0;
-            left : $main-menu-width + $gutter-width;
+            left : $main-menu-width + $right-gutter-width;
             padding : 2em;
             z-index : 100;
             max-height : 355px;
@@ -2093,16 +2297,7 @@ grundform-clean {
 
         }
         
-        .logo_link_monogram {
-            background: url("../img/lb_monogram.svg") no-repeat;
-            background-size: contain;
-            height : 70px;
-            width : 100px;
-            left: -22px;
-            margin-bottom: 0px;
-            position : relative;
-            
-        }
+        
     }
 
     .toc {

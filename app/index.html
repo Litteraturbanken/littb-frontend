@@ -26,74 +26,55 @@
     </head>
     <body ng-app="littbApp" ng-cloak ng-class="{focus : _focus_mode, night : _night_mode}">
 
-        <div class="header">
-            <a ng-if="isSla" class="logo_link_monogram" ng-href="/#!/start"></a>
-            <a class="logo_link" ng-href="/#!{{getLogoUrl()}}"></a>
-            <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
+        <!-- <div class="header"> -->
+            
+            <!-- <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
                 <li>
                     <a ng-if="!isSchool" href="/#!/start">Hem</a> 
                     <a ng-if="isSchool" href="/#!/start">Litteraturbanken</a> 
                 </li>
                 
                 <li ng-repeat="item in breadcrumb track by $index" ng-class="{active : $last}"><a ng-href="{{item.url}}">{{item.label}}</a></li>
-              <!-- <li class="active">Data</li> -->
-            </ul>
-            <hr>
-            <ul class="start_menu">
-                <li><a href="/#!/epub">EPUB</a></li>
-                <li><a href="/#!/titlar?mediatypeFilter=pdf">PDF</a></li>
-                <li><a href="/#!/titlar?mediatypeFilter=etext">ETEXT</a></li>
-                <li><a href="/#!/titlar?mediatypeFilter=faksimil">FAKSIMIL</a></li>
-            </ul>
+            </ul> -->
             
-            <div class="clearfix"></div>
-        </div>
+            <!-- <div class="clearfix"></div> -->
+        <!-- </div> -->
         <div id="leftCorridor">
+            <a  class="logo_link_monogram" ng-href="/#!/start" ng-href="/#!{{getLogoUrl()}}"></a>
             <ul role="navigation" class="mainnav">
                 <li>
-                    <a href="/#!/forfattare">Författare</a>
+                    <a href="/#!/nytt">Nytt</a>
                 </li>
                 <li>
-                    <a href="/#!/titlar">Titlar</a>
+                    <a href="/#!/sok">Sök</a>
                 </li>
                 <li>
-                    <a href="/#!/epub">Epub-filer</a>
+                    <a href="/#!/hojpunkter">Höjdpunkter</a>
                 </li>
                 <li>
-                    <a ng-href="/#!/presentationer">Presentationer</a>
+                    <a href="/#!/kronologi">Kronologi</a>
                 </li>
                 <li>
-                    <a href="/#!/om/aktuellt">Aktuellt</a>
+                    <a href="/#!/listor">Listor</a>
                 </li>
                 <li>
-                    <a href="/#!/om/rattigheter">Rättigheter</a>
+                    <a href="/#!/epub">Epubfiler</a>
+                </li>
+                <li>
+                    <a href="/#!/svenskordbok">Svensk ordbok</a>
+                </li>
+                <li>
+                    <a href="/#!/skola">Skolan</a>
                 </li>
                 <li>
                     <a href="/#!/om/ide">Om LB</a>
                 </li>
                 <li>
-                    <a href="/#!/om/inenglish">In English</a>
+                    <img class="sla" src="/img/sla.svg">
                 </li>
-                <li>
-                    <a href="/#!/kontakt">Kontakt</a>
-                </li>
-                <li>
-                    <a href="/#!/om/hjalp">Hjälp</a>
-                </li>
-                <li>
-                    <a href="/#!/statistik">Statistik</a>
-                </li>
-                <li>
-                    <a href="/#!/forfattare/LagerlofS">Lagerlöfarkivet</a>
-                </li>
-                <li>
-                    <a href="/#!/skola">LB:s skola</a>
-                </li>
-                <li>
-                    <a href="/#!/sok">Sök i verk</a>
-                </li>
+                
             </ul>
-            
+            <!-- 
             <div class="font-small dict_links">
                 <a href="http://g3.spraakdata.gu.se/saob/" target="_blank">SAOB</a> ::: <a href="http://spraakbanken.gu.se/karp/#lexicon=dalinm,dalin,dalin-base" target="_blank">Dalin</a>
             </div>
