@@ -2301,7 +2301,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             steps = for page in $("page", data)
                 if $(page).attr("pagestep")
                     steps.append [($(page).attr "pageix"), Number($(page).attr "pagestep")]
-                s.etextPageMapping[$(page).attr("name")] = _.str.trim $(page).text()
+
+
+                p = $(page).clone()
+                p.find("*").remove()
+                etextcontent = _.str.trim $(p).text()
+                s.etextPageMapping[$(page).attr("name")] = etextcontent
 
             # avoid etextPageMapping memory bloat
             pairs = _.pairs s.etextPageMapping
