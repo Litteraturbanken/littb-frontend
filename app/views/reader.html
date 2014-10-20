@@ -94,7 +94,7 @@
         
             <div class="pager_ctrls" ng-click="resetHitMarkings()">
                 <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
-                    ng-click="gotopage(startpage, $event)">
+                    ng-click="toStartPage($event)">
                     <i class="fa fa-fast-backward"></i>
                 </a>
                 <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">

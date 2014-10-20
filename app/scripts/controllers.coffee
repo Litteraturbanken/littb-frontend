@@ -1345,6 +1345,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     
     s.isBeforeStartpage = () ->
+        if s.isEditor then return false
         unless s.pagemap then return
         startix = s.pagemap["page_" + s.startpage]
         s.pageix <= startix
@@ -1390,6 +1391,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pageToLoad = ix
         else
             s.setPage ix
+
+    s.toStartPage = (event) ->
+        event?.preventDefault()
+        if s.isEditor
+            s.pageix = 0
+            s.pageToLoad = 0
+        else
+            s.gotopage(s.startpage)
 
     s.mouseover = (event) ->
         c.log "mouseover"
