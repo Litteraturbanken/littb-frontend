@@ -381,6 +381,13 @@ module.exports = function (grunt) {
         },
         {
           expand: true,
+          cwd: '<%= yeoman.app %>',
+          src: ['styles/requiem/*'],
+          dest: '<%= yeoman.dist %>/styles/requiem',
+          flatten: true
+        },
+        {
+          expand: true,
           dot: true,
           cwd: '<%= yeoman.app %>',
           dest: '<%= yeoman.dist %>',
