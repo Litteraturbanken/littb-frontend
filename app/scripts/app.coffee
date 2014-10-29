@@ -251,16 +251,16 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter">
                         <td>{{row.itemAttrs.lbworkid}}</td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author.authorid}}">{{row.author.surname}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a>
                         </td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
                         </td>
                         <td>
                             <span ng-repeat="type in row.mediatype">
                             
                                 <span ng-show="!$first">:::</span>
-                                <a href="/#!/forfattare/{{row.author.authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{type}}</a>
+                                <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{type}}</a>
                             </span>
                         </td>
                     </tr>

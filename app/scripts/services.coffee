@@ -269,7 +269,8 @@ littb.factory 'backend', ($http, $q, util) ->
                     c.log "author failed", itm
                 rows.push
                     itemAttrs : objFromAttrs itm
-                    author : (objFromAttrs $(itm).find("author").get(0)) or ""
+                    # author : (objFromAttrs $(itm).find("author").get(0)) or ""
+                    author : _.map $(itm).find("author"), objFromAttrs
                     mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
                     # mediatype : getMediatypes($(itm).attr("lbworkid"))
 

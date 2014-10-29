@@ -619,7 +619,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     s.filterAuthor = (row) ->
         unless s.authorFilter then return true
-        row.author.authorid == s.authorFilter
+        s.authorFilter in _.pluck row.author, "authorid"
 
     titlesort = "itemAttrs.sortkey"
     
@@ -796,7 +796,7 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
         return true
 
     s.getAuthor = (row) ->
-        [last, first] = row.author.nameforindex.split(",")
+        [last, first] = row.author[0].nameforindex.split(",")
 
         (_.compact [last.toUpperCase(), first]).join ","
 
@@ -835,13 +835,14 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
     backend.getTitles().then (titleArray) ->
         s.searching = false
         s.rows = _.filter titleArray, (item) -> "epub" in item.mediatype
-        authors = _.pluck s.rows, "author"
+        authors = _.map s.rows, (row) ->
+            row.author[0]
 
         s.authorData = _.unique authors, false, (item) ->
             item.authorid
 
         s.currentLetters = _.unique _.map titleArray, (item) ->
-            item.author.nameforindex[0]
+            item.author[0].nameforindex[0]
 
         util.setupHashComplex s, [
             key : "selectedLetter"
