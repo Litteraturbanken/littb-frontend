@@ -807,7 +807,7 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
         backend.logPage("0", filename, "epub")
 
     s.getFilename = (row) ->
-        row.author.authorid[0] + '_' + row.itemAttrs.titlepath.split('/')[0]
+        row.author[0].authorid + '_' + row.itemAttrs.titlepath.split('/')[0]
 
 
     util.setupHashComplex s,
