@@ -700,7 +700,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     s.getUrl = (row, mediatype) ->
         # unless row then return
-        url = "/#!/forfattare/#{row.author.workauthor or row.author.authorid}/titlar/#{s.getTitleId(row)}/"
+        url = "/#!/forfattare/#{row.author[0].workauthor or row.author[0].authorid}/titlar/#{s.getTitleId(row)}/"
         if mediatype == "epub" or mediatype == "pdf"
             url += "info/#{mediatype}"
         else

@@ -23,11 +23,11 @@
             </thead>
             <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.author.nameforindex[0].toUpperCase()}}">
                     <td>
-                        <a ng-href="/#!/forfattare/{{::row.author.authorid}}" >{{::getAuthor(row)}}</a>
+                        <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}" >{{::getAuthor(row)}}</a>
                         <span class="dots"></span>
                     </td>
                     <td class="title">
-                        <a ng-href="/#!/forfattare/{{::row.author.authorid}}/titlar/{{::row.itemAttrs.titlepath.split('/')[0]}}/info" >{{::row.itemAttrs.showtitle}}</a>
+                        <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}/titlar/{{::row.itemAttrs.titlepath.split('/')[0]}}/info" >{{::row.itemAttrs.showtitle}}</a>
                     </td>
                     <td>
                         <a ng-click="log(getFilename(row))" ng-href="/txt/epub/{{::getFilename(row)}}.epub">Hämta</a>
