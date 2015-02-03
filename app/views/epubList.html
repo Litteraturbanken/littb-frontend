@@ -17,11 +17,10 @@
         <div class="preloader">Hämtar <span class="dots_blink"></span></div>
         <table class="contenttable" scroll-to="{{selectedLetter || 'A'}}">
             <thead>
-                <th> <div sort-triangles val="['author.nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
-                <th> <div sort-triangles val="['itemAttrs.sortkey', 'author.nameforindex']" tuple="sorttuple"></div> </th>
-                <th></th>
+                <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
+                <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
             </thead>
-            <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.author.nameforindex[0].toUpperCase()}}">
+            <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.author[0].nameforindex.toUpperCase()}}">
                     <td>
                         <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}" >{{::getAuthor(row)}}</a>
                         <span class="dots"></span>

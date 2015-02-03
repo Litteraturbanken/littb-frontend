@@ -91,11 +91,9 @@ littb.factory "util", ($location) ->
                 unless val 
                     if obj.default then val = obj.default else continue
                 
-
                 val = (obj.val_in or _.identity)(val)
                 # c.log "obj.val_in", obj.val_in
                 
-
                 if "scope_name" of obj
                     scope[obj.scope_name] = val
                 else if "scope_func" of obj

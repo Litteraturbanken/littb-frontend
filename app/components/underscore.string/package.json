@@ -1,6 +1,6 @@
 {
   "name": "underscore.string",
-  "version": "2.3.3",
+  "version": "2.4.0",
   "description": "String manipulation extensions for Underscore.js javascript library.",
   "homepage": "http://epeli.github.com/underscore.string/",
   "contributors": [
@@ -17,7 +17,7 @@
     "underscore",
     "string"
   ],
-  "main": "./lib/underscore.string",
+  "main": "./lib/underscore.string.js",
   "directories": {
     "lib": "./lib"
   },
@@ -35,5 +35,15 @@
     {
       "type": "MIT"
     }
-  ]
+  ],
+  "scripts": {
+    "test": "gulp test"
+  },
+  "devDependencies": {
+    "gulp": "~3.8.10",
+    "gulp-uglify": "~1.0.1",
+    "gulp-qunit": "~1.0.0",
+    "gulp-clean": "~0.3.1",
+    "gulp-rename": "~1.2.0"
+  }
 }

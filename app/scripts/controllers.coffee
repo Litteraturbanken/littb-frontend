@@ -11,6 +11,7 @@ littb.filter "formatAuthors", (authors) ->
             suffix = {
                 editor : " (red.)"
                 translator : " (övers.)"
+                illustrator : " (ill.)"
                 # scholar : " (red.)"
 
 
@@ -720,7 +721,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             # scope_name : "sortVal"
             scope_func : "setSort"
             key : "sortering"
-            default : titlesort + ",author.nameforindex"
+            default : titlesort + ",author[0].nameforindex"
             val_in : (val) ->
                 val?.split(",")
             val_out : (val) ->
@@ -731,7 +732,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             expr : "sorttuple[1]"
             scope_func : "setDir"
             key : "fallande"
-            replace : false
+            #replace : false
         ,
             key : "filter"
             scope_name : "rowfilter"
@@ -790,9 +791,9 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
     window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
     s.rowFilter = (item) ->
         if "epub" not in item.mediatype then return false
-        if s.authorFilter and s.authorFilter.authorid != item.author.authorid then return false
+        if s.authorFilter and s.authorFilter.authorid != item.author[0].authorid then return false
         if s.filterTxt
-            return false if not ((has item.author.fullname, s.filterTxt) or (has item.itemAttrs.showtitle, s.filterTxt))
+            return false if not ((has item.author[0].fullname, s.filterTxt) or (has item.itemAttrs.showtitle, s.filterTxt))
         return true
 
     s.getAuthor = (row) ->
@@ -816,7 +817,7 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
             # scope_name : "sortVal"
             scope_func : "setSort"
             key : "sortering"
-            default : "author.nameforindex,itemAttrs.sortkey"
+            default : "author[0].nameforindex,itemAttrs.sortkey"
             val_in : (val) ->
                 val?.split(",")
             val_out : (val) ->

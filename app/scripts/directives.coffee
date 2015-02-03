@@ -64,12 +64,11 @@ littb.directive 'sortTriangles', () ->
                  class="triangle up" ng-class="{'disabled' : active && !enabled[0]}"></span>
            <span ng-click="down()"
                  class="triangle down" ng-class="{'disabled' : active && !enabled[1]}"></span>
-     </div>'''
+    </div>'''
     scope : {tuple : "=", val : "@"}
     link: (scope, elem, iAttrs) ->
         s = scope
         val = scope.$eval scope.val
-        
         s.sorttuple = [val, 1]
         s.enabled = [true, true]
         tupMatches = (tup) ->

@@ -27,8 +27,8 @@
     </div>
     <table id="table" class="contenttable" ng-hide="searching">
         <thead>
-            <th> <div sort-triangles val="['itemAttrs.sortkey', 'author.nameforindex']" tuple="sorttuple"></div> </th>
-            <th> <div sort-triangles val="['author.nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
+            <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
+            <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
             <th></th>
         </thead>
         
@@ -38,7 +38,7 @@
                     href="/#!/forfattare/{{row.author[0].workauthor || row.author[0].authorid}}/titlar/{{getTitleId(row)}}/info">{{row.itemAttrs.showtitle}}</a>
                     <span class="dots"></span>
             </td>
-            <td><a href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></td>
+            <td><a href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></td>
             <td>
                 <span ng-repeat="type in row.mediatype">
 

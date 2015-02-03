@@ -82,7 +82,9 @@
             <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Verk och titlar i LB</a>
         </li>
         <li ng-if="groupedWorks.length == 1">
-            <a ng-href="/#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>
+            <!--<a ng-if="groupedWorks[0][0].mediatype == 'pdf'" ng-href="/#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/info" >::: {{groupedWorks[0][0].showtitle}}</a>
+            <a ng-if="groupedWorks[0][0].mediatype != 'pdf'" ng-href="/#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>-->
+            <a ng-href="{{getUrl(groupedWorks[0][0])}}">::: {{groupedWorks[0][0].showtitle}}</a>
         </li>
         <!-- <li ng-if="groupedWorks.length > 1">
             <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>

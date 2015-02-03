@@ -286,7 +286,7 @@
   @include box-shadow($shadow);
 
   // Mixin behavior for optimum display
-  @extend .form-inline;
+  @extend .form-inline !optional;
 
   .form-group {
     @media (max-width: $screen-xs-max) {
