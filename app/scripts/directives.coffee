@@ -236,6 +236,7 @@ littb.directive 'selectionSniffer', ($window) ->
             $("body > .search_dict").remove()
 
         showIndicator = (target) ->
+            return false # CURRENTLY S.O. IS DISABLED
             c.log "showIndicator", target
             box.remove()
             

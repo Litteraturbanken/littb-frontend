@@ -624,12 +624,12 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     titlesort = "itemAttrs.sortkey"
     
-    s.sorttuple = [[titlesort, 'author.nameforindex'], false]
+    s.sorttuple = [[titlesort, 'author[0].nameforindex'], false]
     s.setSort = ([sortstr]) ->
 
         alternate = _.object([
-            [titlesort, "author.nameforindex"],
-            ["author.nameforindex", titlesort]
+            [titlesort, "author[0].nameforindex"],
+            ["author[0].nameforindex", titlesort]
         ])[sortstr]
 
         s.sorttuple[0] = [sortstr, alternate]
@@ -778,11 +778,11 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope
     s.searching = true
     # TODO: what about the workauthor issue?
-    s.sorttuple = [["author.nameforindex", "itemAttrs.sortkey"], false]
+    s.sorttuple = [["author[0].nameforindex", "itemAttrs.sortkey"], false]
     s.setSort = ([sortstr]) ->
         alternate = {
-            "author.nameforindex" : "itemAttrs.sortkey"
-            "itemAttrs.sortkey" : "author.nameforindex"
+            "author[0].nameforindex" : "itemAttrs.sortkey"
+            "itemAttrs.sortkey" : "author[0].nameforindex"
         }[sortstr]
         s.sorttuple[0] = [sortstr, alternate]
     s.setDir = (isAsc) ->

@@ -98,8 +98,7 @@
                 <a href="http://g3.spraakdata.gu.se/saob/" target="_blank">SAOB</a> ::: <a href="http://spraakbanken.gu.se/karp/#lexicon=dalinm,dalin,dalin-base" target="_blank">Dalin</a>
             </div>
 
-            <div class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
-                <!-- <label>Slå upp i Svensk ordbok</label> -->
+            <div style="visibility:hidden" class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
                 <div class="input_container">
                     <input  type="text"
                             ng-model="lex_article"
@@ -113,8 +112,8 @@
                     
                     <span class="so_spinner" us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"></span>
                 </div>
-                <!-- <div to-body alert-popup="dict_not_found"></div> -->
-            </div>
+                
+            </div><!-- <div to-body alert-popup="dict_not_found"></div> -->
 
             <div id="toolkit"></div>
         </div>
