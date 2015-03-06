@@ -637,6 +637,10 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
+    s.sortMedia = (list) ->
+        order = ['etext', 'faksimil', 'epub', 'pdf']
+        return _.intersection(order,list).concat(_.difference(list, order))
+
     s.getTitleId = (row) ->
         row.itemAttrs.titlepath.split('/')[0]
 
