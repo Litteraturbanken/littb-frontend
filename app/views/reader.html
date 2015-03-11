@@ -76,14 +76,14 @@
 
 
         <div class="pager_ctrls small" ng-click="resetHitMarkings()">
-            <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
-                ng-click="gotopage(startpage, $event)">
-                Gå framåt en sida
-            </a>
             <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
                 Gå bakåt en sida
             </a>
             <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+                Gå framåt en sida
+            </a>
+            <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
+                ng-click="gotopage(startpage, $event)">
                 Gå till första sidan
             </a>
             <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}"
@@ -96,9 +96,9 @@
         <div class="subnav">
             <ul>
                 <li>Mer om boken</li>
-                <li>Visa som helskräm</li>
+                <li>Innehållsförteckning</li>
+                <li>Visa som helskärm</li>
                 <li>Visa som bokomslag</li>
-                <li>Parallelltextvisning</li>
                 <li>Sök i verket</li>
                 <li>Sök i författarens texter</li>
                 <li>Dela boken</li>

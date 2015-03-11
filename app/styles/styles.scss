@@ -28,9 +28,9 @@ $fa-font-path: "/components/font-awesome/fonts";
 $inline-block-alignment : top;
 $sans : "Helvetica", "Arial", sans-serif;
 
-$main-menu-width : 120px;
+$main-menu-width : 187px;
 $left-gutter-width : 40px;
-$right-gutter-width : 80px;
+$right-gutter-width : 120px;
 $page-width : 900px;
 $right-corridor-width : 210px;
 $mainview-width : $page-width - $main-menu-width - ($left-gutter-width + $right-gutter-width + $right-corridor-width);
@@ -43,9 +43,9 @@ $dotted : thin dotted #990000;
     @include background-image(linear-gradient($primarycolor, darken($primarycolor, 7%)));
 }
 
-* {
-    @include box-sizing(border-box);
-}
+// * {
+//     @include box-sizing(border-box);
+// }
 
 .txt {
     width : 500px;
@@ -80,7 +80,7 @@ body {
     // width : $page-width;
     /*background-color: white;*/
     color: #333;
-    line-height : 17.5px;
+    line-height : 1.2;
     padding-bottom : 4em;
     
     a:visited {
@@ -128,7 +128,7 @@ h1,h2,h3,h4,h5,h6 {
 #rightCorridor{
     @include inline-block;
     margin-top : $content-top-margin;
-    margin-left: 8em;
+    margin-left: 10em;
     width : $right-corridor-width;
     #toolkit-right {
         margin-top: 2em;
@@ -138,6 +138,7 @@ h1,h2,h3,h4,h5,h6 {
 #leftCorridor {
     width : $main-menu-width;
     margin-right : $right-gutter-width;
+    margin-top : 1em;
     @include inline-block();
     > * {
         margin-bottom : 2em;
@@ -385,9 +386,10 @@ form {
 .mainnav {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size : 1.2em;
 
     vertical-align: top;
-    line-height : 19px;
+    line-height : 1.2;
     a:hover, a:active {
         color : $primarycolor;
     }
@@ -473,10 +475,10 @@ body > .header {
 
 .logo_link_monogram {
     background: url("../img/lb_monogram.svg") no-repeat;
-    background-size: contain;
-    height: 150px;
-    width: 190px;
-    left: -20px;
+    background-size: cover;
+    height: 230px;
+    width: 240px;
+    left: -30px;
     margin-bottom: 0px;
     position : relative;
     display: block;
@@ -512,7 +514,7 @@ body > .header {
             border-bottom : 1px solid grey;
         }
         .start_menu {
-            width : 46%;
+            // width : 46%;
             @include inline-block(bottom);
             text-align: right;
             font-size: 0.9em;
@@ -531,20 +533,22 @@ body > .header {
         }
     }
     #leftCorridor {
-        width : 160px;
+        // width : 160px;
+        width : auto;
+        margin-right : 0;
     }
     .logo_link_monogram {
-        margin-top : 2em;
-        height: 240px;
-        width: 330px;
-        left : -70px;
+        margin-top: 3em;
+        height: 340px;
+        width: 360px;
+        left: 30px;
     }
     .mainnav {
-        font-size : 1.3em;
-        line-height : 24px;
-        a {
+        font-size : 2em;
+        a:not(:hover) {
             color : white;
         }
+
         .sla {
             margin-top: 3em;
             height : 55px;
@@ -560,7 +564,7 @@ body > .header {
     #mainview {
         // width : 30%;
         // margin: 0 auto;
-        font-size : 1.5em;
+        font-size : 1.8em;
         line-height : 1.1em;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
@@ -624,6 +628,7 @@ body > .header {
                 width : 11em;
             }            
             .start-quote-source {
+                font-size : 0.9em;
                 
                 .title {
                     font-style: italic;
@@ -1100,7 +1105,7 @@ $partnav-width : 170px;
     }
 
     #mainview {
-
+        font-size : 1.3em;
         // .searching .preloader {
         //     display : block;
         // }
@@ -1178,10 +1183,14 @@ $partnav-width : 170px;
         }
         .etext {
             white-space : nowrap;
-            color: black;
-            font-family: Georgia,Times,serif;
+            // color: black;
+            // font-family: Georgia,Times,serif;
             // font-size: 10pt;
-
+            div.pname {
+                position: static;
+                width: auto;
+                left: 0;
+            }
             &.reading {
                 white-space : normal;
 
@@ -1267,6 +1276,9 @@ $partnav-width : 170px;
         }
         .author {
             text-transform: uppercase;
+            a {
+                color : $primarycolor;
+            }
         }
         .title {
             // font-style: italic;
@@ -1280,6 +1292,7 @@ $partnav-width : 170px;
         .part_menu {
             // height: 300px;
             // width: 300px;
+            width : 83%;
             display : inline-block;
             vertical-align: middle;
             position : relative;
@@ -1298,7 +1311,7 @@ $partnav-width : 170px;
                 pointer-events : none;
                 
             }
-            width : 118px;
+            
         }
         .arrows {
             display : inline-block;
