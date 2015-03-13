@@ -15,7 +15,8 @@ $fa-font-path: "/components/font-awesome/fonts";
 }                     
 @font-face {
     font-family: "Requiem";
-    src: url("requiem/RequiemDisplay-HTF-Italic.otf");
+    // src: url("requiem/RequiemDisplay-HTF-Italic.otf");
+    src: url("requiem/RequiemText-HTF-Italic.otf");
     font-style: italic;
 }
 @font-face {
@@ -32,11 +33,12 @@ $main-menu-width : 187px;
 $left-gutter-width : 40px;
 $right-gutter-width : 120px;
 $page-width : 900px;
-$right-corridor-width : 210px;
+$right-corridor-width : 250px;
 $mainview-width : $page-width - $main-menu-width - ($left-gutter-width + $right-gutter-width + $right-corridor-width);
 
 $content-top-margin : 5em;
 
+$textcolor : #333;
 $primarycolor : #990000;
 $dotted : thin dotted #990000;
 @mixin primarygradient {
@@ -79,7 +81,7 @@ body {
     font-family : "Requiem", georgia, serif;
     // width : $page-width;
     /*background-color: white;*/
-    color: #333;
+    color: $textcolor;
     line-height : 1.2;
     padding-bottom : 4em;
     
@@ -916,7 +918,7 @@ $partnav-width : 170px;
                 // background-color : #333;
             }
         }
-        #leftCorridor {
+        #leftCorridor, #rightCorridor {
             display : none;
         }
         .size_picker > div {
@@ -950,6 +952,108 @@ $partnav-width : 170px;
             width : inherit !important;
         }
     }
+
+    .about-modal {
+        padding: 30px;
+        .searching > div:not(.preloader) {
+            // display : none;
+            visibility: hidden;
+        }
+        .header_left {
+            float : left;
+            width : 360px;
+        }
+        .header_right {
+            float : right;
+            cursor : pointer;
+        }
+        .visible .cover {
+            display : block;
+        }
+        .large_img {
+            &.visible {
+                opacity : 1;
+                transition : opacity 500ms;
+            }
+            opacity : 0;
+            transition : opacity 500ms;
+            .cover {
+                display : none;
+                position : absolute;
+                top: 0;
+                right : 0;
+                left : 0;
+                bottom : 0;
+                background: rgba(255, 255, 255, 0.6);
+            }
+            img {
+                display : block;
+                margin : 0 auto;
+                position: absolute;
+                z-index: 1;
+            }
+        }
+        div, p {
+            margin-bottom : 1em;
+        }
+        p {
+            max-width : 350px;
+        }
+
+        h3 {
+            margin : 0;
+            line-height : inherit;
+            &.author {
+                font-size : 1.3em;
+                margin-bottom : 1em;
+                text-transform: uppercase;
+                a {
+                    color : $primarycolor;
+                }
+            }
+            &.title {
+                margin-bottom : 2em;
+                max-width: 400px;
+                font-size: 1.2em;
+            }
+        }
+        .mediatypes,.mediatypes_also {
+            margin-bottom : 0;
+            text-transform: uppercase;
+            font-size : 0.8em;
+            color : $primarycolor;
+            a {
+                color : $primarycolor;
+            }
+            .size {
+                color: $textcolor;
+            }
+        }
+        .provenance {
+            margin : 2em 0;
+            > a {
+                margin-right : 10px;
+            }
+            > p {
+                width : 250px;
+                @include inline-block(middle);
+            }
+        }
+        .toggle {
+            display : block;
+            margin-top : 1em;            
+        }
+        .errata_table {
+            td {
+                padding-right : 3em;
+            }
+        }
+
+
+        .lower_cover {
+            border: thin #999 solid;
+        }
+    }
     
     .focusBtn {
         margin-top : 1em;
@@ -966,7 +1070,7 @@ $partnav-width : 170px;
         // height : 8%;
         // background-color : grey;
         padding : 1%;
-        font-size : 3em;
+        font-size : 34px;
         border-top : 1px solid #999;
         text-align : center;
         box-shadow: 1px 1px 9px 1px #666;
@@ -1517,92 +1621,12 @@ $partnav-width : 170px;
     }
 }
 
-.page-sourceInfo {
-    #mainview {
-        .searching > div:not(.preloader) {
-            // display : none;
-            visibility: hidden;
-        }
-        .header_left {
-            float : left;
-            width : 360px;
-        }
-        .header_right {
-            float : right;
-            cursor : pointer;
-        }
-        .visible .cover {
-            display : block;
-        }
-        .large_img {
-            &.visible {
-                opacity : 1;
-                transition : opacity 500ms;
-            }
-            opacity : 0;
-            transition : opacity 500ms;
-            .cover {
-                display : none;
-                position : absolute;
-                top: 0;
-                right : 0;
-                left : 0;
-                bottom : 0;
-                background: rgba(255, 255, 255, 0.6);
-            }
-            img {
-                display : block;
-                margin : 0 auto;
-                position: absolute;
-                z-index: 1;
-            }
-        }
-        div, p {
-            margin-bottom : 1em;
-        }
-        p {
-            max-width : 350px;
-        }
-        .mediatypes {
-            margin-bottom : 0;
-        }
+// .page-sourceInfo {
+//     #mainview {
+        
 
-        h3 {
-            margin : 0;
-            line-height : inherit;
-            &.author {
-                font-variant : small-caps;
-            }
-            &.title {
-                margin-bottom : 2em;
-                max-width: 400px;
-            }
-        }
-        .mediatype {
-            font-variant : small-caps;
-        }
-        .provenance {
-            margin : 2em 0;
-            > a {
-                margin-right : 10px;
-            }
-            > p {
-                width : 250px;
-                @include inline-block(middle);
-            }
-        }
-        .toggle {
-            display : block;
-            margin-top : 1em;            
-        }
-        .errata_table {
-            td {
-                padding-right : 3em;
-            }
-        }
-
-    }
-}
+//     }
+// }
 
 .page-authorInfo {
     #mainview {

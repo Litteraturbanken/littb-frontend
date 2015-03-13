@@ -1209,7 +1209,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal) ->
     s = $scope
     s.isEditor = false
     s._ = {humanize : _.humanize}
@@ -1269,7 +1269,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
         return out
 
+    s.openModal = () ->
+        
+        modal = $modal.open
+            templateUrl : "about.html"
+            scope : s
 
+        # modal.result.then () ->
+            # s.closeModal()
+        # , () ->
+            # s.closeModal()
 
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)

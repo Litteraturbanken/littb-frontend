@@ -95,10 +95,10 @@
         
         <div class="subnav">
             <ul>
-                <li>Mer om boken</li>
+                <li><a ng-click="openModal()">Mer om boken</a></li>
                 <li>Innehållsförteckning</li>
-                <li>Visa som helskärm</li>
-                <li>Visa som bokomslag</li>
+                <li><a ng-click="activateFocus()">Visa som helskärm</a></li>
+                <li>Visa som bokuppslag</li>
                 <li>Sök i verket</li>
                 <li>Sök i författarens texter</li>
                 <li>Dela boken</li>
@@ -107,7 +107,96 @@
 
         
     </div>
+        <script type="text/ng-template" id="about.html">
+            <div class="about-modal modal-body">
+                <ng-include src="'views/sourceInfo.html'"></ng-include>
+            </div>
+             
+        </script>
+    <!-- <div toolkit>
+        <div ng-class="{editor: isEditor}">
+            <hr>
+            
+        
+            <div id="search_nav" ng-show="searchData.total_hits && (x || markee_from)">
+                <div class="box">
+                    <div class="text">
+                        <div>
+                            Sökträff
+                        </div>
+                        <div>
+                            <span>{{searchData.current + 1}}</span> av <span>{{searchData.total_hits}}</span>
+                        </div>
+                    </div>
+                    <div class="ctrls">
+                        <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
+                        <div style="clear:both;"></div>
+                        <div class="arrows">
+                            <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
+                            <img ng-click="nextHit()" class="" src="/bilder/h_pil.png">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <div style="height: 1em;"></div>
+        
+            <div><a href="/#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm || title}}/info">::: Om boken</a></div>
+        
+            <hr>
+        
+        
+            
+            <form ng-submit="pageToLoad = displaynum">
+                <span ng-if="isEditor">Index</span> 
+                <span ng-if="!isEditor">Sida</span> 
+                <input class="pageinput" ng-model="displaynum">
+            </form>
+        
+            <div ng-if="!isEditor">
+                <ul class="work_parts">
+                    <li><a ng-click="gotopage(startpage)">[Start]</a></li>
+                    <li ng-repeat="part in workinfo.parts | limitTo:5" 
+                        tooltip="{{getTooltip(part)}}" tooltip-append-to-body>
+                        <a ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
+                    </li>
+                </ul>
+            </div>
+        
+            <div class="partnav" ng-show="workinfo.parts.length > 5">
+                <div>
+                    <i ng-mouseover="mouseover()" 
+                        ng-touch="mouseover()"
+                        class="arrow_icon fa fa-play"></i>
+                </div>
+        
+                <div ng-show="showPopup" class="triangle"></div>
+        
+        
+            </div>
+        
+            <div class="size_picker" ng-show="mediatype == 'faksimil'">
+                <div ng-class="{selected : size, hidden : !isDefined(size)}" 
+                     ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div>
+                
+            </div>
     
+            <div ng-if="supportsParallel()"><a ng-click="toggleParallel()">
+                <span ng-if="!isParallel">
+                    Visa <span ng-show="mediatype == 'etext'">faksimil</span> 
+                    <span ng-show="mediatype == 'faksimil'">etext</span> 
+                    parallellt</span>
+                <span ng-if="isParallel">Stäng parallellvisningen</span>
+            </a></div>
+
+            <div class="focusBtn">
+                <a ng-click="activateFocus()">Fokusläge</a>
+            </div>
+        
+        
+            
+        </div>
+    </div> -->
     <div ng-show="isFocus" class="leftCover" ng-click="prevPage($event)" to-body></div>
     <div ng-show="isFocus" class="rightCover" ng-click="nextPage($event)" to-body></div>
     <div ng-show="isFocus && showFocusBar" class="bottomBar" set-class="{'ng-hide-remove' : !isFocus}" to-body>

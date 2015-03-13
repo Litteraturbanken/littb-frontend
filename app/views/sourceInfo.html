@@ -1,6 +1,6 @@
 <page-title>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</page-title>
 <meta-desc>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</meta-desc>
-<div class="maincontent" ng-class="{searching:!data}">
+<div class="maincontent" ng-class="{searching:!data}" ng-controller="sourceInfoCtrl">
     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div ng-if="error" class="error">Ett fel har uppstått.</div>
 
@@ -26,10 +26,10 @@
         <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
         <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)
     </div>
-    <div ng-show="data.mediatypes.length > 1">
+    <div ng-show="data.mediatypes.length > 1" class="mediatypes_also">
         Även tillgängligt som 
         
-        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)</span> </a>
+        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span class="size" ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)</span> </a>
     </div>
     
     <div ng-repeat="prov in data.provenance" class="provenance">
@@ -51,15 +51,15 @@
         <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>
         <a class="toggle" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
     </div>
+
+    <div class="pull-right lower_cover">
+        <img src="/txt/{{data.lbworkid}}/cover_small.png" alt="">
+    </div>
+    <div class="clearfix"></div>
 </div>
 
-<div toolkit>
+<!-- <div toolkit>
     <hr>
     <span ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
-    <!-- <span ng-repeat="author in getValidAuthors()">
-        <a class="author" ng-href="/#!/forfattare/{{author.id}}">{{authorById[author.id].fullname}}</a>
-        <span ng-if="author.type == 'editor'">(red.)</span>
-        <span ng-if="!$last">och</span>
-    </span> -->
     <div><em><a ng-href="/#!/forfattare/{{author}}/titlar/{{data.titlepathNorm.split('/')[0]}}/{{data.mediatypes[0]}}">{{data.shorttitle || data.showtitle || data.title}}</a></em></div>
-</div>
+</div> -->
