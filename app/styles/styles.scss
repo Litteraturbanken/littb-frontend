@@ -1806,7 +1806,18 @@ $partnav-width : 170px;
             background-color: fade-out(white, 0.2);
 
             &.title {
-                left: 55px;
+                left: 105px;
+
+                .author {
+                    text-transform: uppercase;
+                    color: $primarycolor;
+                }
+                .links {
+                    margin-top : 2em;
+                    .fa-play {
+                        color : $primarycolor;
+                    }
+                }
             }
         }
         .box_container {
@@ -1817,7 +1828,7 @@ $partnav-width : 170px;
         }
         .box {
             // min-height: 100px;
-            width: 400px;
+            width: 450px;
             // flex: 1 1 auto;
             // align-self: flex-end;
             border: 2px solid darkgrey;
@@ -1831,17 +1842,29 @@ $partnav-width : 170px;
 
             li {
                 margin-bottom : 0.2em;
+                cursor: pointer;
+                &:hover {
+                    color : $primarycolor;
+                }
             }
-        }
-        
-        .box.title {
-            margin-left : 1em;
-            .title {
-                a {
+            &.title {
+                margin-left : 1em;
+
+                li {
+                    display: flex;
+
+                }
+
+                .title {
                     color: $primarycolor;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    margin-right: 0.3em;
                 }
             }
         }
+        
     }
 }
 

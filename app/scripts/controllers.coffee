@@ -605,7 +605,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
     
     
-littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, authors) ->
+littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement) ->
     s = $scope
     s.searching = false
     s.rowByLetter = {}
@@ -720,6 +720,55 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             return s.titleArray
 
 
+    s.authorClick = ($event, author) ->
+        if author == s.selectedAuth
+            s.selectedTitle = null
+            return
+        s.selectedTitle = null
+        s.selectedAuth = author
+        $event.stopPropagation()
+
+    
+    getWorkIntro = (author, titlepath) ->
+        s.sourcedesc = null
+        infoDef = backend.getSourceInfo(author, titlepath.split("/")[0])
+        infoDef.then (data) ->
+            c.log "source", data
+            s.workintro = data.workintro
+            # s.error = false
+            # s.data = data
+            # if not s.mediatype
+            #     s.mediatype = s.data.mediatypes[0]
+        , (reason) -> # reject callback 
+            # s.data = {}
+            # s.error = true
+        return infoDef
+
+
+    s.getWorkAuthor = (authors) ->
+        wa = authors[0].workauthor
+        if wa
+            return s.authorsById[wa]
+        else return authors[0]
+
+    s.titleClick = ($event, title) ->
+        if title == s.selectedTitle
+            s.selectedTitle = null
+            return
+        s.selectedAuth = null
+        s.selectedTitle = title
+
+        # getWorkIntro(s.getWorkAuthor(title.author).authorid, title.itemAttrs.titlepath)
+
+        $event.stopPropagation()
+
+    onRootClick = (event) ->
+        s.$apply () ->
+            s.selectedAuth = null
+            s.selectedTitle = null
+    $rootElement.on "click", onRootClick
+
+
     util.setupHashComplex s,
         [
             expr : "sorttuple[0]"
@@ -778,6 +827,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     if s.rowfilter then s.filter = s.rowfilter
     c.log "workfilter", s.workFilter
     fetchWorks()
+
+    s.$on "$destroy", () ->
+        $rootElement.off "click", onRootClick
 
 littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope

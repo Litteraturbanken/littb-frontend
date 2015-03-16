@@ -30,8 +30,8 @@
     
         <div class="box_container">
             <ul class="box author">
-                <li top="$parent.auth_off" ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="$parent.selectedAuth = author">
-                    <span >{{author.nameforindex}}</span>
+                <li top="$parent.auth_off" ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)">
+                    <span >{{author.nameforindex}} {{author | authorYear}}</span>
                 </li>
             </ul>
             <div class="info_box auth" ng-show="selectedAuth" ng-style="{top: auth_off}" >
@@ -39,19 +39,30 @@
             </div>
 
             <div class="info_box title" ng-show="selectedTitle" ng-style="{top: title_off}" >
-                {{selectedTitle.itemAttrs.showtitle}}
+                <div>
+                    <span class="author">{{selectedTitle.author[0].fullname}} </span> {{authorsById[selectedTitle.author[0].authorid] | authorYear}}
+                </div>
+                <div class="title">{{selectedTitle.itemAttrs.title}} ({{selectedTitle.itemAttrs.imprintyear}})</div>
+
+                <ul class="links">
+                    <li><i class="fa fa-play "></i> Läs verket som <span class="smaller">TEXT</span></li>
+                    <li><i class="fa fa-play "></i> Ladda ner verket som <span class="smaller">EPUB</span></li>
+                    <li><i class="fa fa-play "></i> Gör en sökning i verket</li>
+                </ul>
+
+                <!-- <p ng-bind-html="workintro | trust"></p> -->
             </div>
-            <ul id="table" class="box title" ng-hide="searching">
+            <ul id="table" class="box title" ng-hide="searching" ng-click="$event.stopPropagation()">
                 <!-- <thead>
                     <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
                     <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
                     <th></th>
                 </thead> -->
                 
-                <li ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle"
-                    top="$parent.title_off" ng-click="$parent.selectedTitle = row">
+                <li class="link" ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle"
+                    top="$parent.title_off" ng-click="titleClick($event, row)">
                     <span class="title">
-                        {{row.itemAttrs.showtitle}}
+                        {{row.itemAttrs.showtitle}} 
                             <!-- <span class="dots"></span> -->
                     </span>
                     <span class="author">{{row.author[0].surname}} <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
