@@ -627,17 +627,18 @@ littb.directive "bigText", () ->
         elem.text elem.text() + " "
 
 
-# littb.directive "bigTextAlt", () ->
-#     link : (scope, elem, attr) ->
-#         obj = scope.$eval attr.bigTextAlt
+littb.directive "top", () ->
+    scope: 
+        top: "="
+    link : (scope, elem, attr) ->
 
-#         elem.text obj.word
+        elem.on "click", () ->
+            scope.$apply () ->
+                scope.top = elem.position()?.top            
 
-#         _.defer () ->
-#             elem.parent().bigtext()
-#             elem.css("display", "inline")
-#             elem.text elem.text() + " "
-
+        # scope.$watch "getY()", (offset) ->
+        #     c.log "lol", elem.height()
+        #     scope.top = offset
 
 
 

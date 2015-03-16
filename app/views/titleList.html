@@ -1,8 +1,9 @@
 <meta-desc>Sök verk eller titel i Litteraturbanken.</meta-desc>
+<h1>Sök författare eller titel <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span></h1>
 <div ng-class="{searching:searching}">
     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div id="controls" ng-hide="searching">
-        <select class="authorselect" ng-model="authorFilter" ng-change="authorChange()"
+        <!-- <select class="authorselect" ng-model="authorFilter" ng-change="authorChange()"
             ng-options="author.authorid as author.nameforindex for author in authorData | orderBy:'nameforindex'">
             <option value="">Alla författare</option>
         </select>
@@ -16,42 +17,59 @@
             <option value="faksimil">Faksimil</option>
             <option value="epub">Epub</option>
             <option value="pdf">PDF</option>
-        </select>
-        <!-- <input ng-show="workFilter == 'works'" class="filter_input" type="text" ng-model="filter" placeholder="Filtrera verk" ng-change="selectedLetter = null"> -->
+        </select> -->
         <form ng-submit="searchTitle()">
-            <input class="filter_input" type="text" ng-model="filter" placeholder="Sök titlar"><span ng-click="searchTitle()" submit-btn></span>
+            <input class="filter_input" type="text" ng-model="filter" placeholder="Filtrera">
+            <!-- <span ng-click="searchTitle()" submit-btn></span> -->
         </form>
 
         
 
-    </div>
-    <table id="table" class="contenttable" ng-hide="searching">
-        <thead>
-            <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
-            <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
-            <th></th>
-        </thead>
+    
+
+    
+        <div class="box_container">
+            <ul class="box author">
+                <li top="$parent.auth_off" ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="$parent.selectedAuth = author">
+                    <span >{{author.nameforindex}}</span>
+                </li>
+            </ul>
+            <div class="info_box auth" ng-show="selectedAuth" ng-style="{top: auth_off}" >
+                {{selectedAuth.fullname}}
+            </div>
+
+            <div class="info_box title" ng-show="selectedTitle" ng-style="{top: title_off}" >
+                {{selectedTitle.itemAttrs.showtitle}}
+            </div>
+            <ul id="table" class="box title" ng-hide="searching">
+                <!-- <thead>
+                    <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
+                    <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
+                    <th></th>
+                </thead> -->
+                
+                <li ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle"
+                    top="$parent.title_off" ng-click="$parent.selectedTitle = row">
+                    <span class="title">
+                        {{row.itemAttrs.showtitle}}
+                            <!-- <span class="dots"></span> -->
+                    </span>
+                    <span class="author">{{row.author[0].surname}} <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
+                    <!-- <td>
+                        <span ng-repeat="type in sortMedia(row.mediatype) | orderBy:'type'">
+            
+                            <span ng-show="!$first">:::</span>
+            
+                            <a ng-href="{{getUrl(row, type)}}">{{type}}</a>
+                        </span>
+                    </td> -->
+                </li>
+            </ul>
+        </div>
         
-        <tbody><tr ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor">
-            <td class="title">
-                <a  tooltip="{{getTitleTooltip(row.itemAttrs)}}" 
-                    href="/#!/forfattare/{{row.author[0].workauthor || row.author[0].authorid}}/titlar/{{getTitleId(row)}}/info">{{row.itemAttrs.showtitle}}</a>
-                    <span class="dots"></span>
-            </td>
-            <td><a href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></td>
-            <td>
-                <span ng-repeat="type in sortMedia(row.mediatype) | orderBy:'type'">
+    </div>
 
-                    <span ng-show="!$first">:::</span>
-
-                    <a ng-href="{{getUrl(row, type)}}">{{type}}</a>
-                </span>
-            </td>
-        </tr></tbody>
-    </table>
-
-
-    <div toolkit>
+    <!-- <div toolkit>
         <hr>
         <div letter-map letter-map-change="letterChange()" selected="selectedLetter" enabled-letters="currentLetters"></div>
         <hr>
@@ -59,7 +77,7 @@
             Det här är en alfabetisk lista över alla de titlar som Litteraturbanken har att erbjuda, med länkar till text, faksimil- eller pdf-versioner av verken. – Samtliga verk visar titlar på hela verk. Samtliga titlar inkluderar titlar på dikter, noveller etc.
         </p>
 
-    </div>
+    </div> -->
     <!-- -->
 </div>
 

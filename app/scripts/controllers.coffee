@@ -618,9 +618,10 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         filter = (s.rowfilter || '')
         return new RegExp(filter, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle))
 
-    s.filterAuthor = (row) ->
-        unless s.authorFilter then return true
-        s.authorFilter in _.pluck row.author, "authorid"
+    s.filterAuthor = (author) ->
+        if not s.rowfilter then return true
+        filter = (s.rowfilter || '')
+        return new RegExp(filter, "i").test((author.fullname))
 
     titlesort = "itemAttrs.sortkey"
     
