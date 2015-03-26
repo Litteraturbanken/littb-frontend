@@ -529,16 +529,16 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    getTitlesByAuthor : (authorid) ->
+    getTitlesByAuthor : (authorid, cache) ->
         def = $q.defer()
         url = "/query/lb-anthology.xql"
-        http(
-
+        req = 
             url : url
-            params :
+            params:
                 action : "get-titles-by-author"
                 authorid : authorid
-        ).success (xml) ->
+        if cache then req.cache = true
+        http(req).success (xml) ->
             output = []
             for elem in $("result", xml).children()
                 output.push objFromAttrs(elem)

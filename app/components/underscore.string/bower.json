@@ -29,14 +29,5 @@
     {
       "type": "MIT"
     }
-  ],
-  "_release": "2.4.0",
-  "_resolution": {
-    "type": "version",
-    "tag": "2.4.0",
-    "commit": "ee72fe2e73ae5399664ef611e9f5607856180477"
-  },
-  "_source": "git://github.com/epeli/underscore.string.git",
-  "_target": "^2.3.3",
-  "_originalSource": "underscore.string"
+  ]
 }

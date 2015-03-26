@@ -1,15 +1,59 @@
 <meta-desc>Sök i Litteraturbanken verk</meta-desc>
 <page-title> {{pageTitle ? 'Sök: "' + pageTitle + '"' : 'Sök' }} | Litteraturbanken</page-title>
 <div ng-class="{searching:searching}">
-    <div class="preloader">Söker <span class="dots_blink"></span></div>
+
+
+    <h1>Textsökning <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span></h1>
+    
+    <select multiple class="filter_select author_select" ui-select2="groupSetup" ng-model="selectedAuthors" data-placeholder="Söker i alla författare">
+        <option value="{{author.authorid}}" ng-repeat="author in authors | orderBy:'nameforindex'">{{author.nameforindex}}</option>
+    </select>
+    
+    <!-- <div>{{selectedAuthors}}</div> -->
+
+    <!-- <ul>
+        <li ng-repeat="title in titles | orderBy:titleSort">{{title.showtitle}}</li>
+    </ul> -->
+    
+    <select multiple class="filter_select title_select" ui-select2="groupSetup" ng-model="selectedAuthors" data-placeholder="Titlar">
+        <!-- <option value="{{author.authorid}}" ng-repeat="author in authors | orderBy:'nameforindex'">{{author.nameforindex}}</option> -->
+        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort">{{title.shorttitle}}</option>
+    </select>
+
+
+    <!-- <div class="box_container">
+       <ul class="box">
+           <li ng-repeat="author in authors | orderBy:'nameforindex'" ng-click="author.checked = !author.checked">
+               <span ng-style="{visibility: author.checked ? 'visible' : 'hidden'}">✓</span><span  >{{author.nameforindex}} {{author | authorYear}}</span>
+           </li>
+       </ul>
+    </div> -->
+
+
+    <!-- <div toolkit toolkit-id="toolkit-right">
+        <form action=""><input type="text"><button class="btn">Sök</button></form>
+        <ul>
+            <li><a href="">Sök efter del av ord</a></li>
+            <li><a href="">Sök efter ordbörjan</a></li>
+            <li><a href="">Sök efter ordslut</a></li>
+        </ul>
+
+        <ul>
+            <li><a href="">Sök i skönlitterära texter</a></li>
+            <li><a href="">Sök i facklitterära texter</a></li>
+            <li><a href="">Sök i översättningar till svenska</a></li>
+            <li><a href="">Sök i korrekturlästa texter</a></li>
+            <li><a href="">Sök i ej korrekturlästa texter</a></li>
+        </ul>
+
+    </div> -->
+
+
+
+
+    <!-- <div class="preloader">Söker <span class="dots_blink"></span></div>
     <div class="header">
         <h1>Sök i texterna</h1>
-        <!-- <a class="open_toggle" ng-click="open = !open">
-            <em ng-show="!open">visa sökalternativ >></em>
-            <em ng-show="open">&lt;&lt; dölj sökalternativ</em>
-    
-    
-        </a> -->
         <div class="clearfix"></div>
     </div>
     
@@ -89,7 +133,7 @@
             </tr>
           </table>
 
-
+    </div>
     <div toolkit>
         <hr>
 
@@ -117,7 +161,7 @@
             </div>
         </div>
 
-        <p>Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.</p>
-    </div>
+        <p>Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.</p> 
+    </div> -->
     <!-- -->
 </div>

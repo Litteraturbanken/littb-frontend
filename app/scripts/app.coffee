@@ -42,6 +42,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             # "jmdobry.angular-cache"
                                             "ngAnimate"
                                             "ngTouch"
+                                            'ui.select2'
                                            ])
     .config ($routeProvider) ->
 

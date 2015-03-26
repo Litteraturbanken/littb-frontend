@@ -120,10 +120,13 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, util, searchData, authors, debounce) ->
+littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, util, searchData, authors, debounce) ->
     s = $scope
     s.open = true
     s.proofread = 'all'
+
+
+    
 
     initTitle = _.once (titlesById) ->
         unless $location.search().titel then return
@@ -161,33 +164,42 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 return item
         
 
-    util.setupHashComplex s, [
-            scope_name : "num_hits"
-            key : "per_sida"
-            val_in : Number
-            default : 20
-        ,
-            key: "prefix"
-        ,   
-            key : "suffix"
-        ,   
-            key : "infix"
-    ]
+    # util.setupHashComplex s, [
+    #         scope_name : "num_hits"
+    #         key : "per_sida"
+    #         val_in : Number
+    #         default : 20
+    #     ,
+    #         key: "prefix"
+    #     ,   
+    #         key : "suffix"
+    #     ,   
+    #         key : "infix"
+    # ]
 
     s.nHitsChange = () ->
         s.current_page = 0
         if s.data
-          s.search()  
+            s.search()  
 
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
-        change = (newAuthor) ->
-            return unless newAuthor
-            backend.getTitlesByAuthor(newAuthor).then (data) ->
-                filteredTitles = _.filter data, (item) -> "/" not in item.titlepath
+        change = (newAuthors) ->
+            return unless newAuthors
+            $q.all _.map newAuthors.split(","), (auth) -> 
+                backend.getTitlesByAuthor(auth, true)
+            .then (results) ->
+                filteredTitles = _.filter (_.flatten results), (item) -> "/" not in item.titlepath
                 s.titles = filteredTitles
-                titlesById = _.object _.map filteredTitles, (item) -> [item.lbworkid, item]    
-                initTitle titlesById
+
+
+
+            # for auth in newAuthors.split(",")
+            #     backend.getTitlesByAuthor(auth, true).then (data) ->
+            #         filteredTitles = _.filter data, (item) -> "/" not in item.titlepath
+            #         s.titles = filteredTitles
+            #         titlesById = _.object _.map filteredTitles, (item) -> [item.lbworkid, item]    
+            #         initTitle titlesById
 
         
         if $location.search().forfattare
@@ -195,9 +207,12 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         
         util.setupHashComplex s, [
                 key : "forfattare"
-                expr : "selected_author.pseudonymfor || selected_author.authorid"
-                # val_in : (val) ->
-                #     authorsById[val]
+                # expr : "selected_author.pseudonymfor || selected_author.authorid"
+                expr : "selectedAuthors"
+                val_in : (val) ->
+                    val?.split(",")
+                val_out : (val) ->
+                    val?.join(",")
                 post_change : change
 
         ]
