@@ -428,6 +428,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         
     s.showpage = null
     s.show_large = false
+    s.show_more = false
 
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById

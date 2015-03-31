@@ -9,25 +9,34 @@
 <div ng-class="{searching:!authorInfo, show_large : show_large}">
     <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
-    <div ng-switch="showpage">
+    <h1>{{authorInfo.fullName}}</h1>
+    <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
-            <div ng-bind-html="authorInfo.intro | trust"></div>
-            <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
-            <div ng-show="authorInfo.smallImage" class="author_img"><img ng-src="{{authorInfo.smallImage}}" ng-click="showLargeImage($event)"></div>
+            <div class="introtext" ng-class="{show_more: show_more}" ng-bind-html="authorInfo.intro | trust"></div>
+
             <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div>
+            <div class="show_more_btn" ng-show="!show_more">{<a href="" ng-click="show_more = true">LÄS MER</a>}</div>
+            <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
         </div>
 
         <div ng-switch-when="titlar">
-            <h1 ng-show="authorInfo">
+            <!-- <h1 ng-show="authorInfo">
                 {{authorInfo.fullName}}<span ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span>:
                 <br>
                 verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
-            </h1>
+            </h1> -->
             <div ng-repeat="titleobj in titleStruct" ng-show="authorInfo && titleobj.data.length">
-                <h2>{{titleobj.label}}</h2>
+                <!-- <h2>{{titleobj.label}}</h2> -->
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                     <tr ng-repeat="works in titleobj.data track by $index">
+                        <td >
+                            <span ng-repeat="work in works track by $index">
+                                <!-- <span ng-show="!$first">::: </span> -->
+                                <a ng-href="{{getUrl(work)}}">{{work.mediatype}}</a>
+                                <span ng-show="!last">&nbsp; </span>
+                            </span>
+                        </td>
                         <td ng-if="$parent.$index > 1">
                             <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
                         </td>
@@ -48,12 +57,7 @@
                             <!-- <span ng-if="titleobj.showAuthor">[{{getWorkAuthor(works[0].authors).nameforindex}}]</span> -->
                             <span class="dots"></span>
                         </td>
-                        <td >
-                            <span ng-repeat="work in works track by $index">
-                                <span ng-show="!$first">::: </span>
-                                <a ng-href="{{getUrl(work)}}">{{work.mediatype}}</a>
-                            </span>
-                        </td>
+                        
                     </tr>
                 </table>
             </div>
@@ -68,9 +72,18 @@
            <div footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
        </div>
     </div>
+    <div class="portrait_container">
+        <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.smallImage}}" ng-click="showLargeImage($event)">
+        <ul class="links">
+            <li><a href="/#!/forfattare/{{author}}/titlar">Tillgängliga verk</a></li>
+            <li><a href="/#!/">Sök i verken</a></li>
+            <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">Mer om författaren</a></li>
+        </ul>
+    </div>
 </div>
 
-<div toolkit>
+
+<!-- <div toolkit>
     <hr>
     <div class="author">
         <a ng-href="/#!/forfattare/{{author}}">{{authorInfo.fullName}}</a>
@@ -82,17 +95,8 @@
             <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Verk och titlar i LB</a>
         </li>
         <li ng-if="groupedWorks.length == 1">
-            <!--<a ng-if="groupedWorks[0][0].mediatype == 'pdf'" ng-href="/#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/info" >::: {{groupedWorks[0][0].showtitle}}</a>
-            <a ng-if="groupedWorks[0][0].mediatype != 'pdf'" ng-href="/#!/forfattare/{{groupedWorks[0][0].workauthor || author}}/titlar/{{groupedWorks[0][0].titlepath.split('/')[0]}}/{{groupedWorks[0][0].mediatype}}" >::: {{groupedWorks[0][0].showtitle}}</a>-->
             <a ng-href="{{getUrl(groupedWorks[0][0])}}">::: {{groupedWorks[0][0].showtitle}}</a>
         </li>
-        <!-- <li ng-if="groupedWorks.length > 1">
-            <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Verk i LB</a>
-        </li>
-        <li ng-if="groupedTitles.length && !groupedWorks.length">
-            <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Titlar i LB</a>
-        </li>
-        -->
     </ul>
     <ul class="subnav" role="navigation" ng-show="authorInfo">
         <li ng-if="authorInfo.intro"><a ng-href="/#!/forfattare/{{author}}" >Introduktion</a></li>
@@ -103,9 +107,8 @@
             <a ng-href="/#!/{{ref.url}}">{{ref.label}}</a>
         </li>
         <ul ng-if="slaMode">
-            <!-- <li><a ng-href="/#!/forfattare/{{author}}/biblinfo">Bibliografisk databas</a></li> -->
             <li><a ng-href="/#!/forfattare/{{author}}/jamfor">Textkritisk verkstad</a></li>
             <li><a ng-href="/#!/forfattare/{{author}}/omtexterna">Vetenskapliga texter</a></li>
         </ul>
     </ul>
-</div>
+</div> -->

@@ -29,7 +29,7 @@ $fa-font-path: "/components/font-awesome/fonts";
 $inline-block-alignment : top;
 $sans : "Helvetica", "Arial", sans-serif;
 
-$main-menu-width : 187px;
+$main-menu-width : 195px;
 $left-gutter-width : 40px;
 $right-gutter-width : 120px;
 $page-width : 900px;
@@ -45,9 +45,22 @@ $dotted : thin dotted #990000;
     @include background-image(linear-gradient($primarycolor, darken($primarycolor, 7%)));
 }
 
+@mixin container {
+    background-color: rgba(255,255,255,0.3);
+    border: 1px solid darkgrey;
+    padding: 0.8em;
+}
+
 // * {
 //     @include box-sizing(border-box);
 // }
+
+
+h1 {
+    text-transform: uppercase;
+    color: $primarycolor;
+    font-size: 1.3em;
+}
 
 .txt {
     width : 500px;
@@ -75,9 +88,8 @@ $dotted : thin dotted #990000;
     display: flex;
     align-content: stretch;
     .box {
-        background-color: rgba(255,255,255,0.3);
+        @include container();
         width: 450px;
-        border: 1px solid darkgrey;
         padding: 1.5em;
         text-transform: uppercase;
         vertical-align: top;
@@ -114,7 +126,7 @@ html {
     height : 100%;
 }
 body {
-    font-size : 16px;
+    font-size : 20px;
     padding-top : 20px;
     padding-left : $left-gutter-width;
     padding-right : $left-gutter-width;
@@ -367,7 +379,7 @@ hr {
         text-align : left;
     }
     .title {
-        font-style: italic;
+        // font-style: italic;
     }
 }
 // .contenttable td:last-of-type,
@@ -429,7 +441,7 @@ form {
 .mainnav {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-size : 1.2em;
+    font-size : 1em;
 
     vertical-align: top;
     line-height : 1.2;
@@ -1714,7 +1726,7 @@ $partnav-width : 170px;
             min-height : 1em;
         }
         p {
-            max-width : 400px;    
+            max-width : 500px;    
         }
         h2 {
             margin-top: 1.5em;
@@ -1726,10 +1738,8 @@ $partnav-width : 170px;
             //     content : ":";
             // }
         }
-        .page-authorInfo {
-            h2 {
-                text-transform : uppercase;
-            }
+        h2 {
+            text-transform : uppercase;
         }
         // really for authorTitles
         .contenttable {
@@ -1738,17 +1748,27 @@ $partnav-width : 170px;
             // margin-left : 0.2em;
             td {
                 text-align: left;
-                vertical-align : bottom;
+                vertical-align : baseline;
+                max-width : 450px;
             }
             td:first-child {
-                padding-left : 0;
-                // width : 100%;
+                text-align: right;
+                text-transform: uppercase;
+                font-size: 0.6em;
+                a {
+                    color : $primarycolor;
+                }
+                padding-right : 2em;
             }
             td:nth-child(2) {
-                white-space: nowrap;
+                padding: 0.2em 0 0.2em 0;
+                
             }
             .title {
-                font-style: italic;
+                display : block;
+                font-size : 1.2em;
+                text-indent: -1.5em;
+                padding-left: 1.5em;
             }
             .extras {
                 .author {
@@ -1762,13 +1782,63 @@ $partnav-width : 170px;
                 }
             }
         }
-        .author_img {
-            margin-top : 3em;
-            text-align : right;
-            opacity : 1;
-            img {
-                cursor : pointer;
+        h1 {
+            margin-bottom : 2em;
+        }
+        .introtext {
+            display: inline-block;
+            vertical-align: top;
+            margin-right : 1em;
+            height : 25em;
+            overflow-y: hidden;
+            &.show_more {
+                height: auto;
             }
+            p:first-child {
+                margin-top: 0;
+            }
+        }
+        .show_more_btn {
+            margin-top : 1em;
+            margin-right: 5em;
+            text-align: right;
+            a {
+                color: $primarycolor;
+                margin: 0 2px;
+                vertical-align: middle;
+            }
+        }
+        .page_content {
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 3em;
+        }
+        .portrait_container {
+            display: inline-block;
+            vertical-align: top;
+            text-align: center;
+            .author_img {
+                // margin-top : 3em;
+                // text-align : right;
+                opacity : 1;
+                box-shadow: 5px 5px 7px 0px grey;
+                border: 1px solid grey;
+                cursor : pointer;
+                margin-bottom : 2em;
+            }
+
+            .links {
+                @include container();
+                font-size: 0.7em;
+                text-transform: uppercase;
+                li {
+                    margin-bottom : 5px;
+                }
+                li:last-of-type {
+                    margin-bottom :0;
+                }
+            }
+            
         }
         .img_large {
             opacity : 1;
