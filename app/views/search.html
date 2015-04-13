@@ -4,21 +4,63 @@
 
 
     <h1>Textsökning <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span></h1>
+
+    <div class="preloader">Söker <span class="dots_blink"></span></div>    
+
+    <div class="auth_select_container"><select multiple class="filter_select author_select" ui-select2="groupSetup" ng-model="selectedAuthors" >
+            <option value="{{author.authorid}}" ng-repeat="author in authors | orderBy:'nameforindex'">{{author.nameforindex}}</option>
+        </select> Välj författarskap att söka i</div>
     
-    <select multiple class="filter_select author_select" ui-select2="groupSetup" ng-model="selectedAuthors" data-placeholder="Söker i alla författare">
-        <option value="{{author.authorid}}" ng-repeat="author in authors | orderBy:'nameforindex'">{{author.nameforindex}}</option>
-    </select>
-    
+    <ul class="options">
+        <li ng-repeat="opt in sortStruct">
+            <span ng-show="opt.val == options.sortSelected">✓</span>
+            <a ng-click="options.sortSelected = opt.val">{{opt.label}}</a>
+        </li>
+    </ul>
     <!-- <div>{{selectedAuthors}}</div> -->
 
     <!-- <ul>
         <li ng-repeat="title in titles | orderBy:titleSort">{{title.showtitle}}</li>
     </ul> -->
     
-    <select multiple class="filter_select title_select" ui-select2="groupSetup" ng-model="selectedAuthors" data-placeholder="Titlar">
-        <!-- <option value="{{author.authorid}}" ng-repeat="author in authors | orderBy:'nameforindex'">{{author.nameforindex}}</option> -->
+    <!-- <select multiple class="filter_select title_select" ui-select2="groupSetup" ng-model="selectedAuthors" data-placeholder="Titlar">
         <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort">{{title.shorttitle}}</option>
-    </select>
+    </select> -->
+
+
+    <form class="submit_form" ng-submit="current_page = 0; search()">
+        <input ng-model="query" autofocus type="text"><button class="btn">Sök</button>
+    </form>
+
+
+
+    <div class="results_container">
+        <div ng-if="!searching && kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
+        
+
+
+          <table cellspacing="0" class="results">
+
+            <tr ng-repeat="sent in sentsWithHeaders" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
+                <td class="header" colspan="4" ng-if="sent.isHeader">
+                    <span class="author">{{authorById[sent.authorid].nameforindex}}</span>: <span class="title">{{sent.shorttitle}}</span></td>
+                <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1) + (current_page * num_hits)}}</td>
+                <!-- <td><a ng-href="/#!/forfattare/{{::getSetVal(sent, 'text_authorid')}}">{{::sent.structs.text_nameforindex}}</a></td> -->
+                <!-- <td class="title" tooltip="{{::sent.structs.text_title}}">
+                    <a ng-href="/#!/forfattare/{{::getSetVal(sent, 'text_authorid')}}/titlar/{{::sent.structs.text_titlepath}}/{{::sent.structs.text_mediatype}}">{{::sent.structs.text_shorttitle}}</a>
+                </td> -->
+
+                <td class="left_context"><span kwic-word="kwic-word" ng-repeat="wd in selectLeft(sent)"></span></td>
+                <td class="match">
+                    <a ng-href="{{::sent.href}}" ng-click="save_search(current_page * num_hits, $index, data)">
+                        <span kwic-word="kwic-word" ng-repeat="wd in selectMatch(sent)"></span>
+                    </a>
+                </td>
+                <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td>
+            </tr>
+          </table>
+
+    </div>
 
 
     <!-- <div class="box_container">
@@ -50,8 +92,8 @@
 
 
 
-
-    <!-- <div class="preloader">Söker <span class="dots_blink"></span></div>
+    
+    <!-- 
     <div class="header">
         <h1>Sök i texterna</h1>
         <div class="clearfix"></div>
@@ -112,28 +154,7 @@
         träffar per sida.
     </div>
     
-    <div>
-        <div ng-if="!searching && kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
-        
-          <table cellspacing="0" class="results">
-            <tr ng-repeat="sent in kwic" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
-                <td class="num">{{::($index + 1) + (current_page * num_hits)}}</td>
-                <td><a ng-href="/#!/forfattare/{{::getSetVal(sent, 'text_authorid')}}">{{::sent.structs.text_nameforindex}}</a></td>
-                <td class="title" tooltip="{{::sent.structs.text_title}}">
-                    <a ng-href="/#!/forfattare/{{::getSetVal(sent, 'text_authorid')}}/titlar/{{::sent.structs.text_titlepath}}/{{::sent.structs.text_mediatype}}">{{::sent.structs.text_shorttitle}}</a>
-                </td>
-
-                <td class="left_context"><span kwic-word="kwic-word" ng-repeat="wd in selectLeft(sent)"></span></td>
-                <td class="match">
-                    <a ng-href="{{::sent.href}}" ng-click="save_search(current_page * num_hits, $index, data)">
-                        <strong><span kwic-word="kwic-word" ng-repeat="wd in selectMatch(sent)"></span></strong>
-                    </a>
-                </td>
-                <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td>
-            </tr>
-          </table>
-
-    </div>
+    
     <div toolkit>
         <hr>
 

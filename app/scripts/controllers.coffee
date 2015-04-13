@@ -125,7 +125,11 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.open = true
     s.proofread = 'all'
 
+    s.groupSetup = {
+        formatSelection : (item) ->
+            item.text.split(",")[0]
 
+    }
     
 
     initTitle = _.once (titlesById) ->
@@ -184,6 +188,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
+        s.authorById = authorsById
         change = (newAuthors) ->
             return unless newAuthors
             $q.all _.map newAuthors.split(","), (auth) -> 
@@ -313,6 +318,35 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     s.$on "$destroy", () ->
         $document.off "keydown", onKeyDown
+    s.sortStruct = [
+        {label: "SORTERA PÅ EFTERNAMN", val: "lastname", selected: true}
+        {label: "SORTERA EFTER TRYCKÅR", val: "imprintyear", selected: false}
+        {label: "SORTERA EFTER SÖKORDET I ALFABETISK ORDNING", val: "hit", selected: false}
+    ]
+    s.options = {
+        sortSelected : 'lastname'
+    }
+    groupSents = (kwic) ->
+        # _.groupBy kwic, (item) ->
+        i = 0
+        output = []
+        prevAuth = null
+        for item in kwic
+            auth = item.structs.text_authorid.split("|")[1]
+            shorttitle = item.structs.text_shorttitle
+
+            if (prevAuth != auth) or (shorttitle != prevShortTitle)
+                output.push {isHeader : true, authorid : auth, shorttitle: shorttitle}
+
+            item.index = i
+            output.push item
+
+            prevAuth = auth
+            prevShortTitle = shorttitle
+            i++
+
+        return output
+
 
     s.search = debounce((query) ->
         q = query or s.query
@@ -339,6 +373,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
             for row in (data.kwic or [])
                 row.href = searchData.parseUrls row
+
+            s.sentsWithHeaders = groupSents(data.kwic)
+
+
     , 200)
 
     queryvars = $location.search()

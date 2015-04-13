@@ -106,6 +106,39 @@ h1 {
 
 
 // bootstrap overrides
+.select2-drop-active, .select2-container-multi.select2-container-active .select2-choices {
+    border-color: #999;
+}
+.select2-results {
+    font-size: 0.8em;
+}
+.select2-results .select2-highlighted {
+    background-color: #999;
+
+}
+.select2-container-multi .select2-choices {
+    background-image : none;
+}
+.select2-container-multi .select2-choices .select2-search-choice {
+    border-radius: 0;
+    text-transform: uppercase;
+    font-size : 0.8em;
+    color: #666;
+    
+}
+.select2-container-multi .select2-search-choice-close {
+    &:before {
+        content: "☒";
+        font-size : 1.2em;
+        position: relative;
+        bottom: 1px;
+        color: #666;
+
+        
+    }
+    font-size: inherit;
+    background: none;
+}
 
 .btn {
     background-color: rgba(255,255,255,0.3);
@@ -812,6 +845,7 @@ body > .header {
     #mainview {
 
         // width : 512px;
+        font-size: 0.85em;
 
         margin-bottom : 3em;
         .results {
@@ -890,8 +924,53 @@ body > .header {
                 }
             }
         }
+        .submit_form {
+            margin-top: 1em;
+            input {
+                width: 93%;
+            }
+            * {
+                vertical-align: middle;
+            }
+        }
+        .auth_select_container {
+            display: inline-block;
+            @include container();
+            padding-top: 0.6em;
+            padding-bottom: 0.6em;
+            
+        }
+        .options {
+            display: inline-block;
+            font-size: 0.8em;
+            vertical-align: middle;
+        }
+        .results_container {
+            @include container();
+            padding-left : 1.3em;
+        }
         table {
             white-space : nowrap;
+            .header {
+                text-indent: 1em;
+                padding-top : 1em;
+                overflow-x: hidden;
+                text-overflow: ellipsis;
+                max-width : 400px;
+                .author {
+                    color: $primarycolor;
+                    text-transform: uppercase;
+                    font-size: 0.8em;
+                }
+                .title {
+                    font-style: italic;
+                }
+            }
+            .match a {
+                color: $primarycolor;
+                text-transform: uppercase;
+                font-size: 0.9em;
+            }
             td {
                 padding-right : 2px;
             }
@@ -899,7 +978,7 @@ body > .header {
                 color : grey;
             }
             td.num {
-                color : grey;
+                // color : grey;
             }
             td.title {
                 max-width : 106px;
@@ -930,7 +1009,7 @@ body > .header {
     }
 
     .filter_select {
-        max-width: 400px;
+        max-width: 300px;
         input {
             min-width: 200px;
         }

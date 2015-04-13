@@ -622,6 +622,7 @@ littb.factory 'backend', ($http, $q, util) ->
             corpus : "LBSOK"
             start: from
             end : to
+            sort: "sortby"
 
         if querydata
             params.querydata = querydata
