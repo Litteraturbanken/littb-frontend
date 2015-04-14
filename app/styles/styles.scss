@@ -41,6 +41,9 @@ $content-top-margin : 5em;
 $textcolor : #333;
 $primarycolor : #990000;
 $dotted : thin dotted #990000;
+
+$transp : rgba(255,255,255,0.3);
+
 @mixin primarygradient {
     @include background-image(linear-gradient($primarycolor, darken($primarycolor, 7%)));
 }
@@ -89,6 +92,7 @@ h1 {
     align-content: stretch;
     .box {
         @include container();
+        background-color: $transp;
         width: 450px;
         padding: 1.5em;
         text-transform: uppercase;
@@ -141,7 +145,7 @@ h1 {
 }
 
 .btn {
-    background-color: rgba(255,255,255,0.3);
+    background-color: $transp;
     border-radius: 0;
     padding: 0.4em 0.9em 0.2em 0.9em;
     text-transform: uppercase;
@@ -830,18 +834,22 @@ body > .header {
     visibility: visible;
 }
 
-.page-search {
+@mixin bkgimg($url) {
     &:after {
-        background: url(../img/background_start.png) no-repeat;
+        background: url($url) no-repeat;
         content: "";
-        opacity: 0.2;
+        opacity: 0.5;
         top: 0;
         left: 0;
         bottom: 0;
         right: 0;
         position: absolute;
         z-index: -1;   
+        box-shadow: inset -50px -50px 100px 30px white;
     }
+}
+.page-search {
+    @include bkgimg("../img/background_start.png");
     #mainview {
 
         // width : 512px;
@@ -927,7 +935,7 @@ body > .header {
         .submit_form {
             margin-top: 1em;
             input {
-                width: 93%;
+                // width: 93%;
             }
             * {
                 vertical-align: middle;
@@ -980,6 +988,18 @@ body > .header {
             td.num {
                 // color : grey;
             }
+            td.auth {
+                text-transform: uppercase;
+                a {
+                    color: $primarycolor;
+                }
+            }
+            td.match {
+                text-transform: uppercase;
+                a {
+                    color: $primarycolor;
+                }
+            }
             td.title {
                 max-width : 106px;
                 overflow-x : hidden;
@@ -992,7 +1012,18 @@ body > .header {
         }
     }
     #toolkit {
-        font-size : .9em;
+        font-size : .7em;
+        text-align: right;
+        margin-bottom : 1em;
+        .hits_info {
+            text-transform: uppercase;
+            * {margin-bottom: 0.1em}
+            .hits {
+                font-size: 2em;
+                vertical-align: baseline;
+            }
+        }
+
         .littb_pager {
             margin-top : 1em;
             margin-bottom : 2em;
@@ -1000,6 +1031,13 @@ body > .header {
                 width : 60px;
             }
             .ctrl {
+                text-transform: uppercase;
+                li {
+                    margin-bottom: 0.2em;
+                }
+                a {
+                    color: $primarycolor;
+                }
                 margin : 10px 0;
                 & > * {
                     cursor : pointer;
@@ -2021,6 +2059,13 @@ $partnav-width : 170px;
             // left : -40px;
             background-color: fade-out(white, 0.2);
 
+            &.auth {
+                .info {
+                    height : 70%;
+                    overflow-y: hidden;
+                }
+            }
+            
             &.title {
                 left: 105px;
 

@@ -34,11 +34,12 @@
                     <span >{{author.nameforindex}} {{author | authorYear}}</span>
                 </li>
             </ul>
-            <div class="info_box auth" ng-show="selectedAuth" ng-style="{top: auth_off}" >
+            <div class="info_box auth" ng-click="$event.stopPropagation()" ng-show="selectedAuth" ng-style="{top: auth_off}" >
                 {{selectedAuth.fullname}}
+                <div class="info" ng-bind-html="authorInfo.intro | trust"></div>
             </div>
 
-            <div class="info_box title" ng-show="selectedTitle" ng-style="{top: title_off}" >
+            <div class="info_box title" ng-click="$event.stopPropagation()" ng-show="selectedTitle" ng-style="{top: title_off}" >
                 <div>
                     <span class="author">{{selectedTitle.author[0].fullname}} </span> {{authorsById[selectedTitle.author[0].authorid] | authorYear}}
                 </div>

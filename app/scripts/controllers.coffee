@@ -188,7 +188,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
-        s.authorById = authorsById
+        s.authorsById = authorsById
         change = (newAuthors) ->
             return unless newAuthors
             $q.all _.map newAuthors.split(","), (auth) -> 
@@ -781,6 +781,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         s.selectedTitle = null
         s.selectedAuth = author
         $event.stopPropagation()
+
+        backend.getAuthorInfo(author.authorid).then (data) ->
+            s.authorInfo = data
 
     
     getWorkIntro = (author, titlepath) ->
