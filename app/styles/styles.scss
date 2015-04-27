@@ -22,9 +22,13 @@ $fa-font-path: "/components/font-awesome/fonts";
 @font-face {
     font-family: "RequiemSC";
     src: url("requiem/RequiemDisplay-HTF-SmallCaps.otf");
+    // font-variant: small-caps;
 }
 
-
+@mixin small-caps {
+    font-family: RequiemSC;
+    text-transform: lowercase;
+}
 
 $inline-block-alignment : top;
 $sans : "Helvetica", "Arial", sans-serif;
@@ -52,6 +56,22 @@ $transp : rgba(255,255,255,0.3);
     background-color: rgba(255,255,255,0.3);
     border: 1px solid darkgrey;
     padding: 0.8em;
+}
+
+@mixin bkgimg($url) {
+    &:after {
+        background: url($url) no-repeat;
+        content: "";
+        opacity: 0.5;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        position: absolute;
+        z-index: -1;   
+        box-shadow: inset -200px -200px 400px 30px white;
+    }
+
 }
 
 // * {
@@ -96,6 +116,7 @@ h1 {
         width: 450px;
         padding: 1.5em;
         text-transform: uppercase;
+        // @include small-caps;
         vertical-align: top;
         overflow-y: auto;
         li {
@@ -651,6 +672,7 @@ body > .header {
         display : none;
     }
     
+    // @include bkgimg("../img/background_start.png");
     background: url(../img/background_start.png) no-repeat;
     background-position-x : -5px;
     #mainview {
@@ -834,22 +856,13 @@ body > .header {
     visibility: visible;
 }
 
-@mixin bkgimg($url) {
-    &:after {
-        background: url($url) no-repeat;
-        content: "";
-        opacity: 0.5;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        position: absolute;
-        z-index: -1;   
-        box-shadow: inset -50px -50px 100px 30px white;
-    }
-}
+
 .page-search {
     @include bkgimg("../img/background_start.png");
+    .grid {
+      width: 1000px;
+      height: 1400px;
+    }
     #mainview {
 
         // width : 512px;
@@ -956,6 +969,8 @@ body > .header {
         .results_container {
             @include container();
             padding-left : 1.3em;
+            display: inline-block;
+            vertical-align: top;
         }
         table {
             white-space : nowrap;
@@ -967,8 +982,8 @@ body > .header {
                 max-width : 400px;
                 .author {
                     color: $primarycolor;
-                    text-transform: uppercase;
-                    font-size: 0.8em;
+                    @include small-caps;
+                    // font-size: 0.8em;
                 }
                 .title {
                     font-style: italic;
@@ -976,8 +991,7 @@ body > .header {
             }
             .match a {
                 color: $primarycolor;
-                text-transform: uppercase;
-                font-size: 0.9em;
+                @include small-caps;
             }
             td {
                 padding-right : 2px;
@@ -1010,13 +1024,25 @@ body > .header {
                 text-align : right;
             }
         }
+        .navigator {
+            @include container();
+            display: inline-block;
+            vertical-align: top;
+            @include small-caps;
+            overflow-y: auto;
+            margin-left: 8px;
+            li.selected a {
+                color : $primarycolor;
+            }
+        }
     }
     #toolkit {
-        font-size : .7em;
+        @include small-caps;
+        // font-size : .8em;
         text-align: right;
         margin-bottom : 1em;
         .hits_info {
-            text-transform: uppercase;
+            // text-transform: uppercase;
             * {margin-bottom: 0.1em}
             .hits {
                 font-size: 2em;
@@ -1031,7 +1057,7 @@ body > .header {
                 width : 60px;
             }
             .ctrl {
-                text-transform: uppercase;
+                // text-transform: uppercase;
                 li {
                     margin-bottom: 0.2em;
                 }
@@ -2070,7 +2096,8 @@ $partnav-width : 170px;
                 left: 105px;
 
                 .author {
-                    text-transform: uppercase;
+                    @include small-caps;
+                    // text-transform: uppercase;
                     color: $primarycolor;
                 }
                 .links {

@@ -252,6 +252,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.lastPage = () ->
         s.current_page = s.total_pages - 1
         s.search(s.query)
+
+    s.gotoPage = (page) ->
+        s.current_page = page
+        s.search(s.query)        
     
     getSearchArgs = () ->
         from = s.current_page  * s.num_hits
@@ -302,6 +306,41 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.getMaxHit = () ->
         Math.min s.hits, (s.current_page  * s.num_hits) + s.kwic.length
 
+    # DATA GRID
+    s.keys = _.keys
+    getTmpl = (key) ->
+        """
+        <div class="ui-grid-cell-contents">
+            <span ng-repeat='token in row.entity.#{key}'>{{token.word}} </span> 
+        </div>
+        """
+
+    s.gridOptions = {
+        showHeader : false
+        init : (gridCtrl, gridScope) ->
+            gridScope.$on 'ngGridEventData', () ->
+                $scope.gridOptions.ngGrid.buildColumns()
+
+        columnDefs: [
+            { 
+                name: 'left',
+                cellTemplate: getTmpl("left")
+            }
+            { 
+                name: 'match',
+                cellTemplate: getTmpl("match")
+                width: "*"
+            }
+            { 
+                name: 'right',
+                cellTemplate: getTmpl("right")
+            }
+            # { field: 'match' },
+            # { field: 'right' }
+        ]
+
+    }
+        
 
     onKeyDown = (event) ->
         if event.metaKey or event.ctrlKey or event.altKey or $("input:focus").length then return
@@ -347,6 +386,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         return output
 
+    getGridData = (row) ->
+        return {
+            left : s.selectLeft row
+            match : s.selectMatch row
+            right : s.selectRight row
+        }
+
 
     s.search = debounce((query) ->
         q = query or s.query
@@ -363,8 +409,25 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         to = (from + s.num_hits) - 1
 
         args = getSearchArgs()
+        backend.getAuthorsInSearch(args...).then (data) ->
+            c.log "getAuthorsInSearch then", data
+
+            n = 0
+            for auth in (_.sortBy (_.keys data).sort())
+                val = data[auth]
+                # c.log "item", key, val
+                data[auth] = Math.floor(n / s.num_hits)
+                # data[auth] = n
+                n += val
+                # c.log "n", n
+
+            s.authorStatsData = data
+
         backend.searchWorks(args...).then (data) ->
             c.log "search data", data
+            s.gridOptions.totalServerItems = data.count
+            s.gridOptions.data = _.map data.kwic, getGridData
+
             s.data = data
             s.kwic = data.kwic or []
             s.hits = data.hits

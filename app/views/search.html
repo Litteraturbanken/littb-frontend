@@ -33,22 +33,18 @@
     </form>
 
 
-
-    <div class="results_container">
+    <div ui-grid="gridOptions" class="grid"></div>
+    <!-- <div class="results_container" height="container_height">
         <div ng-if="!searching && kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
         
 
 
-          <table cellspacing="0" class="results">
+        <table cellspacing="0" class="results">
 
             <tr ng-repeat="sent in sentsWithHeaders" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
                 <td class="header" colspan="4" ng-if="sent.isHeader">
                     <span class="author">{{authorsById[sent.authorid].nameforindex}}</span>: <span class="title">{{sent.shorttitle}}</span></td>
                 <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1) + (current_page * num_hits)}}</td>
-                <!-- <td><a ng-href="/#!/forfattare/{{::getSetVal(sent, 'text_authorid')}}">{{::sent.structs.text_nameforindex}}</a></td> -->
-                <!-- <td class="title" tooltip="{{::sent.structs.text_title}}">
-                    <a ng-href="/#!/forfattare/{{::getSetVal(sent, 'text_authorid')}}/titlar/{{::sent.structs.text_titlepath}}/{{::sent.structs.text_mediatype}}">{{::sent.structs.text_shorttitle}}</a>
-                </td> -->
 
                 <td class="left_context"><span kwic-word="kwic-word" ng-repeat="wd in selectLeft(sent)"></span></td>
                 <td class="match">
@@ -58,9 +54,16 @@
                 </td>
                 <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td>
             </tr>
-          </table>
+        </table> -->
+        
+
 
     </div>
+    <ul class="navigator" ng-style="{'max-height': container_height}">
+        <li ng-repeat="(author, page) in authorStatsData" ng-class="{selected: page == current_page}">
+            <a ng-click="gotoPage(page)">{{author}}</a>
+        </li>
+    </ul>
 
     <div toolkit>
 

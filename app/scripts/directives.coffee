@@ -641,6 +641,16 @@ littb.directive "top", () ->
         #     scope.top = offset
 
 
+littb.directive "height", () ->
+    restrict: "A"
+    scope: 
+        height: "="
+    link : (scope, elem, attr) ->
+        scope.$watch (() -> elem.outerHeight()), (val) ->
+            scope.height = val
+        # scope.height = elem.
+
+
 
 
 

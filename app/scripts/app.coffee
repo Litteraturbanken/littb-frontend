@@ -43,6 +43,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "ngAnimate"
                                             "ngTouch"
                                             'ui.select2'
+                                            'ui.grid'
                                            ])
     .config ($routeProvider) ->
 

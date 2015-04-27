@@ -214,6 +214,69 @@ littb.factory 'backend', ($http, $q, util) ->
         # output.author_type = $(root + " > authorid", xml).attr("type")
         return output
 
+    getCqp = (query, mediatype, selectedAuthor, selectedTitle, prefix, suffix, infix) ->
+
+        tokenList = []
+        regescape = (s) ->
+            s.replace(/[\.|\?|\+|\*|\|\"\(\)\^\$]/g, "\\$&")
+
+        tokenize = (str) ->
+            # Excludes some characters from starting word tokens
+            # _re_word_start = /[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]/
+
+            # Characters that cannot appear within words
+            # _re_non_word_chars = /(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])/ #@
+
+            # Excludes some characters from ending word tokens
+            # _re_word_end = /[\(\"\`{\[:;&\#\*@\)}\],]/
+
+            # Multi-character punctuation
+            # _re_multi_char_punct = /(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)/
+
+
+
+            wdlist = for wd in query.split(/\s+/)
+                extras = []
+                if wd.match(/\.\.\./)
+                    extras.push "..."
+                    wd = wd.replace(/(\.\.\.)/, "")
+                wd = wd.replace(/([\.,;:!?])/g, " $1")
+                wd = wd.replace(/([-’])/g, " $1 ")
+                wd = wd.replace(/(['])/g, " $1$1 ") # double quote for escaping
+                wd = wd.replace(/([»])/g, "$1 ")
+                c.log "wd", wd
+                wd.split(" ")
+
+
+            _.compact [].concat (_.flatten wdlist), extras
+
+
+        for wd in tokenize(query)
+            pre = suf = ""
+            or_block = []
+
+            if prefix
+                or_block.push "word = '#{regescape wd}.*' %c"
+            if suffix
+                or_block.push "word = '.*#{regescape wd}' %c"
+            if infix and not (prefix or suffix)
+                or_block.push "word = '.*#{regescape wd}.*' %c"
+            if not prefix and not suffix
+                or_block.push "word = '#{regescape wd}' %c"
+
+            tokenList.push "(#{or_block.join(' | ')})"
+
+        if selectedAuthor
+            tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"
+        if selectedTitle
+            tokenList[0] += " & _.text_lbworkid = '#{selectedTitle}'"
+        if mediatype == "all"
+            tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
+        else
+            tokenList[0] += " & _.text_mediatype = '#{mediatype}'"
+
+        return "[#{tokenList.join('] [')}]"
+
 
     getHtmlFile : (url) ->
         return http(
@@ -553,70 +616,11 @@ littb.factory 'backend', ($http, $q, util) ->
         c.log "searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle
         def = $q.defer()
 
-        tokenList = []
-        regescape = (s) ->
-            s.replace(/[\.|\?|\+|\*|\|\"\(\)\^\$]/g, "\\$&")
-
-        tokenize = (str) ->
-            # Excludes some characters from starting word tokens
-            # _re_word_start = /[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]/
-
-            # Characters that cannot appear within words
-            # _re_non_word_chars = /(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])/ #@
-
-            # Excludes some characters from ending word tokens
-            # _re_word_end = /[\(\"\`{\[:;&\#\*@\)}\],]/
-
-            # Multi-character punctuation
-            # _re_multi_char_punct = /(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)/
-
-
-
-            wdlist = for wd in query.split(/\s+/)
-                extras = []
-                if wd.match(/\.\.\./)
-                    extras.push "..."
-                    wd = wd.replace(/(\.\.\.)/, "")
-                wd = wd.replace(/([\.,;:!?])/g, " $1")
-                wd = wd.replace(/([-’])/g, " $1 ")
-                wd = wd.replace(/(['])/g, " $1$1 ") # double quote for escaping
-                wd = wd.replace(/([»])/g, "$1 ")
-                c.log "wd", wd
-                wd.split(" ")
-
-
-            _.compact [].concat (_.flatten wdlist), extras
-
-
-        for wd in tokenize(query)
-            pre = suf = ""
-            or_block = []
-
-            if prefix
-                or_block.push "word = '#{regescape wd}.*' %c"
-            if suffix
-                or_block.push "word = '.*#{regescape wd}' %c"
-            if infix and not (prefix or suffix)
-                or_block.push "word = '.*#{regescape wd}.*' %c"
-            if not prefix and not suffix
-                or_block.push "word = '#{regescape wd}' %c"
-
-            tokenList.push "(#{or_block.join(' | ')})"
-
-        if selectedAuthor
-            tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"
-        if selectedTitle
-            tokenList[0] += " & _.text_lbworkid = '#{selectedTitle}'"
-        if mediatype == "all"
-            tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
-        else
-            tokenList[0] += " & _.text_mediatype = '#{mediatype}'"
-
 
 
         params = 
             command : "query"
-            cqp : "[#{tokenList.join('] [')}]"
+            cqp : getCqp(query, mediatype, selectedAuthor, selectedTitle, prefix, suffix, infix)
             show: "wid,x,y,width,height"
             show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
             corpus : "LBSOK"
@@ -638,13 +642,33 @@ littb.factory 'backend', ($http, $q, util) ->
             querydata = data.querydata
             def.resolve data
         ).error (data) ->
-            c.log "error", arguments
+            c.log "searchworks error", arguments
             def.reject()
 
         return def.promise
 
 
+    getAuthorsInSearch : (query, mediatype, from, to, selectedAuthor, selectedTitle, prefix, suffix, infix) ->
+        def = $q.defer()
+        params = 
+            command: "count"
+            groupby: "text_nameforindex"
+            cqp: getCqp(query, mediatype, selectedAuthor, selectedTitle, prefix, suffix, infix)
+            corpus: "LBSOK"
+            incremental: false
+            defaultwithin: "sentence"
+        $http(
+            url: "http://spraakbanken.gu.se/ws/korp"
+            method: "GET"
+            cache: true
+            params: params
+        ).success( (data) ->
+            def.resolve data.total.absolute
+        ).error (data) ->
+            c.log "getAuthorsInSearch error", arguments
+            def.reject()
 
+        return def.promise
 
 
 
