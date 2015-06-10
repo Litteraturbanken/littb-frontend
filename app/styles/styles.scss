@@ -29,6 +29,9 @@ $fa-font-path: "/components/font-awesome/fonts";
     font-family: RequiemSC;
     text-transform: lowercase;
 }
+.sc {
+    @include small-caps();
+}
 
 $inline-block-alignment : top;
 $sans : "Helvetica", "Arial", sans-serif;
@@ -80,9 +83,9 @@ $transp : rgba(255,255,255,0.3);
 
 
 h1 {
-    text-transform: uppercase;
+    // text-transform: uppercase;
     color: $primarycolor;
-    font-size: 1.3em;
+    // font-size: 1.3em;
 }
 
 .txt {
@@ -854,6 +857,14 @@ body > .header {
 }
 .searching .preloader {
     visibility: visible;
+    position: absolute;
+    top: 400px;
+    // left : 300px;
+
+
+    opacity: 0.5;
+    margin-left: 200px;
+    // font-size: 260px;
 }
 
 
@@ -874,8 +885,9 @@ body > .header {
             opacity : 1;
         }
         .searching .results {
-            transition : opacity 100ms;
-            opacity : 0.3;
+            // transition : opacity 100ms;
+            // opacity : 0.3;
+            visibility: hidden;
         }
         .query_label {
             vertical-align: middle;
@@ -904,130 +916,188 @@ body > .header {
         .n_pages {
             margin-bottom: 1em;
         }
-        .extended {
-            margin-top : 1em;
-            border : 1px lightgrey solid;
-            padding : 10px;
-            h3 {
-                margin : 0.3em 0;
-            }
-            .columns {
-                > div {
-                    width : 49%;
-                    @include inline-block();
+        // .extended {
+        //     margin-top : 1em;
+        //     border : 1px lightgrey solid;
+        //     padding : 10px;
+        //     h3 {
+        //         margin : 0.3em 0;
+        //     }
+        //     .columns {
+        //         > div {
+        //             width : 49%;
+        //             @include inline-block();
 
-                    label {
-                        display : block;
-                    }
-                }
-                #title_select {
-                    width : 245px;
-                }
-                #author_select {
-                    width : 232px;
-                }
-            }
-            .chks {
-                margin-top : 1em;
-                input {
-                    margin-left : 1em;
-                }
-            }
-            .also_include {
-                label {
-                    margin-right : 0.9em;
-                }    
-                #prefix {
-                    margin-left : 1em;
-                }
-                #infix {
-                    margin-left : 1em;
-                }
-            }
-        }
+        //             label {
+        //                 display : block;
+        //             }
+        //         }
+        //         #title_select {
+        //             width : 245px;
+        //         }
+        //         #author_select {
+        //             width : 232px;
+        //         }
+        //     }
+        //     .chks {
+        //         margin-top : 1em;
+        //         input {
+        //             margin-left : 1em;
+        //         }
+        //     }
+        //     .also_include {
+        //         label {
+        //             margin-right : 0.9em;
+        //         }    
+        //         #prefix {
+        //             margin-left : 1em;
+        //         }
+        //         #infix {
+        //             margin-left : 1em;
+        //         }
+        //     }
+        // }
         .submit_form {
             margin-top: 1em;
             input {
                 // width: 93%;
             }
-            * {
+            & > * {
                 vertical-align: middle;
+            }
+
+            .submit {
+                margin-left: 0.5em;
             }
         }
         .auth_select_container {
-            display: inline-block;
+            display: none;
             @include container();
             padding-top: 0.6em;
             padding-bottom: 0.6em;
             
         }
+        .advanced .auth_select_container {
+            display : inline-block;
+        }
+        .simple_text {display : none;}
+        .advanced .simple_text {display : block;}
+        .advanced .advanced_text {display : none;}
+        .text {
+            max-width : 360px;
+            margin-top : 3em;
+            a {
+                color : $primarycolor;
+                white-space : nowrap;
+            }
+
+            .fa-play {
+                margin-left : 5px;
+                font-size : 0.9em;
+            } 
+            
+        }
+        .advanced_text {
+        }
         .options {
+
+            margin-left: 1em;
+
             display: inline-block;
-            font-size: 0.8em;
-            vertical-align: middle;
+            // font-size: 0.8em;
+            li {vertical-align: baseline;}
+            .sc {
+                color : $primarycolor;
+            }
+        }
+        .lower_options {
+            margin-top : 1em;
+            margin-bottom : 2em;
+            @include small-caps();
         }
         .results_container {
-            @include container();
-            padding-left : 1.3em;
-            display: inline-block;
-            vertical-align: top;
+            position: relative;
+            white-space: nowrap;
+            & > *  {
+                white-space: normal;
+                @include container();
+                display: inline-block;
+                vertical-align: top;    
+                max-height: 630px;
+            }
         }
-        table {
-            white-space : nowrap;
-            .header {
-                text-indent: 1em;
-                padding-top : 1em;
+        .table_viewport {
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            
+        }
+        .table_container {
+            padding-left : 1.3em;
+            width : 800px;
+            overflow-x: hidden;
+            
+            table {
+                display: block;
+                width : 775px;
+                position: absolute;
                 overflow-x: hidden;
-                text-overflow: ellipsis;
-                max-width : 400px;
-                .author {
+                white-space : nowrap;
+                .header {
+                    text-indent: 1em;
+                    padding-top : 1em;
+                    overflow-x: hidden;
+                    text-overflow: ellipsis;
+                    max-width : 400px;
+                    .author {
+                        color: $primarycolor;
+                        @include small-caps;
+                        // font-size: 0.8em;
+                    }
+                    .title {
+                        font-style: italic;
+                    }
+                }
+                .right_context {
+                    pointer-events : none;
+                }
+                .match a {
                     color: $primarycolor;
                     @include small-caps;
-                    // font-size: 0.8em;
                 }
-                .title {
+                td {
+                    padding-right : 2px;
+                }
+                tr.is_faksimil {
+                    color : grey;
+                }
+                td.num {
+                    // color : grey;
+                }
+                td.auth {
+                    text-transform: uppercase;
+                    a {
+                        color: $primarycolor;
+                    }
+                }
+                td.match {
+                    text-transform: uppercase;
+                    a {
+                        color: $primarycolor;
+                    }
+                }
+                td.title {
+                    max-width : 106px;
+                    overflow-x : hidden;
+                    text-overflow : ellipsis;
                     font-style: italic;
                 }
-            }
-            .match a {
-                color: $primarycolor;
-                @include small-caps;
-            }
-            td {
-                padding-right : 2px;
-            }
-            tr.is_faksimil {
-                color : grey;
-            }
-            td.num {
-                // color : grey;
-            }
-            td.auth {
-                text-transform: uppercase;
-                a {
-                    color: $primarycolor;
+                td.left_context {
+                    text-align : right;
                 }
-            }
-            td.match {
-                text-transform: uppercase;
-                a {
-                    color: $primarycolor;
-                }
-            }
-            td.title {
-                max-width : 106px;
-                overflow-x : hidden;
-                text-overflow : ellipsis;
-                font-style: italic;
-            }
-            td.left_context {
-                text-align : right;
             }
         }
         .navigator {
-            @include container();
-            display: inline-block;
-            vertical-align: top;
             @include small-caps;
             overflow-y: auto;
             margin-left: 8px;
@@ -1183,6 +1253,25 @@ $partnav-width : 170px;
         }
     }
 
+    .chapters-modal {
+        .header {
+            margin-bottom : 2em;
+        }
+        .author a {
+            color : $primarycolor;
+        }
+        .title {
+            font-style: italic;
+        }
+
+        .part_menu {
+            font-size : 0.85em;
+        }
+
+        .close_btn {
+            color : $primarycolor;
+        }
+    }
     .about-modal {
         padding: 30px;
         .searching > div:not(.preloader) {

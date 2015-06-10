@@ -35,8 +35,16 @@
                 </li>
             </ul>
             <div class="info_box auth" ng-click="$event.stopPropagation()" ng-show="selectedAuth" ng-style="{top: auth_off}" >
-                {{selectedAuth.fullname}}
+                <!-- {{selectedAuth.fullname}} -->
                 <div class="info" ng-bind-html="authorInfo.intro | trust"></div>
+
+
+                <ul class="links">
+                    <li><a href="/#!/forfattare/{{selectedAuth.authorid}}"><i class="fa fa-play "></i>Gå till författarens sida</a></li>
+                    <li><i class="fa fa-play "></i><a href="/#!/sok?authorid={{selectedAuth.authorid}}">Sök i författarens verk</a></li>
+                    <li><i class="fa fa-play "></i><a href="/#!/forfattare/{{selectedAuth.authorid}}/titlar">Visa författarens verk</a></li>
+                </ul>
+
             </div>
 
             <div class="info_box title" ng-click="$event.stopPropagation()" ng-show="selectedTitle" ng-style="{top: title_off}" >
@@ -46,8 +54,8 @@
                 <div class="title">{{selectedTitle.itemAttrs.title}} ({{selectedTitle.itemAttrs.imprintyear}})</div>
 
                 <ul class="links">
-                    <li><i class="fa fa-play "></i> Läs verket som <span class="smaller">TEXT</span></li>
-                    <li><i class="fa fa-play "></i> Ladda ner verket som <span class="smaller">EPUB</span></li>
+                    <li><i class="fa fa-play "></i> Läs verket som <span class="sc">TEXT</span></li>
+                    <li><i class="fa fa-play "></i> Ladda ner verket som <span class="sc">EPUB</span></li>
                     <li><i class="fa fa-play "></i> Gör en sökning i verket</li>
                 </ul>
 

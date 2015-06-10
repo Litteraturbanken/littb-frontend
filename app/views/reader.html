@@ -37,7 +37,7 @@
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
 
     <div square ng-repeat="obj in coors" ng-show="height" x="obj.x" 
-         y="obj.y" width="obj.width" height="obj.height" 
+         y="obj.y" w="obj.width" h="obj.height" 
          class="faksimilMarkee" ng-class="{long : obj.width > 150}"></div>
     
     
@@ -60,7 +60,7 @@
              </a>
         </div>
         
-        <hr>
+        <!-- <hr>
         <ul class="part_menu" >
             <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
             <li ng-repeat="part in workinfo.parts | limitTo:6" tooltip="{{part.showtitle}}">
@@ -72,7 +72,7 @@
             <div class="up fa fa-play"></div>
             <br>
             <div class="down fa fa-play"></div>
-        </div>
+        </div> -->
 
 
         <div class="pager_ctrls small" ng-click="resetHitMarkings()">
@@ -96,9 +96,9 @@
         <div class="subnav">
             <ul>
                 <li><a ng-click="openModal()">Mer om boken</a></li>
-                <li>Innehållsförteckning</li>
-                <li><a ng-click="activateFocus()">Visa som helskärm</a></li>
-                <li>Visa som bokuppslag</li>
+                <li><a ng-click="show_chapters = true">Innehållsförteckning</a></li>
+                <li><a ng-click="activateFocus()">Läsfokus</a></li>
+                <!-- <li>Visa som bokuppslag</li> -->
                 <li>Sök i verket</li>
                 <li>Sök i författarens texter</li>
                 <li>Dela boken</li>
@@ -112,6 +112,26 @@
                 <ng-include src="'views/sourceInfo.html'"></ng-include>
             </div>
              
+        </script>
+        <script type="text/ng-template" id="chapters.html">
+            <div class="chapters-modal modal-body">
+                <i class="close_btn fa fa-times pull-right"></i>
+
+                <div class="header">
+                    <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></h2>
+                    <h2 class="title" 
+                        href="/#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info">
+                        {{workinfo.showtitle}}
+                     </h2>
+                </div>
+
+                <ul class="part_menu" >
+                    <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
+                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
+                    </li>
+                </ul>
+            </div>
+
         </script>
     <!-- <div toolkit>
         <div ng-class="{editor: isEditor}">

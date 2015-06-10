@@ -44,6 +44,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "ngTouch"
                                             'ui.select2'
                                             'ui.grid'
+                                            'ngScrollEvent'
                                            ])
     .config ($routeProvider) ->
 

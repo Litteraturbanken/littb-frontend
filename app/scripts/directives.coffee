@@ -126,8 +126,8 @@ littb.directive 'square', () ->
     scope : 
         left : "=x"
         top : "=y"
-        width : "="
-        height : "="
+        w : "=width"
+        h : "=height"
     link : (scope, elm, attrs) ->
         s = scope
         EXPAND_SIZE = 4
@@ -648,7 +648,32 @@ littb.directive "height", () ->
     link : (scope, elem, attr) ->
         scope.$watch (() -> elem.outerHeight()), (val) ->
             scope.height = val
-        # scope.height = elem.
+
+
+littb.directive "firstHeight", () ->
+
+    setWatch = (scope, elem) ->
+        scope.$watch (() -> elem.outerHeight()), (val) ->
+            scope.firstHeight = val
+
+    scope : 
+        firstHeight : "="
+    restrict: "A"
+    link : (scope, elem, attr) ->
+        # if scope.$parent.$first
+        _.one setWatch
+
+    
+littb.directive 'onFinishRender', ($timeout) ->
+    restrict : "A"
+    link: (scope, element, attr) ->
+        if (scope.$last)
+            $timeout(() ->
+                scope.$eval attr.onFinishRender
+            )
+            # scope.$evalAsync(attr.onFinishRender)
+
+
 
 
 

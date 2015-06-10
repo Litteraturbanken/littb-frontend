@@ -31,6 +31,73 @@ littb.factory "debounce", ($timeout) ->
 
 
 
+getCqp = (o) ->
+
+    # o.query, o.mediatype, o.selectedAuthor, o.selectedTitle, o.prefix, o.suffix, o.infix
+
+    tokenList = []
+    regescape = (s) ->
+        s.replace(/[\.|\?|\+|\*|\|\"\(\)\^\$]/g, "\\$&")
+
+    tokenize = (str) ->
+        # Excludes some characters from starting word tokens
+        # _re_word_start = /[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]/
+
+        # Characters that cannot appear within words
+        # _re_non_word_chars = /(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])/ #@
+
+        # Excludes some characters from ending word tokens
+        # _re_word_end = /[\(\"\`{\[:;&\#\*@\)}\],]/
+
+        # Multi-character punctuation
+        # _re_multi_char_punct = /(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)/
+
+
+
+        wdlist = for wd in o.query.split(/\s+/)
+            extras = []
+            if wd.match(/\.\.\./)
+                extras.push "..."
+                wd = wd.replace(/(\.\.\.)/, "")
+            wd = wd.replace(/([\.,;:!?])/g, " $1")
+            wd = wd.replace(/([-’])/g, " $1 ")
+            wd = wd.replace(/(['])/g, " $1$1 ") # double quote for escaping
+            wd = wd.replace(/([»])/g, "$1 ")
+            c.log "wd", wd
+            wd.split(" ")
+
+
+        _.compact [].concat (_.flatten wdlist), extras
+
+
+    for wd in tokenize(o.query)
+        pre = suf = ""
+        or_block = []
+        flag = "%c"
+        # flag = ""
+
+        if o.prefix
+            or_block.push "word = '#{regescape wd}.*'#{flag}"
+        if o.suffix
+            or_block.push "word = '.*#{regescape wd}'#{flag}"
+        if o.infix and not (o.prefix or o.suffix)
+            or_block.push "word = '.*#{regescape wd}.*'#{flag}"
+        if not o.prefix and not o.suffix
+            or_block.push "word = '#{regescape wd}'#{flag}"
+
+        tokenList.push "(#{or_block.join(' | ')})"
+
+    if o.selectedAuthor
+        tokenList[0] += " & _.text_authorid contains '#{o.selectedAuthor}'"
+    if o.selectedTitle
+        tokenList[0] += " & _.text_lbworkid = '#{o.selectedTitle}'"
+    if o.mediatype == "all"
+        tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
+    else
+        tokenList[0] += " & _.text_mediatype = '#{o.mediatype}'"
+
+    return "[#{tokenList.join('] [')}]"
+
 
 
 littb.factory "util", ($location) ->
@@ -168,7 +235,6 @@ littb.factory 'backend', ($http, $q, util) ->
         jQuery.error "Invalid XML: " + data  if not xml or not xml.documentElement or xml.getElementsByTagName("parsererror").length
         xml
 
-    querydata = null
 
     http = (config) ->
         defaultConfig =
@@ -214,68 +280,7 @@ littb.factory 'backend', ($http, $q, util) ->
         # output.author_type = $(root + " > authorid", xml).attr("type")
         return output
 
-    getCqp = (query, mediatype, selectedAuthor, selectedTitle, prefix, suffix, infix) ->
-
-        tokenList = []
-        regescape = (s) ->
-            s.replace(/[\.|\?|\+|\*|\|\"\(\)\^\$]/g, "\\$&")
-
-        tokenize = (str) ->
-            # Excludes some characters from starting word tokens
-            # _re_word_start = /[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]/
-
-            # Characters that cannot appear within words
-            # _re_non_word_chars = /(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])/ #@
-
-            # Excludes some characters from ending word tokens
-            # _re_word_end = /[\(\"\`{\[:;&\#\*@\)}\],]/
-
-            # Multi-character punctuation
-            # _re_multi_char_punct = /(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)/
-
-
-
-            wdlist = for wd in query.split(/\s+/)
-                extras = []
-                if wd.match(/\.\.\./)
-                    extras.push "..."
-                    wd = wd.replace(/(\.\.\.)/, "")
-                wd = wd.replace(/([\.,;:!?])/g, " $1")
-                wd = wd.replace(/([-’])/g, " $1 ")
-                wd = wd.replace(/(['])/g, " $1$1 ") # double quote for escaping
-                wd = wd.replace(/([»])/g, "$1 ")
-                c.log "wd", wd
-                wd.split(" ")
-
-
-            _.compact [].concat (_.flatten wdlist), extras
-
-
-        for wd in tokenize(query)
-            pre = suf = ""
-            or_block = []
-
-            if prefix
-                or_block.push "word = '#{regescape wd}.*' %c"
-            if suffix
-                or_block.push "word = '.*#{regescape wd}' %c"
-            if infix and not (prefix or suffix)
-                or_block.push "word = '.*#{regescape wd}.*' %c"
-            if not prefix and not suffix
-                or_block.push "word = '#{regescape wd}' %c"
-
-            tokenList.push "(#{or_block.join(' | ')})"
-
-        if selectedAuthor
-            tokenList[0] += " & _.text_authorid contains '#{selectedAuthor}'"
-        if selectedTitle
-            tokenList[0] += " & _.text_lbworkid = '#{selectedTitle}'"
-        if mediatype == "all"
-            tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
-        else
-            tokenList[0] += " & _.text_mediatype = '#{mediatype}'"
-
-        return "[#{tokenList.join('] [')}]"
+    
 
 
     getHtmlFile : (url) ->
@@ -612,48 +617,13 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
 
 
-    searchWorks : (query, mediatype, from, to, selectedAuthor, selectedTitle, prefix, suffix, infix) ->
-        c.log "searchvars", query, mediatype, from, to, selectedAuthor, selectedTitle
-        def = $q.defer()
 
-
-
-        params = 
-            command : "query"
-            cqp : getCqp(query, mediatype, selectedAuthor, selectedTitle, prefix, suffix, infix)
-            show: "wid,x,y,width,height"
-            show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
-            corpus : "LBSOK"
-            start: from
-            end : to
-            sort: "sortby"
-
-        if querydata
-            params.querydata = querydata
-
-        $http(
-            url : "http://spraakbanken.gu.se/ws/korp"
-            method : "GET"
-            # cache: localStorageCache
-            cache: true
-            params : params
-                
-        ).success( (data) ->
-            querydata = data.querydata
-            def.resolve data
-        ).error (data) ->
-            c.log "searchworks error", arguments
-            def.reject()
-
-        return def.promise
-
-
-    getAuthorsInSearch : (query, mediatype, from, to, selectedAuthor, selectedTitle, prefix, suffix, infix) ->
+    getAuthorsInSearch : (o) ->
         def = $q.defer()
         params = 
             command: "count"
             groupby: "text_nameforindex"
-            cqp: getCqp(query, mediatype, selectedAuthor, selectedTitle, prefix, suffix, infix)
+            cqp: getCqp(o)
             corpus: "LBSOK"
             incremental: false
             defaultwithin: "sentence"
@@ -892,15 +862,159 @@ littb.factory "authors", (backend, $q) ->
 
 
 
-littb.factory "searchData", (backend, $q) ->
-    NUM_HITS = 20 # how many hits per search?
+littb.factory "searchData", (backend, $q, $http) ->
+    NUM_HITS = 50 # how many hits per search?
+    BUFFER = 10 # additional hits 
     class SearchData
         constructor: () ->
             @data = []
             @total_hits = null
             @current = null
+            @querydata = null
+            @currentParams = null
 
-        parseUrls : (row, matches) ->
+        newSearch : (o) ->
+            @currentParams = o
+
+        searchWorks : (o) ->
+            c.log "searchvars", o
+            def = $q.defer()
+
+
+            from = (o.from or 0) - BUFFER
+            if from < 0 then from = 0
+            to = (o.to or NUM_HITS) + BUFFER
+
+
+            params = 
+                command : "query"
+                cqp : getCqp(o)
+                show: "wid,x,y,width,height"
+                show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
+                corpus : "LBSOK"
+                start: from
+                end : to
+                sort: "sortby"
+                context: 'LBSOK:20 words'
+
+            if @querydata
+                params.querydata = @querydata
+
+            $http(
+                url : "http://spraakbanken.gu.se/ws/korp"
+                method : "GET"
+                # cache: localStorageCache
+                cache: true
+                params : params
+                    
+            ).success( (data) =>
+                @querydata = data.querydata
+                # sums = []
+                if data.ERROR
+                    c.log "searchWorks error:", JSON.stringify(data.ERROR)
+                    def.reject(data)
+                    return
+
+                @total_hits = data.hits
+                @compactData(data)
+
+                if not @data.length
+                    @data = new Array(data.hits)
+
+                c.log "splice", from, data.kwic.length
+                @data[from..data.kwic.length] = data.kwic
+
+
+
+                def.resolve data
+            ).error (data) ->
+                c.log "searchworks error", arguments
+                def.reject()
+
+            return def.promise
+
+        slice : (from, to) ->
+            unless @currentParams then return
+            c.log "slice", from, to
+            def = $q.defer()
+            if @hasSlice from, to 
+                c.log "@hasSlice from, to", (@hasSlice from, to)
+                def.resolve(@data.slice(from, to))
+            else
+                [missingStart, missingEnd] = @findMissingInSpan(from, to)
+                if missingEnd
+                    @currentParams.from = missingStart
+                    c.log "missingStart", missingStart, missingEnd
+                    @currentParams.to = missingEnd
+                else
+                    @currentParams.from = from
+                    @currentParams.to = to
+
+                @searchWorks(@currentParams).then (data) ->
+                    c.log "searchWorks then", data.kwic, from, to
+                    def.resolve data.kwic
+
+            return def.promise
+
+
+        hasSlice: (from, to) ->
+            slice = @data.slice(from, to)
+            unless slice.length then return false
+            return not _.any slice, _.isUndefined
+
+        findMissingInSpan : (from, to) ->
+            start = null
+            span = @data[from..to]
+            for item, i in span
+                if not item? # count undefined
+                    start = i
+                    end = (_.takeWhile span[i..], _.isUndefined).length
+                    break
+
+            c.log "end", end
+            return [from + start, from + start + end]
+
+
+
+
+        reset : () ->
+            @data = []
+            @currentParams = null
+
+        compactData : (data) ->
+            min = Infinity
+            for row in data.kwic
+
+                sum = _.sum row.tokens, (item, i) ->
+                    if i < row.match.start
+                        return item.word.length
+                    else
+                        return 0
+
+                if sum < min then min = sum 
+                # sums.push sum 
+
+                row.sent_length = sum
+
+            for row in data.kwic
+                row.href = @parseUrls row
+                if row.sent_length > min
+
+                    diff = row.sent_length - min
+                    dropped = 0
+
+                    for wd, i in row.tokens
+                        if dropped >= diff
+                            drop = i
+                            break
+                        dropped += wd.word.length
+
+                    if drop
+                        row.tokens.splice(0, drop)
+                        row.match.start -= drop
+                        row.match.end -= drop
+
+        parseUrls : (row) ->
             itm = row.structs
             mediatype = itm.text_mediatype
 
@@ -951,17 +1065,17 @@ littb.factory "searchData", (backend, $q) ->
             return "/#!/forfattare/#{author}/titlar/#{titleid}" + 
                 "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{merged}" # ?#{backend.getHitParams(itm)}
             
-        save : (startIndex, currentIndex, input, search_args) ->
-            @searchArgs = search_args
-            @data = new Array(input.hits)
-            @appendData startIndex, input
-            @total_hits = input.hits
-            @current = currentIndex
-            c.log "save currentIndex", currentIndex
+        # save : (startIndex, currentIndex, input, search_args) ->
+        #     @searchArgs = search_args
+        #     @data = new Array(input.hits)
+        #     @appendData startIndex, input
+        #     @total_hits = input.hits
+        #     @current = currentIndex
+        #     c.log "save currentIndex", currentIndex
 
-        appendData : (startIndex, data) ->
-            @data[startIndex..data.kwic.length] = _.map data.kwic, (itm) => 
-                _.str.ltrim @parseUrls(itm), "/#!"
+        # appendData : (startIndex, data) ->
+        #     @data[startIndex..data.kwic.length] = _.map data.kwic, (itm) => 
+        #         _.str.ltrim @parseUrls(itm), "/#!"
 
 
         next : () ->
@@ -983,13 +1097,16 @@ littb.factory "searchData", (backend, $q) ->
                 def.resolve @data[@current]
             else
                 # current_page = Math.floor(@current / NUM_HITS )
-                args = [].concat @searchArgs
+                # args = [].concat @searchArgs
+                args = _.clone @searchArgs
                 # replace from and to args
-                args[2] = @current
-                args[3] = @current + NUM_HITS
+                args.to = @current
+                args.from = @current + NUM_HITS
+                # args[2] = @current
+                # args[3] = @current + NUM_HITS
                 c.log "fetch and append", args
 
-                backend.searchWorks(args...).then (data) =>
+                backend.searchWorks(args).then (data) =>
                     @appendData @current, data
                     def.resolve @data[@current]
             return def.promise

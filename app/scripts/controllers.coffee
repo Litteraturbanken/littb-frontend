@@ -181,10 +181,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     #         key : "infix"
     # ]
 
-    s.nHitsChange = () ->
-        s.current_page = 0
-        if s.data
-            s.search()  
+    # s.nHitsChange = () ->
+    #     s.current_page = 0
+    #     if s.data
+    #         s.search()  
 
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
@@ -224,8 +224,45 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
 
     s.searching = false
-    s.num_hits ?= 20
-    s.current_page = 0
+    s.num_hits ?= 15
+    # s.current_page = 0
+
+    s.rowHeights = []
+
+    s.getRowHeight = () ->
+        add = (a, b) -> a+b
+        
+        return (_.foldr s.rowHeights, add) / (s.rowHeights.length)
+
+
+    s.tableRenderComplete = () ->
+        c.log "tableRenderComplete"
+        s.getTotalHeight()
+        s.searching = false
+
+    s.getTotalHeight = () ->
+        s.totalHeight = s.hits * s.getRowHeight()
+
+
+    s.updateOnScrollEvents = (evt, isEnd) ->
+        if not isEnd then return
+        top = evt.currentTarget.scrollTop
+        rowHeight = s.getRowHeight()
+        c.log "rowHeight", rowHeight
+        from = Math.floor(top / rowHeight)
+        c.log "from", from
+        n_rows = Math.ceil($(evt.currentTarget).height() / rowHeight)
+
+
+        s.search(from, (from + n_rows)).then () ->
+            s.table_top = top
+            
+
+
+
+
+    getVisibleRows = () ->
+
 
     
     getMediatypes = () ->
@@ -236,47 +273,50 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         }[s.proofread]
 
 
-    s.nextPage = () ->
-        if (s.current_page  * s.num_hits) + s.kwic.length < s.hits
-            s.current_page++
-            c.log "nextpage search"
-            s.search(s.query)
-    s.prevPage = () ->
-        if not s.current_page or s.current_page == 0 then return
-        s.current_page--
-        s.search(s.query)
+    # s.nextPage = () ->
+    #     if (s.current_page  * s.num_hits) + s.kwic.length < s.hits
+    #         s.current_page++
+    #         c.log "nextpage search"
+    #         s.search(s.query)
+    # s.prevPage = () ->
+    #     if not s.current_page or s.current_page == 0 then return
+    #     s.current_page--
+    #     s.search(s.query)
 
-    s.firstPage = () ->
-        s.current_page = 0
-        s.search(s.query)
-    s.lastPage = () ->
-        s.current_page = s.total_pages - 1
-        s.search(s.query)
+    # s.firstPage = () ->
+    #     s.current_page = 0
+    #     s.search(s.query)
+    # s.lastPage = () ->
+    #     s.current_page = s.total_pages - 1
+    #     s.search(s.query)
 
-    s.gotoPage = (page) ->
-        s.current_page = page
-        s.search(s.query)        
+    # s.gotoPage = (page) ->
+    #     s.current_page = page
+    #     s.search(s.query)        
     
-    getSearchArgs = () ->
-        from = s.current_page  * s.num_hits
-        to = (from + s.num_hits) - 1
+    getSearchArgs = (from, to) ->
+        # from = s.current_page  * s.num_hits
+        # to = (from + s.num_hits) - 1
         
-        [s.query,
-        getMediatypes(),
-        from,
-        to,
-        $location.search().forfattare,
-        $location.search().titel,
-        s.prefix,
-        s.suffix,
-        s.infix]    
+        return {
+            query : s.query
+            mediatype: getMediatypes()
+            from: from
+            to: to
+            selectedAuthor: $location.search().forfattare
+            selectedTitle : $location.search().titel
+            prefix: s.prefix
+            suffix: s.suffix
+            infix: s.infix
+        }
 
-    s.save_search = (startIndex, currentIndex, data) ->
-        c.log "save_search", startIndex, currentIndex, data
 
-        c.log "searchData", searchData
+    s.save_search = (currentIndex) ->
+        # TODO: fix me
+        # c.log "save_search", startIndex, currentIndex, data
+        # c.log "searchData", searchData
 
-        searchData.save(startIndex, currentIndex + s.current_page  * s.num_hits, data, getSearchArgs())
+        # searchData.save(startIndex, currentIndex + s.current_page  * s.num_hits, data, getSearchArgs())
 
 
     s.getSetVal = (sent, val) ->
@@ -298,48 +338,48 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         len = sentence.tokens.length
         sentence.tokens.slice from, len
 
-    s.setPageNum = (num) ->
-        c.log "setPageNum", num
-        s.current_page = num
-        s.search()
+    # s.setPageNum = (num) ->
+    #     c.log "setPageNum", num
+    #     s.current_page = num
+    #     s.search()
 
     s.getMaxHit = () ->
         Math.min s.hits, (s.current_page  * s.num_hits) + s.kwic.length
 
     # DATA GRID
-    s.keys = _.keys
-    getTmpl = (key) ->
-        """
-        <div class="ui-grid-cell-contents">
-            <span ng-repeat='token in row.entity.#{key}'>{{token.word}} </span> 
-        </div>
-        """
+    # s.keys = _.keys
+    # getTmpl = (key) ->
+    #     """
+    #     <div class="ui-grid-cell-contents">
+    #         <span ng-repeat='token in row.entity.#{key}'>{{token.word}} </span> 
+    #     </div>
+    #     """
 
-    s.gridOptions = {
-        showHeader : false
-        init : (gridCtrl, gridScope) ->
-            gridScope.$on 'ngGridEventData', () ->
-                $scope.gridOptions.ngGrid.buildColumns()
+    # s.gridOptions = {
+    #     showHeader : false
+    #     init : (gridCtrl, gridScope) ->
+    #         gridScope.$on 'ngGridEventData', () ->
+    #             $scope.gridOptions.ngGrid.buildColumns()
 
-        columnDefs: [
-            { 
-                name: 'left',
-                cellTemplate: getTmpl("left")
-            }
-            { 
-                name: 'match',
-                cellTemplate: getTmpl("match")
-                width: "*"
-            }
-            { 
-                name: 'right',
-                cellTemplate: getTmpl("right")
-            }
-            # { field: 'match' },
-            # { field: 'right' }
-        ]
+    #     columnDefs: [
+    #         { 
+    #             name: 'left',
+    #             cellTemplate: getTmpl("left")
+    #         }
+    #         { 
+    #             name: 'match',
+    #             cellTemplate: getTmpl("match")
+    #             width: "*"
+    #         }
+    #         { 
+    #             name: 'right',
+    #             cellTemplate: getTmpl("right")
+    #         }
+    #         # { field: 'match' },
+    #         # { field: 'right' }
+    #     ]
 
-    }
+    # }
         
 
     onKeyDown = (event) ->
@@ -357,11 +397,28 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     s.$on "$destroy", () ->
         $document.off "keydown", onKeyDown
-    s.sortStruct = [
-        {label: "SORTERA PÅ EFTERNAMN", val: "lastname", selected: true}
-        {label: "SORTERA EFTER TRYCKÅR", val: "imprintyear", selected: false}
-        {label: "SORTERA EFTER SÖKORDET I ALFABETISK ORDNING", val: "hit", selected: false}
+
+
+    # s.sortStruct = [
+    #     {label: "SÖK I ALLA TEXTER", val: "lastname", selected: true}
+    #     {label: "INKLUDERA KOMMENTARER OCH", val: "imprintyear", selected: false}
+    #     {label: "SORTERA EFTER SÖKORDET I ALFABETISK ORDNING", val: "hit", selected: false}
+    # ]
+
+    s.filterOpts =  [
+        {label: "Sök i <span class='sc'>ALLA TEXTER</span>", val: "all_texts", selected: true}
+        {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
     ]
+
+    s.searchOptionsMenu = [
+        {label: "SÖK EFTER HELT ORD ELLER FRAS", val: "default", selected: true}
+        {label: "SÖK EFTER ORDBÖRJAN", val: "prefix", selected: false}
+        {label: "SÖK EFTER ORDSLUT", val: "suffix", selected: false}
+        {label: "SÖK EFTER DEL AV ORD", val: "infix", selected: false}
+    ]
+
+
+
     s.options = {
         sortSelected : 'lastname'
     }
@@ -371,6 +428,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         output = []
         prevAuth = null
         for item in kwic
+            if not item? then continue
             auth = item.structs.text_authorid.split("|")[1]
             shorttitle = item.structs.text_shorttitle
 
@@ -393,23 +451,31 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             right : s.selectRight row
         }
 
-
-    s.search = debounce((query) ->
+    s.newSearch = (query) ->
         q = query or s.query
         unless q then return
         $location.search("fras", q) if q
 
         s.query = q
         s.pageTitle = q
+        from = 0
+        to = (s.num_hits - 1)
+        args = getSearchArgs from, to
+        searchData.newSearch args
+        s.search from, to
+
+
+    # s.search = debounce((query, from, to) ->
+    s.search = (from, to) ->
         s.searching = true
-        
 
+        args = getSearchArgs(from, to)
+        # args.from = from
+        s.from_index = from
 
-        from = s.current_page  * s.num_hits
-        to = (from + s.num_hits) - 1
+        # args.to = to
 
-        args = getSearchArgs()
-        backend.getAuthorsInSearch(args...).then (data) ->
+        backend.getAuthorsInSearch(args).then (data) ->
             c.log "getAuthorsInSearch then", data
 
             n = 0
@@ -423,38 +489,43 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
             s.authorStatsData = data
 
-        backend.searchWorks(args...).then (data) ->
-            c.log "search data", data
-            s.gridOptions.totalServerItems = data.count
-            s.gridOptions.data = _.map data.kwic, getGridData
+        # def = backend.searchWorks(args)
+        def = searchData.slice(from, to)
+        def.then (kwic) ->
+            c.log "search data", kwic
+            # s.gridOptions.totalServerItems = data.count
+            # s.gridOptions.data = _.map data.kwic, getGridData
 
-            s.data = data
-            s.kwic = data.kwic or []
-            s.hits = data.hits
+            # s.data = data
+            s.kwic = kwic
+            s.hits = searchData.total_hits
+            # s.total_pages = Math.ceil(s.hits / s.num_hits)
+
+            # for row in (data.kwic or [])
+            #     row.href = searchData.parseUrls row
+
+            s.sentsWithHeaders = groupSents(kwic)
             s.searching = false
-            s.total_pages = Math.ceil(s.hits / s.num_hits)
 
-            for row in (data.kwic or [])
-                row.href = searchData.parseUrls row
+            # s.searching = false
 
-            s.sentsWithHeaders = groupSents(data.kwic)
-
-
-    , 200)
+        return def
+    # , 200)
 
     queryvars = $location.search()
 
     util.setupHashComplex s,
         [
-            scope_name : "current_page"
-            key : "traffsida"
-            val_in : (val) ->
-                Number(val) - 1
-            val_out : (val) ->
-                val + 1
-            default : 1
+            # scope_name : "current_page"
+            # key : "traffsida"
+            # val_in : (val) ->
+            #     Number(val) - 1
+            # val_out : (val) ->
+            #     val + 1
+            # default : 1
         # ,   
-        #     key : "open"
+            key : "avancerad"
+            scope_name : "advanced"
         ,   
             key : "proofread"
             default : "all"
@@ -462,7 +533,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             key : "fras"
             post_change : (val) ->
                 if val
-                    s.search val
+                    s.newSearch val
 
 
         ]
@@ -845,6 +916,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         s.selectedAuth = author
         $event.stopPropagation()
 
+        c.log "author.authorid", author.authorid
         backend.getAuthorInfo(author.authorid).then (data) ->
             s.authorInfo = data
 
@@ -870,6 +942,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         if wa
             return s.authorsById[wa]
         else return authors[0]
+
 
     s.titleClick = ($event, title) ->
         if title == s.selectedTitle
@@ -1401,6 +1474,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.loading = true
     s.showPopup = false
     s.error = false
+    s.show_chapters = false # index modal
 
     h = $(window).height()
     w = $(window).width()
@@ -1456,6 +1530,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)
         s.showPopup = false
+        s.show_chapters = false
 
     s.resetHitMarkings = () ->
         for key in ["traff", "traffslut", "x", "y", "height", "width"]
@@ -1627,7 +1702,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             pairs = _.pairs _.pick s, "x", "y", "height", "width"
             _.object _.map pairs, ([key, val]) ->
                 [key, val.split("|")[i].split(",")[s.size - 1]]
-
+    chapter_modal = null
     util.setupHashComplex s, [
             scope_name : "markee_from"
             key : "traff"
@@ -1662,10 +1737,27 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             post_change : (val) ->
                 $rootScope._focus_mode = val
 
+        ,
+            key : "innehall"
+            scope_name : "show_chapters"
+            post_change : (val) ->
+                if val
 
+                    chapter_modal = $modal.open
+                        templateUrl: "chapters.html"
+                        scope: s
 
+                    chapter_modal.result.then () ->
+                        s.show_chapters = false
+                    , () ->
+                        s.show_chapters = false
+
+                else
+                    chapter_modal?.close()
+                    chapter_modal = null
 
     ]
+    
     # s.showFocusBar = s.isFocus
     if mediatype == "faksimil"
         util.setupHashComplex s, [
