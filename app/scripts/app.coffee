@@ -246,8 +246,9 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when ["/id/:id", "/id"],
                 template : """
                 <div ng-class="{searching:!data}">
-                    <input ng-model="id" placeholder="lbid" autofocus ng-change="title = ''"> 
-                    <input ng-model="title" placeholder="titel" ng-change="id = ''">
+                    <input ng-model="id" placeholder="lbid" autofocus ng-change="titles = []"> 
+                    <input ng-model="titles[0]" placeholder="titel" ng-change="id = '';" ng-model-options="{debounce: 500}">
+                    <textarea ng-model="textarea" placeholder="flera titlar separarade med nyrad" ng-change="textareaChange(textarea)" ng-model-options="{debounce: 500}"></textarea>
                     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
                     <table class="table-striped">
                     <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter">

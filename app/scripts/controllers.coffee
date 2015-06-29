@@ -1491,12 +1491,10 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
     s = $scope
     _.extend s, $routeParams
     s.id = s.id?.toLowerCase()
-
+    s.titles = []
     unless _.str.startsWith s.id, "lb"
-        s.title = s.id
+        s.titles = [s.id]
         s.id = ""
-    # else
-    #     s.id
 
     backend.getTitles().then (titleArray) ->
         s.data = titleArray
@@ -1506,10 +1504,17 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
         row.itemAttrs.lbworkid == s.id
 
     s.rowFilter = (row) ->
-        unless s.title then return true
-        _.str.contains(row.itemAttrs.titlepath.toLowerCase(), s.title) or
-            _.str.contains(row.itemAttrs.title.toLowerCase(), s.title)
+        if not s.titles.length then return true
+        return _.any _.map s.titles, (title) ->
+            _.str.contains(row.itemAttrs.titlepath.toLowerCase(), title?.toLowerCase()) or
+                _.str.contains(row.itemAttrs.title.toLowerCase(), title?.toLowerCase())
 
+
+    s.textareaChange = (titles)  ->
+        s.id = ''
+
+        s.titles = _.map titles.split("\n"), (row) ->
+            _.str.strip(row.split("–")[1] or row)
 
 littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document, $location) ->
     s = $scope
