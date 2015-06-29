@@ -430,6 +430,9 @@ littb.filter "setMarkee", () ->
         wrapper = $("<div>")
         if fromid == toid
             $("#" + fromid, input).addClass("markee")
+            if $("#" + fromid, input).next().text() == "-"
+                $("#" + fromid, input).next().next("br").next().addClass("markee")
+                    
         else
             $("#" + fromid, input)
                 .nextUntil("#" + toid, "span")
