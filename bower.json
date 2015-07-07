@@ -21,7 +21,8 @@
     "angular-touch": "1.3.0-beta.10",
     "ui-select": "*",
     "angular-ui-grid": "~3.0.0-rc.20",
-    "angular-scrollevents": "https://github.com/Madd/angular-scrollevents.git"
+    "angular-scrollevents": "https://github.com/Madd/angular-scrollevents.git",
+    "angular-ui-slider": "~0.1.2"
   },
   "devDependencies": {
     "angular-mocks": "git://github.com/angular/bower-angular-mocks.git#1.0.7",

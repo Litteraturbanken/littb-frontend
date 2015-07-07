@@ -826,6 +826,19 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.setDir = (isAsc) ->
         s.sorttuple[1] = isAsc
 
+    s.hasMediatype = (titleobj, mediatype) ->
+        return mediatype in (titleobj?.mediatype or [])
+
+    s.getTitleUrl = (titleobj) ->
+        mediatype = s.sortMedia(titleObj.mediatype)[0]
+
+        # if mediatype == 'faksimil'
+
+        # else if mediatype == "etext"
+        #     return "/#!/forfattare/#{titleObj.author[0].authorid}/titlar/#{titleObj.itemAttrs.titlepath.split('/')[0]}/#{mediatype}"
+            
+
+
     s.sortMedia = (list) ->
         order = ['etext', 'faksimil', 'epub', 'pdf']
         return _.intersection(order,list).concat(_.difference(list, order))
