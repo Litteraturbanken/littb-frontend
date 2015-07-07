@@ -408,6 +408,17 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.filterOpts =  [
         {label: "Sök i <span class='sc'>ALLA TEXTER</span>", val: "all_texts", selected: true}
         {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
+        {label: 'Sök i <span class="sc">svenska</span> orginalverk', val: "lang_swedish", selected: true}
+        {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
+        {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
+        {label: 'Sök i <span class="sc">moderniserade</span> texter', val: "modernized", selected: true}
+        {label: 'Sök i <span class="sc">ej moderniserade</span> texter', val: "not_modernized", selected: true}
+        {label: 'Sök i <span class="sc">korrekturlästa</span> texter', val: "proofread", selected: true}
+        {label: 'Sök i <span class="sc">ej korrekturlästa</span> texter', val: "not_proofread", selected: true}
+        {label: 'Sök i texter skrivna av <span class="sc">män</span>', val: "gender_male", selected: true}
+        {label: 'Sök i texter skrivna av <span class="sc">kvinnor</span>', val: "gender_female", selected: true}
+        {label: 'Sök i texter skrivna av <span class="sc">anonyma författare</span>', val: "anonymous", selected: true}
+
     ]
 
     s.searchOptionsMenu = [

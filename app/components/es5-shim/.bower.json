@@ -9,5 +9,6 @@
     "commit": "ec9b54dc0713e7978cf08b50712789fa4a3df427"
   },
   "_source": "git://github.com/kriskowal/es5-shim.git",
-  "_target": "2.0.11"
+  "_target": "2.0.11",
+  "_originalSource": "git://github.com/kriskowal/es5-shim"
 }

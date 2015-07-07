@@ -1,6 +1,6 @@
 {
   "name": "angular-bindonce",
-  "version": "0.3.0",
+  "version": "0.3.3",
   "main": "bindonce.js",
   "description": "Zero watchers binding directives for AngularJS",
   "homepage": "https://github.com/Pasvaz/bindonce",
@@ -15,9 +15,7 @@
     "node_modules",
     "components"
   ],
-  "dependencies": {
-    "angular": ">=1.0.6"
-  },
+  "dependencies": {},
   "keywords": [
     "angularjs",
     "angular",
@@ -26,14 +24,13 @@
     "watcher",
     "bindonce"
   ],
-  "_release": "0.3.0",
+  "_release": "0.3.3",
   "_resolution": {
     "type": "version",
-    "tag": "0.3.0",
-    "commit": "c9c962f175d4e0bb4b76be5ae91ec5abe9e6b486"
+    "tag": "0.3.3",
+    "commit": "0fcf71e6effc88179893c9c06baf6c6bf9037632"
   },
   "_source": "git://github.com/Pasvaz/bindonce.git",
   "_target": "~0.3.0",
-  "_originalSource": "angular-bindonce",
-  "_direct": true
+  "_originalSource": "angular-bindonce"
 }

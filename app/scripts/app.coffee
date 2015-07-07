@@ -44,7 +44,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "ngTouch"
                                             'ui.select2'
                                             'ngScrollEvent'
-                                            # "ui.slider"
+                                            "ui.slider"
                                            ])
     .config ($routeProvider) ->
 

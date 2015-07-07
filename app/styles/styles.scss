@@ -964,6 +964,12 @@ body > .header {
             }
             & > * {
                 vertical-align: middle;
+                // max-width : 35em;
+            }
+
+            .expl {
+                margin-top: 0.6em;
+                margin-bottom: 1em;
             }
 
             .submit {
@@ -984,7 +990,8 @@ body > .header {
         .advanced .simple_text {display : block;}
         .advanced .advanced_text {display : none;}
         .text {
-            max-width : 360px;
+
+            // max-width : 330px;
             margin-top : 3em;
             a {
                 color : $primarycolor;
@@ -996,6 +1003,20 @@ body > .header {
                 font-size : 0.9em;
             } 
             
+        }
+        .expl {
+            .sc {
+                color : $primarycolor;
+            }
+        }
+        .left_col,.right_col {
+            display: inline-block;
+            vertical-align: top;
+
+        }
+        .left_col {
+            margin-right : 2em;
+            max-width : 360px;
         }
         .advanced_text {
         }
@@ -1015,6 +1036,13 @@ body > .header {
             margin-bottom : 2em;
             @include small-caps();
         }
+
+
+        .slider {
+            
+        }
+
+
         .results_container {
             position: relative;
             white-space: nowrap;
@@ -1143,7 +1171,7 @@ body > .header {
     }
 
     .filter_select {
-        max-width: 300px;
+        // max-width: 300px;
         input {
             min-width: 200px;
         }
