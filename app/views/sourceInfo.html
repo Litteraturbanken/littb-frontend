@@ -56,7 +56,7 @@
     <div class="license" ng-bind-html="workinfo.licenseText | correctLink | trust"></div>
     
     <div class="errata" ng-show="mediatype == 'etext'">
-        <div class="header" ng-show="workinfo.errata.length">I etexten har följande ändringar gjorts mot originalet</div>
+        <div class="header" ng-show="workinfo.errata.length">I {{mediatype}}en har följande ändringar gjorts mot originalet:</div>
         <div ng-show="!workinfo.errata">Inga ändringar har gjorts mot orginalet.</div>
         <table class="errata_table">
             <tr ng-repeat="tup in workinfo.errata | limitTo:errataLimit">
