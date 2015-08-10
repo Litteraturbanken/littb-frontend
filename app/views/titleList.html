@@ -31,19 +31,26 @@
         <div class="box_container">
             <ul class="box author">
                 <li top="$parent.auth_off" ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)">
-                    <span >{{author.nameforindex}} {{author | authorYear}}</span>
-                </li>
-            </ul>
-            <div class="info_box auth" ng-click="$event.stopPropagation()" ng-show="selectedAuth" ng-style="{top: auth_off}" >
-                <!-- {{selectedAuth.fullname}} -->
-                <div class="info" ng-bind-html="authorInfo.intro | trust"></div>
+                    <span class="item_header" ng-click="collapsed[$index] = !collapsed[$index]" >{{author.nameforindex}} {{author | authorYear}}</span>
+
+                    <div collapse="!collapsed[$index]">
+                        <div class="collapse-content">
+                            <div class="info" ng-bind-html="author.data.intro | trust"></div>
 
 
-                <ul class="links">
-                    <li><a href="/#!/forfattare/{{selectedAuth.authorid}}"><i class="fa fa-play "></i>Gå till författarens sida</a></li>
-                    <li><i class="fa fa-play "></i><a href="/#!/sok?authorid={{selectedAuth.authorid}}">Sök i författarens verk</a></li>
-                    <li><i class="fa fa-play "></i><a href="/#!/forfattare/{{selectedAuth.authorid}}/titlar">Visa författarens verk</a></li>
+                            <ul class="links">
+                                <li><a href="/#!/forfattare/{{selectedAuth.authorid}}"><i class="fa fa-play "></i>Gå till författarens sida</a></li>
+                                <li><i class="fa fa-play "></i><a href="/#!/sok?authorid={{selectedAuth.authorid}}">Sök i författarens verk</a></li>
+                                <li><i class="fa fa-play "></i><a href="/#!/forfattare/{{selectedAuth.authorid}}/titlar">Visa författarens verk</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                
+
+                    </li>
                 </ul>
+            
+            <!-- <div class="info_box auth" ng-click="$event.stopPropagation()" ng-show="selectedAuth" ng-style="{top: auth_off}" >
 
             </div>
 
@@ -62,8 +69,7 @@
                     <li><i class="fa fa-play "></i> Gör en sökning i verket</li>
                 </ul>
 
-                <!-- <p ng-bind-html="workintro | trust"></p> -->
-            </div>
+            </div> -->
             <ul id="table" class="box title" ng-hide="searching" ng-click="$event.stopPropagation()">
                 <!-- <thead>
                     <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>

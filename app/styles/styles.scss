@@ -125,7 +125,7 @@ h1 {
         li {
             margin-bottom : 0.2em;
             cursor: pointer;
-            &:hover {
+            .item_header:hover {
                 color : $primarycolor;
             }
         }
@@ -2217,14 +2217,21 @@ $partnav-width : 170px;
                     // text-transform: uppercase;
                     color: $primarycolor;
                 }
-                .links {
-                    margin-top : 2em;
-                    .fa-play {
-                        color : $primarycolor;
-                    }
-                }
             }
         }
+        .collapse-content {
+            font-size : 0.8em;
+            text-transform: initial;
+            margin-bottom : 1em;
+            margin-left: 0.4em;
+        }
+        .links {
+            margin-top : 2em;
+            .fa-play {
+                color : $primarycolor;
+            }
+        }
+
         
         .box {
             &.title {

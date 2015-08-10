@@ -849,7 +849,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         #     return "/#!/forfattare/#{titleObj.author[0].authorid}/titlar/#{titleObj.itemAttrs.titlepath.split('/')[0]}/#{mediatype}"
             
 
-
+    s.collapsed = []
     s.sortMedia = (list) ->
         order = ['etext', 'faksimil', 'epub', 'pdf']
         return _.intersection(order,list).concat(_.difference(list, order))
@@ -942,7 +942,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
         c.log "author.authorid", author.authorid
         backend.getAuthorInfo(author.authorid).then (data) ->
-            s.authorInfo = data
+            author.data = data
 
     
     getWorkIntro = (author, titlepath) ->
