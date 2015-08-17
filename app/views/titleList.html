@@ -29,13 +29,16 @@
 
     
         <div class="box_container">
-            <ul class="box author">
-                <li top="$parent.auth_off" ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)">
-                    <span class="item_header" ng-click="collapsed[$index] = !collapsed[$index]" >{{author.nameforindex}} {{author | authorYear}}</span>
+            <ul class="box author" scroll-to="{{selectedAuth.authorid}}" target="parent">
+                <li ng-show="authorSearching">
+                    <span class="auth_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span>
+                </li>
+                <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}">
+                    <span class="item_header" ng-click="author._collapsed = !author._collapsed" >{{author.nameforindex}} {{author | authorYear}}</span>
 
-                    <div collapse="!collapsed[$index]">
+                    <div collapse="!author._collapsed">
                         <div class="collapse-content">
-                            <div class="info" ng-bind-html="author.data.intro | trust"></div>
+                            <div class="info" ng-class="{show_all: author._show_all}" ng-bind-html="author.data.intro | trust" ng-click="author._show_all = true"></div>
 
 
                             <ul class="links">
@@ -70,13 +73,14 @@
                 </ul>
 
             </div> -->
-            <ul id="table" class="box title" ng-hide="searching" ng-click="$event.stopPropagation()">
+            
+            <ul id="table" class="box title" ng-click="$event.stopPropagation()">
                 <!-- <thead>
                     <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
                     <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
                     <th></th>
                 </thead> -->
-                
+                <li ng-show="titleSearching"><span class="title_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span></li>    
                 <li class="link" ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle"
                     top="$parent.title_off" ng-click="titleClick($event, row)">
                     <span class="title">

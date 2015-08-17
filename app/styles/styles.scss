@@ -2192,33 +2192,33 @@ $partnav-width : 170px;
         .authorselect {
             width : 220px;
         }
-        .info_box {
-            width : 350px;
-            height : 250px;
-            padding: 10px;
-            margin-left: 5px;
-            border: 1px solid grey;
-            position: absolute;
-            // left : -40px;
-            background-color: fade-out(white, 0.2);
+        // .info_box {
+        //     width : 350px;
+        //     height : 250px;
+        //     padding: 10px;
+        //     margin-left: 5px;
+        //     border: 1px solid grey;
+        //     position: absolute;
+        //     // left : -40px;
+        //     background-color: fade-out(white, 0.2);
 
-            &.auth {
-                .info {
-                    height : 70%;
-                    overflow-y: hidden;
-                }
-            }
+        //     &.auth {
+        //         .info {
+        //             // height : 70%;
+        //             // overflow-y: hidden;
+        //         }
+        //     }
             
-            &.title {
-                left: 105px;
+        //     &.title {
+        //         left: 105px;
 
-                .author {
-                    @include small-caps;
-                    // text-transform: uppercase;
-                    color: $primarycolor;
-                }
-            }
-        }
+        //         .author {
+        //             @include small-caps;
+        //             // text-transform: uppercase;
+        //             color: $primarycolor;
+        //         }
+        //     }
+        // }
         .collapse-content {
             font-size : 0.8em;
             text-transform: initial;
@@ -2231,9 +2231,31 @@ $partnav-width : 170px;
                 color : $primarycolor;
             }
         }
+        
 
         
         .box {
+            .spinner {
+                height : 20px;
+                width: 20px;
+                display: block;
+                margin: auto;
+            }
+            &.author {
+                .info {
+                    max-height : 3.4em;
+                    overflow: hidden;
+                    color : grey;
+                    &:not(.show_all):hover:after {
+                        content : "visa mer";
+                        
+                    }
+                    &.show_all {
+                        max-height : initial;
+                        color : inherit;
+                    }
+                }
+            }
             &.title {
                 margin-left : 1em;
 

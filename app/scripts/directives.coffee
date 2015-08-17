@@ -118,7 +118,7 @@ littb.directive 'letterMap', () ->
 
         s.setLetter = (l) ->
             s.selected = l
-            s.letterMapChange(l)
+            s.letterMapChange()
 
 littb.directive 'square', () ->
     template : "<div></div>"
@@ -170,10 +170,16 @@ littb.directive 'scrollTo', ($window, $timeout) ->
             return attr.scrollTo
         scope.$watch '_getScroll()', (val) ->
             c.log 'scroll watch', val
+            unless val then return
             target = elem.find("#" + val)
             if not target.length then return
+
+            # parent = if attr.target == "parent" then elem
+
             $timeout( () ->
-                $window.scrollTo(0, target.position().top)
+                elem.animate
+                    scrollTop : elem.scrollTop() + target.position().top
+                # elem.scrollTop()
             )   
 
 

@@ -804,9 +804,10 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
     
     
-littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement) ->
+littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement, $anchorScroll) ->
     s = $scope
-    s.searching = false
+    s.titleSearching = false
+    s.authorSearching = true
     s.rowByLetter = {}
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
@@ -849,7 +850,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         #     return "/#!/forfattare/#{titleObj.author[0].authorid}/titlar/#{titleObj.itemAttrs.titlepath.split('/')[0]}/#{mediatype}"
             
 
-    s.collapsed = []
+    # s.collapsed = []
     s.sortMedia = (list) ->
         order = ['etext', 'faksimil', 'epub', 'pdf']
         return _.intersection(order,list).concat(_.difference(list, order))
@@ -874,9 +875,25 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             s.selectedLetter = "A"
         fetchWorks()
 
+    s.authorRender = () ->
+        c.log "authorRender"
+        # $anchorScroll()
+        if $location.search()['author']
+            auth = s.authorsById[$location.search()['author']]
+            s.authorClick(null, auth)
+            auth._collapsed = true
+
+
+        # $timeout(() ->
+        #     c.log "timeout"
+        #     $anchorScroll()
+        # ) 
+
+
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
         s.authorData = authorList
+        s.authorSearching = false
 
 
     s.searchTitle = () ->
@@ -898,9 +915,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             fetchWorks()
 
     fetchWorks = () ->
-        s.searching = true
+        s.titleSearching = true
         backend.getTitles(s.workFilter == "titles", s.authorFilter, s.selectedLetter, s.filter).then (titleArray) ->
-            s.searching = false
+            s.titleSearching = false
             s.titleArray = titleArray
             s.rowByLetter = _.groupBy titleArray, (item) ->
                 firstletter = item.itemAttrs.sortkey[0]
@@ -938,9 +955,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             return
         s.selectedTitle = null
         s.selectedAuth = author
-        $event.stopPropagation()
+        $event?.stopPropagation()
 
         c.log "author.authorid", author.authorid
+        $location.search("author", author.authorid)
+        # $anchorScroll()
         backend.getAuthorInfo(author.authorid).then (data) ->
             author.data = data
 
@@ -1077,6 +1096,7 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
 
     s.letterChange = () ->
         s.filterTxt = ""
+        return
 
     s.log = (filename) ->
         backend.logPage("0", filename, "epub")
