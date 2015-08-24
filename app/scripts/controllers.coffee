@@ -1020,40 +1020,40 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         #     # post_change : () ->
         #     replace : false
         # ,
-            expr : "sorttuple[1]"
-            scope_func : "setDir"
-            key : "fallande"
-            #replace : false
-        ,
+        #     expr : "sorttuple[1]"
+        #     scope_func : "setDir"
+        #     key : "fallande"
+        #     #replace : false
+        # ,
             key : "filter"
             scope_name : "rowfilter"
             replace : false
-        ,
-            key : "niva"
-            scope_name : "workFilter"
-            default : "works"
-            replace : false
-        ,
+        # ,
+        #     key : "niva"
+        #     scope_name : "workFilter"
+        #     default : "works"
+        #     replace : false
+        # ,
             # TODO: history recall issue with back btn
-            key : "mediatypeFilter"
-            replace : false
+        #     key : "mediatypeFilter"
+        #     replace : false
 
-        ,
+        # ,
             key : "forfattare"
             scope_name : "authorFilter"
             replace : false
-        ,
-            key : "index",
-            scope_name : "selectedLetter"
-            # default: "A"
-            replace : false
-            post_change : (val) ->
-                if val
-                    s.filter = "" 
-                    s.rowfilter = ""
-                if s.workFilter == "titles" and val
-                    fetchWorks()
-                return val
+        # ,
+        #     key : "index",
+        #     scope_name : "selectedLetter"
+        #     # default: "A"
+        #     replace : false
+        #     post_change : (val) ->
+        #         if val
+        #             s.filter = "" 
+        #             s.rowfilter = ""
+        #         if s.workFilter == "titles" and val
+        #             fetchWorks()
+        #         return val
 
         ]
 
