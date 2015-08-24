@@ -823,20 +823,20 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         filter = (s.rowfilter || '')
         return new RegExp(filter, "i").test((author.fullname))
 
-    titlesort = "itemAttrs.sortkey"
+    # titlesort = "itemAttrs.sortkey"
     
-    s.sorttuple = [[titlesort, 'author[0].nameforindex'], false]
-    s.setSort = ([sortstr]) ->
+    # s.sorttuple = [[titlesort, 'author[0].nameforindex'], false]
+    # s.setSort = ([sortstr]) ->
 
-        alternate = _.object([
-            [titlesort, "author[0].nameforindex"],
-            ["author[0].nameforindex", titlesort]
-        ])[sortstr]
+    #     alternate = _.object([
+    #         [titlesort, "author[0].nameforindex"],
+    #         ["author[0].nameforindex", titlesort]
+    #     ])[sortstr]
 
-        s.sorttuple[0] = [sortstr, alternate]
+    #     s.sorttuple[0] = [sortstr, alternate]
 
-    s.setDir = (isAsc) ->
-        s.sorttuple[1] = isAsc
+    # s.setDir = (isAsc) ->
+    #     s.sorttuple[1] = isAsc
 
     s.hasMediatype = (titleobj, mediatype) ->
         return mediatype in (titleobj?.mediatype or [])
@@ -850,7 +850,6 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         #     return "/#!/forfattare/#{titleObj.author[0].authorid}/titlar/#{titleObj.itemAttrs.titlepath.split('/')[0]}/#{mediatype}"
             
 
-    # s.collapsed = []
     s.sortMedia = (list) ->
         order = ['etext', 'faksimil', 'epub', 'pdf']
         return _.intersection(order,list).concat(_.difference(list, order))
@@ -960,8 +959,10 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         c.log "author.authorid", author.authorid
         $location.search("author", author.authorid)
         # $anchorScroll()
+        s.infoSearching = true
         backend.getAuthorInfo(author.authorid).then (data) ->
             author.data = data
+            s.infoSearching = false
 
     
     getWorkIntro = (author, titlepath) ->
@@ -1007,18 +1008,18 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     util.setupHashComplex s,
         [
-            expr : "sorttuple[0]"
-            # scope_name : "sortVal"
-            scope_func : "setSort"
-            key : "sortering"
-            default : titlesort + ",author[0].nameforindex"
-            val_in : (val) ->
-                val?.split(",")
-            val_out : (val) ->
-                val?.join(",")
-            # post_change : () ->
-            replace : false
-        ,
+        #     expr : "sorttuple[0]"
+        #     # scope_name : "sortVal"
+        #     scope_func : "setSort"
+        #     key : "sortering"
+        #     default : titlesort + ",author[0].nameforindex"
+        #     val_in : (val) ->
+        #         val?.split(",")
+        #     val_out : (val) ->
+        #         val?.join(",")
+        #     # post_change : () ->
+        #     replace : false
+        # ,
             expr : "sorttuple[1]"
             scope_func : "setDir"
             key : "fallande"

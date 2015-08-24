@@ -38,13 +38,20 @@
 
                     <div collapse="!author._collapsed">
                         <div class="collapse-content">
-                            <div class="info" ng-class="{show_all: author._show_all}" ng-bind-html="author.data.intro | trust" ng-click="author._show_all = true"></div>
-
-
+                            <!-- <div class="" ng-show="infoSearching">
+                                <span class="auth_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span>
+                            </div> -->
+                            <div class="info" 
+                                ng-class="{show_min: !author._show_all, show_all: author._show_all}" 
+                                ng-bind-html="author.data.intro | trust" 
+                                ng-click="author._show_all = true"></div>
+                            <div class="dot_icon" ng-show="author.data.intro && !author._show_all">
+                                <span class="dots">…</span>
+                            </div>
                             <ul class="links">
-                                <li><a href="/#!/forfattare/{{selectedAuth.authorid}}"><i class="fa fa-play "></i>Gå till författarens sida</a></li>
-                                <li><i class="fa fa-play "></i><a href="/#!/sok?authorid={{selectedAuth.authorid}}">Sök i författarens verk</a></li>
-                                <li><i class="fa fa-play "></i><a href="/#!/forfattare/{{selectedAuth.authorid}}/titlar">Visa författarens verk</a></li>
+                                <li><a href="/#!/forfattare/{{selectedAuth.authorid}}"><i class="fa fa-play "></i> Gå till författarens sida</a></li>
+                                <li><a href="/#!/sok?authorid={{selectedAuth.authorid}}"><i class="fa fa-play "></i> Sök i författarens verk</a></li>
+                                <li><a href="/#!/forfattare/{{selectedAuth.authorid}}/titlar"><i class="fa fa-play "></i> Visa författarens verk</a></li>
                             </ul>
                         </div>
                     </div>

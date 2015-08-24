@@ -2248,12 +2248,42 @@ $partnav-width : 170px;
                     color : grey;
                     &:not(.show_all):hover:after {
                         content : "visa mer";
-                        
                     }
                     &.show_all {
                         max-height : initial;
                         color : inherit;
                     }
+                }
+
+                .info.show_min:hover {
+                    color : $primarycolor;
+                    // .dot_icon:before {
+                    //     content : "[ Läs mer ";
+                    // }
+                    // .dot_icon:before, .dot_icon:after {
+                    //     font-size : 1em;
+                    // }
+                    // .dots {display : none;}
+
+
+                }
+
+                .dot_icon {
+                    text-align : right;
+                    // color: $primarycolor;
+                    &:before {
+                        color: $primarycolor;
+                        content: "[";
+                        font-size : 1.5em;
+                        display : inline;
+                    }
+                    &:after {
+                        color: $primarycolor;
+                        content: "]";
+                        font-size : 1.5em;
+                        display : inline;
+                    }
+
                 }
             }
             &.title {
