@@ -788,6 +788,15 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     s.normalizeAuthor = $filter('normalizeAuthor')
 
+    s.titleSort = (a) ->
+        _.map a[0].shorttitle.split(/(\d+)/), (item) -> 
+            if Number(item)
+                zeroes = (_.map [0..(10 - item.toString().length)], () -> "0").join("")
+
+                return zeroes + item.toString()
+            else 
+                return item
+
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
 
