@@ -185,7 +185,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     #     s.current_page = 0
     #     if s.data
     #         s.search()  
-
+    # s.selectedAuthors = $location.search("forfattare")?.split(",")
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
         s.authorsById = authorsById
@@ -208,8 +208,15 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         
         if $location.search().forfattare
-            s.selected_author = authorsById[$location.search().forfattare]
+            # c.log "auth", $location.search().forfattare
+            auth = $location.search().forfattare?.split(",")
+            s.selectedAuthors = auth
+            c.log "s.selectedAuthors", s.selectedAuthors
         
+        if $location.search().titlar
+            titles = $location.search().titlar?.split(",")
+            s.selectedTitles = titles
+
         util.setupHashComplex s, [
                 key : "forfattare"
                 # expr : "selected_author.pseudonymfor || selected_author.authorid"
@@ -219,6 +226,15 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 val_out : (val) ->
                     val?.join(",")
                 post_change : change
+            ,
+                key : "titlar"
+                # expr : "selected_author.pseudonymfor || selected_author.authorid"
+                expr : "selectedTitles"
+                val_in : (val) ->
+                    val?.split(",")
+                val_out : (val) ->
+                    val?.join(",")
+                # post_change : change
 
         ]
 
@@ -1689,6 +1705,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         else
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.endpage}/#{mediatype}"
 
+    s.getPageUrl = (page) ->
+        "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{s.mediatype}"
 
     s.gotopage = (page, event) ->
         c.log "preventDefault", page
@@ -1722,6 +1740,33 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getTooltip = (part) ->
         return part.showtitle if part.navtitle != part.showtitle
+
+    s.getCurrentPart = () ->
+        unless s.workinfo then return
+        outputPart = null
+        for part in s.workinfo.parts by -1 #backwards
+            startix = s.pagemap["page_" + part.startpagename] 
+            endix = s.pagemap["page_" + part.endpagename] 
+            if (s.pageix <= endix) and (s.pageix >= startix)
+                outputPart = part
+                break
+
+        return outputPart
+
+
+    s.getNextPart = () ->
+        current = s.getCurrentPart()
+        unless (current or s.workinfo) then return
+        # i = current.number - 1
+        i = _.indexOf s.workinfo.parts, current
+        c.log "current", current, s.workinfo?.parts[i + 1]
+        return s.workinfo?.parts[i + 1]
+
+    s.getPrevPart = () ->
+        current = s.getCurrentPart()
+        unless (current or s.workinfo) then return
+        i = _.indexOf s.workinfo.parts, current
+        return s.workinfo?.parts[i - 1]
 
     s.toggleParallel = () ->
         s.isParallel = !s.isParallel

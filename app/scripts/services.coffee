@@ -468,7 +468,10 @@ littb.factory 'backend', ($http, $q, util) ->
             info.pagemap = pgMap
 
             # info.parts = _.map $("parts > part", xml), objFromAttrs
-            info.parts = _.map $("parts > part", xml), objFromAttrs
+            info.parts = _.map $("parts > part", xml), (item, i) ->
+                obj = objFromAttrs(item)
+                obj.number = i
+                return obj
             info.parts = _.filter info.parts, (item) ->
                 return "/" in item.id
 

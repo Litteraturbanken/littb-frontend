@@ -60,47 +60,63 @@
              </a>
         </div>
         
-        <!-- <hr>
-        <ul class="part_menu" >
-            <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
-            <li ng-repeat="part in workinfo.parts | limitTo:6" tooltip="{{part.showtitle}}">
-                
-                <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
-            </li>
-        </ul>
-        <div class="arrows">
+        <!-- <div class="arrows">
             <div class="up fa fa-play"></div>
             <br>
             <div class="down fa fa-play"></div>
         </div> -->
 
+        <hr>
+        <div>
+            <h5 class="chapt_header sc">Kapitel</h5>
+            <span>{{getCurrentPart().number}}. {{getCurrentPart().navtitle}}</span>
+        </div>
+        <hr>
+        <!-- <ul class="part_menu" >
+            <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
+            <li ng-repeat="part in workinfo.parts | limitTo:6" tooltip="{{part.showtitle}}">
+                
+                <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
+            </li>
+        </ul> -->
 
         <div class="pager_ctrls small" ng-click="resetHitMarkings()">
-            <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
-                Gå bakåt en sida
-            </a>
-            <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
-                Gå framåt en sida
-            </a>
+            
+            <a ng-href="{{getPageUrl(getPrevPart().startpagename)}}">Gå bakåt ett kapitel</a>
+            <br>
+            <a ng-href="{{getPageUrl(getNextPart().startpagename)}}">Gå till nästa kapitel</a>
+            <br>
             <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
                 ng-click="gotopage(startpage, $event)">
                 Gå till första sidan
             </a>
+            <br>
             <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}"
                 ng-click="gotopage(endpage, $event)">
                 Gå till sista sidan
             </a>
+            <br>
+            
+
+            <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
+                <i class="fa fa-arrow-circle-o-left"></i>
+            </a>
+            <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+                <i class="fa fa-arrow-circle-o-right"></i>
+            </a>
+
+            <span class="expl small">Du kan också bläddra med tangentbordets piltangenter</span>
         </div>
-        <span class="small">Du kan också bläddra med tangentbordets piltangenter</span>
+        
         
         <div class="subnav">
             <ul>
-                <li><a ng-click="openModal()">Mer om boken</a></li>
                 <li><a ng-click="show_chapters = true">Innehållsförteckning</a></li>
+                <li><a ng-click="openModal()">Mer om boken</a></li>
                 <li><a ng-click="activateFocus()">Läsfokus</a></li>
                 <!-- <li>Visa som bokuppslag</li> -->
-                <li>Sök i verket</li>
-                <li>Sök i författarens texter</li>
+                <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}&titlar={{workinfo.lbworkid}}">Sök i verket</a></li>
+                <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}">Sök i författarens texter</a></li>
                 <li>Dela boken</li>
             </ul>
         </div>
@@ -115,7 +131,7 @@
         </script>
         <script type="text/ng-template" id="chapters.html">
             <div class="chapters-modal modal-body">
-                <i class="close_btn fa fa-times pull-right"></i>
+                <i class="close_btn fa fa-times pull-right" ng-click="$close()"></i>
 
                 <div class="header">
                     <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></h2>

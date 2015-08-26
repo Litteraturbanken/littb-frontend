@@ -218,7 +218,12 @@ body {
     // height: 100%;
 
 }
-
+h5 {
+    margin: 0;
+    font-weight : normal;
+    padding : 0;
+    font-size : inherit;
+}
 h1,h2,h3,h4,h5,h6 {
     font-family: inherit;
 }
@@ -986,9 +991,16 @@ body > .header {
         .advanced .auth_select_container {
             display : inline-block;
         }
-        .simple_text {display : none;}
-        .advanced .simple_text {display : block;}
-        .advanced .advanced_text {display : none;}
+        // .expl {
+        //     display: none;
+        // }
+        // .advanced .expl.expl_auth, .advanced .expl.expl_about {
+        //     display : block;
+        // }
+        .simple_text {display : block;}
+        .advanced_text {display : none;}
+        .advanced .simple_text {display : none;}
+        .advanced .advanced_text {display : block;}
         .text {
 
             // max-width : 330px;
@@ -1297,6 +1309,7 @@ $partnav-width : 170px;
         }
 
         .close_btn {
+            cursor: pointer;
             color : $primarycolor;
         }
     }
@@ -1706,8 +1719,13 @@ $partnav-width : 170px;
 
     #toolkit-right {
         // max-width : 150px;
+        hr {
+            color : $textcolor;
+        }
         .subnav {
+            margin-top : 5em;
             text-transform: uppercase;
+            white-space: nowrap;
         }
         .editor .pager_ctrls .disabled i {
             &:before {
@@ -1816,7 +1834,7 @@ $partnav-width : 170px;
         .pager_ctrls {
             margin-bottom: 0.8em;
             a {
-                display : block;
+                // display : block;
                 text-transform: uppercase;
                 margin-right : 3px;
                 margin-right : 2px;
@@ -1824,6 +1842,12 @@ $partnav-width : 170px;
                     padding-left : 0;
                     margin-left : 0;
                 }
+            }
+
+            .expl {
+                display: inline-block;
+                width: 160px;
+                margin-top: 1em;
             }
 
             $hover : desaturate($primarycolor, 50%);

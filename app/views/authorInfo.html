@@ -44,7 +44,7 @@
                         <!-- <td ng-if="titleobj.showAuthor">
                             <a href="/#!/forfattare/{{works[0].authors[0].authorid}}">{{works[0].authors[0].nameforindex}}</a>
                         </td> -->
-                            <a class="title" ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/info">
+                            <a class="title" ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{works[0].mediatype}}">
                                 {{works[0].showtitle}}
                             </a>
                             <span class="extras" ng-if="$parent.$index == 1">i
