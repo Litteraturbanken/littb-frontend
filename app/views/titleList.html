@@ -60,26 +60,6 @@
                     </li>
                 </ul>
             
-            <!-- <div class="info_box auth" ng-click="$event.stopPropagation()" ng-show="selectedAuth" ng-style="{top: auth_off}" >
-
-            </div>
-
-            <div class="info_box title" ng-click="$event.stopPropagation()" ng-show="selectedTitle" ng-style="{top: title_off}" >
-                <div>
-                    <span class="author">{{selectedTitle.author[0].fullname}} </span> {{authorsById[selectedTitle.author[0].authorid] | authorYear}}
-                </div>
-                <div class="title">{{selectedTitle.itemAttrs.title}} ({{selectedTitle.itemAttrs.imprintyear}})</div>
-
-                <ul class="links">
-
-                    <li ng-if="hasMediatype(selectedTitle, 'etext')"><a ng-href="{{getUrl(selectedTitle, 'etext')}}"><i class="fa fa-play "></i> Läs verket som <span class="sc">TEXT</span></a></li>
-                    <li ng-if="hasMediatype(selectedTitle, 'faksimil')"><a ng-href="{{getUrl(selectedTitle, 'faksimil')}}"><a ng-href=""><i class="fa fa-play "></i> Läs verket som <span class="sc">FAKSIMIL</span></a></a></li>
-                    <li ng-if="hasMediatype(selectedTitle, 'epub')"><a ng-href="{{getUrl(selectedTitle, 'epub')}}"><i class="fa fa-play "></i> Ladda ner verket som <span class="sc">EPUB</span></a></li>
-                    <li ng-if="hasMediatype(selectedTitle, 'pdf')"><a ng-href="{{getUrl(selectedTitle, 'pdf')}}"><i class="fa fa-play "></i> Ladda ner verket som <span class="sc">PDF</span></a></li>
-                    <li><i class="fa fa-play "></i> Gör en sökning i verket</li>
-                </ul>
-
-            </div> -->
             
             <ul id="table" class="box title" ng-click="$event.stopPropagation()">
                 <!-- <thead>
@@ -88,13 +68,32 @@
                     <th></th>
                 </thead> -->
                 <li ng-show="titleSearching"><span class="title_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span></li>    
-                <li class="link" ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle"
+                
+                <li class="link" ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle" on-finish-render="titleRender()"
                     top="$parent.title_off" ng-click="titleClick($event, row)">
-                    <span class="title">
-                        {{row.itemAttrs.showtitle}} 
-                            <!-- <span class="dots"></span> -->
-                    </span>
-                    <span class="author">{{row.author[0].surname}} <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
+                    <div class="header">
+                        <span class="title" ng-click="row._collapsed = !row._collapsed" >
+                            {{row.itemAttrs.showtitle}} 
+                        </span>
+                        <span class="author">{{row.author[0].surname}} <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
+                    </div>
+                    <div collapse="!row._collapsed">
+                        <div class="collapse-content">
+                            <!-- <div>
+                                <span class="author">{{selectedTitle.author[0].fullname}} </span> {{authorsById[selectedTitle.author[0].authorid] | authorYear}}
+                            </div>
+                            <div class="title">{{selectedTitle.itemAttrs.title}} ({{selectedTitle.itemAttrs.imprintyear}})</div> -->
+
+                            <ul class="links">
+
+                                <li ng-if="hasMediatype(selectedTitle, 'etext')"><a ng-href="{{getUrl(selectedTitle, 'etext')}}"><i class="fa fa-play "></i> Läs verket som <span class="sc">TEXT</span></a></li>
+                                <li ng-if="hasMediatype(selectedTitle, 'faksimil')"><a ng-href="{{getUrl(selectedTitle, 'faksimil')}}"><a ng-href=""><i class="fa fa-play "></i> Läs verket som <span class="sc">FAKSIMIL</span></a></a></li>
+                                <li ng-if="hasMediatype(selectedTitle, 'epub')"><a ng-href="{{getUrl(selectedTitle, 'epub')}}"><i class="fa fa-play "></i> Ladda ner verket som <span class="sc">EPUB</span></a></li>
+                                <li ng-if="hasMediatype(selectedTitle, 'pdf')"><a ng-href="{{getUrl(selectedTitle, 'pdf')}}"><i class="fa fa-play "></i> Ladda ner verket som <span class="sc">PDF</span></a></li>
+                                <li><i class="fa fa-play "></i> <a ng-href="/#!/sok?forfattare={{row.author[0].authorid}}&titlar={{row.itemAttrs.lbworkid}}">Gör en sökning i verket</a></li>
+                            </ul>
+                        </div>
+                    </div>
                     <!-- <td>
                         <span ng-repeat="type in sortMedia(row.mediatype) | orderBy:'type'">
             

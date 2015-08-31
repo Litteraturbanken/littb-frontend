@@ -215,14 +215,24 @@ body {
 
     }
 
-    // height: 100%;
+    p, #{headers()} {
+        max-width: 500px;
+    }
 
+    // height: 100%;
+    
 }
 h5 {
     margin: 0;
     font-weight : normal;
     padding : 0;
     font-size : inherit;
+}
+h1 {
+    line-height : 37px;
+}
+h2 {
+
 }
 h1,h2,h3,h4,h5,h6 {
     font-family: inherit;
@@ -610,6 +620,9 @@ body > .header {
     display : none;
 }
 .page-start {
+    * {
+        max-width : initial;
+    }
     .header {
         // #logo {
         //     height: 57px;
@@ -665,7 +678,7 @@ body > .header {
         left: 30px;
     }
     .mainnav {
-        font-size : 2em;
+        font-size : 1.8em;
         a:not(:hover) {
             color : white;
         }
@@ -680,9 +693,6 @@ body > .header {
         display : none;
     }
     
-    // @include bkgimg("../img/background_start.png");
-    background: url(../img/background_start.png) no-repeat;
-    background-position-x : -5px;
     #mainview {
         // width : 30%;
         // margin: 0 auto;
@@ -2192,8 +2202,10 @@ $partnav-width : 170px;
 }
 
 .page-titleList {
+    padding-bottom : 0;
     #mainview {
-        padding-bottom : 4em;
+        width : 100%;
+        // padding-bottom : 4em;
         .submit_btn {
             vertical-align: bottom;
             position: relative;
@@ -2256,7 +2268,9 @@ $partnav-width : 170px;
             }
         }
         
-
+        .box_container {
+            width : 70%;
+        }
         
         .box {
             .spinner {
@@ -2266,6 +2280,7 @@ $partnav-width : 170px;
                 margin: auto;
             }
             &.author {
+                flex : 0 auto;
                 .info {
                     max-height : 3.4em;
                     overflow: hidden;
@@ -2312,13 +2327,22 @@ $partnav-width : 170px;
             }
             &.title {
                 margin-left : 1em;
+                flex : 1 auto;
 
                 li {
-                    display: flex;
+                    // display: flex;
 
                 }
+                .header {
+                    display : flex;
+                    justify-content : space-around;
 
+                    // & > * {
+                        
+                    // }
+                }
                 .title {
+                    flex : 1;
                     color: $primarycolor;
                     white-space: nowrap;
                     overflow: hidden;
@@ -2380,6 +2404,7 @@ $partnav-width : 170px;
 
 .page-epubList {
     #mainview {
+        width : 70vw;
         padding-bottom : 4em;
         .preloader {
             text-align : left;
@@ -2395,9 +2420,14 @@ $partnav-width : 170px;
         > * {
             margin : 1em 0;
         }
-
+        table {
+            width : 100%;
+        }
         table td:first-child {
-            max-width : 200px;
+            max-width : 250px;
+        }
+        p {
+            max-width : 700px
         }
     }
 }
@@ -2962,8 +2992,8 @@ grundform-clean {
     width : 100%;
     // padding : 50px;
     padding-left : 40px;
-    font-size : 16px;
-    line-height: 1.4em;
+    // font-size : 16px;
+    line-height: 1.4;
     $column_width : 500px;
     h1 {
         line-height : 1.1;
@@ -3151,6 +3181,7 @@ grundform-clean {
         // white-space: nowrap;
     }
     .ulink {
+        @include small-caps;
         // font-style: italic;
     }
     .firstterm, .glossterm {
@@ -3204,12 +3235,14 @@ grundform-clean {
     }
     .nav_sidebar {
         @include inline-block(top);
-
         width : 195px;
         margin-right : 60px;
-        font-size : 12px;
+        font-size : 0.7em;
         .top_menu {
             margin-top: 1.3em;
+        }
+        li {
+            white-space : nowrap;
         }
 
         & > .affix {
@@ -3442,9 +3475,9 @@ only screen and (max-width: 760px),
         margin: 0; 
     }
 
-    .page-epubList p {
-        max-width : 70%;
-    }
+    // .page-epubList p {
+    //     max-width : 70%;
+    // }
 
 /* Force table to not be like tables anymore */
     .page-epubList .contenttable,

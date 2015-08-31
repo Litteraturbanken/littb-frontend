@@ -903,6 +903,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         #     c.log "timeout"
         #     $anchorScroll()
         # ) 
+    s.titleRender = () ->
+        if $location.search()['title']
+            title = s.titleByPath[$location.search()['title']][0]
+            s.titleClick(null, title)
+            title._collapsed = true
 
 
     authors.then ([authorList, authorsById]) ->
@@ -934,6 +939,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         backend.getTitles(s.workFilter == "titles", s.authorFilter, s.selectedLetter, s.filter).then (titleArray) ->
             s.titleSearching = false
             s.titleArray = titleArray
+            s.titleByPath = _.groupBy titleArray, (item) ->
+                return item.itemAttrs.titlepath
             s.rowByLetter = _.groupBy titleArray, (item) ->
                 firstletter = item.itemAttrs.sortkey[0]
                 if firstletter == "Æ"
@@ -965,14 +972,13 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
 
     s.authorClick = ($event, author) ->
-        if author == s.selectedAuth
-            s.selectedTitle = null
-            return
-        s.selectedTitle = null
+        # if author == s.selectedAuth
+            # s.selectedTitle = null
+            # return
+        # s.selectedTitle = null
         s.selectedAuth = author
         $event?.stopPropagation()
 
-        c.log "author.authorid", author.authorid
         $location.search("author", author.authorid)
         # $anchorScroll()
         s.infoSearching = true
@@ -980,6 +986,17 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             author.data = data
             s.infoSearching = false
 
+    s.titleClick = ($event, title) ->
+        # if title == s.selectedTitle
+        #     s.selectedTitle = null
+        #     return
+        # s.selectedAuth = null
+        s.selectedTitle = title
+        $location.search("title", title.itemAttrs.titlepath)
+
+        # getWorkIntro(s.getWorkAuthor(title.author).authorid, title.itemAttrs.titlepath)
+
+        # $event.stopPropagation()
     
     getWorkIntro = (author, titlepath) ->
         s.sourcedesc = null
@@ -1004,16 +1021,6 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         else return authors[0]
 
 
-    s.titleClick = ($event, title) ->
-        if title == s.selectedTitle
-            s.selectedTitle = null
-            return
-        s.selectedAuth = null
-        s.selectedTitle = title
-
-        # getWorkIntro(s.getWorkAuthor(title.author).authorid, title.itemAttrs.titlepath)
-
-        $event.stopPropagation()
 
     onRootClick = (event) ->
         s.$apply () ->
