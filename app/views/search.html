@@ -5,9 +5,9 @@
 
     <h1>Textsökning <span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span> </h1>
 
-    <div class="preloader">
-    <span class="search_spinner" us-spinner="{lines : 10 ,radius:50, width:15, length: 25}"></span>
-    </div>    
+    <!-- <div class="preloader"> -->
+    
+    <!-- </div>     -->
 
 
     
@@ -75,9 +75,9 @@
     </form>
 
     <!-- <div ui-grid="gridOptions" class="grid"></div> -->
-    <div class="results_container" ng-show="kwic">
-
-        <div class="table_viewport" ng-scroll-event="updateOnScrollEvents($event, isEndEvent)"  >
+    <div class="results_container" >
+        <span class="search_spinner" us-spinner="{lines : 8 ,radius:30, width:15, length: 25}"></span>
+        <div class="table_viewport" ng-show="kwic" ng-scroll-event="updateOnScrollEvents($event, isEndEvent)"  >
             <div class="table_container" ng-style="{height : totalHeight}" > <!-- height="container_height" -->
                 <div ng-if="!searching && kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
                 
@@ -88,7 +88,7 @@
                     <tr on-finish-render="tableRenderComplete()" height="$parent.rowHeights[$index]" ng-repeat="sent in sentsWithHeaders" ng-class="{even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" class="sentence">
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <span class="author">{{authorsById[sent.authorid].nameforindex}}</span>: <span class="title">{{sent.shorttitle}}</span></td>
-                        <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1) + (from_index)}}</td>
+                        <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>
             
                         <td class="left_context"><span kwic-word="kwic-word" ng-repeat="wd in selectLeft(sent)"></span></td>
                         <td class="match">
@@ -104,10 +104,10 @@
             
             </div>
         </div>
-        <ul class="navigator" ng-style="{'max-height': container_height}">
+        <ul class="navigator" ng-show="kwic" ng-style="{'max-height': container_height}">
             <!-- ng-class="{selected: page == current_page}" -->
-            <li ng-repeat="(author, page) in authorStatsData" >
-                <a ng-click="gotoPage(page)">{{author}}</a>
+            <li ng-repeat="obj in authorStatsData" >
+                <a ng-click="gotoPage(obj.pos)">{{obj.author}}</a>
             </li>
         </ul>
     </div>
@@ -119,8 +119,8 @@
 
 
                 <div class="hits_info">
-                    <div><span class="hits">{{hits}}</span> sökträffar</div>
-                    <div>Träff {{from}}–{{to}}</div>
+                    <div><div class="hits">{{hits}}</div> <div class="hits_sub">sökträffar</div></div>
+                    <!-- <div>Träff {{from}}–{{to}}</div> -->
 
                 </div>
 

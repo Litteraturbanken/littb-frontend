@@ -925,6 +925,8 @@ littb.factory "searchData", (backend, $q, $http) ->
                     @data = new Array(data.hits)
 
                 c.log "splice", from, data.kwic.length
+                for sent, i in data.kwic
+                    sent.index = i + from
                 @data[from..data.kwic.length] = data.kwic
 
 

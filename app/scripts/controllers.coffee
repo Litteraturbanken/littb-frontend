@@ -120,7 +120,7 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, util, searchData, authors, debounce) ->
+littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce) ->
     s = $scope
     s.open = true
     s.proofread = 'all'
@@ -252,9 +252,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
 
     s.tableRenderComplete = () ->
-        c.log "tableRenderComplete"
-        s.getTotalHeight()
         s.searching = false
+        $timeout(() ->
+            s.getTotalHeight()
+        , 0)
 
     s.getTotalHeight = () ->
         s.totalHeight = s.hits * s.getRowHeight()
@@ -262,11 +263,30 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     s.updateOnScrollEvents = (evt, isEnd) ->
         if not isEnd then return
+        # c.log "evt", evt
+
+        top = $(evt.currentTarget).offset().top
+
+        # for tr in $("tr", evt.currentTarget)
+        #     if tr.offset().top < top
+
+        topMost = _.min $("tr", evt.currentTarget), (tr) ->
+            if $(tr).offset().top < top then 9999 else $(tr).offset().top
+        c.log "topMost", topMost, $(topMost).scope()
+
+
+
         top = evt.currentTarget.scrollTop
         rowHeight = s.getRowHeight()
-        c.log "rowHeight", rowHeight
-        from = Math.floor(top / rowHeight)
-        c.log "from", from
+        # c.log "rowHeight", rowHeight
+        if $(topMost).scope().sent.index
+            from = $(topMost).scope().sent.index + s.from_index
+            c.log "tr index", from
+        else 
+            from = Math.floor(top / rowHeight)
+            c.log "rowheight from", from
+        # from = Math.floor(top / rowHeight)
+        # c.log "from", from
         n_rows = Math.ceil($(evt.currentTarget).height() / rowHeight)
 
 
@@ -306,9 +326,12 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     #     s.current_page = s.total_pages - 1
     #     s.search(s.query)
 
-    # s.gotoPage = (page) ->
-    #     s.current_page = page
-    #     s.search(s.query)        
+    s.gotoPage = (page) ->
+        # s.current_page = page
+        # n_rows = Math.ceil($(evt.currentTarget).height() / rowHeight)
+        $(".table_viewport").scrollTop(s.getRowHeight() * page)
+        
+        s.search(page, page + 30)
     
     getSearchArgs = (from, to) ->
         # from = s.current_page  * s.num_hits
@@ -462,7 +485,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             if (prevAuth != auth) or (shorttitle != prevShortTitle)
                 output.push {isHeader : true, authorid : auth, shorttitle: shorttitle}
 
-            item.index = i
+            # item.index = i
             output.push item
 
             prevAuth = auth
@@ -505,21 +528,30 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         backend.getAuthorsInSearch(args).then (data) ->
             c.log "getAuthorsInSearch then", data
 
-            n = 0
+            # n = 0
+            # for auth in (_.sortBy (_.keys data).sort())
+            #     val = data[auth]
+            #     data[auth] = Math.floor(n / s.num_hits)
+            #     n += val
+
+            s.authorStatsData = _.sortBy (_.pairs data), (item) -> item[0]
+
+            prev = 0
+            s.authorStatsData = []
             for auth in (_.sortBy (_.keys data).sort())
                 val = data[auth]
-                # c.log "item", key, val
-                data[auth] = Math.floor(n / s.num_hits)
-                # data[auth] = n
-                n += val
-                # c.log "n", n
+                
+                s.authorStatsData.push {author : auth, pos : prev}
+                prev = val + prev
 
-            s.authorStatsData = data
+
+
+
 
         # def = backend.searchWorks(args)
         def = searchData.slice(from, to)
         def.then (kwic) ->
-            c.log "search data", kwic
+            # c.log "search data", kwic
             # s.gridOptions.totalServerItems = data.count
             # s.gridOptions.data = _.map data.kwic, getGridData
 
@@ -646,6 +678,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         s.authorError = (normalize s.author) not of s.authorsById
 
     s.showLargeImage = ($event) ->
+        c.log "showLargeImage", s.show_large
         if s.show_large then return 
         s.show_large = true
         $event.stopPropagation()
@@ -691,10 +724,14 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     s.getUrl = (work) ->
         auth = work.authors[0].workauthor or work.workauthor or s.author
-        url = "/#!/forfattare/#{auth}/titlar/#{work.titlepath.split('/')[0]}/"
-        if work.mediatype == "epub" or work.mediatype == "pdf"
-            url += "info"
+        if work.mediatype == "epub" 
+            url = "txt/epub/" + auth + "_" + work.titlepath.split("/")[0] + ".epub"
+        else if work.mediatype == "pdf"
+            # url += "info"
+            url = "txt/#{work.lbworkid}/work.lbworkid.pdf"
+
         else
+            url = "/#!/forfattare/#{auth}/titlar/#{work.titlepath.split('/')[0]}/"
             url += "sida/#{work.startpagename}/#{work.mediatype}"
         return url
 

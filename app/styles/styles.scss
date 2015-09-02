@@ -46,8 +46,8 @@ $mainview-width : $page-width - $main-menu-width - ($left-gutter-width + $right-
 $content-top-margin : 5em;
 
 $textcolor : #333;
-$primarycolor : #990000;
-$dotted : thin dotted #990000;
+$primarycolor : #7A1400;
+$dotted : thin dotted #7A1400;
 
 $transp : rgba(255,255,255,0.3);
 
@@ -68,11 +68,13 @@ $transp : rgba(255,255,255,0.3);
         opacity: 0.5;
         top: 0;
         left: 0;
-        bottom: 0;
-        right: 0;
+        right : 0;
+        bottom : 0;
+        // right: -2530px;
+        // bottom: -2137px;
         position: absolute;
         z-index: -1;   
-        box-shadow: inset -200px -200px 400px 30px white;
+        // box-shadow: inset -200px -200px 400px 30px white;
     }
 
 }
@@ -605,7 +607,7 @@ body > .header {
 }
 
 .logo_link_monogram {
-    background: url("../img/lb_monogram.svg") no-repeat;
+    background: url("../img/lb_monogram_red_white.svg") no-repeat;
     background-size: cover;
     height: 230px;
     width: 240px;
@@ -620,6 +622,12 @@ body > .header {
     display : none;
 }
 .page-start {
+    @include bkgimg("../img/moln.jpg");
+    &:after {
+        // box-shadow: initial;
+        opacity : 1;
+        
+    }
     * {
         max-width : initial;
     }
@@ -640,6 +648,7 @@ body > .header {
             // width : 59%;
             display: block;
         }
+            
         hr {
             width : 53%;
             @include inline-block();
@@ -672,13 +681,15 @@ body > .header {
         margin-right : 0;
     }
     .logo_link_monogram {
-        margin-top: 3em;
+        margin-top: 0.9em;
         height: 340px;
         width: 360px;
-        left: 30px;
+        left: -50px;
+        margin-bottom : 1em !important;
     }
     .mainnav {
-        font-size : 1.8em;
+        margin-right : 3em;
+        font-size : 1.4em;
         a:not(:hover) {
             color : white;
         }
@@ -694,6 +705,8 @@ body > .header {
     }
     
     #mainview {
+        margin-top : 2em;
+
         // width : 30%;
         // margin: 0 auto;
         font-size : 1.8em;
@@ -707,34 +720,36 @@ body > .header {
         .center_col {
             display: inline-block;
             vertical-align: top;
-            margin-left : 7em;
+            margin-left : 3em;
             color : darken(white, 0%);
             h1 {
+                color : white;
                 margin-bottom : 0;
                 font-size : 2.31em;
             }
             h2 {
-                color : black;
-                font-size : 1.0em;
+                color : white;
+                font-size : 1.03em;
             }
         }
-        .news {
+        .news li {
+            color : black;
         }
         .buttons {
             
-            margin-top : 5em;
+            margin-top : 2em;
 
             // display : inline-block;
         }
         .buttons > button {
-            display: block;
+            display: inline-block;
             text-transform: uppercase;
             margin: 0 auto;
-            background-color: rgba(255,255,255,0.5);
+            background-color: rgba(255, 255, 255, 0.5);
             border: 1px inset #666;
             margin-top: 5px;
-            padding: 0.5em 1.1em;
-            font-size: 0.5em;
+            padding: 0.1em 0.5em;
+            font-size: 0.4em;
             width: 12em;
             &:hover {
 
@@ -742,9 +757,12 @@ body > .header {
         }
 
         .about {
-            margin-top: 11em;
+            margin-top: 3em;
             text-transform: uppercase;
-            font-size: 0.6em;
+            font-size: 0.5em;
+            a {
+                color : white;
+            }
         }
 
         .start-quote-block {
@@ -757,10 +775,20 @@ body > .header {
             vertical-align: top;
             .start-quote {
                 // font-size : 1.6em;
-                width : 11em;
+                // width : 11em;
+                font-size: 0.8em;
+                line-height: 1.3;
+                color : white;
+    
+                .quotes {
+                    font-size : 4em;
+                }
+
             }            
             .start-quote-source {
-                font-size : 0.9em;
+                font-size : 0.6em;
+                margin-top: 0.5em;
+                line-height : 1.2;
                 
                 .title {
                     font-style: italic;
@@ -884,11 +912,21 @@ body > .header {
 
 
 .page-search {
-    @include bkgimg("../img/background_start.png");
-    .grid {
-      width: 1000px;
-      height: 1400px;
+    // .grid {
+    //   width: 1000px;
+    //   height: 1400px;
+    // }
+
+    .searching .search_spinner {display : block;}
+    .search_spinner {
+        display: none;
+        // margin: 0 auto;
+        position: relative;
+        top: 100px;
+        left : 200px;
+        // width: 100px;
     }
+
     #mainview {
 
         // width : 512px;
@@ -901,8 +939,8 @@ body > .header {
         }
         .searching .results {
             // transition : opacity 100ms;
-            // opacity : 0.3;
-            visibility: hidden;
+            // opacity : 0;
+            // visibility: hidden;
         }
         .query_label {
             vertical-align: middle;
@@ -1068,7 +1106,7 @@ body > .header {
         .results_container {
             position: relative;
             white-space: nowrap;
-            & > *  {
+            & > div, & > ul  {
                 white-space: normal;
                 @include container();
                 display: inline-block;
@@ -1167,6 +1205,9 @@ body > .header {
             .hits {
                 font-size: 2em;
                 vertical-align: baseline;
+                margin-bottom : 0.3em;
+            }
+            .hits_sub {
             }
         }
 
@@ -2136,6 +2177,7 @@ $partnav-width : 170px;
         }
         .img_large {
             opacity : 1;
+            z-index : 99;
             position : absolute;
             top : 0;
             bottom : 0;
@@ -2273,6 +2315,7 @@ $partnav-width : 170px;
         }
         
         .box {
+            font-size : 0.9em;
             .spinner {
                 height : 20px;
                 width: 20px;
