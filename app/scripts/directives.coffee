@@ -166,22 +166,29 @@ littb.directive 'clickOutside', ($document) ->
 littb.directive 'scrollTo', ($window, $timeout) -> 
     # scope : scrollTo : "="
     link : (scope, elem, attr) ->
-        scope._getScroll = () ->
-            return attr.scrollTo
-        scope.$watch '_getScroll()', (val) ->
-            c.log 'scroll watch', val
+        scope.$watch ( () -> scope.$eval elem.attr("scroll-to")), (val) ->
             unless val then return
             target = elem.find("#" + val)
             if not target.length then return
 
-            # parent = if attr.target == "parent" then elem
-
             $timeout( () ->
+                offset = 0
+                # c.log "animate to offset", (scope.$eval elem.attr("offset"))
+                if attr.offset
+                    offset = (scope.$eval elem.attr("offset")) or 0
                 elem.animate
-                    scrollTop : elem.scrollTop() + target.position().top
+                    scrollTop : (elem.scrollTop() + target.position().top) - offset
                 # elem.scrollTop()
             )   
 
+
+littb.directive 'collapsing', ($window, $timeout) -> 
+    scope :
+        collapsing: "="
+    link : (scope, elem, attr) ->
+        scope.$watch ( () -> elem.find(".in.collapsing").height()), (val) ->
+            c.log "collapsing height", val
+            scope.collapsing = val
 
 
 littb.directive 'soArticle', ($compile, $location, $window) -> 
@@ -306,6 +313,7 @@ littb.directive 'alertPopup', ($rootElement, $timeout, $rootScope) ->
 littb.directive 'focusable', () ->
     link : (scope, elem, attr) ->
         scope.$on "focus", () ->
+            c.log "focusable focus"
             elem.focus()
 
         scope.$on "blur", () ->
@@ -667,7 +675,7 @@ littb.directive "firstHeight", () ->
     restrict: "A"
     link : (scope, elem, attr) ->
         # if scope.$parent.$first
-        _.one setWatch
+        _.once setWatch
 
     
 littb.directive 'onFinishRender', ($timeout) ->
@@ -678,6 +686,23 @@ littb.directive 'onFinishRender', ($timeout) ->
                 scope.$eval attr.onFinishRender
             )
             # scope.$evalAsync(attr.onFinishRender)
+
+
+littb.directive 'bkgImg', ($rootElement) ->
+    restrict : "EA"
+    template : '''
+        <img >
+    '''
+    replace : true
+    scope : {}
+    #     src: "@"
+
+    link : (scope, element, attr) ->
+        element.appendTo "#bkgimg"
+
+        scope.$on "$destroy", () ->
+            c.log "destroy", element
+            element.remove()
 
 
 

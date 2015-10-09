@@ -1,4 +1,3 @@
-'use strict';
 _.templateSettings =
   interpolate : /\{\{(.+?)\}\}/g
 
@@ -178,7 +177,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                    "/forfattare/:author/titlar"
                    "/forfattare/:author/bibliografi"
                    "/forfattare/:author/presentation"
-                   "/forfattare/:author/semer"
+                   "/forfattare/:author/mer"
                    "/forfattare/:author/biblinfo"
                    "/forfattare/:author/jamfor"
                    "/forfattare/:author/omtexterna/:omtexternaDoc?"

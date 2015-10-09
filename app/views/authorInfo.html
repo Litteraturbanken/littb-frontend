@@ -5,28 +5,47 @@
     <a href="/#!/forfattare/{{author}}">{{authorInfo.fullName}}</a>
     <a href="">{{getPageTitle(showpage)}}</a>
 </breadcrumb>
+<img bkg-img class="no-gradient" src="img/trad_bkg.jpg"></img>
+
 
 <div ng-class="{searching:!authorInfo, show_large : show_large}">
     <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
-    <h1>{{authorInfo.fullName}}</h1>
-    <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div>
+    <h1>{{authorInfo.fullName}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
+    <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
+
+    <ul class="links"> 
+        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/#!/forfattare/{{author}}">Introduktion</a></li>
+        <li ng-class="{active : showpage == 'titlar'}"><a href="/#!/forfattare/{{author}}/titlar">Titlar</a></li>
+        <li ng-class="{active : showpage == 'mer'}"><a ng-href="/#!/forfattare/{{author}}/mer">Mer</a></li>
+        <li ng-if="getSearchableTitles().length"><a href="/#!/sok?forfattare=BenedictssonV">Sök i texterna</a></li>
+    </ul>
+    
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
             <div class="introtext" ng-class="{show_more: show_more}" ng-bind-html="authorInfo.intro | trust"></div>
 
-            <div class="show_more_btn" ng-show="!show_more">{<a href="" ng-click="show_more = true">LÄS MER</a>}</div>
+            <div>{{authorsById[authorInfo.introAuthor]}}</div>
+
+            <div class="portrait_container">
+                <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
+                <!-- <ul class="links">
+                    <li><a href="/#!/forfattare/{{author}}/titlar">Tillgängliga titlar</a></li>
+                    <li><a href="/#!/sok?forfattare=BenedictssonV">Sök i texterna</a></li>
+                    <li><a ng-href="/#!/forfattare/{{author}}/semer">Mer om författaren</a></li>
+                </ul> -->
+            </div>
+            
+
+            <!-- <div class="show_more_btn" ng-show="!show_more">–<a href="" ng-click="show_more = true">LÄS MER</a>–</div> -->
+            <!-- <div class="show_more_btn" ng-show="!show_more"> <a href="" ng-click="show_more = true"><span class="arrow">▼</span> LÄS MER</a></div> -->
+            <div class="show_more_btn" ng-show="!show_more"> <i class="fa fa-caret-down"></i> <a href="" ng-click="show_more = true"> LÄS MER</a></div>
             <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
         </div>
 
-        <div ng-switch-when="titlar">
-            <!-- <h1 ng-show="authorInfo">
-                {{authorInfo.fullName}}<span ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span>:
-                <br>
-                verk <span ng-if="groupedTitles.length">och titlar</span> i Litteraturbanken
-            </h1> -->
-            <div ng-repeat="titleobj in titleStruct" ng-show="authorInfo && titleobj.data.length">
-                <!-- <h2>{{titleobj.label}}</h2> -->
+        <script type="text/ng-template" id="listing.html">
+            <div ng-repeat="titleobj in getDataSource()" ng-show="authorInfo && titleobj.data.length">
+                <h2 ng-show="titleobj.data.length">{{titleobj.label}}</h2>
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                     <tr ng-repeat="works in titleobj.data track by $index">
@@ -37,13 +56,10 @@
                                 <span ng-show="!last">&nbsp; </span>
                             </span>
                         </td>
-                        <td ng-if="$parent.$index > 1">
+                        <td ng-if="titleobj.showAuthor">
                             <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
                         </td>
                         <td>
-                        <!-- <td ng-if="titleobj.showAuthor">
-                            <a href="/#!/forfattare/{{works[0].authors[0].authorid}}">{{works[0].authors[0].nameforindex}}</a>
-                        </td> -->
                             <a class="title" ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{works[0].mediatype}}">
                                 {{works[0].showtitle}}
                             </a>
@@ -51,16 +67,22 @@
                                 <a class="author" href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">
                                     {{getWorkAuthor(works[0].authors).surname}}:
                                 </a> 
-                                <span class="title">{{works[0].workshorttitle}}</span></span>
+                                <span class="extras_title">{{works[0].workshorttitle}}</span></span>
                             
-                                    
-                            <!-- <span ng-if="titleobj.showAuthor">[{{getWorkAuthor(works[0].authors).nameforindex}}]</span> -->
                             <span class="dots"></span>
                         </td>
                         
                     </tr>
                 </table>
             </div>
+            
+        </script>
+
+        <div ng-switch-when="titlar">
+            <ng-include src="'listing.html'"></ng-include>
+        </div>
+        <div ng-switch-when="mer">
+            <ng-include src="'listing.html'"></ng-include>
         </div>
     
         <div ng-switch-when="biblinfo"><div ng-include="'views/sla/biblinfo.html'"></div></div>
@@ -72,14 +94,8 @@
            <div footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
        </div>
     </div>
-    <div class="portrait_container">
-        <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.smallImage}}" ng-click="showLargeImage($event)">
-        <ul class="links">
-            <li><a href="/#!/forfattare/{{author}}/titlar">Tillgängliga verk</a></li>
-            <li><a href="/#!/sok?forfattare=BenedictssonV">Sök i verken</a></li>
-            <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">Mer om författaren</a></li>
-        </ul>
-    </div>
+
+    
 </div>
 
 

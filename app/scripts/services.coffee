@@ -333,12 +333,19 @@ littb.factory 'backend', ($http, $q, util) ->
                 itm = elemList[0]
                 if not (objFromAttrs $(itm).find("author").get(0))
                     c.log "author failed", itm
-                rows.push
+
+
+                obj = 
                     itemAttrs : objFromAttrs itm
                     # author : (objFromAttrs $(itm).find("author").get(0)) or ""
                     author : _.map $(itm).find("author"), objFromAttrs
                     mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
                     # mediatype : getMediatypes($(itm).attr("lbworkid"))
+
+                if allTitles
+                    obj.isTitle = true
+
+                rows.push obj
 
             # rows = _.flatten _.values rows
             def.resolve rows
@@ -542,11 +549,18 @@ littb.factory 'backend', ($http, $q, util) ->
 
             [works, editorWorks, translatorWorks] = parseWorks("works item")
             [titles, editorTitles, translatorTitles] = parseWorks("titles item")
+            [aboutWorks, about_editorWorks, about_translatorWorks] = parseWorks("about works item")
+            [aboutTitles, about_editorTitles, about_translatorTitles] = parseWorks("about titles item")
 
             authorInfo.works = works
             authorInfo.titles = titles
             authorInfo.editorWorks = [].concat editorWorks, editorTitles
             authorInfo.translatorWorks = [].concat translatorWorks, translatorTitles
+            
+            authorInfo.aboutWorks = aboutWorks
+            authorInfo.aboutTitles = aboutTitles
+            authorInfo.about_editorTitles = about_editorTitles
+            authorInfo.about_translatorTitles = about_translatorTitles
 
             authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
             authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)

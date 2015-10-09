@@ -1,6 +1,4 @@
-﻿'use strict';
-
-window.c = console ? log : _.noop
+﻿window.c = console ? log : _.noop
 littb = angular.module('littbApp')
 
 littb.filter "formatAuthors", (authors) ->
@@ -53,7 +51,7 @@ littb.filter "authorYear", () ->
         if (isFalsy obj.birth) and (isFalsy death) then return ""
         if isFalsy death then return "f. #{obj.birth}"
         if isFalsy obj.birth then return "d. #{death}"
-        return "#{obj.birth}–#{death}"
+        return "#{obj.birth}-#{death}"
 
 
 littb.controller "startCtrl", ($scope, $location) ->
@@ -659,7 +657,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         
     s.showpage = null
     s.show_large = false
-    s.show_more = false
+    s.show_more = true
 
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
@@ -692,6 +690,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     refreshRoute = () ->
         s.showpage = $location.path().split("/")[3]
         unless s.showpage then s.showpage = "introduktion"
+        # if s.showpage == ("titlar" or "mer") then s.showpage = "titlar_mer"
         # s.showpage = "introduktion" if s.author == s.showpage
 
     # refreshTitle = () ->
@@ -721,6 +720,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     s.getAllTitles = () ->
         [].concat s.groupedTitles, s.groupedWorks, s.groupedEditorWorks
+
+    s.getSearchableTitles = () ->
+        titles = s.getAllTitles()
+
+        _.filter (_.flatten titles), (title) -> 
+            title?.searchable == "true"
 
     s.getUrl = (work) ->
         auth = work.authors[0].workauthor or work.workauthor or s.author
@@ -817,6 +822,15 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             return s.authorsById[wa]
         else return authors[0]
 
+    s.getDataSource = () ->
+        c.log "getDatasource", s.showpage
+        if s.showpage == "titlar"
+            s.titleStruct
+        else if s.showpage == "mer"
+            c.log "showpage mer"
+            s.moreStruct
+
+
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
         
@@ -824,9 +838,15 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
         s.groupedEditorWorks = _.values _.groupBy s.authorInfo.editorWorks, "titlepath"
         s.groupedTranslatorWorks = _.values _.groupBy s.authorInfo.translatorWorks, "titlepath"
+        
+        s.groupedAboutWorks = _.values _.groupBy s.authorInfo.aboutWorks, "titlepath"
+        s.groupedAboutTitles = _.values _.groupBy s.authorInfo.aboutTitles, "titlepath"
+        s.groupedAboutEditorTitles = _.values _.groupBy s.authorInfo.aboutEditorTitles, "titlepath"
+        s.groupedAboutTranslatorTitles = _.values _.groupBy s.authorInfo.aboutTranslatorTitles, "titlepath"
+
 
         s.titleStruct = [
-                label : "Verk"
+                label : "Tillgängliga titlar"
                 data : s.groupedWorks
                 showAuthor : false
             ,
@@ -840,6 +860,24 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             ,
                 label : "Som översättare"
                 data : s.groupedTranslatorWorks
+                showAuthor : true
+        ]
+
+        s.moreStruct = [
+                label : "Verk som nämner författaren"
+                data : s.groupedAboutWorks
+                showAuthor : true
+            ,
+                label : "Titlar som nämner författaren"
+                data : s.groupedAboutTitles
+                showAuthor : true
+            ,
+                label : "Som utgivare"
+                data : s.groupedAboutEditorWorks
+                showAuthor : true
+            ,
+                label : "Som översättare"
+                data : s.groupedAboutTranslatorWorks
                 showAuthor : true
         ]
 
@@ -869,7 +907,12 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.filterTitle = (row) ->    
         if not s.rowfilter then return true
         filter = (s.rowfilter || '')
-        return new RegExp(filter, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle))
+
+        authors = (_.map row.author, (auth) ->
+            return auth.fullname
+        ).join(" ")
+
+        return new RegExp(filter, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + authors))
 
     s.filterAuthor = (author) ->
         if not s.rowfilter then return true
@@ -910,6 +953,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.getTitleId = (row) ->
         row.itemAttrs.titlepath.split('/')[0]
 
+    s.getUniqId = (row) ->
+        unless row then return
+        row.itemAttrs.lbworkid + (row.itemAttrs.titlepath.split('/')[1] or "")
+        
+
     s.selectWork = () ->
         c.log "selectWork", s.workFilter
         if s.workFilter == "titles"
@@ -930,10 +978,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.authorRender = () ->
         c.log "authorRender"
         # $anchorScroll()
-        if $location.search()['author']
-            auth = s.authorsById[$location.search()['author']]
-            s.authorClick(null, auth)
-            auth._collapsed = true
+        s.$apply () ->
+            if $location.search()['author']
+                auth = s.authorsById[$location.search()['author']]
+                s.authorClick(null, auth)
+            # auth._collapsed = true
 
 
         # $timeout(() ->
@@ -955,10 +1004,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     s.searchTitle = () ->
         c.log "searchTitle", s.workFilter
-        if s.workFilter == 'titles'
+        if s.filter
             s.selectedLetter = null
 
-            fetchWorks()
+            # fetchWorks()
+            fetchTitles()
         else
             unless s.filter then s.selectedLetter = "A" else s.selectedLetter = null
 
@@ -971,9 +1021,16 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         if s.workFilter == "titles"
             fetchWorks()
 
+    fetchTitles = () ->
+        # unless s.filter then return
+        backend.getTitles(true, null, null, s.filter).then (titleArray) ->
+            s.all_titles = titleArray
+
+
+
     fetchWorks = () ->
         s.titleSearching = true
-        backend.getTitles(s.workFilter == "titles", s.authorFilter, s.selectedLetter, s.filter).then (titleArray) ->
+        backend.getTitles(false, s.authorFilter, s.selectedLetter, s.filter).then (titleArray) ->
             s.titleSearching = false
             s.titleArray = titleArray
             s.titleByPath = _.groupBy titleArray, (item) ->
@@ -1013,15 +1070,25 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             # s.selectedTitle = null
             # return
         # s.selectedTitle = null
+        unless s.selectedAuth == author
+            s.selectedAuth?._collapsed = false
+        
         s.selectedAuth = author
         $event?.stopPropagation()
 
         $location.search("author", author.authorid)
         # $anchorScroll()
-        s.infoSearching = true
+        author._infoSearching = true
         backend.getAuthorInfo(author.authorid).then (data) ->
+            author._collapsed = true
             author.data = data
-            s.infoSearching = false
+            author._infoSearching = false
+
+    s.authorHeaderClick = ($event, author) ->
+        if s.selectedAuth == author and author._collapsed
+            author._collapsed = false
+            $event?.stopPropagation()
+
 
     s.titleClick = ($event, title) ->
         # if title == s.selectedTitle
@@ -1059,11 +1126,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
 
 
-    onRootClick = (event) ->
-        s.$apply () ->
-            s.selectedAuth = null
-            s.selectedTitle = null
-    $rootElement.on "click", onRootClick
+    # onRootClick = (event) ->
+    #     s.$apply () ->
+    #         s.selectedAuth = null
+    #         s.selectedTitle = null
+    # $rootElement.on "click", onRootClick
 
 
     util.setupHashComplex s,
@@ -1086,9 +1153,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         #     #replace : false
         # ,
             key : "filter"
-            scope_name : "rowfilter"
+            # scope_name : "rowfilter"
             replace : false
-        # ,
+        ,
         #     key : "niva"
         #     scope_name : "workFilter"
         #     default : "works"
@@ -1125,8 +1192,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     c.log "workfilter", s.workFilter
     fetchWorks()
 
-    s.$on "$destroy", () ->
-        $rootElement.off "click", onRootClick
+    # s.$on "$destroy", () ->
+    #     $rootElement.off "click", onRootClick
 
 littb.controller "epubListCtrl", ($scope, backend, util) ->
     s = $scope
@@ -1753,6 +1820,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{s.mediatype}"
 
     s.gotopage = (page, event) ->
+        s.showGotoInput = false
         c.log "preventDefault", page
         event?.preventDefault()
         ix = s.pagemap["page_" + page]
@@ -1761,6 +1829,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pageToLoad = ix
         else
             s.setPage ix
+
+    s.onGotoClick = () ->
+        if s.showGotoInput
+            s.showGotoInput = false
+            return
+        s.showGotoInput = true
+        $timeout(() ->
+            s.$broadcast("focus")
+        0)
 
     s.toStartPage = (event) ->
         event?.preventDefault()
@@ -1803,7 +1880,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         unless (current or s.workinfo) then return
         # i = current.number - 1
         i = _.indexOf s.workinfo.parts, current
-        c.log "current", current, s.workinfo?.parts[i + 1]
         return s.workinfo?.parts[i + 1]
 
     s.getPrevPart = () ->
