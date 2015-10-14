@@ -728,7 +728,8 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             title?.searchable == "true"
 
     s.getUrl = (work) ->
-        auth = work.authors[0].workauthor or work.workauthor or s.author
+        # auth = work.authors[0].workauthor or work.workauthor or s.author
+        auth = (s.getWorkAuthor work.authors).authorid
         if work.mediatype == "epub" 
             url = "txt/epub/" + auth + "_" + work.titlepath.split("/")[0] + ".epub"
         else if work.mediatype == "pdf"
@@ -779,7 +780,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         unless s.showpage in ["introduktion", "titlar"]
             getHtml(url).then (xml) ->
                 s.externalDoc = xml
-                c.log "s.showpage", s.showpage
                 if s.showpage == "omtexterna"
                     s.pagelinks = harvestLinks(s.externalDoc)
                 else
@@ -823,13 +823,14 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         else return authors[0]
 
     s.getDataSource = () ->
-        c.log "getDatasource", s.showpage
         if s.showpage == "titlar"
             s.titleStruct
         else if s.showpage == "mer"
             c.log "showpage mer"
             s.moreStruct
 
+    s.hasMore = () ->
+        (_.flatten _.pluck s.moreStruct, "data").length
 
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
@@ -850,7 +851,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
                 data : s.groupedWorks
                 showAuthor : false
             ,
-                label : "Titlar som ingår i andra verk"
+                label : "Dikter, noveller, essäer, etc. som ingår i andra verk"
                 data : s.groupedTitles
                 showAuthor : true
             ,
@@ -863,21 +864,23 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
                 showAuthor : true
         ]
 
+        # gen_author = if _.str.endsWith("s") then s.authorInfo.fullName else s.authorInfo.fullName + "s"
+
         s.moreStruct = [
-                label : "Verk som nämner författaren"
+                label : "Verk om #{s.authorInfo.fullName}"
                 data : s.groupedAboutWorks
                 showAuthor : true
             ,
-                label : "Titlar som nämner författaren"
+                label : "Kortare texter om #{s.authorInfo.fullName}"
                 data : s.groupedAboutTitles
                 showAuthor : true
             ,
                 label : "Som utgivare"
-                data : s.groupedAboutEditorWorks
+                data : s.groupedAboutEditorTitles
                 showAuthor : true
             ,
                 label : "Som översättare"
-                data : s.groupedAboutTranslatorWorks
+                data : s.groupedAboutTranslatorTitles
                 showAuthor : true
         ]
 
@@ -1000,7 +1003,6 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         s.authorsById = authorsById
         s.authorData = authorList
         s.authorSearching = false
-
 
     s.searchTitle = () ->
         c.log "searchTitle", s.workFilter
@@ -1132,6 +1134,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     #         s.selectedTitle = null
     # $rootElement.on "click", onRootClick
 
+    if $location.search().filter
+        s.filter = $location.search().filter
+        s.searchTitle()
 
     util.setupHashComplex s,
         [
@@ -1689,10 +1694,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         return out
 
     s.openModal = () ->
+        s.show_about = true  
         
-        modal = $modal.open
-            templateUrl : "about.html"
-            scope : s
 
         # modal.result.then () ->
             # s.closeModal()
@@ -1948,6 +1951,25 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 $rootScope._focus_mode = val
 
         ,
+            key : "om-boken"
+            scope_name : "show_about"
+            post_change : (val) ->
+                if val
+                    about_modal = $modal.open
+                        templateUrl : "about.html"
+                        scope : s
+                        windowClass : "about"
+
+
+                    about_modal.result.then () ->
+                        s.show_about = false
+                    , () ->
+                        s.show_about = false
+                else
+                    about_modal?.close()
+                    about_modal = null
+            
+        ,
             key : "innehall"
             scope_name : "show_chapters"
             post_change : (val) ->
@@ -1956,6 +1978,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                     chapter_modal = $modal.open
                         templateUrl: "chapters.html"
                         scope: s
+                        windowClass : "chapters"
 
                     chapter_modal.result.then () ->
                         s.show_chapters = false

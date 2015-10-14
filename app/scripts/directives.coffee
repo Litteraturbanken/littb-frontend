@@ -313,7 +313,6 @@ littb.directive 'alertPopup', ($rootElement, $timeout, $rootScope) ->
 littb.directive 'focusable', () ->
     link : (scope, elem, attr) ->
         scope.$on "focus", () ->
-            c.log "focusable focus"
             elem.focus()
 
         scope.$on "blur", () ->

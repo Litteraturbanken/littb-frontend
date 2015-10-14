@@ -32,113 +32,123 @@
 
     
         <div class="box_container">
-            <ul class="box author" 
-                scroll-to="selectedAuth.authorid" 
-                target="parent"
-                offset="offset"
-                collapsing="offset">
-                <li ng-show="authorSearching">
-                    <i class="auth_spinner spinner fa fa-spinner fa-spinner-pulse"></i>
-                    <!-- <span class="auth_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
-                </li>
-                <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}" >
-                    <span class="item_header" ng-click="authorHeaderClick($event, author)"><span class="surname">{{author.surname}}</span><span ng-show="author.nameforindex.split(',').length > 1">,</span> {{author.nameforindex.split(",")[1]}} {{author | authorYear}}
-
-                        <i ng-show="author._infoSearching" class="fa fa-spinner fa-spinner-pulse"></i>
-                    </span>
-
-                    <div collapse="!author._collapsed" >
-                        <div class="collapse-content">
-                            <div class="info show_all" ng-show="author.data.intro"
-                                ng-bind-html="author.data.intro | trust" 
-                                ></div> <!-- ng-click="author._show_all = true" -->
-                            <ul class="links">
-                                <li><a href="/#!/forfattare/{{selectedAuth.authorid}}">
-                                    Gå till författarens sida
-                                    </a></li>
-                                <li><a href="/#!/sok?authorid={{selectedAuth.authorid}}">
-                                     Sök i författarens verk</a>
-                                </li>
-                                <li><a href="/#!/forfattare/{{selectedAuth.authorid}}/titlar">
-                                     Visa författarens verk</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                
-
-                    </li>
-                </ul>
             
-            
-            <ul id="table" class="box title" ng-click="$event.stopPropagation()" scroll-to="getUniqId(selectedTitle)">
-                <!-- <thead>
-                    <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
-                    <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
-                    <th></th>
-                </thead> -->
-                <li ng-show="titleSearching">
-                <i class="title_spinner spinner fa fa-spinner fa-spinner-pulse"></i>
-                    <!-- <span class="title_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
-                </li>    
+            <div class="box author">
 
-                <li class="part_header top_header" ng-if="getSource().length">
-                    Hela verk
-                </li>
-                
-                <li class="link" ng-repeat="row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle" on-finish-render="titleRender()"
-                    top="$parent.title_off" ng-click="titleClick($event, row)"
-                    id="{{getUniqId(row)}}">
-                    <div class="header">
-                        <span class="title" >
-                            <a ng-click="row._collapsed = !row._collapsed" >{{row.itemAttrs.showtitle}} </a>
-                        </span>
-                        <span class="author"><a ng-click="authorClick($event, authorsById[row.author[0].authorid])">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
-                    </div>
-                    <div collapse="!row._collapsed">
-                        <div class="collapse-content">
-                            <!-- <div>
-                                <span class="author">{{selectedTitle.author[0].fullname}} </span> {{authorsById[selectedTitle.author[0].authorid] | authorYear}}
+                <div class="scroll-area">
+                    <ul class="list" 
+                        scroll-to="selectedAuth.authorid" 
+                        target="parent"
+                        offset="offset"
+                        collapsing="offset">
+                        <li ng-show="authorSearching">
+                            <i class="auth_spinner spinner fa fa-spinner fa-spinner-pulse"></i>
+                            <!-- <span class="auth_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
+                        </li>
+                        <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}" >
+                            <div class="item_header" ng-click="authorHeaderClick($event, author)"><span class="surname">{{author.surname}}</span><span ng-show="author.nameforindex.split(',').length > 1">,</span> {{author.nameforindex.split(",")[1]}} {{author | authorYear}}
+                    
+                                <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner fa-spinner-pulse"></i>
                             </div>
-                            <div class="title">{{selectedTitle.itemAttrs.title}} ({{selectedTitle.itemAttrs.imprintyear}})</div> -->
-
-                            <ul class="links">
-
-                                <li ng-show="hasMediatype(selectedTitle, 'etext')"><a ng-href="{{getUrl(row, 'etext')}}">Läs som <span class="sc">TEXT</span></a></li>
-                                <li ng-show="hasMediatype(selectedTitle, 'faksimil')"><a ng-href="{{getUrl(row, 'faksimil')}}">Läs som <span class="sc">FAKSIMIL</span></a></li>
-                                <li ng-show="hasMediatype(selectedTitle, 'epub')"><a ng-href="{{getUrl(row, 'epub')}}">Ladda ner <span class="sc">EPUB</span></a></li>
-                                <li ng-show="hasMediatype(selectedTitle, 'pdf')"><a ng-href="{{getUrl(row, 'pdf')}}">Ladda ner <span class="sc">PDF</span></a></li>
-                                <li ng-show="row.searchable == 'true'"><a ng-href="/#!/sok?forfattare={{row.author[0].authorid}}&titlar={{row.itemAttrs.lbworkid}}">Gör en sökning i verket</a></li>
-                                
-                                <li ng-show="hasMediatype(selectedTitle, 'etext')"><a ng-href="{{getUrl(row, row.mediatype[0])}}">Läs mer om verket</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <!-- <td>
-                        <span ng-repeat="type in sortMedia(row.mediatype) | orderBy:'type'">
-            
-                            <span ng-show="!$first">:::</span>
-            
-                            <a ng-href="{{getUrl(row, type)}}">{{type}}</a>
-                        </span>
-                    </td> -->
-                </li>
-                
-                <li class="part_header" ng-if="all_titles.length">
-                    Dikter, noveller, essäer, etc.
-                </li>
-
-                <li ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
-
-                    <div class="header" tooltip="{{row.itemAttrs.title}}">
-                        <span class="title">{{row.itemAttrs.showtitle}}</span>
+                    
+                            <div collapse="!author._collapsed" >
+                                <div class="collapse-content">
+                                    <div class="info show_all" ng-show="author.data.intro">
+                                        <div ng-bind-html="author.data.intro | trust" ></div>
+                                        <em>{{authorsById[author.data.introAuthor].fullname}}</em> <!-- ng-click="author._show_all = true" -->
+                                    </div>
+                                    <ul class="links">
+                                        <li><a href="/#!/forfattare/{{selectedAuth.authorid}}">
+                                            Gå till författarens sida
+                                            </a></li>
+                                        <li ng-if="author.searchable == 'true'"><a href="/#!/sok?authorid={{selectedAuth.authorid}}">
+                                             Sök i författarens verk</a>
+                                        </li>
+                                        <li><a href="/#!/forfattare/{{selectedAuth.authorid}}/titlar">
+                                             Visa författarens verk</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
                         
-                        <span class="author"><a ng-click="authorClick($event, authorsById[row.author[0].authorid])">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
-                    </div>
-                </li>
-                
-            </ul>
-
+                    
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            
+            <div class="box title">
+                <div class="scroll-area">
+                    <ul id="table" class="list" ng-click="$event.stopPropagation()" scroll-to="getUniqId(selectedTitle)">
+                        <!-- <thead>
+                            <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
+                            <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
+                            <th></th>
+                        </thead> -->
+                        <li ng-show="titleSearching">
+                        <i class="title_spinner spinner fa fa-spinner fa-spinner-pulse"></i>
+                            <!-- <span class="title_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
+                        </li>    
+                    
+                        <li class="part_header top_header" ng-if="getSource().length">
+                            Hela verk
+                        </li>
+                        
+                        <li class="link" ng-repeat="row in getSource() | orderBy:'itemAttrs.sortkey' | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle" on-finish-render="titleRender()"
+                            top="$parent.title_off" ng-click="titleClick($event, row)"
+                            id="{{getUniqId(row)}}">
+                            <div class="header">
+                                <span class="title" >
+                                    <a ng-click="row._collapsed = !row._collapsed" >{{row.itemAttrs.showtitle}} </a>
+                                </span>
+                                <span class="author"><a ng-click="authorClick($event, authorsById[row.author[0].authorid])">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
+                            </div>
+                            <div collapse="!row._collapsed">
+                                <div class="collapse-content">
+                                    <!-- <div>
+                                        <span class="author">{{selectedTitle.author[0].fullname}} </span> {{authorsById[selectedTitle.author[0].authorid] | authorYear}}
+                                    </div>
+                                    <div class="title">{{selectedTitle.itemAttrs.title}} ({{selectedTitle.itemAttrs.imprintyear}})</div> -->
+                    
+                                    <ul class="links">
+                    
+                                        <li ng-show="hasMediatype(selectedTitle, 'etext')"><a ng-href="{{getUrl(row, 'etext')}}">Läs som <span class="sc">TEXT</span></a></li>
+                                        <li ng-show="hasMediatype(selectedTitle, 'faksimil')"><a ng-href="{{getUrl(row, 'faksimil')}}">Läs som <span class="sc">FAKSIMIL</span></a></li>
+                                        <li ng-show="hasMediatype(selectedTitle, 'epub')"><a ng-href="{{getUrl(row, 'epub')}}">Ladda ner <span class="sc">EPUB</span></a></li>
+                                        <li ng-show="hasMediatype(selectedTitle, 'pdf')"><a ng-href="{{getUrl(row, 'pdf')}}">Ladda ner <span class="sc">PDF</span></a></li>
+                                        <li ng-show="row.searchable == 'true'"><a ng-href="/#!/sok?forfattare={{row.author[0].authorid}}&titlar={{row.itemAttrs.lbworkid}}">Gör en sökning i verket</a></li>
+                                        
+                                        <li ng-show="hasMediatype(selectedTitle, 'etext') || hasMediatype(selectedTitle, 'faksimil')"><a ng-href="{{getUrl(row, row.mediatype[0]) + '/?om-boken'}}">Läs mer om verket</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <!-- <td>
+                                <span ng-repeat="type in sortMedia(row.mediatype) | orderBy:'type'">
+                    
+                                    <span ng-show="!$first">:::</span>
+                    
+                                    <a ng-href="{{getUrl(row, type)}}">{{type}}</a>
+                                </span>
+                            </td> -->
+                        </li>
+                        
+                        <li class="part_header" ng-if="all_titles.length">
+                            Dikter, noveller, essäer, etc.
+                        </li>
+                    
+                        <li ng-repeat="row in all_titles | orderBy:'itemAttrs.sortkey'" class="parts" ng-class="{first_part : $first}">
+                    
+                            <div class="header" tooltip="{{row.itemAttrs.title}}">
+                                <span class="title">{{row.itemAttrs.showtitle}}</span>
+                                
+                                <span class="author"><a ng-click="authorClick($event, authorsById[row.author[0].authorid])">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
+                            </div>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
 
         </div>
         

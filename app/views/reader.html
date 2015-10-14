@@ -56,7 +56,8 @@
             <a class="title" 
                 href="/#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info">
                 {{workinfo.showtitle}}
-             </a>
+            </a>
+            <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
         </div>
         
         <!-- <div class="arrows">
@@ -67,9 +68,11 @@
 
         <hr>
         <div class="current_part">
-            <div class="header">Avsnitt eller del</div>
+            <div class="header">
+                <a ng-click="show_chapters = true">Avsnitt eller del</a>
+            </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
-            <span>{{getCurrentPart().navtitle}}</span>
+            <div class="navtitle">{{getCurrentPart().showtitle}}</div>
         </div>
         <hr class="lower">
         <!-- <ul class="part_menu" >
@@ -97,16 +100,23 @@
             </a>
             <br>
             <form class="goto" ng-submit="gotopage(gotoInput)" >
-                <a ng-click="onGotoClick()">Gå till sida … <span class="pages">{{pagename}} av {{endpage}}</span></a> <input focusable type="text" ng-show="showGotoInput" ng-model="gotoInput"> <i ng-show="showGotoInput" class="fa fa-angle-double-right"></i>
+                <a ng-click="onGotoClick()">Gå till sida . . . <span class="pages">{{pagename}} av {{endpage}}</span></a> <input focusable type="text" ng-show="showGotoInput" ng-model="gotoInput"> <i ng-show="showGotoInput" class="fa fa-angle-double-right"></i>
             </form>
             
 
-            <a class="navicon" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
+            <a class="" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
                 <!-- <i class="fa fa-arrow-circle-o-left"></i> -->
-                <i class="fa fa-chevron-left"></i>
+                <!-- <i class="fa fa-play-circle flip"></i> -->
+                <!-- <span class="back navicon">&lt;</span> -->
+                
+                <button class="submit btn navicon" ng-click="$close()">
+                    <i class="fa fa-angle-left "></i></button>
             </a>
-            <a class="navicon" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
-            <i class="fa fa-chevron-right"></i>
+            <a class="" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+            <button class="submit btn navicon" ng-click="$close()">
+                <i class="fa fa-angle-right right"></i>
+            </button>
+            <!-- <i class="fa fa-play-circle right"></i> -->
                 <!-- <i class="fa fa-arrow-circle-o-right"></i> -->
             </a>
 
@@ -116,7 +126,7 @@
         
         <div class="subnav">
             <ul>
-                <li><a ng-click="show_chapters = true">Innehållsförteckning</a></li>
+                <li ng-show="workinfo.parts.length"><a ng-click="show_chapters = true">Innehållsförteckning</a></li>
                 <li><a ng-click="openModal()">Mer om boken</a></li>
                 <li><a ng-click="activateFocus()">Läsfokus</a></li>
                 <!-- <li>Visa som bokuppslag</li> -->
@@ -130,25 +140,26 @@
     </div>
         <script type="text/ng-template" id="about.html">
             <div class="about-modal modal-body">
+                <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
                 <ng-include src="'views/sourceInfo.html'"></ng-include>
             </div>
              
         </script>
         <script type="text/ng-template" id="chapters.html">
             <div class="chapters-modal modal-body">
-                <i class="close_btn fa fa-times pull-right" ng-click="$close()"></i>
+            <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
 
                 <div class="header">
                     <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></h2>
                     <h2 class="title" 
                         href="/#!/forfattare/{{author || getValidAuthors()[0].id}}/titlar/{{workinfo.titlepathNorm}}/info">
-                        {{workinfo.showtitle}}
+                        {{workinfo.showtitle}} <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
                      </h2>
                 </div>
 
                 <ul class="part_menu" >
                     <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
-                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
+                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.showtitle}}</a>
                     </li>
                 </ul>
             </div>

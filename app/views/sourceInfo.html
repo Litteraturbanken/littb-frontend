@@ -1,23 +1,25 @@
 <page-title>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</page-title>
 <meta-desc>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</meta-desc>
 <div class="maincontent" ng-class="{searching:!data}" ng-controller="sourceInfoCtrl">
-    <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+    <div ng-show="loading" class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div ng-if="error" class="error">Ett fel har uppstått.</div>
 
-    <div class="header_left">
-        <h3 class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></h3>
-        <h3 class="title"><em>{{data.title}}</em></h3>
+    <div class="header header_left">
+        <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></h2>
+        <h2 class="title"><span>{{data.title}}</span></h2>
     </div>
-    <div class="header_right" >
+    <!-- <div class="header_right" >
         <img ng-show="data.lbworkid" ng-src="{{getSourceImage()}}" ng-click="showLargeImage($event)" onerror="this.style.display = 'none';" >
     </div>
+ -->
+    <!-- <div class="large_img" ng-class="{visible : show_large}">
 
-    <div class="large_img" ng-class="{visible : show_large}">
+
         <img ng-show="data.lbworkid && show_large" ng-src="txt/{{data.lbworkid}}/{{data.lbworkid}}_large.jpeg">
         <div class="cover"></div>
-    </div>
+    </div> -->
     
-    <p class="clearfix" ng-bind-html="data.sourcedesc | trust"></p>
+    <p class="clearfix sourcedesc" ng-bind-html="data.sourcedesc | trust"></p>
 
     <p class="clearfix" ng-bind-html="data.workintro | trust"></p>
     
@@ -52,9 +54,9 @@
         <a class="toggle" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
     </div>
 
-    <div class="pull-right lower_cover">
+    <!-- <div class="pull-right lower_cover">
         <img src="/txt/{{data.lbworkid}}/cover_small.png" alt="">
-    </div>
+    </div> -->
     <div class="clearfix"></div>
 </div>
 

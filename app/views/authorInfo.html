@@ -13,19 +13,25 @@
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
     <h1>{{authorInfo.fullName}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
-
     <ul class="links"> 
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/#!/forfattare/{{author}}">Introduktion</a></li>
         <li ng-class="{active : showpage == 'titlar'}"><a href="/#!/forfattare/{{author}}/titlar">Titlar</a></li>
-        <li ng-class="{active : showpage == 'mer'}"><a ng-href="/#!/forfattare/{{author}}/mer">Mer</a></li>
-        <li ng-if="getSearchableTitles().length"><a href="/#!/sok?forfattare=BenedictssonV">Sök i texterna</a></li>
+        <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/#!/forfattare/{{author}}/mer">Mer</a></li>
+        <li ng-if="getSearchableTitles().length"><a href="/#!/sok?forfattare={{author}}">Sök i texterna</a></li>
     </ul>
     
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
-            <div class="introtext" ng-class="{show_more: show_more}" ng-bind-html="authorInfo.intro | trust"></div>
+            <div class="introtext" ng-class="{show_more: show_more}" >
+                <div ng-bind-html="authorInfo.intro | trust"></div>
+                <div><em>{{authorsById[authorInfo.introAuthor].fullname}}</em></div>
 
-            <div>{{authorsById[authorInfo.introAuthor]}}</div>
+                <div class="source">
+                    <span class="sc">Källa</span>
+                    <span class="source_text">{{authorInfo.sources}}</span>
+                </div>
+            </div>
+
 
             <div class="portrait_container">
                 <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
@@ -48,7 +54,7 @@
                 <h2 ng-show="titleobj.data.length">{{titleobj.label}}</h2>
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
-                    <tr ng-repeat="works in titleobj.data track by $index">
+                    <tr ng-repeat="works in titleobj.data track by $index | orderBy:'works[0].sortkey'">
                         <td >
                             <span ng-repeat="work in works track by $index">
                                 <!-- <span ng-show="!$first">::: </span> -->
@@ -63,11 +69,12 @@
                             <a class="title" ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{works[0].mediatype}}">
                                 {{works[0].showtitle}}
                             </a>
-                            <span class="extras" ng-if="$parent.$index == 1">i
+                            <div class="extras" ng-if="$parent.$index == 1">i
                                 <a class="author" href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">
                                     {{getWorkAuthor(works[0].authors).surname}}:
                                 </a> 
-                                <span class="extras_title">{{works[0].workshorttitle}}</span></span>
+                                <span class="extras_title">{{works[0].workshorttitle}}</span>
+                            </div>
                             
                             <span class="dots"></span>
                         </td>
