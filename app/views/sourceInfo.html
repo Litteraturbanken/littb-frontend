@@ -9,7 +9,6 @@
         <h2 class="title"><span>{{data.title}}</span></h2>
     </div>
     <!-- <div class="header_right" >
-        <img ng-show="data.lbworkid" ng-src="{{getSourceImage()}}" ng-click="showLargeImage($event)" onerror="this.style.display = 'none';" >
     </div>
  -->
     <!-- <div class="large_img" ng-class="{visible : show_large}">
@@ -19,35 +18,42 @@
         <div class="cover"></div>
     </div> -->
     
-    <p class="clearfix sourcedesc" ng-bind-html="data.sourcedesc | trust"></p>
-
-    <p class="clearfix" ng-bind-html="data.workintro | trust"></p>
+    <div class="columns">
+        <div class="col_left">
+            <p class="sourcedesc" ng-bind-html="data.sourcedesc | trust"></p>
+            
+            <div ng-show="data.mediatype" class="mediatypes" ng-class="{bold : data.workintro}">
+                Läs verket som 
+                <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
+                <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)
+            </div>
+            <div ng-show="data.mediatypes.length > 1" class="mediatypes_also">
+                Även tillgängligt som 
+                
+                <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span class="size" ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)</span> </a>
+            </div>
+        </div>
+        <div class="col_right">
+            <img ng-show="data.lbworkid" ng-src="{{getSourceImage()}}" ng-click="showLargeImage($event)" onerror="this.style.display = 'none';" >
+        </div>
+    </div>
     
-    <div ng-show="data.mediatype" class="mediatypes" ng-class="{bold : data.workintro}">
-        Läs verket som 
-        <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
-        <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)
-    </div>
-    <div ng-show="data.mediatypes.length > 1" class="mediatypes_also">
-        Även tillgängligt som 
-        
-        <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span class="size" ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)</span> </a>
-    </div>
+    <p class="workintro" ng-bind-html="data.workintro | trust"></p>
     
     <div ng-repeat="prov in data.provenance" class="provenance">
         <a ng-href="{{prov.link}}" ng-if="prov.image"><img ng-src="red/bilder/gemensamt/{{prov.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
         <p>{{prov.text}}</p>
     </div>
     
-    <div ng-bind-html="data.licenseText | correctLink | trust"></div>
+    <div class="license" ng-bind-html="data.licenseText | correctLink | trust"></div>
     
-    <div ng-show="mediatype == 'etext'">
-        <div ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet:</div>
+    <div class="errata" ng-show="mediatype == 'etext'">
+        <div class="header" ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet</div>
         <div ng-show="!data.errata">Inga ändringar har gjorts mot orginalet.</div>
         <table class="errata_table">
             <tr ng-repeat="tup in data.errata | limitTo:errataLimit">
-                <td><strong>{{tup[0]}}</strong></td>
-                <td>{{tup[1]}}</td>
+                <td>{{tup[0]}}</td>
+                <td ng-bind-html="tup[1] | trust"></td>
             </tr>
         </table>
         <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>

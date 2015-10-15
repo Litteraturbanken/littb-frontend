@@ -32,7 +32,7 @@ littb.filter "formatAuthors", (authors) ->
 
 
 
-        if firsts.length then return "#{firsts.join(', ')} och #{last}"
+        if firsts.length then return "#{firsts.join(', ')} <em style='font-family: Requiem'>&</em> #{last}"
         else return last
         
 

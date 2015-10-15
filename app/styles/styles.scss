@@ -1456,8 +1456,8 @@ $partnav-width : 170px;
         .modal-dialog {
         }
         .modal-body {
-            height : 65vh;
-
+            max-height : 65vh;
+            padding-bottom : 4em;
         }
 
 
@@ -1512,7 +1512,8 @@ $partnav-width : 170px;
     }
     .about-modal {
         .header {
-            margin-bottom : 1em;
+            margin-top : 1em;
+            margin-bottom : 2em;
         }
         .close_btn {
             position: relative;
@@ -1524,7 +1525,7 @@ $partnav-width : 170px;
             visibility: hidden;
         }
         .header_left {
-            float : left;
+            // float : left;
             width : 360px;
 
             .author {
@@ -1533,11 +1534,21 @@ $partnav-width : 170px;
 
         }
         .header_right {
-            float : right;
-            cursor : pointer;
+            // float : right;
+            // cursor : pointer;
         }
         .visible .cover {
             display : block;
+        }
+        .columns {
+            display : flex;
+        }
+        .col_left {
+            flex : 1 1 0;
+            margin-right : 1em;
+        }
+        .col_right {
+            flex : 0 1 auto;
         }
         .large_img {
             &.visible {
@@ -1566,10 +1577,16 @@ $partnav-width : 170px;
             // margin-bottom : 1em;
         }
         p {
-            max-width : 350px;
+            // max-width : 350px;
+        }
+
+        a[rel="license"] {
+            background : none;
         }
 
         .sourcedesc {
+            margin-top : 0;
+
 
         }
 
@@ -1592,7 +1609,8 @@ $partnav-width : 170px;
         // }
         .mediatypes,.mediatypes_also {
             margin-bottom : 0;
-            text-transform: uppercase;
+            // text-transform: uppercase;
+            @include small-caps();
             font-size : 0.8em;
             color : $primarycolor;
             a {
@@ -1604,17 +1622,39 @@ $partnav-width : 170px;
         }
         .provenance {
             margin : 2em 0;
+            font-size : 0.8em;
+
+            display : flex;
+
+            & > * {
+            }
+
             > a {
-                margin-right : 10px;
+                display : block;
+                margin-right : 30px;
+                flex : 0 1 auto;
             }
             > p {
-                width : 250px;
+                flex : 1 1 0;
+
+                // width : 250px;
                 @include inline-block(middle);
             }
         }
         .toggle {
             display : block;
             margin-top : 1em;            
+        }
+        .license {
+            margin-bottom : 2em;
+        }
+        .errata {
+            font-size : 0.8em;
+            .header {
+                max-width : initial;
+                @include small-caps();
+                margin-bottom : 0.5em;
+            }
         }
         .errata_table {
             td {
@@ -1993,6 +2033,8 @@ $partnav-width : 170px;
             .navtitle {
                 max-width : 70%;
                 line-height : 1.3;
+                max-height : 4.5em;
+                overflow-y: hidden;
             }
             margin-bottom : 3em;
         }

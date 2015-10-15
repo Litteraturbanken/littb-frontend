@@ -72,7 +72,7 @@
                 <a ng-click="show_chapters = true">Avsnitt eller del</a>
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
-            <div class="navtitle">{{getCurrentPart().showtitle}}</div>
+            <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().navtitle}}" class="navtitle"></div>
         </div>
         <hr class="lower">
         <!-- <ul class="part_menu" >

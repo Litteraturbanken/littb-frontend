@@ -99,7 +99,7 @@
                             top="$parent.title_off" ng-click="titleClick($event, row)"
                             id="{{getUniqId(row)}}">
                             <div class="header">
-                                <span class="title" >
+                                <span class="title" tooltip="{{row.itemAttrs.title}}">
                                     <a ng-click="row._collapsed = !row._collapsed" >{{row.itemAttrs.showtitle}} </a>
                                 </span>
                                 <span class="author"><a ng-click="authorClick($event, authorsById[row.author[0].authorid])">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>

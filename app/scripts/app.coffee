@@ -44,6 +44,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             'ui.select2'
                                             'ngScrollEvent'
                                             "ui.slider"
+                                            "dibari.angular-ellipsis"
                                            ])
     .config ($routeProvider) ->
 
