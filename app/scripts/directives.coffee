@@ -175,7 +175,8 @@ littb.directive 'scrollTo', ($window, $timeout) ->
                 offset = 0
                 # c.log "animate to offset", (scope.$eval elem.attr("offset"))
                 if attr.offset
-                    offset = (scope.$eval elem.attr("offset")) or 0
+                    offset = Number((scope.$eval elem.attr("offset")) or 0)
+                    c.log "offset", offset
                 elem.animate
                     scrollTop : (elem.scrollTop() + target.position().top) - offset
                 # elem.scrollTop()
@@ -185,10 +186,12 @@ littb.directive 'scrollTo', ($window, $timeout) ->
 littb.directive 'collapsing', ($window, $timeout) -> 
     scope :
         collapsing: "="
+        index: "="
     link : (scope, elem, attr) ->
         scope.$watch ( () -> elem.find(".in.collapsing").height()), (val) ->
-            c.log "collapsing height", val
+
             scope.collapsing = val
+            scope.index = (elem.find(".in.collapsing").scope()?.$eval "$index")
 
 
 littb.directive 'soArticle', ($compile, $location, $window) -> 
@@ -411,20 +414,27 @@ littb.directive "sticky", () ->
             $(document).off "scroll.sticky"
 
 littb.directive "popper", ($rootElement) ->
-    scope: {}
+    scope: {
+        popper : "@"
+    }
     link : (scope, elem, attrs) ->
         popup = elem.next()
         popup.appendTo("body").hide()
         closePopup = () ->
             popup.hide()
         
-        popup.on "click", (event) ->
-            closePopup()
-            return false
+        # popup.on "click", (event) ->
+        #     closePopup()
+        #     return false
+
+        # scope.$watch (() -> popup.is(":visible")), (isVisible) ->
+        #     popper = 
+
 
         elem.on "click", (event) ->
             if popup.is(":visible") then closePopup()
-            else popup.show()
+            else 
+                popup.show()
 
             pos = 
                 my : attrs.my or "right top"
@@ -439,6 +449,13 @@ littb.directive "popper", ($rootElement) ->
 
         $rootElement.on "click", () ->
             closePopup()
+
+        scope.$on "popper.open." + scope.popper, () ->
+            c.log "on popper open", elem
+            setTimeout(() ->
+                elem.click()
+            , 0)
+
 
 
 littb.directive 'kwicWord', ->
@@ -698,15 +715,44 @@ littb.directive 'bkgImg', ($rootElement) ->
 
     link : (scope, element, attr) ->
         element.appendTo "#bkgimg"
-
+        $("#bkgimg").attr("class", element.attr("class"))
         scope.$on "$destroy", () ->
             c.log "destroy", element
             element.remove()
+            $("#bkgimg").attr("class", "")
 
 
 
+littb.directive "listScroll", () ->
+    link : ($scope, element, attr) ->
+        s = $scope
 
+        s.$on "listScroll", ($event, id) ->
+            c.log "id", id
+            element.find("#" + id).click()
 
+        element.on "click", "li", (event) ->
+            targetScope = $(event.currentTarget).scope()
+            closing = element.find(".in.collapsing")
 
+            animateTo = () ->
+                element.animate
+                    scrollTop : element.scrollTop() + $(event.currentTarget).position().top - 25
+
+            if not closing.length
+                animateTo()
+                return
+            
+            collapse_index = closing.scope().$index
+            collapse_height = closing.height()
+            
+
+            isBelow = targetScope.$index > collapse_index
+
+            if isBelow
+                element.animate
+                    scrollTop : (element.scrollTop() + $(event.currentTarget).position().top - 25) - collapse_height
+            else
+                animateTo()
 
 

@@ -21,7 +21,7 @@
             <option value="pdf">PDF</option>
         </select> -->
         <form ng-submit="searchTitle()">
-            <input class="filter_input" type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel och tryck enter">
+            <input class="filter_input" autofocus ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel och tryck enter">
             <button class="submit btn">Sök</button>
             <!-- <span ng-click="searchTitle()" submit-btn></span> -->
         </form>
@@ -35,27 +35,26 @@
             
             <div class="box author">
 
-                <div class="scroll-area">
-                    <ul class="list" 
-                        scroll-to="selectedAuth.authorid" 
-                        target="parent"
-                        offset="offset"
-                        collapsing="offset">
-                        <li ng-show="authorSearching">
-                            <i class="auth_spinner spinner fa fa-spinner fa-spinner-pulse"></i>
+                <div class="scroll-area" list-scroll> <!-- scroll-to="selectedAuth.authorid" target="parent" offset="getCollapseOffset(collapse_index) + 16" collapsing="offset" index="collapse_index" -->
+                    <ul class="list">
+                        <li class="spinner_row" ng-show="authorSearching">
+                            <i class="spinner fa fa-spinner fa-pulse"></i>
                             <!-- <span class="auth_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
                         </li>
-                        <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}" >
+                        <li class="part_header top_header" ng-if="authorData.length">
+                            Författare, utgivare etc.
+                        </li>
+                        <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}" ng-hide="author.show == 'false'" >
                             <div class="item_header" ng-click="authorHeaderClick($event, author)"><span class="surname">{{author.surname}}</span><span ng-show="author.nameforindex.split(',').length > 1">,</span> {{author.nameforindex.split(",")[1]}} {{author | authorYear}}
                     
-                                <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner fa-spinner-pulse"></i>
+                                <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner"></i>
                             </div>
                     
                             <div collapse="!author._collapsed" >
                                 <div class="collapse-content">
                                     <div class="info show_all" ng-show="author.data.intro">
                                         <div ng-bind-html="author.data.intro | trust" ></div>
-                                        <em>{{authorsById[author.data.introAuthor].fullname}}</em> <!-- ng-click="author._show_all = true" -->
+                                        <em>{{authorsById[author.data['intro-author']].fullname}}</em> <!-- ng-click="author._show_all = true" -->
                                     </div>
                                     <ul class="links">
                                         <li><a href="/#!/forfattare/{{selectedAuth.authorid}}">
@@ -79,15 +78,15 @@
             
             
             <div class="box title">
-                <div class="scroll-area">
-                    <ul id="table" class="list" ng-click="$event.stopPropagation()" scroll-to="getUniqId(selectedTitle)">
+                <div class="scroll-area" list-scroll>
+                    <ul id="table" class="list">
                         <!-- <thead>
                             <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
                             <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
                             <th></th>
                         </thead> -->
-                        <li ng-show="titleSearching">
-                        <i class="title_spinner spinner fa fa-spinner fa-spinner-pulse"></i>
+                        <li class="spinner_row" ng-show="titleSearching">
+                            <i class="spinner fa fa-spinner fa-pulse"></i>
                             <!-- <span class="title_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
                         </li>    
                     
@@ -100,7 +99,7 @@
                             id="{{getUniqId(row)}}">
                             <div class="header">
                                 <span class="title" tooltip="{{row.itemAttrs.title}}">
-                                    <a ng-click="row._collapsed = !row._collapsed" >{{row.itemAttrs.showtitle}} </a>
+                                    <a ng-click="titleHeaderClick($event, row)" >{{row.itemAttrs.showtitle}} </a>
                                 </span>
                                 <span class="author"><a ng-click="authorClick($event, authorsById[row.author[0].authorid])">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
                             </div>

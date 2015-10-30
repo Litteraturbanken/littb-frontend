@@ -9,7 +9,9 @@
 
 
 <div ng-class="{searching:!authorInfo, show_large : show_large}">
-    <div class="preloader">Hämtar författare <span class="dots_blink"></span></div>
+    <div class="preloader"> 
+        <i class="spinner fa fa-spinner fa-pulse"></i>
+    </div>
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
     <h1>{{authorInfo.fullName}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
@@ -26,8 +28,8 @@
                 <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div><em>{{authorsById[authorInfo.introAuthor].fullname}}</em></div>
 
-                <div class="source">
-                    <span class="sc">Källa</span>
+                <div class="source" ng-if="authorInfo.sources">
+                    <span class="source_header sc">Källa</span>
                     <span class="source_text">{{authorInfo.sources}}</span>
                 </div>
             </div>
@@ -54,7 +56,7 @@
                 <h2 ng-show="titleobj.data.length">{{titleobj.label}}</h2>
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
-                    <tr ng-repeat="works in titleobj.data track by $index | orderBy:'works[0].sortkey'">
+                    <tr ng-repeat="works in titleobj.data | orderBy:sortOrder track by $index">
                         <td >
                             <span ng-repeat="work in works track by $index">
                                 <!-- <span ng-show="!$first">::: </span> -->

@@ -21,16 +21,22 @@
     <div class="columns">
         <div class="col_left">
             <p class="sourcedesc" ng-bind-html="data.sourcedesc | trust"></p>
+            <div class="sourcedescauthor">{{authorById[data.sourcedescAuthor].fullname}}</div>
             
             <div ng-show="data.mediatype" class="mediatypes" ng-class="{bold : data.workintro}">
-                Läs verket som 
-                <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a>
-                <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)
+                Läs verket som <a class="sc" ng-href="{{getUrl(getReadMediatypes()[0])}}">{{getReadMediatypes()[0]}}</a>
+                <span ng-show="getReadMediatypes().length > 1">
+                    eller <a class="sc" ng-href="{{getUrl(getReadMediatypes()[1])}}">{{getReadMediatypes()[1]}}</a>
+                </span>
+                <!-- <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a> -->
+                <!-- <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB) -->
             </div>
             <div ng-show="data.mediatypes.length > 1" class="mediatypes_also">
-                Även tillgängligt som 
-                
-                <a class="mediatype" ng-repeat="mediatype in getOtherMediatypes()" ng-href="{{getUrl(mediatype)}}"><span ng-show="!$first">::: </span>{{mediatype}} <span class="size" ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB)</span> </a>
+                Ladda ner 
+                <a class="sc" ng-href="{{getUrl(getDownloadMediatypes()[0])}}">{{getDownloadMediatypes()[0]}}</a>
+                <span ng-show="getDownloadMediatypes().length > 1">
+                    eller <a class="sc" ng-href="{{getUrl(getDownloadMediatypes()[1])}}">{{getDownloadMediatypes()[1]}}</a>
+                </span>
             </div>
         </div>
         <div class="col_right">
@@ -56,8 +62,8 @@
                 <td ng-bind-html="tup[1] | trust"></td>
             </tr>
         </table>
-        <a class="toggle" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>
-        <a class="toggle" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
+        <a class="toggle sc" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>
+        <a class="toggle sc" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
     </div>
 
     <!-- <div class="pull-right lower_cover">

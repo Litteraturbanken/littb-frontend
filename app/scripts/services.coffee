@@ -85,16 +85,26 @@ getCqp = (o) ->
         if not o.prefix and not o.suffix
             or_block.push "word = '#{regescape wd}'#{flag}"
 
-        tokenList.push "(#{or_block.join(' | ')})"
+        tokenList.push "(#{or_block.join(' | ')}) & "
 
-    if o.selectedAuthor
-        tokenList[0] += " & _.text_authorid contains '#{o.selectedAuthor}'"
-    if o.selectedTitle
-        tokenList[0] += " & _.text_lbworkid = '#{o.selectedTitle}'"
+
+    structAttrs = []
+
     if o.mediatype == "all"
-        tokenList[0] += " & (_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
+        structAttrs.push "(_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
     else
-        tokenList[0] += " & _.text_mediatype = '#{o.mediatype}'"
+        structAttrs.push "_.text_mediatype = '#{o.mediatype}'"
+    if o.selectedAuthor
+        auths = _.map o.selectedAuthor.split(","), (auth) -> "_.text_authorid contains '#{auth}'"
+        auths = "(#{auths.join(' | ')})"
+        structAttrs.push auths
+    if o.selectedTitle
+        titles = _.map o.selectedTitle.split(","), (id) -> "_.text_lbworkid = '#{id}'"
+        titles = "(#{titles.join(' | ')})"
+        structAttrs.push titles
+
+
+    tokenList[0] += structAttrs.join(" & ")
 
     return "[#{tokenList.join('] [')}]"
 
@@ -401,8 +411,9 @@ littb.factory 'backend', ($http, $q, util) ->
                 }
 
 
+            output.sourcedescAuthor = $("sourcedesc-author", xml).text()
             sourcedesc = $("sourcedesc", xml)
-
+            $("sourcedesc-author", sourcedesc).remove()
 
             errata = $("errata", xml)
             output.errata = for tr in $("tr", errata)
@@ -411,6 +422,8 @@ littb.factory 'backend', ($http, $q, util) ->
             errata.remove()
 
             output.sourcedesc = (util.getInnerXML sourcedesc) or ""
+
+
             # output.workintro = (util.getInnerXML workintro) or ""
 
             epub = $("result epub", xml)
@@ -547,8 +560,8 @@ littb.factory 'backend', ($http, $q, util) ->
                 return [titles, editorTitles, translatorTitles]
 
 
-            [works, editorWorks, translatorWorks] = parseWorks("works item")
-            [titles, editorTitles, translatorTitles] = parseWorks("titles item")
+            [works, editorWorks, translatorWorks] = parseWorks(":root > works item")
+            [titles, editorTitles, translatorTitles] = parseWorks(":root > titles item")
             [aboutWorks, about_editorWorks, about_translatorWorks] = parseWorks("about works item")
             [aboutTitles, about_editorTitles, about_translatorTitles] = parseWorks("about titles item")
 
@@ -879,7 +892,7 @@ littb.factory "authors", (backend, $q) ->
 
 
 
-littb.factory "searchData", (backend, $q, $http) ->
+littb.factory "searchData", (backend, $q, $http, $location) ->
     NUM_HITS = 50 # how many hits per search?
     BUFFER = 10 # additional hits 
     class SearchData
@@ -890,8 +903,14 @@ littb.factory "searchData", (backend, $q, $http) ->
             @querydata = null
             @currentParams = null
 
-        newSearch : (o) ->
-            @currentParams = o
+        newSearch : (params) ->
+            @currentParams = params
+            # @writeArgsToLoc(params)
+
+        writeArgsToLoc : (params) ->
+            $location.search params
+
+
 
         searchWorks : (o) ->
             c.log "searchvars", o

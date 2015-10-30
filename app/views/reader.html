@@ -6,6 +6,7 @@
     <a href="/#!/forfattare/{{author}}">{{authorById[author].surname}}</a>
     <a href="/#!/forfattare/{{author}}/titlar/{{workinfo.titlepath.split('/')[0]}}/info">{{workinfo.shorttitle || workinfo.showtitle}} s. {{pagename}} {{mediatype || ''}}</a>
 </breadcrumb>
+<img class="no-gradient" bkg-img src="img/las_bkg.jpg"></img>
 <div class="reader_main" 
      ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr()}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
 
@@ -69,7 +70,7 @@
         <hr>
         <div class="current_part">
             <div class="header">
-                <a ng-click="show_chapters = true">Avsnitt eller del</a>
+                <a ng-click="show_chapters = true" ng-show="getCurrentPart().showtitle">Avsnitt eller del</a>
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
             <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().navtitle}}" class="navtitle"></div>
@@ -85,7 +86,7 @@
 
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
             
-            <a ng-href="{{getPageUrl(getPrevPart().startpagename)}}">Gå bakåt ett kapitel</a>
+            <a ng-href="{{getPageUrl(getPrevPart().startpagename)}}" ng-class="{disabled : !getPrevPart().startpagename}">Gå bakåt ett kapitel</a>
             <br>
             <a ng-href="{{getPageUrl(getNextPart().startpagename)}}">Gå till nästa kapitel</a>
             <br>
@@ -105,19 +106,14 @@
             
 
             <a class="" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
-                <!-- <i class="fa fa-arrow-circle-o-left"></i> -->
-                <!-- <i class="fa fa-play-circle flip"></i> -->
-                <!-- <span class="back navicon">&lt;</span> -->
                 
                 <button class="submit btn navicon" ng-click="$close()">
                     <i class="fa fa-angle-left "></i></button>
             </a>
             <a class="" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
-            <button class="submit btn navicon" ng-click="$close()">
-                <i class="fa fa-angle-right right"></i>
-            </button>
-            <!-- <i class="fa fa-play-circle right"></i> -->
-                <!-- <i class="fa fa-arrow-circle-o-right"></i> -->
+                <button class="submit btn navicon" ng-click="$close()">
+                    <i class="fa fa-angle-right right"></i>
+                </button>
             </a>
 
             <span class="expl small">Du kan också bläddra med tangentbordets piltangenter.</span>
@@ -130,7 +126,31 @@
                 <li><a ng-click="openModal()">Mer om boken</a></li>
                 <li><a ng-click="activateFocus()">Läsfokus</a></li>
                 <!-- <li>Visa som bokuppslag</li> -->
-                <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}&titlar={{workinfo.lbworkid}}">Sök i verket</a></li>
+                <li>
+                    <a popper="searchPopup" my="middle top+10" at="bottom middle">Sök i verket</a> 
+
+                    <div class="searchbox popper_menu" ng-click="$event.stopPropagation()">
+                        <div class="header">
+                            Sök i <span class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
+                            <div class="title">{{workinfo.title}}</div>
+                        </div>
+
+
+
+                        <div class="ctrls">
+                            <form ng-submit="searchWork(search_query)">
+                                <input autofocus type="text" ng-model="search_query">
+                            </form>
+
+                            <ul class="opts">
+                                <li>Del av ord</li>
+                                <li>Exakt stavning</li>
+                                <li>Avancerad sökning</li>
+                                
+                            </ul>
+                        </div>
+                    </div>
+                </li>
                 <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}">Sök i författarens texter</a></li>
                 <li>Dela boken</li>
             </ul>
@@ -165,31 +185,37 @@
             </div>
 
         </script>
+
+        <div toolkit>
+            <div id="search_nav" ng-show="searchData.total_hits && (x || markee_from)">
+                <div class="text">
+                    <div>
+                        <span class="num">{{searchData.total_hits}}</span> Sökträffar
+                    </div>
+                    <div>
+                        Träff <span>{{searchData.current + 1}}</span>, sida {{page}}
+                    </div>
+                </div>
+                <div class="ctrls">
+                    <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
+                    <div style="clear:both;"></div>
+                    <div class="arrows">
+                        <i class="fa fa-angle-left" ng-click="prevHit()"></i>
+                        <i class="fa fa-angle-right" ng-click="nextHit()"></i>
+                        <!-- <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
+                         -->
+                         <!-- <img ng-click="nextHit()" class="" src="/bilder/h_pil.png"> -->
+                    </div>
+                </div>
+            </div>
+            
+        </div>
     <!-- <div toolkit>
         <div ng-class="{editor: isEditor}">
             <hr>
             
         
-            <div id="search_nav" ng-show="searchData.total_hits && (x || markee_from)">
-                <div class="box">
-                    <div class="text">
-                        <div>
-                            Sökträff
-                        </div>
-                        <div>
-                            <span>{{searchData.current + 1}}</span> av <span>{{searchData.total_hits}}</span>
-                        </div>
-                    </div>
-                    <div class="ctrls">
-                        <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
-                        <div style="clear:both;"></div>
-                        <div class="arrows">
-                            <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
-                            <img ng-click="nextHit()" class="" src="/bilder/h_pil.png">
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         
             <div style="height: 1em;"></div>
         
@@ -254,32 +280,34 @@
     <div ng-show="isFocus && showFocusBar" class="bottomBar" set-class="{'ng-hide-remove' : !isFocus}" to-body>
         
         <a popper my="middle bottom-25" at="bottom middle" >
-            <span ng-include="'img/focus_letters.svg'" class="sizeBtn">
+            <span class="letters">a A</span>
+            <!-- <span ng-include="'img/focus_letters.svg'" class="sizeBtn"> -->
         </a>
         <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
             <div class="arrow"></div>
             <div class="popover_inner">
 
                 <ul ng-show="mediatype == 'etext'">
-                    <li><button ng-click="incrFontSize($event, -0.1)" class="btn btn-small">a</button> 
-                    <button ng-click="incrFontSize($event, 0.1)" class="btn btn-small pull-right">A</button></li>
+                    <li><button ng-click="incrFontSize($event, -0.1)" class="small_text btn btn-small">Mindre <br> text</button> 
+                    <button ng-click="incrFontSize($event, 0.1)" class="btn btn-small pull-right">Större <br> text</button></li>
                 </ul>
                 <div class="size_picker" ng-show="mediatype == 'faksimil'">
                     <div ng-class="{selected : size, hidden : !isDefined(size)}" 
                          ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div>
                     
                 </div>
-                <div class="night_switch on" ng-if="mediatype!= 'faksimil' && !$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Mörkt <br> läge</div></div>
-                <div class="night_switch off" ng-if="mediatype!= 'faksimil' && $root._night_mode" ng-click="$root._night_mode = false"><span class="icon"></span> <div class="label">Ljust <br> läge</div></div>
+                <div class="night_switch on" ng-if="mediatype!= 'faksimil' && !$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Nattläge</div></div>
+                <div class="night_switch off" ng-if="mediatype!= 'faksimil' && $root._night_mode" ng-click="$root._night_mode = false"><span class="icon"></span> <div class="label">Ljust läge</div></div>
             </div>
         </div>
 
 
-        <a rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
-            <i class="fa fa-backward"></i>
+        <a class="nav left" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
+            <i class="fa fa-angle-left "></i>
         </a>
-        <a rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
-            <i class="fa fa-forward"></i>
+        <a class="nav right" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+            <i class="fa fa-angle-right"></i>
+            <!-- <i class="fa fa-forward"></i> -->
         </a>
 
         <a popper my="middle bottom-25" at="bottom middle" >

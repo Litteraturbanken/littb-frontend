@@ -165,6 +165,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             else 
                 return item
         
+    # for the author / about author search check
+    s.isAuthorSearch = true
 
     # util.setupHashComplex s, [
     #         scope_name : "num_hits"
@@ -192,7 +194,11 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             $q.all _.map newAuthors.split(","), (auth) -> 
                 backend.getTitlesByAuthor(auth, true)
             .then (results) ->
-                filteredTitles = _.filter (_.flatten results), (item) -> "/" not in item.titlepath
+                filteredTitles = _.filter (_.flatten results), (item) -> 
+
+                    "/" not in item.titlepath
+
+                filteredTitles = _.uniq filteredTitles, (item) -> item.lbworkid
                 s.titles = filteredTitles
 
 
@@ -341,7 +347,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             from: from
             to: to
             selectedAuthor: $location.search().forfattare
-            selectedTitle : $location.search().titel
+            selectedTitle : $location.search().titlar
             prefix: s.prefix
             suffix: s.suffix
             infix: s.infix
@@ -444,8 +450,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     s.filterOpts =  [
         {label: "Sök i <span class='sc'>ALLA TEXTER</span>", val: "all_texts", selected: true}
-        {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
-        {label: 'Sök i <span class="sc">svenska</span> orginalverk', val: "lang_swedish", selected: true}
+        # {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
+        # {label: 'Sök i <span class="sc">svenska</span> orginalverk', val: "lang_swedish", selected: true}
         {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
         {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
         {label: 'Sök i <span class="sc">moderniserade</span> texter', val: "modernized", selected: true}
@@ -459,7 +465,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     ]
 
     s.searchOptionsMenu = [
-        {label: "SÖK EFTER HELT ORD ELLER FRAS", val: "default", selected: true}
+        {label: "SÖK EFTER ORD ELLER FRAS", val: "default", selected: true}
         {label: "SÖK EFTER ORDBÖRJAN", val: "prefix", selected: false}
         {label: "SÖK EFTER ORDSLUT", val: "suffix", selected: false}
         {label: "SÖK EFTER DEL AV ORD", val: "infix", selected: false}
@@ -500,6 +506,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         }
 
     s.newSearch = (query) ->
+        c.log "newSearch", query
         q = query or s.query
         unless q then return
         $location.search("fras", q) if q
@@ -829,6 +836,10 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             c.log "showpage mer"
             s.moreStruct
 
+
+    s.sortOrder = (works) ->
+        works[0].sortkey
+
     s.hasMore = () ->
         (_.flatten _.pluck s.moreStruct, "data").length
 
@@ -915,12 +926,21 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             return auth.fullname
         ).join(" ")
 
-        return new RegExp(filter, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + authors))
+        exprs = filter.split(" ")
+
+        return _.all exprs, (expr) ->
+            new RegExp(expr, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + authors))
+
+        
 
     s.filterAuthor = (author) ->
         if not s.rowfilter then return true
         filter = (s.rowfilter || '')
-        return new RegExp(filter, "i").test((author.fullname))
+
+        exprs = filter.split(" ")
+
+        return _.any exprs, (expr) ->
+            new RegExp(expr, "i").test((author.fullname))
 
     # titlesort = "itemAttrs.sortkey"
     
@@ -956,9 +976,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.getTitleId = (row) ->
         row.itemAttrs.titlepath.split('/')[0]
 
-    s.getUniqId = (row) ->
-        unless row then return
-        row.itemAttrs.lbworkid + (row.itemAttrs.titlepath.split('/')[1] or "")
+    s.getUniqId = (title) ->
+        unless title then return
+        title.itemAttrs.lbworkid + (title.itemAttrs.titlepath.split('/')[1] or "")
         
 
     s.selectWork = () ->
@@ -980,23 +1000,20 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     s.authorRender = () ->
         c.log "authorRender"
-        # $anchorScroll()
-        s.$apply () ->
-            if $location.search()['author']
-                auth = s.authorsById[$location.search()['author']]
-                s.authorClick(null, auth)
-            # auth._collapsed = true
+        # s.$apply () ->
+        if $location.search()['author']
+            auth = s.authorsById[$location.search()['author']]
+            s.authorClick(null, auth)
+
+            s.$emit("listScroll", $location.search()['author'])
 
 
-        # $timeout(() ->
-        #     c.log "timeout"
-        #     $anchorScroll()
-        # ) 
     s.titleRender = () ->
         if $location.search()['title']
             title = s.titleByPath[$location.search()['title']][0]
             s.titleClick(null, title)
-            title._collapsed = true
+            id = s.getUniqId title
+            s.$emit("listScroll", id)
 
 
     authors.then ([authorList, authorsById]) ->
@@ -1066,6 +1083,21 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         else
             return s.titleArray
 
+    # getSelectedAuthorIndex = () ->
+    #     i = _.indexOf s.authorData, s.selectedAuth
+        # return i
+
+    # s.getCollapseOffset = (collapse_index) ->
+    #     current_index = getSelectedAuthorIndex()
+    #     c.log "current_index", current_index, collapse_index
+
+        
+    #     isBelow = current_index > collapse_index
+
+    #     if isBelow
+    #         c.log "isBelow", s.offset
+    #         return s.offset
+    #     else return 0
 
     s.authorClick = ($event, author) ->
         # if author == s.selectedAuth
@@ -1076,7 +1108,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             s.selectedAuth?._collapsed = false
         
         s.selectedAuth = author
-        $event?.stopPropagation()
+        # $event?.stopPropagation()
 
         $location.search("author", author.authorid)
         # $anchorScroll()
@@ -1091,18 +1123,19 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             author._collapsed = false
             $event?.stopPropagation()
 
+    s.titleHeaderClick = ($event, title) ->
+        if s.selectedTitle == title and title._collapsed
+            title._collapsed = false
+            $event?.stopPropagation()
 
     s.titleClick = ($event, title) ->
-        # if title == s.selectedTitle
-        #     s.selectedTitle = null
-        #     return
-        # s.selectedAuth = null
+        unless s.selectedTitle == title
+            s.selectedTitle?._collapsed = false
+
         s.selectedTitle = title
+        s.selectedTitle._collapsed = true
         $location.search("title", title.itemAttrs.titlepath)
 
-        # getWorkIntro(s.getWorkAuthor(title.author).authorid, title.itemAttrs.titlepath)
-
-        # $event.stopPropagation()
     
     getWorkIntro = (author, titlepath) ->
         s.sourcedesc = null
@@ -1437,6 +1470,15 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     s.getOtherMediatypes = () ->
         (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
+
+    s.getReadMediatypes = () ->
+        read = ['etext', 'faksimil']
+        (x for x in (s.data?.mediatypes or []) when x in read)
+    
+    s.getDownloadMediatypes = () ->
+        download = ['epub', 'pdf']
+        (x for x in (s.data?.mediatypes or []) when x in download)
+        
 
     # s.getMediatypeUrl = (mediatype) ->
     #     if mediatype == "epub"
@@ -1820,6 +1862,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.endpage}/#{mediatype}"
 
     s.getPageUrl = (page) ->
+        unless page then return ""
         "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{s.mediatype}"
 
     s.gotopage = (page, event) ->
@@ -1988,6 +2031,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 else
                     chapter_modal?.close()
                     chapter_modal = null
+        ,
+            key : "fras"
+            scope_name : "search_query"
+            # post_change : (val) ->
+            #     if val
+
+                    
 
     ]
     
@@ -1999,7 +2049,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 val_in : Number
                 # val_out : (val) ->
                 #     val + 1
-                default : 3
+                default : 2
                 post_change: recalcCoors
                     
         ]
@@ -2174,6 +2224,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.loading = false
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
+
+            if $location.search().sok
+                s.$broadcast "popper.open.searchPopup"
+
+            if $location.search().fras
+                s.searchWork $location.search().fras
+
+
+
+
         , (data) ->
             c.log "fail", data
             s.error = true
@@ -2223,4 +2283,34 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     #    $(".etext .markee").removeClass("markee")
     
 ## END ORD OCH SAK
+
+    ## START SEARCH
+
+    # if s.search_query
+
+    s.searchWork = (query) ->
+
+
+
+        args = {
+            query : query
+            mediatype: mediatype
+            from: 0
+            to: 50
+            selectedAuthor: s.author
+            selectedTitle : s.workinfo.lbworkid
+            prefix: s.prefix
+            suffix: s.suffix
+            infix: s.infix
+        }
+
+        searchData.newSearch(args)
+
+        searchData.slice(0, 50).then (kwic) ->
+            c.log "kwic", kwic
+
+            $location.url(kwic[0].href[3...])
+
+
+
 

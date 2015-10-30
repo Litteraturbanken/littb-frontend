@@ -397,7 +397,8 @@ module.exports = function (grunt) {
             'robots.txt',
             // 'bower_components/**/*',
             'img/{,*/}*.{gif,webp}',
-            'styles/fonts/*'
+            'styles/fonts/*',
+            'components/select2/select2.css'
           ]
         }, {
           expand: true,
@@ -413,6 +414,13 @@ module.exports = function (grunt) {
             dest: '<%= yeoman.dist %>',
             src : ['views/sla/*.xml'],
         }
+        // ,
+        // { 
+        //     expand : true,
+        //     cwd : '<%= yeoman.app %>',
+        //     dest: '<%= yeoman.tmp %>',
+        //     src : ['components/select2/select2.css'],
+        // }
         ]
       },
     },
