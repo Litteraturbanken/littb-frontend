@@ -88,6 +88,10 @@ getCqp = (o) ->
         tokenList.push "(#{or_block.join(' | ')}) & "
 
 
+    getAuthors = (obj, type) ->
+        auths = _.map obj.split(","), (auth) -> "_.text_#{type} contains '#{auth}'"
+        auths = "(#{auths.join(' | ')})"
+
     structAttrs = []
 
     if o.mediatype == "all"
@@ -95,9 +99,12 @@ getCqp = (o) ->
     else
         structAttrs.push "_.text_mediatype = '#{o.mediatype}'"
     if o.selectedAuthor
-        auths = _.map o.selectedAuthor.split(","), (auth) -> "_.text_authorid contains '#{auth}'"
-        auths = "(#{auths.join(' | ')})"
+        auths = getAuthors(o.selectedAuthor, "authorid")
         structAttrs.push auths
+    else if o.selectedAboutAuthor
+        auths = getAuthors(o.selectedAboutAuthor, "aboutauthor")
+        structAttrs.push auths
+
     if o.selectedTitle
         titles = _.map o.selectedTitle.split(","), (id) -> "_.text_lbworkid = '#{id}'"
         titles = "(#{titles.join(' | ')})"
@@ -350,6 +357,7 @@ littb.factory 'backend', ($http, $q, util) ->
                     # author : (objFromAttrs $(itm).find("author").get(0)) or ""
                     author : _.map $(itm).find("author"), objFromAttrs
                     mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
+                    authorKeywords : _.pluck $(itm).find("authorkeyword"), "innerHTML"
                     # mediatype : getMediatypes($(itm).attr("lbworkid"))
 
                 if allTitles

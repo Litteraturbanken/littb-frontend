@@ -6,20 +6,6 @@
 
     <h1>Textsökning <span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span> </h1>
 
-    <!-- <div class="preloader"> -->
-    
-    <!-- </div>     -->
-
-
-    
-    <!-- <select multiple class="filter_select title_select" ui-select2="groupSetup" ng-model="selectedAuthors" data-placeholder="Titlar">
-
-    Söker i {{selectedTitles.length || titles.length}} titlar
-    <select multiple class="filter_select title_select" ui-select2="groupSetup" ng-model="selectedTitles" data-placeholder="Titlar">
-        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort">{{title.shorttitle}}</option>
-    </select> -->
-
-
     <form class="submit_form" ng-submit="newSearch(query)">
         <div class="top_row">
             <div class="left_col">
@@ -58,21 +44,21 @@
             <div class="left">
                 <div class="auth_select_container">
                     <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" >
-                        <option value="{{author.authorid}}" ng-repeat="author in authors | orderBy:'nameforindex' | filter:{searchable : 'true'}">
+                        <option value="{{author.authorid}}" ng-repeat="author in getAuthorDatasource() | orderBy:'nameforindex' | filter:{searchable : 'true'}">
                             {{author.fullname}}
                         </option>
                     </select> 
                 </div>
 
                 <div class="textfields">
-                    <div class="checkbox" ng-class="{disabled : !isAuthorSearch}" ng-click="isAuthorSearch = true">
+                    <div class="checkbox" ng-class="{disabled : isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = false">
                         <div class="check">✓</div>
                         <p class="expl advanced_text auth">
                             För att söka i specifika <span class="sc">författarskap</span>: skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> författarskap.) 
                         </p>
                     </div>
                     
-                    <div class="checkbox" ng-class="{disabled : isAuthorSearch}" ng-click="isAuthorSearch = false">
+                    <div class="checkbox" ng-class="{disabled : !isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = true">
                         <div class="check check2">✓</div>
                         <p class="expl advanced_text auth">
                             Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)

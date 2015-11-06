@@ -140,7 +140,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             """
 
         formatSelection : (item) ->
-            c.log "s.authorsById[item.id].surname", s.authorsById[item.id].surname
             return s.authorsById[item.id].surname
             # item.text
 
@@ -212,6 +211,27 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     #     if s.data
     #         s.search()  
     # s.selectedAuthors = $location.search("forfattare")?.split(",")
+
+    titleDef = backend.getTitles()
+    $q.all([titleDef, authors]).then ([titleArray, [authorList, authorsById]]) ->
+        titles = _.filter titleArray, (title) ->
+            title.itemAttrs.searchable == 'true'
+
+
+        aboutAuthorIds = _.unique _.flatten _.pluck titleArray, "authorKeywords"
+        s.aboutAuthors = _.map aboutAuthorIds, (id) ->
+            authorsById[id]
+
+
+
+        # c.log "all titles", titles
+        # _.unique titleArray, (title) ->
+    s.getAuthorDatasource = () ->
+        if s.isAuthorAboutSearch
+            return s.aboutAuthors
+        else
+            return s.authors
+
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
         s.authorsById = authorsById
@@ -367,17 +387,24 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         # from = s.current_page  * s.num_hits
         # to = (from + s.num_hits) - 1
         
-        return {
+        
+        args = {
             query : s.query
             mediatype: getMediatypes()
             from: from
             to: to
-            selectedAuthor: $location.search().forfattare
             selectedTitle : $location.search().titlar
             prefix: s.prefix
             suffix: s.suffix
             infix: s.infix
         }
+
+        if $location.search().sok_om
+            args.selectedAboutAuthor = $location.search().forfattare
+        else
+            args.selectedAuthor = $location.search().forfattare
+
+        return args
 
 
     s.save_search = (currentIndex) ->
@@ -414,42 +441,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     s.getMaxHit = () ->
         Math.min s.hits, (s.current_page  * s.num_hits) + s.kwic.length
-
-    # DATA GRID
-    # s.keys = _.keys
-    # getTmpl = (key) ->
-    #     """
-    #     <div class="ui-grid-cell-contents">
-    #         <span ng-repeat='token in row.entity.#{key}'>{{token.word}} </span> 
-    #     </div>
-    #     """
-
-    # s.gridOptions = {
-    #     showHeader : false
-    #     init : (gridCtrl, gridScope) ->
-    #         gridScope.$on 'ngGridEventData', () ->
-    #             $scope.gridOptions.ngGrid.buildColumns()
-
-    #     columnDefs: [
-    #         { 
-    #             name: 'left',
-    #             cellTemplate: getTmpl("left")
-    #         }
-    #         { 
-    #             name: 'match',
-    #             cellTemplate: getTmpl("match")
-    #             width: "*"
-    #         }
-    #         { 
-    #             name: 'right',
-    #             cellTemplate: getTmpl("right")
-    #         }
-    #         # { field: 'match' },
-    #         # { field: 'right' }
-    #     ]
-
-    # }
-        
 
     onKeyDown = (event) ->
         if event.metaKey or event.ctrlKey or event.altKey or $("input:focus").length then return
@@ -524,13 +515,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         return output
 
-    getGridData = (row) ->
-        return {
-            left : s.selectLeft row
-            match : s.selectMatch row
-            right : s.selectRight row
-        }
-
     s.newSearch = (query) ->
         c.log "newSearch", query
         q = query or s.query
@@ -602,7 +586,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         return def
     # , 200)
 
-    queryvars = $location.search()
+    # queryvars = $location.search()
 
     util.setupHashComplex s,
         [
@@ -625,6 +609,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 c.log "fras val", val
                 if val
                     s.newSearch val
+        ,   
+            key : "sok_om"
+            scope_name : "isAuthorAboutSearch"
+            default : false
 
 
         ]
