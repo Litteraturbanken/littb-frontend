@@ -287,7 +287,7 @@ module.exports = function (grunt) {
           '<%= yeoman.dist %>/styles/{,*/}*.css',
           '<%= yeoman.dist %>/img/{,*/}*.{png,jpg,jpeg,gif,webp}',
           // '!<%= yeoman.dist %>/img/focus_letters.svg',
-          '<%= yeoman.dist %>/styles/fonts/*'
+          // '<%= yeoman.dist %>/styles/fonts/*'
         ]
           
       }
@@ -308,7 +308,10 @@ module.exports = function (grunt) {
       }
     },
     usemin: {
-      html: ['<%= yeoman.dist %>/{,*/}*.html'],
+      html: [
+        '<%= yeoman.dist %>/{,*/}*.html',
+        '<%= yeoman.dist %>/views/**/*.html'
+      ],
       css: ['<%= yeoman.dist %>/styles/{,*/}*.css'],
       options: {
         assetsDirs: ['<%= yeoman.dist %>', '<%= yeoman.dist %>/img']
@@ -397,7 +400,7 @@ module.exports = function (grunt) {
             'robots.txt',
             // 'bower_components/**/*',
             'img/{,*/}*.{gif,webp}',
-            'styles/fonts/*',
+            'styles/fonts/**/*',
             'components/select2/select2.css'
           ]
         }, {

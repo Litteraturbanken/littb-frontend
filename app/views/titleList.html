@@ -54,7 +54,7 @@
                                 <div class="collapse-content">
                                     <div class="info show_all" ng-show="author.data.intro">
                                         <div ng-bind-html="author.data.intro | trust" ></div>
-                                        <em>{{authorsById[author.data['intro-author']].fullname}}</em> <!-- ng-click="author._show_all = true" -->
+                                        <em>{{authorsById[author.data['introAuthor']].fullname}}</em> <!-- ng-click="author._show_all = true" -->
                                     </div>
                                     <ul class="links">
                                         <li><a href="/#!/forfattare/{{selectedAuth.authorid}}">

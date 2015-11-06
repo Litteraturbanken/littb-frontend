@@ -107,11 +107,11 @@
 
             <a class="" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
                 
-                <button class="submit btn navicon" ng-click="$close()">
+                <button class="submit btn navicon left" ng-click="$close()">
                     <i class="fa fa-angle-left "></i></button>
             </a>
             <a class="" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
-                <button class="submit btn navicon" ng-click="$close()">
+                <button class="submit btn navicon right" ng-click="$close()">
                     <i class="fa fa-angle-right right"></i>
                 </button>
             </a>
@@ -193,20 +193,31 @@
                         <span class="num">{{searchData.total_hits}}</span> Sökträffar
                     </div>
                     <div>
-                        Träff <span>{{searchData.current + 1}}</span>, sida {{page}}
+                        Träff <span>{{searchData.current + 1}}</span>, sida {{pagename}}
                     </div>
                 </div>
-                <div class="ctrls">
-                    <img ng-click="close_hits()" class="close_btn" src="/bilder/kryssruta.png">
-                    <div style="clear:both;"></div>
+                <ul class="ctrls">
+
                     <div class="arrows">
-                        <i class="fa fa-angle-left" ng-click="prevHit()"></i>
-                        <i class="fa fa-angle-right" ng-click="nextHit()"></i>
-                        <!-- <img ng-click="prevHit()" class="" src="/bilder/v_pil.png"> 
-                         -->
-                         <!-- <img ng-click="nextHit()" class="" src="/bilder/h_pil.png"> -->
+                        <button rel="next" class="submit btn navicon left" ng-click="prevHit()">
+                            <i class="fa fa-angle-left"></i>
+                        </button>
+                        <button rel="prev" class="submit btn navicon" ng-click="nextHit()">
+                            <i class="fa fa-angle-right"></i>
+                        </button>
                     </div>
-                </div>
+
+                    <li>Gå till första träffen</li>
+                    <li>Gå till sista träffen</li>
+                    <li  ng-class="{open : showGotoHitInput}"><a ng-click="onGotoHitInput()">Gå direkt till träff . . .</a> 
+                        <form ng-submit="onGotoHit(gotoHitInput)" ng-show="showGotoHitInput">
+                            <input focusable type="text" ng-model="gotoHitInput"> <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>    
+                        </form>
+                    </li>
+                    <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Stäng träffvisningen</a> </li>
+
+                    
+                </ul>
             </div>
             
         </div>

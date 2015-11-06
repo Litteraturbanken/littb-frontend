@@ -34,38 +34,38 @@ $fa-font-path: "/components/font-awesome/fonts";
 }
 
 // @font-face {
-//     font-family: "Requiem";
+//     font-family: "Requiem Text A", "Requiem Text B";
 //     src: url("requiem/RequiemText-HTF-Roman.otf");
 //     font-style: normal;
 //     font-weight: normal;
 // }                     
 // @font-face {
-//     font-family: "Requiem";
+//     font-family: "Requiem Text A", "Requiem Text B";
 //     // src: url("requiem/RequiemDisplay-HTF-Italic.otf");
 //     src: url("requiem/RequiemText-HTF-Italic.otf");
 //     font-style: italic;
 // }
 // @font-face {
-//     font-family: "RequiemSC";
+//     font-family: "Requiem Text SC A", "Requiem Text SC B";
 //     src: url("requiem/RequiemText-HTF-SmallCaps.otf");
 //     // font-variant: small-caps;
 // }
 
 // // Display font
 // @font-face {
-//     font-family: "RequiemDisplay";
+//     font-family: "Requiem Display A", "Requiem Display B";
 //     src: url("requiem/RequiemDisplay-HTF-Roman.otf");
 //     font-style: normal;
 //     font-weight: normal;
 // }                     
 // @font-face {
-//     font-family: "RequiemDisplay";
+//     font-family: "Requiem Display A", "Requiem Display B";
 //     // src: url("requiem/RequiemDisplay-HTF-Italic.otf");
 //     src: url("requiem/RequiemDisplay-HTF-Italic.otf");
 //     font-style: italic;
 // }
 // @font-face {
-//     font-family: "RequiemDisplaySC";
+//     font-family: "Requiem Text SC A", "Requiem Text SC B";
 //     src: url("requiem/RequiemDisplay-HTF-SmallCaps.otf");
 //     // font-variant: small-caps;
 // }
@@ -89,7 +89,7 @@ $page-width : 900px;
 $right-corridor-width : 250px;
 $mainview-width : $page-width - $main-menu-width - ($left-gutter-width + $right-gutter-width + $right-corridor-width);
 
-$content-top-margin : 5em;
+$content-top-margin : 1em;
 
 $textcolor : #333;
 $primarycolor : #7A1400;
@@ -217,6 +217,7 @@ h1 {
 }
 .select2-results {
     font-size: 0.8em;
+    max-height : 410px;
 }
 .select2-results .select2-highlighted {
     background-color: lighten(lightgrey, 10%);
@@ -379,6 +380,7 @@ h2 {
 }
 h1,h2,h3,h4,h5,h6 {
     font-family: "Requiem Display A", "Requiem Display B", georgia, serif;
+    font-weight : normal;
 }
 .font-small {
     font-size : 0.8em;
@@ -1123,6 +1125,11 @@ body > .header {
     ul.select2-choices {
         padding-top : 2px;
     }
+
+    .select2-drop .firstname, .select2-drop .year, .select2-drop .title {
+        font-size: 0.9em;
+    }
+
     #mainview {
 
         width : 820px;
@@ -1214,6 +1221,7 @@ body > .header {
         // }
         .submit_form {
             margin-top: 1em;
+            margin-bottom: 3em;
             input {
                 // width: 93%;
             }
@@ -1224,7 +1232,7 @@ body > .header {
 
             .expl {
                 font-size : 0.9em;
-                margin-top: 0.6em;
+                // margin-top: 0.6em;
                 margin-bottom: 1em;
             }
 
@@ -1232,18 +1240,10 @@ body > .header {
                 margin-left: 0.5em;
             }
         }
+
         .auth_select_container,
         .title_select_container {
-            display: none;
-            // @include container();
-            padding-top: 0.6em;
-            padding-bottom: 0.6em;
-
-
-            .surname {
-                @include small-caps();
-            }
-            
+            display : none;
         }
         .advanced .auth_select_container,
         .advanced .title_select_container {
@@ -1306,6 +1306,16 @@ body > .header {
             }
 
         }
+        .textfields {
+            margin-top : 1.5em;
+            p {margin-top : 0;}
+        }
+        // .expl.advanced_text {
+        //     margin-top : 1.5em;
+        // }
+        // .expl.advanced_text.auth {
+        //     margin-top : 0.5em;
+        // }
         .advanced .check {display: inline-block;}
         .disabled .expl.advanced_text {
             color : #999 !important;
@@ -1390,8 +1400,10 @@ body > .header {
                 vertical-align: top;
             }
         }
-        .bottow_row {
+        .bottom_row {
             margin-top : 2em;
+            // padding-bottom : 2em;
+            margin-bottom : 2em;
             & > * {
                 display: inline-block;
                 width : 40%;
@@ -1407,10 +1419,28 @@ body > .header {
             & > div, & > ul  {
                 white-space: normal;
                 @include container();
-                background-color : rgba(255,255,255,0.8);
+                padding-left : 0;
+                background-color : rgba(255,255,255,0.95);
                 display: inline-block;
                 vertical-align: top;    
-                max-height: 630px;
+                max-height: 75vh;
+                min-height: 200px;
+
+                
+            }
+
+            .left_context .punct:first-of-type {
+                display : none;
+            }
+            .word.punct {
+                margin-left : -3px;
+            }
+
+            .right_context {
+                display : block;
+                white-space : nowrap;
+                overflow-x : hidden;
+                text-overflow : ellipsis;
             }
         }
         .table_viewport {
@@ -1421,17 +1451,24 @@ body > .header {
         }
         .table_container {
             padding-left : 1.3em;
-            width : 800px;
+            width : 66vw;
             overflow-x: hidden;
             
             table {
+                width : 100%;
                 display: block;
-                width : 775px;
                 position: absolute;
                 overflow-x: hidden;
                 white-space : nowrap;
+                font-size: 0.9em;
                 .header {
-                    text-indent: 1em;
+                    // text-indent: 1em;
+                    .header_content {
+                        display: inline-block;
+                        border-bottom : 1px solid darkgrey;
+                        padding-right : 5px;
+                        margin-bottom: 0.4em;
+                    }
                     padding-top : 1em;
                     overflow-x: hidden;
                     text-overflow: ellipsis;
@@ -1440,13 +1477,21 @@ body > .header {
                         color: $primarycolor;
                         @include small-caps;
                         // font-size: 0.8em;
+                        margin-right : 7px;
                     }
                     .title {
-                        font-style: italic;
+                        // @include small-caps;
+                        // font-style: italic;
                     }
+                }
+                .sentence {
+                    // font-size: 0.9em;
                 }
                 .right_context {
                     pointer-events : none;
+                }
+                .match {
+                    padding-left: 7px;
                 }
                 .match a {
                     color: $primarycolor;
@@ -1460,6 +1505,7 @@ body > .header {
                 }
                 td.num {
                     // color : grey;
+                    font-size: 0.8em;
                 }
                 td.auth {
                     text-transform: uppercase;
@@ -1484,16 +1530,9 @@ body > .header {
                 }
             }
         }
-        .navigator {
-            @include small-caps;
-            overflow-y: auto;
-            margin-left: 8px;
-            li.selected a {
-                color : $primarycolor;
-            }
-        }
     }
     #toolkit {
+
         margin-top : 2.5em;
         font-size : 0.8em;
         @include small-caps;
@@ -1535,6 +1574,28 @@ body > .header {
                 }
             }
         }
+
+        .navigator {
+            @include container();
+            text-align: left;
+            line-height : 1.1;
+            max-height : 422px;
+            li {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow : ellipsis;
+                
+            }
+
+            background-color: rgba(255, 255, 255, 0.95);
+            @include small-caps;
+            overflow-y: auto;
+            margin-left: 8px;
+            li.selected a {
+                color : $primarycolor;
+            }
+        }
+
     }
 
     .filter_select {
@@ -2280,29 +2341,66 @@ $partnav-width : 170px;
 
     #leftCorridor {
         #search_nav {
+            text-align: right;
+            @include small-caps();
+            line-height : 1;
+            font-size: 0.9em;
+            margin-top : 3em;
             .ctrls {
-                float : right;
+                // float : right;
+                margin-top  : 1em;
                 img {
                     cursor : pointer;
                 }
-                .close_btn {
-                    position: relative;
-                    right : 2px;
-                    float : right;
-                }
                 .arrows {
                     position: relative;
-
-                    i {
-                        display : inline-block;
-                        border : 1px solid grey;
-                        border-radius : 40px;
-                        width : 40px;
-                        height : 40px;
+                    margin-top: 1em;
+                    
+                    button {
+                        line-height : 1;
                     }
+                    button.left  {
+                        padding : 4px 9px;
+                    }
+                }
+                li {
+                    white-space: nowrap;
+                }
+                li.open {
+                    form {
+                        display: inline;
+                    }
+                    input {
+                        width : 40px;
+                        height: 16px;
+                        vertical-align: bottom;
+                        font-size: 0.7em;
+                    }
+                    
                 }
             }
         }
+    }
+
+    .navicon {
+        border-radius : 100px;
+        margin-top : -11px;
+        // font-size : 3em;
+        padding : 4px 9px;
+
+        &.left {
+            padding : 4px 10px;
+            
+        }
+
+        // color : #333;
+        // border-radius: 100px;
+        // border: 1px solid #333;
+        // width : 1em;
+        // height : 1em;
+        // position: relative;
+        // top : 3px;
+        // left : 2px;
     }
     
     #toolkit-right {
@@ -2401,20 +2499,7 @@ $partnav-width : 170px;
             margin-right: 3px;
         }
 
-        .navicon {
-            border-radius : 100px;
-            margin-top : -11px;
-            // font-size : 3em;
-            padding : 0.17em 0.55em;
-            // color : #333;
-            // border-radius: 100px;
-            // border: 1px solid #333;
-            // width : 1em;
-            // height : 1em;
-            // position: relative;
-            // top : 3px;
-            // left : 2px;
-        }
+        
         .part_menu {
             // height: 300px;
             // width: 300px;
@@ -2628,6 +2713,7 @@ $partnav-width : 170px;
     #bkgimg:after {
         box-shadow: inset -410px -460px 400px 30px white;
     }
+
     #mainview {
         // position : relative;
         .error ~ * {
@@ -2639,7 +2725,7 @@ $partnav-width : 170px;
         }
         p {
             max-width : 500px;    
-            line-height : 1.3;
+            line-height : 1.4;
         }
         h2 {
             // text-transform : uppercase;
@@ -2863,12 +2949,6 @@ $partnav-width : 170px;
             }
         }
         .subnav {
-            li:before {
-                content : ":::";
-                display : inline-block;
-                vertical-align: top;
-                margin-right : 3px;
-            }
             li a {
                 display : inline-block;
                 width : 85%;
@@ -3643,22 +3723,121 @@ grundform-clean {
 
 }
 
-.site-sla {
-    &:after {
-        position: absolute;
-        background: url("../img/selma_young_reverse.jpg") no-repeat;
-        top: 0;
-        right : 0;
-        // bottom: 0;
-        content: " ";
-        display: block;
-        height: 1203px;
-        width: 1149px;
-        z-index: -1;
-        opacity: 0.4;
-        // margin-left: auto;
+.site-sla, .site-school {
+    #leftCorridor {
+        display : inline-flex;
+        flex-direction: column;
+
+        .subnav {
+            font-family: "Requiem Display A", "Requiem Display B", georgia, serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-size: 1em;
+            vertical-align: top;
+            line-height: 1.2;
+            text-align: right;
+            text-transform: uppercase;
+
+            order : 1;
+            width: 200px;
+
+            margin-bottom : 200px;
+        }
+        .logo_link_monogram {
+            order: 2;
+            background: url("../img/lb_monogram_white_white.svg") no-repeat;
+            background-size: cover;
+            height: 129px;
+            width: 170px;
+            left: 2px;
+            margin-bottom: 0em;
+            position: relative;
+            display: block;
+            top: 9px;
+
+        }
+
+        .mainnav {
+            order: 3;
+            font-size: 0.8em;
+            a {
+               color : white;
+            }
+        }
         
     }
+
+
+
+}
+
+.site-sla {
+    
+    #bkgimg:after {
+        display : none;
+    }
+    background-color : black;
+    #bkgimg img {
+        opacity : 0.8;
+    }
+    p a {
+        background: linear-gradient(90deg, lightgrey 25%, rgba(0, 0, 0, 0) 0%) repeat-x;
+        background-size: .15em 2px;
+        background-position: 0 85%;
+    }
+
+    * {
+        -webkit-font-smoothing: antialiased;
+        color : white;
+        a:hover {
+            color : #333;
+            * {
+                color : #333;
+            }
+        }
+    }
+    #leftCorridor {
+        * {
+            color : white;
+            a:hover {
+                color : $primarycolor;
+            }
+        }
+        
+
+        .sla_logo {
+            background: url("../img/sla_logga_white_white.svg") no-repeat;
+            height: 162px;
+            width: 420px;
+            margin-bottom: 0;
+            display: inline-block;
+            vertical-align: bottom;
+            background-size: contain;
+            margin-top: 20px;
+
+        }
+
+        
+
+    }
+
+    #mainview {
+        margin-top : 11em;
+
+        .introtext {
+            display: inline-block;
+            vertical-align: top;
+
+        }
+        & > div > h1, .links {
+            display : none;
+        }
+    }
+
+    // .links {
+    //     display : none;
+    // }
+
     h2 {
         margin-top : 4em;
     }
@@ -3689,8 +3868,12 @@ grundform-clean {
         }
     }
     .sla_intro {
-        margin-top : 2em;
+        display: inline-block;
+        vertical-align: top;
+        margin-right: 3em;
+        // margin-top : 2em;
         h1 {
+            margin-top: 0;
             font-size : 1.4em;
         }
     }
@@ -3730,20 +3913,8 @@ grundform-clean {
         margin-right : 1em;
     }
 
+    
     .header {
-        .breadcrumb {
-            width : 55%;
-        }
-        .logo_link {
-            background: url("../img/sla.svg") no-repeat;
-            height : 55px;
-            width : 170px;
-            margin-bottom : 0;
-            @include inline-block(bottom);
-            background-size : contain;
-            // margin-left : 8px;
-
-        }
         
         
     }
@@ -3827,6 +3998,7 @@ grundform-clean {
 }
 
 .site-school {
+    -webkit-font-smoothing: antialiased;
     width : 100%;
     // padding : 50px;
     padding-left : 40px;
@@ -3840,9 +4012,9 @@ grundform-clean {
     h2 {
         margin-top : 2.5em;
         font-size : 1.2em;
-        a {
-            border-bottom : 1px dotted $primarycolor;
-        }
+        // a {
+        //     border-bottom : 1px dotted $primarycolor;
+        // }
     }
     h3 {
         font-weight: bold;
@@ -3966,14 +4138,12 @@ grundform-clean {
     .italics, .italic {
         font-style: italic;
     }
-    #leftCorridor {
-        display : none;
-    }
+
     .header hr {
         border-color : lightgrey;
     }
     .logo_link {
-        background: url("../img/school_logo.svg") no-repeat;
+        // background: url("../img/school_logo.svg") no-repeat;
         height : 50px;
         width: 370px;
         margin-bottom : 0;
@@ -4003,21 +4173,23 @@ grundform-clean {
     }
 
     #mainview {
+
+
         width : auto;
     }
     p, #{headers()} {
         max-width: $column_width;
     }
-    #mainview:after {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        background-repeat: no-repeat;
-        opacity : 0.3;
-        content: "";
-        z-index: -1;
-        // white-space: nowrap;
-    }
+    // #mainview:after {
+    //     position: absolute;
+    //     right: 0;
+    //     bottom: 0;
+    //     background-repeat: no-repeat;
+    //     opacity : 0.3;
+    //     content: "";
+    //     z-index: -1;
+    //     // white-space: nowrap;
+    // }
     .ulink {
         @include small-caps;
         // font-style: italic;
@@ -4056,8 +4228,9 @@ grundform-clean {
         // font-style: italic;
         font-size : 20px;
     }
-
     .content {
+        display: inline-block;
+        vertical-align: top;
         h1 {
             // color : $primarycolor;
             // text-transform: uppercase;
@@ -4121,6 +4294,44 @@ grundform-clean {
 
 
     &.page-school {
+
+        .subnav {
+            a {
+                color : black;
+            }
+            a:hover {
+                color : white;
+            }
+        }
+        .mainnav {
+            a:hover {
+                color : black !important;
+            }   
+        }
+
+        background-color : black;
+
+        #bkgimg {
+            opacity: 0.9;
+        }
+
+        #leftCorridor {
+
+            h1 {
+                font-size: 5em;
+                margin-top: 0em;
+                color : white;
+                margin-bottom: 0;
+            }
+            h2 {
+                color: white;
+                margin-top: 1.5em;
+                margin-bottom: 0.2em;
+            }
+        }
+        .content {
+            margin-top : 6.3em;
+        }
         ul {
             font-size : 0.8em;  
         }
@@ -4143,6 +4354,14 @@ grundform-clean {
         
         .content {
             min-height : 380px;
+            width : 450px;
+            color : white;
+            a {
+                color : white;
+            }
+            a:hover {
+                color : #333;
+            }
         }
         
         
@@ -4150,42 +4369,42 @@ grundform-clean {
             h2 {
                 color : $primarycolor;
             }
-            position: absolute;
+            // position: absolute;
             text-transform: uppercase;
 
         }
-        .header hr {
-            position : relative;
-            z-index : -1; 
-            width : 600px;
-            margin : 0;
-            margin-top: 31px;
-        }
+        // .header hr {
+        //     position : relative;
+        //     z-index : -1; 
+        //     width : 600px;
+        //     margin : 0;
+        //     margin-top: 31px;
+        // }
 
-        .img_circle {
-            float : right;
-        }
+        // .img_circle {
+        //     float : right;
+        // }
 
         .teachers {
-            top: 220px;
-            left: 550px;
+            // top: 220px;
+            // left: 550px;
         }
         .students {
-            top: 420px;
-            left: 600px;
+            // top: 420px;
+            // left: 600px;
         }
 
         #mainview:after {
-            background-image: url("../img/selma_circle.png");
-            background-size : 700px;
-            top: 50px;
-            left: 450px;
-            opacity : 1;
-            height : 710px;
+            // background-image: url("../img/selma_circle.png");
+            // background-size : 700px;
+            // top: 50px;
+            // left: 450px;
+            // opacity : 1;
+            // height : 710px;
         }
-        h1, p {
-            max-width : 380px;
-        }
+        // h1, p {
+        //     max-width : 380px;
+        // }
     }
     &.page-teachers, &.page-students {
         #mainview > div {
@@ -4207,7 +4426,7 @@ grundform-clean {
         }
         #mainview:after {
             position: absolute;
-            background-image: url("../img/lagerlof_portrait.jpg");
+            // background-image: url("../img/lagerlof_portrait.jpg");
             top: -90px;
             left: -280px;
             height : 1200px;   

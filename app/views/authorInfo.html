@@ -5,7 +5,8 @@
     <a href="/#!/forfattare/{{author}}">{{authorInfo.fullName}}</a>
     <a href="">{{getPageTitle(showpage)}}</a>
 </breadcrumb>
-<img bkg-img class="no-gradient" src="img/trad_bkg.jpg"></img>
+<img ng-if="!slaMode" bkg-img class="no-gradient" src="img/trad_bkg.jpg"></img>
+<img ng-if="slaMode" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img>
 
 
 <div ng-class="{searching:!authorInfo, show_large : show_large}">
@@ -24,9 +25,10 @@
     
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
+            <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div class="introtext" ng-class="{show_more: show_more}" >
                 <div ng-bind-html="authorInfo.intro | trust"></div>
-                <div><em>{{authorsById[authorInfo.introAuthor].fullname}}</em></div>
+                <div class="pull-right"><em>{{authorsById[authorInfo.introAuthor].fullname}}</em></div>
 
                 <div class="source" ng-if="authorInfo.sources">
                     <span class="source_header sc">Källa</span>
@@ -48,7 +50,7 @@
             <!-- <div class="show_more_btn" ng-show="!show_more">–<a href="" ng-click="show_more = true">LÄS MER</a>–</div> -->
             <!-- <div class="show_more_btn" ng-show="!show_more"> <a href="" ng-click="show_more = true"><span class="arrow">▼</span> LÄS MER</a></div> -->
             <div class="show_more_btn" ng-show="!show_more"> <i class="fa fa-caret-down"></i> <a href="" ng-click="show_more = true"> LÄS MER</a></div>
-            <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
+            
         </div>
 
         <script type="text/ng-template" id="listing.html">
@@ -108,32 +110,24 @@
 </div>
 
 
-<!-- <div toolkit>
-    <hr>
-    <div class="author">
-        <a ng-href="/#!/forfattare/{{author}}">{{authorInfo.fullName}}</a>
-        <div>{{authorInfo | authorYear}}</div>
-    </div>
-    
-    <ul class="topnav" role="navigation">
-        <li ng-if="hasTitles()">
-            <a ng-href="/#!/forfattare/{{author}}/titlar" >::: Verk och titlar i LB</a>
-        </li>
-        <li ng-if="groupedWorks.length == 1">
-            <a ng-href="{{getUrl(groupedWorks[0][0])}}">::: {{groupedWorks[0][0].showtitle}}</a>
-        </li>
-    </ul>
-    <ul class="subnav" role="navigation" ng-show="authorInfo">
-        <li ng-if="authorInfo.intro"><a ng-href="/#!/forfattare/{{author}}" >Introduktion</a></li>
-        <li ng-if="authorInfo.presentation"><a ng-href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
-        <li ng-if="authorInfo.bibliografi"><a ng-href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
-        <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">Se mer</a></li>
-        <li ng-repeat="ref in authorInfo.externalref">
-            <a ng-href="/#!/{{ref.url}}">{{ref.label}}</a>
-        </li>
-        <ul ng-if="slaMode">
-            <li><a ng-href="/#!/forfattare/{{author}}/jamfor">Textkritisk verkstad</a></li>
-            <li><a ng-href="/#!/forfattare/{{author}}/omtexterna">Vetenskapliga texter</a></li>
+<div toolkit>
+    <div ng-show="slaMode">
+        <a href="/#!/forfattare/LagerlofS" class="sla_logo"></a>
+        <ul class="subnav" role="navigation" ng-show="authorInfo">
+            <li>
+                <a ng-href="/#!/forfattare/{{author}}/titlar" >Verk i LB</a>
+            </li>
+            <li ng-if="authorInfo.intro"><a ng-href="/#!/forfattare/{{author}}" >Introduktion</a></li>
+            <li ng-if="authorInfo.presentation"><a ng-href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
+            <li ng-if="authorInfo.bibliografi"><a ng-href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
+            <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">Se mer</a></li>
+            <li ng-repeat="ref in authorInfo.externalref">
+                <a ng-href="/#!/{{ref.url}}">{{ref.label}}</a>
+            </li>
+            <ul ng-if="slaMode">
+                <li><a ng-href="/#!/forfattare/{{author}}/jamfor">Textkritik</a></li>
+                <li><a ng-href="/#!/forfattare/{{author}}/omtexterna">Vetenskap</a></li>
+            </ul>
         </ul>
-    </ul>
-</div> -->
+    </div>
+</div>

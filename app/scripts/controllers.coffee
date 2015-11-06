@@ -118,15 +118,41 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce) ->
+littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce, $filter) ->
     s = $scope
     s.open = true
     s.proofread = 'all'
 
-    s.groupSetup = {
-        formatSelection : (item) ->
-            item.text.split(",")[0]
+    s.authorSelectSetup = {
+        formatNoMatches: "Inga resultat",
+        formatResult : (data) ->
+            # return data.text
+            author = s.authorsById[data.id]
 
+            firstname = ""
+            if author.nameforindex.split(",").length > 1
+                firstname = "<span class='firstname'>, #{author.nameforindex.split(',')[1]}</span>"
+
+            return """
+            <span>
+                <span class="surname sc">#{author.surname}</span>#{firstname} <span class="year">#{$filter('authorYear')(author)}</span>
+            </span>
+            """
+
+        formatSelection : (item) ->
+            c.log "s.authorsById[item.id].surname", s.authorsById[item.id].surname
+            return s.authorsById[item.id].surname
+            # item.text
+
+    }
+
+    s.titleSelectSetup = {
+        formatNoMatches: "Inga resultat",
+        formatResult : (data) ->
+            return "<span class='title'>#{data.text}</span>"
+
+        formatSelection : (item) ->
+            item.text
     }
     
 
@@ -596,6 +622,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         ,
             key : "fras"
             post_change : (val) ->
+                c.log "fras val", val
                 if val
                     s.newSearch val
 
@@ -1756,12 +1783,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     thisRoute = $route.current
     
     s.nextHit = () ->
-        searchData.next().then (newUrl) ->
-            c.log "newUrl", newUrl
-            $location.url(newUrl)
+        searchData.next().then (newHit) ->
+            c.log "newHit", newHit
+            $location.url(newHit.href[3...])
     s.prevHit = () ->
-        searchData.prev().then (newUrl) ->
-            $location.url(newUrl)
+        searchData.prev().then (newHit) ->
+            $location.url(newHit.href[3...])
     s.close_hits = () ->
         searchData.reset()
         $location.search("traff", null)
@@ -2031,9 +2058,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 else
                     chapter_modal?.close()
                     chapter_modal = null
-        ,
-            key : "fras"
-            scope_name : "search_query"
+        # ,
+        #     key : "fras"
+        #     scope_name : "search_query"
             # post_change : (val) ->
             #     if val
 
@@ -2228,8 +2255,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             if $location.search().sok
                 s.$broadcast "popper.open.searchPopup"
 
-            if $location.search().fras
-                s.searchWork $location.search().fras
+            # if $location.search().fras
+            #     s.searchWork $location.search().fras
 
 
 
@@ -2288,10 +2315,49 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     # if s.search_query
 
+    s.getCleanUrl = () ->
+        "/#!" + $location.path()
+
+
+    s.$watch (() -> $location.search().search_params), (val) ->
+        c.log "search_params", val
+        if val
+            args = JSON.parse val
+            searchData.newSearch(args)
+            searchData.current = Number($location.search().hit_index)
+
+            searchData.slice(0, 50).then () ->
+                c.log "searchdata slice"
+        
+
+    s.onGotoHitInput = () ->
+        if s.showGotoHitInput
+            s.showGotoHitInput = false
+            return
+        s.showGotoHitInput = true
+        $timeout(() ->
+            s.$broadcast("focus")
+        0)
+
+
+    s.onGotoHit = (hit) ->
+        if hit > searchData.total_hits
+            return
+        s.showGotoHitInput = false
+        hit = Number(hit - 1)
+        # from = if (hit - 5) < 0 then 0 else (hit - 5)
+        searchData.current = hit
+        searchData.search().then (result) ->
+            c.log "result", result
+            $location.url(result.href[3...])
+
+        # searchData.slice(from, from + 10).then (data) ->
+        #     c.log "slice data", data
+
+
+
+
     s.searchWork = (query) ->
-
-
-
         args = {
             query : query
             mediatype: mediatype

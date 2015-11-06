@@ -905,12 +905,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
         newSearch : (params) ->
             @currentParams = params
-            # @writeArgsToLoc(params)
-
-        writeArgsToLoc : (params) ->
-            $location.search params
-
-
+            @doNewSearch = true
 
         searchWorks : (o) ->
             c.log "searchvars", o
@@ -945,6 +940,8 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     
             ).success( (data) =>
                 @querydata = data.querydata
+
+                punctArray = [",", ".", ";", ":", "!", "?", "..."]
                 # sums = []
                 if data.ERROR
                     c.log "searchWorks error:", JSON.stringify(data.ERROR)
@@ -957,9 +954,14 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                 if not @data.length
                     @data = new Array(data.hits)
 
+
                 c.log "splice", from, data.kwic.length
                 for sent, i in data.kwic
                     sent.index = i + from
+                    for wd in sent.tokens
+                        if wd.word in punctArray
+                            wd._punct = true
+
                 @data[from..data.kwic.length] = data.kwic
 
 
@@ -975,7 +977,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             unless @currentParams then return
             c.log "slice", from, to
             def = $q.defer()
-            if @hasSlice from, to 
+            if (@hasSlice from, to) and not @doNewSearch
                 c.log "@hasSlice from, to", (@hasSlice from, to)
                 def.resolve(@data.slice(from, to))
             else
@@ -991,7 +993,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                 @searchWorks(@currentParams).then (data) ->
                     c.log "searchWorks then", data.kwic, from, to
                     def.resolve data.kwic
-
+            @doNewSearch = false
             return def.promise
 
 
@@ -1034,8 +1036,8 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
                 row.sent_length = sum
 
-            for row in data.kwic
-                row.href = @parseUrls row
+            for row, index in data.kwic
+                row.href = @parseUrls row, index
                 if row.sent_length > min
 
                     diff = row.sent_length - min
@@ -1052,7 +1054,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                         row.match.start -= drop
                         row.match.end -= drop
 
-        parseUrls : (row) ->
+        parseUrls : (row, index) ->
             itm = row.structs
             mediatype = itm.text_mediatype
 
@@ -1096,10 +1098,13 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     unless a then return b
                     a + "|" + b
             )
+            merged.search_params = JSON.stringify @currentParams
+            merged.hit_index = index
             merged = _(merged).pairs().invoke("join", "=").join("&")
 
             author = _.str.trim(itm.text_authorid, "|").split("|")[0]
             titleid = itm.text_titlepath
+
             return "/#!/forfattare/#{author}/titlar/#{titleid}" + 
                 "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{merged}" # ?#{backend.getHitParams(itm)}
             
