@@ -495,13 +495,23 @@ littb.factory 'backend', ($http, $q, util) ->
 
             info.pagemap = pgMap
 
-            # info.parts = _.map $("parts > part", xml), objFromAttrs
-            info.parts = _.map $("parts > part", xml), (item, i) ->
-                obj = objFromAttrs(item)
+
+            info.parts = _.map $("LBwork part", xml), (item, i) ->
+
+                # obj = objFromAttrs(item)
+                obj = {}
+                for node in $(item).children()
+                    obj[node.nodeName] = $(node).text()
+
+
+                obj.showtitle = obj.showtitle or obj.shorttitle or obj.title
+
                 obj.number = i
                 return obj
-            info.parts = _.filter info.parts, (item) ->
-                return "/" in item.id
+            c.log "info.parts", info.parts
+            # info.parts = _.filter info.parts, (item) ->
+            #     return "/" in item.titlepath
+
 
 
             info.mediatypes = for mediatype in $("mediatypes mediatype", xml)
@@ -635,13 +645,14 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    getTitlesByAuthor : (authorid, cache) ->
+    getTitlesByAuthor : (authorid, cache, aboutAuthors=false) ->
+        serviceName = if aboutAuthors then "get-works-by-author-keyword" else "get-titles-by-author"
         def = $q.defer()
         url = "/query/lb-anthology.xql"
         req = 
             url : url
             params:
-                action : "get-titles-by-author"
+                action : serviceName
                 authorid : authorid
         if cache then req.cache = true
         http(req).success (xml) ->
@@ -1025,10 +1036,6 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
 
 
-        reset : () ->
-            @data = []
-            @currentParams = null
-
         compactData : (data) ->
             min = Infinity
             for row in data.kwic
@@ -1168,6 +1175,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @total_hits = null
             @data = []
             @searchArgs = null
+            @currentParams = null
 
 
     return new SearchData()

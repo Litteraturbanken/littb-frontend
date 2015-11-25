@@ -1,0 +1,634 @@
+@charset "utf-8";
+
+
+.site-sla, .site-school {
+    #leftCorridor {
+        display : inline-flex;
+        flex-direction: column;
+
+        .subnav, .lower_menu {
+            font-size: 0.8em;
+            font-family: "Requiem Display A", "Requiem Display B", georgia, serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            // font-size: 1em;
+            vertical-align: top;
+            line-height: 1.2;
+            text-align: right;
+            text-transform: uppercase;
+
+            order : 1;
+            // width: 200px;
+
+            // margin-bottom : 200px;
+
+            li a.selected {
+
+                color : white;
+                cursor : default;
+            }
+        }
+        .logo_link_monogram {
+
+            order: 2;
+            background: url("../img/lb_monogram_white_white.svg") no-repeat;
+            background-size: cover;
+            height: 129px;
+            width: 170px;
+            left: 9px;
+            top: -6px;
+            margin-bottom: 0em;
+            position: relative;
+            display: block;
+
+        }
+
+        .mainnav {
+            align-self : flex-end;
+            order: 3;
+            font-size: 0.8em;
+            a {
+               color : white;
+            }
+        }
+        
+    }
+
+    .content {
+        margin-bottom : 5em;
+        font-size: 0.9em;
+        @include container();
+        background-color : rgba(255, 255, 255, 0.75);
+
+        padding : 1em;
+        padding-left : 2em;
+        // padding-bottom: 2em;
+        border: 1px solid #333;
+        height: 75vh;
+        overflow-y: auto;
+
+        // em {
+        //     font-style : normal;
+        //     display: inline-block;
+        //     max-width : 500px;
+
+        // }
+        h1 {
+            @include small-caps();
+
+            color : $primarycolor;
+            color: #7A1400;
+            font-size: 1em;
+            margin-top: 1.4em;
+            .italic {
+                font-style: normal;
+            }
+            span {
+                // border-bottom: 1px solid darkgrey;
+                // padding-bottom: 2px;
+            }
+        }
+
+        p {
+            margin: 0;
+            text-indent : 2em;
+            line-height: 1.4;
+        }
+
+        h2 + p, 
+        h1 + p,
+        h3 + p,
+        .titlepage + p {
+            text-indent : 0em;
+        }
+
+        h1 a {
+            color : $primarycolor;
+        }
+        a {
+            background: none;
+        }
+        li {
+        }
+        .auth {
+            float : right;
+            @include small-caps();
+            color : $primarycolor;
+            font-size: 0.9em;
+        }
+        h1:first-of-type {
+            margin-top : 0.9em;
+            &:empty {
+                margin : none;
+            }
+        }
+        h2 {
+            color : $primarycolor;
+            font-size: 1em;
+        }
+    }
+}
+
+
+.site-school {
+    -webkit-font-smoothing: antialiased;
+    width : 100%;
+    // padding : 50px;
+    padding-left : 40px;
+    // font-size : 16px;
+    line-height: 1.4;
+    $column_width : 500px;
+    h1 {
+        line-height : 1.1;
+        font-size : 1.6em;
+    }
+    h2 {
+        margin-top : 2.5em;
+        font-size : 1.2em;
+        // a {
+        //     border-bottom : 1px dotted $primarycolor;
+        // }
+    }
+    h3 {
+        // font-weight: bold;
+        margin-top : 2.5em;
+        font-size : 0.8em;
+        line-height : 0.5;
+    }
+
+
+    .inner {
+        // margin-right : 0.5em;
+        // margin : 0.5em 0;
+        margin-top: 0.3em;
+        margin-bottom: 0.7em;
+        @include font-normal();
+
+        border-right : 1px solid white;
+        padding-right : 0.6em;
+        line-height : 0.7;
+        li {
+            margin-bottom: 0.5em;
+        }
+        // font-style: italic;
+        // margin-right : 1em;
+
+    }
+
+    
+
+    
+    .authorinfo {
+        text-indent : 0em;
+    }
+    .authorinfo + .authorinfo {
+        text-indent : 2em;
+    }
+
+    blockquote {
+        font-size : 0.85em;
+        padding-left : 25px;
+        margin-left : 1em;
+        max-width : $column_width - 60px;
+        line-height : 1.4em;
+    }
+
+    .download {
+        line-height : 1.1;
+        vertical-align : middle;
+        display : inline-block;
+        // padding : 3px;
+        border : 1px solid transparent;
+        cursor: pointer;
+        border-radius: 4px;
+        // font-size : 0.9em;
+        * {
+            display : inline-block;
+        }
+        i {
+            font-size : 0.8em;
+            margin-right: 3px;
+            // vertical-align: bottom;
+            color : #333;
+        }
+        &:hover {
+        }
+        &:active {
+            color : grey;
+        }
+        &:hover {
+            color : initial;
+        }
+    }
+
+    .itemizedlist {
+        p {
+            margin : 0;
+        }
+    }
+    // .top_menu .icon {
+    //     cursor: pointer;
+    //     margin-left : -16px;
+
+    //     color : #666;
+    // }
+    .collapse {
+        // margin-left : 1.5em;
+        overflow: hidden;
+    }
+    // .minus:after {
+    //     font-size : 1.4em;
+    //     height : 100%;
+    // }
+    // .plus:after {
+    //     font-size : 1.4em;
+    //     line-height: 0;
+    // }
+    // .minus:hover, .plus:hover {
+    //     color : $primarycolor;
+    // }
+    // .minus:active, .plus:active {
+    //     color: lighten($primarycolor, 5%);
+    // }
+    
+    .highlight {
+        color : $primarycolor;
+    }
+
+    .file_parent {
+        margin-bottom: 3em;
+        white-space : nowrap;
+        & > * {
+            white-space: normal;
+        }
+    }
+    .next_prev {
+        height : 1em;
+        font-size : 0.8em;
+        margin-top : 3em;
+        a:first-child:not(.empty) {
+            float : left;
+            &:before {
+                content : "← ";
+            }
+        }
+        a:last-child:not(.empty) {
+            float : right;
+            &:after {
+                content : " →";
+            }
+        }
+    }
+
+    .sidebar_parent {
+        width : 800px;
+        text-indent: 0;
+
+        & > * {
+            display: inline-block;
+            vertical-align: top;
+        }
+    }
+
+    // .before_sidebar {
+    //     @include inline-block(top);
+    // }
+    .sidebar {
+        @include inline-block(top);
+
+        width: 210px;
+        margin-left: 2em;
+        font-size: 0.85em;
+        line-height : 1.2;
+        p {
+            text-indent : 0;
+        }
+
+    }
+
+    .italics, .italic {
+        font-style: italic;
+    }
+
+    .header hr {
+        border-color : lightgrey;
+    }
+    .logo_link {
+        // background: url("../img/school_logo.svg") no-repeat;
+        height : 50px;
+        width: 370px;
+        margin-bottom : 0;
+        @include inline-block();
+        position: relative;
+        top: 20px;
+        // margin-bottom : -40px;
+    }
+    & > .header .breadcrumb {
+        display : block;
+        width : auto;
+    }
+
+
+    #toolkit {
+        margin-bottom: 3em;
+        
+    }
+
+
+    #mainview {
+        margin-top: 8.4em;
+        width : auto;
+    }
+    p, #{headers()} {
+        max-width: $column_width;
+    }
+    .ulink {
+        // @include small-caps;
+        // font-style: italic;
+    }
+    .ulink[href^="/#!/skola"] {
+        @include small-caps();
+    }
+    .firstterm, .glossterm {
+        // font-variant: small-caps;
+        font-size : 0.9em;
+        // text-transform: capitalize;
+        
+    }
+    .firstterm {
+        font-style: normal;
+
+    }
+    .separator {
+        text-align: center;
+        margin-top: 2em;
+    }
+    
+    dt {
+        margin-top: 0.8em;
+        margin-bottom : 0.5em;
+        .glossterm {
+            font-style: normal;
+            font-weight: bold;       
+        }
+    }
+    dd {
+        margin-bottom : 1.5em;
+    }
+    dd p {
+        margin-top : 0;
+    }
+    .titlepage {
+        font-weight: normal;
+        // font-style: italic;
+        font-size : 20px;
+    }
+    .content {
+        display: inline-block;
+        vertical-align: top;
+        h1 {
+            // color : $primarycolor;
+            // text-transform: uppercase;
+        }
+        ul li {
+            list-style-type : disc;
+            margin-left : 2em;
+        }
+        @include inline-block(top);
+        .sect2 {
+            margin-top: 2em;
+        }
+    }
+    ul ul li {
+        margin-left : 1em;
+    }
+
+    .lower_menu {
+        margin-top : 1em;
+    }
+
+    &.page-teachers, &.page-students {
+        #mainview > div {
+            white-space : nowrap;
+            & > * {
+                white-space : normal;
+            }
+        }
+        #mainview {
+            img {
+                max-width : 520px;
+            }
+        }
+        #leftCorridor {
+            .logo_link_monogram {
+                @include logo("black_black");
+            }
+            h1 {
+                color : #333;
+                a:hover {
+                    color : white;
+                }
+            }
+
+            .mainnav {
+                a {
+                    color : black;
+                    &:hover {
+                        color : white;
+                    }
+                }
+            }
+
+            .subnav, .lower_menu {
+                h2 {
+                    a {
+                        color : white;
+                    }
+                }
+
+                a {
+                    color : black;
+                }
+
+                a:hover {
+                    color : white;
+                }
+            }
+            
+        }
+        
+
+
+        // .nav_sidebar {
+        //     width : 274px;
+        // }
+        &:after {
+            position: absolute;
+            top : 0;
+            left : 0;
+            right : 0;
+            height: 100%;
+            background-color : white;
+            opacity  : 0;
+            transition : opacity 500ms;
+            z-index: -1;
+            content : " ";
+        }
+
+        // #bkgimg {
+        //     opacity : 0.5;
+        // }
+        // .logos {
+        //     margin-top : 4em;
+        //     & > * {
+        //         display : block;
+        //         margin-top : 1em;
+        //     }
+        //     .lb {
+        //         height : 33px;
+        //     }
+        //     .sla {
+        //         height : 33px;
+        //         // margin-left: 29px;
+        //         margin-top: 7px;
+        //     }
+        // }
+    }
+
+    .subnav {
+        a:hover {
+            color : white;
+        }
+    }
+    // .mainnav {
+    //     a:hover {
+    //         color : black !important;
+    //     }   
+    // }
+
+    #leftCorridor {
+
+        h1 {
+            font-size: 5em;
+            margin-top: 0em;
+            color : white;
+            margin-bottom: 0;
+        }
+        h2 {
+            font-size: 1.4em;
+            color: white;
+            margin-top: 1.5em;
+            margin-bottom: 0.2em;
+        }
+    }
+    // ul {
+    // }
+    
+    &.page-school {
+
+
+        background-color : black;
+
+        // #bkgimg {
+        //     opacity: 0.9;
+        // }
+
+        .content {
+            // margin-top : 6.3em;
+            padding-top : 0;
+            background : none;
+            border : none;
+        }
+        .logo_link {
+            cursor: pointer;
+        }
+        .logos {
+            margin-top : 5em;
+            .lb{
+                height : 40px;
+            }
+            .amp{
+                height : 16px;
+                margin : 0 8px;
+            }
+            .sla{
+                height : 40px;
+            }
+        }
+        
+        .content {
+            min-height : 380px;
+            width : 450px;
+            color : white;
+            a {
+                color : white;
+            }
+            a:hover {
+                color : #333;
+            }
+        }
+        
+        
+        .teachers, .students {
+            h2 {
+                color : $primarycolor;
+            }
+            // position: absolute;
+            text-transform: uppercase;
+
+        }
+    }
+    &.page-teachers  {
+        #leftCorridor {
+            width : 231px;
+        }
+        .header hr {
+            border-color : #999;
+            border-width: 1px;
+        }
+        #mainview:after {
+            position: absolute;
+            top: -90px;
+            left: -280px;
+            height : 1200px;   
+
+        }
+        #mainview {
+            & > div {
+                @include inline-block(top);
+            }
+        }
+        .authorinfo {
+            margin-top : 5em;
+            &:last-child {
+                margin-top : inherit;
+            }
+            font-size : 0.8em;
+
+        }
+    }
+    &.page-students {
+
+        &.school-startpage .content {
+            background : none;
+            border : none;
+            color : white;
+            height : auto;
+
+        }
+
+        [toolkit].page_f-5 {
+            width  : 200px;
+        }
+        [toolkit].page_6-9 {
+            width  : 269px;
+        }
+        [toolkit].page_gymnasium {
+            width  : 269px;
+        }
+
+        .header hr {
+            border-color : #999;
+        }
+    }
+}

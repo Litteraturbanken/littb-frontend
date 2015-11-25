@@ -1,12 +1,31 @@
 littb = angular.module('littbApp')
 
     
-littb.controller "MenuCtrl", ($scope) ->
+littb.controller "MenuCtrl", ($scope, util) ->
+    c.log "MenuCtrl", $scope
     s = $scope
     s.$root.collapsed ?= [true, true, true, true, true]
 
+    # util.setupHash s, [
+    #     key : "collapsed"
+    # ]
+
+
+    s.collapseMenu = (index) ->
+        c.log "collapseMenu", index
+
+        if not s.$root.collapsed[index]
+            s.$root.collapsed[index] = true    
+            return
+
+        for __, i in s.$root.collapsed
+            s.$root.collapsed[i] = true
+        s.$root.collapsed[index] = false
+        c.log "s.$root.collapsed", s.$root.collapsed
+            
+
 getStudentCtrl = (id) ->
-    ["$scope", "$routeParams", ($scope, $routeParams) ->
+    ["$scope", "$routeParams", "$rootElement", "$location", ($scope, $routeParams, $rootElement, $location) ->
         # filenameFunc($scope, $routeParams)
         $scope.id = id
         sfx = {
@@ -15,6 +34,11 @@ getStudentCtrl = (id) ->
             "gymnasium" : "GY"
         }[id]
         $scope.defaultUrl = "Valkommen#{sfx}.html"
+
+        if !_.str.endsWith $location.path(), ".html"
+            $rootElement.addClass "school-startpage"
+        else
+            $rootElement.removeClass "school-startpage"
 
         $scope.capitalize = (str) -> str[0].toUpperCase() + str[1..]
 
@@ -149,8 +173,16 @@ littb.config () ->
 
 
 
-littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q, $timeout, $rootScope) ->
+littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q, $timeout, $rootScope, $rootElement) ->
     $scope.docurl = $routeParams.docurl
+
+    # classlist = $rootElement.attr("class").split(" ")
+    # classlist = _.filter classlist, (item) -> !_.str.startsWith("subpage-")
+
+    # $rootElement.attr("class", classlist.join(" "))
+    # $rootElement.addClass("subpage-" + id)
+
+
     def = $q.defer()
     def.promise.then () ->
         $timeout(() ->
@@ -196,8 +228,14 @@ littb.directive "scFile", ($routeParams, $http, $compile, util, backend) ->
 littb.directive "sidebar", () ->
     restrict : "C"
     link : ($scope, elem, attr) ->
-        h = elem.prev().addClass("before_sidebar").height()
-        elem.height(h)
+
+        parent = $("<div class='sidebar_parent'></div>")
+        prev = elem.prev()
+        elem.before(parent)
+        parent.append(prev, elem)
+
+        # h = elem.prev().addClass("before_sidebar").height()
+        # elem.height(h)
 
 
 

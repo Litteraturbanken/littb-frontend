@@ -1,39 +1,51 @@
 <meta-desc>Litteraturbankens gratis tillgängliga verk i formatet epub.</meta-desc>
     
-
+    <img bkg-img src="img/moln.jpg"></img>
 
     <div ng-class="{searching : searching}"><!-- for some reason, this breaks if dedented -->
         <h1>Litteraturbankens epubfiler</h1>
             
-        <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Listan på verk som finns tillgängliga i formatet kommer att utökas med tiden. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
+        <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
         
         <div>
-            <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
+            <!-- <select ng-model="authorFilter" ng-options="author.nameforindex for author in authorData | orderBy:'nameforindex'">
                 <option value="">Alla författare</option>
-            </select>
+            </select> -->
+
+            <div class="auth_select_container">
+                <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
+                    <option>Välj författare</option>
+                    <option value="{{author.authorid}}" ng-repeat="author in authorData | orderBy:'nameforindex'">
+
+                        <span class="lastname">{{author.surname}}</span>
+                    </option>
+                </select> 
+            </div>
         
             <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
         </div>
         <div class="preloader">Hämtar <span class="dots_blink"></span></div>
-        <table class="contenttable" scroll-to="{{selectedLetter || 'A'}}">
-            <thead>
-                <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
-                <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
-            </thead>
-            <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.author[0].nameforindex.toUpperCase()}}">
-                    <td>
-                        <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}" >{{::getAuthor(row)}}</a>
-                        <span class="dots"></span>
-                    </td>
-                    <td class="title">
-                        <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}/titlar/{{::row.itemAttrs.titlepath.split('/')[0]}}/info" >{{::row.itemAttrs.showtitle}}</a>
-                    </td>
-                    <td>
-                        <a ng-click="log(getFilename(row))" ng-href="/txt/epub/{{::getFilename(row)}}.epub">Hämta</a>
-                    </td>
-                </tr></tbody>
-        </table>
+        <div class="table_container">
+            <table class="contenttable" scroll-to="{{selectedLetter || 'A'}}">
+                <thead>
+                    <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
+                    <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
+                </thead>
+                <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.author[0].nameforindex.toUpperCase()}}">
+                        <td>
+                            <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}" >{{::getAuthor(row)}}</a>
+                        </td>
+                        <td class="title">
+                            <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}/titlar/{{::row.itemAttrs.titlepath.split('/')[0]}}/etext/?om-boken" >{{::row.itemAttrs.showtitle}}</a>
+                        </td>
+                        <td>
+                            <a ng-click="log(getFilename(row))" ng-href="/txt/epub/{{::getFilename(row)}}.epub">Hämta</a>
+                        </td>
+                    </tr></tbody>
+            </table>
+        </div>
     </div>
-    <div toolkit>
+    <!-- <div toolkit>
         <div letter-map letter-map-change="letterChange()" selected="selectedLetter" enabled-letters="currentLetters"></div>
     </div>
+ -->

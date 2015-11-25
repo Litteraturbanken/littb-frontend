@@ -1,20 +1,22 @@
 <meta-desc>
     {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
-<breadcrumb>
+<!-- <breadcrumb>
     <a href="/#!/forfattare">författare</a>
     <a href="/#!/forfattare/{{author}}">{{authorById[author].surname}}</a>
     <a href="/#!/forfattare/{{author}}/titlar/{{workinfo.titlepath.split('/')[0]}}/info">{{workinfo.shorttitle || workinfo.showtitle}} s. {{pagename}} {{mediatype || ''}}</a>
-</breadcrumb>
-<img class="no-gradient" bkg-img src="img/las_bkg.jpg"></img>
+</breadcrumb> -->
+<!-- <img class="no-gradient" bkg-img src="img/las_bkg.jpg"></img> -->
 <div class="reader_main" 
-     ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr()}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
+     ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr(), border : border}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
 
-    <div class="preloader">Hämtar sida <span class="dots_blink"></span></div>
+    <!-- <div class="preloader">Hämtar sida <span class="dots_blink"></span></div> -->
+    <div class="preloader pull-right"><i class="spinner fa fa-spinner fa-pulse"></i></div>
+
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     <div class="etext txt"
-         selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-bind-html="etext_html | setMarkee:markee_from:markee_to | trust" ></div>
+         selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
     
          <!-- ng-style="{height : overlayHeight, width : overlayWidth}" 
 
@@ -37,12 +39,11 @@
 
     <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
 
-    <div square ng-repeat="obj in coors" ng-show="height" x="obj.x" 
-         y="obj.y" w="obj.width" h="obj.height" 
+    <div square ng-repeat="obj in coors" ng-show="obj.height"
          class="faksimilMarkee" ng-class="{long : obj.width > 150}"></div>
     
     
-    <div toolkit toolkit-id="toolkit-right">
+    <div toolkit toolkit-id="toolkit-right" ng-show="workinfo">
         <!-- <div id="ord-och-sak" ng-show="ordOchSakPage">
             <div ng-repeat="entry in ordOchSakPage" ng-mouseenter="markOosEntry(entry)" 
                  ng-mouseleave="unmarkOosEntries()">
@@ -70,7 +71,8 @@
         <hr>
         <div class="current_part">
             <div class="header">
-                <a ng-click="show_chapters = true" ng-show="getCurrentPart().showtitle">Avsnitt eller del</a>
+                <a ng-click="show_chapters = true" ng-show="!getCurrentPart().authorid">Avsnitt eller del</a>
+                <a ng-click="show_chapters = true" ng-show="getCurrentPart().authorid">{{authorById[getCurrentPart().authorid].fullname}}</a>
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
             <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().navtitle}}" class="navtitle"></div>
@@ -86,9 +88,9 @@
 
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
             
-            <a ng-href="{{getPageUrl(getPrevPart().startpagename)}}" ng-class="{disabled : !getPrevPart().startpagename}">Gå bakåt ett kapitel</a>
+            <a ng-href="{{getPageUrl(getPrevPart().startpagename)}}" ng-class="{disabled : !getPrevPart()}">Gå bakåt ett kapitel</a>
             <br>
-            <a ng-href="{{getPageUrl(getNextPart().startpagename)}}">Gå till nästa kapitel</a>
+            <a ng-class="{disabled : !getNextPart()}" ng-href="{{getPageUrl(getNextPart().startpagename)}}">Gå till nästa kapitel</a>
             <br>
             <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
                 ng-click="gotopage(startpage, $event)">
@@ -127,27 +129,36 @@
                 <li><a ng-click="activateFocus()">Läsfokus</a></li>
                 <!-- <li>Visa som bokuppslag</li> -->
                 <li>
-                    <a popper="searchPopup" my="middle top+10" at="bottom middle">Sök i verket</a> 
+                    <!-- <a popper="searchPopup" my="left center" at="left middle">Sök i verket</a>  -->
+                    <a ng-click="openSearchWorks()">Sök i verket</a> 
 
-                    <div class="searchbox popper_menu" ng-click="$event.stopPropagation()">
-                        <div class="header">
-                            Sök i <span class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
-                            <div class="title">{{workinfo.title}}</div>
-                        </div>
+                    <!-- <div class="searchbox popper_menu" ng-click="$event.stopPropagation()"> -->
+                    <div collapse="!show_search_work" class="searchbox" ng-class="{searching : isSearchingWork}">
+                        <div class="collapse-content">
+                            <div class="header">
+                                <div class="auth">
+                                    Sök i <span class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
+                                </div>
+                                <div class="title">{{workinfo.showtitle}}</div>
+                            </div>
 
 
 
-                        <div class="ctrls">
-                            <form ng-submit="searchWork(search_query)">
-                                <input autofocus type="text" ng-model="search_query">
-                            </form>
+                            <div class="ctrls">
+                                <form ng-submit="searchWork(search_query)">
+                                    <input focusable="search_work" type="text" ng-model="search_query"> 
+                                    <i class="spinner fa fa-spinner fa-pulse"></i>
+                                    <button type="submit" ng-click="searchWork(search_query)" class="submit btn">Sök</button>
 
-                            <ul class="opts">
-                                <li>Del av ord</li>
-                                <li>Exakt stavning</li>
-                                <li>Avancerad sökning</li>
-                                
-                            </ul>
+                                </form>
+
+                                <ul class="opts search_opts">
+                                    <li> <span class="check">✓</span><a href="">Ord eller fras</a></li>
+                                    <li><a href="">Ordbörjan</a></li>
+                                    <li><a href="">Ordslut</a></li>
+                                    <li><a href="">Del av ord</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </li>
@@ -158,6 +169,12 @@
 
         
     </div>
+        <script type="text/ng-template" id="img_full.html">
+            <div class="about-modal modal-body">
+                <img ng-src="{{activeSrc}}">
+            </div>
+             
+        </script>
         <script type="text/ng-template" id="about.html">
             <div class="about-modal modal-body">
                 <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
@@ -179,7 +196,9 @@
 
                 <ul class="part_menu" >
                     <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
+                        <span class="author">{{authorById[part.authorid].fullname}}</span>
                         <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.showtitle}}</a>
+
                     </li>
                 </ul>
             </div>
@@ -187,12 +206,14 @@
         </script>
 
         <div toolkit>
-            <div id="search_nav" ng-show="searchData.total_hits && (x || markee_from)">
+            <div ng-class="{searched_work : hasSearchedWork}" id="search_nav" ng-show="searchData.data.length  && (x || markee_from)">
                 <div class="text">
                     <div>
-                        <span class="num">{{searchData.total_hits}}</span> Sökträffar
+                        <span class="num">{{searchData.total_hits}}</span> 
+                        <span ng-show="searchData.total_hits > 1">sökträffar</span>
+                        <span ng-show="searchData.total_hits == 1">sökträff</span>
                     </div>
-                    <div>
+                    <div ng-show="searchData.total_hits > 0">
                         Träff <span>{{searchData.current + 1}}</span>, sida {{pagename}}
                     </div>
                 </div>
@@ -207,20 +228,48 @@
                         </button>
                     </div>
 
-                    <li>Gå till första träffen</li>
-                    <li>Gå till sista träffen</li>
+                    <li><a ng-click="onGotoHit(1)">Gå till första träffen</a></li>
+                    <li><a ng-click="onGotoHit(searchData.total_hits)">Gå till sista träffen</a></li>
                     <li  ng-class="{open : showGotoHitInput}"><a ng-click="onGotoHitInput()">Gå direkt till träff . . .</a> 
                         <form ng-submit="onGotoHit(gotoHitInput)" ng-show="showGotoHitInput">
                             <input focusable type="text" ng-model="gotoHitInput"> <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>    
                         </form>
                     </li>
+
+                    <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Tillbaka till söksidan</a> </li>
                     <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Stäng träffvisningen</a> </li>
 
                     
                 </ul>
+
+                <!-- <div class="search_again" ng-class="{searching : isSearchingWork}">
+                    <form ng-submit="searchWork(search_query)">
+                        <input autofocus type="text" ng-model="search_query">
+                        <button type="submit" ng-click="searchWork(search_query)" class="submit btn">Sök</button>
+                        <i class="spinner fa fa-spinner fa-pulse"></i>
+                    </form>
+                    <ul class="search_opts">
+                        <li> <span class="check">✓</span> <a href="">Ord eller fras</a></li>
+                        <li><a href="">Ordbörjan</a></li>
+                        <li><a href="">Ordslut</a></li>
+                        <li><a href="">Del av ord</a></li>
+                    </ul>
+                </div> -->
+
             </div>
             
+            <div class="size_picker" ng-show="mediatype == 'faksimil'">
+                <h2>Ändra storlek</h2>
+                <button ng-click="setSize(size - 1)" ng-disabled="!sizes[(size || 0) - 1]" class="small_text btn btn-small">Mindre</button>
+                <button ng-click="setSize(size + 1)" ng-disabled="!sizes[(size || 0) + 1]" class="small_text btn btn-small">Större</button>
+
+
+                <!-- <div ng-class="{selected : size, hidden : !isDefined(size)}" 
+                     ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div> -->
+                
+            </div>
         </div>
+
     <!-- <div toolkit>
         <div ng-class="{editor: isEditor}">
             <hr>
@@ -264,11 +313,7 @@
         
             </div>
         
-            <div class="size_picker" ng-show="mediatype == 'faksimil'">
-                <div ng-class="{selected : size, hidden : !isDefined(size)}" 
-                     ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div>
-                
-            </div>
+            
     
             <div ng-if="supportsParallel()"><a ng-click="toggleParallel()">
                 <span ng-if="!isParallel">
@@ -291,7 +336,7 @@
     <div ng-show="isFocus && showFocusBar" class="bottomBar" set-class="{'ng-hide-remove' : !isFocus}" to-body>
         
         <a popper my="middle bottom-25" at="bottom middle" >
-            <span class="letters">a A</span>
+            <span class="letters sans bold">A a</span>
             <!-- <span ng-include="'img/focus_letters.svg'" class="sizeBtn"> -->
         </a>
         <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
@@ -331,7 +376,7 @@
                 <ul class="work_parts">
                     <li><a ng-click="gotopage(startpage)">[Start]</a></li>
                     <li ng-repeat="part in workinfo.parts">
-                        <a ng-click="gotopage(part.startpagename)">{{part.navtitle}}</a>
+                        <a ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
                     </li>
                 </ul>
             </div>

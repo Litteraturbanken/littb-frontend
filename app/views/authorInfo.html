@@ -26,7 +26,7 @@
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
             <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
-            <div class="introtext" ng-class="{show_more: show_more}" >
+            <div class="introtext" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div class="pull-right"><em>{{authorsById[authorInfo.introAuthor].fullname}}</em></div>
 
@@ -39,6 +39,7 @@
 
             <div class="portrait_container">
                 <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
+                <figcaption>{{authorInfo.pictureinfo}}</figcaption>
                 <!-- <ul class="links">
                     <li><a href="/#!/forfattare/{{author}}/titlar">Tillgängliga titlar</a></li>
                     <li><a href="/#!/sok?forfattare=BenedictssonV">Sök i texterna</a></li>
@@ -47,15 +48,14 @@
             </div>
             
 
-            <!-- <div class="show_more_btn" ng-show="!show_more">–<a href="" ng-click="show_more = true">LÄS MER</a>–</div> -->
-            <!-- <div class="show_more_btn" ng-show="!show_more"> <a href="" ng-click="show_more = true"><span class="arrow">▼</span> LÄS MER</a></div> -->
             <div class="show_more_btn" ng-show="!show_more"> <i class="fa fa-caret-down"></i> <a href="" ng-click="show_more = true"> LÄS MER</a></div>
             
         </div>
 
         <script type="text/ng-template" id="listing.html">
-            <div ng-repeat="titleobj in getDataSource()" ng-show="authorInfo && titleobj.data.length">
-                <h2 ng-show="titleobj.data.length">{{titleobj.label}}</h2>
+            <div ng-class="{content : slaMode}" ng-repeat="titleobj in getDataSource()" ng-show="authorInfo && titleobj.data.length">
+                <h2 ng-show="!slaMode" ng-show="titleobj.data.length">{{titleobj.label}}</h2>
+                <h1 ng-show="slaMode" ng-show="titleobj.data.length">{{titleobj.label}}</h1>
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                     <tr ng-repeat="works in titleobj.data | orderBy:sortOrder track by $index">
@@ -102,7 +102,7 @@
     
         <!-- <div ng-switch-default id="author-info-external"></div> -->
         <div ng-switch-default>
-           <div footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
+           <div ng-class="{content : slaMode}" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
        </div>
     </div>
 
@@ -113,14 +113,13 @@
 <div toolkit>
     <div ng-show="slaMode">
         <a href="/#!/forfattare/LagerlofS" class="sla_logo"></a>
-        <ul class="subnav" role="navigation" ng-show="authorInfo">
+        <ul class="subnav" role="navigation">
             <li>
                 <a ng-href="/#!/forfattare/{{author}}/titlar" >Verk i LB</a>
             </li>
-            <li ng-if="authorInfo.intro"><a ng-href="/#!/forfattare/{{author}}" >Introduktion</a></li>
-            <li ng-if="authorInfo.presentation"><a ng-href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
-            <li ng-if="authorInfo.bibliografi"><a ng-href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
-            <li ng-if="authorInfo.semer"><a ng-href="/#!/forfattare/{{author}}/semer">Se mer</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}" >Introduktion</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
+            <li><a ng-href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
             <li ng-repeat="ref in authorInfo.externalref">
                 <a ng-href="/#!/{{ref.url}}">{{ref.label}}</a>
             </li>

@@ -16,7 +16,6 @@
         <!-- <link rel="stylesheet" href="styles/red.css"/> -->
         <link rel="stylesheet" type="text/css" href="components/select2/select2.css" />
         <!-- build:css(.tmp) styles/littb.css -->
-        <link rel="stylesheet" type="text/css" href="styles/so.css" />
         <link rel="stylesheet" type="text/css" href="styles/bootstrap.css" />
         <link rel="stylesheet" type="text/css" href="styles/styles.css" />
         <!-- <link rel="stylesheet" type="text/css" href="components/angular-ui-grid/ui-grid.css" /> -->
@@ -28,26 +27,9 @@
         <link rel="stylesheet" type="text/css" href="//cloud.typography.com/7426274/770508/css/fonts.css" />
     </head>
     <body ng-app="littbApp" ng-cloak ng-class="{focus : _focus_mode, night : _night_mode}">
-
-        <!-- <div class="header"> -->
-            
-            <!-- <ul class="breadcrumb" ng-show="breadcrumb && breadcrumb.length">
-                <li>
-                    <a ng-if="!isSchool" href="/#!/start">Hem</a> 
-                    <a ng-if="isSchool" href="/#!/start">Litteraturbanken</a> 
-                </li>
-                
-                <li ng-repeat="item in breadcrumb track by $index" ng-class="{active : $last}"><a ng-href="{{item.url}}">{{item.label}}</a></li>
-            </ul> -->
-            
-            <!-- <div class="clearfix"></div> -->
-        <!-- </div> -->
         <div id="leftCorridor">
             <a  class="logo_link_monogram" ng-href="/#!/start" ng-href="/#!{{getLogoUrl()}}"></a>
             <ul role="navigation" class="mainnav">
-                <li>
-                    <a href="/#!/nytt">Nytt</a>
-                </li>
                 <li>
                     <a href="/#!/titlar">Biblioteket</a>
                 </li>
@@ -55,10 +37,13 @@
                     <a href="/#!/epub">Epubfiler</a>
                 </li>
                 <li>
+                    <a href="/#!/sok">Sök i texterna</a>
+                </li>
+                <li>
                     <a href="/#!/presentationer">Presentationer</a>
                 </li>
                 <li>
-                    <a href="/#!/sok">Sök i texterna</a>
+                    <a href="/#!/nytt">Nytillkommet</a>
                 </li>
                 <!-- <li>
                     <a href="/#!/svenskordbok">Svensk ordbok</a>
@@ -77,28 +62,6 @@
                 </li> -->
                 
             </ul>
-            <!-- 
-            <div class="font-small dict_links">
-                <a href="http://g3.spraakdata.gu.se/saob/" target="_blank">SAOB</a> ::: <a href="http://spraakbanken.gu.se/karp/#lexicon=dalinm,dalin,dalin-base" target="_blank">Dalin</a>
-            </div>
-
-            <div style="visibility:hidden" class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
-                <div class="input_container">
-                    <input  type="text"
-                            ng-model="lex_article"
-                            focusable
-                            placeholder="Slå i Svensk ordbok"
-                            typeahead-on-select="showModal(lex_article)"
-                            typeahead-wait-ms="300"
-                            typeahead="article as article.baseform for article in getWords($viewValue)"
-                            ng-keydown="keydown($event)"
-                            typeahead-trigger>
-                    
-                    <span class="so_spinner" us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"></span>
-                </div>
-                
-            </div><!-- <div to-body alert-popup="dict_not_found"></div> -->
-
             <div id="toolkit"></div>
         </div>
 
@@ -112,11 +75,12 @@
         
         <script type="text/ng-template" id="so_modal_template.html">
             <div role="dialog">
-                <div class="so_modal" ng-class="{loading : $parent.$parent.dict_searching}">
+                <div class="so_modal" ng-class="{loading : $parent.dict_searching}">
                     <div class="modal-header">
-                        <h4>Svensk ordbok utgiven av Svenska Akademien (2009)</h4>
-                        <span ng-show="$parent.$parent.dict_searching" class="so_spinner" us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"></span>
-                        <span ng-click="clickX()" class="close-x">×</span>
+                        <h4>Svensk ordbok utgiven av <br> Svenska Akademien (2009)</h4>
+                        <i class="so_spinner spinner fa fa-spinner fa-pulse"></i>
+                        <button ng-click="clickX()" class="btn pull-right">Stäng</button>
+                        <!-- <span ng-click="clickX()" class="close-x">×</span> -->
                     </div>
                     <div so-article="lexemes" class="_so_article" >
                     </div>
@@ -134,7 +98,24 @@
                 location.hash = decodeURIComponent(location.hash);
             // TODO: # rewrite to #!
         </script>        
+        
 
+        <script type="text/ng-template" id="nytt.html">
+            <div class="">
+                <img bkg-img class="no-gradient" src="img/nytt_bkg.jpg"></img>
+                <div class="container" ng-include="'/red/om/aktuellt/aktuellt.html'"></div>
+            </div>
+        </script>
+        <script type="text/ng-template" id="about.html">
+            <img bkg-img src="img/about_bkg.jpg"></img>     
+            <h1>Om Litteraturbanken</h1>
+            <ul class="links">
+                <li><a ng-click="page = 'intro'">Introduktion</a></li>
+                <li><a ng-click="page = 'help'">Hjälp</a></li>
+                <li><a ng-click="page = 'contact'">Kontakt</a></li>
+            </ul>
+            <ng-include src="getPage(page)"></ng-include>
+        </script>
         
         <!-- build:js scripts/libs.js -->
         <!-- bower:js -->
@@ -191,5 +172,28 @@
         <script src="scripts/bin/lagerlof.js"></script>
         <script src="scripts/bin/school.js"></script>
         <!-- endbuild -->
+
+        
+        <!-- <div class="font-small dict_links">
+            <a href="http://g3.spraakdata.gu.se/saob/" target="_blank">SAOB</a> ::: <a href="http://spraakbanken.gu.se/karp/#lexicon=dalinm,dalin,dalin-base" target="_blank">Dalin</a>
+        </div> -->
+
+        <div style="visibility:hidden" class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
+            <div class="input_container">
+                <input  type="text"
+                        ng-model="lex_article"
+                        focusable
+                        placeholder="Slå i Svensk ordbok"
+                        typeahead-on-select="showModal(lex_article)"
+                        typeahead-wait-ms="300"
+                        typeahead="article as article.baseform for article in getWords($viewValue)"
+                        ng-keydown="keydown($event)"
+                        typeahead-trigger>
+                
+                <span class="so_spinner" us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"></span>
+            </div>
+            
+        </div>
+        <div to-body alert-popup="dict_not_found"></div>
     </body>
 </html>

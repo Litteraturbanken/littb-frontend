@@ -14,9 +14,9 @@
                 <button class="submit btn">Sök</button>
                 
                 <ul class="lower_options">
-                    <li ng-repeat="opt in searchOptionsMenu" >
+                    <li ng-repeat="(key, opt) in searchOptionsItems" >
                         <span role="checkbox" aria-checked="{{opt.selected}}" ng-show="opt.selected">✓</span>
-                        <a ng-click="opt.selected = !opt.selected">{{opt.label}}</a>
+                        <a ng-click="searchOptSelect(opt)">{{opt.label}}</a>
                     </li>
                 </ul>
                 
@@ -116,7 +116,8 @@
                     <tr on-finish-render="tableRenderComplete()" height="$parent.rowHeights[$index]" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" >
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content">
-                                <span class="author">{{authorsById[sent.authorid].nameforindex}}</span> <span class="title" tooltip="{{sent.title}}">{{sent.shorttitle}}</span>
+
+                                <span class="author">{{authorsById[sent.authorid].nameforindex}}</span> <span class="title" tooltip="{{sent.title}}"><a ng-href="/#!/forfattare/{{sent.authorid}}/titlar/{{sent.titlepath[0]}}?om-boken">{{sent.shorttitle}}</a></span>
                             </div>
                         </td>
                         <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>
@@ -157,13 +158,13 @@
                 {{hits}} träffar,
                 sida {{current_page + 1}} av {{total_pages}}. -->
 
-                <ul class="ctrl" ng-show="hits > 1">
+                <!-- <ul class="ctrl" ng-show="hits > 1"> -->
                     <!-- <li>
                         <a ng-click="nextPage()">Gå till {{(current_page + 1) * num_hits + 1}}-{{getMaxHit() + num_hits}}</a>
                     </li> -->
-                    <li><a href="">Sortera på efternamn</a> <span role="checkbox" aria-checked="{{opt.selected}}">✓</span></li>
-                    <li><a href="">Sortera efter tryckår</a></li>
-                    <li><a href="">Sortera efter sökord</a></li>
+                    <!-- <li><a href="">Sortera på efternamn</a> <span role="checkbox" aria-checked="{{opt.selected}}">✓</span></li> -->
+                    <!-- <li><a href="">Sortera efter tryckår</a></li> -->
+                    <!-- <li><a href="">Sortera efter sökord</a></li> -->
                     <!-- <li><a href="">AVANCERAD SÖKNING</a></li> -->
                     <!-- <li>
                         <a ng-click="prevPage()">Gå bakåt en träff</a>
@@ -177,7 +178,7 @@
                     <li>
                         <a ng-click="lastPage()">Gå direkt till träff…</a>
                     </li> -->
-                </ul>
+                <!-- </ul> -->
             
                 <!-- <label>Gå till träffsida</label>
                 <form ng-submit="setPageNum(input_page - 1)">

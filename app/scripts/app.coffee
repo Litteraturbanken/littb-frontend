@@ -96,19 +96,26 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 ]
                 template : '''
                         <meta-desc>{{title}}</meta-desc>
-                        <div style="position:relative;" ng-bind-html="doc | trust"></div>
+                        <div class="page-presentation" style="position:relative;" ng-bind-html="doc | trust"></div>
                     '''
                 breadcrumb : ["presentationer"]
             .when '/om/aktuellt',
-                templateUrl: '/red/om/aktuellt/aktuellt.html'
-                title : "Aktuellt"
-                breadcrumb : ["aktuellt"]
+                # templateUrl: '/red/om/aktuellt/aktuellt.html'
+                # title : "Aktuellt"
+                # breadcrumb : ["aktuellt"]
+                redirectTo : "/nytt",
+            .when '/nytt',
+                templateUrl: "nytt.html"
+                title : "Nytt hos Litteraturbanken"
+                controller : "newCtrl"
+                # breadcrumb : ["n"]
             .when '/om/rattigheter',
                 templateUrl: '/red/om/rattigheter/rattigheter.html'
                 title : "Rättigheter"
                 breadcrumb : ["rättigheter"]
             .when '/om/ide',
-                templateUrl: '/red/om/ide/omlitteraturbanken.html'
+                templateUrl: "about.html"
+                controller : "aboutCtrl"
                 title : "Om LB"
                 reloadOnSearch : false
                 breadcrumb : ["idé"]
@@ -120,7 +127,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when '/om/hjalp',
                 # templateUrl: '/red/om/hjalp/hjalp.html'
                 templateUrl : "views/help.html"
-                controller : "helpCtrl"
+                # controller : "helpCtrl"
                 title : "Hjälp"
                 breadcrumb : ["hjälp"]
                 reloadOnSearch : false
@@ -146,7 +153,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 templateUrl : "views/epubList.html"
                 controller : "epubListCtrl"
                 reloadOnSearch : false
-                title : "Gratis titlar för nerladdning i epubformatet"
+                title : "Gratis böcker för nerladdning i epubformatet"
                 breadcrumb : ["epub"]
             .when "/forfattare",
                 templateUrl : "views/authorList.html"
@@ -289,6 +296,7 @@ littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
 
 
 littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
+    c.log "run search params", $location.search().search_params
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
         $rootElement.addClass("ready")

@@ -7,9 +7,9 @@ littb.filter "formatAuthors", (authors) ->
 
         stringify = (auth) ->
             suffix = {
-                editor : " (red.)"
-                translator : " (övers.)"
-                illustrator : " (ill.)"
+                editor : " <span class='authortype'>red.</span>"
+                translator : " <span class='authortype'>övers.</span>"
+                illustrator : " <span class='authortype'>ill.</span>"
                 # scholar : " (red.)"
 
 
@@ -18,7 +18,7 @@ littb.filter "formatAuthors", (authors) ->
         
         linkify = (auth) ->
             $("<a>").attr "href", "/#!/forfattare/#{auth.id}"
-                .text stringify auth
+                .html stringify auth
                 .outerHTML()
 
         if makeLink
@@ -118,12 +118,8 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.data = data
 
-littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce, $filter) ->
-    s = $scope
-    s.open = true
-    s.proofread = 'all'
-
-    s.authorSelectSetup = {
+getAuthorSelectSetup = (s, $filter) ->
+    return {
         formatNoMatches: "Inga resultat",
         formatResult : (data) ->
             # return data.text
@@ -144,6 +140,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             # item.text
 
     }
+
+littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce, $filter) ->
+    s = $scope
+    s.open = true
+    s.proofread = 'all'
+
+    s.authorSelectSetup = getAuthorSelectSetup(s, $filter)
 
     s.titleSelectSetup = {
         formatNoMatches: "Inga resultat",
@@ -193,18 +196,21 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     # for the author / about author search check
     s.isAuthorSearch = true
 
-    # util.setupHashComplex s, [
-    #         scope_name : "num_hits"
-    #         key : "per_sida"
-    #         val_in : Number
-    #         default : 20
-    #     ,
-    #         key: "prefix"
-    #     ,   
-    #         key : "suffix"
-    #     ,   
-    #         key : "infix"
-    # ]
+    util.setupHashComplex s, [
+        #     scope_name : "num_hits"
+        #     key : "per_sida"
+        #     val_in : Number
+        #     default : 20
+        # ,
+            key: "prefix"
+            expr: "searchOptionsMenu.prefix.selected"
+        ,   
+            key : "suffix"
+            expr: "searchOptionsMenu.suffix.selected"
+        ,   
+            key : "infix"
+            expr: "searchOptionsMenu.infix.selected"
+    ]
 
     # s.nHitsChange = () ->
     #     s.current_page = 0
@@ -238,7 +244,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         change = (newAuthors) ->
             return unless newAuthors
             $q.all _.map newAuthors.split(","), (auth) -> 
-                backend.getTitlesByAuthor(auth, true)
+                backend.getTitlesByAuthor(auth, true, s.isAuthorAboutSearch)
             .then (results) ->
                 filteredTitles = _.filter (_.flatten results), (item) -> 
 
@@ -469,8 +475,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         {label: "Sök i <span class='sc'>ALLA TEXTER</span>", val: "all_texts", selected: true}
         # {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
         # {label: 'Sök i <span class="sc">svenska</span> orginalverk', val: "lang_swedish", selected: true}
-        {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
-        {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
+        # {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
+        # {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
         {label: 'Sök i <span class="sc">moderniserade</span> texter', val: "modernized", selected: true}
         {label: 'Sök i <span class="sc">ej moderniserade</span> texter', val: "not_modernized", selected: true}
         {label: 'Sök i <span class="sc">korrekturlästa</span> texter', val: "proofread", selected: true}
@@ -481,12 +487,62 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     ]
 
-    s.searchOptionsMenu = [
-        {label: "SÖK EFTER ORD ELLER FRAS", val: "default", selected: true}
-        {label: "SÖK EFTER ORDBÖRJAN", val: "prefix", selected: false}
-        {label: "SÖK EFTER ORDSLUT", val: "suffix", selected: false}
-        {label: "SÖK EFTER DEL AV ORD", val: "infix", selected: false}
-    ]
+    s.searchOptionsMenu = 
+        default : {
+            label: "SÖK EFTER ORD ELLER FRAS",
+            val: "default",
+            selected: not ($location.search().infix or $location.search().prefix or $location.search().suffix),
+        }
+        prefix : {
+            label: "SÖK EFTER ORDBÖRJAN",
+            val: "prefix",
+            selected: $location.search().prefix
+        }
+        suffix : {
+            label: "SÖK EFTER ORDSLUT",
+            val: "suffix",
+            selected: $location.search().suffix
+        }
+        infix : {
+            label: "SÖK EFTER DEL AV ORD",
+            val: "infix",
+            selected: $location.search().infix
+        }
+
+    s.searchOptionsItems = _.values s.searchOptionsMenu
+
+    s.searchOptSelect = (sel) ->
+        o = s.searchOptionsMenu
+
+        currents = _.filter (_.values o), "selected"
+        isDeselect = sel in currents
+        deselectAll = () ->
+            for item in currents
+                item.selected = false
+
+
+
+        if sel.val == "default"
+            deselectAll()
+            sel.selected = true
+            return
+        if sel.val in ["prefix", "suffix", "infix"] and currents.length == 1 and isDeselect
+            currents[0].selected = false
+            o.default.selected = true
+            return
+        if sel.val in ["prefix", "suffix"]
+            o.default.selected = false
+            sel.selected = !o[sel.val].selected
+            if isDeselect then o.infix.selected = false
+        if sel.val == 'infix' and not isDeselect
+            deselectAll()
+            sel.selected = true
+            o.prefix.selected = true
+            o.suffix.selected = true
+            return
+        if isDeselect
+            sel.selected = false
+
 
 
 
@@ -1031,10 +1087,13 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             s.$emit("listScroll", id)
 
 
-    authors.then ([authorList, authorsById]) ->
-        s.authorsById = authorsById
-        s.authorData = authorList
-        s.authorSearching = false
+    # use timeout to make sure the page shows before loading authors
+    $timeout () ->
+        authors.then ([authorList, authorsById]) ->
+            s.authorsById = authorsById
+            s.authorData = authorList
+            s.authorSearching = false
+    , 0
 
     s.searchTitle = () ->
         c.log "searchTitle", s.workFilter
@@ -1248,9 +1307,49 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     # s.$on "$destroy", () ->
     #     $rootElement.off "click", onRootClick
 
-littb.controller "epubListCtrl", ($scope, backend, util) ->
+littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
     s = $scope
     s.searching = true
+
+
+    authors.then ([authorList, authorsById]) ->
+        s.authorsById = authorsById
+
+    # s.authorSelectSetup = getAuthorSelectSetup(s, $filter)
+
+
+    s.authorSelectSetup = {
+        formatNoMatches: "Inga resultat",
+        formatResult : (data) ->
+            c.log "data", data
+            # c.log "data", data
+            # return "<span>" + data.text + "</span>"
+            # return data.text
+            # return data.text
+            author = s.authorsById[data.id]
+            unless author then return data.text
+
+            firstname = ""
+            if author.nameforindex.split(",").length > 1
+                firstname = "<span class='firstname'>, #{author.nameforindex.split(',')[1]}</span>"
+
+            return """
+            <span>
+                <span class="surname sc">#{author.surname}</span>#{firstname} <span class="year">#{$filter('authorYear')(author)}</span>
+            </span>
+            """
+
+        formatSelection : (item) ->
+            c.log "item", item
+
+            try
+                return s.authorsById[item.id].surname
+            catch e
+                return "Välj författare"
+
+    }
+
+
     # TODO: what about the workauthor issue?
     s.sorttuple = [["author[0].nameforindex", "itemAttrs.sortkey"], false]
     s.setSort = ([sortstr]) ->
@@ -1265,7 +1364,8 @@ littb.controller "epubListCtrl", ($scope, backend, util) ->
     window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
     s.rowFilter = (item) ->
         if "epub" not in item.mediatype then return false
-        if s.authorFilter and s.authorFilter.authorid != item.author[0].authorid then return false
+        author = s.authorsById?[s.authorFilter]
+        if author and author.authorid != item.author[0].authorid then return false
         if s.filterTxt
             return false if not ((has item.author[0].fullname, s.filterTxt) or (has item.itemAttrs.showtitle, s.filterTxt))
         return true
@@ -1352,6 +1452,16 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
             replace : false
         ]
 
+littb.controller "newCtrl", ($scope, $http, util, $location) ->
+littb.controller "aboutCtrl", ($scope, $http, util, $location) ->
+    s = $scope
+    s.page = "intro"
+    s.getPage = (page) ->
+        return {
+                "intro" : '/red/om/ide/omlitteraturbanken.html'
+                "help" : "views/help.html"
+                "contact" : 'views/contactForm.html'
+            }[page]
 
 littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, util) ->
     s = $scope
@@ -1779,8 +1889,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             $location.url(newHit.href[3...])
     s.close_hits = () ->
         searchData.reset()
-        $location.search("traff", null)
-        $location.search("traffslut", null)
+        s.show_search_work = false
+        s.markee_from = null
+        s.markee_to = null
+        # $location.search("traff", null)
+        # $location.search("traffslut", null)
     # s.pagename = pagename
     
 
@@ -1878,7 +1991,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getPageUrl = (page) ->
         unless page then return ""
-        "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{s.mediatype}"
+        search = $location.url().split("?")?[1]
+        suffix = ""
+        if search
+            suffix = "?" + search
+
+        "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{s.mediatype}" + suffix
 
     s.gotopage = (page, event) ->
         s.showGotoInput = false
@@ -1938,14 +2056,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getNextPart = () ->
         current = s.getCurrentPart()
-        unless (current or s.workinfo) then return
+        if not s.workinfo or not current then return
         # i = current.number - 1
         i = _.indexOf s.workinfo.parts, current
         return s.workinfo?.parts[i + 1]
 
     s.getPrevPart = () ->
         current = s.getCurrentPart()
-        unless (current or s.workinfo) then return
+        if not s.workinfo or not current then return
         i = _.indexOf s.workinfo.parts, current
         return s.workinfo?.parts[i - 1]
 
@@ -2007,6 +2125,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             scope_name : "isFocus"
             post_change : (val) ->
                 $rootScope._focus_mode = val
+        ,
+            key : "border"
 
         ,
             key : "om-boken"
@@ -2172,7 +2292,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             
         s.loading = true
 
-
         backend.getPage(params).then ([data, workinfo]) ->
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
@@ -2222,10 +2341,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # if mediatype == 'faksimil' or isParallel
             s.sizes = new Array(5)
             for url in $("pages faksimil-url", data)
-                s.sizes[Number($(url).attr("size"))] = false
+                s.sizes[Number($(url).attr("size"))] = true
             
-            if s.sizes[s.size] is false
-                s.sizes[s.size] = true
+            # if s.sizes[s.size] is false
+            #     s.sizes[s.size] = true
 
             c.log "loadpage result", s.size
 
@@ -2259,9 +2378,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     
     s.setSize = (index) ->
-        c.log "setsize", index
-        s.sizes = _.map s.sizes, (item) -> if item then false else item
-        s.sizes[index] = true
         s.size = index
         loadPage(s.getPage())
 
@@ -2299,6 +2415,26 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     
 ## END ORD OCH SAK
 
+    s.$on "img_expand", (evt, src) ->
+        c.log "img expand!", src
+
+        s.activeSrc = src
+        about_modal = $modal.open
+            templateUrl : "img_full.html"
+            scope : s
+            windowClass : "img_full"
+
+
+        about_modal.result.then () ->
+            s.show_about = false
+        , () ->
+            s.show_about = false
+
+
+
+
+
+
     ## START SEARCH
 
     # if s.search_query
@@ -2307,8 +2443,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         "/#!" + $location.path()
 
 
+    c.log "outside params", $location.search()
     s.$watch (() -> $location.search().search_params), (val) ->
-        c.log "search_params", val
+        c.log "search_params", val, $location.search().search_params
         if val
             args = JSON.parse val
             searchData.newSearch(args)
@@ -2345,7 +2482,19 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
 
+    s.openSearchWorks = () ->
+        s.show_search_work = !s.show_search_work 
+        $timeout () ->
+            s.$broadcast('focus.search_work')
+        , 0
+
+
+    s.isSearchingWork = false
     s.searchWork = (query) ->
+        c.log "searchWork", query
+
+        s.isSearchingWork = true
+        s.hasSearchedWork = true
         args = {
             query : query
             mediatype: mediatype
@@ -2353,15 +2502,17 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             to: 50
             selectedAuthor: s.author
             selectedTitle : s.workinfo.lbworkid
-            prefix: s.prefix
-            suffix: s.suffix
-            infix: s.infix
+            prefix: $location.search().prefix
+            suffix: $location.search().suffix
+            infix: $location.search().infix
         }
 
         searchData.newSearch(args)
 
         searchData.slice(0, 50).then (kwic) ->
             c.log "kwic", kwic
+            # s.show_search_work = false
+            s.isSearchingWork = false
 
             $location.url(kwic[0].href[3...])
 

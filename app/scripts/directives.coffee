@@ -61,10 +61,15 @@ littb.directive 'toBody', ($compile) ->
 
 littb.directive 'sortTriangles', () ->
     template: '''
-    <div><span ng-click="up()"
-                 class="triangle up" ng-class="{'disabled' : active && !enabled[0]}"></span>
-           <span ng-click="down()"
-                 class="triangle down" ng-class="{'disabled' : active && !enabled[1]}"></span>
+    <div class="sort" ng-class="{disabled : !active}">
+        
+        <span ng-click="down()" class="label">Sortera</span>
+        <span ng-click="down()" class="target disabled " ng-class="{'disabled' :!enabled[1]}">
+            stigande
+        </span> <span class="dash">/</span>
+        <span ng-click="up()" class="target" ng-class="{'disabled' : !enabled[0]}">
+            fallande
+        </span> 
     </div>'''
     scope : {tuple : "=", val : "@"}
     link: (scope, elem, iAttrs) ->
@@ -78,6 +83,7 @@ littb.directive 'sortTriangles', () ->
         s.$watch "tuple", (newtup) ->
             [newval, dir] = newtup
             s.active = tupMatches(newval)
+            c.log "active", s.active
             s.enabled = [!dir, dir]
         s.up = () ->
             s.tuple = [val, true]
@@ -85,54 +91,57 @@ littb.directive 'sortTriangles', () ->
             s.tuple = [val, false]
 
 
-littb.directive 'letterMap', () ->
-    template : """
-        <table class="letters">
-            <tr ng-repeat="row in letterArray">
-                <td ng-repeat="letter in row"
-                    ng-class="{disabled: !ifShow(letter), selected: letter == selected}"
-                    ng-click="setLetter(letter)">{{letter}}</td>
-            </tr>
-        </table>
-    """
-    replace : true
-    scope :
-        selected : "="
-        enabledLetters : "="
-        letterMapChange : "&"
-    link : (scope, elm, attrs) ->
-        s = scope
+# littb.directive 'letterMap', () ->
+#     template : """
+#         <table class="letters">
+#             <tr ng-repeat="row in letterArray">
+#                 <td ng-repeat="letter in row"
+#                     ng-class="{disabled: !ifShow(letter), selected: letter == selected}"
+#                     ng-click="setLetter(letter)">{{letter}}</td>
+#             </tr>
+#         </table>
+#     """
+#     replace : true
+#     scope :
+#         selected : "="
+#         enabledLetters : "="
+#         letterMapChange : "&"
+#     link : (scope, elm, attrs) ->
+#         s = scope
 
-        s.letterArray = _.invoke([
-            "ABCDE",
-            "FGHIJ",
-            "KLMNO",
-            "PQRST",
-            "UVWXY",
-            "ZÅÄÖ"
-        ], "split", "")
+#         s.letterArray = _.invoke([
+#             "ABCDE",
+#             "FGHIJ",
+#             "KLMNO",
+#             "PQRST",
+#             "UVWXY",
+#             "ZÅÄÖ"
+#         ], "split", "")
 
-        s.ifShow = (letter) ->
-            unless s.enabledLetters then return false
-            letter in s.enabledLetters
+#         s.ifShow = (letter) ->
+#             unless s.enabledLetters then return false
+#             letter in s.enabledLetters
 
-        s.setLetter = (l) ->
-            s.selected = l
-            s.letterMapChange()
+#         s.setLetter = (l) ->
+#             s.selected = l
+#             s.letterMapChange()
 
 littb.directive 'square', () ->
     template : "<div></div>"
     replace : false
-    scope : 
-        left : "=x"
-        top : "=y"
-        w : "=width"
-        h : "=height"
+    # scope : 
+        # left : "=x"
+        # top : "=y"
+        # w : "=width"
+        # h : "=height"
     link : (scope, elm, attrs) ->
         s = scope
         EXPAND_SIZE = 4
         Y_OFFSET = -2
-        coors = _.pick scope, "top", "left", "width", "height"
+        coors = _.pick scope.obj, "x", "y", "width", "height"
+        coors.top = coors.y
+        coors.left = coors.x
+
         coors = _.object _.map coors, (val, key) ->
             val = Number(val)
             expand = (val) ->
@@ -253,7 +262,7 @@ littb.directive 'selectionSniffer', ($window) ->
             $("body > .search_dict").remove()
 
         showIndicator = (target) ->
-            return false # CURRENTLY S.O. IS DISABLED
+            # return false # CURRENTLY S.O. IS DISABLED
             c.log "showIndicator", target
             box.remove()
             
@@ -315,7 +324,9 @@ littb.directive 'alertPopup', ($rootElement, $timeout, $rootScope) ->
     
 littb.directive 'focusable', () ->
     link : (scope, elem, attr) ->
-        scope.$on "focus", () ->
+        evtsuffix = if attr.focusable then ("." + attr.focusable) else ""
+        scope.$on ("focus" + evtsuffix), () ->
+            c.log "focus!"
             elem.focus()
 
         scope.$on "blur", () ->
@@ -493,8 +504,8 @@ littb.directive 'downloadBtn', () ->
         file : "="
     template : """
     <a class="download" ng-href="{{getUrl(file)}}">
-        <i class="fa fa-file-text "></i>
-        <span class="">Ladda ner <br>som PDF</span> 
+        <i class="fa fa-file-text-o "></i>
+        <span class="">Ladda ner som PDF</span> 
     </a>
     """
     link : (scope, elem, attr) ->
@@ -714,12 +725,18 @@ littb.directive 'bkgImg', ($rootElement) ->
     #     src: "@"
 
     link : (scope, element, attr) ->
-        element.appendTo "#bkgimg"
-        $("#bkgimg").attr("class", element.attr("class"))
+        # element.appendTo "#bkgimg"
+        src = element.attr("src")
+        element.remove()
+
+        $("body").css
+            "background" : "url('#{src}') no-repeat"
         scope.$on "$destroy", () ->
             c.log "destroy", element
-            element.remove()
-            $("#bkgimg").attr("class", "")
+
+            # element.remove()
+            $("body").css
+                "background-image" : "none"
 
 
 
@@ -754,5 +771,65 @@ littb.directive "listScroll", () ->
                     scrollTop : (element.scrollTop() + $(event.currentTarget).position().top - 25) - collapse_height
             else
                 animateTo()
+
+
+
+littb.directive "ornament", () ->
+    restrict : "C"
+    compile: (elm, attrs) ->
+        c.log "ornament"
+        img = elm.find("img")
+        if _.endsWith img.attr("src"), ".svg"
+            elm.load(img.attr("src"), (data) ->
+                c.log "svg", data.match(/viewBox="(.+?)"/)[1]
+                [__, __, width, height] = data.match(/viewBox="(.+?)"/)[1].split(" ")
+                elm.find('svg').width width
+                elm.find('svg').height height
+
+            )
+            
+
+
+imgDef = () ->
+    restrict : "C"
+    link : ($scope, element, attr) ->
+        s = $scope
+
+        element.find("img").load () ->
+            $(this).css("max-width", "initial")
+            actualWidth = $(this).width()
+            $(this).css("max-width", "100%")
+
+            if $(this).width() < actualWidth
+                # do something with over-wide img
+                element.addClass "img-overflow"
+
+                # $("<i class='fa fa-expand'></i>").click () ->
+                $("<button class='btn btn-xs expand'>Förstora</button>").click () ->
+                    s.$emit "img_expand", element.find("img").attr("src")
+                .appendTo element
+
+
+littb.directive "imgdiv", imgDef
+littb.directive "figurediv", imgDef
+
+
+
+littb.directive "compile", ($compile) ->
+    link : ($scope, element, attr) ->
+        s = $scope
+        # s.$watch ( () -> s.$eval attr.compile), (val) ->
+        #     c.log "element change", val
+        #     if val
+        # c.log s.compile()
+
+        s.$watch attr.compile, (val) ->
+            tmpl = ($compile val)(s)
+            element.html tmpl
+
+
+
+        # element.append $compile(s.$eval attr.compile)(s)
+        # c.log "elemnent", attr.compile, s.$eval attr.compile
 
 

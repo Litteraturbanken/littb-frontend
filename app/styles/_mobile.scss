@@ -1,0 +1,271 @@
+@media
+    // only screen and (max-device-width: 1136px) and (min-device-width: 960px) and (max-device-height: 640px) and (min-device-height: 560px),
+    // (max-device-height: 1136px) and (min-device-height: 960px) and (max-device-width: 640px) and (min-device-width: 560px) 
+    (max-width : 560px)
+    {
+        .page-reading.focus .etext {
+            padding-bottom : 100px;
+        }
+}
+
+
+@media 
+only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px)  {
+    // .reader_main.focus {
+    //     background-color : red;
+    // }
+    a:active {
+        color : inherit;
+    }
+    a:hover {
+        color : inherit;
+    }
+    a.ng-click-active, a:focus {
+        color : $primarycolor;
+    }
+    input[type=text] {
+        -webkit-appearance: none;
+        border : 1px solid lightgrey;
+        border-radius : 0;
+    }
+
+    .page-reading {
+        #toolkit .pager_ctrls a {
+            margin-right : 2px;
+        }
+    }    
+    
+    .modal { 
+        position: fixed; 
+        top: 20px !important; 
+        right: 3%; 
+        left: 3%;
+        width: auto; 
+        margin: 0; 
+    }
+    
+    .page-titleList {
+        #leftCorridor, #mainview {
+            display : block;
+        }
+        .box_container {
+            display : block;
+            .box {
+                display : block;
+                height : 500px;
+                // overflow-y: scroll;
+                // -webkit-overflow-scrolling: touch;
+                margin-bottom  : 1em;
+            }
+        }
+    }
+
+    // .page-epubList p {
+    //     max-width : 70%;
+    // }
+
+/* Force table to not be like tables anymore */
+    .page-epubList .contenttable,
+    .page-titleList .contenttable,
+    .page-authorInfo .contenttable {
+        display : block;
+        margin-top : 2em;
+        table, 
+        thead, 
+        tbody, 
+        th,
+        td, 
+        tr {
+            display: block; 
+          }
+        
+        /* Hide table headers (but not display: none;, for accessibility) */
+        thead tr { 
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+        
+        tr:nth-of-type(odd) {
+            background-color : #EDEDED;
+        }
+        
+        td { 
+            /* Behave  like a "row" */
+            border: none;
+            position: relative;
+            & > *:first-child {
+                background: none;
+            }
+            .dots {
+                display : none;
+            }
+        }
+        
+        td:before {  
+            /* Now like a table header */
+            position: absolute;
+            /* Top/left values mimic padding */
+            top: 6px;
+            left: 6px;
+            width: 45%; 
+            padding-right: 10px; 
+            white-space: nowrap;
+        }   
+        
+    }
+    .site-school {
+
+        .logo_link {
+            // height : 30px;
+            // width: 100%;
+            // background-size: 100%;
+        }
+        padding : 5%;
+
+        .header .breadcrumb {
+            text-align: left;
+            margin-top : 0.5em;
+        }
+        .download {
+            position : static;
+            margin-top : 2em;
+        }
+
+        img {
+            max-width : 100%;
+        }
+
+        &.page-school {
+            .header hr {
+                width : 100%;
+            }
+            #mainview:after {
+                display : none;
+            }
+            .teachers, .students {
+                position : static;
+            }
+            .students {
+                margin-bottom : 2em;
+            }
+            h1, p {
+                width: 100%;
+                max-width : 100%;
+            }
+
+            .lb{
+                display : block;
+                margin-bottom : 2em;
+            }
+            .amp{
+                display : none;
+            }
+            .sla{
+                display : block;
+            }
+
+            h2 { 
+                margin-top : 1em;
+            }
+        }
+
+        &.page-teachers, &.page-students {
+            #mainview > div {
+                white-space : normal;
+            }
+            #mainview:after {
+                background-image: none;
+            }
+
+        }
+
+        
+        .nav_sidebar {
+            margin-bottom : 2em;  
+            margin-left : 1em; 
+            width : auto;
+            .affix {
+                position : static;
+            }
+        }
+
+        .before_sidebar {
+            display : block;
+        }
+        .sidebar {
+            display : block;
+            background-color : lightgrey;
+            margin-left : 0;
+            width : 100%;
+            padding : 3%;
+            margin : 0 auto;
+            height : auto !important;
+            // margin-left : 5%;
+        }
+    }    
+
+}
+
+@media 
+(min-width : 320px) 
+and (max-width : 568px) {
+    #bkgimg {
+        display : none;
+    }
+    .page-titleList {
+        display: block;
+
+        #leftCorridor .mainnav {
+            a {
+                color : black;
+                &:hover {color : $primarycolor}
+            }
+        }
+    }
+}
+
+
+// iphone type screen
+@media only screen 
+and (min-device-width : 320px) 
+and (max-device-width : 568px) {
+    #bkgimg {
+        display : none;
+    }
+    #mainview, #leftCorridor {
+        display: block;
+    }
+    .modal-open {
+        // padding-top : 2%;
+        // padding-left : 4%;
+        padding: 2%;
+        width : 100%;
+        background-color : #333;
+        #mainview, #leftCorridor, .header, .modal-backdrop {
+            display : none;
+        }
+    }
+    .modal {
+        position: static;
+        bottom : 0;
+        width : 100%;
+        
+    }
+    .so_modal {
+        
+        .modal-header h4 {
+            max-width : 85%;
+
+        }
+        ._so_article {
+            padding-left : 0;
+            lemma {
+                margin-left: 0;
+                margin-right: 0;
+            }
+        }
+        
+    }
+}
