@@ -5,28 +5,33 @@
 <div ng-class="{searching:searching}">
     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div id="controls" ng-hide="searching">
-        <!-- <select class="authorselect" ng-model="authorFilter" ng-change="authorChange()"
-            ng-options="author.authorid as author.nameforindex for author in authorData | orderBy:'nameforindex'">
-            <option value="">Alla författare</option>
-        </select>
-        <select ng-model="workFilter" ng-change="selectWork()">
-            <option value="works">Samtliga verk</option>
-            <option value="titles">Samtliga titlar</option>
-        </select>
-        <select ng-model="mediatypeFilter" ng-change="selectedLetter = null" >
-            <option value="">Alla mediatyper</option>
-            <option value="etext">Etext</option>
-            <option value="faksimil">Faksimil</option>
-            <option value="epub">Epub</option>
-            <option value="pdf">PDF</option>
-        </select> -->
         <form ng-submit="searchTitle()">
             <input class="filter_input" autofocus ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel och tryck enter">
             <button class="submit btn">Sök</button>
-            <!-- <span ng-click="searchTitle()" submit-btn></span> -->
+
         </form>
 
-        
+        <div class="mediatype_opts">
+            
+            <ul>
+                <li>
+                    <span ng-show="mediatypeObj.etext" >✓</span>
+                    <a ng-click="mediatypeObj.etext = !mediatypeObj.etext">Etext</a>
+                </li>
+                <li>
+                    <span ng-show="mediatypeObj.faksimil" >✓</span>
+                    <a ng-click="mediatypeObj.faksimil = !mediatypeObj.faksimil">Faksimil</a>
+                </li>
+                <li>
+                    <span ng-show="mediatypeObj.epub" >✓</span>
+                    <a ng-click="mediatypeObj.epub = !mediatypeObj.epub">Epub</a>
+                </li>
+                <li>
+                    <span ng-show="mediatypeObj.pdf" >✓</span>
+                    <a ng-click="mediatypeObj.pdf = !mediatypeObj.pdf">PDF</a>
+                </li>
+            </ul>
+        </div>
 
     
 
@@ -41,10 +46,13 @@
                             <i class="spinner fa fa-spinner fa-pulse"></i>
                             <!-- <span class="auth_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
                         </li>
-                        <li class="part_header top_header" ng-if="authorData.length">
+                        <li class="part_header top_header" ng-show="authorData.length">
                             Författare, utgivare etc.
                         </li>
-                        <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}" ng-hide="author.show == 'false'" >
+                        <li ng-show="!authorSearching && !(authorData | filter:filterAuthor).length">
+                            Inga träffar.
+                        </li>
+                        <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}" >
                             <div class="item_header" ng-click="authorHeaderClick($event, author)"><span class="surname">{{author.surname}}</span><span ng-show="author.nameforindex.split(',').length > 1">,</span> {{author.nameforindex.split(",")[1]}} {{author | authorYear}}
                     
                                 <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner"></i>
@@ -60,11 +68,11 @@
                                         <li><a href="/#!/forfattare/{{selectedAuth.authorid}}">
                                             Gå till författarens sida
                                             </a></li>
-                                        <li ng-if="author.searchable == 'true'"><a href="/#!/sok?authorid={{selectedAuth.authorid}}">
-                                             Sök i författarens verk</a>
-                                        </li>
                                         <li><a href="/#!/forfattare/{{selectedAuth.authorid}}/titlar">
                                              Visa författarens verk</a>
+                                        </li>
+                                        <li ng-if="author.searchable == 'true'"><a href="/#!/sok?forfattare={{selectedAuth.authorid}}&avancerad">
+                                             Sök i författarens verk</a>
                                         </li>
                                     </ul>
                                 </div>
@@ -80,21 +88,18 @@
             <div class="box title">
                 <div class="scroll-area" list-scroll>
                     <ul id="table" class="list">
-                        <!-- <thead>
-                            <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
-                            <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
-                            <th></th>
-                        </thead> -->
                         <li class="spinner_row" ng-show="titleSearching">
                             <i class="spinner fa fa-spinner fa-pulse"></i>
-                            <!-- <span class="title_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
                         </li>    
                     
-                        <li class="part_header top_header" ng-if="getSource().length">
+                        <li class="part_header top_header" ng-hide="titleSearching">
                             Hela verk
                         </li>
+                        <li ng-show="!titleSearching && !(titleArray | filter:filterTitle | filter:mediatypeFilter).length">
+                            Inga träffar.
+                        </li>
                         
-                        <li class="link" ng-repeat="row in getSource() | orderBy:'itemAttrs.sortkey' | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle" on-finish-render="titleRender()"
+                        <li class="link" ng-repeat="row in titleArray | orderBy:'itemAttrs.sortkey' | filter:mediatypeFilter | filter:filterTitle" on-finish-render="titleRender()"
                             top="$parent.title_off" ng-click="titleClick($event, row)"
                             id="{{getUniqId(row)}}">
                             <div class="header">
@@ -122,21 +127,16 @@
                                     </ul>
                                 </div>
                             </div>
-                            <!-- <td>
-                                <span ng-repeat="type in sortMedia(row.mediatype) | orderBy:'type'">
-                    
-                                    <span ng-show="!$first">:::</span>
-                    
-                                    <a ng-href="{{getUrl(row, type)}}">{{type}}</a>
-                                </span>
-                            </td> -->
                         </li>
                         
-                        <li class="part_header" ng-if="all_titles.length">
+                        <li class="part_header" ng-hide="titleSearching">
                             Dikter, noveller, essäer, etc.
                         </li>
+                        <li class="" ng-show="all_titles && !(all_titles  | filter:mediatypeFilter).length">
+                            Inga träffar.
+                        </li>
                     
-                        <li ng-repeat="row in all_titles | orderBy:'itemAttrs.sortkey'" class="parts" ng-class="{first_part : $first}">
+                        <li ng-repeat="row in all_titles  | filter:mediatypeFilter | orderBy:'itemAttrs.sortkey'" class="parts" ng-class="{first_part : $first}">
                     
                             <div class="header" tooltip="{{row.itemAttrs.title}}">
                                 <span class="title">{{row.itemAttrs.showtitle}}</span>
@@ -153,15 +153,5 @@
         
     </div>
 
-    <!-- <div toolkit>
-        <hr>
-        <div letter-map letter-map-change="letterChange()" selected="selectedLetter" enabled-letters="currentLetters"></div>
-        <hr>
-        <p>
-            Det här är en alfabetisk lista över alla de titlar som Litteraturbanken har att erbjuda, med länkar till text, faksimil- eller pdf-versioner av verken. – Samtliga verk visar titlar på hela verk. Samtliga titlar inkluderar titlar på dikter, noveller etc.
-        </p>
-
-    </div> -->
-    <!-- -->
 </div>
 

@@ -13,12 +13,7 @@
                 <i class="spinner fa fa-spinner fa-pulse"></i>
                 <button class="submit btn">Sök</button>
                 
-                <ul class="lower_options">
-                    <li ng-repeat="(key, opt) in searchOptionsItems" >
-                        <span role="checkbox" aria-checked="{{opt.selected}}" ng-show="opt.selected">✓</span>
-                        <a ng-click="searchOptSelect(opt)">{{opt.label}}</a>
-                    </li>
-                </ul>
+                <search-opts></search-opts>
                 
                 
                 

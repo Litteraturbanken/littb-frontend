@@ -76,11 +76,11 @@ getCqp = (o) ->
         flag = "%c"
         # flag = ""
 
-        if o.prefix
+        if o.prefix and not o.infix
             or_block.push "word = '#{regescape wd}.*'#{flag}"
-        if o.suffix
+        if o.suffix and not o.infix
             or_block.push "word = '.*#{regescape wd}'#{flag}"
-        if o.infix and not (o.prefix or o.suffix)
+        if o.infix
             or_block.push "word = '.*#{regescape wd}.*'#{flag}"
         if not o.prefix and not o.suffix
             or_block.push "word = '#{regescape wd}'#{flag}"
@@ -824,7 +824,6 @@ littb.factory 'backend', ($http, $q, util) ->
         url = titlemap[title]
         
         if not url
-           c.log "ordOchSak: tillåtna titlar är " + (t for t of titlemap)
            def.reject("#{title} not of #{t for t of titlemap}")
            
         else
@@ -1113,7 +1112,11 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     unless a then return b
                     a + "|" + b
             )
-            merged.search_params = JSON.stringify @currentParams
+
+            for key, val of @currentParams
+                merged["s_" + key] = val
+
+
             merged.hit_index = index
             merged = _(merged).pairs().invoke("join", "=").join("&")
 

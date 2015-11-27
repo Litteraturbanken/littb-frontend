@@ -202,14 +202,14 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         #     val_in : Number
         #     default : 20
         # ,
-            key: "prefix"
-            expr: "searchOptionsMenu.prefix.selected"
-        ,   
-            key : "suffix"
-            expr: "searchOptionsMenu.suffix.selected"
-        ,   
-            key : "infix"
-            expr: "searchOptionsMenu.infix.selected"
+        #     key: "prefix"
+        #     expr: "searchOptionsMenu.prefix.selected"
+        # ,   
+        #     key : "suffix"
+        #     expr: "searchOptionsMenu.suffix.selected"
+        # ,   
+        #     key : "infix"
+        #     expr: "searchOptionsMenu.infix.selected"
     ]
 
     # s.nHitsChange = () ->
@@ -414,6 +414,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
 
     s.save_search = (currentIndex) ->
+        c.log "save_search", $location.url()
+        s.$root.prevSearchState = "/#!" + $location.url()
         # TODO: fix me
         # c.log "save_search", startIndex, currentIndex, data
         # c.log "searchData", searchData
@@ -487,62 +489,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     ]
 
-    s.searchOptionsMenu = 
-        default : {
-            label: "SÖK EFTER ORD ELLER FRAS",
-            val: "default",
-            selected: not ($location.search().infix or $location.search().prefix or $location.search().suffix),
-        }
-        prefix : {
-            label: "SÖK EFTER ORDBÖRJAN",
-            val: "prefix",
-            selected: $location.search().prefix
-        }
-        suffix : {
-            label: "SÖK EFTER ORDSLUT",
-            val: "suffix",
-            selected: $location.search().suffix
-        }
-        infix : {
-            label: "SÖK EFTER DEL AV ORD",
-            val: "infix",
-            selected: $location.search().infix
-        }
-
-    s.searchOptionsItems = _.values s.searchOptionsMenu
-
-    s.searchOptSelect = (sel) ->
-        o = s.searchOptionsMenu
-
-        currents = _.filter (_.values o), "selected"
-        isDeselect = sel in currents
-        deselectAll = () ->
-            for item in currents
-                item.selected = false
-
-
-
-        if sel.val == "default"
-            deselectAll()
-            sel.selected = true
-            return
-        if sel.val in ["prefix", "suffix", "infix"] and currents.length == 1 and isDeselect
-            currents[0].selected = false
-            o.default.selected = true
-            return
-        if sel.val in ["prefix", "suffix"]
-            o.default.selected = false
-            sel.selected = !o[sel.val].selected
-            if isDeselect then o.infix.selected = false
-        if sel.val == 'infix' and not isDeselect
-            deselectAll()
-            sel.selected = true
-            o.prefix.selected = true
-            o.suffix.selected = true
-            return
-        if isDeselect
-            sel.selected = false
-
+    
 
 
 
@@ -783,6 +730,18 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         # else
         #     $rootScope.breadcrumb.pop()
 
+    s.getPrimaryMediatype = (works) ->
+        (s.sortMedia (_.pluck works, "mediatype"))[0]
+
+    s.mediaOrder = (work) ->
+        _.indexOf ['etext', 'faksimil', 'epub', 'pdf', "zip"], work.mediatype
+
+
+    s.sortMedia = (list) ->
+        order = ['etext', 'faksimil', 'epub', 'pdf', "zip"]
+        return _.intersection(order,list).concat(_.difference(list, order))
+
+
     s.getUnique = (worklist) ->
         _.filter worklist, (item) ->
             "/" not in item.titlepath 
@@ -812,7 +771,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             url = "txt/epub/" + auth + "_" + work.titlepath.split("/")[0] + ".epub"
         else if work.mediatype == "pdf"
             # url += "info"
-            url = "txt/#{work.lbworkid}/work.lbworkid.pdf"
+            url = "txt/#{work.lbworkid}/#{work.lbworkid}.pdf"
 
         else
             url = "/#!/forfattare/#{auth}/titlar/#{work.titlepath.split('/')[0]}/"
@@ -929,7 +888,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
 
         s.titleStruct = [
-                label : "Tillgängliga titlar"
+                label : "Tillgängliga verk"
                 data : s.groupedWorks
                 showAuthor : false
             ,
@@ -1028,6 +987,17 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     # s.setDir = (isAsc) ->
     #     s.sorttuple[1] = isAsc
 
+    s.mediatypeObj = 
+        etext : if $location.search().etext then false else true
+        faksimil : if $location.search().faksimil then false else true
+        epub : if $location.search().epub then false else true
+        pdf : if $location.search().pdf then false else true
+
+    s.mediatypeFilter = (row) ->
+        # c.log "row.mediatype", row.mediatype
+        _.any _.map row.mediatype, (mt) -> s.mediatypeObj[mt]
+        
+
     s.hasMediatype = (titleobj, mediatype) ->
         return mediatype in (titleobj?.mediatype or [])
 
@@ -1091,7 +1061,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     $timeout () ->
         authors.then ([authorList, authorsById]) ->
             s.authorsById = authorsById
-            s.authorData = authorList
+            s.authorData = _.filter authorList, (item) -> item.show == "true"
             s.authorSearching = false
     , 0
 
@@ -1151,11 +1121,11 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             url += "sida/#{row.itemAttrs.startpagename}/#{mediatype}"
         return url
 
-    s.getSource = () -> 
-        if s.selectedLetter 
-            return s.rowByLetter[s.selectedLetter]
-        else
-            return s.titleArray
+    # s.getSource = () -> 
+    #     if s.selectedLetter 
+    #         return s.rowByLetter[s.selectedLetter]
+    #     else
+    #         return s.titleArray
 
     # getSelectedAuthorIndex = () ->
     #     i = _.indexOf s.authorData, s.selectedAuth
@@ -1268,6 +1238,19 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
             # scope_name : "rowfilter"
             replace : false
         ,
+            key : "ej_etext"
+            expr : "!mediatypeObj.etext"
+        ,
+            key : "ej_faksimil"
+            expr : "!mediatypeObj.faksimil"
+        ,
+            key : "ej_epub"
+            expr : "!mediatypeObj.epub"
+        ,
+            key : "ej_pdf"
+            expr : "!mediatypeObj.pdf"
+
+        ,
         #     key : "niva"
         #     scope_name : "workFilter"
         #     default : "works"
@@ -1298,8 +1281,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     # timeout in order to await the setupHashComplex watch firing.
     # $timeout () ->
-    if not (s.authorFilter or s.rowfilter or s.selectedLetter or s.mediatypeFilter) 
-        s.selectedLetter = "A"
+    # if not (s.authorFilter or s.rowfilter or s.selectedLetter or s.mediatypeFilter) 
+    #     s.selectedLetter = "A"
     if s.rowfilter then s.filter = s.rowfilter
     c.log "workfilter", s.workFilter
     fetchWorks()
@@ -1420,10 +1403,10 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         s.currentLetters = _.unique _.map titleArray, (item) ->
             item.author[0].nameforindex[0]
 
-        util.setupHashComplex s, [
-            key : "selectedLetter"
+        # util.setupHashComplex s, [
+        #     key : "selectedLetter"
 
-        ]
+        # ]
 
 
 
@@ -1441,26 +1424,36 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
             id : $(elem).attr("id")
             
         
-        util.setupHashComplex s, [
-            "key" : "ankare"
-            post_change : (val) ->
-                c.log "post_change", val
-                unless val and $("##{val}").length
-                    $(window).scrollTop(0)
-                    return
-                $(window).scrollTop($("##{val}").offset().top)
-            replace : false
-        ]
+        # util.setupHashComplex s, [
+        #     "key" : "ankare"
+        #     post_change : (val) ->
+        #         c.log "post_change", val
+        #         unless val and $("##{val}").length
+        #             $(window).scrollTop(0)
+        #             return
+        #         $(window).scrollTop($("##{val}").offset().top)
+        #     replace : false
+        # ]
 
 littb.controller "newCtrl", ($scope, $http, util, $location) ->
-littb.controller "aboutCtrl", ($scope, $http, util, $location) ->
+littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
     s = $scope
-    s.page = "intro"
+    # s.$watch ( () -> $routeParams.page), () ->
+    #     c.log "$routeParams.page", $routeParams.page
+    _.extend s, $routeParams
+    s.$on "$routeChangeError", (event, current, prev, rejection) ->
+        c.log "route change", current.pathParams
+        _.extend s, current.pathParams
+
+
+
+    s.page = $routeParams.page
     s.getPage = (page) ->
         return {
-                "intro" : '/red/om/ide/omlitteraturbanken.html'
-                "help" : "views/help.html"
-                "contact" : 'views/contactForm.html'
+                "ide" : '/red/om/ide/omlitteraturbanken.html'
+                "hjalp" : "views/help.html"
+                "kontakt" : 'views/contactForm.html'
+                "statistik" : 'views/stats.html'
             }[page]
 
 littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, util) ->
@@ -1657,19 +1650,19 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
     $q.all([authors, infoDef]).then ([[authorData, authorById], infoData]) ->
         # c.log "authorData", arguments
         s.authorById = authorById
-        for item in authorData
-            if item.authorid == author
-                s.appendCrumb [
-                    label : item.nameforindex.split(",")[0]
-                    url : "/#!/forfattare/" + author
-                ,
-                    label : "titlar"
-                    url : "/#!/forfattare/#{author}/titlar"
-                ,   
-                    label : (infoData.shorttitle or _.str.humanize infoData.titlepath.split("/")[0]) + " info"
-                    # url : "#!/forfattare/#{author}/titlar/#{infoData.titlepathnorm}"
-                ]
-                break
+        # for item in authorData
+        #     if item.authorid == author
+        #         s.appendCrumb [
+        #             label : item.nameforindex.split(",")[0]
+        #             url : "/#!/forfattare/" + author
+        #         ,
+        #             label : "titlar"
+        #             url : "/#!/forfattare/#{author}/titlar"
+        #         ,   
+        #             label : (infoData.shorttitle or _.str.humanize infoData.titlepath.split("/")[0]) + " info"
+        #             # url : "#!/forfattare/#{author}/titlar/#{infoData.titlepathnorm}"
+        #         ]
+        #         break
 
 
 
@@ -1834,6 +1827,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.isFocus = true
         s.showFocusBar = true
 
+    s.hasSearchable = (authorid) ->
+        s.authorById?[authorid].searchable == 'true'
+
     s.closeFocus = (event) ->
         # event.stopPropagation()
         s.isFocus = false
@@ -1890,8 +1886,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.close_hits = () ->
         searchData.reset()
         s.show_search_work = false
-        s.markee_from = null
-        s.markee_to = null
+        # s.markee_from = null
+        # s.markee_to = null
         # $location.search("traff", null)
         # $location.search("traffslut", null)
     # s.pagename = pagename
@@ -2051,14 +2047,22 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 outputPart = part
                 break
 
+
         return outputPart
 
 
     s.getNextPart = () ->
+        if not s.workinfo then return
         current = s.getCurrentPart()
-        if not s.workinfo or not current then return
-        # i = current.number - 1
-        i = _.indexOf s.workinfo.parts, current
+
+        if not current
+            # is page before first part?
+            startix = s.pagemap["page_" + s.workinfo.parts[0].startpagename]
+            if s.pageix < startix
+                i = -1
+        else
+            i = _.indexOf s.workinfo.parts, current
+
         return s.workinfo?.parts[i + 1]
 
     s.getPrevPart = () ->
@@ -2127,7 +2131,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 $rootScope._focus_mode = val
         ,
             key : "border"
-
+        ,
+            key: "show_search_work"
         ,
             key : "om-boken"
             scope_name : "show_about"
@@ -2444,10 +2449,16 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
     c.log "outside params", $location.search()
-    s.$watch (() -> $location.search().search_params), (val) ->
-        c.log "search_params", val, $location.search().search_params
+    s.$watch (() -> $location.search().s_query), (val) ->
+        c.log "search_params", val
         if val
-            args = JSON.parse val
+            args = {}
+            for key, val of $location.search()
+                if _.str.startsWith key, "s_"
+                    args[key[2..]] = val
+                
+            c.log "args", args
+            # args = JSON.parse val
             searchData.newSearch(args)
             searchData.current = Number($location.search().hit_index)
 
@@ -2514,7 +2525,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # s.show_search_work = false
             s.isSearchingWork = false
 
-            $location.url(kwic[0].href[3...])
+            unless kwic.length then return
+            stateLocVars = ["show_search_work", "prefix", "suffix", "infix"]
+            stateVars = (_.pick $location.search(), stateLocVars...)
+
+            query = (_.invoke (_.pairs stateVars), "join", "=").join("&")
+
+
+            $location.url(kwic[0].href[3...] + "&" + query)
+
 
 
 

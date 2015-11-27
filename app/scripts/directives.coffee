@@ -818,18 +818,96 @@ littb.directive "figurediv", imgDef
 littb.directive "compile", ($compile) ->
     link : ($scope, element, attr) ->
         s = $scope
-        # s.$watch ( () -> s.$eval attr.compile), (val) ->
-        #     c.log "element change", val
-        #     if val
-        # c.log s.compile()
 
         s.$watch attr.compile, (val) ->
             tmpl = ($compile val)(s)
             element.html tmpl
 
 
+littb.directive "searchOpts", ($location, util) ->
+    template: """
+        <ul class="search_opts_widget">
+            <li ng-repeat="(key, opt) in searchOptionsItems" >
+                <span role="checkbox" aria-checked="{{opt.selected}}" ng-show="opt.selected">✓</span>
+                <a ng-click="searchOptSelect(opt)">{{opt.label}}</a>
+            </li>
+        </ul>
+    """
+    link : ($scope, element, attr) ->
+        s = $scope
 
-        # element.append $compile(s.$eval attr.compile)(s)
-        # c.log "elemnent", attr.compile, s.$eval attr.compile
+        c.log "$location.search().prefix", $location.search().prefix
+        s.searchOptionsMenu = 
+            default : {
+                label: "SÖK EFTER ORD ELLER FRAS",
+                val: "default",
+                selected: not ($location.search().infix or $location.search().prefix or $location.search().suffix),
+            }
+            prefix : {
+                label: "SÖK EFTER ORDBÖRJAN",
+                val: "prefix",
+                selected: $location.search().prefix
+            }
+            suffix : {
+                label: "SÖK EFTER ORDSLUT",
+                val: "suffix",
+                selected: $location.search().suffix
+            }
+            infix : {
+                label: "SÖK EFTER DEL AV ORD",
+                val: "infix",
+                selected: $location.search().infix
+            }
+
+        s.searchOptionsItems = _.values s.searchOptionsMenu
+
+
+        util.setupHashComplex s, [
+            key: "prefix"
+            expr: "searchOptionsMenu.prefix.selected"
+        ,   
+            key : "suffix"
+            expr: "searchOptionsMenu.suffix.selected"
+        ,   
+            key : "infix"
+            expr: "searchOptionsMenu.infix.selected"
+        ]
+
+        s.searchOptSelect = (sel) ->
+            o = s.searchOptionsMenu
+
+            currents = _.filter (_.values o), "selected"
+            isDeselect = sel in currents
+            deselectAll = () ->
+                for item in currents
+                    item.selected = false
+
+
+
+            if sel.val == "default"
+                deselectAll()
+                sel.selected = true
+                return
+            if sel.val in ["prefix", "suffix", "infix"] and currents.length == 1 and isDeselect
+                currents[0].selected = false
+                o.default.selected = true
+                return
+            if sel.val in ["prefix", "suffix"]
+                o.default.selected = false
+                sel.selected = !o[sel.val].selected
+                if isDeselect then o.infix.selected = false
+            if sel.val == 'infix' and not isDeselect
+                deselectAll()
+                sel.selected = true
+                o.prefix.selected = true
+                o.suffix.selected = true
+                return
+            if isDeselect
+                sel.selected = false
+
+
+
+
+
 
 

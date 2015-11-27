@@ -1,11 +1,6 @@
 <meta-desc>{{authorInfo.fullName}}, {{getPageTitle(showpage).toLowerCase()}}</meta-desc>
 <page-title>{{authorInfo.fullName}}, {{getPageTitle(showpage).toLowerCase()}}</page-title>
-<breadcrumb>
-    <a href="/#!/forfattare">författare</a>
-    <a href="/#!/forfattare/{{author}}">{{authorInfo.fullName}}</a>
-    <a href="">{{getPageTitle(showpage)}}</a>
-</breadcrumb>
-<img ng-if="!slaMode" bkg-img class="no-gradient" src="img/trad_bkg.jpg"></img>
+<img ng-if="!slaMode" bkg-img class="no-gradient" src="img/forf2_bkg.jpg"></img>
 <img ng-if="slaMode" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img>
 
 
@@ -18,7 +13,7 @@
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links"> 
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/#!/forfattare/{{author}}">Introduktion</a></li>
-        <li ng-class="{active : showpage == 'titlar'}"><a href="/#!/forfattare/{{author}}/titlar">Titlar</a></li>
+        <li ng-class="{active : showpage == 'titlar'}"><a href="/#!/forfattare/{{author}}/titlar">Verk</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/#!/forfattare/{{author}}/mer">Mer</a></li>
         <li ng-if="getSearchableTitles().length"><a href="/#!/sok?forfattare={{author}}">Sök i texterna</a></li>
     </ul>
@@ -60,7 +55,7 @@
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                     <tr ng-repeat="works in titleobj.data | orderBy:sortOrder track by $index">
                         <td >
-                            <span ng-repeat="work in works track by $index">
+                            <span ng-repeat="work in works | orderBy:mediaOrder track by $index ">
                                 <!-- <span ng-show="!$first">::: </span> -->
                                 <a ng-href="{{getUrl(work)}}">{{work.mediatype}}</a>
                                 <span ng-show="!last">&nbsp; </span>
@@ -70,7 +65,7 @@
                             <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
                         </td>
                         <td>
-                            <a class="title" ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{works[0].mediatype}}">
+                            <a class="title" ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{getPrimaryMediatype(works)}}/?om-boken">
                                 {{works[0].showtitle}}
                             </a>
                             <div class="extras" ng-if="$parent.$index == 1">i

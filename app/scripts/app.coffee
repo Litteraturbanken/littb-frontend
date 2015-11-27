@@ -113,24 +113,43 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 templateUrl: '/red/om/rattigheter/rattigheter.html'
                 title : "Rättigheter"
                 breadcrumb : ["rättigheter"]
-            .when '/om/ide',
-                templateUrl: "about.html"
+            .when '/om/:page', #['/om/ide', "/om/hjalp", "om/kontakt", "om/statistik", "om/inenglish"],
+                templateUrl: "views/about.html"
                 controller : "aboutCtrl"
                 title : "Om LB"
                 reloadOnSearch : false
-                breadcrumb : ["idé"]
+
+                resolve : 
+                    r : ["$q", "$routeParams", "$route", "$rootScope",
+                            ($q, $routeParams, $route, $rootScope) ->
+                                def = $q.defer()
+                                c.log "resolve", $routeParams, $route, $rootScope.prevRoute
+
+
+
+                                if routeStartCurrent?.controller == "aboutCtrl" and 
+                                        $route.current.controller == "aboutCtrl"
+                                    c.log "reject about route"
+                                    def.reject()
+                                else
+                                    def.resolve()
+                                return def.promise
+                        ]
+
             .when '/om/inenglish',
                 templateUrl: '/red/om/ide/inenglish.html'
                 title : "In English"
                 breadcrumb : ["in english"]
                 reloadOnSearch : false
-            .when '/om/hjalp',
+            .when '/hjalp',
+                redirectTo : "/om/hjalp"
+
                 # templateUrl: '/red/om/hjalp/hjalp.html'
-                templateUrl : "views/help.html"
+                # templateUrl : "views/help.html"
                 # controller : "helpCtrl"
-                title : "Hjälp"
-                breadcrumb : ["hjälp"]
-                reloadOnSearch : false
+                # title : "Hjälp"
+                # breadcrumb : ["hjälp"]
+                # reloadOnSearch : false
             .when '/statistik',
                 templateUrl: 'views/stats.html'
                 controller : 'statsCtrl'
@@ -246,11 +265,12 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     ]
 
             .when '/kontakt',
-                templateUrl: 'views/contactForm.html'
-                controller : 'contactFormCtrl'
-                reloadOnSearch : false
-                title : "Kontakt"
-                breadcrumb : ["kontakt"]
+                redirectTo : "/om/kontakt"
+                # templateUrl: 'views/contactForm.html'
+                # controller : 'contactFormCtrl'
+                # reloadOnSearch : false
+                # title : "Kontakt"
+                # breadcrumb : ["kontakt"]
             .when ["/id/:id", "/id"],
                 template : """
                 <div ng-class="{searching:!data}">
@@ -333,7 +353,8 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         $("title:first").text title
 
     $rootScope.$on "$routeChangeStart", (event, next, current) ->
-        routeStartCurrent = current
+        routeStartCurrent = current?.$$route
+        c.log "set routeStartCurrent", routeStartCurrent
 
     $rootScope.$on "$routeChangeSuccess", (event, newRoute, prevRoute) ->
         if newRoute.controller == "startCtrl"

@@ -1,0 +1,9 @@
+<img bkg-img src="img/about_bkg.jpg"></img>     
+<h1>Om Litteraturbanken</h1>
+<ul class="links">
+    <li><a ng-class="{active : page == 'ide'}" href="/#!/om/ide">Introduktion</a></li>
+    <li><a ng-class="{active : page == 'statistik'}" href="/#!/om/statistik">Statistik</a></li>
+    <li><a ng-class="{active : page == 'hjalp'}" href="/#!/om/hjalp">Hjälp</a></li>
+    <li><a ng-class="{active : page == 'kontakt'}" href="/#!/om/kontakt">Kontakt</a></li>
+</ul>
+<ng-include src="getPage(page)"></ng-include>

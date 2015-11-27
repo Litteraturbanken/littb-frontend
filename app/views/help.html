@@ -1,10 +1,12 @@
-<div ng-controller="helpCtrl" class="page-help" ng-bind-html="htmlContent | trust"></div>
+<div class="help_content content" scroll-to="ankare" offset="230"
+    ng-controller="helpCtrl" class="page-help" ng-bind-html="htmlContent | trust">
+    <div toolkit>
+        <ul affix class="help_submenu">
+            <li ng-repeat="item in labelArray">
+                <a ng-click="$parent.ankare = item.id">::: {{item.label}}</a>
+            </li>
+        </ul>
 
-<div toolkit>
-    <ul affix>
-        <li ng-repeat="item in labelArray">
-            <a ng-click="$parent.ankare = item.id">::: {{item.label}}</a>
-        </li>
-    </ul>
-
+    </div>
 </div>
+

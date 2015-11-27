@@ -130,7 +130,7 @@
                 <!-- <li>Visa som bokuppslag</li> -->
                 <li>
                     <!-- <a popper="searchPopup" my="left center" at="left middle">Sök i verket</a>  -->
-                    <a ng-click="openSearchWorks()">Sök i verket</a> 
+                    <a ng-disabled="workinfo.searchable == 'false'" ng-click="openSearchWorks()">Sök i verket</a> 
 
                     <!-- <div class="searchbox popper_menu" ng-click="$event.stopPropagation()"> -->
                     <div collapse="!show_search_work" class="searchbox" ng-class="{searching : isSearchingWork}">
@@ -152,17 +152,12 @@
 
                                 </form>
 
-                                <ul class="opts search_opts">
-                                    <li> <span class="check">✓</span><a href="">Ord eller fras</a></li>
-                                    <li><a href="">Ordbörjan</a></li>
-                                    <li><a href="">Ordslut</a></li>
-                                    <li><a href="">Del av ord</a></li>
-                                </ul>
+                                <search-opts></search-opts>
                             </div>
                         </div>
                     </div>
                 </li>
-                <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}">Sök i författarens texter</a></li>
+                <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}" ng-disabled="!hasSearchable(author || getValidAuthors()[0])">Sök i författarens texter</a></li>
                 <li>Dela boken</li>
             </ul>
         </div>
@@ -236,7 +231,7 @@
                         </form>
                     </li>
 
-                    <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Tillbaka till söksidan</a> </li>
+                    <li><a ng-href="{{prevSearchState || '/#!/sok'}}">Tillbaka till söksidan</a> </li>
                     <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Stäng träffvisningen</a> </li>
 
                     

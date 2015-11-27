@@ -263,7 +263,7 @@ th {
     height: 80vh;
     display: flex;
     align-content: stretch;
-    flex-wrap : wrap;
+    // flex-wrap : wrap;
     align-items: stretch;
     .box {
         @include container();
@@ -506,6 +506,8 @@ h1,h2,h3,h4,h5,h6 {
 
 #leftCorridor {
     width : $main-menu-width;
+    // safari bug?
+    min-width : $main-menu-width;
     margin-right : $right-gutter-width;
     margin-top : 1em;
     margin-bottom: 3em;
@@ -568,6 +570,13 @@ h1,h2,h3,h4,h5,h6 {
 
 
 
+a[disabled="disabled"] {
+    color : lightgrey;
+    cursor : default;
+    &:hover {
+        color : lightgrey;
+    }
+}
 a[ng-click] {
     cursor : pointer;
 }
@@ -1498,7 +1507,7 @@ body > .header {
                 color : $primarycolor;
             }
         }
-        .lower_options {
+        .search_opts_widget {
             margin-top : 1em;
             margin-bottom : 2em;
             @include small-caps();
@@ -1754,7 +1763,6 @@ $partnav-width : 170px;
 
     }
 }
-
 .page-reading {
     .mainnav {
         margin-bottom: 3em;
@@ -2038,9 +2046,9 @@ $partnav-width : 170px;
         }
     }
 
-    .search_opts {
-        @include small-caps();
-    }
+    // .search_opts {
+    //     @include small-caps();
+    // }
 
     li a {
         cursor : pointer;
@@ -2503,10 +2511,10 @@ $partnav-width : 170px;
                 
             }
             .title {
-                display : block;
+                // display : block;
                 font-size : 0.95em;
-                text-indent: -1.5em;
-                padding-left: 1.5em;
+                // text-indent: -1.5em;
+                // padding-left: 1.5em;
             }
             .extras {
                 font-size : 0.85em;
@@ -2613,7 +2621,6 @@ $partnav-width : 170px;
             figcaption {
                 font-size: 0.8em;
                 font-style : italic;
-                text-align : right;
             }
 
             
@@ -2701,7 +2708,12 @@ $partnav-width : 170px;
         // flex : 0 1 auto
         .mainnav a {
             color : white;
+            &:hover {
+                color : #333;
+            }
         }
+
+        margin-right: 80px;
     }
     #rightCorridor {
         display : none;
@@ -2736,6 +2748,33 @@ $partnav-width : 170px;
             padding-left: 19px;
             vertical-align: middle;
             margin-right : 10px;
+        }
+        .mediatype_opts {
+            font-size: 0.8em;
+            
+            vertical-align: middle;
+            @include small-caps();
+            margin-left: 1em;
+            // margin-top: 1em;
+            display: inline-block;
+            @include user-select(none);
+            li {
+            }
+            span, a {
+                cursor: pointer;
+
+            }
+            span {
+                color : white;
+            }
+            a {
+                color : white;
+                &:hover {
+                    color : black;
+                }
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
         }
         .btn {
             // font-size: 0.8em;
@@ -2820,6 +2859,7 @@ $partnav-width : 170px;
         
         .box_container {
             // width : 70%;
+            width : 70vw;
         }
         .list {
             // padding-left: 1.5em;
@@ -2868,6 +2908,7 @@ $partnav-width : 170px;
 
             // }
             &.author {
+                width : 400px;
                 flex : 0 auto;
                 margin-right : 1em;
                 .info {
@@ -3192,13 +3233,6 @@ $partnav-width : 170px;
         p {
             max-width : 700px
         }
-    }
-}
-
-.page-help {
-    #toolkit {
-        font-size : 0.9em;
-
     }
 }
 
@@ -4052,6 +4086,18 @@ grundform-clean {
 }
 
 .page-about {
+    .help_submenu {
+        margin-top: 2em;
+        @include container();
+        background-color : rgba(255,255,255,0.7);
+        font-size : 0.8em;
+    }
+    .help_content {
+
+    }
+
+
+
     .logo_link_monogram {
         @include logo("red_black");
     }
@@ -4059,9 +4105,16 @@ grundform-clean {
     .links {
         @include topLinks();
         margin-bottom: 3em;
+
+        a.active {
+            color : black;
+            cursor : default;
+
+        }
     }
 
     div > p:first-child, 
+    h3 + p,
     h2 + p, 
     h1 + p
      {
