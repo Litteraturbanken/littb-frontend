@@ -93,18 +93,19 @@
                         </li>    
                     
                         <li class="part_header top_header" ng-hide="titleSearching">
-                            Hela verk
+                            <a ng-disabled="showPopular" class="popular" ng-click="showPopular = true">Populära verk</a>
+                            <a ng-disabled="!showPopular" class="works" ng-click="showPopular = false">Samtliga verk</a>
                         </li>
-                        <li ng-show="!titleSearching && !(titleArray | filter:filterTitle | filter:mediatypeFilter).length">
-                            Inga träffar.
+                        <li ng-show="!(getTitles() | filter:filterTitle | filter:mediatypeFilter).length">
+                            Inga träffar. 
                         </li>
                         
-                        <li class="link" ng-repeat="row in titleArray | orderBy:'itemAttrs.sortkey' | filter:mediatypeFilter | filter:filterTitle" on-finish-render="titleRender()"
+                        <li class="link" ng-repeat="row in getTitles() | orderBy:'itemAttrs.sortkey' | filter:mediatypeFilter | filter:filterTitle" on-finish-render="titleRender()"
                             top="$parent.title_off" ng-click="titleClick($event, row)"
                             id="{{getUniqId(row)}}">
                             <div class="header">
-                                <span class="title" tooltip="{{row.itemAttrs.title}}">
-                                    <a ng-click="titleHeaderClick($event, row)" >{{row.itemAttrs.showtitle}} </a>
+                                <span class="title" tooltip="{{::row.itemAttrs.title != row.itemAttrs.showtitle ? row.itemAttrs.title : ''}}" tooltip-popup-delay="100" >
+                                    <a ng-click="titleHeaderClick($event, row)" >{{::row.itemAttrs.showtitle}} </a>
                                 </span>
                                 <span class="author"><a ng-click="authorClick($event, authorsById[row.author[0].authorid])">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
                             </div>
@@ -129,7 +130,7 @@
                             </div>
                         </li>
                         
-                        <li class="part_header" ng-hide="titleSearching">
+                        <li class="part_header" ng-hide="titleSearching || showPopular">
                             Dikter, noveller, essäer, etc.
                         </li>
                         <li class="" ng-show="all_titles && !(all_titles  | filter:mediatypeFilter).length">
@@ -139,7 +140,11 @@
                         <li ng-repeat="row in all_titles  | filter:mediatypeFilter | orderBy:'itemAttrs.sortkey'" class="parts" ng-class="{first_part : $first}">
                     
                             <div class="header" tooltip="{{row.itemAttrs.title}}">
-                                <span class="title">{{row.itemAttrs.showtitle}}</span>
+                                <span class="title">
+                                    <a ng-click="titleHeaderClick($event, row)" >
+                                    {{row.itemAttrs.showtitle}}
+                                    </a>
+                                </span>
                                 
                                 <span class="author"><a ng-click="authorClick($event, authorsById[row.author[0].authorid])">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span>
                             </div>

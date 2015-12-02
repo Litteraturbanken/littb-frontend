@@ -2967,9 +2967,23 @@ $partnav-width : 170px;
                 margin-top : 2em;
                 margin-bottom : 1em;
                 color : $primarycolor;
+                
             }
             .top_header {
                 margin-top : 0;
+
+                .popular {
+                    margin-right: 1em;
+                }
+                a {
+                    color : $primarycolor;
+                    &:hover {
+                        color : #333;
+                    }
+                }
+                [disabled="disabled"] {
+                    color : grey;
+                }
             }
             &.title {
                 .first_part {
@@ -3318,6 +3332,20 @@ $partnav-width : 170px;
         }
     }
 }
+
+#textjamforelse {
+    @include container();
+    background-color : rgba(255,255,255,0.55);
+    max-width : 70%;
+    * {
+        color : #333;
+    }
+    option {
+        
+        font-size: 0.8em;
+    }
+}
+
 #context-versions-div {
     border: 1px solid #bbb;
     box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
@@ -3705,6 +3733,7 @@ grundform-clean {
         .lagerlof_bibliografi {
             li {
                 margin-bottom : 1em;
+                max-width : 500px;
             }
         }
     }

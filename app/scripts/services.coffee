@@ -294,6 +294,44 @@ littb.factory 'backend', ($http, $q, util) ->
 
             output[util.normalize(elem.nodeName)] = val
 
+
+        prov = $("result provenance-data", xml)
+
+
+        output["provenance"] = for item in prov
+            {
+                text : $("text", item).text()
+                image : $("image", item).text()
+                link : $("link", item).text()
+            }
+
+
+        output.sourcedescAuthor = $("sourcedesc-author", xml).text()
+        sourcedesc = $("sourcedesc", xml)
+        $("sourcedesc-author", sourcedesc).remove()
+
+        errata = $("errata", xml)
+        output.errata = for tr in $("tr", errata)
+            _($(tr).find("td")).map(util.getInnerXML)
+            .map(_.str.strip).value()
+        errata.remove()
+
+        output.sourcedesc = (util.getInnerXML sourcedesc) or ""
+
+
+        # output.workintro = (util.getInnerXML workintro) or ""
+
+        epub = $("result epub", xml)
+        if epub.length
+            output.epub = 
+                file_size: epub.attr("file-size")
+                url : util.getInnerXML epub
+        pdf = $("result pdf", xml)
+        if pdf.length
+            output.pdf = 
+                file_size: pdf.attr("file-size")
+                url : util.getInnerXML pdf
+
         # output.author_type = $(root + " > authorid", xml).attr("type")
         return output
 
@@ -408,42 +446,7 @@ littb.factory 'backend', ($http, $q, util) ->
             output = parseWorkInfo("result", xml)
 
 
-            prov = $("result provenance-data", xml)
-
-
-            output["provenance"] = for item in prov
-                {
-                    text : $("text", item).text()
-                    image : $("image", item).text()
-                    link : $("link", item).text()
-                }
-
-
-            output.sourcedescAuthor = $("sourcedesc-author", xml).text()
-            sourcedesc = $("sourcedesc", xml)
-            $("sourcedesc-author", sourcedesc).remove()
-
-            errata = $("errata", xml)
-            output.errata = for tr in $("tr", errata)
-                _($(tr).find("td")).map(util.getInnerXML)
-                .map(_.str.strip).value()
-            errata.remove()
-
-            output.sourcedesc = (util.getInnerXML sourcedesc) or ""
-
-
-            # output.workintro = (util.getInnerXML workintro) or ""
-
-            epub = $("result epub", xml)
-            if epub.length
-                output.epub = 
-                    file_size: epub.attr("file-size")
-                    url : util.getInnerXML epub
-            pdf = $("result pdf", xml)
-            if pdf.length
-                output.pdf = 
-                    file_size: pdf.attr("file-size")
-                    url : util.getInnerXML pdf
+            
 
             def.resolve output
         ).error (xml) ->
@@ -621,16 +624,37 @@ littb.factory 'backend', ($http, $q, util) ->
 
         ).success (xml) ->
             output = {}
+            parse = (toplist) ->
+                list = for item in toplist.children()
+                    obj = {}
+                    obj.itemAttrs = objFromAttrs item
+                    obj.author = []
+                    for author in $(item).find("author")
+                        authObj = objFromAttrs author
+                        obj.author.push authObj
+
+                    obj.mediatype = []
+                    for mediatype in $(item).find("mediatype")
+                        obj.mediatype.push $(mediatype).text()
+
+                    obj
+
+                
+                return list
+
+
+
+            output.titleList = parse $("toplist:first", xml)
+            output.epubList = parse $("toplist:nth(1)", xml)
+            
+
             parseObj = ["pages", "words"]
-            # getting two tables for some reason
-            # if $("table", xml).length > 1
-            #     $("table", xml).last().remove()
-            parseTable = (table) ->
-                return ("<a href='/#!/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", table))
-            output.titleList = parseTable($("table", xml)[0])
-            output.epubList = parseTable($("table", xml)[1])
+            # parseTable = (table) ->
+            #     return ("<a href='/#!/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", table))
+            # output.titleList = parseTable($("table", xml)[0])
+            # output.epubList = parseTable($("table", xml)[1])
             for elem in $("result", xml).children()
-                if elem.tagName == "table"
+                if elem.tagName == "toplist"
                     continue
                     
                 else if elem.tagName in parseObj

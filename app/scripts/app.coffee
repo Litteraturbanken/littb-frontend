@@ -19,7 +19,7 @@ authorResolve = ["$q", "$routeParams", "$route",
                             ($q, $routeParams, $route) ->
                                 def = $q.defer()
                                 c.log "resolve", $routeParams, $route
-                                if routeStartCurrent?.controller == "authorInfoCtrl" and 
+                                if routeStartCurrent?.$$route.controller == "authorInfoCtrl" and 
                                         $route.current.controller == "authorInfoCtrl" and
                                         $route.current.params.author == $routeParams.author
                                     def.reject()
@@ -123,11 +123,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     r : ["$q", "$routeParams", "$route", "$rootScope",
                             ($q, $routeParams, $route, $rootScope) ->
                                 def = $q.defer()
-                                c.log "resolve", $routeParams, $route, $rootScope.prevRoute
 
-
-
-                                if routeStartCurrent?.controller == "aboutCtrl" and 
+                                if routeStartCurrent?.$$route.controller == "aboutCtrl" and 
                                         $route.current.controller == "aboutCtrl"
                                     c.log "reject about route"
                                     def.reject()
@@ -162,12 +159,18 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 reloadOnSearch : false
                 breadcrumb : ["sök"]
 
-            .when "/titlar",
+            .when "/bibliotek",
                 templateUrl : "views/titleList.html"
                 controller : "titleListCtrl"
                 reloadOnSearch : false
-                title : "Titlar"
-                breadcrumb : ["titlar"]
+                title : "Biblioteket – Titlar och författare"
+            .when "/titlar",
+                redirectTo : "/bibliotek"
+            #     templateUrl : "views/titleList.html"
+            #     controller : "titleListCtrl"
+            #     reloadOnSearch : false
+            #     title : "Titlar"
+            #     breadcrumb : ["titlar"]
             .when "/epub",
                 templateUrl : "views/epubList.html"
                 controller : "epubListCtrl"
@@ -175,11 +178,11 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Gratis böcker för nerladdning i epubformatet"
                 breadcrumb : ["epub"]
             .when "/forfattare",
-                templateUrl : "views/authorList.html"
-                controller : "authorListCtrl"
-                title : "Författare"
-                reloadOnSearch : false
-                breadcrumb : ["författare"]
+                redirectTo : "/bibliotek"
+                # templateUrl : "views/authorList.html"
+                # controller : "authorListCtrl"
+                # title : "Författare"
+                # reloadOnSearch : false
 
             .when ["/forfattare/LagerlofS"
                    "/forfattare/LagerlofS/titlar"
@@ -248,7 +251,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                     # return def.promise
                                 # if we're only changing pages in the reader, don't change route
         
-                                if routeStartCurrent?.controller == "readingCtrl" and $route.current.controller == "readingCtrl"
+                                if routeStartCurrent?.$$route.controller == "readingCtrl" and $route.current.controller == "readingCtrl"
                                     cmp = ["author", "mediatype", "title"]
                                     if "lbid" of $route.current.params
                                         cmp.push "lbid"
@@ -284,7 +287,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                             <a href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a>
                         </td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/info">{{row.itemAttrs.showtitle}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/{{row.itemAttrs.mediatype}}">{{row.itemAttrs.showtitle}}</a>
                         </td>
                         <td>
                             <span ng-repeat="type in row.mediatype">
@@ -353,8 +356,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         $("title:first").text title
 
     $rootScope.$on "$routeChangeStart", (event, next, current) ->
-        routeStartCurrent = current?.$$route
-        c.log "set routeStartCurrent", routeStartCurrent
+        routeStartCurrent = current
 
     $rootScope.$on "$routeChangeSuccess", (event, newRoute, prevRoute) ->
         if newRoute.controller == "startCtrl"
@@ -469,6 +471,7 @@ littb.filter "setMarkee", () ->
 littb.filter "numberFmt", () ->
     return (input) ->
         unless input then return input
+        if input.toString().length < 5 then return input
         input = _.map input.toString().split("").reverse(), (item, i) ->
             if not i then return item
             if i % 3 == 0

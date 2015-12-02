@@ -8,7 +8,7 @@
 </breadcrumb> -->
 <!-- <img class="no-gradient" bkg-img src="img/las_bkg.jpg"></img> -->
 <div class="reader_main" 
-     ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr(), border : border}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
+     ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, first_load : first_load, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr(), border : border}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
 
     <!-- <div class="preloader">Hämtar sida <span class="dots_blink"></span></div> -->
     <div class="preloader pull-right"><i class="spinner fa fa-spinner fa-pulse"></i></div>
@@ -16,7 +16,7 @@
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
     <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
     <div class="etext txt"
-         selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
+         selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="first_load && etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
     
          <!-- ng-style="{height : overlayHeight, width : overlayWidth}" 
 
@@ -43,7 +43,7 @@
          class="faksimilMarkee" ng-class="{long : obj.width > 150}"></div>
     
     
-    <div toolkit toolkit-id="toolkit-right" ng-show="workinfo">
+    <div toolkit toolkit-id="toolkit-right" ng-show="first_load">
         <!-- <div id="ord-och-sak" ng-show="ordOchSakPage">
             <div ng-repeat="entry in ordOchSakPage" ng-mouseenter="markOosEntry(entry)" 
                  ng-mouseleave="unmarkOosEntries()">
@@ -170,7 +170,7 @@
             </div>
              
         </script>
-        <script type="text/ng-template" id="about.html">
+        <script type="text/ng-template" id="sourceInfoModal.html">
             <div class="about-modal modal-body">
                 <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
                 <ng-include src="'views/sourceInfo.html'"></ng-include>

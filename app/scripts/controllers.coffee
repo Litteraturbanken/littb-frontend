@@ -939,11 +939,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
     
     
-littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement, $anchorScroll) ->
+littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement, $anchorScroll, $q) ->
     s = $scope
     s.titleSearching = false
     s.authorSearching = true
-    s.rowByLetter = {}
+    s.showPopular = true
+    # s.rowByLetter = {}
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
         return attrs.title unless attrs.showtitle == attrs.title
@@ -969,7 +970,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
         exprs = filter.split(" ")
 
-        return _.any exprs, (expr) ->
+        return _.all exprs, (expr) ->
             new RegExp(expr, "i").test((author.fullname))
 
     # titlesort = "itemAttrs.sortkey"
@@ -1022,22 +1023,18 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         title.itemAttrs.lbworkid + (title.itemAttrs.titlepath.split('/')[1] or "")
         
 
-    s.selectWork = () ->
-        c.log "selectWork", s.workFilter
-        if s.workFilter == "titles"
-            # s.authorFilter = null
-            s.mediatypeFilter = ""
-            if s.filter
-                s.selectedLetter = null
-            if s.selectedLetter
-                s.filter = null
-            # unless s.filter or s.selectedLetter then s.selectedLetter = "A"
+    # s.selectWork = () ->
+    #     c.log "selectWork", s.workFilter
+    #     if s.workFilter == "titles"
+    #         s.mediatypeFilter = ""
+    #         if s.filter
+    #             s.selectedLetter = null
+    #         if s.selectedLetter
+    #             s.filter = null
 
-            # s.selectedLetter = null
-            # s.filter = null
-        if not s.authorFilter and not s.filter and not s.selectedLetter 
-            s.selectedLetter = "A"
-        fetchWorks()
+    #     if not s.authorFilter and not s.filter and not s.selectedLetter 
+    #         s.selectedLetter = "A"
+    #     fetchWorks()
 
     s.authorRender = () ->
         c.log "authorRender"
@@ -1068,21 +1065,19 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.searchTitle = () ->
         c.log "searchTitle", s.workFilter
         if s.filter
-            s.selectedLetter = null
 
-            # fetchWorks()
             fetchTitles()
         else
             unless s.filter then s.selectedLetter = "A" else s.selectedLetter = null
 
         s.rowfilter = s.filter
 
-    s.authorChange = () ->
-        s.selectedLetter = null
-        unless s.authorFilter and not s.selectedLetter
-            s.selectedLetter = "A"
-        if s.workFilter == "titles"
-            fetchWorks()
+    # s.authorChange = () ->
+    #     s.selectedLetter = null
+    #     unless s.authorFilter and not s.selectedLetter
+    #         s.selectedLetter = "A"
+    #     if s.workFilter == "titles"
+    #         fetchWorks()
 
     fetchTitles = () ->
         # unless s.filter then return
@@ -1093,23 +1088,27 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     fetchWorks = () ->
         s.titleSearching = true
-        backend.getTitles(false, s.authorFilter, s.selectedLetter, s.filter).then (titleArray) ->
+        def = backend.getTitles(false, s.authorFilter, s.selectedLetter, s.filter).then (titleArray) ->
             s.titleSearching = false
             s.titleArray = titleArray
             s.titleByPath = _.groupBy titleArray, (item) ->
                 return item.itemAttrs.titlepath
-            s.rowByLetter = _.groupBy titleArray, (item) ->
-                firstletter = item.itemAttrs.sortkey[0]
-                if firstletter == "Æ"
-                    firstletter = "A"
-                return firstletter.toUpperCase()
+
+            return titleArray
+
+        return def
+            # s.rowByLetter = _.groupBy titleArray, (item) ->
+            #     firstletter = item.itemAttrs.sortkey[0]
+            #     if firstletter == "Æ"
+            #         firstletter = "A"
+            #     return firstletter.toUpperCase()
 
 
 
-            if s.workFilter == "titles"
-                s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("")
-            else
-                s.currentLetters = _.keys s.rowByLetter
+            # if s.workFilter == "titles"
+                # s.currentLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ".split("")
+            # else
+                # s.currentLetters = _.keys s.rowByLetter
                 
 
     s.getUrl = (row, mediatype) ->
@@ -1204,7 +1203,6 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         else return authors[0]
 
 
-
     # onRootClick = (event) ->
     #     s.$apply () ->
     #         s.selectedAuth = null
@@ -1240,17 +1238,23 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         ,
             key : "ej_etext"
             expr : "!mediatypeObj.etext"
+            replace : false
         ,
             key : "ej_faksimil"
             expr : "!mediatypeObj.faksimil"
+            replace : false
         ,
             key : "ej_epub"
             expr : "!mediatypeObj.epub"
+            replace : false
         ,
             key : "ej_pdf"
             expr : "!mediatypeObj.pdf"
-
+            replace : false
         ,
+            key : "populara"   
+            scope_name : "showPopular"
+
         #     key : "niva"
         #     scope_name : "workFilter"
         #     default : "works"
@@ -1285,10 +1289,26 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     #     s.selectedLetter = "A"
     if s.rowfilter then s.filter = s.rowfilter
     c.log "workfilter", s.workFilter
-    fetchWorks()
+    # fetchWorks()
 
-    # s.$on "$destroy", () ->
-    #     $rootElement.off "click", onRootClick
+    onceFetchWorks = _.once () ->
+        fetchWorks()
+
+    s.getTitles = () ->
+        if s.showPopular
+            s.popularTitles
+        else
+            onceFetchWorks()
+            return s.titleArray
+
+    s.titleSearching = true
+    backend.getStats().then (data) ->
+        c.log "data", data
+
+        s.titleSearching = false
+        s.popularTitles = _.compact _.unique ([].concat data.titleList, data.epublist), (title) ->
+            title?.itemAttrs.lbworkid
+
 
 littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
     s = $scope
@@ -1400,14 +1420,8 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         s.authorData = _.unique authors, false, (item) ->
             item.authorid
 
-        s.currentLetters = _.unique _.map titleArray, (item) ->
-            item.author[0].nameforindex[0]
-
-        # util.setupHashComplex s, [
-        #     key : "selectedLetter"
-
-        # ]
-
+        # s.currentLetters = _.unique _.map titleArray, (item) ->
+        #     item.author[0].nameforindex[0]
 
 
 
@@ -1475,53 +1489,53 @@ littb.controller "omtexternaCtrl", ($scope, $routeParams) ->
     $scope.doc = docPath + ($routeParams['doc'] or 'omtexterna.html')
     
 
-littb.controller "authorListCtrl", ($scope, backend, util, authors) ->
-    s = $scope
-    # util.setupHash s, "authorFilter"
-    s.sorttuple = [["nameforindex"], false]
-    s.setSort = ([sortstr]) ->
-        s.sorttuple[0] = [sortstr]
-    s.setDir = (isAsc) ->
-        s.sorttuple[1] = isAsc
+# littb.controller "authorListCtrl", ($scope, backend, util, authors) ->
+#     s = $scope
+#     # util.setupHash s, "authorFilter"
+#     s.sorttuple = [["nameforindex"], false]
+#     s.setSort = ([sortstr]) ->
+#         s.sorttuple[0] = [sortstr]
+#     s.setDir = (isAsc) ->
+#         s.sorttuple[1] = isAsc
 
-    s.authorDef = authors
+#     s.authorDef = authors
 
-    util.setupHashComplex s,
-        [
-            expr : "sorttuple[0]"
-            scope_func : "setSort"
-            key : "sortering"
-            val_in : (val) ->
-                val?.split(",")
-            val_out : (val) ->
-                val?.join(",")
-            default : "nameforindex"
-        ,
-            expr : "sorttuple[1]"
-            scope_func : "setDir"
-            key : "fallande"
-        ,
-            key : "authorFilter",
-        ,   
-            key : "selectedLetter"
-        ]
+#     util.setupHashComplex s,
+#         [
+#             expr : "sorttuple[0]"
+#             scope_func : "setSort"
+#             key : "sortering"
+#             val_in : (val) ->
+#                 val?.split(",")
+#             val_out : (val) ->
+#                 val?.join(",")
+#             default : "nameforindex"
+#         ,
+#             expr : "sorttuple[1]"
+#             scope_func : "setDir"
+#             key : "fallande"
+#         ,
+#             key : "authorFilter",
+#         ,   
+#             key : "selectedLetter"
+#         ]
 
-    authors.then ([data, authorById]) ->
-        s.authorIdGroup = authorById
-        s.authorIdGroup[""] = ""
-        s.rows = data
+#     authors.then ([data, authorById]) ->
+#         s.authorIdGroup = authorById
+#         s.authorIdGroup[""] = ""
+#         s.rows = data
 
-        s.rowByLetter = _.groupBy data, (item) ->
-            item.nameforindex[0]
-        s.currentLetters = _.keys s.rowByLetter
+#         s.rowByLetter = _.groupBy data, (item) ->
+#             item.nameforindex[0]
+#         s.currentLetters = _.keys s.rowByLetter
 
-    s.getAuthor = (row) ->
-        [last, first] = row.nameforindex.split(",")
-        last = last.toUpperCase()
-        if first
-            return last + "," + first
-        else 
-            return last
+#     s.getAuthor = (row) ->
+#         [last, first] = row.nameforindex.split(",")
+#         last = last.toUpperCase()
+#         if first
+#             return last + "," + first
+#         else 
+#             return last
     # $scope.
 
 littb.filter "correctLink", () ->
@@ -1570,7 +1584,8 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
     s.show_large = false
 
     s.getValidAuthors = () ->
-        _.filter s.data?.authoridNorm, (item) ->
+        unless s.authorById then return
+        _.filter s.workinfo?.authorid, (item) ->
             item.id of s.authorById
 
     s.toggleErrata = () ->
@@ -1579,28 +1594,28 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     s.getUrl = (mediatype) ->
         if mediatype == "epub" 
-            return s.data?.epub.url
+            return s.workinfo?.epub.url
             
         else if mediatype == "pdf" 
-            return s.data?.pdf.url
+            return s.workinfo?.pdf.url
 
         return "/#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
 
     s.getOtherMediatypes = () ->
-        (x for x in (s.data?.mediatypes or []) when x != s.mediatype)
+        (x for x in (s.workinfo?.mediatypes or []) when x != s.mediatype)
 
     s.getReadMediatypes = () ->
         read = ['etext', 'faksimil']
-        (x for x in (s.data?.mediatypes or []) when x in read)
+        (x for x in (s.workinfo?.mediatypes or []) when x in read)
     
     s.getDownloadMediatypes = () ->
         download = ['epub', 'pdf']
-        (x for x in (s.data?.mediatypes or []) when x in download)
+        (x for x in (s.workinfo?.mediatypes or []) when x in download)
         
 
     # s.getMediatypeUrl = (mediatype) ->
     #     if mediatype == "epub"
-    #         # return s.data?.epub.url
+    #         # return s.workinfo?.epub.url
     #         s.getUrl(mediatype)
     #         return "#!/forfattare/#{s.author}/titlar/#{s.title}/info/#{mediatype}"
     #     else
@@ -1612,8 +1627,8 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
     #         window.location.href = s.getUrl(mediatype)
 
     s.getSourceImage = () ->
-        if s.data
-            "/txt/#{s.data.lbworkid}/#{s.data.lbworkid}_small.jpeg"
+        if s.workinfo
+            "/txt/#{s.workinfo.lbworkid}/#{s.workinfo.lbworkid}_small.jpeg"
 
     s.showLargeImage = ($event) ->
         if s.show_large then return 
@@ -1628,26 +1643,28 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     
     s.getFileSize = (mediatype) ->
-        unless s.data then return
-        size = s.data[mediatype].file_size
+        unless s.workinfo then return
+        size = s.workinfo[mediatype].file_size
 
         kb = size / 1024
 
         return kb
 
 
+    if not s.mediatype
+        s.mediatype = s.workinfo.mediatypes[0]
+    # infoDef = backend.getSourceInfo(author, title) #TODO: REMOVE!
+    # infoDef.then (data) ->
+    #     s.error = false
+    #     s.data = data
+    #     if not s.mediatype
+    #         s.mediatype = s.data.mediatypes[0]
+    # , (reason) -> # reject callback 
+    #     s.data = {}
+    #     s.error = true
 
-    infoDef = backend.getSourceInfo(author, title) #TODO: REMOVE!
-    infoDef.then (data) ->
-        s.error = false
-        s.data = data
-        if not s.mediatype
-            s.mediatype = s.data.mediatypes[0]
-    , (reason) -> # reject callback 
-        s.data = {}
-        s.error = true
-
-    $q.all([authors, infoDef]).then ([[authorData, authorById], infoData]) ->
+    # $q.all([authors, infoDef]).then ([[authorData, authorById], infoData]) ->
+    authors.then ([authorData, authorById]) ->
         # c.log "authorData", arguments
         s.authorById = authorById
         # for item in authorData
@@ -1792,7 +1809,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http) ->
     s = $scope
     s.isEditor = false
     s._ = {humanize : _.humanize}
@@ -1809,6 +1826,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.searchData = searchData
     s.loading = true
+    s.first_load = false
+    # setFirstLoad = _.once () -> s.first_load = true
     s.showPopup = false
     s.error = false
     s.show_chapters = false # index modal
@@ -1859,11 +1878,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.openModal = () ->
         s.show_about = true  
         
-
-        # modal.result.then () ->
-            # s.closeModal()
-        # , () ->
-            # s.closeModal()
 
     s.onPartClick = (startpage) ->
         s.gotopage(startpage)
@@ -2060,6 +2074,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             startix = s.pagemap["page_" + s.workinfo.parts[0].startpagename]
             if s.pageix < startix
                 i = -1
+            else 
+                return
         else
             i = _.indexOf s.workinfo.parts, current
 
@@ -2138,8 +2154,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             scope_name : "show_about"
             post_change : (val) ->
                 if val
+
+                    # $http.get("") $templateCache
+
+
                     about_modal = $modal.open
-                        templateUrl : "about.html"
+                        templateUrl : "sourceInfoModal.html"
                         scope : s
                         windowClass : "about"
 
@@ -2361,6 +2381,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
 
             s.loading = false
+            s.first_load = true
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
 
@@ -2377,6 +2398,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             c.log "fail", data
             s.error = true
             s.loading = false
+            s.first_load = true
             
 
 

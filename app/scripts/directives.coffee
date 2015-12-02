@@ -774,44 +774,46 @@ littb.directive "listScroll", () ->
 
 
 
-littb.directive "ornament", () ->
+# littb.directive "ornament", () ->
+#     restrict : "C"
+    
+            
+
+
+imgDef = () ->
     restrict : "C"
     compile: (elm, attrs) ->
         c.log "ornament"
-        img = elm.find("img")
-        if _.endsWith img.attr("src"), ".svg"
-            elm.load(img.attr("src"), (data) ->
+        if _.endsWith elm.attr("src"), ".svg"
+            elm.load(elm.attr("src"), (data) ->
                 c.log "svg", data.match(/viewBox="(.+?)"/)[1]
                 [__, __, width, height] = data.match(/viewBox="(.+?)"/)[1].split(" ")
                 elm.find('svg').width width
                 elm.find('svg').height height
 
             )
-            
-
-
-imgDef = () ->
-    restrict : "C"
     link : ($scope, element, attr) ->
         s = $scope
-
-        element.find("img").load () ->
+        if _.str.endsWith element.attr("src"), "svg"
+            return
+        element.load () ->
             $(this).css("max-width", "initial")
             actualWidth = $(this).width()
             $(this).css("max-width", "100%")
 
             if $(this).width() < actualWidth
                 # do something with over-wide img
-                element.addClass "img-overflow"
+                element.parent().addClass "img-overflow"
 
                 # $("<i class='fa fa-expand'></i>").click () ->
                 $("<button class='btn btn-xs expand'>Förstora</button>").click () ->
-                    s.$emit "img_expand", element.find("img").attr("src")
-                .appendTo element
+                    s.$emit "img_expand", element.attr("src")
+                .after element
 
 
-littb.directive "imgdiv", imgDef
-littb.directive "figurediv", imgDef
+# littb.directive "imgdiv", imgDef
+# littb.directive "figurediv", imgDef
+littb.directive "graphicimg", imgDef
 
 
 

@@ -1,12 +1,12 @@
 <page-title>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</page-title>
 <meta-desc>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</meta-desc>
-<div class="maincontent" ng-class="{searching:!data}" ng-controller="sourceInfoCtrl">
+<div class="maincontent" ng-class="{searching:!workinfo}" ng-controller="sourceInfoCtrl">
     <div ng-show="loading" class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div ng-if="error" class="error">Ett fel har uppstått.</div>
 
     <div class="header header_left">
         <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></h2>
-        <h2 class="title"><span>{{data.title}}</span></h2>
+        <h2 class="title"><span>{{workinfo.title}}</span></h2>
     </div>
     <!-- <div class="header_right" >
     </div>
@@ -14,16 +14,16 @@
     <!-- <div class="large_img" ng-class="{visible : show_large}">
 
 
-        <img ng-show="data.lbworkid && show_large" ng-src="txt/{{data.lbworkid}}/{{data.lbworkid}}_large.jpeg">
+        <img ng-show="workinfo.lbworkid && show_large" ng-src="txt/{{workinfo.lbworkid}}/{{workinfo.lbworkid}}_large.jpeg">
         <div class="cover"></div>
     </div> -->
     
     <div class="columns">
         <div class="col_left">
-            <p class="sourcedesc" ng-bind-html="data.sourcedesc | trust"></p>
-            <div class="sourcedescauthor">{{authorById[data.sourcedescAuthor].fullname}}</div>
+            <p class="sourcedesc" ng-bind-html="workinfo.sourcedesc | trust"></p>
+            <div class="sourcedescauthor">{{authorById[workinfo.sourcedescAuthor].fullname}}</div>
             
-            <div ng-show="data.mediatype" class="mediatypes" ng-class="{bold : data.workintro}">
+            <div ng-show="workinfo.mediatype" class="mediatypes" ng-class="{bold : workinfo.workintro}">
                 Läs verket som <a class="sc" ng-href="{{getUrl(getReadMediatypes()[0])}}">{{getReadMediatypes()[0]}}</a>
                 <span ng-show="getReadMediatypes().length > 1">
                     eller <a class="sc" ng-href="{{getUrl(getReadMediatypes()[1])}}">{{getReadMediatypes()[1]}}</a>
@@ -31,7 +31,7 @@
                 <!-- <a class="mediatype" ng-href="{{getUrl(mediatype)}}">{{mediatype}}</a> -->
                 <!-- <span ng-if="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype) | number:0}} KB) -->
             </div>
-            <div ng-show="data.mediatypes.length > 1" class="mediatypes_also">
+            <div ng-show="workinfo.mediatypes.length > 1" class="mediatypes_also">
                 Ladda ner 
                 <a class="sc" ng-href="{{getUrl(getDownloadMediatypes()[0])}}">{{getDownloadMediatypes()[0]}}</a>
                 <span ng-show="getDownloadMediatypes().length > 1">
@@ -40,34 +40,34 @@
             </div>
         </div>
         <div class="col_right">
-            <img ng-show="data.lbworkid" ng-src="{{getSourceImage()}}" ng-click="showLargeImage($event)" onerror="this.style.display = 'none';" >
+            <img ng-show="workinfo.lbworkid" ng-src="{{getSourceImage()}}" ng-click="showLargeImage($event)" onerror="this.style.display = 'none';" >
         </div>
     </div>
     
-    <p class="workintro" ng-bind-html="data.workintro | trust"></p>
+    <p class="workintro" ng-bind-html="workinfo.workintro | trust"></p>
     
-    <div ng-repeat="prov in data.provenance" class="provenance">
+    <div ng-repeat="prov in workinfo.provenance track by $index" class="provenance">
         <a ng-href="{{prov.link}}" ng-if="prov.image"><img ng-src="red/bilder/gemensamt/{{prov.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
         <p>{{prov.text}}</p>
     </div>
     
-    <div class="license" ng-bind-html="data.licenseText | correctLink | trust"></div>
+    <div class="license" ng-bind-html="workinfo.licenseText | correctLink | trust"></div>
     
     <div class="errata" ng-show="mediatype == 'etext'">
-        <div class="header" ng-show="data.errata.length">I etexten har följande ändringar gjorts mot originalet</div>
-        <div ng-show="!data.errata">Inga ändringar har gjorts mot orginalet.</div>
+        <div class="header" ng-show="workinfo.errata.length">I etexten har följande ändringar gjorts mot originalet</div>
+        <div ng-show="!workinfo.errata">Inga ändringar har gjorts mot orginalet.</div>
         <table class="errata_table">
-            <tr ng-repeat="tup in data.errata | limitTo:errataLimit">
+            <tr ng-repeat="tup in workinfo.errata | limitTo:errataLimit">
                 <td>{{tup[0]}}</td>
                 <td ng-bind-html="tup[1] | trust"></td>
             </tr>
         </table>
-        <a class="toggle sc" ng-click="toggleErrata()" ng-show="!isOpen && data.errata.length > defaultErrataLimit">Visa fler</a>
+        <a class="toggle sc" ng-click="toggleErrata()" ng-show="!isOpen && workinfo.errata.length > defaultErrataLimit">Visa fler</a>
         <a class="toggle sc" ng-click="toggleErrata()" ng-show="isOpen">Visa färre</a>
     </div>
 
     <!-- <div class="pull-right lower_cover">
-        <img src="/txt/{{data.lbworkid}}/cover_small.png" alt="">
+        <img src="/txt/{{workinfo.lbworkid}}/cover_small.png" alt="">
     </div> -->
     <div class="clearfix"></div>
 </div>
@@ -75,5 +75,5 @@
 <!-- <div toolkit>
     <hr>
     <span ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
-    <div><em><a ng-href="/#!/forfattare/{{author}}/titlar/{{data.titlepathNorm.split('/')[0]}}/{{data.mediatypes[0]}}">{{data.shorttitle || data.showtitle || data.title}}</a></em></div>
+    <div><em><a ng-href="/#!/forfattare/{{author}}/titlar/{{workinfo.titlepathNorm.split('/')[0]}}/{{workinfo.mediatypes[0]}}">{{workinfo.shorttitle || workinfo.showtitle || workinfo.title}}</a></em></div>
 </div> -->
