@@ -85,7 +85,7 @@ getCqp = (o) ->
         if not o.prefix and not o.suffix
             or_block.push "word = '#{regescape wd}'#{flag}"
 
-        tokenList.push "(#{or_block.join(' | ')}) & "
+        tokenList.push "(#{or_block.join(' | ')})"
 
 
     getAuthors = (obj, type) ->
@@ -93,17 +93,27 @@ getCqp = (o) ->
         auths = "(#{auths.join(' | ')})"
 
     structAttrs = []
+    textAttrs = []
+    c.log "o.text_attrs", o.text_attrs
+    if o.text_attrs
+        if not _.isArray o.text_attrs then o.text_attrs = o.text_attrs.split(",")
+        for attr in o.text_attrs
+            textAttrs.push attr
 
-    if o.mediatype == "all"
-        structAttrs.push "(_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
-    else
-        structAttrs.push "_.text_mediatype = '#{o.mediatype}'"
+    # if o.mediatype == "all"
+    #     textAttrs.push "(_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
+    # else
+    #     textAttrs.push "_.text_mediatype = '#{o.mediatype}'"
     if o.selectedAuthor
         auths = getAuthors(o.selectedAuthor, "authorid")
         structAttrs.push auths
     else if o.selectedAboutAuthor
         auths = getAuthors(o.selectedAboutAuthor, "aboutauthor")
         structAttrs.push auths
+    else if o.searchAllAbout
+        structAttrs.push "ambiguity(_.text_aboutauthor) > 0"
+
+    if textAttrs.length then structAttrs.push "(#{textAttrs.join(' & ')})"
 
     if o.selectedTitle
         titles = _.map o.selectedTitle.split(","), (id) -> "_.text_lbworkid = '#{id}'"
@@ -111,7 +121,8 @@ getCqp = (o) ->
         structAttrs.push titles
 
 
-    tokenList[0] += structAttrs.join(" & ")
+    if structAttrs.length
+        tokenList[0] += " & " + structAttrs.join(" & ")
 
     return "[#{tokenList.join('] [')}]"
 
@@ -321,7 +332,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
         # output.workintro = (util.getInnerXML workintro) or ""
 
-        epub = $("result epub", xml)
+        epub = $("result > epub", xml)
         if epub.length
             output.epub = 
                 file_size: epub.attr("file-size")
@@ -489,6 +500,14 @@ littb.factory 'backend', ($http, $q, util) ->
 
             info["showtitle"] = $("showtitle:first", xml).text()
             info["css"] = $("css", xml).text()
+            info.widths = []
+            
+            for {name, value} in _.values $("bok", xml).prop("attributes")
+                if _.str.startsWith name, "width"
+                    size = Number name.split("-")[1]
+                    info.widths[size] = value
+
+
             pgMap = {}
             for page in $("bok sida", xml)
                 p = $(page)
@@ -511,7 +530,6 @@ littb.factory 'backend', ($http, $q, util) ->
 
                 obj.number = i
                 return obj
-            c.log "info.parts", info.parts
             # info.parts = _.filter info.parts, (item) ->
             #     return "/" in item.titlepath
 
@@ -697,7 +715,7 @@ littb.factory 'backend', ($http, $q, util) ->
             command: "count"
             groupby: "text_nameforindex"
             cqp: getCqp(o)
-            corpus: "LBSOK"
+            corpus: "LBSOKDEMO"
             incremental: false
             defaultwithin: "sentence"
         $http(
@@ -936,7 +954,7 @@ littb.factory "authors", (backend, $q) ->
 
 littb.factory "searchData", (backend, $q, $http, $location) ->
     NUM_HITS = 50 # how many hits per search?
-    BUFFER = 10 # additional hits 
+    BUFFER = 0 # additional hits 
     class SearchData
         constructor: () ->
             @data = []
@@ -948,6 +966,8 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
         newSearch : (params) ->
             @currentParams = params
             @doNewSearch = true
+            @querydata = null
+            @current = null
 
         searchWorks : (o) ->
             c.log "searchvars", o
@@ -964,11 +984,12 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                 cqp : getCqp(o)
                 show: "wid,x,y,width,height"
                 show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
-                corpus : "LBSOK"
+                corpus : "LBSOKDEMO"
                 start: from
                 end : to
                 sort: "sortby"
                 context: 'LBSOK:20 words'
+                rightcontext : 'LBSOK:15 words'
 
             if @querydata
                 params.querydata = @querydata
@@ -991,7 +1012,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     return
 
                 @total_hits = data.hits
-                @compactData(data)
+                @compactData(data, from)
 
                 if not @data.length
                     @data = new Array(data.hits)
@@ -1059,7 +1080,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
 
 
-        compactData : (data) ->
+        compactData : (data, startIndex) ->
             min = Infinity
             for row in data.kwic
 
@@ -1075,7 +1096,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                 row.sent_length = sum
 
             for row, index in data.kwic
-                row.href = @parseUrls row, index
+                row.href = @parseUrls row, index + startIndex
                 if row.sent_length > min
 
                     diff = row.sent_length - min
@@ -1137,8 +1158,12 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     a + "|" + b
             )
 
+
             for key, val of @currentParams
-                merged["s_" + key] = val
+                if key == "text_attrs" and val.length
+                    merged["s_" + key] = encodeURIComponent(val.join(","))
+                else
+                    merged["s_" + key] = val
 
 
             merged.hit_index = index
@@ -1151,7 +1176,6 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                 "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{merged}" # ?#{backend.getHitParams(itm)}
             
         # save : (startIndex, currentIndex, input, search_args) ->
-        #     @searchArgs = search_args
         #     @data = new Array(input.hits)
         #     @appendData startIndex, input
         #     @total_hits = input.hits
@@ -1166,42 +1190,51 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
         next : () ->
             if @current + 1 == @total_hits then return {then : angular.noop}
             @current++
-            @search()
+            @get(@current)
 
             
         prev : () ->
             if @current == 0 then return {then : angular.noop}
             @current--
-            @search()
+            @get(@current)
 
-
-        search : () ->
+        get : (index) ->
             def = $q.defer()
-            c.log "search", @current
-            if @data[@current]? 
-                def.resolve @data[@current]
-            else
-                # current_page = Math.floor(@current / NUM_HITS )
-                # args = [].concat @searchArgs
-                args = _.clone @searchArgs
-                # replace from and to args
-                args.to = @current
-                args.from = @current + NUM_HITS
-                # args[2] = @current
-                # args[3] = @current + NUM_HITS
-                c.log "fetch and append", args
+            # c.log "search", @current
 
-                backend.searchWorks(args).then (data) =>
-                    @appendData @current, data
-                    def.resolve @data[@current]
+            if @data[index]? 
+                def.resolve @data[index]
+            else
+                @slice(index - 10, index + 10).then () ->
+                    def.resolve @data[index]
             return def.promise
+
+
+        # search : () ->
+        #     def = $q.defer()
+        #     c.log "search", @current
+        #     if @data[@current]? 
+        #         def.resolve @data[@current]
+        #     else
+        #         # current_page = Math.floor(@current / NUM_HITS )
+        #         args = _.clone @currentParams
+        #         # replace from and to args
+        #         args.to = @current
+        #         args.from = @current + NUM_HITS
+        #         # args[2] = @current
+        #         # args[3] = @current + NUM_HITS
+        #         c.log "fetch and append", args
+
+        #         @searchWorks(args).then (data) =>
+        #             @appendData @current, data
+        #             def.resolve @data[@current]
+        #     return def.promise
 
 
         reset : () ->
             @current = null
             @total_hits = null
             @data = []
-            @searchArgs = null
             @currentParams = null
 
 

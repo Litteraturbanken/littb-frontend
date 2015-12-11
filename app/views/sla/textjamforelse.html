@@ -65,15 +65,16 @@
 </div>
 
 <div>
-    <!-- <style scoped id="showBaseWitStyle">
+    <style scoped id="">
       .changed > :not(.{{ baseWit }}) {
         display:none; 
       }
     </style>
-    <div id="koll-text" ng-class="showBulk ? null : 'hide-bulk'" /> -->
+    <div id="koll-text" ng-class="showBulk ? null : 'hide-bulk'" />
 
-    <style id="showBaseWitStyle"
-           ng-bind-template=".wit:not(.{{baseWit}}){display:none} "></style>
+    <style id="">
+       .wit:not(.{{baseWit}}){display:none !important}
+     </style>
     <div id="koll-text" 
          ng-class="showBulk ? null : 'hide-bulk'" />
 </div>
@@ -90,10 +91,10 @@
          ng-repeat="version in contextVersions">
         <a class="fa fa-book" ng-href="{{version.url}}" tooltip="Gå till verkets infosida."/>
         <span class="title">{{version.title}}
-            <span ng-if="baseWit == version.wit" 
-                  tooltip="Denna utgåva är vald som grundutgåva">☆</span>
-            <i ng-show="baseWit != version.wit && myHover">★</i>
         </span>
+        <span ng-if="baseWit == version.wit" 
+              tooltip="Denna utgåva är vald som grundutgåva">☆</span>
+        <i ng-show="baseWit != version.wit && myHover">★</i>
         <div id="context-versions-controls">
             <span class="control show-in-text" 
                   ng-class="" 

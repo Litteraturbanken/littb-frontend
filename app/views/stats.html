@@ -1,7 +1,7 @@
 <meta-desc>Statistik för Litteraturbanken.</meta-desc>
-<div ng-show="data" ng-controller="statsCtrl">
+<div class="content stats" ng-show="data" ng-controller="statsCtrl">
     
-    <h3>Litteraturbanken innehåller just nu: </h3>
+    <h3>Litteraturbanken innehåller just nu</h3>
     
     <ul>
         <li>{{data.works | numberFmt}} verk</li>
@@ -12,16 +12,20 @@
         <li>{{data.epubs | numberFmt}} epubfiler</li>
     </ul>
     
-    <h3>De mest lästa verken:</h3>
+    <h3>De mest lästa verken</h3>
     <ul>
         <li ng-repeat="title in data.titleList">
-            <a ng-href="/#!/forfattare/{{title.author[0].authorid}}">{{title.author[0].fullname}}</a> – <a ng-href="/#!/forfattare/{{title.author[0].authorid}}/titlar/{{title.itemAttrs.titlepath.split('/')[0]}}/{{title.itemAttrs.mediatype}}">{{title.itemAttrs.showtitle}}</a>
+            <span class="num">{{$index + 1}}. </span> <a ng-href="/#!/forfattare/{{title.author[0].authorid}}/titlar/{{title.itemAttrs.titlepath.split('/')[0]}}/{{title.itemAttrs.mediatype}}">{{title.itemAttrs.showtitle}}</a>
+            
+
+            <a class="author pull-right" ng-href="/#!/forfattare/{{title.author[0].authorid}}">{{title.author[0].nameforindex.split(",")[0] || title.author[0].fullname}}</a>
         </li>
     </ul>
-    <h3>De mest nedladdade epubarna:</h3>
+    <h3>De mest nedladdade epubarna</h3>
     <ul>
         <li ng-repeat="title in data.epubList">
-            <a ng-href="/#!/forfattare/{{title.author[0].authorid}}">{{title.author[0].fullname}}</a> – <a ng-href="/txt/epub/{{title.author[0].authorid}}_{{title.itemAttrs.titlepath.split('/')[0]}}.epub">{{title.itemAttrs.showtitle}}</a>
+            <span class="num">{{$index + 1}}. </span> <a ng-href="/txt/epub/{{title.author[0].authorid}}_{{title.itemAttrs.titlepath.split('/')[0]}}.epub">{{title.itemAttrs.showtitle}}</a>
+            <a class="author pull-right" ng-href="/#!/forfattare/{{title.author[0].authorid}}">{{title.author[0].nameforindex.split(",")[0] || title.author[0].fullname}}</a>
     
         </li>
     </ul>

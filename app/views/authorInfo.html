@@ -1,8 +1,9 @@
 <meta-desc>{{authorInfo.fullName}}, {{getPageTitle(showpage).toLowerCase()}}</meta-desc>
 <page-title>{{authorInfo.fullName}}, {{getPageTitle(showpage).toLowerCase()}}</page-title>
 <img ng-if="!slaMode" bkg-img class="no-gradient" src="img/forf2_bkg.jpg"></img>
-<img ng-if="slaMode" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img>
+<img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img>
 
+<img ng-if="slaMode && showpage != 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img>
 
 <div ng-class="{searching:!authorInfo, show_large : show_large}">
     <div class="preloader"> 
@@ -11,11 +12,13 @@
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
     <h1>{{authorInfo.fullName}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
-    <ul class="links"> 
+    <ul class="links" ng-show="authorInfo"> 
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/#!/forfattare/{{author}}">Introduktion</a></li>
         <li ng-class="{active : showpage == 'titlar'}"><a href="/#!/forfattare/{{author}}/titlar">Verk</a></li>
+        <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
+        <li ng-show="authorInfo.bibliografi" ng-class="{active : showpage == 'bibliografi'}"><a href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/#!/forfattare/{{author}}/mer">Mer</a></li>
-        <li ng-if="getSearchableTitles().length"><a href="/#!/sok?forfattare={{author}}">Sök i texterna</a></li>
+        <li ng-if="getSearchableTitles().length"><a href="/#!/sok?forfattare={{author}}&avancerad">Sök i texterna</a></li>
     </ul>
     
     <div class="page_content" ng-switch="showpage">
@@ -97,7 +100,7 @@
     
         <!-- <div ng-switch-default id="author-info-external"></div> -->
         <div ng-switch-default>
-           <div ng-class="{content : slaMode}" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
+           <div class="content" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
        </div>
     </div>
 

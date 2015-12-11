@@ -674,7 +674,7 @@ littb.directive "top", () ->
     link : (scope, elem, attr) ->
 
         elem.on "click", () ->
-            scope.$apply () ->
+            safeApply scope, () ->
                 scope.top = elem.position()?.top            
 
         # scope.$watch "getY()", (offset) ->
@@ -715,7 +715,7 @@ littb.directive 'onFinishRender', ($timeout) ->
             # scope.$evalAsync(attr.onFinishRender)
 
 
-littb.directive 'bkgImg', ($rootElement) ->
+littb.directive 'bkgImg', ($rootElement, $timeout) ->
     restrict : "EA"
     template : '''
         <img >
@@ -729,14 +729,17 @@ littb.directive 'bkgImg', ($rootElement) ->
         src = element.attr("src")
         element.remove()
 
-        $("body").css
-            "background" : "url('#{src}') no-repeat"
+        $timeout( () ->
+            $("body").css
+                "background" : "url('#{src}') no-repeat"
+        , 0)
         scope.$on "$destroy", () ->
             c.log "destroy", element
 
             # element.remove()
             $("body").css
                 "background-image" : "none"
+            
 
 
 
@@ -777,7 +780,27 @@ littb.directive "listScroll", () ->
 # littb.directive "ornament", () ->
 #     restrict : "C"
     
-            
+
+overflowLoad = (s, element) ->
+    btn = null
+
+    element.load () ->
+        maxWidth = $(this).css("max-width")
+        $(this).css("max-width", "initial")
+        actualWidth = $(this).width()
+        $(this).css("max-width", maxWidth)
+
+        if $(this).width() < actualWidth
+            element.parent().addClass "img-overflow"
+            btn?.remove()
+            btn = $("<button class='btn btn-xs expand'>Förstora</button>").click () ->
+                s.$emit "img_expand", element.attr("src"), actualWidth
+            .appendTo element.parent()
+        else
+            btn?.remove()
+            element.parent().removeClass "img-overflow"
+
+
 
 
 imgDef = () ->
@@ -788,33 +811,28 @@ imgDef = () ->
             elm.load(elm.attr("src"), (data) ->
                 c.log "svg", data.match(/viewBox="(.+?)"/)[1]
                 [__, __, width, height] = data.match(/viewBox="(.+?)"/)[1].split(" ")
-                elm.find('svg').width width
-                elm.find('svg').height height
+                elm.width width
+                elm.height height
 
             )
     link : ($scope, element, attr) ->
         s = $scope
         if _.str.endsWith element.attr("src"), "svg"
             return
-        element.load () ->
-            $(this).css("max-width", "initial")
-            actualWidth = $(this).width()
-            $(this).css("max-width", "100%")
-
-            if $(this).width() < actualWidth
-                # do something with over-wide img
-                element.parent().addClass "img-overflow"
-
-                # $("<i class='fa fa-expand'></i>").click () ->
-                $("<button class='btn btn-xs expand'>Förstora</button>").click () ->
-                    s.$emit "img_expand", element.attr("src")
-                .after element
+        
+        overflowLoad(s, element)
 
 
 # littb.directive "imgdiv", imgDef
 # littb.directive "figurediv", imgDef
 littb.directive "graphicimg", imgDef
 
+
+
+littb.directive "faksimilImg", () ->
+    restrict : "A"
+    link : ($scope, element, attr) ->
+        overflowLoad($scope, element)
 
 
 littb.directive "compile", ($compile) ->

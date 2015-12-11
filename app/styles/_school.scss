@@ -53,33 +53,12 @@
         }
         
     }
-
     .content {
-        margin-bottom : 5em;
-        font-size: 0.9em;
-        @include container();
-        background-color : rgba(255, 255, 255, 0.75);
 
-        padding : 1em;
-        padding-left : 2em;
-        // padding-bottom: 2em;
-        border: 1px solid #333;
         height: 75vh;
         overflow-y: auto;
 
-        // em {
-        //     font-style : normal;
-        //     display: inline-block;
-        //     max-width : 500px;
-
-        // }
         h1 {
-            @include small-caps();
-
-            color : $primarycolor;
-            color: #7A1400;
-            font-size: 1em;
-            margin-top: 1.4em;
             .italic {
                 font-style: normal;
             }
@@ -88,45 +67,8 @@
                 // padding-bottom: 2px;
             }
         }
-
-        p {
-            margin: 0;
-            text-indent : 2em;
-            line-height: 1.4;
-        }
-
-        h2 + p, 
-        h1 + p,
-        h3 + p,
-        .titlepage + p {
-            text-indent : 0em;
-        }
-
-        h1 a {
-            color : $primarycolor;
-        }
-        a {
-            background: none;
-        }
-        li {
-        }
-        .auth {
-            float : right;
-            @include small-caps();
-            color : $primarycolor;
-            font-size: 0.9em;
-        }
-        h1:first-of-type {
-            margin-top : 0.9em;
-            &:empty {
-                margin : none;
-            }
-        }
-        h2 {
-            color : $primarycolor;
-            font-size: 1em;
-        }
     }
+    
 }
 
 
@@ -143,25 +85,67 @@
         font-size : 1.6em;
     }
     h2 {
-        margin-top : 2.5em;
-        font-size : 1.2em;
+        // margin-top : 2.5em;
+        // font-size : 1.2em;
         // a {
         //     border-bottom : 1px dotted $primarycolor;
         // }
     }
+    .content h2:first-child {
+        margin-top: 0;
+    }
     h3 {
-        // font-weight: bold;
-        margin-top : 2.5em;
-        font-size : 0.8em;
-        line-height : 0.5;
+        font-size: 1.1em;
+        color: #7A1400;
+        margin-top: 3em;
+        margin-bottom: 1em;
+        @include small-caps();
     }
 
+    a[href$="Litteraturlista.html"] {
+        // display : block;
+        // text-indent : -2em;
+    }
+
+    [sc-file="Litteraturlista.html"] {
+        .listitem {
+            list-style-type : none;
+            max-width : 500px;
+            margin-left : 0;
+            margin-bottom: 0.5em;
+        }
+    }
+    [sc-file="Lashandledningar.html"] {
+        .listitem {
+            list-style-type : none;
+            margin-left : 0;
+            .listitem {
+                list-style-type : disc;
+                margin-left : 2em;
+            }
+        }
+    }
+
+    .next_prev + p {
+        margin-top: 1em;
+        clear: both;
+    }
+
+    strong {
+        font-weight : normal;
+        @include small-caps();
+    }
+    
+    .blockquote + p,
+    .titlepage + p {
+        text-indent: 0;
+    }
 
     .inner {
         // margin-right : 0.5em;
         // margin : 0.5em 0;
         margin-top: 0.3em;
-        margin-bottom: 0.7em;
+        
         @include font-normal();
 
         border-right : 1px solid white;
@@ -169,6 +153,9 @@
         line-height : 0.7;
         li {
             margin-bottom: 0.5em;
+            &:last-child {
+                margin-bottom: 0.7em;
+            }
         }
         // font-style: italic;
         // margin-right : 1em;
@@ -191,6 +178,12 @@
         margin-left : 1em;
         max-width : $column_width - 60px;
         line-height : 1.4em;
+        p:first-child {
+            text-indent: 0;
+        }
+    }
+    img {
+        margin : 1em 0;
     }
 
     .download {
@@ -234,7 +227,12 @@
     // }
     .collapse {
         // margin-left : 1.5em;
-        overflow: hidden;
+        // overflow: hidden;
+
+    }
+    .collapsing {
+        -webkit-transition: none;
+        transition: none;
     }
     // .minus:after {
     //     font-size : 1.4em;
@@ -264,19 +262,21 @@
     }
     .next_prev {
         height : 1em;
-        font-size : 0.8em;
+        font-size : 1em;
         margin-top : 3em;
         a:first-child:not(.empty) {
             float : left;
-            &:before {
-                content : "← ";
-            }
+            background: none;
+            // &:before {
+            //     content : "← ";
+            // }
         }
         a:last-child:not(.empty) {
             float : right;
-            &:after {
-                content : " →";
-            }
+            background: none;
+            // &:after {
+            //     content : " →";
+            // }
         }
     }
 
@@ -284,9 +284,14 @@
         width : 800px;
         text-indent: 0;
 
+
         & > * {
             display: inline-block;
             vertical-align: top;
+        }
+
+        p:first-child {
+            text-indent : 2em;
         }
     }
 
@@ -295,13 +300,17 @@
     // }
     .sidebar {
         @include inline-block(top);
-
+        height: 0;
         width: 210px;
         margin-left: 2em;
         font-size: 0.85em;
         line-height : 1.2;
+        padding-bottom : 3em;
         p {
             text-indent : 0;
+        }
+        p:last-child {
+            margin-bottom: 3em;
         }
 
     }
@@ -383,7 +392,9 @@
         // font-style: italic;
         font-size : 20px;
     }
+
     .content {
+        min-width : 570px;
         display: inline-block;
         vertical-align: top;
         h1 {
@@ -398,6 +409,7 @@
         .sect2 {
             margin-top: 2em;
         }
+
     }
     ul ul li {
         margin-left : 1em;

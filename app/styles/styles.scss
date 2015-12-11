@@ -125,10 +125,13 @@ $fa-font-path: "/components/font-awesome/fonts";
         }
         a {
             color : $primarycolor;
+            &:hover {
+                color: #333;
+            }
         }
         &.active {
             a {
-                color : black;
+                color : #333;
                 cursor: default;
             }
         }
@@ -176,7 +179,7 @@ th {
 @mixin dotted($color) {
     & {
         background: linear-gradient(90deg, 
-                    $color 25%, transparent 0) /* 60%: ratio between dash-gap */
+                    $color 26%, transparent 0) /* 60%: ratio between dash-gap */
                     repeat-x;
         background-size: .15em 2px; /* .25em: Width of dash+gap, 2px: thickness of underline */
         background-position: 0 85%; /* vertical position of underline */
@@ -283,6 +286,97 @@ th {
         }
     }
 }
+
+
+
+.content {
+    margin-bottom : 5em;
+    font-size: 0.9em;
+    @include container();
+    background-color : rgba(255, 255, 255, 0.75);
+
+    padding : 1em 2em;
+    border: 1px solid #333;
+    height: 75vh;
+    overflow-y: auto;
+
+    
+
+    p {
+        margin: 0;
+        text-indent : 2em;
+        line-height: 1.4;
+    }
+
+    p:first-child {
+        text-indent : 0;
+    }
+
+    .avdelare {
+        text-align: center;
+        margin : 1em 0;
+    }
+
+    .quote {
+        text-indent : 0;
+        font-size: 0.85em;
+        margin-left: 2.5em;
+        max-width: 400px;
+        p {
+            max-width: 400px;
+        }
+        margin-top: 0.8em;
+        margin-bottom: 1em;
+    }
+    .titlepage + p,
+    .separator + p,
+    .quote + p,
+    .bildtext + p,
+    div > p:first-child, 
+    h4 + p, 
+    h3 + p, 
+    h2 + p, 
+    h1 + p,
+    .copyright,
+    .author + div + p,
+    .avdelare + p {
+        text-indent : 0em;
+    }
+
+    h1 a {
+        color : $primarycolor;
+    }
+    
+    .auth {
+        float : right;
+        @include small-caps();
+        color : $primarycolor;
+        font-size: 0.9em;
+    }
+    h1:first-of-type {
+        margin-top : 0.9em;
+        &:empty {
+            margin : none;
+        }
+    }
+    h2:first-child {
+        margin-top: 1em;
+    }
+
+    h2 {
+        font-size : 1.1em;
+        @include small-caps();
+        color : $primarycolor;
+        margin-top : 3em;
+        margin-bottom : 1em;
+    }
+    .copyright {
+        @include small-caps();
+        font-size: 0.9em;
+        margin-top: 2em;
+    }
+}
+
 
 
 // bootstrap overrides
@@ -716,10 +810,6 @@ hr {
         // font-style: italic;
     }
 }
-// .contenttable td:last-of-type,
-// th:last-of-type {
-//     text-align:right;
-// }
 
 
 .letters {
@@ -990,6 +1080,9 @@ body > .header {
         font-size : 1.3em;
         a:not(:hover) {
             color : white;
+        }
+        a:hover {
+            color : $primarycolor;
         }
 
         .sla {
@@ -1577,15 +1670,23 @@ body > .header {
             position: relative;
             
         }
+        .searching .table_container table td {
+            opacity : 0.2;
+            transition : opacity 400ms;
+        }
+
         .table_container {
             padding-left : 1.3em;
             width : 66vw;
             overflow-x: hidden;
             
+
             table {
+                opacity : 1;
+                transition : opacity 400ms;
                 width : 100%;
                 display: block;
-                position: absolute;
+                // position: absolute;
                 overflow-x: hidden;
                 white-space : nowrap;
                 font-size: 0.9em;
@@ -1669,14 +1770,14 @@ body > .header {
         margin-bottom : 1em;
         .hits_info {
             // text-transform: uppercase;
-            margin-bottom: 1em;
+            // margin-bottom: 1em;
             * {margin-bottom: 0.1em}
             .hits {
                 font-family: "Requiem Display A", "Requiem Display B";
                 display: inline-block;
                 font-size: 1.5em;
-                vertical-align: baseline;
-                margin-bottom : 0.3em;
+                vertical-align: inherit;
+                // margin-bottom : 0.3em;
             }
             .hits_sub {
                 display: inline-block;
@@ -1684,23 +1785,64 @@ body > .header {
         }
 
         .littb_pager {
+            @include container();
+            background-color : rgba(255,255,255,0.95);
             margin-top : 1em;
             margin-bottom : 2em;
+            line-height : 1;
             .input_page {
                 width : 60px;
             }
             .ctrl {
                 // text-transform: uppercase;
+                font-size: 0.9em;
                 li {
-                    margin-bottom: 0.2em;
+                    // margin-bottom: 0.2em;
+                }
+                a[disabled="disabled"] {
+                    color : grey;
+                    cursor : default;
+                    &:hover {
+                        color : grey;
+                    }
                 }
                 a {
                     color: $primarycolor;
+                    &:hover {
+                        color: #333;
+                    }
                 }
                 margin : 10px 0;
                 & > * {
                     cursor : pointer;
                 }
+                button {
+                    border-radius : 40px;
+                    width : 25px;
+                    height : 25px;
+                    padding : 0;
+                    margin-bottom: 0.6em;
+                }
+                button.left {
+                    margin-right: 5px;
+                }
+                button.left i {
+                    position: relative;
+                    right: 1px;
+
+                }
+
+                form {
+                    display : inline;
+                    input[type="text"] {
+                        width: 40px;
+                        height: 16px;
+                        vertical-align: middle;
+                        font-size: 0.8em;
+                    }
+                }
+
+
             }
         }
 
@@ -1715,14 +1857,13 @@ body > .header {
                 text-overflow : ellipsis;
                 
             }
-
             background-color: rgba(255, 255, 255, 0.95);
             @include small-caps;
             overflow-y: auto;
-            margin-left: 8px;
-            li.selected a {
+            li a.selected {
                 color : $primarycolor;
             }
+
         }
 
     }
@@ -1753,16 +1894,6 @@ body > .header {
 }
 $partnav-width : 170px;
 
-.img_full {
-    .modal-dialog {
-        width : auto;
-    }
-    .modal-body {
-        max-height : 90vh;
-        max-width : 90vw;
-
-    }
-}
 .page-reading {
     .mainnav {
         margin-bottom: 3em;
@@ -1796,8 +1927,21 @@ $partnav-width : 170px;
         display : inline-block;
     }
     // height : 100%;
-    
-    
+    // .center .graphicimg {
+    //     margin: 0 auto;
+    // }
+    .img_full {
+        overflow: auto;
+        overflow-y: auto;
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        margin-left: auto;
+        margin-right: auto;   
+        .modal-dialog.modal-lg {
+            width: 71vw;
+        }
+    }
 
     #mainview {
         font-size : 1em;
@@ -1820,6 +1964,9 @@ $partnav-width : 170px;
         }
         img.faksimil {
             @include user-select(none);
+        }
+        .img_area {
+
         }
         .markee {
             position: relative;
@@ -1915,23 +2062,22 @@ $partnav-width : 170px;
                 }
             }
 
-            .img-overflow {
-                // width : 10px;
-                // height : 10px;
-                position: relative;
-                // @extend .fa;
-                // @extend .fa-expand;
+        }
+        .img-overflow {
+            // width : 10px;
+            // height : 10px;
+            position: relative;
+            // @extend .fa;
+            // @extend .fa-expand;
 
-                .expand {
-                    position: absolute;
-                    bottom : -30px;
-                    right : 10px;
-                    padding: 3px 7px;
-                    font-size : 0.5em;
-                }
+            .expand {
+                position: absolute;
+                bottom : -30px;
+                right : 10px;
+                padding: 3px 7px;
+                font-size : 0.5em;
             }
         }
-
 
         .searching {
             .etext, .faksimil {
@@ -2445,12 +2591,6 @@ $partnav-width : 170px;
     }
 }
 
-// .page-sourceInfo {
-//     #mainview {
-        
-
-//     }
-// }
 
 .page-authorInfo {
     .logo_link_monogram {
@@ -2461,6 +2601,31 @@ $partnav-width : 170px;
         box-shadow: inset -410px -460px 400px 30px white;
     }
 
+    &:not(.site-sla) {
+        .content {
+            overflow : visible;
+            border : none;
+            height : auto;
+            background: none;
+            padding : 0;
+            h2 {
+                font-size: inherit;
+            }
+        }    
+        
+    }
+    .content h2 {
+        font-size: inherit;
+    }
+
+    h2 {
+        // text-transform : uppercase;
+        // @include small-caps();
+        margin-top : 2em;
+        margin-bottom : 1em;
+        // color : $primarycolor;
+        font-size : 1.2em;
+    }
     #mainview {
         // position : relative;
         .error ~ * {
@@ -2471,18 +2636,11 @@ $partnav-width : 170px;
             min-height : 1em;
         }
         p {
-            max-width : 500px;    
+            width : 500px;    
             line-height : 1.4;
         }
-        h2 {
-            // text-transform : uppercase;
-            // @include small-caps();
-            margin-top : 2em;
-            margin-bottom : 1em;
-            // color : $primarycolor;
-            font-size : 1.2em;
-        }
 
+        
 
         // really for authorTitles
         .contenttable {
@@ -2626,7 +2784,81 @@ $partnav-width : 170px;
             
         }
 
+        // p {
+        //     margin: 0;
+        //     text-indent : 2em;
+        //     line-height: 1.4;
+        // }
+        // .quote {
+        //     text-indent : 0;
+        //     font-size: 0.85em;
+        //     margin-left: 2.5em;
+        //     max-width: 400px;
+        //     margin-top: 0.8em;
+        //     margin-bottom : 1em;
+        // }
+        // .quote + p,
+        // .bildtext + p,
+        // div > p:first-child, 
+        // h4 + p, 
+        // h3 + p, 
+        // h2 + p, 
+        // h1 + p,
+        // .copyright,
+        // .author + div + p,
+        // .avdelare + p {
+        //     text-indent : 0em;
+        // }
+        // .author {
+        //     font-style : italic;
+        //     margin-bottom: 3em;
+        // }
+
+        // .avdelare {
+        //     text-align: center;
+        //     margin : 1em 0;
+        // }
         
+        // .author + div {
+        //     display : none;
+        // }
+        // .copyright {
+        //     @include small-caps();
+        //     font-size: 0.9em;
+        //     margin-top: 2em;
+        // }
+
+        // .bibliography {
+        //     li {
+        //         max-width : 500px;
+        //     }
+        // }
+
+        // br + br {
+        //     display : none;
+        // }
+        // .quote br + br {
+        //     display: block;
+        // }
+        // h1 {
+        //     margin-bottom: 1.5em;
+        // }
+        // line-height : 1.3;
+        // .intro {
+        //     margin-top: 0;
+        //     margin-bottom: 1.5em;
+        // }
+        // h2 {
+        //     font-size : 1.1em;
+        //     @include small-caps();
+        //     color : $primarycolor;
+        // }
+
+        // .bildtext {
+        //     font-size: 0.8em;
+        //     text-indent : 0 !important;
+        //     margin-bottom: 2em;
+        // }
 
         .links {
             @include topLinks()
@@ -2976,13 +3208,34 @@ $partnav-width : 170px;
                     margin-right: 1em;
                 }
                 a {
-                    color : $primarycolor;
+                    color : #333;
                     &:hover {
-                        color : #333;
+                        color : $primarycolor;
                     }
                 }
                 [disabled="disabled"] {
-                    color : grey;
+                    color : $primarycolor;
+                    cursor : default;
+                    &:hover {
+                        color : $primarycolor;
+                    }
+                }
+                .fitlered {
+                    color : $primarycolor;
+                }
+                .reset {
+                    margin-left: 2em;
+                    // fz
+
+                    &:before {
+                        content: "[ ";
+                        font-size: 0.8em;
+                    }
+                    &:after {
+                        content: " ]";
+                        font-size: 0.8em;
+                    }
+
                 }
             }
             &.title {
@@ -3194,12 +3447,14 @@ $partnav-width : 170px;
             }
             .target {
                 cursor : pointer;
+                color : black;
             }
             @include small-caps();
-            color : $primarycolor;
+            color : black;
             margin-bottom: 1em;
             &.disabled * {
-                color : #666;
+                color : black !important;
+                cursor : pointer !important;
             }
             &.disabled .label {
                 color : black;
@@ -3208,7 +3463,8 @@ $partnav-width : 170px;
                 color : black;
             }
             .target.disabled {
-                color : #666;
+                color : $primarycolor;
+                cursor : default;
             }
 
 
@@ -3268,81 +3524,90 @@ $partnav-width : 170px;
         background-color: #E1FFD6;
     }
 }
-.koll-context-pb {
-    display:none;
-}
-.koll-context-pb, .koll-pb {
-    white-space: nowrap;
-    right: $mainview-width + 6px;
-    position: absolute;
-    font-size: smaller;
-    &:before {
-        content: 's ';
-    }
-    // fix for page numbers
-    // &.w1 + &.w2 {
-    //     display : none;
-    // }
-}
-.koll-context {
-    cursor: pointer;
-    /* this is done manually in javascipt, because performance reasons in chrome( as of v.34) */
-    /*&.highlight { 
-        background-color: rgba(yellow, 0.4) !important; // override hover
-    }*/
-}
-.koll-p {
-    margin-top: 0;
-}
-#koll-text {
-    position: relative;
-}
-.hide-bulk {
-    >.bulk, .koll-pb, >.koll-p {
-       display: none;
-    }
-    .koll-context-pb {
-        display: inline;
-    }
-    >.koll-context {
-        display: block;
-        padding: 10px;
-        border-bottom: 1px solid lightgrey;
-        cursor: pointer;
-        max-height: 100px; // 5em;
-        overflow: hidden;
-        
-        &.odd {
-            background-color: rgba(black, 0.05);
-        }
-        &:after {
-            content: ' ...';
-        }
-        &:before {
-            content: '... ';
-        }
-        &:first-child:before {
-            content: '';
-        }
-        &:last-child:after {
-            content: '';
-        }
-        &:hover {
-            background-color: rgba(yellow, 0.2); 
-        }
-    }
-}
+
 
 #textjamforelse {
     @include container();
-    background-color : rgba(255,255,255,0.55);
+    background-color : rgba(255,255,255,0.85);
+    min-width : 500px;
     max-width : 70%;
+
+    padding-left : 2em;
+
     * {
         color : #333;
     }
     option {
         
         font-size: 0.8em;
+    }
+
+    #koll-text {
+        position: relative;
+        font-size: 0.9em;
+    }
+
+    .koll-context-pb {
+        display:none;
+    }
+    .koll-context-pb, .koll-pb {
+        white-space: nowrap;
+        left : -32px;
+        position: absolute;
+        font-size: smaller;
+        &:before {
+            content: 's ';
+        }
+        // fix for page numbers
+        &.w1 + &.w2 {
+            display : none;
+        }
+    }
+    .koll-context {
+        cursor: pointer;
+        /* this is done manually in javascipt, because performance reasons in chrome( as of v.34) */
+        /*&.highlight { 
+            background-color: rgba(yellow, 0.4) !important; // override hover
+        }*/
+    }
+    .koll-p {
+        margin-top: 0;
+    }
+
+    .hide-bulk {
+        >.bulk, .koll-pb, >.koll-p {
+           display: none;
+        }
+        .koll-context-pb {
+            display: inline;
+        }
+        >.koll-context {
+            display: block;
+            padding: 10px;
+            border-bottom: 1px solid lightgrey;
+            cursor: pointer;
+            max-height: 100px; // 5em;
+            overflow: hidden;
+            
+            &.odd {
+                background-color: rgba(black, 0.05);
+            }
+            &:after {
+                content: ' ...';
+            }
+            &:before {
+                content: '... ';
+            }
+            &:first-child:before {
+                content: '';
+            }
+            &:last-child:after {
+                content: '';
+            }
+            &:hover {
+                background-color: rgba(yellow, 0.2); 
+            }
+        }
     }
 }
 
@@ -3369,9 +3634,12 @@ $partnav-width : 170px;
             margin-bottom: 0px;
             padding: 10px;
         }
+        .title {
+            font-style : italic;
+        }
     }
     .title {
-        font-weight: bold;
+        // font-weight: bold;
     }
     .base {
         .title {
@@ -3405,7 +3673,7 @@ $partnav-width : 170px;
     border-radius: 3px;
     > .title {
         display: block;
-        font-weight: bold;
+        // font-weight: bold;
         &.base {
             &:before {
                 content: '☆ ';
@@ -3701,9 +3969,14 @@ grundform-clean {
         h1 {
             font-size : 1.3em;
             margin-bottom: 1em;
+            font-family: "Requiem Text SC A","Requiem Text SC B";
+            text-transform: lowercase;
+            color: #7A1400;
+            color: #7A1400;
+            // margin-top: 1.4em;
         }
 
-        * {
+        a,span,em,p,div,h3,i {
             color : #333;
         }
         a {
@@ -3712,14 +3985,8 @@ grundform-clean {
                 color : $primarycolor;
             }
         }
-        a {
-        }
 
-        .copyright {
-            @include small-caps();
-            font-size: 0.9em;
-            margin-top: 2em;
-        }
+        
 
         .contenttable {
             width : 660px !important;
@@ -3763,7 +4030,7 @@ grundform-clean {
         font-size : 1.2em;
     }
     &.page-authorInfo #mainview p {
-        max-width : 450px;
+        max-width : 500px;
     }
     .separator {
         text-align : center;
@@ -3931,7 +4198,7 @@ grundform-clean {
         padding: 5px 10px;
         font-size: 0.8em;
         .oos-ord {
-            font-weight: bold;
+            // font-weight: bold;
         }
         .oos-forklaring {
             /* font-size: smaller; */
@@ -4005,44 +4272,79 @@ grundform-clean {
 
 .page-presentation {
     background-position-y : -100px !important;
+    
+    
     .logo_link_monogram {
         background: url("../img/lb_monogram_black_white.svg") no-repeat;
         background-size: cover;
+    }
+
+    .mainnav {
+        a {
+            color : white;
+        }
+        a:hover {
+            color : black;
+        }
+    }
+
+    &.subpage {
+        .logo_link_monogram {
+            background: url("../img/lb_monogram_red_black.svg") no-repeat;
+            background-size: cover;
+        }
+        .mainnav {
+            a {
+                color : inherit;
+            }
+            a:hover {
+                color : $primarycolor;
+            }   
+            
+        }
+        .content {
+            height : auto;
+            overflow : visible;
+            border : none;
+            padding : 0;
+        }
+    }
+
+    li {
+        max-width : 500px;
+    }
+
+    .main li {
+        max-width : initial;
+        // * {
+        // }
+    }
+    .main .content {
+        width : 750px;
+    }
+    .main {
+        em {
+            font-style : normal;
+            // max-width : 500px;
+            // white-space: nowrap;
+            // display : block;
+            // text-overflow: ellipsis;
+            // margin-right : 100px;
+            // overflow-x : hidden;
+        }
     }
 
     // p, #{headers()} {
     //     max-width : 670px;
     // }
 
-    p {
-        margin: 0;
-        text-indent : 2em;
-        line-height: 1.4;
-    }
-    div > p:first-child, 
-    h2 + p, 
-    h1 + p,
-    .copyright,
-    .author + div + p,
-    .avdelare + p {
-        text-indent : 0em;
-    }
     .author {
         font-style : italic;
         margin-bottom: 3em;
     }
 
-    .avdelare {
-        text-align: center;
-        margin : 1em 0;
-    }
-    
     .author + div {
         display : none;
-    }
-    .copyright {
-        @include small-caps();
-        font-size: 0.9em;
     }
 
     .bibliography {
@@ -4060,14 +4362,7 @@ grundform-clean {
     #bkgimg {
         top : -100px;
     }
-    .mainnav {
-        a {
-            color : white;
-        }
-        a:hover {
-            color : black;
-        }
-    }
+    
     h1 {
         margin-bottom: 1.5em;
     }
@@ -4076,50 +4371,34 @@ grundform-clean {
         margin-top: 0;
         margin-bottom: 1.5em;
     }
-    h2 {
-        font-size : 1.1em;
-        @include small-caps();
-        color : $primarycolor;
+    
+
+    img {
+        display: block;
+        margin-top : 1em;
+        margin-bottom : 0.3em;
     }
-    .content {
-        font-size: 0.9em;
-        @include container();
-        background-color : rgba(255, 255, 255, 0.75);
 
-        padding : 1em;
-        padding-left : 2em;
-        border: 1px solid #333;
-        height: 75vh;
-        overflow-y: auto;
-
-        em {
-            font-style : normal;
-            display: inline-block;
-            max-width : 500px;
-
-        }
-        a {
-            background: none;
-        }
-        li {
-        }
-        .auth {
-            float : right;
-            @include small-caps();
-            color : $primarycolor;
-            font-size: 0.9em;
-        }
+    .bildtext {
+        font-size: 0.8em;
+        text-indent : 0 !important;
+        margin-bottom: 2em;
     }
 
 
 }
 
 .page-about {
+    li {
+        max-width : 500px;
+    }
     .help_submenu {
         margin-top: 2em;
         @include container();
         background-color : rgba(255,255,255,0.7);
         font-size : 0.8em;
+        @include small-caps();
+        padding-left: 1.2em;
     }
     .help_content {
 
@@ -4143,6 +4422,7 @@ grundform-clean {
     }
 
     div > p:first-child, 
+    p + blockquote,
     h3 + p,
     h2 + p, 
     h1 + p
@@ -4156,17 +4436,24 @@ grundform-clean {
         line-height: 1.4;
     }
 
-    h2 {
+    h2, h3, h4 {
         font-size : 1.1em;
         @include small-caps();
         color : $primarycolor;
+
+        a {
+            color : $primarycolor;
+            &:hover {
+                color : $primarycolor;
+            }
+        }
     }
-
-    p + h2 {
-        margin-top: 2em;
+    p, ul {
+        & + h2, & +  h3, & +  h4 {
+            margin-top: 2em;
+        }
     }
-
-
+    
     .content {
         @include container();
         background-color : rgba(255, 255, 255, 0.75);
@@ -4179,7 +4466,22 @@ grundform-clean {
             margin-top: 3em;
         }
     }
+    .stats {
+        .author {
+            @include small-caps();
+            // color : $primarycolor;
+        }
+        li {
+            max-width : initial;
+        }
+        ul {
+            font-size: 0.9em;
+        }
+        .num {
+            font-size: 0.9em;
 
+        }
+    }
     .mainnav {
         // a:hover {
         //     color : white;

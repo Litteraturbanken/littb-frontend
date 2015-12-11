@@ -37,7 +37,9 @@
      <!-- <div ng-repeat="obj in overlaydata" big-text="obj.word" ng-style="getOverlayCss(obj)" ng-mousedown="overlayMousedown()" ng-mouseup="overlayMouseup()"></div> -->
      <!-- <span ng-repeat="obj in overlaydata" ng-style="getOverlayCss(obj)">{{obj.word}}</span> -->
 
-    <img class="faksimil" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
+    <div class="img_area" ng-style="{'width' : workinfo.widths[size] + 'px'}">
+        <img faksimil-img class="faksimil" ng-style="{'max-width' : workinfo.widths[size] + 'px'}" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
+    </div>
 
     <div square ng-repeat="obj in coors" ng-show="obj.height"
          class="faksimilMarkee" ng-class="{long : obj.width > 150}"></div>
@@ -158,15 +160,15 @@
                     </div>
                 </li>
                 <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}" ng-disabled="!hasSearchable(author || getValidAuthors()[0])">Sök i författarens texter</a></li>
-                <li>Dela boken</li>
+                <!-- <li>Dela boken</li> -->
             </ul>
         </div>
 
         
     </div>
         <script type="text/ng-template" id="img_full.html">
-            <div class="about-modal modal-body">
-                <img ng-src="{{activeSrc}}">
+            <div class="img-modal modal-body">
+                <img ng-src="{{url || activeSrc}}">
             </div>
              
         </script>
@@ -231,7 +233,7 @@
                         </form>
                     </li>
 
-                    <li><a ng-href="{{prevSearchState || '/#!/sok'}}">Tillbaka till söksidan</a> </li>
+                    <li><a ng-show="prevSearchState" ng-href="{{prevSearchState}}">Tillbaka till söksidan</a> </li>
                     <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Stäng träffvisningen</a> </li>
 
                     

@@ -10,6 +10,8 @@ if(location.hash.length && location.hash[1] != "!")
     location.hash = "#!" + _.str.lstrip(location.hash, "#")
 
 
+window.safeApply = (scope, fn) ->
+    if (scope.$$phase || scope.$root.$$phase) then fn(scope) else scope.$apply(fn)
 
 $.fn.outerHTML = () ->
     return $(this).clone().wrap('<div></div>').parent().html()
@@ -79,24 +81,30 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Svenska klassiker som e-bok och epub"
             .when '/presentationer',
                 title : "Presentationer"
-                breadcrumb : ["presentationer"]
+                # breadcrumb : ["presentationer"]
                 templateUrl : "views/presentations.html"
                 controller : "presentationCtrl"
                         
             .when '/presentationer/:folder/:doc',
-                controller : ["$scope", "$routeParams", "$http", "util", 
-                                ($scope, $routeParams, $http, util) ->
+                controller : ["$scope", "$routeParams", "$http", "util", "$rootElement",
+                                ($scope, $routeParams, $http, util, $rootElement) ->
+                                    $rootElement.addClass "page-presentation"
+                                    $rootElement.addClass "subpage"
+                                    $scope.$on "$destroy", () ->
+                                        # $rootElement.removeClass "page-presentation"
+                                        $rootElement.removeClass "subpage"
+
                                     $http.get("/red/presentationer/#{$routeParams.folder}/#{$routeParams.doc}").success (data) ->
                 
                                         $scope.doc = data
                                         $scope.title = $("<root>#{data}</root>").find("h1").text()
                                         $scope.title = $scope.title.split(" ")[0...5].join(" ")
                                         $scope.setTitle $scope.title
-                                        $scope.appendCrumb $scope.title
+                                        # $scope.appendCrumb $scope.title
                 ]
                 template : '''
                         <meta-desc>{{title}}</meta-desc>
-                        <div class="page-presentation" style="position:relative;" ng-bind-html="doc | trust"></div>
+                        <div class="content" style="position:relative;" ng-bind-html="doc | trust"></div>
                     '''
                 breadcrumb : ["presentationer"]
             .when '/om/aktuellt',
@@ -109,10 +117,10 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Nytt hos Litteraturbanken"
                 controller : "newCtrl"
                 # breadcrumb : ["n"]
-            .when '/om/rattigheter',
-                templateUrl: '/red/om/rattigheter/rattigheter.html'
-                title : "Rättigheter"
-                breadcrumb : ["rättigheter"]
+            # .when '/om/rattigheter',
+            #     templateUrl: '/red/om/rattigheter/rattigheter.html'
+            #     title : "Rättigheter"
+            #     breadcrumb : ["rättigheter"]
             .when '/om/:page', #['/om/ide', "/om/hjalp", "om/kontakt", "om/statistik", "om/inenglish"],
                 templateUrl: "views/about.html"
                 controller : "aboutCtrl"
@@ -133,11 +141,11 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                 return def.promise
                         ]
 
-            .when '/om/inenglish',
-                templateUrl: '/red/om/ide/inenglish.html'
-                title : "In English"
-                breadcrumb : ["in english"]
-                reloadOnSearch : false
+            # .when '/om/inenglish',
+            #     templateUrl: '/red/om/ide/inenglish.html'
+            #     title : "In English"
+            #     breadcrumb : ["in english"]
+            #     reloadOnSearch : false
             .when '/hjalp',
                 redirectTo : "/om/hjalp"
 
@@ -380,6 +388,8 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             $rootElement.addClass("site-school")
             className = (_.last newRoute.templateUrl.split("/")).split(".")[0]
             $rootElement.addClass("page-" + className)
+            
+            
         else 
             delete $rootScope.isSchool
         
@@ -393,15 +403,15 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
 
         # c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
-        $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
-            if _.isObject item 
-                item 
-            else
-                {label : item, url : "/#!/" + normalizeUrl(item).join("")}
+        # $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
+        #     if _.isObject item 
+        #         item 
+        #     else
+        #         {label : item, url : "/#!/" + normalizeUrl(item).join("")}
 
         firstRoute.resolve()
 
-
+    ###
     $rootScope.scrollPos = {} # scroll position of each view
     $(window).on "scroll", ->
         # false between $routeChangeStart and $routeChangeSuccess
@@ -423,6 +433,8 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
         #     $timeout (-> # wait for DOM, then restore scroll position
                 
         #     ), 0
+
+###
 
     # $rootScope._showmenu_mobile = false;
     $rootScope._focus_mode = true

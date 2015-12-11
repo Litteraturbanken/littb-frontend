@@ -194,8 +194,8 @@ littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q
                 $(window).scrollTop($("##{a}").offset().top)
 
                 $("##{a}").parent().addClass("highlight")
-            else if $rootScope.scrollPos[$location.path()]
-                $(window).scrollTop ($rootScope.scrollPos[$location.path()] or 0)
+            # else if $rootScope.scrollPos[$location.path()]
+            #     $(window).scrollTop ($rootScope.scrollPos[$location.path()] or 0)
             
             else
                 $anchorScroll()
@@ -225,14 +225,17 @@ littb.directive "scFile", ($routeParams, $http, $compile, util, backend) ->
             $scope.fileDef.resolve()
 
 
-littb.directive "sidebar", () ->
+littb.directive "sidebar", ($timeout) ->
     restrict : "C"
     link : ($scope, elem, attr) ->
-
-        parent = $("<div class='sidebar_parent'></div>")
-        prev = elem.prev()
-        elem.before(parent)
-        parent.append(prev, elem)
+        $timeout( () ->
+            parent = $("<div class='sidebar_parent'></div>")
+            prev = elem.prev()
+            elem.before(parent)
+            c.log "elem", elem
+            parent.append(prev, elem)
+            
+        , 0)
 
         # h = elem.prev().addClass("before_sidebar").height()
         # elem.height(h)

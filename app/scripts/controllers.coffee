@@ -141,12 +141,16 @@ getAuthorSelectSetup = (s, $filter) ->
 
     }
 
-littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce, $filter) ->
+littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce, $filter, $anchorScroll) ->
     s = $scope
     s.open = true
-    s.proofread = 'all'
+    # s.proofread = 'all'
 
     s.authorSelectSetup = getAuthorSelectSetup(s, $filter)
+
+    $timeout( () ->
+        s.$broadcast "focus"
+    , 100)
 
     s.titleSelectSetup = {
         formatNoMatches: "Inga resultat",
@@ -168,16 +172,17 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         $location.search("titel", s.selected_title?.lbworkid or null)
 
 
-    s.checkProof = (obj) ->
-        if obj.searchable != 'true' then return false
-        if s.proofread == 'all'
-            return true
-        else if s.proofread == "no" and obj.proofread == "false"
-            return true
-        else if s.proofread == "yes" and obj.proofread == "true"
-            return true
-        else
-            return false
+    # s.checkProof = (obj) ->
+    #     if obj.searchable != 'true' then return false
+    #     if s.proofread == 'all'
+    #         return true
+    #     else if s.proofread == "no" and obj.proofread == "false"
+    #         return true
+    #     else if s.proofread == "yes" and obj.proofread == "true"
+    #         return true
+    #     else
+    #         return false
+
 
 
     s.authorChange = () ->
@@ -201,16 +206,9 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         #     key : "per_sida"
         #     val_in : Number
         #     default : 20
-        # ,
-        #     key: "prefix"
-        #     expr: "searchOptionsMenu.prefix.selected"
-        # ,   
-        #     key : "suffix"
-        #     expr: "searchOptionsMenu.suffix.selected"
-        # ,   
-        #     key : "infix"
-        #     expr: "searchOptionsMenu.infix.selected"
     ]
+
+
 
     # s.nHitsChange = () ->
     #     s.current_page = 0
@@ -296,117 +294,134 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
 
     s.searching = false
-    s.num_hits ?= 15
-    # s.current_page = 0
+    s.num_hits ?= 50
+    s.current_page = 0
 
-    s.rowHeights = []
+    # s.rowHeights = []
 
-    s.getRowHeight = () ->
-        add = (a, b) -> a+b
+    # s.getRowHeight = () ->
+    #     add = (a, b) -> a+b
         
-        return (_.foldr s.rowHeights, add) / (s.rowHeights.length)
+    #     return (_.foldr s.rowHeights, add) / (s.rowHeights.length)
 
 
-    s.tableRenderComplete = () ->
-        s.searching = false
-        $timeout(() ->
-            s.getTotalHeight()
-        , 0)
+    # s.tableRenderComplete = () ->
+    #     s.searching = false
+    #     $timeout(() ->
+    #         s.getTotalHeight()
+    #     , 0)
 
-    s.getTotalHeight = () ->
-        s.totalHeight = s.hits * s.getRowHeight()
+    # s.getTotalHeight = () ->
+    #     s.totalHeight = s.hits * s.getRowHeight()
 
 
-    s.updateOnScrollEvents = (evt, isEnd) ->
-        if not isEnd then return
-        # c.log "evt", evt
+    # s.updateOnScrollEvents = (evt, isEnd) ->
+    #     if not isEnd then return
 
-        top = $(evt.currentTarget).offset().top
+    #     top = $(evt.currentTarget).offset().top
 
-        # for tr in $("tr", evt.currentTarget)
-        #     if tr.offset().top < top
-
-        topMost = _.min $("tr", evt.currentTarget), (tr) ->
-            if $(tr).offset().top < top then 9999 else $(tr).offset().top
-        c.log "topMost", topMost, $(topMost).scope()
+    #     topMost = _.min $("tr", evt.currentTarget), (tr) ->
+    #         if $(tr).offset().top < top then 9999 else $(tr).offset().top
+    #     c.log "topMost", topMost, $(topMost).scope()
 
 
 
-        top = evt.currentTarget.scrollTop
-        rowHeight = s.getRowHeight()
-        # c.log "rowHeight", rowHeight
-        if $(topMost).scope().sent.index
-            from = $(topMost).scope().sent.index + s.from_index
-            c.log "tr index", from
-        else 
-            from = Math.floor(top / rowHeight)
-            c.log "rowheight from", from
-        # from = Math.floor(top / rowHeight)
-        # c.log "from", from
-        n_rows = Math.ceil($(evt.currentTarget).height() / rowHeight)
+    #     top = evt.currentTarget.scrollTop
+    #     rowHeight = s.getRowHeight()
+    #     if $(topMost).scope().sent.index
+    #         from = $(topMost).scope().sent.index + s.from_index
+    #         c.log "tr index", from
+    #     else 
+    #         from = Math.floor(top / rowHeight)
+    #         c.log "rowheight from", from
+    #     n_rows = Math.ceil($(evt.currentTarget).height() / rowHeight)
 
 
-        s.search(from, (from + n_rows)).then () ->
-            s.table_top = top
+    #     s.search(from, (from + n_rows)).then () ->
+    #         s.table_top = top
             
 
-
-
-
-    getVisibleRows = () ->
-
-
     
-    getMediatypes = () ->
-        {
-            yes : "etext"
-            no : "faksimil"
-            all : "all"
-        }[s.proofread]
+    # getMediatypes = () ->
+    #     {
+    #         yes : "etext"
+    #         no : "faksimil"
+    #         all : "all"
+    #     }[s.proofread]
 
 
-    # s.nextPage = () ->
-    #     if (s.current_page  * s.num_hits) + s.kwic.length < s.hits
-    #         s.current_page++
-    #         c.log "nextpage search"
-    #         s.search(s.query)
-    # s.prevPage = () ->
-    #     if not s.current_page or s.current_page == 0 then return
-    #     s.current_page--
-    #     s.search(s.query)
+    s.nextPage = () ->
+        if (s.current_page  * s.num_hits) + s.kwic.length < s.hits
+            s.current_page++
+            s.gotoPage s.current_page
+    s.prevPage = () ->
+        if not s.current_page or s.current_page == 0 then return
+        s.current_page--
+        s.gotoPage s.current_page
+        
 
-    # s.firstPage = () ->
-    #     s.current_page = 0
-    #     s.search(s.query)
-    # s.lastPage = () ->
-    #     s.current_page = s.total_pages - 1
-    #     s.search(s.query)
+    s.firstPage = () ->
+        s.gotoPage 0
+    s.lastPage = () ->
+        
+        s.gotoPage(s.total_pages - 1)
 
     s.gotoPage = (page) ->
-        # s.current_page = page
+        if page > (s.total_pages - 1) then return
+        s.showGotoHitInput = false
+        s.current_page = page
         # n_rows = Math.ceil($(evt.currentTarget).height() / rowHeight)
-        $(".table_viewport").scrollTop(s.getRowHeight() * page)
-        
-        s.search(page, page + 30)
+        # $(".table_viewport").scrollTop(s.getRowHeight() * page)
+        from = s.current_page * s.num_hits
+        s.search(from, from + s.num_hits)
+
+
+    s.onGotoHitInput = () ->
+        if s.total_pages == 1 then return
+        if s.showGotoHitInput
+            s.showGotoHitInput = false
+            return
+        s.showGotoHitInput = true
+        $timeout(() ->
+            s.$broadcast("focus")
+        0)
+
     
     getSearchArgs = (from, to) ->
         # from = s.current_page  * s.num_hits
         # to = (from + s.num_hits) - 1
         
+        unless s.filterOpts[0].selected
+
+            groups = _.groupBy (_.filter s.filterOpts, "selected"), "group"
+
+            groups = _.map groups, (group) ->
+                
+                vals = _.map (_.pluck group, "val"), (val) -> "_.text_" + val
+                "(" + vals.join(" | ") + ")"
+
+            text_attrs = _.flatten groups
+
+
+
+            # text_attrs = (_.pluck (_.filter s.filterOpts, "selected"), "val")
         
         args = {
             query : s.query
-            mediatype: getMediatypes()
+            # mediatype: getMediatypes()
             from: from
             to: to
             selectedTitle : $location.search().titlar
-            prefix: s.prefix
-            suffix: s.suffix
-            infix: s.infix
+            prefix: $location.search().prefix
+            suffix: $location.search().suffix
+            infix: $location.search().infix
+            text_attrs : text_attrs or []
         }
 
-        if $location.search().sok_om
+        if $location.search().sok_om and $location.search().forfattare
             args.selectedAboutAuthor = $location.search().forfattare
+        else if $location.search().sok_om
+            args.searchAllAbout = true
         else
             args.selectedAuthor = $location.search().forfattare
 
@@ -442,12 +457,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         len = sentence.tokens.length
         sentence.tokens.slice from, len
 
-    # s.setPageNum = (num) ->
-    #     c.log "setPageNum", num
-    #     s.current_page = num
-    #     s.search()
+    s.setPageNum = (num) ->
+        c.log "setPageNum", num
+        s.current_page = num
+        s.search()
 
     s.getMaxHit = () ->
+        unless s.kwic then return
         Math.min s.hits, (s.current_page  * s.num_hits) + s.kwic.length
 
     onKeyDown = (event) ->
@@ -473,19 +489,58 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     #     {label: "SORTERA EFTER SÖKORDET I ALFABETISK ORDNING", val: "hit", selected: false}
     # ]
 
+    # {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
+    # {label: 'Sök i <span class="sc">svenska</span> orginalverk', val: "lang_swedish", selected: true}
+    # {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
+    # {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
     s.filterOpts =  [
-        {label: "Sök i <span class='sc'>ALLA TEXTER</span>", val: "all_texts", selected: true}
-        # {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
-        # {label: 'Sök i <span class="sc">svenska</span> orginalverk', val: "lang_swedish", selected: true}
-        # {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
-        # {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
-        {label: 'Sök i <span class="sc">moderniserade</span> texter', val: "modernized", selected: true}
-        {label: 'Sök i <span class="sc">ej moderniserade</span> texter', val: "not_modernized", selected: true}
-        {label: 'Sök i <span class="sc">korrekturlästa</span> texter', val: "proofread", selected: true}
-        {label: 'Sök i <span class="sc">ej korrekturlästa</span> texter', val: "not_proofread", selected: true}
-        {label: 'Sök i texter skrivna av <span class="sc">män</span>', val: "gender_male", selected: true}
-        {label: 'Sök i texter skrivna av <span class="sc">kvinnor</span>', val: "gender_female", selected: true}
-        {label: 'Sök i texter skrivna av <span class="sc">anonyma författare</span>', val: "anonymous", selected: true}
+        {
+            label: "Sök i <span class='sc'>ALLA TEXTER</span>",
+            val: "all_texts",
+            selected: true
+        }
+        {
+            label: 'Sök i <span class="sc">moderniserade</span> texter',
+            val: "modernized = 'true'",
+            selected: true
+            group : 0
+        }
+        {
+            label: 'Sök i <span class="sc">ej moderniserade</span> texter',
+            val: "modernized = 'false'",
+            selected: true
+            group : 0
+        }
+        {
+            label: 'Sök i <span class="sc">korrekturlästa</span> texter',
+            val: "proofread = 'true'",
+            selected: true
+            group : 1
+        }
+        {
+            label: 'Sök i <span class="sc">ej korrekturlästa</span> texter',
+            val: "proofread = 'false'",
+            selected: true
+            group : 1
+        }
+        {
+            label: 'Sök i texter skrivna <span class="sc">kvinnor</span>',
+            val: "gender contains 'female'",
+            selected: true
+            group : 2
+        }
+        {
+            label: 'Sök i texter skrivna <span class="sc">män</span>',
+            val: "gender contains 'male'",
+            selected: true
+            group : 2
+        }
+        {
+            label: 'Sök i texter skrivna av <span class="sc">anonyma författare</span>',
+            val: "authorid contains 'Anonym'",
+            selected: true
+            group : 2
+        }
 
     ]
 
@@ -518,15 +573,19 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         return output
 
+    s.onSearchSubmit = (query) ->
+        $anchorScroll("results")
+        s.newSearch(query)        
+
     s.newSearch = (query) ->
         c.log "newSearch", query
         q = query or s.query
         unless q then return
         $location.search("fras", q) if q
-
         s.query = q
         s.pageTitle = q
         from = 0
+        #TODO: eh?
         to = (s.num_hits - 1)
         args = getSearchArgs from, to
         searchData.newSearch args
@@ -559,7 +618,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             for auth in (_.sortBy (_.keys data).sort())
                 val = data[auth]
                 
-                s.authorStatsData.push {author : auth, pos : prev}
+                s.authorStatsData.push {author : auth, pos : Math.floor(prev / s.num_hits)}
                 prev = val + prev
 
 
@@ -569,14 +628,12 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         # def = backend.searchWorks(args)
         def = searchData.slice(from, to)
         def.then (kwic) ->
-            # c.log "search data", kwic
-            # s.gridOptions.totalServerItems = data.count
-            # s.gridOptions.data = _.map data.kwic, getGridData
+            c.log "search data slice", searchData.total_hits
 
             # s.data = data
             s.kwic = kwic
             s.hits = searchData.total_hits
-            # s.total_pages = Math.ceil(s.hits / s.num_hits)
+            s.total_pages = Math.ceil(s.hits / s.num_hits)
 
             # for row in (data.kwic or [])
             #     row.href = searchData.parseUrls row
@@ -591,21 +648,78 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     # queryvars = $location.search()
 
+    s.opt_change = (opt) ->
+        commit = () -> 
+            s.search_filter_opts = _.map (_.pluck s.filterOpts, "selected"), Number
+        if opt.val == "all_texts" 
+            for o in s.filterOpts
+                o.selected = true
+            commit()
+            return
+
+        # isDeselect = opt.selected
+        opt.selected = !opt.selected
+
+
+        group = _.filter s.filterOpts, (o) -> o.group == opt.group
+        c.log "group", group
+
+        if not _.any group, "selected"
+            i = _.indexOf group, opt
+            (group[i + 1] or group[0]).selected = true
+
+            commit()
+            return 
+
+
+
+        if not _.all s.filterOpts, "selected"
+            s.filterOpts[0].selected = false
+        if not (_.filter s.filterOpts, "selected").length
+            opt.selected = true
+        
+        if _.all s.filterOpts[1..], "selected"
+            s.filterOpts[0].selected = true
+
+
+
+
+        commit()
+
+        
+
+
+
+
     util.setupHashComplex s,
         [
-            # scope_name : "current_page"
-            # key : "traffsida"
-            # val_in : (val) ->
-            #     Number(val) - 1
-            # val_out : (val) ->
-            #     val + 1
-            # default : 1
-        # ,   
+            scope_name : "current_page"
+            key : "traffsida"
+            val_in : (val) ->
+                Number(val) - 1
+            val_out : (val) ->
+                val + 1
+            default : 1
+        ,   
             key : "avancerad"
             scope_name : "advanced"
-        ,   
-            key : "proofread"
-            default : "all"
+        ,
+            key : "filter"
+            scope_name : "search_filter_opts"
+            val_in : (val) ->
+                for bool, i in val?.split(",")
+                    bool = Boolean Number bool
+                    s.filterOpts[i].selected = bool
+
+                return val?.split(",")
+
+            val_out : (val) ->
+                val?.join(",")
+
+
+        # ,   
+        #     key : "proofread"
+        #     default : "all"
         ,
             key : "fras"
             post_change : (val) ->
@@ -765,7 +879,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             title?.searchable == "true"
 
     s.getUrl = (work) ->
-        # auth = work.authors[0].workauthor or work.workauthor or s.author
         auth = (s.getWorkAuthor work.authors).authorid
         if work.mediatype == "epub" 
             url = "txt/epub/" + auth + "_" + work.titlepath.split("/")[0] + ".epub"
@@ -944,6 +1057,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.titleSearching = false
     s.authorSearching = true
     s.showPopular = true
+    s.showInitial = true
     # s.rowByLetter = {}
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
@@ -953,14 +1067,14 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         if not s.rowfilter then return true
         filter = (s.rowfilter || '')
 
-        authors = (_.map row.author, (auth) ->
+        auths = (_.map row.author, (auth) ->
             return auth.fullname
         ).join(" ")
 
         exprs = filter.split(" ")
 
         return _.all exprs, (expr) ->
-            new RegExp(expr, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + authors))
+            new RegExp(expr, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + auths))
 
         
 
@@ -972,6 +1086,16 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
         return _.all exprs, (expr) ->
             new RegExp(expr, "i").test((author.fullname))
+
+    s.resetView = () ->
+        s.showInitial = true
+        s.showPopular = true
+
+        s.filter = ""
+        s.rowfilter = ""
+
+        s.all_titles = null
+
 
     # titlesort = "itemAttrs.sortkey"
     
@@ -998,6 +1122,9 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         # c.log "row.mediatype", row.mediatype
         _.any _.map row.mediatype, (mt) -> s.mediatypeObj[mt]
         
+
+    s.titleFilter = (row) ->
+        row.itemAttrs.titlepath.split("/").length > 1
 
     s.hasMediatype = (titleobj, mediatype) ->
         return mediatype in (titleobj?.mediatype or [])
@@ -1048,10 +1175,12 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
 
     s.titleRender = () ->
         if $location.search()['title']
-            title = s.titleByPath[$location.search()['title']][0]
+            # fetchWorks().then () ->
+            title = s.titleByPath?[$location.search()['title']][0]
             s.titleClick(null, title)
             id = s.getUniqId title
             s.$emit("listScroll", id)
+                
 
 
     # use timeout to make sure the page shows before loading authors
@@ -1065,7 +1194,8 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
     s.searchTitle = () ->
         c.log "searchTitle", s.workFilter
         if s.filter
-
+            s.showPopular = false
+            s.showInitial = false
             fetchTitles()
         else
             unless s.filter then s.selectedLetter = "A" else s.selectedLetter = null
@@ -1112,12 +1242,19 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
                 
 
     s.getUrl = (row, mediatype) ->
-        # unless row then return
-        url = "/#!/forfattare/#{row.author[0].workauthor or row.author[0].authorid}/titlar/#{s.getTitleId(row)}/"
-        if mediatype == "epub" or mediatype == "pdf"
-            url += "info/#{mediatype}"
+        authorid = row.author[0].workauthor or row.author[0].authorid
+
+        if mediatype == "epub" 
+            url = "txt/epub/" + authorid + "_" + row.itemAttrs.titlepath.split("/")[0] + ".epub"
+        else if mediatype == "pdf"
+            url = "txt/#{row.itemAttrs.lbworkid}/#{row.itemAttrs.lbworkid}.pdf"
         else
-            url += "sida/#{row.itemAttrs.startpagename}/#{mediatype}"
+            url = "/#!/forfattare/#{authorid}/titlar/#{s.getTitleId(row)}/" +
+                 "sida/#{row.itemAttrs.startpagename}/#{mediatype}"
+
+        # if mediatype == "epub" or mediatype == "pdf"
+        #     url += "info/#{mediatype}"
+        # else
         return url
 
     # s.getSource = () -> 
@@ -1295,7 +1432,7 @@ littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, a
         fetchWorks()
 
     s.getTitles = () ->
-        if s.showPopular
+        if s.showInitial and s.showPopular
             s.popularTitles
         else
             onceFetchWorks()
@@ -1468,11 +1605,14 @@ littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
                 "hjalp" : "views/help.html"
                 "kontakt" : 'views/contactForm.html'
                 "statistik" : 'views/stats.html'
+                "rattigheter" : '/red/om/rattigheter/rattigheter.html'
+                "inenglish" : "/red/om/ide/inenglish.html"
             }[page]
 
 littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, util) ->
     s = $scope
     url = '/red/presentationer/presentationerForfattare.html'
+    s.isMain = true
     $http.get(url).success (data) ->
         s.doc = data
         s.currentLetters = for elem in $("[id]", data)
@@ -1648,7 +1788,10 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
         kb = size / 1024
 
-        return kb
+        return (Math.round kb) + " KB"
+
+    s.downloadFile = (url) ->
+        window.location = url
 
 
     if not s.mediatype
@@ -1889,14 +2032,20 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s[key] = null
     
     thisRoute = $route.current
-    
+    maybeSize = () ->
+        size = ""
+        if s.size and s.size != 2
+            size = '&storlek=' + s.size
+        return size
     s.nextHit = () ->
+        size = maybeSize()
         searchData.next().then (newHit) ->
             c.log "newHit", newHit
-            $location.url(newHit.href[3...])
+            $location.url(newHit.href[3...] + size)
     s.prevHit = () ->
+        size = maybeSize()
         searchData.prev().then (newHit) ->
-            $location.url(newHit.href[3...])
+            $location.url(newHit.href[3...] + size)
     s.close_hits = () ->
         searchData.reset()
         s.show_search_work = false
@@ -2066,7 +2215,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
     s.getNextPart = () ->
-        if not s.workinfo then return
+        if not (s.workinfo and s.workinfo.parts.length) then return
         current = s.getCurrentPart()
 
         if not current
@@ -2446,16 +2595,17 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         c.log "img expand!", src
 
         s.activeSrc = src
-        about_modal = $modal.open
+        img_modal = $modal.open
             templateUrl : "img_full.html"
             scope : s
             windowClass : "img_full"
+            size : "lg"
 
 
-        about_modal.result.then () ->
-            s.show_about = false
-        , () ->
-            s.show_about = false
+        # img_modal.result.then () ->
+        #     s.show_about = false
+        # , () ->
+        #     s.show_about = false
 
 
 
@@ -2477,7 +2627,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             args = {}
             for key, val of $location.search()
                 if _.str.startsWith key, "s_"
-                    args[key[2..]] = val
+                    if key == "s_text_attrs" and val
+                        args["text_attrs"] = decodeURIComponent(val).split(",")
+                    else    
+                        args[key[2..]] = val
                 
             c.log "args", args
             # args = JSON.parse val
@@ -2503,11 +2656,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             return
         s.showGotoHitInput = false
         hit = Number(hit - 1)
+        c.log "hit", hit
         # from = if (hit - 5) < 0 then 0 else (hit - 5)
         searchData.current = hit
-        searchData.search().then (result) ->
+        searchData.slice(hit, hit + 20).then (result) ->
             c.log "result", result
-            $location.url(result.href[3...])
+            size = maybeSize()
+            $location.url(result[0].href[3...] + size)
 
         # searchData.slice(from, from + 10).then (data) ->
         #     c.log "slice data", data
@@ -2525,6 +2680,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.isSearchingWork = false
     s.searchWork = (query) ->
         c.log "searchWork", query
+
+        s.$root.prevSearchState = null
 
         s.isSearchingWork = true
         s.hasSearchedWork = true

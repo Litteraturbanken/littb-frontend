@@ -6,10 +6,10 @@
 
     <h1>Textsökning <span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span> </h1>
 
-    <form class="submit_form" ng-submit="newSearch(query)">
+    <form class="submit_form" ng-submit="onSearchSubmit(query)">
         <div class="top_row">
             <div class="left_col">
-                <input class="query" ng-model="query" autofocus type="text">
+                <input class="query" ng-model="query" autofocus type="text" focusable>
                 <i class="spinner fa fa-spinner fa-pulse"></i>
                 <button class="submit btn">Sök</button>
                 
@@ -26,8 +26,8 @@
             <div class="right_col">
                 <ul class="options">
                     <li ng-repeat="opt in filterOpts">
-                        <span ng-show="opt.selected">✓</span>
-                        <a ng-click="opt.selected = !opt.selected" ng-bind-html="opt.label | trust"></a>
+                        <span  ng-click="opt_change(opt)" ng-show="opt.selected">✓</span>
+                        <a ng-click="opt_change(opt)" ng-bind-html="opt.label | trust"></a>
                     </li>
                 </ul>
             
@@ -97,18 +97,19 @@
         
     </form>
 
-    <!-- <div ui-grid="gridOptions" class="grid"></div> -->
-    <div class="results_container" >
-        <!-- <span class="search_spinner" us-spinner="{lines : 8 ,radius:30, width:15, length: 25}"></span> -->
-        <div class="table_viewport" ng-show="kwic" ng-scroll-event="updateOnScrollEvents($event, isEndEvent)"  >
-            <div class="table_container" ng-style="{height : totalHeight}" > <!-- height="container_height" -->
+    <div class="results_container" ng-class="{searching:searching}" id="results" >
+        <!-- <div class="table_viewport" ng-show="kwic" ng-scroll-event="updateOnScrollEvents($event, isEndEvent)"  > -->
+        <div class="table_viewport" ng-show="kwic">
+            <!-- <div class="table_container" ng-style="{height : totalHeight}" > -->
+            <div class="table_container">
                 <div ng-if="!searching && kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
                 
             
             
                 <table cellspacing="0" class="results" ng-style="{top : table_top}">
                     
-                    <tr on-finish-render="tableRenderComplete()" height="$parent.rowHeights[$index]" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" >
+                    <!-- <tr on-finish-render="tableRenderComplete()" height="$parent.rowHeights[$index]" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" > -->
+                    <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" >
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content">
 
@@ -135,8 +136,7 @@
     </div>
 
     <div toolkit>
-
-        <div class="littb_pager" ng-show="kwic && hits">
+        <div class="littb_pager" ng-if="hits">
             <div>
 
 
@@ -145,35 +145,47 @@
                         <span ng-show="hits > 1">sökträffar</span>
                         <span ng-show="hits == 1">sökträff</span>
                     </div></div>
-                    <!-- <div>Träff {{from}}–{{to}}</div> -->
 
                 </div>
 
-                <!-- Visar {{current_page  * num_hits + 1}}-{{getMaxHit()}} av 
+                Visar {{current_page  * num_hits + 1}}-{{getMaxHit()}} av 
                 {{hits}} träffar,
-                sida {{current_page + 1}} av {{total_pages}}. -->
+                sida {{current_page + 1}} av {{total_pages}}.
 
-                <!-- <ul class="ctrl" ng-show="hits > 1"> -->
+                <ul class="ctrl" ng-show="hits > 1">
                     <!-- <li>
                         <a ng-click="nextPage()">Gå till {{(current_page + 1) * num_hits + 1}}-{{getMaxHit() + num_hits}}</a>
                     </li> -->
-                    <!-- <li><a href="">Sortera på efternamn</a> <span role="checkbox" aria-checked="{{opt.selected}}">✓</span></li> -->
-                    <!-- <li><a href="">Sortera efter tryckår</a></li> -->
-                    <!-- <li><a href="">Sortera efter sökord</a></li> -->
-                    <!-- <li><a href="">AVANCERAD SÖKNING</a></li> -->
+                    <!-- <li><a href="">Sortera på efternamn</a> <span role="checkbox" aria-checked="{{opt.selected}}">✓</span></li>
+                    <li><a href="">Sortera efter tryckår</a></li>
+                    <li><a href="">Sortera efter sökord</a></li> -->
+
+
+                    <li class="arrows">
+                        <button rel="next" class="submit btn navicon left" ng-click="prevPage()">
+                            <i class="fa fa-angle-left"></i>
+                        </button>
+                        <button rel="prev" class="submit btn navicon" ng-click="nextPage()">
+                            <i class="fa fa-angle-right"></i>
+                        </button>
+                    </li>
+
+
                     <!-- <li>
                         <a ng-click="prevPage()">Gå bakåt en träff</a>
-                    </li>
+                    </li> -->
                     <li>
                         <a ng-click="firstPage()">Gå till första träffen</a>
                     </li>
                     <li>
                         <a ng-click="lastPage()">Gå till sista träffen</a>
                     </li>
-                    <li>
-                        <a ng-click="lastPage()">Gå direkt till träff…</a>
-                    </li> -->
-                <!-- </ul> -->
+                    <li ng-disabled="total_pages == 1" ng-class="{open : showGotoHitInput}"><a ng-disabled="total_pages == 1" ng-click="onGotoHitInput()">Gå till träffsida . . .</a> 
+                        <form ng-submit="gotoPage(gotoHitInput - 1)" ng-show="showGotoHitInput">
+                            <input focusable type="text" ng-model="gotoHitInput"> <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>    
+                        </form>
+                    </li>
+                </ul>
             
                 <!-- <label>Gå till träffsida</label>
                 <form ng-submit="setPageNum(input_page - 1)">
@@ -181,13 +193,12 @@
                 </form> -->
             </div>
             
-            <ul class="navigator" ng-show="kwic.length" ng-style="{'max-height': container_height}">
-                <!-- ng-class="{selected: page == current_page}" -->
-                <li ng-repeat="obj in authorStatsData" >
-                    <a ng-click="gotoPage(obj.pos)">{{obj.author}}</a>
-                </li>
-            </ul>
         </div>
+        <ul class="navigator" ng-show="kwic.length" ng-style="{'max-height': container_height}">
+            <li ng-repeat="obj in authorStatsData" >
+                <a ng-class="{selected: obj.pos == current_page}" ng-click="gotoPage(obj.pos)">{{obj.author}}</a>
+            </li>
+        </ul>
 
 
 
