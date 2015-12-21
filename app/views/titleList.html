@@ -1,4 +1,4 @@
-<meta-desc>Sök verk eller titel i Litteraturbanken.</meta-desc>
+<meta-desc>Blädda bland Litteraturbankens författare och titlar.</meta-desc>
 <h1>Botanisera i biblioteket</h1> <!-- samlingarna -->
 <!--  <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span> -->
 <img bkg-img src="img/sok_moln.jpg"></img>
@@ -62,7 +62,7 @@
                                 <div class="collapse-content">
                                     <div class="info show_all" ng-show="author.data.intro">
                                         <div ng-bind-html="author.data.intro | trust" ></div>
-                                        <em>{{authorsById[author.data['introAuthor']].fullname}}</em> <!-- ng-click="author._show_all = true" -->
+                                        <em>{{authorsById[normalizeAuthor(author.data['introAuthor'])].fullname}}</em> <!-- ng-click="author._show_all = true" -->
                                     </div>
                                     <ul class="links">
                                         <li><a href="/#!/forfattare/{{::selectedAuth.authorid}}">

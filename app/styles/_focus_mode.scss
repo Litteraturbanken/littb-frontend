@@ -6,6 +6,12 @@
 &.focus-remove {opacity : 0 }        
 &.focus-remove-active {opacity : 1 } 
 &.focus {
+    .type-faksimil.reader_main {
+        transform : none !important;
+    }
+    .img_area {
+        width : auto !important;                
+    }
     width : auto;
     padding : 2%;
     height : 100%;
@@ -404,6 +410,10 @@
     padding : 0.5em;
     .size_picker {
         margin-top : 0;
+        white-space : nowrap;
+        button {
+            display: inline-block;
+        }
     }
 
 }
@@ -484,6 +494,10 @@
     color: white;
     background-color: #333;
     font-weight : bold;
+    &:hover {
+        background-color : $primarycolor;
+        border-color : $primarycolor;
+    }
 }
 
 .nav.left {

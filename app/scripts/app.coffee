@@ -81,7 +81,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Svenska klassiker som e-bok och epub"
             .when '/presentationer',
                 title : "Presentationer"
-                # breadcrumb : ["presentationer"]
                 templateUrl : "views/presentations.html"
                 controller : "presentationCtrl"
                         
@@ -106,21 +105,17 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                         <meta-desc>{{title}}</meta-desc>
                         <div class="content" style="position:relative;" ng-bind-html="doc | trust"></div>
                     '''
-                breadcrumb : ["presentationer"]
             .when '/om/aktuellt',
                 # templateUrl: '/red/om/aktuellt/aktuellt.html'
                 # title : "Aktuellt"
-                # breadcrumb : ["aktuellt"]
                 redirectTo : "/nytt",
             .when '/nytt',
                 templateUrl: "nytt.html"
                 title : "Nytt hos Litteraturbanken"
                 controller : "newCtrl"
-                # breadcrumb : ["n"]
             # .when '/om/rattigheter',
             #     templateUrl: '/red/om/rattigheter/rattigheter.html'
             #     title : "Rättigheter"
-            #     breadcrumb : ["rättigheter"]
             .when '/om/:page', #['/om/ide', "/om/hjalp", "om/kontakt", "om/statistik", "om/inenglish"],
                 templateUrl: "views/about.html"
                 controller : "aboutCtrl"
@@ -141,31 +136,14 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                 return def.promise
                         ]
 
-            # .when '/om/inenglish',
-            #     templateUrl: '/red/om/ide/inenglish.html'
-            #     title : "In English"
-            #     breadcrumb : ["in english"]
-            #     reloadOnSearch : false
             .when '/hjalp',
                 redirectTo : "/om/hjalp"
-
-                # templateUrl: '/red/om/hjalp/hjalp.html'
-                # templateUrl : "views/help.html"
-                # controller : "helpCtrl"
-                # title : "Hjälp"
-                # breadcrumb : ["hjälp"]
-                # reloadOnSearch : false
             .when '/statistik',
-                templateUrl: 'views/stats.html'
-                controller : 'statsCtrl'
-                reloadOnSearch : false
-                title : "Statistik"
-                breadcrumb : ["statistik"]
+                redirectTo: "/om/statistik"
             .when '/sok',
                 templateUrl: 'views/search.html'
                 controller : 'searchCtrl'
                 reloadOnSearch : false
-                breadcrumb : ["sök"]
 
             .when "/bibliotek",
                 templateUrl : "views/titleList.html"
@@ -174,23 +152,13 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 title : "Biblioteket – Titlar och författare"
             .when "/titlar",
                 redirectTo : "/bibliotek"
-            #     templateUrl : "views/titleList.html"
-            #     controller : "titleListCtrl"
-            #     reloadOnSearch : false
-            #     title : "Titlar"
-            #     breadcrumb : ["titlar"]
             .when "/epub",
                 templateUrl : "views/epubList.html"
                 controller : "epubListCtrl"
                 reloadOnSearch : false
                 title : "Gratis böcker för nerladdning i epubformatet"
-                breadcrumb : ["epub"]
             .when "/forfattare",
                 redirectTo : "/bibliotek"
-                # templateUrl : "views/authorList.html"
-                # controller : "authorListCtrl"
-                # title : "Författare"
-                # reloadOnSearch : false
 
             .when ["/forfattare/LagerlofS"
                    "/forfattare/LagerlofS/titlar"
@@ -205,10 +173,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 controller : "authorInfoCtrl"
                 isSla : true
                 reloadOnSearch : false
-                # breadcrumb : [
-                #     label : "författare"
-                #     url : "#!/forfattare"
-                # ]
                 resolve : 
                     r : authorResolve
             .when ["/forfattare/:author"
@@ -216,6 +180,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                    "/forfattare/:author/bibliografi"
                    "/forfattare/:author/presentation"
                    "/forfattare/:author/mer"
+                   "/forfattare/:author/semer"
                    "/forfattare/:author/biblinfo"
                    "/forfattare/:author/jamfor"
                    "/forfattare/:author/omtexterna/:omtexternaDoc?"
@@ -224,23 +189,24 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 controller : "authorInfoCtrl"
                 resolve : 
                     r : authorResolve
-            .when "/forfattare/:author/titlar/:title/info",
-                templateUrl : "views/sourceInfo.html"
-                controller : "sourceInfoCtrl"
-                reloadOnSearch : false
-                title : "Verk"
-                breadcrumb : ["författare"]
             .when "/forfattare/:author/titlar/:title/info/:mediatype",
-                # templateUrl : "views/sourceInfo.html"
-                # controller : "sourceInfoCtrl"
-                # reloadOnSearch : false
-                # breadcrumb : ["författare"]
-                redirectTo : "/forfattare/:author/titlar/:title/info",
+                redirectTo : (routeParams, path, searchVars) ->
+                    return "/forfattare/#{routeParams.author}/titlar/#{routeParams.title}/#{routeParams.mediatype}/?om-boken"
+            .when [
+                "/forfattare/:author/titlar/:title",
+                "/forfattare/:author/titlar/:title/info"
+                ],
+                template : "<div></div>"
+                controller : ["$scope", "backend", "$routeParams", "$location", ($scope, backend, $routeParams, $location) ->
+                    backend.getSourceInfo($routeParams.author, $routeParams.title).then (data) ->
+                        $location.url("/forfattare/#{$routeParams.author}/titlar/#{$routeParams.title}/#{data.mediatype}?om-boken").replace()
+                ]
+
+
             .when "/forfattare/:author/titlar/:title/:mediatype",
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false
-                breadcrumb : ["författare"]
             # .when "/editor/:lbid",
 
             .when [ "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
@@ -248,7 +214,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 templateUrl : "views/reader.html"
                 controller : "readingCtrl"
                 reloadOnSearch : false,
-                breadcrumb : ["författare"]
                 resolve :
                     r : ["$q", "$routeParams", "$route", "$rootScope",
                             ($q, $routeParams, $route, $rootScope) ->
@@ -277,11 +242,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
 
             .when '/kontakt',
                 redirectTo : "/om/kontakt"
-                # templateUrl: 'views/contactForm.html'
-                # controller : 'contactFormCtrl'
-                # reloadOnSearch : false
-                # title : "Kontakt"
-                # breadcrumb : ["kontakt"]
             .when ["/id/:id", "/id"],
                 template : """
                 <div ng-class="{searching:!data}">
@@ -301,7 +261,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                             <span ng-repeat="type in row.mediatype">
                             
                                 <span ng-show="!$first">:::</span>
-                                <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath}}/info">{{type}}</a>
+                                <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
                             </span>
                         </td>
                     </tr>
@@ -314,7 +274,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                             <p>Använd browserns bakåtknapp för att komma tillbaka till 
                             sidan du var på innan, eller klicka på någon av 
                             länkarna till vänster.</p>"
-                breadcrumb : ["fel"]
                 title : "Sidan kan inte hittas"
             #     redirectTo: '/'
 
@@ -327,7 +286,7 @@ littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
 
 
 littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
-    c.log "run search params", $location.search().search_params
+    c.log "run search params", $location.search()
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
         $rootElement.addClass("ready")
@@ -497,4 +456,13 @@ littb.filter "trust", ($sce) ->
     return (input) ->
         $sce.trustAsHtml input
 
+littb.filter "normalizeAuthor", () ->
+    trans = _.object _.zip "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ", "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy"
+    trans = _.extend trans, _.object _.zip ["Æ", "æ", "Ð", "ð", "Þ", "þ", "ß", "Œ", "œ"], ["AE", "ae", "DH", "dh", "TH", "th", "ss", "OE", "oe"]
+    return (authorid) ->
+        unless authorid then return
+        ret = _.map authorid.split(""), (char) ->
+            trans[char] or char
+        .join("")
 
+        return ret

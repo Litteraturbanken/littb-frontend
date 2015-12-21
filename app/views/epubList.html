@@ -24,9 +24,11 @@
         
             <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
         </div>
-        <div class="preloader">Hämtar <span class="dots_blink"></span></div>
         <div class="table_container">
-            <table class="contenttable" scroll-to="{{selectedLetter || 'A'}}">
+            <div class="preloader"> 
+                <i class="spinner fa fa-spinner fa-pulse"></i>
+            </div>
+            <table class="contenttable">
                 <thead>
                     <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
                     <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>

@@ -782,14 +782,16 @@ littb.directive "listScroll", () ->
     
 
 overflowLoad = (s, element) ->
+    c.log "overflowLoad", s, element
     btn = null
 
     element.load () ->
+        c.log "element load overflow"
         maxWidth = $(this).css("max-width")
         $(this).css("max-width", "initial")
         actualWidth = $(this).width()
         $(this).css("max-width", maxWidth)
-
+        c.log "oveflowLoad", s, element, $(this).width(), actualWidth
         if $(this).width() < actualWidth
             element.parent().addClass "img-overflow"
             btn?.remove()
@@ -803,29 +805,23 @@ overflowLoad = (s, element) ->
 
 
 
-imgDef = () ->
+# littb.directive "imgdiv", imgDef
+# littb.directive "figurediv", imgDef
+littb.directive "graphicimg", () ->
     restrict : "C"
     compile: (elm, attrs) ->
-        c.log "ornament"
-        if _.endsWith elm.attr("src"), ".svg"
+        if _.str.endsWith elm.attr("src"), ".svg"
             elm.load(elm.attr("src"), (data) ->
-                c.log "svg", data.match(/viewBox="(.+?)"/)[1]
                 [__, __, width, height] = data.match(/viewBox="(.+?)"/)[1].split(" ")
                 elm.width width
                 elm.height height
-
             )
-    link : ($scope, element, attr) ->
-        s = $scope
-        if _.str.endsWith element.attr("src"), "svg"
-            return
-        
-        overflowLoad(s, element)
-
-
-# littb.directive "imgdiv", imgDef
-# littb.directive "figurediv", imgDef
-littb.directive "graphicimg", imgDef
+        return ($scope, element, attr) ->
+            s = $scope
+            if _.str.endsWith element.attr("src"), "svg"
+                return
+            
+            overflowLoad(s, element)
 
 
 

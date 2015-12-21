@@ -31,9 +31,10 @@ littb.factory "debounce", ($timeout) ->
 
 
 
+
+
 getCqp = (o) ->
 
-    # o.query, o.mediatype, o.selectedAuthor, o.selectedTitle, o.prefix, o.suffix, o.infix
 
     tokenList = []
     regescape = (s) ->
@@ -92,13 +93,50 @@ getCqp = (o) ->
         auths = _.map obj.split(","), (auth) -> "_.text_#{type} contains '#{auth}'"
         auths = "(#{auths.join(' | ')})"
 
+    optsToCQP = (optlist) ->
+        map = 
+            # all_texts : "Sök i <span class='sc'>ALLA TEXTER</span>"
+            is_modernized : 
+                cqp : "_.text_modernized = 'true'"
+                group : 0
+            not_modernized : 
+                cqp : "_.text_modernized = 'false'"
+                group : 0
+            is_proofread : 
+                cqp : "_.text_proofread = 'true'"
+                group : 1
+            not_proofread : 
+                cqp : "_.text_proofread = 'false'"
+                group : 1
+            gender_female : 
+                cqp : "_.text_gender contains 'female'"
+                group : 2
+            gender_male : 
+                cqp : "_.text_gender contains 'male'"
+                group : 2
+            is_anom : 
+                cqp : "_.text_authorid contains 'Anonym'"
+                group : 2
+
+
+        opts = _.map optlist, (key) -> map[key]
+        groups = _.groupBy opts, "group"
+
+        groups = _.map groups, (group) ->
+            
+            # vals = _.map (_.pluck group, "cqp"), (val) -> "_.text_" + val
+            vals = _.pluck group, "cqp"
+            return "(" + vals.join(" | ") + ")"
+
+        return groups.join(" & ")
+
     structAttrs = []
     textAttrs = []
     c.log "o.text_attrs", o.text_attrs
-    if o.text_attrs
-        if not _.isArray o.text_attrs then o.text_attrs = o.text_attrs.split(",")
-        for attr in o.text_attrs
-            textAttrs.push attr
+    # if o.text_attrs.length
+    #     if not _.isArray o.text_attrs then o.text_attrs = o.text_attrs.split(",")
+    #     for attr in o.text_attrs
+    #         textAttrs.push attr
 
     # if o.mediatype == "all"
     #     textAttrs.push "(_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
@@ -113,7 +151,10 @@ getCqp = (o) ->
     else if o.searchAllAbout
         structAttrs.push "ambiguity(_.text_aboutauthor) > 0"
 
-    if textAttrs.length then structAttrs.push "(#{textAttrs.join(' & ')})"
+    # if textAttrs.length then structAttrs.push "(#{textAttrs.join(' & ')})"
+
+    if o.text_attrs?.length
+        structAttrs.push optsToCQP(o.text_attrs)
 
     if o.selectedTitle
         titles = _.map o.selectedTitle.split(","), (id) -> "_.text_lbworkid = '#{id}'"
@@ -715,7 +756,7 @@ littb.factory 'backend', ($http, $q, util) ->
             command: "count"
             groupby: "text_nameforindex"
             cqp: getCqp(o)
-            corpus: "LBSOKDEMO"
+            corpus: "LBSOK"
             incremental: false
             defaultwithin: "sentence"
         $http(
@@ -963,11 +1004,17 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @querydata = null
             @currentParams = null
 
+            @isSearching = false
+
         newSearch : (params) ->
+            @data = []
+            @total_hits = null
             @currentParams = params
             @doNewSearch = true
             @querydata = null
             @current = null
+            @isSearching = false
+
 
         searchWorks : (o) ->
             c.log "searchvars", o
@@ -984,7 +1031,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                 cqp : getCqp(o)
                 show: "wid,x,y,width,height"
                 show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
-                corpus : "LBSOKDEMO"
+                corpus : "LBSOK"
                 start: from
                 end : to
                 sort: "sortby"
@@ -994,6 +1041,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             if @querydata
                 params.querydata = @querydata
 
+            @isSearching = true
             $http(
                 url : "http://spraakbanken.gu.se/ws/korp"
                 method : "GET"
@@ -1003,7 +1051,6 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     
             ).success( (data) =>
                 @querydata = data.querydata
-
                 punctArray = [",", ".", ";", ":", "!", "?", "..."]
                 # sums = []
                 if data.ERROR
@@ -1025,7 +1072,9 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                         if wd.word in punctArray
                             wd._punct = true
 
+                @isSearching = false
                 @data[from..data.kwic.length] = data.kwic
+
 
 
 
@@ -1054,7 +1103,6 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     @currentParams.to = to
 
                 @searchWorks(@currentParams).then (data) ->
-                    c.log "searchWorks then", data.kwic, from, to
                     def.resolve data.kwic
             @doNewSearch = false
             return def.promise
@@ -1161,7 +1209,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
             for key, val of @currentParams
                 if key == "text_attrs" and val.length
-                    merged["s_" + key] = encodeURIComponent(val.join(","))
+                    merged["s_" + key] = val.join(",")
                 else
                     merged["s_" + key] = val
 
@@ -1175,17 +1223,6 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             return "/#!/forfattare/#{author}/titlar/#{titleid}" + 
                 "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{merged}" # ?#{backend.getHitParams(itm)}
             
-        # save : (startIndex, currentIndex, input, search_args) ->
-        #     @data = new Array(input.hits)
-        #     @appendData startIndex, input
-        #     @total_hits = input.hits
-        #     @current = currentIndex
-        #     c.log "save currentIndex", currentIndex
-
-        # appendData : (startIndex, data) ->
-        #     @data[startIndex..data.kwic.length] = _.map data.kwic, (itm) => 
-        #         _.str.ltrim @parseUrls(itm), "/#!"
-
 
         next : () ->
             if @current + 1 == @total_hits then return {then : angular.noop}
@@ -1205,31 +1242,9 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             if @data[index]? 
                 def.resolve @data[index]
             else
-                @slice(index - 10, index + 10).then () ->
+                @slice(index - 10, index + 10).then () =>
                     def.resolve @data[index]
             return def.promise
-
-
-        # search : () ->
-        #     def = $q.defer()
-        #     c.log "search", @current
-        #     if @data[@current]? 
-        #         def.resolve @data[@current]
-        #     else
-        #         # current_page = Math.floor(@current / NUM_HITS )
-        #         args = _.clone @currentParams
-        #         # replace from and to args
-        #         args.to = @current
-        #         args.from = @current + NUM_HITS
-        #         # args[2] = @current
-        #         # args[3] = @current + NUM_HITS
-        #         c.log "fetch and append", args
-
-        #         @searchWorks(args).then (data) =>
-        #             @appendData @current, data
-        #             def.resolve @data[@current]
-        #     return def.promise
-
 
         reset : () ->
             @current = null
