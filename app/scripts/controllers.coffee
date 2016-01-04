@@ -1359,7 +1359,13 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         return
 
     s.log = (filename) ->
+        return true
+
+    s.fetchEpub = (row) ->
+        filename = s.getFilename(row)
         backend.logPage("0", filename, "epub")
+        location.href = "/txt/epub/#{filename}.epub"
+
 
     s.getFilename = (row) ->
         row.author[0].authorid + '_' + row.itemAttrs.titlepath.split('/')[0]
@@ -1719,7 +1725,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.searchData = searchData
     s.loading = true
     s.first_load = false
-    # setFirstLoad = _.once () -> s.first_load = true
+    onFirstLoad = _.once () ->
+        $timeout( () ->
+            $("html, body").animate({ scrollLeft: "1000px"}, 1000)
+        , 0)
     s.showPopup = false
     s.error = false
     s.show_chapters = false # index modal
@@ -2278,6 +2287,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             s.loading = false
             s.first_load = true
+            onFirstLoad()
 
             s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
 

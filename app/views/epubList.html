@@ -41,7 +41,7 @@
                             <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}/titlar/{{::row.itemAttrs.titlepath.split('/')[0]}}/etext/?om-boken" >{{::row.itemAttrs.showtitle}}</a>
                         </td>
                         <td>
-                            <a ng-click="log(getFilename(row))" ng-href="/txt/epub/{{::getFilename(row)}}.epub">Hämta</a>
+                            <a ng-click="fetchEpub(row)">Hämta</a>
                         </td>
                     </tr></tbody>
             </table>
