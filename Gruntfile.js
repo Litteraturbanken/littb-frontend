@@ -411,7 +411,7 @@ module.exports = function (grunt) {
             'generated/*'
           ]
         }, 
-        { // xml-filer för kollationeringen
+        { // xml-filer fÃ¶r kollationeringen
             expand : true,
             cwd : '<%= yeoman.app %>',
             dest: '<%= yeoman.dist %>',

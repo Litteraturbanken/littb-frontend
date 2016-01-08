@@ -20,7 +20,7 @@ angular.module('ui.bootstrap.collapse', [])
             .attr('aria-hidden', false);
 
           $animate.addClass(element, 'in', {
-            to: { height: element[0].scrollHeight + 'px' }
+            to: { height: (element[0].scrollHeight - 10) + 'px' }
           }).then(expandDone);
         }
 

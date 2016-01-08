@@ -11,21 +11,20 @@
   "license": "MIT",
   "ignore": [],
   "description": "Native AngularJS (Angular) directives for Bootstrap.",
-  "version": "0.13.3",
   "main": [
     "./ui-bootstrap-tpls.js"
   ],
   "dependencies": {
     "angular": ">=1.3.0"
   },
-  "homepage": "https://github.com/angular-ui/bootstrap-bower",
-  "_release": "0.13.3",
+  "homepage": "https://github.com/jroxendal/bootstrap-bower",
+  "_release": "554417e81d",
   "_resolution": {
-    "type": "version",
-    "tag": "0.13.3",
-    "commit": "140a9a069f051e55a2468737b68f407c82098c5e"
+    "type": "branch",
+    "branch": "old_0.13.3",
+    "commit": "554417e81d21032357507b7d280ed4a1b3c4b8c6"
   },
-  "_source": "git://github.com/angular-ui/bootstrap-bower.git",
-  "_target": "~0.13.3",
-  "_originalSource": "angular-bootstrap"
+  "_source": "https://github.com/jroxendal/bootstrap-bower.git",
+  "_target": "old_0.13.3",
+  "_originalSource": "https://github.com/jroxendal/bootstrap-bower.git"
 }

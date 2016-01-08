@@ -2136,7 +2136,7 @@ $partnav-width : 170px;
         // width : 280px;
         margin : 0.5em 0; 
         @include container();
-        padding: 1.2em;
+        padding: 0;
         background-color : white;
         white-space: normal;
         .header {
@@ -2153,6 +2153,9 @@ $partnav-width : 170px;
         .title, .author {
             font-size : 1em;
             font-weight : normal;
+        }
+        .collapse-content {
+            padding : 1.2em;
         }
 
         .author {

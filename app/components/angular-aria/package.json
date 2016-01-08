@@ -1,7 +1,7 @@
 {
-  "name": "angular",
+  "name": "angular-aria",
   "version": "1.4.8",
-  "description": "HTML enhanced for web apps",
+  "description": "AngularJS module for making accessibility easy",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,6 +14,8 @@
     "angular",
     "framework",
     "browser",
+    "accessibility",
+    "a11y",
     "client-side"
   ],
   "author": "Angular Core Team <angular-core+npm@google.com>",

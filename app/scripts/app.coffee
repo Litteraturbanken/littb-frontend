@@ -42,6 +42,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "angularSpinner"
                                             # "jmdobry.angular-cache"
                                             "ngAnimate"
+                                            "ngAria"
                                             "ngTouch"
                                             'ui.select2'
                                             'ngScrollEvent'
