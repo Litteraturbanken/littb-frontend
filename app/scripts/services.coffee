@@ -460,22 +460,38 @@ littb.factory 'backend', ($http, $q, util) ->
             # .fail -> def.reject()
         return def.promise
 
-    getAuthorList : () ->
-        def = $q.defer()
-        url = "/query/lb-authors.xql?action=get-authors"
-        http(
-            url : url
-            # cache: localStorageCache
-        ).success (xml) ->
-            attrArray = for item in $("item", xml)
-                obj = objFromAttrs item
-                obj.sortyear = Number(obj.sortyear)
-                obj
+    # getAuthorList : () ->
+    #     def = $q.defer()
+    #     url = "/query/lb-authors.xql?action=get-authors"
+    #     http(
+    #         url : url
+    #         # cache: localStorageCache
+    #     ).success (xml) ->
+    #         attrArray = for item in $("item", xml)
+    #             obj = objFromAttrs item
+    #             obj.sortyear = Number(obj.sortyear)
+    #             obj
                 
 
-            def.resolve attrArray
+    #         c.log "attrArray", attrArray[0]
+    #         def.resolve attrArray
 
-        return def.promise
+    #     return def.promise
+
+    getAuthorList : () ->
+
+            def = $q.defer()
+            url = "http://localhost:5000/get_authors"
+            $http(
+                url : url
+                method: "GET"
+                cache: true
+            ).success (response) ->
+                c.log "getAuthorList", response
+                def.resolve response.data
+
+            return def.promise
+
 
     getSourceInfo : (author, title, mediatype) ->
         def = $q.defer()

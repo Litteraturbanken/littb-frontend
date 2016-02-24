@@ -1112,9 +1112,9 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         unless title then return
         title.itemAttrs.lbworkid + (title.itemAttrs.titlepath.split('/')[1] or "")
         
-
+    t = $.now()
     s.authorRender = () ->
-        c.log "authorRender"
+        c.log "authorRender", $.now() - t
         # s.$apply () ->
         if $location.search()['author']
             auth = s.authorsById[$location.search()['author']]
@@ -1296,8 +1296,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     s.titleSearching = true
     backend.getStats().then (data) ->
-        c.log "data", data
-
+        c.log "stats data", data
         s.titleSearching = false
         s.popularTitles = _.compact _.unique ([].concat data.titleList, data.epublist), (title) ->
             title?.itemAttrs.lbworkid
