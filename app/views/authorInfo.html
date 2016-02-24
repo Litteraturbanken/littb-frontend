@@ -68,9 +68,11 @@
                             <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
                         </td>
                         <td>
-                            <a class="title" ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{getPrimaryMediatype(works)}}/?om-boken">
-                                {{works[0].showtitle}}
+                            <a class="title" 
+                                ng-href="{{getUrl(getPrimaryUrl(works)) + '?om-boken'}}"
                             </a>
+                            <!-- ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
+                                {{works[0].showtitle}}
                             <div class="extras" ng-if="$parent.$index == 1">i
                                 <a class="author" href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">
                                     {{getWorkAuthor(works[0].authors).surname}}:

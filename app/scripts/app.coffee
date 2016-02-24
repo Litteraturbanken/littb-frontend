@@ -147,8 +147,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 reloadOnSearch : false
 
             .when "/bibliotek",
-                templateUrl : "views/titleList.html"
-                controller : "titleListCtrl"
+                templateUrl : "views/library.html"
+                controller : "libraryCtrl"
                 reloadOnSearch : false
                 title : "Biblioteket – Titlar och författare"
             .when "/titlar",

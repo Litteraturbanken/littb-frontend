@@ -10,6 +10,7 @@ littb.filter "formatAuthors", (authors) ->
                 editor : " <span class='authortype'>red.</span>"
                 translator : " <span class='authortype'>övers.</span>"
                 illustrator : " <span class='authortype'>ill.</span>"
+                photographer : " <span class='authortype'>fotogr.</span>"
                 # scholar : " (red.)"
 
 
@@ -822,6 +823,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         order = ['etext', 'faksimil', 'epub', 'pdf', "zip"]
         return _.intersection(order,list).concat(_.difference(list, order))
 
+    s.getPrimaryUrl = (works) ->
+        (s.sortMedia works)[0]
+
 
     s.getUnique = (worklist) ->
         _.filter worklist, (item) ->
@@ -1019,7 +1023,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
     
     
-littb.controller "titleListCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement, $anchorScroll, $q, $filter) ->
+littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement, $anchorScroll, $q, $filter) ->
     s = $scope
     s.titleSearching = false
     s.authorSearching = true
@@ -1522,7 +1526,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     s.getValidAuthors = () ->
         unless s.authorById then return
-        _.filter s.workinfo?.authorid, (item) ->
+        _.filter s.workinfo?.authoridNorm, (item) ->
             item.id of s.authorById
 
     s.toggleErrata = () ->

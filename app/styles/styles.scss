@@ -328,6 +328,7 @@ th {
         margin-top: 0.8em;
         margin-bottom: 1em;
     }
+    br + p,
     .titlepage + p,
     .separator + p,
     .quote + p,
@@ -2951,7 +2952,7 @@ $partnav-width : 170px;
 
 }
 
-.page-titleList {
+.page-library {
     display : inline-flex;
     width : 100%;
     .tooltip {
@@ -4306,7 +4307,16 @@ grundform-clean {
 .page-presentation {
     background-position-y : -100px !important;
     
-    
+    table {
+        max-width : 900px;
+        thead, thead * {
+            @include small-caps();
+        }
+        td {
+            padding-right: 1em;
+        }
+    }
+     
     .logo_link_monogram {
         background: url("../img/lb_monogram_black_white.svg") no-repeat;
         background-size: cover;
