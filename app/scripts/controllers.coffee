@@ -833,7 +833,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
     s.getPageTitle = (page) ->
         {
-           "titlar": "Verk i LB"
+           "titlar": "Verk i Litteraturbanken"
            "semer": "Mera om"
            "biblinfo": "Bibliografisk databas"
            "jamfor": "Textkritisk verkstad"
