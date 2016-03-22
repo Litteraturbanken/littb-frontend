@@ -187,6 +187,9 @@ module.exports = function (grunt) {
     },
     clean: {
       dist: {
+        options : {
+          force : true
+        },
         files: [{
           dot: true,
           src: [
@@ -196,7 +199,14 @@ module.exports = function (grunt) {
           ]
         }]
       },
-      server: '.tmp'
+      server: {
+        options : {
+          force : true
+        },
+        files: [{
+          src: ['.tmp']
+        }]
+      } 
     },
     jshint: {
       options: {

@@ -48,7 +48,9 @@ $fa-font-path: "/components/font-awesome/fonts";
 
 
 
-
+:focus {
+    outline: none;
+}
 
 // @font-face {
 //     font-family: "Requiem Text A", "Requiem Text B";
