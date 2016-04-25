@@ -112,8 +112,29 @@
                     <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" >
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content">
+                                <span class="author">{{authorsById[sent.metadata.author_id].nameforindex}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authorid}}/titlar/{{sent.metadata.titlepath[0]}}?om-boken">{{sent.metadata.title}}</a></span>
+                            </div>
+                        </td>
+                        <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>                        
 
-                                <span class="author">{{authorsById[sent.authorid].nameforindex}}</span> <span class="title" tooltip="{{sent.title}}"><a ng-href="/#!/forfattare/{{sent.authorid}}/titlar/{{sent.titlepath[0]}}?om-boken">{{sent.shorttitle}}</a></span>
+                        <td class="left_context"><!--
+                            --><span ng-repeat="wd in sent.highlight.left_context | limitTo:10">{{wd.word}}</span>
+                        </td>
+                        <td class="match">
+                            <span class="match" ng-repeat="wd in sent.highlight.match">
+                            <a ng-href="/#!/forfattare/{{sent.metadata.author_id}}/titlar/{{sent.metadata.title_id}}/?om-boken">{{wd.word}}</a></span>
+                        </td>
+                        <td class="right_context">
+                            <span ng-repeat="wd in sent.highlight.right_context">{{wd.word}}</span>
+                        </td>
+                                <!-- <li ng-repeat="hit in sent.highlight"> -->
+                                
+
+
+                        <!-- <td class="header" colspan="4" ng-if="sent.isHeader">
+                            <div class="header_content">
+
+                                <span class="author">{{authorsById[sent.author_id].nameforindex}}</span> <span class="title" tooltip="{{sent.title}}"><a ng-href="/#!/forfattare/{{sent.authorid}}/titlar/{{sent.titlepath[0]}}?om-boken">{{sent.title}}</a></span>
                             </div>
                         </td>
                         <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>
@@ -124,7 +145,7 @@
                                 <span kwic-word="kwic-word" ng-repeat="wd in selectMatch(sent)"></span>
                             </a>
                         </td>
-                        <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td>
+                        <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td> -->
                     </tr>
                 </table>
                 

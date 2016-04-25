@@ -1037,67 +1037,82 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             def = $q.defer()
 
 
-            from = (o.from or 0) - BUFFER
-            if from < 0 then from = 0
-            to = (o.to or NUM_HITS) + BUFFER
+            # from = (o.from or 0) - BUFFER
+            # if from < 0 then from = 0
+            # to = (o.to or NUM_HITS) + BUFFER
 
 
-            params = 
-                command : "query"
-                cqp : getCqp(o)
-                show: "wid,x,y,width,height"
-                show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
-                corpus : "LBSOK"
-                start: from
-                end : to
-                sort: "sortby"
-                context: 'LBSOK:20 words'
-                rightcontext : 'LBSOK:15 words'
+            # params = 
+            #     command : "query"
+            #     cqp : getCqp(o)
+            #     show: "wid,x,y,width,height"
+            #     show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
+            #     corpus : "LBSOK"
+            #     start: from
+            #     end : to
+            #     sort: "sortby"
+            #     context: 'LBSOK:20 words'
+            #     rightcontext : 'LBSOK:15 words'
 
-            if @querydata
-                params.querydata = @querydata
+            # if @querydata
+            #     params.querydata = @querydata
 
             @isSearching = true
+
             $http(
-                url : "http://spraakbanken.gu.se/ws/korp"
-                method : "GET"
-                # cache: localStorageCache
-                cache: true
-                params : params
-                    
-            ).success( (data) =>
-                @querydata = data.querydata
-                punctArray = [",", ".", ";", ":", "!", "?", "..."]
-                # sums = []
-                if data.ERROR
-                    c.log "searchWorks error:", JSON.stringify(data.ERROR)
-                    def.reject(data)
-                    return
-
-                @total_hits = data.hits
-                @compactData(data, from)
-
-                if not @data.length
-                    @data = new Array(data.hits)
-
-
-                c.log "splice", from, data.kwic.length
-                for sent, i in data.kwic
-                    sent.index = i + from
-                    for wd in sent.tokens
-                        if wd.word in punctArray
-                            wd._punct = true
-
+                url: "http://localhost:5000/lb_search/" + o.query
+            ).success (data) =>
+                c.log "data", data
                 @isSearching = false
-                @data[from..data.kwic.length] = data.kwic
-
-
-
-
+                @total_hits = data.hits
+                c.log "@total_hits", @total_hits
                 def.resolve data
-            ).error (data) ->
-                c.log "searchworks error", arguments
-                def.reject()
+            .error (data) =>
+                def.reject(data)
+
+
+
+
+            # $http(
+            #     url : "http://spraakbanken.gu.se/ws/korp"
+            #     method : "GET"
+            #     # cache: localStorageCache
+            #     cache: true
+            #     params : params
+                    
+            # ).success( (data) =>
+            #     @querydata = data.querydata
+            #     punctArray = [",", ".", ";", ":", "!", "?", "..."]
+            #     # sums = []
+            #     if data.ERROR
+            #         c.log "searchWorks error:", JSON.stringify(data.ERROR)
+            #         def.reject(data)
+            #         return
+
+                # @total_hits = data.hits
+            #     @compactData(data, from)
+
+            #     if not @data.length
+            #         @data = new Array(data.hits)
+
+
+            #     c.log "splice", from, data.kwic.length
+            #     for sent, i in data.kwic
+            #         sent.index = i + from
+            #         for wd in sent.tokens
+            #             if wd.word in punctArray
+            #                 wd._punct = true
+
+            #     @isSearching = false
+            #     @data[from..data.kwic.length] = data.kwic
+
+
+
+
+            #     def.resolve data
+            # ).error (data) ->
+            #     c.log "searchworks error", arguments
+            #     def.reject()
 
             return def.promise
 
@@ -1119,10 +1134,9 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     @currentParams.to = to
 
                 @searchWorks(@currentParams).then (data) ->
-                    def.resolve data.kwic
+                    def.resolve data.data
             @doNewSearch = false
             return def.promise
-
 
         hasSlice: (from, to) ->
             slice = @data.slice(from, to)

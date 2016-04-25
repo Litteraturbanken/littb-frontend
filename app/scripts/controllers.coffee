@@ -543,21 +543,32 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         # _.groupBy kwic, (item) ->
         i = 0
         output = []
-        prevAuth = null
+        # prevAuth = null
+
+
+
+        row_index = 0
         for item in kwic
-            if not item? then continue
-            auth = item.structs.text_authorid.split("|")[1]
-            shorttitle = item.structs.text_shorttitle
+            # if not item? then continue
 
-            if (prevAuth != auth) or (shorttitle != prevShortTitle)
-                output.push {isHeader : true, authorid : auth, shorttitle: shorttitle}
+            output.push {isHeader: true, metadata: item.source}
+            for high in item.highlight
+                output.push {metadata: item.source, highlight: high, index: row_index}
+                row_index++
 
-            # item.index = i
-            output.push item
 
-            prevAuth = auth
-            prevShortTitle = shorttitle
-            i++
+            # auth = item.structs.text_authorid.split("|")[1]
+            # shorttitle = item.structs.text_shorttitle
+
+            # if (prevAuth != auth) or (shorttitle != prevShortTitle)
+            #     output.push {isHeader : true, authorid : auth, shorttitle: shorttitle}
+
+            # # item.index = i
+            # output.push item
+
+            # prevAuth = auth
+            # prevShortTitle = shorttitle
+            # i++
 
         return output
 
@@ -585,29 +596,21 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.searching = true
 
         args = getSearchArgs(from, to)
-        # args.from = from
         s.from_index = from
 
-        # args.to = to
 
-        backend.getAuthorsInSearch(args).then (data) ->
-            c.log "getAuthorsInSearch then", data
+        # backend.getAuthorsInSearch(args).then (data) ->
+        #     c.log "getAuthorsInSearch then", data
 
-            # n = 0
-            # for auth in (_.sortBy (_.keys data).sort())
-            #     val = data[auth]
-            #     data[auth] = Math.floor(n / s.num_hits)
-            #     n += val
+        #     s.authorStatsData = _.sortBy (_.pairs data), (item) -> item[0]
 
-            s.authorStatsData = _.sortBy (_.pairs data), (item) -> item[0]
-
-            prev = 0
-            s.authorStatsData = []
-            for auth in (_.sortBy (_.keys data).sort())
-                val = data[auth]
+        #     prev = 0
+        #     s.authorStatsData = []
+        #     for auth in (_.sortBy (_.keys data).sort())
+        #         val = data[auth]
                 
-                s.authorStatsData.push {author : auth, pos : Math.floor(prev / s.num_hits)}
-                prev = val + prev
+        #         s.authorStatsData.push {author : auth, pos : Math.floor(prev / s.num_hits)}
+        #         prev = val + prev
 
 
 
@@ -621,6 +624,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             # s.data = data
             s.kwic = kwic
             s.hits = searchData.total_hits
+            # s.hits = 10
             s.total_pages = Math.ceil(s.hits / s.num_hits)
 
             # for row in (data.kwic or [])
@@ -1112,9 +1116,9 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         unless title then return
         title.itemAttrs.lbworkid + (title.itemAttrs.titlepath.split('/')[1] or "")
         
-    t = $.now()
+
     s.authorRender = () ->
-        c.log "authorRender", $.now() - t
+        c.log "authorRender"
         # s.$apply () ->
         if $location.search()['author']
             auth = s.authorsById[$location.search()['author']]
@@ -1296,7 +1300,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     s.titleSearching = true
     backend.getStats().then (data) ->
-        c.log "stats data", data
+        c.log "data", data
+
         s.titleSearching = false
         s.popularTitles = _.compact _.unique ([].concat data.titleList, data.epublist), (title) ->
             title?.itemAttrs.lbworkid
