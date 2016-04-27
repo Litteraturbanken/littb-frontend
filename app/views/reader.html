@@ -66,8 +66,8 @@
         <hr>
         <div class="current_part">
             <div class="header">
-                <a ng-click="show_chapters = true" ng-show="!getCurrentPart().authorid">Avsnitt eller del</a>
-                <a ng-href="/#!/forfattare/{{getCurrentPart().authorid}}" ng-show="getCurrentPart().authorid">{{authorById[getCurrentPart().authorid].fullname}}</a>
+                <a ng-click="show_chapters = true" ng-show="!getCurrentPart().authors.length">Avsnitt eller del</a>
+                <a ng-href="/#!/forfattare/{{getCurrentPart().authors.length}}" ng-show="getCurrentPart().authors.length">{{authorById[getCurrentPart().authors[0].authorid].fullname}}</a>
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
             <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().navtitle}}" class="navtitle"></div>
