@@ -760,7 +760,7 @@ littb.factory 'backend', ($http, $q, util) ->
             incremental: false
             defaultwithin: "sentence"
         $http(
-            url: "http://spraakbanken.gu.se/ws/korp"
+            url: "https://spraakbanken.gu.se/ws/korp"
             method: "GET"
             cache: true
             params: params
@@ -1043,7 +1043,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
             @isSearching = true
             $http(
-                url : "http://spraakbanken.gu.se/ws/korp"
+                url : "https://spraakbanken.gu.se/ws/korp"
                 method : "GET"
                 # cache: localStorageCache
                 cache: true

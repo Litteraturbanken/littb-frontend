@@ -1057,7 +1057,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         exprs = filter.split(" ")
 
         return _.all exprs, (expr) ->
-            new RegExp(expr, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + auths))
+            new RegExp(expr, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + auths + " " + row.itemAttrs.imprintyear + " "))
 
         
 
