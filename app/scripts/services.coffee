@@ -1,5 +1,8 @@
 littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
+
+STRIX_URL = "http://localhost:5000"
+
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->
         args = null
@@ -481,7 +484,7 @@ littb.factory 'backend', ($http, $q, util) ->
     getAuthorList : () ->
 
             def = $q.defer()
-            url = "http://localhost:5000/get_authors"
+            url = "#{STRIX_URL}/get_authors"
             $http(
                 url : url
                 method: "GET"
@@ -605,87 +608,97 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getAuthorInfo : (authorid) ->
         def = $q.defer()
-        url = "/query/lb-authors.xql"
-        http(
-            url : url
-            # cache: 
-            cache: true #localStorageCache
-            params :
-                action : "get-author-data-init"
-                authorid : authorid
+        $http(
+            url : "#{STRIX_URL}/get_lb_author/" + authorid
+        ).success( (response) ->
 
-        ).success( (xml) ->
-            authorInfo = {}
-            for elem in $("LBauthor", xml).children()
-                if elem.nodeName == "intro" 
-                    val = util.getInnerXML elem
-                else
-                    val = $(elem).text()
-
-                authorInfo[util.normalize(elem.nodeName)] = val
-
-
-            parseWorks = (selector) ->
-                titles = []
-                editorTitles = []
-                translatorTitles = []
-                for item in $(selector, xml)
-                    obj = objFromAttrs item
-                    obj.authors = []
-                    isEditor = false
-                    isTranslator = false
-                    for author in $(item).find("author")
-                        authObj = objFromAttrs author
-                        obj.authors.push authObj
-                        if authorid == authObj.authorid and authObj.authortype == 'editor'
-                            isEditor = true
-                        else if authorid == authObj.authorid and authObj.authortype == 'translator'
-                            isTranslator = true
-
-
-                    # if obj.authors.length > 1
-                    #     obj.workauthor = obj.authors[0].workauthor or authorid
-                    
-                    if isEditor
-                        editorTitles.push obj
-                    else if isTranslator
-                        translatorTitles.push obj
-                    else
-                        titles.push obj
-                
-                return [titles, editorTitles, translatorTitles]
-
-
-            [works, editorWorks, translatorWorks] = parseWorks(":root > works item")
-            [titles, editorTitles, translatorTitles] = parseWorks(":root > titles item")
-            [aboutWorks, about_editorWorks, about_translatorWorks] = parseWorks("about works item")
-            [aboutTitles, about_editorTitles, about_translatorTitles] = parseWorks("about titles item")
-
-            authorInfo.works = works
-            authorInfo.titles = titles
-            authorInfo.editorWorks = [].concat editorWorks, editorTitles
-            authorInfo.translatorWorks = [].concat translatorWorks, translatorTitles
-            
-            authorInfo.aboutWorks = aboutWorks
-            authorInfo.aboutTitles = aboutTitles
-            authorInfo.about_editorTitles = about_editorTitles
-            authorInfo.about_translatorTitles = about_translatorTitles
-
-            authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
-            authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
-            authorInfo.presentation = util.getInnerXML $("presentation-uri", xml)
-            authorInfo.bibliografi = util.getInnerXML $("bibliography-uri", xml)
-            authorInfo.semer = util.getInnerXML $("see-uri", xml)
-            authorInfo.externalref = for ref in $("LBauthor external-ref", xml)
-                label : util.getInnerXML $("label", ref)
-                url : util.getInnerXML $("url", ref)
-
-
-            def.resolve authorInfo
-        ).error (data, status, headers, config) ->
-            def.reject()
+            def.resolve response.data
+        )
 
         return def.promise
+    # getAuthorInfo : (authorid) ->
+    #     def = $q.defer()
+    #     url = "/query/lb-authors.xql"
+    #     http(
+    #         url : url
+    #         # cache: 
+    #         cache: true #localStorageCache
+    #         # params :
+    #         #     action : "get-author-data-init"
+    #         #     authorid : authorid
+
+    #     ).success( (xml) ->
+    #         authorInfo = {}
+    #         for elem in $("LBauthor", xml).children()
+    #             if elem.nodeName == "intro" 
+    #                 val = util.getInnerXML elem
+    #             else
+    #                 val = $(elem).text()
+
+    #             authorInfo[util.normalize(elem.nodeName)] = val
+
+
+    #         parseWorks = (selector) ->
+    #             titles = []
+    #             editorTitles = []
+    #             translatorTitles = []
+    #             for item in $(selector, xml)
+    #                 obj = objFromAttrs item
+    #                 obj.authors = []
+    #                 isEditor = false
+    #                 isTranslator = false
+    #                 for author in $(item).find("author")
+    #                     authObj = objFromAttrs author
+    #                     obj.authors.push authObj
+    #                     if authorid == authObj.authorid and authObj.authortype == 'editor'
+    #                         isEditor = true
+    #                     else if authorid == authObj.authorid and authObj.authortype == 'translator'
+    #                         isTranslator = true
+
+
+    #                 # if obj.authors.length > 1
+    #                 #     obj.workauthor = obj.authors[0].workauthor or authorid
+                    
+    #                 if isEditor
+    #                     editorTitles.push obj
+    #                 else if isTranslator
+    #                     translatorTitles.push obj
+    #                 else
+    #                     titles.push obj
+                
+    #             return [titles, editorTitles, translatorTitles]
+
+
+    #         [works, editorWorks, translatorWorks] = parseWorks(":root > works item")
+    #         [titles, editorTitles, translatorTitles] = parseWorks(":root > titles item")
+    #         [aboutWorks, about_editorWorks, about_translatorWorks] = parseWorks("about works item")
+    #         [aboutTitles, about_editorTitles, about_translatorTitles] = parseWorks("about titles item")
+
+    #         authorInfo.works = works
+    #         authorInfo.titles = titles
+    #         authorInfo.editorWorks = [].concat editorWorks, editorTitles
+    #         authorInfo.translatorWorks = [].concat translatorWorks, translatorTitles
+            
+    #         authorInfo.aboutWorks = aboutWorks
+    #         authorInfo.aboutTitles = aboutTitles
+    #         authorInfo.about_editorTitles = about_editorTitles
+    #         authorInfo.about_translatorTitles = about_translatorTitles
+
+    #         authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
+    #         authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
+    #         authorInfo.presentation = util.getInnerXML $("presentation-uri", xml)
+    #         authorInfo.bibliografi = util.getInnerXML $("bibliography-uri", xml)
+    #         authorInfo.semer = util.getInnerXML $("see-uri", xml)
+    #         authorInfo.externalref = for ref in $("LBauthor external-ref", xml)
+    #             label : util.getInnerXML $("label", ref)
+    #             url : util.getInnerXML $("url", ref)
+
+
+    #         def.resolve authorInfo
+    #     ).error (data, status, headers, config) ->
+    #         def.reject()
+
+    #     return def.promise
 
 
     getStats : () ->
@@ -1060,7 +1073,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @isSearching = true
 
             $http(
-                url: "http://localhost:5000/lb_search/" + o.query
+                url: "#{STRIX_URL}/lb_search/" + o.query
             ).success (data) =>
                 c.log "data", data
                 @isSearching = false

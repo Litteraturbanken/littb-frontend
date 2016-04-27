@@ -1,5 +1,5 @@
-<meta-desc>{{authorInfo.fullName}}, {{getPageTitle(showpage)}}</meta-desc>
-<page-title>{{authorInfo.fullName}}, {{getPageTitle(showpage)}}</page-title>
+<meta-desc>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</meta-desc>
+<page-title>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</page-title>
 <img ng-if="!slaMode" bkg-img class="no-gradient" src="img/forf2_bkg.jpg"></img>
 <img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img>
 
@@ -10,7 +10,7 @@
         <i class="spinner fa fa-spinner fa-pulse"></i>
     </div>
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
-    <h1>{{authorInfo.fullName}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
+    <h1>{{authorInfo.full_name}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/#!/forfattare/{{author}}">Introduktion</a></li>
@@ -26,11 +26,11 @@
             <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div class="introtext" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
-                <div class="pull-right"><em>{{authorsById[normalizeAuthor(authorInfo.introAuthor)].fullname}}</em></div>
+                <div class="pull-right"><em>{{authorsById[normalizeAuthor(authorInfo.intro_author)].fullname}}</em></div>
 
                 <div class="source" ng-if="authorInfo.sources">
                     <span class="source_header sc">Källa</span>
-                    <span class="source_text">{{authorInfo.sources}}</span>
+                    <span class="source_text" ng-bind-html='authorInfo.sources.join("<br>") | trust'></span>
                 </div>
             </div>
 
@@ -65,16 +65,16 @@
                             </span>
                         </td>
                         <td ng-if="titleobj.showAuthor">
-                            <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
+                            <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).author_id}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
                         </td>
                         <td>
                             <a class="title" 
                                 ng-href="{{getUrl(getPrimaryUrl(works)) + '?om-boken'}}"
                             </a>
-                            <!-- ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
+                            <!-- ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).author_id}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
                                 {{works[0].showtitle}}
                             <div class="extras" ng-if="$parent.$index == 1">i
-                                <a class="author" href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">
+                                <a class="author" href="/#!/forfattare/{{getWorkAuthor(works[0].authors).author_id}}">
                                     {{getWorkAuthor(works[0].authors).surname}}:
                                 </a> 
                                 <span class="extras_title">{{works[0].workshorttitle}}</span>
