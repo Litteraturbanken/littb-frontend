@@ -186,7 +186,7 @@
                 <ul class="part_menu" >
                     <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
                         <span class="author">{{authorById[part.authorid].fullname}}</span>
-                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.showtitle}}</a>
+                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.showtitle}}</a>
 
                     </li>
                 </ul>
