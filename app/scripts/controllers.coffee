@@ -1141,7 +1141,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     $timeout () ->
         authors.then ([authorList, authorsById]) ->
             s.authorsById = authorsById
-            s.authorData = _.filter authorList, (item) -> item.show == "true"
+            s.authorData = _.filter authorList, (item) -> item.show == true
             s.authorSearching = false
     , 0
 
