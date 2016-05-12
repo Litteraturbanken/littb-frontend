@@ -3297,6 +3297,12 @@ $partnav-width : 170px;
                     // @include small-caps();
                     text-transform: uppercase;
                     font-size : 0.9em;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    overflow-x: hidden;
+                    max-width: 50%;
+                    position: relative;
+                    top: 1px;
                 }
             }
         }

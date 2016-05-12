@@ -569,8 +569,8 @@ littb.factory 'backend', ($http, $q, util) ->
                 delete obj.authorid
                 delete obj["authorid-norm"]
                 obj.authors = []
-                c.log "$(item).find('authorid')", $(item).find("authorid")
-                for node in $(item).find("authorid")
+                # c.log "$(item).find('authorid')", $(item).find("authorid")
+                for node in $(item).children() when node.nodeName == "authorid"
                     auth = authorid : $(node).text()
                     if $(node).attr("type")
                         auth.type = $(node).attr("type")

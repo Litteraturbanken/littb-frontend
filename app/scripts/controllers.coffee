@@ -1723,12 +1723,14 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http, $filter) ->
     s = $scope
     s.isEditor = false
     s._ = {humanize : _.humanize}
 
     $window.scrollTo(0, 0)
+
+    s.normalizeAuthor = $filter('normalizeAuthor')
         
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.pick $routeParams, "title", "author", "mediatype")
@@ -1766,7 +1768,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.showFocusBar = true
 
     s.hasSearchable = (authorid) ->
-        s.authorById?[authorid].searchable == 'true'
+        s.authorById?[authorid]?.searchable == 'true'
 
     s.closeFocus = (event) ->
         # event.stopPropagation()

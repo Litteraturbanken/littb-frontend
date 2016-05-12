@@ -152,12 +152,15 @@
             color : $primarycolor;
             
             font-size : 0.85em;
+
+            // text-indent: 0 !important;
+            padding-left: 30px;
         }
         font-size : 0.85em;
 
-        li {
-            text-indent: -2em;
-            padding-left: 2em;
+        li a {
+            text-indent: -30px;
+            padding-left: 30px;
         }
     }
 
