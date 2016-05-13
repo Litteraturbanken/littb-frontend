@@ -1,0 +1,52 @@
+<div ng-controller="fileCtrl">
+    <img bkg-img src="img/skola_bkg.jpg"></img>
+    <div toolkit>
+
+        <h1><a href="/#!/skola">Litteraturskolan</a></h1>
+        <div  > <!-- school-affix -->
+
+
+
+            <ul class="subnav" active-style ng-controller="MenuCtrl">
+                <li class=""><h2>Allmänt</h2></li>
+                <li>
+                    <!-- <i class="icon" ng-class="{'minus' : !collapsed[3], 'plus' : collapsed[3]}" ng-click="collapseMenu(3)"></i> -->
+                    <a ng-click="collapseMenu(3)" href="/#!/skola/larare/DidaktikOchMetodik.html">Didaktik <em>&</em> metodik</a></li>
+                    <ul class="inner" collapse="collapsed[3]">
+                        <!-- <li><a href="/#!/skola/larare/DidaktikOchMetodik.html">Didaktisk introduktion</a></li> -->
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik.html">1. Introduktion</a></li>
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik2.html">2. Litteratursamtal</a></li>
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik3.html">3. Genreläsning m. m.</a></li>
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik4.html">4. Metodiska idéer</a></li>
+                        <li><a href="/#!/skola/larare/DidaktikOchMetodik5.html">5. Analysmodeller</a></li>
+                        <li><a href="/#!/skola/larare/Litteraturlista.html">Litteraturlista</a></li>
+                        
+                    </ul>
+                <li><a href="/#!/skola/larare/TermerOchBegrepp.html">Termer och begrepp</a></li>
+                <li><a href="/#!/skola/larare/Genrer.html">Litterära genrer</a></li>
+                <li><a href="/#!/skola/larare/Hjalp.html">Hjälp</a></li>                
+                
+
+                <li class=""><h2>Lyrik i skolan</h2></li>
+                <li><a href="/#!/skola/lyrik/larare">Introduktion</a></li>
+                <li><h4><a href="/#!/skola/lyrik/f-5">Läshandledningar</a></h4></li>
+                <ul class="inner">
+                    <li><a href="/#!/skola/lyrik/f-5">F-5</a></li>
+                    <li><a href="/#!/skola/lyrik/6-9">6-9</a></li>
+                    <li><a href="/#!/skola/lyrik/gymnasium">Gymnasium</a></li>    </ul>
+                
+            </ul>
+            <!-- <ul class="lower_menu">
+                <li>
+                    <download-btn ng-if="docurl" file="docurl"></download-btn>
+                </li>
+                <li><a href="/#!/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
+                <li><a href="/#!/forfattare/LagerlofS/presentation">Mer om Lagerlöf</a></li>
+            </ul> -->
+        </div>
+    </div>
+    <div class="content">
+        <p sc-file="{{docurl || 'lyrik/LarareLasaLyrikISkolan.html'}}"></p>
+    </div>
+
+</div>

@@ -149,6 +149,9 @@ littb.config () ->
     #     reloadOnSearch : false
     #     title : "Kontakt"
     #     breadcrumb : ["kontakt"]
+    whn ["/skola/lyrik/larare/:docurl", "/skola/lyrik/larare"],
+        title : "Lyrikskolan"
+        templateUrl : "views/school/lyrik_teachers.html"
 
     whn ["/skola/larare/:docurl", "/skola/larare"],
         title : "Lärare"
@@ -167,6 +170,8 @@ littb.config () ->
         title : "Gymnasium"
         templateUrl : "views/school/students.html"
         controller : getStudentCtrl("gymnasium")
+
+
 
 
 

@@ -581,7 +581,7 @@
         }
         
         
-        .teachers, .students {
+        .general, .poetry, .prose {
             h2 {
                 color : $primarycolor;
             }
@@ -642,5 +642,38 @@
         .header hr {
             border-color : #999;
         }
+    }
+
+    &.page-lyrik_teachers {
+        .subnav h4 {
+            // color : white;
+            margin: 0;
+        }
+
+        div.itemizedlist {
+            margin: 1em 0;
+        }
+
+        div.itemizedlist, 
+        div.literallayout {
+            & + p,
+            & + .sidebar_parent > p:first-child {
+                text-indent: 0;
+            }
+        }
+
+        .literallayout {
+            margin-left: 3em;
+            margin-bottom: 1em;
+            margin-top: 1em;
+            p {
+                text-indent: 0;
+            }
+        }
+
+        h3 + .literallayout {
+            margin-top: 0;
+        }
+
     }
 }
