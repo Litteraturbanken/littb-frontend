@@ -66,10 +66,12 @@
         <hr>
         <div class="current_part">
             <div class="header">
-                <a ng-click="show_chapters = true" ng-show="!getCurrentPart().authors.length">Avsnitt eller del</a>
-                <a ng-href="/#!/forfattare/{{getCurrentPart().authors[0].authorid}}" ng-show="getCurrentPart().authors.length">{{authorById[getCurrentPart().authors[0].authorid].fullname}}</a>
+                <a ng-href="/#!/forfattare/{{getCurrentPart().authors[0].authorid}}" ng-show="getCurrentPart().authors.length == 1">{{authorById[getCurrentPart().authors[0].authorid].fullname}}</a>
+                <a ng-repeat="auth in getCurrentPart().authors" 
+                    ng-href="/#!/forfattare/{{normalizeAuthor(auth.authorid)}}"
+                    ng-show="getCurrentPart().authors.length > 1"
+                >{{authorById[auth.authorid].surname}}<span ng-if="!$last">, </span></a>
             </div>
-            <span ng-if="!$last && getCurrentPart().authors.length > 1">et al.</span>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
             <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().navtitle}}" class="navtitle"></div>
         </div>
@@ -186,8 +188,12 @@
 
                 <ul class="part_menu" >
                     <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
-                        <span ng-repeat="auth in part.authors" class="author">{{authorById[normalizeAuthor(auth.authorid)].fullname}} <br></span>
-                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.showtitle}}</a>
+                        <span>
+                            <span ng-repeat="auth in part.authors" class="author">{{authorById[normalizeAuthor(auth.authorid)].surname}}<span ng-show="!$last">, </span> </span>
+                        </span>
+                        <span class="title">
+                            <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.showtitle}}</a>
+                        </span>
 
                     </li>
                 </ul>

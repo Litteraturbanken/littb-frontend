@@ -147,20 +147,22 @@
 
     
     .part_menu {
-        .author {
-            @include small-caps();
-            color : $primarycolor;
-            
-            font-size : 0.85em;
-
-            // text-indent: 0 !important;
-            padding-left: 30px;
-        }
         font-size : 0.85em;
 
-        li a {
-            text-indent: -30px;
-            padding-left: 30px;
+        li {
+            .author {
+                @include small-caps();
+                color : $primarycolor;
+                
+                font-size : 0.85em;
+
+                // text-indent: 0 !important;
+                // padding-left: 30px;
+            }
+            .title {
+                // text-indent: -30px;
+                // padding-left: 30px;
+            }
         }
     }
 
