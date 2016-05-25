@@ -17,7 +17,7 @@
 
           -->
      <div selection-sniffer class="overlay" ng-if="mediatype == 'faksimil' && overlaydata.length">
-         <div ng-repeat="list in overlaydata" >
+         <div ng-repeat="list in overlaydata" on-finish-render="overlayFinishRender()" >
              <!-- <div class="parent" ng-style="getOverlayCss(obj)" ng-repeat="obj in list">
                  <span class="w" big-text-alt="obj"  ></span>
              </div> -->

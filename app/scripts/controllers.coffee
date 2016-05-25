@@ -2174,6 +2174,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         }
 
 
+    t = $.now()
+    s.overlayFinishRender = () ->
+        c.log "overlay finishrender, took", $.now() - t
+
+
+
+
+
 
     loadPage = (val) ->
         # take care of state hiccup
