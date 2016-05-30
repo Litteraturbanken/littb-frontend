@@ -644,7 +644,13 @@
         }
     }
 
-    &.page-lyrik_teachers {
+    &.page-lyrik_students {
+        [toolkit] {
+            width : 269px;
+        }
+    }
+
+    &.page-lyrik_teachers, &.page-lyrik_students {
         .subnav h4 {
             // color : white;
             margin: 0;

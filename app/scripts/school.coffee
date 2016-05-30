@@ -130,6 +130,140 @@ getStudentCtrl = (id) ->
     ]
 
 
+getLyrikStudentCtrl = (id) ->
+    ["$scope", "$routeParams", "$rootElement", "$location", ($scope, $routeParams, $rootElement, $location) ->
+        # filenameFunc($scope, $routeParams)
+        $scope.id = id
+        sfx = {
+            "f-5" : "F-5"
+            "6-9" : "6-9"
+            "gymnasium" : "GY"
+        }[id]
+        # $scope.defaultUrl = "Valkommen#{sfx}.html"
+        $scope.defaultUrl = "Valkommen.html"
+
+        if !_.str.endsWith $location.path(), ".html"
+            $rootElement.addClass "school-startpage"
+        else
+            $rootElement.removeClass "school-startpage"
+
+        $scope.capitalize = (str) -> str[0].toUpperCase() + str[1..]
+
+
+        works =  [
+            {
+                label : "Andersson", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Andersson.html"
+                if : ["gymnasium"]
+            }
+            {
+                label : "Boye", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Boye.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Fröding", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Froding.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Karlfeldt", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Karlfeldt.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Lenngren", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Lenngren.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Nordenflycht", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Nordenflycht.html"
+                if : ["gymnasium"]
+            }
+            {
+                label : "Sjöberg", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Sjoberg.html"
+                if: ["6-9", "gymnasium"]
+            }
+            {
+                label : "Södergran", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Sodergran.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Övriga dikter", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/OvrigaDikter.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Idéer", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Ideer.html"
+                if : ["6-9", "gymnasium"]
+            }
+            # {
+            #     label : "Lyrikens undergenrer", 
+            #     url : "/#!/skola/lyrik/elev/#{sfx}/LyrikensUndergenrer.html"
+            #     if : ["gymnasium"]
+            # }
+            {
+                label : "Teman", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/Teman.html"
+                if : ["6-9", "gymnasium"]
+            }
+            {
+                label : "Visor och psalmer", 
+                url : "/#!/skola/lyrik/elev/#{sfx}/VisorOchPsalmer.html"
+                if : ["6-9"]
+            }
+        ]
+
+        workfilter = (obj) ->
+            unless obj.if then return true
+            return id in obj.if
+
+
+        works = _.filter works, workfilter
+
+        $scope.list = _.filter [
+                label: "Välkommen", 
+                url : "/#!/skola/lyrik/elev/#{id}/Valkommen.html"
+                if : ["6-9", "gymnasium"]
+            ,
+                label: "Termer och begrepp", 
+                url : "/#!/skola/lyrik/elev/#{id}/TermerOchBegrepp.html"
+                if : ["6-9", "gymnasium"]
+            ,
+                label: "Litterära genrer", 
+                url : "/#!/skola/lyrik/elev/#{id}/Genrer.html"
+                if : ["6-9", "gymnasium"]
+            ,
+                label: "Hjälp", 
+                url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
+                if : ["6-9", "gymnasium"]
+            ,
+                label: "Läshandledningar", 
+                sublist : works
+                if : ["6-9", "gymnasium"]
+
+            # ,
+            #     label: "Orientering genrer", 
+            #     url : "/#!/skola/#{id}/Genrer.html", 
+            #     sublist : [
+            #         {label : "Romaner", url: "/#!/skola/#{id}/Romaner.html"}
+            #         {label : "Noveller", url: "/#!/skola/#{id}/Noveller.html"}
+            #     ]
+            # ,
+                # label: "Orientering tema/motiv", url : "/#!/skola/#{id}/Genrer.html"
+            # ,
+            #     label: "I andra medier", url : "/#!/skola/#{id}/SLiAndraMedier.html"
+
+
+        ], workfilter
+
+    ]
+
+
 
 littb.config () -> 
     router = new Router()
@@ -138,6 +272,7 @@ littb.config () ->
     whn = (route, obj) ->
         router.when route, (_.extend {school : true}, obj)
 
+    
     whn "/skola",
         title : "Skola"
         templateUrl : "views/school/school.html"
@@ -149,7 +284,16 @@ littb.config () ->
     #     reloadOnSearch : false
     #     title : "Kontakt"
     #     breadcrumb : ["kontakt"]
-    whn ["/skola/lyrik/larare/:docurl", "/skola/lyrik/larare"],
+    whn ["/skola/lyrik/elev/gymnasium/:docurl", "/skola/lyrik/elev/gymnasium"],
+        title : "Lyrikskolan gymnasium"
+        templateUrl : "views/school/lyrik_students.html"
+        controller : getLyrikStudentCtrl("gymnasium")
+    whn ["/skola/lyrik/elev/6-9/:docurl", "/skola/lyrik/elev/6-9"],
+        title : "Lyrikskolan 6-9"
+        templateUrl : "views/school/lyrik_students.html"
+        controller : getLyrikStudentCtrl("6-9")
+
+    whn ["/skola/lyrik/larare/:subsection/:docurl", "/skola/lyrik/larare/:docurl", "/skola/lyrik/larare"],
         title : "Lyrikskolan"
         templateUrl : "views/school/lyrik_teachers.html"
 
@@ -172,6 +316,11 @@ littb.config () ->
         controller : getStudentCtrl("gymnasium")
 
 
+    whn "/skola/:docurl",
+        title : "Litteraturskolan"
+        templateUrl : "views/school/teachers.html"
+
+
 
 
 
@@ -180,6 +329,7 @@ littb.config () ->
 
 littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q, $timeout, $rootScope, $rootElement) ->
     $scope.docurl = $routeParams.docurl
+    $scope.subsection = $routeParams.subsection
 
     # classlist = $rootElement.attr("class").split(" ")
     # classlist = _.filter classlist, (item) -> !_.str.startsWith("subpage-")
@@ -211,14 +361,53 @@ littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q
     $scope.fileDef = def
 
 
-littb.directive "scFile", ($routeParams, $http, $compile, util, backend) ->
+littb.directive "scFile", ($routeParams, $location, $http, $compile, util, backend) ->
     template: """<div class="file_parent"></div>"""
     replace : true
     link : ($scope, elem, attr) ->
         # $scope.doc = $routeParams.doc
+
+        getLocationRoot = () ->
+            if _.startsWith($location.url(), "/skola/lyrik")
+                return "/skola/lyrik/"
+            else 
+                return "/skola/"
+
+
+        # look for these under /skola, disregarding locationRoot above
+        generalTexts = [
+            "ValkommenStartsida.html"
+            "DidaktikOchMetodik.html"
+            "DidaktikOchMetodik.html"
+            "DidaktikOchMetodik2.html"
+            "DidaktikOchMetodik3.html"
+            "DidaktikOchMetodik4.html"
+            "DidaktikOchMetodik5.html"
+            "Litteraturlista.html"
+            "TermerOchBegrepp.html"
+            "Genrer.html"
+            "Hjalp.html"
+        ]
+
+
         $scope.setName = (name) ->
             $scope.currentName = name
-        backend.getHtmlFile("/red/skola/" + attr.scFile or $routeParams.doc).success (data) ->
+
+        filename = attr.scFile or $routeParams.doc
+        c.log "filename", filename
+        section = $scope.$eval attr.section
+        subsection = $scope.$eval attr.subsection
+        if subsection == "gymnasium" then subsection = "gy"
+
+        if filename in generalTexts
+            path = "/skola/" + filename
+        else
+            path = getLocationRoot() + (_.compact [section, subsection, filename]).join("_")
+
+        # if section then filename = section + "/" + filename
+        c.log "section", section, subsection, filename
+
+        backend.getHtmlFile("/red" + path ).success (data) ->
             innerxmls = _.map $("body > div > :not(.titlepage)", data), util.getInnerXML
             innerxmlStr = innerxmls.join("\n")
             # bug fix for firefox

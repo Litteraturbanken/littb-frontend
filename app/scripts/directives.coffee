@@ -714,7 +714,7 @@ littb.directive 'onFinishRender', ($timeout) ->
             )
             # scope.$evalAsync(attr.onFinishRender)
 
-
+blockRemoveBkg = false
 littb.directive 'bkgImg', ($rootElement, $timeout) ->
     restrict : "EA"
     template : '''
@@ -734,14 +734,20 @@ littb.directive 'bkgImg', ($rootElement, $timeout) ->
                 "background" : "url('#{src}') no-repeat"
         , 0)
         scope.$on "$destroy", () ->
-            c.log "destroy", element
+            c.log "bkg destroy"
 
             # element.remove()
+            if blockRemoveBkg
+                blockRemoveBkg = false
+                c.log "block remove bkg"
+                return
             $("body").css
                 "background-image" : "none"
-            
 
 
+        scope.$on "$routeChangeStart", (event, next, current) ->
+            unless next.$$route then return
+            blockRemoveBkg = current.$$route.school and next.$$route.school
 
 littb.directive "listScroll", () ->
     link : ($scope, element, attr) ->
