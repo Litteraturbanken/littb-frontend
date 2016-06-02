@@ -137,7 +137,7 @@ getLyrikStudentCtrl = (id) ->
         sfx = {
             "f-5" : "F-5"
             "6-9" : "6-9"
-            "gymnasium" : "GY"
+            "gymnasium" : "gymnasium"
         }[id]
         # $scope.defaultUrl = "Valkommen#{sfx}.html"
         $scope.defaultUrl = "Valkommen.html"
@@ -196,11 +196,11 @@ getLyrikStudentCtrl = (id) ->
                 url : "/#!/skola/lyrik/elev/#{sfx}/OvrigaDikter.html"
                 if : ["6-9", "gymnasium"]
             }
-            {
-                label : "Idéer", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Ideer.html"
-                if : ["6-9", "gymnasium"]
-            }
+            # {
+            #     label : "Idéer", 
+            #     url : "/#!/skola/lyrik/elev/#{sfx}/Ideer.html"
+            #     if : ["6-9", "gymnasium"]
+            # }
             # {
             #     label : "Lyrikens undergenrer", 
             #     url : "/#!/skola/lyrik/elev/#{sfx}/LyrikensUndergenrer.html"
