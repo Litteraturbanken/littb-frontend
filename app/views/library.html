@@ -101,28 +101,31 @@
                             <a class="fitlered" ng-show="!showInitial">Hela verk</a>
                             <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
                         </li>
-                        <li ng-show="getTitles() && !(getTitles() | filter:filterTitle | filter:mediatypeFilter).length">
+                        <li ng-show="getTitles() && !(getTitles() | filter:mediatypeFilter).length">
                             Inga träffar. 
                         </li>
                         
-                        <li class="link" ng-repeat="row in getTitles() | orderBy:'itemAttrs.sortkey' | filter:mediatypeFilter | filter:filterTitle" on-finish-render="titleRender()"
+                        <li class="link" ng-repeat="row in getTitles() | orderBy:'sortkey' | filter:mediatypeFilter" on-finish-render="titleRender()"
                             top="$parent.title_off" ng-click="titleClick($event, row)"
                             id="{{getUniqId(row)}}">
                             <div class="header">
-                                <span class="title" tooltip="{{row.itemAttrs.title != row.itemAttrs.shorttitle ? row.itemAttrs.title : ''}}" tooltip-popup-delay="500" >
-                                    <a ng-click="titleHeaderClick($event, row)" >{{row.itemAttrs.shorttitle}} </a>
+                                <span class="title" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
+                                    <a ng-click="titleHeaderClick($event, row)" >{{row.shorttitle}} </a>
                                 </span>
-                                <span class="author"><a ng-href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a> <span ng-if="row.author[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.author[0].authortype == 'illustrator'">(ill.)</span></span> <!-- ng-click="authorClick($event, authorsById[row.author[0].authorid])" -->
+                                <span class="author"><a ng-href="/#!/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a> <span ng-if="row.authors[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.authors[0].authortype == 'illustrator'">(ill.)</span></span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" -->
                             </div>
                             <div collapse="!row._collapsed">
                                 <div class="collapse-content">
                                     <ul class="links">
-                    
-                                        <li ng-show="hasMediatype(row, 'etext')"><a ng-href="{{getUrl(row, 'etext')}}">Läs som <span class="sc">ETEXT</span></a></li>
+                                        <li ng-repeat="work in titleGroups[row.lbworkid]">
+                                            <a ng-href="{{getUrl(row, work.mediatype)}}">Läs som {{work.mediatype}}</a>
+                                        </li>
+                                        
+                                        <!-- <li ng-show="hasMediatype(row, 'etext')"><a ng-href="{{getUrl(row, 'etext')}}">Läs som <span class="sc">ETEXT</span></a></li>
                                         <li ng-show="hasMediatype(row, 'faksimil')"><a ng-href="{{getUrl(row, 'faksimil')}}">Läs som <span class="sc">FAKSIMIL</span></a></li>
                                         <li ng-show="hasMediatype(row, 'epub')"><a ng-href="{{getUrl(row, 'epub')}}">Ladda ner <span class="sc">EPUB</span></a></li>
-                                        <li ng-show="hasMediatype(row, 'pdf')"><a ng-href="{{getUrl(row, 'pdf')}}">Ladda ner <span class="sc">PDF</span></a></li>
-                                        <li ng-show="::row.itemAttrs.searchable == 'true'"><a ng-href="/#!/sok?forfattare={{row.author[0].authorid}}&titlar={{row.itemAttrs.lbworkid}}&avancerad">Gör en sökning i verket</a></li>
+                                        <li ng-show="hasMediatype(row, 'pdf')"><a ng-href="{{getUrl(row, 'pdf')}}">Ladda ner <span class="sc">PDF</span></a></li> -->
+                                        <li ng-show="::row.searchable"><a ng-href="/#!/sok?forfattare={{row.authors[0].author_id}}&titlar={{row.lbworkid}}&avancerad">Gör en sökning i verket</a></li>
                                         
                                         <li ng-show="hasMediatype(row, 'etext') || hasMediatype(row, 'faksimil')"><a ng-href="{{getUrl(row, row.mediatype[0]) + '/?om-boken'}}">Läs mer om verket</a></li>
                                     </ul>
@@ -137,12 +140,12 @@
                             Inga träffar.
                         </li>
                     
-                        <li ng-repeat="row in all_titles | filter: titleFilter | filter:mediatypeFilter | orderBy:'itemAttrs.sortkey'" class="parts" ng-class="{first_part : $first}">
+                        <li ng-repeat="row in all_titles | filter: titleFilter | filter:mediatypeFilter | orderBy:'sortkey'" class="parts" ng-class="{first_part : $first}">
                     
-                            <div class="header" tooltip="{{row.itemAttrs.title}}">
+                            <div class="header" tooltip="{{row.title}}">
                                 <span class="title">
-                                    <a ng-href="/#!/forfattare/{{row.author[0].workauthor || row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/sida/{{row.itemAttrs.startpagename}}/{{row.itemAttrs.mediatype}}">
-                                    {{row.itemAttrs.shorttitle}}
+                                    <a ng-href="/#!/forfattare/{{row.author[0].workauthor || row.author[0].authorid}}/titlar/{{row.titlepath.split('/')[0]}}/sida/{{row.startpagename}}/{{row.mediatype}}">
+                                    {{row.shorttitle}}
                                     </a>
                                 </span>
                                 

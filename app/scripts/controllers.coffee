@@ -205,7 +205,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     titleDef = backend.getTitles()
     $q.all([titleDef, authors]).then ([titleArray, [authorList, authorsById]]) ->
         titles = _.filter titleArray, (title) ->
-            title.itemAttrs.searchable == 'true'
+            title.searchable
 
 
         aboutAuthorIds = _.unique _.flatten _.pluck titleArray, "authorKeywords"
@@ -1050,18 +1050,18 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         unless attrs then return
         return attrs.title unless attrs.showtitle == attrs.title
 
-    s.filterTitle = (row) ->    
-        if not s.rowfilter then return true
-        filter = (s.rowfilter || '')
+    # s.filterTitle = (row) ->    
+    #     if not s.rowfilter then return true
+    #     filter = (s.rowfilter || '')
 
-        auths = (_.map row.author, (auth) ->
-            return auth.fullname
-        ).join(" ")
+    #     auths = (_.map row.author, (auth) ->
+    #         return auth.fullname
+    #     ).join(" ")
 
-        exprs = filter.split(" ")
+    #     exprs = filter.split(" ")
 
-        return _.all exprs, (expr) ->
-            new RegExp(expr, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + auths))
+    #     return _.all exprs, (expr) ->
+    #         new RegExp(expr, "i").test((row.title + " " + row.shorttitle + " " + auths))
 
         
 
@@ -1091,12 +1091,13 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         pdf : if $location.search().pdf then false else true
 
     s.mediatypeFilter = (row) ->
+        return true
         # c.log "row.mediatype", row.mediatype
         _.any _.map row.mediatype, (mt) -> s.mediatypeObj[mt]
         
 
     s.titleFilter = (row) ->
-        row.itemAttrs.titlepath.split("/").length > 1
+        row.titlepath.split("/").length > 1
 
     s.hasMediatype = (titleobj, mediatype) ->
         return mediatype in (titleobj?.mediatype or [])
@@ -1110,11 +1111,11 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         return _.intersection(order,list).concat(_.difference(list, order))
 
     s.getTitleId = (row) ->
-        row.itemAttrs.titlepath.split('/')[0]
+        row.titlepath.split('/')[0]
 
     s.getUniqId = (title) ->
         unless title then return
-        title.itemAttrs.lbworkid + (title.itemAttrs.titlepath.split('/')[1] or "")
+        title.lbworkid + (title.titlepath.split('/')[1] or "")
         
 
     s.authorRender = () ->
@@ -1166,11 +1167,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchWorks = () ->
         s.titleSearching = true
-        def = backend.getTitles(false, s.authorFilter, s.selectedLetter, s.filter).then (titleArray) ->
+        def = backend.getTitles(false, s.authorFilter, null, s.filter).then ([titleArray, titleGroups]) ->
             s.titleSearching = false
             s.titleArray = titleArray
+            s.titleGroups = titleGroups
             s.titleByPath = _.groupBy titleArray, (item) ->
-                return item.itemAttrs.titlepath
+                return item.titlepath
 
             return titleArray
 
@@ -1178,15 +1180,15 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
                 
 
     s.getUrl = (row, mediatype) ->
-        authorid = row.author[0].workauthor or row.author[0].authorid
+        authorid = row.authors[0].workauthor or row.authors[0].author_id
 
         if mediatype == "epub" 
-            url = "txt/epub/" + authorid + "_" + row.itemAttrs.titlepath.split("/")[0] + ".epub"
+            url = "txt/epub/" + authorid + "_" + row.titlepath.split("/")[0] + ".epub"
         else if mediatype == "pdf"
-            url = "txt/#{row.itemAttrs.lbworkid}/#{row.itemAttrs.lbworkid}.pdf"
+            url = "txt/#{row.lbworkid}/#{row.lbworkid}.pdf"
         else
             url = "/#!/forfattare/#{authorid}/titlar/#{s.getTitleId(row)}/" +
-                 "sida/#{row.itemAttrs.startpagename}/#{mediatype}"
+                 "sida/#{row.startpagename}/#{mediatype}"
 
         return url
 
@@ -1220,7 +1222,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
         s.selectedTitle = title
         s.selectedTitle._collapsed = true
-        $location.search("title", title.itemAttrs.titlepath)
+        $location.search("title", title.titlepath)
 
     
     getWorkIntro = (author, titlepath) ->
@@ -1299,12 +1301,24 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             return s.titleArray
 
     s.titleSearching = true
-    backend.getStats().then (data) ->
-        c.log "data", data
 
+    def = backend.getTitles(false, null, true).then ([titleArray, titleGroups]) ->
         s.titleSearching = false
-        s.popularTitles = _.compact _.unique ([].concat data.titleList, data.epublist), (title) ->
-            title?.itemAttrs.lbworkid
+        s.popularTitles = titleArray
+        # s.titleArray = titleArray
+        s.titleGroups = titleGroups
+        s.titleByPath = _.groupBy titleArray, (item) ->
+            return item.titlepath
+
+        return titleArray
+
+    # backend.getStats().then (data) ->
+    #     c.log "data", data
+
+        # s.titleSearching = false
+
+    #     s.popularTitles = _.compact _.unique ([].concat data.titleList, data.epublist), (title) ->
+    #         title?.itemAttrs.lbworkid
 
 
 littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->

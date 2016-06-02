@@ -405,63 +405,100 @@ littb.factory 'backend', ($http, $q, util) ->
         else 
             return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
-    getTitles : (allTitles = false, author = null, initial = null, string = null) ->
+    getTitles : (allTitles = false, author = null, sort_popularity = false, string = null) ->
         def = $q.defer()
-        if author and allTitles
-            params = 
-                action : "get-titles-by-author"
-                authorid : author
-        else if allTitles
-            params = 
-                action : "get-titles-by-string-filter"
-            if initial
-                params.initial = initial
-            if string
-                params.string = string
-        else 
-            params = 
-                action : "get-works"
+        params = 
+            exclude : "text,parts,sourcedesc"
 
+        if sort_popularity
+            params.sort_field = "popularity|desc"
+            params.to = 30
+        if string
+            params.filter_string = string
+        if author
+            author = "/" + author
 
-        http(
-            url : "/query/lb-anthology.xql"
+        $http(
+            url : "#{STRIX_URL}/lb_list_all/etext,faksimil" + (author or "")
             params: params
 
 
-        ).success (xml) ->
+        ).success (data) ->
+            c.log "data", data
 
-            pathGroups = _.groupBy $("item", xml), (item) ->
-                author = $(item).find("author").attr("authorid")
-                # if "/" in $(item).attr("titlepath")
-                return author + $(item).attr("titlepath").split("/")
-                # else
-                #     return author + $(item).attr("titlepath")
+            titleGroups = _.groupBy data.data, (title) ->
+                title.lbworkid
 
 
-            rows = []
-            for path, elemList of pathGroups
-                itm = elemList[0]
-                if not (objFromAttrs $(itm).find("author").get(0))
-                    c.log "author failed", itm
+            # for path, titles in pathGroups
+            #     if titles.length > 1
+            #         for title in titles
+            #             sibl = _.filter titles, (item) -> item.mediatype != title.mediatype
+            #             title.siblings = sibl[0]
 
+            def.resolve [data.data, titleGroups]
 
-                obj = 
-                    itemAttrs : objFromAttrs itm
-                    # author : (objFromAttrs $(itm).find("author").get(0)) or ""
-                    author : _.map $(itm).find("author"), objFromAttrs
-                    mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
-                    authorKeywords : _.pluck $(itm).find("authorkeyword"), "innerHTML"
-                    # mediatype : getMediatypes($(itm).attr("lbworkid"))
-
-                if allTitles
-                    obj.isTitle = true
-
-                rows.push obj
-
-            # rows = _.flatten _.values rows
-            def.resolve rows
-            # .fail -> def.reject()
         return def.promise
+
+
+
+    # getTitles : (allTitles = false, author = null, initial = null, string = null) ->
+    #     def = $q.defer()
+    #     if author and allTitles
+    #         params = 
+    #             action : "get-titles-by-author"
+    #             authorid : author
+    #     else if allTitles
+    #         params = 
+    #             action : "get-titles-by-string-filter"
+    #         if initial
+    #             params.initial = initial
+    #         if string
+    #             params.string = string
+    #     else 
+    #         params = 
+    #             action : "get-works"
+
+
+    #     http(
+    #         url : "/query/lb-anthology.xql"
+    #         params: params
+
+
+    #     ).success (xml) ->
+
+    #         pathGroups = _.groupBy $("item", xml), (item) ->
+    #             author = $(item).find("author").attr("authorid")
+    #             # if "/" in $(item).attr("titlepath")
+    #             return author + $(item).attr("titlepath").split("/")
+    #             # else
+    #             #     return author + $(item).attr("titlepath")
+
+
+    #         rows = []
+    #         for path, elemList of pathGroups
+    #             itm = elemList[0]
+    #             if not (objFromAttrs $(itm).find("author").get(0))
+    #                 c.log "author failed", itm
+
+
+    #             obj = 
+    #                 itemAttrs : objFromAttrs itm
+    #                 # author : (objFromAttrs $(itm).find("author").get(0)) or ""
+    #                 author : _.map $(itm).find("author"), objFromAttrs
+    #                 mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
+    #                 authorKeywords : _.pluck $(itm).find("authorkeyword"), "innerHTML"
+    #                 # mediatype : getMediatypes($(itm).attr("lbworkid"))
+
+    #             if allTitles
+    #                 obj.isTitle = true
+
+    #             rows.push obj
+
+    #         # rows = _.flatten _.values rows
+    #         def.resolve rows
+    #         # .fail -> def.reject()
+    #     return def.promise
 
     # getAuthorList : () ->
     #     def = $q.defer()
