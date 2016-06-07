@@ -70,7 +70,7 @@
                                         <li><a href="/#!/forfattare/{{::selectedAuth.authorid}}/titlar">
                                              Visa författarens verk</a>
                                         </li>
-                                        <li ng-if="author.searchable == 'true'"><a href="/#!/sok?forfattare={{selectedAuth.authorid}}&avancerad">
+                                        <li ng-if="author.searchable"><a href="/#!/sok?forfattare={{selectedAuth.authorid}}&avancerad">
                                              Sök i författarens verk</a>
                                         </li>
                                     </ul>
@@ -104,8 +104,8 @@
                         <li ng-show="getTitles() && !(getTitles() | filter:mediatypeFilter).length">
                             Inga träffar. 
                         </li>
-                        
-                        <li class="link" ng-repeat="row in getTitles() | orderBy:'sortkey' | filter:mediatypeFilter" on-finish-render="titleRender()"
+                        <!-- orderBy | 'sortkey' -->
+                        <li class="link" ng-repeat="row in getTitles() | filter:mediatypeFilter" on-finish-render="titleRender()"
                             top="$parent.title_off" ng-click="titleClick($event, row)"
                             id="{{getUniqId(row)}}">
                             <div class="header">

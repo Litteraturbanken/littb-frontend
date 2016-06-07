@@ -405,13 +405,13 @@ littb.factory 'backend', ($http, $q, util) ->
         else 
             return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
-    getTitles : (allTitles = false, author = null, sort_popularity = false, string = null) ->
+    getTitles : (allTitles = false, author = null, sort_key = null, string = null) ->
         def = $q.defer()
         params = 
             exclude : "text,parts,sourcedesc"
 
-        if sort_popularity
-            params.sort_field = "popularity|desc"
+        if sort_key
+            params.sort_field = sort_key
             params.to = 30
         if string
             params.filter_string = string

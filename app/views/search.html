@@ -118,14 +118,14 @@
                         <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>                        
 
                         <td class="left_context"><!--
-                            --><span ng-repeat="wd in sent.highlight.left_context | limitTo:10">{{wd.word}}</span>
+                            --><span ng-repeat="wd in sent.highlight.left_context | limitTo:10">{{wd.word}} </span>
                         </td>
                         <td class="match">
                             <span class="match" ng-repeat="wd in sent.highlight.match">
                             <a ng-href="/#!/forfattare/{{sent.metadata.author_id}}/titlar/{{sent.metadata.title_id}}/?om-boken">{{wd.word}}</a></span>
                         </td>
                         <td class="right_context">
-                            <span ng-repeat="wd in sent.highlight.right_context">{{wd.word}}</span>
+                            <span ng-repeat="wd in sent.highlight.right_context">{{wd.word}} </span>
                         </td>
                                 <!-- <li ng-repeat="hit in sent.highlight"> -->
                                 

@@ -1167,7 +1167,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchWorks = () ->
         s.titleSearching = true
-        def = backend.getTitles(false, s.authorFilter, null, s.filter).then ([titleArray, titleGroups]) ->
+        def = backend.getTitles(false, s.authorFilter, "sortkey|asc", s.filter).then ([titleArray, titleGroups]) ->
             s.titleSearching = false
             s.titleArray = titleArray
             s.titleGroups = titleGroups
@@ -1302,7 +1302,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     s.titleSearching = true
 
-    def = backend.getTitles(false, null, true).then ([titleArray, titleGroups]) ->
+    def = backend.getTitles(false, null, "popularity|desc").then ([titleArray, titleGroups]) ->
         s.titleSearching = false
         s.popularTitles = titleArray
         # s.titleArray = titleArray
