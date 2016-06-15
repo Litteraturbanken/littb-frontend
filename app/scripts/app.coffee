@@ -49,7 +49,16 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "ui.slider"
                                             "dibari.angular-ellipsis"
                                            ])
+    .decorator "$xhrFactory", ($delegate, $injector) ->
+        return (method, url) ->
+            xhr = $delegate(method, url)
+            $http = $injector.get("$http")
+            callConfig = $http.pendingRequests[$http.pendingRequests.length - 1]
+            if (angular.isFunction(callConfig.onProgress))
+                xhr.addEventListener("progress", callConfig.onProgress)
+            return xhr
     .config ($routeProvider) ->
+
 
         class window.Router
             constructor : () ->

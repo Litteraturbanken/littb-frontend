@@ -533,30 +533,39 @@ littb.factory 'backend', ($http, $q, util) ->
             return def.promise
 
 
-    getSourceInfo : (author, title, mediatype) ->
+    getSourceInfo : (titlepath, mediatype) ->
+        # TODO: mediatype can be null?
         def = $q.defer()
-        url = "/query/lb-anthology.xql"
-        params = 
-            action : "get-work-info-init"
-            authorid : author
-            titlepath : title
+        url = "#{STRIX_URL}/get_work_info/#{titlepath}/#{mediatype}"
 
-        if mediatype
-            params.mediatype = mediatype
-
-        http(
+        $http(
             url : url
-            params : params
 
-        ).success( (xml) ->
-            if $("fel", xml).length
-                def.reject $("fel", xml).text()
-            output = parseWorkInfo("result", xml)
+        ).success( (data) ->
+            # if $("fel", xml).length
+            #     def.reject $("fel", xml).text()
+            # output = parseWorkInfo("result", xml)
+            workinfo = data.data[0]
+
+            workinfo.pagemap = {}
+            for pg in workinfo.pages
+                workinfo.pagemap["page_" + pg.pagename] = pg.pageindex
+                workinfo.pagemap["ix_" + pg.pageindex] = pg.pagename
+
+            workinfo.errata = for tr in $("tr", workinfo.errata)
+                _($(tr).find("td")).map(util.getInnerXML)
+                .map(_.str.strip).value()
+
+            if workinfo.epub
+                workinfo.mediatypes.push "epub"
+            if workinfo.pdf
+                workinfo.mediatypes.push "pdf"
 
 
-            
 
-            def.resolve output
+
+            c.log "getSourceInfo", workinfo
+            def.resolve workinfo
         ).error (xml) ->
             def.reject xml
         
@@ -578,6 +587,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getPage : (passedParams) ->
         def = $q.defer()
+
         url = "/query/lb-anthology.xql"
 
         params =
@@ -593,7 +603,6 @@ littb.factory 'backend', ($http, $q, util) ->
             params : _.extend {}, params, passedParams
         ).success( (xml) ->
             info = parseWorkInfo("LBwork", xml)
-            # c.log "info", info
 
             info["showtitle"] = $("showtitle:first", xml).text()
             info["css"] = $("css", xml).text()
@@ -627,10 +636,6 @@ littb.factory 'backend', ($http, $q, util) ->
 
                 obj.number = i
                 return obj
-            # info.parts = _.filter info.parts, (item) ->
-            #     return "/" in item.titlepath
-
-
 
             info.mediatypes = for mediatype in $("mediatypes mediatype", xml)
                 util.getInnerXML mediatype
@@ -1041,7 +1046,23 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-            
+    
+    workSearch : (query, lbworkid) ->
+        def = $q.defer()
+        source = new EventSource('#{STRIX_URL}/search_document/#{lbworkid}/#{query}');
+        source.onmessage = (event) ->
+            data = JSON.parse(event.data)
+            c.log "onmessage onprogress", data 
+            def.notify data
+
+        source.onerror = (event) ->
+            c.log "onmessage onprogress fail", event
+            this.close()
+            def.resolve()
+
+        return def.promise
+        
+        
 
 
 littb.factory "authors", (backend, $q) ->
@@ -1058,6 +1079,7 @@ littb.factory "authors", (backend, $q) ->
     return def.promise
 
 
+    
 
 littb.factory "searchData", (backend, $q, $http, $location) ->
     NUM_HITS = 50 # how many hits per search?

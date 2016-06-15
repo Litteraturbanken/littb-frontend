@@ -15,10 +15,10 @@ littb.filter "formatAuthors", (authors) ->
 
 
             }[auth.type] or ""
-            authorsById[auth.id].fullname + suffix
+            authorsById[auth.author_id].fullname + suffix
         
         linkify = (auth) ->
-            $("<a>").attr "href", "/#!/forfattare/#{auth.id}"
+            $("<a>").attr "href", "/#!/forfattare/#{auth.author_id}"
                 .html stringify auth
                 .outerHTML()
 
@@ -1227,6 +1227,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     
     getWorkIntro = (author, titlepath) ->
         s.sourcedesc = null
+        # TODO: i think this broke
         infoDef = backend.getSourceInfo(author, titlepath.split("/")[0])
         infoDef.then (data) ->
             c.log "source", data
@@ -1558,8 +1559,9 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     s.getValidAuthors = () ->
         unless s.authorById then return
-        _.filter s.workinfo?.authoridNorm, (item) ->
-            item.id of s.authorById
+        # _.filter s.workinfo?.authoridNorm, (item) ->
+        #     item.id of s.authorById
+        return s.workinfo?.authors
 
     s.toggleErrata = () ->
         s.errataLimit = if s.isOpen then 8 else 1000
@@ -1747,6 +1749,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s._ = {humanize : _.humanize}
 
     $window.scrollTo(0, 0)
+    t = $.now()
+
         
     {title, author, mediatype, pagename} = $routeParams
     _.extend s, (_.pick $routeParams, "title", "author", "mediatype")
@@ -1881,11 +1885,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.nextPage = (event) ->
         event?.preventDefault()
         if s.isEditor
-            s.pageix = s.pageix + s.getStep()
+            # s.pageix = s.pageix + s.getStep()
+            s.pageix = s.pageix + 1
             s.pageToLoad = s.pageix
             return
         unless s.endpage then return
-        newix = s.pageix + s.getStep()
+        # newix = s.pageix + s.getStep()
+        newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         # else
@@ -1895,10 +1901,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         event?.preventDefault()
         unless s.pagemap then return
         if s.isEditor
-            s.pageix = s.pageix - s.getStep()
+            # s.pageix = s.pageix - s.getStep()
+            s.pageix = s.pageix - 1
             s.pageToLoad = s.pageix
             return
-        newix = s.pageix - s.getStep()
+        # newix = s.pageix - s.getStep()
+        newix = s.pageix - 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         else
@@ -1919,7 +1927,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     
     s.getPrevPageUrl = () ->
         unless s.pagemap then return
-        newix = s.pageix - s.getStep()
+        # newix = s.pageix - s.getStep()
+        newix = s.pageix - 1
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
@@ -1929,7 +1938,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getNextPageUrl = () ->
         unless s.endpage then return
         if s.pageix == s.pagemap["page_" + s.endpage] then return
-        newix = s.pageix + s.getStep()
+        # newix = s.pageix + s.getStep()
+        newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
@@ -2039,8 +2049,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getValidAuthors = () ->
         unless s.authorById then return
-        _.filter s.workinfo?.authoridNorm, (item) ->
-            item.id of s.authorById
+        return s.workinfo?.authors
+        # _.filter s.workinfo?.authors, (item) ->
+        #     item.id of s.authorById
 
     authors.then ([authorData, authorById]) ->
         s.authorById = authorById
@@ -2189,9 +2200,89 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # height : fac * obj.h
         }
 
+    initSourceInfo = () ->
+        def = backend.getSourceInfo(title, mediatype)
+        def.then (workinfo) ->
+            s.workinfo = workinfo
+            s.pagemap = workinfo.pagemap
+            steps = []
+            s.etextPageMapping ?= {}
+            # for page in $("page", data)
+            #     if $(page).attr("pagestep")
+            #         steps.push [($(page).attr "pageix"), Number($(page).attr "pagestep")]
 
+
+            #     p = $(page).clone()
+            #     p.find("*").remove()
+            #     etextcontent = _.str.trim $(p).text()
+            #     s.etextPageMapping[$(page).attr("name")] = etextcontent
+
+            # # avoid etextPageMapping memory bloat
+            # pairs = _.pairs s.etextPageMapping
+            # if pairs.length > 100
+            #     pairs = pairs[30..]
+            #     s.etextPageMapping = _.object pairs
+
+
+
+            # s.stepmap = _.object steps
+            # s.pagestep = Number $("pagestep", data).text()
+
+            s.startpage = workinfo.startpagename
+            s.endpage = workinfo.endpagename
+            s.pageix = s.pagemap["page_" + pagename]
+            c.log "s.pagename", pagename
+
+        return def
+
+
+    
+
+    downloadPage = (pageix) ->
+        filename = _.str.lpad(pageix, 5, "0")
+        if mediatype == "etext"
+            url = "txt/#{s.workinfo.lbworkid}/res_#{filename}.html"
+            def = backend.getHtmlFile(url)
+            def.then (html) ->
+                s.etext_html = html.data.firstChild.innerHTML
+                s.first_load = true
+                s.loading = false
+                return s.etext_html
+
+            return def
+
+
+    infoDef = initSourceInfo()
 
     loadPage = (val) ->
+        infoDef.then () ->
+            c.log "loadPage", val
+            unless $route.current.controller == 'readingCtrl' 
+                c.log "resisted page load"
+                return
+
+            s.error = false
+
+            unless s.isEditor
+                backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
+
+            
+
+            s.setTitle "#{s.workinfo.title} sidan #{s.pagename} #{s.mediatype}"
+
+            if $location.search().sok
+                s.$broadcast "popper.open.searchPopup"
+
+            s.pagename = val
+            s.pageix = s.pagemap["page_" + s.pagename]
+            downloadPage(s.pageix).then (html) ->
+                c.log "onFirstLoad"
+                onFirstLoad()
+
+
+
+
+    loadPageOld = (val) ->
         # take care of state hiccup
         unless $route.current.controller == 'readingCtrl' 
             c.log "resisted page load"
@@ -2261,35 +2352,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             
         s.loading = true
 
-        backend.getPage(params).then ([data, workinfo]) ->
-            s.workinfo = workinfo
-            s.pagemap = workinfo.pagemap
+        backend.getPage(params).then (data) ->
+            # s.workinfo = workinfo
+            
 
-            steps = []
-            s.etextPageMapping ?= {}
-            for page in $("page", data)
-                if $(page).attr("pagestep")
-                    steps.push [($(page).attr "pageix"), Number($(page).attr "pagestep")]
-
-
-                p = $(page).clone()
-                p.find("*").remove()
-                etextcontent = _.str.trim $(p).text()
-                s.etextPageMapping[$(page).attr("name")] = etextcontent
-
-            # avoid etextPageMapping memory bloat
-            pairs = _.pairs s.etextPageMapping
-            if pairs.length > 100
-                pairs = pairs[30..]
-                s.etextPageMapping = _.object pairs
-
-
-
-            s.stepmap = _.object steps
-            s.pagestep = Number $("pagestep", data).text()
-
-            s.startpage = workinfo.startpagename
-            s.endpage = workinfo.endpagename
+            
 
 
             page = $(pageQuery, data).last().clone()

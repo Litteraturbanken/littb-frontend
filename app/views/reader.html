@@ -70,7 +70,7 @@
                 <a ng-href="/#!/forfattare/{{getCurrentPart().authorid}}" ng-show="getCurrentPart().authorid">{{authorById[getCurrentPart().authorid].fullname}}</a>
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
-            <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().navtitle}}" class="navtitle"></div>
+            <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().nav_title}}" class="navtitle"></div>
         </div>
         <hr class="lower">
         <!-- <ul class="part_menu" >
@@ -185,8 +185,8 @@
 
                 <ul class="part_menu" >
                     <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
-                        <span class="author">{{authorById[part.authorid].fullname}}</span>
-                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.showtitle}}</a>
+                        <span class="author">{{authorById[part.author_id].fullname}}</span>
+                        <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.nav_title || part.title}}</a>
 
                     </li>
                 </ul>
