@@ -2,6 +2,7 @@ littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 STRIX_URL = "http://localhost:5000"
+# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
 
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->
@@ -136,15 +137,7 @@ getCqp = (o) ->
     structAttrs = []
     textAttrs = []
     c.log "o.text_attrs", o.text_attrs
-    # if o.text_attrs.length
-    #     if not _.isArray o.text_attrs then o.text_attrs = o.text_attrs.split(",")
-    #     for attr in o.text_attrs
-    #         textAttrs.push attr
 
-    # if o.mediatype == "all"
-    #     textAttrs.push "(_.text_mediatype = 'faksimil' | _.text_mediatype = 'etext')"
-    # else
-    #     textAttrs.push "_.text_mediatype = '#{o.mediatype}'"
     if o.selectedAuthor
         auths = getAuthors(o.selectedAuthor, "authorid")
         structAttrs.push auths
@@ -405,10 +398,21 @@ littb.factory 'backend', ($http, $q, util) ->
         else 
             return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
-    getTitles : (allTitles = false, author = null, sort_key = null, string = null) ->
+    getEpub : () ->
+        
+        return $http(
+            url : "#{STRIX_URL}/get_epub"        
+            params :
+                size : 10000
+                exclude : "text,parts,sourcedesc,pages,errata"
+                sort_field : "popularity|desc"
+        ).then (response) ->
+            return response.data.data
+
+    getTitles : (includeParts = false, author = null, sort_key = null, string = null, aboutAuthors=false) ->
         def = $q.defer()
         params = 
-            exclude : "text,parts,sourcedesc"
+            exclude : "text,parts,sourcedesc,pages,errata"
 
         if sort_key
             params.sort_field = sort_key
@@ -417,6 +421,8 @@ littb.factory 'backend', ($http, $q, util) ->
             params.filter_string = string
         if author
             author = "/" + author
+        if aboutAuthors
+            params.about_authors = true
 
         $http(
             url : "#{STRIX_URL}/lb_list_all/etext,faksimil" + (author or "")
@@ -425,8 +431,9 @@ littb.factory 'backend', ($http, $q, util) ->
 
         ).success (data) ->
             c.log "data", data
+            titles = data.data
 
-            titleGroups = _.groupBy data.data, (title) ->
+            titleGroups = _.groupBy titles, (title) ->
                 title.lbworkid
 
 
@@ -436,7 +443,7 @@ littb.factory 'backend', ($http, $q, util) ->
             #             sibl = _.filter titles, (item) -> item.mediatype != title.mediatype
             #             title.siblings = sibl[0]
 
-            def.resolve [data.data, titleGroups]
+            def.resolve [titles, titleGroups]
 
         return def.promise
 
@@ -518,14 +525,20 @@ littb.factory 'backend', ($http, $q, util) ->
 
     #     return def.promise
 
-    getAuthorList : () ->
+    getAuthorList : (include, exclude) ->
 
             def = $q.defer()
             url = "#{STRIX_URL}/get_authors"
+            params = {}
+            if include
+                params.include = include.join(",")
+            if exclude
+                params.exclude = exclude.join(",")
             $http(
                 url : url
                 method: "GET"
                 cache: true
+                params : params
             ).success (response) ->
                 c.log "getAuthorList", response
                 def.resolve response.data
@@ -555,6 +568,11 @@ littb.factory 'backend', ($http, $q, util) ->
             workinfo.errata = for tr in $("tr", workinfo.errata)
                 _($(tr).find("td")).map(util.getInnerXML)
                 .map(_.str.strip).value()
+
+            workinfo.mediatypes = [workinfo.mediatype]
+            # TODO: add other mediatype if exists in data.data[1]
+            # for book in data.data[1:]:
+                # workinfo.mediatypes.push(book.mediatype)
 
             if workinfo.epub
                 workinfo.mediatypes.push "epub"
@@ -800,48 +818,51 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
 
     getTitlesByAuthor : (authorid, cache, aboutAuthors=false) ->
-        serviceName = if aboutAuthors then "get-works-by-author-keyword" else "get-titles-by-author"
+        # TODO: repace this with getTitles?
+        # serviceName = if aboutAuthors then "get-works-by-author-keyword" else "get-titles-by-author"
         def = $q.defer()
-        url = "/query/lb-anthology.xql"
+        
+        params = 
+            include : "shorttitle,lbworkid,titlepath,searchable"
+
+        if aboutAuthors
+            params.aboutAuthors = true
+
+        # url = "/query/lb-anthology.xql"
+        url = "#{STRIX_URL}/lb_list_all/etext,faksimil/#{authorid}"
         req = 
             url : url
-            params:
-                action : serviceName
-                authorid : authorid
-        if cache then req.cache = true
-        http(req).success (xml) ->
-            output = []
-            for elem in $("result", xml).children()
-                output.push objFromAttrs(elem)
-
-            def.resolve output
-
-
-        return def.promise
-
-
-
-    getAuthorsInSearch : (o) ->
-        def = $q.defer()
-        params = 
-            command: "count"
-            groupby: "text_nameforindex"
-            cqp: getCqp(o)
-            corpus: "LBSOK"
-            incremental: false
-            defaultwithin: "sentence"
-        $http(
-            url: "http://spraakbanken.gu.se/ws/korp"
-            method: "GET"
-            cache: true
             params: params
-        ).success( (data) ->
-            def.resolve data.total.absolute
-        ).error (data) ->
-            c.log "getAuthorsInSearch error", arguments
-            def.reject()
+        if cache then req.cache = true
+        $http(req).success (data) ->
+            def.resolve data.data
+
 
         return def.promise
+
+
+
+    # getAuthorsInSearch : (o) ->
+    #     def = $q.defer()
+    #     params = 
+    #         command: "count"
+    #         groupby: "text_nameforindex"
+    #         cqp: getCqp(o)
+    #         corpus: "LBSOK"
+    #         incremental: false
+    #         defaultwithin: "sentence"
+    #     $http(
+    #         url: "http://spraakbanken.gu.se/ws/korp"
+    #         method: "GET"
+    #         cache: true
+    #         params: params
+    #     ).success( (data) ->
+    #         def.resolve data.total.absolute
+    #     ).error (data) ->
+    #         c.log "getAuthorsInSearch error", arguments
+    #         def.reject()
+
+    #     return def.promise
 
 
 
@@ -1069,7 +1090,7 @@ littb.factory "authors", (backend, $q) ->
     
     def = $q.defer()
     # @promise = def.promise
-    backend.getAuthorList().then (authors) =>
+    backend.getAuthorList(null, exclude=['intro']).then (authors) =>
         authorsById = _.object _.map authors, (item) =>
             [item.authorid, item]
         # c.log "authorsById", authorsById
@@ -1082,7 +1103,6 @@ littb.factory "authors", (backend, $q) ->
     
 
 littb.factory "searchData", (backend, $q, $http, $location) ->
-    NUM_HITS = 50 # how many hits per search?
     BUFFER = 0 # additional hits 
     class SearchData
         constructor: () ->
@@ -1093,6 +1113,8 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @currentParams = null
 
             @isSearching = false
+            @NUM_HITS = 20 # how many doc hits per search?
+            @NUM_HIGHLIGHTS = 5
 
         newSearch : (params) ->
             @data = []
@@ -1102,6 +1124,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @querydata = null
             @current = null
             @isSearching = false
+            @savedParams = null
 
 
         searchWorks : (o) ->
@@ -1109,36 +1132,63 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             def = $q.defer()
 
 
-            # from = (o.from or 0) - BUFFER
-            # if from < 0 then from = 0
-            # to = (o.to or NUM_HITS) + BUFFER
-
-
-            # params = 
-            #     command : "query"
-            #     cqp : getCqp(o)
-            #     show: "wid,x,y,width,height"
-            #     show_struct : "page_n,text_lbworkid,text_author,text_authorid,text_title,text_shorttitle,text_titlepath,text_nameforindex,text_mediatype,text_date,page_size"
-            #     corpus : "LBSOK"
-            #     start: from
-            #     end : to
-            #     sort: "sortby"
-            #     context: 'LBSOK:20 words'
-            #     rightcontext : 'LBSOK:15 words'
-
-            # if @querydata
-            #     params.querydata = @querydata
-
             @isSearching = true
 
+            params = 
+                include: "authors,title,titlepath,title_id,mediatype"
+                number_of_fragments: @NUM_HIGHLIGHTS + 1
+
+            params = _.extend {}, o, params
+
+
+            groupSents = (data) =>
+                i = 0
+                output = []
+
+                row_index = 0
+                for item in data
+                    output.push {isHeader: true, metadata: item.source}
+                    for high in item.highlight
+                        obj = {metadata: item.source, highlight: high, index: row_index}
+                        obj.href = @parseUrls obj, row_index
+                        output.push obj
+                        row_index++
+                    if item.overflow
+                        output.push {overflow: true}
+
+                return output
+                
             $http(
-                url: "#{STRIX_URL}/lb_search/" + o.query
-            ).success (data) =>
-                c.log "data", data
+                url: "#{STRIX_URL}/lb_search/#{o.query}"
+                params : params
+            ).success (response) =>
+                c.log "response", response
                 @isSearching = false
-                @total_hits = data.hits
+                @total_hits = response.hits
                 c.log "@total_hits", @total_hits
-                def.resolve data
+
+                punctArray = [",", ".", ";", ":", "!", "?", "..."]
+                for work in response.data
+                    if work.highlight.length > @NUM_HIGHLIGHTS
+                        work.highlight = work.highlight[0..@NUM_HIGHLIGHTS - 1]
+                        work.overflow = true
+                    
+                    for high in work.highlight
+
+                        for key in ["left_context", "match", "right_context"]
+                            for wd in high[key]
+                                if wd.word in punctArray
+                                    wd._punct = true
+
+                # @compactData(response.data, o.from)
+
+                sentsWithHeaders = groupSents(response.data)
+
+
+
+
+
+                def.resolve [response.data, sentsWithHeaders, response.author_aggregation]
             .error (data) =>
                 def.reject(data)
 
@@ -1188,6 +1238,25 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
             return def.promise
 
+        resetMod : () ->
+            def = $q.defer()
+            @currentParams = @savedParams
+            @savedParams = null
+            @searchWorks(@currentParams).then (data) ->
+                def.resolve data
+            return def.promise
+
+        modifySearch : (arg_mod) ->
+            # redoes search with new args
+            def = $q.defer()
+            if not @savedParams
+                @savedParams = @currentParams
+            @currentParams = _.extend {}, @savedParams, arg_mod
+            @searchWorks(@currentParams).then (data) ->
+                def.resolve data
+            return def.promise
+
+
         slice : (from, to) ->
             unless @currentParams then return
             c.log "slice", from, to
@@ -1206,7 +1275,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                     @currentParams.to = to
 
                 @searchWorks(@currentParams).then (data) ->
-                    def.resolve data.data
+                    def.resolve data
             @doNewSearch = false
             return def.promise
 
@@ -1232,7 +1301,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
         compactData : (data, startIndex) ->
             min = Infinity
-            for row in data.kwic
+            for work in data.highlight
 
                 sum = _.sum row.tokens, (item, i) ->
                     if i < row.match.start
@@ -1264,25 +1333,25 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                         row.match.end -= drop
 
         parseUrls : (row, index) ->
-            itm = row.structs
-            mediatype = itm.text_mediatype
+            metadata = row.metadata
 
-            matches = row.tokens[row.match.start...row.match.end]
+            matches = row.highlight.match
             matchParams = []
-            if mediatype == "faksimil"
+            c.log "metadata.mediatype", metadata.mediatype
+            if metadata.mediatype == "faksimil"
                 # obj = _.pick item, "x", "y", "width", "height"
-                matchGroups = _.groupBy matches, "y"
+                matchGroups = _.groupBy matches, (match) -> match.attrs.x
 
                 makeParams = (group) ->
-                    params = _.pick group[0], "x", "y", "height"
+                    params = _.pick group[0].attrs, "x", "y", "height"
 
                     for match in group
                         unless params.width
-                            params.width = Number(match.width)
+                            params.width = Number(match.attrs.width)
                         else
-                            params.width += Number(match.width)
-
-                    max = Math.max itm.page_size.split("x")...
+                            params.width += Number(match.attrs.width)
+                    # TODO update this when page_size has been implemented in the backend
+                    max = Math.max metadata.page_size.split("x")...
                     factors = _.map SIZE_VALS, (val) -> val / max
 
                     for key, val of params
@@ -1297,8 +1366,8 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
             else 
                 matchParams.push
-                    traff : matches[0].wid
-                    traffslut : _.last(matches).wid
+                    traff : matches[0].attrs.wid
+                    traffslut : _.last(matches).attrs.wid
                 
 
             merged = _(matchParams).reduce( (obj1, obj2) -> 
@@ -1319,11 +1388,11 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             merged.hit_index = index
             merged = _(merged).pairs().invoke("join", "=").join("&")
 
-            author = _.str.trim(itm.text_authorid, "|").split("|")[0]
-            titleid = itm.text_titlepath
+            author = metadata.authors[0].author_id
+            titleid = metadata.title_id
 
             return "/#!/forfattare/#{author}/titlar/#{titleid}" + 
-                "/sida/#{itm.page_n}/#{itm.text_mediatype}?#{merged}" # ?#{backend.getHitParams(itm)}
+                "/sida/#{matches[0].attrs.n}/#{metadata.mediatype}?#{merged}" # ?#{backend.getHitParams(metadata)}
             
 
         next : () ->

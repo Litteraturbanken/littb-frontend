@@ -110,23 +110,35 @@
                     
                     <!-- <tr on-finish-render="tableRenderComplete()" height="$parent.rowHeights[$index]" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" > -->
                     <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" >
-                        <td class="header" colspan="4" ng-if="sent.isHeader">
-                            <div class="header_content">
-                                <span class="author">{{authorsById[sent.metadata.author_id].nameforindex}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authorid}}/titlar/{{sent.metadata.titlepath[0]}}?om-boken">{{sent.metadata.title}}</a></span>
+                        <td  colspan="4" ng-if="sent.overflow">
+                            <div class="overflow sc">
+                                <hr>
+                                    <a class="more" ng-click="">Visa fler</a>
+                                <hr>
+                                
                             </div>
                         </td>
-                        <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>                        
+                        <td class="header" colspan="4" ng-if="sent.isHeader">
+                            <div class="header_content">
+                                <span class="author">{{authorsById[sent.metadata.authors[0].author_id].nameforindex}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.titlepath.split('/')[0]}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
+                            </div>
+                        </td>
+                        <!-- <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>                         -->
 
-                        <td class="left_context"><!--
-                            --><span ng-repeat="wd in sent.highlight.left_context | limitTo:10">{{wd.word}} </span>
+                        <td ng-if="sent.highlight" class="left_context"><!--
+                            --><span ng-repeat="wd in sent.highlight.left_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
                         </td>
-                        <td class="match">
-                            <span class="match" ng-repeat="wd in sent.highlight.match">
-                            <a ng-href="/#!/forfattare/{{sent.metadata.author_id}}/titlar/{{sent.metadata.title_id}}/?om-boken">{{wd.word}}</a></span>
+                        <td ng-if="sent.highlight" class="match">
+                            <span ng-repeat="wd in sent.highlight.match">
+                                <!-- ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.titlepath.split('/')[0]}}/{{sent.metadata.mediatype}}/{{wd.attrs.n}}"  -->
+                                <a ng-href="{{::sent.href}}" ng-click="save_search($index)"
+                                    class="word" ng-class="{punct: wd._punct}">{{wd.word}}</a>
+                            </span>
                         </td>
-                        <td class="right_context">
-                            <span ng-repeat="wd in sent.highlight.right_context">{{wd.word}} </span>
+                        <td ng-if="sent.highlight" class="right_context">
+                            <span ng-repeat="wd in sent.highlight.right_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
                         </td>
+                        
                                 <!-- <li ng-repeat="hit in sent.highlight"> -->
                                 
 
@@ -216,8 +228,12 @@
             
         </div>
         <ul class="navigator" ng-show="kwic.length" ng-style="{'max-height': container_height}">
-            <li ng-repeat="obj in authorStatsData" >
-                <a ng-class="{selected: obj.pos == current_page}" ng-click="gotoPage(obj.pos)">{{obj.author}}</a>
+            <li><a ng-click="resetAuthorFilter()" ng-class="{selected : !nav_filter}">Visa alla</a></li>
+            <li ng-repeat="obj in authorStatsData"  >
+                <!-- <a ng-class="{selected: obj.pos == current_page}" ng-click="gotoPage(obj.pos)">{{obj.author}}</a> -->
+                <a  ng-class="{selected : nav_filter == obj.author_id}" 
+                    ng-click="setAuthorFilter(obj.author_id)">{{authorsById[obj.author_id].surname}}</a>
+                {{obj.doc_count}}
             </li>
         </ul>
 

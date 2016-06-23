@@ -127,8 +127,8 @@ getAuthorSelectSetup = (s, $filter) ->
             author = s.authorsById[data.id]
 
             firstname = ""
-            if author.nameforindex.split(",").length > 1
-                firstname = "<span class='firstname'>, #{author.nameforindex.split(',')[1]}</span>"
+            if author.name_for_index.split(",").length > 1
+                firstname = "<span class='firstname'>, #{author.name_for_index.split(',')[1]}</span>"
 
             return """
             <span>
@@ -145,6 +145,7 @@ getAuthorSelectSetup = (s, $filter) ->
 littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce, $filter, $anchorScroll) ->
     s = $scope
     s.open = true
+    hasSearchInit = false
     # s.proofread = 'all'
 
     s.authorSelectSetup = getAuthorSelectSetup(s, $filter)
@@ -172,18 +173,15 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         # $location.search("titel", s.selected_title?.titlepath.split("/")[0] or null)
         $location.search("titel", s.selected_title?.lbworkid or null)
 
+    s.resetAuthorFilter = () ->
+        s.nav_filter = null
+        searchData.resetMod().then ([kwic, sentsWithHeaders]) ->
+            # s.kwic = kwic
+            s.sentsWithHeaders = sentsWithHeaders
 
-    # s.checkProof = (obj) ->
-    #     if obj.searchable != 'true' then return false
-    #     if s.proofread == 'all'
-    #         return true
-    #     else if s.proofread == "no" and obj.proofread == "false"
-    #         return true
-    #     else if s.proofread == "yes" and obj.proofread == "true"
-    #         return true
-    #     else
-    #         return false
-
+    s.setAuthorFilter = (authorid) ->
+        # $location.search("navigator_filter", authorid)
+        s.nav_filter = authorid
 
 
     s.authorChange = () ->
@@ -202,13 +200,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     # for the author / about author search check
     s.isAuthorSearch = true
 
-    titleDef = backend.getTitles()
-    $q.all([titleDef, authors]).then ([titleArray, [authorList, authorsById]]) ->
-        titles = _.filter titleArray, (title) ->
+
+    aboutDef = backend.getTitles(false, null, null, null, true)
+
+    $q.all([aboutDef, authors]).then ([[titleArray], [authorList, authorsById]]) ->
+        titleArray = _.filter titleArray, (title) ->
             title.searchable
-
-
-        aboutAuthorIds = _.unique _.flatten _.pluck titleArray, "authorKeywords"
+        aboutAuthorIds = _.compact _.pluck titleArray, "authorkeyword"
         s.aboutAuthors = _.map aboutAuthorIds, (id) ->
             authorsById[id]
 
@@ -232,19 +230,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
                 filteredTitles = _.uniq filteredTitles, (item) -> item.lbworkid
                 s.titles = filteredTitles
-
-
-
-            # for auth in newAuthors.split(",")
-            #     backend.getTitlesByAuthor(auth, true).then (data) ->
-            #         filteredTitles = _.filter data, (item) -> "/" not in item.titlepath
-            #         s.titles = filteredTitles
-            #         titlesById = _.object _.map filteredTitles, (item) -> [item.lbworkid, item]    
-            #         initTitle titlesById
-
         
         if $location.search().forfattare
-            # c.log "auth", $location.search().forfattare
             auth = $location.search().forfattare?.split(",")
             s.selectedAuthors = auth
             c.log "s.selectedAuthors", s.selectedAuthors
@@ -252,6 +239,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         if $location.search().titlar
             titles = $location.search().titlar?.split(",")
             s.selectedTitles = titles
+        if $location.search().sok_filter
+            s.nav_filter = $location.search().sok_filter
 
         util.setupHashComplex s, [
                 key : "forfattare"
@@ -270,13 +259,24 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                     val?.split(",")
                 val_out : (val) ->
                     val?.join(",")
-                # post_change : change
+
+            , 
+                key : "sok_filter"
+                expr : "nav_filter"
+                post_change : (authorid) ->
+                    if authorid
+                        c.log "do modifySearch", authorid
+                        searchData.modifySearch({authors: authorid, from: 0, to: s.num_hits - 1}).then ([kwic, sentsWithHeaders]) ->
+                            # s.kwic = kwic
+                            s.sentsWithHeaders = sentsWithHeaders
+
+
 
         ]
 
 
     s.searching = false
-    s.num_hits ?= 50
+    s.num_hits = searchData.NUM_HITS
     s.current_page = 0
 
     # s.rowHeights = []
@@ -371,19 +371,17 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     
     getSearchArgs = (from, to) ->
         
-        unless s.filterOpts[0].selected
-
-            text_attrs = _.pluck (_.filter s.filterOpts, "selected"), "key"
-            # groups = _.groupBy (_.filter s.filterOpts, "selected"), "group"
-
-            # groups = _.map groups, (group) ->
-                
-            #     vals = _.map (_.pluck group, "val"), (val) -> "_.text_" + val
-            #     return "(" + vals.join(" | ") + ")"
-
-            # text_attrs = _.flatten groups
+        filter_params = []
+        unless s.filterOpts[0].selected # search all texts is false
+            searchAnom = _.find(s.filterOpts, {key: "is_anom"}).selected
+            for groupKey, group of (_.groupBy s.filterOpts, "group")
+                if groupKey == "undefined" then continue
+                selected = _.filter group, "selected"
+                if selected.length == 1
+                    filter_params.push selected[0].param
 
 
+        filter_params = _.object filter_params
 
         
         args = {
@@ -391,19 +389,28 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             # mediatype: getMediatypes()
             from: from
             to: to
-            selectedTitle : $location.search().titlar
-            prefix: $location.search().prefix
-            suffix: $location.search().suffix
-            infix: $location.search().infix
-            text_attrs : text_attrs or []
         }
+        prefix = $location.search().prefix
+        suffix = $location.search().suffix
+        infix = $location.search().infix
+        if prefix or suffix or infix
+            args.phrase = false
+            if prefix or suffix
+                prefix = if prefix then ".*" else ""
+                suffix = if suffix then ".*" else ""
+                args.query = suffix + args.query + prefix
+        _.extend args, filter_params
 
-        if $location.search().sok_om and $location.search().forfattare
-            args.selectedAboutAuthor = $location.search().forfattare
-        else if $location.search().sok_om
-            args.searchAllAbout = true
-        else
-            args.selectedAuthor = $location.search().forfattare
+        if $location.search().sok_om
+            args.about_author = true
+        if $location.search().forfattare
+            args.authors = $location.search().forfattare
+        if $location.search().titlar
+            args.work_ids = $location.search().titlar
+
+
+        if searchAnom
+            args.anonymous = false
 
         return args
 
@@ -476,48 +483,48 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.filterOpts =  [
         {
             label: "Sök i <span class='sc'>ALLA TEXTER</span>",
-            val: "all_texts",
+            # param: "all_texts",
             selected: true
             key : "all_texts"
         }
         {
             label: 'Sök i <span class="sc">moderniserade</span> texter',
-            # val: "modernized = 'true'",
+            param: ["modernized", true],
             selected: true
             group : 0
             key : "is_modernized"
         }
         {
             label: 'Sök i <span class="sc">ej moderniserade</span> texter',
-            # val: "modernized = 'false'",
+            param: ["modernized", false],
             selected: true
             group : 0
             key : "not_modernized"
         }
         {
             label: 'Sök i <span class="sc">korrekturlästa</span> texter',
-            # val: "proofread = 'true'",
+            param: ["proofread", true],
             selected: true
             group : 1
             key : "is_proofread"
         }
         {
             label: 'Sök i <span class="sc">ej korrekturlästa</span> texter',
-            # val: "proofread = 'false'",
+            param: ["proofread", false],
             selected: true
             group : 1
             key : "not_proofread"
         }
         {
             label: 'Sök i texter skrivna av <span class="sc">kvinnor</span>',
-            # val: "gender contains 'female'",
+            param: ["gender", "female"],
             selected: true
             group : 2
             key : "gender_female"
         }
         {
             label: 'Sök i texter skrivna av <span class="sc">män</span>',
-            # val: "gender contains 'male'",
+            param: ["gender", "male"],
             selected: true
             group : 2
             key : "gender_male"
@@ -539,53 +546,26 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.options = {
         sortSelected : 'lastname'
     }
-    groupSents = (kwic) ->
-        # _.groupBy kwic, (item) ->
-        i = 0
-        output = []
-        # prevAuth = null
-
-
-
-        row_index = 0
-        for item in kwic
-            # if not item? then continue
-
-            output.push {isHeader: true, metadata: item.source}
-            for high in item.highlight
-                output.push {metadata: item.source, highlight: high, index: row_index}
-                row_index++
-
-
-            # auth = item.structs.text_authorid.split("|")[1]
-            # shorttitle = item.structs.text_shorttitle
-
-            # if (prevAuth != auth) or (shorttitle != prevShortTitle)
-            #     output.push {isHeader : true, authorid : auth, shorttitle: shorttitle}
-
-            # # item.index = i
-            # output.push item
-
-            # prevAuth = auth
-            # prevShortTitle = shorttitle
-            # i++
-
-        return output
 
     s.onSearchSubmit = (query) ->
         $anchorScroll("results")
+        # s.resetAuthorFilter()
         s.newSearch(query)        
 
     s.newSearch = (query) ->
+        if hasSearchInit
+            s.current_page = 0
+
+
         c.log "newSearch", query
         q = query or s.query
         unless q then return
         $location.search("fras", q) if q
         s.query = q
         s.pageTitle = q
-        from = 0
+        from = s.current_page * s.num_hits
         #TODO: eh?
-        to = (s.num_hits - 1)
+        to = (from + s.num_hits) - 1
         args = getSearchArgs from, to
         searchData.newSearch args
         s.search from, to
@@ -598,42 +578,20 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         args = getSearchArgs(from, to)
         s.from_index = from
 
-
-        # backend.getAuthorsInSearch(args).then (data) ->
-        #     c.log "getAuthorsInSearch then", data
-
-        #     s.authorStatsData = _.sortBy (_.pairs data), (item) -> item[0]
-
-        #     prev = 0
-        #     s.authorStatsData = []
-        #     for auth in (_.sortBy (_.keys data).sort())
-        #         val = data[auth]
-                
-        #         s.authorStatsData.push {author : auth, pos : Math.floor(prev / s.num_hits)}
-        #         prev = val + prev
-
-
-
-
-
         # def = backend.searchWorks(args)
         def = searchData.slice(from, to)
-        def.then (kwic) ->
+        def.then ([kwic, sentsWithHeaders, author_aggs]) ->
             c.log "search data slice", searchData.total_hits
 
-            # s.data = data
             s.kwic = kwic
             s.hits = searchData.total_hits
-            # s.hits = 10
             s.total_pages = Math.ceil(s.hits / s.num_hits)
 
-            # for row in (data.kwic or [])
-            #     row.href = searchData.parseUrls row
 
-            s.sentsWithHeaders = groupSents(kwic)
+            s.sentsWithHeaders = sentsWithHeaders
+            s.authorStatsData = author_aggs
             s.searching = false
-
-            # s.searching = false
+            hasSearchInit = true
 
         return def
     # , 200)
@@ -1313,14 +1271,6 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
         return titleArray
 
-    # backend.getStats().then (data) ->
-    #     c.log "data", data
-
-        # s.titleSearching = false
-
-    #     s.popularTitles = _.compact _.unique ([].concat data.titleList, data.epublist), (title) ->
-    #         title?.itemAttrs.lbworkid
-
 
 littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
     s = $scope
@@ -1336,13 +1286,12 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
     s.authorSelectSetup = {
         formatNoMatches: "Inga resultat",
         formatResult : (data) ->
-            c.log "data", data
             author = s.authorsById[data.id]
             unless author then return data.text
 
             firstname = ""
-            if author.nameforindex.split(",").length > 1
-                firstname = "<span class='firstname'>, #{author.nameforindex.split(',')[1]}</span>"
+            if author.name_for_index.split(",").length > 1
+                firstname = "<span class='firstname'>, #{author.name_for_index.split(',')[1]}</span>"
 
             return """
             <span>
@@ -1351,8 +1300,6 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
             """
 
         formatSelection : (item) ->
-            c.log "item", item
-
             try
                 return s.authorsById[item.id].surname
             catch e
@@ -1362,11 +1309,11 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
 
     # TODO: what about the workauthor issue?
-    s.sorttuple = [["author[0].nameforindex", "itemAttrs.sortkey"], false]
+    s.sorttuple = [["author[0].name_for_index", "itemAttrs.sortkey"], false]
     s.setSort = ([sortstr]) ->
         alternate = {
-            "author[0].nameforindex" : "itemAttrs.sortkey"
-            "itemAttrs.sortkey" : "author[0].nameforindex"
+            "author[0].name_for_index" : "itemAttrs.sortkey"
+            "itemAttrs.sortkey" : "author[0].name_for_index"
         }[sortstr]
         s.sorttuple[0] = [sortstr, alternate]
     s.setDir = (isAsc) ->
@@ -1374,21 +1321,16 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
     s.rowFilter = (item) ->
-        if "epub" not in item.mediatype then return false
-        author = s.authorsById?[s.authorFilter]
-        if author and author.authorid != item.author[0].authorid then return false
-        if s.filterTxt
-            return false if not ((has item.author[0].fullname, s.filterTxt) or (has item.itemAttrs.showtitle, s.filterTxt))
+        # author = s.authorsById?[s.authorFilter]
+        # if author and author.authorid != item.author[0].authorid then return false
+        # if s.filterTxt
+        #     return false if not ((has item.author[0].fullname, s.filterTxt) or (has item.itemAttrs.showtitle, s.filterTxt))
         return true
 
     s.getAuthor = (row) ->
-        [last, first] = row.author[0].nameforindex.split(",")
+        [last, first] = row.authors[0].name_for_index.split(",")
 
         (_.compact [last.toUpperCase(), first]).join ","
-
-    s.letterChange = () ->
-        s.filterTxt = ""
-        return
 
     s.log = (filename) ->
         return true
@@ -1409,7 +1351,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
             # scope_name : "sortVal"
             scope_func : "setSort"
             key : "sortering"
-            default : "author[0].nameforindex,itemAttrs.sortkey"
+            default : "author[0].name_for_index,itemAttrs.sortkey"
             val_in : (val) ->
                 val?.split(",")
             val_out : (val) ->
@@ -1425,17 +1367,15 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         ]
 
     
-    backend.getTitles().then (titleArray) ->
+    backend.getEpub().then (titleArray) ->
         s.searching = false
-        s.rows = _.filter titleArray, (item) -> "epub" in item.mediatype
+        s.rows = titleArray
+        # s.rows = _.filter titleArray, (item) -> "epub" in item.mediatype
         authors = _.map s.rows, (row) ->
-            row.author[0]
+            row.authors[0]
 
         s.authorData = _.unique authors, false, (item) ->
-            item.authorid
-
-        # s.currentLetters = _.unique _.map titleArray, (item) ->
-        #     item.author[0].nameforindex[0]
+            item.author_id
 
 
 
@@ -2494,6 +2434,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             
         searchData.newSearch(args)
         searchData.current = Number($location.search().hit_index or 0)
+        #TODO: why 50?
         searchData.slice(0, 50).then () ->
             c.log "searchdata slice"
         
@@ -2516,7 +2457,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         c.log "hit", hit
         # from = if (hit - 5) < 0 then 0 else (hit - 5)
         searchData.current = hit
-        searchData.slice(hit, hit + 20).then (result) ->
+        searchData.slice(hit, hit + 20).then ([result]) ->
             c.log "result", result
             size = maybeSize()
             $location.url(result[0].href[3...] + size)

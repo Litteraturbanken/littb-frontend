@@ -30,15 +30,15 @@
             </div>
             <table class="contenttable">
                 <thead>
-                    <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
-                    <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
+                    <th> <div sort-triangles val="['author[0].nameforindex', 'sortkey']" tuple="sorttuple"></div> </th>
+                    <th> <div sort-triangles val="['sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
                 </thead>
                 <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.author[0].nameforindex.toUpperCase()}}">
                         <td>
-                            <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}" >{{::getAuthor(row)}}</a>
+                            <a ng-href="/#!/forfattare/{{::row.author[0].author_id}}" >{{::getAuthor(row)}}</a>
                         </td>
                         <td class="title">
-                            <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}/titlar/{{::row.itemAttrs.titlepath.split('/')[0]}}/etext/?om-boken" >{{::row.itemAttrs.showtitle}}</a>
+                            <a ng-href="/#!/forfattare/{{::row.author[0].author_id}}/titlar/{{::row.titlepath.split('/')[0]}}/etext/?om-boken" >{{::row.showtitle || row.shorttitle}}</a>
                         </td>
                         <td>
                             <a ng-click="fetchEpub(row)">Hämta</a>

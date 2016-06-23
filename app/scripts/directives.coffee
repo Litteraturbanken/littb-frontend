@@ -469,26 +469,26 @@ littb.directive "popper", ($rootElement) ->
 
 
 
-littb.directive 'kwicWord', ->
-    replace: true
-    template : """<span class="word" ng-class="getClassObj(wd)">{{::wd.word}} </span>
-                """ #ng-click="wordClick($event, wd, sentence)"
-    link : (scope, element) ->
-        scope.getClassObj = (wd) ->
-            output =
-                reading_match : wd._match
-                punct : wd._punct
-                match_sentence : wd._matchSentence
+# littb.directive 'kwicWord', ->
+#     replace: true
+#     template : """<span class="word" ng-class="getClassObj(wd)">{{::wd.word}} </span>
+#                 """ #ng-click="wordClick($event, wd, sentence)"
+#     link : (scope, element) ->
+#         scope.getClassObj = (wd) ->
+#             output =
+#                 reading_match : wd._match
+#                 punct : wd._punct
+#                 match_sentence : wd._matchSentence
 
-            for struct in (wd._struct or [])
-                output["struct_" + struct] = true
+#             for struct in (wd._struct or [])
+#                 output["struct_" + struct] = true
 
-            for struct in (wd._open or [])
-                output["open_" + struct] = true
-            for struct in (wd._close or [])
-                output["close_" + struct] = true
+#             for struct in (wd._open or [])
+#                 output["open_" + struct] = true
+#             for struct in (wd._close or [])
+#                 output["close_" + struct] = true
 
-            return (x for [x, y] in _.pairs output when y).join " "
+#             return (x for [x, y] in _.pairs output when y).join " "
 
 
 littb.directive 'insert', () ->

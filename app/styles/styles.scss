@@ -1716,6 +1716,22 @@ body > .header {
                         // font-style: italic;
                     }
                 }
+                
+                .overflow {
+                    display : flex;
+                    justify-content: center;
+                    margin-top: 1em;
+                    font-size: 0.8em;
+                    hr {
+                        width: 40px;
+                        border-color : #999;
+                        // display: inline;
+                    }
+                    .more {
+                        // display : inline-block;
+                        margin: 0 1em;
+                    }
+                }
                 .sentence {
                     // font-size: 0.9em;
                 }
