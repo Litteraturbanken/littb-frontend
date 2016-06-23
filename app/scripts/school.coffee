@@ -318,7 +318,7 @@ littb.config () ->
 
     whn "/skola/:docurl",
         title : "Litteraturskolan"
-        templateUrl : "views/school/teachers.html"
+        templateUrl : "views/school/school.html"
 
 
 

@@ -49,6 +49,9 @@
             font-size: 0.8em;
             a {
                color : white;
+               &:hover {
+                color: #333;
+               }
             }
         }
         
@@ -359,8 +362,10 @@
         @include small-caps();
     }
     .firstterm, .glossterm {
+        font-weight: normal;
+        @include small-caps();
         // font-variant: small-caps;
-        font-size : 0.9em;
+        // font-size : 0.9em;
         // text-transform: capitalize;
         
     }
@@ -375,10 +380,8 @@
     
     dt {
         margin-top: 0.8em;
-        margin-bottom : 0.5em;
+        // margin-bottom : 0.5em;
         .glossterm {
-            font-style: normal;
-            font-weight: bold;       
         }
     }
     dd {
@@ -436,7 +439,7 @@
         }
         #leftCorridor {
             .logo_link_monogram {
-                @include logo("black_black");
+                // @include logo("black_black");
             }
             h1 {
                 color : #333;
@@ -447,9 +450,9 @@
 
             .mainnav {
                 a {
-                    color : black;
+                    // color : #333;
                     &:hover {
-                        color : white;
+                        // color : white;
                     }
                 }
             }
@@ -462,7 +465,7 @@
                 }
 
                 a {
-                    color : black;
+                    color : #333;
                 }
 
                 a:hover {
@@ -558,9 +561,9 @@
 
         .content {
             // margin-top : 6.3em;
-            padding-top : 0;
-            background : none;
-            border : none;
+            // padding-top : 0;
+            // background : none;
+            // border : none;
         }
         .logo_link {
             cursor: pointer;
@@ -580,15 +583,15 @@
         }
         
         .content {
-            min-height : 380px;
-            width : 450px;
-            color : white;
-            a {
-                color : white;
-            }
-            a:hover {
-                color : #333;
-            }
+            // min-height : 380px;
+            // width : 450px;
+            // color : white;
+            // a {
+            //     color : white;
+            // }
+            // a:hover {
+            //     color : #333;
+            // }
         }
         
         
