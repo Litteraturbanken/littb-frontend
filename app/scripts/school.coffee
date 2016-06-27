@@ -344,9 +344,9 @@ littb.controller "fileCtrl", ($scope, $routeParams, $location, $anchorScroll, $q
             a = $location.search().ankare
             if a
                 unless a and $("##{a}").length
-                    $(window).scrollTop(0)
+                    $(".content").scrollTop(0)
                     return
-                $(window).scrollTop($("##{a}").offset().top)
+                $(".content").scrollTop($("##{a}").position().top - 200)
 
                 $("##{a}").parent().addClass("highlight")
             # else if $rootScope.scrollPos[$location.path()]
