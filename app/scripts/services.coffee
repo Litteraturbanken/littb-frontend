@@ -36,7 +36,7 @@ littb.factory "debounce", ($timeout) ->
 
 
 
-
+###
 getCqp = (o) ->
 
 
@@ -163,7 +163,7 @@ getCqp = (o) ->
 
     return "[#{tokenList.join('] [')}]"
 
-
+###
 
 littb.factory "util", ($location) ->
     PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i
@@ -409,7 +409,31 @@ littb.factory 'backend', ($http, $q, util) ->
         ).then (response) ->
             return response.data.data
 
-    getTitles : (includeParts = false, author = null, sort_key = null, string = null, aboutAuthors=false) ->
+    getParts : (filterString) ->
+        def = $q.defer()
+        # TODO: add filter for leaf titlepaths and mediatype
+        params = 
+            exclude : "text,parts,sourcedesc,pages,errata"
+
+
+        $http(
+            url : "#{STRIX_URL}/lb_list_all/part"
+            params: params
+
+
+        ).success (data) ->
+            c.log "data", data
+            def.resolve data.data
+
+        return def.promise
+
+            # titleGroups = _.groupBy titles, (title) ->
+            #     title.lbworkid
+
+
+
+
+    getTitles : (includeParts = false, author = null, sort_key = null, string = null, aboutAuthors=false, getAll = false) ->
         def = $q.defer()
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
@@ -423,6 +447,8 @@ littb.factory 'backend', ($http, $q, util) ->
             author = "/" + author
         if aboutAuthors
             params.about_authors = true
+        # if getAll
+        #     params.to = 500
 
         $http(
             url : "#{STRIX_URL}/lb_list_all/etext,faksimil" + (author or "")
@@ -558,12 +584,16 @@ littb.factory 'backend', ($http, $q, util) ->
             # if $("fel", xml).length
             #     def.reject $("fel", xml).text()
             # output = parseWorkInfo("result", xml)
+            if data.hits == 0
+                def.reject "not_found"
+                return
             workinfo = data.data[0]
 
             workinfo.pagemap = {}
             for pg in workinfo.pages
                 workinfo.pagemap["page_" + pg.pagename] = pg.pageindex
                 workinfo.pagemap["ix_" + pg.pageindex] = pg.pagename
+            delete workinfo.pages
 
             workinfo.errata = for tr in $("tr", workinfo.errata)
                 _($(tr).find("td")).map(util.getInnerXML)
@@ -1108,17 +1138,19 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
         constructor: () ->
             @data = []
             @total_hits = null
+            @total_doc_hits = null
             @current = null
             @querydata = null
             @currentParams = null
 
             @isSearching = false
-            @NUM_HITS = 20 # how many doc hits per search?
+            @NUM_HITS = 30 # how many doc hits per search?
             @NUM_HIGHLIGHTS = 5
 
         newSearch : (params) ->
             @data = []
             @total_hits = null
+            @total_doc_hits = null
             @currentParams = params
             @doNewSearch = true
             @querydata = null
@@ -1161,13 +1193,20 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             $http(
                 url: "#{STRIX_URL}/lb_search/#{o.query}"
                 params : params
+                cache: true
             ).success (response) =>
                 c.log "response", response
                 @isSearching = false
-                @total_hits = response.hits
-                c.log "@total_hits", @total_hits
+                
+                @total_doc_hits = response.hits
+                
 
                 punctArray = [",", ".", ";", ":", "!", "?", "..."]
+
+
+
+                @compactLeftContext(response.data)
+
                 for work in response.data
                     if work.highlight.length > @NUM_HIGHLIGHTS
                         work.highlight = work.highlight[0..@NUM_HIGHLIGHTS - 1]
@@ -1186,14 +1225,19 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
 
 
-
-
                 def.resolve [response.data, sentsWithHeaders, response.author_aggregation]
             .error (data) =>
                 def.reject(data)
 
 
-
+            $http(
+                url: "#{STRIX_URL}/lb_search_count/#{o.query}"
+                params : params
+                cache: true
+            ).success (response) =>
+                c.log "count all", response
+                @total_hits = response.total_highlights
+                c.log "@total_hits", @total_hits
 
             # $http(
             #     url : "http://spraakbanken.gu.se/ws/korp"
@@ -1299,45 +1343,38 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
 
 
-        compactData : (data, startIndex) ->
-            min = Infinity
-            for work in data.highlight
+        compactLeftContext : (data) ->
+            min = 40 # no longer sentences than min chars
+            # for work in data
+            #     for ctx in _.pluck work.highlight, "left_context"
+            #         sum = _.sum ctx, (wd) -> wd.word.length
 
-                sum = _.sum row.tokens, (item, i) ->
-                    if i < row.match.start
-                        return item.word.length
-                    else
-                        return 0
+            #         if sum < min then min = sum 
 
-                if sum < min then min = sum 
-                # sums.push sum 
+            #         ctx.num_chars = sum
+            c.log "min", min
+            for work in data
+                for ctx in _.pluck work.highlight, "left_context"
+                    num_chars = _.sum ctx, (wd) -> wd.word.length
+                    if num_chars > min
+                        diff = num_chars - min
+                        dropped = 0
 
-                row.sent_length = sum
+                        for wd, i in ctx
+                            if dropped >= diff
+                                drop = i
+                                break
+                            dropped += wd.word.length
 
-            for row, index in data.kwic
-                row.href = @parseUrls row, index + startIndex
-                if row.sent_length > min
+                        if drop
+                            ctx.splice(0, drop)
 
-                    diff = row.sent_length - min
-                    dropped = 0
-
-                    for wd, i in row.tokens
-                        if dropped >= diff
-                            drop = i
-                            break
-                        dropped += wd.word.length
-
-                    if drop
-                        row.tokens.splice(0, drop)
-                        row.match.start -= drop
-                        row.match.end -= drop
 
         parseUrls : (row, index) ->
             metadata = row.metadata
 
             matches = row.highlight.match
             matchParams = []
-            c.log "metadata.mediatype", metadata.mediatype
             if metadata.mediatype == "faksimil"
                 # obj = _.pick item, "x", "y", "width", "height"
                 matchGroups = _.groupBy matches, (match) -> match.attrs.x
@@ -1350,14 +1387,13 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                             params.width = Number(match.attrs.width)
                         else
                             params.width += Number(match.attrs.width)
-                    # TODO update this when page_size has been implemented in the backend
-                    max = Math.max metadata.page_size.split("x")...
+
+                    max = Math.max group[0].attrs.size.split("x")...
                     factors = _.map SIZE_VALS, (val) -> val / max
 
                     for key, val of params
                         params[key] = _(factors).map( (fact) ->
                             Math.round fact * val).join(",")
-
                     return params
                 
                 for group in _.values matchGroups
@@ -1396,7 +1432,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             
 
         next : () ->
-            if @current + 1 == @total_hits then return {then : angular.noop}
+            if @current + 1 == @total_doc_hits then return {then : angular.noop}
             @current++
             @get(@current)
 
@@ -1420,6 +1456,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
         reset : () ->
             @current = null
             @total_hits = null
+            @total_doc_hits = null
             @data = []
             @currentParams = null
 

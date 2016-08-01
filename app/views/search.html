@@ -39,7 +39,7 @@
             <div class="left">
                 <div class="auth_select_container">
                     <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" >
-                        <option value="{{author.authorid}}" ng-repeat="author in getAuthorDatasource() | orderBy:'nameforindex' | filter:{searchable : 'true'}">
+                        <option value="{{author.authorid}}" ng-repeat="author in getAuthorDatasource() | orderBy:'nameforindex' | filter:{searchable : 'true'}  track by $index">
                             {{author.fullname}}
                         </option>
                     </select> 
@@ -102,14 +102,14 @@
         <div class="table_viewport" ng-show="kwic">
             <!-- <div class="table_container" ng-style="{height : totalHeight}" > -->
             <div class="table_container">
-                <div ng-if="!searching && kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
+                <div ng-if="!searching && kwic && !kwic.length && !searchData.total_hits">Din sökning gav inga träffar</div>
                 
             
             
                 <table cellspacing="0" class="results" ng-style="{top : table_top}">
                     
                     <!-- <tr on-finish-render="tableRenderComplete()" height="$parent.rowHeights[$index]" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" > -->
-                    <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" >
+                    <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.metadata.mediatype == 'faksimil'}" >
                         <td  colspan="4" ng-if="sent.overflow">
                             <div class="overflow sc">
                                 <hr>
@@ -169,23 +169,25 @@
     </div>
 
     <div toolkit>
-        <div class="littb_pager" ng-if="hits">
+        <div class="littb_pager">
             <div>
 
 
                 <div class="hits_info">
-                    <div><div class="hits">{{hits}}</div> <div class="hits_sub">
-                        <span ng-show="hits > 1">sökträffar</span>
-                        <span ng-show="hits == 1">sökträff</span>
-                    </div></div>
+                    <div><div class="hits" ng-show="searchData.total_hits">{{searchData.total_hits}}</div> 
+                        <div class="hits_sub">
+                            <span ng-show="searchData.total_hits > 1">sökträffar</span>
+                            <span ng-show="searchData.total_hits == 1">sökträff</span>
+                        </div>
+                    </div>
 
                 </div>
 
                 Visar {{current_page  * num_hits + 1}}-{{getMaxHit()}} av 
-                {{hits}} träffar,
+                {{doc_hits}} träffar,
                 sida {{current_page + 1}} av {{total_pages}}.
 
-                <ul class="ctrl" ng-show="hits > 1">
+                <ul class="ctrl" ng-show="doc_hits > 1">
                     <!-- <li>
                         <a ng-click="nextPage()">Gå till {{(current_page + 1) * num_hits + 1}}-{{getMaxHit() + num_hits}}</a>
                     </li> -->

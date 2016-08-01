@@ -16,6 +16,7 @@ window.safeApply = (scope, fn) ->
 $.fn.outerHTML = () ->
     return $(this).clone().wrap('<div></div>').parent().html()
 
+_.templateSettings.interpolate = /{{([\s\S]+?)}}/g;
 
 authorResolve = ["$q", "$routeParams", "$route",
                             ($q, $routeParams, $route) ->

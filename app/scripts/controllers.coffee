@@ -127,7 +127,9 @@ getAuthorSelectSetup = (s, $filter) ->
             author = s.authorsById[data.id]
 
             firstname = ""
-            if author.name_for_index.split(",").length > 1
+            unless author.name_for_index
+                c.warn("no name_for_index for author", author)
+            if author.name_for_index?.split(",").length > 1
                 firstname = "<span class='firstname'>, #{author.name_for_index.split(',')[1]}</span>"
 
             return """
@@ -147,6 +149,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.open = true
     hasSearchInit = false
     # s.proofread = 'all'
+
+    s.searchData = searchData
 
     s.authorSelectSetup = getAuthorSelectSetup(s, $filter)
 
@@ -201,13 +205,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.isAuthorSearch = true
 
 
-    aboutDef = backend.getTitles(false, null, null, null, true)
+    aboutDef = backend.getTitles(false, null, null, null, true, true)
 
     $q.all([aboutDef, authors]).then ([[titleArray], [authorList, authorsById]]) ->
         titleArray = _.filter titleArray, (title) ->
             title.searchable
         aboutAuthorIds = _.compact _.pluck titleArray, "authorkeyword"
-        s.aboutAuthors = _.map aboutAuthorIds, (id) ->
+        s.aboutAuthors = _.uniq _.map aboutAuthorIds, (id) ->
             authorsById[id]
 
     s.getAuthorDatasource = () ->
@@ -267,7 +271,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                     if authorid
                         c.log "do modifySearch", authorid
                         searchData.modifySearch({authors: authorid, from: 0, to: s.num_hits - 1}).then ([kwic, sentsWithHeaders]) ->
-                            # s.kwic = kwic
                             s.sentsWithHeaders = sentsWithHeaders
 
 
@@ -333,7 +336,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
 
     s.nextPage = () ->
-        if (s.current_page  * s.num_hits) + s.kwic.length < s.hits
+        if (s.current_page  * s.num_hits) + s.kwic.length < s.doc_hits
             s.current_page++
             s.gotoPage s.current_page
     s.prevPage = () ->
@@ -451,7 +454,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     s.getMaxHit = () ->
         unless s.kwic then return
-        Math.min s.hits, (s.current_page  * s.num_hits) + s.kwic.length
+        Math.min searchData.total_hits, (s.current_page  * s.num_hits) + s.kwic.length
 
     onKeyDown = (event) ->
         if event.metaKey or event.ctrlKey or event.altKey or $("input:focus").length then return
@@ -568,7 +571,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         to = (from + s.num_hits) - 1
         args = getSearchArgs from, to
         searchData.newSearch args
-        s.search from, to
+        return s.search from, to
 
 
     # s.search = debounce((query, from, to) ->
@@ -584,11 +587,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             c.log "search data slice", searchData.total_hits
 
             s.kwic = kwic
-            s.hits = searchData.total_hits
-            s.total_pages = Math.ceil(s.hits / s.num_hits)
+            # s.hits = searchData.total_hits
+            s.doc_hits = searchData.total_doc_hits
+            s.total_pages = Math.ceil(s.doc_hits / s.num_hits)
 
-
-            s.sentsWithHeaders = sentsWithHeaders
+            # TODO: silly, silly hack
+            unless $location.search().sok_filter
+                s.sentsWithHeaders = sentsWithHeaders
             s.authorStatsData = author_aggs
             s.searching = false
             hasSearchInit = true
@@ -675,7 +680,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             post_change : (val) ->
                 c.log "fras val", val
                 if val
-                    s.newSearch val
+                    s.newSearch(val)
         ,   
             key : "sok_om"
             scope_name : "isAuthorAboutSearch"
@@ -1054,8 +1059,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         _.any _.map row.mediatype, (mt) -> s.mediatypeObj[mt]
         
 
-    s.titleFilter = (row) ->
-        row.titlepath.split("/").length > 1
+    # s.titleFilter = (row) ->
+    #     row.title_path.split("/").length > 1
 
     s.hasMediatype = (titleobj, mediatype) ->
         return mediatype in (titleobj?.mediatype or [])
@@ -1118,7 +1123,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchTitles = () ->
         # unless s.filter then return
-        backend.getTitles(true, null, null, s.filter).then (titleArray) ->
+        backend.getParts(s.filter).then (titleArray) ->
             s.all_titles = titleArray
 
 
@@ -2168,6 +2173,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # s.stepmap = _.object steps
             # s.pagestep = Number $("pagestep", data).text()
 
+            if mediatype == "faksimil"
+
+                s.sizes = new Array(5)
+                for i in s.workinfo.faksimil_sizes
+                    s.sizes[i - 1] = true
+
+
             s.startpage = workinfo.startpagename
             s.endpage = workinfo.endpagename
             s.pageix = s.pagemap["page_" + pagename]
@@ -2185,8 +2197,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             def = backend.getHtmlFile(url)
             def.then (html) ->
                 s.etext_html = html.data.firstChild.innerHTML
-                s.first_load = true
-                s.loading = false
                 return s.etext_html
 
             return def
@@ -2215,10 +2225,26 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             s.pagename = val
             s.pageix = s.pagemap["page_" + s.pagename]
-            downloadPage(s.pageix).then (html) ->
-                c.log "onFirstLoad"
-                onFirstLoad()
 
+            if mediatype == "etext"
+                downloadPage(s.pageix).then (html) ->
+                    c.log "onFirstLoad"
+                    s.first_load = true
+                    s.loading = false
+                    onFirstLoad()
+            else
+                id = $routeParams.lbid or s.workinfo.lbworkid
+                filename = _.str.lpad(s.pageix + 1, 4, "0")
+                s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}.jpeg"
+                s.first_load = true
+                s.loading = false
+                onFirstLoad()
+        , (err) ->
+            c.log "err", err
+
+            s.error = true
+            s.loading = false
+            s.first_load = true
 
 
 
