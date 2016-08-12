@@ -263,16 +263,16 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter">
                         <td>{{row.itemAttrs.lbworkid}}</td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].author_id}}">{{row.author[0].surname}}</a>
                         </td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.work_title_id}}/{{row.itemAttrs.mediatype}}">{{row.itemAttrs.showtitle}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.itemAttrs.work_title_id}}/{{row.itemAttrs.mediatype}}">{{row.itemAttrs.showtitle}}</a>
                         </td>
                         <td>
                             <span ng-repeat="type in row.mediatype">
                             
                                 <span ng-show="!$first">:::</span>
-                                <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
+                                <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
                             </span>
                         </td>
                     </tr>
@@ -473,9 +473,9 @@ littb.filter "trust", ($sce) ->
 littb.filter "normalizeAuthor", () ->
     trans = _.object _.zip "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ", "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy"
     trans = _.extend trans, _.object _.zip ["Æ", "æ", "Ð", "ð", "Þ", "þ", "ß", "Œ", "œ"], ["AE", "ae", "DH", "dh", "TH", "th", "ss", "OE", "oe"]
-    return (authorid) ->
-        unless authorid then return
-        ret = _.map authorid.split(""), (char) ->
+    return (author_id) ->
+        unless author_id then return
+        ret = _.map author_id.split(""), (char) ->
             trans[char] or char
         .join("")
 

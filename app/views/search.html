@@ -39,8 +39,8 @@
             <div class="left">
                 <div class="auth_select_container">
                     <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" >
-                        <option value="{{author.authorid}}" ng-repeat="author in getAuthorDatasource() | orderBy:'nameforindex' | filter:{searchable : 'true'}  track by $index">
-                            {{author.fullname}}
+                        <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | orderBy:'name_for_index' | filter:{searchable : 'true'}  track by $index">
+                            {{author.full_name}}
                         </option>
                     </select> 
                 </div>
@@ -120,7 +120,7 @@
                         </td>
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content">
-                                <span class="author">{{authorsById[sent.metadata.authors[0].author_id].nameforindex}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.work_title_id}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
+                                <span class="author">{{authorsById[sent.metadata.authors[0].author_id].name_for_index}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.work_title_id}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
                             </div>
                         </td>
                         <!-- <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>                         -->
@@ -146,7 +146,7 @@
                         <!-- <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content">
 
-                                <span class="author">{{authorsById[sent.author_id].nameforindex}}</span> <span class="title" tooltip="{{sent.title}}"><a ng-href="/#!/forfattare/{{sent.authorid}}/titlar/{{sent.titlepath[0]}}?om-boken">{{sent.title}}</a></span>
+                                <span class="author">{{authorsById[sent.author_id].name_for_index}}</span> <span class="title" tooltip="{{sent.title}}"><a ng-href="/#!/forfattare/{{sent.author_id}}/titlar/{{sent.titlepath[0]}}?om-boken">{{sent.title}}</a></span>
                             </div>
                         </td>
                         <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>
@@ -247,8 +247,8 @@
 
     <!-- <div class="box_container">
        <ul class="box">
-           <li ng-repeat="author in authors | orderBy:'nameforindex'" ng-click="author.checked = !author.checked">
-               <span ng-style="{visibility: author.checked ? 'visible' : 'hidden'}">✓</span><span  >{{author.nameforindex}} {{author | authorYear}}</span>
+           <li ng-repeat="author in authors | orderBy:'name_for_index'" ng-click="author.checked = !author.checked">
+               <span ng-style="{visibility: author.checked ? 'visible' : 'hidden'}">✓</span><span  >{{author.name_for_index}} {{author | authorYear}}</span>
            </li>
        </ul>
     </div> -->
@@ -294,7 +294,7 @@
                 <select id="author_select"
                         ng-model="selected_author"
                         ng-change="authorChange()"
-                        ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
+                        ng-options="author.name_for_index for author in authors | filter:{searchable : 'true'}" >
                     <option value="">Alla författare</option>
                 </select>
             </div>

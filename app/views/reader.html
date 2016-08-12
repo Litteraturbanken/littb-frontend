@@ -1,5 +1,5 @@
 <meta-desc>
-    {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
+    {{workinfo.showtitle}} av {{authorById[author].full_name}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
 <!-- <img class="no-gradient" bkg-img src="img/las_bkg.jpg"></img> -->
 <div class="reader_main" 
@@ -9,7 +9,7 @@
     <div class="preloader pull-right"><i class="spinner fa fa-spinner fa-pulse"></i></div>
 
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
-    <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
+    <div css="/txt/css/{{workinfo.lbworkid}}-etext.css" if="workinfo && mediatype == 'etext' || isParallel"></div>
     <div class="etext txt"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="first_load && etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
     
@@ -66,8 +66,8 @@
         <hr>
         <div class="current_part">
             <div class="header">
-                <a ng-click="show_chapters = true" ng-show="!getCurrentPart().authorid">Avsnitt eller del</a>
-                <a ng-href="/#!/forfattare/{{getCurrentPart().authorid}}" ng-show="getCurrentPart().authorid">{{authorById[getCurrentPart().authorid].fullname}}</a>
+                <a ng-click="show_chapters = true" ng-show="!getCurrentPart().author_id">Avsnitt eller del</a>
+                <a ng-href="/#!/forfattare/{{getCurrentPart().author_id}}" ng-show="getCurrentPart().author_id">{{authorById[getCurrentPart().author_id].full_name}}</a>
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
             <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().nav_title}}" class="navtitle"></div>
@@ -185,7 +185,7 @@
 
                 <ul class="part_menu" >
                     <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
-                        <span class="author">{{authorById[part.author_id].fullname}}</span>
+                        <span class="author">{{authorById[part.author_id].full_name}}</span>
                         <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.nav_title || part.title}}</a>
 
                     </li>

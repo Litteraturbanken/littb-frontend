@@ -119,7 +119,7 @@ getCqp = (o) ->
                 cqp : "_.text_gender contains 'male'"
                 group : 2
             is_anom : 
-                cqp : "_.text_authorid contains 'Anonym'"
+                cqp : "_.text_author_id contains 'Anonym'"
                 group : 2
 
 
@@ -139,7 +139,7 @@ getCqp = (o) ->
     c.log "o.text_attrs", o.text_attrs
 
     if o.selectedAuthor
-        auths = getAuthors(o.selectedAuthor, "authorid")
+        auths = getAuthors(o.selectedAuthor, "author_id")
         structAttrs.push auths
     else if o.selectedAboutAuthor
         auths = getAuthors(o.selectedAboutAuthor, "aboutauthor")
@@ -379,7 +379,7 @@ littb.factory 'backend', ($http, $q, util) ->
             else if elem.nodeName in asArray
                 val = _.map $(elem).children(), (child) ->
                     $(child).text()
-            else if elem.nodeName in ["authorid", "authorid-norm"]
+            else if elem.nodeName in ["author_id", "author_id-norm"]
                 val = {id : $(elem).text(), type: $(elem).attr("type")}
                 (output[util.normalize(elem.nodeName)]?.push val) or
                  output[util.normalize(elem.nodeName)] = [val]
@@ -427,7 +427,7 @@ littb.factory 'backend', ($http, $q, util) ->
                 file_size: pdf.attr("file-size")
                 url : util.getInnerXML pdf
 
-        # output.author_type = $(root + " > authorid", xml).attr("type")
+        # output.author_type = $(root + " > author_id", xml).attr("type")
         return output
 
     
@@ -488,6 +488,10 @@ littb.factory 'backend', ($http, $q, util) ->
         if sort_key
             params.sort_field = sort_key
             params.to = 30
+        else
+            params.sort_field = "sortkey|asc"
+            params.to = 10000
+            
         if string
             params.filter_string = string
         if author
@@ -498,7 +502,7 @@ littb.factory 'backend', ($http, $q, util) ->
         #     params.to = 500
 
         $http(
-            url : "#{STRIX_URL}/lb_list_all/etext,faksimil" + (author or "")
+            url : "#{STRIX_URL}/lb_list_all/etext,faksimil,pdf" + (author or "")
             params: params
 
 
@@ -506,8 +510,9 @@ littb.factory 'backend', ($http, $q, util) ->
             c.log "data", data
             titles = data.data
 
-            titleGroups = _.groupBy titles, (title) ->
-                title.lbworkid
+
+            # titleGroups = _.groupBy titles, (title) ->
+            #     title.lbworkid
 
 
             # for path, titles in pathGroups
@@ -516,7 +521,8 @@ littb.factory 'backend', ($http, $q, util) ->
             #             sibl = _.filter titles, (item) -> item.mediatype != title.mediatype
             #             title.siblings = sibl[0]
 
-            def.resolve [titles, titleGroups]
+            # def.resolve [titles, titleGroups]
+            def.resolve expandMediatypes(titles)
 
         return def.promise
 
@@ -527,7 +533,7 @@ littb.factory 'backend', ($http, $q, util) ->
     #     if author and allTitles
     #         params = 
     #             action : "get-titles-by-author"
-    #             authorid : author
+    #             author_id : author
     #     else if allTitles
     #         params = 
     #             action : "get-titles-by-string-filter"
@@ -548,7 +554,7 @@ littb.factory 'backend', ($http, $q, util) ->
     #     ).success (xml) ->
 
     #         pathGroups = _.groupBy $("item", xml), (item) ->
-    #             author = $(item).find("author").attr("authorid")
+    #             author = $(item).find("author").attr("author_id")
     #             # if "/" in $(item).attr("titlepath")
     #             return author + $(item).attr("titlepath").split("/")
     #             # else
@@ -622,19 +628,25 @@ littb.factory 'backend', ($http, $q, util) ->
     getSourceInfo : (titlepath, mediatype) ->
         # TODO: mediatype can be null?
         def = $q.defer()
-        url = "#{STRIX_URL}/get_work_info/#{titlepath}/#{mediatype}"
+        url = "#{STRIX_URL}/get_work_info/#{titlepath}"
 
         $http(
             url : url
 
-        ).success( (data) ->
+        ).success( (response) ->
             # if $("fel", xml).length
             #     def.reject $("fel", xml).text()
             # output = parseWorkInfo("result", xml)
-            if data.hits == 0
+            if response.hits == 0
                 def.reject "not_found"
                 return
-            workinfo = data.data[0]
+            # workinfo = data.data[0]
+
+            works = response.data
+            c.log "works", works
+
+
+            workinfo = expandMediatypes(works)[0]
 
             workinfo.pagemap = {}
             for pg in workinfo.pages
@@ -645,19 +657,6 @@ littb.factory 'backend', ($http, $q, util) ->
             workinfo.errata = for tr in $("tr", workinfo.errata)
                 _($(tr).find("td")).map(util.getInnerXML)
                 .map(_.str.strip).value()
-
-            workinfo.mediatypes = [workinfo.mediatype]
-            # TODO: add other mediatype if exists in data.data[1]
-            # for book in data.data[1:]:
-                # workinfo.mediatypes.push(book.mediatype)
-
-            if workinfo.epub
-                workinfo.mediatypes.push "epub"
-            if workinfo.pdf
-                workinfo.mediatypes.push "pdf"
-
-
-
 
             c.log "getSourceInfo", workinfo
             def.resolve workinfo
@@ -743,9 +742,9 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    getAuthorInfo : (authorid) ->
+    getAuthorInfo : (author_id) ->
         return $http(
-            url : "#{STRIX_URL}/get_lb_author/" + authorid
+            url : "#{STRIX_URL}/get_lb_author/" + author_id
         ).then( (response) ->
             return response.data.data
         , (err) ->
@@ -753,7 +752,7 @@ littb.factory 'backend', ($http, $q, util) ->
         )
 
 
-    getTextByAuthor : (authorid, textType, maybeAuthType) ->
+    getTextByAuthor : (author_id, textType, maybeAuthType) ->
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
             to : 10000
@@ -761,7 +760,7 @@ littb.factory 'backend', ($http, $q, util) ->
             params["author_type"] = maybeAuthType
             
         return $http(
-            url : "#{STRIX_URL}/lb_list_all/#{textType}/" + authorid
+            url : "#{STRIX_URL}/lb_list_all/#{textType}/" + author_id
             params : params
         ).then( (response) ->
             return expandMediatypes response.data.data
@@ -770,9 +769,9 @@ littb.factory 'backend', ($http, $q, util) ->
         )
 
 
-    getPartsInOthersWorks : (authorid) ->
+    getPartsInOthersWorks : (author_id) ->
         return $http(
-            url : "#{STRIX_URL}/list_parts_in_others_works/" + authorid
+            url : "#{STRIX_URL}/list_parts_in_others_works/" + author_id
             # params : 
             #     exclude : "text,parts,sourcedesc,pages,errata"
         ).then( (response) ->
@@ -783,9 +782,9 @@ littb.factory 'backend', ($http, $q, util) ->
 
 
 
-    # getWorksByAuthor : (authorid) ->
+    # getWorksByAuthor : (author_id) ->
 
-    # getAuthorInfo : (authorid) ->
+    # getAuthorInfo : (author_id) ->
     #     def = $q.defer()
     #     url = "/query/lb-authors.xql"
     #     http(
@@ -794,7 +793,7 @@ littb.factory 'backend', ($http, $q, util) ->
     #         cache: true #localStorageCache
     #         # params :
     #         #     action : "get-author-data-init"
-    #         #     authorid : authorid
+    #         #     author_id : author_id
 
     #     ).success( (xml) ->
     #         authorInfo = {}
@@ -819,14 +818,14 @@ littb.factory 'backend', ($http, $q, util) ->
     #                 for author in $(item).find("author")
     #                     authObj = objFromAttrs author
     #                     obj.authors.push authObj
-    #                     if authorid == authObj.authorid and authObj.authortype == 'editor'
+    #                     if author_id == authObj.author_id and authObj.authortype == 'editor'
     #                         isEditor = true
-    #                     else if authorid == authObj.authorid and authObj.authortype == 'translator'
+    #                     else if author_id == authObj.author_id and authObj.authortype == 'translator'
     #                         isTranslator = true
 
 
     #                 # if obj.authors.length > 1
-    #                 #     obj.workauthor = obj.authors[0].workauthor or authorid
+    #                 #     obj.workauthor = obj.authors[0].workauthor or author_id
                     
     #                 if isEditor
     #                     editorTitles.push obj
@@ -926,7 +925,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-    getTitlesByAuthor : (authorid, cache, aboutAuthors=false) ->
+    getTitlesByAuthor : (author_id, cache, aboutAuthors=false) ->
         # TODO: repace this with getTitles?
         # serviceName = if aboutAuthors then "get-works-by-author-keyword" else "get-titles-by-author"
         def = $q.defer()
@@ -938,7 +937,7 @@ littb.factory 'backend', ($http, $q, util) ->
             params.aboutAuthors = true
 
         # url = "/query/lb-anthology.xql"
-        url = "#{STRIX_URL}/lb_list_all/etext,faksimil/#{authorid}"
+        url = "#{STRIX_URL}/lb_list_all/etext,faksimil/#{author_id}"
         req = 
             url : url
             params: params
@@ -955,7 +954,7 @@ littb.factory 'backend', ($http, $q, util) ->
     #     def = $q.defer()
     #     params = 
     #         command: "count"
-    #         groupby: "text_nameforindex"
+    #         groupby: "text_name_for_index"
     #         cqp: getCqp(o)
     #         corpus: "LBSOK"
     #         incremental: false
@@ -1201,7 +1200,7 @@ littb.factory "authors", (backend, $q) ->
     # @promise = def.promise
     backend.getAuthorList(null, exclude=['intro']).then (authors) =>
         authorsById = _.object _.map authors, (item) =>
-            [item.authorid, item]
+            [item.author_id, item]
         # c.log "authorsById", authorsById
         def.resolve [authors, authorsById]
 
