@@ -276,6 +276,53 @@ littb.factory "util", ($location) ->
 
 
 
+# writeDownloadableUrl = (toWorkObj) ->
+    
+
+expandMediatypes = (works) ->
+    groups = _.groupBy works, "titlepath"
+    output = []
+
+    makeObj = (metadata) ->
+        if metadata.mediatype == "pdf"
+            return {
+                label : metadata.mediatype
+                url : "txt/#{metadata.lbworkid}/#{metadata.lbworkid}.pdf"
+                downloadable : true
+            }
+        else
+            return {
+                label : metadata.mediatype
+                url : "/#!/forfattare/#{metadata.authors[0].author_id}/titlar/#{metadata.work_title_id}/sida/#{metadata.startpagename}/#{metadata.mediatype}"
+            }
+
+
+
+    for key, group of groups
+        group = _.sortBy group, "mediatype"
+        [main, rest...] = group
+
+        main.work_title_id = main.work_title_id or main.title_id
+
+        mediatypes = [makeObj(main)]
+        mediatypes = mediatypes.concat _.map rest, makeObj
+
+        if main.has_epub
+            mediatypes.push
+                label : "epub"
+                url : "txt/epub/" + main.authors[0].author_id + "_" + main.work_title_id + ".epub"
+                downloadable : true
+
+
+        sortMedia = (item) ->
+            order = ['etext', 'faksimil', 'epub', 'pdf']
+            return _.indexOf order, item.label
+
+
+        main.mediatypes = _.sortBy mediatypes, sortMedia
+        output.push main
+        
+    return output
 
 
 littb.factory 'backend', ($http, $q, util) ->
@@ -697,15 +744,47 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
 
     getAuthorInfo : (authorid) ->
-        def = $q.defer()
-        $http(
+        return $http(
             url : "#{STRIX_URL}/get_lb_author/" + authorid
-        ).success( (response) ->
-
-            def.resolve response.data
+        ).then( (response) ->
+            return response.data.data
+        , (err) ->
+            c.log "getAuthorInfo error", err
         )
 
-        return def.promise
+
+    getTextByAuthor : (authorid, textType, maybeAuthType) ->
+        params = 
+            exclude : "text,parts,sourcedesc,pages,errata"
+            to : 10000
+        if maybeAuthType
+            params["author_type"] = maybeAuthType
+            
+        return $http(
+            url : "#{STRIX_URL}/lb_list_all/#{textType}/" + authorid
+            params : params
+        ).then( (response) ->
+            return expandMediatypes response.data.data
+        , (err) ->
+            c.log "err", err
+        )
+
+
+    getPartsInOthersWorks : (authorid) ->
+        return $http(
+            url : "#{STRIX_URL}/list_parts_in_others_works/" + authorid
+            # params : 
+            #     exclude : "text,parts,sourcedesc,pages,errata"
+        ).then( (response) ->
+            return expandMediatypes response.data.data
+        , (err) ->
+            c.log "err getPartsInOthersWorks", err
+        )        
+
+
+
+    # getWorksByAuthor : (authorid) ->
+
     # getAuthorInfo : (authorid) ->
     #     def = $q.defer()
     #     url = "/query/lb-authors.xql"

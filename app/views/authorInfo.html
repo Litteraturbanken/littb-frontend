@@ -56,28 +56,29 @@
                 <h1 ng-show="slaMode" ng-show="titleobj.data.length">{{titleobj.label}}</h1>
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
-                    <tr ng-repeat="works in titleobj.data | orderBy:titleSort track by $index">
+                    <tr ng-repeat="work in titleobj.data | orderBy:titleSort track by $index">
                         <td >
-                            <span ng-repeat="work in works | orderBy:mediaOrder track by $index ">
+                            <span ng-repeat="mediatype in work.mediatypes track by $index ">
                                 <!-- <span ng-show="!$first">::: </span> -->
-                                <a ng-href="{{getUrl(work)}}">{{work.mediatype}}</a>
+                                <a ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
                                 <span ng-show="!last">&nbsp; </span>
                             </span>
                         </td>
                         <td ng-if="titleobj.showAuthor">
-                            <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).author_id}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
+                            <a href="/#!/forfattare/{{work[titleobj.showAuthor][0].author_id}}">{{work[titleobj.showAuthor][0].name_for_index}}</a>
                         </td>
                         <td>
                             <a class="title" 
-                                ng-href="{{getUrl(getPrimaryUrl(works)) + '?om-boken'}}"
+                                ng-href="{{getUrl(work) + '?om-boken'}}">
+                                {{work.showtitle || work.shorttitle}}
                             </a>
-                            <!-- ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).author_id}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
-                                {{works[0].showtitle}}
+                            <!-- ng-href="/#!/forfattare/{{getWorkAuthor(work.authors).author_id}}/titlar/{{work.work_title_id}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
+                                
                             <div class="extras" ng-if="$parent.$index == 1">i
-                                <a class="author" href="/#!/forfattare/{{getWorkAuthor(works[0].authors).author_id}}">
-                                    {{getWorkAuthor(works[0].authors).surname}}:
+                                <a class="author" href="/#!/forfattare/{{work.work_authors[0].author_id}}">
+                                    {{work.work_authors[0].surname}}:
                                 </a> 
-                                <span class="extras_title">{{works[0].workshorttitle}}</span>
+                                <span class="extras_title">{{work.workshorttitle}}</span>
                             </div>
                             
                             <span class="dots"></span>

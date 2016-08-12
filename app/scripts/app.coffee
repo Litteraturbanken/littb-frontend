@@ -47,7 +47,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "ngTouch"
                                             'ui.select2'
                                             'ngScrollEvent'
-                                            "ui.slider"
                                             "dibari.angular-ellipsis"
                                            ])
     .decorator "$xhrFactory", ($delegate, $injector) ->
@@ -267,7 +266,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                             <a href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a>
                         </td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/{{row.itemAttrs.mediatype}}">{{row.itemAttrs.showtitle}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.work_title_id}}/{{row.itemAttrs.mediatype}}">{{row.itemAttrs.showtitle}}</a>
                         </td>
                         <td>
                             <span ng-repeat="type in row.mediatype">

@@ -45,15 +45,24 @@ c.timeEnd = angular.noop
 littb.filter "authorYear", () ->
     (obj) ->
         unless obj then return
-        # c.log "obj", obj
         isFalsy = (val) ->
             not val or (val == "0000")
-        death = obj.death # or obj.datestring.split("–")[1]
-        if (isFalsy obj.birth) and (isFalsy death) then return ""
-        if isFalsy death then return "f. #{obj.birth}"
-        if isFalsy obj.birth then return "d. #{death}"
-        return "#{obj.birth}-#{death}"
+        birth = obj.birth?.plain
+        death = obj.death?.plain
+        if (isFalsy birth) and (isFalsy death) then return ""
+        if isFalsy death then return "f. #{birth}"
+        if isFalsy obj.birth?.date then return "d. #{death}"
+        return "#{birth}-#{death}"
 
+
+titleSort = (a) ->
+    _.map a.shorttitle.split(/(\d+)/), (item) -> 
+        if Number(item)
+            zeroes = (_.map [0..(10 - item.toString().length)], () -> "0").join("")
+
+            return zeroes + item.toString()
+        else 
+            return item
 
 littb.controller "startCtrl", ($scope, $location) ->
 
@@ -174,7 +183,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.selected_title = titlesById[$location.search().titel]
 
     s.titleChange = () ->
-        # $location.search("titel", s.selected_title?.titlepath.split("/")[0] or null)
+        # $location.search("titel", s.selected_title?.work_title_id or null)
         $location.search("titel", s.selected_title?.lbworkid or null)
 
     s.resetAuthorFilter = () ->
@@ -192,14 +201,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         $location.search("titel", null)
         s.selected_title = ""
 
-    s.titleSort = (a) ->
-        _.map a.shorttitle.split(/(\d+)/), (item) -> 
-            if Number(item)
-                zeroes = (_.map [0..(10 - item.toString().length)], () -> "0").join("")
-
-                return zeroes + item.toString()
-            else 
-                return item
+    s.titleSort = titleSort
         
     # for the author / about author search check
     s.isAuthorSearch = true
@@ -755,14 +757,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     s.normalizeAuthor = $filter('normalizeAuthor')
 
-    s.titleSort = (a) ->
-        _.map a[0].shorttitle.split(/(\d+)/), (item) -> 
-            if Number(item)
-                zeroes = (_.map [0..(10 - item.toString().length)], () -> "0").join("")
-
-                return zeroes + item.toString()
-            else 
-                return item
+    s.titleSort = titleSort
 
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
@@ -788,19 +783,19 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         # s.showpage = "introduktion" if s.author == s.showpage
 
 
-    s.getPrimaryMediatype = (works) ->
-        (s.sortMedia (_.pluck works, "mediatype"))[0]
+    # s.getPrimaryMediatype = (works) ->
+    #     (s.sortMedia (_.pluck works, "mediatype"))[0]
 
-    s.mediaOrder = (work) ->
-        _.indexOf ['etext', 'faksimil', 'epub', 'pdf', "zip"], work.mediatype
+    # s.mediaOrder = (work) ->
+    #     _.indexOf ['etext', 'faksimil', 'epub', 'pdf'], work.mediatype
 
 
-    s.sortMedia = (list) ->
-        order = ['etext', 'faksimil', 'epub', 'pdf', "zip"]
-        return _.intersection(order,list).concat(_.difference(list, order))
+    # s.sortMedia = (list) ->
+    #     order = ['etext', 'faksimil', 'epub', 'pdf']
+    #     return _.intersection(order,list).concat(_.difference(list, order))
 
-    s.getPrimaryUrl = (works) ->
-        (s.sortMedia works)[0]
+    # s.getPrimaryUrl = (works) ->
+    #     (s.sortMedia works)[0]
 
 
     s.getUnique = (worklist) ->
@@ -826,15 +821,15 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             title?.searchable == "true"
 
     s.getUrl = (work) ->
-        auth = (s.getWorkAuthor work.authors).authorid
+        auth = (s.getWorkAuthor work.authors).author_id
         if work.mediatype == "epub" 
-            url = "txt/epub/" + auth + "_" + work.titlepath.split("/")[0] + ".epub"
+            url = "txt/epub/" + auth + "_" + work.work_title_id + ".epub"
         else if work.mediatype == "pdf"
             # url += "info"
             url = "txt/#{work.lbworkid}/#{work.lbworkid}.pdf"
 
         else
-            url = "/#!/forfattare/#{auth}/titlar/#{work.titlepath.split('/')[0]}/"
+            url = "/#!/forfattare/#{auth}/titlar/#{work.work_title_id}/"
             url += "sida/#{work.startpagename}/#{work.mediatype}"
         return url
 
@@ -933,8 +928,45 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     s.hasMore = () ->
         (_.flatten _.pluck s.moreStruct, "data").length
 
+    s.titleStruct = [
+            label : "Tillgängliga verk"
+            data : null
+            showAuthor : ""
+        ,
+            label : "Dikter, noveller, essäer, etc. som ingår i andra verk"
+            data : null
+            showAuthor : "work_authors"
+        ,
+            label : "Som utgivare"
+            data : null
+            showAuthor : "authors"
+        ,
+            label : "Som översättare"
+            data : null
+            showAuthor : "authors"
+    ]
+
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf").then (data) ->
+        c.log "getWorksByAuthor", data
+        s.titleStruct[0].data = data
+
+    backend.getPartsInOthersWorks(s.author, "part").then (data) ->
+        c.log "getWorksByAuthor part", data
+        s.titleStruct[1].data = data
+
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "editor").then (data) ->
+        c.log "editor works", data
+        s.titleStruct[2].data = data
+    
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator").then (data) ->
+        c.log "translator works", data
+        s.titleStruct[3].data = data
+
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
+    ###
+    # backend.getAuthorInfo(s.author).then (data) ->
+    #     s.authorInfo = data
         
         s.groupedWorks = _.values _.groupBy s.authorInfo.works, "titlepath"
         s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
@@ -997,7 +1029,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         if not s.authorInfo.intro and s.showpage == "introduktion"
             $location.path("/forfattare/#{s.author}/titlar").replace()
     
-    
+        ###
     
 littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement, $anchorScroll, $q, $filter) ->
     s = $scope
@@ -1074,7 +1106,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         return _.intersection(order,list).concat(_.difference(list, order))
 
     s.getTitleId = (row) ->
-        row.titlepath.split('/')[0]
+        row.work_title_id
 
     s.getUniqId = (title) ->
         unless title then return
@@ -1146,7 +1178,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         authorid = row.authors[0].workauthor or row.authors[0].author_id
 
         if mediatype == "epub" 
-            url = "txt/epub/" + authorid + "_" + row.titlepath.split("/")[0] + ".epub"
+            url = "txt/epub/" + authorid + "_" + row.work_title_id + ".epub"
         else if mediatype == "pdf"
             url = "txt/#{row.lbworkid}/#{row.lbworkid}.pdf"
         else
@@ -1191,7 +1223,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     getWorkIntro = (author, titlepath) ->
         s.sourcedesc = null
         # TODO: i think this broke
-        infoDef = backend.getSourceInfo(author, titlepath.split("/")[0])
+        infoDef = backend.getSourceInfo(author, work_title_id)
         infoDef.then (data) ->
             c.log "source", data
             s.workintro = data.workintro
@@ -1347,7 +1379,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
 
     s.getFilename = (row) ->
-        row.author[0].authorid + '_' + row.itemAttrs.titlepath.split('/')[0]
+        row.author[0].authorid + '_' + row.itemAttrs.work_title_id
 
 
     util.setupHashComplex s,

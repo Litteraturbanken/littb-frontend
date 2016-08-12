@@ -120,7 +120,7 @@
                         </td>
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content">
-                                <span class="author">{{authorsById[sent.metadata.authors[0].author_id].nameforindex}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.titlepath.split('/')[0]}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
+                                <span class="author">{{authorsById[sent.metadata.authors[0].author_id].nameforindex}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.work_title_id}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
                             </div>
                         </td>
                         <!-- <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>                         -->
@@ -130,7 +130,7 @@
                         </td>
                         <td ng-if="sent.highlight" class="match">
                             <span ng-repeat="wd in sent.highlight.match">
-                                <!-- ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.titlepath.split('/')[0]}}/{{sent.metadata.mediatype}}/{{wd.attrs.n}}"  -->
+                                <!-- ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.work_title_id}}/{{sent.metadata.mediatype}}/{{wd.attrs.n}}"  -->
                                 <a ng-href="{{::sent.href}}" ng-click="save_search($index)"
                                     class="word" ng-class="{punct: wd._punct}">{{wd.word}}</a>
                             </span>
