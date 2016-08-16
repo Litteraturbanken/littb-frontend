@@ -900,19 +900,19 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     
 
 
-    s.hasTitles = () ->
-        _.any [
-            s.authorInfo?.works.length
-            s.authorInfo?.titles.length
-            s.authorInfo?.editorWorks.length
-            s.authorInfo?.translatorWorks.length
-        ]
+    # s.hasTitles = () ->
+    #     _.any [
+    #         s.authorInfo?.works.length
+    #         s.authorInfo?.titles.length
+    #         s.authorInfo?.editorWorks.length
+    #         s.authorInfo?.translatorWorks.length
+    #     ]
 
-    s.getWorkAuthor = (authors) ->
-        wa = authors[0].workauthor
-        if wa
-            return s.authorsById[wa]
-        else return authors[0]
+    # s.getWorkAuthor = (authors) ->
+    #     wa = authors[0].workauthor
+    #     if wa
+    #         return s.authorsById[wa]
+    #     else return authors[0]
 
     s.getDataSource = () ->
         if s.showpage == "titlar"
@@ -1243,11 +1243,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         return infoDef
 
 
-    s.getWorkAuthor = (authors) ->
-        wa = authors[0].workauthor
-        if wa
-            return s.authorsById[wa]
-        else return authors[0]
+    s.getPartAuthor = (part) ->
+        part.authors?[0] or part.work_authors[0]
 
 
     if $location.search().filter

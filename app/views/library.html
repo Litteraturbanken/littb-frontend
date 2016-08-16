@@ -144,12 +144,12 @@
                     
                             <div class="header" tooltip="{{row.title}}">
                                 <span class="title">
-                                    <a ng-href="/#!/forfattare/{{row.part_authors[0].workauthor || row.part_authors[0].author_id}}/titlar/{{row.title_path.split('/')[0]}}/sida/{{row.startpagename}}/{{row.mediatype}}">
+                                    <a ng-href="/#!/forfattare/{{row.work_authors[0].author_id}}/titlar/{{row.work_title_id}}/sida/{{row.startpagename}}/{{row.mediatype}}">
                                     {{row.shorttitle}}
                                     </a>
                                 </span>
                                 
-                                <span class="author"><a ng-click="authorClick($event, authorsById[row.part_authors[0].author_id])">{{row.part_authors[0].surname}}</a> <span ng-if="row.part_authors[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.part_authors[0].authortype == 'illustrator'">(ill.)</span></span>
+                                <span class="author"><a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
                             </div>
                         </li>
                         

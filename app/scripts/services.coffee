@@ -1,8 +1,8 @@
 littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-STRIX_URL = "http://localhost:5000"
-# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+# STRIX_URL = "http://localhost:5000"
+STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
 
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->
@@ -282,6 +282,8 @@ littb.factory "util", ($location) ->
 expandMediatypes = (works) ->
     groups = _.groupBy works, "titlepath"
     output = []
+    getMainAuthor = (metadata) ->
+        (metadata.work_authors or metadata.authors)[0]
 
     makeObj = (metadata) ->
         if metadata.mediatype == "pdf"
@@ -293,7 +295,7 @@ expandMediatypes = (works) ->
         else
             return {
                 label : metadata.mediatype
-                url : "/#!/forfattare/#{metadata.authors[0].author_id}/titlar/#{metadata.work_title_id}/sida/#{metadata.startpagename}/#{metadata.mediatype}"
+                url : "/#!/forfattare/#{getMainAuthor(metadata).author_id}/titlar/#{metadata.work_title_id}/sida/#{metadata.startpagename}/#{metadata.mediatype}"
             }
 
 
@@ -310,7 +312,7 @@ expandMediatypes = (works) ->
         if main.has_epub
             mediatypes.push
                 label : "epub"
-                url : "txt/epub/" + main.authors[0].author_id + "_" + main.work_title_id + ".epub"
+                url : "txt/epub/" + getMainAuthor(main).author_id + "_" + main.work_title_id + ".epub"
                 downloadable : true
 
 
@@ -461,6 +463,8 @@ littb.factory 'backend', ($http, $q, util) ->
         # TODO: add filter for leaf titlepaths and mediatype
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
+            filter_string: filterString
+            to: 10000
 
 
         $http(
@@ -468,15 +472,11 @@ littb.factory 'backend', ($http, $q, util) ->
             params: params
 
 
-        ).success (data) ->
-            c.log "data", data
-            def.resolve data.data
+        ).success (response) ->
+            c.log "getParts data", response
+            def.resolve expandMediatypes(response.data)
 
         return def.promise
-
-            # titleGroups = _.groupBy titles, (title) ->
-            #     title.lbworkid
-
 
 
 

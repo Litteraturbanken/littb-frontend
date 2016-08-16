@@ -300,7 +300,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
     c.log "run search params", $location.search()
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
-        $rootElement.addClass("ready")
+        $rootElement.addClass("ready").removeClass("not_ready")
 
     $rootScope.getLogoUrl = () ->
         if $rootScope.isSchool 
@@ -312,7 +312,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
     # just in case the above deferred fails. 
     $timeout( () -> 
-        $rootElement.addClass("ready")
+        $rootElement.addClass("ready").removeClass("not_ready")
     , 1000)
 
     stripClass = (prefix) ->
