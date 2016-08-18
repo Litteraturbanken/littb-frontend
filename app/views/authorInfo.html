@@ -16,7 +16,8 @@
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/#!/forfattare/{{author}}">Introduktion</a></li>
         <li ng-class="{active : showpage == 'titlar'}"><a href="/#!/forfattare/{{author}}/titlar">Verk</a></li>
         <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
-        <li ng-show="authorInfo.bibliografi" ng-class="{active : showpage == 'bibliografi'}"><a href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
+        <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
+        <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/#!/forfattare/{{author}}/las-mer">Läs mer</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/#!/forfattare/{{author}}/mer">Mer</a></li>
         <li ng-if="getSearchableTitles().length"><a href="/#!/sok?forfattare={{author}}&avancerad">Sök i texterna</a></li>
     </ul>
@@ -69,7 +70,7 @@
                         </td>
                         <td>
                             <a class="title" 
-                                ng-href="{{getUrl(work) + '?om-boken'}}">
+                                ng-href="{{work.mediatypes[0].url + '?om-boken'}}">
                                 {{work.showtitle || work.shorttitle}}
                             </a>
                             <!-- ng-href="/#!/forfattare/{{getWorkAuthor(work.authors).author_id}}/titlar/{{work.work_title_id}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
@@ -94,7 +95,8 @@
             <ng-include src="'listing.html'"></ng-include>
         </div>
         <div ng-switch-when="mer">
-            <ng-include src="'listing.html'"></ng-include>
+            <!-- <div class="content" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div> -->
+           <ng-include src="'listing.html'"></ng-include>
         </div>
     
         <div ng-switch-when="biblinfo"><div ng-include="'views/sla/biblinfo.html'"></div></div>

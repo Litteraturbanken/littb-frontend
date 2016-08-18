@@ -861,14 +861,14 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             else 
                 url = s.authorInfo[page]
         else    
-            url = s.authorInfo[page]
-        
+            # url = s.authorInfo[page]
+            if page == "mer" then page = "semer"
+            url = "/red/forfattare/#{s.author}/#{page}/index.html"
+            c.log "url", url
+
+
         return unless url
         
-        # because the livereload snippet is inserted into the html
-        # if location.hostname == "localhost"
-        #     url = "http://demolittb.spraakdata.gu.se" + s.authorInfo[page]
-
         unless s.showpage in ["introduktion", "titlar"]
             getHtml(url).then (xml) ->
                 s.externalDoc = xml
@@ -962,8 +962,53 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         c.log "translator works", data
         s.titleStruct[3].data = data
 
+    
+
+
+
     backend.getAuthorInfo(s.author).then (data) ->
         s.authorInfo = data
+
+        refreshExternalDoc(s.showpage, $routeParams)
+
+
+
+        s.moreStruct = [
+                label : "Verk om #{s.authorInfo.full_name}"
+                data : null
+                showAuthor : "authors"
+            ,
+                label : "Kortare texter om #{s.authorInfo.full_name}"
+                data : null
+                showAuthor : "work_authors"
+            ,
+                label : "Som utgivare"
+                data : null
+                showAuthor : "authors"
+            ,
+                label : "Som översättare"
+                data : null
+                showAuthor : "authors"
+        ]
+
+        # TODO: this doesn't work at all.
+        backend.getTextByAuthor(s.author, "etext,faksimil,pdf", null, true).then (data) ->
+            c.log "about getWorksByAuthor", data
+            s.moreStruct[0].data = data
+
+        backend.getPartsInOthersWorks(s.author, true).then (data) ->
+            c.log "about getPartsInOthersWorks", data
+            s.moreStruct[1].data = data
+
+        backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "editor", true).then (data) ->
+            c.log "about editor works", data
+            s.moreStruct[2].data = data
+        
+        backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator", true).then (data) ->
+            c.log "about translator works", data
+            s.moreStruct[3].data = data    
+
+
     ###
     # backend.getAuthorInfo(s.author).then (data) ->
     #     s.authorInfo = data
@@ -1410,7 +1455,6 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
     backend.getEpub().then (titleArray) ->
         s.searching = false
         s.rows = titleArray
-        # s.rows = _.filter titleArray, (item) -> "epub" in item.mediatype
         authors = _.map s.rows, (row) ->
             row.authors[0]
 

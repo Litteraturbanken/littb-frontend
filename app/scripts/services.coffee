@@ -1,8 +1,8 @@
 littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-# STRIX_URL = "http://localhost:5000"
-STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+STRIX_URL = "http://localhost:5000"
+# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
 
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->
@@ -510,18 +510,6 @@ littb.factory 'backend', ($http, $q, util) ->
             c.log "data", data
             titles = data.data
 
-
-            # titleGroups = _.groupBy titles, (title) ->
-            #     title.lbworkid
-
-
-            # for path, titles in pathGroups
-            #     if titles.length > 1
-            #         for title in titles
-            #             sibl = _.filter titles, (item) -> item.mediatype != title.mediatype
-            #             title.siblings = sibl[0]
-
-            # def.resolve [titles, titleGroups]
             def.resolve expandMediatypes(titles)
 
         return def.promise
@@ -746,18 +734,28 @@ littb.factory 'backend', ($http, $q, util) ->
         return $http(
             url : "#{STRIX_URL}/get_lb_author/" + author_id
         ).then( (response) ->
-            return response.data.data
+
+            auth = response.data.data
+
+            # for auth in data
+            if auth.image
+                auth.smallImage = "/red/forfattare/#{auth.author_id}/#{auth.author_id}_small.jpeg"
+                auth.largeImage = "/red/forfattare/#{auth.author_id}/#{auth.author_id}_large.jpeg"
+
+            return auth
         , (err) ->
             c.log "getAuthorInfo error", err
         )
 
 
-    getTextByAuthor : (author_id, textType, maybeAuthType) ->
+    getTextByAuthor : (author_id, textType, maybeAuthType, list_about=false) ->
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
             to : 10000
         if maybeAuthType
             params["author_type"] = maybeAuthType
+        if list_about
+            params["about_author"] = true
             
         return $http(
             url : "#{STRIX_URL}/lb_list_all/#{textType}/" + author_id
@@ -769,11 +767,14 @@ littb.factory 'backend', ($http, $q, util) ->
         )
 
 
-    getPartsInOthersWorks : (author_id) ->
+    getPartsInOthersWorks : (author_id, list_about=false) ->
+        params = {}
+        if list_about
+            params["about_author"] = true
         return $http(
             url : "#{STRIX_URL}/list_parts_in_others_works/" + author_id
-            # params : 
-            #     exclude : "text,parts,sourcedesc,pages,errata"
+            params : params
+                
         ).then( (response) ->
             return expandMediatypes response.data.data
         , (err) ->
