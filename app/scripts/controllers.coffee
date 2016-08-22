@@ -378,7 +378,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         
         filter_params = []
         unless s.filterOpts[0].selected # search all texts is false
-            searchAnom = _.find(s.filterOpts, {key: "is_anom"}).selected
+            # searchAnom = _.find(s.filterOpts, {key: "is_anom"}).selected
             for groupKey, group of (_.groupBy s.filterOpts, "group")
                 if groupKey == "undefined" then continue
                 selected = _.filter group, "selected"
@@ -414,8 +414,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             args.work_ids = $location.search().titlar
 
 
-        if searchAnom
-            args.anonymous = false
+        # if searchAnom
+        #     args.anonymous = false
 
         return args
 
@@ -534,13 +534,12 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             group : 2
             key : "gender_male"
         }
-        {
-            label: 'Sök i texter skrivna av <span class="sc">anonyma författare</span>',
-            # val: "author_id contains 'Anonym'",
-            selected: true
-            group : 2
-            key : "is_anom"
-        }
+        # {
+        #     label: 'Sök i texter skrivna av <span class="sc">anonyma författare</span>',
+        #     selected: true
+        #     group : 2
+        #     key : "is_anom"
+        # }
 
     ]
 
@@ -859,7 +858,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             if doc
                 url = '/red/sla/' + doc
             else 
-                url = s.authorInfo[page]
+                url = "/red/forfattare/#{s.author}/#{page}/index.html"
         else    
             # url = s.authorInfo[page]
             if page == "mer" then page = "semer"
@@ -1193,11 +1192,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     , 0
 
     s.searchTitle = () ->
-        c.log "searchTitle", s.workFilter
+        c.log "searchTitle", s.filter
         if s.filter
             s.showPopular = false
             s.showInitial = false
             fetchTitles()
+            fetchWorks()
             s.selectedAuth = null
             s.selectedTitle = null
 

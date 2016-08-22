@@ -105,7 +105,7 @@
                             Inga träffar. 
                         </li>
                         <!-- orderBy | 'sortkey' -->
-                        <li class="link" ng-repeat="row in getTitles() | filter:filterTitle | filter:mediatypeFilter" on-finish-render="titleRender()"
+                        <li class="link" ng-repeat="row in getTitles() | filter:mediatypeFilter" on-finish-render="titleRender()"
                             top="$parent.title_off" ng-click="titleClick($event, row)"
                             id="{{getUniqId(row)}}">
                             <div class="header">

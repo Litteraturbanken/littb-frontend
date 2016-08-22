@@ -26,7 +26,7 @@
             <div class="right_col">
                 <ul class="options">
                     <li ng-repeat="opt in filterOpts">
-                        <span  ng-click="opt_change(opt)" ng-show="opt.selected">✓</span>
+                        <span ng-click="opt_change(opt)" ng-style="{visibility: opt.selected ? 'visible' : 'hidden'}">✓</span>
                         <a ng-click="opt_change(opt)" ng-bind-html="opt.label | trust"></a>
                     </li>
                 </ul>

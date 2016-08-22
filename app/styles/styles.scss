@@ -1591,6 +1591,7 @@ body > .header {
 
         }
         .options {
+            @include user-select(none);
             // margin-left: 1em;
             // display: inline-block;
             // font-size: 0.8em;
@@ -1869,7 +1870,7 @@ body > .header {
             @include container();
             text-align: left;
             line-height : 1.1;
-            max-height : 422px;
+            max-height : 220px;
             li {
                 white-space: nowrap;
                 overflow: hidden;
