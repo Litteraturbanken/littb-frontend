@@ -1,31 +1,31 @@
 <meta-desc>Statistik för Litteraturbanken.</meta-desc>
-<div class="content stats" ng-show="data" ng-controller="statsCtrl">
+<div class="content stats" ng-show="statsData" ng-controller="statsCtrl">
     
     <h3>Litteraturbanken innehåller just nu</h3>
     
     <ul>
-        <li>{{data.works | numberFmt}} verk</li>
-        <li>{{data.authors | numberFmt}} författare</li>
-        <li>{{data.pages.etext | numberFmt}} sidor etext</li>
-        <li>{{data.pages.faksimil | numberFmt}} sidor faksimil</li>
-        <li>{{data.words.etext | numberFmt}} ord</li>
-        <li>{{data.epubs | numberFmt}} epubfiler</li>
+        <li>{{statsData.works | numberFmt}} verk</li>
+        <li>{{statsData.authors | numberFmt}} författare</li>
+        <li>{{statsData.pages.etext | numberFmt}} sidor etext</li>
+        <li>{{statsData.pages.faksimil | numberFmt}} sidor faksimil</li>
+        <li>{{statsData.words.etext | numberFmt}} ord</li>
+        <li>{{statsData.epubs | numberFmt}} epubfiler</li>
     </ul>
     
     <h3>De mest lästa verken</h3>
     <ul>
-        <li ng-repeat="title in data.titleList">
-            <span class="num">{{$index + 1}}. </span> <a ng-href="/#!/forfattare/{{title.author[0].author_id}}/titlar/{{title.itemAttrs.work_title_id}}/{{title.itemAttrs.mediatype}}">{{title.itemAttrs.showtitle}}</a>
+        <li ng-repeat="title in titleList">
+            <span class="num">{{$index + 1}}. </span> <a ng-href="/#!/forfattare/{{title.authors[0].author_id}}/titlar/{{title.title_id}}/{{title.mediatype}}">{{title.showtitle}}</a>
             
 
-            <a class="author pull-right" ng-href="/#!/forfattare/{{title.author[0].author_id}}">{{title.author[0].name_for_index.split(",")[0] || title.author[0].full_name}}</a>
+            <a class="author pull-right" ng-href="/#!/forfattare/{{title.authors[0].author_id}}">{{title.authors[0].surname || title.authors[0].full_name}}</a>
         </li>
     </ul>
     <h3>De mest nedladdade epubarna</h3>
     <ul>
-        <li ng-repeat="title in data.epubList">
-            <span class="num">{{$index + 1}}. </span> <a ng-href="/txt/epub/{{title.author[0].author_id}}_{{title.itemAttrs.work_title_id}}.epub">{{title.itemAttrs.showtitle}}</a>
-            <a class="author pull-right" ng-href="/#!/forfattare/{{title.author[0].author_id}}">{{title.author[0].name_for_index.split(",")[0] || title.author[0].full_name}}</a>
+        <li ng-repeat="title in epubList">
+            <span class="num">{{$index + 1}}. </span> <a ng-href="/txt/epub/{{title.authors[0].author_id}}_{{title.title_id}}.epub">{{title.showtitle}}</a>
+            <a class="author pull-right" ng-href="/#!/forfattare/{{title.authors[0].author_id}}">{{title.authors[0].surname || title.authors[0].full_name}}</a>
     
         </li>
     </ul>

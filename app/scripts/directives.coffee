@@ -656,13 +656,18 @@ littb.directive "bigText", () ->
         elem.text obj.word
         size = 4
         elem.css("font-size", size + "px")
-        w = fac * (Number obj.w)
+        w = fac * (Number obj.width)
         # c.log "elem.width()", elem.width()  
         if elem.width() 
             while elem.width() < w
-                size += 1
+                size += 10
                 elem.css("font-size", size + "px")
                 if size > 300 then break
+
+            while elem.width() > w
+                size -= 1
+                elem.css("font-size", size + "px")
+                if size < 5 then break
 
         # elem.css("font-size", size * (1.2) + "px")
         elem.text elem.text() + " "

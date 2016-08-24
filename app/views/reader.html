@@ -21,7 +21,7 @@
              <!-- <div class="parent" ng-style="getOverlayCss(obj)" ng-repeat="obj in list">
                  <span class="w" big-text-alt="obj"  ></span>
              </div> -->
-             <span big-text="obj" fac="overlayFactors[size - 1]" class="w parent" ng-repeat="obj in list" ng-style="getOverlayCss(obj)"> </span>
+             <span big-text="obj" fac="overlayFactors[size - 1]" class="w parent" ng-repeat="obj in list" ng-style="getOverlayCss(obj)" on-finish-render="onOverlayComplete()" > </span>
 
          </div>
      </div>

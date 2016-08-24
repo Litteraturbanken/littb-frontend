@@ -125,8 +125,19 @@ littb.controller "statsCtrl", ($scope, backend) ->
     s = $scope
 
 
+
+
     backend.getStats().then (data) ->
-        s.data = data
+        s.statsData = data
+
+    backend.getTitles(false, null, "popularity|desc").then (titleArray) ->
+        s.titleList = titleArray
+
+    backend.getEpub(30).then (titleArray) ->
+        s.epubList = titleArray
+
+
+
 
 getAuthorSelectSetup = (s, $filter) ->
     return {
@@ -1767,7 +1778,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http, $q) ->
     s = $scope
     s.isEditor = false
     s._ = {humanize : _.humanize}
@@ -2224,6 +2235,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # height : fac * obj.h
         }
 
+    overlayDef = $q.defer()
+    s.onOverlayComplete = () ->
+        overlayDef.resolve()
+        
+
     initSourceInfo = () ->
         def = backend.getSourceInfo(title, mediatype)
         def.then (workinfo) ->
@@ -2318,6 +2334,18 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 s.first_load = true
                 s.loading = false
                 onFirstLoad()
+
+
+                backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
+
+                    t = $.now()
+                    overlayDef.promise.then () ->
+                        c.log "overlay rendered", $.now() - t
+                        overlayDef = $q.defer()
+
+                    s.overlaydata = data
+                    s.overlayFactors = overlayFactors
+
         , (err) ->
             c.log "err", err
 

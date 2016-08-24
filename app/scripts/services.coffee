@@ -447,12 +447,12 @@ littb.factory 'backend', ($http, $q, util) ->
         else 
             return "traff=#{item.nodeid}&traffslut=#{item.endnodeid}"
 
-    getEpub : () ->
+    getEpub : (size) ->
         
         return $http(
             url : "#{STRIX_URL}/get_epub"        
             params :
-                size : 10000
+                size : size or 10000
                 exclude : "text,parts,sourcedesc,pages,errata"
                 sort_field : "popularity|desc"
         ).then (response) ->
@@ -871,60 +871,11 @@ littb.factory 'backend', ($http, $q, util) ->
 
 
     getStats : () ->
-        def = $q.defer()
-        url = "/query/lb-stats.xql"
-        http(
-
-            url : url
-            params :
-                action : "get-overall-stats"
-
-        ).success (xml) ->
-            output = {}
-            parse = (toplist) ->
-                list = for item in toplist.children()
-                    obj = {}
-                    obj.itemAttrs = objFromAttrs item
-                    obj.author = []
-                    for author in $(item).find("author")
-                        authObj = objFromAttrs author
-                        obj.author.push authObj
-
-                    obj.mediatype = []
-                    for mediatype in $(item).find("mediatype")
-                        obj.mediatype.push $(mediatype).text()
-
-                    obj
-
-                
-                return list
-
-
-
-            output.titleList = parse $("toplist:first", xml)
-            output.epubList = parse $("toplist:nth(1)", xml)
-            
-
-            parseObj = ["pages", "words"]
-            # parseTable = (table) ->
-            #     return ("<a href='/#!/#{$(x).attr('href').slice(3)}'>#{$(x).text()}</a>" for x in $("td:nth-child(2) a", table))
-            # output.titleList = parseTable($("table", xml)[0])
-            # output.epubList = parseTable($("table", xml)[1])
-            for elem in $("result", xml).children()
-                if elem.tagName == "toplist"
-                    continue
-                    
-                else if elem.tagName in parseObj
-                    output[elem.tagName] = _.object _.map $(elem).children(), (child) ->
-                        [child.tagName, $(child).text()]
-                else
-                    output[elem.tagName] = $(elem).text()
-
-            def.resolve output
-
-
-
-        return def.promise
+        $http(
+            url : "#{STRIX_URL}/get_stats"
+        ).then (response) ->
+            c.log "response", response
+            return response.data
 
     getTitlesByAuthor : (author_id, cache, aboutAuthors=false) ->
         # TODO: repace this with getTitles?
@@ -1070,32 +1021,18 @@ littb.factory 'backend', ($http, $q, util) ->
             
         return def.promise
 
+    
     submitContactForm : (name, email, message) ->
-        def = $q.defer()
-
-        url = "query/lb-contact.xql"
-        
-        if window.isDev
-            action = "contact-test"
-        else
-            action = "contact"
-
         params = 
-            action : action
-            lang : "swe"
-            ContactName : name
-            ContactEmail : email
-            ContactMessage : message
-
-
-        http(
-            url : url
+            sender_name : name
+            sender_address : email
+            message : message
+        if isDev
+            params.test = true
+        $http(
+            url : "#{STRIX_URL}/contact"
             params: params
-
-        ).success(def.resolve)
-        .error def.reject
-        
-        return def.promise
+        )
         
     ordOchSak : (author, title) ->
         def = $q.defer()
@@ -1133,6 +1070,34 @@ littb.factory 'backend', ($http, $q, util) ->
         
         return def.promise
 
+    fetchOverlayData : (workid, ix) ->
+        $http(
+            url : "#{STRIX_URL}/get_ocr/#{workid}/#{ix}"
+        ).then (response) ->
+            max = _.max response.data.size
+            factors = _.map SIZE_VALS, (val) -> val / max
+
+            TOLERANCE = 3
+            isInsideTolerence = (thisVal, ofThatVal) ->
+                Math.abs(thisVal - ofThatVal) < TOLERANCE
+
+            output = []
+
+            for obj in response.data.data
+
+                if not isInsideTolerence obj.y, prevY
+                    output.push [obj]
+                else
+                    (_.last output).push obj
+
+                prevY = obj.y
+
+
+            return [output, factors]
+
+
+
+    ###
     fetchOverlayData : (workid, ix) ->
         def = $q.defer()
         http(
@@ -1175,7 +1140,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
 
         return def.promise
-
+    ###
     
     workSearch : (query, lbworkid) ->
         def = $q.defer()
