@@ -112,7 +112,7 @@ module.exports = function (grunt) {
         // Change this to '0.0.0.0' to access the server from outside.
         hostname: '0.0.0.0',
       },
-      proxies : ["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "ws"].map(function(item) {
+      proxies : ["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "ws", "xhr"].map(function(item) {
         var host = 'demolittb.spraakdata.gu.se'
         // var host = 'litteraturbanken.se'
         return {

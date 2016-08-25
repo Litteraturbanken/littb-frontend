@@ -1579,7 +1579,7 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
         s.titles = _.map titles.split("\n"), (row) ->
             _.str.strip(row.split("–")[1] or row)
 
-littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document, $location) ->
+littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document, $location, $http) ->
     s = $scope
     {title, author} = $routeParams
     # _.extend s, $routeParams
@@ -1591,6 +1591,27 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
     s.errataLimit = s.defaultErrataLimit
     s.isOpen = false
     s.show_large = false
+
+    $http(
+        url : "/xhr/red/etc/provenance/provenance.json"
+    ).then (response) ->
+        c.log "response", response
+        s.provenanceData = []
+        for prov in s.workinfo.provenance
+            output = response.data[prov.library]
+            if s.mediatype == "faksimil" and s.workinfo.printed
+                output.text = output.text.faksimilnoprinted    
+            else if s.mediatype == "faksimil" and not s.workinfo.printed
+                output.text = output.text.faksimilnoprinted    
+            else 
+                output.text = output.text[s.mediatype]
+
+            if prov.signum then prov.signum = " (#{prov.signum})"
+            output.text = _.template(output.text)({signum: prov.signum or ""})
+            s.provenanceData.push output
+
+        c.log "s.workinfo.provenance.library", s.workinfo.provenance.library
+        c.log "s.provenanceData", s.provenanceData
 
     s.getValidAuthors = () ->
         unless s.authorById then return

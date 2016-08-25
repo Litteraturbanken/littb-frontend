@@ -46,10 +46,17 @@
     
     <p class="workintro" ng-bind-html="workinfo.workintro | trust"></p>
     
-    <div ng-repeat="prov in workinfo.provenance track by $index" class="provenance">
-        <a ng-href="{{prov.link}}" ng-if="prov.image"><img ng-src="red/bilder/gemensamt/{{prov.image}}"></a> <!-- onerror="this.style.visibility = 'hidden'" -->
+    <div class="provenance" ng-repeat="prov in provenanceData">
+        <a ng-href="{{prov.link}}" ng-if="prov.image"><img ng-src="red/bilder/gemensamt/{{prov.image}}"></a>
         <p>{{prov.text}}</p>
     </div>
+
+    <!-- <div ng-repeat="prov in workinfo.provenance track by $index" class="provenance">
+        <a ng-href="{{prov.link}}" ng-if="prov.image"><img ng-src="red/bilder/gemensamt/{{prov.image}}"></a>
+        <p>{{prov.text}}</p>
+    </div> -->
+
+    <!-- onerror="this.style.visibility = 'hidden'" -->
     
     <div class="license" ng-bind-html="workinfo.licenseText | correctLink | trust"></div>
     

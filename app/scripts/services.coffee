@@ -367,7 +367,7 @@ littb.factory 'backend', ($http, $q, util) ->
     objFromAttrs = (elem) ->
         return null unless elem
         _.object ([util.normalize(attrib.name), attrib.value] for attrib in elem.attributes)
-
+    ###
     parseWorkInfo = (root, xml) ->
         useInnerXML = ["sourcedesc", "workintro", "license-text"]
         asArray = ["mediatypes"]
@@ -431,7 +431,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
         # output.author_type = $(root + " > author_id", xml).attr("type")
         return output
-
+    ###
     
 
 
@@ -666,7 +666,7 @@ littb.factory 'backend', ($http, $q, util) ->
                 # hash : "80301537332859264406912773809666"
         )
 
-
+    ###
     getPage : (passedParams) ->
         def = $q.defer()
 
@@ -729,7 +729,7 @@ littb.factory 'backend', ($http, $q, util) ->
             def.reject(arguments...)
 
         return def.promise
-
+    ###
     getAuthorInfo : (author_id) ->
         return $http(
             url : "#{STRIX_URL}/get_lb_author/" + author_id
