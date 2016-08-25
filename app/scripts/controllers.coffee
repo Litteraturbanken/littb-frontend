@@ -1592,26 +1592,15 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
     s.isOpen = false
     s.show_large = false
 
-    $http(
-        url : "/xhr/red/etc/provenance/provenance.json"
-    ).then (response) ->
-        c.log "response", response
-        s.provenanceData = []
-        for prov in s.workinfo.provenance
-            output = response.data[prov.library]
-            if s.mediatype == "faksimil" and s.workinfo.printed
-                output.text = output.text.faksimilnoprinted    
-            else if s.mediatype == "faksimil" and not s.workinfo.printed
-                output.text = output.text.faksimilnoprinted    
-            else 
-                output.text = output.text[s.mediatype]
+    s.workinfoPromise.then () ->
+        c.log "workinfo", s.workinfo
+        backend.getProvenance(s.workinfo).then (provData) ->
+            s.provenanceData = provData
+        backend.getLicense(s.workinfo).then (licenseData) ->
+            s.licenseData = licenseData
 
-            if prov.signum then prov.signum = " (#{prov.signum})"
-            output.text = _.template(output.text)({signum: prov.signum or ""})
-            s.provenanceData.push output
 
-        c.log "s.workinfo.provenance.library", s.workinfo.provenance.library
-        c.log "s.provenanceData", s.provenanceData
+
 
     s.getValidAuthors = () ->
         unless s.authorById then return
@@ -2263,6 +2252,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     initSourceInfo = () ->
         def = backend.getSourceInfo(title, mediatype)
+        s.workinfoPromise = def 
         def.then (workinfo) ->
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap

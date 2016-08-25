@@ -58,7 +58,7 @@
 
     <!-- onerror="this.style.visibility = 'hidden'" -->
     
-    <div class="license" ng-bind-html="workinfo.licenseText | correctLink | trust"></div>
+    <div class="license" ng-bind-html="licenseData | correctLink | trust"></div>
     
     <div class="errata" ng-show="mediatype == 'etext'">
         <div class="header" ng-show="workinfo.errata.length">I {{mediatype}}en har följande ändringar gjorts mot originalet:</div>

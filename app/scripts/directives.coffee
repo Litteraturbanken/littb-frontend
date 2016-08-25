@@ -787,17 +787,15 @@ littb.directive "listScroll", () ->
     
 
 overflowLoad = (s, element) ->
-    c.log "overflowLoad", s, element
     btn = null
 
     element.load () ->
-        c.log "element load overflow"
         maxWidth = $(this).css("max-width")
         $(this).css("max-width", "initial")
         actualWidth = $(this).width()
         $(this).css("max-width", maxWidth)
-        c.log "oveflowLoad", s, element, $(this).width(), actualWidth
         if $(this).width() < actualWidth
+            c.log "overflowing image found", element, $(this).width(), actualWidth
             element.parent().addClass "img-overflow"
             btn?.remove()
             btn = $("<button class='btn btn-xs expand'>Förstora</button>").click () ->

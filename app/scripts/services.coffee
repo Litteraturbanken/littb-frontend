@@ -612,7 +612,33 @@ littb.factory 'backend', ($http, $q, util) ->
 
             return def.promise
 
+    getLicense : (workinfo) ->
+        $http(
+            url : "/xhr/red/etc/license/license.json"
+        ).then (response) ->
+            c.log "license", response.data[workinfo.license]
+            return response.data[workinfo.license]
 
+
+    getProvenance : (workinfo) ->
+        $http(
+            url : "/xhr/red/etc/provenance/provenance.json"
+        ).then (response) ->
+            provData = []
+            for prov in workinfo.provenance
+                output = response.data[prov.library]
+                if workinfo.mediatype == "faksimil" and workinfo.printed
+                    output.text = output.text.faksimilnoprinted    
+                else if workinfo.mediatype == "faksimil" and not workinfo.printed
+                    output.text = output.text.faksimilnoprinted    
+                else 
+                    output.text = output.text[workinfo.mediatype]
+
+                signum = ""
+                if prov.signum then signum = " (#{prov.signum})"
+                output.text = _.template(output.text)({signum: signum or ""})
+                provData.push output
+            return provData
     getSourceInfo : (titlepath, mediatype) ->
         # TODO: mediatype can be null?
         def = $q.defer()
