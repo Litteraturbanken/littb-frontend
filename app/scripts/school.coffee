@@ -149,6 +149,11 @@ getLyrikStudentCtrl = (id) ->
 
         $scope.capitalize = (str) -> str[0].toUpperCase() + str[1..]
 
+        $scope.getOtherId = (id) ->
+            {
+                "6-9": "gymnasium"
+                "gymnasium" : "6-9"
+            }[id]
 
         works =  [
             {
@@ -237,26 +242,22 @@ getLyrikStudentCtrl = (id) ->
                 label: "Litterära genrer", 
                 url : "/#!/skola/lyrik/elev/#{id}/Genrer.html"
                 if : ["6-9", "gymnasium"]
-            ,
-                label: "Hjälp", 
-                url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
-                if : ["6-9", "gymnasium"]
+            # ,
+            #     label: "Hjälp", 
+            #     url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
+            #     if : ["6-9", "gymnasium"]
             ,
                 label: "Läshandledningar", 
                 sublist : works
                 if : ["6-9", "gymnasium"]
-
             # ,
-            #     label: "Orientering genrer", 
-            #     url : "/#!/skola/#{id}/Genrer.html", 
-            #     sublist : [
-            #         {label : "Romaner", url: "/#!/skola/#{id}/Romaner.html"}
-            #         {label : "Noveller", url: "/#!/skola/#{id}/Noveller.html"}
-            #     ]
+            #     label: "Hjälp", 
+            #     url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
+            #     if : ["6-9", "gymnasium"]
             # ,
-                # label: "Orientering tema/motiv", url : "/#!/skola/#{id}/Genrer.html"
-            # ,
-            #     label: "I andra medier", url : "/#!/skola/#{id}/SLiAndraMedier.html"
+            #     label: "Hjälp", 
+            #     url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
+            #     if : ["6-9", "gymnasium"]
 
 
         ], workfilter
