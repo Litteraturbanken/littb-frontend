@@ -625,14 +625,18 @@ littb.factory 'backend', ($http, $q, util) ->
             url : "/xhr/red/etc/provenance/provenance.json"
         ).then (response) ->
             provData = []
-            for prov in workinfo.provenance
+            for prov, i in workinfo.provenance
                 output = response.data[prov.library]
-                if workinfo.mediatype == "faksimil" and workinfo.printed
-                    output.text = output.text.faksimilnoprinted    
-                else if workinfo.mediatype == "faksimil" and not workinfo.printed
-                    output.text = output.text.faksimilnoprinted    
+                if i > 0 and prov.text2
+                    textField = 'text2' 
                 else 
-                    output.text = output.text[workinfo.mediatype]
+                    textField = 'text1'
+                if workinfo.mediatype == "faksimil" and workinfo.printed
+                    output.text = output[textField].faksimilnoprinted    
+                else if workinfo.mediatype == "faksimil" and not workinfo.printed
+                    output.text = output[textField].faksimilnoprinted    
+                else 
+                    output.text = output[textField][workinfo.mediatype]
 
                 signum = ""
                 if prov.signum then signum = " (#{prov.signum})"
