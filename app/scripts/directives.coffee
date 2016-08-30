@@ -138,7 +138,7 @@ littb.directive 'square', () ->
         s = scope
         EXPAND_SIZE = 4
         Y_OFFSET = -2
-        coors = _.pick scope.obj, "x", "y", "width", "height"
+        coors = _.pick scope.obj, "x", "y", "w", "h"
         coors.top = coors.y
         coors.left = coors.x
 
@@ -653,10 +653,10 @@ littb.directive "bigText", () ->
     link : (scope, elem, attr) ->
         obj = scope.$eval attr.bigText
         fac = scope.$eval attr.fac
-        elem.text obj.word
+        elem.text obj.wd
         size = 4
         elem.css("font-size", size + "px")
-        w = fac * (Number obj.width)
+        w = fac * (Number obj.w)
         # c.log "elem.width()", elem.width()  
         if elem.width() 
             while elem.width() < w

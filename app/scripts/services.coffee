@@ -454,7 +454,7 @@ littb.factory 'backend', ($http, $q, util) ->
             params :
                 size : size or 10000
                 exclude : "text,parts,sourcedesc,pages,errata"
-                sort_field : "popularity|desc"
+                sort_field : "epub_popularity|desc"
         ).then (response) ->
             return response.data.data
 
@@ -616,7 +616,6 @@ littb.factory 'backend', ($http, $q, util) ->
         $http(
             url : "/xhr/red/etc/license/license.json"
         ).then (response) ->
-            c.log "license", response.data[workinfo.license]
             return response.data[workinfo.license]
 
 
@@ -630,7 +629,7 @@ littb.factory 'backend', ($http, $q, util) ->
                 if i > 0 and prov.text2
                     textField = 'text2' 
                 else 
-                    textField = 'text1'
+                    textField = 'text'
                 if workinfo.mediatype == "faksimil" and workinfo.printed
                     output.text = output[textField].faksimilnoprinted    
                 else if workinfo.mediatype == "faksimil" and not workinfo.printed
@@ -643,14 +642,16 @@ littb.factory 'backend', ($http, $q, util) ->
                 output.text = _.template(output.text)({signum: signum or ""})
                 provData.push output
             return provData
-    getSourceInfo : (titlepath, mediatype) ->
+    getSourceInfo : (key, value) ->
         # TODO: mediatype can be null?
         def = $q.defer()
-        url = "#{STRIX_URL}/get_work_info/#{titlepath}"
-
+        url = "#{STRIX_URL}/get_work_info"
+        params = {}
+        # key is titlepath or lbworkid
+        params[key] = value
         $http(
             url : url
-
+            params: params
         ).success( (response) ->
             # if $("fel", xml).length
             #     def.reject $("fel", xml).text()
@@ -685,15 +686,13 @@ littb.factory 'backend', ($http, $q, util) ->
 
 
     logPage : (pageix, lbworkid, mediatype) ->
-            
-        http(
-            url : "/query/lb-admin.xql"
-            params : 
-                action : "log-page-request"
-                lbworkid : lbworkid
-                pageix : pageix
-                type : mediatype
-                # hash : "80301537332859264406912773809666"
+        $http(
+            url : "#{STRIX_URL}/log_page/#{lbworkid}/#{mediatype}/#{pageix}"
+        )
+
+    logDownload : (lbworkid) ->
+        $http(
+            url : "#{STRIX_URL}/log_download/#{lbworkid}"
         )
 
     ###

@@ -1281,7 +1281,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.selectedTitle._collapsed = true
         $location.search("title", title.titlepath)
 
-    
+    ###
     getWorkIntro = (author, titlepath) ->
         s.sourcedesc = null
         # TODO: i think this broke
@@ -1297,7 +1297,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             # s.data = {}
             # s.error = true
         return infoDef
-
+    ###
 
     s.getPartAuthor = (part) ->
         part.authors?[0] or part.work_authors[0]
@@ -1433,12 +1433,12 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     s.fetchEpub = (row) ->
         filename = s.getFilename(row)
-        backend.logPage("0", filename, "epub")
+        backend.logDownload(row.lbworkid)
         location.href = "/txt/epub/#{filename}.epub"
 
 
     s.getFilename = (row) ->
-        row.author[0].author_id + '_' + row.itemAttrs.work_title_id
+        row.authors[0].author_id + '_' + row.title_id
 
 
     util.setupHashComplex s,
@@ -1832,8 +1832,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.isFocus = true
         s.showFocusBar = true
 
-    s.hasSearchable = (author_id) ->
-        s.authorById?[author_id].searchable == 'true'
+    s.hasSearchable = (author) ->
+        author?.searchable
+        # unless author then return
+        # s.authorById?[author].searchable == 'true'
 
     s.closeFocus = (event) ->
         # event.stopPropagation()
@@ -2251,7 +2253,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         
 
     initSourceInfo = () ->
-        def = backend.getSourceInfo(title, mediatype)
+        key = if title then "titlepath" else "lbworkid"
+        value = if title then title else $routeParams.lbid
+        def = backend.getSourceInfo(key, value)
         s.workinfoPromise = def 
         def.then (workinfo) ->
             s.workinfo = workinfo
@@ -2298,17 +2302,28 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     downloadPage = (pageix) ->
         filename = _.str.lpad(pageix, 5, "0")
-        if mediatype == "etext"
-            url = "txt/#{s.workinfo.lbworkid}/res_#{filename}.html"
-            def = backend.getHtmlFile(url)
-            def.then (html) ->
-                s.etext_html = html.data.firstChild.innerHTML
-                return s.etext_html
+        id = $routeParams.lbid or s.workinfo.lbworkid
+        url = "txt/#{id}/res_#{filename}.html"
+        def = backend.getHtmlFile(url)
+        def.then (html) ->
+            s.etext_html = html.data.firstChild.innerHTML
+            return s.etext_html
 
-            return def
+        return def
 
 
     infoDef = initSourceInfo()
+    fetchPage = (ix) ->
+        if mediatype == "etext"
+            return downloadPage(ix)
+        else
+            id = $routeParams.lbid or s.workinfo.lbworkid
+            filename = _.str.lpad(ix + 1, 4, "0")
+            s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}.jpeg"
+            def = $q.defer()
+            def.resolve()
+            return def.promise
+
 
     loadPage = (val) ->
         infoDef.then () ->
@@ -2319,7 +2334,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             s.error = false
 
-            unless s.isEditor
+            if not s.isEditor and not isDev
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
 
             
@@ -2329,24 +2344,24 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             if $location.search().sok
                 s.$broadcast "popper.open.searchPopup"
 
-            s.pagename = val
-            s.pageix = s.pagemap["page_" + s.pagename]
 
-            if mediatype == "etext"
-                downloadPage(s.pageix).then (html) ->
-                    c.log "onFirstLoad"
-                    s.first_load = true
-                    s.loading = false
-                    onFirstLoad()
-            else
-                id = $routeParams.lbid or s.workinfo.lbworkid
-                filename = _.str.lpad(s.pageix + 1, 4, "0")
-                s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}.jpeg"
+            
+            promise = null
+            if s.isEditor
+                s.pageix = Number val
+                promise = fetchPage(s.pageix)
+            else 
+                s.pagename = val
+                s.pageix = s.pagemap["page_" + s.pagename]
+                promise = fetchPage(s.pageix)
+
+            promise.then (html) ->
+                c.log "onFirstLoad"
                 s.first_load = true
                 s.loading = false
                 onFirstLoad()
 
-
+            if mediatype == "faksimil"
                 backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
 
                     t = $.now()
@@ -2360,9 +2375,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         , (err) ->
             c.log "err", err
 
-            s.error = true
-            s.loading = false
-            s.first_load = true
+
+            if s.isEditor
+                fetchPage(val).then () ->
+                s.loading = false
+                s.first_load = true
+
+            else
+                s.error = true
+
 
 
 
