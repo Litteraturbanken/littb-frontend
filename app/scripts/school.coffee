@@ -4,12 +4,16 @@ littb = angular.module('littbApp')
 littb.controller "MenuCtrl", ($scope, util) ->
     c.log "MenuCtrl", $scope
     s = $scope
-    s.$root.collapsed ?= [true, true, true, true, true]
+    s.$root.collapsed ?= [true, true, true, true, true, true, true, true]
 
     # util.setupHash s, [
     #     key : "collapsed"
     # ]
 
+    s.unCollapse = (index) ->
+        for __, i in s.$root.collapsed
+            s.$root.collapsed[i] = true
+        s.$root.collapsed[index] = false
 
     s.collapseMenu = (index) ->
         c.log "collapseMenu", index
@@ -23,6 +27,9 @@ littb.controller "MenuCtrl", ($scope, util) ->
         s.$root.collapsed[index] = false
         c.log "s.$root.collapsed", s.$root.collapsed
             
+littb.controller "lyrikTeacherCtrl", ($scope, util, $location) ->
+    c.log("location", $location.url())
+
 
 getStudentCtrl = (id) ->
     ["$scope", "$routeParams", "$rootElement", "$location", ($scope, $routeParams, $rootElement, $location) ->
@@ -242,6 +249,10 @@ getLyrikStudentCtrl = (id) ->
                 label: "Litterära genrer", 
                 url : "/#!/skola/lyrik/elev/#{id}/Genrer.html"
                 if : ["6-9", "gymnasium"]
+            ,
+                label : "Lyrikens undergenrer", 
+                url : "/#!/skola/lyrik/elev/#{id}/LyrikensUndergenrer.html"
+                if : ["6-9", "gymnasium"]
             # ,
             #     label: "Hjälp", 
             #     url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
@@ -390,6 +401,10 @@ littb.directive "scFile", ($routeParams, $location, $http, $compile, util, backe
             "Hjalp.html"
         ]
 
+        generalTextsForLyrikStudents = [
+            "LyrikensUndergenrer.html"
+        ]
+
 
         $scope.setName = (name) ->
             $scope.currentName = name
@@ -402,11 +417,28 @@ littb.directive "scFile", ($routeParams, $location, $http, $compile, util, backe
 
         if filename in generalTexts
             path = "/skola/" + filename
+        else if filename in generalTextsForLyrikStudents
+            path = "/skola/lyrik/elev_" + filename
         else
             path = getLocationRoot() + (_.compact [section, subsection, filename]).join("_")
 
         # if section then filename = section + "/" + filename
         c.log "section", section, subsection, filename
+
+        $scope.path = path
+
+        if section == "larare" and subsection
+
+            actualPath = path.replace(/_/g, "/")
+            actualPath = "/#!" + actualPath
+            c.log "actualPath", actualPath
+            # may God forgive me for this code
+            s = $("a[href='#{actualPath}']").parent().parent().scope()
+            if s
+                safeApply s, (s) ->
+                    index = $("a[href='#{actualPath}']").parent().parent().attr("collapse").slice(-2, -1)
+                    s.$eval("unCollapse(#{index})")
+            
 
         backend.getHtmlFile("/red" + path ).success (data) ->
             innerxmls = _.map $("body > div > :not(.titlepage)", data), util.getInnerXML

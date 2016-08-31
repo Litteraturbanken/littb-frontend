@@ -18,6 +18,12 @@
                 </ul> 
             </li>
         </ul>
+        <ul class="subnav">
+            <li><br></li>
+            <li>
+                <download-btn ng-if="path" file="path" is-lyrik></download-btn>
+            </li>
+        </ul>
 
         <ul class="lower_menu">
             <li><a href="/#!/skola/lyrik/elev/{{getOtherId(id)}}">{{getOtherId(id)}}</a></li>

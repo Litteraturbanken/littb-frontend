@@ -4,16 +4,16 @@
 
         <h1><a href="/#!/skola">Litteraturskolan</a></h1>
         <h2 class="subheader caps">Att läsa lyrik</h2>
-        <div  > <!-- school-affix -->
+        <div ng-controller="lyrikTeacherCtrl" > <!-- school-affix -->
 
 
 
             <ul class="subnav" active-style ng-controller="MenuCtrl">
 
                 <li class=""><h2>För lärare</h2></li>
-                <li><a href="/#!/skola/lyrik/larare">Introduktion</a>
+                <li><a href="/#!/skola/lyrik/larare" ng-click="collapseMenu(5)">Introduktion</a>
 
-                    <ul class="inner">
+                    <ul class="inner" collapse="collapsed[5]">
                         <li><a href="/#!/skola/lyrik/larare?ankare=Introduktion" >Introduktion</a></li>
                         <li><a href="/#!/skola/lyrik/larare?ankare=Styrdokument">Skolans styrdokument</a></li>
                         <li><a href="/#!/skola/lyrik/larare?ankare=Varfor">Varför läsa lyrik?</a></li>
@@ -30,7 +30,94 @@
                         <li><a href="/#!/skola/lyrik/larare?ankare=Litteratur">Litteraturlista</a></li>
                     </ul>
                 </li>
-                <li><h4><a href="/#!/skola/lyrik/larare/Lashandledningar.html">Läshandledningar</a></h4></li>
+                <li><h4><a href="/#!/skola/lyrik/larare/Lashandledningar.html">Läshandledningar</a></h4>
+
+                    <ul class="inner">
+                        <li><a ng-click="collapseMenu(2)">Lärare f-5</a>
+
+                            <ul class="inner inner_again" collapse="collapsed[2]">
+                                <li><a href="/#!/skola/lyrik/larare/f-5/Boye.html">Boye</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/f-5/Froding.html">Fröding</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/f-5/Karlfeldt.html">Karlfeldt</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/f-5/Sodergran.html">Södergran</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/f-5/OvrigaDikter.html">Övriga dikter</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/f-5/Ideer.html">Idéer</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/f-5/Teman.html">Teman</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/f-5/VisorOchPsalmer.html">Visor och psalmer</a></li>
+                            </ul>
+                        </li>
+                        <li><a ng-click="collapseMenu(3)">Lärare 6-9</a>
+                            <ul class="inner inner_again" collapse="collapsed[3]">
+                                <li><a href="/#!/skola/lyrik/larare/6-9/Boye.html">Boye</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/Froding.html">Fröding</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/Karlfeldt.html">Karlfeldt</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/Lenngren.html">Lenngren</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/Sjoberg.html">Sjöberg</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/Sodergran.html">Södergran</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/OvrigaDikter.html">Övriga dikter</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/Ideer.html">Idéer</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/Teman.html">Teman</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/6-9/VisorOchPsalmer.html">Visor och psalmer</a></li>
+                            </ul>
+                        </li>
+                        <li><a ng-click="collapseMenu(4)">Lärare GY</a>
+                            <ul class="inner inner_again" collapse="collapsed[4]">
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Andersson.html">Andersson</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Boye.html">Boye</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Froding.html">Fröding</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Karlfeldt.html">Karlfeldt</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Lenngren.html">Lenngren</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Nordenflycht.html">Nordenflycht</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Sjoberg.html">Sjöberg</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Sodergran.html">Södergran</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/OvrigaDikter.html">Övriga dikter</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Ideer.html">Idéer</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/LyrikensUndergenrer.html">Lyrikens undergenrer</a></li>
+                                <li><a href="/#!/skola/lyrik/larare/gymnasium/Teman.html">Teman</a></li>
+                            </ul>
+                        </li>
+                        <li><a ng-click="collapseMenu(6)">Elev 6-9</a>
+                            <ul class="inner inner_again" collapse="collapsed[6]">
+                                <li><a href="/#!/skola/lyrik/elev/6-9/Boye.html">Boye</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/Froding.html">Fröding</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/Karlfeldt.html">Karlfeldt</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/Lenngren.html">Lenngren</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/Sjoberg.html">Sjöberg</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/Sodergran.html">Södergran</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/OvrigaDikter.html">Övriga dikter</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/Ideer.html">Idéer</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/Teman.html">Teman</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/6-9/VisorOchPsalmer.html">Visor och psalmer</a></li>
+                            </ul>
+                        </li>
+                        <li><a ng-click="collapseMenu(7)">Elev GY</a>
+                            <ul class="inner inner_again" collapse="collapsed[7]">
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Andersson.html">Andersson</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Boye.html">Boye</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Froding.html">Fröding</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Karlfeldt.html">Karlfeldt</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Lenngren.html">Lenngren</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Nordenflycht.html">Nordenflycht</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Sjoberg.html">Sjöberg</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Sodergran.html">Södergran</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/OvrigaDikter.html">Övriga dikter</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Ideer.html">Idéer</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/LyrikensUndergenrer.html">Lyrikens undergenrer</a></li>
+                                <li><a href="/#!/skola/lyrik/elev/gymnasium/Teman.html">Teman</a></li>
+                            </ul>
+                        </li>
+
+                        </li>    
+
+                    </ul>
+
+
+
+                </li>
+
+                <li>
+                    <download-btn ng-if="path" file="path" is-lyrik></download-btn>
+                </li>
 
                 <li class=""><h2>Elevsidor</h2></li>
                 <li class=""><a href="/#!/skola/lyrik/elev/6-9">6–9</a></li>
@@ -52,58 +139,12 @@
                     </ul>
                 <li><a href="/#!/skola/lyrik/larare/TermerOchBegrepp.html">Termer och begrepp</a></li>
                 <li><a href="/#!/skola/lyrik/larare/Genrer.html">Litterära genrer</a></li>
+                <li><a href="/#!/skola/lyrik/larare/LyrikensUndergenrer.html">Lyrikens undergenrer</a></li>
                 <li><a href="/#!/skola/lyrik/larare/Hjalp.html">Hjälp</a></li>                
                 
 
                 
-                <!-- <ul class="inner">
-                    <li><a ng-click="collapseMenu(2)">F-5</a>
-
-                        <ul class="inner" collapse="collapsed[2]">
-                            <li><a href="/#!/skola/lyrik/larare/f-5/Boye.html">Boye</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/f-5/Froding.html">Fröding</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/f-5/Karlfeldt.html">Karlfeldt</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/f-5/Sodergran.html">Södergran</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/f-5/OvrigaDikter.html">Övriga dikter</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/f-5/Ideer.html">Idéer</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/f-5/Teman.html">Teman</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/f-5/VisorOchPsalmer.html">Visor och psalmer</a></li>
-                        </ul>
-                    </li>
-                    <li><a ng-click="collapseMenu(3)">6-9</a>
-                        <ul class="inner" collapse="collapsed[3]">
-                            <li><a href="/#!/skola/lyrik/larare/6-9/Boye.html">Boye</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/Froding.html">Fröding</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/Karlfeldt.html">Karlfeldt</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/Lenngren.html">Lenngren</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/Sjoberg.html">Sjöberg</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/Sodergran.html">Södergran</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/OvrigaDikter.html">Övriga dikter</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/Ideer.html">Idéer</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/Teman.html">Teman</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/6-9/VisorOchPsalmer.html">Visor och psalmer</a></li>
-                        </ul>
-                    </li>
-                    <li><a ng-click="collapseMenu(4)">gymnasium</a>
-                        <ul class="inner" collapse="collapsed[4]">
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Andersson.html">Andersson</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Boye.html">Boye</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Froding.html">Fröding</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Karlfeldt.html">Karlfeldt</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Lenngren.html">Lenngren</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Nordenflycht.html">Nordenflycht</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Sjoberg.html">Sjöberg</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Sodergran.html">Södergran</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/OvrigaDikter.html">Övriga dikter</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Ideer.html">Idéer</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/LyrikensUndergenrer.html">Lyrikens undergenrer</a></li>
-                            <li><a href="/#!/skola/lyrik/larare/gymnasium/Teman.html">Teman</a></li>
-                        </ul>
-                    </li>
-
-                    </li>    
-
-                </ul> -->
+                
                 
             </ul>
             <!-- <ul class="lower_menu">

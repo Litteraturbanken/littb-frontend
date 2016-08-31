@@ -509,8 +509,16 @@ littb.directive 'downloadBtn', () ->
     </a>
     """
     link : (scope, elem, attr) ->
+        c.log "attr", attr
         scope.getUrl = (filename) ->
-            "/red/skola/pdf/" + filename.replace(".html", ".pdf")
+            if attr.isLyrik?
+                segments = filename.split("/")
+                segments.splice(-1, 0, "pdf")
+                return "/red" + segments.join("/").replace(".html", ".pdf")
+
+
+            else
+                "/red/skola/pdf/" + filename.replace(".html", ".pdf")
 
 
 littb.directive "schoolAffix", ($window) ->
