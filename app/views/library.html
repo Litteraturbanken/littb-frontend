@@ -46,12 +46,22 @@
                             <!-- <span class="auth_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
                         </li>
                         <li class="part_header top_header" ng-show="authorData.length">
-                            Författare, utgivare etc.
+                            
+                            <a class="popular"
+                                ng-show="showInitial"
+                                ng-disabled="showPopularAuth"
+                                ng-click="showPopularAuth = true">Populära författare</a> 
+                            <a class="works" 
+                                ng-show="showInitial" 
+                                ng-disabled="!showPopularAuth"  ng-click="showPopularAuth = false">Alla Författare</a>
                         </li>
                         <li ng-show="!authorSearching && !(authorData | filter:filterAuthor).length">
                             Inga träffar.
                         </li>
-                        <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'name_for_index'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.author_id}}" >
+
+                        
+
+                        <li ng-repeat="author in getAuthorData() | filter:filterAuthor" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.author_id}}" >
                             <div class="item_header" ng-click="authorHeaderClick($event, author)"><span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span> {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
                     
                                 <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner"></i>
@@ -95,7 +105,7 @@
                                 ng-show="showInitial"
                                 ng-disabled="showPopular"
                                 ng-click="showPopular = true">Populära verk</a> 
-                                <a class="works" 
+                            <a class="works" 
                                 ng-show="showInitial" 
                                 ng-disabled="!showPopular"  ng-click="showPopular = false">Samtliga verk</a>
                             <a class="fitlered" ng-show="!showInitial">Hela verk</a>

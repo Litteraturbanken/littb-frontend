@@ -1,8 +1,12 @@
 littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-STRIX_URL = "http://localhost:5000"
+STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 # STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+
+if _.str.startsWith(location.host, "demolittb")
+    STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+    
 
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->
@@ -453,7 +457,7 @@ littb.factory 'backend', ($http, $q, util) ->
             url : "#{STRIX_URL}/get_epub"        
             params :
                 size : size or 10000
-                exclude : "text,parts,sourcedesc,pages,errata"
+                exclude : "text,parts,sourcedesc,pages,overlay,errata"
                 sort_field : "epub_popularity|desc"
         ).then (response) ->
             return response.data.data
@@ -462,7 +466,7 @@ littb.factory 'backend', ($http, $q, util) ->
         def = $q.defer()
         # TODO: add filter for leaf titlepaths and mediatype
         params = 
-            exclude : "text,parts,sourcedesc,pages,errata"
+            exclude : "text,parts,sourcedesc,pages,overlay,errata"
             filter_string: filterString
             to: 10000
 
@@ -483,7 +487,7 @@ littb.factory 'backend', ($http, $q, util) ->
     getTitles : (includeParts = false, author = null, sort_key = null, string = null, aboutAuthors=false, getAll = false) ->
         def = $q.defer()
         params = 
-            exclude : "text,parts,sourcedesc,pages,errata"
+            exclude : "text,parts,sourcedesc,pages,overlay,errata"
 
         if sort_key
             params.sort_field = sort_key
@@ -592,25 +596,30 @@ littb.factory 'backend', ($http, $q, util) ->
 
     #     return def.promise
 
+    getPopularAuthors : () ->
+        $http(
+            url : "#{STRIX_URL}/get_popular_authors"
+        ).then (response) ->
+            return response.data.data
     getAuthorList : (include, exclude) ->
 
-            def = $q.defer()
-            url = "#{STRIX_URL}/get_authors"
-            params = {}
-            if include
-                params.include = include.join(",")
-            if exclude
-                params.exclude = exclude.join(",")
-            $http(
-                url : url
-                method: "GET"
-                cache: true
-                params : params
-            ).success (response) ->
-                c.log "getAuthorList", response
-                def.resolve response.data
+        def = $q.defer()
+        url = "#{STRIX_URL}/get_authors"
+        params = {}
+        if include
+            params.include = include.join(",")
+        if exclude
+            params.exclude = exclude.join(",")
+        $http(
+            url : url
+            method: "GET"
+            cache: true
+            params : params
+        ).success (response) ->
+            c.log "getAuthorList", response
+            def.resolve response.data
 
-            return def.promise
+        return def.promise
 
     getLicense : (workinfo) ->
         $http(
@@ -779,7 +788,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
     getTextByAuthor : (author_id, textType, maybeAuthType, list_about=false) ->
         params = 
-            exclude : "text,parts,sourcedesc,pages,errata"
+            exclude : "text,parts,sourcedesc,pages,overlay,errata"
             to : 10000
         if maybeAuthType
             params["author_type"] = maybeAuthType

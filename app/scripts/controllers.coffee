@@ -1091,6 +1091,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.titleSearching = false
     s.authorSearching = true
     s.showPopular = true
+    s.showPopularAuth = true
     s.showInitial = true
     # s.rowByLetter = {}
 
@@ -1198,9 +1199,19 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     $timeout () ->
         authors.then ([authorList, authorsById]) ->
             s.authorsById = authorsById
-            s.authorData = _.filter authorList, (item) -> item.show == true
+            s.authorData = authorList
             s.authorSearching = false
-    , 0
+
+        backend.getPopularAuthors().then (auths) ->
+            s.popularAuthors = auths
+        
+    , 10
+
+    s.getAuthorData = () ->
+        if s.showPopularAuth
+            s.popularAuthors
+        else
+            s.authorData
 
     s.searchTitle = () ->
         c.log "searchTitle", s.filter
@@ -2306,7 +2317,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         url = "txt/#{id}/res_#{filename}.html"
         def = backend.getHtmlFile(url)
         def.then (html) ->
-            s.etext_html = html.data.firstChild.innerHTML
+            # since we use hard line breaks, soft hyphen needs to be replaced by actual hyphen
+            s.etext_html = html.data.firstChild.innerHTML.replace(/­/g, "-") # there's a soft hyphen in there, trust me
             return s.etext_html
 
         return def
