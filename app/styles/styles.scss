@@ -3362,7 +3362,7 @@ $partnav-width : 170px;
         width : 302px !important;
         padding-top: 5px;
     }
-
+    
     .select2-search {
         input {
             @include font-normal();
@@ -3544,6 +3544,12 @@ $partnav-width : 170px;
         }
         p {
             max-width : 700px
+        }
+        .rowlimit {
+            margin-top: 2em;
+            color : #333;
+            text-align: center;
+            font-size: 0.7em;
         }
     }
 }

@@ -33,7 +33,7 @@
                     <th> <div sort-triangles val="['author[0].nameforindex', 'itemAttrs.sortkey']" tuple="sorttuple"></div> </th>
                     <th> <div sort-triangles val="['itemAttrs.sortkey', 'author[0].nameforindex']" tuple="sorttuple"></div> </th>
                 </thead>
-                <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.author[0].nameforindex.toUpperCase()}}">
+                <tbody><tr ng-repeat="row in rows | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.author[0].nameforindex.toUpperCase()}}">
                         <td>
                             <a ng-href="/#!/forfattare/{{::row.author[0].authorid}}" >{{::getAuthor(row)}}</a>
                         </td>
@@ -45,6 +45,7 @@
                         </td>
                     </tr></tbody>
             </table>
+            <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div>
         </div>
     </div>
     <!-- <div toolkit>

@@ -51,7 +51,7 @@
                         <li ng-show="!authorSearching && !(authorData | filter:filterAuthor).length">
                             Inga träffar.
                         </li>
-                        <li ng-repeat="author in authorData | filter:filterAuthor| orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}" >
+                        <li ng-repeat="author in authorData | filter:filterAuthor | limitTo: rowLimit | orderBy:'nameforindex'" ng-click="authorClick($event, author)" on-finish-render="authorRender()" id="{{author.authorid}}" >
                             <div class="item_header" ng-click="authorHeaderClick($event, author)"><span class="surname">{{author.nameforindex.split(',')[0]}}</span><span ng-show="author.nameforindex.split(',').length > 1">,</span> {{author.nameforindex.split(",")[1]}} {{author | authorYear}}
                     
                                 <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner"></i>
@@ -105,7 +105,8 @@
                             Inga träffar. 
                         </li>
                         
-                        <li class="link" ng-repeat="row in getTitles() | orderBy:'itemAttrs.sortkey' | filter:mediatypeFilter | filter:filterTitle" on-finish-render="titleRender()"
+                        <li class="link" ng-repeat="row in getTitles() | filter:mediatypeFilter | filter:filterTitle | limitTo: rowLimit 
+                        | orderBy:'itemAttrs.sortkey'" on-finish-render="titleRender()"
                             top="$parent.title_off" ng-click="titleClick($event, row)"
                             id="{{getUniqId(row)}}">
                             <div class="header">

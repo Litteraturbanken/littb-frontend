@@ -1,6 +1,33 @@
 ﻿window.c = console ? log : _.noop
 littb = angular.module('littbApp')
 
+window.detectIE = () ->
+    ua = window.navigator.userAgent
+
+    msie = ua.indexOf('MSIE ')
+    if (msie > 0)
+        # IE 10 or older => return version number
+        return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10)
+    
+
+    trident = ua.indexOf('Trident/')
+    if (trident > 0)
+        # IE 11 => return version number
+        rv = ua.indexOf('rv:')
+        return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10)
+    
+
+    edge = ua.indexOf('Edge/')
+    if (edge > 0)
+       # Edge (IE 12+) => return version number
+       return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10)
+    
+
+    # other browser
+    return false
+
+
+
 littb.filter "formatAuthors", (authors) ->
     (authorlist, authorsById, makeLink) ->
         if not authorlist or not authorlist.length or not authorsById then return
@@ -1059,7 +1086,11 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         return _.all exprs, (expr) ->
             new RegExp(expr, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + auths + " " + row.itemAttrs.imprintyear + " "))
 
-        
+    isIE = detectIE()
+    c.log "isIE", isIE
+
+    if isIE and isIE < 12
+        s.rowLimit = 30        
 
     s.filterAuthor = (author) ->
         if not s.rowfilter then return true
@@ -1340,6 +1371,12 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
                 return "Välj författare"
 
     }
+
+    isIE = detectIE()
+    c.log "isIE", isIE
+
+    if isIE and isIE < 12
+        s.rowLimit = 30
 
 
     # TODO: what about the workauthor issue?
