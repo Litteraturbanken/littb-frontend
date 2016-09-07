@@ -36,7 +36,7 @@
         <img faksimil-img class="faksimil" ng-style="{'max-width' : workinfo.widths[size] + 'px'}" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
     </div>
     <div square ng-repeat="obj in coors" ng-show="x"
-         class="faksimilMarkee" ng-class="{long : obj.width > 150}"></div>
+         class="faksimilMarkee" ng-class="{long : obj.w > 150}"></div>
     
     
     <div toolkit toolkit-id="toolkit-right" ng-show="first_load">

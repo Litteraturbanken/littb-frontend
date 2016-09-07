@@ -138,7 +138,7 @@ littb.directive 'square', () ->
         s = scope
         EXPAND_SIZE = 4
         Y_OFFSET = -2
-        coors = _.pick scope.obj, "x", "y", "w", "h"
+        coors = _.pick scope.obj, "x", "y", "width", "height"
         coors.top = coors.y
         coors.left = coors.x
 
@@ -670,7 +670,8 @@ littb.directive "bigText", () ->
                 if size < 5 then break
 
         # elem.css("font-size", size * (1.2) + "px")
-        elem.text elem.text() + " "
+        elem.attr "id", obj.wid
+        elem.text obj.wd + " "
 
 
 littb.directive "top", () ->
