@@ -1,8 +1,8 @@
 littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-# STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
 
 if _.str.startsWith(location.host, "demolittb")
     STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
@@ -617,6 +617,7 @@ littb.factory 'backend', ($http, $q, util) ->
     getLicense : (workinfo) ->
         $http(
             url : "/xhr/red/etc/license/license.json"
+            cache: true
         ).then (response) ->
             return response.data[workinfo.license]
 
@@ -624,6 +625,7 @@ littb.factory 'backend', ($http, $q, util) ->
     getProvenance : (workinfo) ->
         $http(
             url : "/xhr/red/etc/provenance/provenance.json"
+            cache: true
         ).then (response) ->
             provData = []
             for prov, i in workinfo.provenance
@@ -641,7 +643,9 @@ littb.factory 'backend', ($http, $q, util) ->
 
                 signum = ""
                 if prov.signum then signum = " (#{prov.signum})"
-                output.text = _.template(output.text)({signum: signum or ""})
+                output.text = _.template(output.text)({
+                    signum: signum or ""
+                })
                 provData.push output
             return provData
     getSourceInfo : (key, value) ->
@@ -692,9 +696,13 @@ littb.factory 'backend', ($http, $q, util) ->
             url : "#{STRIX_URL}/log_page/#{lbworkid}/#{mediatype}/#{pageix}"
         )
 
-    logDownload : (lbworkid) ->
+    logDownload : (author, title, lbworkid) ->
         $http(
-            url : "#{STRIX_URL}/log_download/#{lbworkid}"
+            url : "#{STRIX_URL}/log_download/#{author}/#{title}/#{lbworkid}"
+        )
+    logLibrary : (filter) ->
+        $http(
+            url : "#{STRIX_URL}/log_library/#{filter}"
         )
 
     ###
@@ -783,13 +791,14 @@ littb.factory 'backend', ($http, $q, util) ->
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
             to : 10000
+            sort: "sortkey"
         if maybeAuthType
             params["author_type"] = maybeAuthType
         if list_about
             params["about_author"] = true
             
         return $http(
-            url : "#{STRIX_URL}/lb_list_all/#{textType}/" + author_id
+            url : "#{STRIX_URL}/lb_list_all/#{textType}/#{author_id}"
             params : params
         ).then( (response) ->
             return expandMediatypes response.data.data

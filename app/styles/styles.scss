@@ -1924,6 +1924,7 @@ $partnav-width : 170px;
 
         .size_picker {
             // margin-top: 3em;
+            display : none;
             text-align: right;
             h2 {
                 color : $primarycolor;
@@ -2238,6 +2239,7 @@ $partnav-width : 170px;
 
         }
         #search_nav {
+            display : none;
             text-align: right;
             @include small-caps();
             line-height : 1;
@@ -3265,7 +3267,7 @@ $partnav-width : 170px;
                         color : $primarycolor;
                     }
                 }
-                .fitlered {
+                .filtered {
                     color : $primarycolor;
                 }
                 .reset {

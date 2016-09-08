@@ -54,8 +54,11 @@
                             <a class="works" 
                                 ng-show="showInitial" 
                                 ng-disabled="!showPopularAuth"  ng-click="showPopularAuth = false">Alla Författare</a>
+
+                            <a class="filtered" ng-show="!showInitial">Författare</a>
+                            <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
                         </li>
-                        <li ng-show="!authorSearching && !(authorData | filter:filterAuthor).length">
+                        <li ng-show="!authorSearching && !(getAuthorData() | filter:filterAuthor).length">
                             Inga träffar.
                         </li>
 
@@ -108,7 +111,7 @@
                             <a class="works" 
                                 ng-show="showInitial" 
                                 ng-disabled="!showPopular"  ng-click="showPopular = false">Samtliga verk</a>
-                            <a class="fitlered" ng-show="!showInitial">Hela verk</a>
+                            <a class="filtered" ng-show="!showInitial">Hela verk</a>
                             <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
                         </li>
                         <li ng-show="getTitles() && !(getTitles() | filter:mediatypeFilter).length">

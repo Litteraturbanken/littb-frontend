@@ -37,9 +37,9 @@
 
         <div class="bottom_row">
             <div class="left">
-                <div class="auth_select_container">
+                <div class="auth_select_container" ng-show="auth_select_rendered">
                     <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" >
-                        <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | orderBy:'name_for_index' | filter:{searchable : 'true'}  track by $index">
+                        <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | filter:{searchable : 'true'} | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
                             {{author.full_name}}
                         </option>
                     </select> 

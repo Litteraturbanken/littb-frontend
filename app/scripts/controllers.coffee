@@ -168,6 +168,9 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s = $scope
     s.open = true
     hasSearchInit = false
+    s.auth_select_rendered = false
+    s.onAuthSelectRender = () ->
+        s.auth_select_rendered = true
     # s.proofread = 'all'
 
     s.searchData = searchData
@@ -238,15 +241,17 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.authorsById = authorsById
         change = (newAuthors) ->
             return unless newAuthors
-            $q.all _.map newAuthors.split(","), (auth) -> 
-                backend.getTitlesByAuthor(auth, true, s.isAuthorAboutSearch)
-            .then (results) ->
-                filteredTitles = _.filter (_.flatten results), (item) -> 
+            backend.getTextByAuthor(newAuthors, "etext,faksimil", null, s.isAuthorAboutSearch).then (titles) ->
+                s.titles = titles
+            # $q.all _.map newAuthors.split(","), (auth) -> 
+            # backend.getTitlesByAuthor(auth, true, s.isAuthorAboutSearch)
+            # .then (results) ->
+            #     filteredTitles = _.filter (_.flatten results), (item) -> 
 
-                    "/" not in item.titlepath
+            #         "/" not in item.titlepath
 
-                filteredTitles = _.uniq filteredTitles, (item) -> item.lbworkid
-                s.titles = filteredTitles
+            #     filteredTitles = _.uniq filteredTitles, (item) -> item.lbworkid
+            #     s.titles = filteredTitles
         
         if $location.search().forfattare
             auth = $location.search().forfattare?.split(",")
@@ -964,11 +969,11 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         c.log "getWorksByAuthor part", data
         s.titleStruct[1].data = data
 
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "editor").then (data) ->
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf,part", "editor").then (data) ->
         c.log "editor works", data
         s.titleStruct[2].data = data
     
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator").then (data) ->
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf,part", "translator").then (data) ->
         c.log "translator works", data
         s.titleStruct[3].data = data
 
@@ -1123,7 +1128,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         exprs = filter.split(" ")
 
         return _.all exprs, (expr) ->
-            new RegExp(expr, "i").test((author.full_name))
+            pseudonym = (_.pluck author.pseudonym, "full_name").join(" ")
+            new RegExp(expr, "i").test((author.full_name + pseudonym))
 
     s.resetView = () ->
         s.showInitial = true
@@ -1216,10 +1222,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.searchTitle = () ->
         c.log "searchTitle", s.filter
         if s.filter
+            s.showPopularAuth = false
             s.showPopular = false
             s.showInitial = false
             fetchTitles()
             fetchWorks()
+            backend.logLibrary(s.filter)
             s.selectedAuth = null
             s.selectedTitle = null
 
@@ -1444,7 +1452,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     s.fetchEpub = (row) ->
         filename = s.getFilename(row)
-        backend.logDownload(row.lbworkid)
+        backend.logDownload(row.authors[0].surname, row.shorttitle, row.lbworkid)
         location.href = "/txt/epub/#{filename}.epub"
 
 
@@ -1605,10 +1613,14 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     s.workinfoPromise.then () ->
         c.log "workinfo", s.workinfo
-        backend.getProvenance(s.workinfo).then (provData) ->
+        prov = backend.getProvenance(s.workinfo)
+        lic = backend.getLicense(s.workinfo)
+
+        $q.all([prov, lic]).then ([provData, licenseData]) ->
             s.provenanceData = provData
-        backend.getLicense(s.workinfo).then (licenseData) ->
-            s.licenseData = licenseData
+            s.licenseData = _.template(licenseData)({
+                provenance: "<a href='#{provData[0].link}'>#{provData[0].fullname}</a>"
+            })
 
 
 
@@ -1799,7 +1811,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http, $q) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http, $q, $filter) ->
     s = $scope
     s.isEditor = false
     s._ = {humanize : _.humanize}
@@ -1828,6 +1840,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.showPopup = false
     s.error = false
     s.show_chapters = false # index modal
+
+    s.normalizeAuthor = $filter('normalizeAuthor')
 
     h = $(window).height()
     w = $(window).width()
@@ -2373,7 +2387,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 s.loading = false
                 onFirstLoad()
 
-            if mediatype == "faksimil"
+            if mediatype == "faksimil" and s.workinfo.has_ocr
                 backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
 
                     t = $.now()
@@ -2398,7 +2412,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
 
-
+    ###
     loadPageOld = (val) ->
         # take care of state hiccup
         unless $route.current.controller == 'readingCtrl' 
@@ -2438,7 +2452,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
                 unless s.pageToLoad then s.pageToLoad = s.pagename
 
-                if s.mediatype == "faksimil"
+                if s.mediatype == "faksimil" and s.workinfo.has_ocr
                     backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
                         s.overlaydata = data
                         s.overlayFactors = overlayFactors
@@ -2525,7 +2539,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.first_load = true
             
 
-
+    ###
 
     
     s.setSize = (index) ->
