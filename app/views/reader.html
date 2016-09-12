@@ -125,7 +125,8 @@
                 <!-- <li>Visa som bokuppslag</li> -->
                 <li>
                     <!-- <a popper="searchPopup" my="left center" at="left middle">Sök i verket</a>  -->
-                    <a ng-disabled="workinfo.searchable == 'false'" ng-click="openSearchWorks()">Sök i verket</a> 
+                    <a ng-show="!workinfo.searchable" class="disabled">Sök i verket</a> 
+                    <a ng-show="workinfo.searchable" ng-click="openSearchWorks()">Sök i verket</a> 
 
                     <!-- <div class="searchbox popper_menu" ng-click="$event.stopPropagation()"> -->
                     <div collapse="!show_search_work" class="searchbox" >
@@ -152,7 +153,7 @@
                         </div>
                     </div>
                 </li>
-                <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}" ng-disabled="!hasSearchable(author || getValidAuthors()[0])">Sök i författarens texter</a></li>
+                <li><a ng-href="/#!/sok?avancerad&forfattare={{author}}" ng-disabled="!hasSearchable(authorById[author])">Sök i författarens texter</a></li>
                 <!-- <li>Dela boken</li> -->
             </ul>
         </div>

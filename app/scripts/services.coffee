@@ -224,8 +224,12 @@ littb.factory "util", ($location) ->
         onWatch = () ->
             for obj in config
                 val = $location.search()[obj.key]
-                unless val 
-                    if obj.default then val = obj.default else continue
+                unless val?
+                    if obj.default
+                        val = obj.default 
+                    else 
+                        obj.post_change?(val)
+                        continue
                 
                 val = (obj.val_in or _.identity)(val)
                 # c.log "obj.val_in", obj.val_in
@@ -239,6 +243,7 @@ littb.factory "util", ($location) ->
         onWatch()
         scope.loc = $location
         scope.$watch 'loc.search()', ->
+            # c.log "onWatch", onWatch
             onWatch()
 
         for obj in config
@@ -1198,6 +1203,28 @@ littb.factory 'backend', ($http, $q, util) ->
             def.resolve()
 
         return def.promise
+
+    autocomplete : (filterstr) ->
+        $http(
+            url : "#{STRIX_URL}/autocomplete/#{filterstr}"
+        ).then (response) ->
+            data = response.data
+
+            for item in data
+                if item.doc_type in ["etext", "faksimil"]
+                    item.url = "/forfattare/#{item.authors[0].author_id}/titlar/#{item.title_id}/sida/#{item.startpagename}"
+                    item.label = "Verk: " + item.authors[0].surname + " – " + item.shorttitle 
+                if item.doc_type == "part"
+                    item.url = "/forfattare/#{item.work_authors[0].author_id}/titlar/#{item.work_title_id}/sida/#{item.startpagename}"
+                    item.label = "Del: " + (item.authors?[0] or item.work_authors[0]).surname + " – " + item.shorttitle
+
+                if item.doc_type == "author"
+                    item.url = "/forfattare/#{item.author_id}"
+                    item.label = 'Författare: ' + item.name_for_index
+
+            return data
+
+
         
         
 

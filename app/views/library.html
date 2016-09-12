@@ -110,15 +110,15 @@
                                 ng-click="showPopular = true">Populära verk</a> 
                             <a class="works" 
                                 ng-show="showInitial" 
-                                ng-disabled="!showPopular"  ng-click="showPopular = false">Samtliga verk</a>
+                                ng-disabled="!showPopular"  ng-click="showAllWorks()">Samtliga verk</a>
                             <a class="filtered" ng-show="!showInitial">Hela verk</a>
                             <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
                         </li>
-                        <li ng-show="getTitles() && !(getTitles() | filter:mediatypeFilter).length">
+                        <li ng-show="listVisibleTitles() && !(listVisibleTitles() | filter:mediatypeFilter).length">
                             Inga träffar. 
                         </li>
                         <!-- orderBy | 'sortkey' -->
-                        <li class="link" ng-repeat="row in getTitles() | filter:mediatypeFilter" on-finish-render="titleRender()"
+                        <li class="link" ng-repeat="row in listVisibleTitles() | filter:mediatypeFilter" on-finish-render="titleRender()"
                             top="$parent.title_off" ng-click="titleClick($event, row)"
                             id="{{getUniqId(row)}}">
                             <div class="header">

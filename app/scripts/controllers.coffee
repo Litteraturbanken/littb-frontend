@@ -1107,14 +1107,11 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         return attrs.title unless attrs.showtitle == attrs.title
 
     s.filterTitle = (row) ->    
-        if not s.rowfilter then return true
-        filter = (s.rowfilter || '')
-
         auths = (_.map row.authors, (auth) ->
             return auth.full_name
         ).join(" ")
 
-        exprs = filter.split(" ")
+        exprs = s.rowfilter.split(" ")
 
         return _.all exprs, (expr) ->
             new RegExp(expr, "i").test((row.title + " " + row.shorttitle + " " + auths))
@@ -1122,10 +1119,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         
 
     s.filterAuthor = (author) ->
-        if not s.rowfilter then return true
-        filter = (s.rowfilter || '')
-
-        exprs = filter.split(" ")
+        exprs = s.rowfilter?.split(" ")
 
         return _.all exprs, (expr) ->
             pseudonym = (_.pluck author.pseudonym, "full_name").join(" ")
@@ -1133,13 +1127,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     s.resetView = () ->
         s.showInitial = true
+        s.showPopularAuth = true
         s.showPopular = true
 
         s.filter = ""
         s.rowfilter = ""
-
         s.all_titles = null
-
 
     s.mediatypeObj = 
         etext : if $location.search().etext then false else true
@@ -1221,22 +1214,24 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     s.searchTitle = () ->
         c.log "searchTitle", s.filter
-        if s.filter
+        s.selectedAuth = null
+        s.selectedTitle = null
+        s.rowfilter = s.filter
+        if s.rowfilter
+            s.showInitial = false
             s.showPopularAuth = false
             s.showPopular = false
-            s.showInitial = false
             fetchTitles()
             fetchWorks()
-            backend.logLibrary(s.filter)
-            s.selectedAuth = null
-            s.selectedTitle = null
+            backend.logLibrary(s.rowfilter)
+        else
+            s.resetView()
 
-        s.rowfilter = s.filter
 
 
     fetchTitles = () ->
         # unless s.filter then return
-        backend.getParts(s.filter).then (titleArray) ->
+        backend.getParts(s.rowfilter).then (titleArray) ->
             s.all_titles = titleArray
 
 
@@ -1253,7 +1248,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             return titleArray
 
         return def
-                
+    
+    s.showAllWorks = () ->
+        s.showPopular = false
+        s.filter = ""
+        s.rowfilter = ""
+        fetchWorks()
 
     s.getUrl = (row, mediatype) ->
         author_id = row.authors[0].workauthor or row.authors[0].author_id
@@ -1324,7 +1324,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     if $location.search().filter
         s.filter = $location.search().filter
-        s.searchTitle()
+    s.searchTitle()
 
     util.setupHashComplex s,
         [
@@ -1356,22 +1356,13 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             replace : false
         ]
 
-    # timeout in order to await the setupHashComplex watch firing.
-    # $timeout () ->
-    # if not (s.authorFilter or s.rowfilter or s.selectedLetter or s.mediatypeFilter) 
-    #     s.selectedLetter = "A"
-    if s.rowfilter then s.filter = s.rowfilter
-    c.log "workfilter", s.workFilter
-    # fetchWorks()
-
     onceFetchWorks = _.once () ->
         fetchWorks()
 
-    s.getTitles = () ->
+    s.listVisibleTitles = () ->
         if s.showInitial and s.showPopular
             s.popularTitles
         else
-            onceFetchWorks()
             return s.titleArray
 
     s.titleSearching = true
@@ -1424,11 +1415,11 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
 
     # TODO: what about the workauthor issue?
-    s.sorttuple = [["author[0].name_for_index", "itemAttrs.sortkey"], false]
+    s.sorttuple = [["author[0].name_for_index", "sortkey"], false]
     s.setSort = ([sortstr]) ->
         alternate = {
-            "author[0].name_for_index" : "itemAttrs.sortkey"
-            "itemAttrs.sortkey" : "author[0].name_for_index"
+            "author[0].name_for_index" : "sortkey"
+            "sortkey" : "authors[0].name_for_index"
         }[sortstr]
         s.sorttuple[0] = [sortstr, alternate]
     s.setDir = (isAsc) ->
@@ -1437,9 +1428,9 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
     window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
     s.rowFilter = (item) ->
         # author = s.authorsById?[s.authorFilter]
-        # if author and author.author_id != item.author[0].author_id then return false
+        # if author and author.author_id != item.authors[0].author_id then return false
         # if s.filterTxt
-        #     return false if not ((has item.author[0].full_name, s.filterTxt) or (has item.itemAttrs.showtitle, s.filterTxt))
+        #     return false if not ((has item.authors[0].full_name, s.filterTxt) or (has item.showtitle, s.filterTxt))
         return true
 
     s.getAuthor = (row) ->
@@ -1466,7 +1457,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
             # scope_name : "sortVal"
             scope_func : "setSort"
             key : "sortering"
-            default : "author[0].name_for_index,itemAttrs.sortkey"
+            default : "authors[0].name_for_index,sortkey"
             val_in : (val) ->
                 val?.split(",")
             val_out : (val) ->
@@ -1569,7 +1560,7 @@ littb.filter "correctLink", () ->
         return wrapper.html()
 
 
-littb.controller "idCtrl", ($scope, backend, $routeParams) ->
+littb.controller "idCtrl", ($scope, backend, $routeParams, $location) ->
     s = $scope
     _.extend s, $routeParams
     s.id = s.id?.toLowerCase()
@@ -1581,15 +1572,27 @@ littb.controller "idCtrl", ($scope, backend, $routeParams) ->
     backend.getTitles().then (titleArray) ->
         s.data = titleArray
 
+
+
+    s.onSelect = (val) ->
+        c.log "val", val
+        $location.url(val.url)
+    s.autocomplete = (val) ->
+        if val
+            return backend.autocomplete(val)
+                
+
+
+
     s.idFilter = (row) ->
         unless s.id then return true
-        row.itemAttrs.lbworkid == s.id
+        row.lbworkid == s.id
 
     s.rowFilter = (row) ->
         if not s.titles.length then return true
         return _.any _.map s.titles, (title) ->
-            _.str.contains(row.itemAttrs.titlepath.toLowerCase(), title?.toLowerCase()) or
-                _.str.contains(row.itemAttrs.title.toLowerCase(), title?.toLowerCase())
+            _.str.contains(row.titlepath.toLowerCase(), title?.toLowerCase()) or
+                _.str.contains(row.title.toLowerCase(), title?.toLowerCase())
 
 
     s.textareaChange = (titles)  ->
@@ -1857,10 +1860,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.isFocus = true
         s.showFocusBar = true
 
-    s.hasSearchable = (author) ->
-        author?.searchable
-        # unless author then return
-        # s.authorById?[author].searchable == 'true'
+    s.hasSearchable = (authorid) ->
+        unless authorid then return
+        s.authorById?[author].searchable
 
     s.closeFocus = (event) ->
         # event.stopPropagation()
@@ -2066,11 +2068,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.showPopup = true
 
 
-    onClickOutside = () ->
-        s.$apply () ->
-            s.showPopup = false
+    # onClickOutside = () ->
+    #     s.$apply () ->
+    #         s.showPopup = false
 
-    $document.on "click", onClickOutside
+    # $document.on "click", onClickOutside
 
 
     s.getTooltip = (part) ->
@@ -2139,6 +2141,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             _.object _.map pairs, ([key, val]) ->
                 [key, val.split("|")[i].split(",")[s.size - 1]]
     chapter_modal = null
+    about_modal = null
     util.setupHashComplex s, [
             scope_name : "markee_from"
             key : "traff"
@@ -2179,12 +2182,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "om-boken"
             scope_name : "show_about"
+            default: "lol"
             post_change : (val) ->
                 if val
-
-                    # $http.get("") $templateCache
-
-
                     about_modal = $modal.open
                         templateUrl : "sourceInfoModal.html"
                         scope : s
@@ -2552,7 +2552,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.$on "$destroy", () ->
         c.log "destroy reader"
         $document.off "keydown", onKeyDown
-        $document.off "click", onClickOutside
         for w in watches
             w()
 

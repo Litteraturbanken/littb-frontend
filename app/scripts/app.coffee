@@ -259,20 +259,32 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <input ng-model="titles[0]" placeholder="titel" ng-change="id = '';" ng-model-options="{debounce: 500}">
                     <textarea ng-model="textarea" placeholder="flera titlar separarade med nyrad" ng-change="textareaChange(textarea)" ng-model-options="{debounce: 500}"></textarea>
                     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+
+                    <div>
+                        <input type="text" 
+                            ng-model="autocomplete_str"
+                            typeahead="item as item.label for item in autocomplete($viewValue)"
+                            typeahead-trigger
+                            autofocus
+                            typeahead-wait-ms="200"
+                            typeahead-on-select="onSelect(autocomplete_str)"
+                        >
+                    </div>
+
                     <table class="table-striped">
-                    <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter">
-                        <td>{{row.itemAttrs.lbworkid}}</td>
+                    <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter" track by $index>
+                        <td>{{row.lbworkid}}</td>
                         <td>
                             <a href="/#!/forfattare/{{row.author[0].author_id}}">{{row.author[0].surname}}</a>
                         </td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.itemAttrs.work_title_id}}/{{row.itemAttrs.mediatype}}">{{row.itemAttrs.showtitle}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.showtitle}}</a>
                         </td>
                         <td>
-                            <span ng-repeat="type in row.mediatype">
+                            <span ng-repeat="type in row.mediatypes track by $index">
                             
                                 <span ng-show="!$first">:::</span>
-                                <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
+                                <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
                             </span>
                         </td>
                     </tr>
