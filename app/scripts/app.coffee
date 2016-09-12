@@ -260,17 +260,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <textarea ng-model="textarea" placeholder="flera titlar separarade med nyrad" ng-change="textareaChange(textarea)" ng-model-options="{debounce: 500}"></textarea>
                     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
 
-                    <div>
-                        <input type="text" 
-                            ng-model="autocomplete_str"
-                            typeahead="item as item.label for item in autocomplete($viewValue)"
-                            typeahead-trigger
-                            autofocus
-                            typeahead-wait-ms="200"
-                            typeahead-on-select="onSelect(autocomplete_str)"
-                        >
-                    </div>
-
                     <table class="table-striped">
                     <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter" track by $index>
                         <td>{{row.lbworkid}}</td>

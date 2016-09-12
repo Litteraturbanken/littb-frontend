@@ -511,6 +511,23 @@ body.modal-open {
     overflow : auto;
 }
 
+.autocomplete {
+    // display : none;
+    font-size: 1.2em;
+    position: fixed;
+    top: 20%;
+    left: 40%;
+    padding : 1em;
+    box-shadow: 0px 0px 9px 1px grey;
+    
+    border: 1px solid grey;
+    background-color: white;
+
+    .dropdown-menu {
+        font-size : 0.8em;
+    }
+}
+
 body {
     // height : 100%;
     position: relative;

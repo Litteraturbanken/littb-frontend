@@ -1,6 +1,7 @@
 littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
+# STRIX_URL = "http://kappa.svenska.gu.se:8081"
 STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 # STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
 
@@ -1212,11 +1213,12 @@ littb.factory 'backend', ($http, $q, util) ->
 
             for item in data
                 if item.doc_type in ["etext", "faksimil"]
-                    item.url = "/forfattare/#{item.authors[0].author_id}/titlar/#{item.title_id}/sida/#{item.startpagename}"
-                    item.label = "Verk: " + item.authors[0].surname + " – " + item.shorttitle 
+                    title_id = item.work_title_id or item.title_id
+                    item.url = "/forfattare/#{item.authors[0].author_id}/titlar/#{title_id}/sida/#{item.startpagename}/#{item.doc_type}"
+                    item.label = "Verk: #{item.authors[0].surname} – #{item.shorttitle} (#{item.doc_type})" 
                 if item.doc_type == "part"
-                    item.url = "/forfattare/#{item.work_authors[0].author_id}/titlar/#{item.work_title_id}/sida/#{item.startpagename}"
-                    item.label = "Del: " + (item.authors?[0] or item.work_authors[0]).surname + " – " + item.shorttitle
+                    item.url = "/forfattare/#{item.work_authors[0].author_id}/titlar/#{item.work_title_id}/sida/#{item.startpagename}/#{item.mediatype}"
+                    item.label = "Del: #{(item.authors?[0] or item.work_authors[0]).surname} – #{item.shorttitle} (#{item.mediatype})"
 
                 if item.doc_type == "author"
                     item.url = "/forfattare/#{item.author_id}"

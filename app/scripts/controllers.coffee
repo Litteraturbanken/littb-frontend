@@ -1560,6 +1560,72 @@ littb.filter "correctLink", () ->
         return wrapper.html()
 
 
+littb.controller "autocompleteCtrl", ($scope, backend, $routeParams, $location, $window, $timeout) ->
+    s = $scope
+    s.onSelect = (val) ->
+        s.show_autocomplete = false
+        $location.url(val.url)
+        s.completeObj = null
+    s.autocomplete = (val) ->
+        if val
+            return backend.autocomplete(val).then (data) ->
+                menu = [
+                        label: "/bibliotek"
+                        url : "/bibliotek"
+                    ,
+                        label: "/epub"
+                        url : "/epub"
+                    ,
+                        label: "/sök"
+                        url : "/sok"
+                    ,
+                        label: "/sok"
+                        url : "/sok"
+                    ,
+                        label: "/presentationer"
+                        url : "/presentationer"
+                    ,
+                        label: "/nytillkommet"
+                        url : "/nytillkommet"
+                    ,
+                        label: "/skolan"
+                        url : "/skolan"
+                    ,
+                        label: "/skolan/lyrik"
+                        url : "/skolan/lyrik"
+                    ,
+                        label: "/om"
+                        url : "/om"
+                    ,
+                        label: "/statistisk"
+                        url : "/statistik"
+
+                ]
+                menu = _.filter menu, (item) ->
+                    item.label.match(val)
+                c.log "menu", menu
+                return data.concat menu
+
+
+
+
+    s.show_autocomplete = false
+
+    $($window).on "keyup", (event) ->
+        #tab
+        if event.which == 83 and not $("input:focus,textarea:focus,select:focus").length
+            s.$apply () ->
+                s.show_autocomplete = true
+                $timeout () ->
+                    s.$broadcast("focus")
+                , 0
+        else if event.which == 27 # escape
+            s.$apply () ->
+                s.completeObj = null
+                s.show_autocomplete = false
+
+
+
 littb.controller "idCtrl", ($scope, backend, $routeParams, $location) ->
     s = $scope
     _.extend s, $routeParams
@@ -1571,18 +1637,6 @@ littb.controller "idCtrl", ($scope, backend, $routeParams, $location) ->
 
     backend.getTitles().then (titleArray) ->
         s.data = titleArray
-
-
-
-    s.onSelect = (val) ->
-        c.log "val", val
-        $location.url(val.url)
-    s.autocomplete = (val) ->
-        if val
-            return backend.autocomplete(val)
-                
-
-
 
     s.idFilter = (row) ->
         unless s.id then return true
@@ -1698,12 +1752,10 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
     s.dict_searching = false
 
     modal = null
-    # $($window).bind 'mousewheel', (event, delta) ->
-    #     if modal then return false
 
-    $($window).on "keyup", (event) ->
-        if event.which == 83 and not $("input:focus,textarea:focus,select:focus").length
-            s.$broadcast "focus"
+    # $($window).on "keyup", (event) ->
+    #     if event.which == 83 and not $("input:focus,textarea:focus,select:focus").length
+    #         s.$broadcast "focus"
 
     s.keydown = (event) ->
         if event.keyCode == 40 # down arrow

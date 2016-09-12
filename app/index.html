@@ -106,6 +106,19 @@
                 <div class="container" ng-include="'/red/om/aktuellt/aktuellt.html'"></div>
             </div>
         </script>
+
+        <div class="autocomplete" ng-controller="autocompleteCtrl" ng-show="show_autocomplete">
+                <input type="text" 
+                    ng-model="completeObj"
+                    typeahead="item as item.label for item in autocomplete($viewValue)"
+                    typeahead-trigger
+                    autofocus
+                    focusable
+                    typeahead-wait-ms="200"
+                    typeahead-on-select="onSelect(completeObj)"
+                >
+        </div>
+
         <!-- build:js scripts/libs.js -->
         <!-- bower:js -->
         <script src="components/es5-shim/es5-shim.js"></script>
