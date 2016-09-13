@@ -1415,10 +1415,10 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
 
     # TODO: what about the workauthor issue?
-    s.sorttuple = [["author[0].name_for_index", "sortkey"], false]
+    s.sorttuple = [["authors[0].name_for_index", "sortkey"], false]
     s.setSort = ([sortstr]) ->
         alternate = {
-            "author[0].name_for_index" : "sortkey"
+            "authors[0].name_for_index" : "sortkey"
             "sortkey" : "authors[0].name_for_index"
         }[sortstr]
         s.sorttuple[0] = [sortstr, alternate]
@@ -1427,10 +1427,10 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
     s.rowFilter = (item) ->
-        # author = s.authorsById?[s.authorFilter]
-        # if author and author.author_id != item.authors[0].author_id then return false
-        # if s.filterTxt
-        #     return false if not ((has item.authors[0].full_name, s.filterTxt) or (has item.showtitle, s.filterTxt))
+        author = s.authorsById?[s.authorFilter]
+        if author and author.author_id != item.authors[0].author_id then return false
+        if s.filterTxt
+            return false if not ((has item.authors[0].full_name, s.filterTxt) or (has item.showtitle, s.filterTxt))
         return true
 
     s.getAuthor = (row) ->
@@ -1570,6 +1570,9 @@ littb.controller "autocompleteCtrl", ($scope, backend, $routeParams, $location, 
         if val
             return backend.autocomplete(val).then (data) ->
                 menu = [
+                        label: "/start"
+                        url : "/start"
+                    ,
                         label: "/bibliotek"
                         url : "/bibliotek"
                     ,
@@ -1595,10 +1598,10 @@ littb.controller "autocompleteCtrl", ($scope, backend, $routeParams, $location, 
                         url : "/skolan/lyrik"
                     ,
                         label: "/om"
-                        url : "/om"
+                        url : "/om/ide"
                     ,
                         label: "/statistisk"
-                        url : "/statistik"
+                        url : "/om/statistik"
 
                 ]
                 menu = _.filter menu, (item) ->
@@ -1623,6 +1626,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $routeParams, $location, 
             s.$apply () ->
                 s.completeObj = null
                 s.show_autocomplete = false
+                s.$broadcast("blur")
 
 
 
@@ -2757,3 +2761,4 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
 
+# 
