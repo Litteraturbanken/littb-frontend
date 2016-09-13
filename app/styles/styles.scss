@@ -513,6 +513,10 @@ body.modal-open {
 
 .autocomplete {
     // display : none;
+    .dropdown-menu>li>a {
+        color : #333;
+    }
+    .dropdown-menu>.active>a, .dropdown-menu>.active>a:hover, .dropdown-menu>.active>a:focus {color : #fff}
     font-size: 1.2em;
     position: fixed;
     top: 10%;
