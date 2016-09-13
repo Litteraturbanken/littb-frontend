@@ -126,7 +126,7 @@
         // text-indent : -2em;
     }
 
-    [sc-file="Litteraturlista.html"] {
+    [sc-file="Litteraturlista.html"], .littlist + div.itemizedlist {
         .listitem {
             list-style-type : none;
             max-width : 500px;
@@ -381,6 +381,9 @@
     .ulink[href^="/#!/skola"] {
         @include small-caps();
     }
+    .lb_tonsatt {
+        text-indent: 0;
+    }
     .firstterm, .glossterm {
         font-weight: normal;
         @include small-caps();
@@ -423,6 +426,9 @@
         ul li {
             list-style-type : disc;
             margin-left : 2em;
+        }
+        ul li[style="list-style-type: none"] {
+            margin-left: 0;
         }
         @include inline-block(top);
         .sect2 {
@@ -683,12 +689,31 @@
     }
 
     &.page-lyrik_students {
-        [toolkit] {
-            width : 269px;
+        #leftCorridor {
+            width : 264px;
+            margin-right: 60px;
+        }
+    }
+    &.page-lyrik_teachers {
+        #leftCorridor {
+            width : 264px;
+            margin-right: 60px;
         }
     }
 
     &.page-lyrik_teachers, &.page-lyrik_students {
+        .mainnav {
+            text-align: right;
+        }
+        .mainnav, .logo_link_monogram {
+            align-self: flex-end;
+        }
+        .logo_link_monogram {
+            margin-right: 3em;
+        }
+        .content {
+            margin-top: 0.9em;
+        }
         .subnav h4 {
             // color : white;
             margin: 0;
@@ -698,6 +723,10 @@
             font-size: 0.9em;
             margin-top: 0.7em;
             margin-bottom: 1em;
+        }
+
+        .littlist {
+
         }
 
         div.itemizedlist {
