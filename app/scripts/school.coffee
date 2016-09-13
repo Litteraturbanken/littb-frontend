@@ -417,7 +417,7 @@ littb.directive "scFile", ($routeParams, $location, $http, $compile, util, backe
 
         if filename in generalTexts
             path = "/skola/" + filename
-        else if filename in generalTextsForLyrikStudents
+        else if filename in generalTextsForLyrikStudents and _.startsWith($location.url(), "/skola/lyrik/elev")
             path = "/skola/lyrik/elev_" + filename
         else
             path = getLocationRoot() + (_.compact [section, subsection, filename]).join("_")
