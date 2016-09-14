@@ -381,8 +381,20 @@
     .ulink[href^="/#!/skola"] {
         @include small-caps();
     }
-    .lb_tonsatt {
+    .lb_link, .lb_tonsatt {
         text-indent: 0;
+    }
+    p + .lb_link {
+        margin-top: 1em;
+    }
+    .lb_tonsatt + p {
+        margin-top: 1em;
+    }
+    .lb_link + p {
+        margin-top: 1em;
+    }
+    .lb_link + .lb_tonsatt {
+        margin-top: 0;
     }
     .firstterm, .glossterm {
         font-weight: normal;
