@@ -1,4 +1,4 @@
-﻿window.c = console ? log : _.noop
+window.c = console ? log : _.noop
 littb = angular.module('littbApp')
 
 littb.filter "formatAuthors", (authors) ->
@@ -571,6 +571,30 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         $anchorScroll("results")
         # s.resetAuthorFilter()
         s.newSearch(query)        
+
+    s.searchAllInWork = (sentenceObj) ->
+        # TODO: this should really be rewritten to use the usual lb_search 
+        # that requires the backend to provide two different responses, one with 
+        # complete kwic rows, and another with just the hit. 
+        c.log "lbworkid", sentenceObj.metadata.lbworkid
+        unless sentenceObj.page
+            backend.searchInWork(s.query, sentenceObj.metadata.lbworkid).then $.noop, $.noop, (data) ->
+                sentenceObj.search_id = data.search_id
+                sentenceObj.page = 1
+
+                c.log("searchInWork success", data)
+            , null, (data) ->
+                c.log("searchInWork nofity", data)
+        else
+            from = sentenceObj.page * searchData.NUM_HIGHLIGHTS
+            c.log "sentenceObj.page * searchData.num_highlights", sentenceObj.page, searchData.NUM_HIGHLIGHTS
+            to = (sentenceObj.page + 1) * searchData.NUM_HIGHLIGHTS
+            backend.pageSearchInWork(sentenceObj.search_id, from, to).then (data) ->
+                c.log("page data", data)
+
+                # TODO: write paged data to write place in the sentswithheaders structure
+                # page data above is still in compact format, must be expanded to full KWIC
+
 
     s.newSearch = (query) ->
         if hasSearchInit

@@ -1750,17 +1750,21 @@ body > .header {
                 }
                 
                 .overflow {
-                    display : flex;
-                    justify-content: center;
+                    // display : flex;
+                    // justify-content: center;
                     margin-top: 1em;
+                    width : 0;
                     font-size: 0.8em;
+                    position: relative;
+                    left : -40px;
                     hr {
                         width: 40px;
                         border-color : #999;
-                        // display: inline;
+                        display: inline-block;
+                        vertical-align: top;
+                        margin-top: 0.7em;
                     }
                     .more {
-                        // display : inline-block;
                         margin: 0 1em;
                     }
                 }

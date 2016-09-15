@@ -1190,9 +1190,9 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
     ###
     
-    workSearch : (query, lbworkid) ->
+    searchInWork : (query, lbworkid) ->
         def = $q.defer()
-        source = new EventSource('#{STRIX_URL}/search_document/#{lbworkid}/#{query}');
+        source = new EventSource("#{STRIX_URL}/search_document/#{lbworkid}/#{query}");
         source.onmessage = (event) ->
             data = JSON.parse(event.data)
             c.log "onmessage onprogress", data 
@@ -1204,6 +1204,13 @@ littb.factory 'backend', ($http, $q, util) ->
             def.resolve()
 
         return def.promise
+
+    pageSearchInWork : (user_id, from, to) ->
+        $http(
+            url : "#{STRIX_URL}/page_search/#{user_id}/#{from}/#{to}"
+        ).then (response) ->
+            c.log "pageSearchInWork", response
+            return response.data.data.
 
     autocomplete : (filterstr) ->
         $http(
@@ -1282,7 +1289,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @isSearching = true
 
             params = 
-                include: "authors,title,titlepath,title_id,mediatype"
+                include: "authors,title,titlepath,title_id,mediatype,lbworkid"
                 number_of_fragments: @NUM_HIGHLIGHTS + 1
 
             params = _.extend {}, o, params
@@ -1301,7 +1308,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                         output.push obj
                         row_index++
                     if item.overflow
-                        output.push {overflow: true}
+                        output.push {metadata: item.source, overflow: true}
 
                 return output
                 
