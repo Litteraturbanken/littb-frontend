@@ -1584,12 +1584,22 @@ littb.filter "correctLink", () ->
         return wrapper.html()
 
 
-littb.controller "autocompleteCtrl", ($scope, backend, $routeParams, $location, $window, $timeout) ->
+littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $window, $timeout) ->
     s = $scope
-    s.onSelect = (val) ->
+    c.log ($route)
+    close = () ->
+        s.lbworkid = null
+        s.$broadcast("blur")
         s.show_autocomplete = false
-        $location.url(val.url)
         s.completeObj = null
+
+
+    s.onSelect = (val) ->
+        ret = val.action?()
+        if ret == false then return
+        close()
+        if val.url
+            $location.url(val.url)
     s.autocomplete = (val) ->
         if val
             return backend.autocomplete(val).then (data) ->
@@ -1628,6 +1638,15 @@ littb.controller "autocompleteCtrl", ($scope, backend, $routeParams, $location, 
                         url : "/om/statistik"
 
                 ]
+
+                if $route.current.$$route.controller == "readingCtrl"
+                    menu.push 
+                        label : "/id"
+                        action : () ->
+                            s.lbworkid = $(".reader_main").scope?().workinfo.lbworkid
+                            return false
+
+
                 menu = _.filter menu, (item) ->
                     item.label.match(val)
                 c.log "menu", menu
@@ -1646,11 +1665,12 @@ littb.controller "autocompleteCtrl", ($scope, backend, $routeParams, $location, 
                 $timeout () ->
                     s.$broadcast("focus")
                 , 0
+
+
+
         else if event.which == 27 # escape
             s.$apply () ->
-                s.completeObj = null
-                s.show_autocomplete = false
-                s.$broadcast("blur")
+                close()
 
 
 

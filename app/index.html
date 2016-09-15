@@ -109,6 +109,7 @@
 
         <div class="autocomplete" ng-controller="autocompleteCtrl" ng-show="show_autocomplete">
                 <input type="text" 
+                    ng-disabled="!show_autocomplete"
                     ng-model="completeObj"
                     typeahead="item as item.label for item in autocomplete($viewValue)"
                     typeahead-trigger
@@ -116,6 +117,7 @@
                     typeahead-wait-ms="200"
                     typeahead-on-select="onSelect(completeObj)"
                 >
+                <pre ng-show="lbworkid">{{lbworkid}}</pre>
         </div>
 
         <!-- build:js scripts/libs.js -->

@@ -512,15 +512,23 @@ body.modal-open {
 }
 
 .autocomplete {
+    width : 50%;
     // display : none;
+    input {
+        width: 100%;
+        display : block;
+    }
     .dropdown-menu>li>a {
         color : #333;
+        // width : 100%;
+        text-overflow: ellipsis;
+        overflow-x : hidden;
     }
     .dropdown-menu>.active>a, .dropdown-menu>.active>a:hover, .dropdown-menu>.active>a:focus {color : #fff}
     font-size: 1.2em;
     position: fixed;
     top: 10%;
-    left: 40%;
+    left: 25%;
     padding : 1em;
     box-shadow: 2px 3px 16px 2px #333;
     
@@ -529,6 +537,7 @@ body.modal-open {
 
     .dropdown-menu {
         font-size : 0.8em;
+        width : 92%;
     }
     
     transition: all 300ms;

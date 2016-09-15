@@ -1210,7 +1210,7 @@ littb.factory 'backend', ($http, $q, util) ->
             url : "#{STRIX_URL}/page_search/#{user_id}/#{from}/#{to}"
         ).then (response) ->
             c.log "pageSearchInWork", response
-            return response.data.data.
+            return response.data.data
 
     autocomplete : (filterstr) ->
         $http(
