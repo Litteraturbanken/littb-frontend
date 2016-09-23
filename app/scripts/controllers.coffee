@@ -417,8 +417,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         if prefix or suffix or infix
             args.phrase = false
             if prefix or suffix
-                prefix = if prefix then ".*" else ""
-                suffix = if suffix then ".*" else ""
+                prefix = if prefix then "*" else ""
+                suffix = if suffix then "*" else ""
                 args.query = suffix + args.query + prefix
         _.extend args, filter_params
 
@@ -2729,10 +2729,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         c.log "hit", hit
         # from = if (hit - 5) < 0 then 0 else (hit - 5)
         searchData.current = hit
-        searchData.slice(hit, hit + 20).then ([result]) ->
-            c.log "result", result
-            size = maybeSize()
-            $location.url(result[0].href[3...] + size)
+        searchData.get(hit).then changeHit
+        # slice(hit, hit + 20).then ([result]) ->
+        #     c.log "result", result
+        #     size = maybeSize()
+        #     $location.url(result[0].href[3...] + size)
 
 
 
@@ -2751,8 +2752,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
         args = {
             query : query
-            mediatype: mediatype
-            # selectedAuthor: s.author
             lbworkid : s.workinfo.lbworkid
             prefix: $location.search().prefix
             suffix: $location.search().suffix
@@ -2775,13 +2774,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             # unless kwic.length then return
             unless hit then return
-            stateLocVars = ["show_search_work", "prefix", "suffix", "infix", "storlek"]
-            stateVars = (_.pick $location.search(), stateLocVars...)
+            # stateLocVars = ["show_search_work", "prefix", "suffix", "infix", "storlek"]
+            # stateVars = (_.pick $location.search(), stateLocVars...)
 
-            query = (_.invoke (_.pairs stateVars), "join", "=").join("&")
+            # query = (_.invoke (_.pairs stateVars), "join", "=").join("&")
 
-
-            $location.url(hit.href[3...] + "&" + query)
+            changeHit(hit)
+            # $location.url(hit.href[3...] + "&" + query)
 
 
 

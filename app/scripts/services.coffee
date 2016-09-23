@@ -3,7 +3,7 @@ SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 # STRIX_URL = "http://kappa.svenska.gu.se:8081"
 STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend2"
 
 if _.str.startsWith(location.host, "demolittb")
     STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend2"
@@ -1473,35 +1473,34 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
             matches = row.highlight.match
             matchParams = []
             # TODO: this probably changed quite a bit
-            if metadata.mediatype == "faksimil"
-                # obj = _.pick item, "x", "y", "width", "height"
-                matchGroups = _.groupBy matches, (match) -> match.attrs.x
+            # if metadata.mediatype == "faksimil"
+                # matchGroups = _.groupBy matches, (match) -> match.attrs.x
 
-                makeParams = (group) ->
-                    params = _.pick group[0].attrs, "x", "y", "height"
+                # makeParams = (group) ->
+                #     params = _.pick group[0].attrs, "x", "y", "height"
 
-                    for match in group
-                        unless params.width
-                            params.width = Number(match.attrs.width)
-                        else
-                            params.width += Number(match.attrs.width)
+                #     for match in group
+                #         unless params.width
+                #             params.width = Number(match.attrs.width)
+                #         else
+                #             params.width += Number(match.attrs.width)
 
-                    max = Math.max group[0].attrs.size.split("x")...
-                    factors = _.map SIZE_VALS, (val) -> val / max
+                #     max = Math.max group[0].attrs.size.split("x")...
+                #     factors = _.map SIZE_VALS, (val) -> val / max
 
-                    for key, val of params
-                        params[key] = _(factors).map( (fact) ->
-                            Math.round fact * val).join(",")
-                    return params
+                #     for key, val of params
+                #         params[key] = _(factors).map( (fact) ->
+                #             Math.round fact * val).join(",")
+                #     return params
                 
-                for group in _.values matchGroups
-                    matchParams.push makeParams group
+                # for group in _.values matchGroups
+                #     matchParams.push makeParams group
 
 
-            else 
-                matchParams.push
-                    traff : matches[0].attrs.wid
-                    traffslut : _.last(matches).attrs.wid
+            # else 
+            matchParams.push
+                traff : matches[0].attrs.wid
+                traffslut : _.last(matches).attrs.wid
                 
 
             merged = _(matchParams).reduce( (obj1, obj2) -> 

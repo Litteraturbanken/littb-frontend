@@ -21,7 +21,7 @@
         class="overlay"
         ng-if="mediatype == 'faksimil' && overlayHtml" 
         ng-style="{width: workinfo.width['size_' + size -1] + 'px', transform: 'scale(' + overlayFactors[size -1] + ')'}"
-        ng-bind-html="overlayHtml | trust" > 
+        compile="overlayHtml | setMarkee:markee_from:markee_to" > 
     </div>
 
      <!-- <div selection-sniffer class="overlay" ng-if="mediatype == 'faksimil' && overlaydata.length">
