@@ -164,7 +164,7 @@ getAuthorSelectSetup = (s, $filter) ->
 
     }
 
-littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, searchData, authors, debounce, $filter, $anchorScroll) ->
+littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, SearchData, authors, debounce, $filter, $anchorScroll) ->
     s = $scope
     s.open = true
     hasSearchInit = false
@@ -173,7 +173,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.auth_select_rendered = true
     # s.proofread = 'all'
 
-    s.searchData = searchData
+    s.searchData = searchData = new SearchData()
 
     s.authorSelectSetup = getAuthorSelectSetup(s, $filter)
 
@@ -572,28 +572,17 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         # s.resetAuthorFilter()
         s.newSearch(query)        
 
-    s.searchAllInWork = (sentenceObj) ->
-        # TODO: this should really be rewritten to use the usual lb_search 
-        # that requires the backend to provide two different responses, one with 
-        # complete kwic rows, and another with just the hit. 
-        c.log "lbworkid", sentenceObj.metadata.lbworkid
-        unless sentenceObj.page
-            backend.searchInWork(s.query, sentenceObj.metadata.lbworkid).then $.noop, $.noop, (data) ->
-                sentenceObj.search_id = data.search_id
-                sentenceObj.page = 1
+    s.searchAllInWork = (sentenceObj, index) ->
+        searchData.getMoreHighlights(sentenceObj).then (sents) ->
+            startIndex = null
+            # find section start index
+            for i in [index-1..0]
+                row = s.sentsWithHeaders[i]
+                if row.isHeader
+                    startIndex = i
+                    break
 
-                c.log("searchInWork success", data)
-            , null, (data) ->
-                c.log("searchInWork nofity", data)
-        else
-            from = sentenceObj.page * searchData.NUM_HIGHLIGHTS
-            c.log "sentenceObj.page * searchData.num_highlights", sentenceObj.page, searchData.NUM_HIGHLIGHTS
-            to = (sentenceObj.page + 1) * searchData.NUM_HIGHLIGHTS
-            backend.pageSearchInWork(sentenceObj.search_id, from, to).then (data) ->
-                c.log("page data", data)
-
-                # TODO: write paged data to write place in the sentswithheaders structure
-                # page data above is still in compact format, must be expanded to full KWIC
+            s.sentsWithHeaders[startIndex..index] = sents
 
 
     s.newSearch = (query) ->
@@ -1914,7 +1903,7 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 
 
 
-littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, searchData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http, $q, $filter) ->
+littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $location, util, SearchWorkData, debounce, $timeout, $rootScope, $document, $window, $rootElement, authors, $modal, $templateCache, $http, $q, $filter) ->
     s = $scope
     s.isEditor = false
     s._ = {humanize : _.humanize}
@@ -1933,7 +1922,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.pageToLoad = pagename
 
-    s.searchData = searchData
+    s.searchData = searchData = null
     s.loading = true
     s.first_load = false
     onFirstLoad = _.once () ->
@@ -2004,29 +1993,25 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s[key] = null
     
     thisRoute = $route.current
-    maybeSize = () ->
-        size = ""
-        if s.size and s.size != 3
-            size = '&storlek=' + s.size
-        return size
+
+    changeHit = (newHit) ->
+        c.log "newHit", newHit
+        from_id = newHit.highlights[0].wid
+        to_id = _.last(newHit.highlights).wid
+        s.gotopage(newHit.highlights[0].n)
+        s.markee_from = from_id
+        s.markee_to = to_id
+        $location.search("hit_index", newHit.order)
+
     s.nextHit = () ->
-        size = maybeSize()
-        searchData.next().then (newHit) ->
-            c.log "newHit", newHit
-            $location.url(newHit.href[3...] + size)
+        searchData.next().then changeHit
+    
     s.prevHit = () ->
-        size = maybeSize()
-        searchData.prev().then (newHit) ->
-            $location.url(newHit.href[3...] + size)
+        searchData.prev().then changeHit
+
     s.close_hits = () ->
         searchData.reset()
         s.show_search_work = false
-        # s.markee_from = null
-        # s.markee_to = null
-        # $location.search("traff", null)
-        # $location.search("traffslut", null)
-    # s.pagename = pagename
-    
 
     onKeyDown = (event) ->
         if event.metaKey or event.ctrlKey or event.altKey then return
@@ -2387,6 +2372,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pagemap = workinfo.pagemap
             steps = []
             s.etextPageMapping ?= {}
+            
+
             # for page in $("page", data)
             #     if $(page).attr("pagestep")
             #         steps.push [($(page).attr "pageix"), Number($(page).attr "pagestep")]
@@ -2412,7 +2399,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
                 s.sizes = new Array(5)
                 for i in s.workinfo.faksimil_sizes
-                    s.sizes[i - 1] = true
+                    s.sizes[i] = true
 
 
             s.startpage = workinfo.startpagename
@@ -2488,15 +2475,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 onFirstLoad()
 
             if mediatype == "faksimil" and s.workinfo.has_ocr
-                backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
-
-                    t = $.now()
-                    overlayDef.promise.then () ->
-                        c.log "overlay rendered", $.now() - t
-                        overlayDef = $q.defer()
-
-                    s.overlaydata = data
+                backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([overlayHtml, overlayFactors]) ->
                     s.overlayFactors = overlayFactors
+                    s.overlayHtml = overlayHtml
 
         , (err) ->
             c.log "err", err
@@ -2709,7 +2690,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         "/#!" + $location.path()
 
     s.hasActiveSearch = () ->
-        $location.search().s_query and not searchData.isSearching
+        $location.search().s_query and not searchData?.isSearching
+
+    s.searchData = searchData = new SearchWorkData()
 
     c.log "outside params", $location.search()
     query = $location.search().s_query
@@ -2724,10 +2707,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             
         searchData.newSearch(args)
         searchData.current = Number($location.search().hit_index or 0)
-        #TODO: why 50?
-        searchData.slice(0, 50).then () ->
-            c.log "searchdata slice"
-        
+        searchData.get(searchData.current)
+        # searchData.slice(0, 10).then (data) ->
+        #     c.log "searchdata slice", data
 
     s.onGotoHitInput = () ->
         if s.showGotoHitInput
@@ -2770,8 +2752,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         args = {
             query : query
             mediatype: mediatype
-            selectedAuthor: s.author
-            selectedTitle : s.workinfo.lbworkid
+            # selectedAuthor: s.author
+            lbworkid : s.workinfo.lbworkid
             prefix: $location.search().prefix
             suffix: $location.search().suffix
             infix: $location.search().infix

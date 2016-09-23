@@ -6,7 +6,7 @@ STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 # STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
 
 if _.str.startsWith(location.host, "demolittb")
-    STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+    STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend2"
     
 
 littb.factory "debounce", ($timeout) ->
@@ -636,6 +636,8 @@ littb.factory 'backend', ($http, $q, util) ->
             provData = []
             for prov, i in workinfo.provenance
                 output = response.data[prov.library]
+                unless output
+                    c.warn "Library name #{prov.library} not in provenance.json"
                 if i > 0 and prov.text2
                     textField = 'text2' 
                 else 
@@ -1116,6 +1118,18 @@ littb.factory 'backend', ($http, $q, util) ->
         
         return def.promise
 
+    fetchOverlayData : (lbworkid, ix) ->
+        filename = _.str.lpad(ix, 5, "0")
+        url = "txt/#{lbworkid}/ocr_#{filename}.html"
+        this.getHtmlFile(url).then (response) ->
+            SIZE_VALS = [625, 750, 1100, 1500, 2050]
+            html = response.data.firstChild
+            # c.log $(html)
+            max = _.max _.map $(html).data("size").split("x"), Number
+            overlayFactors = _.map SIZE_VALS, (val) -> val / max
+            return [$(html).outerHTML(), overlayFactors]
+
+    ###
     fetchOverlayData : (workid, ix) ->
         $http(
             url : "#{STRIX_URL}/get_ocr/#{workid}/#{ix}"
@@ -1142,7 +1156,7 @@ littb.factory 'backend', ($http, $q, util) ->
 
 
             return [output, factors]
-
+    ###
 
 
     ###
@@ -1190,28 +1204,6 @@ littb.factory 'backend', ($http, $q, util) ->
         return def.promise
     ###
     
-    searchInWork : (query, lbworkid) ->
-        def = $q.defer()
-        source = new EventSource("#{STRIX_URL}/search_document/#{lbworkid}/#{query}");
-        source.onmessage = (event) ->
-            data = JSON.parse(event.data)
-            c.log "onmessage onprogress", data 
-            def.notify data
-
-        source.onerror = (event) ->
-            c.log "onmessage onprogress fail", event
-            this.close()
-            def.resolve()
-
-        return def.promise
-
-    pageSearchInWork : (user_id, from, to) ->
-        $http(
-            url : "#{STRIX_URL}/page_search/#{user_id}/#{from}/#{to}"
-        ).then (response) ->
-            c.log "pageSearchInWork", response
-            return response.data.data
-
     autocomplete : (filterstr) ->
         $http(
             url : "#{STRIX_URL}/autocomplete/#{filterstr}"
@@ -1252,12 +1244,10 @@ littb.factory "authors", (backend, $q) ->
     return def.promise
 
 
-    
+littb.factory "SearchData", (backend, $q, $http, $location) ->
 
-littb.factory "searchData", (backend, $q, $http, $location) ->
-    BUFFER = 0 # additional hits 
     class SearchData
-        constructor: () ->
+        constructor: (endpoint="lb_search") ->
             @data = []
             @total_hits = null
             @total_doc_hits = null
@@ -1268,6 +1258,10 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @isSearching = false
             @NUM_HITS = 30 # how many doc hits per search?
             @NUM_HIGHLIGHTS = 5
+
+            @include = "authors,title,titlepath,title_id,mediatype,lbworkid"
+
+            @endpoint = endpoint
 
         newSearch : (params) ->
             @data = []
@@ -1280,129 +1274,46 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @isSearching = false
             @savedParams = null
 
-
-        searchWorks : (o) ->
-            c.log "searchvars", o
-            def = $q.defer()
-
-
-            @isSearching = true
-
-            params = 
-                include: "authors,title,titlepath,title_id,mediatype,lbworkid"
-                number_of_fragments: @NUM_HIGHLIGHTS + 1
-
-            params = _.extend {}, o, params
-
-
-            groupSents = (data) =>
-                i = 0
-                output = []
-
-                row_index = 0
-                for item in data
-                    output.push {isHeader: true, metadata: item.source}
-                    for high in item.highlight
-                        obj = {metadata: item.source, highlight: high, index: row_index}
-                        obj.href = @parseUrls obj, row_index
-                        output.push obj
-                        row_index++
-                    if item.overflow
-                        output.push {metadata: item.source, overflow: true}
-
-                return output
-                
+        submit : (query, params) ->
             $http(
-                url: "#{STRIX_URL}/lb_search/#{o.query}"
-                params : params
-                cache: true
-            ).success (response) =>
-                c.log "response", response
-                @isSearching = false
-                
-                @total_doc_hits = response.hits
-                
-
-                punctArray = [",", ".", ";", ":", "!", "?", "..."]
-
-
-
-                @compactLeftContext(response.data)
-
-                for work in response.data
-                    if work.highlight.length > @NUM_HIGHLIGHTS
-                        work.highlight = work.highlight[0..@NUM_HIGHLIGHTS - 1]
-                        work.overflow = true
-                    
-                    for high in work.highlight
-
-                        for key in ["left_context", "match", "right_context"]
-                            for wd in high[key]
-                                if wd.word in punctArray
-                                    wd._punct = true
-
-                # @compactData(response.data, o.from)
-
-                sentsWithHeaders = groupSents(response.data)
-
-
-
-                def.resolve [response.data, sentsWithHeaders, response.author_aggregation]
-            .error (data) =>
-                def.reject(data)
-
-
-            $http(
-                url: "#{STRIX_URL}/lb_search_count/#{o.query}"
-                params : params
+                url: "#{STRIX_URL}/lb_search_count/#{query}"
+                params : _.omit params, "number_of_fragments", "from", "to"
                 cache: true
             ).success (response) =>
                 c.log "count all", response
                 @total_hits = response.total_highlights
                 c.log "@total_hits", @total_hits
 
-            # $http(
-            #     url : "http://spraakbanken.gu.se/ws/korp"
-            #     method : "GET"
-            #     # cache: localStorageCache
-            #     cache: true
-            #     params : params
-                    
-            # ).success( (data) =>
-            #     @querydata = data.querydata
-            #     punctArray = [",", ".", ";", ":", "!", "?", "..."]
-            #     # sums = []
-            #     if data.ERROR
-            #         c.log "searchWorks error:", JSON.stringify(data.ERROR)
-            #         def.reject(data)
-            #         return
+            return $http(
+                url: "#{STRIX_URL}/lb_search/#{query}"
+                params : params
+                cache: true
+            ).then (response) =>
+                c.log "response", response.data
+                @isSearching = false
+                
+                @total_doc_hits = response.data.hits
+                punctArray = [",", ".", ";", ":", "!", "?", "..."]
+                @compactLeftContext(response.data.data)
 
-                # @total_hits = data.hits
-            #     @compactData(data, from)
-
-            #     if not @data.length
-            #         @data = new Array(data.hits)
+                sentsWithHeaders = @decorateData(response.data.data, @NUM_HIGHLIGHTS)
 
 
-            #     c.log "splice", from, data.kwic.length
-            #     for sent, i in data.kwic
-            #         sent.index = i + from
-            #         for wd in sent.tokens
-            #             if wd.word in punctArray
-            #                 wd._punct = true
+                return [response.data.data, sentsWithHeaders, response.author_aggregation]
+            # .error (data) =>
+                # def.reject(data)
 
-            #     @isSearching = false
-            #     @data[from..data.kwic.length] = data.kwic
+        searchWorks : (o) ->
+            c.log "searchvars", o
 
+            @isSearching = true
 
+            params = 
+                include: @include
+                number_of_fragments: @NUM_HIGHLIGHTS + 1
 
-
-            #     def.resolve data
-            # ).error (data) ->
-            #     c.log "searchworks error", arguments
-            #     def.reject()
-
-            return def.promise
+            params = _.extend {}, o, params
+            return @submit(o.query, params)
 
         resetMod : () ->
             def = $q.defer()
@@ -1426,32 +1337,35 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
         slice : (from, to) ->
             unless @currentParams then return
             c.log "slice", from, to
+            if from < 0 then from = 0
             def = $q.defer()
             if (@hasSlice from, to) and not @doNewSearch
                 c.log "@hasSlice from, to", (@hasSlice from, to)
                 def.resolve(@data.slice(from, to))
             else
-                [missingStart, missingEnd] = @findMissingInSpan(from, to)
-                if missingEnd
-                    @currentParams.from = missingStart
-                    c.log "missingStart", missingStart, missingEnd
-                    @currentParams.to = missingEnd
-                else
-                    @currentParams.from = from
-                    @currentParams.to = to
+                # [missingStart, missingEnd] = @findMissingInSpan(from, to)
+                # if missingEnd
+                #     @currentParams.from = missingStart
+                #     c.log "missingStart", missingStart, missingEnd
+                #     @currentParams.to = missingEnd
+                # else
+                @currentParams.from = from
+                @currentParams.to = to
 
-                @searchWorks(@currentParams).then (data) ->
-                    def.resolve data
+                @searchWorks(@currentParams).then (response) =>
+                    @data[@currentParams.from..@currentParams.to] = response[0]
+                    def.resolve response
             @doNewSearch = false
             return def.promise
 
         hasSlice: (from, to) ->
             slice = @data.slice(from, to)
-            unless slice.length then return false
+            if slice.length < (to - from) then return false
             return not _.any slice, _.isUndefined
 
         findMissingInSpan : (from, to) ->
             start = null
+
             span = @data[from..to]
             for item, i in span
                 if not item? # count undefined
@@ -1463,7 +1377,68 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             return [from + start, from + start + end]
 
 
+        getMoreHighlights : (sentenceData) ->
+            sentenceData.at_highlight_page ?= 1
+            at_page = sentenceData.at_highlight_page + 1
+            num_fragments = at_page * @NUM_HIGHLIGHTS
+            c.log "sentenceData.at_highlight_page", sentenceData.at_highlight_page
+            params = 
+                include: @include
+                number_of_fragments: num_fragments + 1
+                # authors: _.pluck sentenceData.metadata.authors, "author_id"
+                work_ids: sentenceData.metadata.lbworkid
 
+            params = _.extend {}, @currentParams, params
+
+            return $http(
+                url: "#{STRIX_URL}/lb_search/#{@currentParams.query}"
+                params : params
+            ).then (response) =>
+                c.log "getMoreHighlights response", response.data.data
+                @compactLeftContext(response.data.data)
+                
+
+                decorated = @decorateData(response.data.data, num_fragments)
+                if (_.last decorated).overflow
+                    (_.last decorated).at_highlight_page = at_page
+                return decorated
+
+
+
+        decorateData : (data, num_fragments) ->
+            c.log "num_fragments", num_fragments
+            groupSents = (data) =>
+                i = 0
+                output = []
+
+                row_index = 0
+                for item in data
+                    output.push {isHeader: true, metadata: item.source}
+                    for high in item.highlight
+                        obj = {metadata: item.source, highlight: high, index: row_index}
+                        obj.href = @parseUrls obj, row_index
+                        output.push obj
+                        row_index++
+                    if item.overflow
+                        output.push {metadata: item.source, overflow: true}
+
+                return output
+
+
+            punctArray = [",", ".", ";", ":", "!", "?", "..."]
+            for work in data
+                if work.highlight.length > num_fragments
+                    work.highlight = work.highlight[0..num_fragments - 1]
+                    work.overflow = true
+                
+                for high in work.highlight
+
+                    for key in ["left_context", "match", "right_context"]
+                        for wd in high[key]
+                            if wd.word in punctArray
+                                wd._punct = true
+
+            return groupSents(data)
 
         compactLeftContext : (data) ->
             min = 40 # no longer sentences than min chars
@@ -1497,6 +1472,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
             matches = row.highlight.match
             matchParams = []
+            # TODO: this probably changed quite a bit
             if metadata.mediatype == "faksimil"
                 # obj = _.pick item, "x", "y", "width", "height"
                 matchGroups = _.groupBy matches, (match) -> match.attrs.x
@@ -1537,12 +1513,14 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
 
 
             for key, val of @currentParams
+                # TODO text_attrs are not more
                 if key == "text_attrs" and val.length
                     merged["s_" + key] = val.join(",")
                 else
                     merged["s_" + key] = val
 
 
+            merged["s_lbworkid"] = metadata.lbworkid
             merged.hit_index = index
             merged = _(merged).pairs().invoke("join", "=").join("&")
 
@@ -1572,6 +1550,7 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
                 def.resolve @data[index]
             else
                 @slice(index - 10, index + 10).then () =>
+                    c.log "@data[index]", index, @data
                     def.resolve @data[index]
             return def.promise
 
@@ -1583,6 +1562,62 @@ littb.factory "searchData", (backend, $q, $http, $location) ->
             @currentParams = null
 
 
-    return new SearchData()
+    # return new SearchData()
         
+littb.factory "SearchWorkData", (SearchData, $q, $http) ->  
+    # c.log "searchWorkData", SearchData
+    class SearchWorkData extends SearchData
+        constructor : () ->
+            super()
+            @n_times = 0
+        submit : (query, params) ->
+            c.log "params", params
+            def = $q.defer()
+            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{query}?init_hits=1");
 
+            source.onmessage = (event) =>
+                data = JSON.parse(event.data)
+
+                c.log "onmessage onprogress", data 
+                def.resolve [data.data]
+                @n_times++ 
+
+                if @n_times > 1
+                    @search_id = data.search_id
+                    @total_hits = data.total_hits
+
+            source.onerror = (event) ->
+                c.log "eventsource closed", event
+                this.close()
+                # def.resolve()
+
+            return def.promise
+
+        searchWorks : (o) ->        
+            @isSearching = true
+
+
+
+            params = 
+                include: @include
+                number_of_fragments: @NUM_HIGHLIGHTS + 1
+
+            params = _.extend {}, o, params
+            if @n_times == 0
+                return @submit(o.query, params).then (data) =>
+                    @isSearching = false
+                    return data
+            else
+                return @pageSearchInWork(@search_id, params.from, params.to)
+
+
+        pageSearchInWork : (search_id, from, to) ->
+            $http(
+                url : "#{STRIX_URL}/page_search/#{search_id}/#{from}/#{to}"
+            ).then (response) =>
+                c.log "pageSearchInWork", response
+                @isSearching = false
+                return [response.data.data]
+
+
+    # return new SearchWorkData()

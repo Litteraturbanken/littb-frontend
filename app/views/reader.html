@@ -16,15 +16,20 @@
          <!-- ng-style="{height : overlayHeight, width : overlayWidth}" 
 
           -->
-     <div selection-sniffer class="overlay" ng-if="mediatype == 'faksimil' && overlaydata.length">
+
+    <div selection-sniffer
+        class="overlay"
+        ng-if="mediatype == 'faksimil' && overlayHtml" 
+        ng-style="{width: workinfo.width['size_' + size -1] + 'px', transform: 'scale(' + overlayFactors[size -1] + ')'}"
+        ng-bind-html="overlayHtml | trust" > 
+    </div>
+
+     <!-- <div selection-sniffer class="overlay" ng-if="mediatype == 'faksimil' && overlaydata.length">
          <div ng-repeat="list in overlaydata" >
-             <!-- <div class="parent" ng-style="getOverlayCss(obj)" ng-repeat="obj in list">
-                 <span class="w" big-text-alt="obj"  ></span>
-             </div> -->
              <span big-text="obj" fac="overlayFactors[size - 1]" class="w parent" ng-repeat="obj in list" ng-style="getOverlayCss(obj)" on-finish-render="onOverlayComplete()" > </span>
 
          </div>
-     </div>
+     </div> -->
 
          <!-- <span class="word" ng-repeat="obj in list" ng-style="getOverlayCss(obj)" big-text="obj.word"></span> -->
          <!-- <span big-text class="word" ng-repeat="obj in list" ng-style="getOverlayCss(obj)">{{obj.word}} </span> -->
@@ -32,7 +37,7 @@
      <!-- <div ng-repeat="obj in overlaydata" big-text="obj.word" ng-style="getOverlayCss(obj)" ng-mousedown="overlayMousedown()" ng-mouseup="overlayMouseup()"></div> -->
      <!-- <span ng-repeat="obj in overlaydata" ng-style="getOverlayCss(obj)">{{obj.word}}</span> -->
 
-    <div class="img_area" ng-style="{'width' : workinfo.widths[size] + 'px'}">
+    <div class="img_area" ng-style="{'width' : workinfo.width['size_' + size] + 'px'}">
         <img faksimil-img class="faksimil" ng-style="{'max-width' : workinfo.width['size_' + size] + 'px'}" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
     </div>
     <div square ng-repeat="obj in coors" ng-show="x"
@@ -62,7 +67,7 @@
             <br>
             <div class="down fa fa-play"></div>
         </div> -->
-
+            
         <hr>
         <div class="current_part">
             <div class="header">
@@ -234,8 +239,7 @@
                 </ul>
 
             </div>
-            
-            <div class="size_picker" ng-show="mediatype == 'faksimil'">
+            <div class="size_picker" ng-if="mediatype == 'faksimil'">
                 <h2>Ändra storlek</h2>
                 <button ng-click="setSize(size - 1)" ng-disabled="!sizes[((size - 1) || 0) - 1]" class="small_text btn btn-small">Mindre</button>
                 <button ng-click="setSize(size + 1)" ng-disabled="!sizes[((size - 1) || 0) + 1]" class="small_text btn btn-small">Större</button>

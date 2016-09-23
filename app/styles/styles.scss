@@ -527,6 +527,7 @@ body.modal-open {
     .dropdown-menu>.active>a, .dropdown-menu>.active>a:hover, .dropdown-menu>.active>a:focus {color : #fff}
     font-size: 1.2em;
     position: fixed;
+    z-index: 10000;
     top: 10%;
     left: 25%;
     padding : 1em;
@@ -1967,8 +1968,6 @@ $partnav-width : 170px;
 
 
         .size_picker {
-            // margin-top: 3em;
-            display : none;
             text-align: right;
             h2 {
                 color : $primarycolor;
@@ -2155,10 +2154,11 @@ $partnav-width : 170px;
                 color : black;
             }
             .faksimil {
-                display : none;
+                visibility : hidden;
             }
         }
         .overlay {
+            line-height: 1;
             position : absolute;
             // height : 673px;
             // width : 430px;
@@ -2174,6 +2174,12 @@ $partnav-width : 170px;
                 white-space: nowrap;
                 display : inline-block;
                 // float : left;
+            }
+            .w {
+                position: absolute;
+            }
+            div {
+                display : block;
             }
         }
         .selecting .overlay {
@@ -2283,7 +2289,6 @@ $partnav-width : 170px;
 
         }
         #search_nav {
-            display : none;
             text-align: right;
             @include small-caps();
             line-height : 1;
