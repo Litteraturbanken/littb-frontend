@@ -37,6 +37,9 @@
                     <a href="/#!/epub">Epubfiler</a>
                 </li>
                 <li>
+                    <a ng-click="$broadcast('show_autocomplete')">Snabbsökning</a>
+                </li>
+                <li>
                     <a href="/#!/sok">Sök i texterna</a>
                 </li>
                 <li>
@@ -107,18 +110,39 @@
             </div>
         </script>
 
-        <div class="autocomplete" ng-controller="autocompleteCtrl" ng-show="show_autocomplete">
+        <script type="text/ng-template" id="customTemplate.html">
+          <a>
+              <!-- <img ng-src="http://upload.wikimedia.org/wikipedia/commons/thumb/{{match.model.flag}}" width="16"> -->
+              <!-- <span ng-bind-html="match.label | uibTypeaheadHighlight:query"></span> -->
+              <span class="type_label">
+                {{match.model.typeLabel}}<span ng-if="match.model.mediatypeLabel">,</span> {{match.model.mediatypeLabel}}
+              </span>
+              <span>{{match.label}}</span>
+          </a>
+        </script>
+
+        <script type="text/ng-template" id="autocomplete.html">
+            <div class="modal-body" ng-controller="autocompleteCtrl"
+            >
+                <div class="header">
+                <!-- <span class="pull-right ">esc för att stänga</span> -->
+                    <!-- <button class="btn btn-sm pull-right">Stäng</button> -->
+                </div>
                 <input type="text" 
-                    ng-disabled="!show_autocomplete"
                     ng-model="completeObj"
                     typeahead="item as item.label for item in autocomplete($viewValue)"
                     typeahead-trigger
                     focusable
                     typeahead-wait-ms="200"
                     typeahead-on-select="onSelect(completeObj)"
+                    typeahead-template-url="customTemplate.html"
+                    placeholder="Gå direkt till ett verk eller en författare"
                 >
                 <pre ng-show="lbworkid">{{lbworkid}}</pre>
-        </div>
+            </div>
+             
+        </script>
+
 
         <!-- build:js scripts/libs.js -->
         <!-- bower:js -->
@@ -170,6 +194,7 @@
 
         <script src="scripts/bin/services.js"></script>
         <script src="scripts/bin/directives.js"></script>
+        <script src="scripts/bin/search_controller.js"></script>
         <script src="scripts/bin/controllers.js"></script>
         <script src="scripts/bin/lagerlof.js"></script>
         <script src="scripts/bin/school.js"></script>
@@ -180,6 +205,7 @@
             <a href="http://g3.spraakdata.gu.se/saob/" target="_blank">SAOB</a> ::: <a href="http://spraakbanken.gu.se/karp/#lexicon=dalinm,dalin,dalin-base" target="_blank">Dalin</a>
         </div> -->
 
+        <div ng-controller="autocompleteCtrl"></div>
         <div style="visibility:hidden" class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
             <div class="input_container">
                 <input  type="text"

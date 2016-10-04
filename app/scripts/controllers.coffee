@@ -55,15 +55,6 @@ littb.filter "authorYear", () ->
         return "#{birth}-#{death}"
 
 
-titleSort = (a) ->
-    _.map a.shorttitle.split(/(\d+)/), (item) -> 
-        if Number(item)
-            zeroes = (_.map [0..(10 - item.toString().length)], () -> "0").join("")
-
-            return zeroes + item.toString()
-        else 
-            return item
-
 littb.controller "startCtrl", ($scope, $location) ->
 
     $scope.gotoTitle = (query) ->
@@ -139,589 +130,6 @@ littb.controller "statsCtrl", ($scope, backend) ->
 
 
 
-getAuthorSelectSetup = (s, $filter) ->
-    return {
-        formatNoMatches: "Inga resultat",
-        formatResult : (data) ->
-            # return data.text
-            author = s.authorsById[data.id]
-
-            firstname = ""
-            unless author.name_for_index
-                c.warn("no name_for_index for author", author)
-            if author.name_for_index?.split(",").length > 1
-                firstname = "<span class='firstname'>, #{author.name_for_index.split(',')[1]}</span>"
-
-            return """
-            <span>
-                <span class="surname sc">#{author.surname}</span>#{firstname} <span class="year">#{$filter('authorYear')(author)}</span>
-            </span>
-            """
-
-        formatSelection : (item) ->
-            return s.authorsById[item.id].surname
-            # item.text
-
-    }
-
-littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, $rootElement, $q, $timeout, util, SearchData, authors, debounce, $filter, $anchorScroll) ->
-    s = $scope
-    s.open = true
-    hasSearchInit = false
-    s.auth_select_rendered = false
-    s.onAuthSelectRender = () ->
-        s.auth_select_rendered = true
-    # s.proofread = 'all'
-
-    s.searchData = searchData = new SearchData()
-
-    s.authorSelectSetup = getAuthorSelectSetup(s, $filter)
-
-    $timeout( () ->
-        s.$broadcast "focus"
-    , 100)
-
-    s.titleSelectSetup = {
-        formatNoMatches: "Inga resultat",
-        formatResult : (data) ->
-            return "<span class='title'>#{data.text}</span>"
-
-        formatSelection : (item) ->
-            item.text
-    }
-    
-
-    initTitle = _.once (titlesById) ->
-        unless $location.search().titel then return
-
-        s.selected_title = titlesById[$location.search().titel]
-
-    s.titleChange = () ->
-        # $location.search("titel", s.selected_title?.work_title_id or null)
-        $location.search("titel", s.selected_title?.lbworkid or null)
-
-    s.resetAuthorFilter = () ->
-        s.nav_filter = null
-        searchData.resetMod().then ([kwic, sentsWithHeaders]) ->
-            # s.kwic = kwic
-            s.sentsWithHeaders = sentsWithHeaders
-
-    s.setAuthorFilter = (author_id) ->
-        # $location.search("navigator_filter", author_id)
-        s.nav_filter = author_id
-
-
-    s.authorChange = () ->
-        $location.search("titel", null)
-        s.selected_title = ""
-
-    s.titleSort = titleSort
-        
-    # for the author / about author search check
-    s.isAuthorSearch = true
-
-
-    aboutDef = backend.getTitles(false, null, null, null, true, true)
-
-    $q.all([aboutDef, authors]).then ([titleArray, [authorList, authorsById]]) ->
-        titleArray = _.filter titleArray, (title) ->
-            title.searchable
-        aboutAuthorIds = _.compact _.pluck titleArray, "authorkeyword"
-        s.aboutAuthors = _.uniq _.map aboutAuthorIds, (id) ->
-            authorsById[id]
-
-    s.getAuthorDatasource = () ->
-        if s.isAuthorAboutSearch
-            return s.aboutAuthors
-        else
-            return s.authors
-
-    authors.then ([authorList, authorsById]) ->
-        s.authors = authorList
-        s.authorsById = authorsById
-        change = (newAuthors) ->
-            return unless newAuthors
-            backend.getTextByAuthor(newAuthors, "etext,faksimil", null, s.isAuthorAboutSearch).then (titles) ->
-                s.titles = titles
-            # $q.all _.map newAuthors.split(","), (auth) -> 
-            # backend.getTitlesByAuthor(auth, true, s.isAuthorAboutSearch)
-            # .then (results) ->
-            #     filteredTitles = _.filter (_.flatten results), (item) -> 
-
-            #         "/" not in item.titlepath
-
-            #     filteredTitles = _.uniq filteredTitles, (item) -> item.lbworkid
-            #     s.titles = filteredTitles
-        
-        if $location.search().forfattare
-            auth = $location.search().forfattare?.split(",")
-            s.selectedAuthors = auth
-            c.log "s.selectedAuthors", s.selectedAuthors
-        
-        if $location.search().titlar
-            titles = $location.search().titlar?.split(",")
-            s.selectedTitles = titles
-        if $location.search().sok_filter
-            s.nav_filter = $location.search().sok_filter
-
-        util.setupHashComplex s, [
-                key : "forfattare"
-                # expr : "selected_author.pseudonymfor || selected_author.author_id"
-                expr : "selectedAuthors"
-                val_in : (val) ->
-                    val?.split(",")
-                val_out : (val) ->
-                    val?.join(",")
-                post_change : change
-            ,
-                key : "titlar"
-                # expr : "selected_author.pseudonymfor || selected_author.author_id"
-                expr : "selectedTitles"
-                val_in : (val) ->
-                    val?.split(",")
-                val_out : (val) ->
-                    val?.join(",")
-
-            , 
-                key : "sok_filter"
-                expr : "nav_filter"
-                post_change : (author_id) ->
-                    if author_id
-                        c.log "do modifySearch", author_id
-                        searchData.modifySearch({authors: author_id, from: 0, to: s.num_hits - 1}).then ([kwic, sentsWithHeaders]) ->
-                            s.sentsWithHeaders = sentsWithHeaders
-
-
-
-        ]
-
-
-    s.searching = false
-    s.num_hits = searchData.NUM_HITS
-    s.current_page = 0
-
-    # s.rowHeights = []
-
-    # s.getRowHeight = () ->
-    #     add = (a, b) -> a+b
-        
-    #     return (_.foldr s.rowHeights, add) / (s.rowHeights.length)
-
-
-    # s.tableRenderComplete = () ->
-    #     s.searching = false
-    #     $timeout(() ->
-    #         s.getTotalHeight()
-    #     , 0)
-
-    # s.getTotalHeight = () ->
-    #     s.totalHeight = s.hits * s.getRowHeight()
-
-
-    # s.updateOnScrollEvents = (evt, isEnd) ->
-    #     if not isEnd then return
-
-    #     top = $(evt.currentTarget).offset().top
-
-    #     topMost = _.min $("tr", evt.currentTarget), (tr) ->
-    #         if $(tr).offset().top < top then 9999 else $(tr).offset().top
-    #     c.log "topMost", topMost, $(topMost).scope()
-
-
-
-    #     top = evt.currentTarget.scrollTop
-    #     rowHeight = s.getRowHeight()
-    #     if $(topMost).scope().sent.index
-    #         from = $(topMost).scope().sent.index + s.from_index
-    #         c.log "tr index", from
-    #     else 
-    #         from = Math.floor(top / rowHeight)
-    #         c.log "rowheight from", from
-    #     n_rows = Math.ceil($(evt.currentTarget).height() / rowHeight)
-
-
-    #     s.search(from, (from + n_rows)).then () ->
-    #         s.table_top = top
-            
-
-    
-    # getMediatypes = () ->
-    #     {
-    #         yes : "etext"
-    #         no : "faksimil"
-    #         all : "all"
-    #     }[s.proofread]
-
-
-    s.nextPage = () ->
-        if (s.current_page  * s.num_hits) + s.kwic.length < s.doc_hits
-            s.current_page++
-            s.gotoPage s.current_page
-    s.prevPage = () ->
-        if not s.current_page or s.current_page == 0 then return
-        s.current_page--
-        s.gotoPage s.current_page
-        
-
-    s.firstPage = () ->
-        s.gotoPage 0
-    s.lastPage = () ->
-        
-        s.gotoPage(s.total_pages - 1)
-
-    s.gotoPage = (page) ->
-        if page > (s.total_pages - 1) then return
-        s.showGotoHitInput = false
-        s.current_page = page
-        # n_rows = Math.ceil($(evt.currentTarget).height() / rowHeight)
-        # $(".table_viewport").scrollTop(s.getRowHeight() * page)
-        from = s.current_page * s.num_hits
-        s.search(from, from + s.num_hits)
-
-
-    s.onGotoHitInput = () ->
-        if s.total_pages == 1 then return
-        if s.showGotoHitInput
-            s.showGotoHitInput = false
-            return
-        s.showGotoHitInput = true
-        $timeout(() ->
-            s.$broadcast("focus")
-        0)
-
-    
-    getSearchArgs = (from, to) ->
-        
-        filter_params = []
-        unless s.filterOpts[0].selected # search all texts is false
-            # searchAnom = _.find(s.filterOpts, {key: "is_anom"}).selected
-            for groupKey, group of (_.groupBy s.filterOpts, "group")
-                if groupKey == "undefined" then continue
-                selected = _.filter group, "selected"
-                if selected.length == 1
-                    filter_params.push selected[0].param
-
-
-        filter_params = _.object filter_params
-
-        
-        args = {
-            query : s.query
-            # mediatype: getMediatypes()
-            from: from
-            to: to
-        }
-        prefix = $location.search().prefix
-        suffix = $location.search().suffix
-        infix = $location.search().infix
-        if prefix or suffix or infix
-            args.phrase = false
-            if prefix or suffix
-                prefix = if prefix then "*" else ""
-                suffix = if suffix then "*" else ""
-                args.query = suffix + args.query + prefix
-        _.extend args, filter_params
-
-        if $location.search().sok_om
-            args.about_author = true
-        if $location.search().forfattare
-            args.authors = $location.search().forfattare
-        if $location.search().titlar
-            args.work_ids = $location.search().titlar
-
-
-        # if searchAnom
-        #     args.anonymous = false
-
-        return args
-
-
-    s.save_search = (currentIndex) ->
-        c.log "save_search", $location.url()
-        s.$root.prevSearchState = "/#!" + $location.url()
-        # TODO: fix me
-        # c.log "save_search", startIndex, currentIndex, data
-        # c.log "searchData", searchData
-
-        # searchData.save(startIndex, currentIndex + s.current_page  * s.num_hits, data, getSearchArgs())
-
-
-    s.getSetVal = (sent, val) ->
-        _.str.trim( sent.structs[val], "|").split("|")[0]
-
-    s.selectLeft = (sentence) ->
-        if not sentence.match then return
-        # c.log "left", sentence.tokens.slice 0, sentence.match.start
-        sentence.tokens.slice 0, sentence.match.start
-
-    s.selectMatch = (sentence) ->
-        if not sentence.match then return
-        from = sentence.match.start
-        sentence.tokens.slice from, sentence.match.end
-
-    s.selectRight = (sentence) ->
-        if not sentence.match then return
-        from = sentence.match.end
-        len = sentence.tokens.length
-        sentence.tokens.slice from, len
-
-    s.setPageNum = (num) ->
-        c.log "setPageNum", num
-        s.current_page = num
-        s.search()
-
-    s.getMaxHit = () ->
-        unless s.kwic then return
-        Math.min searchData.total_hits, (s.current_page  * s.num_hits) + s.kwic.length
-
-    onKeyDown = (event) ->
-        if event.metaKey or event.ctrlKey or event.altKey or $("input:focus").length then return
-        s.$apply () ->
-            switch event.which
-                when 39 
-                    if navigator.userAgent.indexOf("Firefox") != -1 or $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") == $($window).width()
-                        s.nextPage()
-                when 37 
-                    if $rootElement.prop("scrollLeft") == 0
-                        s.prevPage()
-
-    $document.on "keydown", onKeyDown
-
-    s.$on "$destroy", () ->
-        $document.off "keydown", onKeyDown
-
-
-    # s.sortStruct = [
-    #     {label: "SÖK I ALLA TEXTER", val: "lastname", selected: true}
-    #     {label: "INKLUDERA KOMMENTARER OCH", val: "imprintyear", selected: false}
-    #     {label: "SORTERA EFTER SÖKORDET I ALFABETISK ORDNING", val: "hit", selected: false}
-    # ]
-
-    # {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
-    # {label: 'Sök i <span class="sc">svenska</span> orginalverk', val: "lang_swedish", selected: true}
-    # {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
-    # {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
-    s.filterOpts =  [
-        {
-            label: "Sök i <span class='sc'>ALLA TEXTER</span>",
-            # param: "all_texts",
-            selected: true
-            key : "all_texts"
-        }
-        {
-            label: 'Sök i <span class="sc">moderniserade</span> texter',
-            param: ["modernized", true],
-            selected: true
-            group : 0
-            key : "is_modernized"
-        }
-        {
-            label: 'Sök i <span class="sc">ej moderniserade</span> texter',
-            param: ["modernized", false],
-            selected: true
-            group : 0
-            key : "not_modernized"
-        }
-        {
-            label: 'Sök i <span class="sc">korrekturlästa</span> texter',
-            param: ["proofread", true],
-            selected: true
-            group : 1
-            key : "is_proofread"
-        }
-        {
-            label: 'Sök i <span class="sc">ej korrekturlästa</span> texter',
-            param: ["proofread", false],
-            selected: true
-            group : 1
-            key : "not_proofread"
-        }
-        {
-            label: 'Sök i texter skrivna av <span class="sc">kvinnor</span>',
-            param: ["gender", "female"],
-            selected: true
-            group : 2
-            key : "gender_female"
-        }
-        {
-            label: 'Sök i texter skrivna av <span class="sc">män</span>',
-            param: ["gender", "male"],
-            selected: true
-            group : 2
-            key : "gender_male"
-        }
-        # {
-        #     label: 'Sök i texter skrivna av <span class="sc">anonyma författare</span>',
-        #     selected: true
-        #     group : 2
-        #     key : "is_anom"
-        # }
-
-    ]
-
-    
-
-
-
-    s.options = {
-        sortSelected : 'lastname'
-    }
-
-    s.onSearchSubmit = (query) ->
-        $anchorScroll("results")
-        # s.resetAuthorFilter()
-        s.newSearch(query)        
-
-    s.searchAllInWork = (sentenceObj, index) ->
-        searchData.getMoreHighlights(sentenceObj).then (sents) ->
-            startIndex = null
-            # find section start index
-            for i in [index-1..0]
-                row = s.sentsWithHeaders[i]
-                if row.isHeader
-                    startIndex = i
-                    break
-
-            s.sentsWithHeaders[startIndex..index] = sents
-
-
-    s.newSearch = (query) ->
-        if hasSearchInit
-            s.current_page = 0
-
-
-        c.log "newSearch", query
-        q = query or s.query
-        unless q then return
-        $location.search("fras", q) if q
-        s.query = q
-        s.pageTitle = q
-        from = s.current_page * s.num_hits
-        #TODO: eh?
-        to = (from + s.num_hits) - 1
-        args = getSearchArgs from, to
-        searchData.newSearch args
-        return s.search from, to
-
-
-    # s.search = debounce((query, from, to) ->
-    s.search = (from, to) ->
-        s.searching = true
-
-        args = getSearchArgs(from, to)
-        s.from_index = from
-
-        # def = backend.searchWorks(args)
-        def = searchData.slice(from, to)
-        def.then ([kwic, sentsWithHeaders, author_aggs]) ->
-            c.log "search data slice", searchData.total_hits
-
-            s.kwic = kwic
-            # s.hits = searchData.total_hits
-            s.doc_hits = searchData.total_doc_hits
-            s.total_pages = Math.ceil(s.doc_hits / s.num_hits)
-
-            # TODO: silly, silly hack
-            unless $location.search().sok_filter
-                s.sentsWithHeaders = sentsWithHeaders
-            s.authorStatsData = author_aggs
-            s.searching = false
-            hasSearchInit = true
-
-        return def
-    # , 200)
-
-    # queryvars = $location.search()
-
-    s.opt_change = (opt) ->
-        commit = () -> 
-            s.search_filter_opts = _.map (_.pluck s.filterOpts, "selected"), Number
-        if opt.val == "all_texts" 
-            for o in s.filterOpts
-                o.selected = true
-            commit()
-            return
-
-        # isDeselect = opt.selected
-        opt.selected = !opt.selected
-
-
-        group = _.filter s.filterOpts, (o) -> o.group == opt.group
-        c.log "group", group
-
-        if not _.any group, "selected"
-            i = _.indexOf group, opt
-            (group[i + 1] or group[0]).selected = true
-
-            commit()
-            return 
-
-
-
-        if not _.all s.filterOpts, "selected"
-            s.filterOpts[0].selected = false
-        if not (_.filter s.filterOpts, "selected").length
-            opt.selected = true
-        
-        if _.all s.filterOpts[1..], "selected"
-            s.filterOpts[0].selected = true
-
-
-
-
-        commit()
-
-        
-
-
-
-
-    util.setupHashComplex s,
-        [
-            scope_name : "current_page"
-            key : "traffsida"
-            val_in : (val) ->
-                Number(val) - 1
-            val_out : (val) ->
-                val + 1
-            default : 1
-        ,   
-            key : "avancerad"
-            scope_name : "advanced"
-        ,
-            key : "filter"
-            scope_name : "search_filter_opts"
-            val_in : (val) ->
-                for bool, i in val?.split(",")
-                    bool = Boolean Number bool
-                    s.filterOpts[i].selected = bool
-
-                return val?.split(",")
-
-            val_out : (val) ->
-                val?.join(",")
-
-
-        # ,   
-        #     key : "proofread"
-        #     default : "all"
-        ,
-            key : "fras"
-            post_change : (val) ->
-                c.log "fras val", val
-                if val
-                    s.newSearch(val)
-        ,   
-            key : "sok_om"
-            scope_name : "isAuthorAboutSearch"
-            default : false
-
-
-        ]
-
-    # if "fras" of queryvars
-    #     s.search(queryvars.fras)
-
 
 
 littb.controller "biblinfoCtrl", ($scope, backend) ->
@@ -785,7 +193,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     s.normalizeAuthor = $filter('normalizeAuthor')
 
-    s.titleSort = titleSort
+    s.titleSort = util.titleSort
 
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
@@ -841,12 +249,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
     s.getAllTitles = () ->
         [].concat s.groupedTitles, s.groupedWorks, s.groupedEditorWorks
-
-    s.getSearchableTitles = () ->
-        titles = s.getAllTitles()
-
-        _.filter (_.flatten titles), (title) -> 
-            title?.searchable == "true"
 
     s.getUrl = (work) ->
         auth = (s.getWorkAuthor work.authors).author_id
@@ -1037,72 +439,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             s.moreStruct[3].data = data    
 
 
-    ###
-    # backend.getAuthorInfo(s.author).then (data) ->
-    #     s.authorInfo = data
-        
-        s.groupedWorks = _.values _.groupBy s.authorInfo.works, "titlepath"
-        s.groupedTitles = _.values _.groupBy s.authorInfo.titles, "titlepath"
-        s.groupedEditorWorks = _.values _.groupBy s.authorInfo.editorWorks, "titlepath"
-        s.groupedTranslatorWorks = _.values _.groupBy s.authorInfo.translatorWorks, "titlepath"
-        
-        s.groupedAboutWorks = _.values _.groupBy s.authorInfo.aboutWorks, "titlepath"
-        s.groupedAboutTitles = _.values _.groupBy s.authorInfo.aboutTitles, "titlepath"
-        s.groupedAboutEditorTitles = _.values _.groupBy s.authorInfo.aboutEditorTitles, "titlepath"
-        s.groupedAboutTranslatorTitles = _.values _.groupBy s.authorInfo.aboutTranslatorTitles, "titlepath"
-
-
-        s.titleStruct = [
-                label : "Tillgängliga verk"
-                data : s.groupedWorks
-                showAuthor : false
-            ,
-                label : "Dikter, noveller, essäer, etc. som ingår i andra verk"
-                data : s.groupedTitles
-                showAuthor : true
-            ,
-                label : "Som utgivare"
-                data : s.groupedEditorWorks
-                showAuthor : true
-            ,
-                label : "Som översättare"
-                data : s.groupedTranslatorWorks
-                showAuthor : true
-        ]
-
-        # gen_author = if _.str.endsWith("s") then s.authorInfo.fullName else s.authorInfo.fullName + "s"
-
-        s.moreStruct = [
-                label : "Verk om #{s.authorInfo.fullName}"
-                data : s.groupedAboutWorks
-                showAuthor : true
-            ,
-                label : "Kortare texter om #{s.authorInfo.fullName}"
-                data : s.groupedAboutTitles
-                showAuthor : true
-            ,
-                label : "Som utgivare"
-                data : s.groupedAboutEditorTitles
-                showAuthor : true
-            ,
-                label : "Som översättare"
-                data : s.groupedAboutTranslatorTitles
-                showAuthor : true
-        ]
-
-        c.log "data.surname", data.surname
-        # $rootScope.appendCrumb 
-        #     label : data.surname
-        #     url : "#!/forfattare/" + s.author
-        # if s.showpage != "introduktion"
-        #     refreshBreadcrumb()
-        # refreshTitle()
-        refreshExternalDoc(s.showpage, $routeParams)
-
-        if not s.authorInfo.intro and s.showpage == "introduktion"
-            $location.path("/forfattare/#{s.author}/titlar").replace()
-    
-        ###
     
 littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, authors, $rootElement, $anchorScroll, $q, $filter) ->
     s = $scope
@@ -1510,17 +846,6 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
             id : $(elem).attr("id")
             
         
-        # util.setupHashComplex s, [
-        #     "key" : "ankare"
-        #     post_change : (val) ->
-        #         c.log "post_change", val
-        #         unless val and $("##{val}").length
-        #             $(window).scrollTop(0)
-        #             return
-        #         $(window).scrollTop($("##{val}").offset().top)
-        #     replace : false
-        # ]
-
 littb.controller "newCtrl", ($scope, $http, util, $location) ->
 littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
     s = $scope
@@ -1573,7 +898,7 @@ littb.filter "correctLink", () ->
         return wrapper.html()
 
 
-littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $window, $timeout) ->
+littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $window, $timeout, $modal) ->
     s = $scope
     c.log ($route)
     close = () ->
@@ -1589,42 +914,56 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
         close()
         if val.url
             $location.url(val.url)
+
+    
+
     s.autocomplete = (val) ->
         if val
             return backend.autocomplete(val).then (data) ->
                 menu = [
-                        label: "/start"
+                        label: "Start"
                         url : "/start"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/bibliotek"
+                        label: "Bibliotek"
                         url : "/bibliotek"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/epub"
+                        label: "Epub"
                         url : "/epub"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/sök"
+                        label: "Sök"
                         url : "/sok"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/sok"
+                        label: "Sok"
                         url : "/sok"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/presentationer"
+                        label: "Presentationer"
                         url : "/presentationer"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/nytillkommet"
-                        url : "/nytillkommet"
+                        label: "Nytillkommet"
+                        url : "/nytt"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/skolan"
+                        label: "Skolan"
                         url : "/skolan"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/skolan/lyrik"
+                        label: "Skolan/lyrik"
                         url : "/skolan/lyrik"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/om"
+                        label: "Om"
                         url : "/om/ide"
+                        typeLabel : "Gå till sidan"
                     ,
-                        label: "/statistisk"
+                        label: "Statistik"
                         url : "/om/statistik"
+                        typeLabel : "Gå till sidan"
 
                 ]
 
@@ -1637,23 +976,34 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
 
 
                 menu = _.filter menu, (item) ->
-                    item.label.match(val)
+                    item.label.match(new RegExp("^" + val, "gi"))
                 c.log "menu", menu
                 return data.concat menu
 
 
 
 
-    s.show_autocomplete = false
+    show = () ->
+        # s.show_autocomplete = true
 
+        c.log "open modal"
+        modal = $modal.open
+            templateUrl : "autocomplete.html"
+            scope : s
+            windowClass : "autocomplete"
+            size : "sm"
+
+        $timeout () ->
+            s.$broadcast("focus")
+        , 0
+    s.show_autocomplete = false
+    s.$on "show_autocomplete", () ->
+        show()
     $($window).on "keyup", (event) ->
         #tab
         if event.which == 83 and not $("input:focus,textarea:focus,select:focus").length
             s.$apply () ->
-                s.show_autocomplete = true
-                $timeout () ->
-                    s.$broadcast("focus")
-                , 0
+                show()
 
 
 
@@ -2303,13 +1653,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 else
                     chapter_modal?.close()
                     chapter_modal = null
-        # ,
-        #     key : "fras"
-        #     scope_name : "search_query"
-            # post_change : (val) ->
-            #     if val
-
-                    
 
     ]
     
@@ -2372,28 +1715,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.pagemap = workinfo.pagemap
             steps = []
             s.etextPageMapping ?= {}
-            
-
-            # for page in $("page", data)
-            #     if $(page).attr("pagestep")
-            #         steps.push [($(page).attr "pageix"), Number($(page).attr "pagestep")]
-
-
-            #     p = $(page).clone()
-            #     p.find("*").remove()
-            #     etextcontent = _.str.trim $(p).text()
-            #     s.etextPageMapping[$(page).attr("name")] = etextcontent
-
-            # # avoid etextPageMapping memory bloat
-            # pairs = _.pairs s.etextPageMapping
-            # if pairs.length > 100
-            #     pairs = pairs[30..]
-            #     s.etextPageMapping = _.object pairs
-
-
-
-            # s.stepmap = _.object steps
-            # s.pagestep = Number $("pagestep", data).text()
 
             if mediatype == "faksimil"
 
@@ -2491,138 +1812,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             else
                 s.error = true
 
-
-
-    ###
-    loadPageOld = (val) ->
-        # take care of state hiccup
-        unless $route.current.controller == 'readingCtrl' 
-            c.log "resisted page load"
-            return
-
-        c.log "loadPage", val
-        # if val == s.pagename then return
-
-        s.error = false
-        
-        if s.isEditor
-            params = 
-                lbworkid : $routeParams.lbid
-                mediatype : mediatype
-                pageix : val
-            pageQuery = "page[ix='#{val}']"
-            setPages = (page) ->
-                s.pageix = Number val
-                s.displaynum = s.pageix
-
-        else
-            pageQuery = "page[name='#{val}']"
-            params = 
-                author_id : author
-                titlepath : title
-                mediatype : mediatype
-
-            setPages = (page, data) ->
-                if not page.length
-                    page = $("page:last", data).clone()
-                    s.pagename = page.attr("name")
-                else
-                    s.pagename = val
-                s.pageix = s.pagemap["page_" + s.pagename]
-                s.displaynum = s.pagename
-
-                unless s.pageToLoad then s.pageToLoad = s.pagename
-
-                if s.mediatype == "faksimil" and s.workinfo.has_ocr
-                    backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([data, overlayFactors]) ->
-                        s.overlaydata = data
-                        s.overlayFactors = overlayFactors
-                                       
-            if val
-                params["pagename"] = val
-            if val and s.pagemap
-                ix = s.pagemap["page_" + val]
-                plusFive = s.pagemap["ix_" + (ix + 5)] or s.endpage
-
-                params["pagename"] = [val, plusFive]
-
-        unless s.isEditor
-            if s.faksimilPageMapping
-                setPages {length : 1}
-
-                filename = s.faksimilPageMapping[s.pageix]
-                id = $routeParams.lbid or s.workinfo.lbworkid
-                s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}"
-                unless s.isEditor
-                    backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
-                return
-            else if s.etextPageMapping?[val]
-                setPages {length : 1}
-                s.etext_html = s.etextPageMapping[val]
-                backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
-                return
-            
-        s.loading = true
-
-        backend.getPage(params).then (data) ->
-            # s.workinfo = workinfo
-            
-
-            
-
-
-            page = $(pageQuery, data).last().clone()
-
-            setPages(page, data)
-
-            if s.mediatype == "faksimil"
-                faksimilPageMapping = for item in $("bok sida[src]", data)
-                    [$(item).attr("ix"), $(item).attr("src")]
-
-                s.faksimilPageMapping = _.object faksimilPageMapping
-            
-            ixes = _.map $("sida", data), (item) ->
-                Number $(item).attr("ix")
-
-            s.endIx = Math.max ixes...
-
-            # if mediatype == 'faksimil' or isParallel
-            s.sizes = new Array(5)
-            for url in $("pages faksimil-url", data)
-                s.sizes[Number($(url).attr("size")) - 1] = true
-            
-            c.log "loadpage result", s.size
-
-            s.url = $("faksimil-url[size=#{s.size}]", page).last().text()
-            # else
-            page.children().remove()
-            s.etext_html = _.str.trim page.text()
-            unless s.isEditor
-                backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
-
-            s.loading = false
-            s.first_load = true
-            onFirstLoad()
-
-            s.setTitle "#{workinfo.title} sidan #{s.pagename} #{s.mediatype}"
-
-            if $location.search().sok
-                s.$broadcast "popper.open.searchPopup"
-
-
-
-
-
-        , (data) ->
-            c.log "fail", data
-            s.error = true
-            s.loading = false
-            s.first_load = true
-            
-
-    ###
-
-    
     s.setSize = (index) ->
         c.log "setsize", index
         s.size = index

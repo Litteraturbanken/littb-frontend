@@ -2,11 +2,11 @@ littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 # STRIX_URL = "http://kappa.svenska.gu.se:8081"
-STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend2"
+# STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
 
 if _.str.startsWith(location.host, "demolittb")
-    STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend2"
+    STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
     
 
 littb.factory "debounce", ($timeout) ->
@@ -40,135 +40,6 @@ littb.factory "debounce", ($timeout) ->
 
 
 
-
-###
-getCqp = (o) ->
-
-
-    tokenList = []
-    regescape = (s) ->
-        s.replace(/[\.|\?|\+|\*|\|\"\(\)\^\$]/g, "\\$&")
-
-    tokenize = (str) ->
-        # Excludes some characters from starting word tokens
-        # _re_word_start = /[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]/
-
-        # Characters that cannot appear within words
-        # _re_non_word_chars = /(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])/ #@
-
-        # Excludes some characters from ending word tokens
-        # _re_word_end = /[\(\"\`{\[:;&\#\*@\)}\],]/
-
-        # Multi-character punctuation
-        # _re_multi_char_punct = /(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)/
-
-
-
-        wdlist = for wd in o.query.split(/\s+/)
-            extras = []
-            if wd.match(/\.\.\./)
-                extras.push "..."
-                wd = wd.replace(/(\.\.\.)/, "")
-            wd = wd.replace(/([\.,;:!?])/g, " $1")
-            wd = wd.replace(/([-’])/g, " $1 ")
-            wd = wd.replace(/(['])/g, " $1$1 ") # double quote for escaping
-            wd = wd.replace(/([»])/g, "$1 ")
-            c.log "wd", wd
-            wd.split(" ")
-
-
-        _.compact [].concat (_.flatten wdlist), extras
-
-
-    for wd in tokenize(o.query)
-        pre = suf = ""
-        or_block = []
-        flag = "%c"
-        # flag = ""
-
-        if o.prefix and not o.infix
-            or_block.push "word = '#{regescape wd}.*'#{flag}"
-        if o.suffix and not o.infix
-            or_block.push "word = '.*#{regescape wd}'#{flag}"
-        if o.infix
-            or_block.push "word = '.*#{regescape wd}.*'#{flag}"
-        if not o.prefix and not o.suffix
-            or_block.push "word = '#{regescape wd}'#{flag}"
-
-        tokenList.push "(#{or_block.join(' | ')})"
-
-
-    getAuthors = (obj, type) ->
-        auths = _.map obj.split(","), (auth) -> "_.text_#{type} contains '#{auth}'"
-        auths = "(#{auths.join(' | ')})"
-
-    optsToCQP = (optlist) ->
-        map = 
-            # all_texts : "Sök i <span class='sc'>ALLA TEXTER</span>"
-            is_modernized : 
-                cqp : "_.text_modernized = 'true'"
-                group : 0
-            not_modernized : 
-                cqp : "_.text_modernized = 'false'"
-                group : 0
-            is_proofread : 
-                cqp : "_.text_proofread = 'true'"
-                group : 1
-            not_proofread : 
-                cqp : "_.text_proofread = 'false'"
-                group : 1
-            gender_female : 
-                cqp : "_.text_gender contains 'female'"
-                group : 2
-            gender_male : 
-                cqp : "_.text_gender contains 'male'"
-                group : 2
-            is_anom : 
-                cqp : "_.text_author_id contains 'Anonym'"
-                group : 2
-
-
-        opts = _.map optlist, (key) -> map[key]
-        groups = _.groupBy opts, "group"
-
-        groups = _.map groups, (group) ->
-            
-            # vals = _.map (_.pluck group, "cqp"), (val) -> "_.text_" + val
-            vals = _.pluck group, "cqp"
-            return "(" + vals.join(" | ") + ")"
-
-        return groups.join(" & ")
-
-    structAttrs = []
-    textAttrs = []
-    c.log "o.text_attrs", o.text_attrs
-
-    if o.selectedAuthor
-        auths = getAuthors(o.selectedAuthor, "author_id")
-        structAttrs.push auths
-    else if o.selectedAboutAuthor
-        auths = getAuthors(o.selectedAboutAuthor, "aboutauthor")
-        structAttrs.push auths
-    else if o.searchAllAbout
-        structAttrs.push "ambiguity(_.text_aboutauthor) > 0"
-
-    # if textAttrs.length then structAttrs.push "(#{textAttrs.join(' & ')})"
-
-    if o.text_attrs?.length
-        structAttrs.push optsToCQP(o.text_attrs)
-
-    if o.selectedTitle
-        titles = _.map o.selectedTitle.split(","), (id) -> "_.text_lbworkid = '#{id}'"
-        titles = "(#{titles.join(' | ')})"
-        structAttrs.push titles
-
-
-    if structAttrs.length
-        tokenList[0] += " & " + structAttrs.join(" & ")
-
-    return "[#{tokenList.join('] [')}]"
-
-###
 
 littb.factory "util", ($location) ->
     PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i
@@ -207,6 +78,15 @@ littb.factory "util", ($location) ->
     normalize : (name) ->
         camelCase(name.replace(PREFIX_REGEXP, ''))
 
+
+    titleSort : (a) ->
+       _.map a.shorttitle.split(/(\d+)/), (item) -> 
+           if Number(item)
+               zeroes = (_.map [0..(10 - item.toString().length)], () -> "0").join("")
+
+               return zeroes + item.toString()
+           else 
+               return item
 
     setupHashComplex : (scope, config) ->
         # config = [
@@ -1214,14 +1094,19 @@ littb.factory 'backend', ($http, $q, util) ->
                 if item.doc_type in ["etext", "faksimil"]
                     title_id = item.work_title_id or item.title_id
                     item.url = "/forfattare/#{item.authors[0].author_id}/titlar/#{title_id}/sida/#{item.startpagename}/#{item.doc_type}"
-                    item.label = "Verk: #{item.authors[0].surname} – #{item.shorttitle} (#{item.doc_type})" 
+                    item.label = "#{item.authors[0].surname} – #{item.shorttitle}" 
+                    item.typeLabel = "Verk"
+                    item.mediatypeLabel = item.doc_type
                 if item.doc_type == "part"
                     item.url = "/forfattare/#{item.work_authors[0].author_id}/titlar/#{item.work_title_id}/sida/#{item.startpagename}/#{item.mediatype}"
-                    item.label = "Del: #{(item.authors?[0] or item.work_authors[0]).surname} – #{item.shorttitle} (#{item.mediatype})"
+                    item.label = "#{(item.authors?[0] or item.work_authors[0]).surname} – #{item.shorttitle}"
+                    item.typeLabel = "Del"
+                    item.mediatypeLabel = item.mediatype
 
                 if item.doc_type == "author"
                     item.url = "/forfattare/#{item.author_id}"
-                    item.label = 'Författare: ' + item.name_for_index
+                    item.label = item.name_for_index
+                    item.typeLabel = "Författare"
 
             return data
 
@@ -1247,12 +1132,11 @@ littb.factory "authors", (backend, $q) ->
 littb.factory "SearchData", (backend, $q, $http, $location) ->
 
     class SearchData
-        constructor: (endpoint="lb_search") ->
+        constructor: () ->
             @data = []
             @total_hits = null
             @total_doc_hits = null
             @current = null
-            @querydata = null
             @currentParams = null
 
             @isSearching = false
@@ -1261,15 +1145,12 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
 
             @include = "authors,title,titlepath,title_id,mediatype,lbworkid"
 
-            @endpoint = endpoint
-
         newSearch : (params) ->
             @data = []
             @total_hits = null
             @total_doc_hits = null
             @currentParams = params
             @doNewSearch = true
-            @querydata = null
             @current = null
             @isSearching = false
             @savedParams = null
@@ -1293,13 +1174,12 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
                 @isSearching = false
                 
                 @total_doc_hits = response.data.hits
-                punctArray = [",", ".", ";", ":", "!", "?", "..."]
                 @compactLeftContext(response.data.data)
 
                 sentsWithHeaders = @decorateData(response.data.data, @NUM_HIGHLIGHTS)
 
 
-                return [response.data.data, sentsWithHeaders, response.author_aggregation]
+                return [sentsWithHeaders, response.data.author_aggregation]
             # .error (data) =>
                 # def.reject(data)
 
@@ -1363,18 +1243,18 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
             if slice.length < (to - from) then return false
             return not _.any slice, _.isUndefined
 
-        findMissingInSpan : (from, to) ->
-            start = null
+        # findMissingInSpan : (from, to) ->
+        #     start = null
 
-            span = @data[from..to]
-            for item, i in span
-                if not item? # count undefined
-                    start = i
-                    end = (_.takeWhile span[i..], _.isUndefined).length
-                    break
+        #     span = @data[from..to]
+        #     for item, i in span
+        #         if not item? # count undefined
+        #             start = i
+        #             end = (_.takeWhile span[i..], _.isUndefined).length
+        #             break
 
-            c.log "end", end
-            return [from + start, from + start + end]
+        #     c.log "end", end
+        #     return [from + start, from + start + end]
 
 
         getMoreHighlights : (sentenceData) ->
@@ -1387,6 +1267,8 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
                 number_of_fragments: num_fragments + 1
                 # authors: _.pluck sentenceData.metadata.authors, "author_id"
                 work_ids: sentenceData.metadata.lbworkid
+                from: 0
+                to: 1
 
             params = _.extend {}, @currentParams, params
 
@@ -1398,7 +1280,8 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
                 @compactLeftContext(response.data.data)
                 
 
-                decorated = @decorateData(response.data.data, num_fragments)
+                decorated = _.flatten @decorateData(response.data.data, num_fragments)
+                c.log "decorated", decorated
                 if (_.last decorated).overflow
                     (_.last decorated).at_highlight_page = at_page
                 return decorated
@@ -1406,21 +1289,21 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
 
 
         decorateData : (data, num_fragments) ->
-            c.log "num_fragments", num_fragments
             groupSents = (data) =>
                 i = 0
                 output = []
 
                 row_index = 0
                 for item in data
-                    output.push {isHeader: true, metadata: item.source}
+                    work_rows = [{isHeader: true, metadata: item.source}]
+                    output.push work_rows
                     for high in item.highlight
                         obj = {metadata: item.source, highlight: high, index: row_index}
                         obj.href = @parseUrls obj, row_index
-                        output.push obj
+                        work_rows.push obj
                         row_index++
                     if item.overflow
-                        output.push {metadata: item.source, overflow: true}
+                        work_rows.push {metadata: item.source, overflow: true}
 
                 return output
 
@@ -1572,7 +1455,7 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
         submit : (query, params) ->
             c.log "params", params
             def = $q.defer()
-            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{query}?init_hits=1");
+            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{query}?init_hits=20");
 
             source.onmessage = (event) =>
                 data = JSON.parse(event.data)
@@ -1592,7 +1475,7 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
 
             return def.promise
 
-        searchWorks : (o) ->        
+        searchWorks : (o) ->
             @isSearching = true
 
 
