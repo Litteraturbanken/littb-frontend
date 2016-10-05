@@ -1,5 +1,5 @@
 <meta-desc>
-    {{workinfo.showtitle}} av {{authorById[author].fullname}}, sida {{pagename}} som {{mediatype}}
+    {{workinfo.showtitle}} av {{authorById[author].full_name}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
 <!-- <img class="no-gradient" bkg-img src="img/las_bkg.jpg"></img> -->
 <div class="reader_main" 
@@ -9,22 +9,27 @@
     <div class="preloader pull-right"><i class="spinner fa fa-spinner fa-pulse"></i></div>
 
     <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
-    <div css="{{workinfo.css}}" if="mediatype == 'etext' || isParallel"></div>
+    <div css="/txt/css/{{workinfo.lbworkid}}-etext.css" if="workinfo && mediatype == 'etext' || isParallel"></div>
     <div class="etext txt"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="first_load && etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
     
          <!-- ng-style="{height : overlayHeight, width : overlayWidth}" 
 
           -->
-     <div selection-sniffer class="overlay" ng-if="mediatype == 'faksimil' && overlaydata.length">
-         <div ng-repeat="list in overlaydata" on-finish-render="overlayFinishRender()" >
-             <!-- <div class="parent" ng-style="getOverlayCss(obj)" ng-repeat="obj in list">
-                 <span class="w" big-text-alt="obj"  ></span>
-             </div> -->
-             <span big-text="obj" fac="overlayFactors[size - 1]" class="w parent" ng-repeat="obj in list" ng-style="getOverlayCss(obj)"> </span>
+
+    <div selection-sniffer
+        class="overlay"
+        ng-if="mediatype == 'faksimil' && overlayHtml" 
+        ng-style="{width: workinfo.width['size_' + size -1] + 'px', transform: 'scale(' + overlayFactors[size -1] + ')'}"
+        compile="overlayHtml | setMarkee:markee_from:markee_to" > 
+    </div>
+
+     <!-- <div selection-sniffer class="overlay" ng-if="mediatype == 'faksimil' && overlaydata.length">
+         <div ng-repeat="list in overlaydata" >
+             <span big-text="obj" fac="overlayFactors[size - 1]" class="w parent" ng-repeat="obj in list" ng-style="getOverlayCss(obj)" on-finish-render="onOverlayComplete()" > </span>
 
          </div>
-     </div>
+     </div> -->
 
          <!-- <span class="word" ng-repeat="obj in list" ng-style="getOverlayCss(obj)" big-text="obj.word"></span> -->
          <!-- <span big-text class="word" ng-repeat="obj in list" ng-style="getOverlayCss(obj)">{{obj.word}} </span> -->
@@ -32,11 +37,11 @@
      <!-- <div ng-repeat="obj in overlaydata" big-text="obj.word" ng-style="getOverlayCss(obj)" ng-mousedown="overlayMousedown()" ng-mouseup="overlayMouseup()"></div> -->
      <!-- <span ng-repeat="obj in overlaydata" ng-style="getOverlayCss(obj)">{{obj.word}}</span> -->
 
-    <div class="img_area" ng-style="{'width' : workinfo.widths[size] + 'px'}">
-        <img faksimil-img class="faksimil" ng-style="{'max-width' : workinfo.widths[size] + 'px'}" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
+    <div class="img_area" ng-style="{'width' : workinfo.width['size_' + size] + 'px'}">
+        <img faksimil-img class="faksimil" ng-style="{'max-width' : workinfo.width['size_' + size] + 'px'}" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
     </div>
     <div square ng-repeat="obj in coors" ng-show="x"
-         class="faksimilMarkee" ng-class="{long : obj.width > 150}"></div>
+         class="faksimilMarkee" ng-class="{long : obj.w > 150}"></div>
     
     
     <div toolkit toolkit-id="toolkit-right" ng-show="first_load">
@@ -62,15 +67,20 @@
             <br>
             <div class="down fa fa-play"></div>
         </div> -->
-
+            
         <hr>
         <div class="current_part">
             <div class="header">
-                <a ng-href="/#!/forfattare/{{getCurrentPart().authors[0].authorid}}" ng-show="getCurrentPart().authors.length == 1">{{authorById[getCurrentPart().authors[0].authorid].fullname}}</a>
+                <! -- TODO: did this part turn out right? -->
+                <a ng-href="/#!/forfattare/{{getCurrentPart().authors[0].authorid}}" ng-show="getCurrentPart().authors.length == 1">{{authorById[getCurrentPart().authors[0].authorid].full_name}}</a>
+                
                 <a ng-repeat="auth in getCurrentPart().authors" 
-                    ng-href="/#!/forfattare/{{normalizeAuthor(auth.authorid)}}"
+                    ng-href="/#!/forfattare/{{auth.authorid}}"
                     ng-show="getCurrentPart().authors.length > 1"
-                >{{authorById[auth.authorid].surname}}<span ng-if="!$last">, </span></a>
+                >{{authorById[auth.author_id].surname}}<span ng-if="!$last">, </span></a>
+                
+                <!-- <a ng-click="show_chapters = true" ng-show="!normalizeAuthor(getCurrentPart().author_id)">Avsnitt eller del</a> -->
+                <!-- <a ng-href="/#!/forfattare/{{normalizeAuthor(getCurrentPart().author_id)}}" ng-show="normalizeAuthor(getCurrentPart().author_id)">{{authorById[normalizeAuthor(getCurrentPart().author_id)].full_name}}</a> -->
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
             <div ng-bind="getCurrentPart().showtitle" data-ellipsis tooltip="{{getCurrentPart().navtitle}}" class="navtitle"></div>
@@ -128,7 +138,8 @@
                 <!-- <li>Visa som bokuppslag</li> -->
                 <li>
                     <!-- <a popper="searchPopup" my="left center" at="left middle">Sök i verket</a>  -->
-                    <a ng-disabled="workinfo.searchable == 'false'" ng-click="openSearchWorks()">Sök i verket</a> 
+                    <a ng-show="!workinfo.searchable" class="disabled">Sök i verket</a> 
+                    <a ng-show="workinfo.searchable" ng-click="openSearchWorks()">Sök i verket</a> 
 
                     <!-- <div class="searchbox popper_menu" ng-click="$event.stopPropagation()"> -->
                     <div collapse="!show_search_work" class="searchbox" >
@@ -155,7 +166,7 @@
                         </div>
                     </div>
                 </li>
-                <li><a ng-href="/#!/sok?avancerad&forfattare={{author || getValidAuthors()[0].id}}" ng-disabled="!hasSearchable(author || getValidAuthors()[0])">Sök i författarens texter</a></li>
+                <li><a ng-href="/#!/sok?avancerad&forfattare={{author}}" ng-disabled="!hasSearchable(authorById[author])">Sök i författarens texter</a></li>
                 <!-- <li>Dela boken</li> -->
             </ul>
         </div>
@@ -189,10 +200,10 @@
                 <ul class="part_menu" >
                     <li ng-repeat="part in workinfo.parts" tooltip="{{part.showtitle}}">
                         <span>
-                            <span ng-repeat="auth in part.authors" class="author">{{authorById[normalizeAuthor(auth.authorid)].surname}}<span ng-show="!$last">, </span> </span>
+                            <span ng-repeat="auth in part.authors" class="author">{{authorById[auth.author_id].surname}}<span ng-show="!$last">, </span> </span>
                         </span>
                         <span class="title">
-                            <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.showtitle}}</a>
+                            <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.title}}</a>
                         </span>
 
                     </li>
@@ -217,10 +228,10 @@
                 <ul class="ctrls">
 
                     <div class="arrows">
-                        <button rel="next" class="submit btn navicon left" ng-click="prevHit()">
+                        <button rel="prev" class="submit btn navicon left" ng-click="prevHit()">
                             <i class="fa fa-angle-left"></i>
                         </button>
-                        <button rel="prev" class="submit btn navicon" ng-click="nextHit()">
+                        <button rel="next" class="submit btn navicon" ng-click="nextHit()">
                             <i class="fa fa-angle-right"></i>
                         </button>
                     </div>
@@ -240,8 +251,7 @@
                 </ul>
 
             </div>
-            
-            <div class="size_picker" ng-show="mediatype == 'faksimil'">
+            <div class="size_picker" ng-if="mediatype == 'faksimil'">
                 <h2>Ändra storlek</h2>
                 <button ng-click="setSize(size - 1)" ng-disabled="!sizes[((size - 1) || 0) - 1]" class="small_text btn btn-small">Mindre</button>
                 <button ng-click="setSize(size + 1)" ng-disabled="!sizes[((size - 1) || 0) + 1]" class="small_text btn btn-small">Större</button>

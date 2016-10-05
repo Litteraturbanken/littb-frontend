@@ -26,7 +26,7 @@
             <div class="right_col">
                 <ul class="options">
                     <li ng-repeat="opt in filterOpts">
-                        <span  ng-click="opt_change(opt)" ng-show="opt.selected">✓</span>
+                        <span ng-click="opt_change(opt)" ng-style="{visibility: opt.selected ? 'visible' : 'hidden'}">✓</span>
                         <a ng-click="opt_change(opt)" ng-bind-html="opt.label | trust"></a>
                     </li>
                 </ul>
@@ -37,10 +37,10 @@
 
         <div class="bottom_row">
             <div class="left">
-                <div class="auth_select_container">
+                <div class="auth_select_container" ng-show="auth_select_rendered">
                     <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" >
-                        <option value="{{author.authorid}}" ng-repeat="author in getAuthorDatasource() | orderBy:'nameforindex' | filter:{searchable : 'true'}">
-                            {{author.fullname}}
+                        <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | filter:{searchable : 'true'} | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
+                            {{author.full_name}}
                         </option>
                     </select> 
                 </div>
@@ -99,21 +99,56 @@
 
     <div class="results_container" ng-class="{searching:searching}" id="results" >
         <!-- <div class="table_viewport" ng-show="kwic" ng-scroll-event="updateOnScrollEvents($event, isEndEvent)"  > -->
-        <div class="table_viewport" ng-show="kwic">
+        <div class="table_viewport" ng-show="sentsWithHeaders">
             <!-- <div class="table_container" ng-style="{height : totalHeight}" > -->
             <div class="table_container">
-                <div ng-if="!searching && kwic && !kwic.length && !hits">Din sökning gav inga träffar</div>
+                <div ng-if="!searching && sentsWithHeaders && !sentsWithHeaders.length && !searchData.total_hits">Din sökning gav inga träffar</div>
                 
             
             
                 <table cellspacing="0" class="results" ng-style="{top : table_top}">
                     
                     <!-- <tr on-finish-render="tableRenderComplete()" height="$parent.rowHeights[$index]" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" > -->
-                    <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" >
+                    <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.metadata.mediatype == 'faksimil'}" >
+
+                        <td ng-if="sent.overflow"></td>
+                        <td ng-if="sent.overflow">
+                            <div class="overflow sc">
+                                <hr>
+                                    <a class="more" ng-click="searchAllInWork(sent, $index)">Visa fler</a>
+                                <hr>
+                                
+                            </div>
+                        </td>
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content">
+                                <span class="author">{{authorsById[sent.metadata.authors[0].author_id].name_for_index}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.title_id}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
+                            </div>
+                        </td>
+                        <!-- <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>                         -->
 
-                                <span class="author">{{authorsById[sent.authorid].nameforindex}}</span> <span class="title" tooltip="{{sent.title}}"><a ng-href="/#!/forfattare/{{sent.authorid}}/titlar/{{sent.titlepath[0]}}?om-boken">{{sent.shorttitle}}</a></span>
+                        <td ng-if="sent.highlight" class="left_context"><!--
+                            --><span ng-repeat="wd in sent.highlight.left_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
+                        </td>
+                        <td ng-if="sent.highlight" class="match">
+                            <span ng-repeat="wd in sent.highlight.match">
+                                <!-- ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.work_title_id}}/{{sent.metadata.mediatype}}/{{wd.attrs.n}}"  -->
+                                <a ng-href="{{::sent.href}}" ng-click="save_search($index)"
+                                    class="word" ng-class="{punct: wd._punct}">{{wd.word}}</a>
+                            </span>
+                        </td>
+                        <td ng-if="sent.highlight" class="right_context">
+                            <span ng-repeat="wd in sent.highlight.right_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
+                        </td>
+                        
+                                <!-- <li ng-repeat="hit in sent.highlight"> -->
+                                
+
+
+                        <!-- <td class="header" colspan="4" ng-if="sent.isHeader">
+                            <div class="header_content">
+
+                                <span class="author">{{authorsById[sent.author_id].name_for_index}}</span> <span class="title" tooltip="{{sent.title}}"><a ng-href="/#!/forfattare/{{sent.author_id}}/titlar/{{sent.titlepath[0]}}?om-boken">{{sent.title}}</a></span>
                             </div>
                         </td>
                         <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>
@@ -124,7 +159,7 @@
                                 <span kwic-word="kwic-word" ng-repeat="wd in selectMatch(sent)"></span>
                             </a>
                         </td>
-                        <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td>
+                        <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td> -->
                     </tr>
                 </table>
                 
@@ -136,23 +171,25 @@
     </div>
 
     <div toolkit>
-        <div class="littb_pager" ng-if="hits">
+        <div class="littb_pager" ng-if="sentsWithHeaders">
             <div>
 
 
                 <div class="hits_info">
-                    <div><div class="hits">{{hits}}</div> <div class="hits_sub">
-                        <span ng-show="hits > 1">sökträffar</span>
-                        <span ng-show="hits == 1">sökträff</span>
-                    </div></div>
+                    <div><div class="hits" ng-show="searchData.total_hits">{{searchData.total_hits}}</div> 
+                        <div class="hits_sub">
+                            <span ng-show="searchData.total_hits > 1">sökträffar</span>
+                            <span ng-show="searchData.total_hits == 1">sökträff</span>
+                        </div>
+                    </div>
 
                 </div>
 
-                Visar {{current_page  * num_hits + 1}}-{{getMaxHit()}} av 
-                {{hits}} träffar,
+                Visar verk {{current_page  * num_hits + 1}}-{{getMaxHit()}} av 
+                {{doc_hits}},
                 sida {{current_page + 1}} av {{total_pages}}.
 
-                <ul class="ctrl" ng-show="hits > 1">
+                <ul class="ctrl" ng-show="doc_hits > 1">
                     <!-- <li>
                         <a ng-click="nextPage()">Gå till {{(current_page + 1) * num_hits + 1}}-{{getMaxHit() + num_hits}}</a>
                     </li> -->
@@ -194,9 +231,14 @@
             </div>
             
         </div>
-        <ul class="navigator" ng-show="kwic.length" ng-style="{'max-height': container_height}">
-            <li ng-repeat="obj in authorStatsData" >
-                <a ng-class="{selected: obj.pos == current_page}" ng-click="gotoPage(obj.pos)">{{obj.author}}</a>
+        <ul class="navigator" ng-show="sentsWithHeaders.length" ng-style="{'max-height': container_height}">
+            <li><a ng-click="resetAuthorFilter()" ng-class="{selected : !nav_filter}">Visa alla</a></li>
+
+            <li ng-repeat="obj in authorStatsData"  >
+                <!-- <a ng-class="{selected: obj.pos == current_page}" ng-click="gotoPage(obj.pos)">{{obj.author}}</a> -->
+                <a  ng-class="{selected : nav_filter == obj.author_id}" 
+                    ng-click="setAuthorFilter(obj.author_id)">{{authorsById[obj.author_id].surname}}</a>
+                <!-- {{obj.doc_count}} -->
             </li>
         </ul>
 
@@ -205,127 +247,5 @@
         <!-- <p>Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.</p>  -->
     </div>
 
-
-    <!-- <div class="box_container">
-       <ul class="box">
-           <li ng-repeat="author in authors | orderBy:'nameforindex'" ng-click="author.checked = !author.checked">
-               <span ng-style="{visibility: author.checked ? 'visible' : 'hidden'}">✓</span><span  >{{author.nameforindex}} {{author | authorYear}}</span>
-           </li>
-       </ul>
-    </div> -->
-
-
-    <!-- <div toolkit toolkit-id="toolkit-right">
-        <form action=""><input type="text"><button class="btn">Sök</button></form>
-        <ul>
-            <li><a href="">Sök efter del av ord</a></li>
-            <li><a href="">Sök efter ordbörjan</a></li>
-            <li><a href="">Sök efter ordslut</a></li>
-        </ul>
-
-        <ul>
-            <li><a href="">Sök i skönlitterära texter</a></li>
-            <li><a href="">Sök i facklitterära texter</a></li>
-            <li><a href="">Sök i översättningar till svenska</a></li>
-            <li><a href="">Sök i korrekturlästa texter</a></li>
-            <li><a href="">Sök i ej korrekturlästa texter</a></li>
-        </ul>
-
-    </div> -->
-
-
-
-    
-    <!-- 
-    <div class="header">
-        <h1>Sök i texterna</h1>
-        <div class="clearfix"></div>
-    </div>
-    
-    
-    <form ng-submit="current_page = 0; search()">
-        <label class="query_label" for="query">Ord eller fras:</label> <input id="query" class="input" ng-model="query" autofocus>
-    </form>
-    
-    <div class="extended">
-        <h3>Urval</h3>
-        <div class="columns">
-            <div class="left">
-                <label for="author_select">Författare</label>
-                <select id="author_select"
-                        ng-model="selected_author"
-                        ng-change="authorChange()"
-                        ng-options="author.nameforindex for author in authors | filter:{searchable : 'true'}" >
-                    <option value="">Alla författare</option>
-                </select>
-            </div>
-            <div class="right">
-                <label for="title_select">Titel: (välj författare först)</label>
-                <select id="title_select" 
-                        ng-model="selected_title" 
-                        ng-change="titleChange()"
-                        ng-options="title.showtitle for title in titles | filter:{searchable: 'true'} | filter: checkProof | orderBy:titleSort ">
-    
-                    <option value="">Allt tillgängligt</option>
-                </select>
-            </div>
-        </div>
-        <div class="chks">
-            Sök i:
-            <input id="yes" type="radio" ng-model="proofread" value="yes">
-            <label for="yes" ng-click="proofread = 'yes'">korrekturläst</label>
-            <input id="no" type="radio" ng-model="proofread" value="no">
-            <label for="no" ng-click="proofread = 'no'">ej korrekturläst</label>
-            <input id="all" type="radio" ng-model="proofread" value="all">
-            <label for="all" ng-click="proofread = 'all'">allt</label>
-        </div>
-        <div class="also_include">
-            Även som: <input ng-change="infix = false" type="checkbox" ng-model="prefix" id="prefix"> <label for="prefix">ordbörjan</label> <input ng-change="infix = false" type="checkbox" id="suffix" ng-model="suffix"> <label for="suffix">ordslut</label>
-            eller <input type="checkbox" id="infix" ng-model="infix" ng-change="prefix = false; suffix = false"> 
-            <label for="infix">del av ord</label>
-        </div>
-    </div>
-    
-    <div><span ng-click="current_page = 0; search()" submit-btn></span><div style="clear:both;"></div></div>
-    
-    
-    
-    <div class="n_pages">Visa
-        <select id="num_hits" ng-model="num_hits" ng-change="nHitsChange()"
-            ng-options="num for num in [10, 20, 50, 100, 250, 500]" ng-change="search(query)">
-        </select>
-        träffar per sida.
-    </div>
-    
-    
-    <div toolkit>
-        <hr>
-
-        <div class="littb_pager" ng-show="kwic && hits">
-            <div ng-if="hits > num_hits">
-                Visar {{current_page  * num_hits + 1}}-{{getMaxHit()}} av 
-                {{hits}} träffar,
-                sida {{current_page + 1}} av {{total_pages}}.
-
-                <div class="ctrl">
-                    <a ng-click="firstPage()"><img src="bilder/LBstart.png"></a>
-                    <a ng-click="prevPage()"><img src="bilder/LBforegaende.png"></a>
-                    <a ng-click="nextPage()"><img src="bilder/LBnasta.png"></a>
-                    <a ng-click="lastPage()"><img src="bilder/LBslut.png"></a>
-                </div>
-            
-                <label>Gå till träffsida</label>
-                <form ng-submit="setPageNum(input_page - 1)">
-                    <input class="input_page" ng-model="input_page"><span ng-click="setPageNum(input_page - 1)" submit-btn></span>
-                </form>
-            </div>
-            
-            <div ng-if="hits <= num_hits">
-                Visar alla {{hits}} träffar.
-            </div>
-        </div>
-
-        <p>Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.</p> 
-    </div> -->
     <!-- -->
 </div>

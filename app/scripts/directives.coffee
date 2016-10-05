@@ -285,7 +285,7 @@ littb.directive 'selectionSniffer', ($window) ->
             isOneWord = sel and " " not in _.str.trim(sel)
             c.log "isOneWord", sel, isOneWord, event.target
 
-            if isOneWord and $(event.target).is("span.w")
+            if isOneWord and $(event.target).is("[id^='lb']")
                 showIndicator event.target
         , 500)
 
@@ -469,26 +469,26 @@ littb.directive "popper", ($rootElement) ->
 
 
 
-littb.directive 'kwicWord', ->
-    replace: true
-    template : """<span class="word" ng-class="getClassObj(wd)">{{::wd.word}} </span>
-                """ #ng-click="wordClick($event, wd, sentence)"
-    link : (scope, element) ->
-        scope.getClassObj = (wd) ->
-            output =
-                reading_match : wd._match
-                punct : wd._punct
-                match_sentence : wd._matchSentence
+# littb.directive 'kwicWord', ->
+#     replace: true
+#     template : """<span class="word" ng-class="getClassObj(wd)">{{::wd.word}} </span>
+#                 """ #ng-click="wordClick($event, wd, sentence)"
+#     link : (scope, element) ->
+#         scope.getClassObj = (wd) ->
+#             output =
+#                 reading_match : wd._match
+#                 punct : wd._punct
+#                 match_sentence : wd._matchSentence
 
-            for struct in (wd._struct or [])
-                output["struct_" + struct] = true
+#             for struct in (wd._struct or [])
+#                 output["struct_" + struct] = true
 
-            for struct in (wd._open or [])
-                output["open_" + struct] = true
-            for struct in (wd._close or [])
-                output["close_" + struct] = true
+#             for struct in (wd._open or [])
+#                 output["open_" + struct] = true
+#             for struct in (wd._close or [])
+#                 output["close_" + struct] = true
 
-            return (x for [x, y] in _.pairs output when y).join " "
+#             return (x for [x, y] in _.pairs output when y).join " "
 
 
 littb.directive 'insert', () ->
@@ -661,19 +661,25 @@ littb.directive "bigText", () ->
     link : (scope, elem, attr) ->
         obj = scope.$eval attr.bigText
         fac = scope.$eval attr.fac
-        elem.text obj.word
+        elem.text obj.wd
         size = 4
         elem.css("font-size", size + "px")
         w = fac * (Number obj.w)
         # c.log "elem.width()", elem.width()  
         if elem.width() 
             while elem.width() < w
-                size += 1
+                size += 10
                 elem.css("font-size", size + "px")
                 if size > 300 then break
 
+            while elem.width() > w
+                size -= 1
+                elem.css("font-size", size + "px")
+                if size < 5 then break
+
         # elem.css("font-size", size * (1.2) + "px")
-        elem.text elem.text() + " "
+        elem.attr "id", obj.wid
+        elem.text obj.wd + " "
 
 
 littb.directive "top", () ->
@@ -796,17 +802,15 @@ littb.directive "listScroll", () ->
     
 
 overflowLoad = (s, element) ->
-    c.log "overflowLoad", s, element
     btn = null
 
     element.load () ->
-        c.log "element load overflow"
         maxWidth = $(this).css("max-width")
         $(this).css("max-width", "initial")
         actualWidth = $(this).width()
         $(this).css("max-width", maxWidth)
-        c.log "oveflowLoad", s, element, $(this).width(), actualWidth
         if $(this).width() < actualWidth
+            c.log "overflowing image found", element, $(this).width(), actualWidth
             element.parent().addClass "img-overflow"
             btn?.remove()
             btn = $("<button class='btn btn-xs expand'>Förstora</button>").click () ->

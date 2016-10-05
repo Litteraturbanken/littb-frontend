@@ -16,6 +16,7 @@ window.safeApply = (scope, fn) ->
 $.fn.outerHTML = () ->
     return $(this).clone().wrap('<div></div>').parent().html()
 
+_.templateSettings.interpolate = /{{([\s\S]+?)}}/g;
 
 authorResolve = ["$q", "$routeParams", "$route",
                             ($q, $routeParams, $route) ->
@@ -250,20 +251,21 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <input ng-model="titles[0]" placeholder="titel" ng-change="id = '';" ng-model-options="{debounce: 500}">
                     <textarea ng-model="textarea" placeholder="flera titlar separarade med nyrad" ng-change="textareaChange(textarea)" ng-model-options="{debounce: 500}"></textarea>
                     <div class="preloader">Hämtar <span class="dots_blink"></span></div>
+
                     <table class="table-striped">
-                    <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter">
-                        <td>{{row.itemAttrs.lbworkid}}</td>
+                    <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter" track by $index>
+                        <td>{{row.lbworkid}}</td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].authorid}}">{{row.author[0].surname}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].author_id}}">{{row.author[0].surname}}</a>
                         </td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath.split('/')[0]}}/{{row.itemAttrs.mediatype}}">{{row.itemAttrs.showtitle}}</a>
+                            <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.showtitle}}</a>
                         </td>
                         <td>
-                            <span ng-repeat="type in row.mediatype">
+                            <span ng-repeat="type in row.mediatypes track by $index">
                             
                                 <span ng-show="!$first">:::</span>
-                                <a href="/#!/forfattare/{{row.author[0].authorid}}/titlar/{{row.itemAttrs.titlepath}}/{{type}}">{{type}}</a>
+                                <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
                             </span>
                         </td>
                     </tr>
@@ -291,7 +293,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
     c.log "run search params", $location.search()
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
-        $rootElement.addClass("ready")
+        $rootElement.addClass("ready").removeClass("not_ready")
 
     $rootScope.getLogoUrl = () ->
         if $rootScope.isSchool 
@@ -303,7 +305,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
     # just in case the above deferred fails. 
     $timeout( () -> 
-        $rootElement.addClass("ready")
+        $rootElement.addClass("ready").removeClass("not_ready")
     , 1000)
 
     stripClass = (prefix) ->
@@ -464,9 +466,9 @@ littb.filter "trust", ($sce) ->
 littb.filter "normalizeAuthor", () ->
     trans = _.object _.zip "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ", "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy"
     trans = _.extend trans, _.object _.zip ["Æ", "æ", "Ð", "ð", "Þ", "þ", "ß", "Œ", "œ"], ["AE", "ae", "DH", "dh", "TH", "th", "ss", "OE", "oe"]
-    return (authorid) ->
-        unless authorid then return
-        ret = _.map authorid.split(""), (char) ->
+    return (author_id) ->
+        unless author_id then return
+        ret = _.map author_id.split(""), (char) ->
             trans[char] or char
         .join("")
 

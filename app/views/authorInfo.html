@@ -1,5 +1,5 @@
-<meta-desc>{{authorInfo.fullName}}, {{getPageTitle(showpage)}}</meta-desc>
-<page-title>{{authorInfo.fullName}}, {{getPageTitle(showpage)}}</page-title>
+<meta-desc>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</meta-desc>
+<page-title>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</page-title>
 <img ng-if="!slaMode" bkg-img class="no-gradient" src="img/forf2_bkg.jpg"></img>
 <img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img>
 
@@ -10,15 +10,16 @@
         <i class="spinner fa fa-spinner fa-pulse"></i>
     </div>
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
-    <h1>{{authorInfo.fullName}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
+    <h1>{{authorInfo.full_name}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/#!/forfattare/{{author}}">Introduktion</a></li>
         <li ng-class="{active : showpage == 'titlar'}"><a href="/#!/forfattare/{{author}}/titlar">Verk</a></li>
         <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/#!/forfattare/{{author}}/presentation">Presentation</a></li>
-        <li ng-show="authorInfo.bibliografi" ng-class="{active : showpage == 'bibliografi'}"><a href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
+        <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/#!/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
+        <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/#!/forfattare/{{author}}/las-mer">Läs mer</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/#!/forfattare/{{author}}/mer">Mer</a></li>
-        <li ng-if="getSearchableTitles().length"><a href="/#!/sok?forfattare={{author}}&avancerad">Sök i texterna</a></li>
+        <li ng-if="authorInfo.searchable"><a href="/#!/sok?forfattare={{author}}&avancerad">Sök i texterna</a></li>
     </ul>
     
     <div class="page_content" ng-switch="showpage">
@@ -26,11 +27,11 @@
             <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div class="introtext" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
-                <div class="pull-right"><em>{{authorsById[normalizeAuthor(authorInfo.introAuthor)].fullname}}</em></div>
+                <div class="pull-right"><em>{{authorsById[normalizeAuthor(authorInfo.intro_author)].full_name}}</em></div>
 
                 <div class="source" ng-if="authorInfo.sources">
                     <span class="source_header sc">Källa</span>
-                    <span class="source_text">{{authorInfo.sources}}</span>
+                    <span class="source_text" ng-bind-html='authorInfo.sources.join("<br>") | trust'></span>
                 </div>
             </div>
 
@@ -56,28 +57,29 @@
                 <h1 ng-show="slaMode" ng-show="titleobj.data.length">{{titleobj.label}}</h1>
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
-                    <tr ng-repeat="works in titleobj.data | orderBy:titleSort track by $index">
+                    <tr ng-repeat="work in titleobj.data | orderBy:'sortkey' track by $index">
                         <td >
-                            <span ng-repeat="work in works | orderBy:mediaOrder track by $index ">
+                            <span ng-repeat="mediatype in work.mediatypes track by $index ">
                                 <!-- <span ng-show="!$first">::: </span> -->
-                                <a ng-href="{{getUrl(work)}}">{{work.mediatype}}</a>
+                                <a ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
                                 <span ng-show="!last">&nbsp; </span>
                             </span>
                         </td>
                         <td ng-if="titleobj.showAuthor">
-                            <a href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">{{getWorkAuthor(works[0].authors).nameforindex}}</a>
+                            <a href="/#!/forfattare/{{work[titleobj.showAuthor][0].author_id}}">{{work[titleobj.showAuthor][0].name_for_index}}</a>
                         </td>
                         <td>
                             <a class="title" 
-                                ng-href="{{getUrl(getPrimaryUrl(works)) + '?om-boken'}}"
+                                ng-href="{{work.mediatypes[0].url + '?om-boken'}}">
+                                {{work.shorttitle || work.showtitle}}
                             </a>
-                            <!-- ng-href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}/titlar/{{works[0].titlepath.split('/')[0]}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
-                                {{works[0].showtitle}}
-                            <div class="extras" ng-if="$parent.$index == 1">i
-                                <a class="author" href="/#!/forfattare/{{getWorkAuthor(works[0].authors).authorid}}">
-                                    {{getWorkAuthor(works[0].authors).surname}}:
+                            <!-- ng-href="/#!/forfattare/{{getWorkAuthor(work.authors).author_id}}/titlar/{{work.work_title_id}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
+                                
+                            <div class="extras" ng-if="$parent.$index != 0 && work.workshorttitle">i
+                                <a class="author" href="/#!/forfattare/{{work.work_authors[0].author_id}}">
+                                    {{work.work_authors[0].surname}}:
                                 </a> 
-                                <span class="extras_title">{{works[0].workshorttitle}}</span>
+                                <span class="extras_title">{{work.workshorttitle}}</span>
                             </div>
                             
                             <span class="dots"></span>
@@ -93,7 +95,8 @@
             <ng-include src="'listing.html'"></ng-include>
         </div>
         <div ng-switch-when="mer">
-            <ng-include src="'listing.html'"></ng-include>
+            <!-- <div class="content" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div> -->
+           <ng-include src="'listing.html'"></ng-include>
         </div>
     
         <div ng-switch-when="biblinfo"><div ng-include="'views/sla/biblinfo.html'"></div></div>
