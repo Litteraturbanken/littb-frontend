@@ -518,6 +518,9 @@ body.modal-open {
         color: $primarycolor;
         font-size : 0.7em;
     }
+    .modal-body {
+        overflow: visible;
+    }
     // display : none;
     input {
         width: 100%;

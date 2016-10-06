@@ -137,10 +137,6 @@
                                             <a ng-href="{{mediatype.url}}">Läs som {{mediatype.label}}</a>
                                         </li>
                                         
-                                        <!-- <li ng-show="hasMediatype(row, 'etext')"><a ng-href="{{getUrl(row, 'etext')}}">Läs som <span class="sc">ETEXT</span></a></li>
-                                        <li ng-show="hasMediatype(row, 'faksimil')"><a ng-href="{{getUrl(row, 'faksimil')}}">Läs som <span class="sc">FAKSIMIL</span></a></li>
-                                        <li ng-show="hasMediatype(row, 'epub')"><a ng-href="{{getUrl(row, 'epub')}}">Ladda ner <span class="sc">EPUB</span></a></li>
-                                        <li ng-show="hasMediatype(row, 'pdf')"><a ng-href="{{getUrl(row, 'pdf')}}">Ladda ner <span class="sc">PDF</span></a></li> -->
                                         <li ng-show="::row.searchable">
                                             <a ng-href="/#!/sok?forfattare={{row.authors[0].author_id}}&titlar={{row.lbworkid}}&avancerad">Gör en sökning i verket</a>
                                         </li>

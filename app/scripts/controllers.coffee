@@ -242,24 +242,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     refreshRoute = () ->
         s.showpage = $location.path().split("/")[3]
         unless s.showpage then s.showpage = "introduktion"
-        # if s.showpage == ("titlar" or "mer") then s.showpage = "titlar_mer"
-        # s.showpage = "introduktion" if s.author == s.showpage
-
-
-    # s.getPrimaryMediatype = (works) ->
-    #     (s.sortMedia (_.pluck works, "mediatype"))[0]
-
-    # s.mediaOrder = (work) ->
-    #     _.indexOf ['etext', 'faksimil', 'epub', 'pdf'], work.mediatype
-
-
-    # s.sortMedia = (list) ->
-    #     order = ['etext', 'faksimil', 'epub', 'pdf']
-    #     return _.intersection(order,list).concat(_.difference(list, order))
-
-    # s.getPrimaryUrl = (works) ->
-    #     (s.sortMedia works)[0]
-
 
     s.getUnique = (worklist) ->
         _.filter worklist, (item) ->
@@ -464,6 +446,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator", true).then (data) ->
             c.log "about translator works", data
             s.moreStruct[3].data = data    
+
+        if not s.authorInfo.intro
+            $location.url("/forfattare/#{s.author}/titlar").replace()
 
 
     
@@ -680,23 +665,6 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.selectedTitle._collapsed = true
         $location.search("title", title.titlepath)
 
-    ###
-    getWorkIntro = (author, titlepath) ->
-        s.sourcedesc = null
-        # TODO: i think this broke
-        infoDef = backend.getSourceInfo(author, work_title_id)
-        infoDef.then (data) ->
-            c.log "source", data
-            s.workintro = data.workintro
-            # s.error = false
-            # s.data = data
-            # if not s.mediatype
-            #     s.mediatype = s.data.mediatypes[0]
-        , (reason) -> # reject callback 
-            # s.data = {}
-            # s.error = true
-        return infoDef
-    ###
 
     s.getPartAuthor = (part) ->
         part.authors?[0] or part.work_authors[0]
@@ -750,8 +718,6 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     def = backend.getTitles(false, null, "popularity|desc").then (titleArray) ->
         s.titleSearching = false
         s.popularTitles = titleArray
-        # s.titleArray = titleArray
-        # s.titleGroups = titleGroups
         s.titleByPath = _.groupBy titleArray, (item) ->
             return item.titlepath
 
@@ -765,9 +731,6 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
-
-    # s.authorSelectSetup = getAuthorSelectSetup(s, $filter)
-
 
     s.authorSelectSetup = {
         formatNoMatches: "Inga resultat",
@@ -937,12 +900,15 @@ littb.filter "correctLink", () ->
 
 littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $window, $timeout, $modal) ->
     s = $scope
-    c.log ($route)
+    modal = null
     close = () ->
         s.lbworkid = null
         s.$broadcast("blur")
-        s.show_autocomplete = false
+        # s.show_autocomplete = false
         s.completeObj = null
+        c.log "close modal", s.modal, s
+        s.modal?.close()
+        s.modal = null
 
 
     s.onSelect = (val) ->
@@ -972,10 +938,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                     ,
                         label: "Sök"
                         url : "/sok"
-                        typeLabel : "Gå till sidan"
-                    ,
-                        label: "Sok"
-                        url : "/sok"
+                        alt: "Sok"
                         typeLabel : "Gå till sidan"
                     ,
                         label: "Presentationer"
@@ -1007,14 +970,18 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                 if $route.current.$$route.controller == "readingCtrl"
                     menu.push 
                         label : "/id"
+                        alt : "id"
+                        typeLabel: "[Red.]"
                         action : () ->
                             s.lbworkid = $(".reader_main").scope?().workinfo.lbworkid
                             return false
 
 
                 menu = _.filter menu, (item) ->
-                    item.label.match(new RegExp("^" + val, "gi"))
-                c.log "menu", menu
+                    exp = new RegExp("^" + val, "gi")
+                    # alt = new RegExp(val, "gi")
+                    item.label.match(exp) or item.alt?.match(exp)
+                # c.log "menu", menu
                 return data.concat menu
 
 
@@ -1023,8 +990,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
     show = () ->
         # s.show_autocomplete = true
 
-        c.log "open modal"
-        modal = $modal.open
+        s.modal = $modal.open
             templateUrl : "autocomplete.html"
             scope : s
             windowClass : "autocomplete"
@@ -1033,7 +999,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
         $timeout () ->
             s.$broadcast("focus")
         , 0
-    s.show_autocomplete = false
+    # s.show_autocomplete = false
     s.$on "show_autocomplete", () ->
         show()
     $($window).on "keyup", (event) ->
@@ -1176,10 +1142,6 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
     s.dict_searching = false
 
     modal = null
-
-    # $($window).on "keyup", (event) ->
-    #     if event.which == 83 and not $("input:focus,textarea:focus,select:focus").length
-    #         s.$broadcast "focus"
 
     s.keydown = (event) ->
         if event.keyCode == 40 # down arrow
@@ -1892,19 +1854,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             size : "lg"
 
 
-        # img_modal.result.then () ->
-        #     s.show_about = false
-        # , () ->
-        #     s.show_about = false
-
-
-
-
-
 
     ## START SEARCH
-
-    # if s.search_query
 
     s.getCleanUrl = () ->
         "/#!" + $location.path()
@@ -1928,8 +1879,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         searchData.newSearch(args)
         searchData.current = Number($location.search().hit_index or 0)
         searchData.get(searchData.current)
-        # searchData.slice(0, 10).then (data) ->
-        #     c.log "searchdata slice", data
 
     s.onGotoHitInput = () ->
         if s.showGotoHitInput
@@ -1947,13 +1896,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.showGotoHitInput = false
         hit = Number(hit - 1)
         c.log "hit", hit
-        # from = if (hit - 5) < 0 then 0 else (hit - 5)
         searchData.current = hit
         searchData.get(hit).then changeHit
-        # slice(hit, hit + 20).then ([result]) ->
-        #     c.log "result", result
-        #     size = maybeSize()
-        #     $location.url(result[0].href[3...] + size)
 
 
 
@@ -1990,20 +1934,5 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         searchData.current = 0
         searchData.get(0).then (hit) ->
             c.log "hit", hit
-            # s.show_search_work = false
-
-            # unless kwic.length then return
             unless hit then return
-            # stateLocVars = ["show_search_work", "prefix", "suffix", "infix", "storlek"]
-            # stateVars = (_.pick $location.search(), stateLocVars...)
-
-            # query = (_.invoke (_.pairs stateVars), "join", "=").join("&")
-
             changeHit(hit)
-            # $location.url(hit.href[3...] + "&" + query)
-
-
-
-
-
-# 

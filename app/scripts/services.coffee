@@ -257,73 +257,6 @@ littb.factory 'backend', ($http, $q, util) ->
     objFromAttrs = (elem) ->
         return null unless elem
         _.object ([util.normalize(attrib.name), attrib.value] for attrib in elem.attributes)
-    ###
-    parseWorkInfo = (root, xml) ->
-        useInnerXML = ["sourcedesc", "workintro", "license-text"]
-        asArray = ["mediatypes"]
-
-        output = {}
-        for elem in $(root, xml).children()
-            # c.log "parseWorkInfo", elem.nodeName
-            if elem.nodeName in useInnerXML
-                val = util.getInnerXML elem
-
-            else if elem.nodeName in asArray
-                val = _.map $(elem).children(), (child) ->
-                    $(child).text()
-            else if elem.nodeName in ["author_id", "author_id-norm"]
-                val = {id : $(elem).text(), type: $(elem).attr("type")}
-                (output[util.normalize(elem.nodeName)]?.push val) or
-                 output[util.normalize(elem.nodeName)] = [val]
-                 continue
-            else
-                val = $(elem).text()
-
-            output[util.normalize(elem.nodeName)] = val
-
-
-        prov = $("result provenance-data", xml)
-
-
-        output["provenance"] = for item in prov
-            {
-                text : $("text", item).text()
-                image : $("image", item).text()
-                link : $("link", item).text()
-            }
-
-
-        output.sourcedescAuthor = $("sourcedesc-author", xml).text()
-        sourcedesc = $("sourcedesc", xml)
-        $("sourcedesc-author", sourcedesc).remove()
-
-        errata = $("errata", xml)
-        output.errata = for tr in $("tr", errata)
-            _($(tr).find("td")).map(util.getInnerXML)
-            .map(_.str.strip).value()
-        errata.remove()
-
-        output.sourcedesc = (util.getInnerXML sourcedesc) or ""
-
-
-        # output.workintro = (util.getInnerXML workintro) or ""
-
-        epub = $("result > epub", xml)
-        if epub.length
-            output.epub = 
-                file_size: epub.attr("file-size")
-                url : util.getInnerXML epub
-        pdf = $("result pdf", xml)
-        if pdf.length
-            output.pdf = 
-                file_size: pdf.attr("file-size")
-                url : util.getInnerXML pdf
-
-        # output.author_type = $(root + " > author_id", xml).attr("type")
-        return output
-    ###
-    
-
 
     getHtmlFile : (url) ->
         return http(
@@ -397,84 +330,6 @@ littb.factory 'backend', ($http, $q, util) ->
 
         return def.promise
 
-
-
-    # getTitles : (allTitles = false, author = null, initial = null, string = null) ->
-    #     def = $q.defer()
-    #     if author and allTitles
-    #         params = 
-    #             action : "get-titles-by-author"
-    #             author_id : author
-    #     else if allTitles
-    #         params = 
-    #             action : "get-titles-by-string-filter"
-    #         if initial
-    #             params.initial = initial
-    #         if string
-    #             params.string = string
-    #     else 
-    #         params = 
-    #             action : "get-works"
-
-
-    #     http(
-    #         url : "/query/lb-anthology.xql"
-    #         params: params
-
-
-    #     ).success (xml) ->
-
-    #         pathGroups = _.groupBy $("item", xml), (item) ->
-    #             author = $(item).find("author").attr("author_id")
-    #             # if "/" in $(item).attr("titlepath")
-    #             return author + $(item).attr("titlepath").split("/")
-    #             # else
-    #             #     return author + $(item).attr("titlepath")
-
-
-    #         rows = []
-    #         for path, elemList of pathGroups
-    #             itm = elemList[0]
-    #             if not (objFromAttrs $(itm).find("author").get(0))
-    #                 c.log "author failed", itm
-
-
-    #             obj = 
-    #                 itemAttrs : objFromAttrs itm
-    #                 # author : (objFromAttrs $(itm).find("author").get(0)) or ""
-    #                 author : _.map $(itm).find("author"), objFromAttrs
-    #                 mediatype : _.unique (_.map elemList, (item) -> $(item).attr("mediatype"))
-    #                 authorKeywords : _.pluck $(itm).find("authorkeyword"), "innerHTML"
-    #                 # mediatype : getMediatypes($(itm).attr("lbworkid"))
-
-    #             if allTitles
-    #                 obj.isTitle = true
-
-    #             rows.push obj
-
-    #         # rows = _.flatten _.values rows
-    #         def.resolve rows
-    #         # .fail -> def.reject()
-    #     return def.promise
-
-    # getAuthorList : () ->
-    #     def = $q.defer()
-    #     url = "/query/lb-authors.xql?action=get-authors"
-    #     http(
-    #         url : url
-    #         # cache: localStorageCache
-    #     ).success (xml) ->
-    #         attrArray = for item in $("item", xml)
-    #             obj = objFromAttrs item
-    #             obj.sortyear = Number(obj.sortyear)
-    #             obj
-                
-
-    #         c.log "attrArray", attrArray[0]
-    #         def.resolve attrArray
-
-    #     return def.promise
-
     getPopularAuthors : () ->
         $http(
             url : "#{STRIX_URL}/get_popular_authors"
@@ -547,13 +402,9 @@ littb.factory 'backend', ($http, $q, util) ->
             url : url
             params: params
         ).success( (response) ->
-            # if $("fel", xml).length
-            #     def.reject $("fel", xml).text()
-            # output = parseWorkInfo("result", xml)
             if response.hits == 0
                 def.reject "not_found"
                 return
-            # workinfo = data.data[0]
 
             works = response.data
             c.log "works", works
@@ -593,82 +444,6 @@ littb.factory 'backend', ($http, $q, util) ->
             url : "#{STRIX_URL}/log_library/#{filter}"
         )
 
-    ###
-    getPage : (passedParams) ->
-        def = $q.defer()
-
-        url = "/query/lb-anthology.xql"
-
-        params =
-            action : "get-work-data-init"
-            navinfo : true
-            css : true
-            workdb : true
-
-
-        http(
-            url : url
-            cache : true
-            params : _.extend {}, params, passedParams
-        ).success( (xml) ->
-            info = parseWorkInfo("LBwork", xml)
-
-            info["showtitle"] = $("showtitle:first", xml).text()
-            info["css"] = $("css", xml).text()
-            info.widths = []
-            
-            for {name, value} in _.values $("bok", xml).prop("attributes")
-                if _.str.startsWith name, "width"
-                    size = Number name.split("-")[1]
-                    info.widths[size] = value
-
-
-            pgMap = {}
-            for page in $("bok sida", xml)
-                p = $(page)
-                pgMap["ix_" + p.attr("ix")] = p.attr("sidn")
-                pgMap["page_" + p.attr("sidn")] = Number p.attr("ix")
-
-
-            info.pagemap = pgMap
-
-
-            info.parts = _.map $("LBwork part", xml), (item, i) ->
-
-                # obj = objFromAttrs(item)
-                obj = {}
-                for node in $(item).children()
-                    obj[node.nodeName] = $(node).text()
-
-                delete obj.authorid
-                delete obj["authorid-norm"]
-                obj.authors = []
-                # c.log "$(item).find('authorid')", $(item).find("authorid")
-                for node in $(item).children() when node.nodeName == "authorid"
-                    auth = authorid : $(node).text()
-                    if $(node).attr("type")
-                        auth.type = $(node).attr("type")
-                    obj.authors.push auth
-                        
-
-
-
-                obj.showtitle = obj.showtitle or obj.shorttitle or obj.title
-
-                obj.number = i
-                return obj
-
-            info.mediatypes = for mediatype in $("mediatypes mediatype", xml)
-                util.getInnerXML mediatype
-
- 
-
-            def.resolve [xml, info]
-        ).error () ->
-            def.reject(arguments...)
-
-        return def.promise
-    ###
     getAuthorInfo : (author_id) ->
         return $http(
             url : "#{STRIX_URL}/get_lb_author/" + author_id
@@ -720,95 +495,6 @@ littb.factory 'backend', ($http, $q, util) ->
         , (err) ->
             c.log "err getPartsInOthersWorks", err
         )        
-
-
-
-    # getWorksByAuthor : (author_id) ->
-
-    # getAuthorInfo : (author_id) ->
-    #     def = $q.defer()
-    #     url = "/query/lb-authors.xql"
-    #     http(
-    #         url : url
-    #         # cache: 
-    #         cache: true #localStorageCache
-    #         # params :
-    #         #     action : "get-author-data-init"
-    #         #     author_id : author_id
-
-    #     ).success( (xml) ->
-    #         authorInfo = {}
-    #         for elem in $("LBauthor", xml).children()
-    #             if elem.nodeName == "intro" 
-    #                 val = util.getInnerXML elem
-    #             else
-    #                 val = $(elem).text()
-
-    #             authorInfo[util.normalize(elem.nodeName)] = val
-
-
-    #         parseWorks = (selector) ->
-    #             titles = []
-    #             editorTitles = []
-    #             translatorTitles = []
-    #             for item in $(selector, xml)
-    #                 obj = objFromAttrs item
-    #                 obj.authors = []
-    #                 isEditor = false
-    #                 isTranslator = false
-    #                 for author in $(item).find("author")
-    #                     authObj = objFromAttrs author
-    #                     obj.authors.push authObj
-    #                     if author_id == authObj.author_id and authObj.authortype == 'editor'
-    #                         isEditor = true
-    #                     else if author_id == authObj.author_id and authObj.authortype == 'translator'
-    #                         isTranslator = true
-
-
-    #                 # if obj.authors.length > 1
-    #                 #     obj.workauthor = obj.authors[0].workauthor or author_id
-                    
-    #                 if isEditor
-    #                     editorTitles.push obj
-    #                 else if isTranslator
-    #                     translatorTitles.push obj
-    #                 else
-    #                     titles.push obj
-                
-    #             return [titles, editorTitles, translatorTitles]
-
-
-    #         [works, editorWorks, translatorWorks] = parseWorks(":root > works item")
-    #         [titles, editorTitles, translatorTitles] = parseWorks(":root > titles item")
-    #         [aboutWorks, about_editorWorks, about_translatorWorks] = parseWorks("about works item")
-    #         [aboutTitles, about_editorTitles, about_translatorTitles] = parseWorks("about titles item")
-
-    #         authorInfo.works = works
-    #         authorInfo.titles = titles
-    #         authorInfo.editorWorks = [].concat editorWorks, editorTitles
-    #         authorInfo.translatorWorks = [].concat translatorWorks, translatorTitles
-            
-    #         authorInfo.aboutWorks = aboutWorks
-    #         authorInfo.aboutTitles = aboutTitles
-    #         authorInfo.about_editorTitles = about_editorTitles
-    #         authorInfo.about_translatorTitles = about_translatorTitles
-
-    #         authorInfo.smallImage = util.getInnerXML $("image-small-uri", xml)
-    #         authorInfo.largeImage = util.getInnerXML $("image-large-uri", xml)
-    #         authorInfo.presentation = util.getInnerXML $("presentation-uri", xml)
-    #         authorInfo.bibliografi = util.getInnerXML $("bibliography-uri", xml)
-    #         authorInfo.semer = util.getInnerXML $("see-uri", xml)
-    #         authorInfo.externalref = for ref in $("LBauthor external-ref", xml)
-    #             label : util.getInnerXML $("label", ref)
-    #             url : util.getInnerXML $("url", ref)
-
-
-    #         def.resolve authorInfo
-    #     ).error (data, status, headers, config) ->
-    #         def.reject()
-
-    #     return def.promise
-
 
     getStats : () ->
         $http(
@@ -996,80 +682,6 @@ littb.factory 'backend', ($http, $q, util) ->
             overlayFactors = _.map SIZE_VALS, (val) -> val / max
             return [$(html).outerHTML(), overlayFactors]
 
-    ###
-    fetchOverlayData : (workid, ix) ->
-        $http(
-            url : "#{STRIX_URL}/get_ocr/#{workid}/#{ix}"
-        ).then (response) ->
-            c.log "response", response
-            max = _.max _.map response.data.size.split("x"), Number
-            c.log "max", max
-            factors = _.map SIZE_VALS, (val) -> val / max
-
-            TOLERANCE = 3
-            isInsideTolerence = (thisVal, ofThatVal) ->
-                Math.abs(thisVal - ofThatVal) < TOLERANCE
-
-            output = []
-
-            for obj in response.data.words
-
-                if not isInsideTolerence obj.y, prevY
-                    output.push [obj]
-                else
-                    (_.last output).push obj
-
-                prevY = obj.y
-
-
-            return [output, factors]
-    ###
-
-
-    ###
-    fetchOverlayData : (workid, ix) ->
-        def = $q.defer()
-        http(
-            url : "/query/lb-anthology.xql"
-            # url : "test.merge"
-            params:
-                action: "get-ocr"
-                pageix : ix
-                lbworkid : workid
-        ).success( (data) ->
-            # dimensions = _.map $(data).attr("rend").split("x"), Number
-            root = $("result page", data)
-            dimensions = _.map [root.attr("w"), root.attr("h")], Number
-
-            max = _.max dimensions
-            factors = _.map SIZE_VALS, (val) -> val / max
-
-            out = []
-            prevY = 0
-            TOLERANCE = 3
-            isInsideTolerence = (thisVal, ofThatVal) ->
-                Math.abs(thisVal - ofThatVal) < TOLERANCE
-
-            for elem in root.children()
-                obj = objFromAttrs elem
-                obj.word = $(elem).text()
-
-                # if ( (Number obj.y) > (prevY)) or ( (Number obj.y) > (prevY - TOLERANCE))
-                if not isInsideTolerence (Number obj.y), prevY
-                    out.push [obj]
-                else
-                    (_.last out).push obj
-
-                prevY = Number obj.y
-
-            def.resolve [out, factors]
-
-
-        ).error def.reject
-
-
-        return def.promise
-    ###
     
     autocomplete : (filterstr) ->
         $http(

@@ -91,41 +91,6 @@ littb.directive 'sortTriangles', () ->
             s.tuple = [val, false]
 
 
-# littb.directive 'letterMap', () ->
-#     template : """
-#         <table class="letters">
-#             <tr ng-repeat="row in letterArray">
-#                 <td ng-repeat="letter in row"
-#                     ng-class="{disabled: !ifShow(letter), selected: letter == selected}"
-#                     ng-click="setLetter(letter)">{{letter}}</td>
-#             </tr>
-#         </table>
-#     """
-#     replace : true
-#     scope :
-#         selected : "="
-#         enabledLetters : "="
-#         letterMapChange : "&"
-#     link : (scope, elm, attrs) ->
-#         s = scope
-
-#         s.letterArray = _.invoke([
-#             "ABCDE",
-#             "FGHIJ",
-#             "KLMNO",
-#             "PQRST",
-#             "UVWXY",
-#             "ZÅÄÖ"
-#         ], "split", "")
-
-#         s.ifShow = (letter) ->
-#             unless s.enabledLetters then return false
-#             letter in s.enabledLetters
-
-#         s.setLetter = (l) ->
-#             s.selected = l
-#             s.letterMapChange()
-
 littb.directive 'square', () ->
     template : "<div></div>"
     replace : false
