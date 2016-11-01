@@ -296,6 +296,7 @@ module.exports = function (grunt) {
           '<%= yeoman.dist %>/scripts/{,*/}*.js',
           '<%= yeoman.dist %>/styles/{,*/}*.css',
           '<%= yeoman.dist %>/img/{,*/}*.{png,jpg,jpeg,gif,webp}',
+          '!<%= yeoman.dist %>/img/favicons/**'
           // '!<%= yeoman.dist %>/img/focus_letters.svg',
           // '<%= yeoman.dist %>/styles/fonts/*'
         ]
@@ -412,7 +413,7 @@ module.exports = function (grunt) {
             '.htaccess',
             'robots.txt',
             // 'bower_components/**/*',
-            'img/{,*/}*.{gif,webp}',
+            'img/{,*/}*',
             'styles/fonts/**/*',
             'components/select2/select2.css',
             'components/select2/select2.png'
