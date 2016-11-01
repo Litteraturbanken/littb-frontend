@@ -237,6 +237,14 @@ and (max-device-width : 568px) {
     #mainview, #leftCorridor {
         display: block;
     }
+    .page-authorInfo {
+        background : none !important;
+    }
+    .logo_link_monogram {
+        background: url("../img/lb_monogram_red_black.svg") no-repeat !important;
+        background-size: cover !important;
+
+    }
     .modal-open {
         // padding-top : 2%;
         // padding-left : 4%;

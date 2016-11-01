@@ -513,12 +513,34 @@ body.modal-open {
     overflow : auto;
 }
 
+@media screen and (min-width: 768px)
+{
+    .autocomplete {
+        .modal-dialog {
+            width : 425px;
+        }
+        
+    }
+}
 .autocomplete {
-    .header {
-        color: $primarycolor;
+    .footer {
+        color: #999;
         font-size : 0.7em;
+        margin-top: 0.8em;
+        @include small-caps();
+        text-align: center;
+        a {
+            color : #999 !important;
+            &:hover {
+                color :$primarycolor !important;
+            }
+        }
+
+
+
     }
     .modal-body {
+        padding-bottom: 0.8em;
         overflow: visible;
     }
     // display : none;
@@ -538,17 +560,7 @@ body.modal-open {
         line-height : 0.9;
     }
     .dropdown-menu>.active>a, .dropdown-menu>.active>a:hover, .dropdown-menu>.active>a:focus {color : #fff}
-    // width : 50%;
     font-size: 0.8em;
-    // position: fixed;
-    // z-index: 10000;
-    // top: 10%;
-    // left: 25%;
-    // padding : 1em;
-    // box-shadow: 2px 3px 16px 2px #333;
-    
-    // border: 1px solid grey;
-    // background-color: white;
 
     .type_label {
         font-size : 0.9em;
@@ -559,7 +571,7 @@ body.modal-open {
     }
     .dropdown-menu {
         font-size : 1em;
-        width : 94%;
+        width : 90%;
     }
     
     // transition: all 300ms;
@@ -2777,6 +2789,10 @@ $partnav-width : 170px;
                 text-align: right;
                 text-transform: uppercase;
                 font-size: 0.6em;
+                max-width : 10em;
+                // @include small-caps();
+
+
                 a {
                     color : $primarycolor;
                 }
@@ -3996,6 +4012,8 @@ grundform-clean {
 .modal-header {
     font-size : 1.2em;
 }
+
+
 // .modal-dialog.fade {
 //     transition: opacity 0.1s linear;
 //     &.in {

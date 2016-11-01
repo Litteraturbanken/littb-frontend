@@ -29,6 +29,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     hasSearchInit = false
     s.auth_select_rendered = false
     s.onAuthSelectRender = () ->
+        c.log "onAuthSelectRender"
         s.auth_select_rendered = true
     # s.proofread = 'all'
 
@@ -61,7 +62,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     s.resetAuthorFilter = () ->
         s.nav_filter = null
-        searchData.resetMod().then ([kwic, sentsWithHeaders]) ->
+        searchData.resetMod().then ([sentsWithHeaders]) ->
             # s.kwic = kwic
             s.sentsWithHeaders = sentsWithHeaders
 
@@ -147,7 +148,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 post_change : (author_id) ->
                     if author_id
                         c.log "do modifySearch", author_id
+                        s.searching = true
                         searchData.modifySearch({authors: author_id, from: 0, to: s.num_hits - 1}).then ([sentsWithHeaders]) ->
+                            c.log "modifySearch args", arguments
+                            s.searching = false
                             s.sentsWithHeaders = sentsWithHeaders
 
 
@@ -359,6 +363,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.onSearchSubmit = (query) ->
         $anchorScroll("results")
         # s.resetAuthorFilter()
+        s.nav_filter = null
         s.newSearch(query)        
 
     s.searchAllInWork = (sentenceObj, index) ->
@@ -405,14 +410,13 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         def.then ([sentsWithHeaders, author_aggs]) ->
             c.log "search data slice", searchData.total_hits
 
-            # s.kwic = kwic
-            # s.hits = searchData.total_hits
             s.doc_hits = searchData.total_doc_hits
             s.total_pages = Math.ceil(s.doc_hits / s.num_hits)
 
             # TODO: silly, silly hack
-            unless $location.search().sok_filter
-                s.sentsWithHeaders = _.flatten sentsWithHeaders
+            # c.log "$location.search().sok_filter", $location.search().sok_filter
+            # unless $location.search().sok_filter
+            s.sentsWithHeaders = _.flatten sentsWithHeaders
             s.authorStatsData = author_aggs
             s.searching = false
             hasSearchInit = true

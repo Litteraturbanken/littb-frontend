@@ -3,10 +3,12 @@ SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 # STRIX_URL = "http://kappa.svenska.gu.se:8081"
 # STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+STRIX_URL = "http://litteraturbanken.se/api"
 
 if _.str.startsWith(location.host, "demolittb")
-    STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+    # STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+    STRIX_URL = "http://litteraturbanken.se/api"
     
 
 littb.factory "debounce", ($timeout) ->
@@ -185,7 +187,7 @@ expandMediatypes = (works) ->
         else
             return {
                 label : metadata.mediatype
-                url : "/#!/forfattare/#{getMainAuthor(metadata).author_id}/titlar/#{metadata.work_title_id}/sida/#{metadata.startpagename}/#{metadata.mediatype}"
+                url : "/#!/forfattare/#{getMainAuthor(metadata).author_id}/titlar/#{metadata.work_title_id or metadata.title_id}/sida/#{metadata.startpagename}/#{metadata.mediatype}"
             }
 
 
@@ -217,7 +219,7 @@ expandMediatypes = (works) ->
     return output
 
 
-littb.factory 'backend', ($http, $q, util) ->
+littb.factory 'backend', ($http, $q, util, $timeout) ->
     # $http.defaults.transformResponse = (data, headers) ->
     # localStorageCache = $angularCacheFactory "localStorageCache", 
     #     storageMode: 'localStorage'
@@ -391,13 +393,13 @@ littb.factory 'backend', ($http, $q, util) ->
                 })
                 provData.push output
             return provData
-    getSourceInfo : (key, value) ->
+    getSourceInfo : (params) ->
         # TODO: mediatype can be null?
         def = $q.defer()
         url = "#{STRIX_URL}/get_work_info"
-        params = {}
+        # params = {}
         # key is titlepath or lbworkid
-        params[key] = value
+        # params[key] = value
         $http(
             url : url
             params: params
@@ -443,6 +445,10 @@ littb.factory 'backend', ($http, $q, util) ->
         $http(
             url : "#{STRIX_URL}/log_library/#{filter}"
         )
+    logQuicksearch : (filter_val, label) ->
+        $http(
+            url : "#{STRIX_URL}/log_quicksearch/#{filter_val}/#{label}"
+        )
 
     getAuthorInfo : (author_id) ->
         return $http(
@@ -466,7 +472,7 @@ littb.factory 'backend', ($http, $q, util) ->
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
             to : 10000
-            sort: "sortkey"
+            sort_field: "sortkey|desc"
         if maybeAuthType
             params["author_type"] = maybeAuthType
         if list_about
@@ -483,7 +489,9 @@ littb.factory 'backend', ($http, $q, util) ->
 
 
     getPartsInOthersWorks : (author_id, list_about=false) ->
-        params = {}
+        params = {
+            sort_field : "sortkey|desc"
+        }
         if list_about
             params["about_author"] = true
         return $http(
@@ -686,10 +694,41 @@ littb.factory 'backend', ($http, $q, util) ->
     autocomplete : (filterstr) ->
         $http(
             url : "#{STRIX_URL}/autocomplete/#{filterstr}"
-        ).then (response) ->
-            data = response.data
+        ).then (response) =>
+            # c.log "autocomplete response", response
+            content = response.data
+            c.log("suggest!", content.suggest[0]?.text, "score", content.suggest[0]?.score)
+            if not (content.data.length or content.suggest.length)
+                data = [{
+                    # TODO: this should not be selectable
+                    label : "Inga träffar."    
+                    action: () ->
+                        return false
+                }]
+                return data
 
-            for item in data
+
+            if content.suggest.length and " " not in filterstr
+                # c.log("suggest!", content.suggest[0].text, content.suggest[0].score)
+                data = [{
+                    label : content.suggest[0].text,
+                    typeLabel: "Menade du",
+                    action: (scope) =>
+                        # c.log ("autoc", @autocomplete)
+                        # return scope.autocomplete(content.suggest[0].text)
+                        # scope.autocomplete(content.suggest[0].text).then (data) ->
+                        # scope.$apply () ->
+                        $("#autocomplete").controller("ngModel").$setViewValue(content.suggest[0].text)
+                        $("#autocomplete").val(content.suggest[0].text)
+
+                        return false
+
+                }]
+                return data
+                # for item in data.suggest
+
+
+            for item in content.data
                 if item.doc_type in ["etext", "faksimil"]
                     title_id = item.work_title_id or item.title_id
                     item.url = "/forfattare/#{item.authors[0].author_id}/titlar/#{title_id}/sida/#{item.startpagename}/#{item.doc_type}"
@@ -707,7 +746,7 @@ littb.factory 'backend', ($http, $q, util) ->
                     item.label = item.name_for_index
                     item.typeLabel = "Författare"
 
-            return data
+            return content.data
 
 
         
@@ -775,7 +814,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
                 @total_doc_hits = response.data.hits
                 @compactLeftContext(response.data.data)
 
-                sentsWithHeaders = @decorateData(response.data.data, @NUM_HIGHLIGHTS)
+                sentsWithHeaders = _.flatten @decorateData(response.data.data, @NUM_HIGHLIGHTS)
 
 
                 return [sentsWithHeaders, response.data.author_aggregation]

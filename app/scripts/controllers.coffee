@@ -374,7 +374,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         ,
             label : "Dikter, noveller, essäer, etc. som ingår i andra verk"
             data : null
-            showAuthor : "work_authors"
+            showAuthor : ""
         ,
             label : "Som utgivare"
             data : null
@@ -389,7 +389,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         c.log "getWorksByAuthor", data
         s.titleStruct[0].data = data
 
-    backend.getPartsInOthersWorks(s.author, "part").then (data) ->
+    backend.getPartsInOthersWorks(s.author).then (data) ->
         c.log "getWorksByAuthor part", data
         s.titleStruct[1].data = data
 
@@ -787,17 +787,17 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
         (_.compact [last.toUpperCase(), first]).join ","
 
-    s.log = (filename) ->
-        return true
+    # s.log = (filename) ->
+        # return true
 
-    s.fetchEpub = (row) ->
+    s.log = (row) ->
         filename = s.getFilename(row)
         backend.logDownload(row.authors[0].surname, row.shorttitle, row.lbworkid)
-        location.href = "/txt/epub/#{filename}.epub"
+        # location.href = "/txt/epub/#{filename}.epub"
 
 
     s.getFilename = (row) ->
-        row.authors[0].author_id + '_' + row.title_id
+        row.authors[0].author_id + '_' + (row.work_title_id or row.title_id)
 
 
     util.setupHashComplex s,
@@ -901,6 +901,7 @@ littb.filter "correctLink", () ->
 littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $window, $timeout, $modal) ->
     s = $scope
     modal = null
+    prevFilter = null
     close = () ->
         s.lbworkid = null
         s.$broadcast("blur")
@@ -912,8 +913,15 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
 
 
     s.onSelect = (val) ->
-        ret = val.action?()
+        c.log("scope", s)
+        backend.logQuicksearch(prevFilter, val.label)
+        
+        ret = val.action?(s)
         if ret == false then return
+        # if ret.then
+        #     ret.then (val) ->
+
+
         close()
         if val.url
             $location.url(val.url)
@@ -922,6 +930,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
 
     s.autocomplete = (val) ->
         if val
+            prevFilter = val
             return backend.autocomplete(val).then (data) ->
                 menu = [
                         label: "Start"
@@ -974,6 +983,17 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                         typeLabel: "[Red.]"
                         action : () ->
                             s.lbworkid = $(".reader_main").scope?().workinfo.lbworkid
+                            return false
+
+                if $route.current.$$route.controller in ["readingCtrl", "authorInfoCtrl"]
+                    key = {"readingCtrl" : "workinfo", "authorInfoCtrl" : "authorInfo"}[$route.current.$$route.controller]
+
+                    menu.push
+                        label : "/info"
+                        alt : "info"
+                        typeLabel: "[Red.]"
+                        action : () ->
+                            s.info = $("#mainview").scope?()[key]
                             return false
 
 
@@ -1699,9 +1719,20 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         }
 
     initSourceInfo = () ->
-        key = if title then "titlepath" else "lbworkid"
-        value = if title then title else $routeParams.lbid
-        def = backend.getSourceInfo(key, value)
+        if s.isEditor
+            params = {
+                lbworkid : $routeParams.lbid
+            }
+        else
+            params = {
+                "titlepath" : title,
+                "authorid" : author,
+                "mediatype" : mediatype
+            }
+
+        # key = if title then "titlepath" else "lbworkid"
+        # value = if title then title else $routeParams.lbid
+        def = backend.getSourceInfo(params)
         s.workinfoPromise = def 
         def.then (workinfo) ->
             s.workinfo = workinfo
@@ -1788,7 +1819,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                 s.loading = false
                 onFirstLoad()
 
-            if mediatype == "faksimil" and s.workinfo.has_ocr
+            if mediatype == "faksimil" and s.workinfo.searchable
                 backend.fetchOverlayData(s.workinfo.lbworkid, s.pageix).then ([overlayHtml, overlayFactors]) ->
                     s.overlayFactors = overlayFactors
                     s.overlayHtml = overlayHtml

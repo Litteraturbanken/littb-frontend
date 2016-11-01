@@ -39,7 +39,7 @@
             <div class="left">
                 <div class="auth_select_container" ng-show="auth_select_rendered">
                     <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" >
-                        <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | filter:{searchable : 'true'} | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
+                        <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | filter:{searchable : true} | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
                             {{author.full_name}}
                         </option>
                     </select> 
@@ -108,7 +108,6 @@
             
                 <table cellspacing="0" class="results" ng-style="{top : table_top}">
                     
-                    <!-- <tr on-finish-render="tableRenderComplete()" height="$parent.rowHeights[$index]" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.structs.text_mediatype == 'faksimil'}" > -->
                     <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.metadata.mediatype == 'faksimil'}" >
 
                         <td ng-if="sent.overflow"></td>
@@ -125,14 +124,12 @@
                                 <span class="author">{{authorsById[sent.metadata.authors[0].author_id].name_for_index}}</span> <span class="title" tooltip="{{sent.metadata.title}}"><a ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.title_id}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
                             </div>
                         </td>
-                        <!-- <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>                         -->
 
                         <td ng-if="sent.highlight" class="left_context"><!--
                             --><span ng-repeat="wd in sent.highlight.left_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
                         </td>
                         <td ng-if="sent.highlight" class="match">
                             <span ng-repeat="wd in sent.highlight.match">
-                                <!-- ng-href="/#!/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.work_title_id}}/{{sent.metadata.mediatype}}/{{wd.attrs.n}}"  -->
                                 <a ng-href="{{::sent.href}}" ng-click="save_search($index)"
                                     class="word" ng-class="{punct: wd._punct}">{{wd.word}}</a>
                             </span>
@@ -141,25 +138,6 @@
                             <span ng-repeat="wd in sent.highlight.right_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
                         </td>
                         
-                                <!-- <li ng-repeat="hit in sent.highlight"> -->
-                                
-
-
-                        <!-- <td class="header" colspan="4" ng-if="sent.isHeader">
-                            <div class="header_content">
-
-                                <span class="author">{{authorsById[sent.author_id].name_for_index}}</span> <span class="title" tooltip="{{sent.title}}"><a ng-href="/#!/forfattare/{{sent.author_id}}/titlar/{{sent.titlepath[0]}}?om-boken">{{sent.title}}</a></span>
-                            </div>
-                        </td>
-                        <td ng-if="!sent.isHeader" class="num">{{::(sent.index + 1)}}</td>
-            
-                        <td class="left_context"><span kwic-word="kwic-word" ng-repeat="wd in selectLeft(sent)"></span></td>
-                        <td class="match">
-                            <a ng-href="{{::sent.href}}" ng-click="save_search($index)">
-                                <span kwic-word="kwic-word" ng-repeat="wd in selectMatch(sent)"></span>
-                            </a>
-                        </td>
-                        <td class="right_context"><span kwic-word="kwic-word" ng-repeat="wd in selectRight(sent)"></span></td> -->
                     </tr>
                 </table>
                 
@@ -231,7 +209,7 @@
             </div>
             
         </div>
-        <ul class="navigator" ng-show="sentsWithHeaders.length" ng-style="{'max-height': container_height}">
+        <ul class="navigator" ng-hide="!sentsWithHeaders.length" ng-style="{'max-height': container_height}">
             <li><a ng-click="resetAuthorFilter()" ng-class="{selected : !nav_filter}">Visa alla</a></li>
 
             <li ng-repeat="obj in authorStatsData"  >

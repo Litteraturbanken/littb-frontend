@@ -58,7 +58,7 @@
 
                 <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                     <tr ng-repeat="work in titleobj.data | orderBy:'sortkey' track by $index">
-                        <td >
+                        <td class="mediatypes">
                             <span ng-repeat="mediatype in work.mediatypes track by $index ">
                                 <!-- <span ng-show="!$first">::: </span> -->
                                 <a ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
@@ -73,7 +73,6 @@
                                 ng-href="{{work.mediatypes[0].url + '?om-boken'}}">
                                 {{work.shorttitle || work.showtitle}}
                             </a>
-                            <!-- ng-href="/#!/forfattare/{{getWorkAuthor(work.authors).author_id}}/titlar/{{work.work_title_id}}/{{getPrimaryMediatype(works)}}/?om-boken"> -->
                                 
                             <div class="extras" ng-if="$parent.$index != 0 && work.workshorttitle">i
                                 <a class="author" href="/#!/forfattare/{{work.work_authors[0].author_id}}">

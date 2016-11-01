@@ -77,13 +77,13 @@
                                         <em>{{authorsById[normalizeAuthor(author.data['introAuthor'])].full_name}}</em> <!-- ng-click="author._show_all = true" -->
                                     </div>
                                     <ul class="links">
-                                        <li><a href="/#!/forfattare/{{::selectedAuth.author_id}}">
+                                        <li><a href="/#!/forfattare/{{::author.author_id}}">
                                             Gå till författarens sida
                                             </a></li>
-                                        <li><a href="/#!/forfattare/{{::selectedAuth.author_id}}/titlar">
+                                        <li><a href="/#!/forfattare/{{::author.author_id}}/titlar">
                                              Visa författarens verk</a>
                                         </li>
-                                        <li ng-if="author.searchable"><a href="/#!/sok?forfattare={{selectedAuth.author_id}}&avancerad">
+                                        <li ng-if="author.searchable"><a href="/#!/sok?forfattare={{author.author_id}}&avancerad">
                                              Sök i författarens verk</a>
                                         </li>
                                     </ul>

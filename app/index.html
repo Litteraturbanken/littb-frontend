@@ -25,6 +25,17 @@
         <!-- <link rel="stylesheet" href="components/nprogress/nprogress.js" /> -->
         <!-- <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/select2/3.4.5/select2.css"> -->
         <link rel="stylesheet" type="text/css" href="//cloud.typography.com/7426274/770508/css/fonts.css" />
+        
+        <!-- favicon stuff -->
+        <link rel="apple-touch-icon" sizes="180x180" href="img/favicons/apple-touch-icon.png?v=dLBd3jp9bb">
+        <link rel="icon" type="image/png" href="img/favicons/favicon-32x32.png?v=dLBd3jp9bb" sizes="32x32">
+        <link rel="icon" type="image/png" href="img/favicons/favicon-16x16.png?v=dLBd3jp9bb" sizes="16x16">
+        <link rel="manifest" href="img/favicons/manifest.json?v=dLBd3jp9bb">
+        <link rel="mask-icon" href="img/favicons/safari-pinned-tab.svg?v=dLBd3jp9bb" color="#5bbad5">
+        <link rel="shortcut icon" href="img/favicons/favicon.ico?v=dLBd3jp9bb">
+        <meta name="msapplication-config" content="img/favicons/browserconfig.xml?v=dLBd3jp9bb">
+        <meta name="theme-color" content="#ffffff">
+
     </head>
     <body ng-app="littbApp" ng-class="{focus : _focus_mode, night : _night_mode}">
         <div id="leftCorridor">
@@ -37,7 +48,7 @@
                     <a href="/#!/epub">Epubfiler</a>
                 </li>
                 <li>
-                    <a ng-click="$broadcast('show_autocomplete')">Snabbsökning</a>
+                    <a ng-click="$broadcast('show_autocomplete')" title="Snabbkommando: 's'">Snabbsökning</a>
                 </li>
                 <li>
                     <a href="/#!/sok">Sök i texterna</a>
@@ -124,21 +135,28 @@
         <script type="text/ng-template" id="autocomplete.html">
             <div class="modal-body" ng-controller="autocompleteCtrl"
             >
-                <div class="header">
-                <!-- <span class="pull-right ">esc för att stänga</span> -->
-                    <!-- <button class="btn btn-sm pull-right">Stäng</button> -->
-                </div>
-                <input type="text" 
+                
+                <input type="text" id="autocomplete"
                     ng-model="completeObj"
-                    typeahead="item as item.label for item in autocomplete($viewValue)"
+                    typeahead="item as item.label for item in (forceShow || autocomplete($viewValue))"
                     typeahead-trigger
                     focusable
                     typeahead-wait-ms="200"
                     typeahead-on-select="onSelect(completeObj)"
                     typeahead-template-url="customTemplate.html"
-                    placeholder="Gå direkt till ett verk eller en författare"
+                    placeholder="Gå till ett verk, en dikt, en novell eller en författare"
                 >
                 <pre ng-show="lbworkid">{{lbworkid}}</pre>
+                <pre ng-show="info">{{info | json}}</pre>
+
+
+                <div class="footer">
+                    <!-- <span class="">Pil upp / ner för att välja</span> -->
+                    <span class="">Gå till <a class="sc" href="/#!/bibliotek">biblioteket</a> om du vill utföra mer avancerade sökningar</span>
+
+                    
+                </div>
+
             </div>
              
         </script>
