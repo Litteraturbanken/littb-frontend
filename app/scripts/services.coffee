@@ -273,6 +273,21 @@ littb.factory 'backend', ($http, $q, util, $timeout) ->
             url : url
         )
     
+    getPodcastFeed : () ->
+        http(
+            url : "/red/ljud/feed.rss"
+        ).then (response) ->
+            c.log "feed", response.data
+            rss = response.data
+            output = for item in $("item", rss)
+                {
+                    title : $("title", item).text()
+                    url : $("enclosure", item).attr("url")
+                }
+
+            return output
+
+
     getEpub : (size) ->
         
         return $http(

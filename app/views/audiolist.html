@@ -1,0 +1,50 @@
+<meta-desc>Litteraturbankens gratis tillgängliga verk i formatet epub.</meta-desc>
+    
+    <img bkg-img src="img/moln.jpg"></img>
+
+    <div ng-class="{searching : searching}"><!-- for some reason, this breaks if dedented -->
+        <h1>Litteraturbankens epubfiler</h1>
+            
+        <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
+        
+        <div>
+            <!-- <select ng-model="authorFilter" ng-options="author.name_for_index for author in authorData | orderBy:'name_for_index'">
+                <option value="">Alla författare</option>
+            </select> -->
+
+            <div class="auth_select_container">
+                <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
+                    <option>Välj författare</option>
+                    <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
+
+                        <span class="lastname">{{author.surname}}</span>
+                    </option>
+                </select> 
+            </div>
+        
+            <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
+        </div>
+        <div class="table_container">
+            <div class="preloader"> 
+                <i class="spinner fa fa-spinner fa-pulse"></i>
+            </div>
+            <table class="contenttable">
+                <tbody><tr ng-repeat="row in rows | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
+                        <td>
+                            <a ng-href="/#!/forfattare/{{::row.authors[0].author_id}}" >{{::getAuthor(row)}}</a>
+                        </td>
+                        <td class="title">
+                            <a ng-href="/#!/forfattare/{{::row.authors[0].author_id}}/titlar/{{::row.work_title_id || row.title_id}}/etext/?om-boken" >{{::row.showtitle || row.shorttitle}}</a>
+                        </td>
+                        <td ng-click="log(row)" ng-touch="log(row)`">
+                            <a  ng-href="/txt/epub/{{getFilename(row)}}.epub">Hämta</a>
+                        </td>
+                    </tr></tbody>
+            </table>
+            <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div>
+        </div>
+    </div>
+    <!-- <div toolkit>
+        <div letter-map letter-map-change="letterChange()" selected="selectedLetter" enabled-letters="currentLetters"></div>
+    </div>
+ -->

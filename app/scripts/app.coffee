@@ -159,6 +159,11 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 controller : "epubListCtrl"
                 reloadOnSearch : false
                 title : "Gratis böcker för nerladdning i epubformatet"
+            .when "/ljudarkivet",
+                templateUrl : "views/audiolist.html"
+                controller : "audioListCtrl"
+                reloadOnSearch : false
+                title : "Gratis böcker för nerladdning i epubformatet"
             .when "/forfattare",
                 redirectTo : "/bibliotek"
 

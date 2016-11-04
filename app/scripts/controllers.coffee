@@ -725,6 +725,13 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         return titleArray
 
 
+littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter) ->
+    s = $scope
+    backend.getPodcastFeed().then (episodes) ->
+        c.log "episodes", episodes
+        s.rows = episodes
+
+
 littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
     s = $scope
     s.searching = true
