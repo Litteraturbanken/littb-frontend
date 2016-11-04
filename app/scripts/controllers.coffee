@@ -393,11 +393,11 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         c.log "getWorksByAuthor part", data
         s.titleStruct[1].data = data
 
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf,part", "editor").then (data) ->
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "editor").then (data) ->
         c.log "editor works", data
         s.titleStruct[2].data = data
     
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf,part", "translator").then (data) ->
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "translator").then (data) ->
         c.log "translator works", data
         s.titleStruct[3].data = data
 
@@ -792,7 +792,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     s.log = (row) ->
         filename = s.getFilename(row)
-        backend.logDownload(row.authors[0].surname, row.shorttitle, row.lbworkid)
+        backend.logDownload(row.authors[0].surname, encodeURIComponent(row.shorttitle), row.lbworkid)
         # location.href = "/txt/epub/#{filename}.epub"
 
 
@@ -1085,8 +1085,12 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
         $q.all([prov, lic]).then ([provData, licenseData]) ->
             s.provenanceData = provData
+            if provData.length
+                provtmpl = "<a href='#{provData[0].link}'>#{provData[0].fullname}</a>"
+            else
+                provtmpl = ""
             s.licenseData = _.template(licenseData)({
-                provenance: "<a href='#{provData[0].link}'>#{provData[0].fullname}</a>"
+                provenance: provtmpl
             })
 
 
@@ -1398,7 +1402,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         if s.isEditor
             $route.current.pathParams.ix
         else
-            $route.current.pathParams.pagename
+            $route.current.pathParams.pagename or s.startpage
     
 
     s.setPage = (ix) ->
@@ -1726,13 +1730,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         else
             params = {
                 "titlepath" : title,
-                "authorid" : author,
-                "mediatype" : mediatype
+                "authorid" : author
             }
 
-        # key = if title then "titlepath" else "lbworkid"
-        # value = if title then title else $routeParams.lbid
-        def = backend.getSourceInfo(params)
+        def = backend.getSourceInfo(params, mediatype)
         s.workinfoPromise = def 
         def.then (workinfo) ->
             s.workinfo = workinfo
@@ -1749,6 +1750,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             s.startpage = workinfo.startpagename
             s.endpage = workinfo.endpagename
+            if not pagename?
+                s.pagename = pagename = s.startpage
             s.pageix = s.pagemap["page_" + pagename]
             c.log "s.pagename", pagename
 
@@ -1777,6 +1780,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         else
             id = $routeParams.lbid or s.workinfo.lbworkid
             filename = _.str.lpad(ix + 1, 4, "0")
+            c.log "filename", ix, filename
             s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}.jpeg"
             def = $q.defer()
             def.resolve()
@@ -1794,10 +1798,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             if not s.isEditor and not isDev
                 backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
-
-            
-
-            s.setTitle "#{s.workinfo.title} sidan #{s.pagename} #{s.mediatype}"
 
             if $location.search().sok
                 s.$broadcast "popper.open.searchPopup"
@@ -1829,7 +1829,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
 
             if s.isEditor
-                fetchPage(val).then () ->
+                fetchPage(Number(val)).then () ->
                 s.loading = false
                 s.first_load = true
 
@@ -1899,17 +1899,17 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     c.log "outside params", $location.search()
     query = $location.search().s_query
     if query
-        args = {}
+        args = {
+            mediatype : mediatype
+        }
+        s.search_query = query
         for key, val of $location.search()
             if _.str.startsWith key, "s_"
-                if key == "s_text_attrs" and val
-                    args["text_attrs"] = val.split(",")
-                else    
-                    args[key[2..]] = val
+                args[key[2..]] = val
             
         searchData.newSearch(args)
         searchData.current = Number($location.search().hit_index or 0)
-        searchData.get(searchData.current)
+        searchData.get(searchData.current).then changeHit
 
     s.onGotoHitInput = () ->
         if s.showGotoHitInput
@@ -1950,7 +1950,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             lbworkid : s.workinfo.lbworkid
             prefix: $location.search().prefix
             suffix: $location.search().suffix
-            infix: $location.search().infix
+            # infix: $location.search().infix
+            mediatype : mediatype
         }
         searchArgs = {}
         for key, val of args
@@ -1960,6 +1961,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
         $location.search(searchArgs)
         c.log "searchArgs", searchArgs
+
 
         searchData.newSearch(args)
         searchData.current = 0

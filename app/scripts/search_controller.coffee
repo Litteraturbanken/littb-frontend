@@ -222,13 +222,17 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         }
         prefix = $location.search().prefix
         suffix = $location.search().suffix
-        infix = $location.search().infix
-        if prefix or suffix or infix
-            args.phrase = false
-            if prefix or suffix
-                prefix = if prefix then "*" else ""
-                suffix = if suffix then "*" else ""
-                args.query = suffix + args.query + prefix
+        if prefix
+            args.prefix = true
+        if suffix
+            args.suffix = true
+        # infix = $location.search().infix
+        # if prefix or suffix or infix
+        #     args.phrase = false
+        #     if prefix or suffix
+        #         prefix = if prefix then "*" else ""
+        #         suffix = if suffix then "*" else ""
+        #         args.query = suffix + args.query + prefix
         _.extend args, filter_params
 
         if $location.search().sok_om

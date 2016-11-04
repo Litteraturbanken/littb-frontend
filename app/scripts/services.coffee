@@ -2,14 +2,17 @@ littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 # STRIX_URL = "http://kappa.svenska.gu.se:8081"
-# STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 # STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
-STRIX_URL = "http://litteraturbanken.se/api"
+# STRIX_URL = "http://litteraturbanken.se/api"
 
 if _.str.startsWith(location.host, "demolittb")
-    # STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+    STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+    # STRIX_URL = "http://litteraturbanken.se/api"
+if _.str.startsWith(location.host, "litteraturbanken")
     STRIX_URL = "http://litteraturbanken.se/api"
     
+
 
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->
@@ -171,7 +174,8 @@ littb.factory "util", ($location) ->
 # writeDownloadableUrl = (toWorkObj) ->
     
 
-expandMediatypes = (works) ->
+expandMediatypes = (works, mainMediatype) ->
+    order = ['etext', 'faksimil', 'epub', 'pdf']
     groups = _.groupBy works, "titlepath"
     output = []
     getMainAuthor = (metadata) ->
@@ -193,7 +197,12 @@ expandMediatypes = (works) ->
 
 
     for key, group of groups
-        group = _.sortBy group, "mediatype"
+        sortWorks = (work) ->
+            if mainMediatype and (work.mediatype == mainMediatype)
+                return -10
+            else
+                return _.indexOf order, work.mediatype
+        group = _.sortBy group, sortWorks
         [main, rest...] = group
 
         main.work_title_id = main.work_title_id or main.title_id
@@ -209,7 +218,6 @@ expandMediatypes = (works) ->
 
 
         sortMedia = (item) ->
-            order = ['etext', 'faksimil', 'epub', 'pdf']
             return _.indexOf order, item.label
 
 
@@ -286,7 +294,7 @@ littb.factory 'backend', ($http, $q, util, $timeout) ->
 
 
         $http(
-            url : "#{STRIX_URL}/lb_list_all/part"
+            url : "#{STRIX_URL}/lb_list_all/etext-part,faksimil-part"
             params: params
 
 
@@ -371,7 +379,7 @@ littb.factory 'backend', ($http, $q, util, $timeout) ->
             cache: true
         ).then (response) ->
             provData = []
-            for prov, i in workinfo.provenance
+            for prov, i in (workinfo.provenance or [])
                 output = response.data[prov.library]
                 unless output
                     c.warn "Library name #{prov.library} not in provenance.json"
@@ -393,7 +401,7 @@ littb.factory 'backend', ($http, $q, util, $timeout) ->
                 })
                 provData.push output
             return provData
-    getSourceInfo : (params) ->
+    getSourceInfo : (params, mediatype) ->
         # TODO: mediatype can be null?
         def = $q.defer()
         url = "#{STRIX_URL}/get_work_info"
@@ -409,10 +417,19 @@ littb.factory 'backend', ($http, $q, util, $timeout) ->
                 return
 
             works = response.data
+            works = expandMediatypes(works, mediatype)
+
             c.log "works", works
 
+            if mediatype
+                for work in works
+                    if work.mediatype == mediatype
+                        workinfo = work
+                        break
+            else
+                workinfo = works[0]
 
-            workinfo = expandMediatypes(works)[0]
+
 
             workinfo.pagemap = {}
             for pg in workinfo.pages
@@ -735,7 +752,7 @@ littb.factory 'backend', ($http, $q, util, $timeout) ->
                     item.label = "#{item.authors[0].surname} – #{item.shorttitle}" 
                     item.typeLabel = "Verk"
                     item.mediatypeLabel = item.doc_type
-                if item.doc_type == "part"
+                if item.doc_type in ["etext-part", "faksimil-part"]
                     item.url = "/forfattare/#{item.work_authors[0].author_id}/titlar/#{item.work_title_id}/sida/#{item.startpagename}/#{item.mediatype}"
                     item.label = "#{(item.authors?[0] or item.work_authors[0]).surname} – #{item.shorttitle}"
                     item.typeLabel = "Del"
@@ -871,7 +888,10 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
                 @currentParams.to = to
 
                 @searchWorks(@currentParams).then (response) =>
-                    @data[@currentParams.from..@currentParams.to] = response[0]
+                    hits = response[0]
+                    for hit in hits
+                        i = hit.order
+                        @data[i] = hit
                     def.resolve response
             @doNewSearch = false
             return def.promise
@@ -1090,10 +1110,24 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
         constructor : () ->
             super()
             @n_times = 0
+
+        newSearch : (params) ->
+            super(params)
+            @n_times = 0
+
         submit : (query, params) ->
             c.log "params", params
             def = $q.defer()
-            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{query}?init_hits=20");
+
+            queryParams = [
+                "init_hits=20"
+            ]
+            if params.prefix
+                queryParams.push "prefix"
+            if params.suffix
+                queryParams.push "suffix"
+
+            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{params.mediatype}/#{query}?" + queryParams.join("&"));
 
             source.onmessage = (event) =>
                 data = JSON.parse(event.data)
@@ -1116,8 +1150,6 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
         searchWorks : (o) ->
             @isSearching = true
 
-
-
             params = 
                 include: @include
                 number_of_fragments: @NUM_HIGHLIGHTS + 1
@@ -1127,8 +1159,10 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
                 return @submit(o.query, params).then (data) =>
                     @isSearching = false
                     return data
-            else
+            else if @search_id
                 return @pageSearchInWork(@search_id, params.from, params.to)
+            else
+                c.warn "search in work data state error", this
 
 
         pageSearchInWork : (search_id, from, to) ->

@@ -1,7 +1,7 @@
 <meta-desc>
     {{workinfo.showtitle}} av {{authorById[author].full_name}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
-<!-- <img class="no-gradient" bkg-img src="img/las_bkg.jpg"></img> -->
+<page-title>{{workinfo.title}} sida {{pagename}} {{mediatype}}</page-title>
 <div class="reader_main" 
      ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, first_load : first_load, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr(), border : border}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
 
@@ -13,29 +13,12 @@
     <div class="etext txt"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="first_load && etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
     
-         <!-- ng-style="{height : overlayHeight, width : overlayWidth}" 
-
-          -->
-
     <div selection-sniffer
         class="overlay"
         ng-if="mediatype == 'faksimil' && overlayHtml" 
         ng-style="{width: workinfo.width['size_' + size -1] + 'px', transform: 'scale(' + overlayFactors[size -1] + ')'}"
         compile="overlayHtml | setMarkee:markee_from:markee_to" > 
     </div>
-
-     <!-- <div selection-sniffer class="overlay" ng-if="mediatype == 'faksimil' && overlaydata.length">
-         <div ng-repeat="list in overlaydata" >
-             <span big-text="obj" fac="overlayFactors[size - 1]" class="w parent" ng-repeat="obj in list" ng-style="getOverlayCss(obj)" on-finish-render="onOverlayComplete()" > </span>
-
-         </div>
-     </div> -->
-
-         <!-- <span class="word" ng-repeat="obj in list" ng-style="getOverlayCss(obj)" big-text="obj.word"></span> -->
-         <!-- <span big-text class="word" ng-repeat="obj in list" ng-style="getOverlayCss(obj)">{{obj.word}} </span> -->
-     
-     <!-- <div ng-repeat="obj in overlaydata" big-text="obj.word" ng-style="getOverlayCss(obj)" ng-mousedown="overlayMousedown()" ng-mouseup="overlayMouseup()"></div> -->
-     <!-- <span ng-repeat="obj in overlaydata" ng-style="getOverlayCss(obj)">{{obj.word}}</span> -->
 
     <div class="img_area" ng-style="{'width' : workinfo.width['size_' + size] + 'px'}">
         <img faksimil-img class="faksimil" ng-style="{'max-width' : workinfo.width['size_' + size] + 'px'}" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
@@ -62,12 +45,6 @@
             <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
         </div>
         
-        <!-- <div class="arrows">
-            <div class="up fa fa-play"></div>
-            <br>
-            <div class="down fa fa-play"></div>
-        </div> -->
-            
         <hr>
         <div class="current_part">
             <div class="header">
@@ -79,21 +56,11 @@
                     ng-show="getCurrentPart().authors.length > 1"
                 >{{authorById[auth.author_id].surname}}<span ng-if="!$last">, </span></a>
                 
-                <!-- <a ng-click="show_chapters = true" ng-show="!normalizeAuthor(getCurrentPart().author_id)">Avsnitt eller del</a> -->
-                <!-- <a ng-href="/#!/forfattare/{{normalizeAuthor(getCurrentPart().author_id)}}" ng-show="normalizeAuthor(getCurrentPart().author_id)">{{authorById[normalizeAuthor(getCurrentPart().author_id)].full_name}}</a> -->
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
             <div ng-bind="getCurrentPart().navtitle" data-ellipsis tooltip="{{getCurrentPart().title}}" class="navtitle"></div>
         </div>
         <hr class="lower">
-        <!-- <ul class="part_menu" >
-            <li><a ng-click="onPartClick(startpage)">[Start]</a></li>
-            <li ng-repeat="part in workinfo.parts | limitTo:6" tooltip="{{part.showtitle}}">
-                
-                <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle}}</a>
-            </li>
-        </ul> -->
-
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
             
             <a ng-href="{{getPageUrl(getPrevPart().startpagename)}}" ng-class="{disabled : !getPrevPart()}">Gå bakåt en del</a>
@@ -135,13 +102,10 @@
                 <li ng-show="workinfo.parts.length"><a ng-click="show_chapters = true">Innehållsförteckning</a></li>
                 <li><a ng-click="openModal()">Mer om boken</a></li>
                 <li><a ng-click="activateFocus()">Läsfokus</a></li>
-                <!-- <li>Visa som bokuppslag</li> -->
                 <li>
-                    <!-- <a popper="searchPopup" my="left center" at="left middle">Sök i verket</a>  -->
                     <a ng-show="!workinfo.searchable" class="disabled">Sök i verket</a> 
                     <a ng-show="workinfo.searchable" ng-click="openSearchWorks()">Sök i verket</a> 
 
-                    <!-- <div class="searchbox popper_menu" ng-click="$event.stopPropagation()"> -->
                     <div collapse="!show_search_work" class="searchbox" >
                         <div class="collapse-content">
                             <div class="header">

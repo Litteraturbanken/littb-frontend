@@ -200,8 +200,11 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 ],
                 template : "<div></div>"
                 controller : ["$scope", "backend", "$routeParams", "$location", ($scope, backend, $routeParams, $location) ->
-                    backend.getSourceInfo($routeParams.author, $routeParams.title).then (data) ->
-                        $location.url("/forfattare/#{$routeParams.author}/titlar/#{$routeParams.title}/#{data.mediatype}?om-boken").replace()
+                    params =
+                        authorid: $routeParams.author
+                        titlepath : $routeParams.title
+                    backend.getSourceInfo(params).then (data) ->
+                        $location.url("/forfattare/#{$routeParams.author}/titlar/#{$routeParams.title}/sida/#{data.startpagename}/#{data.mediatype}?om-boken").replace()
                 ]
 
 

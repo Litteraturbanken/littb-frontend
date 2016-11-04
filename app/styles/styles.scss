@@ -2774,9 +2774,7 @@ $partnav-width : 170px;
 
         // really for authorTitles
         .contenttable {
-            width : 100%;
             margin-bottom : 3em;
-            // margin-left : 0.2em;
             td {
                 text-align: left;
                 vertical-align : baseline;
@@ -2784,17 +2782,17 @@ $partnav-width : 170px;
                 padding : 0 2em 3px 0 !important;
             }
             td:first-child {
-                // display : none;
                 white-space: nowrap;
                 text-align: right;
                 text-transform: uppercase;
                 font-size: 0.6em;
-                max-width : 10em;
-                // @include small-caps();
-
 
                 a {
                     color : $primarycolor;
+                    &:hover {
+                        color: #333;
+                        cursor: pointer;
+                    }
                 }
             }
             td:nth-child(2) {

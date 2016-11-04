@@ -8,7 +8,7 @@
         <li>{{statsData.authors | numberFmt}} författare</li>
         <li>{{statsData.pages.etext | numberFmt}} sidor etext</li>
         <li>{{statsData.pages.faksimil | numberFmt}} sidor faksimil</li>
-        <li>{{statsData.words.etext | numberFmt}} ord</li>
+        <li>{{statsData.words.etext + statsData.words.faksimil | numberFmt}} ord</li>
         <li>{{statsData.epubs | numberFmt}} epubfiler</li>
     </ul>
     

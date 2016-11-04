@@ -333,7 +333,8 @@ littb.directive 'pageTitle', ($interpolate) ->
         wtch = scope.$watch((s) ->
             inpl(s)
         , (val) ->
-            $("head > title").text(val or "")
+            if val then val += " | Litteraturbanken"
+            $("head > title").text(val or "Litteraturbanken")
         )
 
         scope.$on "$destroy", () ->
