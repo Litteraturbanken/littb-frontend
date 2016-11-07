@@ -727,9 +727,23 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
 littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter) ->
     s = $scope
+    s.play_obj = null
+
+    s.getAuthor = (author) ->
+        [last, first] = author.name_for_index.split(",")
+
+        (_.compact [last.toUpperCase(), first]).join ","
+
+    authors.then ([authorList, authorsById]) ->
+        s.authorsById = authorsById
+
     backend.getPodcastFeed().then (episodes) ->
         c.log "episodes", episodes
         s.rows = episodes
+        s.play_obj = episodes[0]
+
+
+
 
 
 littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->

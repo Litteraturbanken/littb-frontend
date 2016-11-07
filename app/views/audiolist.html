@@ -1,17 +1,13 @@
 <meta-desc>Litteraturbankens gratis tillgängliga verk i formatet epub.</meta-desc>
     
-    <img bkg-img src="img/moln.jpg"></img>
+    <!-- <img bkg-img src="img/ljudlandskap.jpg"></img> -->
 
     <div ng-class="{searching : searching}"><!-- for some reason, this breaks if dedented -->
-        <h1>Litteraturbankens epubfiler</h1>
+        <h1>Uppläsningar och andra inspelningar</h1>
             
-        <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
+        <!-- <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p> -->
         
-        <div>
-            <!-- <select ng-model="authorFilter" ng-options="author.name_for_index for author in authorData | orderBy:'name_for_index'">
-                <option value="">Alla författare</option>
-            </select> -->
-
+        <!-- <div>
             <div class="auth_select_container">
                 <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
                     <option>Välj författare</option>
@@ -23,25 +19,41 @@
             </div>
         
             <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
-        </div>
+        </div> -->
         <div class="table_container">
             <div class="preloader"> 
                 <i class="spinner fa fa-spinner fa-pulse"></i>
             </div>
+
+            <div class="section_header">
+                <h2>Horace Engdahl läser svenska dikter</h2>
+                <div class="img_container">
+                    <img  src="img/ljudfiler/horace.jpg" alt="Horace Engdahl">
+                    <figcaption>Fotograf och copyright</figcaption>
+                </div>
+            </div>
             <table class="contenttable">
-                <tbody><tr ng-repeat="row in rows | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
+                <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
                         <td>
-                            <a ng-href="/#!/forfattare/{{::row.authors[0].author_id}}" >{{::getAuthor(row)}}</a>
+                            "{{row.title}}" av <span class="author">{{authorsById[row.author].full_name}}</span>
                         </td>
-                        <td class="title">
-                            <a ng-href="/#!/forfattare/{{::row.authors[0].author_id}}/titlar/{{::row.work_title_id || row.title_id}}/etext/?om-boken" >{{::row.showtitle || row.shorttitle}}</a>
-                        </td>
-                        <td ng-click="log(row)" ng-touch="log(row)`">
-                            <a  ng-href="/txt/epub/{{getFilename(row)}}.epub">Hämta</a>
+                        <!-- <td>
+                            <audio controls ng-src="{{row.url}}"></audio>
+                        </td> -->
+                        <td class="play" ng-touch="log(row)">
+                            <a ng-click="play_obj = row.url">Lyssna</a>
                         </td>
                     </tr></tbody>
             </table>
             <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div>
+        </div>
+        <div class="footer">
+            <div class="player_container">
+                <audio ng-src="{{play_obj.url}}" controls></audio>
+                <div class="playing">
+                    <span class="author">{{authorsById[play_obj.author].full_name}}</span>: "{{play_obj.title}}"
+                </div>
+            </div>
         </div>
     </div>
     <!-- <div toolkit>

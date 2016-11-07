@@ -227,7 +227,7 @@ expandMediatypes = (works, mainMediatype) ->
     return output
 
 
-littb.factory 'backend', ($http, $q, util, $timeout) ->
+littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
     # $http.defaults.transformResponse = (data, headers) ->
     # localStorageCache = $angularCacheFactory "localStorageCache", 
     #     storageMode: 'localStorage'
@@ -275,14 +275,16 @@ littb.factory 'backend', ($http, $q, util, $timeout) ->
     
     getPodcastFeed : () ->
         http(
-            url : "/red/ljud/feed.rss"
+            # url : "/red/ljud/feed.rss"
+            url : "feed.rss"
         ).then (response) ->
-            c.log "feed", response.data
+            # c.log "feed", response.data
             rss = response.data
             output = for item in $("item", rss)
                 {
+                    author : $("author", item).text()
                     title : $("title", item).text()
-                    url : $("enclosure", item).attr("url")
+                    url : $sce.trustAsResourceUrl($("enclosure", item).attr("url"))
                 }
 
             return output
