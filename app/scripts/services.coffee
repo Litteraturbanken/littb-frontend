@@ -275,8 +275,8 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
     
     getPodcastFeed : () ->
         http(
-            # url : "/red/ljud/feed.rss"
-            url : "feed.rss"
+            url : "/red/ljud/feed.rss"
+            # url : "feed.rss"
         ).then (response) ->
             # c.log "feed", response.data
             rss = response.data
