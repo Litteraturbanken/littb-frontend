@@ -388,9 +388,9 @@ littb.factory 'backend', ($http, $q, util, $timeout) ->
                 else 
                     textField = 'text'
                 if workinfo.mediatype == "faksimil" and workinfo.printed
-                    output.text = output[textField].faksimilnoprinted    
+                    output.text = output[textField].faksimilnoprint
                 else if workinfo.mediatype == "faksimil" and not workinfo.printed
-                    output.text = output[textField].faksimilnoprinted    
+                    output.text = output[textField].faksimilnoprint
                 else 
                     output.text = output[textField][workinfo.mediatype]
 

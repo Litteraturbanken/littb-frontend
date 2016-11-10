@@ -1639,7 +1639,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         ,
             key : "om-boken"
             scope_name : "show_about"
-            default: "lol"
+            default: "no"
             post_change : (val) ->
                 if val
                     about_modal = $modal.open
@@ -1840,6 +1840,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         c.log "setsize", index
         s.size = index
         loadPage(s.getPage())
+
+    s.isSizeDisabled = (isIncrement) ->
+        if s.isEditor then return false
+        c.log "!s.sizes?[((s.size - 1) or 0) + 1]", !s.sizes?[((s.size - 1) or 0) + 1]
+        if isIncrement
+            !s.sizes?[((s.size - 1) or 0) + 1]
+        else
+            !s.sizes?[((s.size - 1) or 0) - 1]
+
 
     watches.push s.$watch "getPage()", debounce(loadPage, 200, {leading : false})
 

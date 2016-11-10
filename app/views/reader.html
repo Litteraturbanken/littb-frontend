@@ -217,8 +217,8 @@
             </div>
             <div class="size_picker" ng-if="mediatype == 'faksimil'">
                 <h2>Ändra storlek</h2>
-                <button ng-click="setSize(size - 1)" ng-disabled="!sizes[((size - 1) || 0) - 1]" class="small_text btn btn-small">Mindre</button>
-                <button ng-click="setSize(size + 1)" ng-disabled="!sizes[((size - 1) || 0) + 1]" class="small_text btn btn-small">Större</button>
+                <button ng-click="setSize(size - 1)" ng-disabled="isSizeDisabled(false)" class="small_text btn btn-small">Mindre</button>
+                <button ng-click="setSize(size + 1)" ng-disabled="isSizeDisable(true)" class="small_text btn btn-small">Större</button>
 
 
                 <!-- <div ng-class="{selected : size, hidden : !isDefined(size)}" 
