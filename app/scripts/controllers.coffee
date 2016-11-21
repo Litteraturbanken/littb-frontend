@@ -725,9 +725,17 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         return titleArray
 
 
-littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter) ->
+littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $timeout) ->
     s = $scope
     s.play_obj = null
+
+    s.setPlayObj = (obj) ->
+        c.log "obj", obj
+        s.play_obj = obj
+
+        $timeout( () -> 
+            $("#audioplayer").get(0).play()
+        )
 
     s.getAuthor = (author) ->
         [last, first] = author.name_for_index.split(",")
@@ -737,10 +745,23 @@ littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter) ->
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
 
-    backend.getPodcastFeed().then (episodes) ->
-        c.log "episodes", episodes
-        s.rows = episodes
-        s.play_obj = episodes[0]
+    backend.getPodcastFeed().then (fileGroups) ->
+        c.log "episodes", fileGroups
+        fakeData =
+            [{
+                author : "AlmqvistCJL"
+                reader : "BaggeM"
+                title : "Du går icke ensam"
+            } ]
+
+        fileGroups.push(fakeData)
+        s.fileGroups = fileGroups
+
+
+
+
+        # s.rows = fileGroups
+        s.play_obj = fileGroups[0][0]
 
 
 

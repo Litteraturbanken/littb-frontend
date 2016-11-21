@@ -284,10 +284,13 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                 {
                     author : $("author", item).text()
                     title : $("title", item).text()
+                    reader : $("reader", item).text()
                     url : $sce.trustAsResourceUrl($("enclosure", item).attr("url"))
                 }
 
-            return output
+            groupedFiles = _.groupBy output, "reader"
+
+            return _.values groupedFiles
 
 
     getEpub : (size) ->

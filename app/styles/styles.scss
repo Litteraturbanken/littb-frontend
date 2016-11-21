@@ -3674,13 +3674,28 @@ $partnav-width : 170px;
         max-width : 650px;
     }
     #mainview {
-        width : 650px;
+        width : 66vw;
         h1, p {
             color : #333;
+        }
+        h1 {
         }
         .author {
             @include small-caps();
             color : $primarycolor;
+        }
+        .left_col {
+            display: inline-block;
+            width : 70%;
+            vertical-align: top;
+        }
+        .right_col {
+            display: inline-block;
+            width : 29%;
+            vertical-align: top;
+        }
+        .table_container {
+            margin-top: 1em;
         }
         .section_header {
             // display: inline-block;
@@ -3693,20 +3708,23 @@ $partnav-width : 170px;
                 vertical-align: top;
                 margin-right: 2em;
             }
-
+        }
+        .img_container {
+            text-align: right;
             img {
+                margin-top: 9px;
             }
+            figcaption {
+                margin-top: 10px;
+                font-size: 0.6em;
+                // font-style: italic;
 
-            .img_container {
-                display : inline;
-                text-align: right;
-                vertical-align: top;
             }
         }
         .contenttable {
             // display: inline-block;
             // vertical-align: top;
-            width : 70%;
+            width : 100%;
         }
 
         table {
@@ -3728,6 +3746,7 @@ $partnav-width : 170px;
 
             .play {
                 @include small-caps();
+                text-align: right;
             }
         }
 
