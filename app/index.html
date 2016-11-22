@@ -122,13 +122,11 @@
         </script>
 
         <script type="text/ng-template" id="customTemplate.html">
-          <a>
-              <!-- <img ng-src="http://upload.wikimedia.org/wikipedia/commons/thumb/{{match.model.flag}}" width="16"> -->
-              <!-- <span ng-bind-html="match.label | uibTypeaheadHighlight:query"></span> -->
+          <a tooltip="{{match.label}}" tooltip-popup-delay="500" tooltip-placement="right">
               <span class="type_label">
                 {{match.model.typeLabel}}<span ng-if="match.model.mediatypeLabel">,</span> {{match.model.mediatypeLabel}}
               </span>
-              <span>{{match.label}}</span>
+              <span >{{match.label}}</span>
           </a>
         </script>
 

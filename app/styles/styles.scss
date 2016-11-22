@@ -484,6 +484,7 @@ input:focus, button.btn:focus {
 
 .tooltip {
     font-size : 0.7em;
+    z-index: 9999;
 }
 .fixed {
     position : fixed;

@@ -370,22 +370,22 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     s.titleStruct = [
             label : "Tillgängliga verk"
             data : null
-            showAuthor : ""
+            showAuthor : false
         ,
             label : "Dikter, noveller, essäer, etc. som ingår i andra verk"
             data : null
-            showAuthor : ""
+            showAuthor : false
         ,
             label : "Som utgivare"
             data : null
-            showAuthor : "authors"
+            showAuthor : (work) -> work["authors"]
         ,
             label : "Som översättare"
             data : null
-            showAuthor : "authors"
+            showAuthor : (work) -> work["authors"]
     ]
 
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf").then (data) ->
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main").then (data) ->
         c.log "getWorksByAuthor", data
         s.titleStruct[0].data = data
 
@@ -415,19 +415,19 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         s.moreStruct = [
                 label : "Verk om #{s.authorInfo.full_name}"
                 data : null
-                showAuthor : "authors"
+                showAuthor : (work) -> work["authors"]
             ,
                 label : "Kortare texter om #{s.authorInfo.full_name}"
                 data : null
-                showAuthor : "work_authors"
+                showAuthor : (work) -> work["authors"] or work["work_authors"]
             ,
                 label : "Som utgivare"
                 data : null
-                showAuthor : "authors"
+                showAuthor : (work) -> work["authors"]
             ,
                 label : "Som översättare"
                 data : null
-                showAuthor : "authors"
+                showAuthor : (work) -> work["authors"]
         ]
 
         # TODO: this doesn't work at all.
@@ -563,7 +563,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     $timeout () ->
         authors.then ([authorList, authorsById]) ->
             s.authorsById = authorsById
-            s.authorData = authorList
+            s.authorData = _.map authorList, (item) ->
+                item.show
             s.authorSearching = false
 
         backend.getPopularAuthors().then (auths) ->
