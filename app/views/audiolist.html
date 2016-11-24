@@ -24,19 +24,19 @@
 
 
 
-        <div class="table_container" ng-repeat="rows in fileGroups">
+        <div class="table_container" ng-repeat="(section, rows) in fileGroups">
             <div class="preloader"> 
                 <i class="spinner fa fa-spinner fa-pulse"></i>
             </div>
 
             <div class="left_col">
                 <div class="section_header">
-                    <h2>Horace Engdahl läser svenska dikter</h2>
+                    <h2>{{section}}</h2>
                 </div>
                 <table class="contenttable">
                     <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
                             <td>
-                                "{{row.title}}" av <span class="author">{{authorsById[row.author].surname || row.author}}</span>
+                                ”{{row.title}}” av <span class="author">{{row.authors[0].surname || row.authors[0].author_id}}</span>
                             </td>
                             <td class="play">
                                 <a ng-click="setPlayObj(row)">Lyssna</a>
@@ -45,8 +45,8 @@
                 </table>
             </div>
             <div class="img_container right_col">
-                <img ng-src="/red/forfattare/{{rows[0].reader}}/{{rows[0].reader}}_large.jpeg" alt="Horace Engdahl">
-                <figcaption>{{authorsById[rows[0].reader].pictureinfo}}</figcaption>
+                <img ng-src="/red/forfattare/{{rows[0].readers[0].author_id}}/{{rows[0].readers[0].author_id}}_large.jpeg" alt="Horace Engdahl">
+                <figcaption>{{authorsById[rows[0].readers[0].author_id].pictureinfo}}</figcaption>
             </div>
             <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div>
         </div>
@@ -54,7 +54,7 @@
             <div class="player_container">
                 <audio id="audioplayer" ng-src="{{play_obj.url}}" controls></audio>
                 <div class="playing">
-                    <span class="author">{{authorsById[play_obj.author].full_name}}</span>: "{{play_obj.title}}"
+                    <span class="author">{{play_obj.authors[0].full_name}}</span>: "{{play_obj.title}}"
                 </div>
             </div>
         </div>

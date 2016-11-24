@@ -841,7 +841,12 @@ littb.directive "searchOpts", ($location, util) ->
             default : {
                 label: "SÖK EFTER ORD ELLER FRAS",
                 val: "default",
-                selected: not ($location.search().infix or $location.search().prefix or $location.search().suffix),
+                selected: not ($location.search().infix or $location.search().prefix or $location.search().suffix or $location.search().lemma),
+            }
+            lemma : {
+                label : "INKLUDERA BÖJNINGSFORMER"
+                val : "lemma"
+                selected : $location.search().lemma
             }
             prefix : {
                 label: "SÖK EFTER ORDBÖRJAN",
@@ -871,6 +876,9 @@ littb.directive "searchOpts", ($location, util) ->
         ,   
             key : "infix"
             expr: "searchOptionsMenu.infix.selected"
+        ,   
+            key : "lemma"
+            expr: "searchOptionsMenu.lemma.selected"
         ]
 
         s.searchOptSelect = (sel) ->
@@ -894,6 +902,7 @@ littb.directive "searchOpts", ($location, util) ->
                 return
             if sel.val in ["prefix", "suffix"]
                 o.default.selected = false
+                o.lemma.selected = false
                 sel.selected = !o[sel.val].selected
                 if isDeselect then o.infix.selected = false
             if sel.val == 'infix' and not isDeselect
@@ -901,6 +910,10 @@ littb.directive "searchOpts", ($location, util) ->
                 sel.selected = true
                 o.prefix.selected = true
                 o.suffix.selected = true
+                return
+            if sel.val == 'lemma' # and not isDeselect
+                deselectAll()
+                o.lemma.selected = true
                 return
             if isDeselect
                 sel.selected = false

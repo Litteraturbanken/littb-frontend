@@ -242,7 +242,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         if $location.search().titlar
             args.work_ids = $location.search().titlar
 
-
+        if not $location.search().lemma
+            args.word_form_only = true
         # if searchAnom
         #     args.anonymous = false
 
@@ -368,7 +369,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         $anchorScroll("results")
         # s.resetAuthorFilter()
         s.nav_filter = null
-        s.newSearch(query)        
+        s.newSearch(query)
 
     s.searchAllInWork = (sentenceObj, index) ->
         searchData.getMoreHighlights(sentenceObj).then (sents) ->

@@ -273,24 +273,36 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             url : url
         )
     
-    getPodcastFeed : () ->
-        http(
-            url : "/red/ljud/feed.rss"
-            # url : "feed.rss"
+    getAudioList : (params) ->
+        $http(
+            url : "#{STRIX_URL}/get_audio"
+            params : params or {}
         ).then (response) ->
-            # c.log "feed", response.data
-            rss = response.data
-            output = for item in $("item", rss)
-                {
-                    author : $("author", item).text()
-                    title : $("title", item).text()
-                    reader : $("reader", item).text()
-                    url : $sce.trustAsResourceUrl($("enclosure", item).attr("url"))
-                }
+            audioList = response.data.data
+            for item in audioList
+                item.url = $sce.trustAsResourceUrl("/red/ljud/" + item.file) 
+                item.showtitle = item.shorttitle = item.title
+            return audioList
 
-            groupedFiles = _.groupBy output, "reader"
 
-            return _.values groupedFiles
+    # getPodcastFeed : () ->
+    #     http(
+    #         url : "/red/ljud/feed.rss"
+    #         # url : "feed.rss"
+    #     ).then (response) ->
+    #         # c.log "feed", response.data
+    #         rss = response.data
+    #         output = for item in $("item", rss)
+    #             {
+    #                 author : $("author", item).text()
+    #                 title : $("title", item).text()
+    #                 reader : $("reader", item).text()
+    #                 url : $sce.trustAsResourceUrl($("enclosure", item).attr("url"))
+    #             }
+
+    #         groupedFiles = _.groupBy output, "reader"
+
+    #         return _.values groupedFiles
 
 
     getEpub : (size) ->
@@ -408,7 +420,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                 else 
                     textField = 'text'
                 if workinfo.mediatype == "faksimil" and workinfo.printed
-                    output.text = output[textField].faksimilnoprint
+                    output.text = output[textField].faksimilprint
                 else if workinfo.mediatype == "faksimil" and not workinfo.printed
                     output.text = output[textField].faksimilnoprint
                 else 
@@ -782,6 +794,11 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                     item.url = "/forfattare/#{item.author_id}"
                     item.label = item.name_for_index
                     item.typeLabel = "Författare"
+                
+                if item.doc_type == "audio"
+                    item.url = "/ljudarkivet?spela=#{item.file}"
+                    item.label = item.title
+                    item.typeLabel = "Ur ljudarkivet"
 
             return content.data
 

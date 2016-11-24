@@ -383,6 +383,14 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             label : "Som översättare"
             data : null
             showAuthor : (work) -> work["authors"]
+        ,
+            label : "Som uppläsare"
+            data : null
+            showAuthor : (work) -> [s.authorsById?[work["author_id"]]]
+        ,
+            label : "Uppläsningar"
+            data : null
+            showAuthor : false #(work) -> [s.authorsById?[work["author_id"]]]
     ]
 
     backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main").then (data) ->
@@ -402,6 +410,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         s.titleStruct[3].data = data
 
     
+
+    backend.getAudioList({reader : s.author}).then (data) ->
+        s.titleStruct[4].data = data
+        
+    backend.getAudioList({author_id : s.author}).then (data) ->
+        s.titleStruct[5].data = data
 
 
 
@@ -589,6 +603,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             s.showPopular = false
             fetchTitles()
             fetchWorks()
+            fetchAudio()
             backend.logLibrary(s.rowfilter)
         else
             s.resetView()
@@ -599,6 +614,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         # unless s.filter then return
         backend.getParts(s.rowfilter).then (titleArray) ->
             s.all_titles = titleArray
+    
+    fetchAudio = () ->
+        # unless s.filter then return
+
+        backend.getAudioList({string_filter : s.rowfilter}).then (titleArray) ->
+            s.audio_list = titleArray
 
 
 
@@ -725,13 +746,15 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         return titleArray
 
 
-littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $timeout) ->
+littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $timeout, $location) ->
     s = $scope
     s.play_obj = null
 
     s.setPlayObj = (obj) ->
         c.log "obj", obj
         s.play_obj = obj
+        c.log "obj.file", obj.file
+        $location.search("spela", obj.file)
 
         $timeout( () -> 
             $("#audioplayer").get(0).play()
@@ -745,28 +768,21 @@ littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $tim
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
 
-    backend.getPodcastFeed().then (fileGroups) ->
-        c.log "episodes", fileGroups
-        fakeData =
-            [{
-                author : "AlmqvistCJL"
-                reader : "BaggeM"
-                title : "Du går icke ensam"
-            } ]
 
-        fileGroups.push(fakeData)
-        s.fileGroups = fileGroups
+    backend.getAudioList().then (audioList) ->
+        c.log "audioList", audioList
+        s.fileGroups = _.groupBy audioList, "section"
 
-
+        if $location.search().spela
+            for item in audioList
+                if item.file == $location.search().spela
+                    s.setPlayObj(item)
+        else
+            s.play_obj = audioList[0]
 
 
-        # s.rows = fileGroups
-        s.play_obj = fileGroups[0][0]
-
-
-
-
-
+      
+    
 littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
     s = $scope
     s.searching = true
@@ -986,6 +1002,10 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                     ,
                         label: "Epub"
                         url : "/epub"
+                        typeLabel : "Gå till sidan"
+                    ,
+                        label: "Ljudarkivet"
+                        url : "/ljudarkivet"
                         typeLabel : "Gå till sidan"
                     ,
                         label: "Sök"
