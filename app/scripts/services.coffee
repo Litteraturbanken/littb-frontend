@@ -849,6 +849,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
             @savedParams = null
 
         submit : (query, params) ->
+            query = query.toLowerCase()
             $http(
                 url: "#{STRIX_URL}/lb_search_count/#{query}"
                 params : _.omit params, "number_of_fragments", "from", "to"
@@ -1168,7 +1169,7 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
                 queryParams.push "word_form_only"
 
 
-            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{params.mediatype}/#{query}?" + queryParams.join("&"));
+            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{params.mediatype}/#{query}/?" + queryParams.join("&"));
 
             source.onmessage = (event) =>
                 data = JSON.parse(event.data)

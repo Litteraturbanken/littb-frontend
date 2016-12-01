@@ -1036,6 +1036,14 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                         action : () ->
                             s.lbworkid = $(".reader_main").scope?().workinfo.lbworkid
                             return false
+                    ,
+                        label : "/öppna"
+                        alt : "öppna"
+                        typeLabel: "[Red.]"
+                        action : () ->
+                            info = $(".reader_main").scope?().workinfo
+                            window.location = "x-littb://open?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}"
+                            return false
 
                 if $route.current.$$route.controller in ["readingCtrl", "authorInfoCtrl"]
                     key = {"readingCtrl" : "workinfo", "authorInfoCtrl" : "authorInfo"}[$route.current.$$route.controller]
@@ -1047,6 +1055,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                         action : () ->
                             s.info = $("#mainview").scope?()[key]
                             return false
+                        
 
 
                 menu = _.filter menu, (item) ->
