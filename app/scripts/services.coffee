@@ -279,30 +279,11 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             params : params or {}
         ).then (response) ->
             audioList = response.data.data
-            for item in audioList
+            for item, i in audioList
                 item.url = $sce.trustAsResourceUrl("/red/ljud/" + item.file) 
                 item.showtitle = item.shorttitle = item.title
+                item.i = i
             return audioList
-
-
-    # getPodcastFeed : () ->
-    #     http(
-    #         url : "/red/ljud/feed.rss"
-    #         # url : "feed.rss"
-    #     ).then (response) ->
-    #         # c.log "feed", response.data
-    #         rss = response.data
-    #         output = for item in $("item", rss)
-    #             {
-    #                 author : $("author", item).text()
-    #                 title : $("title", item).text()
-    #                 reader : $("reader", item).text()
-    #                 url : $sce.trustAsResourceUrl($("enclosure", item).attr("url"))
-    #             }
-
-    #         groupedFiles = _.groupBy output, "reader"
-
-    #         return _.values groupedFiles
 
 
     getEpub : (size) ->
@@ -371,6 +352,14 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             def.resolve expandMediatypes(titles)
 
         return def.promise
+
+    getAboutAuthors : () ->
+        $http(
+            url : "#{STRIX_URL}/get_authorkeywords"
+        ).then (response) ->
+            return response.data
+
+
 
     getPopularAuthors : () ->
         $http(
@@ -464,9 +453,15 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
 
             workinfo.pagemap = {}
+            workinfo.stepmap = {}
+            workinfo.pagestep = Number(workinfo.pagestep)
+            workinfo.filenameMap = []
             for pg in workinfo.pages
                 workinfo.pagemap["page_" + pg.pagename] = pg.pageindex
                 workinfo.pagemap["ix_" + pg.pageindex] = pg.pagename
+                workinfo.filenameMap[pg.pageindex] = pg.imagenumber
+                if pg.pagestep
+                    workinfo.stepmap[pg.pageindex] = Number(pg.pagestep)
             delete workinfo.pages
 
             workinfo.errata = for tr in $("tr", workinfo.errata)
@@ -497,6 +492,12 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
     logQuicksearch : (filter_val, label) ->
         $http(
             url : "#{STRIX_URL}/log_quicksearch/#{filter_val}/#{label}"
+        )
+    logError : (type, payload) ->
+        $http(
+            url : "#{STRIX_URL}/log_error/#{type}"
+            params:
+                payload
         )
 
     getAuthorInfo : (author_id) ->
@@ -746,8 +747,8 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         ).then (response) =>
             # c.log "autocomplete response", response
             content = response.data
-            c.log("suggest!", content.suggest[0]?.text, "score", content.suggest[0]?.score)
-            if not (content.data.length or content.suggest.length)
+            c.log("suggest!", content.suggest?[0]?.text, "score", content.suggest?[0]?.score)
+            if not (content.data.length or content.suggest?.length)
                 data = [{
                     # TODO: this should not be selectable
                     label : "Inga träffar."    
@@ -1163,6 +1164,9 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
                 queryParams.push "prefix"
             if params.suffix
                 queryParams.push "suffix"
+            if params.word_form_only
+                queryParams.push "word_form_only"
+
 
             source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{params.mediatype}/#{query}?" + queryParams.join("&"));
 
@@ -1211,4 +1215,3 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
                 return [response.data.data]
 
 
-    # return new SearchWorkData()

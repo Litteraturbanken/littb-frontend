@@ -1,34 +1,8 @@
 <meta-desc>Litteraturbankens gratis tillgängliga verk i formatet epub.</meta-desc>
-    
-    <!-- <img bkg-img src="img/ljudlandskap.jpg"></img> -->
-
     <div ng-class="{searching : searching}"><!-- for some reason, this breaks if dedented -->
         <h1>Uppläsningar och andra inspelningar</h1>
             
-        <!-- <p>Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p> -->
-        
-        <!-- <div>
-            <div class="auth_select_container">
-                <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
-                    <option>Välj författare</option>
-                    <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
-
-                        <span class="lastname">{{author.surname}}</span>
-                    </option>
-                </select> 
-            </div>
-        
-            <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
-        </div> -->
-        
-
-
-
         <div class="table_container" ng-repeat="(section, rows) in fileGroups">
-            <div class="preloader"> 
-                <i class="spinner fa fa-spinner fa-pulse"></i>
-            </div>
-
             <div class="left_col">
                 <div class="section_header">
                     <h2>{{section}}</h2>
@@ -45,16 +19,21 @@
                 </table>
             </div>
             <div class="img_container right_col">
-                <img ng-src="/red/forfattare/{{rows[0].readers[0].author_id}}/{{rows[0].readers[0].author_id}}_large.jpeg" alt="Horace Engdahl">
-                <figcaption>{{authorsById[rows[0].readers[0].author_id].pictureinfo}}</figcaption>
+                <div style="display:inline-block" >
+                    <img ng-src="/red/forfattare/{{rows[0].readers[0].author_id}}/{{rows[0].readers[0].author_id}}_large.jpeg" alt="Horace Engdahl">
+                    <figcaption>{{authorsById[rows[0].readers[0].author_id].pictureinfo}}</figcaption>
+                </div>
             </div>
             <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div>
         </div>
+
+        <h3><a href="https://itunes.apple.com/se/podcast/litteraturbankens-upplasningar/id1180639320?l=sv">Prenumerera på Litteraturbankens inspelningar</a></h3>
+
         <div class="footer">
             <div class="player_container">
                 <audio id="audioplayer" ng-src="{{play_obj.url}}" controls></audio>
                 <div class="playing">
-                    <span class="author">{{play_obj.authors[0].full_name}}</span>: "{{play_obj.title}}"
+                    <span class="author">{{play_obj.authors[0].full_name}}</span>: ”{{play_obj.title}}”
                 </div>
             </div>
         </div>

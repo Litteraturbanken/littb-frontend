@@ -62,7 +62,7 @@
                             Inga träffar.
                         </li>
 
-                        <li ng-repeat="author in getAuthorData() | filter:filterAuthor | limitTo: rowLimit"
+                        <li ng-repeat="author in getAuthorData() | filter:filterAuthor | limitTo: rowLimit track by author.author_id"
                             ng-click="authorClick($event, author)" 
                             on-finish-render="authorRender()" 
                             id="{{author.author_id}}">
@@ -102,6 +102,24 @@
                         <li class="spinner_row" ng-show="titleSearching">
                             <i class="spinner fa fa-spinner fa-pulse"></i>
                         </li>    
+
+                        <!-- audio -->
+                        <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
+                            Ur ljudarkivet
+                        </li>
+                        
+                        <li ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
+                        
+                            <div class="header" tooltip="{{row.title}}">
+                                <span class="title">
+                                    <a ng-href="/#!/ljudarkivet?spela={{row.file}}">
+                                    {{row.shorttitle}}
+                                    </a>
+                                </span>
+                                
+                                <span class="author"><a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
+                            </div>
+                        </li>
                     
                         <li class="part_header top_header" ng-hide="titleSearching">
                             <a class="popular"
@@ -114,29 +132,6 @@
                             <a class="filtered" ng-show="!showInitial">Hela verk</a>
                             <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
                         </li>
-
-
-
-                        <!-- audio -->
-                        <li class="part_header" ng-hide="showInitial && !audio_list.length">
-                            Ur ljudarkivet
-                        </li>
-                        
-                        <li ng-repeat="row in audio_list" class="parts" ng-class="{first_part : $first}">
-                        
-                            <div class="header" tooltip="{{row.title}}">
-                                <span class="title">
-                                    <a ng-href="/#!/ljudarkivet?spela={{row.file}}">
-                                    {{row.shorttitle}}
-                                    </a>
-                                </span>
-                                
-                                <span class="author"><a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
-                            </div>
-                        </li>
-
-
-
 
                         <li ng-show="listVisibleTitles() && !(listVisibleTitles() | filter:mediatypeFilter).length">
                             Inga träffar. 

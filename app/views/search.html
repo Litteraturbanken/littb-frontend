@@ -1,5 +1,5 @@
 <meta-desc>Sök i Litteraturbanken verk</meta-desc>
-<page-title> {{pageTitle ? 'Sök: "' + pageTitle + '"' : 'Sök' }} | Litteraturbanken</page-title>
+<page-title> {{pageTitle ? 'Sök: "' + pageTitle + '"' : 'Sök' }}</page-title>
 <img bkg-img src="img/sok_bkg.jpg"></img>
 <div ng-class="{searching:searching, advanced : advanced}">
     
@@ -99,16 +99,16 @@
 
     <div class="results_container" ng-class="{searching:searching}" id="results" >
         <!-- <div class="table_viewport" ng-show="kwic" ng-scroll-event="updateOnScrollEvents($event, isEndEvent)"  > -->
-        <div class="table_viewport" ng-show="sentsWithHeaders">
+        <div class="table_viewport" ng-show="getSentsWithHeadersFromState()">
             <!-- <div class="table_container" ng-style="{height : totalHeight}" > -->
             <div class="table_container">
-                <div ng-if="!searching && sentsWithHeaders && !sentsWithHeaders.length && !searchData.total_hits">Din sökning gav inga träffar</div>
+                <div ng-if="!searching && getSentsWithHeadersFromState() && !getSentsWithHeadersFromState().length && !searchData.total_hits">Din sökning gav inga träffar</div>
                 
             
             
                 <table cellspacing="0" class="results" ng-style="{top : table_top}">
                     
-                    <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in sentsWithHeaders" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.metadata.mediatype == 'faksimil'}" >
+                    <tr on-finish-render="tableRenderComplete()" ng-repeat="sent in getSentsWithHeadersFromState()" ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.metadata.mediatype == 'faksimil'}" >
 
                         <td ng-if="sent.overflow"></td>
                         <td ng-if="sent.overflow">
@@ -149,7 +149,7 @@
     </div>
 
     <div toolkit>
-        <div class="littb_pager" ng-if="sentsWithHeaders">
+        <div class="littb_pager" ng-if="getSentsWithHeadersFromState()">
             <div>
 
 
@@ -209,7 +209,7 @@
             </div>
             
         </div>
-        <ul class="navigator" ng-hide="!sentsWithHeaders.length" ng-style="{'max-height': container_height}">
+        <ul class="navigator" ng-hide="!getSentsWithHeadersFromState().length" ng-style="{'max-height': container_height}">
             <li><a ng-click="resetAuthorFilter()" ng-class="{selected : !nav_filter}">Visa alla</a></li>
 
             <li ng-repeat="obj in authorStatsData"  >

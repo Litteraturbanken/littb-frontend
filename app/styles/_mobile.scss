@@ -233,7 +233,22 @@ and (min-device-width : 320px)
 and (max-device-width : 568px) {
 
     .page-audioList {
-        
+        #mainview {
+            width: 100vw;
+            .table_container {
+                flex-direction : column-reverse;
+            }
+            .right_col figcaption {text-align: left;}
+            .footer {
+                .player_container {
+                    margin-left: 1em;
+                    * {
+                        display : block;
+                        margin-left: 0;
+                    }
+                }
+            }
+        }
     }
 
     #bkgimg {

@@ -338,21 +338,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         # refreshBreadcrumb()
     
 
-
-    # s.hasTitles = () ->
-    #     _.any [
-    #         s.authorInfo?.works.length
-    #         s.authorInfo?.titles.length
-    #         s.authorInfo?.editorWorks.length
-    #         s.authorInfo?.translatorWorks.length
-    #     ]
-
-    # s.getWorkAuthor = (authors) ->
-    #     wa = authors[0].workauthor
-    #     if wa
-    #         return s.authorsById[wa]
-    #     else return authors[0]
-
     s.getDataSource = () ->
         if s.showpage == "titlar"
             s.titleStruct
@@ -386,11 +371,12 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         ,
             label : "Som uppläsare"
             data : null
-            showAuthor : (work) -> [s.authorsById?[work["author_id"]]]
+            showAuthor : (work) -> work["authors"]
         ,
             label : "Uppläsningar"
             data : null
-            showAuthor : false #(work) -> [s.authorsById?[work["author_id"]]]
+            showAuthor : false
+            audioExtras : true
     ]
 
     backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main").then (data) ->
@@ -444,7 +430,6 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
                 showAuthor : (work) -> work["authors"]
         ]
 
-        # TODO: this doesn't work at all.
         backend.getTextByAuthor(s.author, "etext,faksimil,pdf", null, true).then (data) ->
             c.log "about getWorksByAuthor", data
             s.moreStruct[0].data = data
@@ -512,6 +497,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.filter = ""
         s.rowfilter = ""
         s.all_titles = null
+        s.audio_list = null
 
     s.mediatypeObj = 
         etext : if $location.search().etext then false else true
@@ -577,7 +563,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     $timeout () ->
         authors.then ([authorList, authorsById]) ->
             s.authorsById = authorsById
-            s.authorData = _.map authorList, (item) ->
+            s.authorData = _.filter authorList, (item) ->
                 item.show
             s.authorSearching = false
 
@@ -616,9 +602,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             s.all_titles = titleArray
     
     fetchAudio = () ->
-        # unless s.filter then return
-
-        backend.getAudioList({string_filter : s.rowfilter}).then (titleArray) ->
+        backend.getAudioList({string_filter : s.rowfilter, sort_field: "title.raw|asc"}).then (titleArray) ->
             s.audio_list = titleArray
 
 
@@ -751,9 +735,7 @@ littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $tim
     s.play_obj = null
 
     s.setPlayObj = (obj) ->
-        c.log "obj", obj
         s.play_obj = obj
-        c.log "obj.file", obj.file
         $location.search("spela", obj.file)
 
         $timeout( () -> 
@@ -769,7 +751,7 @@ littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $tim
         s.authorsById = authorsById
 
 
-    backend.getAudioList().then (audioList) ->
+    backend.getAudioList(sort_field: "title.raw|asc").then (audioList) ->
         c.log "audioList", audioList
         s.fileGroups = _.groupBy audioList, "section"
 
@@ -779,6 +761,13 @@ littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $tim
                     s.setPlayObj(item)
         else
             s.play_obj = audioList[0]
+
+
+        $("#audioplayer").bind 'ended', () ->
+            s.$apply () ->
+                if audioList[s.play_obj.i + 1]
+                    s.setPlayObj(audioList[s.play_obj.i + 1])
+
 
 
       
@@ -1472,20 +1461,20 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.pageix = ix
         s.pageToLoad = s.pagemap["ix_" + s.pageix]
 
-    s.getStep = (ix) ->
-        s.stepmap[ix] or s.pagestep or 1
+    s.getStep = () ->
+        s.workinfo?.stepmap[s.pageix] or s.workinfo?.pagestep or 1
 
     
     s.nextPage = (event) ->
         event?.preventDefault()
         if s.isEditor
-            # s.pageix = s.pageix + s.getStep()
-            s.pageix = s.pageix + 1
+            s.pageix = s.pageix + s.getStep()
+            # s.pageix = s.pageix + 1
             s.pageToLoad = s.pageix
             return
         unless s.endpage then return
-        # newix = s.pageix + s.getStep()
-        newix = s.pageix + 1
+        newix = s.pageix + s.getStep()
+        # newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         # else
@@ -1493,14 +1482,14 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     
     s.prevPage = (event) ->
         event?.preventDefault()
-        unless s.pagemap then return
+        # unless s.pagemap then return
         if s.isEditor
-            # s.pageix = s.pageix - s.getStep()
-            s.pageix = s.pageix - 1
+            s.pageix = s.pageix - s.getStep()
+            # s.pageix = s.pageix - 1
             s.pageToLoad = s.pageix
             return
-        # newix = s.pageix - s.getStep()
-        newix = s.pageix - 1
+        newix = s.pageix - s.getStep()
+        # newix = s.pageix - 1
         if "ix_" + newix of s.pagemap
             s.setPage(newix)
         else
@@ -1521,8 +1510,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     
     s.getPrevPageUrl = () ->
         unless s.pagemap then return
-        # newix = s.pageix - s.getStep()
-        newix = s.pageix - 1
+        newix = s.pageix - s.getStep()
+        # newix = s.pageix - 1
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
@@ -1532,8 +1521,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getNextPageUrl = () ->
         unless s.endpage then return
         if s.pageix == s.pagemap["page_" + s.endpage] then return
-        # newix = s.pageix + s.getStep()
-        newix = s.pageix + 1
+        newix = s.pageix + s.getStep()
+        # newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
             "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
@@ -1842,8 +1831,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             return downloadPage(ix)
         else
             id = $routeParams.lbid or s.workinfo.lbworkid
-            filename = _.str.lpad(ix + 1, 4, "0")
-            c.log "filename", ix, filename
+            if s.isEditor
+                basename = ix + 1
+            else
+                basename = s.workinfo.filenameMap[ix]
+            filename = _.str.lpad(basename, 4, "0")
             s.url = "/txt/#{id}/#{id}_#{s.size}/#{id}_#{s.size}_#{filename}.jpeg"
             def = $q.defer()
             def.resolve()
@@ -1888,7 +1880,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
                     s.overlayHtml = overlayHtml
 
         , (err) ->
-            c.log "err", err
+            c.log "page load error", err, $location.path()
 
 
             if s.isEditor
@@ -1898,6 +1890,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
             else
                 s.error = true
+                if not isDev
+                    backend.logError "reader", {
+                        path: $location.path()
+                    }
 
     s.setSize = (index) ->
         c.log "setsize", index
@@ -1906,7 +1902,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.isSizeDisabled = (isIncrement) ->
         if s.isEditor then return false
-        c.log "!s.sizes?[((s.size - 1) or 0) + 1]", !s.sizes?[((s.size - 1) or 0) + 1]
         if isIncrement
             !s.sizes?[((s.size - 1) or 0) + 1]
         else

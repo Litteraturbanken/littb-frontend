@@ -81,12 +81,9 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.isAuthorSearch = true
 
 
-    aboutDef = backend.getTitles(false, null, null, null, true, true)
+    aboutDef = backend.getAboutAuthors()
 
-    $q.all([aboutDef, authors]).then ([titleArray, [authorList, authorsById]]) ->
-        titleArray = _.filter titleArray, (title) ->
-            title.searchable
-        aboutAuthorIds = _.compact _.pluck titleArray, "authorkeyword"
+    $q.all([aboutDef, authors]).then ([aboutAuthorIds, [authorList, authorsById]]) ->
         s.aboutAuthors = _.uniq _.map aboutAuthorIds, (id) ->
             authorsById[id]
 
@@ -101,17 +98,9 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.authorsById = authorsById
         change = (newAuthors) ->
             return unless newAuthors
+            c.log "change newAuthors", newAuthors
             backend.getTextByAuthor(newAuthors, "etext,faksimil", null, s.isAuthorAboutSearch).then (titles) ->
                 s.titles = titles
-            # $q.all _.map newAuthors.split(","), (auth) -> 
-            # backend.getTitlesByAuthor(auth, true, s.isAuthorAboutSearch)
-            # .then (results) ->
-            #     filteredTitles = _.filter (_.flatten results), (item) -> 
-
-            #         "/" not in item.titlepath
-
-            #     filteredTitles = _.uniq filteredTitles, (item) -> item.lbworkid
-            #     s.titles = filteredTitles
         
         if $location.search().forfattare
             auth = $location.search().forfattare?.split(",")
@@ -152,11 +141,17 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                         searchData.modifySearch({authors: author_id, from: 0, to: s.num_hits - 1}).then ([sentsWithHeaders]) ->
                             c.log "modifySearch args", arguments
                             s.searching = false
-                            s.sentsWithHeaders = sentsWithHeaders
+                            s.sentsNavFilter = sentsWithHeaders
 
 
 
         ]
+
+    s.getSentsWithHeadersFromState = () ->
+        if $location.search().sok_filter
+            return s.sentsNavFilter
+        else 
+            return s.sentsWithHeaders
 
 
     s.searching = false
@@ -418,9 +413,6 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             s.doc_hits = searchData.total_doc_hits
             s.total_pages = Math.ceil(s.doc_hits / s.num_hits)
 
-            # TODO: silly, silly hack
-            # c.log "$location.search().sok_filter", $location.search().sok_filter
-            # unless $location.search().sok_filter
             s.sentsWithHeaders = _.flatten sentsWithHeaders
             s.authorStatsData = author_aggs
             s.searching = false

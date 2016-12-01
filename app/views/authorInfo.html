@@ -70,11 +70,20 @@
                             <a href="/#!/forfattare/{{titleobj.showAuthor(work)[0].author_id}}">{{titleobj.showAuthor(work)[0].name_for_index}}</a>
                         </td>
                         <td>
-                            <a class="title" 
+                            <a class="title" ng-if="work.doc_type == 'audio'" 
+                                ng-href="/#!/ljudarkivet?spela={{work.file}}">
+                                {{work.shorttitle || work.showtitle}}
+                            </a>
+                            <a class="title" ng-if="work.doc_type != 'audio'" 
                                 ng-href="{{work.mediatypes[0].url + '?om-boken'}}">
                                 {{work.shorttitle || work.showtitle}}
                             </a>
-                                
+                            
+                            <div class="extras" ng-if="titleobj.audioExtras" >
+                                <a class="author" href="/#!/forfattare/{{work.readers[0].author_id}}">
+                                    Uppläsare: {{work.readers[0].full_name}}
+                                </a> 
+                            </div>
                             <div class="extras" ng-if="$parent.$index != 0 && work.workshorttitle">i
                                 <a class="author" href="/#!/forfattare/{{work.work_authors[0].author_id}}">
                                     {{work.work_authors[0].surname}}:
