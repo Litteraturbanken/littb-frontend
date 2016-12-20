@@ -27,9 +27,7 @@
       filter = element(By.model("filter"));
       filter.sendKeys("constru");
       filter.sendKeys(protractor.Key.ENTER);
-      return rows.then(function() {
-        return expect(rows.count()).toEqual(1);
-      });
+      return expect(rows.count()).toEqual(1);
     });
   });
 
@@ -45,9 +43,7 @@
       filter = element(By.model("filter"));
       filter.sendKeys("psalm");
       filter.sendKeys(protractor.Key.ENTER);
-      return rows.then(function() {
-        return expect(rows.count()).toEqual(750);
-      });
+      return expect(rows.count()).toEqual(750);
     });
   });
 
@@ -62,9 +58,7 @@
       var filter;
       filter = element(By.model("filterTxt"));
       filter.sendKeys("nordanf");
-      return rows.then(function() {
-        return expect(rows.count()).toEqual(1);
-      });
+      return expect(rows.count()).toEqual(1);
     });
   });
 
@@ -95,7 +89,7 @@
     });
   });
 
-  fdescribe("search", function() {
+  describe("search", function() {
     beforeEach(function() {
       return browser.get("http://localhost:9000/#!/sok");
     });

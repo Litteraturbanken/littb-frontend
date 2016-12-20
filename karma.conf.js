@@ -16,14 +16,15 @@ module.exports = function(config) {
     // ],
 
     files: [
+      'app/components/jquery/jquery.js',
       'app/components/angular/angular.js',
       'app/components/angular-mocks/angular-mocks.js',
       'app/components/angular-route/angular-route.js',
       'app/components/lodash/lodash.js',
-      'app/scripts/*.coffee',
-      'app/scripts/**/*.coffee',
-      'test/mock/**/*.coffee',
-      'test/spec/**/*.coffee'
+      // 'app/scripts/*.js',
+      // 'app/scripts/**/*.js',
+      'test/mock/**/*.js',
+      'test/spec/**/*.js'
     ],
 
     // list of files / patterns to exclude

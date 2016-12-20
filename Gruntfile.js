@@ -519,8 +519,8 @@ module.exports = function (grunt) {
 
   grunt.registerTask('e2e', [
     "coffee:test",
-    // 'connect:e2e',
-    // "protractor_webdriver",
+    'connect:e2e',
+    "protractor_webdriver",
     'protractor'
   ]);
   grunt.registerTask('test', [
@@ -529,8 +529,7 @@ module.exports = function (grunt) {
     'concurrent:test',
     'concurrent:server',
     'autoprefixer',
-    // 'connect:test',
-    // 'karma',
+    // 'karma', // karma currenly not in use, e2e only
     'e2e'
     
   ]);

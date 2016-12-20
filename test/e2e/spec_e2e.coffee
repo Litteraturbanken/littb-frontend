@@ -23,8 +23,7 @@ describe "works", () ->
         filter = element(By.model("filter"))
         filter.sendKeys("constru")
         filter.sendKeys(protractor.Key.ENTER)
-        rows.then () ->
-            expect(rows.count()).toEqual 1
+        expect(rows.count()).toEqual 1
 
 describe "titles", () ->
     rows = null
@@ -37,8 +36,7 @@ describe "titles", () ->
         filter = element(By.model("filter"))
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
-        rows.then () ->
-            expect(rows.count()).toEqual 750
+        expect(rows.count()).toEqual 750
 
 
 describe "epubList", () ->
@@ -52,8 +50,7 @@ describe "epubList", () ->
         filter = element(By.model("filterTxt"))
         filter.sendKeys("nordanf")
         # rows = element.all(By.repeater("row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]"))
-        rows.then () ->
-            expect(rows.count()).toEqual 1
+        expect(rows.count()).toEqual 1
 
 
 
@@ -90,25 +87,12 @@ describe "editor", () ->
 
         expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
-
-
-
-
-
 describe "search", () ->
     beforeEach () ->
         browser.get "http://localhost:9000/#!/sok"
         
 
     it "should give search results. ", () ->
-
-        # element(By.css ".open_toggle").click()
-        # won't work :(
-        # ptor.findElement((By.cssContainingText "#author_select option", "StrindbergA")).then (elem) ->
-        #     elem.click()
-
-
-        
         input = element(By.model "query")
         input.sendKeys("kriget är förklarat !")
         input.sendKeys(protractor.Key.ENTER)
