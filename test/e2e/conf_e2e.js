@@ -1,6 +1,6 @@
 
 
-var HtmlReporter = require('protractor-html-screenshot-reporter');
+// var HtmlReporter = require('protractor-html-screenshot-reporter');
 
 exports.config = {
   // The address of a running selenium server.
@@ -8,7 +8,10 @@ exports.config = {
 
   // Capabilities to be passed to the webdriver instance.
   capabilities: {
-    'browserName': 'chrome'
+    'browserName': 'chrome',
+    'chromeOptions': {
+       'args': ['--disable-extensions']
+     }
   },
 
   // Spec patterns are relative to the current working directly when
@@ -20,13 +23,22 @@ exports.config = {
     showColors: true,
     defaultTimeoutInterval: 30000
   },
+  framework: 'jasmine2',
+  // plugins: [{
+  //     package: 'protractor-screenshoter-plugin',
+  //     screenshotPath: './REPORTS/e2e',
+  //     screenshotOnExpect: 'failure+success',
+  //     screenshotOnSpec: 'none',
+  //     withLogs: 'true',
+  //     writeReportFreq: 'asap',
+  //     clearFoldersBeforeTest: true
+  // }],
 
   onPrepare: function() {
-        jasmine.getEnv().addReporter(new HtmlReporter({
-           baseDirectory: 'test/reports',
-           takeScreenShotsOnlyForFailedSpecs: true
-        }));
-     }
+      // returning the promise makes protractor wait for the reporter config before executing tests
+      // return global.browser.getProcessedConfig().then(function(config) {
+      // });
+  }
 
 
 };

@@ -2474,10 +2474,11 @@ $partnav-width : 170px;
                 }
             }
             .navtitle {
-                max-width : 70%;
+                max-width : 85%;
                 line-height : 1.3;
                 max-height : 5.5em;
                 overflow-y: hidden;
+                overflow-x: hidden;
             }
             margin-bottom : 3em;
         }

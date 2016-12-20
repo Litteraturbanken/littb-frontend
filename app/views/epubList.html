@@ -8,10 +8,6 @@
         <p class="preamble">Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
         
         <div>
-            <!-- <select ng-model="authorFilter" ng-options="author.name_for_index for author in authorData | orderBy:'name_for_index'">
-                <option value="">Alla författare</option>
-            </select> -->
-
             <div class="auth_select_container">
                 <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
                     <option>Välj författare</option>

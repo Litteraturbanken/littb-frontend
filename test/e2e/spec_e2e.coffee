@@ -2,21 +2,21 @@
 describe "authors", () ->
     rows = null
     beforeEach () ->
-        browser.get "http://localhost:9000/#!/forfattare"
-        rows = element.all(By.repeater("row in rowByLetter[selectedLetter] || rows | filter:authorFilter"))
+        browser.get "http://localhost:9000/#!/bibliotek"
+        rows = element.all(By.repeater("author in getAuthorData() | filter:filterAuthor"))
 
     it "should filter using the input", () ->
-        element(By.model("authorFilter")).sendKeys "adel"
-        rows.then () ->
-            expect(rows.count()).toEqual 1
+        filter = element(By.model("filter"))
+        filter.sendKeys "adel"
+        filter.sendKeys(protractor.Key.ENTER)
+        expect(rows.count()).toEqual 1
 
 
 describe "works", () ->
     rows = null
-    testFilter = () ->
     beforeEach () ->
-        browser.get "http://localhost:9000/#!/titlar"
-        rows = element.all(By.repeater("row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor"))
+        browser.get "http://localhost:9000/#!/bibliotek"
+        rows = element.all(By.repeater("row in listVisibleTitles() | filter:mediatypeFilter"))
 
 
     it "should filter works using the input", () ->
@@ -28,10 +28,9 @@ describe "works", () ->
 
 describe "titles", () ->
     rows = null
-    testFilter = () ->
     beforeEach () ->
-        browser.get "http://localhost:9000/#!/titlar?niva=titles"
-        rows = element.all(By.repeater("row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor"))
+        browser.get "http://localhost:9000/#!/bibliotek"
+        rows = element.all(By.repeater("row in all_titles | filter:mediatypeFilter"))
 
 
     it "should filter titles using the input", () ->
@@ -39,60 +38,57 @@ describe "titles", () ->
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         rows.then () ->
-            expect(rows.count()).toEqual 779
+            expect(rows.count()).toEqual 750
 
 
 describe "epubList", () ->
     rows = null
     beforeEach () ->
         browser.get "http://localhost:9000/#!/epub"
-        rows = element.all(By.repeater("row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]"))
+        rows = element.all(By.repeater("row in rows | filter:rowFilter"))
 
 
     it "should filter using the input", () ->
         filter = element(By.model("filterTxt"))
         filter.sendKeys("nordanf")
+        # rows = element.all(By.repeater("row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]"))
         rows.then () ->
             expect(rows.count()).toEqual 1
 
 
 
 describe "reader", () ->
-    ptor = null
-    beforeEach () ->
-        ptor = protractor.getInstance()
+    # beforeEach () ->
 
     it "should change page on click", () ->
         browser.get "http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/3/etext"
         element(By.css ".pager_ctrls a[rel=next]").click()
-        expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext")
+        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext")
     
     it "should correctly handle pagestep", () ->
         browser.get "http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
         element(By.css ".pager_ctrls a[rel=next]").click()
 
-        expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
+        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
 describe "editor", () ->
-    ptor = null
-    beforeEach () ->
-        ptor = protractor.getInstance()
+    # beforeEach () ->
 
     it "should change page on click", () ->
         browser.get "http://localhost:9000/#!/editor/lb238704/ix/3/f"
         element(By.css ".pager_ctrls a[rel=next]").click()
-        expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f")
+        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f")
 
         expect(element(By.css "img.faksimil").getAttribute("src"))
-            .toEqual("http://litteraturbanken.se/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg")
+            .toEqual("http://localhost:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg")
 
 
     
-    # it "should correctly handle pagestep", () ->
-    #     browser.get "http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
-    #     element(By.css ".pager_ctrls a[rel=next]").click()
+    it "should correctly handle pagestep", () ->
+        browser.get "http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
+        element(By.css ".pager_ctrls a[rel=next]").click()
 
-    #     expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
+        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
 
 
@@ -100,10 +96,7 @@ describe "editor", () ->
 
 
 describe "search", () ->
-    ptor = null
     beforeEach () ->
-        ptor = protractor.getInstance()
-
         browser.get "http://localhost:9000/#!/sok"
         
 
@@ -117,9 +110,8 @@ describe "search", () ->
 
         
         input = element(By.model "query")
-        input.sendKeys("kriget är förklarat!")
+        input.sendKeys("kriget är förklarat !")
         input.sendKeys(protractor.Key.ENTER)
 
-        rows = element.all(By.repeater("sent in kwic"))
-        rows.then () ->
-            expect(rows.count()).toEqual 1
+        rows = element.all(By.css(".sentence"))
+        expect(rows.count()).toEqual 1

@@ -3,24 +3,24 @@
     var rows;
     rows = null;
     beforeEach(function() {
-      browser.get("http://localhost:9000/#!/forfattare");
-      return rows = element.all(By.repeater("row in rowByLetter[selectedLetter] || rows | filter:authorFilter"));
+      browser.get("http://localhost:9000/#!/bibliotek");
+      return rows = element.all(By.repeater("author in getAuthorData() | filter:filterAuthor"));
     });
     return it("should filter using the input", function() {
-      element(By.model("authorFilter")).sendKeys("adel");
-      return rows.then(function() {
-        return expect(rows.count()).toEqual(1);
-      });
+      var filter;
+      filter = element(By.model("filter"));
+      filter.sendKeys("adel");
+      filter.sendKeys(protractor.Key.ENTER);
+      return expect(rows.count()).toEqual(1);
     });
   });
 
   describe("works", function() {
-    var rows, testFilter;
+    var rows;
     rows = null;
-    testFilter = function() {};
     beforeEach(function() {
-      browser.get("http://localhost:9000/#!/titlar");
-      return rows = element.all(By.repeater("row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor"));
+      browser.get("http://localhost:9000/#!/bibliotek");
+      return rows = element.all(By.repeater("row in listVisibleTitles() | filter:mediatypeFilter"));
     });
     return it("should filter works using the input", function() {
       var filter;
@@ -34,12 +34,11 @@
   });
 
   describe("titles", function() {
-    var rows, testFilter;
+    var rows;
     rows = null;
-    testFilter = function() {};
     beforeEach(function() {
-      browser.get("http://localhost:9000/#!/titlar?niva=titles");
-      return rows = element.all(By.repeater("row in getSource() | orderBy:sorttuple[0]:sorttuple[1] | filter:{mediatype : mediatypeFilter || ''} | filter:filterTitle | filter:filterAuthor"));
+      browser.get("http://localhost:9000/#!/bibliotek");
+      return rows = element.all(By.repeater("row in all_titles | filter:mediatypeFilter"));
     });
     return it("should filter titles using the input", function() {
       var filter;
@@ -47,7 +46,7 @@
       filter.sendKeys("psalm");
       filter.sendKeys(protractor.Key.ENTER);
       return rows.then(function() {
-        return expect(rows.count()).toEqual(779);
+        return expect(rows.count()).toEqual(750);
       });
     });
   });
@@ -57,7 +56,7 @@
     rows = null;
     beforeEach(function() {
       browser.get("http://localhost:9000/#!/epub");
-      return rows = element.all(By.repeater("row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]"));
+      return rows = element.all(By.repeater("row in rows | filter:rowFilter"));
     });
     return it("should filter using the input", function() {
       var filter;
@@ -70,53 +69,43 @@
   });
 
   describe("reader", function() {
-    var ptor;
-    ptor = null;
-    beforeEach(function() {
-      return ptor = protractor.getInstance();
-    });
     it("should change page on click", function() {
       browser.get("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/3/etext");
       element(By.css(".pager_ctrls a[rel=next]")).click();
-      return expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext");
+      return expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext");
     });
     return it("should correctly handle pagestep", function() {
       browser.get("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil");
       element(By.css(".pager_ctrls a[rel=next]")).click();
-      return expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil");
+      return expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil");
     });
   });
 
   describe("editor", function() {
-    var ptor;
-    ptor = null;
-    beforeEach(function() {
-      return ptor = protractor.getInstance();
-    });
-    return it("should change page on click", function() {
+    it("should change page on click", function() {
       browser.get("http://localhost:9000/#!/editor/lb238704/ix/3/f");
       element(By.css(".pager_ctrls a[rel=next]")).click();
-      expect(ptor.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f");
-      return expect(element(By.css("img.faksimil")).getAttribute("src")).toEqual("http://litteraturbanken.se/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg");
+      expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f");
+      return expect(element(By.css("img.faksimil")).getAttribute("src")).toEqual("http://localhost:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg");
+    });
+    return it("should correctly handle pagestep", function() {
+      browser.get("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil");
+      element(By.css(".pager_ctrls a[rel=next]")).click();
+      return expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil");
     });
   });
 
-  describe("search", function() {
-    var ptor;
-    ptor = null;
+  fdescribe("search", function() {
     beforeEach(function() {
-      ptor = protractor.getInstance();
       return browser.get("http://localhost:9000/#!/sok");
     });
     return it("should give search results. ", function() {
       var input, rows;
       input = element(By.model("query"));
-      input.sendKeys("kriget är förklarat!");
+      input.sendKeys("kriget är förklarat !");
       input.sendKeys(protractor.Key.ENTER);
-      rows = element.all(By.repeater("sent in kwic"));
-      return rows.then(function() {
-        return expect(rows.count()).toEqual(1);
-      });
+      rows = element.all(By.css(".sentence"));
+      return expect(rows.count()).toEqual(1);
     });
   });
 

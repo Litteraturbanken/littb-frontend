@@ -2,8 +2,8 @@ littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 # STRIX_URL = "http://kappa.svenska.gu.se:8081"
-STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-# STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+# STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
 # STRIX_URL = "http://litteraturbanken.se/api"
 
 if _.str.startsWith(location.host, "demolittb")

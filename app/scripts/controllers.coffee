@@ -946,7 +946,7 @@ littb.filter "correctLink", () ->
         return wrapper.html()
 
 
-littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $window, $timeout, $modal) ->
+littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $window, $timeout, $modal, $http) ->
     s = $scope
     modal = null
     prevFilter = null
@@ -1042,7 +1042,14 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                         typeLabel: "[Red.]"
                         action : () ->
                             info = $(".reader_main").scope?().workinfo
-                            window.location = "x-littb://open?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}"
+                            $http(
+                                url : "http://localhost:4321"
+                                params :
+                                    lbworkid : info.lbworkid
+                                    mediatype : info.mediatype
+                            )
+                            # window.location = "http://localhost:4321/?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}"
+
                             return false
 
                 if $route.current.$$route.controller in ["readingCtrl", "authorInfoCtrl"]

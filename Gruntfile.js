@@ -81,7 +81,7 @@ module.exports = function (grunt) {
 
     protractor: {
       options: {
-        configFile: "node_modules/protractor/referenceConf.js", // Default config file
+        // configFile: "node_modules/protractor/example/conf.js", // Default config file. overwritten below.
         keepAlive: false, // If false, the grunt process stops when the test fails.
         noColor: false, // If true, protractor will not use colors in its output.
         chromeOnly : true,
@@ -517,6 +517,12 @@ module.exports = function (grunt) {
       ]);
   });
 
+  grunt.registerTask('e2e', [
+    "coffee:test",
+    // 'connect:e2e',
+    // "protractor_webdriver",
+    'protractor'
+  ]);
   grunt.registerTask('test', [
     'clean:server',
     'configureProxies',
@@ -524,11 +530,9 @@ module.exports = function (grunt) {
     'concurrent:server',
     'autoprefixer',
     // 'connect:test',
-    // 'karma'
+    // 'karma',
+    'e2e'
     
-    'connect:e2e',
-    "protractor_webdriver",
-    'protractor'
   ]);
 
 
