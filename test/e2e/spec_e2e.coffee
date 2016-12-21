@@ -64,28 +64,33 @@ describe "reader", () ->
     
     it "should correctly handle pagestep", () ->
         browser.get "http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
-        element(By.css ".pager_ctrls a[rel=next]").click()
 
-        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
+        element(By.css ".pager_ctrls a[rel=next]").getAttribute('href').then (linkUrl) ->
+            browser.get(linkUrl)
+            expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
+
 
 describe "editor", () ->
     # beforeEach () ->
 
     it "should change page on click", () ->
         browser.get "http://localhost:9000/#!/editor/lb238704/ix/3/f"
-        element(By.css ".pager_ctrls a[rel=next]").click()
-        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f")
 
-        expect(element(By.css "img.faksimil").getAttribute("src"))
-            .toEqual("http://localhost:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg")
+        element(By.css ".pager_ctrls a[rel=next]").getAttribute("href").then () ->
+            element(By.css ".pager_ctrls a[rel=next]").click()
+            expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f")
+
+            expect(element(By.css "img.faksimil").getAttribute("src"))
+                .toEqual("http://localhost:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg")
 
 
     
     it "should correctly handle pagestep", () ->
         browser.get "http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
-        element(By.css ".pager_ctrls a[rel=next]").click()
+        element(By.css ".pager_ctrls a[rel=next]").getAttribute('href').then (linkUrl) ->
+            browser.get(linkUrl)
+            expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
-        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
 describe "search", () ->
     beforeEach () ->

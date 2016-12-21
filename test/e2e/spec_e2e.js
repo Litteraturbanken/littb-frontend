@@ -70,22 +70,28 @@
     });
     return it("should correctly handle pagestep", function() {
       browser.get("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil");
-      element(By.css(".pager_ctrls a[rel=next]")).click();
-      return expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil");
+      return element(By.css(".pager_ctrls a[rel=next]")).getAttribute('href').then(function(linkUrl) {
+        browser.get(linkUrl);
+        return expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil");
+      });
     });
   });
 
   describe("editor", function() {
     it("should change page on click", function() {
       browser.get("http://localhost:9000/#!/editor/lb238704/ix/3/f");
-      element(By.css(".pager_ctrls a[rel=next]")).click();
-      expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f");
-      return expect(element(By.css("img.faksimil")).getAttribute("src")).toEqual("http://localhost:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg");
+      return element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href").then(function() {
+        element(By.css(".pager_ctrls a[rel=next]")).click();
+        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/editor/lb238704/ix/4/f");
+        return expect(element(By.css("img.faksimil")).getAttribute("src")).toEqual("http://localhost:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg");
+      });
     });
     return it("should correctly handle pagestep", function() {
       browser.get("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil");
-      element(By.css(".pager_ctrls a[rel=next]")).click();
-      return expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil");
+      return element(By.css(".pager_ctrls a[rel=next]")).getAttribute('href').then(function(linkUrl) {
+        browser.get(linkUrl);
+        return expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil");
+      });
     });
   });
 

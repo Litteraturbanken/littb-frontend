@@ -1,7 +1,5 @@
 
 
-// var HtmlReporter = require('protractor-html-screenshot-reporter');
-
 exports.config = {
   // The address of a running selenium server.
   seleniumAddress: 'http://localhost:4444/wd/hub',
@@ -10,7 +8,7 @@ exports.config = {
   capabilities: {
     'browserName': 'chrome',
     'chromeOptions': {
-       'args': ['--disable-extensions']
+       'args': ['--disable-extensions', '--window-size=1200,900']
      }
   },
 
@@ -23,6 +21,8 @@ exports.config = {
     showColors: true,
     defaultTimeoutInterval: 30000
   },
+  // directConnect: true,
+  // restartBrowserBetweenTests: true,
   framework: 'jasmine2',
   // plugins: [{
   //     package: 'protractor-screenshoter-plugin',

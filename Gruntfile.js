@@ -180,11 +180,6 @@ module.exports = function (grunt) {
           }
       }
     },
-    open: {
-      server: {
-        url: 'http://localhost:<%= connect.options.port %>'
-      }
-    },
     clean: {
       dist: {
         options : {
@@ -512,7 +507,6 @@ module.exports = function (grunt) {
         'concurrent:server',
         'autoprefixer',
         'connect:livereload',
-        // 'open',
         'watch'
       ]);
   });
@@ -536,7 +530,7 @@ module.exports = function (grunt) {
 
 
   grunt.registerTask('build', [
-    // 'test',
+    'test',
     'clean:dist',
     'wiredep',
     'useminPrepare',
