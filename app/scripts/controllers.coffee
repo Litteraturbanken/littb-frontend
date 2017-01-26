@@ -379,7 +379,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             audioExtras : true
     ]
 
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main").then (data) ->
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main,scholar").then (data) ->
         c.log "getWorksByAuthor", data
         s.titleStruct[0].data = data
 
