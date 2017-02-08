@@ -500,6 +500,21 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                 payload
         )
 
+
+    getBackgroundConf : () ->
+        http(
+            url : "/red/bilder/bakgrundsbilder/backgrounds.xml"
+        ).then (response) ->
+            output = {}
+            for node in $("background", response.data)
+                output[$(node).attr("target")] = 
+                    "url" : $(node).attr("url")
+                    "style" : $("style", node).get(0)
+            return output
+
+
+
+
     getAuthorInfo : (author_id) ->
         return $http(
             url : "#{STRIX_URL}/get_lb_author/" + author_id
@@ -806,6 +821,25 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
         
         
+littb.factory "bkgConf", (backend) ->
+    confPromise = backend.getBackgroundConf()
+
+    return {
+        get : (page) ->
+
+            confPromise.then (conf) ->
+                c.log "conf", conf, page
+
+                if conf[page]
+                    return conf[page]
+
+
+                for key, val of conf
+                    c.log "key", key
+                    if page.match(key.replace("/*", ".*"))
+                        return val
+
+    }
 
 
 littb.factory "authors", (backend, $q) ->

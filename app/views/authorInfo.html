@@ -1,9 +1,9 @@
 <meta-desc>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</meta-desc>
 <page-title>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</page-title>
 <img ng-if="!slaMode" bkg-img class="no-gradient" src="img/forf2_bkg.jpg"></img>
-<img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img>
+<!-- <img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img> -->
 
-<img ng-if="slaMode && showpage != 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img>
+<!-- <img ng-if="slaMode && showpage != 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img> -->
 
 <div ng-class="{searching:!authorInfo, show_large : show_large}">
     <div class="preloader"> 
@@ -71,11 +71,13 @@
                         </td>
                         <td>
                             <a class="title" ng-if="work.doc_type == 'audio'" 
-                                ng-href="/#!/ljudarkivet?spela={{work.file}}">
+                                ng-href="/#!/ljudarkivet?spela={{work.file}}"
+                                tooltip="{{getTitleTooltip(work)}}">
                                 {{work.shorttitle || work.showtitle}}
                             </a>
                             <a class="title" ng-if="work.doc_type != 'audio'" 
-                                ng-href="{{work.mediatypes[0].url + '?om-boken'}}">
+                                ng-href="{{work.mediatypes[0].url + '?om-boken'}}"
+                                tooltip="{{getTitleTooltip(work)}}">
                                 {{work.shorttitle || work.showtitle}}
                             </a>
                             

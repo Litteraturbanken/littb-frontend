@@ -101,7 +101,6 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                         $scope.title = $("<root>#{data}</root>").find("h1").text()
                                         $scope.title = $scope.title.split(" ")[0...5].join(" ")
                                         $scope.setTitle $scope.title
-                                        # $scope.appendCrumb $scope.title
                 ]
                 template : '''
                         <meta-desc>{{title}}</meta-desc>
@@ -297,8 +296,9 @@ littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
 
 
 
-littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
+littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
     c.log "run search params", $location.search()
+
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
         $rootElement.addClass("ready").removeClass("not_ready")
@@ -373,14 +373,25 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
             delete $rootScope.isSla
 
 
-        # c.log "newRoute?.breadcrumb", newRoute?.breadcrumb
-        # $rootScope.breadcrumb = for item in newRoute?.breadcrumb or []
-        #     if _.isObject item 
-        #         item 
-        #     else
-        #         {label : item, url : "/#!/" + normalizeUrl(item).join("")}
+        firstRoute.resolve()    
 
-        firstRoute.resolve()
+        path = $location.path()
+        # alt = "/" + _.str.ltrim(path, "/").split("/")
+
+
+
+        bkgConf.get(path).then (confObj) ->
+            c.log "bkgConf", confObj
+            if confObj
+                $("body").css
+                    "background" : "url('#{confObj.url}') no-repeat"
+
+                $("#confObjStyle").text($(confObj.style).text())
+            else
+                $("body").css
+                    "background-image" : "none"
+                
+                $("#confObjStyle").text("")
 
     ###
     $rootScope.scrollPos = {} # scroll position of each view
@@ -415,22 +426,6 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout) ->
 
         _.map str, (letter) ->
             trans[letter.toLowerCase()] or letter
-
-
-    
-
-    $rootScope.appendCrumb = (input) ->
-        if _.isArray input
-            array = input
-        else if _.isString input
-            array = [{label : input}]
-        else if _.isObject input
-            array = [input]
-
-        $rootScope.breadcrumb = [].concat $rootScope.breadcrumb, array
-
-    
-
 
 
 littb.filter "setMarkee", () ->

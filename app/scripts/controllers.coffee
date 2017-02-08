@@ -78,7 +78,7 @@ littb.filter "authorYear", () ->
         death = obj.death?.plain
         if (isFalsy birth) and (isFalsy death) then return ""
         if isFalsy death then return "f. #{birth}"
-        if isFalsy obj.birth?.date then return "d. #{death}"
+        if isFalsy birth then return "d. #{death}"
         return "#{birth}-#{death}"
 
 
@@ -239,6 +239,10 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
                 s.show_large = false
         return
 
+    s.getTitleTooltip = (attrs) ->
+        unless attrs then return
+        return attrs.title unless attrs.shorttitle == attrs.title
+
     refreshRoute = () ->
         s.showpage = $location.path().split("/")[3]
         unless s.showpage then s.showpage = "introduktion"
@@ -357,6 +361,10 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             data : null
             showAuthor : false
         ,
+            label : "Tillgängliga verk"
+            data : null
+            showAuthor : false
+        ,
             label : "Dikter, noveller, essäer, etc. som ingår i andra verk"
             data : null
             showAuthor : false
@@ -382,26 +390,30 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main").then (data) ->
         c.log "getWorksByAuthor", data
         s.titleStruct[0].data = data
+    
+    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "scholar").then (data) ->
+        c.log "getWorksByAuthor", data
+        s.titleStruct[1].data = data
 
     backend.getPartsInOthersWorks(s.author).then (data) ->
         c.log "getWorksByAuthor part", data
-        s.titleStruct[1].data = data
+        s.titleStruct[2].data = data
 
     backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "editor").then (data) ->
         c.log "editor works", data
-        s.titleStruct[2].data = data
+        s.titleStruct[3].data = data
     
     backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "translator").then (data) ->
         c.log "translator works", data
-        s.titleStruct[3].data = data
+        s.titleStruct[4].data = data
 
     
 
     backend.getAudioList({reader : s.author}).then (data) ->
-        s.titleStruct[4].data = data
+        s.titleStruct[5].data = data
         
     backend.getAudioList({author_id : s.author}).then (data) ->
-        s.titleStruct[5].data = data
+        s.titleStruct[6].data = data
 
 
 
@@ -1036,21 +1048,20 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                         action : () ->
                             s.lbworkid = $(".reader_main").scope?().workinfo.lbworkid
                             return false
-                    ,
-                        label : "/öppna"
-                        alt : "öppna"
-                        typeLabel: "[Red.]"
-                        action : () ->
-                            info = $(".reader_main").scope?().workinfo
-                            $http(
-                                url : "http://localhost:4321"
-                                params :
-                                    lbworkid : info.lbworkid
-                                    mediatype : info.mediatype
-                            )
-                            # window.location = "http://localhost:4321/?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}"
+                    # ,
+                    #     label : "/öppna"
+                    #     alt : "öppna"
+                    #     typeLabel: "[Red.]"
+                    #     action : () ->
+                    #         info = $(".reader_main").scope?().workinfo
+                    #         $http(
+                    #             url : "http://localhost:4321"
+                    #             params :
+                    #                 lbworkid : info.lbworkid
+                    #                 mediatype : info.mediatype
+                    #         )
 
-                            return false
+                    #         return false
 
                 if $route.current.$$route.controller in ["readingCtrl", "authorInfoCtrl"]
                     key = {"readingCtrl" : "workinfo", "authorInfoCtrl" : "authorInfo"}[$route.current.$$route.controller]

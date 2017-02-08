@@ -58,7 +58,7 @@
                 
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
-            <div ng-bind="getCurrentPart().navtitle" data-ellipsis tooltip="{{getCurrentPart().title}}" class="navtitle"></div>
+            <div ng-bind="getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title" data-ellipsis tooltip="{{getCurrentPart().navtitle}}" class="navtitle"></div>
         </div>
         <hr class="lower">
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
@@ -218,7 +218,7 @@
             <div class="size_picker" ng-if="mediatype == 'faksimil'">
                 <h2>Ändra storlek</h2>
                 <button ng-click="setSize(size - 1)" ng-disabled="isSizeDisabled(false)" class="small_text btn btn-small">Mindre</button>
-                <button ng-click="setSize(size + 1)" ng-disabled="isSizeDisable(true)" class="small_text btn btn-small">Större</button>
+                <button ng-click="setSize(size + 1)" ng-disabled="isSizeDisabled(true)" class="small_text btn btn-small">Större</button>
 
 
                 <!-- <div ng-class="{selected : size, hidden : !isDefined(size)}" 
