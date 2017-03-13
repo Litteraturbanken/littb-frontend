@@ -754,7 +754,10 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             # c.log $(html)
             max = _.max _.map $(html).data("size").split("x"), Number
             overlayFactors = _.map SIZE_VALS, (val) -> val / max
-            return [$(html).outerHTML(), overlayFactors]
+
+            xmlSerializer = new XMLSerializer()
+            result = xmlSerializer.serializeToString(html)
+            return [result, overlayFactors]
 
     
     autocomplete : (filterstr) ->

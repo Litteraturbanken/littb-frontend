@@ -1846,7 +1846,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         def = backend.getHtmlFile(url)
         def.then (html) ->
             # since we use hard line breaks, soft hyphen needs to be replaced by actual hyphen
-            s.etext_html = html.data.firstChild.innerHTML.replace(/­/g, "-") # there's a soft hyphen in there, trust me
+            xmlSerializer = new XMLSerializer()
+            childNodes = []
+            for child in html.data.firstChild.childNodes
+                childNodes.push xmlSerializer.serializeToString(child)
+            s.etext_html = childNodes.join("").replace(/­/g, "-") # there's a soft hyphen in there, trust me
             return s.etext_html
 
         return def
