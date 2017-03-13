@@ -509,6 +509,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             for node in $("background", response.data)
                 output[$(node).attr("target")] = 
                     "url" : $(node).attr("url")
+                    "class" : $(node).attr("class")
                     "style" : $("style", node).get(0)
             return output
 
@@ -835,8 +836,8 @@ littb.factory "bkgConf", (backend) ->
 
 
                 for key, val of conf
-                    c.log "key", key
-                    if page.match(key.replace("/*", ".*"))
+                    c.log "key", key, page
+                    if page.match("^" + key.replace("/*", ".*") + "$")
                         return val
 
     }

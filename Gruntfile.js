@@ -545,6 +545,21 @@ module.exports = function (grunt) {
     'usemin'
   ]);
 
+  grunt.registerTask('quickbuild', [
+    'clean:dist',
+    'wiredep',
+    'useminPrepare',
+    'concurrent:dist',
+    'autoprefixer',
+    'concat',
+    'copy:dist',
+    'ngAnnotate',
+    'cssmin',
+    'uglify',
+    'filerev',
+    'usemin'
+  ]);
+
 
 
   grunt.registerTask('default', ['build']);

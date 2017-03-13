@@ -4626,6 +4626,14 @@ grundform-clean {
             padding : 0;
         }
     }
+    
+    &.bkg-add-border .content {
+        padding: 1em 2em;
+        border: 1px solid #333;
+        height: 75vh;
+        overflow-y: auto;
+    }
+
 
     li {
         max-width : 500px;

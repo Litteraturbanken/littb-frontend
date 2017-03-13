@@ -379,7 +379,8 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
         # alt = "/" + _.str.ltrim(path, "/").split("/")
 
 
-
+        $("#confObjStyle").text("")
+        stripClass("bkg")
         bkgConf.get(path).then (confObj) ->
             c.log "bkgConf", confObj
             if confObj
@@ -387,11 +388,15 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
                     "background" : "url('#{confObj.url}') no-repeat"
 
                 $("#confObjStyle").text($(confObj.style).text())
+                if confObj["class"]
+                    for className in confObj["class"].split(" ")
+                        $("body").addClass("bkg-" + className)
+
+
             else
                 $("body").css
                     "background-image" : "none"
                 
-                $("#confObjStyle").text("")
 
     ###
     $rootScope.scrollPos = {} # scroll position of each view
