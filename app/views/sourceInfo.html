@@ -1,5 +1,5 @@
-<page-title>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</page-title>
-<meta-desc>{{getValidAuthors() | formatAuthors:authorById}} – {{data.title}}. Om boken</meta-desc>
+<page-title>{{getValidAuthors() | formatAuthors:authorById}} – {{workinfo.title}}. Om boken</page-title>
+<meta-desc>{{getValidAuthors() | formatAuthors:authorById}} – {{workinfo.title}}. Om boken</meta-desc>
 <div class="maincontent" ng-class="{searching:!workinfo}" ng-controller="sourceInfoCtrl">
     <div ng-show="loading" class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div ng-if="error" class="error">Ett fel har uppstått.</div>
@@ -22,13 +22,13 @@
             <p class="sourcedesc" ng-bind-html="workinfo.sourcedesc | trust"></p>
             <div class="sourcedescauthor">{{authorById[workinfo.sourcedescAuthor].full_name}}</div>
             
-            <div ng-show="workinfo.mediatype" class="mediatypes" ng-class="{bold : workinfo.workintro}">
+            <div ng-show="workinfo.mediatype" class="mediatypes" ng-class="{larger : workinfo.workintro}">
                 Läs verket som <a class="sc" ng-href="{{workinfo.mediatypes[0].url}}">{{workinfo.mediatypes[0].label}}</a>
                 <span ng-show="getReadMediatypes().length > 1">
                     eller <a class="sc" ng-href="{{getReadMediatypes()[1].url}}">{{getReadMediatypes()[1].label}}</a>
                 </span>
             </div>
-            <div ng-show="workinfo.mediatypes.length > 1" class="mediatypes_also">
+            <div ng-show="getDownloadMediatypes().length > 1" class="mediatypes_also">
                 Ladda ner 
                 <a class="sc" ng-href="{{getDownloadMediatypes()[0].url}}"
                 ng-click="downloadFile(getDownloadMediatypes()[0].url)">{{getDownloadMediatypes()[0].label}}</a> <!-- ({{getFileSize(getDownloadMediatypes()[0])}}) -->

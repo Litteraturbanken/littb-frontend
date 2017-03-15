@@ -360,61 +360,51 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             label : "Tillgängliga verk"
             data : null
             showAuthor : false
-        ,
-            label : "Tillgängliga verk"
-            data : null
-            showAuthor : false
+            def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main,scholar")
         ,
             label : "Dikter, noveller, essäer, etc. som ingår i andra verk"
             data : null
             showAuthor : false
+            def : backend.getPartsInOthersWorks(s.author)
+        ,
+            label : "Som fotograf"
+            data : null
+            showAuthor : (work) -> work["authors"]
+            def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "photographer")
+        ,
+            label : "Som illustratör"
+            data : null
+            showAuthor : (work) -> work["authors"]
+            def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "illustrator")
         ,
             label : "Som utgivare"
             data : null
             showAuthor : (work) -> work["authors"]
+            def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "editor")
         ,
             label : "Som översättare"
             data : null
             showAuthor : (work) -> work["authors"]
+            def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "translator")
         ,
             label : "Som uppläsare"
             data : null
             showAuthor : (work) -> work["authors"]
+            def : backend.getAudioList({reader : s.author})
         ,
             label : "Uppläsningar"
             data : null
             showAuthor : false
+            def : backend.getAudioList({author_id : s.author})
             audioExtras : true
     ]
 
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main,scholar").then (data) ->
-        c.log "getWorksByAuthor", data
-        s.titleStruct[0].data = data
-    
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "scholar").then (data) ->
-        c.log "getWorksByAuthor", data
-        s.titleStruct[1].data = data
-
-    backend.getPartsInOthersWorks(s.author).then (data) ->
-        c.log "getWorksByAuthor part", data
-        s.titleStruct[2].data = data
-
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "editor").then (data) ->
-        c.log "editor works", data
-        s.titleStruct[3].data = data
-    
-    backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "translator").then (data) ->
-        c.log "translator works", data
-        s.titleStruct[4].data = data
-
-    
-
-    backend.getAudioList({reader : s.author}).then (data) ->
-        s.titleStruct[5].data = data
-        
-    backend.getAudioList({author_id : s.author}).then (data) ->
-        s.titleStruct[6].data = data
-
+    for item in s.titleStruct
+        # TODO: error handling?
+        do (item) ->
+            item.def.then (data) -> 
+                c.log "then", data
+                item.data = data
 
 
     backend.getAuthorInfo(s.author).then (data) ->
@@ -427,36 +417,28 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         s.moreStruct = [
                 label : "Verk om #{s.authorInfo.full_name}"
                 data : null
+                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", null, true)
                 showAuthor : (work) -> work["authors"]
             ,
                 label : "Kortare texter om #{s.authorInfo.full_name}"
                 data : null
+                def : backend.getPartsInOthersWorks(s.author, true)
                 showAuthor : (work) -> work["authors"] or work["work_authors"]
             ,
                 label : "Som utgivare"
                 data : null
+                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "editor", true)
                 showAuthor : (work) -> work["authors"]
             ,
                 label : "Som översättare"
                 data : null
+                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator", true)
                 showAuthor : (work) -> work["authors"]
         ]
 
-        backend.getTextByAuthor(s.author, "etext,faksimil,pdf", null, true).then (data) ->
-            c.log "about getWorksByAuthor", data
-            s.moreStruct[0].data = data
-
-        backend.getPartsInOthersWorks(s.author, true).then (data) ->
-            c.log "about getPartsInOthersWorks", data
-            s.moreStruct[1].data = data
-
-        backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "editor", true).then (data) ->
-            c.log "about editor works", data
-            s.moreStruct[2].data = data
-        
-        backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator", true).then (data) ->
-            c.log "about translator works", data
-            s.moreStruct[3].data = data    
+        for item in s.moreStruct
+            do (item) ->
+                item.def.then (data) -> item.data = data
 
         if not s.authorInfo.intro
             $location.url("/forfattare/#{s.author}/titlar").replace()

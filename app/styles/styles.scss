@@ -3208,6 +3208,9 @@ $partnav-width : 170px;
                 // list-style-type: ;
                 margin-bottom: 0;
                 line-height: 1;
+                a {
+                    display: inline-block;
+                }
                 &:before {
                     content: "*";
                     font-size: 2.2em;
@@ -4624,6 +4627,7 @@ grundform-clean {
             overflow : visible;
             border : none;
             padding : 0;
+            background : none;
         }
     }
     
@@ -4632,8 +4636,8 @@ grundform-clean {
         border: 1px solid #333;
         height: 75vh;
         overflow-y: auto;
+        background-color : rgba(255, 255, 255, 0.75);
     }
-
 
     li {
         max-width : 500px;

@@ -310,6 +310,9 @@
         .size {
             color: $textcolor;
         }
+        &.larger {
+            font-size : 0.9em;
+        }
     }
     .provenance {
         margin : 2em 0;
