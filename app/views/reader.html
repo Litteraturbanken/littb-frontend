@@ -63,11 +63,11 @@
         <hr class="lower">
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
             
-            <a ng-href="{{getPageUrl(getPrevPart().startpagename)}}" ng-class="{disabled : !getPrevPart()}">Gå bakåt en del</a>
+            <a ng-href="{{getPrevPartUrl()}}" ng-class="{disabled : !getPrevPartUrl()}">Gå bakåt en del</a>
             <br>
-            <a ng-class="{disabled : !getNextPart()}" ng-href="{{getPageUrl(getNextPart().startpagename)}}">Gå till nästa del</a>
+            <a ng-class="{disabled : !getNextPartUrl()}" ng-href="{{getNextPartUrl()}}">Gå till nästa del</a>
             <br>
-            <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage()}"
+            <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage(pageix)}"
                 ng-click="gotopage(startpage, $event)">
                 Gå till första sidan
             </a>
@@ -195,7 +195,7 @@
                         <button rel="prev" class="submit btn navicon left" ng-click="prevHit()">
                             <i class="fa fa-angle-left"></i>
                         </button>
-                        <button rel="next" class="submit btn navicon" ng-click="nextHit()">
+                        <button rel="next" class="submit btn navicon" ng-class="{disabled : searchData.current + 1 == searchData.total_hits}" ng-click="nextHit()">
                             <i class="fa fa-angle-right"></i>
                         </button>
                     </div>

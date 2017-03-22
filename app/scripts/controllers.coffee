@@ -584,7 +584,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             fetchTitles()
             fetchWorks()
             fetchAudio()
-            backend.logLibrary(s.rowfilter)
+            if not isDev
+                backend.logLibrary(s.rowfilter)
         else
             s.resetView()
 
@@ -592,18 +593,19 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchTitles = () ->
         # unless s.filter then return
-        backend.getParts(s.rowfilter).then (titleArray) ->
+        backend.getParts(s.rowfilter, true).then (titleArray) ->
             s.all_titles = titleArray
     
     fetchAudio = () ->
-        backend.getAudioList({string_filter : s.rowfilter, sort_field: "title.raw|asc"}).then (titleArray) ->
+        backend.getAudioList({string_filter : s.rowfilter, sort_field: "title.raw|asc", partial_string : true}).then (titleArray) ->
             s.audio_list = titleArray
 
 
 
     fetchWorks = () ->
         s.titleSearching = true
-        def = backend.getTitles(false, s.authorFilter, null, s.filter).then (titleArray) ->
+        # last true in args list is for partial_string match
+        def = backend.getTitles(false, s.authorFilter, null, s.filter, false, false, true).then (titleArray) ->
             s.titleSearching = false
             s.titleArray = titleArray
             # s.titleGroups = titleGroups
@@ -834,7 +836,8 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     s.log = (row) ->
         filename = s.getFilename(row)
-        backend.logDownload(row.authors[0].surname, encodeURIComponent(row.shorttitle), row.lbworkid)
+        if not isDev
+            backend.logDownload(row.authors[0].surname, encodeURIComponent(row.shorttitle), row.lbworkid)
         # location.href = "/txt/epub/#{filename}.epub"
 
 
@@ -956,7 +959,8 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
 
     s.onSelect = (val) ->
         c.log("scope", s)
-        backend.logQuicksearch(prevFilter, val.label)
+        if not isDev
+            backend.logQuicksearch(prevFilter, val.label)
         
         ret = val.action?(s)
         if ret == false then return
@@ -1505,11 +1509,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.setPage(0)
 
     
-    s.isBeforeStartpage = () ->
+    s.isBeforeStartpage = (pageix) ->
         if s.isEditor then return false
         unless s.pagemap then return
         startix = s.pagemap["page_" + s.startpage]
-        s.pageix <= startix
+        pageix <= startix
 
     s.getFirstPageUrl = () ->
         if s.isEditor
@@ -1596,41 +1600,79 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getTooltip = (part) ->
         return part.showtitle if part.navtitle != part.showtitle
 
-    s.getCurrentPart = () ->
+    partStartsOnPage = (part) ->
+        return s.pagemap["page_" + part.startpagename] == s.pageix
+
+    s.getAllCurrentParts = () ->
         unless s.workinfo then return
-        outputPart = null
-        for part in s.workinfo.parts by -1 #backwards
+        _.filter s.workinfo.parts, (part) ->
             startix = s.pagemap["page_" + part.startpagename] 
             endix = s.pagemap["page_" + part.endpagename] 
-            if (s.pageix <= endix) and (s.pageix >= startix)
-                outputPart = part
-                break
+            return (s.pageix <= endix) and (s.pageix >= startix)
 
 
-        return outputPart
+    s.getCurrentPart = () ->
+        unless s.workinfo then return
+        
+        partsOnPage = s.getAllCurrentParts()
+        if partsOnPage.length == 0 then return 
+        if partsOnPage.length == 1 then return partsOnPage[0]
+        if partStartsOnPage(partsOnPage[0])
+            return partsOnPage[0]
+        else
+            return partsOnPage[1]
 
 
-    s.getNextPart = () ->
-        if not (s.workinfo and s.workinfo.parts.length) then return
-        current = s.getCurrentPart()
+        # for part in s.workinfo.parts
+        #     startix = s.pagemap["page_" + part.startpagename] 
+        #     endix = s.pagemap["page_" + part.endpagename] 
+        #     if (s.pageix <= endix) and (s.pageix >= startix)
+        #         return part
 
-        if not current
+
+
+
+    s.getNextPartUrl = () ->
+        partsOnPage = s.getAllCurrentParts()
+        if not s.workinfo then return
+
+        if not partsOnPage.length
             # is page before first part?
             startix = s.pagemap["page_" + s.workinfo.parts[0].startpagename]
             if s.pageix < startix
-                i = -1
+                newPart = s.workinfo.parts[0]
             else 
-                return
+                return s.getNextPageUrl()
+                
         else
-            i = _.indexOf s.workinfo.parts, current
+            i = _.indexOf s.workinfo.parts, (_.last partsOnPage)
+            newPart = s.workinfo.parts[i + 1]
 
-        return s.workinfo?.parts[i + 1]
 
-    s.getPrevPart = () ->
-        current = s.getCurrentPart()
-        if not s.workinfo or not current then return
-        i = _.indexOf s.workinfo.parts, current
-        return s.workinfo?.parts[i - 1]
+        unless newPart then return ""
+        return s.getPageUrl newPart.startpagename
+
+    s.getPrevPartUrl = () ->
+        partsOnPage = s.getAllCurrentParts()
+        if not s.workinfo then return
+
+        if s.isBeforeStartpage(s.pageix)
+            return 
+        if not partsOnPage.length
+            return s.getPrevPageUrl()
+
+
+        # does the top-most visible part on the page start on the page?
+        if s.pagemap["page_" + partsOnPage[0].startpagename] == s.pageix
+            i = _.indexOf s.workinfo.parts, partsOnPage[0]
+            newPart = s.workinfo.parts[i - 1]
+        else
+            # show the first page of the part that ends on the current page
+            newPart = partsOnPage[0]
+
+        unless newPart then return ""
+
+        return s.getPageUrl newPart.startpagename
 
     s.toggleParallel = () ->
         s.isParallel = !s.isParallel

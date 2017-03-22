@@ -3,12 +3,12 @@ SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 # STRIX_URL = "http://kappa.svenska.gu.se:8081"
 # STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+STRIX_URL = "http://demolittb.spraakdata.gu.se/api"
 # STRIX_URL = "http://litteraturbanken.se/api"
 
 if _.str.startsWith(location.host, "demolittb")
-    STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
-    # STRIX_URL = "http://litteraturbanken.se/api"
+    # STRIX_URL = "http://demosb.spraakdata.gu.se/strix/backend"
+    STRIX_URL = "http://demolittb.spraakdata.gu.se/api"
 if _.str.startsWith(location.host, "litteraturbanken")
     STRIX_URL = "http://litteraturbanken.se/api"
     
@@ -176,7 +176,7 @@ littb.factory "util", ($location) ->
 
 expandMediatypes = (works, mainMediatype) ->
     order = ['etext', 'faksimil', 'epub', 'pdf']
-    groups = _.groupBy works, "titlepath"
+    groups = _.groupBy works, (item) -> item.titlepath + item.mediatype + item.lbworkid
     output = []
     getMainAuthor = (metadata) ->
         (metadata.work_authors or metadata.authors)[0]
@@ -297,7 +297,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         ).then (response) ->
             return response.data.data
 
-    getParts : (filterString) ->
+    getParts : (filterString, partial_string = false) ->
         def = $q.defer()
         # TODO: add filter for leaf titlepaths and mediatype
         params = 
@@ -305,6 +305,8 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             filter_string: filterString
             to: 10000
 
+        if partial_string
+            params.partial_string = true
 
         $http(
             url : "#{STRIX_URL}/lb_list_all/etext-part,faksimil-part"
@@ -319,7 +321,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
 
 
-    getTitles : (includeParts = false, author = null, sort_key = null, string = null, aboutAuthors=false, getAll = false) ->
+    getTitles : (includeParts = false, author = null, sort_key = null, string = null, aboutAuthors=false, getAll = false, partial_string = false) ->
         def = $q.defer()
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
@@ -337,6 +339,8 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             author = "/" + author
         if aboutAuthors
             params.about_authors = true
+        if partial_string
+            params.partial_string = true
         # if getAll
         #     params.to = 500
 
@@ -839,7 +843,6 @@ littb.factory "bkgConf", (backend) ->
 
 
                 for key, val of conf
-                    c.log "key", key, page
                     if page.match("^" + key.replace("/*", ".*") + "$")
                         return val
 
@@ -1032,9 +1035,9 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
                 for item in data
                     work_rows = [{isHeader: true, metadata: item.source}]
                     output.push work_rows
-                    for high in item.highlight
+                    for high, highlight_index in item.highlight
                         obj = {metadata: item.source, highlight: high, index: row_index}
-                        obj.href = @parseUrls obj, row_index
+                        obj.href = @parseUrls obj, highlight_index
                         work_rows.push obj
                         row_index++
                     if item.overflow
@@ -1090,32 +1093,6 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
 
             matches = row.highlight.match
             matchParams = []
-            # TODO: this probably changed quite a bit
-            # if metadata.mediatype == "faksimil"
-                # matchGroups = _.groupBy matches, (match) -> match.attrs.x
-
-                # makeParams = (group) ->
-                #     params = _.pick group[0].attrs, "x", "y", "height"
-
-                #     for match in group
-                #         unless params.width
-                #             params.width = Number(match.attrs.width)
-                #         else
-                #             params.width += Number(match.attrs.width)
-
-                #     max = Math.max group[0].attrs.size.split("x")...
-                #     factors = _.map SIZE_VALS, (val) -> val / max
-
-                #     for key, val of params
-                #         params[key] = _(factors).map( (fact) ->
-                #             Math.round fact * val).join(",")
-                #     return params
-                
-                # for group in _.values matchGroups
-                #     matchParams.push makeParams group
-
-
-            # else 
             matchParams.push
                 traff : matches[0].attrs.wid
                 traffslut : _.last(matches).attrs.wid
