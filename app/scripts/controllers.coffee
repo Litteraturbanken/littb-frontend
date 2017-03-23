@@ -1603,7 +1603,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     partStartsOnPage = (part) ->
         return s.pagemap["page_" + part.startpagename] == s.pageix
 
-    s.getAllCurrentParts = () ->
+    getAllCurrentParts = () ->
         unless s.workinfo then return
         _.filter s.workinfo.parts, (part) ->
             startix = s.pagemap["page_" + part.startpagename] 
@@ -1614,7 +1614,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getCurrentPart = () ->
         unless s.workinfo then return
         
-        partsOnPage = s.getAllCurrentParts()
+        partsOnPage = getAllCurrentParts()
         if partsOnPage.length == 0 then return 
         if partsOnPage.length == 1 then return partsOnPage[0]
         if partStartsOnPage(partsOnPage[0])
@@ -1622,57 +1622,30 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         else
             return partsOnPage[1]
 
-
-        # for part in s.workinfo.parts
-        #     startix = s.pagemap["page_" + part.startpagename] 
-        #     endix = s.pagemap["page_" + part.endpagename] 
-        #     if (s.pageix <= endix) and (s.pageix >= startix)
-        #         return part
-
-
-
-
     s.getNextPartUrl = () ->
-        partsOnPage = s.getAllCurrentParts()
         if not s.workinfo then return
 
-        if not partsOnPage.length
-            # is page before first part?
-            startix = s.pagemap["page_" + s.workinfo.parts[0].startpagename]
-            if s.pageix < startix
-                newPart = s.workinfo.parts[0]
-            else 
-                return s.getNextPageUrl()
-                
-        else
-            i = _.indexOf s.workinfo.parts, (_.last partsOnPage)
-            newPart = s.workinfo.parts[i + 1]
+        findIndex = s.pageix + 1 # should always go on page fwd
 
+        next = _.first _.dropWhile s.workinfo.partStartArray, ([i, part]) -> i < findIndex
 
-        unless newPart then return ""
+        unless next then return ""
+        [i, newPart] = next
+
         return s.getPageUrl newPart.startpagename
 
     s.getPrevPartUrl = () ->
-        partsOnPage = s.getAllCurrentParts()
         if not s.workinfo then return
 
-        if s.isBeforeStartpage(s.pageix)
-            return 
-        if not partsOnPage.length
-            return s.getPrevPageUrl()
+        findIndex = s.pageix - 1 # should always go on page back
 
+        prev = _.last _.dropRightWhile s.workinfo.partStartArray, ([i, part]) -> i > findIndex
 
-        # does the top-most visible part on the page start on the page?
-        if s.pagemap["page_" + partsOnPage[0].startpagename] == s.pageix
-            i = _.indexOf s.workinfo.parts, partsOnPage[0]
-            newPart = s.workinfo.parts[i - 1]
-        else
-            # show the first page of the part that ends on the current page
-            newPart = partsOnPage[0]
-
-        unless newPart then return ""
+        unless prev then return ""
+        [i, newPart] = prev
 
         return s.getPageUrl newPart.startpagename
+
 
     s.toggleParallel = () ->
         s.isParallel = !s.isParallel

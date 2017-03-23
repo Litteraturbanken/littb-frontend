@@ -105,3 +105,25 @@ describe "search", () ->
 
         rows = element.all(By.css(".sentence"))
         expect(rows.count()).toEqual 1
+
+
+
+describe "parts navigation", () ->
+    prevPart = () -> element(By.css(".pager_ctrls a:nth-of-type(1)"))
+    nextPart = () -> element(By.css(".pager_ctrls a:nth-of-type(2)"))
+
+    it "should handle parts with parent parts", () ->
+        browser.get "http://localhost:9000/#!/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil"
+        expect(prevPart().getAttribute('href')).toBe("http://localhost:9000/#!/forfattare/RydbergV/titlar/Singoalla1885/sida/20/faksimil")
+    
+    it "should handle many parts on same page, prev", () ->
+        browser.get "http://localhost:9000/#!/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil"
+        expect(prevPart().getAttribute('href')).toBe("http://localhost:9000/#!/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil")
+
+    it "should handle many parts on same page, next", () ->
+        browser.get "http://localhost:9000/#!/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil"
+        expect(nextPart().getAttribute('href')).toBe("http://localhost:9000/#!/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil")
+
+
+
+

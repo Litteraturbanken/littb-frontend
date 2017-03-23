@@ -109,6 +109,28 @@
     });
   });
 
+  fdescribe("parts navigation", function() {
+    var nextPart, prevPart;
+    prevPart = function() {
+      return element(By.css(".pager_ctrls a:nth-of-type(1)"));
+    };
+    nextPart = function() {
+      return element(By.css(".pager_ctrls a:nth-of-type(2)"));
+    };
+    it("should handle parts with parent parts", function() {
+      browser.get("http://localhost:9000/#!/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil");
+      return expect(prevPart().getAttribute('href')).toBe("http://localhost:9000/#!/forfattare/RydbergV/titlar/Singoalla1885/sida/20/faksimil");
+    });
+    it("should handle many parts on same page, prev", function() {
+      browser.get("http://localhost:9000/#!/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil");
+      return expect(prevPart().getAttribute('href')).toBe("http://localhost:9000/#!/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil");
+    });
+    return it("should handle many parts on same page, next", function() {
+      browser.get("http://localhost:9000/#!/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil");
+      return expect(nextPart().getAttribute('href')).toBe("http://localhost:9000/#!/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil");
+    });
+  });
+
 }).call(this);
 
 //# sourceMappingURL=spec_e2e.js.map

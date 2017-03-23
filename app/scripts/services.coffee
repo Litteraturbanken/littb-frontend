@@ -407,7 +407,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             for prov, i in (workinfo.provenance or [])
                 output = response.data[prov.library]
                 unless output
-                    c.warn "Library name #{prov.library} not in provenance.json"
+                    c.warn "Library name '#{prov.library}' not in provenance.json", prov
                 if i > 0 and prov.text2
                     textField = 'text2' 
                 else 
@@ -471,6 +471,19 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             workinfo.errata = for tr in $("tr", workinfo.errata)
                 _($(tr).find("td")).map(util.getInnerXML)
                 .map(_.str.strip).value()
+
+
+
+            workinfo.partStartArray = _(workinfo.parts).map (part) -> 
+                return [workinfo.pagemap["page_" + part.startpagename], part]
+            .sortBy ([i, part]) -> 
+                return i
+            .value()
+
+
+
+
+
 
             c.log "getSourceInfo", workinfo
             def.resolve workinfo

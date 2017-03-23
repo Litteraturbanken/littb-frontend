@@ -511,6 +511,11 @@ module.exports = function (grunt) {
       ]);
   });
 
+  grunt.registerTask('quicke2e', [
+    "coffee:test",
+    'connect:e2e',
+    'protractor'
+  ]);
   grunt.registerTask('e2e', [
     "coffee:test",
     'connect:e2e',
