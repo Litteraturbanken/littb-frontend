@@ -1603,24 +1603,29 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     partStartsOnPage = (part) ->
         return s.pagemap["page_" + part.startpagename] == s.pageix
 
-    getAllCurrentParts = () ->
-        unless s.workinfo then return
-        _.filter s.workinfo.parts, (part) ->
-            startix = s.pagemap["page_" + part.startpagename] 
-            endix = s.pagemap["page_" + part.endpagename] 
-            return (s.pageix <= endix) and (s.pageix >= startix)
+    # getAllCurrentParts = () ->
+    #     unless s.workinfo then return
+    #     _.filter s.workinfo.parts, (part) ->
+    #         startix = s.pagemap["page_" + part.startpagename] 
+    #         endix = s.pagemap["page_" + part.endpagename] 
+    #         return (s.pageix <= endix) and (s.pageix >= startix)
+
+
+
+    getLastSeenPart = () ->
+        findIndex = s.pageix - 1 # should always go on page back
+
+        return _.last _.dropRightWhile s.workinfo.partStartArray, ([i, part]) -> i > findIndex
 
 
     s.getCurrentPart = () ->
         unless s.workinfo then return
         
-        partsOnPage = getAllCurrentParts()
-        if partsOnPage.length == 0 then return 
-        if partsOnPage.length == 1 then return partsOnPage[0]
-        if partStartsOnPage(partsOnPage[0])
-            return partsOnPage[0]
-        else
-            return partsOnPage[1]
+        partStartingHere = s.workinfo.partStartArray.find ([i, part]) -> 
+            i == s.pageix
+
+        return partStartingHere?[1] or getLastSeenPart()?[1]
+
 
     s.getNextPartUrl = () ->
         if not s.workinfo then return
@@ -1637,9 +1642,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getPrevPartUrl = () ->
         if not s.workinfo then return
 
-        findIndex = s.pageix - 1 # should always go on page back
-
-        prev = _.last _.dropRightWhile s.workinfo.partStartArray, ([i, part]) -> i > findIndex
+        prev = getLastSeenPart()
 
         unless prev then return ""
         [i, newPart] = prev

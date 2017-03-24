@@ -109,7 +109,7 @@
     });
   });
 
-  fdescribe("parts navigation", function() {
+  describe("parts navigation", function() {
     var nextPart, prevPart;
     prevPart = function() {
       return element(By.css(".pager_ctrls a:nth-of-type(1)"));
