@@ -891,7 +891,19 @@ littb.controller "helpCtrl", ($scope, $http, util, $location) ->
             id : $(elem).attr("id")
             
         
-littb.controller "newCtrl", ($scope, $http, util, $location) ->
+littb.controller "newCtrl", ($scope, $http, util, $location, backend) ->
+
+    s = $scope
+
+    backend.getTitles(false, null, "imported|desc", null, false, true).then (titleArray) ->
+        s.titleList = titleArray
+
+        s.titleGroups = _.groupBy titleArray, "imported"
+
+        # _.filter (_.pairs s.titleGroups), ([imported, title]) ->
+        #     title.
+
+
 littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
     s = $scope
     # s.$watch ( () -> $routeParams.page), () ->

@@ -111,7 +111,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 # title : "Aktuellt"
                 redirectTo : "/nytt",
             .when '/nytt',
-                templateUrl: "nytt.html"
+                # templateUrl: "nytt.html"
+                templateUrl: "views/new.html"
                 title : "Nytt hos Litteraturbanken"
                 controller : "newCtrl"
             # .when '/om/rattigheter',

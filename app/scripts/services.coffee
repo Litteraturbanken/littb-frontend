@@ -341,8 +341,8 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             params.about_authors = true
         if partial_string
             params.partial_string = true
-        # if getAll
-        #     params.to = 500
+        if getAll
+            params.to = 300
 
         $http(
             url : "#{STRIX_URL}/lb_list_all/etext,faksimil,pdf" + (author or "")
