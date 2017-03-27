@@ -1193,7 +1193,7 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
                 queryParams.push "prefix"
             if params.suffix
                 queryParams.push "suffix"
-            unless params.word_form_only
+            if params.word_form_only?
                 queryParams.push "word_form_only"
 
 

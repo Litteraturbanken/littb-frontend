@@ -1603,12 +1603,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     partStartsOnPage = (part) ->
         return s.pagemap["page_" + part.startpagename] == s.pageix
 
-    # getAllCurrentParts = () ->
-    #     unless s.workinfo then return
-    #     _.filter s.workinfo.parts, (part) ->
-    #         startix = s.pagemap["page_" + part.startpagename] 
-    #         endix = s.pagemap["page_" + part.endpagename] 
-    #         return (s.pageix <= endix) and (s.pageix >= startix)
+    getAllCurrentParts = () ->
+        unless s.workinfo then return
+        _.filter s.workinfo.parts, (part) ->
+            startix = s.pagemap["page_" + part.startpagename] 
+            endix = s.pagemap["page_" + part.endpagename] 
+            return (s.pageix <= endix) and (s.pageix >= startix)
 
 
 
@@ -1620,7 +1620,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getCurrentPart = () ->
         unless s.workinfo then return
-        
+
+        # there are no parts on this page
+        unless getAllCurrentParts().length then return 
+
         partStartingHere = s.workinfo.partStartArray.find ([i, part]) -> 
             i == s.pageix
 
@@ -2001,9 +2004,25 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             mediatype : mediatype
         }
         s.search_query = query
+        getScopeVars = (args) ->
+            output = {}
+            if args.word_form_only
+                output.lemma = true
+            if args.prefix
+                output.prefix = true
+            if args.suffix
+                output.suffix = true
+            if args.prefix and args.suffix
+                args.infix = true
+            return output
+
         for key, val of $location.search()
             if _.str.startsWith key, "s_"
-                args[key[2..]] = val
+                k = key[2..]
+                args[k] = val
+
+        # _.extend s, getScopeVars(args)
+
             
         searchData.newSearch(args)
         searchData.current = Number($location.search().hit_index or 0)
@@ -2051,14 +2070,19 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             # infix: $location.search().infix
             mediatype : mediatype
         }
+        if not $location.search().lemma
+            args.word_form_only = true
         searchArgs = {}
         for key, val of args
             searchArgs["s_" + key] = val
 
 
+        prevArgs = {}
+        for key, val of $location.search()
+            if not (_.str.startsWith key, "s_") then prevArgs[key] = val
 
-        $location.search(searchArgs)
-        c.log "searchArgs", searchArgs
+        $location.search(_.extend {}, prevArgs, searchArgs)
+        c.log "searchArgs", searchArgs, prevArgs
 
 
         searchData.newSearch(args)
