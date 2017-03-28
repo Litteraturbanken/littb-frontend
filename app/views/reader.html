@@ -167,7 +167,7 @@
                             <span ng-repeat="auth in part.authors" class="author">{{authorById[auth.author_id].surname}}<span ng-show="!$last">, </span> </span>
                         </span>
                         <span class="title">
-                            <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.title}}</a>
+                            <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.shorttitle || part.title}}</a>
                         </span>
 
                     </li>
