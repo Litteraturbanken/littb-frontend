@@ -124,6 +124,10 @@
                         <li class="part_header top_header" ng-hide="titleSearching">
                             <a class="popular"
                                 ng-show="showInitial"
+                                ng-disabled="showRecent"
+                                ng-click="showRecent = true">Nytillkomna verk</a> 
+                            <a class="popular"
+                                ng-show="showInitial"
                                 ng-disabled="showPopular"
                                 ng-click="showPopular = true">Populära verk</a> 
                             <a class="works" 
