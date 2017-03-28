@@ -487,6 +487,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.showInitial = true
         s.showPopularAuth = true
         s.showPopular = true
+        s.showRecent = false
 
         s.filter = ""
         s.rowfilter = ""
@@ -502,7 +503,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.mediatypeFilter = (row) ->
         # return true
         # c.log "row.mediatype", row.mediatype
-        s.mediatypeObj
+        # s.mediatypeObj
+        if row.isHeader then return true
         _.any _.map row.mediatypes, (mtObj) -> 
             s.mediatypeObj[mtObj.label]
         
@@ -618,9 +620,34 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     
     s.showAllWorks = () ->
         s.showPopular = false
+        s.showRecent = false
         s.filter = ""
         s.rowfilter = ""
+        s.titleArray = null
         fetchWorks()
+    
+    s.popClick = () ->
+        s.showRecent = false
+        s.showPopular = true
+
+    s.fetchRecent = () ->
+        s.showPopular = false
+        s.showRecent = true
+        s.filter = ""
+        s.rowfilter = ""
+        s.titleArray = null
+        backend.getTitles(false, null, "imported|desc", null, false, true).then (titleArray) ->
+            s.titleSearching = false
+            # s.titleArray = titleArray
+
+            s.titleGroups = _.groupBy titleArray, "imported"
+
+            output = []
+            for datestr, titles of s.titleGroups
+                output.push {isHeader : true, label : datestr}
+                output = output.concat titles
+
+            s.titleArray = output
 
     s.getUrl = (row, mediatype) ->
         author_id = row.authors[0].workauthor or row.authors[0].author_id
@@ -672,9 +699,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         part.authors?[0] or part.work_authors[0]
 
 
-    if $location.search().filter
-        s.filter = $location.search().filter
-    s.searchTitle()
+    if $location.search().nytillkommet
+        s.fetchRecent()
+    else
+        if $location.search().filter
+            s.filter = $location.search().filter
+        s.searchTitle()
 
     util.setupHashComplex s,
         [
@@ -698,12 +728,11 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             expr : "!mediatypeObj.pdf"
             replace : false
         ,
-            key : "populara"   
-            scope_name : "showPopular"
-
             key : "forfattare"
             scope_name : "authorFilter"
-            replace : false
+        ,
+            key : "nytillkommet"
+            scope_name : "showRecent"
         ]
 
     onceFetchWorks = _.once () ->
@@ -895,13 +924,11 @@ littb.controller "newCtrl", ($scope, $http, util, $location, backend) ->
 
     s = $scope
 
-    backend.getTitles(false, null, "imported|desc", null, false, true).then (titleArray) ->
-        s.titleList = titleArray
+    # backend.getTitles(false, null, "imported|desc", null, false, true).then (titleArray) ->
+    #     s.titleList = titleArray
 
-        s.titleGroups = _.groupBy titleArray, "imported"
+    #     s.titleGroups = _.groupBy titleArray, "imported"
 
-        # _.filter (_.pairs s.titleGroups), ([imported, title]) ->
-        #     title.
 
 
 littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->

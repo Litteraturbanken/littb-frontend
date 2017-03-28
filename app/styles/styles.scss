@@ -3334,7 +3334,7 @@ $partnav-width : 170px;
             .top_header {
                 margin-top : 0;
 
-                .popular {
+                .popular, .recent {
                     margin-right: 1em;
                 }
                 a {
@@ -3372,6 +3372,7 @@ $partnav-width : 170px;
                 .first_part {
                 }
                 max-width : 570px;
+                min-width: 465px;
                 
                 flex : 1 auto;
 
