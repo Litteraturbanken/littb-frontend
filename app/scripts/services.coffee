@@ -176,7 +176,7 @@ littb.factory "util", ($location) ->
 
 expandMediatypes = (works, mainMediatype) ->
     order = ['etext', 'faksimil', 'epub', 'pdf']
-    groups = _.groupBy works, (item) -> item.titlepath + item.mediatype + item.lbworkid
+    groups = _.groupBy works, (item) -> item.titlepath + item.lbworkid
     output = []
     getMainAuthor = (metadata) ->
         (metadata.work_authors or metadata.authors)[0]
