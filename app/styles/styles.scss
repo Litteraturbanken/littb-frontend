@@ -1362,17 +1362,7 @@ body > .header {
 
 }
 
-.page-stats #mainview {
-    h3 {
-        margin-top : 2em;
-    }
-    ul li {
-        counter-increment : listcounter;
-        a:before {
-            content : counter(listcounter, decimal) ". ";
-        }
-    }
-}
+
 .preloader {
     visibility: hidden;
     color : $primarycolor;
@@ -3344,7 +3334,7 @@ $partnav-width : 170px;
             .top_header {
                 margin-top : 0;
 
-                .popular {
+                .popular, .recent {
                     margin-right: 1em;
                 }
                 a {
@@ -3382,6 +3372,7 @@ $partnav-width : 170px;
                 .first_part {
                 }
                 max-width : 570px;
+                min-width: 465px;
                 
                 flex : 1 auto;
 
@@ -4525,6 +4516,31 @@ grundform-clean {
 
 .page-new {
 
+    .author {
+        @include small-caps();
+        // color : $primarycolor;
+    }
+    li {
+        max-width : initial;
+    }
+    ul {
+        font-size: 0.9em;
+    }
+    .num {
+        font-size: 0.9em;
+        display : inline-block;
+        margin-right: 0.7em;
+        width : 2em;
+        vertical-align: top;
+        text-align: right;
+
+    }
+    .title {
+        display : inline-block;
+        max-width : 30em;
+        vertical-align: top;
+    }
+    
     .logo_link_monogram {
         background: url("../img/lb_monogram_white_black.svg") no-repeat;
         background-size: cover;

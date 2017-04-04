@@ -1,0 +1,20 @@
+
+
+<div class="content">
+<ul>
+    <li ng-repeat="(date, titleList) in titleGroups">
+        <h3>{{date}}</h3>
+        <ul>
+            <li ng-repeat="title in titleList">
+                <span class="num">{{$index + 1}}. </span> <a class="title" ng-href="/#!/forfattare/{{title.authors[0].author_id}}/titlar/{{title.title_id}}/sida/{{title.startpagename}}/{{title.mediatype}}">{{title.showtitle}}</a>
+                
+
+                <a class="author pull-right" ng-href="/#!/forfattare/{{title.authors[0].author_id}}">{{title.authors[0].surname || title.authors[0].full_name}}</a>
+            </li>
+        </ul>
+
+    </li>
+</ul>
+</div>
+
+<!-- <ng-include src="'nytt.html'"></ng-include> -->
