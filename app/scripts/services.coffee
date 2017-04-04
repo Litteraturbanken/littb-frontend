@@ -321,11 +321,20 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
 
 
-    getTitles : (includeParts = false, author = null, sort_key = null, string = null, aboutAuthors=false, getAll = false, partial_string = false) ->
+    getTitles : (includeParts = false,
+                 author,
+                 sort_key,
+                 string,
+                 aboutAuthors = false,
+                 getAll = false,
+                 partial_string = false,
+                 include = null) ->
         def = $q.defer()
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
 
+        if include
+            params.include = include
         if sort_key
             params.sort_field = sort_key
             params.to = 30

@@ -604,8 +604,9 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchWorks = () ->
         s.titleSearching = true
+        include = "titlepath,title,shorttitle,mediatype,searchable,authors.author_id,authors.surname,authors.authortype"
         # last true in args list is for partial_string match
-        def = backend.getTitles(false, s.authorFilter, null, s.filter, false, false, true).then (titleArray) ->
+        def = backend.getTitles(false, s.authorFilter, null, s.filter, false, false, true, include).then (titleArray) ->
             s.titleSearching = false
             s.titleArray = titleArray
             # s.titleGroups = titleGroups
