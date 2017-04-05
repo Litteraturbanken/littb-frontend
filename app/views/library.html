@@ -144,6 +144,7 @@
                         <li class="link" 
                             ng-repeat="row in listVisibleTitles() | filter:mediatypeFilter | limitTo: rowLimit" 
                             on-finish-render="titleRender()"
+                            ng-class="{'first' : $first}"
                             >
                             <h3 ng-if="row.isHeader">{{row.label}}</h3>
                             <div ng-if="!row.isHeader" 

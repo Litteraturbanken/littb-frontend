@@ -1,5 +1,5 @@
 
-describe "authors", () ->
+describe "library authors", () ->
     rows = null
     beforeEach () ->
         browser.get "http://localhost:9000/#!/bibliotek"
@@ -12,7 +12,7 @@ describe "authors", () ->
         expect(rows.count()).toEqual 1
 
 
-describe "works", () ->
+describe "library works", () ->
     rows = null
     beforeEach () ->
         browser.get "http://localhost:9000/#!/bibliotek"
@@ -24,6 +24,10 @@ describe "works", () ->
         filter.sendKeys("constru")
         filter.sendKeys(protractor.Key.ENTER)
         expect(rows.count()).toEqual 1
+
+    it "should link correctly to reading mode", () ->
+        expect(element(By.css "li.link.first li:first-of-type a").getAttribute("href")).toEqual "http://localhost:9000/#!/forfattare/MartinsonH/titlar/Aniara/sida/5/etext"
+    
 
 describe "titles", () ->
     rows = null
@@ -59,8 +63,8 @@ describe "reader", () ->
 
     it "should change page on click", () ->
         browser.get "http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/3/etext"
-        element(By.css ".pager_ctrls a[rel=next]").click()
-        expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext")
+        element(By.css ".pager_ctrls a[rel=next]").getAttribute("href").then (linkUrl) ->
+            expect(linkUrl).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext")
     
     it "should correctly handle pagestep", () ->
         browser.get "http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"

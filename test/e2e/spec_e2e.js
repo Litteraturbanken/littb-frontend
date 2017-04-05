@@ -1,5 +1,5 @@
 (function() {
-  describe("authors", function() {
+  describe("library authors", function() {
     var rows;
     rows = null;
     beforeEach(function() {
@@ -15,19 +15,22 @@
     });
   });
 
-  describe("works", function() {
+  describe("library works", function() {
     var rows;
     rows = null;
     beforeEach(function() {
       browser.get("http://localhost:9000/#!/bibliotek");
       return rows = element.all(By.repeater("row in listVisibleTitles() | filter:mediatypeFilter"));
     });
-    return it("should filter works using the input", function() {
+    it("should filter works using the input", function() {
       var filter;
       filter = element(By.model("filter"));
       filter.sendKeys("constru");
       filter.sendKeys(protractor.Key.ENTER);
       return expect(rows.count()).toEqual(1);
+    });
+    return it("should link correctly to reading mode", function() {
+      return expect(element(By.css("li.link.first li:first-of-type a")).getAttribute("href")).toEqual("http://localhost:9000/#!/forfattare/MartinsonH/titlar/Aniara/sida/5/etext");
     });
   });
 
@@ -65,8 +68,9 @@
   describe("reader", function() {
     it("should change page on click", function() {
       browser.get("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/3/etext");
-      element(By.css(".pager_ctrls a[rel=next]")).click();
-      return expect(browser.getCurrentUrl()).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext");
+      return element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href").then(function(linkUrl) {
+        return expect(linkUrl).toBe("http://localhost:9000/#!/forfattare/StrindbergA/titlar/Fadren/sida/4/etext");
+      });
     });
     return it("should correctly handle pagestep", function() {
       browser.get("http://localhost:9000/#!/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil");
