@@ -28,7 +28,7 @@
                     eller <a class="sc" ng-href="{{getReadMediatypes()[1].url}}">{{getReadMediatypes()[1].label}}</a>
                 </span>
             </div>
-            <div ng-show="getDownloadMediatypes().length > 1" class="mediatypes_also">
+            <div ng-show="getDownloadMediatypes().length" class="mediatypes_also">
                 Ladda ner 
                 <a class="sc" ng-href="{{getDownloadMediatypes()[0].url}}"
                 ng-click="downloadFile(getDownloadMediatypes()[0].url)">{{getDownloadMediatypes()[0].label}}</a> <!-- ({{getFileSize(getDownloadMediatypes()[0])}}) -->

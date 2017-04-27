@@ -111,8 +111,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 # title : "Aktuellt"
                 redirectTo : "/nytt",
             .when '/nytt',
-                # templateUrl: "nytt.html"
-                templateUrl: "views/new.html"
+                templateUrl: "nytt.html"
+                # templateUrl: "views/new.html"
                 title : "Nytt hos Litteraturbanken"
                 controller : "newCtrl"
             # .when '/om/rattigheter',
@@ -290,6 +290,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             #     redirectTo: '/'
 
 littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
+    # $locationProvider.html5Mode(true)
     $locationProvider.hashPrefix('!')
     delete $httpProvider.defaults.headers.common["X-Requested-With"]
     $tooltipProvider.options

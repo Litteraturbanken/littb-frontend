@@ -777,7 +777,7 @@ littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $tim
         s.authorsById = authorsById
 
 
-    backend.getAudioList(sort_field: "title.raw|asc").then (audioList) ->
+    backend.getAudioList(sort_field: "order|asc").then (audioList) ->
         c.log "audioList", audioList
         s.fileGroups = _.groupBy audioList, "section"
 
