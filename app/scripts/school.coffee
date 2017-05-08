@@ -116,7 +116,7 @@ getStudentCtrl = (id) ->
                 if : ["6-9", "gymnasium"]
             ,
                 label: "Den heliga natten", 
-                url : "/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil"
+                url : "/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil?storlek=1"
                 if : ["f-5"]
 
             # ,

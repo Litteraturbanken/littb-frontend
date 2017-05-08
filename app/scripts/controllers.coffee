@@ -606,7 +606,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchWorks = () ->
         s.titleSearching = true
-        include = "lbworkid,titlepath,title,title_id,shorttitle,mediatype,searchable,authors.author_id,authors.surname,authors.authortype,startpagename,has_epub"
+        include = "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,authors.author_id,authors.surname,authors.authortype,startpagename,has_epub"
         # last true in args list is for partial_string match
         def = backend.getTitles(false, s.authorFilter, null, s.filter, false, false, true, include).then (titleArray) ->
             s.titleSearching = false
@@ -637,7 +637,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.filter = ""
         s.rowfilter = ""
         s.titleArray = null
-        backend.getTitles(false, null, "imported|desc", null, false, true).then (titleArray) ->
+        backend.getTitles(false, null, "imported|desc,sortfield|asc", null, false, true).then (titleArray) ->
             s.titleSearching = false
             # s.titleArray = titleArray
 
@@ -646,7 +646,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             output = []
             for datestr, titles of s.titleGroups
                 output.push {isHeader : true, label : datestr}
-                output = output.concat titles
+                output = output.concat (_.sortBy titles, "authors[0].surname")
 
             s.titleArray = output
 
