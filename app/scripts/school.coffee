@@ -52,37 +52,37 @@ getStudentCtrl = (id) ->
         works =  [
             {
                 label : "Drottningar i Kongahälla", 
-                url : "/#!/skola/#{id}/Drottningar#{sfx}.html"
+                url : "/skola/#{id}/Drottningar#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "En herrgårdssägen", 
-                url : "/#!/skola/#{id}/EnHerrgardssagen#{sfx}.html"
+                url : "/skola/#{id}/EnHerrgardssagen#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "Gösta Berlings saga", 
-                url : "/#!/skola/#{id}/GostaBerlingGY.html"
+                url : "/skola/#{id}/GostaBerlingGY.html"
                 if : ["gymnasium"]
             }
             {
                 label : "Herr Arnes penningar", 
-                url : "/#!/skola/#{id}/HerrArne#{sfx}.html"
+                url : "/skola/#{id}/HerrArne#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "Nils Holgersson", 
-                url : "/#!/skola/#{id}/NilsHolgerssonUppgifter.html"
+                url : "/skola/#{id}/NilsHolgerssonUppgifter.html"
                 if: ["6-9"]
             }
             {
                 label : "Osynliga länkar", 
-                url : "/#!/skola/#{id}/OsynligaLankar#{sfx}.html"
+                url : "/skola/#{id}/OsynligaLankar#{sfx}.html"
                 if: ["6-9", "gymnasium"]
             }
             {
                 label : "Troll och människor", 
-                url : "/#!/skola/#{id}/TrollManniskor#{sfx}.html"
+                url : "/skola/#{id}/TrollManniskor#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             }
         ]
@@ -96,18 +96,18 @@ getStudentCtrl = (id) ->
 
         $scope.list = _.filter [
                 label: "Termer och begrepp", 
-                url : "/#!/skola/#{id}/TermerOchBegrepp.html"
+                url : "/skola/#{id}/TermerOchBegrepp.html"
                 if : ["6-9", "gymnasium"]
             ,
                 label: "Författarpresentation", 
-                url : "/#!/skola/#{id}/Forfattarpresentation#{sfx}.html"
+                url : "/skola/#{id}/Forfattarpresentation#{sfx}.html"
                 if : ["6-9", "gymnasium"]
             ,
                 label: "I andra medier", 
-                url : "/#!/skola/#{id}/SLiAndraMedier.html"
+                url : "/skola/#{id}/SLiAndraMedier.html"
                 sublist : [
                         label : "Uppgifter medier"
-                        url : "/#!/skola/#{id}/UppgifterMedierGY.html"
+                        url : "/skola/#{id}/UppgifterMedierGY.html"
                 ]
                 if : ["gymnasium"]
             ,
@@ -116,20 +116,20 @@ getStudentCtrl = (id) ->
                 if : ["6-9", "gymnasium"]
             ,
                 label: "Den heliga natten", 
-                url : "/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil?storlek=1"
+                url : "/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil?storlek=1"
                 if : ["f-5"]
 
             # ,
             #     label: "Orientering genrer", 
-            #     url : "/#!/skola/#{id}/Genrer.html", 
+            #     url : "/skola/#{id}/Genrer.html", 
             #     sublist : [
-            #         {label : "Romaner", url: "/#!/skola/#{id}/Romaner.html"}
-            #         {label : "Noveller", url: "/#!/skola/#{id}/Noveller.html"}
+            #         {label : "Romaner", url: "/skola/#{id}/Romaner.html"}
+            #         {label : "Noveller", url: "/skola/#{id}/Noveller.html"}
             #     ]
             # ,
-                # label: "Orientering tema/motiv", url : "/#!/skola/#{id}/Genrer.html"
+                # label: "Orientering tema/motiv", url : "/skola/#{id}/Genrer.html"
             # ,
-            #     label: "I andra medier", url : "/#!/skola/#{id}/SLiAndraMedier.html"
+            #     label: "I andra medier", url : "/skola/#{id}/SLiAndraMedier.html"
 
 
         ], workfilter
@@ -165,67 +165,67 @@ getLyrikStudentCtrl = (id) ->
         works =  [
             {
                 label : "Andersson", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Andersson.html"
+                url : "/skola/lyrik/elev/#{sfx}/Andersson.html"
                 if : ["gymnasium"]
             }
             {
                 label : "Boye", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Boye.html"
+                url : "/skola/lyrik/elev/#{sfx}/Boye.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "Fröding", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Froding.html"
+                url : "/skola/lyrik/elev/#{sfx}/Froding.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "Karlfeldt", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Karlfeldt.html"
+                url : "/skola/lyrik/elev/#{sfx}/Karlfeldt.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "Lenngren", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Lenngren.html"
+                url : "/skola/lyrik/elev/#{sfx}/Lenngren.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "Nordenflycht", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Nordenflycht.html"
+                url : "/skola/lyrik/elev/#{sfx}/Nordenflycht.html"
                 if : ["gymnasium"]
             }
             {
                 label : "Sjöberg", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Sjoberg.html"
+                url : "/skola/lyrik/elev/#{sfx}/Sjoberg.html"
                 if: ["6-9", "gymnasium"]
             }
             {
                 label : "Södergran", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Sodergran.html"
+                url : "/skola/lyrik/elev/#{sfx}/Sodergran.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "Övriga dikter", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/OvrigaDikter.html"
+                url : "/skola/lyrik/elev/#{sfx}/OvrigaDikter.html"
                 if : ["6-9", "gymnasium"]
             }
             # {
             #     label : "Idéer", 
-            #     url : "/#!/skola/lyrik/elev/#{sfx}/Ideer.html"
+            #     url : "/skola/lyrik/elev/#{sfx}/Ideer.html"
             #     if : ["6-9", "gymnasium"]
             # }
             # {
             #     label : "Lyrikens undergenrer", 
-            #     url : "/#!/skola/lyrik/elev/#{sfx}/LyrikensUndergenrer.html"
+            #     url : "/skola/lyrik/elev/#{sfx}/LyrikensUndergenrer.html"
             #     if : ["gymnasium"]
             # }
             {
                 label : "Teman", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/Teman.html"
+                url : "/skola/lyrik/elev/#{sfx}/Teman.html"
                 if : ["6-9", "gymnasium"]
             }
             {
                 label : "Visor och psalmer", 
-                url : "/#!/skola/lyrik/elev/#{sfx}/VisorOchPsalmer.html"
+                url : "/skola/lyrik/elev/#{sfx}/VisorOchPsalmer.html"
                 if : ["6-9"]
             }
         ]
@@ -239,23 +239,23 @@ getLyrikStudentCtrl = (id) ->
 
         $scope.list = _.filter [
                 label: "Välkommen", 
-                url : "/#!/skola/lyrik/elev/#{id}/Valkommen.html"
+                url : "/skola/lyrik/elev/#{id}/Valkommen.html"
                 if : ["6-9", "gymnasium"]
             ,
                 label: "Termer och begrepp", 
-                url : "/#!/skola/lyrik/elev/#{id}/TermerOchBegrepp.html"
+                url : "/skola/lyrik/elev/#{id}/TermerOchBegrepp.html"
                 if : ["6-9", "gymnasium"]
             ,
                 label: "Litterära genrer", 
-                url : "/#!/skola/lyrik/elev/#{id}/Genrer.html"
+                url : "/skola/lyrik/elev/#{id}/Genrer.html"
                 if : ["6-9", "gymnasium"]
             ,
                 label : "Lyrikens undergenrer", 
-                url : "/#!/skola/lyrik/elev/#{id}/LyrikensUndergenrer.html"
+                url : "/skola/lyrik/elev/#{id}/LyrikensUndergenrer.html"
                 if : ["6-9", "gymnasium"]
             # ,
             #     label: "Hjälp", 
-            #     url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
+            #     url : "/skola/lyrik/elev/#{id}/Hjalp.html"
             #     if : ["6-9", "gymnasium"]
             ,
                 label: "Läshandledningar", 
@@ -263,11 +263,11 @@ getLyrikStudentCtrl = (id) ->
                 if : ["6-9", "gymnasium"]
             # ,
             #     label: "Hjälp", 
-            #     url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
+            #     url : "/skola/lyrik/elev/#{id}/Hjalp.html"
             #     if : ["6-9", "gymnasium"]
             # ,
             #     label: "Hjälp", 
-            #     url : "/#!/skola/lyrik/elev/#{id}/Hjalp.html"
+            #     url : "/skola/lyrik/elev/#{id}/Hjalp.html"
             #     if : ["6-9", "gymnasium"]
 
 

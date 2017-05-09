@@ -3,10 +3,10 @@
     
 
     <div toolkit class="page_{{id}}">
-        <h1><a href="/#!/skola">Litteraturskolan</a></h1>
+        <h1><a href="/skola">Litteraturskolan</a></h1>
         <h2 class="subheader caps">Att läsa prosa</h2>
         <ul class="subnav">
-            <li class="page"><h2><a href="/#!/skola/{{id}}">{{id}}</a></h2></li>
+            <li class="page"><h2><a href="/skola/{{id}}">{{id}}</a></h2></li>
 
             <li ng-repeat="item in list">
                 <a selectable ng-if="item.url" ng-href="{{item.url}}">{{item.label}}</a>
@@ -18,22 +18,22 @@
         </ul>
         
         <ul class="lower_menu">
-            <li ng-if="id != 'f-5'"><a ng-href="/#!/skola/f-5">Upp till årskurs 5</a></li>
-            <!-- <li><a href="/#!/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil">För de yngre</a></li> -->
-            <li ng-if="id != '6-9'"><a ng-href="/#!/skola/6-9">Årskurs 6 till 9</a></li>
-            <li ng-if="id != 'gymnasium'"><a ng-href="/#!/skola/gymnasium">Gymnasium</a></li>
+            <li ng-if="id != 'f-5'"><a ng-href="/skola/f-5">Upp till årskurs 5</a></li>
+            <!-- <li><a href="/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil">För de yngre</a></li> -->
+            <li ng-if="id != '6-9'"><a ng-href="/skola/6-9">Årskurs 6 till 9</a></li>
+            <li ng-if="id != 'gymnasium'"><a ng-href="/skola/gymnasium">Gymnasium</a></li>
         </ul>
         <ul class="lower_menu">
             <download-btn ng-if="docurl" file="docurl"></download-btn>
-            <li><a ng-href="/#!/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
-            <li><a href="/#!/forfattare/LagerlofS/presentation">Mer om Lagerlöf</a></li>
-            <li><a ng-href="/#!/forfattare/LagerlofS">Lagerlöfarkivet</a></li>
-            <li><a ng-href="/#!/start">Litteraturbanken</a></li>
-            <li><a ng-href="/#!/skola/{id}/hjalp.html">Hjälp</a></li>
+            <li><a ng-href="/sok?forfattare=LagerlofS&open">Sök i Lagerlöfs verk</a></li>
+            <li><a href="/forfattare/LagerlofS/presentation">Mer om Lagerlöf</a></li>
+            <li><a ng-href="/forfattare/LagerlofS">Lagerlöfarkivet</a></li>
+            <li><a ng-href="/start">Litteraturbanken</a></li>
+            <li><a ng-href="/skola/{id}/hjalp.html">Hjälp</a></li>
         </ul>
         <!-- <div class="logos">
-            <a href="/#!/start"><img class="lb" src="/img/lb_full.svg"></a>
-            <a href="/#!/forfattare/LagerlofS"><img class="sla" src="/img/sla.svg"></a>
+            <a href="/start"><img class="lb" src="/img/lb_full.svg"></a>
+            <a href="/forfattare/LagerlofS"><img class="sla" src="/img/sla.svg"></a>
          </div>-->
 
     </div>

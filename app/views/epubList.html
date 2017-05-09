@@ -5,7 +5,7 @@
     <div ng-class="{searching : searching}"><!-- for some reason, this breaks if dedented -->
         <h1 class="preamble">Litteraturbankens epubfiler</h1>
             
-        <p class="preamble">Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/#!/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
+        <p class="preamble">Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
         
         <div>
             <div class="auth_select_container">
@@ -31,10 +31,10 @@
                 </thead>
                 <tbody><tr ng-repeat="row in rows | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
                         <td>
-                            <a ng-href="/#!/forfattare/{{::row.authors[0].author_id}}" >{{::getAuthor(row)}}</a>
+                            <a ng-href="/forfattare/{{::row.authors[0].author_id}}" >{{::getAuthor(row)}}</a>
                         </td>
                         <td class="title">
-                            <a ng-href="/#!/forfattare/{{::row.authors[0].author_id}}/titlar/{{::row.work_title_id || row.title_id}}/etext/?om-boken" >{{::row.showtitle || row.shorttitle}}</a>
+                            <a ng-href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{::row.work_title_id || row.title_id}}/etext/?om-boken" >{{::row.showtitle || row.shorttitle}}</a>
                         </td>
                         <td ng-click="log(row)" ng-touch="log(row)">
                             <a  ng-href="/txt/epub/{{getFilename(row)}}.epub">Hämta</a>

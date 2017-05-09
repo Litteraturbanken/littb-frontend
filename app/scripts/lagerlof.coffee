@@ -443,7 +443,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 myWits.push wit
                 ids.push work.id
                 s.witTitles[wit] = work.title
-                s.witUrls[wit] = "/#!/forfattare/LagerlofS/titlar/#{work.path}/info/"
+                s.witUrls[wit] = "/forfattare/LagerlofS/titlar/#{work.path}/info/"
         
         s.haveText = false
         $('#koll-text').html('') # do this while getDiff is loading 

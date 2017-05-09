@@ -264,16 +264,16 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter" track by $index>
                         <td>{{row.lbworkid}}</td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].author_id}}">{{row.author[0].surname}}</a>
+                            <a href="/forfattare/{{row.author[0].author_id}}">{{row.author[0].surname}}</a>
                         </td>
                         <td>
-                            <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.showtitle}}</a>
+                            <a href="/forfattare/{{row.author[0].author_id}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.showtitle}}</a>
                         </td>
                         <td>
                             <span ng-repeat="type in row.mediatypes track by $index">
                             
                                 <span ng-show="!$first">:::</span>
-                                <a href="/#!/forfattare/{{row.author[0].author_id}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
+                                <a href="/forfattare/{{row.author[0].author_id}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
                             </span>
                         </td>
                     </tr>
@@ -290,8 +290,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             #     redirectTo: '/'
 
 littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
-    # $locationProvider.html5Mode(true)
-    $locationProvider.hashPrefix('!')
+    $locationProvider.html5Mode(true)
+    # $locationProvider.hashPrefix('!')
     delete $httpProvider.defaults.headers.common["X-Requested-With"]
     $tooltipProvider.options
         appendToBody: true

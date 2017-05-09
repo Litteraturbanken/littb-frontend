@@ -191,7 +191,7 @@ expandMediatypes = (works, mainMediatype) ->
         else
             return {
                 label : metadata.mediatype
-                url : "/#!/forfattare/#{getMainAuthor(metadata).author_id}/titlar/#{metadata.work_title_id or metadata.title_id}/sida/#{metadata.startpagename}/#{metadata.mediatype}"
+                url : "/forfattare/#{getMainAuthor(metadata).author_id}/titlar/#{metadata.work_title_id or metadata.title_id}/sida/#{metadata.startpagename}/#{metadata.mediatype}"
             }
 
 
@@ -1143,7 +1143,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
             author = metadata.authors[0].author_id
             titleid = metadata.title_id
 
-            return "/#!/forfattare/#{author}/titlar/#{titleid}" + 
+            return "/forfattare/#{author}/titlar/#{titleid}" + 
                 "/sida/#{matches[0].attrs.n}/#{metadata.mediatype}?#{merged}"
             
 

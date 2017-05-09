@@ -378,7 +378,7 @@
         // @include small-caps;
         // font-style: italic;
     }
-    .ulink[href^="/#!/skola"] {
+    .ulink[href^="/skola"] {
         @include small-caps();
     }
     .lb_link, .lb_tonsatt {

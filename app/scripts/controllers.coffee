@@ -45,7 +45,7 @@ littb.filter "formatAuthors", (authors) ->
             authorsById[auth.author_id].full_name + suffix
         
         linkify = (auth) ->
-            $("<a>").attr "href", "/#!/forfattare/#{auth.author_id}"
+            $("<a>").attr "href", "/forfattare/#{auth.author_id}"
                 .html stringify auth
                 .outerHTML()
 
@@ -272,7 +272,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             url = "txt/#{work.lbworkid}/#{work.lbworkid}.pdf"
 
         else
-            url = "/#!/forfattare/#{auth}/titlar/#{work.work_title_id}/"
+            url = "/forfattare/#{auth}/titlar/#{work.work_title_id}/"
             url += "sida/#{work.startpagename}/#{work.mediatype}"
         return url
 
@@ -658,7 +658,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         else if mediatype == "pdf"
             url = "txt/#{row.lbworkid}/#{row.lbworkid}.pdf"
         else
-            url = "/#!/forfattare/#{author_id}/titlar/#{s.getTitleId(row)}/" +
+            url = "/forfattare/#{author_id}/titlar/#{s.getTitleId(row)}/" +
                  "sida/#{row.startpagename}/#{mediatype}"
 
         return url
@@ -1218,7 +1218,7 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
         else if mediatype == "pdf" 
             return s.workinfo?.pdf.url
 
-        return "/#!/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
+        return "/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
 
     s.getOtherMediatypes = () ->
         (x for x in (s.workinfo?.mediatypes or []) when x != s.mediatype)
@@ -1557,9 +1557,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getFirstPageUrl = () ->
         if s.isEditor
-            "/#!/editor/#{$routeParams.lbid}/ix/0/#{$routeParams.mediatype}"
+            "/editor/#{$routeParams.lbid}/ix/0/#{$routeParams.mediatype}"
         else
-            "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.startpage}/#{mediatype}"
+            "/forfattare/#{author}/titlar/#{title}/sida/#{s.startpage}/#{mediatype}"
     
     s.getPrevPageUrl = () ->
         unless s.pagemap then return
@@ -1567,7 +1567,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         # newix = s.pageix - 1
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
-            "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
+            "/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
         else
             ""
     
@@ -1578,15 +1578,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         # newix = s.pageix + 1
         if "ix_" + newix of s.pagemap
             page = s.pagemap["ix_" + newix]
-            "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
+            "/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{mediatype}"
         else
             ""
     
     s.getLastPageUrl = () ->
         if s.isEditor
-            "/#!/editor/#{$routeParams.lbid}/ix/#{s.endIx}/#{$routeParams.mediatype}"
+            "/editor/#{$routeParams.lbid}/ix/#{s.endIx}/#{$routeParams.mediatype}"
         else
-            "/#!/forfattare/#{author}/titlar/#{title}/sida/#{s.endpage}/#{mediatype}"
+            "/forfattare/#{author}/titlar/#{title}/sida/#{s.endpage}/#{mediatype}"
 
     s.getPageUrl = (page) ->
         unless page then return ""
@@ -1595,7 +1595,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         if search
             suffix = "?" + search
 
-        "/#!/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{s.mediatype}" + suffix
+        "/forfattare/#{author}/titlar/#{title}/sida/#{page}/#{s.mediatype}" + suffix
 
     s.gotopage = (page, event) ->
         s.showGotoInput = false

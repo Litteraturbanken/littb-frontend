@@ -2,7 +2,7 @@
 var LIVERELOAD_PORT = 35729;
 var lrSnippet = require('connect-livereload')({ port: LIVERELOAD_PORT });
 var proxySnippet = require('grunt-connect-proxy/lib/utils').proxyRequest;
-// var modRewrite = require('connect-modrewrite');
+var modRewrite = require('connect-modrewrite');
 var mountFolder = function (connect, dir) {
   return connect.static(require('path').resolve(dir));
 };
@@ -142,7 +142,7 @@ module.exports = function (grunt) {
                   return [
                       lrSnippet,
                       proxySnippet,
-                      // modRewrite(['^[^\\.]*$ /index.html [L]']),
+                      modRewrite(['^[^\\.]*$ /index.html [L]']),
                       mountFolder(connect, '.tmp'),
                       mountFolder(connect, yeomanConfig.app)
                   ];
@@ -154,6 +154,7 @@ module.exports = function (grunt) {
           middleware: function (connect) {
             return [
               proxySnippet, 
+              modRewrite(['^[^\\.]*$ /index.html [L]']),
               mountFolder(connect, '.tmp'),
               mountFolder(connect, 'test')
             ];
@@ -165,6 +166,7 @@ module.exports = function (grunt) {
           middleware: function (connect) {
             return [
               proxySnippet, 
+              modRewrite(['^[^\\.]*$ /index.html [L]']),
               mountFolder(connect, '.tmp'),
               mountFolder(connect, yeomanConfig.app)
             ];
@@ -176,7 +178,9 @@ module.exports = function (grunt) {
               middleware: function (connect) {
                   return [
                     proxySnippet,
-                      mountFolder(connect, yeomanConfig.dist)
+                    modRewrite(['^[^\\.]*$ /index.html [L]']),
+
+                    mountFolder(connect, yeomanConfig.dist)
                   ];
               }
           }
