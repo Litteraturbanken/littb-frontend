@@ -401,7 +401,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
     getLicense : (workinfo) ->
         $http(
-            url : "/xhr/red/etc/license/license.json"
+            url : "/red/etc/license/license.json"
             cache: true
         ).then (response) ->
             return response.data[workinfo.license]
@@ -409,7 +409,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
     getProvenance : (workinfo) ->
         $http(
-            url : "/xhr/red/etc/provenance/provenance.json"
+            url : "/red/etc/provenance/provenance.json"
             cache: true
         ).then (response) ->
             provData = []

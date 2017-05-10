@@ -2030,7 +2030,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     ## START SEARCH
 
     s.getCleanUrl = () ->
-        "/#!" + $location.path()
+        "/" + $location.path()
 
     s.hasActiveSearch = () ->
         $location.search().s_query and not searchData?.isSearching

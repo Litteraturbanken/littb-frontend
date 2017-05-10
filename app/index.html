@@ -6,6 +6,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
         <meta name="google-site-verification" content="GYTPY9q8YTxZgZLgC35X-rxVDPbZjLdfe1kakRWPqd0"
          />
+        <meta name="google-site-verification" content="N0kL5tDA6UPMmyqv6bJBPNMsvOv27pcF7_ABjT94v5c" />
         <meta name="msvalidate.01" content="36C8508B74F9ABEDA521C9217D70E66B" />
         <title>Litteraturbanken | Svenska klassiker som e-bok och epub</title>
         <meta name="description" content="På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."/>
@@ -47,7 +48,7 @@
         <!-- <img bkg-img src="{{bkgConf.url}}"></img> -->
 
         <div id="leftCorridor">
-            <a  class="logo_link_monogram" ng-href="/start" ng-href="/#!{{getLogoUrl()}}"></a>
+            <a  class="logo_link_monogram" ng-href="/start" ng-href="/{{getLogoUrl()}}"></a>
             <ul role="navigation" class="mainnav">
                 <li>
                     <a href="/bibliotek">Biblioteket</a>
@@ -117,13 +118,6 @@
                 </div>
             </div>
         </script>
-
-        <script>
-            if(decodeURIComponent(location.hash))
-                location.hash = decodeURIComponent(location.hash);
-            // TODO: # rewrite to #!
-        </script>        
-        
 
         <script type="text/ng-template" id="nytt.html">
             <div class="" ng-include="'/red/om/aktuellt/aktuellt.html'"></div>

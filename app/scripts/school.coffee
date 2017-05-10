@@ -430,7 +430,7 @@ littb.directive "scFile", ($routeParams, $location, $http, $compile, util, backe
         if section == "larare" and subsection
 
             actualPath = path.replace(/_/g, "/")
-            actualPath = "/#!" + actualPath
+            actualPath = "/" + actualPath
             c.log "actualPath", actualPath
             # may God forgive me for this code
             s = $("a[href='#{actualPath}']").parent().parent().scope()

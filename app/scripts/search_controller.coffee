@@ -247,7 +247,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     # s.save_search = (currentIndex) ->
     #     c.log "save_search", $location.url()
-        s.$root.prevSearchState = "/#!" + $location.url()
+        s.$root.prevSearchState = "/" + $location.url()
 
 
     s.getSetVal = (sent, val) ->

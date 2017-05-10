@@ -5,9 +5,13 @@ window.isDev = location.hostname != "litteraturbanken.se"
 
 routeStartCurrent = null
 
-# rewrite for libris
-if(location.hash.length && location.hash[1] != "!")
-    location.hash = "#!" + _.str.lstrip(location.hash, "#")
+if location.hash.length && location.hash.startsWith("#!%2F") #rewrite for incoming #! with encoded url
+    location.href = decodeURIComponent(location.href).replace("/#!/", "/")
+else if location.hash.length && location.hash.startsWith("#!/") #rewrite for incoming #!
+    location.href = location.href.replace("/#!/", "/")
+else if(location.hash.length && location.hash[1] != "!") # rewrite for libris
+    location.hash = _.str.lstrip(location.hash, "#")
+
 
 
 window.safeApply = (scope, fn) ->
@@ -291,7 +295,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
 
 littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
     $locationProvider.html5Mode(true)
-    # $locationProvider.hashPrefix('!')
+    $locationProvider.hashPrefix('!')
     delete $httpProvider.defaults.headers.common["X-Requested-With"]
     $tooltipProvider.options
         appendToBody: true
