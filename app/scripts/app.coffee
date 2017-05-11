@@ -5,11 +5,11 @@ window.isDev = location.hostname != "litteraturbanken.se"
 
 routeStartCurrent = null
 
-if location.hash.length && location.hash.startsWith("#!%2F") #rewrite for incoming #! with encoded url
+if location.hash.length and _.startsWith location.hash, "#!%2F" #rewrite for incoming #! with encoded url
     location.href = decodeURIComponent(location.href).replace("/#!/", "/")
-else if location.hash.length && location.hash.startsWith("#!/") #rewrite for incoming #!
+else if location.hash.length and _.startsWith location.hash, "#!/" #rewrite for incoming #!
     location.href = location.href.replace("/#!/", "/")
-else if(location.hash.length && location.hash[1] != "!") # rewrite for libris
+else if(location.hash.length and location.hash[1] != "!") # rewrite for libris
     location.hash = _.str.lstrip(location.hash, "#")
 
 

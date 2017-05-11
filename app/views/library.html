@@ -160,8 +160,11 @@
                                 <div collapse="!row._collapsed">
                                     <div class="collapse-content">
                                         <ul class="links">
-                                            <li ng-repeat="mediatype in row.mediatypes">
+                                            <li ng-repeat="mediatype in row | readMediatypes">
                                                 <a ng-href="{{mediatype.url}}">Läs som {{mediatype.label}}</a>
+                                            </li>
+                                            <li ng-repeat="mediatype in row | downloadMediatypes">
+                                                <a ng-href="{{mediatype.url}}" target="_self">Ladda ner {{mediatype.label}}</a>
                                             </li>
                                             
                                             <li ng-show="::row.searchable">

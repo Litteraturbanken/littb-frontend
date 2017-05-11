@@ -64,6 +64,17 @@ littb.filter "formatAuthors", (authors) ->
         else return last
         
 
+
+littb.filter "downloadMediatypes", () ->
+    (obj) ->
+        (x for x in (obj?.mediatypes or []) when x.downloadable)
+
+littb.filter "readMediatypes", () ->
+    read = ['etext', 'faksimil']
+    (obj) ->
+        (x for x in (obj?.mediatypes or []) when x.label in read)
+
+
         
 
 c.time = angular.noop
@@ -1222,14 +1233,6 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
 
     s.getOtherMediatypes = () ->
         (x for x in (s.workinfo?.mediatypes or []) when x != s.mediatype)
-
-    s.getReadMediatypes = () ->
-        read = ['etext', 'faksimil']
-        (x for x in (s.workinfo?.mediatypes or []) when x.label in read)
-    
-    s.getDownloadMediatypes = () ->
-        (x for x in (s.workinfo?.mediatypes or []) when x.downloadable)
-        
 
     s.getSourceImage = () ->
         if s.workinfo

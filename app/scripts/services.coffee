@@ -385,9 +385,9 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         url = "#{STRIX_URL}/get_authors"
         params = {}
         if include
-            params.include = include.join(",")
+            params.include = include
         if exclude
-            params.exclude = exclude.join(",")
+            params.exclude = exclude
         $http(
             url : url
             method: "GET"
@@ -875,7 +875,7 @@ littb.factory "authors", (backend, $q) ->
     
     def = $q.defer()
     # @promise = def.promise
-    backend.getAuthorList(null, exclude=['intro']).then (authors) =>
+    backend.getAuthorList(null, exclude='intro,db_*,doc_type,corpus,es_id').then (authors) =>
         authorsById = _.object _.map authors, (item) =>
             [item.author_id, item]
         # c.log "authorsById", authorsById
