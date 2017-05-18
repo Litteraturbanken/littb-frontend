@@ -146,7 +146,7 @@
                             on-finish-render="titleRender()"
                             ng-class="{'first' : $first}"
                             >
-                            <h3 ng-if="row.isHeader">{{row.label}}</h3>
+                            <h3 ng-if="row.isHeader" class="row_title part_header">{{row.label}}</h3>
                             <div ng-if="!row.isHeader" 
                                  top="$parent.title_off" 
                                  ng-click="titleClick($event, row)"

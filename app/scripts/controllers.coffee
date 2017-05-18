@@ -29,7 +29,7 @@ window.detectIE = () ->
 
 
 littb.filter "formatAuthors", (authors) ->
-    (authorlist, authorsById, makeLink) ->
+    (authorlist, authorsById, makeLink, noHTML) ->
         if not authorlist or not authorlist.length or not authorsById then return
 
         stringify = (auth) ->
@@ -42,6 +42,7 @@ littb.filter "formatAuthors", (authors) ->
 
 
             }[auth.type] or ""
+            if noHTML then suffix = $(suffix).text()
             authorsById[auth.author_id].full_name + suffix
         
         linkify = (auth) ->
@@ -59,8 +60,11 @@ littb.filter "formatAuthors", (authors) ->
         last = _.last strings
 
 
-
-        if firsts.length then return "#{firsts.join(', ')} <em style='font-family: Requiem'>&</em> #{last}"
+        if noHTML
+            et = "&"
+        else
+            et = "<em style='font-family: Requiem'>&</em>"
+        if firsts.length then return "#{firsts.join(', ')} #{et} #{last}"
         else return last
         
 
@@ -648,6 +652,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.filter = ""
         s.rowfilter = ""
         s.titleArray = null
+
+        dateFmt = (datestr) ->
+            months = "januari,februari,mars,april,maj,juni,juli,augusti,septemper,oktober,november,december".split(",")
+            [year, month, day] = datestr.split("-")
+            return [day, months[month - 1], year].join(" ")
+
         backend.getTitles(false, null, "imported|desc,sortfield|asc", null, false, true).then (titleArray) ->
             s.titleSearching = false
             # s.titleArray = titleArray
@@ -656,7 +666,9 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
             output = []
             for datestr, titles of s.titleGroups
-                output.push {isHeader : true, label : datestr}
+                # TODO: fix locale format, 'femte maj 2017'
+                # output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
+                output.push {isHeader : true, label : dateFmt(datestr)}
                 output = output.concat (_.sortBy titles, "authors[0].surname")
 
             s.titleArray = output

@@ -3319,6 +3319,9 @@ $partnav-width : 170px;
                 }
 
             }
+            .row_title {
+                font-size: 1em;
+            }
             .part_header {
                 @include small-caps();
                 margin-top : 2em;

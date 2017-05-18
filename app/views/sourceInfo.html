@@ -1,5 +1,5 @@
 <page-title>{{getValidAuthors() | formatAuthors:authorById}} – {{workinfo.title}}. Om boken</page-title>
-<meta-desc>{{getValidAuthors() | formatAuthors:authorById}} – {{workinfo.title}}. Om boken</meta-desc>
+<meta-desc>{{getValidAuthors() | formatAuthors:authorById:false:true}} – {{workinfo.title}}. Om boken</meta-desc>
 <div class="maincontent" ng-class="{searching:!workinfo}" ng-controller="sourceInfoCtrl">
     <div ng-show="loading" class="preloader">Hämtar <span class="dots_blink"></span></div>
     <div ng-if="error" class="error">Ett fel har uppstått.</div>

@@ -113,12 +113,12 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when '/om/aktuellt',
                 # templateUrl: '/red/om/aktuellt/aktuellt.html'
                 # title : "Aktuellt"
-                redirectTo : "/nytt",
+                redirectTo : () -> "/bibliotek?nytillkommet",
             .when '/nytt',
-                templateUrl: "nytt.html"
-                # templateUrl: "views/new.html"
-                title : "Nytt hos Litteraturbanken"
-                controller : "newCtrl"
+                # templateUrl: "nytt.html"
+                # title : "Nytt hos Litteraturbanken"
+                # controller : "newCtrl"
+                redirectTo : () -> "/bibliotek?nytillkommet",
             # .when '/om/rattigheter',
             #     templateUrl: '/red/om/rattigheter/rattigheter.html'
             #     title : "Rättigheter"
@@ -167,7 +167,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 templateUrl : "views/audiolist.html"
                 controller : "audioListCtrl"
                 reloadOnSearch : false
-                title : "Gratis böcker för nerladdning i epubformatet"
+                title : "Litteraturbankens uppläsningar"
             .when "/forfattare",
                 redirectTo : "/bibliotek"
 
