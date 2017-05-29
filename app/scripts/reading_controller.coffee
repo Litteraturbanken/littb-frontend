@@ -272,7 +272,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     getLastSeenPart = () ->
         findIndex = s.pageix - 1 # should always go on page back
 
-        return _.last _.dropRightWhile s.workinfo.partStartArray, ([i, part]) -> i > findIndex
+        return _.last _.dropRightWhile s.workinfo.partStartArray, ([startix, part]) -> 
+            endix = s.pagemap["page_" + part.endpagename] 
+            if findIndex is endix then return false # shortcut
+            # look for prev seen started part that has not ended
+            return (startix > findIndex) or (endix <= findIndex) 
 
 
     s.getCurrentPart = () ->
