@@ -83,7 +83,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.show_chapters = false
 
     s.resetHitMarkings = () ->
-        for key in ["traff", "traffslut", "x", "y", "height", "width"]
+        for key in ["markee_from", "markee_to", "x", "y", "height", "width"]
             s[key] = null
     
     thisRoute = $route.current
@@ -105,6 +105,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.close_hits = () ->
         searchData.reset()
+        s.resetHitMarkings()
         s.show_search_work = false
 
     onKeyDown = (event) ->
@@ -651,7 +652,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     ## START SEARCH
 
     s.getCleanUrl = () ->
-        "/" + $location.path()
+        $location.url().split("?")[0]
 
     s.hasActiveSearch = () ->
         $location.search().s_query and not searchData?.isSearching

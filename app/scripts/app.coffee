@@ -162,7 +162,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 templateUrl : "views/epubList.html"
                 controller : "epubListCtrl"
                 reloadOnSearch : false
-                title : "Gratis böcker för nerladdning i epubformatet"
+                title : "Gratis böcker för nerladdning i epubformat"
             .when "/ljudarkivet",
                 templateUrl : "views/audiolist.html"
                 controller : "audioListCtrl"
@@ -445,7 +445,9 @@ littb.filter "setMarkee", () ->
         input = $(input)
         wrapper = $("<div>")
         if fromid == toid
-            $("#" + fromid, input).addClass("markee")
+            markee = $("#" + fromid, input).addClass("markee")
+            if navigator.userAgent.search("Firefox") > -1
+                markee.parent().css("position", "relative")
             if $("#" + fromid, input).next().text() == "-"
                 $("#" + fromid, input).next().next("br").next().addClass("markee")
                     
