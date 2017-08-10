@@ -46,7 +46,7 @@
       filter = element(By.model("filter"));
       filter.sendKeys("psalm");
       filter.sendKeys(protractor.Key.ENTER);
-      return expect(rows.count()).toEqual(793);
+      return expect(rows.count()).toEqual(794);
     });
   });
 

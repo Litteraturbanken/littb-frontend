@@ -460,6 +460,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                     if work.mediatype == mediatype
                         workinfo = work
                         break
+                unless workinfo then workinfo = works[0]
             else
                 workinfo = works[0]
 
