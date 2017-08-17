@@ -469,7 +469,7 @@ littb.directive 'downloadBtn', () ->
     scope :
         file : "="
     template : """
-    <a class="download" ng-href="{{getUrl(file)}}">
+    <a class="download" ng-href="{{getUrl(file)}}" target="_blank">
         <i class="fa fa-file-text-o "></i>
         <span class="">Ladda ner som PDF</span> 
     </a>
