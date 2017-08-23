@@ -8,8 +8,8 @@ var mountFolder = function (connect, dir) {
 };
 
 
-var host = 'demolittb.spraakdata.gu.se'
-// var host = 'litteraturbanken.se'
+// var host = 'demolittb.spraakdata.gu.se'
+var host = 'litteraturbanken.se'
 
 
 // # Globbing
@@ -120,14 +120,14 @@ module.exports = function (grunt) {
       },
       proxies : [
       {
-          context: '/ws',
+          context: '/api',
           host: host,
           port: 443,
           https: true,
           changeOrigin: true
 
       }
-      ].concat(["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "xhr"].map(function(item) {
+      ].concat(["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "xhr", "ws"].map(function(item) {
         
         return {
                       context: '/' + item,
