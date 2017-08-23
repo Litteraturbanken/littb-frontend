@@ -7,6 +7,11 @@ var mountFolder = function (connect, dir) {
   return connect.static(require('path').resolve(dir));
 };
 
+
+var host = 'demolittb.spraakdata.gu.se'
+// var host = 'litteraturbanken.se'
+
+
 // # Globbing
 // for performance reasons we're only matching one level down:
 // 'test/spec/{,*/}*.js'
@@ -113,9 +118,17 @@ module.exports = function (grunt) {
         // Change this to '0.0.0.0' to access the server from outside.
         hostname: '0.0.0.0',
       },
-      proxies : ["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "ws", "xhr"].map(function(item) {
-        var host = 'demolittb.spraakdata.gu.se'
-        // var host = 'litteraturbanken.se'
+      proxies : [
+      {
+          context: '/ws',
+          host: host,
+          port: 443,
+          https: true,
+          changeOrigin: true
+
+      }
+      ].concat(["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "xhr"].map(function(item) {
+        
         return {
                       context: '/' + item,
                       host: host,
@@ -124,7 +137,7 @@ module.exports = function (grunt) {
                       changeOrigin: true
 
                   }
-      }),
+      })),
       // proxies : [
       //   {
       //     // context: '/' + item,
