@@ -2310,6 +2310,7 @@ $partnav-width : 170px;
 
         }
         #search_nav {
+            display : none;
             text-align: right;
             @include small-caps();
             line-height : 1;

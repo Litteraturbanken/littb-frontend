@@ -1,5 +1,5 @@
 <meta-desc>
-    {{workinfo.showtitle}} av {{authorById[author].full_name}}, sida {{pagename}} som {{mediatype}}
+    {{workinfo.showtitle}} av {{authorById[author].full_name}}. {{getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
 <page-title>{{workinfo.title}} sida {{pagename}} {{mediatype}}</page-title>
 <div class="reader_main" 
@@ -178,7 +178,7 @@
 
         <div toolkit>
             <i class="spinner_search fa fa-spinner fa-pulse" ng-class="{searching : searchData.isSearching && !searchData.data.length}"></i>
-            <div id="search_nav" ng-show="hasActiveSearch()">
+            <div id="search_nav" ng-style="{display : hasActiveSearch() ? 'block' : 'none'}">
                 <div class="text">
                     <div>
                         <span class="num">{{searchData.total_hits}}</span> 
