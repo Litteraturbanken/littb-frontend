@@ -46,7 +46,7 @@
       filter = element(By.model("filter"));
       filter.sendKeys("psalm");
       filter.sendKeys(protractor.Key.ENTER);
-      return expect(rows.count()).toEqual(794);
+      return expect(rows.count()).toEqual(795);
     });
   });
 
@@ -129,9 +129,13 @@
       browser.get("http://localhost:9000/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil");
       return expect(prevPart().getAttribute('href')).toBe("http://localhost:9000/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil");
     });
-    return it("should handle many parts on same page, next", function() {
+    it("should handle many parts on same page, next", function() {
       browser.get("http://localhost:9000/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil");
       return expect(nextPart().getAttribute('href')).toBe("http://localhost:9000/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil");
+    });
+    return it("should give a prev part despite prev page being between parts", function() {
+      browser.get("http://localhost:9000/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil");
+      return expect(prevPart().getAttribute('href')).toBe("http://localhost:9000/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil");
     });
   });
 

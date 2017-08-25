@@ -40,7 +40,7 @@ describe "titles", () ->
         filter = element(By.model("filter"))
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
-        expect(rows.count()).toEqual 794
+        expect(rows.count()).toEqual 795
 
 
 describe "epubList", () ->
@@ -127,6 +127,9 @@ describe "parts navigation", () ->
         browser.get "http://localhost:9000/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil"
         expect(nextPart().getAttribute('href')).toBe("http://localhost:9000/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil")
 
+    it "should give a prev part despite prev page being between parts", () ->
+        browser.get "http://localhost:9000/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil"
+        expect(prevPart().getAttribute('href')).toBe("http://localhost:9000/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil")
 
 
 

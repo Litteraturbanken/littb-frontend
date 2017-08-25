@@ -8,8 +8,8 @@ var mountFolder = function (connect, dir) {
 };
 
 
-// var host = 'demolittb.spraakdata.gu.se'
-var host = 'litteraturbanken.se'
+var host = 'demolittb.spraakdata.gu.se'
+// var host = 'litteraturbanken.se'
 
 
 // # Globbing
@@ -119,11 +119,19 @@ module.exports = function (grunt) {
         hostname: '0.0.0.0',
       },
       proxies : [
+      // {
+      //     context: '/api',
+      //     host: host,
+      //     port: 443,
+      //     https: true,
+      //     changeOrigin: true
+
+      // }
       {
           context: '/api',
           host: host,
-          port: 443,
-          https: true,
+          port: 80,
+          https: false,
           changeOrigin: true
 
       }

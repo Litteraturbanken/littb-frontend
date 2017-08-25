@@ -1,6 +1,15 @@
 littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
+
+# STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 STRIX_URL = "/api"
+
+if _.str.startsWith(location.host, "demolittb")
+    STRIX_URL = "/api"
+if _.str.startsWith(location.host, "litteraturbanken")
+    STRIX_URL = "/api"
+    
+
 
 littb.factory "debounce", ($timeout) ->
     (func, wait, options) ->

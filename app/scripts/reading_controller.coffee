@@ -268,16 +268,38 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             endix = s.pagemap["page_" + part.endpagename] 
             return (s.pageix <= endix) and (s.pageix >= startix)
 
-
+    findShortest = (parts) ->
+        _.min parts, (part) ->
+            startix = s.pagemap["page_" + part.startpagename] 
+            endix = s.pagemap["page_" + part.endpagename] 
+            return endix - startix
 
     getLastSeenPart = () ->
-        findIndex = s.pageix - 1 # should always go on page back
 
-        return _.last _.dropRightWhile s.workinfo.partStartArray, ([startix, part]) -> 
+        findIndex = s.pageix - 1 # should always go on page back
+        console.log("findIndex", findIndex)
+
+        maybePart = _.last _.dropRightWhile s.workinfo.partStartArray, ([startix, part]) -> 
             endix = s.pagemap["page_" + part.endpagename] 
             if findIndex is endix then return false # shortcut
             # look for prev seen started part that has not ended
             return (startix > findIndex) or (endix <= findIndex) 
+
+        if maybePart then return maybePart[1]
+
+        # we're could be on a page between two parts
+        # so find the last part that ended
+        decorated = _.map s.workinfo.partStartArray, ([i, part]) -> 
+            [findIndex - s.pagemap["page_" + part.endpagename], part]
+
+        [diff, part] = _.min decorated, ([num, part]) ->
+            if num < 0 then return 10000
+            else return num
+        console.log("part", part)
+
+        return part
+
+
 
 
     s.getCurrentPart = () ->
@@ -289,7 +311,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         partStartingHere = s.workinfo.partStartArray.find ([i, part]) -> 
             i == s.pageix
 
-        return partStartingHere?[1] or getLastSeenPart()?[1]
+        return partStartingHere?[1] or getLastSeenPart()
 
 
     s.getNextPartUrl = () ->
@@ -307,12 +329,21 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getPrevPartUrl = () ->
         if not s.workinfo then return
 
+        # are we on the first part?
+        firstParts = _.filter s.workinfo.partStartArray, ([startix]) ->
+            # all parts that start at the same page as the first part
+            s.workinfo.partStartArray[0][0] == startix
+
+        shortestFirstpart = findShortest(_.map(firstParts, _.last))
+        # are we at the first part?
+        if s.pageix <= s.pagemap["page_" + shortestFirstpart.endpagename]
+            return null
+
         prev = getLastSeenPart()
 
         unless prev then return ""
-        [i, newPart] = prev
 
-        return s.getPageUrl newPart.startpagename
+        return s.getPageUrl prev.startpagename
 
 
     s.toggleParallel = () ->
