@@ -277,7 +277,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     getLastSeenPart = () ->
 
         findIndex = s.pageix - 1 # should always go on page back
-        console.log("findIndex", findIndex)
 
         maybePart = _.last _.dropRightWhile s.workinfo.partStartArray, ([startix, part]) -> 
             endix = s.pagemap["page_" + part.endpagename] 
@@ -308,7 +307,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         # there are no parts on this page
         unless getAllCurrentParts().length then return 
 
-        partStartingHere = s.workinfo.partStartArray.find ([i, part]) -> 
+        partStartingHere = _.find s.workinfo.partStartArray, ([i, part]) -> 
             i == s.pageix
 
         return partStartingHere?[1] or getLastSeenPart()
