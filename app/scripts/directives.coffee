@@ -827,7 +827,7 @@ littb.directive "compile", ($compile) ->
 littb.directive "searchOpts", ($location, util) ->
     template: """
         <ul class="search_opts_widget">
-            <li ng-repeat="(key, opt) in searchOptionsItems" >
+            <li ng-repeat="(key, opt) in searchOptionsItems" ng-class="{advanced_only: opt.advanced_only}">
                 <span role="checkbox" aria-checked="{{opt.selected}}" ng-show="opt.selected">✓</span>
                 <a ng-click="searchOptSelect(opt)">{{opt.label}}</a>
             </li>
@@ -836,18 +836,27 @@ littb.directive "searchOpts", ($location, util) ->
     link : ($scope, element, attr) ->
         s = $scope
 
-        c.log "$location.search().prefix", $location.search().prefix
         s.searchOptionsMenu = 
             default : {
                 label: "SÖK EFTER ORD ELLER FRAS",
                 val: "default",
-                selected: not ($location.search().infix or $location.search().prefix or $location.search().suffix or $location.search().lemma),
+                selected: not ($location.search().infix or
+                               $location.search().prefix or
+                               $location.search().suffix or
+                               $location.search().fuzzy or
+                               $location.search().lemma),
             }
             lemma : {
                 label : "INKLUDERA BÖJNINGSFORMER"
                 val : "lemma"
                 selected : $location.search().lemma
             }
+            # fuzzy : {
+            #     label : "Suddig sökning"
+            #     val : "fuzzy"
+            #     selected : $location.search().fuzzy
+            #     advanced_only : true
+            # }
             prefix : {
                 label: "SÖK EFTER ORDBÖRJAN",
                 val: "prefix",
@@ -879,6 +888,9 @@ littb.directive "searchOpts", ($location, util) ->
         ,   
             key : "lemma"
             expr: "searchOptionsMenu.lemma.selected"
+        ,   
+            key : "fuzzy"
+            expr: "searchOptionsMenu.fuzzy.selected"
         ]
 
         s.searchOptSelect = (sel) ->
@@ -914,6 +926,10 @@ littb.directive "searchOpts", ($location, util) ->
             if sel.val == 'lemma' # and not isDeselect
                 deselectAll()
                 o.lemma.selected = true
+                return
+            if sel.val == 'fuzzy'
+                deselectAll()
+                o.fuzzy.selected = true
                 return
             if isDeselect
                 sel.selected = false

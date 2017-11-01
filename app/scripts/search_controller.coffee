@@ -138,7 +138,15 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                     if author_id
                         c.log "do modifySearch", author_id
                         s.searching = true
-                        searchData.modifySearch({authors: author_id, from: 0, to: s.num_hits - 1}).then ([sentsWithHeaders]) ->
+
+                        args = {from: 0, to: s.num_hits - 1}
+                        # if !s.isAuthorAboutSearch
+                        #     args["about_author"] = author_id
+                        # else
+                        #     args["author"] = author_id
+                        args["author"] = author_id
+
+                        searchData.modifySearch(args).then ([sentsWithHeaders]) ->
                             c.log "modifySearch args", arguments
                             s.searching = false
                             s.sentsNavFilter = sentsWithHeaders
@@ -239,6 +247,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         if not $location.search().lemma
             args.word_form_only = true
+        if $location.search().fuzzy
+            args.fuzzy = true
         # if searchAnom
         #     args.anonymous = false
 

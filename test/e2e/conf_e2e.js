@@ -8,7 +8,7 @@ exports.config = {
   capabilities: {
     'browserName': 'chrome',
     'chromeOptions': {
-       'args': ['--disable-extensions', '--window-size=1200,900']
+       'args': ['--disable-extensions', '--window-size=1500,900']
      }
   },
 

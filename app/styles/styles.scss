@@ -92,7 +92,6 @@ $fa-font-path: "/components/font-awesome/fonts";
 @mixin small-caps {
     font-family: "Requiem Text SC A", "Requiem Text SC B";
     text-transform: lowercase;
-    // font-variant: small-caps;
 }
 .sc {
     @include small-caps();
@@ -1677,6 +1676,10 @@ body > .header {
             }
         }
 
+        .simple .search_opts_widget li.advanced_only {
+            display: none;
+        }
+
 
         .slider {
             
@@ -2825,6 +2828,9 @@ $partnav-width : 170px;
         }
         .author_year {
             font-size: 0.9em;
+        }
+        .content {
+            font-size: 1em;
         }
         .introtext {
             display: inline-block;
@@ -4769,7 +4775,10 @@ grundform-clean {
 
         }
     }
-
+    .avdelare {
+        text-align: center;
+        margin-top: 1em;
+    }
     div > p:first-child, 
     p + blockquote,
     h3 + p,

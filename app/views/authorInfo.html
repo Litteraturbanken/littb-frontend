@@ -25,7 +25,7 @@
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
             <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
-            <div class="introtext" ng-class="{show_more: show_more}">
+            <div class="introtext content" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div class="pull-right"><em>{{authorsById[normalizeAuthor(authorInfo.intro_author)].full_name}}</em></div>
 

@@ -1,7 +1,7 @@
 <meta-desc>Sök i Litteraturbankens verk</meta-desc>
 <page-title> {{pageTitle ? 'Sök: "' + pageTitle + '"' : 'Sök' }}</page-title>
 <!-- <img bkg-img src="img/sok_bkg.jpg"></img> -->
-<div ng-class="{searching:searching, advanced : advanced}">
+<div ng-class="{searching:searching, advanced : advanced, simple: !advanced}">
     
 
     <h1>Textsökning <span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span> </h1>

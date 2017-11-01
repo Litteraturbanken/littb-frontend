@@ -627,7 +627,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
     searchLexicon : (str, id, useWildcard, doSearchId, strict) ->
         def = $q.defer()
-        url = "/query/so.xql"
+        url = "/so/"
         # c.log "searchId", searchId
         if doSearchId
             params = 
@@ -911,6 +911,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
 
         submit : (query, params) ->
             query = query.toLowerCase()
+            delete params.query
             $http(
                 url: "#{STRIX_URL}/lb_search_count/#{query}"
                 params : _.omit params, "number_of_fragments", "from", "to"

@@ -334,8 +334,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             s.workinfo.partStartArray[0][0] == startix
 
         shortestFirstpart = findShortest(_.map(firstParts, _.last))
+
+        partStartingHere = _.find s.workinfo.partStartArray, ([i, part]) -> 
+            i == s.pageix
+        noPartStartsHere = !partStartingHere?[1] 
         # are we at the first part?
-        if s.pageix <= s.pagemap["page_" + shortestFirstpart.endpagename]
+        if noPartStartsHere and (s.pageix <= s.pagemap["page_" + shortestFirstpart.endpagename])
             return null
 
         prev = getLastSeenPart()

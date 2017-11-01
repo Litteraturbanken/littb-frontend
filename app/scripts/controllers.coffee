@@ -621,7 +621,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchWorks = () ->
         s.titleSearching = true
-        include = "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,authors.author_id,authors.surname,authors.authortype,startpagename,has_epub"
+        include = "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,authors.author_id,work_authors.author_id,authors.surname,authors.authortype,startpagename,has_epub"
         # last true in args list is for partial_string match
         def = backend.getTitles(false, s.authorFilter, null, s.filter, false, false, true, include).then (titleArray) ->
             s.titleSearching = false
@@ -656,7 +656,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         dateFmt = (datestr) ->
             months = "januari,februari,mars,april,maj,juni,juli,augusti,septemper,oktober,november,december".split(",")
             [year, month, day] = datestr.split("-")
-            return [day, months[month - 1], year].join(" ")
+            return [Number(day), months[month - 1], year].join(" ")
 
         backend.getTitles(false, null, "imported|desc,sortfield|asc", null, false, true).then (titleArray) ->
             s.titleSearching = false
@@ -968,6 +968,7 @@ littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
         return {
                 "ide" : '/red/om/ide/omlitteraturbanken.html'
                 "hjalp" : "views/help.html"
+                "vision" : "/red/om/visioner/visioner.html"
                 "kontakt" : 'views/contactForm.html'
                 "statistik" : 'views/stats.html'
                 "rattigheter" : '/red/om/rattigheter/rattigheter.html'

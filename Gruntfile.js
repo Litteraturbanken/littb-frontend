@@ -135,7 +135,7 @@ module.exports = function (grunt) {
           changeOrigin: true
 
       }
-      ].concat(["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "xhr", "ws"].map(function(item) {
+      ].concat(["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "xhr", "ws", "so"].map(function(item) {
         
         return {
                       context: '/' + item,
@@ -184,6 +184,7 @@ module.exports = function (grunt) {
       },
       e2e : {
         options: {
+          port: 9001,
           middleware: function (connect) {
             return [
               proxySnippet, 
