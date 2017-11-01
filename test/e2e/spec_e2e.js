@@ -46,7 +46,7 @@
       filter = element(By.model("filter"));
       filter.sendKeys("psalm");
       filter.sendKeys(protractor.Key.ENTER);
-      return expect(rows.count()).toEqual(795);
+      return expect(rows.count()).toEqual(796);
     });
   });
 
@@ -99,7 +99,7 @@
     });
   });
 
-  describe("search", function() {
+  fdescribe("search", function() {
     beforeEach(function() {
       return browser.get("http://localhost:9001/sok");
     });

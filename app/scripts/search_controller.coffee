@@ -140,11 +140,11 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                         s.searching = true
 
                         args = {from: 0, to: s.num_hits - 1}
-                        # if !s.isAuthorAboutSearch
-                        #     args["about_author"] = author_id
-                        # else
-                        #     args["author"] = author_id
-                        args["author"] = author_id
+                        if !s.isAuthorAboutSearch
+                            args["about_author"] = author_id
+                        else
+                            args["author"] = author_id
+                        # args["author"] = author_id
 
                         searchData.modifySearch(args).then ([sentsWithHeaders]) ->
                             c.log "modifySearch args", arguments
@@ -238,10 +238,12 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         #         args.query = suffix + args.query + prefix
         _.extend args, filter_params
 
-        if $location.search().sok_om
-            args.about_author = true
         if $location.search().forfattare
-            args.authors = $location.search().forfattare
+            if $location.search().sok_om
+                args.about_author = $location.search().forfattare
+            else
+                args.authors = $location.search().forfattare
+                
         if $location.search().titlar
             args.work_ids = $location.search().titlar
 

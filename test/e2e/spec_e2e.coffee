@@ -40,7 +40,7 @@ describe "titles", () ->
         filter = element(By.model("filter"))
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
-        expect(rows.count()).toEqual 795
+        expect(rows.count()).toEqual 796
 
 
 describe "epubList", () ->
