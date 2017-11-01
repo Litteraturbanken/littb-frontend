@@ -146,7 +146,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 redirectTo : "/om/hjalp"
             .when '/statistik',
                 redirectTo: "/om/statistik"
-            .when '/sok',
+            .when ['/sok', '/sök'],
                 templateUrl: 'views/search.html'
                 controller : 'searchCtrl'
                 reloadOnSearch : false

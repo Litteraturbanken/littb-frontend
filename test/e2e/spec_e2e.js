@@ -99,7 +99,7 @@
     });
   });
 
-  fdescribe("search", function() {
+  describe("search", function() {
     beforeEach(function() {
       return browser.get("http://localhost:9001/sok");
     });

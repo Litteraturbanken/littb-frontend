@@ -1,5 +1,5 @@
 
-describe "library authors", () ->
+fdescribe "library authors", () ->
     rows = null
     beforeEach () ->
         browser.get "http://localhost:9001/bibliotek"
