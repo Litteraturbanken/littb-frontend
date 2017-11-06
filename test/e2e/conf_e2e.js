@@ -16,6 +16,9 @@ exports.config = {
   // protractor is called.
   specs: ['spec_e2e.js'],
 
+  chromeOnly: true,
+  directConnect: true,
+
   // Options to be passed to Jasmine-node.
   jasmineNodeOpts: {
     showColors: true,
