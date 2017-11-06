@@ -2759,7 +2759,7 @@ $partnav-width : 170px;
             min-height : 1em;
         }
         p {
-            width : 500px;    
+            // width : 500px;    
             line-height : 1.4;
         }
 
@@ -4230,7 +4230,7 @@ grundform-clean {
         background-position: 0 85%;
     }
 
-    * {
+    .sla_intro, .sla_intro * {
         -webkit-font-smoothing: antialiased;
         color : white;
         a:hover {

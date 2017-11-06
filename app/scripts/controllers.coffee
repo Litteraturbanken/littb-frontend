@@ -654,7 +654,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.titleArray = null
 
         dateFmt = (datestr) ->
-            months = "januari,februari,mars,april,maj,juni,juli,augusti,septemper,oktober,november,december".split(",")
+            months = "januari,februari,mars,april,maj,juni,juli,augusti,september,oktober,november,december".split(",")
             [year, month, day] = datestr.split("-")
             return [Number(day), months[month - 1], year].join(" ")
 
@@ -1008,7 +1008,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
     s = $scope
     modal = null
     prevFilter = null
-    close = () ->
+    s.close = () ->
         s.lbworkid = null
         s.$broadcast("blur")
         # s.show_autocomplete = false
@@ -1029,7 +1029,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
         #     ret.then (val) ->
 
 
-        close()
+        s.close()
         if val.url
             $location.url(val.url)
 
@@ -1158,7 +1158,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
 
         else if event.which == 27 # escape
             s.$apply () ->
-                close()
+                s.close()
 
 
 

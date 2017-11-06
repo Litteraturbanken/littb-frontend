@@ -281,8 +281,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         maybePart = _.last _.dropRightWhile s.workinfo.partStartArray, ([startix, part]) -> 
             endix = s.pagemap["page_" + part.endpagename] 
             if findIndex is endix then return false # shortcut
+            # TODO WRONG LOGIC. look for prev part that has ended
             # look for prev seen started part that has not ended
-            return (startix > findIndex) or (endix <= findIndex) 
+            return (startix > findIndex) #or (endix <= findIndex) 
 
         if maybePart then return maybePart[1]
 
@@ -294,7 +295,6 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         [diff, part] = _.min decorated, ([num, part]) ->
             if num < 0 then return 10000
             else return num
-        console.log("part", part)
 
         return part
 
@@ -328,18 +328,15 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getPrevPartUrl = () ->
         if not s.workinfo then return
 
-        # are we on the first part?
         firstParts = _.filter s.workinfo.partStartArray, ([startix]) ->
             # all parts that start at the same page as the first part
             s.workinfo.partStartArray[0][0] == startix
 
         shortestFirstpart = findShortest(_.map(firstParts, _.last))
 
-        partStartingHere = _.find s.workinfo.partStartArray, ([i, part]) -> 
-            i == s.pageix
-        noPartStartsHere = !partStartingHere?[1] 
         # are we at the first part?
-        if noPartStartsHere and (s.pageix <= s.pagemap["page_" + shortestFirstpart.endpagename])
+        # i.e are we before the end of the first part?
+        if (s.pageix <= s.pagemap["page_" + shortestFirstpart.endpagename])
             return null
 
         prev = getLastSeenPart()

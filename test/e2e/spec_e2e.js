@@ -99,21 +99,7 @@
     });
   });
 
-  describe("search", function() {
-    beforeEach(function() {
-      return browser.get("http://localhost:9001/sok");
-    });
-    return it("should give search results. ", function() {
-      var input, rows;
-      input = element(By.model("query"));
-      input.sendKeys("kriget är förklarat !");
-      input.sendKeys(protractor.Key.ENTER);
-      rows = element.all(By.css(".sentence"));
-      return expect(rows.count()).toEqual(1);
-    });
-  });
-
-  describe("parts navigation", function() {
+  fdescribe("parts navigation", function() {
     var nextPart, prevPart;
     prevPart = function() {
       return element(By.css(".pager_ctrls a:nth-of-type(1)"));
@@ -133,9 +119,13 @@
       browser.get("http://localhost:9001/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil");
       return expect(nextPart().getAttribute('href')).toBe("http://localhost:9001/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil");
     });
-    return it("should give a prev part despite prev page being between parts", function() {
+    it("should give a prev part despite prev page being between parts", function() {
       browser.get("http://localhost:9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil");
       return expect(prevPart().getAttribute('href')).toBe("http://localhost:9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil");
+    });
+    return it("should find a single page part on the prev page", function() {
+      browser.get("http://localhost:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil");
+      return expect(prevPart().getAttribute('href')).toBe("http://localhost:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil");
     });
   });
 

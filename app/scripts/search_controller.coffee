@@ -141,7 +141,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
                         args = {from: 0, to: s.num_hits - 1}
                         if !s.isAuthorAboutSearch
-                            args["about_author"] = author_id
+                            args["about_authors"] = author_id
                         else
                             args["author"] = author_id
                         # args["author"] = author_id
@@ -240,7 +240,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
         if $location.search().forfattare
             if $location.search().sok_om
-                args.about_author = $location.search().forfattare
+                args.about_authors = $location.search().forfattare
             else
                 args.authors = $location.search().forfattare
                 

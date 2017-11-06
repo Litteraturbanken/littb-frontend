@@ -1,5 +1,5 @@
 
-fdescribe "library authors", () ->
+describe "library authors", () ->
     rows = null
     beforeEach () ->
         browser.get "http://localhost:9001/bibliotek"
@@ -96,18 +96,18 @@ describe "editor", () ->
             expect(browser.getCurrentUrl()).toBe("http://localhost:9001/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
 
-describe "search", () ->
-    beforeEach () ->
-        browser.get "http://localhost:9001/sok"
+# describe "search", () ->
+#     beforeEach () ->
+#         browser.get "http://localhost:9001/sok"
         
 
-    it "should give search results. ", () ->
-        input = element(By.model "query")
-        input.sendKeys("kriget är förklarat !")
-        input.sendKeys(protractor.Key.ENTER)
+#     it "should give search results. ", () ->
+#         input = element(By.model "query")
+#         input.sendKeys("kriget är förklarat !")
+#         input.sendKeys(protractor.Key.ENTER)
 
-        rows = element.all(By.css(".sentence"))
-        expect(rows.count()).toEqual 1
+#         rows = element.all(By.css(".sentence"))
+#         expect(rows.count()).toEqual 1
 
 
 
@@ -130,6 +130,10 @@ describe "parts navigation", () ->
     it "should give a prev part despite prev page being between parts", () ->
         browser.get "http://localhost:9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil"
         expect(prevPart().getAttribute('href')).toBe("http://localhost:9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil")
+    
+    it "should find a single page part on the prev page", () ->
+        browser.get "http://localhost:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil"
+        expect(prevPart().getAttribute('href')).toBe("http://localhost:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil")
 
 
 

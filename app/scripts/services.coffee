@@ -896,6 +896,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
             @isSearching = false
             @NUM_HITS = 30 # how many doc hits per search?
             @NUM_HIGHLIGHTS = 5
+            @NUM_HIGHLIGHTS_MORE = 50
 
             @include = "authors,title,titlepath,title_id,mediatype,lbworkid"
 
@@ -1019,7 +1020,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
         getMoreHighlights : (sentenceData) ->
             sentenceData.at_highlight_page ?= 1
             at_page = sentenceData.at_highlight_page + 1
-            num_fragments = at_page * @NUM_HIGHLIGHTS
+            num_fragments = at_page * @NUM_HIGHLIGHTS_MORE
             c.log "sentenceData.at_highlight_page", sentenceData.at_highlight_page
             params = 
                 include: @include
