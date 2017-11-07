@@ -322,7 +322,8 @@
     //     @include inline-block(top);
     // }
     .sidebar {
-        @include inline-block(top);
+        display: inline-block;
+        vertical-align: top;
         height: 0;
         width: 210px;
         margin-left: 2em;
@@ -350,7 +351,7 @@
         height : 50px;
         width: 370px;
         margin-bottom : 0;
-        @include inline-block();
+        display: inline-block;
         position: relative;
         top: 20px;
         // margin-bottom : -40px;
@@ -442,7 +443,8 @@
         ul li[style="list-style-type: none"] {
             margin-left: 0;
         }
-        @include inline-block(top);
+        display: inline-block;
+        vertical-align: top;
         .sect2 {
             margin-top: 2em;
         }
@@ -662,7 +664,8 @@
         }
         #mainview {
             & > div {
-                @include inline-block(top);
+                display: inline-block;
+                vertical-align: top;
             }
         }
         .authorinfo {

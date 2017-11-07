@@ -1,4 +1,4 @@
-'use strict';
+// 'use strict';
 var LIVERELOAD_PORT = 35729;
 var lrSnippet = require('connect-livereload')({ port: LIVERELOAD_PORT });
 var proxySnippet = require('grunt-connect-proxy/lib/utils').proxyRequest;
@@ -44,10 +44,16 @@ module.exports = function (grunt) {
         files: ['test/spec/{,*/}*.coffee'],
         tasks: ['newer:coffee:test']
       },
-      compass: {
-        files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
-        tasks: ['compass:server', 'newer:autoprefixer'],
+      // compass: {
+      //   files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
+      //   tasks: ['compass:server', 'newer:autoprefixer'],
+      // },
+
+      sass: {
+          files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
+          tasks: ["sass:dist"]
       },
+
       gruntfile: {
         files: ['Gruntfile.js']
       },
@@ -287,30 +293,46 @@ module.exports = function (grunt) {
         }]
       }
     },
-    compass: {
+    // compass: {
+    //   options: {
+    //     sassDir: '<%= yeoman.app %>/styles',
+    //     cssDir: ['.tmp/styles'],
+    //     generatedImagesDir: '.tmp/img/generated',
+    //     imagesDir: '<%= yeoman.app %>/img',
+    //     javascriptsDir: '<%= yeoman.app %>/scripts',
+    //     fontsDir: '<%= yeoman.app %>/styles/fonts',
+    //     importPath: '<%= yeoman.app %>/components',
+    //     httpImagesPath: '/img',
+    //     httpGeneratedImagesPath: '/img/generated',
+    //     httpFontsPath: '/styles/fonts',
+    //     relativeAssets: false
+    //   },
+    //   dist: {
+    //     options: {
+    //       outputStyle: 'compressed',
+    //       force: true
+    //     }
+    //   },
+    //   server: {
+    //     options: {
+    //       debugInfo: true
+    //     }
+    //   }
+    // },
+    sass: {
       options: {
-        sassDir: '<%= yeoman.app %>/styles',
-        cssDir: ['.tmp/styles'],
-        generatedImagesDir: '.tmp/img/generated',
-        imagesDir: '<%= yeoman.app %>/img',
-        javascriptsDir: '<%= yeoman.app %>/scripts',
-        fontsDir: '<%= yeoman.app %>/styles/fonts',
-        importPath: '<%= yeoman.app %>/components',
-        httpImagesPath: '/img',
-        httpGeneratedImagesPath: '/img/generated',
-        httpFontsPath: '/styles/fonts',
-        relativeAssets: false
+          sourceMap: true
       },
       dist: {
-        options: {
-          outputStyle: 'compressed',
-          force: true
-        }
-      },
-      server: {
-        options: {
-          debugInfo: true
-        }
+          // src: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
+          files: [{
+            expand: true,
+            cwd: '<%= yeoman.app %>/styles',
+            src: ['**/*.scss'],
+            dest: '.tmp/styles',
+            ext: '.css'
+          }]
+
       }
     },
     filerev: {
@@ -468,15 +490,18 @@ module.exports = function (grunt) {
     concurrent: {
       server: [
         'newer:coffee:dist',
-        'compass:server',
+        'sass',
+        // 'compass:server',
       ],
       test: [
         'newer:coffee',
-        'compass',
+        'sass',
+        // 'compass',
       ],
       dist: [
         'coffee',
-        'compass:dist',
+        'sass',
+        // 'compass:dist',
         'imagemin',
         'svgmin',
         'htmlmin'
