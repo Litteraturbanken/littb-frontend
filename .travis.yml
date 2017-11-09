@@ -21,10 +21,10 @@ install:
   - docker-compose version
 
 # before_script:
-#   - docker-compose up --build
+#   - docker-compose up --build --exit-code-from
 
 script:
-  - docker-compose up --build
+  - docker-compose up --build --exit-code-from
 
 after_script:
   - docker-compose down
