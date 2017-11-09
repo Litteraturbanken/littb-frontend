@@ -1,0 +1,51 @@
+version: '2'
+
+services:
+
+  littb:
+    build: .
+    container_name: littb
+    # volumes:
+      # - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      
+    ports:
+      - "9000:9000"
+    expose:
+      - 9001
+    # environment:
+    # networks:
+    #   - littb
+    entrypoint: "grunt docker_test"
+
+    environment:
+      - SELENIUM=hub
+      - LITTB_DOCKER_HOST=littb
+    depends_on:
+      - chrome
+
+
+  hub:
+    container_name: hub
+    image: selenium/hub
+    ports:
+      - "4444:4444"
+    expose:
+      - "4444" 
+    # networks:
+    #   - littb
+
+  chrome:
+    image: selenium/node-chrome
+    depends_on:
+      - hub
+    environment:
+        - HUB_PORT_4444_TCP_ADDR=hub
+        - HUB_PORT_4444_TCP_PORT=4444 
+    volumes:
+      - /dev/shm:/dev/shm
+    # networks:
+    #   - littb
+
+networks:
+  littb:
+    driver: bridge

@@ -585,6 +585,14 @@ module.exports = function (grunt) {
     'e2e'
     
   ]);
+  grunt.registerTask('docker_test', [
+    'clean:server',
+    'configureProxies',
+    'concurrent:test',
+    'concurrent:server',
+    'autoprefixer',
+    'quicke2e'
+  ]);
 
 
   grunt.registerTask('build', [

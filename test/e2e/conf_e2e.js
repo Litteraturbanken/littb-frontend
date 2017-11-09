@@ -2,13 +2,13 @@
 
 exports.config = {
   // The address of a running selenium server.
-  seleniumAddress: 'http://localhost:4444/wd/hub',
+  seleniumAddress: "http://" + (process.env.SELENIUM || "localhost") + ":4444/wd/hub",
 
   // Capabilities to be passed to the webdriver instance.
   capabilities: {
     'browserName': 'chrome',
     'chromeOptions': {
-       'args': ['--disable-extensions', '--window-size=1500,900']
+       'args': ['--disable-extensions', '--window-size=1500,900', "--privileged", "--headless"]
      }
   },
 
@@ -16,8 +16,8 @@ exports.config = {
   // protractor is called.
   specs: ['spec_e2e.js'],
 
-  chromeOnly: true,
-  directConnect: true,
+  // chromeOnly: true,
+  // directConnect: true,
 
   // Options to be passed to Jasmine-node.
   jasmineNodeOpts: {
