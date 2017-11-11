@@ -31,6 +31,8 @@ services:
       - "4444:4444"
     expose:
       - "4444" 
+    environment:
+      - "JAVA_OPTS=-Dselenium.LOGGER.level=WARNING"
     # networks:
     #   - littb
 
@@ -41,7 +43,7 @@ services:
     environment:
         - HUB_PORT_4444_TCP_ADDR=hub
         - HUB_PORT_4444_TCP_PORT=4444 
-        - JAVA_OPTS=-Dselenium.LOGGER.level=2
+        - "JAVA_OPTS=-Dselenium.LOGGER.level=WARNING"
     volumes:
       - /dev/shm:/dev/shm
     # networks:
