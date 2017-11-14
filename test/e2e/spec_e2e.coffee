@@ -1,4 +1,4 @@
-HOST = process.env.LITTB_DOCKER_HOST or "#{HOST}"
+HOST = process.env.LITTB_DOCKER_HOST or "localhost"
 describe "library authors", () ->
     rows = null
     beforeEach () ->

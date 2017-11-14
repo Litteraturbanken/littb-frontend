@@ -4,17 +4,6 @@ services:
 
   littb:
     build: .
-    container_name: littb
-    # volumes:
-      # - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-      
-    ports:
-      - "9000:9000"
-    expose:
-      - 9001
-    # environment:
-    # networks:
-    #   - littb
     entrypoint: "grunt docker_test"
 
     environment:
@@ -23,18 +12,10 @@ services:
     depends_on:
       - chrome
 
-
   hub:
-    container_name: hub
     image: selenium/hub
-    ports:
-      - "4444:4444"
-    expose:
-      - "4444" 
     environment:
       - "JAVA_OPTS=-Dselenium.LOGGER.level=WARNING"
-    # networks:
-    #   - littb
 
   chrome:
     image: selenium/node-chrome
@@ -46,9 +27,4 @@ services:
         - "JAVA_OPTS=-Dselenium.LOGGER.level=WARNING"
     volumes:
       - /dev/shm:/dev/shm
-    # networks:
-    #   - littb
 
-networks:
-  littb:
-    driver: bridge
