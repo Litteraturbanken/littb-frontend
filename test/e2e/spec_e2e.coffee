@@ -7,7 +7,7 @@ describe "library authors", () ->
 
     it "should filter using the input", () ->
         filter = element(By.model("filter"))
-        filter.sendKeys "adel"
+        filter.sendKeys "adelb"
         filter.sendKeys(protractor.Key.ENTER)
         expect(rows.count()).toEqual 1
 
@@ -96,18 +96,18 @@ describe "editor", () ->
             expect(browser.getCurrentUrl()).toBe("http://#{HOST}:9001/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
 
-# describe "search", () ->
-#     beforeEach () ->
-#         browser.get "http://#{HOST}:9001/sok"
+describe "search", () ->
+    beforeEach () ->
+        browser.get "http://#{HOST}:9001/sok"
         
 
-#     it "should give search results. ", () ->
-#         input = element(By.model "query")
-#         input.sendKeys("kriget är förklarat !")
-#         input.sendKeys(protractor.Key.ENTER)
+    it "should give search results. ", () ->
+        input = element(By.model "query")
+        input.sendKeys("kriget är förklarat !")
+        input.sendKeys(protractor.Key.ENTER)
 
-#         rows = element.all(By.css(".sentence"))
-#         expect(rows.count()).toEqual 1
+        rows = element.all(By.css(".sentence"))
+        expect(rows.count()).toEqual 1
 
 
 

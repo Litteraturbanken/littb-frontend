@@ -1,9 +1,12 @@
-version: '2'
+version: '3'
 
 services:
 
   littb:
     build: .
+    # ports:
+    #   - 9000:9000
+    # entrypoint: "grunt server"
     entrypoint: "grunt docker_test"
 
     environment:
