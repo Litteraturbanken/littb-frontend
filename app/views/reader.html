@@ -63,9 +63,9 @@
         <hr class="lower">
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
             
-            <a ng-href="{{getPrevPartUrl()}}" ng-class="{disabled : !getPrevPartUrl()}">Gå bakåt en del</a>
+            <a class="prev_part" ng-href="{{getPrevPartUrl()}}" ng-class="{disabled : !getPrevPartUrl()}">Gå bakåt en del</a>
             <br>
-            <a ng-class="{disabled : !getNextPartUrl()}" ng-href="{{getNextPartUrl()}}">Gå till nästa del</a>
+            <a class="next_part" ng-class="{disabled : !getNextPartUrl()}" ng-href="{{getNextPartUrl()}}">Gå till nästa del</a>
             <br>
             <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage(pageix)}"
                 ng-click="gotopage(startpage, $event)">

@@ -138,7 +138,9 @@ littb.controller "contactFormCtrl", ($scope, backend, $timeout, $location) ->
             msg = "[skola] " + s.message
         else
             msg = s.message
-        backend.submitContactForm(s.name, s.email, msg).then( () ->
+        # svenskt oversattarlexikon?
+        isSOL = $location.search().sol?
+        backend.submitContactForm(s.name, s.email, msg, isSOL).then( () ->
             s.showContact = true
             done()
         , err

@@ -721,13 +721,15 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         return def.promise
 
     
-    submitContactForm : (name, email, message) ->
+    submitContactForm : (name, email, message, isSOL) ->
         params = 
             sender_name : name
             sender_address : email
             message : message
         if isDev
             params.test = true
+        if isSOL
+            params.isSOL = true
         $http(
             url : "#{STRIX_URL}/contact"
             params: params
