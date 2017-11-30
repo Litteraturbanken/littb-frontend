@@ -614,7 +614,7 @@ body {
     p {
         max-width: 500px;
     }
-    #{headers()} {
+    h1,h2,h3,h4,h5,h6 {
         max-width: 600px;
     }
 
@@ -4534,6 +4534,9 @@ grundform-clean {
 }
 
 .page-presentation {
+    headers() {
+
+    }
     background-position-y : -100px !important;
     
     table {

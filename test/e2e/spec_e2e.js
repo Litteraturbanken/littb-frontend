@@ -13,7 +13,7 @@
     return it("should filter using the input", function() {
       var filter;
       filter = element(By.model("filter"));
-      filter.sendKeys("adel");
+      filter.sendKeys("adelb");
       filter.sendKeys(protractor.Key.ENTER);
       return expect(rows.count()).toEqual(1);
     });
@@ -50,7 +50,7 @@
       filter = element(By.model("filter"));
       filter.sendKeys("psalm");
       filter.sendKeys(protractor.Key.ENTER);
-      return expect(rows.count()).toEqual(805);
+      return expect(rows.count()).toEqual(806);
     });
   });
 
@@ -106,10 +106,10 @@
   describe("parts navigation", function() {
     var nextPart, prevPart;
     prevPart = function() {
-      return element(By.css(".pager_ctrls a:nth-of-type(1)"));
+      return element(By.css(".pager_ctrls a.prev_part"));
     };
     nextPart = function() {
-      return element(By.css(".pager_ctrls a:nth-of-type(2)"));
+      return element(By.css(".pager_ctrls a.next_part"));
     };
     it("should handle parts with parent parts", function() {
       browser.get("http://" + HOST + ":9001/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil");

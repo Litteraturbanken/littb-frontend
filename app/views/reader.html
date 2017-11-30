@@ -68,7 +68,7 @@
             <a class="next_part" ng-class="{disabled : !getNextPartUrl()}" ng-href="{{getNextPartUrl()}}">Gå till nästa del</a>
             <br>
             <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage(pageix)}"
-                ng-click="gotopage(startpage, $event)">
+                > <!-- ng-click="gotopage(startpage, $event)" -->
                 Gå till första sidan
             </a>
             <br>

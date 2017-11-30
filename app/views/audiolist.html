@@ -20,7 +20,9 @@
             </div>
             <div class="img_container right_col">
                 <div style="display:inline-block" >
-                    <img ng-src="/red/forfattare/{{rows[0].readers[0].author_id}}/{{rows[0].readers[0].author_id}}_large.jpeg" alt="Horace Engdahl">
+                    <img 
+                        ng-src="/red/forfattare/{{rows[0].readers[0].author_id}}/{{rows[0].readers[0].author_id}}_large.jpeg" 
+                        alt="{{authorsById[rows[0].readers[0].author_id].full_name || 'Info om uppläsare saknas'}}">
                     <figcaption>{{authorsById[rows[0].readers[0].author_id].pictureinfo}}</figcaption>
                 </div>
             </div>
