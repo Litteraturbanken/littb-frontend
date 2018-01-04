@@ -174,10 +174,11 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         pageix <= startix
 
     s.getFirstPageUrl = () ->
+        search = window.location.search
         if s.isEditor
-            "/editor/#{$routeParams.lbid}/ix/0/#{$routeParams.mediatype}"
+            "/editor/#{$routeParams.lbid}/ix/0/#{$routeParams.mediatype}" + search
         else
-            "/forfattare/#{author}/titlar/#{title}/sida/#{s.startpage}/#{mediatype}"
+            "/forfattare/#{author}/titlar/#{title}/sida/#{s.startpage}/#{mediatype}" + search
     
     s.getPrevPageUrl = () ->
         unless s.pagemap then return
