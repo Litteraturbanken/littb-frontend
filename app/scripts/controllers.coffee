@@ -974,7 +974,10 @@ littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
                 "kontakt" : 'views/contactForm.html'
                 "statistik" : 'views/stats.html'
                 "rattigheter" : '/red/om/rattigheter/rattigheter.html'
-                "inenglish" : "/red/om/ide/inenglish.html"
+                # "inenglish" : "/red/om/ide/inenglish.html",
+                "english.html" : "/red/om/ide/english.html",
+                "deutsch.html" : "/red/om/ide/deutsch.html",
+                "francais.html" : "/red/om/ide/francais.html",
             }[page]
 
 littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, util) ->

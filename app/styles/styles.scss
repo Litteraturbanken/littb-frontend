@@ -142,7 +142,7 @@
 $inline-block-alignment : top;
 $sans : "Verlag A", "Verlag B", sans-serif;
 
-$main-menu-width : 195px;
+$main-menu-width : 225px;
 $left-gutter-width : 40px;
 $right-gutter-width : 120px;
 $page-width : 900px;
@@ -684,6 +684,18 @@ h1,h2,h3,h4,h5,h6 {
     .dict_links {
         margin-bottom : 0.5em;
     }
+    ul.langs {
+        text-align : right;
+        font-family : "Requiem Display A", "Requiem Display B", georgia, serif;
+        -webkit-font-smoothing: antialiased;
+        text-transform: uppercase;
+        margin-top: 1em;
+        margin-right : 8rem;
+        font-size: 0.8em;
+
+        display: none;
+
+    }
     .word_search {
         .input_container {
             position : relative;
@@ -1041,7 +1053,7 @@ body > .header {
     background-size: cover;
     height: 230px;
     width: 240px;
-    left: -30px;
+    left: 9px;
     margin-bottom: 1em;
     position : relative;
     display: block;
@@ -1078,7 +1090,7 @@ body > .header {
 .page-start {
     // @include bkgimg("../img/moln.jpg");
     // overflow : hidden;
-    padding-left : 10px;
+    padding-left : 30px;
     &:after {
         // box-shadow: initial;
         opacity : 1;
@@ -1110,6 +1122,9 @@ body > .header {
         // width : 160px;
         width : auto;
         margin-right : 0;
+        ul.langs {
+            display: block;
+        }
     }
     .logo_link_monogram {
         @include logo("red_white");
@@ -1122,7 +1137,7 @@ body > .header {
         margin-bottom : 1em !important;
     }
     .mainnav {
-        margin-right : 3em;
+        margin-right : 8rem;
         font-size : 1.3em;
         a:not(:hover) {
             color : white;
@@ -2231,10 +2246,14 @@ $partnav-width : 170px;
         .ctrls {
             font-size : 0.7em;
             form {
+                white-space: nowrap;
                 margin: 1em 0;
                 button {
                     vertical-align: bottom;
-                    padding-top: 0.1em;
+                    padding-top: 0.45em;
+                    padding-bottom: 0.4em;
+                    line-height: 1;
+                    font-size: 1em;
                 }
 
                 input {
@@ -3758,6 +3777,9 @@ $partnav-width : 170px;
     &.fmt {
         background-color: #E1FFD6;
     }
+    .w1 {
+        background-color: rgb(255,230,230);
+    }
 }
 
 
@@ -4693,7 +4715,10 @@ grundform-clean {
     .help_content {
 
     }
-
+    #leftCorridor ul.langs {
+        display : block;
+        margin-right: 0;
+    }
 
 
     .logo_link_monogram {

@@ -612,7 +612,6 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         if aboutAuthors
             params.aboutAuthors = true
 
-        # url = "/query/lb-anthology.xql"
         url = "#{STRIX_URL}/lb_list_all/etext,faksimil/#{author_id}"
         req = 
             url : url
