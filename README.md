@@ -1,6 +1,9 @@
 Litteraturbanken-frontend-v4
 ============================
 
+[![Build Status](https://travis-ci.org/spraakbanken/littb-frontend.svg?branch=master)](https://travis-ci.org/spraakbanken/littb-frontend)
+
+
 ## Compile and install
 1. Clone frontend from demo/home/fkstrix/littb_frontend.git
 2. Run `npm install -g grunt-cli` (if not already installed)
