@@ -974,6 +974,7 @@ littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
                 "kontakt" : 'views/contactForm.html'
                 "statistik" : 'views/stats.html'
                 "rattigheter" : '/red/om/rattigheter/rattigheter.html'
+                "organisation" : '/red/om/ide/organisation.html'
                 # "inenglish" : "/red/om/ide/inenglish.html",
                 "english.html" : "/red/om/ide/english.html",
                 "deutsch.html" : "/red/om/ide/deutsch.html",
