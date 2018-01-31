@@ -40,7 +40,7 @@ describe "titles", () ->
         filter = element(By.model("filter"))
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
-        expect(rows.count()).toEqual 810
+        expect(rows.count()).toEqual 809
 
 
 describe "epubList", () ->
@@ -111,9 +111,10 @@ describe "editor", () ->
 
 
 
-fdescribe "parts navigation", () ->
+describe "parts navigation", () ->
     prevPart = () -> element(By.css(".pager_ctrls a.prev_part"))
     nextPart = () -> element(By.css(".pager_ctrls a.next_part"))
+    currentPartName = () -> element(By.css(".current_part .navtitle"))
 
     it "should handle parts with parent parts", () ->
         browser.get "http://#{HOST}:9001/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil"
@@ -134,6 +135,14 @@ fdescribe "parts navigation", () ->
     it "should find a single page part on the prev page", () ->
         browser.get "http://#{HOST}:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil"
         expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil")
+
+    it "should go back to ended sub-part of main part", () ->
+        browser.get "http://#{HOST}:9001/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil"
+        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/Euripides/titlar/Elektra1843/sida/2/faksimil")
+
+    it "should show current part name instead of ended part", () ->
+        browser.get "http://#{HOST}:9001/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil"
+        expect(currentPartName().getText()).toBe("Elektra")
 
 
 

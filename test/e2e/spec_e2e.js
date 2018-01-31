@@ -103,13 +103,16 @@
     });
   });
 
-  fdescribe("parts navigation", function() {
-    var nextPart, prevPart;
+  describe("parts navigation", function() {
+    var currentPartName, nextPart, prevPart;
     prevPart = function() {
       return element(By.css(".pager_ctrls a.prev_part"));
     };
     nextPart = function() {
       return element(By.css(".pager_ctrls a.next_part"));
+    };
+    currentPartName = function() {
+      return element(By.css(".current_part .navtitle"));
     };
     it("should handle parts with parent parts", function() {
       browser.get("http://" + HOST + ":9001/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil");
@@ -127,9 +130,17 @@
       browser.get("http://" + HOST + ":9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil");
       return expect(prevPart().getAttribute('href')).toBe("http://" + HOST + ":9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil");
     });
-    return it("should find a single page part on the prev page", function() {
+    it("should find a single page part on the prev page", function() {
       browser.get("http://" + HOST + ":9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil");
       return expect(prevPart().getAttribute('href')).toBe("http://" + HOST + ":9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil");
+    });
+    it("should go back to ended sub-part of main part", function() {
+      browser.get("http://" + HOST + ":9001/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil");
+      return expect(prevPart().getAttribute('href')).toBe("http://" + HOST + ":9001/forfattare/Euripides/titlar/Elektra1843/sida/2/faksimil");
+    });
+    return it("should show current part name instead of ended part", function() {
+      browser.get("http://" + HOST + ":9001/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil");
+      return expect(currentPartName().getText()).toBe("Elektra");
     });
   });
 
