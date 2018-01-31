@@ -596,7 +596,7 @@ module.exports = function (grunt) {
 
 
   grunt.registerTask('build', [
-    'test',
+    // 'test',
     'clean:dist',
     'wiredep',
     'useminPrepare',
@@ -611,20 +611,6 @@ module.exports = function (grunt) {
     'usemin'
   ]);
 
-  grunt.registerTask('quickbuild', [
-    'clean:dist',
-    'wiredep',
-    'useminPrepare',
-    'concurrent:dist',
-    'autoprefixer',
-    'concat',
-    'copy:dist',
-    'ngAnnotate',
-    'cssmin',
-    'uglify',
-    'filerev',
-    'usemin'
-  ]);
 
 
 

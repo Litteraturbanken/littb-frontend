@@ -50,7 +50,7 @@
       filter = element(By.model("filter"));
       filter.sendKeys("psalm");
       filter.sendKeys(protractor.Key.ENTER);
-      return expect(rows.count()).toEqual(806);
+      return expect(rows.count()).toEqual(810);
     });
   });
 
@@ -103,7 +103,7 @@
     });
   });
 
-  describe("parts navigation", function() {
+  fdescribe("parts navigation", function() {
     var nextPart, prevPart;
     prevPart = function() {
       return element(By.css(".pager_ctrls a.prev_part"));

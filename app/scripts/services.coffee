@@ -207,11 +207,14 @@ expandMediatypes = (works, mainMediatype) ->
         mediatypes = [makeObj(main)]
         mediatypes = mediatypes.concat _.map rest, makeObj
 
-        if main.has_epub
-            mediatypes.push
-                label : "epub"
-                url : "txt/epub/" + getMainAuthor(main).author_id + "_" + main.work_title_id + ".epub"
-                downloadable : true
+        # if main.has_epub
+        for work in group
+            if work.has_epub
+                mediatypes.push
+                    label : "epub"
+                    url : "txt/epub/" + getMainAuthor(work).author_id + "_" + (work.work_title_id or work.title_id) + ".epub"
+                    downloadable : true
+                break
 
 
         sortMedia = (item) ->

@@ -671,7 +671,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
                 # TODO: fix locale format, 'femte maj 2017'
                 # output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
                 output.push {isHeader : true, label : dateFmt(datestr)}
-                output = output.concat (_.sortBy titles, "authors[0].surname")
+                output = output.concat (_.sortBy titles, ["sortfield"])
 
             s.titleArray = output
 
@@ -1064,7 +1064,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                     ,
                         label: "Sök"
                         url : "/sok"
-                        alt: "Sok"
+                        alt: ["Sok"]
                         typeLabel : "Gå till sidan"
                     ,
                         label: "Presentationer"
@@ -1096,34 +1096,27 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                 if $route.current.$$route.controller == "readingCtrl"
                     menu.push 
                         label : "/id"
-                        alt : "id"
+                        alt : ["id", "red"]
                         typeLabel: "[Red.]"
                         action : () ->
                             s.lbworkid = $(".reader_main").scope?().workinfo.lbworkid
                             return false
-                    ,
-                        label : "/öppna"
-                        alt : "öppna"
-                        typeLabel: "[Red.]"
-                        action : () ->
-                            info = $(".reader_main").scope?().workinfo
-                            win = window.open("littb-open://?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}")
-                            win.onload = () => win.close()
-                            # $http(
-                            #     url : "littb-open://"
-                            #     params :
-                            #         lbworkid : info.lbworkid
-                            #         mediatype : info.mediatype
-                            # )
-
-                            return false
+                    # ,
+                    #     label : "/öppna"
+                    #     alt : ["öppna"]
+                    #     typeLabel: "[Red.]"
+                    #     action : () ->
+                    #         info = $(".reader_main").scope?().workinfo
+                    #         win = window.open("littb-open://?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}")
+                    #         win.onload = () => win.close()
+                    #         return false
 
                 if $route.current.$$route.controller in ["readingCtrl", "authorInfoCtrl"]
                     key = {"readingCtrl" : "workinfo", "authorInfoCtrl" : "authorInfo"}[$route.current.$$route.controller]
 
                     menu.push
                         label : "/info"
-                        alt : "info"
+                        alt : ["info", "db", "red"]
                         typeLabel: "[Red.]"
                         action : () ->
                             s.info = $("#mainview").scope?()[key]
@@ -1132,10 +1125,11 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
 
 
                 menu = _.filter menu, (item) ->
+                    # if !isDev and item.typeLabel == "[Red.]" then return false
                     exp = new RegExp("^" + val, "gi")
                     # alt = new RegExp(val, "gi")
-                    item.label.match(exp) or item.alt?.match(exp)
-                # c.log "menu", menu
+                    item.label.match(exp) or _.any item.alt?.map (item) ->
+                        item.match(exp)
                 return data.concat menu
 
 

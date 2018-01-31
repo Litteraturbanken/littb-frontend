@@ -113,10 +113,10 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         s.$apply () ->
             switch event.which
                 when 39 
-                    if navigator.userAgent.indexOf("Firefox") != -1 or $rootElement.prop("scrollWidth") - $rootElement.prop("scrollLeft") == $($window).width()
+                    if navigator.userAgent.indexOf("Firefox") != -1 or $rootElement.prop("scrollWidth") - $window.scrollX == $($window).width()
                         s.nextPage()
                 when 37 
-                    if $rootElement.prop("scrollLeft") == 0
+                    if $window.scrollX == 0
                         s.prevPage()
 
     $document.on "keydown", onKeyDown
@@ -275,15 +275,12 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             endix = s.pagemap["page_" + part.endpagename] 
             return endix - startix
 
-    getLastSeenPart = () ->
-
-        findIndex = s.pageix - 1 # should always go on page back
+    getLastSeenPart = (findIndex, filterEnded) ->
 
         maybePart = _.last _.dropRightWhile s.workinfo.partStartArray, ([startix, part]) -> 
             endix = s.pagemap["page_" + part.endpagename] 
             if findIndex is endix then return false # shortcut
-            # TODO WRONG LOGIC. look for prev part that has ended
-            # look for prev seen started part that has not ended
+            if filterEnded and (endix < findIndex) then return true # toss out ended parts
             return (startix > findIndex) #or (endix <= findIndex) 
 
         if maybePart then return maybePart[1]
@@ -311,13 +308,13 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         partStartingHere = _.find s.workinfo.partStartArray, ([i, part]) -> 
             i == s.pageix
 
-        return partStartingHere?[1] or getLastSeenPart()
+        return partStartingHere?[1] or getLastSeenPart(s.pageix, true)
 
 
     s.getNextPartUrl = () ->
         if not s.workinfo then return
 
-        findIndex = s.pageix + 1 # should always go on page fwd
+        findIndex = s.pageix + 1 # should always go one page fwd
 
         next = _.first _.dropWhile s.workinfo.partStartArray, ([i, part]) -> i < findIndex
 
@@ -329,6 +326,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getPrevPartUrl = () ->
         if not s.workinfo then return
 
+        ###
         firstParts = _.filter s.workinfo.partStartArray, ([startix]) ->
             # all parts that start at the same page as the first part
             s.workinfo.partStartArray[0][0] == startix
@@ -339,8 +337,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         # i.e are we before the end of the first part?
         if (s.pageix <= s.pagemap["page_" + shortestFirstpart.endpagename])
             return null
-
-        prev = getLastSeenPart()
+        ###
+        prev = getLastSeenPart(s.pageix - 1, false)
 
         unless prev then return ""
 

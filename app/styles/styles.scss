@@ -1,6 +1,6 @@
 @charset "UTF-8";
 @import "triangle"; 
-@import "../components/font-awesome/scss/font-awesome";
+// @import "../components/font-awesome/scss/font-awesome";
 
 @font-face {
     font-family: "Requiem Text A", "Requiem Text B";
@@ -478,6 +478,10 @@ input:focus, button.btn:focus {
 .tooltip {
     font-size : 0.7em;
     z-index: 9999;
+}
+.tooltip.left .tooltip-inner {
+    margin-left: -145px;
+    max-width: 350px;
 }
 .fixed {
     position : fixed;
@@ -2657,8 +2661,6 @@ $partnav-width : 170px;
 
 
 .page-authorInfo {
-    background-position-x: -293px !important;
-    background-position-y: -220px !important;
     .logo_link_monogram {
         // background-image: url("../img/lb_monogram_red_white.svg");
         @include logo(red_white);
@@ -2674,6 +2676,8 @@ $partnav-width : 170px;
     }
 
     &:not(.site-sla) {
+        background-position-x: -293px !important;
+        background-position-y: -220px !important;
         .content {
             overflow : visible;
             border : none;
@@ -2684,7 +2688,6 @@ $partnav-width : 170px;
                 font-size: inherit;
             }
         }    
-        
     }
     .content h2 {
         font-size: inherit;
@@ -2740,7 +2743,7 @@ $partnav-width : 170px;
             }
             td:nth-child(2) {
                 padding: 0.2em 0 0.2em 0;
-                max-width : initial;
+                max-width : 500px;
                 
             }
             .title {
@@ -2785,7 +2788,7 @@ $partnav-width : 170px;
         .introtext {
             display: inline-block;
             vertical-align: top;
-            margin-right : 1em;
+            padding-right : 1em;
             height : 14.5em;
             overflow-y: hidden;
             max-width : 500px;
@@ -3680,6 +3683,7 @@ $partnav-width : 170px;
         .img_container {
             img {
                 margin-top: 9px;
+                max-width: 220px;
             }
             figcaption {
                 margin-top: 10px;

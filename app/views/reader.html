@@ -39,7 +39,9 @@
         
         <div>
             <div class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></div>
-            <a class="title" ng-click="openModal()" tooltip="{{workinfo.title != workinfo.showtitle ? workinfo.title : ''}}" tooltip-placement="left">
+            <a  class="title" ng-click="openModal()" 
+                tooltip="{{workinfo.title != workinfo.showtitle ? workinfo.title : ''}}" 
+                tooltip-placement="{{workinfo.title.length > 300 ? 'left' : 'top'}}">
                 {{workinfo.showtitle}}
             </a>
             <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
@@ -58,7 +60,13 @@
                 
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
-            <div ng-bind="getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title" data-ellipsis tooltip="{{getCurrentPart().title != getCurrentPart().navtitle ? getCurrentPart().title : ''}}" class="navtitle"></div>
+            <div 
+                 data-ellipsis 
+                 ng-bind="getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title" 
+                 tooltip="{{getCurrentPart().title != getCurrentPart().navtitle ? getCurrentPart().title : ''}}" 
+                 tooltip-placement="left"
+                 tooltip-append-to-body
+                 class="navtitle"></div>
         </div>
         <hr class="lower">
         <div class="pager_ctrls" ng-click="resetHitMarkings()">

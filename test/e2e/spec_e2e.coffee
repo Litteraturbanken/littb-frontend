@@ -111,7 +111,7 @@ describe "editor", () ->
 
 
 
-describe "parts navigation", () ->
+fdescribe "parts navigation", () ->
     prevPart = () -> element(By.css(".pager_ctrls a.prev_part"))
     nextPart = () -> element(By.css(".pager_ctrls a.next_part"))
 

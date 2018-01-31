@@ -1,5 +1,5 @@
 {
-  "name": "Littb",
+  "name": "littb",
   "version": "0.0.0",
   "dependencies": {
     "angular": "~1.4.8",
