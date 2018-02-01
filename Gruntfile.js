@@ -461,7 +461,8 @@ module.exports = function (grunt) {
             'img/{,*/}*',
             'styles/fonts/**/*',
             'components/select2/select2.css',
-            'components/select2/select2.png'
+            'components/select2/select2.png',
+            'components/font-awesome/css/font-awesome.css'
           ]
         }, {
           expand: true,
