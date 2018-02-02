@@ -829,12 +829,12 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                 if item.doc_type in ["etext", "faksimil"]
                     title_id = item.work_title_id or item.title_id
                     item.url = "/forfattare/#{item.authors[0].author_id}/titlar/#{title_id}/sida/#{item.startpagename}/#{item.doc_type}"
-                    item.label = "#{item.authors[0].surname} – #{item.shorttitle}" 
+                    item.label = "#{item.authors[0].surname} – #{item.shorttitle || item.title}" 
                     item.typeLabel = "Verk"
                     item.mediatypeLabel = item.doc_type
                 if item.doc_type in ["etext-part", "faksimil-part"]
                     item.url = "/forfattare/#{item.work_authors[0].author_id}/titlar/#{item.work_title_id}/sida/#{item.startpagename}/#{item.mediatype}"
-                    item.label = "#{(item.authors?[0] or item.work_authors[0]).surname} – #{item.shorttitle}"
+                    item.label = "#{(item.authors?[0] or item.work_authors[0]).surname} – #{item.shorttitle || item.title}"
                     item.typeLabel = "Del"
                     item.mediatypeLabel = item.mediatype
 

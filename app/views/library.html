@@ -153,7 +153,7 @@
                                  id="{{getUniqId(row)}}">
                                 <div class="header">
                                     <span class="title" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
-                                        <a ng-click="titleHeaderClick($event, row)" >{{row.shorttitle}} </a>
+                                        <a ng-click="titleHeaderClick($event, row)" >{{row.shorttitle || row.title}} </a>
                                     </span>
                                     <span class="author"><a ng-href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a> <span ng-if="row.authors[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.authors[0].authortype == 'illustrator'">(ill.)</span></span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" -->
                                 </div>
@@ -190,10 +190,10 @@
                     
                         <li ng-repeat="row in all_titles | filter:mediatypeFilter | orderBy:'sortkey'" class="parts" ng-class="{first_part : $first}">
                     
-                            <div class="header" tooltip="{{row.title}}">
+                            <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500">
                                 <span class="title">
                                     <a ng-href="/forfattare/{{row.work_authors[0].author_id}}/titlar/{{row.work_title_id}}/sida/{{row.startpagename}}/{{row.mediatype}}">
-                                    {{row.shorttitle}}
+                                    {{row.shorttitle || row.title}}
                                     </a>
                                 </span>
                                 

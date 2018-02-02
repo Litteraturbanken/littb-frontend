@@ -78,12 +78,12 @@
                                 <a class="title" ng-if="work.doc_type == 'audio'" 
                                     ng-href="/ljudarkivet?spela={{work.file}}"
                                     tooltip="{{getTitleTooltip(work)}}">
-                                    {{work.shorttitle || work.showtitle}}
+                                    {{work.shorttitle || work.title}}
                                 </a>
                                 <a class="title" ng-if="work.doc_type != 'audio'" 
                                     ng-href="{{work.mediatypes[0].url + '?om-boken'}}"
                                     tooltip="{{getTitleTooltip(work)}}">
-                                    {{work.shorttitle || work.showtitle}}
+                                    {{work.shorttitle || work.title}}
                                 </a>
                                 
                                 <div class="extras" ng-if="titleobj.audioExtras" >
