@@ -44,6 +44,11 @@
                         </option>
                     </select> 
                 </div>
+                <div class="title_select_container">
+                    <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
+                        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle}}</option>
+                    </select>
+                </div>
 
                 <div class="textfields">
                     <div class="checkbox" ng-class="{disabled : isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = false">
@@ -66,15 +71,16 @@
             </div>
 
             <div class="right">
+
                 <div class="title_select_container">
-                    <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" ng-change="onTitleChange()" data-placeholder="Titlar">
-                        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle || title.title}}</option>
+                    <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Sök på genre, tema och annat">
+                        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{{{title.shorttitle || title.title}}}}</option>
                     </select>
                 </div>
                 
-                <p class="expl advanced_text textfields" ng-show="isAuthorSearch">
+                <!-- <p class="expl advanced_text textfields" ng-show="isAuthorSearch">
                     Lämna fältet ovan tomt för att söka i de valda författarnas <span class="sc">samtliga sökbara verk</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
-                </p>
+                </p> -->
                 <p class="expl advanced_text textfields" ng-hide="isAuthorSearch">
                     Lämna fältet ovan tomt för att söka i samtliga sökbara verk <span class="sc">om ett visst författarskap</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
                 </p>
