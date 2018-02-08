@@ -42,7 +42,7 @@
             <a  class="title" ng-click="openModal()" 
                 tooltip="{{workinfo.title != workinfo.shorttitle ? workinfo.title : ''}}" 
                 tooltip-placement="{{workinfo.title.length > 300 ? 'left' : 'top'}}">
-                {{workinfo.shorttitle || workinfo.title}}
+                {{workinfo.showtitle || workinfo.shorttitle || workinfo.title}}
             </a>
             <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
         </div>

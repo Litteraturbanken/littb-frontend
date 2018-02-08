@@ -59,7 +59,7 @@
                     <h1 ng-show="slaMode" ng-show="titleobj.data.length">{{titleobj.label}}</h1>
 
                     <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
-                        <tr ng-repeat="work in titleobj.data | orderBy:['authors[0].surname', 'sortkey'] track by $index">
+                        <tr ng-repeat="work in titleobj.data | orderBy:getSortOrder(titleobj) track by $index">
                             <td class="mediatypes">
                                 <a ng-if="work.doc_type == 'audio'" ng-href="/ljudarkivet?spela={{work.file}}">Lyssna</a>
                                 <span ng-repeat="mediatype in work | readMediatypes track by $index ">

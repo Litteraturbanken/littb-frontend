@@ -82,7 +82,7 @@ littb.factory "util", ($location) ->
 
 
     titleSort : (a) ->
-       _.map a.shorttitle.split(/(\d+)/), (item) -> 
+       _.map a.sortkey.split(/(\d+)/), (item) -> 
            if Number(item)
                zeroes = (_.map [0..(10 - item.toString().length)], () -> "0").join("")
 

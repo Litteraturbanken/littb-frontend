@@ -115,14 +115,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 # title : "Aktuellt"
                 redirectTo : () -> "/bibliotek?nytillkommet",
             .when '/nytt',
-                # templateUrl: "nytt.html"
-                # title : "Nytt hos Litteraturbanken"
-                # controller : "newCtrl"
                 redirectTo : () -> "/bibliotek?nytillkommet",
-            # .when '/om/rattigheter',
-            #     templateUrl: '/red/om/rattigheter/rattigheter.html'
-            #     title : "Rättigheter"
-            .when '/om/:page', #['/om/ide', "/om/hjalp", "om/kontakt", "om/statistik", "om/inenglish"],
+            .when '/om/:page',
                 templateUrl: "views/about.html"
                 controller : "aboutCtrl"
                 title : "Om LB"
@@ -146,7 +140,9 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 redirectTo : "/om/hjalp"
             .when '/statistik',
                 redirectTo: "/om/statistik"
-            .when ['/sok', '/sök'],
+            .when 'sok',
+                redirectTo: '/sök'
+            .when '/sök',
                 templateUrl: 'views/search.html'
                 controller : 'searchCtrl'
                 reloadOnSearch : false
@@ -268,16 +264,16 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                     <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter" track by $index>
                         <td>{{row.lbworkid}}</td>
                         <td>
-                            <a href="/forfattare/{{row.author[0].author_id}}">{{row.author[0].surname}}</a>
+                            <a href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a>
                         </td>
                         <td>
-                            <a href="/forfattare/{{row.author[0].author_id}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.showtitle}}</a>
+                            <a href="/forfattare/{{row.authors[0].author_id}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.shorttitle || row.title}}</a>
                         </td>
                         <td>
                             <span ng-repeat="type in row.mediatypes track by $index">
                             
                                 <span ng-show="!$first">:::</span>
-                                <a href="/forfattare/{{row.author[0].author_id}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
+                                <a href="/forfattare/{{row.authors[0].author_id}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
                             </span>
                         </td>
                     </tr>

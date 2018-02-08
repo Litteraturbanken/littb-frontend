@@ -415,6 +415,11 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             def : backend.getAudioList({author_id : s.author})
             audioExtras : true
     ]
+    s.getSortOrder = (obj) ->
+        if obj.showAuthor is false
+            return 'sortkey'
+        else
+            return ['authors[0].surname', 'sortkey']
 
     for item in s.titleStruct
         # TODO: error handling?

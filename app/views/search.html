@@ -68,7 +68,7 @@
             <div class="right">
                 <div class="title_select_container">
                     <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar">
-                        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle}}</option>
+                        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle || title.title}}</option>
                     </select>
                 </div>
                 
