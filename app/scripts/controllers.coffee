@@ -880,7 +880,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         author = s.authorsById?[s.authorFilter]
         if author and author.author_id != item.authors[0].author_id then return false
         if s.filterTxt
-            return false if not ((has item.authors[0].full_name, s.filterTxt) or (has item.showtitle, s.filterTxt))
+            return false if not ((has item.authors[0].full_name, s.filterTxt) or (has (item.title), s.filterTxt))
         return true
 
     s.getAuthor = (row) ->
@@ -1090,6 +1090,11 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                     ,
                         label: "Om"
                         url : "/om/ide"
+                        typeLabel : "Gå till sidan"
+                    ,
+                        label: "Hjälp"
+                        url : "/om/hjalp"
+                        alt : ["hjalp"]
                         typeLabel : "Gå till sidan"
                     ,
                         label: "Statistik"

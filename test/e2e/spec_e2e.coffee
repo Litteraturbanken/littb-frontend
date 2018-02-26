@@ -1,8 +1,10 @@
 HOST = process.env.LITTB_DOCKER_HOST or "localhost"
+get = (url) ->
+    browser.get("http://#{HOST}:9001" + url)
 describe "library authors", () ->
     rows = null
     beforeEach () ->
-        browser.get "http://#{HOST}:9001/bibliotek"
+        get "/bibliotek"
         rows = element.all(By.repeater("author in getAuthorData() | filter:filterAuthor"))
 
     it "should filter using the input", () ->
@@ -15,7 +17,7 @@ describe "library authors", () ->
 describe "library works", () ->
     rows = null
     beforeEach () ->
-        browser.get "http://#{HOST}:9001/bibliotek"
+        get "/bibliotek"
         rows = element.all(By.repeater("row in listVisibleTitles() | filter:mediatypeFilter"))
 
 
@@ -32,7 +34,7 @@ describe "library works", () ->
 describe "titles", () ->
     rows = null
     beforeEach () ->
-        browser.get "http://#{HOST}:9001/bibliotek"
+        get "/bibliotek"
         rows = element.all(By.repeater("row in all_titles | filter:mediatypeFilter"))
 
 
@@ -46,7 +48,7 @@ describe "titles", () ->
 describe "epubList", () ->
     rows = null
     beforeEach () ->
-        browser.get "http://#{HOST}:9001/epub"
+        get "/epub"
         rows = element.all(By.repeater("row in rows | filter:rowFilter"))
 
 
@@ -62,12 +64,12 @@ describe "reader", () ->
     # beforeEach () ->
 
     it "should change page on click", () ->
-        browser.get "http://#{HOST}:9001/forfattare/StrindbergA/titlar/Fadren/sida/3/etext"
+        get "/forfattare/StrindbergA/titlar/Fadren/sida/3/etext"
         element(By.css ".pager_ctrls a[rel=next]").getAttribute("href").then (linkUrl) ->
             expect(linkUrl).toBe("http://#{HOST}:9001/forfattare/StrindbergA/titlar/Fadren/sida/4/etext")
     
     it "should correctly handle pagestep", () ->
-        browser.get "http://#{HOST}:9001/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
+        get "/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
 
         element(By.css ".pager_ctrls a[rel=next]").getAttribute('href').then (linkUrl) ->
             browser.get(linkUrl)
@@ -78,7 +80,7 @@ describe "editor", () ->
     # beforeEach () ->
 
     it "should change page on click", () ->
-        browser.get "http://#{HOST}:9001/editor/lb238704/ix/3/f"
+        get "/editor/lb238704/ix/3/f"
 
         element(By.css ".pager_ctrls a[rel=next]").getAttribute("href").then () ->
             element(By.css ".pager_ctrls a[rel=next]").click()
@@ -90,24 +92,24 @@ describe "editor", () ->
 
     
     it "should correctly handle pagestep", () ->
-        browser.get "http://#{HOST}:9001/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
+        get "/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
         element(By.css ".pager_ctrls a[rel=next]").getAttribute('href').then (linkUrl) ->
             browser.get(linkUrl)
             expect(browser.getCurrentUrl()).toBe("http://#{HOST}:9001/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
 
-# describe "search", () ->
-#     beforeEach () ->
-#         browser.get "http://#{HOST}:9001/sok"
+describe "search", () ->
+    beforeEach () ->
+        get "/sök"
         
 
-#     it "should give search results. ", () ->
-#         input = element(By.model "query")
-#         input.sendKeys("kriget är förklarat !")
-#         input.sendKeys(protractor.Key.ENTER)
+    it "should give search results. ", () ->
+        input = element(By.model "query")
+        input.sendKeys("kriget är förklarat !")
+        input.sendKeys(protractor.Key.ENTER)
 
-#         rows = element.all(By.css(".sentence"))
-#         expect(rows.count()).toEqual 1
+        rows = element.all(By.css(".sentence"))
+        expect(rows.count()).toEqual 1
 
 
 
@@ -117,32 +119,35 @@ describe "parts navigation", () ->
     currentPartName = () -> element(By.css(".current_part .navtitle"))
 
     it "should handle parts with parent parts", () ->
-        browser.get "http://#{HOST}:9001/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil"
+        get "/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil"
         expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/RydbergV/titlar/Singoalla1885/sida/20/faksimil")
     
     it "should handle many parts on same page, prev", () ->
-        browser.get "http://#{HOST}:9001/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil"
+        get "/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil"
         expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil")
 
     it "should handle many parts on same page, next", () ->
-        browser.get "http://#{HOST}:9001/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil"
+        get "/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil"
         expect(nextPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil")
 
     it "should give a prev part despite prev page being between parts", () ->
-        browser.get "http://#{HOST}:9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil"
+        get "/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil"
         expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil")
     
     it "should find a single page part on the prev page", () ->
-        browser.get "http://#{HOST}:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil"
+        get "/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil"
         expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil")
 
-    it "should go back to ended sub-part of main part", () ->
-        browser.get "http://#{HOST}:9001/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil"
-        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/Euripides/titlar/Elektra1843/sida/2/faksimil")
-
     it "should show current part name instead of ended part", () ->
-        browser.get "http://#{HOST}:9001/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil"
-        expect(currentPartName().getText()).toBe("Elektra")
+        get "/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil"
+        expect(currentPartName().getText()).toBe("[Pjäsen]")
 
+    it "should go to beginning of current part rather than previous part", () ->
+        get "/forfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil"
+        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil")
+
+    it "should disable prev if before first part", () ->
+        get "/forfattare/OmarKhayyam/titlar/UmrKhaiyamRubaIyat/sida/1/faksimil"
+        expect(prevPart().getAttribute('class')).toBe('prev_part disabled')
 
 

@@ -275,9 +275,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
             endix = s.pagemap["page_" + part.endpagename] 
             return endix - startix
 
-    getLastSeenPart = (findIndex, filterEnded) ->
-
+    getLastSeenPart = (findIndex, filterEnded, ignoreCurrent) ->
         maybePart = _.last _.dropRightWhile s.workinfo.partStartArray, ([startix, part]) -> 
+            if part == ignoreCurrent then return true # always go back a part
             endix = s.pagemap["page_" + part.endpagename] 
             if findIndex is endix then return false # shortcut
             if filterEnded and (endix < findIndex) then return true # toss out ended parts
@@ -326,6 +326,9 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.getPrevPartUrl = () ->
         if not s.workinfo then return
 
+        [i, firstpart] = s.workinfo.partStartArray[0]
+        if s.pageix <= i then return # disable prev if we're before first part
+
         ###
         firstParts = _.filter s.workinfo.partStartArray, ([startix]) ->
             # all parts that start at the same page as the first part
@@ -337,6 +340,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
         # i.e are we before the end of the first part?
         if (s.pageix <= s.pagemap["page_" + shortestFirstpart.endpagename])
             return null
+        current = s.getCurrentPart()
         ###
         prev = getLastSeenPart(s.pageix - 1, false)
 

@@ -140,7 +140,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                 redirectTo : "/om/hjalp"
             .when '/statistik',
                 redirectTo: "/om/statistik"
-            .when 'sok',
+            .when '/sok',
                 redirectTo: '/sök'
             .when '/sök',
                 templateUrl: 'views/search.html'

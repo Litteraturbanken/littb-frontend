@@ -140,10 +140,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                         s.searching = true
 
                         args = {from: 0, to: s.num_hits - 1}
-                        if !s.isAuthorAboutSearch
+                        if s.isAuthorAboutSearch
                             args["about_authors"] = author_id
                         else
-                            args["author"] = author_id
+                            args["authors"] = author_id
                         # args["author"] = author_id
 
                         searchData.modifySearch(args).then ([sentsWithHeaders]) ->
@@ -438,7 +438,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.opt_change = (opt) ->
         commit = () -> 
             s.search_filter_opts = _.map (_.pluck s.filterOpts, "selected"), Number
-        if opt.val == "all_texts" 
+        if opt.key == "all_texts" 
             for o in s.filterOpts
                 o.selected = true
             commit()

@@ -23,7 +23,7 @@
                     <img 
                         ng-src="/red/forfattare/{{rows[0].readers[0].author_id}}/{{rows[0].readers[0].author_id}}_large.jpeg" 
                         alt="{{authorsById[rows[0].readers[0].author_id].full_name || 'Info om uppläsare saknas'}}">
-                    <figcaption>{{authorsById[rows[0].readers[0].author_id].pictureinfo}}</figcaption>
+                    <figcaption ng-bind-html="authorsById[rows[0].readers[0].author_id].pictureinfo | trust"></figcaption>
                 </div>
             </div>
             <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div>

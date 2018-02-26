@@ -1,5 +1,5 @@
 <meta-desc>
-    {{workinfo.showtitle}} av {{authorById[author].full_name}}. {{getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title}}, sida {{pagename}} som {{mediatype}}
+    {{workinfo.shorttitle || workinfo.title}} av {{authorById[author].full_name}}. {{getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
 <page-title>{{workinfo.title}} sida {{pagename}} {{mediatype}}</page-title>
 <div class="reader_main" 
@@ -120,7 +120,7 @@
                                 <div class="auth">
                                     Sök i <span class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
                                 </div>
-                                <div class="title">{{workinfo.showtitle}}</div>
+                                <div class="title">{{workinfo.showtitle || workinfo.shorttitle || workinfo.title}}</div>
                             </div>
 
 

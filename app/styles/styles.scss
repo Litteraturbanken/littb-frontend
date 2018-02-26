@@ -368,6 +368,12 @@ th {
         margin-top : 3em;
         margin-bottom : 1em;
     }
+    h3.author {
+        text-align: right;
+        &.pull-right {
+            float: none !important;
+        }
+    }
     .copyright {
         @include small-caps();
         font-size: 0.9em;
@@ -762,7 +768,7 @@ a[disabled="disabled"] {
 a[ng-click] {
     cursor : pointer;
 }
-p a {
+p a, pictureinfo a {
     @include dotted($primarycolor);
 }
 
@@ -1929,7 +1935,7 @@ body > .header {
             @include container();
             text-align: left;
             line-height : 1.1;
-            max-height : 220px;
+            max-height : 53vh;
             li {
                 white-space: nowrap;
                 overflow: hidden;
@@ -2799,7 +2805,14 @@ $partnav-width : 170px;
                 margin-top: 0;
             }
 
-            .source {
+            sources {
+                source:before {
+                    content: "KÄLLA";
+                    font-size: 0.8em;
+                    color: $primarycolor;
+                    margin-right: 1em;
+                }
+                display: block;
                 margin-top : 2em;
                 font-size : 0.8em;
             }
@@ -2866,81 +2879,6 @@ $partnav-width : 170px;
             
         }
 
-        // p {
-        //     margin: 0;
-        //     text-indent : 2em;
-        //     line-height: 1.4;
-        // }
-        // .quote {
-        //     text-indent : 0;
-        //     font-size: 0.85em;
-        //     margin-left: 2.5em;
-        //     max-width: 400px;
-        //     margin-top: 0.8em;
-        //     margin-bottom : 1em;
-        // }
-        // .quote + p,
-        // .bildtext + p,
-        // div > p:first-child, 
-        // h4 + p, 
-        // h3 + p, 
-        // h2 + p, 
-        // h1 + p,
-        // .copyright,
-        // .author + div + p,
-        // .avdelare + p {
-        //     text-indent : 0em;
-        // }
-        // .author {
-        //     font-style : italic;
-        //     margin-bottom: 3em;
-        // }
-
-        // .avdelare {
-        //     text-align: center;
-        //     margin : 1em 0;
-        // }
-        
-        // .author + div {
-        //     display : none;
-        // }
-        // .copyright {
-        //     @include small-caps();
-        //     font-size: 0.9em;
-        //     margin-top: 2em;
-        // }
-
-        // .bibliography {
-        //     li {
-        //         max-width : 500px;
-        //     }
-        // }
-
-        // br + br {
-        //     display : none;
-        // }
-        // .quote br + br {
-        //     display: block;
-        // }
-        // h1 {
-        //     margin-bottom: 1.5em;
-        // }
-        // line-height : 1.3;
-        // .intro {
-        //     margin-top: 0;
-        //     margin-bottom: 1.5em;
-        // }
-        // h2 {
-        //     font-size : 1.1em;
-        //     @include small-caps();
-        //     color : $primarycolor;
-        // }
-
-        // .bildtext {
-        //     font-size: 0.8em;
-        //     text-indent : 0 !important;
-        //     margin-bottom: 2em;
-        // }
 
         .links {
             @include topLinks()
@@ -2992,20 +2930,6 @@ $partnav-width : 170px;
             }
         }
     }
-}
-
-
-.page-authorList {
-    #mainview {
-        padding-bottom : 4em;
-    }
-    .contenttable {
-        margin-top : 2em;
-        td {
-            max-width : 180px;
-        }
-    }
-
 }
 
 .page-library {
@@ -4723,7 +4647,6 @@ grundform-clean {
         display : block;
         margin-right: 0;
     }
-
 
     .logo_link_monogram {
         @include logo("red_black");
