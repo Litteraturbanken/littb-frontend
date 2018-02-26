@@ -253,33 +253,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when '/kontakt',
                 redirectTo : "/om/kontakt"
             .when ["/id/:id", "/id"],
-                template : """
-                <div ng-class="{searching:!data}">
-                    <input ng-model="id" placeholder="lbid" autofocus ng-change="titles = []"> 
-                    <input ng-model="titles[0]" placeholder="titel" ng-change="id = '';" ng-model-options="{debounce: 500}">
-                    <textarea ng-model="textarea" placeholder="flera titlar separarade med nyrad" ng-change="textareaChange(textarea)" ng-model-options="{debounce: 500}"></textarea>
-                    <div class="preloader">Hämtar <span class="dots_blink"></span></div>
-
-                    <table class="table-striped">
-                    <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter" track by $index>
-                        <td>{{row.lbworkid}}</td>
-                        <td>
-                            <a href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a>
-                        </td>
-                        <td>
-                            <a href="/forfattare/{{row.authors[0].author_id}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.shorttitle || row.title}}</a>
-                        </td>
-                        <td>
-                            <span ng-repeat="type in row.mediatypes track by $index">
-                            
-                                <span ng-show="!$first">:::</span>
-                                <a href="/forfattare/{{row.authors[0].author_id}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
-                            </span>
-                        </td>
-                    </tr>
-                    </table>
-                </div>
-                            """
+                templateURL : "views/id.html"
                 controller : 'idCtrl'
             .otherwise
                 template : "<p>Du har angett en adress som inte finns på Litteraturbanken.</p>

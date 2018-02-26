@@ -2805,18 +2805,8 @@ $partnav-width : 170px;
                 margin-top: 0;
             }
 
-            sources {
-                source:before {
-                    content: "KÄLLA";
-                    font-size: 0.8em;
-                    color: $primarycolor;
-                    margin-right: 1em;
-                }
-                display: block;
-                margin-top : 2em;
-                font-size : 0.8em;
-            }
             .source_header { 
+                margin-top: 1em;
                 vertical-align: top;
                 display: inline-block;
             }
@@ -2827,6 +2817,11 @@ $partnav-width : 170px;
                 vertical-align: top;
             }
         }
+
+        .introauthor {
+            text-align: right;
+        }
+
         .show_more_btn {
             @include small-caps();
             margin-top : 1em;

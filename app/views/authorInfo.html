@@ -27,13 +27,13 @@
             <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div class="introtext content" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
-                <div class="pull-right"><em>{{authorsById[normalizeAuthor(authorInfo.intro_author)].full_name}}</em></div>
+                <div class="introauthor"><em>{{authorsById[normalizeAuthor(authorInfo.intro_author)].full_name}}</em></div>
 
 
-                <!-- NOT USED because of <sources> inside of <intro>. <div class="source" ng-if="authorInfo.sources">
+                <div class="source" ng-if="authorInfo.sources">
                     <span class="source_header sc">Källa</span>
                     <span class="source_text" ng-bind-html='authorInfo.sources.join("<br>") | trust'></span>
-                </div> -->
+                </div>
             </div>
 
 
