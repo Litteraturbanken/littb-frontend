@@ -41,7 +41,7 @@
             <div class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></div>
             <a  class="title" ng-click="openModal()" 
                 tooltip="{{workinfo.title != workinfo.shorttitle ? workinfo.title : ''}}" 
-                tooltip-placement="{{workinfo.title.length > 300 ? 'left' : 'top'}}">
+                tooltip-placement="{{workinfo.title.length > 200 ? 'left' : 'top'}}">
                 {{workinfo.showtitle || workinfo.shorttitle || workinfo.title}}
             </a>
             <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
@@ -50,7 +50,6 @@
         <hr>
         <div class="current_part">
             <div class="header">
-                <!-- TODO: did this part turn out right? -->
                 <a ng-href="/forfattare/{{getCurrentPart().authors[0].author_id}}" ng-show="getCurrentPart().authors.length == 1">{{authorById[getCurrentPart().authors[0].author_id].full_name}}</a>
                 
                 <a ng-repeat="auth in getCurrentPart().authors" 
@@ -81,7 +80,7 @@
             </a>
             <br>
             <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}"
-                ng-click="gotopage(endpage, $event)">
+                > <!-- ng-click="gotopage(endpage, $event)"-->
                 Gå till sista sidan
             </a>
             <br>

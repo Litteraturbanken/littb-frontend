@@ -31,8 +31,18 @@
 
 
                 <div class="source" ng-if="authorInfo.sources">
-                    <span class="source_header sc">Källa</span>
-                    <span class="source_text" ng-bind-html='authorInfo.sources.join("<br>") | trust'></span>
+                    <span class="source_header sc" ng-if="authorInfo.sources.length > 1">
+                        Källor
+                    </span>
+                    <span class="source_header sc" ng-if="authorInfo.sources.length == 1">
+                        Källa
+                    </span>
+                    
+                    <ul>
+                        <li ng-repeat="item in authorInfo.sources">
+                            <div class="source_content" ng-bind-html="item | trust"></div>
+                        </li>
+                    </ul>
                 </div>
             </div>
 

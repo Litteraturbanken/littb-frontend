@@ -885,8 +885,10 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     s.getAuthor = (row) ->
         [last, first] = row.authors[0].name_for_index.split(",")
-
-        (_.compact [last.toUpperCase(), first]).join ","
+        auth = (_.compact [last.toUpperCase(), first]).join ","
+        if row.authors[0].type == "editor"
+            auth += " (red.)"
+        return auth
 
     # s.log = (filename) ->
         # return true

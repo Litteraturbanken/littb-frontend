@@ -295,7 +295,10 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                 exclude : "text,parts,sourcedesc,pages,errata"
                 sort_field : "epub_popularity|desc"
         ).then (response) ->
-            return response.data.data
+            data = response.data.data
+            # for row in data
+            #     row.hasNoMainAuho = _.map row.authors, 
+            return data
 
     getParts : (filterString, partial_string = false) ->
         def = $q.defer()
@@ -309,7 +312,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             params.partial_string = true
 
         $http(
-            url : "#{STRIX_URL}/lb_list_all/etext-part,faksimil-part"
+            url : "#{STRIX_URL}/list_all/etext-part,faksimil-part"
             params: params
 
 
@@ -354,7 +357,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             params.to = 300
 
         $http(
-            url : "#{STRIX_URL}/lb_list_all/etext,faksimil,pdf" + (author or "")
+            url : "#{STRIX_URL}/list_all/etext,faksimil,pdf" + (author or "")
             params: params
 
 
@@ -572,7 +575,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             params["about_author"] = true
             
         return $http(
-            url : "#{STRIX_URL}/lb_list_all/#{textType}/#{author_id}"
+            url : "#{STRIX_URL}/list_all/#{textType}/#{author_id}"
             params : params
         ).then( (response) ->
             return expandMediatypes response.data.data
@@ -615,7 +618,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         if aboutAuthors
             params.aboutAuthors = true
 
-        url = "#{STRIX_URL}/lb_list_all/etext,faksimil/#{author_id}"
+        url = "#{STRIX_URL}/list_all/etext,faksimil/#{author_id}"
         req = 
             url : url
             params: params
