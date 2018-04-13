@@ -2811,6 +2811,9 @@ $partnav-width : 170px;
                 vertical-align: top;
                 display: inline-block;
             }
+            .source ul {
+                padding-left: 1em;
+            }
             .source ul li {
                 position: relative;
                 // list-style: initial;
@@ -3190,6 +3193,7 @@ $partnav-width : 170px;
                 }
 
                 .item_header {
+                    display: block;
                     margin-left: 2em;
                     text-indent: -2em;
                     cursor : pointer;

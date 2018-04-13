@@ -517,10 +517,10 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.audio_list = null
 
     s.mediatypeObj = 
-        etext : if $location.search().etext then false else true
-        faksimil : if $location.search().faksimil then false else true
-        epub : if $location.search().epub then false else true
-        pdf : if $location.search().pdf then false else true
+        etext : if $location.search().ej_etext then false else true
+        faksimil : if $location.search().ej_faksimil then false else true
+        epub : if $location.search().ej_epub then false else true
+        pdf : if $location.search().ej_pdf then false else true
 
     s.mediatypeFilter = (row) ->
         # return true
@@ -884,6 +884,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         return true
 
     s.getAuthor = (row) ->
+        console.log("getAuthor")
         [last, first] = row.authors[0].name_for_index.split(",")
         auth = (_.compact [last.toUpperCase(), first]).join ","
         if row.authors[0].type == "editor"

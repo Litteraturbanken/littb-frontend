@@ -66,15 +66,16 @@
                             ng-click="authorClick($event, author)" 
                             on-finish-render="authorRender()" 
                             id="{{author.author_id}}">
-                            <div class="item_header" ng-click="authorHeaderClick($event, author)"><span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span> {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
-                                <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner"></i>
-                            </div>
+                            <!-- ng-click="authorHeaderClick($event, author)" -->
+                            <a ng-href="/forfattare/{{author.author_id}}/" class="item_header" ><span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span> {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
+                                <!-- <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner"></i> -->
+                            </a>
                     
-                            <div collapse="!author._collapsed" >
+                            <!-- <div collapse="!author._collapsed" >
                                 <div class="collapse-content">
                                     <div class="info show_all" ng-show="author.data.intro">
                                         <div ng-bind-html="author.data.intro | trust" ></div>
-                                        <em>{{authorsById[normalizeAuthor(author.data['introAuthor'])].full_name}}</em> <!-- ng-click="author._show_all = true" -->
+                                        <em>{{authorsById[normalizeAuthor(author.data['introAuthor'])].full_name}}</em> 
                                     </div>
                                     <ul class="links">
                                         <li><a href="/forfattare/{{::author.author_id}}">
@@ -88,7 +89,7 @@
                                         </li>
                                     </ul>
                                 </div>
-                            </div>
+                            </div> -->
                         
                     
                         </li>

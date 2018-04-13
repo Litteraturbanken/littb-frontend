@@ -325,6 +325,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
 
     s.getPrevPartUrl = () ->
         if not s.workinfo then return
+        if not s.workinfo.partStartArray.length then return
 
         [i, firstpart] = s.workinfo.partStartArray[0]
         if s.pageix <= i then return # disable prev if we're before first part
