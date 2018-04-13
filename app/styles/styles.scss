@@ -52,6 +52,14 @@ $fa-font-path: "~font-awesome/fonts";
 }
 
 
+@font-face {
+    font-family: "Verlag A", "Verlag B";
+    font-style: italic;
+    font-weight: 800;
+}
+
+
+
 
 :focus {
     outline: none;
@@ -4774,6 +4782,77 @@ grundform-clean {
         //     color : white;
 
         // }
+    }
+}
+
+.page-dramaweb {
+    
+    background: url("../img/dramawebben.jpg") no-repeat !important;
+    background-size: contain;
+
+    .logo_link_monogram {
+        @include logo("white_white");
+    }
+
+    .mainnav {
+        a {
+            color : white;
+        }
+        a:hover {
+            color : $primarycolor;
+        }   
+        
+    }
+    
+    .drama-content {
+        // background-color : rgba(255,255,255,0.3);
+        // padding: 1em;
+
+    }
+
+    h1 {
+        margin-bottom: 0;
+        font-size: 3.1em;
+    }
+    h2 {
+        margin-top: 0;
+        font-size: 1.10em;
+        line-height: .2;
+        font-variant: small-caps;
+        text-transform: lowercase;
+        position: relative;
+        left: 4px;
+        margin-bottom: 1.5em;
+    }
+
+    // h1 {
+    //     font-family: "Fell Type A", "Fell Type B";
+    //     margin-bottom: 0;
+    //     font-size: 4.1em;
+    //     line-height : 1.2;
+    // }
+    // h2 {
+    //     font-family: "Fell Type A", "Fell Type B";
+    //     margin-top: 0;
+    //     font-size: 1.4em;
+    //     line-height: .2;
+    //     font-variant: small-caps;
+    //     text-transform: lowercase;
+    //     position: relative;
+    //     left: 4px;
+    //     margin-bottom: 1.5em;
+    // }
+
+    .links {
+        @include topLinks();
+        font-size: 1.1em;
+        margin-bottom: 3em;
+
+        a.active {
+            color : black;
+            cursor : default;
+
+        }
     }
 }
 

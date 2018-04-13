@@ -151,6 +151,10 @@ window.littb = angular.module('littbApp', [ "ngRoute",
 
             .when '/hjalp',
                 redirectTo : "/om/hjalp"
+            .when '/dramawebben',
+                templateUrl: 'views/dramaweb.html'
+                controller : 'dramawebCtrl'
+                reloadOnSearch : false
             .when '/statistik',
                 redirectTo: "/om/statistik"
             .when '/sok',
