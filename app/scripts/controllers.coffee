@@ -872,6 +872,9 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $
                 return s.authorsById[item.id].surname
             catch e
                 return "Välj författare"
+    }
+
+    s.genderSelectSetup = {
 
     }
 
@@ -1425,6 +1428,71 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
         replace : false
 
     ]
+
+littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route, authors, $q, $filter, $rootElement) ->
+    s = $scope
+
+
+    updateRoute = () ->
+        s.showpage = $location.path().split("/")[2] or "start"
+        s.isStartPage = s.showpage == "start"
+        # s.$root.dramasubpage = !s.isStartPage
+        $rootScope._stripClass("drama")
+        if !s.isStartPage
+            $rootElement.addClass("drama-dramasubpage")
+        
+    updateRoute()
+    s.$on "$routeChangeError", (event, current, prev, rejection) ->
+        # _.extend s, current.pathParams
+        updateRoute()
+
+
+
+
+    authors.then ([authorList, authorsById]) ->
+        s.authorsById = authorsById
+    s.authorSelectSetup = {
+        formatNoMatches: "Inga resultat",
+        formatResult : (data) ->
+            author = s.authorsById[data.id]
+            unless author then return data.text
+
+            firstname = ""
+            if author.name_for_index.split(",").length > 1
+                firstname = "<span class='firstname'>, #{author.name_for_index.split(',')[1]}</span>"
+
+            return """
+            <span>
+                <span class="surname sc">#{author.surname}</span>#{firstname} <span class="year">#{$filter('authorYear')(author)}</span>
+            </span>
+            """
+
+        formatSelection : (item) ->
+            try
+                return s.authorsById[item.id].surname
+            catch e
+                return "Välj författare"
+
+    }
+
+    
+    s.activePill = 0
+    s.gender = ""
+
+    s.getAuthor = (author) ->
+        [last, first] = author.name_for_index.split(",")
+
+        (_.compact [last.toUpperCase(), first]).join ","
+
+    backend.getEpub(200).then (data) ->
+        s.rows = data
+
+        authors = _.map data, (row) ->
+            row.authors[0]
+
+        s.authorData = _.unique authors, false, (item) ->
+            item.author_id
+
 
 
 

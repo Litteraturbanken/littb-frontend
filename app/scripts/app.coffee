@@ -33,6 +33,7 @@ authorResolve = ["$q", "$routeParams", "$route",
                                 return def.promise
                         ]
 
+
 window.getScope = () -> $("#mainview").children().scope()
 
 window.littb = angular.module('littbApp', [ "ngRoute",
@@ -42,6 +43,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "template/tooltip/tooltip-popup.html"
                                             "template/typeahead/typeahead-popup.html"
                                             "template/typeahead/typeahead-match.html"
+                                            "template/tabs/tabset.html"
+                                            "template/tabs/tab.html"
                                             "angularSpinner"
                                             "ngAnimate"
                                             "ngAria"
@@ -151,10 +154,21 @@ window.littb = angular.module('littbApp', [ "ngRoute",
 
             .when '/hjalp',
                 redirectTo : "/om/hjalp"
-            .when '/dramawebben',
+            .when ['/dramawebben', '/dramawebben/pjäser', '/dramawebben/författare'],
                 templateUrl: 'views/dramaweb.html'
                 controller : 'dramawebCtrl'
                 reloadOnSearch : false
+                resolve:
+                    r: ["$q", "$routeParams", "$route",
+                            ($q, $routeParams, $route) ->
+                                def = $q.defer()
+                                if routeStartCurrent?.$$route.controller == "dramawebCtrl" and 
+                                        $route.current.controller == "dramawebCtrl"
+                                    def.reject()
+                                else
+                                    def.resolve()
+                                return def.promise
+                        ]
             .when '/statistik',
                 redirectTo: "/om/statistik"
             .when '/sok',
@@ -339,6 +353,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
         cls = cls.replace re, ""
         $rootElement.attr "class", cls
 
+    $rootScope._stripClass = stripClass
 
     $rootScope.goto = (path) ->
         $location.url(path)
@@ -385,6 +400,10 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
         else 
             delete $rootScope.isSchool
         
+        if $rootScope.dramasubpage
+            $rootElement.addClass("site-drama")
+            $rootElement.addClass("page-dramasubpage")
+
         if newRoute.isSla
             $rootScope.isSla = true
             $rootElement.addClass("site-sla")

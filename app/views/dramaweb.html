@@ -2,41 +2,71 @@
 <page-title>Dramawebben</page-title> -->
 
 
-<h1>Dramawebben</h1>
-<h2>Svensk dramatik hos Litteraturbanken</h2>
+<div class="cover" ng-class="{show: !isStartPage}"></div>
 
-<div>
-    <ul class="links">
-        <li>Hem</li>
-        <li>Pjäser</li>
-        <li>Författare</li>
-        <li>Kronologi</li>
-        <li>Kringtexter</li>
-        <li>Sök</li>
-
-    </ul>
-    
-
-    <div class="drama-content">
-        <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-        </p>
-
-        <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-        </p>
-
-        <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-        </p>
-
-        <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-        </p>
-
-
-        
+<div ng-class="{subpage : !isStartPage, startpage : isStartPage}">
+    <div class="logo">
+        <h1><a href="/dramawebben"><img src="/img/dramawebben_vit.svg" alt="Dramawebben"></a></h1>
+        <h2>Fri svensk dramatik <br>hos Litteraturbanken</h2>
     </div>
+    
+    <div>
+        <ul class="links">
+            <!-- <li ng-class="{active: showpage == 'start'}"><a href="/dramawebben">Hem</a></li> -->
+            <li ng-class="{active: showpage == 'pjäser'}"><a href="/dramawebben/pjäser">Pjäser</a></li>
+            <li ng-class="{active: showpage == 'kronologi'}"><a href="">Kronologi</a></li>
+            <li ng-class="{active: showpage == 'kringtexter'}"><a href="/dramawebben/kringtexter">Kringtexter</a></li>
+            <li ng-class="{active: showpage == 'sök'}"><a href="">Sök <span ng-if="isStartPage">i dramawebben</span></a></li>
 
+            <li><a href="">Om <span ng-if="isStartPage">dramawebben</span></a></li>
+            <li ng-class=""><a href="/start">Litteraturbanken</a></li>
+            <!-- <li><a href="">Litteraturbanken</a></li> -->
 
+        </ul>
+        
+    
+        <div class="page_content" ng-switch="showpage">
+            
+            <div ng-switch-when="pjäser">
+
+                <div>
+                    <tabset active="activePill" vertical="false" type="pills">
+                      <tab index="0" heading="Pjäser"></tab>
+                      <tab index="1" heading="Författare"></tab>
+                    </tabset>
+
+                    <div class="auth_select_container">
+                        <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
+                            <option>Välj författare</option>
+                            <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
+
+                                <span class="lastname">{{author.surname}}</span>
+                            </option>
+                        </select> 
+                    </div>
+                    <div class="auth_select_container">
+                        <select  class="gender_select " ui-select2="{minimumResultsForSearch: -1, dropdownCssClass: 'genderdropdown'}" ng-model="gender" data-placeholder="Välj kön" >
+                            <option value=""></option>
+                            <option>Endast kvinnliga författare</option>    
+                            <option>Endast manliga författare</option>
+                            </option>
+                        </select> 
+                    </div>
+                
+                    <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
+                </div>
+                <table class="contenttable">
+                    <tr ng-repeat="row in rows | orderBy: 'authors[0].name_for_index'">
+                        <td><a ng-href="/forfattare/{{::row.authors[0].author_id}}" >{{::getAuthor(row.authors[0])}}</a>
+                        </td>
+                        <td class="">{{row.shorttitle ||  row.title}}</td>
+                    </tr>
+                </table>
+
+            </div>
+        </div>
+
+    
+    
+    </div>
 </div>
