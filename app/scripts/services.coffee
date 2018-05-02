@@ -292,7 +292,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             url : "#{STRIX_URL}/get_epub"        
             params :
                 size : size or 10000
-                include: "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,authors.name_for_index,authors.authortype,startpagename,authors.surname,author.full_name"
+                include: "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name"
                 exclude : "text,parts,sourcedesc,pages,errata"
                 sort_field : "epub_popularity|desc"
         ).then (response) ->
