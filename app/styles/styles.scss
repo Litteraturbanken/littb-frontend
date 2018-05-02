@@ -429,6 +429,7 @@ th {
     
 }
 .select2-container-multi .select2-search-choice-close {
+    background: none;
     &:before {
         content: "☒";
         font-size : 1.2em;

@@ -1,8 +1,8 @@
 littb = angular.module('littbApp');
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-# STRIX_URL = "/api"
+# STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+STRIX_URL = "/api"
 
 if _.str.startsWith(location.host, "demolittb")
     STRIX_URL = "/api"
@@ -292,7 +292,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             url : "#{STRIX_URL}/get_epub"        
             params :
                 size : size or 10000
-                include: "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,authors.name_for_index,authors.authortype,startpagename"
+                include: "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,authors.name_for_index,authors.authortype,startpagename,authors.surname,author.full_name"
                 exclude : "text,parts,sourcedesc,pages,errata"
                 sort_field : "epub_popularity|desc"
         ).then (response) ->

@@ -302,6 +302,11 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
 
     $rootScope.goto = (path) ->
         $location.url(path)
+    
+    $rootScope.gotoExternal = (path, event) ->
+        event.preventDefault()
+        event.stopPropagation()
+        window.location.pathname = path
 
     $rootScope.setTitle = (title) ->
         if title
