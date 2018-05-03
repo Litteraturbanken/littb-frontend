@@ -246,7 +246,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
 
-        s.authorError = (s.normalizeAuthor s.author) not of s.authorsById
+        # s.authorError = (s.normalizeAuthor s.author) not of s.authorsById
 
     s.showLargeImage = ($event) ->
         c.log "showLargeImage", s.show_large
@@ -468,6 +468,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
 
         if not s.authorInfo.intro
             $location.url("/forfattare/#{s.author}/titlar").replace()
+    , (data) ->
+        c.log("authorinfo error", arguments)
+        s.authorError = true
 
 
     

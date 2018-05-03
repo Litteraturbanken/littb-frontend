@@ -5,7 +5,7 @@
 
 <!-- <img ng-if="slaMode && showpage != 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img> -->
 
-<div ng-class="{searching:!authorInfo, show_large : show_large}">
+<div ng-class="{searching:!authorInfo && !authorError, show_large : show_large}">
     <div class="preloader"> 
         <i class="spinner fa fa-spinner fa-pulse"></i>
     </div>
