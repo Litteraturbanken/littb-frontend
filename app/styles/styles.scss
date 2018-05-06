@@ -515,6 +515,12 @@ input:focus, button.btn:focus {
     // &:
 }
 
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active, .btn-primary.active {
+    background-color : #333;
+    color : white;
+}
+
+
 .tooltip {
     font-size : 0.7em;
     z-index: 9999;
@@ -4824,6 +4830,11 @@ grundform-clean {
     // background-size: contain;
     background-position: -100px -80px;
     
+    .btn:not(.active) {
+        color : black;
+        background-image: linear-gradient(to top, #eee 0%, #fff 50%);
+    }
+
     &.drama-dramasubpage {
         background-image: url("../img/start_bkg_apr2018_light.jpg") !important;
     }

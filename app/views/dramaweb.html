@@ -30,10 +30,10 @@
             <div ng-switch-when="pjäser">
 
                 <div>
-                    <tabset active="activePill" vertical="false" type="pills">
-                      <tab index="0" heading="Pjäser"></tab>
-                      <tab index="1" heading="Författare"></tab>
-                    </tabset>
+                    <div class="btn-group">
+                        <label class="btn btn-primary" ng-model="listType" btn-radio="'plays'">Pjäser</label>
+                        <label class="btn btn-primary" ng-model="listType" btn-radio="'authors'">Författare</label>
+                    </div>
 
                     <div class="auth_select_container">
                         <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >

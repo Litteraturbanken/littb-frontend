@@ -1476,7 +1476,7 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
     }
 
     
-    s.activePill = 0
+    s.listType = 'plays'
     s.gender = ""
 
     s.getAuthor = (author) ->
