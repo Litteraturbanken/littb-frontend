@@ -16,9 +16,9 @@
             <li ng-class="{active: showpage == 'pjäser'}"><a href="/dramawebben/pjäser">Pjäser</a></li>
             <li ng-class="{active: showpage == 'kronologi'}"><a href="">Kronologi</a></li>
             <li ng-class="{active: showpage == 'kringtexter'}"><a href="/dramawebben/kringtexter">Kringtexter</a></li>
-            <li ng-class="{active: showpage == 'sök'}"><a href="">Sök <span ng-if="isStartPage">i dramawebben</span></a></li>
+            <li ng-class="{active: showpage == 'sok'}"><a href="/dramawebben/sok">Sök <span ng-if="isStartPage">i dramawebben</span></a></li>
 
-            <li><a href="">Om <span ng-if="isStartPage">dramawebben</span></a></li>
+            <li><a href="/dramawebben/om">Om <span ng-if="isStartPage">dramawebben</span></a></li>
             <li ng-class=""><a href="/start">Litteraturbanken</a></li>
             <!-- <li><a href="">Litteraturbanken</a></li> -->
 
@@ -31,8 +31,10 @@
 
                 <div>
                     <div class="btn-group">
-                        <label class="btn btn-primary" ng-model="listType" btn-radio="'plays'">Pjäser</label>
-                        <label class="btn btn-primary" ng-model="listType" btn-radio="'authors'">Författare</label>
+                        <label class="sc btn btn-primary" 
+                            ng-model="listType" btn-radio="'pjäser'" ng-click="onRadioClick('pjäser')">Pjäser</label>
+                        <label class="sc btn btn-primary" 
+                            ng-model="listType" btn-radio="'författare'" ng-click="onRadioClick('författare')">Författare</label>
                     </div>
 
                     <div class="auth_select_container">
@@ -52,19 +54,110 @@
                             </option>
                         </select> 
                     </div>
+                    
+                    <div class="auth_select_container">
+                        <!-- <select  class="general_filters " ui-select2="{minimumResultsForSearch: -1, dropdownCssClass: 'genderdropdown'}" data-placeholder="Akter / roller" >
+                            <option value=""></option>
+                            <option><input type="checkbox"> Hej</option>    
+                            <option>Endast manliga författare</option>
+                            </option>
+                        </select>  -->
+
+
+                        <div class="btn-group" dropdown>
+                            <button type="button" class="btn btn-primary filter_btn" dropdown-toggle >
+                                Akter och roller <span class="caret"></span>
+                            </button>
+
+                            <ul class="dropdown-menu " role="menu" aria-labelledby="single-button" ng-click="$event.stopPropagation()">
+                                <li role="menuitem">
+                                    <span class="label">Antal akter</span>
+                                    <div class="number_input">
+                                        <input type="text"> —
+                                        <input type="text">
+                                    </div>
+                                </li>
+                                <li role="menuitem">
+                                    <span class="label">Antal roller</span>
+                                    <div class="number_input">
+                                        <input type="text"> —
+                                        <input type="text">
+                                    </div>
+                                </li>
+                                <li role="menuitem">
+                                    <span class="label">Antal kvinnliga roller</span>
+                                    <div class="number_input">
+                                        <input type="text"> —
+                                        <input type="text">
+                                    </div>
+                                </li>
+                                <li role="menuitem">
+                                    <span class="label">Antal manliga roller</span>
+                                    <div class="number_input">
+                                        <input type="text"> —
+                                        <input type="text">
+                                    </div>
+                                </li>
+                                <li role="menuitem">
+                                    <span class="label">Antal övriga roller</span>
+                                    <div class="number_input">
+                                        <input type="text"> —
+                                        <input type="text">
+                                    </div>
+                                </li>
+                                <li role="menuitem">
+                                    <span class="label">Tryckår</span>
+                                    <div class="number_input">
+                                        <input type="text"> —
+                                        <input type="text">
+                                    </div>
+                                </li>
+                                <li role="menuitem">
+                                    <span class="label">Barnpjäs</span> <div class="fa check" ng-class="{'fa-check': filters.isChildrensPlay}" ng-click="filters.isChildrensPlay = !filters.isChildrensPlay"></div> 
+                                </li>
+                            </ul>
+                        </div>
+
+                    </div>
                 
                     <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
                 </div>
-                <table class="contenttable">
+                <table ng-if="listType == 'pjäser'" class="contenttable">
                     <tr ng-repeat="row in rows | orderBy: 'authors[0].name_for_index'">
-                        <td><a ng-href="/forfattare/{{::row.authors[0].author_id}}" >{{::getAuthor(row.authors[0])}}</a>
+                        <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
                         </td>
                         <td class="">{{row.shorttitle ||  row.title}}</td>
                     </tr>
                 </table>
+                <table ng-if="listType == 'författare'" class="contenttable">
+                    <tr ng-repeat="author in authorList.slice(0, 100)">
+                        <td class="author"><a ng-href="/forfattare/{{::author.author_id}}" ng-bind-html="::getAuthor(author) | trust" ></a>
+                        </td>
+                        <td class="">{{author | authorYear}}</td>
+                    </tr>
+                </table>
+
+
+            </div>
+            <div ng-switch-when="om">
+
+                <div ng-include="'/red/dramawebben/om.html'"></div>
+
+            </div>
+            <div ng-switch-when="kringtexter">
+                <div ng-include="'/red/dramawebben/kringtexter/kringtexter.html'"></div>
+
+            </div>
+
+            <div ng-switch-when="sok">
+                
+                <div ng-controller="searchCtrl" ng-include="'views/search.html'"></div>
+
+
 
             </div>
         </div>
+
 
     
     

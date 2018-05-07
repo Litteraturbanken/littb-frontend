@@ -104,10 +104,13 @@ $fa-font-path: "~font-awesome/fonts";
 
 @mixin small-caps {
     font-family: "Requiem Text SC A", "Requiem Text SC B";
-    text-transform: lowercase;
+    text-transform: lowercase !important;
 }
 .sc {
     @include small-caps();
+}
+.italic {
+    font-style: italic;
 }
 @mixin font-normal {
     font-family: "Requiem Text A", "Requiem Text B";
@@ -438,6 +441,7 @@ th {
     font-size: 0.8em;
 }
 
+<<<<<<< HEAD
 .select2-container--default .select2-selection--multiple, .select2-container--default .select2-selection--single {
     background-color: transparent;
     border-radius: 0;
@@ -448,6 +452,25 @@ th {
         border-radius: 0;
         text-transform: uppercase;
         font-size : 0.8em;
+=======
+    margin-right: 6px;
+    margin-left: 0;
+    margin-bottom: 4px;
+    &:last-child-of-type {
+        margin-bottom : 8px;
+    }
+    
+}
+
+
+.select2-container-multi .select2-search-choice-close {
+    background: none;
+    &:before {
+        content: "☒";
+        font-size : 1.2em;
+        position: relative;
+        bottom: 1px;
+>>>>>>> worked on subpages
         color: #666;
 
         margin-right: 6px;
@@ -518,6 +541,7 @@ input:focus, button.btn:focus {
 .btn-primary:hover, .btn-primary:focus, .btn-primary:active, .btn-primary.active {
     background-color : #333;
     color : white;
+    border-color: transparent;
 }
 
 
@@ -4866,31 +4890,47 @@ grundform-clean {
     .logo {
         margin-top: 8em;
         margin-left: 4em;
-    }
-    h1 {
-        font-size: 3.1em;
-        margin: 0;
-        
-        img {
-            transform: scale(10);
-            transform-origin: 20px 36px;
-            height: 125px;
+
+        h1 {
+            font-size: 3.1em;
+            margin: 0;
+            
+            img {
+                transform: scale(10);
+                transform-origin: 20px 36px;
+                height: 125px;
+                position: relative;
+                z-index: -1;
+            }
+        }
+
+        h2 {
+            margin-top: 10px;
+            font-size: 2.10em;
+            line-height: .8;
+            font-variant: small-caps;
+            text-transform: lowercase;
             position: relative;
-            z-index: -1;
+            left: 172px;
+
+
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
     }
-    h2 {
-        margin-top: 10px;
-        font-size: 2.10em;
-        line-height: .8;
-        font-variant: small-caps;
-        text-transform: lowercase;
-        position: relative;
-        left: 172px;
+    
+    .content {
+        height : auto;
+        background: none;
+        border : none;
+        padding: 0;
 
+        h3 {
+            @include small-caps();
+            
+            margin-bottom: 0;
+        }
 
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
     }
 
     .subpage {
@@ -4948,7 +4988,13 @@ grundform-clean {
         color : $primarycolor;
     }
     
-
+    .author {
+        font-size: 1.1em;
+    }
+    .firstname {
+        font-size: 0.85em;
+    }
+    
     .nav-pills {
         // display : flex;
         // justify-content: center;
@@ -4961,10 +5007,74 @@ grundform-clean {
 
         li {
             @extend .btn;
+
             a {
                 background-color : initial;
             }
         }
+    }
+
+    .btn-group label.btn {
+        text-transform: lowercase !important;
+        padding : 0.2em 0.9em 0.4em 0.9em;
+        font-size: 16px;
+        &:hover {
+            background-color: #333 !important;
+        }
+    }
+    .filter_btn {
+        @include small-caps();
+        padding : 0.2em 0.9em 0.4em 0.9em;
+        font-size: 16px;
+
+        .caret {
+            background-image: url(/components/select2/select2x2.png) !important;
+            background-repeat: no-repeat !important;
+            background-size: 60px 40px !important;
+        }
+
+    }
+
+    .dropdown-menu {
+        min-width : 250px;
+
+        li {
+            display : flex;
+            justify-content: space-between;
+            .number_input {
+            }
+        }
+
+        input[type=text] {
+            max-width : 20px;
+            font-family : Times;
+
+            font-size: 0.8em;
+            border: 1px solid grey;
+            margin-bottom: 1px;
+
+        }
+
+        .check {
+            border: 1px solid grey;
+            padding: 1px 2px;
+            margin-right : 2.78em;
+            width : 1.45em;
+            height : 17px;
+        }
+        
+        padding: 1em 0.9em;
+
+        .label {
+            align-self: center;
+            @include small-caps();
+        }
+        
+    }
+
+    .select2-container .select2-choice {
+        height : 34px;
+        padding: 3px 0 0 8px;
     }
 
     .subpage .links {
@@ -4994,8 +5104,9 @@ grundform-clean {
         padding: 0px;
         font-size: 0.9em;
         vertical-align: bottom;
-        margin-left: 0.5em;
+        // margin-left: 0.5em;
         padding-left: 0.5em;
+        height : 33px;
     }
     .auth_select_container {
         display : inline-block;
@@ -5018,9 +5129,12 @@ grundform-clean {
 
     .contenttable {
         width : 80vw;
-        margin-top: 1em;
         font-size: 0.9em;
+        margin-top: 2em;
+
         td {
+            max-width: 440px;
+            padding-top: 0;
             padding-bottom : 0;
             padding-left : 0;
             vertical-align: top;

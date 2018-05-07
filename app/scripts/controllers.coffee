@@ -1432,6 +1432,9 @@ littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $ti
 littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route, authors, $q, $filter, $rootElement) ->
     s = $scope
 
+    s.filters = {
+        isChildrensPlay : false
+    }
 
     updateRoute = () ->
         s.showpage = $location.path().split("/")[2] or "start"
@@ -1447,13 +1450,21 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         updateRoute()
 
 
-
+    util.setupHashComplex s,
+            [
+                key : "visa"
+                scope_name : "listType"
+                replace : false
+                default : "pjäser"
+        ]
 
     authors.then ([authorList, authorsById]) ->
         s.authorsById = authorsById
+        s.authorList = authorList
     s.authorSelectSetup = {
         formatNoMatches: "Inga resultat",
         formatResult : (data) ->
+            if not s.authorsById then return 
             author = s.authorsById[data.id]
             unless author then return data.text
 
@@ -1475,14 +1486,22 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
 
     }
 
+    s.onRadioClick = (newType) ->
+        c.log "onRadioClick", s.listType
+        s.listType = newType
     
-    s.listType = 'plays'
+    s.listType = 'pjäser'
     s.gender = ""
 
     s.getAuthor = (author) ->
         [last, first] = author.name_for_index.split(",")
 
-        (_.compact [last.toUpperCase(), first]).join ","
+        if first
+            first = "<span class='firstname'>#{first}</span>"
+        else
+            first = ""
+
+        _.compact(["<span class='sc'>#{last}</span>", first]).join ","
 
     backend.getEpub(200).then (data) ->
         s.rows = data
