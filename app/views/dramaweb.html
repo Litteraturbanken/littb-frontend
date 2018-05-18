@@ -14,8 +14,8 @@
         <ul class="links">
             <!-- <li ng-class="{active: showpage == 'start'}"><a href="/dramawebben">Hem</a></li> -->
             <li ng-class="{active: showpage == 'pjäser'}"><a href="/dramawebben/pjäser">Pjäser</a></li>
-            <li ng-class="{active: showpage == 'kronologi'}"><a href="">Kronologi</a></li>
-            <li ng-class="{active: showpage == 'kringtexter'}"><a href="/dramawebben/kringtexter">Kringtexter</a></li>
+            <!-- <li ng-class="{active: showpage == 'kronologi'}"><a href="">Kronologi</a></li> -->
+            <li ng-class="{active: showpage == 'kringtexter'}"><a href="/dramawebben/kringtexter">Mer läsning</a></li>
             <li ng-class="{active: showpage == 'sok'}"><a href="/dramawebben/sok">Sök <span ng-if="isStartPage">i dramawebben</span></a></li>
 
             <li><a href="/dramawebben/om">Om <span ng-if="isStartPage">dramawebben</span></a></li>
@@ -126,7 +126,7 @@
                     <tr ng-repeat="row in rows | orderBy: 'authors[0].name_for_index'">
                         <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
                         </td>
-                        <td class="">{{row.shorttitle ||  row.title}}</td>
+                        <td class="title"><a href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{row.title_id}}/{{row.mediatype}}">{{row.shorttitle ||  row.title}}</a></td>
                     </tr>
                 </table>
                 <table ng-if="listType == 'författare'" class="contenttable">
