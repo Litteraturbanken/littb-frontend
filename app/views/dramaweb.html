@@ -16,7 +16,7 @@
             <li ng-class="{active: showpage == 'pjäser'}"><a href="/dramawebben/pjäser">Pjäser</a></li>
             <!-- <li ng-class="{active: showpage == 'kronologi'}"><a href="">Kronologi</a></li> -->
             <li ng-class="{active: showpage == 'kringtexter'}"><a href="/dramawebben/kringtexter">Mer läsning</a></li>
-            <li ng-class="{active: showpage == 'sok'}"><a href="/dramawebben/sok">Sök <span ng-if="isStartPage">i dramawebben</span></a></li>
+            <li ng-class="{active: showpage == 'sok'}"><a href="/sok?avancerad">Sök <span ng-if="isStartPage">i dramawebben</span></a></li>
 
             <li><a href="/dramawebben/om">Om <span ng-if="isStartPage">dramawebben</span></a></li>
             <li ng-class=""><a href="/start">Litteraturbanken</a></li>
@@ -38,19 +38,22 @@
                     </div>
 
                     <div class="auth_select_container">
-                        <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
-                            <option>Välj författare</option>
+                        <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="filters.author" data-placeholder="Författare" >
+                            <option value="">Välj författare</option>
                             <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
-
                                 <span class="lastname">{{author.surname}}</span>
                             </option>
                         </select> 
                     </div>
                     <div class="auth_select_container">
-                        <select  class="gender_select " ui-select2="{minimumResultsForSearch: -1, dropdownCssClass: 'genderdropdown'}" ng-model="gender" data-placeholder="Välj kön" >
+                        <select  class="gender_select" 
+                                 ui-select2="{minimumResultsForSearch: -1, dropdownCssClass: 'genderdropdown'}" 
+                                 ng-model="filters.gender" 
+                                 data-placeholder="Välj kön" >
                             <option value=""></option>
-                            <option>Endast kvinnliga författare</option>    
-                            <option>Endast manliga författare</option>
+                            <option value="">Alla författare</option>
+                            <option value="female">Endast kvinnliga författare</option>    
+                            <option value="male">Endast manliga författare</option>
                             </option>
                         </select> 
                     </div>
@@ -73,45 +76,52 @@
                                 <li role="menuitem">
                                     <span class="label">Antal akter</span>
                                     <div class="number_input">
-                                        <input type="text"> —
-                                        <input type="text">
+                                        <input type="text" ng-model="filters.number_of_acts[0]"> —
+                                        <input type="text" ng-model="filters.number_of_acts[1]">
                                     </div>
                                 </li>
                                 <li role="menuitem">
                                     <span class="label">Antal roller</span>
                                     <div class="number_input">
-                                        <input type="text"> —
-                                        <input type="text">
+                                        <input type="text" ng-model="filters.number_of_roles[0]"> —
+                                        <input type="text" ng-model="filters.number_of_roles[1]">
+                                    </div>
+                                </li>
+                                <li role="menuitem">
+                                    <span class="label">Antal sidor</span>
+                                    <div class="number_input">
+                                        <input type="text" ng-model="filters.number_of_pages[0]"> —
+                                        <input type="text" ng-model="filters.number_of_pages[1]">
                                     </div>
                                 </li>
                                 <li role="menuitem">
                                     <span class="label">Antal kvinnliga roller</span>
                                     <div class="number_input">
-                                        <input type="text"> —
-                                        <input type="text">
+                                        <input type="text" ng-model="filters.female_roles[0]"> —
+                                        <input type="text" ng-model="filters.female_roles[1]">
                                     </div>
                                 </li>
                                 <li role="menuitem">
                                     <span class="label">Antal manliga roller</span>
                                     <div class="number_input">
-                                        <input type="text"> —
-                                        <input type="text">
+                                        <input type="text" ng-model="filters.male_roles[0]"> —
+                                        <input type="text" ng-model="filters.male_roles[1]">
                                     </div>
                                 </li>
                                 <li role="menuitem">
                                     <span class="label">Antal övriga roller</span>
                                     <div class="number_input">
-                                        <input type="text"> —
-                                        <input type="text">
+                                        <input type="text" ng-model="filters.other_roles[0]"> —
+                                        <input type="text" ng-model="filters.other_roles[1]">
                                     </div>
                                 </li>
-                                <li role="menuitem">
+                                <!-- <li role="menuitem">
                                     <span class="label">Tryckår</span>
                                     <div class="number_input">
-                                        <input type="text"> —
-                                        <input type="text">
+                                        <input type="text" ng-model="filters."> —
+                                        <input type="text" ng-model="filters.">
                                     </div>
-                                </li>
+                                </li> -->
                                 <li role="menuitem">
                                     <span class="label">Barnpjäs</span> <div class="fa check" ng-class="{'fa-check': filters.isChildrensPlay}" ng-click="filters.isChildrensPlay = !filters.isChildrensPlay"></div> 
                                 </li>
@@ -120,17 +130,17 @@
 
                     </div>
                 
-                    <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
+                    <input class="filter" ng-model="filters.filterTxt" autofocus placeholder="Filtrera">
                 </div>
                 <table ng-if="listType == 'pjäser'" class="contenttable">
-                    <tr ng-repeat="row in rows | orderBy: 'authors[0].name_for_index'">
+                    <tr ng-repeat="row in getFilteredRows()" >
                         <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
                         </td>
                         <td class="title"><a href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{row.title_id}}/{{row.mediatype}}">{{row.shorttitle ||  row.title}}</a></td>
                     </tr>
                 </table>
-                <table ng-if="listType == 'författare'" class="contenttable">
-                    <tr ng-repeat="author in authorList.slice(0, 100)">
+                <table ng-if="listType == 'författare'" class="contenttable authors">
+                    <tr ng-repeat="author in authorData">
                         <td class="author"><a ng-href="/forfattare/{{::author.author_id}}" ng-bind-html="::getAuthor(author) | trust" ></a>
                         </td>
                         <td class="">{{author | authorYear}}</td>

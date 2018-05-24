@@ -36,65 +36,66 @@
 
 
         <div class="bottom_row">
-            <div class="left">
-                <div class="auth_select_container" ng-show="auth_select_rendered">
-                    <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" ng-change="onAuthChange()" >
-                        <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | filter:{searchable : true} | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
-                            {{author.full_name}}
-                        </option>
-                    </select> 
-                </div>
-                <div class="title_select_container">
-                    <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
-                        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle}}</option>
-                    </select>
-                </div>
+                <div class="right">
 
-                <div class="textfields">
-                    <div class="checkbox" ng-class="{disabled : isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = false">
-                        <div class="check">✓</div>
-                        <p class="expl advanced_text auth">
-                            För att söka i specifika <span class="sc">författarskap</span>: skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> författarskap.) 
-                        </p>
+                    <div class="title_select_container">
+                        <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Sök på genre, tema och annat">
+                            <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle || title.title}}</option>
+                        </select>
                     </div>
                     
-                    <div class="checkbox" ng-class="{disabled : !isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = true">
-                        <div class="check check2">✓</div>
-                        <p class="expl advanced_text auth">
-                            Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)
-                        </p>
-                    </div>
+                    <!-- <p class="expl advanced_text textfields" ng-show="isAuthorSearch">
+                        Lämna fältet ovan tomt för att söka i de valda författarnas <span class="sc">samtliga sökbara verk</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
+                    </p> -->
+                    <p class="expl advanced_text textfields" ng-hide="isAuthorSearch">
+                        Lämna fältet ovan tomt för att söka i samtliga sökbara verk <span class="sc">om ett visst författarskap</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
+                    </p>
+                    <!-- <p class="expl advanced_text">
+                        Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)
+                    </p> -->
+                    
+
+                    <div class="text simple_text">Vill du göra mer avancerade sökningar i texterna? Då kan du klicka på <a ng-click="advanced = true"><i class="fa fa-play"></i> <span class="sc">Avancerade sökmöjligheter</span></a> </div>
+                    <div class="text advanced_text">Vill du förenkla sökformuläret? <br>Då kan du klicka på <a ng-click="advanced = false"><i class="fa fa-play"></i> <span class="sc">Enkel sökning</span></a> </div>
                 </div>
 
-                <!-- Välj sedan i fältet till höger vilka <span class="sc">titlar</span> av de valda författarna som du vill söka i. (Lämna fältet blankt för att söka i alla deras sökbara texter.) -->
                 
-            </div>
-
-            <div class="right">
-
-                <div class="title_select_container">
-                    <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Sök på genre, tema och annat">
-                        <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{{{title.shorttitle || title.title}}}}</option>
-                    </select>
-                </div>
-                
-                <!-- <p class="expl advanced_text textfields" ng-show="isAuthorSearch">
-                    Lämna fältet ovan tomt för att söka i de valda författarnas <span class="sc">samtliga sökbara verk</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
-                </p> -->
-                <p class="expl advanced_text textfields" ng-hide="isAuthorSearch">
-                    Lämna fältet ovan tomt för att söka i samtliga sökbara verk <span class="sc">om ett visst författarskap</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
-                </p>
-                <!-- <p class="expl advanced_text">
-                    Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)
-                </p> -->
-                
-
-                <div class="text simple_text">Vill du göra mer avancerade sökningar i texterna? Då kan du klicka på <a ng-click="advanced = true"><i class="fa fa-play"></i> <span class="sc">Avancerade sökmöjligheter</span></a> </div>
-                <div class="text advanced_text">Vill du förenkla sökformuläret? <br>Då kan du klicka på <a ng-click="advanced = false"><i class="fa fa-play"></i> <span class="sc">Enkel sökning</span></a> </div>
-            </div>
-
             
-        </div>
+                <div class="left">
+                    <div class="auth_select_container" ng-show="auth_select_rendered">
+                        <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" ng-change="onAuthChange()" >
+                            <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | filter:{searchable : true} | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
+                                {{author.full_name}}
+                            </option>
+                        </select> 
+                    </div>
+                    <div class="title_select_container">
+                        <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
+                            <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle}}</option>
+                        </select>
+                    </div>
+
+                    <div class="textfields">
+                        <div class="checkbox" ng-class="{disabled : isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = false">
+                            <div class="check">✓</div>
+                            <p class="expl advanced_text auth">
+                                För att söka i specifika <span class="sc">författarskap</span>: skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> författarskap.) 
+                            </p>
+                        </div>
+                        
+                        <div class="checkbox" ng-class="{disabled : !isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = true">
+                            <div class="check check2">✓</div>
+                            <p class="expl advanced_text auth">
+                                Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Välj sedan i fältet till höger vilka <span class="sc">titlar</span> av de valda författarna som du vill söka i. (Lämna fältet blankt för att söka i alla deras sökbara texter.) -->
+                    
+                </div>
+            </div>
+            
 
         <p ng-show="false" class="expl advanced_text">
             Avgränsa sökningen efter tryckår. Dra i reglagen nedan för att filtrera sökurvalet till ett specifikt tidsspann.

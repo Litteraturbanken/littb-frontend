@@ -3048,7 +3048,7 @@ $partnav-width : 170px;
             padding: 0.8em;
             border: 1px solid #333;
         }
-        .filter_input {
+        .filter_input, .keyword_select {
             border : 1px solid #333;
             // margin-top : 0.4em;
             width: 320px;
@@ -3061,6 +3061,13 @@ $partnav-width : 170px;
             vertical-align: middle;
             margin-right : 10px;
         }
+
+        .keyword_select {
+            width: 400px;
+            display: block;
+            margin-top: 1em;
+        }
+
         .mediatype_opts {
             font-size: 0.8em;
             
@@ -5171,6 +5178,10 @@ grundform-clean {
                 // text-decoration: underline
             }
         }
+    }
+
+    .contenttable.authors {
+        width : 46vw;
     }
 }
 

@@ -169,7 +169,7 @@ littb.controller "statsCtrl", ($scope, backend) ->
     backend.getStats().then (data) ->
         s.statsData = data
 
-    backend.getTitles(false, null, "popularity|desc").then (titleArray) ->
+    backend.getTitles(null, "popularity|desc").then (titleArray) ->
         s.titleList = titleArray
 
     backend.getEpub(30).then ({data, hits}) ->
@@ -637,7 +637,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.titleSearching = true
         include = "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,authors.author_id,work_authors.author_id,authors.surname,authors.authortype,startpagename,has_epub"
         # last true in args list is for partial_string match
-        def = backend.getTitles(false, s.authorFilter, null, s.filter, false, false, true, include).then (titleArray) ->
+        def = backend.getTitles(s.authorFilter, null, s.filter, false, false, true, include).then (titleArray) ->
             s.titleSearching = false
             s.titleArray = titleArray
             # s.titleGroups = titleGroups
@@ -672,7 +672,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             [year, month, day] = datestr.split("-")
             return [Number(day), months[month - 1], year].join(" ")
 
-        backend.getTitles(false, null, "imported|desc,sortfield|asc", null, false, true).then (titleArray) ->
+        backend.getTitles(null, "imported|desc,sortfield|asc", null, false, true).then (titleArray) ->
             s.titleSearching = false
             # s.titleArray = titleArray
 
@@ -784,7 +784,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     s.titleSearching = true
 
-    def = backend.getTitles(false, null, "popularity|desc").then (titleArray) ->
+    def = backend.getTitles(null, "popularity|desc").then (titleArray) ->
         s.titleSearching = false
         s.popularTitles = titleArray
         s.titleByPath = _.groupBy titleArray, (item) ->
@@ -977,7 +977,7 @@ littb.controller "newCtrl", ($scope, $http, util, $location, backend) ->
 
     s = $scope
 
-    # backend.getTitles(false, null, "imported|desc", null, false, true).then (titleArray) ->
+    # backend.getTitles(null, "imported|desc", null, false, true).then (titleArray) ->
     #     s.titleList = titleArray
 
     #     s.titleGroups = _.groupBy titleArray, "imported"
@@ -1491,7 +1491,16 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         s.listType = newType
     
     s.listType = 'pjäser'
-    s.gender = ""
+    s.filters = {
+        gender : "",
+        filterTxt : "",
+        female_roles : []
+        male_roles : []
+        number_of_acts : []
+        number_of_pages : []
+        number_of_roles : []
+        isChildrensPlay : false
+    }
 
     s.getAuthor = (author) ->
         [last, first] = author.name_for_index.split(",")
@@ -1503,7 +1512,47 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
 
         _.compact(["<span class='sc'>#{last}</span>", first]).join ","
 
-    backend.getEpub(200).then (data) ->
+    s.getFilteredRows = () ->
+        c.log("getFilteredRows", s.filters.gender, s.filters.filterTxt, s.filters.author)
+        ret = _.filter s.rows, (item) -> 
+            # if not (_.filter item.authors, (auth) -> auth.gender == s.filters.gender).length
+            #     # return false
+            if s.filters.gender and item.authors[0].gender isnt s.filters.gender then return false
+
+
+            if s.filters.author
+                if item.authors[0].author_id != s.filters.author then return false
+
+
+            if s.filters.filterTxt 
+                fullnames = _.map item.authors, (author) ->
+                    author.full_name
+                fullnames.join(" ")
+                searchstr = fullnames.join(" ") + (item.title)
+                searchstr = searchstr.toLowerCase()
+                
+                for str in s.filters.filterTxt.split(" ")
+                    if not searchstr.match(str) then return false
+
+            if s.filters.isChildrensPlay
+                if not ("Barnlitteratur" in item.keywords) then return false
+
+            for [key, value] in _.pairs(s.filters)
+                if (_.isArray value) and value.length
+                    [from, to] = value
+                    from = from or 0
+                    to = to or Infinity
+                    if not (item.dramawebben?.hasOwnProperty key) then return false
+                    n = Number(item.dramawebben[key])
+                    if not (from <= n <= to ) then return false
+
+            return true
+
+        return ret
+                
+
+
+    backend.getDramawebTitles().then (data) ->
         s.rows = data
 
         authors = _.map data, (row) ->

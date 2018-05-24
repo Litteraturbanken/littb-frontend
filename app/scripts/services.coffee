@@ -5,7 +5,9 @@ SIZE_VALS = [625, 750, 1100, 1500, 2050]
 # STRIX_URL = "https://litteraturbanken.se/api"
 STRIX_URL = "/api"
 
-if _.str.startsWith(location.host, "demolittb")
+if _.str.startsWith(location.host, "demolittbred")
+    STRIX_URL = "http://demolittbdev.spraakdata.gu.se/api"
+else if _.str.startsWith(location.host, "demolittb")
     STRIX_URL = "/api"
 if _.str.startsWith(location.host, "litteraturbanken")
     STRIX_URL = "/api"
@@ -341,8 +343,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
 
 
-    getTitles : (includeParts = false,
-                 author,
+    getTitles : (author,
                  sort_key,
                  string,
                  aboutAuthors = false,
@@ -653,6 +654,44 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
 
         return def.promise
+
+    getDramawebTitles: () ->
+        params = 
+            exclude : "text,parts,sourcedesc,pages,errata"
+            include : "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben"
+            dramawebben: true
+            to: 10000
+
+        # if include
+        #     params.include = include
+        # if sort_key
+        #     params.sort_field = sort_key
+        #     params.to = 30
+        # else
+        #     params.sort_field = "sortkey|asc"
+        #     params.to = 10000
+            
+        # if string
+        #     params.filter_string = string
+        # if author
+        #     author = "/" + author
+        # if aboutAuthors
+        #     params.about_authors = true
+        # if partial_string
+        #     params.partial_string = true
+        # if getAll
+        #     params.to = 300
+
+        return $http(
+            url : "#{STRIX_URL}/list_all/etext,faksimil"
+            params: params
+        ).then (response) ->
+            c.log "data", response
+            titles = response.data.data
+
+            c.log "dramawebben", _.filter(titles, "dramawebben")
+
+            return expandMediatypes(titles)
 
 
     searchLexicon : (str, id, useWildcard, doSearchId, strict) ->
