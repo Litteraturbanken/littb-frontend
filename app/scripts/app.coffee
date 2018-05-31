@@ -93,6 +93,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when '/presentationer/:folder/:doc',
                 controller : ["$scope", "$routeParams", "$http", "util", "$rootElement",
                                 ($scope, $routeParams, $http, util, $rootElement) ->
+                                    c.log("presentation ctrl init")
                                     $rootElement.addClass "page-presentation"
                                     $rootElement.addClass "subpage"
                                     $scope.$on "$destroy", () ->
@@ -106,6 +107,21 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                         $scope.title = $scope.title.split(" ")[0...5].join(" ")
                                         $scope.setTitle $scope.title
                 ]
+                resolve : 
+                    r : ["$q", "$routeParams", "$route", "$rootScope",
+                            ($q, $routeParams, $route, $rootScope) ->
+                                console.log("$routeParams", $routeParams, routeStartCurrent, $route)
+                                def = $q.defer()
+
+                                if (routeStartCurrent?.$$route is $route.current.$$route) and
+                                        ($route.current.params.folder == $routeParams.folder) and 
+                                        ($route.current.params.doc == $routeParams.doc)
+                                    c.log "reject about route"
+                                    def.reject()
+                                else
+                                    def.resolve()
+                                return def.promise
+                        ]
                 template : '''
                         <meta-desc>{{title}}</meta-desc>
                         <div class="content" style="position:relative;" ng-bind-html="doc | trust"></div>
