@@ -2,7 +2,8 @@
   "name": "Litteraturbanken",
   "version": "3.0.0",
   "scripts": {
-    "test": "docker-compose up --build --exit-code-from littb"
+    "test": "docker-compose up --build --exit-code-from littb",
+    "build" : "node_modules/grunt-cli/bin/grunt"
   },
   "dependencies": {
   },

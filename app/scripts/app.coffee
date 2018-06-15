@@ -271,6 +271,20 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when ["/id/:id", "/id"],
                 templateURL : "views/id.html"
                 controller : 'idCtrl'
+            .when '/översättarlexikon/:anything*',
+                resolve :
+                    r : ["$q", "$routeParams", "$route", "$rootScope", "$timeout",
+                            ($q, $routeParams, $route, $rootScope, $timeout) ->
+                                def = $q.defer()
+                                def.reject()
+                                # insert a with href here and fake click?
+                                console.log("ovs", $(".mainnav a[href^='/översättarlexikon']"))
+                                $timeout(() ->
+                                    $(".mainnav a[href^='/översättarlexikon']").click()
+                                , 0, false)
+                                return def
+                                
+                        ]
             .otherwise
                 template : "<p>Du har angett en adress som inte finns på Litteraturbanken.</p>
                             <p>Använd browserns bakåtknapp för att komma tillbaka till 

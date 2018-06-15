@@ -140,6 +140,14 @@ module.exports = function (grunt) {
           https: false,
           changeOrigin: true
 
+      },
+      {
+          context: '/översättarlexikon',
+          host: host,
+          port: 80,
+          https: false,
+          changeOrigin: true
+
       }
       ].concat(["red", "txt", "query", "bilder", "css", "sla-bibliografi", "authordb", "xhr", "ws", "so"].map(function(item) {
         
