@@ -141,6 +141,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
             s.selectedTitles = titles
         if $location.search().sok_filter
             s.nav_filter = $location.search().sok_filter
+        if $location.search().keyword
+            s.selectedKeywords = $location.search().keyword?.split(",")
 
         util.setupHashComplex s, [
                 key : "forfattare"
@@ -155,8 +157,14 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 post_change : change
             ,
                 key : "titlar"
-                # expr : "selected_author.pseudonymfor || selected_author.author_id"
                 expr : "selectedTitles"
+                val_in : (val) ->
+                    val?.split(",")
+                val_out : (val) ->
+                    val?.join(",")
+            ,
+                key : "keyword"
+                expr : "selectedKeywords"
                 val_in : (val) ->
                     val?.split(",")
                 val_out : (val) ->

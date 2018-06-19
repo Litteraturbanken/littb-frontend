@@ -39,8 +39,10 @@
                 <div class="right">
 
                     <div class="title_select_container">
-                        <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Sök på genre, tema och annat">
-                            <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle || title.title}}</option>
+                        <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedKeywords" data-placeholder="Sök på genre, tema och annat">
+                            <option value=""></option>
+                            <option value="dramawebben">Dramawebben</option>
+                            <option value="kb">Kungliga biblioteket</option>
                         </select>
                     </div>
                     
