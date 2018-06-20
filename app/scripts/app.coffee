@@ -45,13 +45,11 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "template/typeahead/typeahead-popup.html"
                                             "template/typeahead/typeahead-match.html"
                                             "angularSpinner"
-                                            # "jmdobry.angular-cache"
                                             "ngAnimate"
                                             "ngAria"
                                             "ngTouch"
-                                            'ui.select2'
-                                            'ngScrollEvent'
-                                            # "ui.slider"
+                                            # 'ui.select2'
+                                            # 'ngScrollEvent'
                                             "dibari.angular-ellipsis"
                                            ])
     .config ($routeProvider) ->
@@ -82,12 +80,12 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when '/',
                 redirectTo : "/start"
             .when '/start',
-                templateUrl: 'views/start.html'
+                templateUrl: require('../views/start.html')
                 controller: 'startCtrl'
                 title : "Svenska klassiker som e-bok och epub"
             .when '/presentationer',
                 title : "Presentationer"
-                templateUrl : "views/presentations.html"
+                templateUrl : require("../views/presentations.html")
                 controller : "presentationCtrl"
                         
             .when '/presentationer/:folder/:doc',
@@ -133,7 +131,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when '/nytt',
                 redirectTo : () -> "/bibliotek?nytillkommet",
             .when '/om/:page',
-                templateUrl: "views/about.html"
+                templateUrl: require("../views/about.html")
                 controller : "aboutCtrl"
                 title : "Om LB"
                 reloadOnSearch : false
@@ -159,24 +157,24 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when '/sok',
                 redirectTo: '/sök'
             .when '/sök',
-                templateUrl: 'views/search.html'
+                templateUrl: require('../views/search.html')
                 controller : 'searchCtrl'
                 reloadOnSearch : false
 
             .when "/bibliotek",
-                templateUrl : "views/library.html"
+                templateUrl : require("../views/library.html")
                 controller : "libraryCtrl"
                 reloadOnSearch : false
                 title : "Biblioteket – Titlar och författare"
             .when "/titlar",
                 redirectTo : "/bibliotek"
             .when "/epub",
-                templateUrl : "views/epubList.html"
+                templateUrl : require("../views/epubList.html")
                 controller : "epubListCtrl"
                 reloadOnSearch : false
                 title : "Gratis böcker för nerladdning i epubformat"
             .when "/ljudarkivet",
-                templateUrl : "views/audiolist.html"
+                templateUrl : require("../views/audiolist.html")
                 controller : "audioListCtrl"
                 reloadOnSearch : false
                 title : "Litteraturbankens uppläsningar"
@@ -192,7 +190,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                    "/forfattare/LagerlofS/omtexterna"
                    "/forfattare/LagerlofS/omtexterna/:omtexternaDoc"
                    ],
-                templateUrl : "views/authorInfo.html"
+                templateUrl : require("../views/authorInfo.html")
                 controller : "authorInfoCtrl"
                 isSla : true
                 reloadOnSearch : false
@@ -208,7 +206,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                    "/forfattare/:author/jamfor"
                    "/forfattare/:author/omtexterna/:omtexternaDoc?"
                    ],
-                templateUrl : "views/authorInfo.html"
+                templateUrl : require("../views/authorInfo.html")
                 controller : "authorInfoCtrl"
                 resolve : 
                     r : authorResolve
@@ -230,14 +228,14 @@ window.littb = angular.module('littbApp', [ "ngRoute",
 
 
             .when "/forfattare/:author/titlar/:title/:mediatype",
-                templateUrl : "views/reader.html"
+                templateUrl : require("../views/reader.html")
                 controller : "readingCtrl"
                 reloadOnSearch : false
             # .when "/editor/:lbid",
 
             .when [ "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
                     "/editor/:lbid/ix/:ix/:mediatype"],
-                templateUrl : "views/reader.html"
+                templateUrl : require("../views/reader.html")
                 controller : "readingCtrl"
                 reloadOnSearch : false,
                 resolve :
@@ -269,7 +267,7 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when '/kontakt',
                 redirectTo : "/om/kontakt"
             .when ["/id/:id", "/id"],
-                templateURL : "views/id.html"
+                templateURL : require("../views/id.html")
                 controller : 'idCtrl'
             .when '/översättarlexikon/:anything*',
                 resolve :

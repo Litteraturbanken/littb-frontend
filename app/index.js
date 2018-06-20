@@ -1,5 +1,17 @@
 
+window.$ = window.jQuery = require("jquery")
 require("lodash")
+require("angular")
+require("angular-animate")
+require("angular-route")
+require("angular-touch")
+require("angular-ui-bootstrap")
+require("angular-spinner")
+require("angular-aria")
+require("angular-ellipsis")
+// require("ui-select")
+// require("select2")
+window._.str = require("underscore.string")
 
 
 
@@ -24,4 +36,5 @@ require("./scripts/lagerlof.coffee")
 require("./scripts/school.coffee")
 
 
-require("./index.html")
+// require("./index.html")
+// require('file-loader?name=[name].[ext]!./index.html')

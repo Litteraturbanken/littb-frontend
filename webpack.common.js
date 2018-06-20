@@ -1,11 +1,13 @@
 const path = require('path');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+
 module.exports = {
     entry: './app/index.js',
     module: {
         rules: [
             {
               test: /\.(jpe?g|png|gif|svg)$/i,
-              loader: "file-loader?name=[name].[ext]"
+              loader: "file-loader?name=[name].[ext]&outputPath=img/"
             },
             {
               test: /\.coffee$/,
@@ -26,11 +28,11 @@ module.exports = {
             {
               test: /\.html$/,
               use: [
-                { loader: "file-loader" },
-                // { 
-                //   loader: "extract-loader",
-                //   options: { publicPath: "" }
-                // },
+                { loader: "file-loader?name=[name].[ext]" },
+                { 
+                  loader: "extract-loader",
+                  options: { publicPath: "" }
+                },
                 { loader: "html-loader" }
               ]
               
@@ -57,6 +59,19 @@ module.exports = {
             },
         ]
     },
+    plugins: [
+        
+        new CopyWebpackPlugin([
+          {
+            from: "./app/index.html",
+            to: path.resolve(__dirname, 'dist'),
+          },
+          {
+            from: "./app/img/favicons",
+            to: path.resolve(__dirname, 'dist/img'),
+          }
+      ])
+    ],
     output: {
       filename: '[name].js',
       path: path.resolve(__dirname, 'dist'),
