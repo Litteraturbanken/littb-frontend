@@ -18,7 +18,6 @@ window._.str = require("underscore.string")
 // require("components/select2/select2.css")
 require("./styles/bootstrap.scss")
 require("./styles/styles.scss")
-// require("components/font-awesome/css/font-awesome.css")
 
 
 require("./lib/jquery.ui.position.js")

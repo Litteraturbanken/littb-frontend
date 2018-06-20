@@ -984,10 +984,10 @@ littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
     s.getPage = (page) ->
         return {
                 "ide" : '/red/om/ide/omlitteraturbanken.html'
-                "hjalp" : "views/help.html"
+                "hjalp" : require("../views/help.html")
                 "vision" : "/red/om/visioner/visioner.html"
-                "kontakt" : 'views/contactForm.html'
-                "statistik" : 'views/stats.html'
+                "kontakt" : require('../views/contactForm.html')
+                "statistik" : require('../views/stats.html')
                 "rattigheter" : '/red/om/rattigheter/rattigheter.html'
                 "organisation" : '/red/om/ide/organisation.html'
                 # "inenglish" : "/red/om/ide/inenglish.html",

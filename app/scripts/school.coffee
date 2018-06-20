@@ -287,7 +287,7 @@ littb.config () ->
     
     whn "/skola",
         title : "Skola"
-        templateUrl : "views/school/school.html"
+        templateUrl : require("../views/school/school.html")
         # controller : getFileName
 
     # whn '/skola/larare/kontakt',
@@ -298,39 +298,39 @@ littb.config () ->
     #     breadcrumb : ["kontakt"]
     whn ["/skola/lyrik/elev/gymnasium/:docurl", "/skola/lyrik/elev/gymnasium"],
         title : "Lyrikskolan gymnasium"
-        templateUrl : "views/school/lyrik_students.html"
+        templateUrl : require("../views/school/lyrik_students.html")
         controller : getLyrikStudentCtrl("gymnasium")
     whn ["/skola/lyrik/elev/6-9/:docurl", "/skola/lyrik/elev/6-9"],
         title : "Lyrikskolan 6-9"
-        templateUrl : "views/school/lyrik_students.html"
+        templateUrl : require("../views/school/lyrik_students.html")
         controller : getLyrikStudentCtrl("6-9")
 
     whn ["/skola/lyrik/larare/:subsection/:docurl", "/skola/lyrik/larare/:docurl", "/skola/lyrik/larare"],
         title : "Lyrikskolan"
-        templateUrl : "views/school/lyrik_teachers.html"
+        templateUrl : require("../views/school/lyrik_teachers.html")
 
     whn ["/skola/larare/:docurl", "/skola/larare"],
         title : "Lärare"
         # controller : getFileName
-        templateUrl : "views/school/teachers.html"
+        templateUrl : require("../views/school/teachers.html")
     
     whn ["/skola/f-5/:docurl", "/skola/f-5"],
         title : "F-5"
-        templateUrl : "views/school/students.html"
+        templateUrl : require("../views/school/students.html")
         controller : getStudentCtrl("f-5")
     whn ["/skola/6-9/:docurl", "/skola/6-9"],
         title : "6-9"
-        templateUrl : "views/school/students.html"
+        templateUrl : require("../views/school/students.html")
         controller : getStudentCtrl("6-9")
     whn ["/skola/gymnasium/:docurl", "/skola/gymnasium"],
         title : "Gymnasium"
-        templateUrl : "views/school/students.html"
+        templateUrl : require("../views/school/students.html")
         controller : getStudentCtrl("gymnasium")
 
 
     whn "/skola/:docurl",
         title : "Litteraturskolan"
-        templateUrl : "views/school/school.html"
+        templateUrl : require("../views/school/school.html")
 
 
 

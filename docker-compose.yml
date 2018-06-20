@@ -7,7 +7,7 @@ services:
     # ports:
     #   - 9000:9000
     # entrypoint: "grunt server"
-    entrypoint: "grunt docker_test"
+    entrypoint: "protractor test/e2e/conf_e2e.js"
 
     environment:
       - SELENIUM=hub

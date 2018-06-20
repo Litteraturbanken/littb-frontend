@@ -6,10 +6,6 @@ module.exports = {
     module: {
         rules: [
             {
-              test: /\.(jpe?g|png|gif|svg)$/i,
-              loader: "file-loader?name=[name].[ext]&outputPath=img/"
-            },
-            {
               test: /\.coffee$/,
               use: [
                 {
@@ -38,25 +34,37 @@ module.exports = {
               
             },
             {
-              test: /\.otf$/i,
-              loader: "file-loader"
-            },
-            {
-              test: /\.woff(\?v=\d+\.\d+\.\d+)?$/,
-              loader: "file-loader?mimetype=application/font-woff"
-            },
-            {
-              test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/,
-              loader: "file-loader?mimetype=application/font-woff"
-            },
-            {
-              test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
-              loader: "file-loader?mimetype=application/octet-stream"
-            },
-            {
-              test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
-              loader: "file-loader"
-            },
+             test: /fontawesome-webfont\.(ttf|otf|eot|svg|woff(2)?)(\?[a-z0-9]+)?$/,
+             use: [{
+               loader: 'file-loader',
+               options: {
+                 name: '[name].[ext]',
+                 outputPath: 'fonts/',    // where the fonts will go
+                 // publicPath: '../'       // override the default path
+               }
+             }]
+           },
+           {
+             test: /\.(jpe?g|png|gif|svg)$/i,
+             exclude: /.*fontawesome-webfont.svg/,
+             use: [
+             {
+                loader: "file-loader",
+                options: {
+                     name: '[name].[ext]',
+                     outputPath: 'img/',    // where the fonts will go
+                     // publicPath: '../'       // override the default path
+                 }
+             },
+             // {
+             //    loader: "svg-url-loader",
+             //    options: {
+
+             //    }
+             // },
+             ]
+
+           },
         ]
     },
     plugins: [
@@ -64,11 +72,15 @@ module.exports = {
         new CopyWebpackPlugin([
           {
             from: "./app/index.html",
-            to: path.resolve(__dirname, 'dist'),
+            to: ".",
           },
           {
             from: "./app/img/favicons",
-            to: path.resolve(__dirname, 'dist/img'),
+            to: "img",
+          },
+          {
+            from: "./app/views/sla/",
+            to: "views/sla/",
           }
       ])
     ],
