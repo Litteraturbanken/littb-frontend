@@ -6,7 +6,7 @@
   "scripts": {
     "test": "docker-compose up --build --exit-code-from littb",
     "build": "webpack --config webpack.prod.js",
-    "dev": "webpack-dev-server --hot --config webpack.dev.js"
+    "dev": "webpack-dev-server --config webpack.dev.js"
   },
   "dependencies": {
     "angular": "1.4.14",
@@ -17,13 +17,14 @@
     "angular-spinner": "^1.0.1",
     "angular-touch": "1.5.9",
     "angular-ui-bootstrap": "0.13.3",
+    "angular-ui-select2": "^0.0.5",
     "bootstrap-sass": "~3.2.0",
     "font-awesome": "~4.4.0",
     "jquery": "1.11.1",
     "lodash": "~3.7.0",
     "nprogress": "~0.1.2",
     "select2": "^4.0.6-rc.1",
-    "ui-select": "*",
+    "ui-select": "^0.19.8",
     "underscore.string": "^2.3.3"
   },
   "devDependencies": {

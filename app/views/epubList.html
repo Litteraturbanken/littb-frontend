@@ -8,11 +8,28 @@
         <p class="preamble">Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
         
         <div>
+
+            <!-- <ui-select ng-model="authorFilter" theme="select2" 
+                       close-on-select="true" style="width: 300px;" title="Författare"
+                       search-enabled="true" >
+                <ui-select-match class="ui-select-match" placeholder="Författare">{{$item.surname}}</ui-select-match>
+                <ui-select-choices repeat="author in authorData | filter:$select.search" position='down'>
+                  <span class="lastname">{{author.surname}}</span>
+                </ui-select-choices>
+              </ui-select> -->
+
+              <!-- <ui-select ng-model="ctrl.country.selected" theme="selectize" search-enabled="ctrl.searchEnabled" ng-disabled="ctrl.disabled" style="width: 300px;">
+                  <ui-select-match placeholder="Select or search a country in the list...">{{$select.selected.name}}</ui-select-match>
+                  <ui-select-choices repeat="country in ctrl.countries | filter: $select.search">
+                    <span ng-bind-html="country.name | highlight: $select.search"></span>
+                    <small ng-bind-html="country.code | highlight: $select.search"></small>
+                  </ui-select-choices>
+                </ui-select> -->
+
             <div class="auth_select_container">
                 <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
                     <option>Välj författare</option>
                     <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
-
                         <span class="lastname">{{author.surname}}</span>
                     </option>
                 </select> 

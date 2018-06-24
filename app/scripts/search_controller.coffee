@@ -1,7 +1,8 @@
 getAuthorSelectSetup = (s, $filter) ->
     return {
         formatNoMatches: "Inga resultat",
-        formatResult : (data) ->
+        templateResult : (data) ->
+            unless data.id then return
             # return data.text
             author = s.authorsById[data.id]
 
@@ -11,13 +12,13 @@ getAuthorSelectSetup = (s, $filter) ->
             if author.name_for_index?.split(",").length > 1
                 firstname = "<span class='firstname'>, #{author.name_for_index.split(',')[1]}</span>"
 
-            return """
+            return $ """
             <span>
                 <span class="surname sc">#{author.surname}</span>#{firstname} <span class="year">#{$filter('authorYear')(author)}</span>
             </span>
             """
 
-        formatSelection : (item) ->
+        templateSelection : (item) ->
             return s.authorsById[item.id].surname
             # item.text
 

@@ -294,7 +294,6 @@ th {
 }
 
 
-
 .content {
     margin-bottom : 5em;
     font-size: 0.9em;
@@ -395,80 +394,87 @@ th {
 
 
 // bootstrap overrides
-.select2-drop-active, .select2-container-multi.select2-container-active .select2-choices {
-    border-color: none;
-    border : none;
-    box-shadow : none;
-    width : 300px;
+.select2-container {
+    width : 300px !important;
+    border: none;
 }
 
-.select2-input {
-    width : 300px;
+.select2-container--open .select2-dropdown--below {
+    top: -5px;
+}
+.select2-results__option[id*='undefined'] {
+    display : none;
 }
 
 .select2-results {
     font-size: 0.8em;
     max-height : 410px;
-    width : 300px;
 }
-.select2-results .select2-highlighted {
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
     background-color: lighten(lightgrey, 10%);
     color : black;
 
 }
-.select2-container.select2-dropdown-open {
-    border: none;
+
+.select2-container--default .select2-selection--single {
+    background-color: white !important;
+    padding-left : 10px;
+    font-size: 0.8em;
 }
-.select2-container-multi .select2-choices {
-    background-image : none;
-    background-color : inherit;
-    border : none;
-}
-.select2-container-multi .select2-choices .select2-search-choice {
+
+.select2-container--default .select2-selection--multiple, .select2-container--default .select2-selection--single {
+    background-color: transparent;
     border-radius: 0;
-    text-transform: uppercase;
-    font-size : 0.8em;
-    color: #666;
+    border: none !important;
 
-    margin-right: 6px;
-    margin-left: 0;
-    margin-bottom: 4px;
-
-    &:last-child-of-type {
-        margin-bottom : 8px;
-    }
-    
-}
-.select2-container-multi .select2-search-choice-close {
-    background: none;
-    &:before {
-        content: "☒";
-        font-size : 1.2em;
-        position: relative;
-        bottom: 1px;
+    .select2-selection__choice {
+        background-image: linear-gradient(to top, #f4f4f4 20%, #f0f0f0 50%, #e8e8e8 52%, #eee 100%);
+        border-radius: 0;
+        text-transform: uppercase;
+        font-size : 0.8em;
         color: #666;
 
+        margin-right: 6px;
+        margin-left: 0;
+        margin-bottom: 4px;
+
+        &:last-child-of-type {
+            margin-bottom : 8px;
+        }
         
     }
-    font-size: inherit;
-    background: none;
+    .select2-selection__rendered {
+        padding: 0;
+        white-space: normal;
+        @include small-caps();
+    }
+    .select2-selection__choice__remove {
+        background: none;
+        color : transparent !important;
+        vertical-align: baseline;
+        margin-right: -5px;
+        &:before {
+            vertical-align: baseline;
+            content: "☒";
+            font-size : 1.1em;
+            color: #666;
+
+            
+        }
+        font-size: inherit;
+        background: none;
+    }
 }
 
-.select2-container-multi .select2-choices .select2-search-field {
-    float: none;
-    width : 300px;
-    display : block;
-}
-
-.select2-container-multi .select2-choices .select2-search-field input {
+.select2-container .select2-search--inline .select2-search__field {
+    margin-top: 0;
+    width : 300px !important;
     margin-top : 4px;
     @include small-caps();
     font-size : 0.8em;
-    padding-left : 10px;
+    padding : 5px 5px 5px 10px;
     display : block;
-    width : 100%;
     background-color : white !important;
-    width : 100% !important;
     border : 1px solid lightgrey;
 }
 
@@ -3372,40 +3378,11 @@ $partnav-width : 170px;
 }
 
 .page-epubList {
-    .select2-drop {
-        width : 302px !important;
-        padding-top: 5px;
-    }
-    
-    .select2-search {
-        input {
-            @include font-normal();
-            padding-left: 1em;
-        }
-    }
-
-    .select2-result-label {
+    .select2-results__option {
         .firstname, .year {
             font-size: 0.9em;
         }
     }
-
-    .select2-container .select2-choice {
-        border-radius : 0;
-    }
-
-    .select2-chosen {
-        @include small-caps();
-        font-size: 0.8em;
-    }
-
-    .select2-container-active .select2-choice, .select2-container-active .select2-choices {
-        border : 1px solid $primarycolor;
-        border-radius: 0;
-        background-image : none;
-        background-color: white;
-    }
-
 
     .logo_link_monogram {
         background: url("../img/lb_monogram_red_white.svg") no-repeat;
@@ -3470,16 +3447,19 @@ $partnav-width : 170px;
 
         .auth_select_container {
             display: inline;
+            .select2-container {
+                border: 1px solid darkgrey;
+            }
         }
 
         input.filter {
-            margin-left : 1em;
-            padding-left : 1em;
+            border: 1px solid darkgrey;
+            margin-left: 1em;
+            padding-left: 1em;
             font-size: 0.8em;
-            padding-bottom: 3px;
-            padding-top: 3px;
-
-
+            padding-bottom: 0px;
+            padding-top: 0px;
+            height: 29px;
         }
         
         > * {

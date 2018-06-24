@@ -48,7 +48,8 @@ window.littb = angular.module('littbApp', [ "ngRoute",
                                             "ngAnimate"
                                             "ngAria"
                                             "ngTouch"
-                                            # 'ui.select2'
+                                            # 'ui.select'
+                                            'ui.select2'
                                             # 'ngScrollEvent'
                                             "dibari.angular-ellipsis"
                                            ])

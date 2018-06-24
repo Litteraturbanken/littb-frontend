@@ -842,7 +842,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     s.authorSelectSetup = {
         formatNoMatches: "Inga resultat",
-        formatResult : (data) ->
+        templateResult : (data) ->
             author = s.authorsById[data.id]
             unless author then return data.text
 
@@ -850,13 +850,13 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
             if author.name_for_index.split(",").length > 1
                 firstname = "<span class='firstname'>, #{author.name_for_index.split(',')[1]}</span>"
 
-            return """
+            return $ """
             <span>
                 <span class="surname sc">#{author.surname}</span>#{firstname} <span class="year">#{$filter('authorYear')(author)}</span>
             </span>
             """
 
-        formatSelection : (item) ->
+        templateSelection : (item) ->
             try
                 return s.authorsById[item.id].surname
             catch e
@@ -891,7 +891,6 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         return true
 
     s.getAuthor = (row) ->
-        console.log("getAuthor")
         [last, first] = row.authors[0].name_for_index.split(",")
         auth = (_.compact [last.toUpperCase(), first]).join ","
         if row.authors[0].type == "editor"

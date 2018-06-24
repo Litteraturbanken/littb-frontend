@@ -10,7 +10,10 @@ require("angular-spinner")
 require("angular-aria")
 require("angular-ellipsis")
 // require("ui-select")
-// require("select2")
+// require("ui-select/dist/select.css")
+require("select2/dist/css/select2.css")
+require("select2/dist/js/select2.js")
+require("angular-ui-select2/src/select2.js")
 window._.str = require("underscore.string")
 
 
@@ -37,3 +40,4 @@ require("./scripts/school.coffee")
 
 // require("./index.html")
 // require('file-loader?name=[name].[ext]!./index.html')
+
