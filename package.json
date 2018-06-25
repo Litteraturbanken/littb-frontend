@@ -6,7 +6,8 @@
   "scripts": {
     "test": "docker-compose up --build --exit-code-from littb",
     "build": "webpack --config webpack.prod.js",
-    "dev": "webpack-dev-server --config webpack.dev.js"
+    "dev": "webpack-dev-server --config webpack.dev.js",
+    "serve-dist": "webpack-dev-server --config webpack.prod.js --env prod --compress"
   },
   "dependencies": {
     "angular": "1.4.14",
@@ -39,8 +40,12 @@
     "extract-loader": "^2.0.1",
     "file-loader": "^1.1.11",
     "html-loader": "^0.5.5",
+    "html-webpack-plugin": "^3.2.0",
+    "mini-css-extract-plugin": "^0.4.0",
     "ng-annotate-webpack-plugin": "^0.3.0",
     "node-sass": "^4.9.0",
+    "optimize-css-assets-webpack-plugin": "^4.0.2",
+    "postcss-loader": "^2.1.5",
     "protractor": "latest",
     "protractor-html-screenshot-reporter": "0.0.21",
     "requirejs": "^2.1.15",

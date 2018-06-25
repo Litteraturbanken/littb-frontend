@@ -304,6 +304,7 @@ littb.config ($httpProvider, $locationProvider, $tooltipProvider) ->
 littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
     c.log "run search params", $location.search()
     $rootScope.cacheKiller = () -> Math.round(new Date().getDate() / 5)
+    $rootScope.sourceInfo = require('../views/sourceInfo.html')
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
         $rootElement.addClass("ready").removeClass("not_ready")

@@ -1,8 +1,21 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const HtmlWebPackPlugin = require("html-webpack-plugin");
 
 module.exports = {
     entry: './app/index.js',
+    devServer: {
+      host: process.env.LITTB_HOST || "localhost",
+      port: process.env.LITTB_PORT || 9000,
+      // hot : true,
+      proxy: [{
+          context : ["/api", "/red", "/txt", "/query", "/bilder", "/css", "/sla-bibliografi", "/authordb", "/xhr", "/ws", "/so"],
+          target: 'http://demolittb.spraakdata.gu.se',
+          changeOrigin : true
+      }],
+      stats: { colors: true },
+      historyApiFallback: true
+    },
     module: {
         rules: [
             {
@@ -14,31 +27,33 @@ module.exports = {
               ]
             },
             {
-              test: /\.css$/,
-              use: [
-                'style-loader',
-                "css-loader"
-              ]
-            },
-            {
-              test: /\.scss$/,
+              test: /\.(sa|sc|c)ss$/,
               use: [
                     "style-loader", // creates style nodes from JS strings
                     "css-loader", // translates CSS into CommonJS
+                    {
+                      loader: "postcss-loader",
+                      options: {
+                        plugins: () => [require('autoprefixer')]
+                      }
+                    },
                     "sass-loader" // compiles Sass to CSS
                 ]
             },
             {
               test: /\.html$/,
+              exclude: /.*index.html/,
               use: [
                 { loader: "file-loader?name=[name].[ext]" },
                 { 
                   loader: "extract-loader",
                   options: { publicPath: "" }
                 },
-                { loader: "html-loader" }
+                { 
+                    loader: "html-loader", 
+                    options: {minimize: true}
+                 }
               ]
-              
             },
             {
              test: /fontawesome-webfont\.(ttf|otf|eot|svg|woff(2)?)(\?[a-z0-9]+)?$/,
@@ -75,12 +90,15 @@ module.exports = {
         ]
     },
     plugins: [
-        
+        new HtmlWebPackPlugin({
+          template: "./app/index.html",
+          filename: "./index.html"
+        }),
         new CopyWebpackPlugin([
-          {
-            from: "./app/index.html",
-            to: ".",
-          },
+          // {
+          //   from: "./app/index.html",
+          //   to: ".",
+          // },
           {
             from: "./app/img/favicons",
             to: "img",
