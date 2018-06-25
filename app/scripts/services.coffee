@@ -1,4 +1,4 @@
-littb = angular.module('littbApp');
+littb = angular.module('littbApp')
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 # STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
@@ -796,7 +796,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
     autocomplete : (filterstr) ->
         $http(
             url : "#{STRIX_URL}/autocomplete/#{filterstr}"
-        ).then (response) =>
+        ).then (response) ->
             # c.log "autocomplete response", response
             content = response.data
             c.log("suggest!", content.suggest?[0]?.text, "score", content.suggest?[0]?.score)
@@ -815,7 +815,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                 data = [{
                     label : content.suggest[0].text,
                     typeLabel: "Menade du",
-                    action: (scope) =>
+                    action: (scope) ->
                         # c.log ("autoc", @autocomplete)
                         # return scope.autocomplete(content.suggest[0].text)
                         # scope.autocomplete(content.suggest[0].text).then (data) ->
@@ -882,8 +882,8 @@ littb.factory "authors", (backend, $q) ->
     
     def = $q.defer()
     # @promise = def.promise
-    backend.getAuthorList(null, exclude='intro,db_*,doc_type,corpus,es_id').then (authors) =>
-        authorsById = _.object _.map authors, (item) =>
+    backend.getAuthorList(null, exclude='intro,db_*,doc_type,corpus,es_id').then (authors) ->
+        authorsById = _.object _.map authors, (item) ->
             [item.author_id, item]
         # c.log "authorsById", authorsById
         def.resolve [authors, authorsById]
@@ -1215,7 +1215,7 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
                 queryParams.push "word_form_only"
 
 
-            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{params.mediatype}/#{query}/?" + queryParams.join("&"));
+            source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{params.mediatype}/#{query}/?" + queryParams.join("&"))
 
             source.onmessage = (event) =>
                 data = JSON.parse(event.data)

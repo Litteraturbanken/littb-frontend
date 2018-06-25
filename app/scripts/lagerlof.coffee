@@ -151,7 +151,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                         else
                             c3++
                             w1split = splitCache[wit1]
-                            for rdg2 in app2    
+                            for rdg2 in app2
                                 # maybe can check for equality before split?, if w1split.length == 1 ...
                                 w2split = splitCache[rdg2.wit]
                                 # partition rdg1 and rdg2 wits into common and uncommon wits
@@ -175,7 +175,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                             
                             if w1split.length > 0
                                 c.log app1, merged, app2
-                                throw 'w1split.length != 0'
+                                throw Error('w1split.length != 0')
                      
                      # replace app1's rdgs with the new merged apps
                      for rdg,i in merged
@@ -196,7 +196,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 line = data.substr(lastIndex, index - lastIndex)
                 lastIndex = index + 1
                 
-                if app == null 
+                if app == null
                     if appPat.test(line)#line.indexOf('<app>') != -1
                         app = []
                 else
@@ -222,7 +222,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                                         text = '<i>' + text + '</i>'
                                     else if rend == 'bold'
                                         text = '<b>' + text + '</b>'
-                                    else 
+                                    else
                                         c.error 'unknown rend=', rend
                                 text = ' ' + text
                             
@@ -446,7 +446,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
                 s.witUrls[wit] = "/forfattare/LagerlofS/titlar/#{work.path}/info/"
         
         s.haveText = false
-        $('#koll-text').html('') # do this while getDiff is loading 
+        $('#koll-text').html('') # do this while getDiff is loading
         s.loading = true
         s.error = false
         
@@ -593,7 +593,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
         windowTop = $($window).scrollTop()
         
         kolltextBounds = $('#koll-text')[0].getBoundingClientRect()
-        margin = 20;
+        margin = 20
         # if contextRect.left >= kolltextBounds.left + margin
             # div[0].style.left = contextRect.left + "px"
         # else

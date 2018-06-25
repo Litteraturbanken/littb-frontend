@@ -20,7 +20,7 @@ window.safeApply = (scope, fn) ->
 $.fn.outerHTML = () ->
     return $(this).clone().wrap('<div></div>').parent().html()
 
-_.templateSettings.interpolate = /{{([\s\S]+?)}}/g;
+_.templateSettings.interpolate = /{{([\s\S]+?)}}/g
 
 authorResolve = ["$q", "$routeParams", "$route",
                             ($q, $routeParams, $route) ->
@@ -323,7 +323,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
     , 1000)
 
     stripClass = (prefix) ->
-        re = new RegExp("\\ ?#{prefix}\\-\\w+", "g");
+        re = new RegExp("\\ ?#{prefix}\\-\\w+", "g")
 
         cls = $rootElement.attr "class"
         cls = cls.replace re, ""
