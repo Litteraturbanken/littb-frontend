@@ -1,6 +1,6 @@
 HOST = process.env.LITTB_DOCKER_HOST or "localhost"
 get = (url) ->
-    browser.get("http://#{HOST}:9001" + url)
+    browser.get("http://#{HOST}:9000" + url)
 describe "library authors", () ->
     rows = null
     beforeEach () ->
@@ -28,7 +28,7 @@ describe "library works", () ->
         expect(rows.count()).toEqual 1
 
     it "should link correctly to reading mode", () ->
-        expect(element(By.css "li.link.first li:first-of-type a").getAttribute("href")).toEqual "http://#{HOST}:9001/forfattare/MartinsonH/titlar/Aniara/sida/5/etext"
+        expect(element(By.css "li.link.first li:first-of-type a").getAttribute("href")).toEqual "http://#{HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext"
     
 
 describe "titles", () ->
@@ -42,7 +42,7 @@ describe "titles", () ->
         filter = element(By.model("filter"))
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
-        expect(rows.count()).toEqual 810
+        expect(rows.count()).toEqual 811
 
 
 describe "epubList", () ->
@@ -66,14 +66,14 @@ describe "reader", () ->
     it "should change page on click", () ->
         get "/forfattare/StrindbergA/titlar/Fadren/sida/3/etext"
         element(By.css ".pager_ctrls a[rel=next]").getAttribute("href").then (linkUrl) ->
-            expect(linkUrl).toBe("http://#{HOST}:9001/forfattare/StrindbergA/titlar/Fadren/sida/4/etext")
+            expect(linkUrl).toBe("http://#{HOST}:9000/forfattare/StrindbergA/titlar/Fadren/sida/4/etext")
     
     it "should correctly handle pagestep", () ->
         get "/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
 
         element(By.css ".pager_ctrls a[rel=next]").getAttribute('href').then (linkUrl) ->
             browser.get(linkUrl)
-            expect(browser.getCurrentUrl()).toBe("http://#{HOST}:9001/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
+            expect(browser.getCurrentUrl()).toBe("http://#{HOST}:9000/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
 
 describe "editor", () ->
@@ -84,10 +84,10 @@ describe "editor", () ->
 
         element(By.css ".pager_ctrls a[rel=next]").getAttribute("href").then () ->
             element(By.css ".pager_ctrls a[rel=next]").click()
-            expect(browser.getCurrentUrl()).toBe("http://#{HOST}:9001/editor/lb238704/ix/4/f")
+            expect(browser.getCurrentUrl()).toBe("http://#{HOST}:9000/editor/lb238704/ix/4/f")
 
             expect(element(By.css "img.faksimil").getAttribute("src"))
-                .toEqual("http://#{HOST}:9001/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg")
+                .toEqual("http://#{HOST}:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg")
 
 
     
@@ -95,7 +95,7 @@ describe "editor", () ->
         get "/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil"
         element(By.css ".pager_ctrls a[rel=next]").getAttribute('href').then (linkUrl) ->
             browser.get(linkUrl)
-            expect(browser.getCurrentUrl()).toBe("http://#{HOST}:9001/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
+            expect(browser.getCurrentUrl()).toBe("http://#{HOST}:9000/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil")
 
 
 describe "search", () ->
@@ -120,23 +120,23 @@ describe "parts navigation", () ->
 
     it "should handle parts with parent parts", () ->
         get "/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil"
-        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/RydbergV/titlar/Singoalla1885/sida/20/faksimil")
+        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9000/forfattare/RydbergV/titlar/Singoalla1885/sida/20/faksimil")
     
     it "should handle many parts on same page, prev", () ->
         get "/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil"
-        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil")
+        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9000/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil")
 
     it "should handle many parts on same page, next", () ->
         get "/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil"
-        expect(nextPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil")
+        expect(nextPart().getAttribute('href')).toBe("http://#{HOST}:9000/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil")
 
     it "should give a prev part despite prev page being between parts", () ->
         get "/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil"
-        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil")
+        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9000/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil")
     
     it "should find a single page part on the prev page", () ->
         get "/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil"
-        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil")
+        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9000/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil")
 
     it "should show current part name instead of ended part", () ->
         get "/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil"
@@ -144,7 +144,7 @@ describe "parts navigation", () ->
 
     it "should go to beginning of current part rather than previous part", () ->
         get "/forfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil"
-        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9001/forfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil")
+        expect(prevPart().getAttribute('href')).toBe("http://#{HOST}:9000/forfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil")
 
     it "should disable prev if before first part", () ->
         get "/forfattare/OmarKhayyam/titlar/UmrKhaiyamRubaIyat/sida/1/faksimil"

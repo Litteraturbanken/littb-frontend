@@ -17,6 +17,9 @@ WORKDIR /usr/src/app
 COPY package.json yarn.lock ./
 
 RUN yarn global add protractor
+RUN yarn global add concurrently
+RUN yarn global add wait-on
+RUN webdriver-manager update
 RUN yarn install
 #RUN node_modules/protractor/bin/webdriver-manager update
 # If you are building your code for production

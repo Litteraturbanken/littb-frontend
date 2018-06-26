@@ -4,10 +4,13 @@
   "private": true,
   "author": "Johan Roxendal",
   "scripts": {
-    "test": "docker-compose up --build --exit-code-from littb",
+    "test":
+      "coffee -c test/e2e && docker-compose up --build --exit-code-from littb",
     "build": "webpack --config webpack.prod.js",
-    "dev": "webpack-dev-server --config webpack.dev.js",
-    "serve-dist": "webpack-dev-server --config webpack.prod.js --env prod --compress"
+    "dev":
+      "webpack-dev-server --config webpack.dev.js --host 0.0.0.0 --disable-host-check",
+    "serve-dist":
+      "webpack-dev-server --config webpack.prod.js --env prod --compress"
   },
   "dependencies": {
     "angular": "1.4.14",

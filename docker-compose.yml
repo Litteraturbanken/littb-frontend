@@ -4,13 +4,11 @@ services:
 
   littb:
     build: .
-    # ports:
-    #   - 9000:9000
-    # entrypoint: "grunt server"
-    entrypoint: "protractor test/e2e/conf_e2e.js"
+    entrypoint: 'concurrently --kill-others "npm run dev" "wait-on http://localhost:9000 && protractor test/e2e/conf_e2e.js"'
 
     environment:
       - SELENIUM=hub
+      # - LITTB_DOCKER_HOST=host.docker.internal
       - LITTB_DOCKER_HOST=littb
     depends_on:
       - chrome
