@@ -14,7 +14,7 @@ WORKDIR /usr/src/app
 # Install app dependencies
 # COPY package.json .
 # For npm@5 or later, copy package-lock.json as well
-COPY package.json package-lock.json yarn.lock ./
+COPY package.json yarn.lock ./
 
 RUN yarn global add protractor
 RUN yarn install
