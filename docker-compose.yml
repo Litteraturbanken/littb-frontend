@@ -4,7 +4,7 @@ services:
 
   littb:
     build: .
-    entrypoint: 'concurrently --kill-others "npm run dev" "wait-on http://localhost:9000 && protractor test/e2e/conf_e2e.js"'
+    entrypoint: 'concurrently --kill-others "npm run dev || true" "wait-on http://localhost:9000 && protractor test/e2e/conf_e2e.js"'
 
     environment:
       - SELENIUM=hub
