@@ -4,7 +4,7 @@ services:
 
   littb:
     build: .
-    entrypoint: 'npm-run-all -r -p dev protractor'
+    entrypoint: 'npm-run-all -r -p serve-dist protractor'
 
     environment:
       - SELENIUM=hub

@@ -12,7 +12,7 @@
     "dev":
       "webpack-dev-server --config webpack.dev.js --host 0.0.0.0 --disable-host-check",
     "serve-dist":
-      "webpack-dev-server --config webpack.prod.js --env prod --compress"
+      "webpack-dev-server  --config webpack.prod.js --env prod --compress  --host 0.0.0.0 --disable-host-check"
   },
   "dependencies": {
     "angular": "1.4.14",
