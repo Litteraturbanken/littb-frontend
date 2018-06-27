@@ -19,7 +19,7 @@ COPY package.json yarn.lock ./
 RUN yarn global add protractor
 RUN yarn global add npm-run-all
 RUN yarn global add wait-on
-RUN webdriver-manager update --standalone false
+RUN webdriver-manager update --standalone false --gecko false
 RUN yarn install
 #RUN node_modules/protractor/bin/webdriver-manager update
 # If you are building your code for production
