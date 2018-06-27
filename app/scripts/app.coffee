@@ -12,8 +12,6 @@ else if location.hash.length and _.startsWith location.hash, "#!/" #rewrite for 
 else if(location.hash.length and location.hash[1] != "!") # rewrite for libris
     location.hash = _.str.lstrip(location.hash, "#")
 
-
-
 window.safeApply = (scope, fn) ->
     if (scope.$$phase || scope.$root.$$phase) then fn(scope) else scope.$apply(fn)
 
@@ -270,20 +268,23 @@ window.littb = angular.module('littbApp', [ "ngRoute",
             .when ["/id/:id", "/id"],
                 templateURL : require("../views/id.html")
                 controller : 'idCtrl'
-            .when '/översättarlexikon/:anything*',
-                resolve :
-                    r : ["$q", "$routeParams", "$route", "$rootScope", "$timeout",
-                            ($q, $routeParams, $route, $rootScope, $timeout) ->
-                                def = $q.defer()
-                                def.reject()
-                                # insert a with href here and fake click?
-                                console.log("ovs", $(".mainnav a[href^='/översättarlexikon']"))
-                                $timeout(() ->
-                                    $(".mainnav a[href^='/översättarlexikon']").click()
-                                , 0, false)
-                                return def
+            # .when '/översättarlexikon/:anything*',
+            #     resolve :
+            #         r : ["$q", "$routeParams", "$route", "$rootScope", "$timeout",
+            #                 ($q, $routeParams, $route, $rootScope, $timeout) ->
+            #                     console.log("$route", $route)
+            #                     def = $q.defer()
+            #                     def.reject()
+            #                     # insert a with href here and fake click?
+            #                     newPath = "/översättarlexikon/" + $routeParams.anything
+            #                     console.log("newPath", newPath)
+            #                     # window.location.pathname = newPath
+            #                     # $timeout(() ->
+            #                     #     $("a").attr("href", newPath).appendTo("body").click()
+            #                     # , 0, false)
+            #                     return def
                                 
-                        ]
+            #             ]
             .otherwise
                 template : "<p>Du har angett en adress som inte finns på Litteraturbanken.</p>
                             <p>Använd browserns bakåtknapp för att komma tillbaka till 
@@ -308,6 +309,11 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
     firstRoute = $q.defer()
     firstRoute.promise.then () ->
         $rootElement.addClass("ready").removeClass("not_ready")
+
+
+    $("body").on "click", "a[href^='/översättarlexikon/']", () ->
+        window.location.pathname = $(this).attr("href")
+        return false
 
     $rootScope.getLogoUrl = () ->
         if $rootScope.isSchool 

@@ -25,7 +25,8 @@ module.exports = {
           "/authordb",
           "/xhr",
           "/ws",
-          "/so"
+          "/so",
+          "/%C3%B6vers%C3%A4ttarlexikon"
         ],
         target: "http://demolittb.spraakdata.gu.se",
         changeOrigin: true
@@ -129,7 +130,7 @@ module.exports = {
     ])
   ],
   output: {
-    filename: "[name].js",
+    filename: "[contenthash].[name].js",
     path: path.resolve(__dirname, "dist"),
     globalObject: "this"
   }

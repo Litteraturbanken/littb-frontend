@@ -692,7 +692,7 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.hasActiveSearch = () ->
         $location.search().s_query and not searchData?.isSearching
 
-    s.searchData = searchData = new SearchWorkData()
+    s.searchData = searchData = new SearchWorkData(s)
 
     c.log "outside params", $location.search()
     query = $location.search().s_query

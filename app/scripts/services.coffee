@@ -1192,9 +1192,11 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
 littb.factory "SearchWorkData", (SearchData, $q, $http) ->  
     # c.log "searchWorkData", SearchData
     class SearchWorkData extends SearchData
-        constructor : () ->
+        constructor : (scope) ->
             super()
             @n_times = 0
+            @isCounting = false
+            @scope = scope
 
         newSearch : (params) ->
             super(params)
@@ -1215,6 +1217,7 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
                 queryParams.push "word_form_only"
 
 
+            @isCounting = true
             source = new EventSource("#{STRIX_URL}/search_document/#{params.lbworkid}/#{params.mediatype}/#{query}/?" + queryParams.join("&"))
 
             source.onmessage = (event) =>
@@ -1222,15 +1225,19 @@ littb.factory "SearchWorkData", (SearchData, $q, $http) ->
 
                 c.log "onmessage onprogress", data 
                 def.resolve [data.data]
-                @n_times++ 
+                @scope.$apply () =>
+                    @n_times++ 
 
-                if @n_times > 1
-                    @search_id = data.search_id
-                    @total_hits = data.total_hits
+                    if @n_times > 1
+                        @search_id = data.search_id
+                        @total_hits = data.total_hits
 
+            self = this
             source.onerror = (event) ->
                 c.log "eventsource closed", event
                 this.close()
+                self.scope.$apply () ->
+                    self.isCounting = false
                 # def.resolve()
 
             return def.promise
