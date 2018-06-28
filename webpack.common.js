@@ -7,7 +7,7 @@ const CopyWebpackPlugin = require("copy-webpack-plugin")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
 
 module.exports = {
-  entry: "./app/index.js",
+  entry: "./app/main.js",
   devServer: {
     host: process.env.LITTB_HOST || "localhost",
     port: process.env.LITTB_PORT || 9000,
@@ -63,7 +63,7 @@ module.exports = {
         test: /\.html$/,
         exclude: /.*index.html/,
         use: [
-          { loader: "file-loader?name=[name].[ext]" },
+          { loader: "file-loader?name=[hash].[name].[ext]" },
           {
             loader: "extract-loader",
             options: { publicPath: "" }
