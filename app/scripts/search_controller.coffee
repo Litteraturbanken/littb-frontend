@@ -32,7 +32,35 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     s.onAuthSelectRender = () ->
         c.log "onAuthSelectRender"
         s.auth_select_rendered = true
+    s.selectedAuthors = []
+    s.selectedTitles = []
     # s.proofread = 'all'
+    # s._selectedAuthors = ["AbeniusM", "AdelborgO"]
+    # Object.defineProperty s, 'selectedAuthors',
+    #   get: ->
+    #     this._selectedAuthors
+    #   set: (val) ->
+    #     c.log("setter", val)
+    #     this._selectedAuthors = val
+
+    s.onAuthChange = _.once (val) ->
+        oldVal = $location.search().forfattare?.split(",")
+        if oldVal
+            $timeout( () ->
+                s.selectedAuthors = oldVal
+                $("select.author_select").val(oldVal)
+                $("select.author_select").trigger("change")
+            , 0)
+    
+    s.onTitleChange = _.once (val) ->
+        oldVal = $location.search().titlar?.split(",")
+        if oldVal
+            $timeout( () ->
+                s.selectedTitles = oldVal
+                $("select.title_select").val(oldVal)
+                $("select.title_select").trigger("change")
+            , 100)
+
 
     s.searchData = searchData = new SearchData()
 
@@ -97,7 +125,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     authors.then ([authorList, authorsById]) ->
         s.authors = authorList
         s.authorsById = authorsById
-        change = (newAuthors) ->
+        change = _.memoize (newAuthors) ->
             return unless newAuthors
             c.log "change newAuthors", newAuthors
             backend.getTextByAuthor(newAuthors, "etext,faksimil", null, s.isAuthorAboutSearch).then (titles) ->
@@ -119,8 +147,10 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 # expr : "selected_author.pseudonymfor || selected_author.author_id"
                 expr : "selectedAuthors"
                 val_in : (val) ->
+                    console.log("val_in", val)
                     val?.split(",")
                 val_out : (val) ->
+                    console.log("val_out", val)
                     val?.join(",")
                 post_change : change
             ,
