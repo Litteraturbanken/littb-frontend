@@ -34,6 +34,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.auth_select_rendered = true
     s.selectedAuthors = []
     s.selectedTitles = []
+    s.selectedKeywords = []
     # s.proofread = 'all'
     # s._selectedAuthors = ["AbeniusM", "AdelborgO"]
     # Object.defineProperty s, 'selectedAuthors',
@@ -43,7 +44,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
     #     c.log("setter", val)
     #     this._selectedAuthors = val
 
-    s.onAuthChange = _.once (val) ->
+    s.onAuthChange = _.once () ->
+        console.log("onAuthChange")
         oldVal = $location.search().forfattare?.split(",")
         if oldVal
             $timeout( () ->
@@ -52,7 +54,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 $("select.author_select").trigger("change")
             , 0)
     
-    s.onTitleChange = _.once (val) ->
+    s.onTitleChange = _.once () ->
         oldVal = $location.search().titlar?.split(",")
         if oldVal
             $timeout( () ->
@@ -60,6 +62,16 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 $("select.title_select").val(oldVal)
                 $("select.title_select").trigger("change")
             , 100)
+
+    oldVal = $location.search().keyword?.split(",")
+    console.log("oldVal", oldVal)
+    if oldVal
+        $timeout( () ->
+            s.selectedKeywords = oldVal
+            console.log("selectedKeywords", s.selectedKeywords)
+            $("select.keyword_select").val(oldVal)
+            $("select.keyword_select").trigger("change")
+        , 100)
 
 
     s.searchData = searchData = new SearchData()
@@ -70,14 +82,14 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         s.$broadcast "focus"
     , 100)
 
-    s.titleSelectSetup = {
-        formatNoMatches: "Inga resultat",
-        formatResult : (data) ->
-            return "<span class='title'>#{data.text}</span>"
+    # s.titleSelectSetup = {
+    #     formatNoMatches: "Inga resultat",
+    #     formatResult : (data) ->
+    #         return "<span class='title'>#{data.text}</span>"
 
-        formatSelection : (item) ->
-            item.text
-    }
+    #     formatSelection : (item) ->
+    #         item.text
+    # }
     
 
     initTitle = _.once (titlesById) ->
@@ -149,10 +161,8 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                 # expr : "selected_author.pseudonymfor || selected_author.author_id"
                 expr : "selectedAuthors"
                 val_in : (val) ->
-                    console.log("val_in", val)
                     val?.split(",")
                 val_out : (val) ->
-                    console.log("val_out", val)
                     val?.join(",")
                 post_change : change
             ,
@@ -277,14 +287,21 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         #         args.query = suffix + args.query + prefix
         _.extend args, filter_params
 
+        args.text_filter = {}
         if $location.search().forfattare
             if $location.search().sok_om
                 args.about_authors = $location.search().forfattare
             else
                 args.authors = $location.search().forfattare
+                # args.text_filter['authors.author_id'] = $location.search().forfattare
                 
         if $location.search().titlar
             args.work_ids = $location.search().titlar
+        
+        if $location.search().keyword
+            for kw in $location.search().keyword.split(",")
+                [key, val] = kw.split(":")
+                args.text_filter[key] = val
 
         if not $location.search().lemma
             args.word_form_only = true

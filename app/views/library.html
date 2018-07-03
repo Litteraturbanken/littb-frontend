@@ -8,7 +8,11 @@
             <input class="filter_input" autofocus ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel och tryck enter">
             <button class="submit btn">Sök</button>
 
-            <input type="text" class="keyword_select" placeholder="Filtrera efter genre, tema och annat">
+            <select multiple class="filter_select keyword_select" 
+                    ui-select2 ng-model="selectedKeywords" data-placeholder="Filtrera på genre, tema och annat" >
+                <option value=""></option>
+                <option value='provenance.library:Dramawebben'>Dramawebben</option>
+            </select>
 
         </form>
         

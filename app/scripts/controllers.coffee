@@ -624,20 +624,27 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchTitles = () ->
         # unless s.filter then return
-        backend.getParts(s.rowfilter, true).then (titleArray) ->
+        backend.getParts(s.rowfilter, true, getKeywordTextfilter()).then (titleArray) ->
             s.all_titles = titleArray
     
     fetchAudio = () ->
         backend.getAudioList({string_filter : s.rowfilter, sort_field: "title.raw|asc", partial_string : true}).then (titleArray) ->
             s.audio_list = titleArray
 
-
+    getKeywordTextfilter = () ->
+        text_filter = {}
+        if $location.search().keyword
+            for kw in $location.search().keyword.split(",")
+                [key, val] = kw.split(":")
+                text_filter[key] = val
+        return text_filter
 
     fetchWorks = () ->
         s.titleSearching = true
         include = "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,authors.author_id,work_authors.author_id,authors.surname,authors.authortype,startpagename,has_epub"
         # last true in args list is for partial_string match
-        def = backend.getTitles(s.authorFilter, null, s.filter, false, false, true, include).then (titleArray) ->
+        text_filter = getKeywordTextfilter()
+        def = backend.getTitles(s.authorFilter, null, s.filter, false, false, true, include, text_filter).then (titleArray) ->
             s.titleSearching = false
             s.titleArray = titleArray
             # s.titleGroups = titleGroups
@@ -743,6 +750,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         if $location.search().filter
             s.filter = $location.search().filter
         s.searchTitle()
+    if $location.search().keyword
+        s.selectedKeywords = $location.search().keyword?.split(",")
 
     util.setupHashComplex s,
         [
@@ -771,10 +780,15 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         ,
             key : "nytillkommet"
             scope_name : "showRecent"
-        ]
+        ,
+            key : "keyword"
+            expr : "selectedKeywords"
+            val_in : (val) ->
+                val?.split(",")
+            val_out : (val) ->
+                val?.join(",")
 
-    onceFetchWorks = _.once () ->
-        fetchWorks()
+        ]
 
     s.listVisibleTitles = () ->
         if s.showInitial and s.showPopular
@@ -1517,10 +1531,12 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         ret = _.filter s.rows, (item) -> 
             # if not (_.filter item.authors, (auth) -> auth.gender == s.filters.gender).length
             #     # return false
-            if s.filters.gender and item.authors[0].gender isnt s.filters.gender then return false
+            if s.filters.gender and 
+                (s.filters.gender != "all") and 
+                item.authors[0].gender isnt s.filters.gender then return false
 
 
-            if s.filters.author
+            if s.filters.author and s.filters.author != "all"
                 if item.authors[0].author_id != s.filters.author then return false
 
 
@@ -1535,7 +1551,7 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
                     if not searchstr.match(str) then return false
 
             if s.filters.isChildrensPlay
-                if not ("Barnlitteratur" in item.keywords) then return false
+                if not ("Barnlitteratur" in (item.keywords? or [])) then return false
 
             for [key, value] in _.pairs(s.filters)
                 if (_.isArray value) and value.length

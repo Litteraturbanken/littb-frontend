@@ -1804,6 +1804,7 @@ body > .header {
                 overflow: hidden;
                 white-space : nowrap;
                 font-size: 0.9em;
+                overflow-y: hidden;
                 .header {
                     // text-indent: 1em;
                     .header_content {
@@ -4909,9 +4910,17 @@ grundform-clean {
     h2 {
         margin-top: 1em;
         color: white;
-        font-size: 2.5rem;
+        font-size: 3.5rem;
         margin-top: 0;
         @include small-caps();
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    .select2-container {
+        width: 150px !important;
+    }
+    .select2-container--open .select2-dropdown--below {
+        top : 0;
     }
 
     .kringtexter {

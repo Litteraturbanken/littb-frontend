@@ -39,10 +39,9 @@
                 <div class="right">
 
                     <div class="title_select_container">
-                        <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedKeywords" data-placeholder="Sök på genre, tema och annat">
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="selectedKeywords" data-placeholder="Sök på genre, tema och annat" >
                             <option value=""></option>
-                            <option value="dramawebben">Dramawebben</option>
-                            <option value="kb">Kungliga biblioteket</option>
+                            <option value='provenance.library:Dramawebben'>Dramawebben</option>
                         </select>
                     </div>
                     

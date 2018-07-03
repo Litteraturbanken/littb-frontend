@@ -319,13 +319,14 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
         return $http(url: url).then (response) -> response.data
 
-    getParts : (filterString, partial_string = false) ->
+    getParts : (filterString, partial_string = false, text_filter = null) ->
         def = $q.defer()
         # TODO: add filter for leaf titlepaths and mediatype
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
             filter_string: filterString
             to: 10000
+            text_filter : text_filter
 
         if partial_string
             params.partial_string = true
@@ -349,10 +350,12 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                  aboutAuthors = false,
                  getAll = false,
                  partial_string = false,
-                 include = null) ->
+                 include = null,
+                 text_filter = null) ->
         def = $q.defer()
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
+            text_filter : text_filter
 
         if include
             params.include = include
@@ -659,7 +662,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
             include : "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben"
-            dramawebben: true
+            text_filter: {'provenance.library': "Dramawebben"}
             to: 10000
 
         # if include
