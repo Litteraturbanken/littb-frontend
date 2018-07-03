@@ -10,6 +10,11 @@ metadata:
   name: littb-frontend
 ---
 apiVersion: v1
+kind: ImageStream
+metadata:
+  name: nginx-geoip
+---
+apiVersion: v1
 kind: BuildConfig
 metadata:
   name: littb-frontend-artifact-build
@@ -92,7 +97,49 @@ data:
           access_log /var/opt/rh/rh-nginx112/log/nginx/access.log json_combined;
 
       }
----
+# ---
+# apiVersion: v1
+# kind: BuildConfig
+# metadata:
+#   name: nginx-geoip
+# spec:
+#   source:
+#     git:
+#       uri: https://github.com/nginxinc/docker-nginx-unprivileged.git
+#     contextDir: "mainline/stretch-perl"
+#   output:
+#     to:
+#       kind: ImageStreamTag
+#       name: nginx-geoip:latest
+#   strategy:
+#     dockerStrategy:
+#       dockerfilePath: "."
+#   triggers:
+#   - type: ImageChange
+  
+# ---
+# ---
+# apiVersion: v1
+# kind: BuildConfig
+# metadata:
+#   name: nginx-geoip-builder
+# spec:
+#   source:
+#     git:
+#       uri: https://github.com/spraakbanken/nginx-container.git
+#     contextDir: "1.12/"
+#   output:
+#     to:
+#       kind: ImageStreamTag
+#       name: nginx-geoip:latest
+#   strategy:
+#     dockerStrategy:
+#       dockerfilePath: "."
+#   triggers:
+#   - type: ImageChange
+  
+# ---
+
 apiVersion: v1
 kind: BuildConfig
 metadata:
