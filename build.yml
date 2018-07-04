@@ -12,7 +12,7 @@ metadata:
 apiVersion: v1
 kind: ImageStream
 metadata:
-  name: nginx-geoip
+  name: nginx-custom
 ---
 apiVersion: v1
 kind: BuildConfig
@@ -118,27 +118,27 @@ data:
 #   - type: ImageChange
   
 # ---
-# ---
-# apiVersion: v1
-# kind: BuildConfig
-# metadata:
-#   name: nginx-geoip-builder
-# spec:
-#   source:
-#     git:
-#       uri: https://github.com/spraakbanken/nginx-container.git
-#     contextDir: "1.12/"
-#   output:
-#     to:
-#       kind: ImageStreamTag
-#       name: nginx-geoip:latest
-#   strategy:
-#     dockerStrategy:
-#       dockerfilePath: "."
-#   triggers:
-#   - type: ImageChange
+---
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: nginx-custom
+spec:
+  source:
+    git:
+      uri: https://github.com/spraakbanken/nginx-container.git
+    contextDir: "1.12/"
+  output:
+    to:
+      kind: ImageStreamTag
+      name: nginx-custom:latest
+  strategy:
+    dockerStrategy:
+      dockerfilePath: "."
+  triggers:
+  - type: ImageChange
   
-# ---
+---
 
 apiVersion: v1
 kind: BuildConfig
@@ -161,7 +161,6 @@ spec:
     sourceStrategy:
       from:
         kind: ImageStreamTag
-        name: nginx:latest
-        namespace: openshift
+        name: nginx-custom:latest
   triggers:
   - type: ImageChange
