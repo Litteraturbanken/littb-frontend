@@ -121,7 +121,7 @@ module.exports = {
       // },
       {
         from: "./app/img/favicons",
-        to: "img"
+        to: "img/favicons"
       },
       {
         from: "./app/views/sla/",
