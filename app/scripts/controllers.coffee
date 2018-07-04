@@ -599,9 +599,16 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     s.getAuthorData = () ->
         if s.showPopularAuth
-            s.popularAuthors
+            return s.popularAuthors
         else
-            s.authorData
+            filters = getKeywordTextfilter()
+            if _.pairs(filters).length
+                if filters['provenance.library'] == "Dramawebben"
+                    return s.authorData
+                    # return _.filter s.authorData, (auth) ->
+
+            else
+                s.authorData
 
     s.searchTitle = () ->
         c.log "searchTitle", s.filter
@@ -628,8 +635,9 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             s.all_titles = titleArray
     
     fetchAudio = () ->
-        backend.getAudioList({string_filter : s.rowfilter, sort_field: "title.raw|asc", partial_string : true}).then (titleArray) ->
-            s.audio_list = titleArray
+        if not _.pairs(getKeywordTextfilter()).length
+            backend.getAudioList({string_filter : s.rowfilter, sort_field: "title.raw|asc", partial_string : true}).then (titleArray) ->
+                s.audio_list = titleArray
 
     getKeywordTextfilter = () ->
         text_filter = {}
@@ -1589,6 +1597,8 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
 
         s.authorData = _.unique authors, false, (item) ->
             item.author_id
+
+        s.authorData = _.sortBy s.authorData, "name_for_index"
 
 
 

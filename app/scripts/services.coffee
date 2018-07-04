@@ -663,6 +663,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             exclude : "text,parts,sourcedesc,pages,errata"
             include : "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben"
             text_filter: {'provenance.library': "Dramawebben"}
+            sort_field: "sortkey|asc"
             to: 10000
 
         # if include
