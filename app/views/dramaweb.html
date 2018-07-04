@@ -37,7 +37,7 @@
                             ng-model="listType" btn-radio="'författare'" ng-click="onRadioClick('författare')">Författare</label>
                     </div>
 
-                    <div class="auth_select_container">
+                    <div class="auth_select_container" ng-show="listType == 'pjäser'">
                         <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="filters.author" data-placeholder="Författare" >
                             <option value="">Välj författare</option>
                             <option value="all">Alla författare</option>
@@ -145,7 +145,7 @@
                     </tr>
                 </table>
                 <table ng-if="listType == 'författare'" class="contenttable authors">
-                    <tr ng-repeat="author in authorData">
+                    <tr ng-repeat="author in authorData | filter:authorFilter">
                         <td class="author"><a ng-href="/forfattare/{{::author.author_id}}" ng-bind-html="::getAuthor(author) | trust" ></a>
                         </td>
                         <td class="">{{author | authorYear}}</td>

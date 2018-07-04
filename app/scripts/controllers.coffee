@@ -1526,6 +1526,20 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
 
         _.compact(["<span class='sc'>#{last}</span>", first]).join ","
 
+    s.authorFilter = (author) ->
+        if s.filters.gender and s.filters.gender != "all"
+            return s.filters.gender == author.gender
+
+
+        if s.filters.filterTxt
+            searchstr = [author.full_name, author.birth.plain, author.death.plain]
+                        .join(" ").toLowerCase()
+            for str in s.filters.filterTxt.split(" ")
+                if not searchstr.match(str) then return false
+
+
+        return true
+
     s.getFilteredRows = () ->
         c.log("getFilteredRows", s.filters.gender, s.filters.filterTxt, s.filters.author)
         ret = _.filter s.rows, (item) -> 
@@ -1542,8 +1556,7 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
 
             if s.filters.filterTxt 
                 fullnames = _.map item.authors, (author) ->
-                    author.full_name
-                fullnames.join(" ")
+                    [author.full_name, author.birth.plain, author.death.plain].join(" ")
                 searchstr = fullnames.join(" ") + (item.title)
                 searchstr = searchstr.toLowerCase()
                 
