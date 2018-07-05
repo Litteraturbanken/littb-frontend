@@ -68,7 +68,7 @@ data:
       server {
           listen       8080;
           listen       [::]:8080;
-          server_name  *.spraakbanken.gu.se;
+          server_name  *.spraakbanken.gu.se *.nip.io;
           root         /opt/app-root/src/;
           index index.html;
 
@@ -97,7 +97,19 @@ data:
           access_log /var/opt/rh/rh-nginx112/log/nginx/access.log json_combined;
 
       }
-# ---
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeats-confmap 
+data:
+  filebeats.conf: |
+    - module: nginx
+      access:
+        input:
+          close_eof: true
+
+---
 # apiVersion: v1
 # kind: BuildConfig
 # metadata:
@@ -164,3 +176,104 @@ spec:
         name: nginx-custom:latest
   triggers:
   - type: ImageChange
+
+
+
+
+
+
+
+---
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: littb-frontend
+  name: littb-frontend
+spec:
+  replicas: 1
+  selector:
+    app: littb-frontend
+    deploymentconfig: littb-frontend
+  strategy:
+    type: Rolling
+  template:
+    metadata:
+      labels:
+        app: littb-frontend
+        deploymentconfig: littb-frontend
+    spec:
+      containers:
+        - image: >-
+            docker-registry.default.svc:5000/littb/littb-frontend@sha256:6b5d7beb9a28c8729070084bc04f89deae41dc92459b987abf45c26b61ccf3ac
+          imagePullPolicy: Always
+          name: littb-frontend
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+            - containerPort: 8443
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /opt/app-root/etc/nginx.d/
+              name: conf
+            - mountPath: /opt/app-root/filebeat/
+              name: filebeats-conf
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: nginx-config
+          name: conf
+        - configMap:
+            defaultMode: 420
+            name: filebeats-confmap
+          name: filebeats-conf
+  triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - littb-frontend
+        from:
+          kind: ImageStreamTag
+          name: 'littb-frontend:latest'
+          namespace: littb
+      type: ImageChange
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: littb-frontend
+  name: littb-frontend
+spec:
+  # clusterIP: 172.30.76.15
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    - name: 8443-tcp
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+  selector:
+    app: littb-frontend
+    deploymentconfig: littb-frontend
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  labels:
+    app: littb-frontend
+  name: littb-frontend
+spec:
+  port:
+    targetPort: 8080-tcp
+  to:
+    kind: Service
+    name: littb-frontend
+  wildcardPolicy: None
