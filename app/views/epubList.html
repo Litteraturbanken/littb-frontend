@@ -35,7 +35,10 @@
                 </select> 
             </div>
         
-            <input class="filter" ng-model="filterTxt" autofocus placeholder="Filtrera">
+            <input class="filter" 
+                ng-model="filterTxt" autofocus 
+                ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
+                placeholder="Filtrera">
         </div>
         <div class="table_container">
             <div class="preloader"> 

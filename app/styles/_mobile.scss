@@ -231,6 +231,30 @@ and (max-width : 568px) {
 @media only screen 
 and (min-device-width : 320px) 
 and (max-device-width : 568px) {
+    body {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    .mainnav {
+        text-align: left;
+    }
+    .page-epubList {
+        background-image : none !important;
+
+        #mainview {
+            width: 100%;
+
+            .table_container {
+                padding: 0;
+                border : 0;
+                height : auto;
+
+            }
+            table td:first-child {
+                max-width : unset;
+            }
+        }
+    }
 
     .page-audioList {
         #mainview {
@@ -263,6 +287,10 @@ and (max-device-width : 568px) {
     .logo_link_monogram {
         background: url("../img/lb_monogram_red_black.svg") no-repeat !important;
         background-size: cover !important;
+        transform: scale(0.6);
+        margin-left: -100px;
+        margin-bottom: -20px;
+        margin-top: -70px;
 
     }
     .modal-open {
