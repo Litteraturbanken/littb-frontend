@@ -3378,6 +3378,10 @@ $partnav-width : 170px;
 }
 
 .page-epubList {
+    .select2-container {
+        width: 100% !important;
+        max-width : 300px;
+    }
     .select2-results__option {
         .firstname, .year {
             font-size: 0.9em;
@@ -3454,7 +3458,7 @@ $partnav-width : 170px;
 
         input.filter {
             border: 1px solid darkgrey;
-            margin-left: 1em;
+            // margin-left: 1em;
             padding-left: 1em;
             font-size: 0.8em;
             padding-bottom: 0px;

@@ -7,7 +7,7 @@
             
         <p class="preamble">Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
         
-        <div>
+        <div class="row">
 
             <!-- <ui-select ng-model="authorFilter" theme="select2" 
                        close-on-select="true" style="width: 300px;" title="Författare"
@@ -26,7 +26,7 @@
                   </ui-select-choices>
                 </ui-select> -->
 
-            <div class="auth_select_container">
+            <div class="auth_select_container col-md-4">
                 <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
                     <option>Välj författare</option>
                     <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
@@ -34,11 +34,14 @@
                     </option>
                 </select> 
             </div>
-        
-            <input class="filter" 
-                ng-model="filterTxt" autofocus 
-                ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
-                placeholder="Filtrera">
+            
+
+            <div class="col-md-4">
+                <input class="filter"  
+                    ng-model="filterTxt" autofocus 
+                    ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
+                    placeholder="Filtrera">
+            </div>
         </div>
         <div class="table_container">
             <div class="preloader"> 
