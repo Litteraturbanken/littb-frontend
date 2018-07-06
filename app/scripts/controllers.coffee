@@ -615,17 +615,18 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.selectedAuth = null
         s.selectedTitle = null
         s.rowfilter = s.filter
-        # if s.rowfilter
-        s.showInitial = false
-        s.showPopularAuth = false
-        s.showPopular = false
-        fetchTitles()
-        fetchWorks()
-        fetchAudio()
-        if not isDev
-            backend.logLibrary(s.rowfilter)
-        # else
-        #     s.resetView()
+        if s.rowfilter or _.pairs(getKeywordTextfilter()).length
+            s.showInitial = false
+            s.showPopularAuth = false
+            s.showPopular = false
+            fetchTitles()
+            fetchWorks()
+            if not _.pairs(getKeywordTextfilter()).length
+                fetchAudio()
+            if not isDev
+                backend.logLibrary(s.rowfilter)
+        else
+            s.resetView()
 
 
 
@@ -635,9 +636,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             s.all_titles = titleArray
     
     fetchAudio = () ->
-        if not _.pairs(getKeywordTextfilter()).length
-            backend.getAudioList({string_filter : s.rowfilter, sort_field: "title.raw|asc", partial_string : true}).then (titleArray) ->
-                s.audio_list = titleArray
+        backend.getAudioList({string_filter : s.rowfilter, sort_field: "title.raw|asc", partial_string : true}).then (titleArray) ->
+            s.audio_list = titleArray
 
     getKeywordTextfilter = () ->
         text_filter = {}
@@ -1549,7 +1549,6 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         return true
 
     s.getFilteredRows = () ->
-        c.log("getFilteredRows", s.filters.gender, s.filters.filterTxt, s.filters.author)
         ret = _.filter s.rows, (item) -> 
             # if not (_.filter item.authors, (auth) -> auth.gender == s.filters.gender).length
             #     # return false

@@ -94,7 +94,7 @@ module.exports = {
           {
             loader: "file-loader",
             options: {
-              name: "[name].[ext]",
+              name: "[hash].[name].[ext]",
               outputPath: "img/" // where the fonts will go
               // publicPath: '../'       // override the default path
             }
