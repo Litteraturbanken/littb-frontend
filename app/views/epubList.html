@@ -36,11 +36,19 @@
             </div>
             
 
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <input class="filter"  
                     ng-model="filterTxt" autofocus 
                     ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
                     placeholder="Filtrera">
+            </div>
+            <div class="auth_select_container col-md-4">
+                <select class="filter_select author_select" ui-select2="{minimumResultsForSearch: -1}" ng-model="sort" data-placeholder="Sortering" >
+                    <option value=""></option>
+                    <option value="epub_popularity|desc">Popularitet</option>
+                    <option value="sortkey|asc">Titel</option>
+                    <!-- <option value="authors.name_for_index|asc">Författare</option> -->
+                </select> 
             </div>
         </div>
         <div class="table_container">
@@ -49,10 +57,10 @@
             </div>
             <table class="contenttable">
                 <thead>
-                    <th> <div sort-triangles val="['authors[0].name_for_index', 'sortkey']" tuple="sorttuple"></div> </th>
-                    <th> <div sort-triangles val="['sortkey', 'authors[0].name_for_index']" tuple="sorttuple"></div> </th>
+                    <!-- <th> <div sort-triangles val="['authors[0].name_for_index', 'sortkey']" tuple="sorttuple"></div> </th>
+                    <th> <div sort-triangles val="['sortkey', 'authors[0].name_for_index']" tuple="sorttuple"></div> </th> -->
                 </thead>
-                <tbody><tr ng-repeat="row in rows | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
+                <tbody><tr ng-repeat="row in rows" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
                         <td>
                             <a ng-href="/forfattare/{{::row.authors[0].author_id}}" >{{::getAuthor(row)}}</a>
                         </td>

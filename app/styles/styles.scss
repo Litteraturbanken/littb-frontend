@@ -3379,7 +3379,6 @@ $partnav-width : 170px;
 
 .page-epubList {
     .select2-container {
-        width: 100% !important;
         max-width : 300px;
     }
     .select2-results__option {
@@ -3431,7 +3430,7 @@ $partnav-width : 170px;
 
             margin-bottom: 2em;
         }
-        width : 60vw;
+        width : 70vw;
         padding-bottom : 4em;
         .table_container {
             position: relative;
@@ -3523,9 +3522,7 @@ $partnav-width : 170px;
             @include container();
             background-color : rgba(255, 255, 255, 0.55);
             padding : 1em;
-            border: 1px solid #333;
-            height: 85vh;
-            overflow-y: auto;
+            border: 1px solid darkgrey;
         }
         
         table td:first-child {

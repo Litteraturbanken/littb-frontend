@@ -864,23 +864,22 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
 
     }
 
-    isIE = detectIE()
-    c.log "isIE", isIE
+    # isIE = detectIE()
+    # c.log "isIE", isIE
 
-    if isIE and isIE < 12
-        s.rowLimit = 30
+    # if isIE and isIE < 12
+    #     s.rowLimit = 30
 
 
-    # TODO: what about the workauthor issue?
-    s.sorttuple = [["authors[0].name_for_index", "sortkey"], false]
-    s.setSort = ([sortstr]) ->
-        alternate = {
-            "authors[0].name_for_index" : "sortkey"
-            "sortkey" : "authors[0].name_for_index"
-        }[sortstr]
-        s.sorttuple[0] = [sortstr, alternate]
-    s.setDir = (isAsc) ->
-        s.sorttuple[1] = isAsc
+    # s.sorttuple = [["authors[0].name_for_index", "sortkey"], false]
+    # s.setSort = ([sortstr]) ->
+    #     alternate = {
+    #         "authors[0].name_for_index" : "sortkey"
+    #         "sortkey" : "authors[0].name_for_index"
+    #     }[sortstr]
+    #     s.sorttuple[0] = [sortstr, alternate]
+    # s.setDir = (isAsc) ->
+    #     s.sorttuple[1] = isAsc
 
     window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
     s.rowFilter = (item) ->
@@ -911,38 +910,51 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         row.authors[0].author_id + '_' + (row.work_title_id or row.title_id)
 
 
+    refreshData = () ->
+        # | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" 
+        size = if s.filterTxt then 10000 else 30
+        backend.getEpub(size, s.filterTxt, s.authorFilter, s.sort).then (titleArray) ->
+            s.searching = false
+            s.rows = titleArray
+            authors = _.map s.rows, (row) ->
+                row.authors[0]
+
+            s.authorData = _.unique authors, false, (item) ->
+                item.author_id
+
     util.setupHashComplex s,
         [
-            expr : "sorttuple[0]"
-            # scope_name : "sortVal"
-            scope_func : "setSort"
-            key : "sortering"
-            default : "authors[0].name_for_index,sortkey"
-            val_in : (val) ->
-                val?.split(",")
-            val_out : (val) ->
-                val?.join(",")
-            # post_change : () ->
-        ,
-            expr : "sorttuple[1]"
-            scope_func : "setDir"
-            key : "fallande"
-        ,
+        #     expr : "sorttuple[0]"
+        #     scope_func : "setSort"
+        #     key : "sortering"
+        #     default : "authors[0].name_for_index,sortkey"
+        #     val_in : (val) ->
+        #         val?.split(",")
+        #     val_out : (val) ->
+        #         val?.join(",")
+        # ,
+        #     expr : "sorttuple[1]"
+        #     scope_func : "setDir"
+        #     key : "fallande"
+        # ,
             key : "filter"
             scope_name : "filterTxt"
+            post_change : () ->
+                refreshData()
+        ,
+            key : "authorFilter"
+            post_change : () ->
+                refreshData()
+        ,
+            key : "sort"
+            post_change : () ->
+                refreshData()
+
         ]
 
     
-    backend.getEpub().then (titleArray) ->
-        s.searching = false
-        s.rows = titleArray
-        authors = _.map s.rows, (row) ->
-            row.authors[0]
 
-        s.authorData = _.unique authors, false, (item) ->
-            item.author_id
-
-
+    refreshData()
 
 
 littb.controller "helpCtrl", ($scope, $http, util, $location) ->

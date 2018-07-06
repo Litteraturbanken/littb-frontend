@@ -287,15 +287,22 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             return audioList
 
 
-    getEpub : (size) ->
-        
+    getEpub : (size, filterTxt, authorid, sort_field) ->
+        url = "#{STRIX_URL}/list_all/etext"
+        if authorid
+            url += "/" + authorid
+        params =
+            has_epub : true
+            to : size or 10000
+            include: "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name"
+            exclude : "text,parts,sourcedesc,pages,errata"
+            sort_field : sort_field or "epub_popularity|desc"
+
+        if filterTxt
+            params.filter_string = filterTxt
         return $http(
-            url : "#{STRIX_URL}/get_epub"        
-            params :
-                size : size or 10000
-                include: "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name"
-                exclude : "text,parts,sourcedesc,pages,errata"
-                sort_field : "epub_popularity|desc"
+            url : url
+            params : params
         ).then (response) ->
             data = response.data.data
             # for row in data
