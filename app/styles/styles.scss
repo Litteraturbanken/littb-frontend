@@ -2993,7 +2993,9 @@ $partnav-width : 170px;
     .tooltip {
         font-size : 0.7em;
     }
-
+    .select2-selection__choice {
+        font-size: 0.8em;
+    }
     .logo_link_monogram {
         background-image: url("../img/lb_monogram_red_white.svg");
     }
@@ -4837,10 +4839,10 @@ grundform-clean {
 
 .page-dramaweb {
     
-    background-image: url("../img/start_bkg_apr2018.jpg") !important;
+    background-image: url("../img/dramawebben.jpg") !important;
     background-repeat: no-repeat;
     // background-size: contain;
-    background-position: -100px -80px;
+    // background-position: -100px -80px;
     
     .btn:not(.active) {
         color : black;
@@ -4848,7 +4850,8 @@ grundform-clean {
     }
 
     &.drama-dramasubpage {
-        background-image: url("../img/start_bkg_apr2018_light.jpg") !important;
+        // background-image: url("../img/start_bkg_apr2018_light.jpg") !important;
+        background-image: url("../img/dramawebben_fade.jpg") !important;
     }
     
     .logo_link_monogram {
@@ -4864,7 +4867,7 @@ grundform-clean {
             color : white;
         }
         a:hover {
-            color : $primarycolor;
+            color : black;
         }   
         
     }
@@ -4884,11 +4887,10 @@ grundform-clean {
             margin: 0;
             
             img {
-                transform: scale(10);
-                transform-origin: 20px 36px;
-                height: 125px;
-                position: relative;
-                z-index: -1;
+                height: 234px;
+                margin-bottom: -70px;
+                margin-left: -85px;
+                margin-top: -30px;
             }
         }
 
@@ -4910,14 +4912,14 @@ grundform-clean {
     h2 {
         margin-top: 1em;
         color: white;
-        font-size: 3.5rem;
+        font-size: 3.5rem !important;
         margin-top: 0;
         @include small-caps();
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
     .select2-container {
-        width: 150px !important;
+        width: 200px !important;
     }
     .select2-container--open .select2-dropdown--below {
         top : 0;
@@ -4978,7 +4980,7 @@ grundform-clean {
         top:0;
         left: 0;
         z-index: -5;
-        transition: background-color 200ms ease-in-out;
+        transition: background-color 400ms ease-in-out;
     }
     .cover.show {
         background-color : rgba(255,255,255,0.5);
@@ -5005,7 +5007,7 @@ grundform-clean {
 
     }
     a:hover {
-        color : $primarycolor;
+        color : white;
     }
     
     .author {

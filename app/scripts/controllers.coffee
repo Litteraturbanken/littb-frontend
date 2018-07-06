@@ -615,17 +615,17 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.selectedAuth = null
         s.selectedTitle = null
         s.rowfilter = s.filter
-        if s.rowfilter
-            s.showInitial = false
-            s.showPopularAuth = false
-            s.showPopular = false
-            fetchTitles()
-            fetchWorks()
-            fetchAudio()
-            if not isDev
-                backend.logLibrary(s.rowfilter)
-        else
-            s.resetView()
+        # if s.rowfilter
+        s.showInitial = false
+        s.showPopularAuth = false
+        s.showPopular = false
+        fetchTitles()
+        fetchWorks()
+        fetchAudio()
+        if not isDev
+            backend.logLibrary(s.rowfilter)
+        # else
+        #     s.resetView()
 
 
 

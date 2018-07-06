@@ -5,19 +5,33 @@
 <div ng-class="{searching:searching}">
     <div id="controls" ng-hide="searching">
         <form ng-submit="searchTitle()">
-            <input class="filter_input" autofocus ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel och tryck enter">
-            <button class="submit btn">Sök</button>
+            <!-- <input class="filter_input" autofocus ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel och tryck enter"> -->
+            
 
-            <select multiple class="filter_select keyword_select" 
-                    ui-select2 ng-model="selectedKeywords" data-placeholder="Filtrera på genre, tema och annat" >
+            <select multiple 
+                    class="filter_select keyword_select" 
+                    ui-select2 ng-model="selectedKeywords" data-placeholder="Sök / filtrera" >
                 <option value=""></option>
-                <option value='provenance.library:Dramawebben'>Dramawebben</option>
+                <optgroup label="Samling">
+                    <option value='provenance.library:Dramawebben'>Dramawebben</option>
+                    <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
+                    <option value='provenance.library:SVELITT'>Svenska litteratursällskapet (SE)</option>
+                    <option value='publisher:Oslo'>Tryckort:Oslo</option>
+                </optgroup>
+                <optgroup label="Textformat">
+                    <option value="etext">Etext</option>
+                    <option value="faksimil">Faksimil</option>
+                    <option value="epub">Epub</option>
+                    <option value="pdf">PDF</option>
+                </optgroup>
             </select>
+
+            <button class="submit btn">Sök</button>
 
         </form>
         
 
-        <div class="mediatype_opts">
+        <!-- <div class="mediatype_opts">
             
             <ul>
                 <li>
@@ -37,7 +51,7 @@
                     <a ng-click="mediatypeObj.pdf = !mediatypeObj.pdf">PDF</a>
                 </li>
             </ul>
-        </div>
+        </div> -->
 
     
 
