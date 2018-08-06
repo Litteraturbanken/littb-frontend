@@ -832,13 +832,17 @@ littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $tim
                     s.setPlayObj(audioList[s.play_obj.i + 1])
 
     
-littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
+littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $location) ->
     s = $scope
     s.searching = true
+    s.authorFilter = null
 
 
-    authors.then ([authorList, authorsById]) ->
+    $q.all([authors, backend.getEpubAuthors()]).then ([[authorList, authorsById], epubAuthorIds]) ->
         s.authorsById = authorsById
+        s.authorData = _.pick authorsById, epubAuthorIds
+        # s.authorIds = epubAuthorIds
+
 
     s.authorSelectSetup = {
         formatNoMatches: "Inga resultat",
@@ -910,18 +914,27 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         row.authors[0].author_id + '_' + (row.work_title_id or row.title_id)
 
 
-    refreshData = () ->
+    s.refreshData = (str) ->
+        console.log("str", str)
         # | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" 
-        size = if s.filterTxt then 10000 else 30
-        backend.getEpub(size, s.filterTxt, s.authorFilter, s.sort).then (titleArray) ->
+        s.searching = true
+        size = if s.filterTxt or s.showAll then 10000 else 30
+        console.log("s.authorFilter", s.authorFilter)
+
+        authorFilter = null
+        if s.authorFilter != "alla"
+            authorFilter = s.authorFilter
+
+        backend.getEpub(size, s.filterTxt, authorFilter, s.sort).then ({data, hits}) ->
             s.searching = false
-            s.rows = titleArray
+            s.rows = data
+            s.hits = hits
             authors = _.map s.rows, (row) ->
                 row.authors[0]
 
-            s.authorData = _.unique authors, false, (item) ->
-                item.author_id
-
+            # s.authorData = _.unique authors, false, (item) ->
+            #     item.author_id
+    
     util.setupHashComplex s,
         [
         #     expr : "sorttuple[0]"
@@ -939,22 +952,19 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter) ->
         # ,
             key : "filter"
             scope_name : "filterTxt"
-            post_change : () ->
-                refreshData()
         ,
             key : "authorFilter"
-            post_change : () ->
-                refreshData()
+            # default: "_all"
         ,
             key : "sort"
-            post_change : () ->
-                refreshData()
+        ,
+            key : "showAll"
 
         ]
 
     
 
-    refreshData()
+    s.refreshData('init')
 
 
 littb.controller "helpCtrl", ($scope, $http, util, $location) ->

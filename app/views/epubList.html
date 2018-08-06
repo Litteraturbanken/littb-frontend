@@ -27,8 +27,9 @@
                 </ui-select> -->
 
             <div class="auth_select_container col-md-4">
-                <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" >
-                    <option>Välj författare</option>
+                <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" ng-change="refreshData()" >
+                    <option value=""></option>
+                    <option value="alla">Alla författare</option>
                     <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
                         <span class="lastname">{{author.surname}}</span>
                     </option>
@@ -39,11 +40,12 @@
             <div class="col-md-3">
                 <input class="filter"  
                     ng-model="filterTxt" autofocus 
+                    ng-change="refreshData()"
                     ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
                     placeholder="Filtrera">
             </div>
             <div class="auth_select_container col-md-4">
-                <select class="filter_select author_select" ui-select2="{minimumResultsForSearch: -1}" ng-model="sort" data-placeholder="Sortering" >
+                <select class="filter_select author_select" ui-select2="{minimumResultsForSearch: -1}" ng-model="sort" data-placeholder="Sortering" ng-change="refreshData()" >
                     <option value=""></option>
                     <option value="epub_popularity|desc">Popularitet</option>
                     <option value="sortkey|asc">Titel</option>
@@ -72,7 +74,12 @@
                         </td>
                     </tr></tbody>
             </table>
-            <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div>
+            <div>
+                <button class="btn btn-sm show_all" ng-show="!showAll && hits > 30" ng-click="(showAll = true) && refreshData()">
+                    Visa alla {{hits}} titlar
+                </button>
+            </div>
+            <!-- <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div> -->
         </div>
     </div>
     <!-- <div toolkit>

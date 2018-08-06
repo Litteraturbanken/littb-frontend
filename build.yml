@@ -103,7 +103,7 @@ kind: ConfigMap
 metadata:
   name: filebeats-confmap 
 data:
-  filebeats.conf: |
+  filebeat.yml: |
     - module: nginx
       access:
         input:
@@ -205,7 +205,7 @@ spec:
     spec:
       containers:
         - image: >-
-            docker-registry.default.svc:5000/littb/littb-frontend@sha256:6b5d7beb9a28c8729070084bc04f89deae41dc92459b987abf45c26b61ccf3ac
+            docker-registry.default.svc:5000/littb/littb-frontend:latest
           imagePullPolicy: Always
           name: littb-frontend
           ports:

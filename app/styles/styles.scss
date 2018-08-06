@@ -3416,7 +3416,7 @@ $partnav-width : 170px;
 
     //     }
     // }
-
+    
     #mainview {
         h1 {
             margin-bottom: 1.4em;
@@ -3431,18 +3431,28 @@ $partnav-width : 170px;
             margin-bottom: 2em;
         }
         width : 70vw;
-        padding-bottom : 4em;
+        padding-bottom : 0;
+        margin-bottom : 0;
         .table_container {
             position: relative;
         }
         .preloader {
+            visibility: visible;
             text-align : left;
             // margin-top : 1em;
             position: absolute;
             top: 13px;
             margin-left: 0px;
             font-size: 1.3em;
-
+            transition: opacity 200ms;
+            opacity: 0;
+        }
+        .searching .preloader {
+            opacity: 1;
+        }
+        
+        .show_all {
+            margin-top: 1em;
         }
         .searching .contenttable {
             display : none;
@@ -3458,7 +3468,7 @@ $partnav-width : 170px;
         input.filter {
             border: 1px solid darkgrey;
             // margin-left: 1em;
-            padding-left: 1em;
+            padding-left: 0.7em;
             font-size: 0.8em;
             padding-bottom: 0px;
             padding-top: 0px;
@@ -3523,6 +3533,7 @@ $partnav-width : 170px;
             background-color : rgba(255, 255, 255, 0.55);
             padding : 1em;
             border: 1px solid darkgrey;
+            min-height : 80vh;
         }
         
         table td:first-child {
