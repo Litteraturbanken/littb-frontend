@@ -59,12 +59,12 @@
     });
   });
 
-  describe("epubList", function() {
+  fdescribe("epubList", function() {
     var rows;
     rows = null;
     beforeEach(function() {
       get("/epub");
-      return rows = element.all(By.repeater("row in rows | filter:rowFilter"));
+      return rows = element.all(By.repeater("row in rows"));
     });
     return it("should filter using the input", function() {
       var filter;

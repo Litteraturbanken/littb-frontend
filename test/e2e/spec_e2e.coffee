@@ -49,7 +49,7 @@ describe "epubList", () ->
     rows = null
     beforeEach () ->
         get "/epub"
-        rows = element.all(By.repeater("row in rows | filter:rowFilter"))
+        rows = element.all(By.repeater("row in rows"))
 
 
     it "should filter using the input", () ->
