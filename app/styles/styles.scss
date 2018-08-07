@@ -3457,10 +3457,12 @@ $partnav-width : 170px;
         .searching .contenttable {
             display : none;
         }
-
+        .ctrls > * {
+            margin-bottom: 0.1em;
+        }
         .auth_select_container {
-            display: inline;
             .select2-container {
+                width : 100% !important;
                 border: 1px solid darkgrey;
             }
         }
@@ -3472,7 +3474,9 @@ $partnav-width : 170px;
             font-size: 0.8em;
             padding-bottom: 0px;
             padding-top: 0px;
-            height: 29px;
+            height: 30px;
+            width : 100%;
+            max-width: 300px;
         }
         
         > * {

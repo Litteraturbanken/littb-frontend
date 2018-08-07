@@ -7,7 +7,7 @@
             
         <p class="preamble">Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
         
-        <div class="row">
+        <div class="row ctrls">
 
             <!-- <ui-select ng-model="authorFilter" theme="select2" 
                        close-on-select="true" style="width: 300px;" title="Författare"
@@ -26,8 +26,8 @@
                   </ui-select-choices>
                 </ui-select> -->
 
-            <div class="auth_select_container col-md-4">
-                <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" ng-change="refreshData()" >
+            <div class="auth_select_container col-md-3">
+                <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" ng-change="onAuthChange(authorFilter)" >
                     <option value=""></option>
                     <option value="alla">Alla författare</option>
                     <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
@@ -42,10 +42,10 @@
                     ng-model="filterTxt" autofocus 
                     ng-change="refreshData()"
                     ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
-                    placeholder="Filtrera">
+                    placeholder="Sök">
             </div>
             <div class="auth_select_container col-md-4">
-                <select class="filter_select author_select" ui-select2="{minimumResultsForSearch: -1}" ng-model="sort" data-placeholder="Sortering" ng-change="refreshData()" >
+                <select class="filter_select author_select" ui-select2="sortSelectSetup" ng-model="sort" data-placeholder="Sortering" ng-change="refreshData()" >
                     <option value=""></option>
                     <option value="epub_popularity|desc">Popularitet</option>
                     <option value="sortkey|asc">Titel</option>

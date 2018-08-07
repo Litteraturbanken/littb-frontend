@@ -94,7 +94,8 @@ data:
           # log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
           #                   '$status $body_bytes_sent "$http_referer" '
           #                   '"$http_user_agent" "$http_x_forwarded_for"';
-          access_log /var/opt/rh/rh-nginx112/log/nginx/access.log json_combined;
+          # access_log /var/opt/rh/rh-nginx112/log/nginx/access.log json_combined;
+          access_log /var/opt/rh/rh-nginx112/log/nginx/access.log;
 
       }
 ---
@@ -218,6 +219,8 @@ spec:
               name: conf
             - mountPath: /opt/app-root/filebeat/
               name: filebeats-conf
+            - mountPath: /opt/app-root/shared/
+              name: pvc
       volumes:
         - configMap:
             defaultMode: 420
@@ -227,6 +230,9 @@ spec:
             defaultMode: 420
             name: filebeats-confmap
           name: filebeats-conf
+        - name: pvc
+          persistentVolumeClaim:
+            claimName: littb-storage
   triggers:
     - type: ConfigChange
     - imageChangeParams:

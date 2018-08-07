@@ -835,7 +835,7 @@ littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $tim
 littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $location) ->
     s = $scope
     s.searching = true
-    s.authorFilter = null
+    s.authorFilter = $location.search().authorFilter
 
 
     $q.all([authors, backend.getEpubAuthors()]).then ([[authorList, authorsById], epubAuthorIds]) ->
@@ -868,22 +868,11 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $
 
     }
 
-    # isIE = detectIE()
-    # c.log "isIE", isIE
-
-    # if isIE and isIE < 12
-    #     s.rowLimit = 30
-
-
-    # s.sorttuple = [["authors[0].name_for_index", "sortkey"], false]
-    # s.setSort = ([sortstr]) ->
-    #     alternate = {
-    #         "authors[0].name_for_index" : "sortkey"
-    #         "sortkey" : "authors[0].name_for_index"
-    #     }[sortstr]
-    #     s.sorttuple[0] = [sortstr, alternate]
-    # s.setDir = (isAsc) ->
-    #     s.sorttuple[1] = isAsc
+    s.sortSelectSetup = {
+        minimumResultsForSearch: -1,
+        templateSelection : (item) ->
+            "Sortering: " + item.text
+    }
 
     window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
     s.rowFilter = (item) ->
@@ -914,13 +903,21 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $
         row.authors[0].author_id + '_' + (row.work_title_id or row.title_id)
 
 
+    s.onAuthChange = (newVal) ->
+        # hack for state issue with select2 broadcasting change event
+        # at init, causing reset of location value
+        if newVal == null 
+            s.authorFilter = $location.search().authorFilter
+        else
+            s.refreshData()
+
+
     s.refreshData = (str) ->
         console.log("str", str)
         # | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" 
+        if s.authorFilter == null then return
         s.searching = true
         size = if s.filterTxt or s.showAll then 10000 else 30
-        console.log("s.authorFilter", s.authorFilter)
-
         authorFilter = null
         if s.authorFilter != "alla"
             authorFilter = s.authorFilter
@@ -937,24 +934,10 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $
     
     util.setupHashComplex s,
         [
-        #     expr : "sorttuple[0]"
-        #     scope_func : "setSort"
-        #     key : "sortering"
-        #     default : "authors[0].name_for_index,sortkey"
-        #     val_in : (val) ->
-        #         val?.split(",")
-        #     val_out : (val) ->
-        #         val?.join(",")
-        # ,
-        #     expr : "sorttuple[1]"
-        #     scope_func : "setDir"
-        #     key : "fallande"
-        # ,
             key : "filter"
             scope_name : "filterTxt"
         ,
             key : "authorFilter"
-            # default: "_all"
         ,
             key : "sort"
         ,
@@ -964,7 +947,7 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $
 
     
 
-    s.refreshData('init')
+    s.refreshData()
 
 
 littb.controller "helpCtrl", ($scope, $http, util, $location) ->
