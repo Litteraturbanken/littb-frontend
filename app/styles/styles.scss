@@ -158,7 +158,8 @@ $left-gutter-width : 40px;
 $right-gutter-width : 120px;
 $page-width : 900px;
 $right-corridor-width : 250px;
-$mainview-width : $page-width - $main-menu-width - ($left-gutter-width + $right-gutter-width + $right-corridor-width);
+$left-area-width: $left-gutter-width + $right-gutter-width + $right-corridor-width;
+$mainview-width : $page-width - $main-menu-width - $left-area-width;
 
 $content-top-margin : 1em;
 
@@ -3430,7 +3431,7 @@ $partnav-width : 170px;
 
             margin-bottom: 2em;
         }
-        width : 70vw;
+        width : calc(100vw - #{$left-area-width});
         padding-bottom : 0;
         margin-bottom : 0;
         .table_container {
@@ -3548,6 +3549,7 @@ $partnav-width : 170px;
         }
         table td:last-child {
             @include small-caps();
+            width: 1%;
 
         }
         p {

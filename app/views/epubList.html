@@ -26,7 +26,7 @@
                   </ui-select-choices>
                 </ui-select> -->
 
-            <div class="auth_select_container col-md-3">
+            <div class="auth_select_container col-lg-3">
                 <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" ng-change="onAuthChange(authorFilter)" >
                     <option value=""></option>
                     <option value="alla">Alla författare</option>
@@ -44,7 +44,7 @@
                     ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
                     placeholder="Sök">
             </div>
-            <div class="auth_select_container col-md-4">
+            <div class="auth_select_container col-lg-4">
                 <select class="filter_select author_select" ui-select2="sortSelectSetup" ng-model="sort" data-placeholder="Sortering" ng-change="refreshData()" >
                     <option value=""></option>
                     <option value="epub_popularity|desc">Popularitet</option>

@@ -253,6 +253,10 @@ and (max-device-width : 568px) {
             table td:first-child {
                 max-width : unset;
             }
+            table td:last-child {
+                @include small-caps();
+                width: auto;
+            }
         }
     }
 
