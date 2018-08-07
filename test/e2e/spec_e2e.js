@@ -59,7 +59,7 @@
     });
   });
 
-  fdescribe("epubList", function() {
+  describe("epubList", function() {
     var rows;
     rows = null;
     beforeEach(function() {

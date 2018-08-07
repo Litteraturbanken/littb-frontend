@@ -939,7 +939,8 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $
         ,
             key : "authorFilter"
         ,
-            key : "sort"
+            key : "sort",
+            default: "epub_popularity|desc"
         ,
             key : "showAll"
 

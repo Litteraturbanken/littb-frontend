@@ -289,7 +289,6 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
     getEpub : (size, filterTxt, authorid, sort_field) ->
         url = "#{STRIX_URL}/list_all/etext"
-        console.log("authorid", authorid)
             
         text_filter = {}
         params =
