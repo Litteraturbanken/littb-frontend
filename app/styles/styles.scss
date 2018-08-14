@@ -296,7 +296,6 @@ th {
     .box {
         @include container();
         background-color: $transp;
-        width: 450px;
         padding: 1.5em;
         text-transform: uppercase;
         // @include small-caps;
@@ -419,7 +418,8 @@ th {
 }
 
 .select2-container--open .select2-dropdown--below {
-    top: -5px;
+    top: -2px;
+    border-radius: 0;
 }
 .select2-results__option[id*='undefined'] {
     display : none;
@@ -2989,7 +2989,6 @@ $partnav-width : 170px;
 
 .page-library {
     display : inline-flex;
-    width : 100%;
     .tooltip {
         font-size : 0.7em;
     }
@@ -3013,8 +3012,17 @@ $partnav-width : 170px;
     #rightCorridor {
         display : none;
     }
+    .select2-container--open .select2-dropdown--below {
+        border : 1px solid #333;
+        border-top : none;
+    }
+    .select2-results__option {
+        @include small-caps();
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
     #mainview {
-        flex : 1 1 auto;
+        width : calc(100vw - #{$left-area-width});
         // width : 100%;
         // padding-bottom : 4em;
         h1 {
@@ -3026,29 +3034,102 @@ $partnav-width : 170px;
             top : 1px;
         }
         form {
+            max-width : 750px;
             background-color: rgba(255,255,255,0.55);
-            display: inline-block;
-            padding: 0.8em;
+            padding: 0.8em 0.8em 0.8em 1.6em;
             border: 1px solid #333;
-        }
-        .filter_input, .keyword_select {
-            border : 1px solid #333;
-            // margin-top : 0.4em;
-            width: 320px;
-            height: 40px;
-            padding: 8px;
-            color: #333;
-            font-size: 0.8em;
-            padding-bottom: 6px;
-            padding-left: 19px;
-            vertical-align: middle;
-            margin-right : 10px;
-        }
 
-        .keyword_select {
-            width: 400px;
-            display: block;
-            margin-top: 1em;
+
+            .filter_input, .keyword_select {
+                border : 1px solid #333;
+                // margin-top : 0.4em;
+                width: 300px;
+                height: 40px;
+                padding: 8px;
+                color: #333;
+                font-size: 0.8em;
+                padding-bottom: 6px;
+                padding-left: 19px;
+                vertical-align: middle;
+                margin-right : 10px;
+            }
+
+            .keyword_select {
+                width: 400px;
+                display: block;
+                margin-top: 1em;
+            }
+
+            .options {
+
+            }
+            .main_input {
+                margin-bottom: 4px;
+                margin-bottom: 1em;
+            }
+            .select2-container {
+                // width : 100% !important;
+                // overflow: visible;
+                * {
+                    @include small-caps();
+                }
+            }
+            .select2-selection--single {
+                border: 1px solid #333 !important;
+                .select2-selection__placeholder {
+                    color: #666666de;
+                }
+            }
+            .select2-selection--multiple {
+                input {
+                    border: 1px solid #333;
+                    margin-right: 0.5em;
+                }
+                &:after {
+                    content: "";
+                    display: block;
+                    border-color: #888 transparent transparent transparent;
+                    border-style: solid;
+                    border-width: 5px 4px 0 4px;
+                    height: 0;
+                    right: 7px;
+                    margin-left: -4px;
+                    margin-top: -2px;
+                    position: absolute;
+                    top: 50%;
+                    width: 0;
+                }
+            }
+
+            .select2-selection__rendered {
+                display : inline-flex;
+                overflow: visible;
+                align-items: center;
+                .select2-selection__choice {
+                    font-size: 1.4rem;
+                    white-space: nowrap;
+                    padding-bottom : 2px;
+                }
+                .select2-search__field {
+                }
+                .select2-search.select2-search--inline {
+                    order: -3;
+                }
+            }
+
+            .more {
+                padding-left : 2px;
+                margin-top: 1em;
+                font-size: 1.6rem;
+                @include small-caps();
+                a {
+                    color : $primarycolor;
+                    &:hover {
+                        color : black;
+                    }
+                }
+
+            }
         }
 
         .mediatype_opts {
@@ -3164,7 +3245,7 @@ $partnav-width : 170px;
         
         .box_container {
             // width : 70%;
-            width : 70vw;
+            // width : 70vw;
         }
         .list {
             // padding-left: 1.5em;
@@ -3182,7 +3263,7 @@ $partnav-width : 170px;
 
         }
         .box {
-            
+            min-width: 370px;
             background-color: rgba(255,255,255,0.55);
             border : 1px solid #333;
             position: relative;
@@ -3213,8 +3294,8 @@ $partnav-width : 170px;
 
             // }
             &.author {
-                width : 400px;
-                flex : 0 auto;
+                // width : 400px;
+                // flex : 0 auto;
                 margin-right : 1em;
                 .info {
                     margin-top : 1em;
@@ -3323,10 +3404,10 @@ $partnav-width : 170px;
             &.title {
                 .first_part {
                 }
-                max-width : 570px;
-                min-width: 465px;
+                // max-width : 570px;
+                // min-width: 465px;
                 
-                flex : 1 auto;
+                // flex : 1 auto;
 
                 li {
 
@@ -4844,6 +4925,8 @@ grundform-clean {
     // background-size: contain;
     // background-position: -100px -80px;
     
+    
+
     .btn:not(.active) {
         color : black;
         background-image: linear-gradient(to top, #eee 0%, #fff 50%);
@@ -5059,23 +5142,49 @@ grundform-clean {
         }
 
     }
-
+    .open .dropdown-menu {
+        opacity : 1;
+    }
     .dropdown-menu {
-        min-width : 250px;
+        display : block;
+        opacity : 0;
+        transition: opacity 200ms;
+        min-width : 350px;
+        padding: 1em 0.9em;
 
         li {
             display : flex;
             justify-content: space-between;
             .number_input {
+                width: 100%;
+            }
+
+            .rzslider .rz-pointer {
+                width: 15px;
+                height: 15px;
+                background-color : white;
+                border: 1px solid darkgrey;
+                box-shadow: 1px 1px 3px grey;
+                top: -6px;
+                &:after {
+                    display: none;
+                }
+            }
+            .rz-bar {
+                background-color: rgba($primarycolor, 0.5); 
+            }
+            .rz-bar.rz-selection {
+                background-color: $primarycolor; 
             }
         }
 
         input[type=text] {
+            display : none;
             max-width : 20px;
             font-family : Times;
 
             font-size: 0.8em;
-            border: 1px solid grey;
+            border: 1px solid lightgrey;
             margin-bottom: 1px;
 
 
@@ -5083,18 +5192,17 @@ grundform-clean {
         }
 
         .check {
-            border: 1px solid grey;
+            border: 1px solid lightgrey;
             padding: 1px 2px;
-            margin-right : 2.78em;
-            width : 1.45em;
-            height : 17px;
+            // margin-right : 2.8em;
+            width : 18px;
+            height : 18px;
         }
-        
-        padding: 1em 0.9em;
-
         .label {
             align-self: center;
             @include small-caps();
+            max-width : 40px;
+            margin-right: 4em;
         }
         
     }

@@ -4,13 +4,80 @@
 <!-- <img bkg-img src="img/sok_moln.jpg"></img> -->
 <div ng-class="{searching:searching}">
     <div id="controls" ng-hide="searching">
-        <form ng-submit="searchTitle()">
-            <!-- <input class="filter_input" autofocus ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel och tryck enter"> -->
+        <form class="row" ng-submit="searchTitle()">
+            
+            <div class="">
+                <div class="row main_input">
+                    <input class="filter_input" autofocus ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel">
+                    <button class="submit btn">Sök</button>
+                </div>
+                <div class="row title_select_container">
+                    <select  class="gender_select" 
+                             ui-select2="{minimumResultsForSearch: -1}" 
+                             ng-model="filters.gender" 
+                             data-placeholder="Välj kön" >
+                        <option value=""></option>
+                        <option value="all">Alla författare</option>
+                        <option value="female">Kvinnliga författare</option>    
+                        <option value="male">Manliga författare</option>
+                        </option>
+                </div>
+                <div class="row title_select_container">
+                    <select multiple class="filter_select keyword_select" ui-select2 ui-select2="{placeholder: 'Välj samling'}" ng-model="selectedKeywords" data-placeholder="Välj samling" >
+                        <option value=""></option>
+                        <option value='provenance.library:Dramawebben'>Dramawebben</option>
+                        <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
+                        <option value='provenance.library:SVELITT'>Svenska litteratursällskapet (SE)</option>
+                        <option value='keyword:Barnlitteratur'>Barnlitteratur</option>
+                        <option value='keyword:sentpajorden'>Sent på jorden</option>
+                        <option value='publisher:Uddevalla'>Tryckort: Uddevalla</option>
+                    </select>
+                </div>
+                <div class="row title_select_container">
+                    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Om ett författarskap'}" ng-model="selectedKeywords" data-placeholder="Om ett författarskap" >
+                        <option value=""></option>
+                        <option value='StrindbergA'>August Strindberg</option>
+                        <option value='BoyeK'>Karin Boye</option>
+                    </select>
+                </div>
+                
+                <div class="row more"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-down"></i> Visa fler inställningar </a></div>
+
+                <div ng-show="show_more">
+                    <div class="row title_select_container">
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="selectedKeywords" data-placeholder="Utgivningsformat" >
+                            <option value=""></option>
+                            <option value="etext">Etext</option>
+                            <option value="faksimil">Faksimil</option>
+                            <option value="epub">Epub</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                    <div class="row title_select_container">
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="selectedProof" data-placeholder="Modernisering …">
+                            <option value=""></option>
+                            <option value="mod">Moderniserat språk</option>
+                            <option value="not_mod">Ej moderniserat språk</option>
+                            <option value="proof">Korrekturläst</option>
+                            <option value="not_proof">Ej korrekturläst</option>
+                            <!-- <option value="">Skrivet av kvinnor</option>
+                            <option value="">Skrivet av män</option> -->
+
+
+                        </select>
+                    </div>
+                    <!-- <ul class="col-lg-6 options">
+                        <li ng-repeat="opt in filterOpts">
+                            <span ng-click="opt_change(opt)" ng-style="{visibility: opt.selected ? 'visible' : 'hidden'}">✓</span>
+                            <a ng-click="opt_change(opt)" ng-bind-html="opt.label | trust"></a>
+                        </li>
+                    </ul> -->
+                </div>
+            </div>
             
 
-            <select multiple 
-                    class="filter_select keyword_select" 
-                    ui-select2 ng-model="selectedKeywords" data-placeholder="Sök / filtrera" >
+            <!-- <select class="col-md-4 filter_select keyword_select" multiple
+                    ui-select2 ng-model="selectedKeywords" data-placeholder="Sök eller filtrera" >
                 <option value=""></option>
                 <optgroup label="Samling">
                     <option value='provenance.library:Dramawebben'>Dramawebben</option>
@@ -24,9 +91,11 @@
                     <option value="epub">Epub</option>
                     <option value="pdf">PDF</option>
                 </optgroup>
-            </select>
+            </select> -->
 
-            <button class="submit btn">Sök</button>
+            
+
+
 
         </form>
         
@@ -56,9 +125,9 @@
     
 
     
-        <div class="box_container">
+        <div class="row box_container">
             
-            <div class="box author">
+            <div class="col-lg-4 box author">
 
                 <div class="scroll-area" list-scroll> <!-- scroll-to="selectedAuth.author_id" target="parent" offset="getCollapseOffset(collapse_index) + 16" collapsing="offset" index="collapse_index" -->
                     <ul class="list">
@@ -118,7 +187,7 @@
                 </div>
             </div>
             
-            <div class="box title">
+            <div class="col-lg-8 box title">
                 <div class="scroll-area" list-scroll>
                     <ul id="table" class="list">
                         <li class="spinner_row" ng-show="titleSearching">

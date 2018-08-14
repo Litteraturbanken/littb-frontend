@@ -275,6 +275,10 @@ angular@1.4.14:
   version "1.4.14"
   resolved "https://registry.yarnpkg.com/angular/-/angular-1.4.14.tgz#9d0feaf60ce6e52ce50f49ee328656d1e1875c37"
 
+angularjs-slider@^6.6.1:
+  version "6.6.1"
+  resolved "https://registry.yarnpkg.com/angularjs-slider/-/angularjs-slider-6.6.1.tgz#3af8beb397254d5f92f2c1aa80ece546b0c0779f"
+
 ansi-escapes@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/ansi-escapes/-/ansi-escapes-3.1.0.tgz#f73207bb81207d75fd6c83f125af26eea378ca30"

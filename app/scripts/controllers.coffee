@@ -485,6 +485,52 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     s.normalizeAuthor = $filter('normalizeAuthor')
 
+    s.filterOpts =  [
+        {
+            label: 'Visa <span class="sc">moderniserade</span> texter',
+            param: ["modernized", true],
+            selected: false
+            group : 0
+            key : "is_modernized"
+        }
+        {
+            label: 'Visa <span class="sc">ej moderniserade</span> texter',
+            param: ["modernized", false],
+            selected: false
+            group : 0
+            key : "not_modernized"
+        }
+        {
+            label: 'Visa <span class="sc">korrekturlästa</span> texter',
+            param: ["proofread", true],
+            selected: false
+            group : 1
+            key : "is_proofread"
+        }
+        {
+            label: 'Visa <span class="sc">ej korrekturlästa</span> texter',
+            param: ["proofread", false],
+            selected: false
+            group : 1
+            key : "not_proofread"
+        }
+        {
+            label: 'Visa texter skrivna av <span class="sc">kvinnor</span>',
+            param: ["gender", "female"],
+            selected: false
+            group : 2
+            key : "gender_female"
+        }
+        {
+            label: 'Visa texter skrivna av <span class="sc">män</span>',
+            param: ["gender", "male"],
+            selected: false
+            group : 2
+            key : "gender_male"
+        }
+
+    ]
+
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
         return attrs.title unless attrs.showtitle == attrs.title
@@ -1516,13 +1562,16 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
     s.filters = {
         gender : "",
         filterTxt : "",
-        female_roles : []
-        male_roles : []
-        number_of_acts : []
-        number_of_pages : []
-        number_of_roles : []
+        female_roles : [0, 30]
+        male_roles : [0, 30]
+        other_roles : [0, 30]
+        number_of_acts : [0, 30]
+        number_of_pages : [0, 30]
+        number_of_roles : [0, 30]
         isChildrensPlay : false
     }
+    s.formatInterval = ([from, width]) ->
+        return "#{from}–#{width + from}"
 
     s.getAuthor = (author) ->
         [last, first] = author.name_for_index.split(",")

@@ -936,7 +936,3 @@ littb.directive "searchOpts", ($location, util) ->
 
 
 
-
-
-
-
