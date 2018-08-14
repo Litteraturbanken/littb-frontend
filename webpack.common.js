@@ -124,6 +124,10 @@ module.exports = {
         to: "img/favicons"
       },
       {
+        from: "./app/img/lb_monogram_white_white.svg",
+        to: "img/"
+      },
+      {
         from: "./app/views/sla/",
         to: "views/sla/"
       }

@@ -481,55 +481,61 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.showPopular = true
     s.showPopularAuth = true
     s.showInitial = true
+    s.show_more = $location.search().avancerat?
     # s.rowByLetter = {}
+    s.filters = {
+        'main_author.gender': $location.search()['kön']
+        keywords : $location.search()['keywords']?.split(",")
+        about_authors : $location.search()['about_authors']?.split(",")
+    }
 
     s.normalizeAuthor = $filter('normalizeAuthor')
 
-    s.filterOpts =  [
-        {
-            label: 'Visa <span class="sc">moderniserade</span> texter',
-            param: ["modernized", true],
-            selected: false
-            group : 0
-            key : "is_modernized"
-        }
-        {
-            label: 'Visa <span class="sc">ej moderniserade</span> texter',
-            param: ["modernized", false],
-            selected: false
-            group : 0
-            key : "not_modernized"
-        }
-        {
-            label: 'Visa <span class="sc">korrekturlästa</span> texter',
-            param: ["proofread", true],
-            selected: false
-            group : 1
-            key : "is_proofread"
-        }
-        {
-            label: 'Visa <span class="sc">ej korrekturlästa</span> texter',
-            param: ["proofread", false],
-            selected: false
-            group : 1
-            key : "not_proofread"
-        }
-        {
-            label: 'Visa texter skrivna av <span class="sc">kvinnor</span>',
-            param: ["gender", "female"],
-            selected: false
-            group : 2
-            key : "gender_female"
-        }
-        {
-            label: 'Visa texter skrivna av <span class="sc">män</span>',
-            param: ["gender", "male"],
-            selected: false
-            group : 2
-            key : "gender_male"
-        }
+    # s.filterOpts =  [
+    #     {
+    #         label: 'Visa <span class="sc">moderniserade</span> texter',
+    #         param: ["modernized", true],
+    #         selected: false
+    #         group : 0
+    #         key : "is_modernized"
+    #     }
+    #     {
+    #         label: 'Visa <span class="sc">ej moderniserade</span> texter',
+    #         param: ["modernized", false],
+    #         selected: false
+    #         group : 0
+    #         key : "not_modernized"
+    #     }
+    #     {
+    #         label: 'Visa <span class="sc">korrekturlästa</span> texter',
+    #         param: ["proofread", true],
+    #         selected: false
+    #         group : 1
+    #         key : "is_proofread"
+    #     }
+    #     {
+    #         label: 'Visa <span class="sc">ej korrekturlästa</span> texter',
+    #         param: ["proofread", false],
+    #         selected: false
+    #         group : 1
+    #         key : "not_proofread"
+    #     }
+    #     {
+    #         label: 'Visa texter skrivna av <span class="sc">kvinnor</span>',
+    #         param: ["gender", "female"],
+    #         selected: false
+    #         group : 2
+    #         key : "gender_female"
+    #     }
+    #     {
+    #         label: 'Visa texter skrivna av <span class="sc">män</span>',
+    #         param: ["gender", "male"],
+    #         selected: false
+    #         group : 2
+    #         key : "gender_male"
+    #     }
 
-    ]
+    # ]
 
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
@@ -686,6 +692,19 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             s.audio_list = titleArray
 
     getKeywordTextfilter = () ->
+        {
+          "gender": "main_author.gender:female",
+          "keywords": [
+            "provenance.library:Dramawebben"
+          ],
+          "about_authors": [
+            "StrindbergA"
+          ],
+          "modernized": [
+            "modernized:true",
+            "proofread:true"
+          ]
+        }
         text_filter = {}
         if $location.search().keyword
             for kw in $location.search().keyword.split(",")
@@ -804,8 +823,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         if $location.search().filter
             s.filter = $location.search().filter
         s.searchTitle()
-    if $location.search().keyword
-        s.selectedKeywords = $location.search().keyword?.split(",")
+    # if $location.search().keyword
+    #     s.selectedKeywords = $location.search().keyword?.split(",")
 
     util.setupHashComplex s,
         [
@@ -835,12 +854,25 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             key : "nytillkommet"
             scope_name : "showRecent"
         ,
-            key : "keyword"
-            expr : "selectedKeywords"
+            key : "kön",
+            expr: "filters['main_author.gender']"
+        ,
+            key : "keywords"
+            expr : "filters.keywords"
             val_in : (val) ->
                 val?.split(",")
             val_out : (val) ->
                 val?.join(",")
+        ,
+            key : "about_authors"
+            expr : "filters.about_authors"
+            val_in : (val) ->
+                val?.split(",")
+            val_out : (val) ->
+                val?.join(",")
+        ,
+            key: "avancerat",
+            expr: "show_more"
 
         ]
 

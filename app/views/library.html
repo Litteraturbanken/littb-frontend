@@ -14,7 +14,7 @@
                 <div class="row title_select_container">
                     <select  class="gender_select" 
                              ui-select2="{minimumResultsForSearch: -1}" 
-                             ng-model="filters.gender" 
+                             ng-model="filters['main_author.gender']" 
                              data-placeholder="Välj kön" >
                         <option value=""></option>
                         <option value="all">Alla författare</option>
@@ -23,7 +23,7 @@
                         </option>
                 </div>
                 <div class="row title_select_container">
-                    <select multiple class="filter_select keyword_select" ui-select2 ui-select2="{placeholder: 'Välj samling'}" ng-model="selectedKeywords" data-placeholder="Välj samling" >
+                    <select multiple class="filter_select keyword_select" ui-select2 ui-select2="{placeholder: 'Välj samling'}" ng-model="filters.keywords" data-placeholder="Välj samling" >
                         <option value=""></option>
                         <option value='provenance.library:Dramawebben'>Dramawebben</option>
                         <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
@@ -34,7 +34,7 @@
                     </select>
                 </div>
                 <div class="row title_select_container">
-                    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Om ett författarskap'}" ng-model="selectedKeywords" data-placeholder="Om ett författarskap" >
+                    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Om ett författarskap'}" ng-model="filters.about_authors" data-placeholder="Om ett författarskap" >
                         <option value=""></option>
                         <option value='StrindbergA'>August Strindberg</option>
                         <option value='BoyeK'>Karin Boye</option>
@@ -54,12 +54,12 @@
                         </select>
                     </div>
                     <div class="row title_select_container">
-                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="selectedProof" data-placeholder="Modernisering …">
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.modernized" data-placeholder="Modernisering …">
                             <option value=""></option>
-                            <option value="mod">Moderniserat språk</option>
-                            <option value="not_mod">Ej moderniserat språk</option>
-                            <option value="proof">Korrekturläst</option>
-                            <option value="not_proof">Ej korrekturläst</option>
+                            <option value="modernized:true">Moderniserat språk</option>
+                            <option value="modernized:false">Ej moderniserat språk</option>
+                            <option value="proofread:true">Korrekturläst</option>
+                            <option value="proofread:false">Ej korrekturläst</option>
                             <!-- <option value="">Skrivet av kvinnor</option>
                             <option value="">Skrivet av män</option> -->
 
