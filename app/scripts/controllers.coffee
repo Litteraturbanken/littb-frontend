@@ -483,11 +483,11 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.showInitial = true
     s.show_more = $location.search().avancerat?
     # s.rowByLetter = {}
-    s.filters = {
+    s.filters = _.omitBy {
         'main_author.gender': $location.search()['kön']
         keywords : $location.search()['keywords']?.split(",")
         about_authors : $location.search()['about_authors']?.split(",")
-    }
+    }, _.isNil
 
     s.normalizeAuthor = $filter('normalizeAuthor')
 
