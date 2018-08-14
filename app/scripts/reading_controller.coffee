@@ -373,8 +373,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     recalcCoors = (val) ->
         unless s.x then return
         s.coors = for item, i in s.x.split("|")
-            pairs = _.pairs _.pick s, "x", "y", "height", "width"
-            _.object _.map pairs, ([key, val]) ->
+            pairs = _.toPairs _.pick s, "x", "y", "height", "width"
+            _.fromPairs _.map pairs, ([key, val]) ->
                 [key, val.split("|")[i].split(",")[s.size - 1]]
     chapter_modal = null
     about_modal = null

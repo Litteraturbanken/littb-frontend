@@ -4,15 +4,11 @@
   "private": true,
   "author": "Johan Roxendal",
   "scripts": {
-    "test":
-      "coffee -c test/e2e && docker-compose up --build --exit-code-from littb",
+    "test": "coffee -c test/e2e && docker-compose up --build --exit-code-from littb",
     "build": "webpack --config webpack.prod.js",
-    "protractor":
-      "wait-on http://localhost:9000 && protractor test/e2e/conf_e2e.js",
-    "dev":
-      "webpack-dev-server --config webpack.dev.js --host 0.0.0.0 --disable-host-check",
-    "serve-dist":
-      "webpack-dev-server  --config webpack.prod.js --env prod --compress  --host 0.0.0.0 --disable-host-check"
+    "protractor": "wait-on http://localhost:9000 && protractor test/e2e/conf_e2e.js",
+    "dev": "webpack-dev-server --config webpack.dev.js --host 0.0.0.0 --disable-host-check",
+    "serve-dist": "webpack-dev-server  --config webpack.prod.js --env prod --compress  --host 0.0.0.0 --disable-host-check"
   },
   "dependencies": {
     "angular": "1.4.14",
@@ -27,7 +23,7 @@
     "bootstrap-sass": "~3.2.0",
     "font-awesome": "~4.4.0",
     "jquery": "1.11.1",
-    "lodash": "~3.7.0",
+    "lodash": "^4.17.10",
     "nprogress": "~0.1.2",
     "select2": "^4.0.6-rc.1",
     "ui-select": "^0.19.8",

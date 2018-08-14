@@ -245,7 +245,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
                     filter_params.push selected[0].param
 
 
-        filter_params = _.object filter_params
+        filter_params = _.fromPairs filter_params
 
         
         args = {
@@ -468,7 +468,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
     s.opt_change = (opt) ->
         commit = () -> 
-            s.search_filter_opts = _.map (_.pluck s.filterOpts, "selected"), Number
+            s.search_filter_opts = _.map (_.map s.filterOpts, "selected"), Number
         if opt.key == "all_texts" 
             for o in s.filterOpts
                 o.selected = true
@@ -482,7 +482,7 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
         group = _.filter s.filterOpts, (o) -> o.group == opt.group
         c.log "group", group
 
-        if not _.any group, "selected"
+        if not _.some group, "selected"
             i = _.indexOf group, opt
             (group[i + 1] or group[0]).selected = true
 
@@ -491,12 +491,12 @@ littb.controller "searchCtrl", ($scope, backend, $location, $document, $window, 
 
 
 
-        if not _.all s.filterOpts, "selected"
+        if not _.every s.filterOpts, "selected"
             s.filterOpts[0].selected = false
         if not (_.filter s.filterOpts, "selected").length
             opt.selected = true
         
-        if _.all s.filterOpts[1..], "selected"
+        if _.every s.filterOpts[1..], "selected"
             s.filterOpts[0].selected = true
 
         commit()

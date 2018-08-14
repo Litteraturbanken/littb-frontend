@@ -444,7 +444,7 @@ littb.run ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) ->
     $rootScope._focus_mode = true
 
     normalizeUrl = (str) ->
-        trans = _.object _.zip "åäö", "aao"
+        trans = _.fromPairs _.zip "åäö", "aao"
 
         _.map str, (letter) ->
             trans[letter.toLowerCase()] or letter
@@ -491,8 +491,8 @@ littb.filter "trust", ($sce) ->
         $sce.trustAsHtml input
 
 littb.filter "normalizeAuthor", () ->
-    trans = _.object _.zip "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ", "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy"
-    trans = _.extend trans, _.object _.zip ["Æ", "æ", "Ð", "ð", "Þ", "þ", "ß", "Œ", "œ"], ["AE", "ae", "DH", "dh", "TH", "th", "ss", "OE", "oe"]
+    trans = _.fromPairs _.zip "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ", "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy"
+    trans = _.extend trans, _.fromPairs _.zip ["Æ", "æ", "Ð", "ð", "Þ", "þ", "ß", "Œ", "œ"], ["AE", "ae", "DH", "dh", "TH", "th", "ss", "OE", "oe"]
     return (author_id) ->
         unless author_id then return
         ret = _.map author_id.split(""), (char) ->

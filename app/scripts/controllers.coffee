@@ -204,14 +204,14 @@ littb.controller "biblinfoCtrl", ($scope, backend) ->
             s.entries
 
     s.getColumn1 = (entry) ->
-        pairs = _.pairs entry
+        pairs = _.toPairs entry
         splitAt = Math.floor pairs.length / 2
-        _.object pairs[0..splitAt]
+        _.fromPairs pairs[0..splitAt]
 
     s.getColumn2 = (entry) ->
-        pairs = _.pairs entry
+        pairs = _.toPairs entry
         splitAt = Math.floor pairs.length / 2
-        _.object pairs[(splitAt + 1)..]
+        _.fromPairs pairs[(splitAt + 1)..]
     
     s.submit = () ->
         names = ["manus", "tryckt_material", "annat_tryckt", "forskning"]
@@ -347,7 +347,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         elemsTuples = for elem in $(".footnotes .footnote[id^=ftn]", doc)
             [$(elem).attr("id"), $(elem).html()]
 
-        s.noteMapping = _.object elemsTuples
+        s.noteMapping = _.fromPairs elemsTuples
 
 
 
@@ -375,7 +375,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
         works[0].sortkey
 
     s.hasMore = () ->
-        (_.flatten _.pluck s.moreStruct, "data").length
+        (_.flatten _.map s.moreStruct, "data").length
 
     s.titleStruct = [
             label : "Tillgängliga verk"
@@ -496,7 +496,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
         exprs = s.rowfilter.split(" ")
 
-        return _.all exprs, (expr) ->
+        return _.every exprs, (expr) ->
             new RegExp(expr, "i").test((row.itemAttrs.title + " " + row.itemAttrs.shorttitle + " " + auths + " " + row.itemAttrs.imprintyear + " "))
 
     isIE = detectIE()
@@ -508,8 +508,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.filterAuthor = (author) ->
         exprs = s.rowfilter?.split(" ")
 
-        return _.all exprs, (expr) ->
-            pseudonym = (_.pluck author.pseudonym, "full_name").join(" ")
+        return _.every exprs, (expr) ->
+            pseudonym = (_.map author.pseudonym, "full_name").join(" ")
             new RegExp(expr, "i").test((author.full_name + pseudonym))
 
     s.resetView = () ->
@@ -534,7 +534,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         # c.log "row.mediatype", row.mediatype
         # s.mediatypeObj
         if row.isHeader then return true
-        _.any _.map row.mediatypes, (mtObj) -> 
+        _.some _.map row.mediatypes, (mtObj) -> 
             s.mediatypeObj[mtObj.label]
         
 
@@ -542,7 +542,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     #     row.title_path.split("/").length > 1
 
     s.hasMediatype = (titleobj, mediatype) ->
-        mediatype in (_.pluck titleobj.mediatypes, "label")
+        mediatype in (_.map titleobj.mediatypes, "label")
 
     s.pickMediatypes = (titleobj, mediatypeLabels) ->
         _.filter titleobj.mediatypes, (item) -> item.label in mediatypeLabels
@@ -1153,7 +1153,7 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                     # if !isDev and item.typeLabel == "[Red.]" then return false
                     exp = new RegExp("^" + val, "gi")
                     # alt = new RegExp(val, "gi")
-                    item.label.match(exp) or _.any item.alt?.map (item) ->
+                    item.label.match(exp) or _.some item.alt?.map (item) ->
                         item.match(exp)
                 return data.concat menu
 
@@ -1207,7 +1207,7 @@ littb.controller "idCtrl", ($scope, backend, $routeParams, $location) ->
 
     s.rowFilter = (row) ->
         if not s.titles.length then return true
-        return _.any _.map s.titles, (title) ->
+        return _.some _.map s.titles, (title) ->
             _.str.contains(row.titlepath.toLowerCase(), title?.toLowerCase()) or
                 _.str.contains(row.title.toLowerCase(), title?.toLowerCase())
 

@@ -149,7 +149,7 @@ littb.factory "util", ($location) ->
     setupHash : (scope, nameConfig...) ->
         names = _.map nameConfig, (item) ->
             if _.isObject(item)
-                return (_.head _.pairs item)[0]
+                return (_.head _.toPairs item)[0]
             else
                 return item
         # c.log "init", _.pick($location.search(), names...)
@@ -160,7 +160,7 @@ littb.factory "util", ($location) ->
 
         for name in nameConfig
             if _.isObject name
-                [name, callback] = _.head _.pairs name
+                [name, callback] = _.head _.toPairs name
             scope[name] = $location.search()[name]
             scope.$watch name, do (name) ->
                 (val) ->
@@ -267,7 +267,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
 
     objFromAttrs = (elem) ->
         return null unless elem
-        _.object ([util.normalize(attrib.name), attrib.value] for attrib in elem.attributes)
+        _.fromPairs ([util.normalize(attrib.name), attrib.value] for attrib in elem.attributes)
 
     getHtmlFile : (url) ->
         return http(
@@ -898,7 +898,7 @@ littb.factory "authors", (backend, $q) ->
     def = $q.defer()
     # @promise = def.promise
     backend.getAuthorList(null, exclude='intro,db_*,doc_type,corpus,es_id').then (authors) ->
-        authorsById = _.object _.map authors, (item) ->
+        authorsById = _.fromPairs _.map authors, (item) ->
             [item.author_id, item]
         # c.log "authorsById", authorsById
         def.resolve [authors, authorsById]
@@ -1025,7 +1025,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
         hasSlice: (from, to) ->
             slice = @data.slice(from, to)
             if slice.length < (to - from) then return false
-            return not _.any slice, _.isUndefined
+            return not _.some slice, _.isUndefined
 
         # findMissingInSpan : (from, to) ->
         #     start = null
@@ -1049,7 +1049,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
             params = 
                 include: @include
                 number_of_fragments: num_fragments + 1
-                # authors: _.pluck sentenceData.metadata.authors, "author_id"
+                # authors: _.map sentenceData.metadata.authors, "author_id"
                 work_ids: sentenceData.metadata.lbworkid
                 from: 0
                 to: 1
@@ -1110,7 +1110,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
         compactLeftContext : (data) ->
             min = 40 # no longer sentences than min chars
             # for work in data
-            #     for ctx in _.pluck work.highlight, "left_context"
+            #     for ctx in _.map work.highlight, "left_context"
             #         sum = _.sum ctx, (wd) -> wd.word.length
 
             #         if sum < min then min = sum 
@@ -1118,7 +1118,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
             #         ctx.num_chars = sum
             c.log "min", min
             for work in data
-                for ctx in _.pluck work.highlight, "left_context"
+                for ctx in _.map work.highlight, "left_context"
                     num_chars = _.sum ctx, (wd) -> wd.word.length
                     if num_chars > min
                         diff = num_chars - min
@@ -1162,7 +1162,7 @@ littb.factory "SearchData", (backend, $q, $http, $location) ->
 
             merged["s_lbworkid"] = metadata.lbworkid
             merged.hit_index = index
-            merged = _(merged).pairs().invoke("join", "=").join("&")
+            merged = _(merged).toPairs().invokeMap("join", "=").join("&")
 
             author = metadata.authors[0].author_id
             titleid = metadata.title_id

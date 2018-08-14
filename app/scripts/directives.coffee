@@ -78,7 +78,7 @@ littb.directive 'sortTriangles', () ->
         s.sorttuple = [val, 1]
         s.enabled = [true, true]
         tupMatches = (tup) ->
-            _.all _.map _.zip(val, tup), ([item1, item2]) ->
+            _.every _.map _.zip(val, tup), ([item1, item2]) ->
                 item1 == item2
         s.$watch "tuple", (newtup) ->
             [newval, dir] = newtup
@@ -107,7 +107,7 @@ littb.directive 'square', () ->
         coors.top = coors.y
         coors.left = coors.x
 
-        coors = _.object _.map coors, (val, key) ->
+        coors = _.fromPairs _.map coors, (val, key) ->
             val = Number(val)
             expand = (val) ->
                 n = if key in ["top", "left"] then EXPAND_SIZE * -1 else EXPAND_SIZE * 2
@@ -454,7 +454,7 @@ littb.directive "popper", ($rootElement) ->
 #             for struct in (wd._close or [])
 #                 output["close_" + struct] = true
 
-#             return (x for [x, y] in _.pairs output when y).join " "
+#             return (x for [x, y] in _.toPairs output when y).join " "
 
 
 littb.directive 'insert', () ->
