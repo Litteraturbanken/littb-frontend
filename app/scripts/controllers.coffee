@@ -648,13 +648,15 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             s.popularAuthors = auths
         
     , 10
-
+    backend.getAboutAuthors().then (data) ->
+        s.aboutAuthors = data
+        
     s.getAuthorData = () ->
         if s.showPopularAuth
             return s.popularAuthors
         else
             filters = getKeywordTextfilter()
-            if _.pairs(filters).length
+            if _.toPairs(filters).length
                 if filters['provenance.library'] == "Dramawebben"
                     return s.authorData
                     # return _.filter s.authorData, (auth) ->
@@ -667,13 +669,13 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.selectedAuth = null
         s.selectedTitle = null
         s.rowfilter = s.filter
-        if s.rowfilter or _.pairs(getKeywordTextfilter()).length
+        if s.rowfilter or _.toPairs(getKeywordTextfilter()).length
             s.showInitial = false
             s.showPopularAuth = false
             s.showPopular = false
             fetchTitles()
             fetchWorks()
-            if not _.pairs(getKeywordTextfilter()).length
+            if not _.toPairs(getKeywordTextfilter()).length
                 fetchAudio()
             if not isDev
                 backend.logLibrary(s.rowfilter)
@@ -1654,7 +1656,7 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
             if s.filters.isChildrensPlay
                 if not ("Barnlitteratur" in (item.keywords? or [])) then return false
 
-            for [key, value] in _.pairs(s.filters)
+            for [key, value] in _.toPairs(s.filters)
                 if (_.isArray value) and value.length
                     [from, to] = value
                     from = from or 0
@@ -1675,7 +1677,7 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         authors = _.map data, (row) ->
             row.authors[0]
 
-        s.authorData = _.unique authors, false, (item) ->
+        s.authorData = _.uniq authors, false, (item) ->
             item.author_id
 
         s.authorData = _.sortBy s.authorData, "name_for_index"

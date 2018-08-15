@@ -36,8 +36,7 @@
                 <div class="row title_select_container">
                     <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Om ett författarskap'}" ng-model="filters.about_authors" data-placeholder="Om ett författarskap" >
                         <option value=""></option>
-                        <option value='StrindbergA'>August Strindberg</option>
-                        <option value='BoyeK'>Karin Boye</option>
+                        <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
                     </select>
                 </div>
                 
