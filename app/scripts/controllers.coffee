@@ -837,6 +837,9 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $
     s.searching = true
     s.authorFilter = $location.search().authorFilter
 
+    if $location.search().qr
+        backend.logQR($location.search().qr, $location.url())
+        $location.search("qr", null)
 
     $q.all([authors, backend.getEpubAuthors()]).then ([[authorList, authorsById], epubAuthorIds]) ->
         s.authorsById = authorsById
