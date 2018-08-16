@@ -1,9 +1,9 @@
 littb = angular.module('littbApp')
 SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+# STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 # STRIX_URL = "https://litteraturbanken.se/api"
-# STRIX_URL = "/api"
+STRIX_URL = "/api"
 
 if _.str.startsWith(location.host, "demolittb")
     STRIX_URL = "/api"
