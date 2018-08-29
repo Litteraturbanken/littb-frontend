@@ -9,4 +9,5 @@ Litteraturbanken-frontend-v4
 2. Install yarn: `npm install -g yarn`
 2. Cd into project folder. Run `yarn` to install dependencies.
 6. Start dev server with `yarn dev`.
-7. Compile with `yarn build`. You find the compiled project in the `dist` directory ready to deploy
+7. Compile with `yarn build`. You find the compiled project in the `dist` directory ready to deploy.
+8. Run tests with `yarn test`. This requires Docker to be installed. 
