@@ -313,7 +313,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             return response.data
 
     getEpubAuthors : () ->
-        url = "#{STRIX_URL}/get_work_prop_authors?key=has_epub&val=True"
+        url = "#{STRIX_URL}/get_work_prop_authors?key=has_epub&val=true"
 
         return $http(url: url).then (response) -> response.data
 
