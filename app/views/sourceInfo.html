@@ -44,9 +44,38 @@
     </div>
     
     <p class="workintro" ng-bind-html="workinfo.workintro | trust"></p>
+
+    <div class="dramaweb" ng-if="dramaweb">
+        <table>
+            <thead></thead>
+            <tbody>
+                <tr ng-repeat="pair in dramaweb.orderedData">
+                    <td>{{dramaweb.getLabel(pair[0])}}</td>
+                    <td ng-bind-html="dramaweb.format(pair[0])(pair[1]) | trust"></td>
+                </tr>
+            </tbody>
+
+        </table>
+
+        <div ng-if="dramaweb.roles">
+            <h3 class="heading"> {{dramaweb.getLabel('roles')}} </h3>
+            <div ng-bind-html="dramaweb.format('roles')(dramaweb.roles) | trust"></div>
+
+        </div>
+        <div ng-if="dramaweb.history">
+            <h3 class="heading">
+                {{dramaweb.getLabel('history')}}
+            </h3>
+            <div class="history" ng-bind-html="dramaweb.history | trust"></div>
+
+        </div>
+        
+        
+        
+    </div>
     
     <div class="provenance" ng-repeat="prov in provenanceData">
-        <a ng-href="{{prov.link}}" ng-if="prov.image"><img ng-src="red/bilder/gemensamt/{{prov.image}}"></a>
+        <a ng-href="{{prov.link}}" ng-if="prov.image"><img class="logo" ng-src="red/bilder/gemensamt/{{prov.image}}"></a>
         <p>{{prov.text}}</p>
     </div>
 

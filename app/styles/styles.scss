@@ -2025,6 +2025,305 @@ body > .header {
 
     }
 }
+
+.modal .close_btn {
+    font-size : 0.5em;
+}
+
+.chapters.modal {
+    .modal-dialog {
+        width: 490px;
+    }
+
+    .modal-body {
+        // max-height : 65vh;
+    }
+}
+
+.about.modal {
+
+    .modal-dialog {
+    }
+    .modal-body {
+        // max-height : 65vh;
+        padding-bottom : 4em;
+    }
+
+
+}
+
+.chapters-modal, .about-modal {
+    padding : 2em;
+    padding-top : 1em;
+    
+    .header {
+        max-width : 80%;
+        margin-bottom : 2em;
+        h2 {
+            font-size : 1.2em;
+        }
+    }
+
+    .author {
+        margin-bottom: 0.4em;
+    }
+    .author a {
+        color : $primarycolor;
+    }
+
+    .title {
+        margin-top: 0;
+    }
+    
+}
+
+.chapters-modal {
+
+    
+    overflow-y: auto;
+
+    
+    .part_menu {
+        font-size : 0.85em;
+
+        li {
+            .author {
+                @include small-caps();
+                color : $primarycolor;
+                
+                font-size : 0.85em;
+
+                // text-indent: 0 !important;
+                // padding-left: 30px;
+            }
+            .title {
+                // text-indent: -30px;
+                // padding-left: 30px;
+            }
+        }
+    }
+
+    .close_btn {
+        margin-top: 2.7em;
+        cursor: pointer;
+        // color : $primarycolor;
+        // font-size: 0.5em;
+    }
+}
+.about-modal {
+    .header {
+        margin-top : 1em;
+        margin-bottom : 2em;
+    }
+    .close_btn {
+        position: relative;
+        top : 2.5em;
+    }
+
+    .searching > div:not(.preloader) {
+        // display : none;
+        visibility: hidden;
+    }
+    .header_left {
+        // float : left;
+        width : 360px;
+
+        .author {
+            margin-top : 0;
+        }
+
+    }
+    .header_right {
+        // float : right;
+        // cursor : pointer;
+    }
+    .visible .cover {
+        display : block;
+    }
+    .columns {
+        display : flex;
+    }
+    .col_left {
+        flex : 1 1 0;
+        margin-right : 1em;
+    }
+    .col_right {
+        flex : 0 1 auto;
+    }
+    .large_img {
+        &.visible {
+            opacity : 1;
+            transition : opacity 500ms;
+        }
+        opacity : 0;
+        transition : opacity 500ms;
+        .cover {
+            display : none;
+            position : absolute;
+            top: 0;
+            right : 0;
+            left : 0;
+            bottom : 0;
+            background: rgba(255, 255, 255, 0.6);
+        }
+        img {
+            display : block;
+            margin : 0 auto;
+            position: absolute;
+            z-index: 1;
+        }
+    }
+    div, p {
+        // margin-bottom : 1em;
+    }
+    p {
+        // max-width : 350px;
+    }
+
+    a[rel="license"] {
+        background : none;
+    }
+    .dramaweb {
+        td:first-of-type, .heading {
+            @include small-caps();
+            font-size: 0.8em;
+            color : $primarycolor;
+            margin-bottom: 0;
+            
+        }
+        td:first-of-type {
+            // text-align: right;
+            padding-right : 1em;
+        }
+
+        .history p:first-child {
+            margin-top: 0;
+        }
+    }
+    .sourcedesc {
+        margin-top : 0;
+        margin-bottom : 1em;
+        
+        font-size : 0.9em;
+        line-height : 1.35;
+
+
+        p {
+            margin: 0;
+        }
+        p {
+            text-indent: 1.5em;
+        }
+        p:first-of-type {
+            text-indent: 0;
+        }
+
+        h3 {
+            margin-top : 2em;
+        }
+
+        h3 + p {
+            text-indent : 0;
+        }
+
+    }
+    .sourcedescauthor {
+        font-size : 0.9em;
+        margin-bottom : 2em;
+        font-style: italic;
+        
+    }
+
+    // h3 {
+    //     margin : 0;
+    //     line-height : inherit;
+    //     &.author {
+    //         // font-size : 1.3em;
+    //         margin-bottom : 1em;
+    //         text-transform: uppercase;
+    //         a {
+    //             color : $primarycolor;
+    //         }
+    //     }
+    //     &.title {
+    //         margin-bottom : 2em;
+    //         max-width: 400px;
+    //         font-size: 1.2em;
+    //     }
+    // }
+    .mediatypes,.mediatypes_also {
+        margin-bottom : 0;
+        // text-transform: uppercase;
+        @include small-caps();
+        font-size : 0.8em;
+        // color : $primarycolor;
+        a {
+            color : $primarycolor;
+        }
+        .size {
+            color: $textcolor;
+        }
+        &.larger {
+            font-size : 0.9em;
+        }
+    }
+    .provenance {
+        margin : 2em 0;
+        font-size : 0.8em;
+
+        .logo[src$='dramawebben_svart.svg'] {
+            height : 70px;
+            margin: -19px -26px 0 -16px;
+        }
+        
+        display : flex;
+        align-items: center;
+
+        & > * {
+        }
+
+        > a {
+            display : block;
+            margin-right : 30px;
+            flex : 0 1 auto;
+        }
+        > p {
+            flex : 1 1 0;
+
+            // width : 250px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+    }
+    .toggle {
+        display : block;
+        margin-top : 1em;            
+    }
+    .license {
+        margin-bottom : 2em;
+        font-size : 0.9em;
+    }
+    .errata {
+        font-size : 0.8em;
+        .header {
+            max-width : initial;
+            @include small-caps();
+            margin-bottom : 0.5em;
+        }
+    }
+    .errata_table {
+        td {
+            padding-right : 3em;
+        }
+    }
+
+
+    .lower_cover {
+        border: thin #999 solid;
+    }
+}
+
+
 $partnav-width : 170px;
 
 .page-reading {
@@ -5144,9 +5443,11 @@ grundform-clean {
     }
     .open .dropdown-menu {
         opacity : 1;
+        left : 0;
     }
     .dropdown-menu {
         display : block;
+        left : -9999px;
         opacity : 0;
         transition: opacity 200ms;
         min-width : 350px;

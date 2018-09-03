@@ -239,6 +239,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     s.show_large = false
     s.show_more = true
 
+    if $location.search().dw
+        s.isDramaweb = true
+
     s.normalizeAuthor = $filter('normalizeAuthor')
 
     s.titleSort = util.titleSort
@@ -1203,6 +1206,10 @@ littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $windo
                         url : "/presentationer"
                         typeLabel : "Gå till sidan"
                     ,
+                        label: "Dramawebben"
+                        url : "/dramawebben"
+                        typeLabel : "Gå till sidan"
+                    ,
                         label: "Nytillkommet"
                         url : "/nytt"
                         typeLabel : "Gå till sidan"
@@ -1358,6 +1365,8 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
                 provenance: provtmpl
             })
 
+        s.dramaweb = new Dramaweb(s.workinfo.dramawebben) if s.workinfo.dramawebben
+
 
 
 
@@ -1416,6 +1425,53 @@ littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, 
         s.mediatype = s.workinfo.mediatypes[0]
     authors.then ([authorData, authorById]) ->
         s.authorById = authorById
+
+
+    class Dramaweb
+        constructor: (data) ->
+            order =  [
+                 "first_staged"
+                 "number_of_pages"
+                 "number_of_acts"
+                 "number_of_roles"
+                 "male_roles"
+                 "female_roles"
+                 "other_roles"
+             ]
+            @roles = data.roles
+            @history = data.history
+            tableData = _.omit data, "legacy_url", "roles", "history"
+            @orderedData = _.orderBy(_.toPairs(tableData), (pair) -> order.indexOf(pair[0]))
+
+        
+        format: (key) ->
+            {
+                'roles': (val) -> val.join("<br>")
+            }[key] or (val) -> val.toString()
+
+        getLabel : (key) ->
+            {
+                roles: "Rollista"
+                "first_staged" : "Urpremiär"
+                "number_of_roles" : "Antal (totalt)"
+                "male_roles" : "Antal (män)"
+                "female_roles" : "Antal (kvinnor)"
+                "other_roles" : "Antal (övriga)"
+                "number_of_pages": "Antal sidor"
+                "number_of_roles" : "Antal roller"
+                "number_of_acts" : "Antal akter"
+                "history" : "Uppsättningshistorik",
+
+
+
+            }[key] or key
+
+        # has_key
+
+    
+    
+
+
 
 littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $timeout, $modal, util, $window) ->
     s = $scope

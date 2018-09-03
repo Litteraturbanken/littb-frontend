@@ -1,6 +1,7 @@
 <meta-desc>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</meta-desc>
 <page-title>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</page-title>
-<img ng-if="!slaMode" bkg-img class="no-gradient" src="../img/forf2_bkg.jpg"></img>
+<img ng-if="!slaMode && !isDramaweb" bkg-img class="no-gradient" src="../img/forf2_bkg.jpg"></img>
+<img ng-if="isDramaweb" bkg-img class="no-gradient" src="../img/dramawebben_fade.jpg"></img>
 <!-- <img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img> -->
 
 <!-- <img ng-if="slaMode && showpage != 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img> -->
@@ -11,6 +12,7 @@
     </div>
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
     <h1>{{authorInfo.full_name}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
+
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/forfattare/{{author}}">Introduktion</a></li>

@@ -134,14 +134,14 @@
                 </div>
                 <table ng-if="listType == 'pjäser'" class="contenttable">
                     <tr ng-repeat="row in getFilteredRows()" >
-                        <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
+                        <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}?dw" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
                         </td>
                         <td class="title"><a href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{row.title_id}}/{{row.mediatype}}">{{row.shorttitle ||  row.title}}</a></td>
                     </tr>
                 </table>
                 <table ng-if="listType == 'författare'" class="contenttable authors">
                     <tr ng-repeat="author in authorData | filter:authorFilter">
-                        <td class="author"><a ng-href="/forfattare/{{::author.author_id}}" ng-bind-html="::getAuthor(author) | trust" ></a>
+                        <td class="author"><a ng-href="/forfattare/{{::author.author_id}}?dw" ng-bind-html="::getAuthor(author) | trust" ></a>
                         </td>
                         <td class="">{{author | authorYear}}</td>
                     </tr>
