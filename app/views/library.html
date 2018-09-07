@@ -34,7 +34,12 @@
                     </select>
                 </div>
                 <div class="row title_select_container">
-                    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Om ett författarskap'}" ng-model="filters.about_authors" data-placeholder="Om ett författarskap" >
+                    <select multiple class="filter_select about_select"
+                            ui-select2="{placeholder: 'Om ett författarskap'}" 
+                            ng-model="about_authors_filter" 
+                            data-placeholder="Om ett författarskap" 
+                            ng-change="onAboutAuthorChange($event)">
+
                         <option value=""></option>
                         <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
                     </select>
@@ -44,7 +49,7 @@
 
                 <div ng-show="show_more">
                     <div class="row title_select_container">
-                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="selectedKeywords" data-placeholder="Utgivningsformat" >
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.mediatype" data-placeholder="Utgivningsformat" >
                             <option value=""></option>
                             <option value="etext">Etext</option>
                             <option value="faksimil">Faksimil</option>

@@ -371,7 +371,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         if author
             author = "/" + author
         if aboutAuthors
-            params.about_authors = true
+            params.about_author = true
         if partial_string
             params.partial_string = true
         if getAll
@@ -664,6 +664,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             include : "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben"
             text_filter: {'provenance.library': "Dramawebben"}
             sort_field: "sortkey|asc"
+            show_all: true
             to: 10000
 
         # if include

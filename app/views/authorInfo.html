@@ -1,7 +1,7 @@
 <meta-desc>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</meta-desc>
 <page-title>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</page-title>
 <img ng-if="!slaMode && !isDramaweb" bkg-img class="no-gradient" src="../img/forf2_bkg.jpg"></img>
-<img ng-if="isDramaweb" bkg-img class="no-gradient" src="../img/dramawebben_fade.jpg"></img>
+<img ng-if="isDramaweb" bkg-img class="no-gradient" src="../img/dramawebben_fade_more.jpg"></img>
 <!-- <img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img> -->
 
 <!-- <img ng-if="slaMode && showpage != 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img> -->
@@ -16,7 +16,7 @@
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/forfattare/{{author}}">Introduktion</a></li>
-        <li ng-class="{active : showpage == 'titlar'}"><a href="/forfattare/{{author}}/titlar">Verk</a></li>
+        <li ng-class="{active : showpage == 'titlar'}"><a href="/forfattare/{{author}}/titlar{{isDramaweb ? '?dw' : ''}}">Verk</a></li>
         <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/forfattare/{{author}}/presentation">Presentation</a></li>
         <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/forfattare/{{author}}/las-mer">Läs mer</a></li>
@@ -28,8 +28,8 @@
         <div ng-switch-when="introduktion">
             <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div class="introtext content" ng-class="{show_more: show_more}">
-                <div ng-bind-html="authorInfo.intro | trust"></div>
-                <div class="introauthor"><em>{{authorsById[normalizeAuthor(authorInfo.intro_author)].full_name}}</em></div>
+                <div ng-bind-html="getIntro() | trust"></div>
+                <div class="introauthor"><em>{{authorsById[normalizeAuthor(getIntroAuthor())].full_name}}</em></div>
 
 
                 <div class="source" ng-if="authorInfo.sources">
