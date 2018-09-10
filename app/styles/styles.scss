@@ -3426,7 +3426,25 @@ $partnav-width : 170px;
                         color : black;
                     }
                 }
-
+                .fa-caret-right {
+                    transition: all 200ms;
+                    vertical-align: middle;
+                    margin-right: 2px;
+                }
+                &.show_more {
+                    .fa-caret-right {
+                        transform : rotate(90deg);
+                    }
+                }
+            }
+            .more_container {
+                max-height : 0;
+                overflow-y: hidden;
+                overflow-x: visible;
+                transition: max-height 200ms;
+                &.show_more {
+                    max-height : 200px;
+                }
             }
         }
 

@@ -45,10 +45,10 @@
                     </select>
                 </div>
                 
-                <div class="row more"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-down"></i> Visa fler inställningar </a></div>
+                <div class="row more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
 
-                <div ng-show="show_more">
-                    <div class="row title_select_container">
+                <div class="row more_container" ng-class="{show_more : show_more}">
+                    <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
                             <option value=""></option>
                             <option value="mediatype:etext">Etext</option>
@@ -57,7 +57,7 @@
                             <option value="mediatype:pdf">PDF</option>
                         </select>
                     </div>
-                    <div class="row title_select_container">
+                    <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
                             <option value=""></option>
                             <option value="modernized:true">Moderniserat språk</option>
