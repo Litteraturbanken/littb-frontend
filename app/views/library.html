@@ -49,21 +49,26 @@
 
                 <div ng-show="show_more">
                     <div class="row title_select_container">
-                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.mediatype" data-placeholder="Utgivningsformat" >
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
                             <option value=""></option>
-                            <option value="etext">Etext</option>
-                            <option value="faksimil">Faksimil</option>
-                            <option value="epub">Epub</option>
-                            <option value="pdf">PDF</option>
+                            <option value="mediatype:etext">Etext</option>
+                            <option value="mediatype:faksimil">Faksimil</option>
+                            <option value="has_epub:true">Epub</option>
+                            <option value="mediatype:pdf">PDF</option>
                         </select>
                     </div>
                     <div class="row title_select_container">
-                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.modernized" data-placeholder="Modernisering …">
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
                             <option value=""></option>
                             <option value="modernized:true">Moderniserat språk</option>
                             <option value="modernized:false">Ej moderniserat språk</option>
                             <option value="proofread:true">Korrekturläst</option>
                             <option value="proofread:false">Ej korrekturläst</option>
+                            <option value="language:swe">Svenska</option>
+                            <option value="language:eng">Engelska</option>
+                            <option value="language:deu">Tyska</option>
+                            <option value="language:fra">Franska</option>
+                            <option value="language:lat">Latin</option>
                             <!-- <option value="">Skrivet av kvinnor</option>
                             <option value="">Skrivet av män</option> -->
 
@@ -103,32 +108,6 @@
 
         </form>
         
-
-        <!-- <div class="mediatype_opts">
-            
-            <ul>
-                <li>
-                    <span ng-show="mediatypeObj.etext" >✓</span>
-                    <a ng-click="mediatypeObj.etext = !mediatypeObj.etext">Etext</a>
-                </li>
-                <li>
-                    <span ng-show="mediatypeObj.faksimil" >✓</span>
-                    <a ng-click="mediatypeObj.faksimil = !mediatypeObj.faksimil">Faksimil</a>
-                </li>
-                <li>
-                    <span ng-show="mediatypeObj.epub" >✓</span>
-                    <a ng-click="mediatypeObj.epub = !mediatypeObj.epub">Epub</a>
-                </li>
-                <li>
-                    <span ng-show="mediatypeObj.pdf" >✓</span>
-                    <a ng-click="mediatypeObj.pdf = !mediatypeObj.pdf">PDF</a>
-                </li>
-            </ul>
-        </div> -->
-
-    
-
-    
         <div class="row box_container">
             
             <div class="col-lg-4 box author">
@@ -232,12 +211,12 @@
                             <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
                         </li>
 
-                        <li ng-show="listVisibleTitles() && !(listVisibleTitles() | filter:mediatypeFilter).length">
+                        <li ng-show="!listVisibleTitles().length">
                             Inga träffar. 
                         </li>
                         <!-- orderBy | 'sortkey' -->
                         <li class="link" 
-                            ng-repeat="row in listVisibleTitles() | filter:mediatypeFilter | limitTo: rowLimit" 
+                            ng-repeat="row in listVisibleTitles() | limitTo: rowLimit" 
                             on-finish-render="titleRender()"
                             ng-class="{'first' : $first}"
                             >
@@ -279,11 +258,11 @@
                         <li class="part_header" ng-hide="titleSearching || showInitial">
                             Dikter, noveller, essäer, etc.
                         </li>
-                        <li class="" ng-show="all_titles && !(all_titles  | filter:mediatypeFilter).length">
+                        <li class="" ng-show="all_titles">
                             Inga träffar.
                         </li>
                     
-                        <li ng-repeat="row in all_titles | filter:mediatypeFilter | orderBy:'sortkey'" class="parts" ng-class="{first_part : $first}">
+                        <li ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
                     
                             <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500">
                                 <span class="title">

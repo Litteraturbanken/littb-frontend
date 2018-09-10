@@ -10,56 +10,12 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.filters = _.omitBy {
         'main_author.gender': $location.search()['kön']
         keywords : $location.search()['keywords']?.split(",")
+        languages : $location.search()['languages']?.split(",")
+        mediatypes : $location.search()['mediatypes']?.split(",")
     }, _.isNil
 
 
     s.normalizeAuthor = $filter('normalizeAuthor')
-
-    # s.filterOpts =  [
-    #     {
-    #         label: 'Visa <span class="sc">moderniserade</span> texter',
-    #         param: ["modernized", true],
-    #         selected: false
-    #         group : 0
-    #         key : "is_modernized"
-    #     }
-    #     {
-    #         label: 'Visa <span class="sc">ej moderniserade</span> texter',
-    #         param: ["modernized", false],
-    #         selected: false
-    #         group : 0
-    #         key : "not_modernized"
-    #     }
-    #     {
-    #         label: 'Visa <span class="sc">korrekturlästa</span> texter',
-    #         param: ["proofread", true],
-    #         selected: false
-    #         group : 1
-    #         key : "is_proofread"
-    #     }
-    #     {
-    #         label: 'Visa <span class="sc">ej korrekturlästa</span> texter',
-    #         param: ["proofread", false],
-    #         selected: false
-    #         group : 1
-    #         key : "not_proofread"
-    #     }
-    #     {
-    #         label: 'Visa texter skrivna av <span class="sc">kvinnor</span>',
-    #         param: ["gender", "female"],
-    #         selected: false
-    #         group : 2
-    #         key : "gender_female"
-    #     }
-    #     {
-    #         label: 'Visa texter skrivna av <span class="sc">män</span>',
-    #         param: ["gender", "male"],
-    #         selected: false
-    #         group : 2
-    #         key : "gender_male"
-    #     }
-
-    # ]
 
     s.getTitleTooltip = (attrs) ->
         unless attrs then return
@@ -117,23 +73,6 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.all_titles = null
         s.audio_list = null
 
-    s.mediatypeObj = 
-        etext : if $location.search().ej_etext then false else true
-        faksimil : if $location.search().ej_faksimil then false else true
-        epub : if $location.search().ej_epub then false else true
-        pdf : if $location.search().ej_pdf then false else true
-
-    s.mediatypeFilter = (row) ->
-        # return true
-        # c.log "row.mediatype", row.mediatype
-        # s.mediatypeObj
-        if row.isHeader then return true
-        _.some _.map row.mediatypes, (mtObj) -> 
-            s.mediatypeObj[mtObj.label]
-        
-
-    # s.titleFilter = (row) ->
-    #     row.title_path.split("/").length > 1
 
     s.hasMediatype = (titleobj, mediatype) ->
         mediatype in (_.map titleobj.mediatypes, "label")
@@ -252,18 +191,24 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
           "about_authors": [
             "StrindbergA"
           ],
-          "modernized": [
+          "languages" : {
             "modernized:true",
-            "proofread:true"
-          ],
-          "mediatype" : "etext"
+            "proofread:true",
+            "language:deu"
+          }
+          "mediatypes" : [
+            'has_epub:true'
+          ]
         }
+        kwList = _.values(s.filters.keywords).concat(_.values(s.filters.languages), _.values(s.filters.mediatypes))
         text_filter = {}
-        if s.filters.keywords
-            for kw in s.filters.keywords
-                [key, val] = kw.split(":")
-                text_filter[key] = val
-        return _.extend s.filters, text_filter
+        for kw in kwList
+            [key, val] = kw.split(":")
+            if text_filter[key]
+                text_filter[key].push(val)
+            else
+                text_filter[key] = [val]
+        return _.extend _.omit(s.filters, "keywords", "languages", "mediatypes"), text_filter
 
     fetchWorks = () ->
         s.titleSearching = true
@@ -386,30 +331,28 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             # scope_name : "rowfilter"
             replace : false
         ,
-            key : "ej_etext"
-            expr : "!mediatypeObj.etext"
-            replace : false
-        ,
-            key : "ej_faksimil"
-            expr : "!mediatypeObj.faksimil"
-            replace : false
-        ,
-            key : "ej_epub"
-            expr : "!mediatypeObj.epub"
-            replace : false
-        ,
-            key : "ej_pdf"
-            expr : "!mediatypeObj.pdf"
-            replace : false
-        ,
             key : "nytillkommet"
             scope_name : "showRecent"
         ,
             key : "kön",
             expr: "filters['main_author.gender']"
         ,
+            key : "languages",
+            expr: "filters.languages",
+            val_in : (val) ->
+                val?.split(",")
+            val_out : (val) ->
+                val?.join(",")
+        ,
             key : "keywords"
             expr : "filters.keywords"
+            val_in : (val) ->
+                val?.split(",")
+            val_out : (val) ->
+                val?.join(",")
+        ,
+            key : "mediatypes"
+            expr : "filters.mediatypes"
             val_in : (val) ->
                 val?.split(",")
             val_out : (val) ->

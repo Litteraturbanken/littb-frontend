@@ -1238,19 +1238,9 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
     s.onRadioClick = (newType) ->
         c.log "onRadioClick", s.listType
         s.listType = newType
-    
+
     s.listType = 'pjäser'
-    s.filters = {
-        gender : "",
-        filterTxt : "",
-        female_roles : [0, 30]
-        male_roles : [0, 30]
-        other_roles : [0, 30]
-        number_of_acts : [0, 30]
-        number_of_pages : [0, 30]
-        number_of_roles : [0, 30]
-        isChildrensPlay : false
-    }
+
     s.formatInterval = ([from, width]) ->
         return "#{from}–#{width + from}"
 
@@ -1308,7 +1298,7 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
                     [from, to] = value
                     from = from or 0
                     to = to or Infinity
-                    if not (item.dramawebben?.hasOwnProperty key) then return false
+                    if not (item.dramawebben?.hasOwnProperty key) then continue
                     n = Number(item.dramawebben[key])
                     if not (from <= n <= to ) then return false
 
@@ -1317,9 +1307,34 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         return ret
                 
 
-
     backend.getDramawebTitles().then (data) ->
         s.rows = data
+
+        s.filters = {
+            gender : "",
+            filterTxt : "",
+            female_roles : [Infinity, 0]
+            male_roles : [Infinity, 0]
+            other_roles : [Infinity, 0]
+            number_of_acts : [Infinity, 0]
+            number_of_pages : [Infinity, 0]
+            number_of_roles : [Infinity, 0]
+            isChildrensPlay : false
+        }
+
+        findMinMax = ["female_roles", "male_roles", "other_roles", "number_of_acts", "number_of_pages", "number_of_roles"]
+        for item in s.rows
+            if not item.dramawebben then continue
+            for key in findMinMax
+                n = Number(item.dramawebben[key])
+                if n < s.filters[key][0]
+                    s.filters[key][0] = n
+                if n > s.filters[key][1]
+                    s.filters[key][1] = n
+        s.sliderConf = {}
+        for key in findMinMax
+            [from, to] = s.filters[key]
+            s.sliderConf[key] = {floor : from, ceil: to}
 
         authors = _.map data, (row) ->
             row.authors[0]
