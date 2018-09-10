@@ -2888,22 +2888,18 @@ $partnav-width : 170px;
             vertical-align: top;
             // text-align: center;
             margin-left : 2em;
-            width : 300px;
 
             .author_img {
-                // margin-top : 3em;
-                // text-align : right;
                 opacity : 1;
-                // box-shadow: 4px 4px 6px 0px grey;
                 border: 1px solid grey;
-                // cursor : pointer;
                 margin-bottom : 0.5em;
                 margin-top: 5px;
-                width : 100%;
+                max-width : 300px;
             }
             figcaption {
                 font-size: 0.8em;
                 font-style : italic;
+                max-width : 300px;
             }
 
             
