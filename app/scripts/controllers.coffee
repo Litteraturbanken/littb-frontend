@@ -245,9 +245,9 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
     s.getIntro = () ->
         unless s.authorInfo then return
         if s.isDramaweb
-            s.authorInfo.dramawebben.intro or s.authorInfo.intro
+            return s.authorInfo.dramawebben.intro or s.authorInfo.intro
         else
-            s.authorInfo.intro
+            return s.authorInfo.intro
     
     s.getIntroAuthor = () ->
         unless s.authorInfo then return
@@ -483,7 +483,7 @@ littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $rou
             do (item) ->
                 item.def.then (data) -> item.data = data
 
-        if not s.authorInfo.intro
+        if not (s.authorInfo.intro or s.authorInfo.dramawebben?.intro)
             $location.url("/forfattare/#{s.author}/titlar").replace()
     , (data) ->
         c.log("authorinfo error", arguments)

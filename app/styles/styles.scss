@@ -5251,6 +5251,18 @@ grundform-clean {
     &.drama-dramasubpage {
         // background-image: url("../img/start_bkg_apr2018_light.jpg") !important;
         background-image: url("../img/dramawebben_fade.jpg") !important;
+
+        .page_content {
+            a {
+                transition : opacity 200ms;
+            }
+            a:hover {
+                color : white;
+                // opacity : 0.5;
+                mix-blend-mode: hard-light;
+            }
+
+        }
     }
     
     .logo_link_monogram {
@@ -5407,6 +5419,9 @@ grundform-clean {
         }
 
 
+    }
+    a {
+        transition : color 200ms;
     }
     a:hover {
         color : white;

@@ -401,6 +401,8 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
     getPopularAuthors : () ->
         $http(
             url : "#{STRIX_URL}/get_popular_authors"
+            params:
+                include: "surname,author_id,birth,death,full_name,pseudonym,name_for_index,dramawebben"
         ).then (response) ->
             return response.data.data
     getAuthorList : (include, exclude) ->

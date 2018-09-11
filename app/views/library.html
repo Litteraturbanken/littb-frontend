@@ -30,7 +30,6 @@
                         <option value='provenance.library:SVELITT'>Svenska litteratursällskapet (SE)</option>
                         <option value='keyword:Barnlitteratur'>Barnlitteratur</option>
                         <option value='keyword:sentpajorden'>Sent på jorden</option>
-                        <option value='publisher:Uddevalla'>Tryckort: Uddevalla</option>
                     </select>
                 </div>
                 <div class="row title_select_container">
@@ -75,37 +74,8 @@
 
                         </select>
                     </div>
-                    <!-- <ul class="col-lg-6 options">
-                        <li ng-repeat="opt in filterOpts">
-                            <span ng-click="opt_change(opt)" ng-style="{visibility: opt.selected ? 'visible' : 'hidden'}">✓</span>
-                            <a ng-click="opt_change(opt)" ng-bind-html="opt.label | trust"></a>
-                        </li>
-                    </ul> -->
                 </div>
             </div>
-            
-
-            <!-- <select class="col-md-4 filter_select keyword_select" multiple
-                    ui-select2 ng-model="selectedKeywords" data-placeholder="Sök eller filtrera" >
-                <option value=""></option>
-                <optgroup label="Samling">
-                    <option value='provenance.library:Dramawebben'>Dramawebben</option>
-                    <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
-                    <option value='provenance.library:SVELITT'>Svenska litteratursällskapet (SE)</option>
-                    <option value='publisher:Oslo'>Tryckort:Oslo</option>
-                </optgroup>
-                <optgroup label="Textformat">
-                    <option value="etext">Etext</option>
-                    <option value="faksimil">Faksimil</option>
-                    <option value="epub">Epub</option>
-                    <option value="pdf">PDF</option>
-                </optgroup>
-            </select> -->
-
-            
-
-
-
         </form>
         
         <div class="row box_container">
@@ -211,8 +181,8 @@
                             <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
                         </li>
 
-                        <li ng-show="!listVisibleTitles().length">
-                            Inga träffar. 
+                        <li ng-show="!titleSearching && !listVisibleTitles().length">
+                            Inga träffar verk. 
                         </li>
                         <!-- orderBy | 'sortkey' -->
                         <li class="link" 
@@ -258,8 +228,8 @@
                         <li class="part_header" ng-hide="titleSearching || showInitial">
                             Dikter, noveller, essäer, etc.
                         </li>
-                        <li class="" ng-show="all_titles">
-                            Inga träffar.
+                        <li class="" ng-show="!showInitial && !titleSearching && !all_titles.length">
+                            Inga träffar titlar.
                         </li>
                     
                         <li ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">

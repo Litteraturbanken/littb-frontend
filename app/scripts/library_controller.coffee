@@ -45,7 +45,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     aboutDef = $q.defer()
     s.onAboutAuthorChange = _.once ($event) ->
         console.log("$event", s.about_authors_filter, $location.search().about_authors_filter)
-        s.about_authors_filter = $location.search().about_authors_filter.split(",")
+        s.about_authors_filter = $location.search().about_authors_filter?.split(",") or []
         aboutDef.resolve()
 
     $q.all([aboutDef.promise, authors]).then () ->
@@ -62,16 +62,34 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             pseudonym = (_.map author.pseudonym, "full_name").join(" ")
             new RegExp(expr, "i").test((author.full_name + pseudonym))
 
+    getPopularTitles = () ->
+        s.titleSearching = true
+        def = backend.getTitles(null, "popularity|desc").then (titleArray) ->
+            s.titleSearching = false
+            s.popularTitles = titleArray
+            s.titleByPath = _.groupBy titleArray, (item) ->
+                return item.titlepath
+
+            return titleArray
+
     s.resetView = () ->
         s.showInitial = true
         s.showPopularAuth = true
         s.showPopular = true
         s.showRecent = false
 
+        s.filters = {}
+        s.about_authors_filter = []
+        $timeout () ->
+            $(".gender_select, .keyword_select, about_select").select2()
+        , 0
         s.filter = ""
         s.rowfilter = ""
         s.all_titles = null
         s.audio_list = null
+
+        if not s.popularTitles
+            getPopularTitles()
 
 
     s.hasMediatype = (titleobj, mediatype) ->
@@ -135,21 +153,24 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.getAuthorData = () ->
         if s.showPopularAuth
             return s.popularAuthors
+        # else
+        #     filters = getKeywordTextfilter()
+        #     if _.toPairs(filters).length
+        #         return _.filter s.authorData, (auth) ->
+        #             conds = []
+        #             if filters['provenance.library'] == "Dramawebben"
+        #                 conds.push(auth.dramaweb?)
+
+        #             if filters['main_author.gender']
+        #                 conds.push(auth.gender == filters['main_author.gender'])
+
+        #             return _.every conds
+
+        else if s.showInitial
+            return s.authorData
         else
-            filters = getKeywordTextfilter()
-            if _.toPairs(filters).length
-                return _.filter s.authorData, (auth) ->
-                    conds = []
-                    if filters['provenance.library'] == "Dramawebben"
-                        conds.push(auth.dramaweb?)
-
-                    if filters['main_author.gender']
-                        conds.push(auth.gender == filters['main_author.gender'])
-
-                    return _.every conds
-
-            else
-                s.authorData
+            # s.authorData
+            return s.currentAuthors
 
     s.searchTitle = () ->
         c.log "searchTitle", s.filter
@@ -157,15 +178,16 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         s.selectedTitle = null
         s.rowfilter = s.filter
         # if s.rowfilter or _.toPairs(getKeywordTextfilter()).length
-        if _.toPairs(getKeywordTextfilter()).length or s.about_authors_filter
+        if _.toPairs(getKeywordTextfilter()).length or $location.search().about_authors_filter
             s.showInitial = false
             s.showPopularAuth = false
             s.showPopular = false
             if s.rowfilter
                 fetchTitles()
-            fetchWorks()
-            if not (_.toPairs(getKeywordTextfilter()).length or s.about_authors_filter?.length)
                 fetchAudio()
+            fetchWorks()
+            # if not (_.toPairs(getKeywordTextfilter()).length or s.about_authors_filter?.length)
+            #     fetchAudio()
             if not isDev
                 backend.logLibrary(s.rowfilter)
         else
@@ -200,10 +222,15 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             'has_epub:true'
           ]
         }
+
+        c.log("gender filter", s.filters["gender"])
+        if s.filters["main_author.gender"] == "all"
+            delete s.filters["main_author.gender"]
         kwList = _.values(s.filters.keywords).concat(_.values(s.filters.languages), _.values(s.filters.mediatypes))
         text_filter = {}
         for kw in kwList
             [key, val] = kw.split(":")
+            if key == 'main_author.gender' and val == "all" then continue
             if text_filter[key]
                 text_filter[key].push(val)
             else
@@ -212,16 +239,25 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
 
     fetchWorks = () ->
         s.titleSearching = true
-        include = "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,authors.author_id,work_authors.author_id,authors.surname,authors.authortype,startpagename,has_epub"
+        include = "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub"
         # last true in args list is for partial_string match
         text_filter = getKeywordTextfilter()
         text_filter = null unless _.toPairs(text_filter).length
-        def = backend.getTitles(s.about_authors_filter?.join(","), null, s.filter, s.about_authors_filter?.length, false, s.rowfilter, include, text_filter).then (titleArray) ->
-            s.titleSearching = false
+        about_authors = $location.search().about_authors_filter
+        def = backend.getTitles(about_authors, null, s.filter, !!about_authors, false, s.rowfilter, include, text_filter).then (titleArray) ->
             s.titleArray = titleArray
+            authors.then () ->
+                s.currentAuthors = _(titleArray)
+                                        .map (work) -> (s.authorsById[auth.author_id] for auth in work.authors when not auth.type)
+                                        .flatten()
+                                        .uniqBy("author_id")
+                                        .sortBy("name_for_index")
+                                        .value()
+
             # s.titleGroups = titleGroups
             s.titleByPath = _.groupBy titleArray, (item) ->
                 return item.titlepath
+            s.titleSearching = false
 
             return titleArray
 
@@ -238,6 +274,8 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
     s.popClick = () ->
         s.showRecent = false
         s.showPopular = true
+        if not s.popularTitles
+            getPopularTitles()
 
     s.fetchRecent = () ->
         s.showPopular = false
@@ -251,6 +289,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
             [year, month, day] = datestr.split("-")
             return [Number(day), months[month - 1], year].join(" ")
 
+        s.titleSearching = true
         backend.getTitles(null, "imported|desc,sortfield|asc", null, false, true).then (titleArray) ->
             s.titleSearching = false
             # s.titleArray = titleArray
@@ -336,6 +375,7 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         ,
             key : "kön",
             expr: "filters['main_author.gender']"
+            default: "all"
         ,
             key : "languages",
             expr: "filters.languages",
@@ -375,12 +415,3 @@ littb.controller "libraryCtrl", ($scope, backend, util, $timeout, $location, aut
         else
             return s.titleArray
 
-    s.titleSearching = true
-
-    def = backend.getTitles(null, "popularity|desc").then (titleArray) ->
-        s.titleSearching = false
-        s.popularTitles = titleArray
-        s.titleByPath = _.groupBy titleArray, (item) ->
-            return item.titlepath
-
-        return titleArray

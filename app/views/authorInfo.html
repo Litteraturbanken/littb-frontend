@@ -15,7 +15,7 @@
 
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
-        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/forfattare/{{author}}">Introduktion</a></li>
+        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro || authorInfo.dramawebben.intro"><a href="/forfattare/{{author}}">Introduktion</a></li>
         <li ng-class="{active : showpage == 'titlar'}"><a href="/forfattare/{{author}}/titlar{{isDramaweb ? '?dw' : ''}}">Verk</a></li>
         <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/forfattare/{{author}}/presentation">Presentation</a></li>
         <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
