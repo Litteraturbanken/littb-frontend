@@ -579,7 +579,7 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
             auth = response.data.data
 
             # for auth in data
-            if auth.image
+            if auth.picture
                 auth.smallImage = "/red/forfattare/#{auth.author_id}/#{auth.author_id}_small.jpeg"
                 auth.largeImage = "/red/forfattare/#{auth.author_id}/#{auth.author_id}_large.jpeg"
 
