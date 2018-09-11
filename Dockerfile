@@ -1,12 +1,4 @@
-FROM node:boron
-
-#FROM mhart/alpine-node:8.9
-# RUN apk add --no-cache make gcc g++ python
-
-# RUN echo "deb http://http.debian.net/debian jessie-backports main" | \
-#       tee --append /etc/apt/sources.list.d/jessie-backports.list > /dev/null
-# RUN apt-get update
-# RUN apt-get install -y -t  jessie-backports openjdk-8-jdk
+FROM node:10.10-alpine
 
 # Create app directory
 WORKDIR /usr/src/app
