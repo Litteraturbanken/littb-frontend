@@ -30,7 +30,7 @@
                 <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" ng-change="onAuthChange(authorFilter)" >
                     <option value=""></option>
                     <option value="alla">Alla författare</option>
-                    <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
+                    <option value="{{author.author_id}}" ng-repeat="author in authorData">
                         <span class="lastname">{{author.surname}}</span>
                     </option>
                 </select> 

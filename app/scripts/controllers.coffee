@@ -844,6 +844,10 @@ littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $
     $q.all([authors, backend.getEpubAuthors()]).then ([[authorList, authorsById], epubAuthorIds]) ->
         s.authorsById = authorsById
         s.authorData = _.pick authorsById, epubAuthorIds
+        s.authorData = _.orderBy s.authorData, (auth) ->
+            transpose = (char) ->
+                {"Ä": "Å", "Å" : "Ä", "ä" : "å", å: "ä"}[char] or char
+            (_.map auth.name_for_index, transpose).join("")
         # s.authorIds = epubAuthorIds
 
 
