@@ -49,14 +49,26 @@ module.exports = {
         test: /\.(sa|sc|c)ss$/,
         use: [
           "style-loader", // creates style nodes from JS strings
-          "css-loader", // translates CSS into CommonJS
+          {
+            loader: "css-loader",
+            options: {
+              // sourceMap: process.env.NODE_ENV !== "production"
+            }
+          },
           {
             loader: "postcss-loader",
             options: {
               plugins: () => [require("autoprefixer")]
+              // sourceMap: process.env.NODE_ENV !== "production"
             }
           },
-          "sass-loader" // compiles Sass to CSS
+          {
+            loader: "sass-loader",
+            options: {
+              // sourceMap: process.env.NODE_ENV !== "production",
+              // sourceMapContents: false
+            }
+          }
         ]
       },
       {

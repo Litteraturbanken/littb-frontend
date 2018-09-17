@@ -5,6 +5,7 @@ const webpack = require("webpack")
 module.exports = merge(common, {
     // devtool: 'eval-source-map',
     // devtool: 'inline-source-map',
+    devtool: "source-map",
     mode: "development"
     // plugins: [
     //   new webpack.HotModuleReplacementPlugin()

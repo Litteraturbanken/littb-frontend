@@ -137,6 +137,14 @@
                         <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}?dw" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
                         </td>
                         <td class="title"><a href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{row.title_id}}/{{row.mediatype}}">{{row.shorttitle ||  row.title}}</a></td>
+
+                        <td>
+                            <ul>
+                                <li ng-repeat="mediatype in row.mediatypes">
+                                    <a class="sc" ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
+                                </li>
+                            </ul>
+                        </td>
                     </tr>
                 </table>
                 <table ng-if="listType == 'författare'" class="contenttable authors">
@@ -168,7 +176,13 @@
             </div>
         </div>
 
-
+    <script type="text/ng-template" id="sourceInfoModal.html">
+        <div class="about-modal modal-body">
+            <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
+            <ng-include src="sourceInfo"></ng-include>
+        </div>
+         
+    </script>
     
     
     </div>

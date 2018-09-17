@@ -38,7 +38,7 @@
 
         
         <div>
-            <div class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></div>
+            <div class="author" ng-bind-html="getValidAuthors() | formatAuthors:true | trust"></div>
             <a  class="title" ng-click="openModal()" 
                 tooltip="{{workinfo.title != workinfo.shorttitle ? workinfo.title : ''}}" 
                 tooltip-placement="{{workinfo.title.length > 200 ? 'left' : 'top'}}">
@@ -117,7 +117,7 @@
                         <div class="collapse-content">
                             <div class="header">
                                 <div class="auth">
-                                    Sök i <span class="author" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></span>
+                                    Sök i <span class="author" ng-bind-html="getValidAuthors() | formatAuthors:true | trust"></span>
                                 </div>
                                 <div class="title">{{workinfo.showtitle || workinfo.shorttitle || workinfo.title}}</div>
                             </div>
@@ -162,7 +162,7 @@
             <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
 
                 <div class="header">
-                    <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:authorById:true | trust"></h2>
+                    <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:true | trust"></h2>
                     <h2 class="title">
                         {{workinfo.title}} <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
                      </h2>

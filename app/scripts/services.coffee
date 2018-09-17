@@ -175,7 +175,7 @@ littb.factory "util", ($location) ->
     
 
 expandMediatypes = (works, mainMediatype) ->
-    order = ['etext', 'faksimil', 'epub', 'pdf']
+    order = ['etext', 'faksimil', 'epub', 'pdf', 'infopost']
     groups = _.groupBy works, (item) -> item.titlepath + item.lbworkid
     output = []
     getMainAuthor = (metadata) ->
@@ -187,6 +187,11 @@ expandMediatypes = (works, mainMediatype) ->
                 label : metadata.mediatype
                 url : "txt/#{metadata.lbworkid}/#{metadata.lbworkid}.pdf"
                 downloadable : true
+            }
+        else if metadata.mediatype == "infopost"
+            return {
+                label : metadata.mediatype
+                url : "/dramawebben/pjäser?om-boken&author_id=#{metadata.authors[0].author_id}&titlepath=#{metadata.titlepath}"
             }
         else
             return {
@@ -528,6 +533,24 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         
         return def.promise
 
+    getInfopost : (authorid, titlepath) ->
+        url = "#{STRIX_URL}/get_work_info"
+        return $http(
+            url : url
+            params: {
+                authorid: authorid
+                titlepath: titlepath
+            }
+        ).then( (response) ->
+            console.log("response.data.data", response.data.data)
+            data = response.data.data
+
+            data = expandMediatypes(data, "infopost")
+
+            console.log("data[0]", data[0])
+            return data[0]
+        )
+
 
     logPage : (pageix, lbworkid, mediatype) ->
         $http(
@@ -690,13 +713,10 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         #     params.to = 300
 
         return $http(
-            url : "#{STRIX_URL}/list_all/etext,faksimil"
+            url : "#{STRIX_URL}/list_all/etext,faksimil,pdf,infopost"
             params: params
         ).then (response) ->
-            c.log "data", response
             titles = response.data.data
-
-            c.log "dramawebben", _.filter(titles, "dramawebben")
 
             return expandMediatypes(titles)
 
@@ -951,7 +971,7 @@ littb.factory "authors", (backend, $q) ->
     
     def = $q.defer()
     # @promise = def.promise
-    backend.getAuthorList(null, exclude='intro,db_*,doc_type,corpus,es_id').then (authors) ->
+    backend.getAuthorList(null, exclude='intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources').then (authors) ->
         authorsById = _.fromPairs _.map authors, (item) ->
             [item.author_id, item]
         # c.log "authorsById", authorsById
