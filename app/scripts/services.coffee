@@ -93,6 +93,13 @@ littb.factory "util", ($location) ->
            else 
                return item
 
+    sortAuthors : (authorList) ->
+        _.orderBy authorList, (auth) ->
+            transpose = (char) ->
+                {"Ä": "Å", "Å" : "Ä", "ä" : "å", å: "ä"}[char] or char
+            (_.map auth.name_for_index.toUpperCase(), transpose).join("")
+
+
     setupHashComplex : (scope, config) ->
         # config = [
         #     expr : "sorttuple[0]"
@@ -686,11 +693,12 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
     getDramawebTitles: () ->
         params = 
             exclude : "text,parts,sourcedesc,pages,errata"
-            include : "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben"
+            include : "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben,keyword,startpagename"
             text_filter: {'provenance.library': "Dramawebben"}
             sort_field: "sortkey|asc"
             show_all: true
             to: 10000
+            author_aggregation: true
 
         # if include
         #     params.include = include
@@ -718,7 +726,10 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
         ).then (response) ->
             titles = response.data.data
 
-            return expandMediatypes(titles)
+            return {
+                authors: _.map response.data.author_aggregation, "author_id"
+                works : expandMediatypes(titles)
+            }
 
 
     searchLexicon : (str, id, useWildcard, doSearchId, strict) ->

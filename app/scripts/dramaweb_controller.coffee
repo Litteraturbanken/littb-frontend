@@ -1,8 +1,17 @@
-littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route, authors, $q, $filter, $rootElement, $modal) ->
+littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route, authors, $q, $filter, $rootElement, $modal, $timeout) ->
     s = $scope
 
     s.filters = {
-        isChildrensPlay : false
+        gender : $location.search().gender
+        filterTxt : $location.search().filterTxt
+        author : $location.search().author
+        female_roles : $location.search().female_roles?.split(",")
+        male_roles : $location.search().male_roles?.split(",")
+        other_roles : $location.search().other_roles?.split(",")
+        number_of_acts : $location.search().number_of_acts?.split(",")
+        number_of_pages : $location.search().number_of_pages?.split(",")
+        number_of_roles : $location.search().number_of_roles?.split(",")
+        isChildrensPlay : $location.search().barnlitteratur
     }
 
     updateRoute = () ->
@@ -15,9 +24,21 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         
     updateRoute()
     s.$on "$routeChangeError", (event, current, prev, rejection) ->
+        console.log("routeChangeError", event, current, prev, rejection)
         # _.extend s, current.pathParams
         updateRoute()
+    
 
+    s.filterDirty = {}
+    s.onDropdownToggle = (isOpen) ->
+        console.log("onDropdownToggle", isOpen)
+
+        if not isOpen and _.keys(s.filterDirty).length
+            for key in _.keys(s.filterDirty)
+                $location.search(key, s.filters[key].join(",")).replace()
+
+        if not isOpen
+            $location.search("barnlitteratur", s.filters.isChildrensPlay or null)
 
 
     util.setupHashComplex s,
@@ -27,6 +48,50 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
                 replace : false
                 default : "pjäser"
             ,
+                key : 'gender'
+                expr : "filters.gender"
+                default : "all"
+            ,
+                key : 'author'
+                expr : "filters.author"
+            ,
+                key : 'filterTxt'
+                expr: "filters.filterTxt"
+            # ,
+            #     key : 'filterDirty'
+            #     val_in : (val) -> val?.split(",")
+            #     val_out : (val) -> val?.join(",")
+            ,
+            #     key : "female_roles"
+            #     expr : "filters.female_roles"
+            #     val_in : (val) -> val.split(",")
+            #     val_out : (val) -> val.join(",")
+            # ,
+            #     key : "male_roles"
+            #     expr : "filters.male_roles"
+            #     val_in : (val) -> val.split(",")
+            #     val_out : (val) -> val.join(",")
+            # ,
+            #     key : "other_roles"
+            #     expr : "filters.other_roles"
+            #     val_in : (val) -> val.split(",")
+            #     val_out : (val) -> val.join(",")
+            # ,
+            #     key : "number_of_acts"
+            #     expr : "filters.number_of_acts"
+            #     val_in : (val) -> val.split(",")
+            #     val_out : (val) -> val.join(",")
+            # ,
+            #     key : "number_of_pages"
+            #     expr : "filters.number_of_pages"
+            #     val_in : (val) -> val.split(",")
+            #     val_out : (val) -> val.join(",")
+            # ,
+            #     key : "number_of_roles"
+            #     expr : "filters.number_of_roles"
+            #     val_in : (val) -> val.split(",")
+            #     val_out : (val) -> val.join(",")
+            # ,
                 key : "om-boken"
                 scope_name : "show_about"
                 default: "no"
@@ -83,6 +148,16 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
 
     }
 
+    s.onAuthorChange = _.once () ->
+        console.log("onAuthorChange", $location.search().author)
+        if $location.search().author
+            s.filters.author = $location.search().author
+        
+    s.onGenderChange = _.once () ->
+        console.log("$location.search().gender", $location.search().gender)
+        if $location.search().gender
+            s.filters.gender = $location.search().gender
+
     s.onRadioClick = (newType) ->
         c.log "onRadioClick", s.listType
         s.listType = newType
@@ -116,7 +191,7 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
 
         return true
 
-    s.getFilteredRows = () ->
+    s.getFilteredRows = _.throttle () ->
         ret = _.filter s.rows, (item) -> 
             # if not (_.filter item.authors, (auth) -> auth.gender == s.filters.gender).length
             #     # return false
@@ -139,56 +214,65 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
                     if not searchstr.match(str) then return false
 
             if s.filters.isChildrensPlay
-                if not ("Barnlitteratur" in (item.keyword? or [])) then return false
+                if not ("Barnlitteratur" in (item.keyword?.split(",") or [])) then return false
 
-            for [key, value] in _.toPairs(s.filters)
+            for key in _.keys(s.filterDirty)
+                # console.log("key", key)
+                value = s.filters[key]
                 if (_.isArray value) and value.length
                     [from, to] = value
                     from = from or 0
                     to = to or Infinity
-                    if not (item.dramawebben?.hasOwnProperty key) then continue
+                    if not (item.dramawebben?.hasOwnProperty key) then return false
+
                     n = Number(item.dramawebben[key])
                     if not (from <= n <= to ) then return false
 
             return true
 
         return ret
+    , 100
                 
-
     backend.getDramawebTitles().then (data) ->
-        s.rows = data
+        s.rows = data.works
+        authors.then () ->
+            s.authorData = _.map data.authors, (author_id) ->
+                s.authorsById[author_id]
+            s.authorData = util.sortAuthors(s.authorData)
+            
 
-        s.filters = {
-            gender : "",
-            filterTxt : "",
-            female_roles : [Infinity, 0]
-            male_roles : [Infinity, 0]
-            other_roles : [Infinity, 0]
-            number_of_acts : [Infinity, 0]
-            number_of_pages : [Infinity, 0]
-            number_of_roles : [Infinity, 0]
-            isChildrensPlay : false
-        }
+        # s.filters = _.extend s.filters, {
+        # }
 
         findMinMax = ["female_roles", "male_roles", "other_roles", "number_of_acts", "number_of_pages", "number_of_roles"]
+        s.filterDirty = _.fromPairs ([key, true] for key in findMinMax when $location.search()[key])
+        ranges = _.fromPairs _.map findMinMax, (key) -> [key, [Infinity, 0]]
         for item in s.rows
             if not item.dramawebben then continue
             for key in findMinMax
                 n = Number(item.dramawebben[key])
-                if n < s.filters[key][0]
-                    s.filters[key][0] = n
-                if n > s.filters[key][1]
-                    s.filters[key][1] = n
+                if n < ranges[key][0]
+                    ranges[key][0] = n
+                if n > ranges[key][1]
+                    ranges[key][1] = n
         s.sliderConf = {}
+        
         for key in findMinMax
-            [from, to] = s.filters[key]
-            s.sliderConf[key] = {floor : from, ceil: to}
+            [from, to] = ranges[key]
+            unless s.filters[key]
+                console.log("from, to", from, to)
+                s.filters[key] = [from, to]
+            s.sliderConf[key] = {
+                floor : from,
+                ceil: to,
+                onEnd : do (key, s) ->
+                    () -> 
+                        # safeApply(s, () ->
+                        $timeout( () ->
+                            s.filterDirty[key] = true
+                        , 0)
+                        # $location.search("ranges", s.filterDirty.join(",")).replace()
+                        # )
+            }
 
-        authors = _.map data, (row) ->
-            row.authors[0]
-
-        s.authorData = _.uniq authors, false, (item) ->
-            item.author_id
-
-        s.authorData = _.sortBy s.authorData, "name_for_index"
 
