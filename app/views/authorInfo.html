@@ -50,8 +50,8 @@
 
 
             <div class="portrait_container">
-                <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
-                <figcaption ng-bind-html="authorInfo.pictureinfo | trust"></figcaption>
+                <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{isDramaweb ? authorInfo.dramawebben.largeImage : authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
+                <figcaption ng-bind-html="(isDramaweb ? authorInfo.dramawebben.picture_info : authorInfo.pictureinfo) | trust"></figcaption>
                 <!-- <ul class="links">
                     <li><a href="/forfattare/{{author}}/titlar">Tillgängliga titlar</a></li>
                     <li><a href="/sok?forfattare=BenedictssonV">Sök i texterna</a></li>

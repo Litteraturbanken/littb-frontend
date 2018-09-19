@@ -619,6 +619,9 @@ littb.factory 'backend', ($http, $q, util, $timeout, $sce) ->
                 auth.smallImage = "/red/forfattare/#{auth.author_id}/#{auth.author_id}_small.jpeg"
                 auth.largeImage = "/red/forfattare/#{auth.author_id}/#{auth.author_id}_large.jpeg"
 
+            if auth.dramawebben?.picture
+                auth.dramawebben.largeImage = "/red/forfattare/#{auth.author_id}/#{auth.author_id}_dw_large.jpeg"
+
             return auth
         , (err) ->
             c.log "getAuthorInfo error", err
