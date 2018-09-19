@@ -149,7 +149,8 @@
                         <td>
                             <ul class="mediatypes">
                                 <li ng-repeat="mediatype in row.mediatypes">
-                                    <a class="sc" ng-href="{{mediatype.url + '?dw'}}">{{mediatype.label}}</a>
+                                    <a ng-if="mediatype.downloadable" class="sc" target="_self" download ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
+                                    <a ng-if="!mediatype.downloadable" class="sc" ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
                                 </li>
                             </ul>
                         </td>

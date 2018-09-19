@@ -254,7 +254,8 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         # }
 
         findMinMax = ["female_roles", "male_roles", "other_roles", "number_of_acts", "number_of_pages", "number_of_roles"]
-        s.filterDirty = _.fromPairs ([key, true] for key in findMinMax when $location.search()[key])
+        s.filterDirty = _.fromPairs _.map (_.intersection findMinMax, $location.search()), (key) -> [key, true]
+        # s.filterDirty = _.fromPairs ([key, true] for key in findMinMax when $location.search()[key])
         ranges = _.fromPairs _.map findMinMax, (key) -> [key, [Infinity, 0]]
         for item in s.rows
             if not item.dramawebben then continue
