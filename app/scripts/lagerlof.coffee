@@ -689,7 +689,7 @@ littb.controller "textjamforelseCtrl", ($scope, $animate, $rootScope, $location,
         # add the ordered wit titles as column headers
         for wit, i in orderedWits
             title = s.witTitles[wit]
-            data += '<h3 id="' + ('w'+i) + '">' +
+            data += "<h3 id='w#{i}'>" +
                 title + 
                 ' <span class=\"wit\">(' + 
                 ( if i == 0 then 'Grundutgåva' else ('w'+i) ) +
