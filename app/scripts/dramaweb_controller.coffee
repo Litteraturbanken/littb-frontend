@@ -4,6 +4,7 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
     s.filters = {
         gender : $location.search().gender
         filterTxt : $location.search().filterTxt
+        mediatype : $location.search().mediatype
         author : $location.search().author
         female_roles : $location.search().female_roles?.split(",")
         male_roles : $location.search().male_roles?.split(",")
@@ -40,7 +41,9 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
         if not isOpen
             $location.search("barnlitteratur", s.filters.isChildrensPlay or null)
 
-
+    s.onMediatypeChange = () ->
+        if s.filters.mediatype == "all"
+            s.filters.mediatype = ""
     util.setupHashComplex s,
             [
                 key : "visa"
@@ -57,6 +60,9 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
             ,
                 key : 'filterTxt'
                 expr: "filters.filterTxt"
+            ,
+                key : 'mediatype'
+                expr: "filters.mediatype"
             # ,
             #     key : 'filterDirty'
             #     val_in : (val) -> val?.split(",")
@@ -177,19 +183,19 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
 
         _.compact(["<span class='sc'>#{last}</span>", first]).join ","
 
-    # s.authorFilter = (author) ->
-    #     if s.filters.gender and s.filters.gender != "all"
-    #         return s.filters.gender == author.gender
+    s.authorFilter = (author) ->
+        if s.filters.gender and s.filters.gender != "all"
+            return s.filters.gender == author.gender
 
 
-    #     if s.filters.filterTxt
-    #         searchstr = [author.full_name, author.birth.plain, author.death.plain]
-    #                     .join(" ").toLowerCase()
-    #         for str in s.filters.filterTxt.split(" ")
-    #             if not searchstr.match(str) then return false
+        if s.filters.filterTxt
+            searchstr = [author.full_name, author.birth.plain, author.death.plain]
+                        .join(" ").toLowerCase()
+            for str in s.filters.filterTxt.split(" ")
+                if not searchstr.match(str) then return false
 
 
-    #     return true
+        return true
 
     s.getFilteredRows = _.throttle () ->
         ret = _.filter s.rows, (item) -> 
@@ -204,6 +210,9 @@ littb.controller "dramawebCtrl", ($scope, $location, $rootScope, backend, $route
                 if item.authors[0].author_id != s.filters.author then return false
 
 
+            if s.filters.mediatype and s.filters.mediatype != "all" 
+                unless (_.filter item.mediatypes, (mt) -> mt.label == s.filters.mediatype).length
+                    return false
             if s.filters.filterTxt 
                 fullnames = _.map item.authors, (author) ->
                     [author.full_name, author.birth.plain, author.death.plain].join(" ")
