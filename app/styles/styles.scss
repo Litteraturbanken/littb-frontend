@@ -4935,10 +4935,10 @@ grundform-clean {
             margin-top: 10px;
             font-size: 2.10em;
             line-height: .8;
-            font-variant: small-caps;
-            text-transform: lowercase;
             position: relative;
             left: 172px;
+            @include small-caps();
+            color : white;
 
 
             -webkit-font-smoothing: antialiased;
