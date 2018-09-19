@@ -5094,6 +5094,8 @@ grundform-clean {
         }
 
     }
+    .controls {
+        
     .open .dropdown-menu {
         opacity : 1;
         left : 0;
@@ -5131,6 +5133,7 @@ grundform-clean {
                 background-color: $primarycolor; 
             }
         }
+    }
 
         input[type=text] {
             display : none;

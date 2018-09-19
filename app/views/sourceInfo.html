@@ -28,7 +28,7 @@
                     eller <a class="sc" ng-href="{{(workinfo | readMediatypes)[1].url}}">{{(workinfo | readMediatypes)[1].label}}</a>
                 </span>
             </div>
-            <div ng-show="(workinfo | downloadMediatypes).length" class="mediatypes_also">
+            <div ng-show="(workinfo | downloadMediatypes).length" class="mediatypes_also" ng-class="{larger : workinfo.workintro}"> 
                 Ladda ner 
                 <a class="sc" ng-href="{{(workinfo | downloadMediatypes)[0].url}}" target="_self" download
                 >{{(workinfo | downloadMediatypes)[0].label}}</a> 
