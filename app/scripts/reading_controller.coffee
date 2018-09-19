@@ -3,6 +3,8 @@ littb.controller "readingCtrl", ($scope, backend, $routeParams, $route, $locatio
     s.isEditor = false
     s._ = {humanize : _.humanize}
 
+    s.isDramaweb = $location.hash() == "dw"    
+
     $window.scrollTo(0, 0)
     t = $.now()
 

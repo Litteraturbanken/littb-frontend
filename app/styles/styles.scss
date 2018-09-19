@@ -1973,6 +1973,10 @@ $partnav-width : 170px;
     @import "focus_mode";
     #rightCorridor {
         display : inline-block;
+        .dw_logo {
+            margin-left: -26px;
+            opacity : 0.8;
+        }
     }
     // height : 100%;
     // .center .graphicimg {

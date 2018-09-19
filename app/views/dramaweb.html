@@ -139,19 +139,19 @@
                     <tr ng-repeat="row in getFilteredRows()" >
                         <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}?dw" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
                         </td>
-                        <td class="title"><a href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{row.title_id}}/{{row.mediatype}}?om-boken">{{row.shorttitle ||  row.title}}</a></td>
+                        <td class="title"><a href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{row.title_id}}/{{row.mediatype}}?om-boken&dw">{{row.shorttitle ||  row.title}}</a></td>
 
                         <td>
                             <ul class="mediatypes">
                                 <li ng-repeat="mediatype in row.mediatypes">
-                                    <a class="sc" ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
+                                    <a class="sc" ng-href="{{mediatype.url + '?dw'}}">{{mediatype.label}}</a>
                                 </li>
                             </ul>
                         </td>
                     </tr>
                 </table>
                 <table ng-if="listType == 'författare'" class="contenttable authors">
-                    <tr ng-repeat="author in authorData | filter:authorFilter">
+                    <tr ng-repeat="author in authorData">
                         <td class="author"><a ng-href="/forfattare/{{::author.author_id}}?dw" ng-bind-html="::getAuthor(author) | trust" ></a>
                         </td>
                         <td class="">{{author | authorYear}}</td>
