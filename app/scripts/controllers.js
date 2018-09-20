@@ -1,1181 +1,1404 @@
-window.c = console ? log : _.noop
-littb = angular.module('littbApp')
+/*
+ * decaffeinate suggestions:
+ * DS101: Remove unnecessary use of Array.from
+ * DS102: Remove unnecessary code created because of implicit returns
+ * DS103: Rewrite code to no longer use __guard__
+ * DS201: Simplify complex destructure assignments
+ * DS205: Consider reworking code to avoid use of IIFEs
+ * DS207: Consider shorter variations of null checks
+ * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
+ */
+window.c = typeof console !== 'undefined' && console !== null ? console : {log : _.noop};
+const littb = angular.module('littbApp');
 
-window.detectIE = () ->
-    ua = window.navigator.userAgent
+window.detectIE = function() {
+    const ua = window.navigator.userAgent;
 
-    msie = ua.indexOf('MSIE ')
-    if (msie > 0)
-        # IE 10 or older => return version number
-        return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10)
+    const msie = ua.indexOf('MSIE ');
+    if (msie > 0) {
+        // IE 10 or older => return version number
+        return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
+    }
     
 
-    trident = ua.indexOf('Trident/')
-    if (trident > 0)
-        # IE 11 => return version number
-        rv = ua.indexOf('rv:')
-        return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10)
+    const trident = ua.indexOf('Trident/');
+    if (trident > 0) {
+        // IE 11 => return version number
+        const rv = ua.indexOf('rv:');
+        return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
+    }
     
 
-    edge = ua.indexOf('Edge/')
-    if (edge > 0)
-       # Edge (IE 12+) => return version number
-       return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10)
+    const edge = ua.indexOf('Edge/');
+    if (edge > 0) {
+       // Edge (IE 12+) => return version number
+       return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
+   }
     
 
-    # other browser
-    return false
+    // other browser
+    return false;
+};
 
 
 
-littb.filter "formatAuthors", () ->
-    (authorlist, makeLink, noHTML) ->
-        if not authorlist or not authorlist.length then return
+littb.filter("formatAuthors", () =>
+    function(authorlist, makeLink, noHTML) {
+        let et, strings;
+        if (!authorlist || !authorlist.length) { return; }
 
-        stringify = (auth) ->
-            suffix = {
-                editor : " <span class='authortype'>red.</span>"
-                translator : " <span class='authortype'>övers.</span>"
-                illustrator : " <span class='authortype'>ill.</span>"
+        const stringify = function(auth) {
+            let suffix = {
+                editor : " <span class='authortype'>red.</span>",
+                translator : " <span class='authortype'>övers.</span>",
+                illustrator : " <span class='authortype'>ill.</span>",
                 photographer : " <span class='authortype'>fotogr.</span>"
-                # scholar : " (red.)"
+                // scholar : " (red.)"
 
 
-            }[auth.type] or ""
-            if noHTML then suffix = $(suffix).text()
-            auth.full_name + suffix
+            }[auth.type] || "";
+            if (noHTML) { suffix = $(suffix).text(); }
+            return auth.full_name + suffix;
+        };
         
-        linkify = (auth) ->
-            $("<a>").attr "href", "/forfattare/#{auth.author_id}"
-                .html stringify auth
+        const linkify = auth =>
+            $("<a>").attr("href", `/forfattare/${auth.author_id}`)
+                .html(stringify(auth))
                 .outerHTML()
+        ;
 
-        if makeLink
-            strings = _.map authorlist, linkify
-        else
-            strings = _.map authorlist, stringify
+        if (makeLink) {
+            strings = _.map(authorlist, linkify);
+        } else {
+            strings = _.map(authorlist, stringify);
+        }
         
 
-        firsts = strings[...-1]
-        last = _.last strings
+        const firsts = strings.slice(0, -1);
+        const last = _.last(strings);
 
 
-        if noHTML
-            et = "&"
-        else
+        if (noHTML) {
+            et = "&";
+        } else {
             et = "<em class='font-normal'>&</em>"
-        if firsts.length then return "#{firsts.join(', ')} #{et} #{last}"
-        else return last
+        }
+        if (firsts.length) { return `${firsts.join(', ')} ${et} ${last}`;
+        } else { return last; }
+    }
+);
         
 
 
-littb.filter "downloadMediatypes", () ->
-    (obj) ->
-        (x for x in (obj?.mediatypes or []) when x.downloadable)
+littb.filter("downloadMediatypes", () =>
+    obj => (Array.from((obj != null ? obj.mediatypes : undefined) || [])).filter((x) => x.downloadable)
+);
 
-littb.filter "readMediatypes", () ->
-    read = ['etext', 'faksimil']
-    (obj) ->
-        (x for x in (obj?.mediatypes or []) when x.label in read)
+littb.filter("readMediatypes", function() {
+    const read = ['etext', 'faksimil'];
+    return obj => (Array.from((obj != null ? obj.mediatypes : undefined) || [])).filter((x) => Array.from(read).includes(x.label));
+});
 
 
         
 
-c.time = angular.noop
-c.timeEnd = angular.noop
+c.time = angular.noop;
+c.timeEnd = angular.noop;
 
-littb.filter "authorYear", () ->
-    (obj) ->
-        unless obj then return
-        isFalsy = (val) ->
-            not val or (val == "0000")
-        birth = obj.birth?.plain
-        death = obj.death?.plain
-        if (isFalsy birth) and (isFalsy death) then return ""
-        if isFalsy death then return "f. #{birth}"
-        if isFalsy birth then return "d. #{death}"
-        return "#{birth}-#{death}"
-
-
-littb.controller "startCtrl", ($scope, $location) ->
-
-    $scope.gotoTitle = (query) ->
-        unless query
-            url = "/titlar"
-        else
-            url = "/titlar?filter=#{query}&selectedLetter=#{query[0].toUpperCase()}"
-
-        $scope.goto url
+littb.filter("authorYear", () =>
+    function(obj) {
+        if (!obj) { return; }
+        const isFalsy = val => !val || (val === "0000");
+        const birth = obj.birth != null ? obj.birth.plain : undefined;
+        const death = obj.death != null ? obj.death.plain : undefined;
+        if ((isFalsy(birth)) && (isFalsy(death))) { return ""; }
+        if (isFalsy(death)) { return `f. ${birth}`; }
+        if (isFalsy(birth)) { return `d. ${death}`; }
+        return `${birth}-${death}`;
+    }
+);
 
 
+littb.controller("startCtrl", ($scope, $location) =>
 
-littb.controller "contactFormCtrl", ($scope, backend, $timeout, $location) ->
-    s = $scope
+    $scope.gotoTitle = function(query) {
+        let url;
+        if (!query) {
+            url = "/titlar";
+        } else {
+            url = `/titlar?filter=${query}&selectedLetter=${query[0].toUpperCase()}`;
+        }
 
-    fromSchool = $location.search().skola?
-    isSOL = $location.search().sol?
+        return $scope.goto(url);
+    }
+);
 
-    if isSOL
-        s.message = "[Ang. Översättarlexikon]\n\n"
 
-    s.showContact = false
-    s.showNewsletter = false
-    s.showError = false
 
-    done = () ->
-        $timeout( () ->
-            s.showContact = false
-            s.showNewsletter = false
+littb.controller("contactFormCtrl", function($scope, backend, $timeout, $location) {
+    const s = $scope;
+
+    const fromSchool = ($location.search().skola != null);
+    const isSOL = ($location.search().sol != null);
+
+    if (isSOL) {
+        s.message = "[Ang. Översättarlexikon]\n\n";
+    }
+
+    s.showContact = false;
+    s.showNewsletter = false;
+    s.showError = false;
+
+    const done = () =>
+        $timeout( function() {
+            s.showContact = false;
+            return s.showNewsletter = false;
+        }
         , 4000)
+    ;
 
-    err = () ->
-        s.showError = true
-        s.showContact = false
-        s.showNewsletter = false
+    const err = function() {
+        s.showError = true;
+        s.showContact = false;
+        s.showNewsletter = false;
 
-        $timeout( () ->
-            s.showError = false
-        , 4000)
+        return $timeout( () => s.showError = false
+        , 4000);
+    };
 
-    s.submitContactForm = () ->
-        if fromSchool
-            msg = "[skola] " + s.message
-        else
-            msg = s.message
-        # svenskt oversattarlexikon?
+    s.submitContactForm = function() {
+        let msg;
+        if (fromSchool) {
+            msg = `[skola] ${s.message}`;
+        } else {
+            msg = s.message;
+        }
+        // svenskt oversattarlexikon?
         
-        backend.submitContactForm(s.name, s.email, msg, isSOL).then( () ->
-            s.showContact = true
-            done()
+        return backend.submitContactForm(s.name, s.email, msg, isSOL).then( function() {
+            s.showContact = true;
+            return done();
+        }
         , err
-        )
-    s.subscribe = () ->
-        msg = s.newsletterEmail + " vill bli tillagd på utskickslistan."
-        backend.submitContactForm("Utskickslista", s.newsletterEmail, msg).then( () ->
-            s.showNewsletter = true
-            done()
+        );
+    };
+    return s.subscribe = function() {
+        const msg = s.newsletterEmail + " vill bli tillagd på utskickslistan.";
+        return backend.submitContactForm("Utskickslista", s.newsletterEmail, msg).then( function() {
+            s.showNewsletter = true;
+            return done();
+        }
         , err
-        )
+        );
+    };
+});
 
 
     
 
-littb.controller "statsCtrl", ($scope, backend) ->
-    s = $scope
+littb.controller("statsCtrl", function($scope, backend) {
+    const s = $scope;
 
 
 
 
-    backend.getStats().then (data) ->
-        s.statsData = data
+    backend.getStats().then(data => s.statsData = data);
 
-    backend.getTitles(null, "popularity|desc").then (titleArray) ->
-        s.titleList = titleArray
+    backend.getTitles(null, "popularity|desc").then(titleArray => s.titleList = titleArray);
 
+<<<<<<< HEAD
     backend.getEpub(30).then ({data, hits}) ->
         s.epubList = data
+=======
+    return backend.getEpub(30).then(titleArray => s.epubList = titleArray);
+});
+>>>>>>> decaffeinate: Convert app.coffee and 10 other files to JS
 
 
 
 
 
 
-littb.controller "biblinfoCtrl", ($scope, backend) ->
-    s = $scope
-    limit = true
-    s.showHit = 0
-    s.searching = false
-    s.wf = ""
+littb.controller("biblinfoCtrl", function($scope, backend) {
+    const s = $scope;
+    let limit = true;
+    s.showHit = 0;
+    s.searching = false;
+    s.wf = "";
 
-    s.showAll = () ->
-        limit = false
+    s.showAll = () => limit = false;
     
-    s.increment = () ->
-        limit = true
-        s.entries?[s.showHit + 1] and s.showHit++
-    s.decrement = () ->
-        limit = true
-        s.showHit and s.showHit--
+    s.increment = function() {
+        limit = true;
+        return (s.entries != null ? s.entries[s.showHit + 1] : undefined) && s.showHit++;
+    };
+    s.decrement = function() {
+        limit = true;
+        return s.showHit && s.showHit--;
+    };
 
-    s.getEntries = () ->
-        if limit
-            return [s.entries?[s.showHit]]
-        else 
-            s.entries
+    s.getEntries = function() {
+        if (limit) {
+            return [(s.entries != null ? s.entries[s.showHit] : undefined)];
+        } else { 
+            return s.entries;
+        }
+    };
 
-    s.getColumn1 = (entry) ->
-        pairs = _.toPairs entry
-        splitAt = Math.floor pairs.length / 2
-        _.fromPairs pairs[0..splitAt]
+    s.getColumn1 = function(entry) {
+        const pairs = _.toPairs(entry);
+        const splitAt = Math.floor(pairs.length / 2);
+        return _.fromPairs(pairs.slice(0, +splitAt + 1 || undefined));
+    };
 
-    s.getColumn2 = (entry) ->
-        pairs = _.toPairs entry
-        splitAt = Math.floor pairs.length / 2
-        _.fromPairs pairs[(splitAt + 1)..]
+    s.getColumn2 = function(entry) {
+        const pairs = _.toPairs(entry);
+        const splitAt = Math.floor(pairs.length / 2);
+        return _.fromPairs(pairs.slice((splitAt + 1)));
+    };
     
-    s.submit = () ->
-        names = ["manus", "tryckt_material", "annat_tryckt", "forskning"]
-        params = ("resurs=" + x for x in names when s[x])
-        wf = s.wf if wf
-        s.searching = true
+    s.submit = function() {
+        let wf;
+        const names = ["manus", "tryckt_material", "annat_tryckt", "forskning"];
+        const params = (Array.from(names).filter((x) => s[x]).map((x) => `resurs=${x}`));
+        if (wf) { ({ wf } = s); }
+        s.searching = true;
 
-        backend.getBiblinfo(params.join("&"), wf).then (data) ->
-            s.entries = data
-            s.num_hits = data.length
-            s.searching = false
+        return backend.getBiblinfo(params.join("&"), wf).then(function(data) {
+            s.entries = data;
+            s.num_hits = data.length;
+            return s.searching = false;
+        });
+    };
             
-    s.submit()
+    return s.submit();
+});
 
 
-littb.controller "authorInfoCtrl", ($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route, authors, $q, $filter) ->
-    s = $scope
-    _.extend s, $routeParams
+littb.controller("authorInfoCtrl", function($scope, $location, $rootScope, backend, $routeParams, $http, $document, util, $route, authors, $q, $filter) {
+    const s = $scope;
+    _.extend(s, $routeParams);
 
-    if $route.current.$$route.isSla
-        s.slaMode = true
-        s.author = "LagerlofS"
+    if ($route.current.$$route.isSla) {
+        s.slaMode = true;
+        s.author = "LagerlofS";
+    }
         
-    s.showpage = null
-    s.show_large = false
-    s.show_more = true
+    s.showpage = null;
+    s.show_large = false;
+    s.show_more = true;
 
-    if $location.search().dw
-        s.isDramaweb = true
+    if ($location.search().dw) {
+        s.isDramaweb = true;
+    }
     
-    s.getIntro = () ->
-        unless s.authorInfo then return
-        if s.isDramaweb
-            return s.authorInfo.dramawebben.intro or s.authorInfo.intro
-        else
-            return s.authorInfo.intro
+    s.getIntro = function() {
+        if (!s.authorInfo) { return; }
+        if (s.isDramaweb) {
+            return s.authorInfo.dramawebben.intro || s.authorInfo.intro;
+        } else {
+            return s.authorInfo.intro;
+        }
+    };
     
-    s.getIntroAuthor = () ->
-        unless s.authorInfo then return
-        if s.isDramaweb and s.authorInfo.dramawebben.intro
-            s.authorInfo.dramawebben.intro_author
-        else
-            s.authorInfo.intro_author
+    s.getIntroAuthor = function() {
+        if (!s.authorInfo) { return; }
+        if (s.isDramaweb && s.authorInfo.dramawebben.intro) {
+            return s.authorInfo.dramawebben.intro_author;
+        } else {
+            return s.authorInfo.intro_author;
+        }
+    };
 
-    s.normalizeAuthor = $filter('normalizeAuthor')
+    s.normalizeAuthor = $filter('normalizeAuthor');
 
-    s.titleSort = util.titleSort
+    s.titleSort = util.titleSort;
 
-    authors.then ([authorList, authorsById]) ->
-        s.authorsById = authorsById
+    authors.then(function(...args) {
+        const [authorList, authorsById] = Array.from(args[0]);
+        return s.authorsById = authorsById;
+    });
 
-        # s.authorError = (s.normalizeAuthor s.author) not of s.authorsById
+        // s.authorError = (s.normalizeAuthor s.author) not of s.authorsById
 
-    s.showLargeImage = ($event) ->
-        c.log "showLargeImage", s.show_large
-        if s.show_large then return 
-        s.show_large = true
-        $event.stopPropagation()
+    s.showLargeImage = function($event) {
+        c.log("showLargeImage", s.show_large);
+        if (s.show_large) { return; } 
+        s.show_large = true;
+        $event.stopPropagation();
 
-        $document.one "click", (event) ->
-            if event.button != 0 then return
-            s.$apply () ->
-                s.show_large = false
-        return
+        $document.one("click", function(event) {
+            if (event.button !== 0) { return; }
+            return s.$apply(() => s.show_large = false);
+        });
+    };
 
-    s.getTitleTooltip = (attrs) ->
-        unless attrs then return
-        return attrs.title unless attrs.shorttitle == attrs.title
+    s.getTitleTooltip = function(attrs) {
+        if (!attrs) { return; }
+        if (attrs.shorttitle !== attrs.title) { return attrs.title; }
+    };
 
-    refreshRoute = () ->
-        s.showpage = $location.path().split("/")[3]
-        unless s.showpage then s.showpage = "introduktion"
+    const refreshRoute = function() {
+        s.showpage = $location.path().split("/")[3];
+        if (!s.showpage) { return s.showpage = "introduktion"; }
+    };
 
-    s.getUnique = (worklist) ->
-        _.filter worklist, (item) ->
-            "/" not in item.titlepath 
+    s.getUnique = worklist =>
+        _.filter(worklist, item => !Array.from(item.titlepath).includes("/")) 
+    ;
     
-    s.getPageTitle = (page) ->
-        {
-           "titlar": "Verk i Litteraturbanken"
-           "semer": "Mera om"
-           "biblinfo": "Bibliografisk databas"
-           "jamfor": "Textkritisk verkstad"
+    s.getPageTitle = page =>
+        ({
+           "titlar": "Verk i Litteraturbanken",
+           "semer": "Mera om",
+           "biblinfo": "Bibliografisk databas",
+           "jamfor": "Textkritisk verkstad",
            "omtexterna": "Om texterna"
-        }[page] or _.str.capitalize page
+        }[page] || _.str.capitalize(page))
+    ;
 
-    s.getAllTitles = () ->
-        [].concat s.groupedTitles, s.groupedWorks, s.groupedEditorWorks
+    s.getAllTitles = () => [].concat(s.groupedTitles, s.groupedWorks, s.groupedEditorWorks);
 
-    s.getUrl = (work) ->
-        auth = (s.getWorkAuthor work.authors).author_id
-        if work.mediatype == "epub" 
-            url = "txt/epub/" + auth + "_" + work.work_title_id + ".epub"
-        else if work.mediatype == "pdf"
-            # url += "info"
-            url = "txt/#{work.lbworkid}/#{work.lbworkid}.pdf"
+    s.getUrl = function(work) {
+        let url;
+        const auth = (s.getWorkAuthor(work.authors)).author_id;
+        if (work.mediatype === "epub") { 
+            url = `txt/epub/${auth}_${work.work_title_id}.epub`;
+        } else if (work.mediatype === "pdf") {
+            // url += "info"
+            url = `txt/${work.lbworkid}/${work.lbworkid}.pdf`;
 
-        else
-            url = "/forfattare/#{auth}/titlar/#{work.work_title_id}/"
-            url += "sida/#{work.startpagename}/#{work.mediatype}"
-        return url
-
-
-    getHtml = (url) ->
-        def = $q.defer()
-        $http.get(url).success (xml) ->
-            from = xml.indexOf "<body>"
-            to = xml.indexOf "</body>"
-            xml = xml[from...to + "</body>".length]
-            def.resolve(_.str.trim xml)
-        return def.promise
+        } else {
+            url = `/forfattare/${auth}/titlar/${work.work_title_id}/`;
+            url += `sida/${work.startpagename}/${work.mediatype}`;
+        }
+        return url;
+    };
 
 
-    if s.slaMode
-        getHtml('/red/sla/OmSelmaLagerlofArkivet.html').then (xml) ->
-            s.slaIntro = xml
-
-    refreshExternalDoc = (page, routeParams) ->
-        # sla hack
-        c.log "refreshExternalDoc", page, routeParams.omtexternaDoc
-        if s.slaMode
-            if page == 'omtexterna' and not routeParams.omtexternaDoc
-                doc = 'omtexterna.html'
-            else if _.str.endsWith routeParams.omtexternaDoc, ".html"
-                doc = routeParams.omtexternaDoc
-            if doc
-                url = '/red/sla/' + doc
-            else 
-                url = "/red/forfattare/#{s.author}/#{page}/index.html"
-        else    
-            # url = s.authorInfo[page]
-            if page == "mer" then page = "semer"
-            url = "/red/forfattare/#{s.author}/#{page}/index.html"
-            c.log "url", url
+    const getHtml = function(url) {
+        const def = $q.defer();
+        $http.get(url).success(function(xml) {
+            const from = xml.indexOf("<body>");
+            const to = xml.indexOf("</body>");
+            xml = xml.slice(from, to + "</body>".length);
+            return def.resolve(_.str.trim(xml));
+        });
+        return def.promise;
+    };
 
 
-        return unless url
+    if (s.slaMode) {
+        getHtml('/red/sla/OmSelmaLagerlofArkivet.html').then(xml => s.slaIntro = xml);
+    }
+
+    const refreshExternalDoc = function(page, routeParams) {
+        // sla hack
+        let url;
+        c.log("refreshExternalDoc", page, routeParams.omtexternaDoc);
+        if (s.slaMode) {
+            let doc;
+            if ((page === 'omtexterna') && !routeParams.omtexternaDoc) {
+                doc = 'omtexterna.html';
+            } else if (_.str.endsWith(routeParams.omtexternaDoc, ".html")) {
+                doc = routeParams.omtexternaDoc;
+            }
+            if (doc) {
+                url = `/red/sla/${doc}`;
+            } else { 
+                url = `/red/forfattare/${s.author}/${page}/index.html`;
+            }
+        } else {    
+            // url = s.authorInfo[page]
+            if (page === "mer") { page = "semer"; }
+            url = `/red/forfattare/${s.author}/${page}/index.html`;
+            c.log("url", url);
+        }
+
+
+        if (!url) { return; }
         
-        unless s.showpage in ["introduktion", "titlar"]
-            getHtml(url).then (xml) ->
-                s.externalDoc = xml
-                if s.showpage == "omtexterna"
-                    s.pagelinks = harvestLinks(s.externalDoc)
-                else
-                    s.pagelinks = null
+        if (!["introduktion", "titlar"].includes(s.showpage)) {
+            return getHtml(url).then(function(xml) {
+                s.externalDoc = xml;
+                if (s.showpage === "omtexterna") {
+                    return s.pagelinks = harvestLinks(s.externalDoc);
+                } else {
+                    return s.pagelinks = null;
+                }
+            });
+        }
+    };
 
 
 
-    harvestLinks = (doc) ->
-        elemsTuples = for elem in $(".footnotes .footnote[id^=ftn]", doc)
-            [$(elem).attr("id"), $(elem).html()]
+    var harvestLinks = function(doc) {
+        const elemsTuples = Array.from($(".footnotes .footnote[id^=ftn]", doc)).map((elem) =>
+            [$(elem).attr("id"), $(elem).html()]);
 
-        s.noteMapping = _.fromPairs elemsTuples
+        return s.noteMapping = _.fromPairs(elemsTuples);
+    };
 
 
 
 
-    refreshRoute()
+    refreshRoute();
 
-    s.$on "$routeChangeError", (event, current, prev, rejection) ->
-        _.extend s, current.pathParams
+    s.$on("$routeChangeError", function(event, current, prev, rejection) {
+        _.extend(s, current.pathParams);
 
-        refreshRoute()  
-        # refreshTitle()
-        refreshExternalDoc(s.showpage, current.pathParams)
-        # refreshBreadcrumb()
+        refreshRoute();  
+        // refreshTitle()
+        return refreshExternalDoc(s.showpage, current.pathParams);
+    });
+        // refreshBreadcrumb()
     
 
-    s.getDataSource = () ->
-        if s.showpage == "titlar"
-            s.titleStruct
-        else if s.showpage == "mer"
-            c.log "showpage mer"
-            s.moreStruct
+    s.getDataSource = function() {
+        if (s.showpage === "titlar") {
+            return s.titleStruct;
+        } else if (s.showpage === "mer") {
+            c.log("showpage mer");
+            return s.moreStruct;
+        }
+    };
 
 
-    s.sortOrder = (works) ->
-        works[0].sortkey
+    s.sortOrder = works => works[0].sortkey;
 
-    s.hasMore = () ->
-        (_.flatten _.map s.moreStruct, "data").length
+    s.hasMore = () => (_.flatten(_.map(s.moreStruct, "data"))).length;
 
-    s.titleStruct = [
-            label : "Tillgängliga verk"
-            data : null
-            showAuthor : false
+    s.titleStruct = [{
+            label : "Tillgängliga verk",
+            data : null,
+            showAuthor : false,
             def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main,scholar")
-        ,
-            label : "Dikter, noveller, essäer, etc. som ingår i andra verk"
-            data : null
-            showAuthor : false
+        }
+        , {
+            label : "Dikter, noveller, essäer, etc. som ingår i andra verk",
+            data : null,
+            showAuthor : false,
             def : backend.getPartsInOthersWorks(s.author)
-        ,
-            label : "Som fotograf"
-            data : null
-            showAuthor : (work) -> work["authors"]
+        }
+        , {
+            label : "Som fotograf",
+            data : null,
+            showAuthor(work) { return work["authors"]; },
             def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "photographer")
-        ,
-            label : "Som illustratör"
-            data : null
-            showAuthor : (work) -> work["authors"]
+        }
+        , {
+            label : "Som illustratör",
+            data : null,
+            showAuthor(work) { return work["authors"]; },
             def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "illustrator")
-        ,
-            label : "Som utgivare"
-            data : null
-            showAuthor : (work) -> work["authors"]
+        }
+        , {
+            label : "Som utgivare",
+            data : null,
+            showAuthor(work) { return work["authors"]; },
             def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "editor")
-        ,
-            label : "Som översättare"
-            data : null
-            showAuthor : (work) -> work["authors"]
+        }
+        , {
+            label : "Som översättare",
+            data : null,
+            showAuthor(work) { return work["authors"]; },
             def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf,etext-part,faksimil-part", "translator")
-        ,
-            label : "Som uppläsare"
-            data : null
-            showAuthor : (work) -> work["authors"]
+        }
+        , {
+            label : "Som uppläsare",
+            data : null,
+            showAuthor(work) { return work["authors"]; },
             def : backend.getAudioList({reader : s.author})
-        ,
-            label : "Uppläsningar"
-            data : null
-            showAuthor : false
-            def : backend.getAudioList({author_id : s.author})
+        }
+        , {
+            label : "Uppläsningar",
+            data : null,
+            showAuthor : false,
+            def : backend.getAudioList({author_id : s.author}),
             audioExtras : true
-    ]
-    s.getSortOrder = (obj) ->
-        if obj.showAuthor is false
-            return 'sortkey'
-        else
-            return ['authors[0].surname', 'sortkey']
+        }
+    ];
+    s.getSortOrder = function(obj) {
+        if (obj.showAuthor === false) {
+            return 'sortkey';
+        } else {
+            return ['authors[0].surname', 'sortkey'];
+        }
+    };
 
-    for item in s.titleStruct
-        # TODO: error handling?
-        do (item) ->
-            item.def.then (data) -> 
-                c.log "then", data
-                item.data = data
-
-
-    backend.getAuthorInfo(s.author).then (data) ->
-        s.authorInfo = data
-
-        refreshExternalDoc(s.showpage, $routeParams)
-
-
-
-        s.moreStruct = [
-                label : "Verk om #{s.authorInfo.full_name}"
-                data : null
-                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", null, true)
-                showAuthor : (work) -> work["authors"]
-            ,
-                label : "Kortare texter om #{s.authorInfo.full_name}"
-                data : null
-                def : backend.getPartsInOthersWorks(s.author, true)
-                showAuthor : (work) -> work["authors"] or work["work_authors"]
-            ,
-                label : "Som utgivare"
-                data : null
-                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "editor", true)
-                showAuthor : (work) -> work["authors"]
-            ,
-                label : "Som översättare"
-                data : null
-                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator", true)
-                showAuthor : (work) -> work["authors"]
-        ]
-
-        for item in s.moreStruct
-            do (item) ->
-                item.def.then (data) -> item.data = data
-
-        if not (s.authorInfo.intro or s.authorInfo.dramawebben?.intro)
-            $location.url("/forfattare/#{s.author}/titlar").replace()
-    , (data) ->
-        c.log("authorinfo error", arguments)
-        s.authorError = true
+    for (var item of Array.from(s.titleStruct)) {
+        // TODO: error handling?
+        (item =>
+            item.def.then(function(data) { 
+                c.log("then", data);
+                return item.data = data;
+            })
+        )(item);
+    }
 
 
-littb.controller "audioListCtrl", ($scope, backend, util, authors, $filter, $timeout, $location) ->
-    s = $scope
-    s.play_obj = null
+    return backend.getAuthorInfo(s.author).then(function(data) {
+        s.authorInfo = data;
 
-    s.setPlayObj = (obj) ->
-        s.play_obj = obj
-        $location.search("spela", obj.file)
-
-        $timeout( () -> 
-            $("#audioplayer").get(0).play()
-        )
-
-    s.getAuthor = (author) ->
-        [last, first] = author.name_for_index.split(",")
-
-        (_.compact [last.toUpperCase(), first]).join ","
-
-    authors.then ([authorList, authorsById]) ->
-        s.authorsById = authorsById
+        refreshExternalDoc(s.showpage, $routeParams);
 
 
-    backend.getAudioList(sort_field: "order|asc").then (audioList) ->
-        c.log "audioList", audioList
-        s.fileGroups = _.groupBy audioList, "section"
 
-        if $location.search().spela
-            for item in audioList
-                if item.file == $location.search().spela
-                    s.setPlayObj(item)
-        else
-            s.play_obj = audioList[0]
+        s.moreStruct = [{
+                label : `Verk om ${s.authorInfo.full_name}`,
+                data : null,
+                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", null, true),
+                showAuthor(work) { return work["authors"]; }
+            }
+            , {
+                label : `Kortare texter om ${s.authorInfo.full_name}`,
+                data : null,
+                def : backend.getPartsInOthersWorks(s.author, true),
+                showAuthor(work) { return work["authors"] || work["work_authors"]; }
+            }
+            , {
+                label : "Som utgivare",
+                data : null,
+                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "editor", true),
+                showAuthor(work) { return work["authors"]; }
+            }
+            , {
+                label : "Som översättare",
+                data : null,
+                def : backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "translator", true),
+                showAuthor(work) { return work["authors"]; }
+            }
+        ];
+
+        for (item of Array.from(s.moreStruct)) {
+            (item => item.def.then(data => item.data = data))(item);
+        }
+
+        if (!(s.authorInfo.intro || (s.authorInfo.dramawebben != null ? s.authorInfo.dramawebben.intro : undefined))) {
+            return $location.url(`/forfattare/${s.author}/titlar`).replace();
+        }
+    }
+    , function(data) {
+        c.log("authorinfo error", arguments);
+        return s.authorError = true;
+    });
+});
 
 
-        $("#audioplayer").bind 'ended', () ->
-            s.$apply () ->
-                if audioList[s.play_obj.i + 1]
-                    s.setPlayObj(audioList[s.play_obj.i + 1])
+littb.controller("audioListCtrl", function($scope, backend, util, authors, $filter, $timeout, $location) {
+    const s = $scope;
+    s.play_obj = null;
+
+    s.setPlayObj = function(obj) {
+        s.play_obj = obj;
+        $location.search("spela", obj.file);
+
+        return $timeout( () => $("#audioplayer").get(0).play());
+    };
+
+    s.getAuthor = function(author) {
+        const [last, first] = Array.from(author.name_for_index.split(","));
+
+        return (_.compact([last.toUpperCase(), first])).join(",");
+    };
+
+    authors.then(function(...args) {
+        const [authorList, authorsById] = Array.from(args[0]);
+        return s.authorsById = authorsById;
+    });
+
+
+    return backend.getAudioList({sort_field: "order|asc"}).then(function(audioList) {
+        c.log("audioList", audioList);
+        s.fileGroups = _.groupBy(audioList, "section");
+
+        if ($location.search().spela) {
+            for (let item of Array.from(audioList)) {
+                if (item.file === $location.search().spela) {
+                    s.setPlayObj(item);
+                }
+            }
+        } else {
+            s.play_obj = audioList[0];
+        }
+
+
+        return $("#audioplayer").bind('ended', () =>
+            s.$apply(function() {
+                if (audioList[s.play_obj.i + 1]) {
+                    return s.setPlayObj(audioList[s.play_obj.i + 1]);
+                }
+            })
+        );
+    });
+});
 
     
-littb.controller "epubListCtrl", ($scope, backend, util, authors, $filter, $q, $location) ->
-    s = $scope
-    s.searching = true
-    s.authorFilter = $location.search().authorFilter
+littb.controller("epubListCtrl", function($scope, backend, util, authors, $filter, $q, $location) {
+    const s = $scope;
+    s.searching = true;
+    s.authorFilter = $location.search().authorFilter;
 
-    if $location.search().qr
-        backend.logQR($location.search().qr, $location.url())
-        $location.search("qr", null)
+    if ($location.search().qr) {
+        backend.logQR($location.search().qr, $location.url());
+        $location.search("qr", null);
+    }
 
-    $q.all([authors, backend.getEpubAuthors()]).then ([[authorList, authorsById], epubAuthorIds]) ->
-        s.authorsById = authorsById
-        s.authorData = _.pick authorsById, epubAuthorIds
-        s.authorData = util.sortAuthors(s.authorData)
-        # s.authorIds = epubAuthorIds
+    $q.all([authors, backend.getEpubAuthors()]).then(function(...args) {
+        const array = args[0], [authorList, authorsById] = Array.from(array[0]), epubAuthorIds = array[1];
+        s.authorsById = authorsById;
+        s.authorData = _.pick(authorsById, epubAuthorIds);
+        return s.authorData = util.sortAuthors(s.authorData);
+    });
+        // s.authorIds = epubAuthorIds
 
 
     s.authorSelectSetup = {
         formatNoMatches: "Inga resultat",
-        templateResult : (data) ->
-            author = s.authorsById[data.id]
-            unless author then return data.text
+        templateResult(data) {
+            const author = s.authorsById[data.id];
+            if (!author) { return data.text; }
 
-            firstname = ""
-            if author.name_for_index.split(",").length > 1
-                firstname = "<span class='firstname'>, #{author.name_for_index.split(',')[1]}</span>"
+            let firstname = "";
+            if (author.name_for_index.split(",").length > 1) {
+                firstname = `<span class='firstname'>, ${author.name_for_index.split(',')[1]}</span>`;
+            }
 
-            return $ """
-            <span>
-                <span class="surname sc">#{author.surname}</span>#{firstname} <span class="year">#{$filter('authorYear')(author)}</span>
-            </span>
-            """
+            return $(`\
+<span>
+    <span class="surname sc">${author.surname}</span>${firstname} <span class="year">${$filter('authorYear')(author)}</span>
+</span>\
+`
+            );
+        },
 
-        templateSelection : (item) ->
-            try
-                return s.authorsById[item.id].surname
-            catch e
-                return "Välj författare"
-    }
+        templateSelection(item) {
+            try {
+                return s.authorsById[item.id].surname;
+            } catch (e) {
+                return "Välj författare";
+            }
+        }
+    };
 
     s.genderSelectSetup = {
 
-    }
+    };
 
     s.sortSelectSetup = {
         minimumResultsForSearch: -1,
-        templateSelection : (item) ->
-            "Sortering: " + item.text
-    }
+        templateSelection(item) {
+            return `Sortering: ${item.text}`;
+        }
+    };
 
-    window.has = (one, two) -> one.toLowerCase().indexOf(two.toLowerCase()) != -1
-    s.rowFilter = (item) ->
-        author = s.authorsById?[s.authorFilter]
-        if author and author.author_id != item.authors[0].author_id then return false
-        if s.filterTxt
-            return false if not ((has item.authors[0].full_name, s.filterTxt) or (has (item.title), s.filterTxt))
-        return true
+    window.has = (one, two) => one.toLowerCase().indexOf(two.toLowerCase()) !== -1;
+    s.rowFilter = function(item) {
+        const author = s.authorsById != null ? s.authorsById[s.authorFilter] : undefined;
+        if (author && (author.author_id !== item.authors[0].author_id)) { return false; }
+        if (s.filterTxt) {
+            if (!((has(item.authors[0].full_name, s.filterTxt)) || (has((item.title), s.filterTxt)))) { return false; }
+        }
+        return true;
+    };
 
-    s.getAuthor = (row) ->
-        [last, first] = row.authors[0].name_for_index.split(",")
-        auth = (_.compact [last.toUpperCase(), first]).join ","
-        if row.authors[0].type == "editor"
-            auth += " (red.)"
-        return auth
+    s.getAuthor = function(row) {
+        const [last, first] = Array.from(row.authors[0].name_for_index.split(","));
+        let auth = (_.compact([last.toUpperCase(), first])).join(",");
+        if (row.authors[0].type === "editor") {
+            auth += " (red.)";
+        }
+        return auth;
+    };
 
-    # s.log = (filename) ->
-        # return true
+    // s.log = (filename) ->
+        // return true
 
-    s.log = (row) ->
-        filename = s.getFilename(row)
-        if not isDev
-            backend.logDownload(row.authors[0].surname, encodeURIComponent(row.shorttitle), row.lbworkid)
-        # location.href = "/txt/epub/#{filename}.epub"
-
-
-    s.getFilename = (row) ->
-        row.authors[0].author_id + '_' + (row.work_title_id or row.title_id)
-
-
-    s.onAuthChange = (newVal) ->
-        # hack for state issue with select2 broadcasting change event
-        # at init, causing reset of location value
-        if newVal == null 
-            s.authorFilter = $location.search().authorFilter
-        else
-            s.refreshData()
+    s.log = function(row) {
+        const filename = s.getFilename(row);
+        if (!isDev) {
+            return backend.logDownload(row.authors[0].surname, encodeURIComponent(row.shorttitle), row.lbworkid);
+        }
+    };
+        // location.href = "/txt/epub/#{filename}.epub"
 
 
-    s.refreshData = (str) ->
-        # | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" 
-        if s.authorFilter == null then return
-        s.searching = true
-        size = if s.filterTxt or s.showAll then 10000 else 30
-        authorFilter = null
-        if s.authorFilter != "alla"
-            authorFilter = s.authorFilter
+    s.getFilename = row => row.authors[0].author_id + '_' + (row.work_title_id || row.title_id);
 
-        backend.getEpub(size, s.filterTxt, authorFilter, s.sort).then ({data, hits}) ->
-            s.searching = false
-            s.rows = data
-            s.hits = hits
-            authors = _.map s.rows, (row) ->
-                row.authors[0]
 
-            # s.authorData = _.unique authors, false, (item) ->
-            #     item.author_id
+    s.onAuthChange = function(newVal) {
+        // hack for state issue with select2 broadcasting change event
+        // at init, causing reset of location value
+        if (newVal === null) { 
+            return s.authorFilter = $location.search().authorFilter;
+        } else {
+            return s.refreshData();
+        }
+    };
+
+
+    s.refreshData = function(str) {
+        // | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]" 
+        if (s.authorFilter === null) { return; }
+        s.searching = true;
+        const size = s.filterTxt || s.showAll ? 10000 : 30;
+        let authorFilter = null;
+        if (s.authorFilter !== "alla") {
+            ({ authorFilter } = s);
+        }
+
+        return backend.getEpub(size, s.filterTxt, authorFilter, s.sort).then(function({data, hits}) {
+            s.searching = false;
+            s.rows = data;
+            s.hits = hits;
+            return authors = _.map(s.rows, row => row.authors[0]);});
+    };
+
+            // s.authorData = _.unique authors, false, (item) ->
+            //     item.author_id
     
-    util.setupHashComplex s,
-        [
-            key : "filter"
+    util.setupHashComplex(s,
+        [{
+            key : "filter",
             scope_name : "filterTxt"
+        }
         ,
-            key : "authorFilter"
-        ,
+            {key : "authorFilter"}
+        , {
             key : "sort",
             default: "epub_popularity|desc"
+        }
         ,
-            key : "showAll"
+            {key : "showAll"}
 
-        ]
+        ]);
 
     
 
-    s.refreshData()
+    return s.refreshData();
+});
 
 
-littb.controller "helpCtrl", ($scope, $http, util, $location) ->
-    s = $scope
-    url = "/red/om/hjalp/hjalp.html"
-    $http.get(url).success (data) ->
-        s.htmlContent = data
-        s.labelArray = for elem in $("[id]", data)
-            label = _.str.humanize($(elem).attr("name").replace(/([A-Z])/g, " $1"))
+littb.controller("helpCtrl", function($scope, $http, util, $location) {
+    const s = $scope;
+    const url = "/red/om/hjalp/hjalp.html";
+    return $http.get(url).success(function(data) {
+        s.htmlContent = data;
+        return s.labelArray = (() => {
+            const result = [];
+            for (let elem of Array.from($("[id]", data))) {
+                const label = _.str.humanize($(elem).attr("name").replace(/([A-Z])/g, " $1"));
 
-            label : label
-            id : $(elem).attr("id")
+                result.push({
+                    label,
+                    id : $(elem).attr("id")
+                });
+            }
+            return result;
+        })();
+    });
+});
             
         
-littb.controller "newCtrl", ($scope, $http, util, $location, backend) ->
+littb.controller("newCtrl", function($scope, $http, util, $location, backend) {
 
-    s = $scope
+    let s;
+    return s = $scope;
+});
 
-    # backend.getTitles(null, "imported|desc", null, false, true).then (titleArray) ->
-    #     s.titleList = titleArray
+    // backend.getTitles(null, "imported|desc", null, false, true).then (titleArray) ->
+    //     s.titleList = titleArray
 
-    #     s.titleGroups = _.groupBy titleArray, "imported"
-
-
-
-littb.controller "aboutCtrl", ($scope, $http, util, $location, $routeParams) ->
-    s = $scope
-    # s.$watch ( () -> $routeParams.page), () ->
-    #     c.log "$routeParams.page", $routeParams.page
-    _.extend s, $routeParams
-    s.$on "$routeChangeError", (event, current, prev, rejection) ->
-        c.log "route change", current.pathParams
-        _.extend s, current.pathParams
+    //     s.titleGroups = _.groupBy titleArray, "imported"
 
 
 
-    s.page = $routeParams.page
-    s.getPage = (page) ->
-        return {
-                "ide" : '/red/om/ide/omlitteraturbanken.html'
-                "hjalp" : require("../views/help.html")
-                "vision" : "/red/om/visioner/visioner.html"
-                "kontakt" : require('../views/contactForm.html')
-                "statistik" : require('../views/stats.html')
-                "rattigheter" : '/red/om/rattigheter/rattigheter.html'
-                "organisation" : '/red/om/ide/organisation.html'
-                # "inenglish" : "/red/om/ide/inenglish.html",
+littb.controller("aboutCtrl", function($scope, $http, util, $location, $routeParams) {
+    const s = $scope;
+    // s.$watch ( () -> $routeParams.page), () ->
+    //     c.log "$routeParams.page", $routeParams.page
+    _.extend(s, $routeParams);
+    s.$on("$routeChangeError", function(event, current, prev, rejection) {
+        c.log("route change", current.pathParams);
+        return _.extend(s, current.pathParams);
+    });
+
+
+
+    s.page = $routeParams.page;
+    return s.getPage = page =>
+        ({
+                "ide" : '/red/om/ide/omlitteraturbanken.html',
+                "hjalp" : require("../views/help.html"),
+                "vision" : "/red/om/visioner/visioner.html",
+                "kontakt" : require('../views/contactForm.html'),
+                "statistik" : require('../views/stats.html'),
+                "rattigheter" : '/red/om/rattigheter/rattigheter.html',
+                "organisation" : '/red/om/ide/organisation.html',
+                // "inenglish" : "/red/om/ide/inenglish.html",
                 "english.html" : "/red/om/ide/english.html",
                 "deutsch.html" : "/red/om/ide/deutsch.html",
                 "francais.html" : "/red/om/ide/francais.html",
-            }[page]
+            }[page])
+    ;
+});
 
-littb.controller "presentationCtrl", ($scope, $http, $routeParams, $location, util) ->
-    s = $scope
-    url = '/red/presentationer/presentationerForfattare.html'
-    s.isMain = true
-    $http.get(url).success (data) ->
-        s.doc = data
-        s.currentLetters = for elem in $("[id]", data)
-            $(elem).attr("id")
-        util.setupHash s, {"ankare" : (val) ->
-            unless val
-                $(window).scrollTop(0)
-                return
-            $(window).scrollTop($("##{val}").offset().top)
+littb.controller("presentationCtrl", function($scope, $http, $routeParams, $location, util) {
+    const s = $scope;
+    const url = '/red/presentationer/presentationerForfattare.html';
+    s.isMain = true;
+    return $http.get(url).success(function(data) {
+        s.doc = data;
+        s.currentLetters = Array.from($("[id]", data)).map((elem) =>
+            $(elem).attr("id"));
+        return util.setupHash(s, {"ankare"(val) {
+            if (!val) {
+                $(window).scrollTop(0);
+                return;
+            }
+            return $(window).scrollTop($(`#${val}`).offset().top);
         }
+        });});
+});
 
-littb.controller "omtexternaCtrl", ($scope, $routeParams) ->
-    docPath = '/red/sla/omtexterna/'
-    $scope.doc = docPath + ($routeParams['doc'] or 'omtexterna.html')
+littb.controller("omtexternaCtrl", function($scope, $routeParams) {
+    const docPath = '/red/sla/omtexterna/';
+    return $scope.doc = docPath + ($routeParams['doc'] || 'omtexterna.html');
+});
     
 
 
-littb.filter "correctLink", () ->
-    (html) ->
-        wrapper = $("<div>").append html
-        img = $("img", wrapper)
-        img.attr "src", "/red/bilder/gemensamt/" + img.attr("src")
-        return wrapper.html()
+littb.filter("correctLink", () =>
+    function(html) {
+        const wrapper = $("<div>").append(html);
+        const img = $("img", wrapper);
+        img.attr("src", `/red/bilder/gemensamt/${img.attr("src")}`);
+        return wrapper.html();
+    }
+);
 
 
-littb.controller "autocompleteCtrl", ($scope, backend, $route, $location, $window, $timeout, $modal, $http) ->
-    s = $scope
-    modal = null
-    prevFilter = null
-    s.close = () ->
-        s.lbworkid = null
-        s.$broadcast("blur")
-        # s.show_autocomplete = false
-        s.completeObj = null
-        c.log "close modal", s.modal, s
-        s.modal?.close()
-        s.modal = null
+littb.controller("autocompleteCtrl", function($scope, backend, $route, $location, $window, $timeout, $modal, $http) {
+    const s = $scope;
+    const modal = null;
+    let prevFilter = null;
+    s.close = function() {
+        s.lbworkid = null;
+        s.$broadcast("blur");
+        // s.show_autocomplete = false
+        s.completeObj = null;
+        c.log("close modal", s.modal, s);
+        if (s.modal != null) {
+            s.modal.close();
+        }
+        return s.modal = null;
+    };
 
 
-    s.onSelect = (val) ->
-        c.log("scope", s)
-        if not isDev
-            backend.logQuicksearch(prevFilter, val.label)
+    s.onSelect = function(val) {
+        c.log("scope", s);
+        if (!isDev) {
+            backend.logQuicksearch(prevFilter, val.label);
+        }
         
-        ret = val.action?(s)
-        if ret == false then return
-        # if ret.then
-        #     ret.then (val) ->
+        const ret = typeof val.action === 'function' ? val.action(s) : undefined;
+        if (ret === false) { return; }
+        // if ret.then
+        //     ret.then (val) ->
 
 
-        s.close()
-        if val.url
-            $location.url(val.url)
+        s.close();
+        if (val.url) {
+            return $location.url(val.url);
+        }
+    };
 
     
 
-    s.autocomplete = (val) ->
-        if val
-            prevFilter = val
-            return backend.autocomplete(val).then (data) ->
-                menu = [
-                        label: "Start"
-                        url : "/start"
+    s.autocomplete = function(val) {
+        if (val) {
+            prevFilter = val;
+            return backend.autocomplete(val).then(function(data) {
+                let menu = [{
+                        label: "Start",
+                        url : "/start",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Bibliotek"
-                        url : "/bibliotek"
+                    }
+                    , {
+                        label: "Bibliotek",
+                        url : "/bibliotek",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Epub"
-                        url : "/epub"
+                    }
+                    , {
+                        label: "Epub",
+                        url : "/epub",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Ljudarkivet"
-                        url : "/ljudarkivet"
+                    }
+                    , {
+                        label: "Ljudarkivet",
+                        url : "/ljudarkivet",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Sök"
-                        url : "/sok"
-                        alt: ["Sok"]
+                    }
+                    , {
+                        label: "Sök",
+                        url : "/sok",
+                        alt: ["Sok"],
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Presentationer"
-                        url : "/presentationer"
+                    }
+                    , {
+                        label: "Presentationer",
+                        url : "/presentationer",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Dramawebben"
-                        url : "/dramawebben"
+                    }
+                    , {
+                        label: "Dramawebben",
+                        url : "/dramawebben",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Nytillkommet"
-                        url : "/nytt"
+                    }
+                    , {
+                        label: "Nytillkommet",
+                        url : "/nytt",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Skolan"
-                        url : "/skolan"
+                    }
+                    , {
+                        label: "Skolan",
+                        url : "/skolan",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Skolan/lyrik"
-                        url : "/skolan/lyrik"
+                    }
+                    , {
+                        label: "Skolan/lyrik",
+                        url : "/skolan/lyrik",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Om"
-                        url : "/om/ide"
+                    }
+                    , {
+                        label: "Om",
+                        url : "/om/ide",
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Hjälp"
-                        url : "/om/hjalp"
-                        alt : ["hjalp"]
+                    }
+                    , {
+                        label: "Hjälp",
+                        url : "/om/hjalp",
+                        alt : ["hjalp"],
                         typeLabel : "Gå till sidan"
-                    ,
-                        label: "Statistik"
-                        url : "/om/statistik"
+                    }
+                    , {
+                        label: "Statistik",
+                        url : "/om/statistik",
                         typeLabel : "Gå till sidan"
+                    }
 
-                ]
+                ];
 
-                if $route.current.$$route.controller == "readingCtrl"
-                    menu.push 
-                        label : "/id"
-                        alt : ["id", "red"]
-                        typeLabel: "[Red.]"
-                        action : () ->
-                            s.lbworkid = $(".reader_main").scope?().workinfo.lbworkid
-                            return false
-                    # ,
-                    #     label : "/öppna"
-                    #     alt : ["öppna"]
-                    #     typeLabel: "[Red.]"
-                    #     action : () ->
-                    #         info = $(".reader_main").scope?().workinfo
-                    #         win = window.open("littb-open://?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}")
-                    #         win.onload = () => win.close()
-                    #         return false
+                if ($route.current.$$route.controller === "readingCtrl") {
+                    menu.push({ 
+                        label : "/id",
+                        alt : ["id", "red"],
+                        typeLabel: "[Red.]",
+                        action() {
+                            s.lbworkid = __guardMethod__($(".reader_main"), 'scope', o => o.scope().workinfo.lbworkid);
+                            return false;
+                        }
+                    });
+                }
+                    // ,
+                    //     label : "/öppna"
+                    //     alt : ["öppna"]
+                    //     typeLabel: "[Red.]"
+                    //     action : () ->
+                    //         info = $(".reader_main").scope?().workinfo
+                    //         win = window.open("littb-open://?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}")
+                    //         win.onload = () => win.close()
+                    //         return false
 
-                if $route.current.$$route.controller in ["readingCtrl", "authorInfoCtrl"]
-                    key = {"readingCtrl" : "workinfo", "authorInfoCtrl" : "authorInfo"}[$route.current.$$route.controller]
+                if (["readingCtrl", "authorInfoCtrl"].includes($route.current.$$route.controller)) {
+                    const key = {"readingCtrl" : "workinfo", "authorInfoCtrl" : "authorInfo"}[$route.current.$$route.controller];
 
-                    menu.push
-                        label : "/info"
-                        alt : ["info", "db", "red"]
-                        typeLabel: "[Red.]"
-                        action : () ->
-                            s.info = $("#mainview").scope?()[key]
-                            return false
+                    menu.push({
+                        label : "/info",
+                        alt : ["info", "db", "red"],
+                        typeLabel: "[Red.]",
+                        action() {
+                            s.info = __guardMethod__($("#mainview"), 'scope', o => o.scope()[key]);
+                            return false;
+                        }
+                    });
+                }
                         
 
 
-                menu = _.filter menu, (item) ->
-                    # if !isDev and item.typeLabel == "[Red.]" then return false
-                    exp = new RegExp("^" + val, "gi")
-                    # alt = new RegExp(val, "gi")
-                    item.label.match(exp) or _.some item.alt?.map (item) ->
-                        item.match(exp)
-                return data.concat menu
+                menu = _.filter(menu, function(item) {
+                    // if !isDev and item.typeLabel == "[Red.]" then return false
+                    const exp = new RegExp(`^${val}`, "gi");
+                    // alt = new RegExp(val, "gi")
+                    return item.label.match(exp) || _.some(item.alt != null ? item.alt.map(item => item.match(exp))
+                     : undefined);
+                });
+                return data.concat(menu);
+            });
+        }
+    };
 
 
 
 
-    show = () ->
-        # s.show_autocomplete = true
+    const show = function() {
+        // s.show_autocomplete = true
 
-        s.modal = $modal.open
-            templateUrl : "autocomplete.html"
-            scope : s
-            windowClass : "autocomplete"
+        s.modal = $modal.open({
+            templateUrl : "autocomplete.html",
+            scope : s,
+            windowClass : "autocomplete",
             size : "sm"
+        });
 
-        $timeout () ->
-            s.$broadcast("focus")
-        , 0
-    # s.show_autocomplete = false
-    s.$on "show_autocomplete", () ->
-        show()
-    $($window).on "keyup", (event) ->
-        #tab
-        if event.which == 83 and not $("input:focus,textarea:focus,select:focus").length
-            s.$apply () ->
-                show()
-
-
-
-        else if event.which == 27 # escape
-            s.$apply () ->
-                s.close()
+        return $timeout(() => s.$broadcast("focus")
+        , 0);
+    };
+    // s.show_autocomplete = false
+    s.$on("show_autocomplete", () => show());
+    return $($window).on("keyup", function(event) {
+        //tab
+        if ((event.which === 83) && !$("input:focus,textarea:focus,select:focus").length) {
+            return s.$apply(() => show());
 
 
 
-littb.controller "idCtrl", ($scope, backend, $routeParams, $location) ->
-    s = $scope
-    _.extend s, $routeParams
-    s.id = s.id?.toLowerCase()
-    s.titles = []
-    unless _.str.startsWith s.id, "lb"
-        s.titles = [s.id]
-        s.id = ""
-
-    backend.getTitles().then (titleArray) ->
-        s.data = titleArray
-
-    s.idFilter = (row) ->
-        unless s.id then return true
-        row.lbworkid == s.id
-
-    s.rowFilter = (row) ->
-        if not s.titles.length then return true
-        return _.some _.map s.titles, (title) ->
-            _.str.contains(row.titlepath.toLowerCase(), title?.toLowerCase()) or
-                _.str.contains(row.title.toLowerCase(), title?.toLowerCase())
+        } else if (event.which === 27) { // escape
+            return s.$apply(() => s.close());
+        }
+    });
+});
 
 
-    s.textareaChange = (titles)  ->
-        s.id = ''
 
-        s.titles = _.map titles.split("\n"), (row) ->
-            _.str.strip(row.split("–")[1] or row)
+littb.controller("idCtrl", function($scope, backend, $routeParams, $location) {
+    const s = $scope;
+    _.extend(s, $routeParams);
+    s.id = s.id != null ? s.id.toLowerCase() : undefined;
+    s.titles = [];
+    if (!_.str.startsWith(s.id, "lb")) {
+        s.titles = [s.id];
+        s.id = "";
+    }
 
-littb.controller "sourceInfoCtrl", ($scope, backend, $routeParams, $q, authors, $document, $location, $http) ->
-    s = $scope
-    {title, author} = $routeParams
-    # _.extend s, $routeParams
-    s.title = $routeParams.title
-    s.author = $routeParams.author
+    backend.getTitles().then(titleArray => s.data = titleArray);
+
+    s.idFilter = function(row) {
+        if (!s.id) { return true; }
+        return row.lbworkid === s.id;
+    };
+
+    s.rowFilter = function(row) {
+        if (!s.titles.length) { return true; }
+        return _.some(_.map(s.titles, title =>
+            _.str.contains(row.titlepath.toLowerCase(), title != null ? title.toLowerCase() : undefined) ||
+                _.str.contains(row.title.toLowerCase(), title != null ? title.toLowerCase() : undefined)
+        )
+        );
+    };
 
 
-    s.defaultErrataLimit = 8
-    s.errataLimit = s.defaultErrataLimit
-    s.isOpen = false
-    s.show_large = false
+    return s.textareaChange = function(titles)  {
+        s.id = '';
 
-    s.workinfoPromise.then () ->
-        c.log "workinfo", s.workinfo
-        prov = backend.getProvenance(s.workinfo)
-        lic = backend.getLicense(s.workinfo)
+        return s.titles = _.map(titles.split("\n"), row => _.str.strip(row.split("–")[1] || row));
+    };
+});
 
-        $q.all([prov, lic]).then ([provData, licenseData]) ->
-            s.provenanceData = provData
-            if provData.length
-                provtmpl = "<a href='#{provData[0].link}'>#{provData[0].fullname}</a>"
-            else
-                provtmpl = ""
-            s.licenseData = _.template(licenseData)({
+littb.controller("sourceInfoCtrl", function($scope, backend, $routeParams, $q, authors, $document, $location, $http) {
+    let Dramaweb;
+    const s = $scope;
+    const {title, author} = $routeParams;
+    // _.extend s, $routeParams
+    s.title = $routeParams.title;
+    s.author = $routeParams.author;
+
+
+    s.defaultErrataLimit = 8;
+    s.errataLimit = s.defaultErrataLimit;
+    s.isOpen = false;
+    s.show_large = false;
+
+    s.workinfoPromise.then(function() {
+        c.log("workinfo", s.workinfo);
+        const prov = backend.getProvenance(s.workinfo);
+        const lic = backend.getLicense(s.workinfo);
+
+        $q.all([prov, lic]).then(function(...args) {
+            let provtmpl;
+            const [provData, licenseData] = Array.from(args[0]);
+            s.provenanceData = provData;
+            if (provData.length) {
+                provtmpl = `<a href='${provData[0].link}'>${provData[0].fullname}</a>`;
+            } else {
+                provtmpl = "";
+            }
+            return s.licenseData = _.template(licenseData)({
                 provenance: provtmpl
-            })
+            });
+        });
 
-        s.dramaweb = new Dramaweb(s.workinfo.dramawebben) if s.workinfo.dramawebben
+        if (s.workinfo.dramawebben) { return s.dramaweb = new Dramaweb(s.workinfo.dramawebben); }
+    });
 
 
 
 
-    s.getValidAuthors = () ->
-        unless s.authorById then return
-        # _.filter s.workinfo?.author_idNorm, (item) ->
-        #     item.id of s.authorById
-        return s.workinfo?.authors
+    s.getValidAuthors = function() {
+        if (!s.authorById) { return; }
+        // _.filter s.workinfo?.author_idNorm, (item) ->
+        //     item.id of s.authorById
+        return (s.workinfo != null ? s.workinfo.authors : undefined);
+    };
 
-    s.toggleErrata = () ->
-        s.errataLimit = if s.isOpen then 8 else 1000
-        s.isOpen = !s.isOpen
+    s.toggleErrata = function() {
+        s.errataLimit = s.isOpen ? 8 : 1000;
+        return s.isOpen = !s.isOpen;
+    };
 
-    s.getUrl = (mediatype) ->
-        if mediatype == "epub" 
-            return s.workinfo?.epub.url
+    s.getUrl = function(mediatype) {
+        if (mediatype === "epub") { 
+            return (s.workinfo != null ? s.workinfo.epub.url : undefined);
             
-        else if mediatype == "pdf" 
-            return s.workinfo?.pdf.url
+        } else if (mediatype === "pdf") { 
+            return (s.workinfo != null ? s.workinfo.pdf.url : undefined);
+        }
 
-        return "/forfattare/#{s.author}/titlar/#{s.title}/#{mediatype}"
+        return `/forfattare/${s.author}/titlar/${s.title}/${mediatype}`;
+    };
 
-    s.getOtherMediatypes = () ->
-        (x for x in (s.workinfo?.mediatypes or []) when x != s.mediatype)
+    s.getOtherMediatypes = () => (Array.from((s.workinfo != null ? s.workinfo.mediatypes : undefined) || [])).filter((x) => x !== s.mediatype);
 
-    s.getSourceImage = () ->
-        if s.workinfo
-            "/txt/#{s.workinfo.lbworkid}/#{s.workinfo.lbworkid}_small.jpeg"
+    s.getSourceImage = function() {
+        if (s.workinfo) {
+            return `/txt/${s.workinfo.lbworkid}/${s.workinfo.lbworkid}_small.jpeg`;
+        }
+    };
 
-    s.showLargeImage = ($event) ->
-        if s.show_large then return 
-        s.show_large = true
-        $event.stopPropagation()
+    s.showLargeImage = function($event) {
+        if (s.show_large) { return; } 
+        s.show_large = true;
+        $event.stopPropagation();
 
-        $document.one "click", (event) ->
-            if event.button != 0 then return
-            s.$apply () ->
-                s.show_large = false
-        return
+        $document.one("click", function(event) {
+            if (event.button !== 0) { return; }
+            return s.$apply(() => s.show_large = false);
+        });
+    };
 
     
-    s.getFileSize = (mediatype) ->
-        # TODO: this is broken
-        if not (s.workinfo and mediatype) then return
-        size = s.workinfo[mediatype].file_size
+    s.getFileSize = function(mediatype) {
+        // TODO: this is broken
+        if (!(s.workinfo && mediatype)) { return; }
+        const size = s.workinfo[mediatype].file_size;
 
-        kb = size / 1024
+        const kb = size / 1024;
 
-        return (Math.round kb) + " KB"
+        return (Math.round(kb)) + " KB";
+    };
 
-    s.downloadFile = (url) ->
-        window.location = url
-
-
-    if not s.mediatype
-        s.mediatype = s.workinfo.mediatypes[0]
-    authors.then ([authorData, authorById]) ->
-        s.authorById = authorById
+    s.downloadFile = url => window.location = url;
 
 
-    class Dramaweb
-        constructor: (data) ->
-            order =  [
-                 "first_staged"
-                 "number_of_pages"
-                 "number_of_acts"
-                 "number_of_roles"
-                 "male_roles"
-                 "female_roles"
+    if (!s.mediatype) {
+        s.mediatype = s.workinfo.mediatypes[0];
+    }
+    authors.then(function(...args) {
+        const [authorData, authorById] = Array.from(args[0]);
+        return s.authorById = authorById;
+    });
+
+
+    return (Dramaweb = class Dramaweb {
+        constructor(data) {
+            const order =  [
+                 "first_staged",
+                 "number_of_pages",
+                 "number_of_acts",
+                 "number_of_roles",
+                 "male_roles",
+                 "female_roles",
                  "other_roles"
-             ]
-            @roles = data.roles
-            @history = data.history
-            tableData = _.omit data, "legacy_url", "roles", "history"
-            @orderedData = _.orderBy(_.toPairs(tableData), (pair) -> order.indexOf(pair[0]))
+             ];
+            this.roles = data.roles;
+            this.history = data.history;
+            const tableData = _.omit(data, "legacy_url", "roles", "history");
+            this.orderedData = _.orderBy(_.toPairs(tableData), pair => order.indexOf(pair[0]));
+        }
 
         
-        format: (key) ->
-            {
-                'roles': (val) -> val.join("<br>")
-            }[key] or (val) -> val.toString()
+        format(key) {
+            return {
+                'roles'(val) { return val.join("<br>"); }
+            }[key] || (val => val.toString());
+        }
 
-        getLabel : (key) ->
-            {
-                roles: "Rollista"
+        getLabel(key) {
+            return {
+                roles: "Rollista",
                 "first_staged" : "Urpremiär",
-                "first_staged_in_sweden" : "Svensk premiär"
-                "number_of_roles" : "Antal (totalt)"
-                "male_roles" : "Antal (män)"
-                "female_roles" : "Antal (kvinnor)"
-                "other_roles" : "Antal (övriga)"
-                "number_of_pages": "Antal sidor"
-                "number_of_roles" : "Antal roller"
-                "number_of_acts" : "Antal akter"
+                "first_staged_in_sweden" : "Svensk premiär",
+                "number_of_roles" : "Antal (totalt)",
+                "male_roles" : "Antal (män)",
+                "female_roles" : "Antal (kvinnor)",
+                "other_roles" : "Antal (övriga)",
+                "number_of_pages": "Antal sidor",
+                "number_of_roles" : "Antal roller",
+                "number_of_acts" : "Antal akter",
                 "history" : "Uppsättningshistorik",
 
 
 
-            }[key] or key
+            }[key] || key;
+        }
+    });
+});
 
-        # has_key
+        // has_key
 
     
     
 
 
 
-littb.controller "lexiconCtrl", ($scope, backend, $location, $rootScope, $q, $timeout, $modal, util, $window) ->
-    s = $scope
-    s.dict_not_found = null
-    s.dict_searching = false
+littb.controller("lexiconCtrl", function($scope, backend, $location, $rootScope, $q, $timeout, $modal, util, $window) {
+    const s = $scope;
+    s.dict_not_found = null;
+    s.dict_searching = false;
 
-    modal = null
+    let modal = null;
 
-    s.keydown = (event) ->
-        if event.keyCode == 40 # down arrow
-            # TODO: this is pretty bad but couldn't be done using the typeahead directive
-            if $(".input_container .dropdown-menu").is(":hidden")
-                #typeaheadTrigger directive
-                s.$broadcast "open", s.lex_article
+    s.keydown = function(event) {
+        if (event.keyCode === 40) { // down arrow
+            // TODO: this is pretty bad but couldn't be done using the typeahead directive
+            if ($(".input_container .dropdown-menu").is(":hidden")) {
+                //typeaheadTrigger directive
+                return s.$broadcast("open", s.lex_article);
+            }
 
-        else if event.keyCode == 27 # escape
-            s.lex_article = null    
+        } else if (event.keyCode === 27) { // escape
+            return s.lex_article = null;    
+        }
+    };
 
 
-    s.showModal = () ->
-        c.log "showModal", modal
-        s.lexemes = s.lex_article.lexemes
-        unless modal
-            s.$broadcast "blur"
+    s.showModal = function() {
+        c.log("showModal", modal);
+        s.lexemes = s.lex_article.lexemes;
+        if (!modal) {
+            s.$broadcast("blur");
 
-            modal = $modal.open
-                templateUrl : "so_modal_template.html"
+            modal = $modal.open({
+                templateUrl : "so_modal_template.html",
                 scope : s
+            });
 
-            modal.result.then () ->
-                s.closeModal()
-            , () ->
-                s.closeModal()
-
-
-    s.clickX = () ->
-        modal.close()
-
-    s.closeModal = () ->
-        s.lex_article = null
-        s.lexid = null
-        modal = null
+            return modal.result.then(() => s.closeModal()
+            , () => s.closeModal());
+        }
+    };
 
 
-    reportDictError = () ->
-        s.$emit "notify", "Hittade inget uppslag"
-        s.dict_searching = false
+    s.clickX = () => modal.close();
 
-    s.lexid = null
+    s.closeModal = function() {
+        s.lex_article = null;
+        s.lexid = null;
+        return modal = null;
+    };
 
 
-    $rootScope.$on "search_dict", (event, lemma, id, doSearchId) ->
-        c.log "search_dict event", lemma, id, doSearchId
-        if doSearchId then s.lexid = false
+    const reportDictError = function() {
+        s.$emit("notify", "Hittade inget uppslag");
+        return s.dict_searching = false;
+    };
 
-        s.dict_searching = true
+    s.lexid = null;
 
-        def = backend.searchLexicon(lemma, id, false, doSearchId, true)
-        def.catch () ->
-            c.log "searchLexicon catch"
-            reportDictError()
 
-        def.then (data) ->
-            c.log "searchLexicon then", data
-            s.dict_searching = false
+    $rootScope.$on("search_dict", function(event, lemma, id, doSearchId) {
+        c.log("search_dict event", lemma, id, doSearchId);
+        if (doSearchId) { s.lexid = false; }
 
-            result = data[0]
-            for obj in data
-                if obj.baseform == lemma
-                    result = obj
-                    continue
+        s.dict_searching = true;
+
+        const def = backend.searchLexicon(lemma, id, false, doSearchId, true);
+        def.catch(function() {
+            c.log("searchLexicon catch");
+            return reportDictError();
+        });
+
+        return def.then(function(data) {
+            c.log("searchLexicon then", data);
+            s.dict_searching = false;
+
+            let result = data[0];
+            for (let obj of Array.from(data)) {
+                if (obj.baseform === lemma) {
+                    result = obj;
+                    continue;
+                }
+            }
 
                     
-            # c.log "searchId", id
-            # s.lexid = if searchId then searchId else null
-            s.lex_article = result
-            if id
-                s.lexid = id
-            s.showModal()
+            // c.log "searchId", id
+            // s.lexid = if searchId then searchId else null
+            s.lex_article = result;
+            if (id) {
+                s.lexid = id;
+            }
+            return s.showModal();
+        });
+    });
             
 
-    s.getWords = (val) ->
-        c.log "getWords", val
-        unless val then return
-        s.dict_searching = true
-        def = backend.searchLexicon(val, null, true)
-        timeout = $timeout(angular.noop, 800)
-        def.catch () ->
-            s.dict_searching = false
-            reportDictError()
+    s.getWords = function(val) {
+        c.log("getWords", val);
+        if (!val) { return; }
+        s.dict_searching = true;
+        const def = backend.searchLexicon(val, null, true);
+        const timeout = $timeout(angular.noop, 800);
+        def.catch(function() {
+            s.dict_searching = false;
+            return reportDictError();
+        });
 
-        $q.all([def, timeout]).then () ->
-            s.dict_searching = false
+        $q.all([def, timeout]).then(() => s.dict_searching = false);
             
 
-        return def
+        return def;
+    };
 
 
 
-    util.setupHashComplex s, [
-        key : "so"
-        expr : "lex_article.baseform"
-        val_in : (val) ->
-            id = $location.search().lex
-            # event = if id then "search_id" else "search_dict"
-            c.log "val_in", val, id
-            s.$emit "search_dict", val, id, false
-        replace : false            
-    ,
-        key : "lex"
-        scope_name : "lexid"
+    return util.setupHashComplex(s, [{
+        key : "so",
+        expr : "lex_article.baseform",
+        val_in(val) {
+            const id = $location.search().lex;
+            // event = if id then "search_id" else "search_dict"
+            c.log("val_in", val, id);
+            return s.$emit("search_dict", val, id, false);
+        },
         replace : false
+    }            
+    , {
+        key : "lex",
+        scope_name : "lexid",
+        replace : false
+    }
 
-    ]
+    ]);
+});
 
 
 
 
+
+function __guardMethod__(obj, methodName, transform) {
+  if (typeof obj !== 'undefined' && obj !== null && typeof obj[methodName] === 'function') {
+    return transform(obj, methodName);
+  } else {
+    return undefined;
+  }
+}
