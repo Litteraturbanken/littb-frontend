@@ -864,7 +864,7 @@ littb.directive("graphicimg", () => ({
     compile(elm, attrs) {
         if (_.str.endsWith(elm.attr("src"), ".svg")) {
             elm.load(elm.attr("src"), function(data) {
-                let [__, __, width, height] = data.match(/viewBox="(.+?)"/)[1].split(" ")
+                let [, , width, height] = data.match(/viewBox="(.+?)"/)[1].split(" ")
                 elm.width(width)
                 return elm.height(height)
             })

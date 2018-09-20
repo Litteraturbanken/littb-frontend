@@ -85,7 +85,7 @@ littb.filter("downloadMediatypes", () => obj => {
     if (!obj) {
         return []
     }
-    return obj.filter(x => x.downloadable)
+    return obj.mediatypes.filter(x => x.downloadable)
 })
 
 littb.filter("readMediatypes", function() {
@@ -94,7 +94,7 @@ littb.filter("readMediatypes", function() {
         if (!obj) {
             return []
         }
-        return obj.filter(x => read.includes(x.label))
+        return obj.mediatypes.filter(x => read.includes(x.label))
     }
 })
 
@@ -1185,6 +1185,52 @@ littb.controller("idCtrl", function($scope, backend, $routeParams, $location) {
     }
 })
 
+class Dramaweb {
+    constructor(data) {
+        const order = [
+            "first_staged",
+            "number_of_pages",
+            "number_of_acts",
+            "number_of_roles",
+            "male_roles",
+            "female_roles",
+            "other_roles"
+        ]
+        this.roles = data.roles
+        this.history = data.history
+        const tableData = _.omit(data, "legacy_url", "roles", "history")
+        this.orderedData = _.orderBy(_.toPairs(tableData), pair => order.indexOf(pair[0]))
+    }
+
+    format(key) {
+        return (
+            {
+                roles(val) {
+                    return val.join("<br>")
+                }
+            }[key] || (val => val.toString())
+        )
+    }
+
+    getLabel(key) {
+        return (
+            {
+                roles: "Rollista",
+                first_staged: "Urpremiär",
+                first_staged_in_sweden: "Svensk premiär",
+                number_of_roles: "Antal (totalt)",
+                male_roles: "Antal (män)",
+                female_roles: "Antal (kvinnor)",
+                other_roles: "Antal (övriga)",
+                number_of_pages: "Antal sidor",
+                number_of_roles: "Antal roller",
+                number_of_acts: "Antal akter",
+                history: "Uppsättningshistorik"
+            }[key] || key
+        )
+    }
+}
+
 littb.controller("sourceInfoCtrl", function(
     $scope,
     backend,
@@ -1195,7 +1241,6 @@ littb.controller("sourceInfoCtrl", function(
     $location,
     $http
 ) {
-    let Dramaweb
     const s = $scope
     const { title, author } = $routeParams
     // _.extend s, $routeParams
@@ -1292,52 +1337,6 @@ littb.controller("sourceInfoCtrl", function(
     authors.then(function([authorList, authorsById]) {
         s.authorsById = authorsById
     })
-
-    class Dramaweb {
-        constructor(data) {
-            const order = [
-                "first_staged",
-                "number_of_pages",
-                "number_of_acts",
-                "number_of_roles",
-                "male_roles",
-                "female_roles",
-                "other_roles"
-            ]
-            this.roles = data.roles
-            this.history = data.history
-            const tableData = _.omit(data, "legacy_url", "roles", "history")
-            this.orderedData = _.orderBy(_.toPairs(tableData), pair => order.indexOf(pair[0]))
-        }
-
-        format(key) {
-            return (
-                {
-                    roles(val) {
-                        return val.join("<br>")
-                    }
-                }[key] || (val => val.toString())
-            )
-        }
-
-        getLabel(key) {
-            return (
-                {
-                    roles: "Rollista",
-                    first_staged: "Urpremiär",
-                    first_staged_in_sweden: "Svensk premiär",
-                    number_of_roles: "Antal (totalt)",
-                    male_roles: "Antal (män)",
-                    female_roles: "Antal (kvinnor)",
-                    other_roles: "Antal (övriga)",
-                    number_of_pages: "Antal sidor",
-                    number_of_roles: "Antal roller",
-                    number_of_acts: "Antal akter",
-                    history: "Uppsättningshistorik"
-                }[key] || key
-            )
-        }
-    }
 })
 
 littb.controller("lexiconCtrl", function(
