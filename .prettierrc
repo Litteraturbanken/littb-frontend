@@ -1,4 +1,4 @@
 {
     "semi" : false,
-    "requirePragma" : true
+    "printWidth" : 100,
 }

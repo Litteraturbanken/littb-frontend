@@ -28,7 +28,7 @@ if (_.str.startsWith(location.host, "litteraturbanken")) {
     
 
 
-littb.factory("debounce", $timeout =>
+littb.factory("debounce", ($timeout) =>
     function(func, wait, options) {
         let leading;
         let args = null;

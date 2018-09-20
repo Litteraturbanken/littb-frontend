@@ -79,8 +79,8 @@ littb.directive('pagetitle', () =>
 );
 
 
-littb.directive('toBody', $compile =>
-    ({
+littb.directive('toBody', function($compile) {
+    return {
         restrict : "A",
         compile(elm, attrs) {
             elm.remove();
@@ -94,8 +94,8 @@ littb.directive('toBody', $compile =>
                 return scope.$on("$destroy", () => newElem.remove());
             };
         }
-    })
-);
+    }
+})
 
 
 littb.directive('sortTriangles', () =>
@@ -292,7 +292,7 @@ littb.directive('hvord', (backend, $location) =>
 
 
         
-littb.directive('selectionSniffer', $window => 
+littb.directive('selectionSniffer', ($window) => 
     
     ({
         link(scope, elem, attr) {
@@ -414,7 +414,7 @@ littb.directive("typeaheadTrigger", () =>
 );
 
 
-littb.directive('metaDesc', $interpolate =>
+littb.directive('metaDesc', ($interpolate) =>
     ({
         restrict : "EA",
         link(scope, elm, attrs) {
@@ -431,7 +431,7 @@ littb.directive('metaDesc', $interpolate =>
 
 
 
-littb.directive('pageTitle', $interpolate =>
+littb.directive('pageTitle', ($interpolate) =>
     ({
         restrict : "EA",
         link(scope, elm, attrs) {
@@ -519,7 +519,7 @@ littb.directive("sticky", () =>
     })
 );
 
-littb.directive("popper", $rootElement =>
+littb.directive("popper", ($rootElement) =>
     ({
         scope: {
             popper : "@"
@@ -632,7 +632,7 @@ littb.directive('downloadBtn', () =>
 );
 
 
-littb.directive("schoolAffix", $window =>
+littb.directive("schoolAffix", ($window) =>
 
     ({
         restrict : "EA",
@@ -706,7 +706,7 @@ littb.directive("schoolAffix", $window =>
         }
     })
 );
-littb.directive("affix", $window =>
+littb.directive("affix", ($window) =>
 
     ({
         restrict : "EA",
@@ -888,7 +888,7 @@ littb.directive("firstHeight", function() {
 });
 
     
-littb.directive('onFinishRender', $timeout =>
+littb.directive('onFinishRender', ($timeout) =>
     ({
         restrict : "A",
         link(scope, element, attr) {
@@ -1055,7 +1055,7 @@ littb.directive("faksimilImg", () =>
 );
 
 
-littb.directive("compile", $compile =>
+littb.directive("compile", ($compile) =>
     ({
         link($scope, element, attr) {
             const s = $scope;

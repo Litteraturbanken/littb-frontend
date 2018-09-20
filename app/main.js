@@ -1,4 +1,3 @@
-
 window.$ = window.jQuery = require("jquery")
 require("lodash")
 require("angular")
@@ -18,30 +17,24 @@ require("select2/dist/js/select2.js")
 require("angular-ui-select2/src/select2.js")
 window._.str = require("underscore.string")
 
-
-
 // require("components/select2/select2.css")
 require("./styles/bootstrap.scss")
 require("./styles/styles.scss")
-
 
 require("./lib/jquery.ui.position.js")
 require("./lib/angular-locale_sv-se.js")
 require("./lib/FileSaver.js")
 
-
-require("./scripts/app.coffee")
-require("./scripts/services.coffee")
-require("./scripts/directives.coffee")
-require("./scripts/reading_controller.coffee")
-require("./scripts/search_controller.coffee")
-require("./scripts/library_controller.coffee")
-require("./scripts/dramaweb_controller.coffee")
-require("./scripts/controllers.coffee")
-require("./scripts/lagerlof.coffee")
-require("./scripts/school.coffee")
-
+require("./scripts/app.js")
+require("./scripts/services.js")
+require("./scripts/directives.js")
+require("./scripts/reading_controller.js")
+require("./scripts/search_controller.js")
+require("./scripts/library_controller.js")
+require("./scripts/dramaweb_controller.js")
+require("./scripts/controllers.js")
+require("./scripts/lagerlof.js")
+require("./scripts/school.js")
 
 // require("./index.html")
 // require('file-loader?name=[name].[ext]!./index.html')
-
