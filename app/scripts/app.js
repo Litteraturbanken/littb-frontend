@@ -1,14 +1,5 @@
 /** @format */
 
-// TODO: This file was created by bulk-decaffeinate.
-// Sanity-check the conversion and remove this comment.
-/*
- * decaffeinate suggestions:
- * DS102: Remove unnecessary code created because of implicit returns
- * DS205: Consider reworking code to avoid use of IIFEs
- * DS207: Consider shorter variations of null checks
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
 _.templateSettings = { interpolate: /\{\{(.+?)\}\}/g }
 
 window.isDev = location.hostname !== "litteraturbanken.se"

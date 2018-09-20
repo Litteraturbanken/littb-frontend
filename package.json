@@ -4,7 +4,7 @@
     "private": true,
     "author": "Johan Roxendal",
     "scripts": {
-        "test": "coffee -c test/e2e && docker-compose up --build --exit-code-from littb",
+        "test": "docker-compose up --build --exit-code-from littb",
         "build": "webpack --config webpack.prod.js",
         "protractor": "wait-on http://localhost:9000 && protractor test/e2e/conf_e2e.js",
         "dev": "webpack-dev-server --config webpack.dev.js --host 0.0.0.0 --disable-host-check",

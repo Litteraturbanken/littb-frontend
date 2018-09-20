@@ -973,44 +973,6 @@ body > .header {
         vertical-align: bottom;
         width : 28%;
     }
-
-    .breadcrumb {
-        display: inline-block;
-        vertical-align: bottom;
-        > li {
-            display: inline;
-            &.active a {
-                color: #999999;
-            }
-        }
-        .divider {
-            color: #CCC;
-            padding: 0px 5px;
-        }
-        text-align : right;
-        width : 71%;
-        position : relative;
-        top : 6px;
-        padding : 0;
-        margin : 0;
-        background-color : transparent;
-        font-size : 0.8em;
-        li {
-            display: inline-block;
-            vertical-align: bottom;
-        }
-        & > li + li:before {
-            content: ">";
-            padding: 0 5px;
-        }
-        & > li:last-of-type a {
-            color: grey;
-        }
-        box-shadow: none;
-
-    }
-
-    
 }
 @mixin logo($color) {
     background-image: url("../img/lb_monogram_#{$color}.svg");
@@ -1120,10 +1082,6 @@ body > .header {
         }
     }
 
-    .breadcrumb {
-        display : none;
-    }
-    
     #mainview {
         margin-top : 2em;
 
@@ -1226,12 +1184,6 @@ body > .header {
         input[type=text] {
             font-size : 1.1em;
             width : 90px;
-        }
-    }
-    & + li:before {
-        .breadcrumb > li + li:before {
-            content: ">";
-            padding: 0 5px;
         }
     }
 }
@@ -4336,9 +4288,6 @@ grundform-clean {
     table, table * {
         border-color : #999;
         border-collapse: collapse;
-    }
-    .header .breadcrumb li:before {
-        color : black !important;
     }
     .author_img {
         display : none;
