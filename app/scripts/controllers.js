@@ -991,6 +991,7 @@ littb.controller("autocompleteCtrl", function(
         if (val) {
             prevFilter = val
             return backend.autocomplete(val).then(function(data) {
+                console.log("data", data, val, s)
                 let menu = [
                     {
                         label: "Start",
@@ -1111,7 +1112,7 @@ littb.controller("autocompleteCtrl", function(
                         (item.alt && _.some(item.alt.map(item => item.match(exp))))
                     )
                 })
-                data.concat(menu)
+                return data.concat(menu)
             })
         }
     }
