@@ -1,7 +1,3 @@
-/**
- * @prettier
- */
-
 const path = require("path")
 const CopyWebpackPlugin = require("copy-webpack-plugin")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
