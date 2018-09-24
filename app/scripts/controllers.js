@@ -214,7 +214,9 @@ littb.controller("statsCtrl", function($scope, backend) {
 
     backend.getStats().then(data => (s.statsData = data))
 
-    backend.getTitles(null, "popularity|desc").then(titleArray => (s.titleList = titleArray))
+    backend.getTitles(null, "popularity|desc").then(({ titles }) => {
+        s.titleList = titles
+    })
 
     return backend.getEpub(30).then(titleArray => (s.epubList = titleArray))
 })

@@ -433,15 +433,14 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({ url }).then(response => response.data)
         },
 
-        getParts(filterString, partial_string, text_filter = null) {
+        getParts(filter_string, partial_string, text_filter = null) {
             if (partial_string == null) {
                 partial_string = false
             }
-            const def = $q.defer()
             // TODO: add filter for leaf titlepaths and mediatype
             const params = {
                 exclude: "text,parts,sourcedesc,pages,errata",
-                filter_string: filterString,
+                filter_string,
                 to: 10000,
                 text_filter
             }
@@ -450,45 +449,43 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params.partial_string = true
             }
 
-            $http({
+            return $http({
                 url: `${STRIX_URL}/list_all/etext-part,faksimil-part`,
                 params
-            }).success(function(response) {
+            }).then(function(response) {
                 c.log("getParts data", response)
-                return def.resolve(expandMediatypes(response.data))
+                return expandMediatypes(response.data.data)
             })
-
-            return def.promise
         },
 
         getTitles(
             author,
             sort_key,
-            string,
-            aboutAuthors,
+            filter_string,
+            about_author,
             getAll,
-            partial_string,
+            partial_string = false,
             include = null,
-            text_filter = null
+            text_filter = null,
+            author_aggregation = null
         ) {
-            if (aboutAuthors == null) {
-                aboutAuthors = false
-            }
             if (getAll == null) {
                 getAll = false
             }
-            if (partial_string == null) {
-                partial_string = false
-            }
-            const def = $q.defer()
-            const params = {
-                exclude: "text,parts,sourcedesc,pages,errata",
-                text_filter
-            }
+            const params = _.omitBy(
+                {
+                    exclude: "text,parts,sourcedesc,pages,errata",
+                    text_filter,
+                    include,
+                    filter_string,
+                    about_author,
+                    author_aggregation,
+                    include,
+                    partial_string
+                },
+                val => _.isEmpty(val) && typeof val !== "boolean"
+            )
 
-            if (include) {
-                params.include = include
-            }
             if (sort_key) {
                 params.sort_field = sort_key
                 params.to = 30
@@ -497,33 +494,22 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params.to = 10000
             }
 
-            if (string) {
-                params.filter_string = string
-            }
             if (author) {
                 author = `/${author}`
-            }
-            if (aboutAuthors) {
-                params.about_author = true
-            }
-            if (partial_string) {
-                params.partial_string = true
             }
             if (getAll) {
                 params.to = 300
             }
 
-            $http({
+            return $http({
                 url: `${STRIX_URL}/list_all/etext,faksimil,pdf` + (author || ""),
                 params
-            }).success(function(data) {
-                c.log("data", data)
-                const titles = data.data
+            }).then(function(response) {
+                c.log("response", response)
+                const { data, author_aggregation } = response.data
 
-                return def.resolve(expandMediatypes(titles))
+                return { titles: expandMediatypes(data), author_aggs: author_aggregation }
             })
-
-            return def.promise
         },
 
         getAboutAuthors() {

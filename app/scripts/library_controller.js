@@ -26,6 +26,7 @@ littb.controller("libraryCtrl", function(
 
     const listKeys = _.pick($location.search(), "keywords", "languages", "mediatypes")
     _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
+    s.filters = _.omitBy(s.filters, _.isNil)
 
     s.normalizeAuthor = $filter("normalizeAuthor")
 
@@ -70,7 +71,7 @@ littb.controller("libraryCtrl", function(
 
     const aboutDef = $q.defer()
     s.onAboutAuthorChange = _.once(function($event) {
-        s.about_authors_filter = ($location.search().about_authors_filter || []).split(",")
+        s.about_authors_filter = ($location.search().about_authors_filter || "").split(",")
         return aboutDef.resolve()
     })
 
@@ -79,7 +80,9 @@ littb.controller("libraryCtrl", function(
     })
 
     s.filterAuthor = function(author) {
-        const exprs = (s.rowfilter || []).split(",")
+        return true
+        if (!author) return
+        const exprs = (s.rowfilter || "").split(" ")
 
         return _.every(exprs, function(expr) {
             const pseudonym = _.map(author.pseudonym, "full_name").join(" ")
@@ -89,16 +92,17 @@ littb.controller("libraryCtrl", function(
 
     function getPopularTitles() {
         s.titleSearching = true
-        backend.getTitles(null, "popularity|desc").then(function(titleArray) {
+        backend.getTitles(null, "popularity|desc").then(function({ titles }) {
             s.titleSearching = false
-            s.popularTitles = titleArray
-            s.titleByPath = _.groupBy(titleArray, item => item.titlepath)
+            s.popularTitles = titles
+            s.titleByPath = _.groupBy(titles, item => item.titlepath)
 
-            return titleArray
+            return titles
         })
     }
 
     s.resetView = function() {
+        console.log("resetView")
         s.showInitial = true
         s.showPopularAuth = true
         s.showPopular = true
@@ -113,7 +117,8 @@ littb.controller("libraryCtrl", function(
         s.audio_list = null
 
         if (!s.popularTitles) {
-            return getPopularTitles()
+            console.log("getPopularTitles")
+            getPopularTitles()
         }
     }
 
@@ -188,6 +193,7 @@ littb.controller("libraryCtrl", function(
             return s.authorData
         } else {
             // s.authorData
+            console.log("currentAuthors", s.currentAuthors)
             return s.currentAuthors
         }
     }
@@ -198,7 +204,12 @@ littb.controller("libraryCtrl", function(
         s.selectedTitle = null
         s.rowfilter = s.filter
         // if s.rowfilter or _.toPairs(getKeywordTextfilter()).length
-        if (_.toPairs(getKeywordTextfilter()).length || $location.search().about_authors_filter) {
+        console.log("_.toPairs(getKeywordTextfilter()).length", _.toPairs(getKeywordTextfilter()))
+        if (
+            s.rowfilter ||
+            _.toPairs(getKeywordTextfilter()).length ||
+            $location.search().about_authors_filter
+        ) {
             s.showInitial = false
             s.showPopularAuth = false
             s.showPopular = false
@@ -210,10 +221,10 @@ littb.controller("libraryCtrl", function(
             // if not (_.toPairs(getKeywordTextfilter()).length or s.about_authors_filter?.length)
             //     fetchAudio()
             if (!isDev) {
-                return backend.logLibrary(s.rowfilter)
+                backend.logLibrary(s.rowfilter)
             }
         } else {
-            return s.resetView()
+            s.resetView()
         }
     }
 
@@ -271,9 +282,9 @@ littb.controller("libraryCtrl", function(
 
     var fetchWorks = async function() {
         s.titleSearching = true
-        const include = `lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,\
-            authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub`
-        // last true in args list is for partial_string match
+        const include =
+            "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable" +
+            "authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub"
         let text_filter = getKeywordTextfilter()
         if (!_.toPairs(text_filter).length) {
             text_filter = null
@@ -286,22 +297,20 @@ littb.controller("libraryCtrl", function(
             s.filter,
             !!about_authors,
             false,
-            s.rowfilter,
+            true, // parial string
             include,
-            text_filter
+            text_filter,
+            true // author_aggs
         )
-        let [titleArray] = await $q.all([def, authors])
-        s.titleArray = titleArray
-        s.currentAuthors = _(titleArray)
-            .map(work =>
-                work.authors.filter(auth => !auth.type).map(auth => s.authorsById[auth.author_id])
-            )
-            .flatten()
-            .uniqBy("author_id")
-            .sortBy("name_for_index")
-            .value()
+        let [{ titles, author_aggs }] = await $q.all([def, authors])
+        console.log("titleArray after all", titles)
 
-        s.titleByPath = _.groupBy(titleArray, item => item.titlepath)
+        s.titleArray = titles
+        s.currentAuthors = util.sortAuthors(
+            author_aggs.map(({ author_id }) => s.authorsById[author_id])
+        )
+
+        s.titleByPath = _.groupBy(titles, item => item.titlepath)
         s.titleSearching = false
     }
 
@@ -318,7 +327,7 @@ littb.controller("libraryCtrl", function(
         s.showRecent = false
         s.showPopular = true
         if (!s.popularTitles) {
-            return getPopularTitles()
+            getPopularTitles()
         }
     }
 
