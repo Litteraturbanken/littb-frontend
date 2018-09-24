@@ -63,7 +63,7 @@ littb.filter "formatAuthors", (authors) ->
         if noHTML
             et = "&"
         else
-            et = "<em style='font-family: Requiem'>&</em>"
+            et = "<em class='font-normal'>&</em>"
         if firsts.length then return "#{firsts.join(', ')} #{et} #{last}"
         else return last
         

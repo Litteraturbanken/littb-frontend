@@ -106,6 +106,13 @@ $fa-font-path: "~font-awesome/fonts";
     text-transform: none;
 }
 
+.font-normal {
+    @include font-normal();
+}
+.italic {
+    font-style: italic;
+}
+
 
 @mixin topLinks() {
     margin-bottom : 1.8em;

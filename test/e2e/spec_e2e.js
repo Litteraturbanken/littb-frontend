@@ -63,13 +63,13 @@
     var rows;
     rows = null;
     beforeEach(function() {
-      get("/epub");
-      return rows = element.all(By.repeater("row in rows"));
+      return get("/epub");
     });
-    return it("should filter using the input", function() {
+    return fit("should filter using the input", function() {
       var filter;
       filter = element(By.model("filterTxt"));
       filter.sendKeys("nordanf");
+      rows = element.all(By.css(".row"));
       return expect(rows.count()).toEqual(1);
     });
   });
