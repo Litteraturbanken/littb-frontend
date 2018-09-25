@@ -1,4 +1,4 @@
-/HOST = process.env.LITTB_DOCKER_HOST or "localhost"
+HOST = process.env.LITTB_DOCKER_HOST or "localhost"
 get = (url) ->
     browser.get("http://#{HOST}:9000" + url)
 describe "library authors", () ->
