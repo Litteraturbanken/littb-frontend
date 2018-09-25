@@ -1441,7 +1441,7 @@ body > .header {
 
     #mainview {
 
-        width : 820px;
+        width : calc(100vw - #{$left-area-width});
 
         h1 {
             white-space: nowrap;
@@ -1730,6 +1730,7 @@ body > .header {
         .results_container {
             position: relative;
             white-space: nowrap;
+            max-width: 750px;
             & > div, & > ul  {
                 white-space: normal;
                 @include container();
@@ -1737,8 +1738,9 @@ body > .header {
                 background-color : rgba(255,255,255,0.95);
                 display: inline-block;
                 vertical-align: top;    
-                max-height: 75vh;
+                max-height: 85vh;
                 min-height: 200px;
+                width : 100%;
 
                 
             }
@@ -1761,6 +1763,7 @@ body > .header {
             overflow-y: auto;
             overflow-x: hidden;
             position: relative;
+            max-width : 100%;
             
         }
         .searching .table_container table td {
@@ -1770,8 +1773,8 @@ body > .header {
 
         .table_container {
             padding-left : 1.3em;
-            width : 66vw;
-            overflow-x: hidden;
+            width : 100%;
+            overflow: hidden;
             
 
             table {
@@ -1780,7 +1783,7 @@ body > .header {
                 width : 100%;
                 display: block;
                 // position: absolute;
-                overflow-x: hidden;
+                overflow: hidden;
                 white-space : nowrap;
                 font-size: 0.9em;
                 .header {
