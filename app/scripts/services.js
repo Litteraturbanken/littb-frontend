@@ -405,8 +405,9 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             const params = {
                 has_epub: true,
                 to: size || 10000,
-                include: `lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,
-                    authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name`,
+                include:
+                    "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id," +
+                    "authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name",
                 exclude: "text,parts,sourcedesc,pages,errata",
                 sort_field: sort_field || "epub_popularity|desc"
             }
@@ -433,7 +434,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({ url }).then(response => response.data)
         },
 
-        getParts(filter_string, partial_string, text_filter = null) {
+        getParts(filter_string, partial_string, filter_or, filter_and) {
             if (partial_string == null) {
                 partial_string = false
             }
@@ -442,7 +443,8 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 exclude: "text,parts,sourcedesc,pages,errata",
                 filter_string,
                 to: 10000,
-                text_filter
+                filter_or,
+                filter_and
             }
 
             if (partial_string) {
@@ -466,7 +468,8 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             getAll,
             partial_string = false,
             include = null,
-            text_filter = null,
+            filter_or = null,
+            filter_and = null,
             author_aggregation = null
         ) {
             if (getAll == null) {
@@ -475,7 +478,8 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             const params = _.omitBy(
                 {
                     exclude: "text,parts,sourcedesc,pages,errata",
-                    text_filter,
+                    filter_or,
+                    filter_and,
                     include,
                     filter_string,
                     about_author,

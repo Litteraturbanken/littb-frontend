@@ -1,3 +1,35 @@
+const littb = window.littb
+const _ = window._
+const $ = window.$
+const isDev = window.isDev
+const c = window.console
+
+function detectIE() {
+    const ua = window.navigator.userAgent
+
+    const msie = ua.indexOf("MSIE ")
+    if (msie > 0) {
+        // IE 10 or older => return version number
+        return parseInt(ua.substring(msie + 5, ua.indexOf(".", msie)), 10)
+    }
+
+    const trident = ua.indexOf("Trident/")
+    if (trident > 0) {
+        // IE 11 => return version number
+        const rv = ua.indexOf("rv:")
+        return parseInt(ua.substring(rv + 3, ua.indexOf(".", rv)), 10)
+    }
+
+    const edge = ua.indexOf("Edge/")
+    if (edge > 0) {
+        // Edge (IE 12+) => return version number
+        return parseInt(ua.substring(edge + 5, ua.indexOf(".", edge)), 10)
+    }
+
+    // other browser
+    return false
+}
+
 littb.controller("libraryCtrl", function(
     $scope,
     backend,
@@ -79,16 +111,15 @@ littb.controller("libraryCtrl", function(
         return $timeout(() => $(".about_select").select2(), 0)
     })
 
-    s.filterAuthor = function(author) {
-        return true
-        if (!author) return
-        const exprs = (s.rowfilter || "").split(" ")
+    // s.filterAuthor = function(author) {
+    //     if (!author) return
+    //     const exprs = (s.rowfilter || "").split(" ")
 
-        return _.every(exprs, function(expr) {
-            const pseudonym = _.map(author.pseudonym, "full_name").join(" ")
-            return new RegExp(expr, "i").test(author.full_name + pseudonym)
-        })
-    }
+    //     return _.every(exprs, function(expr) {
+    //         const pseudonym = _.map(author.pseudonym, "full_name").join(" ")
+    //         return new RegExp(expr, "i").test(author.full_name + pseudonym)
+    //     })
+    // }
 
     function getPopularTitles() {
         s.titleSearching = true
@@ -193,23 +224,20 @@ littb.controller("libraryCtrl", function(
             return s.authorData
         } else {
             // s.authorData
-            console.log("currentAuthors", s.currentAuthors)
             return s.currentAuthors
         }
     }
-
+    let hasActiveFilter = () => {
+        let { filter_or, filter_and } = getKeywordTextfilter()
+        return _.toPairs({ ...filter_and, ...filter_or }).length
+    }
     s.searchTitle = function() {
         c.log("searchTitle", s.filter)
         s.selectedAuth = null
         s.selectedTitle = null
         s.rowfilter = s.filter
         // if s.rowfilter or _.toPairs(getKeywordTextfilter()).length
-        console.log("_.toPairs(getKeywordTextfilter()).length", _.toPairs(getKeywordTextfilter()))
-        if (
-            s.rowfilter ||
-            _.toPairs(getKeywordTextfilter()).length ||
-            $location.search().about_authors_filter
-        ) {
+        if (s.rowfilter || hasActiveFilter() || $location.search().about_authors_filter) {
             s.showInitial = false
             s.showPopularAuth = false
             s.showPopular = false
@@ -228,11 +256,13 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    var fetchTitles = () =>
+    var fetchTitles = () => {
         // unless s.filter then return
+        let { filter_or, filter_and } = getKeywordTextfilter()
         backend
-            .getParts(s.rowfilter, true, getKeywordTextfilter())
+            .getParts(s.rowfilter, true, filter_or, filter_and)
             .then(titleArray => (s.all_titles = titleArray))
+    }
 
     var fetchAudio = () =>
         backend
@@ -254,30 +284,28 @@ littb.controller("libraryCtrl", function(
         //         "proofread:true": "proofread:true",
         //         "language:deu": "language:deu"
         //     },
-        //     mediatypes: ["has_epub:true"]
+        //     mediatypes: ["has_epub:true", "mediatype:faksimil"]
         // }
 
-        c.log("gender filter", s.filters["gender"])
         if (s.filters["main_author.gender"] === "all") {
             delete s.filters["main_author.gender"]
         }
-        const kwList = _.values(s.filters.keywords).concat(
-            _.values(s.filters.languages),
-            _.values(s.filters.mediatypes)
-        )
-        const text_filter = {}
-        for (let kw of kwList) {
-            const [key, val] = kw.split(":")
-            if (key === "main_author.gender" && val === "all") {
-                continue
+        function makeObj(list) {
+            let output = {}
+            for (let kw of list || []) {
+                const [key, val] = kw.split(":")
+                if (output[key]) {
+                    output[key].push(val)
+                } else {
+                    output[key] = [val]
+                }
             }
-            if (text_filter[key]) {
-                text_filter[key].push(val)
-            } else {
-                text_filter[key] = [val]
-            }
+            return output
         }
-        return _.extend(_.omit(s.filters, "keywords", "languages", "mediatypes"), text_filter)
+        const rest = _.omit(s.filters, "keywords", "languages", "mediatypes")
+        const filter_or = makeObj(s.filters.mediatypes)
+        const filter_and = _.extend(rest, makeObj(s.filters.languages), makeObj(s.filters.keywords))
+        return { filter_or, filter_and }
     }
 
     var fetchWorks = async function() {
@@ -285,10 +313,10 @@ littb.controller("libraryCtrl", function(
         const include =
             "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable" +
             "authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub"
-        let text_filter = getKeywordTextfilter()
-        if (!_.toPairs(text_filter).length) {
-            text_filter = null
-        }
+        let { filter_or, filter_and } = getKeywordTextfilter()
+        // if (!_.toPairs(text_filter).length) {
+        //     text_filter = null
+        // }
         const about_authors = $location.search().about_authors_filter
 
         const def = backend.getTitles(
@@ -299,19 +327,21 @@ littb.controller("libraryCtrl", function(
             false,
             true, // parial string
             include,
-            text_filter,
+            filter_or,
+            filter_and,
             true // author_aggs
         )
-        let [{ titles, author_aggs }] = await $q.all([def, authors])
-        console.log("titleArray after all", titles)
+        $q.all([def, authors]).then(([{ titles, author_aggs }]) => {
+            console.log("titleArray after all", titles)
 
-        s.titleArray = titles
-        s.currentAuthors = util.sortAuthors(
-            author_aggs.map(({ author_id }) => s.authorsById[author_id])
-        )
+            s.titleArray = titles
+            s.currentAuthors = util.sortAuthors(
+                author_aggs.map(({ author_id }) => s.authorsById[author_id])
+            )
 
-        s.titleByPath = _.groupBy(titles, item => item.titlepath)
-        s.titleSearching = false
+            s.titleByPath = _.groupBy(titles, item => item.titlepath)
+            s.titleSearching = false
+        })
     }
 
     s.showAllWorks = function() {
@@ -373,9 +403,10 @@ littb.controller("libraryCtrl", function(
         } else if (mediatype === "pdf") {
             return `txt/${row.lbworkid}/${row.lbworkid}.pdf`
         } else {
-            return
-            ;`/forfattare/${author_id}/titlar/${s.getTitleId(row)}/` +
+            return (
+                `/forfattare/${author_id}/titlar/${s.getTitleId(row)}/` +
                 `sida/${row.startpagename}/${mediatype}`
+            )
         }
     }
 

@@ -340,46 +340,47 @@ littb.controller("dramawebCtrl", async function(
         return ret
     }, 100)
 
-    let data = await backend.getDramawebTitles()
-    s.rows = data.works
-    authors.then(function() {
-        s.authorData = _.map(data.authors, author_id => s.authorsById[author_id])
-        s.authorData = util.sortAuthors(s.authorData)
+    backend.getDramawebTitles().then(data => {
+        s.rows = data.works
+        authors.then(function() {
+            s.authorData = _.map(data.authors, author_id => s.authorsById[author_id])
+            s.authorData = util.sortAuthors(s.authorData)
+        })
+
+        // s.filters = _.extend s.filters, {
+        // }
+
+        s.filterDirty = _.fromPairs(
+            _.map(_.intersection(findMinMax, $location.search()), key => [key, true])
+        )
+        // s.filterDirty = _.fromPairs ([key, true] for key in findMinMax when $location.search()[key])
+        const ranges = _.fromPairs(_.map(findMinMax, key => [key, [Infinity, 0]]))
+        for (let item of s.rows) {
+            if (!item.dramawebben) {
+                continue
+            }
+            for (let key of findMinMax) {
+                const n = Number(item.dramawebben[key])
+                if (n < ranges[key][0]) {
+                    ranges[key][0] = n
+                }
+                if (n > ranges[key][1]) {
+                    ranges[key][1] = n
+                }
+            }
+        }
+        s.sliderConf = {}
+
+        for (key of findMinMax) {
+            const [from, to] = ranges[key]
+            if (!s.filters[key]) {
+                s.filters[key] = [from, to]
+            }
+            s.sliderConf[key] = {
+                floor: from,
+                ceil: to,
+                onEnd: ((key, s) => () => $timeout(() => (s.filterDirty[key] = true), 0))(key, s)
+            }
+        }
     })
-
-    // s.filters = _.extend s.filters, {
-    // }
-
-    s.filterDirty = _.fromPairs(
-        _.map(_.intersection(findMinMax, $location.search()), key => [key, true])
-    )
-    // s.filterDirty = _.fromPairs ([key, true] for key in findMinMax when $location.search()[key])
-    const ranges = _.fromPairs(_.map(findMinMax, key => [key, [Infinity, 0]]))
-    for (let item of s.rows) {
-        if (!item.dramawebben) {
-            continue
-        }
-        for (let key of findMinMax) {
-            const n = Number(item.dramawebben[key])
-            if (n < ranges[key][0]) {
-                ranges[key][0] = n
-            }
-            if (n > ranges[key][1]) {
-                ranges[key][1] = n
-            }
-        }
-    }
-    s.sliderConf = {}
-
-    for (key of findMinMax) {
-        const [from, to] = ranges[key]
-        if (!s.filters[key]) {
-            s.filters[key] = [from, to]
-        }
-        s.sliderConf[key] = {
-            floor: from,
-            ceil: to,
-            onEnd: ((key, s) => () => $timeout(() => (s.filterDirty[key] = true), 0))(key, s)
-        }
-    }
 })

@@ -1,33 +1,11 @@
-/** @format */
+const angular = window.angular
+const _ = window._
+const $ = window.$
+const isDev = window.isDev
 
-window.c = typeof console !== "undefined" && console !== null ? console : { log: _.noop }
+const c = (window.c =
+    typeof console !== "undefined" && console !== null ? console : { log: _.noop })
 const littb = angular.module("littbApp")
-
-window.detectIE = function() {
-    const ua = window.navigator.userAgent
-
-    const msie = ua.indexOf("MSIE ")
-    if (msie > 0) {
-        // IE 10 or older => return version number
-        return parseInt(ua.substring(msie + 5, ua.indexOf(".", msie)), 10)
-    }
-
-    const trident = ua.indexOf("Trident/")
-    if (trident > 0) {
-        // IE 11 => return version number
-        const rv = ua.indexOf("rv:")
-        return parseInt(ua.substring(rv + 3, ua.indexOf(".", rv)), 10)
-    }
-
-    const edge = ua.indexOf("Edge/")
-    if (edge > 0) {
-        // Edge (IE 12+) => return version number
-        return parseInt(ua.substring(edge + 5, ua.indexOf(".", edge)), 10)
-    }
-
-    // other browser
-    return false
-}
 
 littb.filter(
     "formatAuthors",
@@ -671,7 +649,7 @@ littb.controller("audioListCtrl", function(
     }
 
     s.getAuthor = function(author) {
-        const [last, first] = author.name_for_index.split(",")
+        const [last, first] = (author.name_for_index || "").split(",")
 
         return _.compact([last.toUpperCase(), first]).join(",")
     }
@@ -704,7 +682,15 @@ littb.controller("audioListCtrl", function(
     })
 })
 
-littb.controller("epubListCtrl", function($scope, backend, util, authors, $filter, $q, $location) {
+littb.controller("epubListCtrl", function epubListCtrl(
+    $scope,
+    backend,
+    util,
+    authors,
+    $filter,
+    $q,
+    $location
+) {
     const s = $scope
     s.searching = true
     s.authorFilter = $location.search().authorFilter
@@ -763,7 +749,7 @@ littb.controller("epubListCtrl", function($scope, backend, util, authors, $filte
         }
     }
 
-    window.has = (one, two) => one.toLowerCase().indexOf(two.toLowerCase()) !== -1
+    const has = (one, two) => one.toLowerCase().indexOf(two.toLowerCase()) !== -1
     s.rowFilter = function(item) {
         if (!s.authorsById) {
             return
@@ -1364,7 +1350,7 @@ littb.controller("lexiconCtrl", function(
             // down arrow
             // TODO: this is pretty bad but couldn't be done using the typeahead directive
             if ($(".input_container .dropdown-menu").is(":hidden")) {
-                //typeaheadTrigger directive
+                // typeaheadTrigger directive
                 s.$broadcast("open", s.lex_article)
             }
         } else if (event.keyCode === 27) {
