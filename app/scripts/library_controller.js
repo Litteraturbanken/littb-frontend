@@ -51,12 +51,19 @@ littb.controller("libraryCtrl", function(
     s.show_more = $location.search().avancerat != null
     s.filters = {
         "main_author.gender": $location.search()["kön"],
+        about_authors: [],
         keywords: [],
         languages: [],
         mediatypes: []
     }
 
-    const listKeys = _.pick($location.search(), "keywords", "languages", "mediatypes")
+    const listKeys = _.pick(
+        $location.search(),
+        "keywords",
+        "languages",
+        "mediatypes",
+        "about_authors"
+    )
     _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
     s.filters = _.omitBy(s.filters, _.isNil)
 
@@ -103,7 +110,7 @@ littb.controller("libraryCtrl", function(
 
     const aboutDef = $q.defer()
     s.onAboutAuthorChange = _.once(function($event) {
-        s.about_authors_filter = ($location.search().about_authors_filter || "").split(",")
+        s.filters.about_authors = ($location.search().about_authors || "").split(",")
         return aboutDef.resolve()
     })
 
@@ -140,7 +147,7 @@ littb.controller("libraryCtrl", function(
         s.showRecent = false
 
         s.filters = {}
-        s.about_authors_filter = []
+        // s.about_authors_filter = []
         $timeout(() => $(".gender_select, .keyword_select, about_select").select2(), 0)
         s.filter = ""
         s.rowfilter = ""
@@ -302,9 +309,14 @@ littb.controller("libraryCtrl", function(
             }
             return output
         }
-        const rest = _.omit(s.filters, "keywords", "languages", "mediatypes")
+        const rest = _.omit(s.filters, "keywords", "languages", "mediatypes", "about_authors")
         const filter_or = makeObj(s.filters.mediatypes)
-        const filter_and = _.extend(rest, makeObj(s.filters.languages), makeObj(s.filters.keywords))
+        const filter_and = _.extend(
+            rest,
+            makeObj(s.filters.languages),
+            makeObj(s.filters.keywords),
+            makeObj(s.filters.about_authors)
+        )
         return { filter_or, filter_and }
     }
 
@@ -317,13 +329,13 @@ littb.controller("libraryCtrl", function(
         // if (!_.toPairs(text_filter).length) {
         //     text_filter = null
         // }
-        const about_authors = $location.search().about_authors_filter
+        // const about_authors = $location.search().about_authors_filter
 
         const def = backend.getTitles(
-            about_authors,
+            null, // authors
             null,
             s.filter,
-            !!about_authors,
+            // !!about_authors,
             false,
             true, // parial string
             include,
@@ -514,7 +526,8 @@ littb.controller("libraryCtrl", function(
             }
         },
         {
-            key: "about_authors_filter",
+            key: "about_authors",
+            expr: "filters.about_authors",
             val_in(val) {
                 return (val || "").split(",")
             },

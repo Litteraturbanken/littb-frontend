@@ -35,12 +35,12 @@
                 <div class="row title_select_container">
                     <select multiple class="filter_select about_select"
                             ui-select2="{placeholder: 'Om ett författarskap'}" 
-                            ng-model="about_authors_filter" 
+                            ng-model="filters.about_authors" 
                             data-placeholder="Om ett författarskap" 
                             ng-change="onAboutAuthorChange($event)">
 
                         <option value=""></option>
-                        <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
+                        <option value='authorkeyword:{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
                     </select>
                 </div>
                 

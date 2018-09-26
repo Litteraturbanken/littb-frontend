@@ -464,7 +464,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             author,
             sort_key,
             filter_string,
-            about_author,
+            // about_author,
             getAll,
             partial_string = false,
             include = null,
@@ -482,9 +482,8 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     filter_and,
                     include,
                     filter_string,
-                    about_author,
+                    // about_author,
                     author_aggregation,
-                    include,
                     partial_string
                 },
                 val => _.isEmpty(val) && typeof val !== "boolean"
