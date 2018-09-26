@@ -69,7 +69,7 @@
       var filter;
       filter = element(By.model("filterTxt"));
       filter.sendKeys("nordanf");
-      rows = element.all(By.css(".row"));
+      rows = element.all(By.css(".tablerow"));
       return expect(rows.count()).toEqual(1);
     });
   });

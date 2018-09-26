@@ -53,7 +53,7 @@ describe "epubList", () ->
     it "should filter using the input", () ->
         filter = element(By.model("filterTxt"))
         filter.sendKeys("nordanf")
-        rows = element.all(By.css(".row"))
+        rows = element.all(By.css(".tablerow"))
         # rows = element.all(By.repeater("row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]"))
 
         expect(rows.count()).toEqual 1
