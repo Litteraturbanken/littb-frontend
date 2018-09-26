@@ -65,7 +65,7 @@
     beforeEach(function() {
       return get("/epub");
     });
-    return fit("should filter using the input", function() {
+    return it("should filter using the input", function() {
       var filter;
       filter = element(By.model("filterTxt"));
       filter.sendKeys("nordanf");
