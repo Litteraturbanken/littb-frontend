@@ -43,6 +43,7 @@ littb.controller("libraryCtrl", function(
     $filter
 ) {
     const s = $scope
+    s.showAllParts = !!$location.search().alla_titlar
     s.titleSearching = false
     s.authorSearching = true
     s.showPopular = true
@@ -114,11 +115,14 @@ littb.controller("libraryCtrl", function(
         if ($location.search().about_authors) {
             s.filters.about_authors = ($location.search().about_authors || "").split(",")
         }
+
         return aboutDef.resolve()
     })
 
     $q.all([aboutDef.promise, authors]).then(function() {
-        return $timeout(() => $(".about_select").select2(), 100)
+        return $timeout(() => {
+            $(".about_select").select2()
+        }, 100)
     })
 
     // s.filterAuthor = function(author) {
@@ -183,15 +187,6 @@ littb.controller("libraryCtrl", function(
             return
         }
         return title.lbworkid + (title.titlepath.split("/")[1] || "")
-    }
-
-    s.authorRender = function() {
-        if ($location.search()["author"]) {
-            const auth = s.authorsById[$location.search()["author"]]
-            s.authorClick(null, auth)
-
-            s.$emit("listScroll", $location.search()["author"])
-        }
     }
 
     s.titleRender = function() {
@@ -430,24 +425,6 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    s.authorClick = function($event, author) {
-        if (s.selectedAuth !== author) {
-            if (s.selectedAuth != null) {
-                s.selectedAuth._collapsed = false
-            }
-        }
-
-        s.selectedAuth = author
-
-        $location.search("author", author.author_id)
-        author._infoSearching = true
-        backend.getAuthorInfo(author.author_id).then(function(data) {
-            author._collapsed = true
-            author.data = data
-            author._infoSearching = false
-        })
-    }
-
     s.authorHeaderClick = function($event, author) {
         if (s.selectedAuth === author && author._collapsed) {
             author._collapsed = false
@@ -546,6 +523,10 @@ littb.controller("libraryCtrl", function(
         {
             key: "avancerat",
             expr: "show_more"
+        },
+        {
+            key: "alla_titlar",
+            expr: "showAllParts"
         }
     ])
 

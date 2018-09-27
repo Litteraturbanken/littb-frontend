@@ -3331,8 +3331,12 @@ $partnav-width : 170px;
                 }
             }
         }
+        .show_all {
+            margin-top: 1em;
+            margin-bottom: 1em;
+        }
         
-    }
+    } // #mainview
 }
 
 .page-biblinfo {

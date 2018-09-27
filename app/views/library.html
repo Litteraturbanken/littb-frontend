@@ -32,9 +32,9 @@
                         <option value='keyword:sentpajorden'>Sent på jorden</option>
                     </select>
                 </div>
-                <div class="row title_select_container">
+                <div class="row title_select_container about_container">
                     <select multiple class="filter_select about_select"
-                            ui-select2="{placeholder: 'Om ett författarskap'}" 
+                            ui-select2 
                             ng-model="filters.about_authors" 
                             data-placeholder="Om ett författarskap" 
                             ng-change="onAboutAuthorChange($event)">
@@ -241,15 +241,15 @@
                                     </a>
                                 </span>
                                 
-                                <span class="author"><a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
+                                <span class="author"><a ng-href="/forfattare/{{row.work_authors[0].author_id}}">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
                             </div>
                         </li>
+                        <li ng-show="!showAllParts && parts_hits > 30">
+                            <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchTitles()">
+                                Visa alla {{parts_hits}} träffar
+                            </button>
+                        </li>
                     </ul>
-                    <div>
-                        <button class="btn btn-sm show_all" ng-show="!showAllParts && nHitsParts > 30" ng-click="(showAllParts = true) && fetchTitles()">
-                            Visa alla {{parts_hits}} träffar
-                        </button>
-                    </div>
                 </div>
             </div>
 

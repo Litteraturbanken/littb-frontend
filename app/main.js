@@ -13,7 +13,7 @@ require("angularjs-slider/dist/rzslider.css")
 // require("ui-select")
 // require("ui-select/dist/select.css")
 require("select2/dist/css/select2.css")
-require("select2/dist/js/select2.js")
+require("./lib/select2.js")
 require("angular-ui-select2/src/select2.js")
 window._.str = require("underscore.string")
 
