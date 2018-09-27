@@ -1212,7 +1212,6 @@ class Dramaweb {
                 female_roles: "Antal (kvinnor)",
                 other_roles: "Antal (övriga)",
                 number_of_pages: "Antal sidor",
-                number_of_roles: "Antal roller",
                 number_of_acts: "Antal akter",
                 history: "Uppsättningshistorik"
             }[key] || key
@@ -1220,7 +1219,7 @@ class Dramaweb {
     }
 }
 
-littb.controller("sourceInfoCtrl", function(
+littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
     $scope,
     backend,
     $routeParams,
@@ -1231,7 +1230,6 @@ littb.controller("sourceInfoCtrl", function(
     $http
 ) {
     const s = $scope
-    const { title, author } = $routeParams
     // _.extend s, $routeParams
     s.title = $routeParams.title
     s.author = $routeParams.author

@@ -1,15 +1,8 @@
-// TODO: This file was created by bulk-decaffeinate.
-// Sanity-check the conversion and remove this comment.
-/*
- * decaffeinate suggestions:
- * DS101: Remove unnecessary use of Array.from
- * DS102: Remove unnecessary code created because of implicit returns
- * DS103: Rewrite code to no longer use __guard__
- * DS201: Simplify complex destructure assignments
- * DS205: Consider reworking code to avoid use of IIFEs
- * DS207: Consider shorter variations of null checks
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
+const angular = window.angular
+const _ = window._
+const jQuery = window.jQuery
+const c = window.console
+
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
@@ -67,8 +60,8 @@ littb.factory(
 )
 
 littb.factory("util", function($location) {
-    const PREFIX_REGEXP = /^(x[\:\-_]|data[\:\-_])/i
-    const SPECIAL_CHARS_REGEXP = /([\:\-\_]+(.))/g
+    const PREFIX_REGEXP = /^(x[:\-_]|data[:\-_])/i
+    const SPECIAL_CHARS_REGEXP = /([:\-_]+(.))/g
     const MOZ_HACK_REGEXP = /^moz([A-Z])/
     const camelCase = name =>
         name
@@ -90,8 +83,7 @@ littb.factory("util", function($location) {
                 // Internet Explorer.
                 return xmlNode.xml
             } catch (error) {
-                //Other browsers without XML Serializer
-                e = error
+                // Other browsers without XML Serializer
                 alert("Xmlserializer not supported")
             }
         }
@@ -335,7 +327,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             } else {
                 // IE
                 // c.log "data", data.replace /<\?xml.*/, ''
-                xml = new ActiveXObject("Microsoft.XMLDOM")
+                xml = new window.ActiveXObject("Microsoft.XMLDOM")
                 xml.async = "false"
                 xml.loadXML(data)
             }
@@ -434,7 +426,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({ url }).then(response => response.data)
         },
 
-        getParts(filter_string, partial_string, filter_or, filter_and) {
+        getParts(filter_string, partial_string, filter_or, filter_and, to) {
             if (partial_string == null) {
                 partial_string = false
             }
@@ -442,7 +434,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             const params = {
                 exclude: "text,parts,sourcedesc,pages,errata",
                 filter_string,
-                to: 10000,
+                to,
                 filter_or,
                 filter_and
             }
@@ -456,7 +448,10 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params
             }).then(function(response) {
                 c.log("getParts data", response)
-                return expandMediatypes(response.data.data)
+                return {
+                    titleArray: expandMediatypes(response.data.data),
+                    hits: response.data.hits
+                }
             })
         },
 
@@ -857,7 +852,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 exclude: "text,parts,sourcedesc,pages,errata",
                 include:
                     "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben,keyword,startpagename",
-                text_filter: { "provenance.library": "Dramawebben" },
+                filter_and: { "provenance.library": "Dramawebben" },
                 sort_field: "sortkey|asc",
                 show_all: true,
                 to: 10000,
@@ -1677,16 +1672,3 @@ littb.factory("SearchWorkData", function(SearchData, $q, $http) {
         }
     })
 })
-
-function __range__(left, right, inclusive) {
-    let range = []
-    let ascending = left < right
-    let end = !inclusive ? right : ascending ? right + 1 : right - 1
-    for (let i = left; ascending ? i < end : i > end; ascending ? i++ : i--) {
-        range.push(i)
-    }
-    return range
-}
-function __guard__(value, transform) {
-    return typeof value !== "undefined" && value !== null ? transform(value) : undefined
-}

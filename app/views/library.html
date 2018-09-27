@@ -225,10 +225,10 @@
 
                         </li>
                         
-                        <li class="part_header" ng-hide="titleSearching || showInitial">
+                        <li class="part_header" ng-hide="partSearching || showInitial">
                             Dikter, noveller, essäer, etc.
                         </li>
-                        <li class="" ng-show="!showInitial && !titleSearching && !all_titles.length">
+                        <li class="" ng-show="!showInitial && !partSearching && !all_titles.length">
                             Inga träffar.
                         </li>
                     
@@ -244,8 +244,12 @@
                                 <span class="author"><a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
                             </div>
                         </li>
-                        
                     </ul>
+                    <div>
+                        <button class="btn btn-sm show_all" ng-show="!showAllParts && nHitsParts > 30" ng-click="(showAllParts = true) && fetchTitles()">
+                            Visa alla {{parts_hits}} träffar
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -1,3 +1,8 @@
+const _ = window._
+const $ = window.$
+const c = window.console
+const littb = window.littb
+
 const getAuthorSelectSetup = (s, $filter) => ({
     formatNoMatches: "Inga resultat",
     templateResult(data) {
@@ -367,7 +372,7 @@ littb.controller("searchCtrl", function(
 
         // s.save_search = (currentIndex) ->
         //     c.log "save_search", $location.url()
-        s.$root.prevSearchState = `/${$location.url()}`
+        // s.$root.prevSearchState = `/${$location.url()}`
     }
 
     s.getSetVal = (sent, val) => _.str.trim(sent.structs[val], "|").split("|")[0]
@@ -540,7 +545,7 @@ littb.controller("searchCtrl", function(
         s.query = q
         s.pageTitle = q
         const from = s.current_page * s.num_hits
-        //TODO: eh?
+        // TODO: eh?
         const to = from + s.num_hits - 1
         const args = getSearchArgs(from, to)
         searchData.newSearch(args)
@@ -551,7 +556,7 @@ littb.controller("searchCtrl", function(
     s.search = function(from, to) {
         s.searching = true
 
-        const args = getSearchArgs(from, to)
+        // const args = getSearchArgs(from, to)
         s.from_index = from
 
         // def = backend.searchWorks(args)

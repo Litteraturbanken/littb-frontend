@@ -1,3 +1,7 @@
+const _ = window._
+const littb = window.littb
+const c = window.console
+
 const rangeKeys = [
     "female_roles",
     "male_roles",
@@ -7,7 +11,7 @@ const rangeKeys = [
     "number_of_roles"
 ]
 
-littb.controller("dramawebCtrl", async function(
+littb.controller("dramawebCtrl", function dramawebCtrl(
     $scope,
     $location,
     $rootScope,
@@ -324,7 +328,7 @@ littb.controller("dramawebCtrl", async function(
                     let [from, to] = value
                     from = from || 0
                     to = to || Infinity
-                    if (item.dramawebben && item.dramawebben.hasOwnProperty(key)) {
+                    if (!item.dramawebben || !item.dramawebben.hasOwnProperty(key)) {
                         return false
                     }
 
@@ -351,16 +355,19 @@ littb.controller("dramawebCtrl", async function(
         // }
 
         s.filterDirty = _.fromPairs(
-            _.map(_.intersection(findMinMax, $location.search()), key => [key, true])
+            _.map(_.intersection(rangeKeys, $location.search()), key => [key, true])
         )
-        // s.filterDirty = _.fromPairs ([key, true] for key in findMinMax when $location.search()[key])
-        const ranges = _.fromPairs(_.map(findMinMax, key => [key, [Infinity, 0]]))
+        // s.filterDirty = _.fromPairs ([key, true] for key in rangeKeys when $location.search()[key])
+        const ranges = _.fromPairs(_.map(rangeKeys, key => [key, [Infinity, 0]]))
         for (let item of s.rows) {
             if (!item.dramawebben) {
                 continue
             }
-            for (let key of findMinMax) {
+            for (let key of rangeKeys) {
                 const n = Number(item.dramawebben[key])
+                if (_.isNaN(n)) {
+                    continue
+                }
                 if (n < ranges[key][0]) {
                     ranges[key][0] = n
                 }
@@ -369,11 +376,13 @@ littb.controller("dramawebCtrl", async function(
                 }
             }
         }
+        console.log("ranges", ranges)
         s.sliderConf = {}
 
-        for (key of findMinMax) {
+        for (let key of rangeKeys) {
             const [from, to] = ranges[key]
-            if (!s.filters[key]) {
+            console.log("from, to", from, to, s.filters[key])
+            if (!s.filters[key] || s.filters[key].length < 2) {
                 s.filters[key] = [from, to]
             }
             s.sliderConf[key] = {

@@ -110,12 +110,15 @@ littb.controller("libraryCtrl", function(
 
     const aboutDef = $q.defer()
     s.onAboutAuthorChange = _.once(function($event) {
-        s.filters.about_authors = ($location.search().about_authors || "").split(",")
+        console.log("onAboutAuthorChange", s.filters.about_authors)
+        if ($location.search().about_authors) {
+            s.filters.about_authors = ($location.search().about_authors || "").split(",")
+        }
         return aboutDef.resolve()
     })
 
     $q.all([aboutDef.promise, authors]).then(function() {
-        return $timeout(() => $(".about_select").select2(), 0)
+        return $timeout(() => $(".about_select").select2(), 100)
     })
 
     // s.filterAuthor = function(author) {
@@ -248,8 +251,8 @@ littb.controller("libraryCtrl", function(
             s.showInitial = false
             s.showPopularAuth = false
             s.showPopular = false
+            s.fetchTitles()
             if (s.rowfilter) {
-                fetchTitles()
                 fetchAudio()
             }
             fetchWorks()
@@ -263,12 +266,17 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    var fetchTitles = () => {
+    s.fetchTitles = () => {
         // unless s.filter then return
+        s.partSearching = true
         let { filter_or, filter_and } = getKeywordTextfilter()
         backend
-            .getParts(s.rowfilter, true, filter_or, filter_and)
-            .then(titleArray => (s.all_titles = titleArray))
+            .getParts(s.rowfilter, true, filter_or, filter_and, s.showAllParts ? 10000 : 30)
+            .then(({ titleArray, hits }) => {
+                s.all_titles = titleArray
+                s.partSearching = false
+                s.parts_hits = hits
+            })
     }
 
     var fetchAudio = () =>
@@ -320,7 +328,7 @@ littb.controller("libraryCtrl", function(
         return { filter_or, filter_and }
     }
 
-    var fetchWorks = async function() {
+    function fetchWorks() {
         s.titleSearching = true
         const include =
             "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable" +

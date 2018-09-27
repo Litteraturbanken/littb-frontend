@@ -144,13 +144,13 @@
                     <tr ng-repeat="row in getFilteredRows()" >
                         <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}?dw" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
                         </td>
-                        <td class="title"><a href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{row.title_id}}/{{row.mediatype}}?om-boken&dw">{{row.shorttitle ||  row.title}}</a></td>
+                        <td class="title"><a href="/forfattare/{{::row.authors[0].author_id}}/titlar/{{row.title_id}}/{{row.mediatype}}?om-boken#dw">{{row.shorttitle ||  row.title}}</a></td>
 
                         <td>
                             <ul class="mediatypes">
                                 <li ng-repeat="mediatype in row.mediatypes">
                                     <a ng-if="mediatype.downloadable" class="sc" target="_self" download ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
-                                    <a ng-if="!mediatype.downloadable" class="sc" ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
+                                    <a ng-if="!mediatype.downloadable" class="sc" ng-href="{{mediatype.url + '#dw'}}">{{mediatype.label}}</a>
                                 </li>
                             </ul>
                         </td>
