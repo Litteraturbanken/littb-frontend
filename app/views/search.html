@@ -39,7 +39,9 @@
                 <div class="right">
 
                     <div class="title_select_container">
-                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="selectedKeywords" data-placeholder="Välj samling" >
+                        <select multiple class="filter_select keyword_select" ui-select2 
+                                ng-model="filters.keywords" data-placeholder="Välj samling" 
+                                ng-change="onKeywordChange()" >
                             <option value=""></option>
                             <option value='provenance.library:Dramawebben'>Dramawebben</option>
                             <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
@@ -49,6 +51,31 @@
                             <option value='authorkeyword:StrindbergA'>Om August Strindberg</option>
                         </select>
                     </div>
+
+                    <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
+                        <option value=""></option>
+                        <option value="modernized:true">Moderniserat språk</option>
+                        <option value="modernized:false">Ej moderniserat språk</option>
+                        <option value="proofread:true">Korrekturläst</option>
+                        <option value="proofread:false">Ej korrekturläst</option>
+                        <option value="language:swe">Svenska</option>
+                        <option value="language:eng">Engelska</option>
+                        <option value="language:deu">Tyska</option>
+                        <option value="language:fra">Franska</option>
+                        <option value="language:lat">Latin</option>
+                        <!-- <option value="">Skrivet av kvinnor</option>
+                        <option value="">Skrivet av män</option> -->
+                    </select>
+                    <select  class="gender_select" 
+                             ui-select2="{minimumResultsForSearch: -1}" 
+                             ng-model="filters['main_author.gender']" 
+                             data-placeholder="Välj kön" >
+                        <option value=""></option>
+                        <option value="all">Alla författare</option>
+                        <option value="female">Kvinnliga författare</option>    
+                        <option value="male">Manliga författare</option>
+                        </option>
+                    </select>
                     
                     <!-- <p class="expl advanced_text textfields" ng-show="isAuthorSearch">
                         Lämna fältet ovan tomt för att söka i de valda författarnas <span class="sc">samtliga sökbara verk</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
@@ -68,16 +95,25 @@
                 
             
                 <div class="left">
-                    <div class="auth_select_container" ng-show="auth_select_rendered">
-                        <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="selectedAuthors" data-placeholder="Författare" ng-change="onAuthChange()" >
-                            <option value="{{author.author_id}}" ng-repeat="author in getAuthorDatasource() | filter:{searchable : true} | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
+                    <div ng-if="authorsById" class="auth_select_container" ng-show="auth_select_rendered">
+                        <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="filters.about_authors" data-placeholder="Författare" ng-change="onAuthChange()" >
+                            <option value="main_author.author_id:{{author.author_id}}" ng-repeat="author in authors | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
                                 {{author.full_name}}
                             </option>
                         </select> 
                     </div>
+                    <select multiple class="filter_select about_select"
+                            ui-select2="authorSelectSetup"
+                            ng-model="filters.about_authors" 
+                            data-placeholder="Om ett författarskap" 
+                            ng-change="onAboutAuthorChange($event)">
+
+                        <option value=""></option>
+                        <option value='authorkeyword:{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
+                    </select>
                     <div class="title_select_container">
                         <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
-                            <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle}}</option>
+                            <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle || title.title}}</option>
                         </select>
                     </div>
 

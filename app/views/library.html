@@ -21,6 +21,7 @@
                         <option value="female">Kvinnliga författare</option>    
                         <option value="male">Manliga författare</option>
                         </option>
+                    </select>
                 </div>
                 <div class="row title_select_container">
                     <select multiple class="filter_select keyword_select" ui-select2 ui-select2="{placeholder: 'Välj samling'}" ng-model="filters.keywords" data-placeholder="Välj samling" >
@@ -46,7 +47,7 @@
                 
                 <div class="row more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
 
-                <div class="row more_container" ng-class="{show_more : show_more}">
+                <div class="row more_container" ng-class="{show_more : show_more}" ng-show="show_more">
                     <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
                             <option value=""></option>
@@ -186,7 +187,7 @@
                         </li>
                         <!-- orderBy | 'sortkey' -->
                         <li class="link" 
-                            ng-repeat="row in listVisibleTitles() | limitTo: rowLimit track by row.doc_id" 
+                            ng-repeat="row in listVisibleTitles() | limitTo: rowLimit" 
                             on-finish-render="titleRender()"
                             ng-class="{'first' : $first}"
                             >

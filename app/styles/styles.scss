@@ -2908,6 +2908,7 @@ $partnav-width : 170px;
             background-color: rgba(255,255,255,0.55);
             padding: 0.8em 0.8em 0.8em 1.6em;
             border: 1px solid #333;
+            overflow-x : auto;
 
 
             .filter_input, .keyword_select {
@@ -3010,13 +3011,25 @@ $partnav-width : 170px;
                     }
                 }
             }
+            .more_container.ng-hide {
+                opacity: 0;
+            }
+
+            .more_container.ng-hide-add,
+            .more_container.ng-hide-remove {
+              transition: opacity 200ms;
+            }
+
             .more_container {
-                max-height : 0;
-                overflow-y: hidden;
-                overflow-x: visible;
-                transition: max-height 200ms;
+                // opacity: 0;
+                // display : none;
+                // overflow-y: hidden;
+                // overflow-x: hidden;
+                // transition: opacity 200ms;
                 &.show_more {
-                    max-height : 200px;
+                    // max-height : 200px;
+                    // display : block;
+                    // opacity: 1;
                 }
             }
         }

@@ -710,7 +710,6 @@ littb.controller("epubListCtrl", function epubListCtrl(
     // s.authorIds = epubAuthorIds
 
     s.authorSelectSetup = {
-        formatNoMatches: "Inga resultat",
         templateResult(data) {
             const author = s.authorsById[data.id]
             if (!author) {

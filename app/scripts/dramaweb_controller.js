@@ -190,7 +190,6 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         s.authorList = authorList
     })
     s.authorSelectSetup = {
-        formatNoMatches: "Inga resultat",
         formatResult(data) {
             if (!s.authorsById) {
                 return

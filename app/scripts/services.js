@@ -129,6 +129,55 @@ littb.factory("util", function($location) {
             })
         },
 
+        getKeywordTextfilter(filterObj) {
+            // sample
+            // {
+            //     gender: "main_author.gender:female",
+            //     keywords: ["provenance.library:Dramawebben"],
+            //     authors: ["StrindbergA"],
+            //     about_authors: ["StrindbergA"],
+            //     languages: {
+            //         "modernized:true": "modernized:true",
+            //         "proofread:true": "proofread:true",
+            //         "language:deu": "language:deu"
+            //     },
+            //     mediatypes: ["has_epub:true", "mediatype:faksimil"]
+            // }
+
+            if (filterObj["main_author.gender"] === "all") {
+                delete filterObj["main_author.gender"]
+            }
+            function makeObj(list) {
+                let output = {}
+                for (let kw of list || []) {
+                    const [key, val] = kw.split(":")
+                    if (output[key]) {
+                        output[key].push(val)
+                    } else {
+                        output[key] = [val]
+                    }
+                }
+                return output
+            }
+            const rest = _.omit(
+                filterObj,
+                "keywords",
+                "languages",
+                "mediatypes",
+                "about_authors",
+                "authors"
+            )
+            const filter_or = makeObj(filterObj.mediatypes)
+            const filter_and = _.extend(
+                rest,
+                makeObj(filterObj.languages),
+                makeObj(filterObj.keywords),
+                makeObj(filterObj.about_authors),
+                makeObj(filterObj.authors)
+            )
+            return { filter_or, filter_and }
+        },
+
         setupHashComplex(scope, config) {
             // config = [
             //     expr : "sorttuple[0]"

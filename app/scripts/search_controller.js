@@ -4,13 +4,15 @@ const c = window.console
 const littb = window.littb
 
 const getAuthorSelectSetup = (s, $filter) => ({
-    formatNoMatches: "Inga resultat",
     templateResult(data) {
         if (!data.id) {
             return
         }
         // return data.text
-        const author = s.authorsById[data.id]
+        console.log("data.id", data.id)
+        const author = s.authorsById[data.id.split(":")[1]]
+        // TODO This shouldn't happen
+        if (!author) return data.id.split(":")[1]
 
         let firstname = ""
         if (!author.name_for_index) {
@@ -26,7 +28,7 @@ const getAuthorSelectSetup = (s, $filter) => ({
     },
 
     templateSelection(item) {
-        return s.authorsById[item.id].surname
+        return s.authorsById[item.id.split(":")[1]].surname
     }
     // item.text
 })
@@ -56,9 +58,18 @@ littb.controller("searchCtrl", function(
         c.log("onAuthSelectRender")
         s.auth_select_rendered = true
     }
+    s.onKeywordChange = () => {}
     s.selectedAuthors = []
     s.selectedTitles = []
     s.selectedKeywords = []
+
+    s.filters = {
+        "main_author.gender": $location.search()["kön"],
+        about_authors: [],
+        keywords: [],
+        languages: []
+    }
+
     // s.proofread = 'all'
     // s._selectedAuthors = ["AbeniusM", "AdelborgO"]
     // Object.defineProperty s, 'selectedAuthors',
@@ -107,8 +118,11 @@ littb.controller("searchCtrl", function(
 
     $timeout(() => s.$broadcast("focus"), 100)
 
-    // s.titleSelectSetup = {
-    //     formatNoMatches: "Inga resultat",
+    s.titleSelectSetup = {
+        language: {
+            noResults: () => "Inga resultat"
+        }
+    }
     //     formatResult : (data) ->
     //         return "<span class='title'>#{data.text}</span>"
 
@@ -116,13 +130,13 @@ littb.controller("searchCtrl", function(
     //         item.text
     // }
 
-    const initTitle = _.once(function(titlesById) {
-        if (!$location.search().titel) {
-            return
-        }
+    // const initTitle = _.once(function(titlesById) {
+    //     if (!$location.search().titel) {
+    //         return
+    //     }
 
-        s.selected_title = titlesById[$location.search().titel]
-    })
+    //     s.selected_title = titlesById[$location.search().titel]
+    // })
 
     s.titleChange = () => {
         // $location.search("titel", s.selected_title?.work_title_id or null)
@@ -151,10 +165,12 @@ littb.controller("searchCtrl", function(
     // for the author / about author search check
     s.isAuthorSearch = true
 
-    const aboutDef = backend.getAboutAuthors()
-
-    $q.all([aboutDef, authors]).then(function([aboutAuthorIds, [authorList, authorsById]]) {
-        s.aboutAuthors = _.uniq(_.map(aboutAuthorIds, id => authorsById[id]))
+    // const aboutDef = backend.getAboutAuthors()
+    // $q.all([aboutDef, authors]).then(function([aboutAuthorIds, [authorList, authorsById]]) {
+    //     s.aboutAuthors = _.uniq(_.map(aboutAuthorIds, id => authorsById[id]))
+    // })
+    backend.getAboutAuthors().then(function(data) {
+        s.aboutAuthors = data
     })
 
     s.getAuthorDatasource = function() {
@@ -166,7 +182,7 @@ littb.controller("searchCtrl", function(
     }
 
     authors.then(function([authorList, authorsById]) {
-        s.authors = authorList
+        s.authors = _.filter(authorList, "searchable")
         s.authorsById = authorsById
         const change = _.memoize(function(newAuthors) {
             if (!newAuthors) {
@@ -179,7 +195,7 @@ littb.controller("searchCtrl", function(
         })
 
         if ($location.search().forfattare) {
-            const auths = $location.search().forfattare
+            const auths = $location.search().forfattare.split(",")
             s.selectedAuthors = auths
         }
 
@@ -189,11 +205,11 @@ littb.controller("searchCtrl", function(
         if ($location.search().sok_filter) {
             s.nav_filter = $location.search().sok_filter
         }
-        if ($location.search().keyword) {
-            s.selectedKeywords = $location.search().keyword.split(",")
+        const listValIn = val => (val || "").split(",")
+        const listValOut = val => {
+            console.log("val", val, typeof val)
+            return (val || []).join(",")
         }
-        listValIn = val => (val || "").split(",")
-        listValOut = val => (val || []).join(",")
         return util.setupHashComplex(s, [
             {
                 key: "forfattare",
@@ -224,7 +240,7 @@ littb.controller("searchCtrl", function(
                         c.log("do modifySearch", author_id)
                         s.searching = true
 
-                        args = { from: 0, to: s.num_hits - 1 }
+                        const args = { from: 0, to: s.num_hits - 1 }
                         if (s.isAuthorAboutSearch) {
                             args["about_authors"] = author_id
                         } else {
@@ -338,15 +354,7 @@ littb.controller("searchCtrl", function(
         //         args.query = suffix + args.query + prefix
         _.extend(args, filter_params)
 
-        args.text_filter = {}
-        if ($location.search().forfattare) {
-            if ($location.search().sok_om) {
-                args.about_authors = $location.search().forfattare
-            } else {
-                args.authors = $location.search().forfattare
-            }
-        }
-        // args.text_filter['authors.author_id'] = $location.search().forfattare
+        args.text_filter = util.getKeywordTextfilter(s.filters)
 
         if ($location.search().titlar) {
             args.work_ids = $location.search().titlar
@@ -453,54 +461,54 @@ littb.controller("searchCtrl", function(
     // {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
     // {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
     s.filterOpts = [
-        {
-            label: "Sök i <span class='sc'>ALLA TEXTER</span>",
-            // param: "all_texts",
-            selected: true,
-            key: "all_texts"
-        },
-        {
-            label: 'Sök i <span class="sc">moderniserade</span> texter',
-            param: ["modernized", true],
-            selected: true,
-            group: 0,
-            key: "is_modernized"
-        },
-        {
-            label: 'Sök i <span class="sc">ej moderniserade</span> texter',
-            param: ["modernized", false],
-            selected: true,
-            group: 0,
-            key: "not_modernized"
-        },
-        {
-            label: 'Sök i <span class="sc">korrekturlästa</span> texter',
-            param: ["proofread", true],
-            selected: true,
-            group: 1,
-            key: "is_proofread"
-        },
-        {
-            label: 'Sök i <span class="sc">ej korrekturlästa</span> texter',
-            param: ["proofread", false],
-            selected: true,
-            group: 1,
-            key: "not_proofread"
-        },
-        {
-            label: 'Sök i texter skrivna av <span class="sc">kvinnor</span>',
-            param: ["gender", "female"],
-            selected: true,
-            group: 2,
-            key: "gender_female"
-        },
-        {
-            label: 'Sök i texter skrivna av <span class="sc">män</span>',
-            param: ["gender", "male"],
-            selected: true,
-            group: 2,
-            key: "gender_male"
-        }
+        // {
+        //     label: "Sök i <span class='sc'>ALLA TEXTER</span>",
+        //     // param: "all_texts",
+        //     selected: true,
+        //     key: "all_texts"
+        // },
+        // {
+        //     label: 'Sök i <span class="sc">moderniserade</span> texter',
+        //     param: ["modernized", true],
+        //     selected: true,
+        //     group: 0,
+        //     key: "is_modernized"
+        // },
+        // {
+        //     label: 'Sök i <span class="sc">ej moderniserade</span> texter',
+        //     param: ["modernized", false],
+        //     selected: true,
+        //     group: 0,
+        //     key: "not_modernized"
+        // },
+        // {
+        //     label: 'Sök i <span class="sc">korrekturlästa</span> texter',
+        //     param: ["proofread", true],
+        //     selected: true,
+        //     group: 1,
+        //     key: "is_proofread"
+        // },
+        // {
+        //     label: 'Sök i <span class="sc">ej korrekturlästa</span> texter',
+        //     param: ["proofread", false],
+        //     selected: true,
+        //     group: 1,
+        //     key: "not_proofread"
+        // },
+        // {
+        //     label: 'Sök i texter skrivna av <span class="sc">kvinnor</span>',
+        //     param: ["gender", "female"],
+        //     selected: true,
+        //     group: 2,
+        //     key: "gender_female"
+        // },
+        // {
+        //     label: 'Sök i texter skrivna av <span class="sc">män</span>',
+        //     param: ["gender", "male"],
+        //     selected: true,
+        //     group: 2,
+        //     key: "gender_male"
+        // }
     ]
 
     s.options = {
@@ -575,47 +583,44 @@ littb.controller("searchCtrl", function(
 
         return def
     }
-    // , 200)
 
-    // queryvars = $location.search()
+    // s.opt_change = function(opt) {
+    //     const commit = () => (s.search_filter_opts = _.map(_.map(s.filterOpts, "selected"), Number))
+    //     if (opt.key === "all_texts") {
+    //         for (let o of s.filterOpts) {
+    //             o.selected = true
+    //         }
+    //         commit()
+    //         return
+    //     }
 
-    s.opt_change = function(opt) {
-        const commit = () => (s.search_filter_opts = _.map(_.map(s.filterOpts, "selected"), Number))
-        if (opt.key === "all_texts") {
-            for (let o of s.filterOpts) {
-                o.selected = true
-            }
-            commit()
-            return
-        }
+    //     // isDeselect = opt.selected
+    //     opt.selected = !opt.selected
 
-        // isDeselect = opt.selected
-        opt.selected = !opt.selected
+    //     const group = _.filter(s.filterOpts, o => o.group === opt.group)
+    //     c.log("group", group)
 
-        const group = _.filter(s.filterOpts, o => o.group === opt.group)
-        c.log("group", group)
+    //     if (!_.some(group, "selected")) {
+    //         const i = _.indexOf(group, opt)
+    //         ;(group[i + 1] || group[0]).selected = true
 
-        if (!_.some(group, "selected")) {
-            const i = _.indexOf(group, opt)
-            ;(group[i + 1] || group[0]).selected = true
+    //         commit()
+    //         return
+    //     }
 
-            commit()
-            return
-        }
+    //     if (!_.every(s.filterOpts, "selected")) {
+    //         s.filterOpts[0].selected = false
+    //     }
+    //     if (!_.filter(s.filterOpts, "selected").length) {
+    //         opt.selected = true
+    //     }
 
-        if (!_.every(s.filterOpts, "selected")) {
-            s.filterOpts[0].selected = false
-        }
-        if (!_.filter(s.filterOpts, "selected").length) {
-            opt.selected = true
-        }
+    //     if (_.every(s.filterOpts.slice(1), "selected")) {
+    //         s.filterOpts[0].selected = true
+    //     }
 
-        if (_.every(s.filterOpts.slice(1), "selected")) {
-            s.filterOpts[0].selected = true
-        }
-
-        return commit()
-    }
+    //     return commit()
+    // }
 
     return util.setupHashComplex(s, [
         {
@@ -633,27 +638,24 @@ littb.controller("searchCtrl", function(
             key: "avancerad",
             scope_name: "advanced"
         },
-        {
-            key: "filter",
-            scope_name: "search_filter_opts",
-            val_in(val) {
-                if (!val) return
-                for (let [i, bool] of val.split(",")) {
-                    bool = Boolean(Number(bool))
-                    s.filterOpts[i].selected = bool
-                }
+        // {
+        //     key: "filter",
+        //     scope_name: "search_filter_opts",
+        //     val_in(val) {
+        //         if (!val) return
+        //         for (let [i, bool] of val.split(",")) {
+        //             bool = Boolean(Number(bool))
+        //             s.filterOpts[i].selected = bool
+        //         }
 
-                return val.split(",")
-            },
+        //         return val.split(",")
+        //     },
 
-            val_out(val) {
-                return (val || []).join(",")
-            }
-        },
+        //     val_out(val) {
+        //         return (val || []).join(",")
+        //     }
+        // },
 
-        // ,
-        //     key : "proofread"
-        //     default : "all"
         {
             key: "fras",
             post_change(val) {

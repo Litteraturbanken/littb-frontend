@@ -162,7 +162,6 @@ littb.controller("libraryCtrl", function(
         s.audio_list = null
 
         if (!s.popularTitles) {
-            console.log("getPopularTitles")
             getPopularTitles()
         }
     }
@@ -233,7 +232,7 @@ littb.controller("libraryCtrl", function(
         }
     }
     let hasActiveFilter = () => {
-        let { filter_or, filter_and } = getKeywordTextfilter()
+        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         return _.toPairs({ ...filter_and, ...filter_or }).length
     }
     s.searchTitle = function() {
@@ -264,7 +263,7 @@ littb.controller("libraryCtrl", function(
     s.fetchTitles = () => {
         // unless s.filter then return
         s.partSearching = true
-        let { filter_or, filter_and } = getKeywordTextfilter()
+        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         backend
             .getParts(s.rowfilter, true, filter_or, filter_and, s.showAllParts ? 10000 : 30)
             .then(({ titleArray, hits }) => {
@@ -283,52 +282,12 @@ littb.controller("libraryCtrl", function(
             })
             .then(titleArray => (s.audio_list = titleArray))
 
-    var getKeywordTextfilter = function() {
-        // sample
-        // {
-        //     gender: "main_author.gender:female",
-        //     keywords: ["provenance.library:Dramawebben"],
-        //     about_authors: ["StrindbergA"],
-        //     languages: {
-        //         "modernized:true": "modernized:true",
-        //         "proofread:true": "proofread:true",
-        //         "language:deu": "language:deu"
-        //     },
-        //     mediatypes: ["has_epub:true", "mediatype:faksimil"]
-        // }
-
-        if (s.filters["main_author.gender"] === "all") {
-            delete s.filters["main_author.gender"]
-        }
-        function makeObj(list) {
-            let output = {}
-            for (let kw of list || []) {
-                const [key, val] = kw.split(":")
-                if (output[key]) {
-                    output[key].push(val)
-                } else {
-                    output[key] = [val]
-                }
-            }
-            return output
-        }
-        const rest = _.omit(s.filters, "keywords", "languages", "mediatypes", "about_authors")
-        const filter_or = makeObj(s.filters.mediatypes)
-        const filter_and = _.extend(
-            rest,
-            makeObj(s.filters.languages),
-            makeObj(s.filters.keywords),
-            makeObj(s.filters.about_authors)
-        )
-        return { filter_or, filter_and }
-    }
-
     function fetchWorks() {
         s.titleSearching = true
         const include =
             "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable" +
             "authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub"
-        let { filter_or, filter_and } = getKeywordTextfilter()
+        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // if (!_.toPairs(text_filter).length) {
         //     text_filter = null
         // }
@@ -393,9 +352,9 @@ littb.controller("libraryCtrl", function(
         s.titleSearching = true
         return backend
             .getTitles(null, "imported|desc,sortfield|asc", null, false, true)
-            .then(function(titleArray) {
+            .then(function({ titles }) {
                 s.titleSearching = false
-                s.titleGroups = _.groupBy(titleArray, "imported")
+                s.titleGroups = _.groupBy(titles, "imported")
 
                 let output = []
                 for (let datestr in s.titleGroups) {
