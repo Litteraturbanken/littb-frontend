@@ -1,1 +1,2 @@
 app/lib/*.js
+test/e2e/spec*.js
