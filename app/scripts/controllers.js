@@ -169,26 +169,7 @@ littb.controller("contactFormCtrl", function($scope, backend, $timeout, $locatio
 })
 
 littb.controller("statsCtrl", function($scope, backend) {
-<<<<<<< HEAD
-    const s = $scope;
-
-
-
-
-    backend.getStats().then(data => s.statsData = data);
-
-    backend.getTitles(null, "popularity|desc").then(titleArray => s.titleList = titleArray);
-
-<<<<<<< HEAD
-    backend.getEpub(30).then ({data, hits}) ->
-        s.epubList = data
-=======
-    return backend.getEpub(30).then(titleArray => s.epubList = titleArray);
-});
->>>>>>> decaffeinate: Convert app.coffee and 10 other files to JS
-=======
     const s = $scope
->>>>>>> prettified. cleaned up controllers and directives
 
     backend.getStats().then(data => (s.statsData = data))
 
@@ -196,7 +177,7 @@ littb.controller("statsCtrl", function($scope, backend) {
         s.titleList = titles
     })
 
-    return backend.getEpub(30).then(titleArray => (s.epubList = titleArray))
+    return backend.getEpub(30).then(({ data, hits }) => (s.epubList = data))
 })
 
 littb.controller("biblinfoCtrl", function($scope, backend) {

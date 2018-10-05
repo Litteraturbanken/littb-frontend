@@ -313,21 +313,21 @@ littb.controller("searchCtrl", function(
 
     const getSearchArgs = function(from, to) {
         let filter_params = []
-        if (!s.filterOpts[0].selected) {
-            // search all texts is false
-            // searchAnom = _.find(s.filterOpts, {key: "is_anom"}).selected
-            const object = _.groupBy(s.filterOpts, "group")
-            for (let groupKey in object) {
-                const group = object[groupKey]
-                if (groupKey === "undefined") {
-                    continue
-                }
-                const selected = _.filter(group, "selected")
-                if (selected.length === 1) {
-                    filter_params.push(selected[0].param)
-                }
-            }
-        }
+        // if (!s.filterOpts[0].selected) {
+        //     // search all texts is false
+        //     // searchAnom = _.find(s.filterOpts, {key: "is_anom"}).selected
+        //     const object = _.groupBy(s.filterOpts, "group")
+        //     for (let groupKey in object) {
+        //         const group = object[groupKey]
+        //         if (groupKey === "undefined") {
+        //             continue
+        //         }
+        //         const selected = _.filter(group, "selected")
+        //         if (selected.length === 1) {
+        //             filter_params.push(selected[0].param)
+        //         }
+        //     }
+        // }
 
         filter_params = _.fromPairs(filter_params)
 
@@ -354,7 +354,8 @@ littb.controller("searchCtrl", function(
         //         args.query = suffix + args.query + prefix
         _.extend(args, filter_params)
 
-        args.text_filter = util.getKeywordTextfilter(s.filters)
+        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+        args.text_filter = { ...filter_or, ...filter_and }
 
         if ($location.search().titlar) {
             args.work_ids = $location.search().titlar
