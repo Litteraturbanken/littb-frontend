@@ -332,14 +332,17 @@ body.modal-open {
             font-size : 0.9em;
         }
     }
+    .logo[src$='dramawebben_svart.svg'] {
+        height : 70px;
+        margin: -19px -26px 0 -16px;
+    }
+    .dw_logo .logo {
+        margin-top: 0.5rem;
+    }
     .provenance {
         margin : 2em 0;
         font-size : 0.8em;
 
-        .logo[src$='dramawebben_svart.svg'] {
-            height : 70px;
-            margin: -19px -26px 0 -16px;
-        }
         
         display : flex;
         align-items: center;

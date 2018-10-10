@@ -482,6 +482,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             // TODO: add filter for leaf titlepaths and mediatype
             const params = {
                 exclude: "text,parts,sourcedesc,pages,errata",
+                // sort_field: "title|desc",
                 filter_string,
                 to,
                 filter_or,
@@ -545,7 +546,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 author = `/${author}`
             }
             if (getAll) {
-                params.to = 300
+                params.to = 500
             }
 
             return $http({

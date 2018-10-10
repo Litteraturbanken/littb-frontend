@@ -2592,6 +2592,11 @@ $partnav-width : 170px;
         @include logo(red_white);
     }
 
+    .logo.dramaweb {
+        height : 50px;
+        margin: -19px -26px 0 -16px;
+    }
+
     .preloader {
         position: absolute;
         right : 70px;
@@ -2753,7 +2758,15 @@ $partnav-width : 170px;
         }
 
         .introauthor {
+            margin-top: 1em;
+            margin-right: 2em;
             text-align: right;
+        }
+        .pseudonym {
+            margin-top: 2em;
+        }
+        .other_name {
+            margin-top: 1em;
         }
 
         .show_more_btn {

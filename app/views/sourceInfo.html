@@ -42,6 +42,8 @@
                 ng-class="{larger : workinfo.workintro}"
                 ng-show="workinfo.librisid" 
                 >Verket i <a ng-href="{{'http://libris.kb.se/bib/' + workinfo.librisid}}" target="_blank">Libris</a></div>
+
+            <div class="dw_logo" ng-show="workinfo.dramaweb"><a href="/dramawebben"><img class="logo" src="../img/dramawebben_svart.svg" alt="Dramawebben"></a></div>
         </div>
 
 
@@ -94,7 +96,7 @@
 
     <!-- onerror="this.style.visibility = 'hidden'" -->
     
-    <div class="license" ng-bind-html="licenseData | correctLink | trust"></div>
+    <div class="license" ng-class="{drama: dramaweb}" ng-bind-html="licenseData | correctLink | trust"></div>
     
     <div class="errata" ng-show="mediatype == 'etext'">
         <div class="header" ng-show="workinfo.errata.length">I {{mediatype}}en har följande ändringar gjorts mot originalet:</div>

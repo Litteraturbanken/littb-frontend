@@ -1225,13 +1225,12 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
         const lic = backend.getLicense(s.workinfo)
 
         $q.all([prov, lic]).then(function([provData, licenseData]) {
-            let provtmpl
+            let provtmpl = ""
             s.provenanceData = provData
-            if (provData.length) {
-                provtmpl = `<a href='${provData[0].link}'>${provData[0].fullname}</a>`
-            } else {
-                provtmpl = ""
-            }
+            provtmpl = _.map(provData, prov => `<a href='${prov.link}'>${prov.fullname}</a>`).join(
+                " – "
+            )
+            console.log("provtmpl", provtmpl)
             s.licenseData = _.template(licenseData)({
                 provenance: provtmpl
             })

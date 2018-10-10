@@ -60,7 +60,7 @@
                     </select> 
 
                     <select class="filter_select keyword_select" 
-                            ng-if="listType == 'pjäser'"
+                            ng-show="listType == 'pjäser'"
                             ui-select2="{minimumResultsForSearch: -1}" 
                             ng-model="filters.mediatype" 
                             data-placeholder="Utgivningsformat"
@@ -137,7 +137,7 @@
                     </div>
                     
 
-                    <input class="filter" ng-model="filters.filterTxt" autofocus placeholder="Filtrera"
+                    <input class="filter" ng-model="filters.filterTxt" autofocus placeholder="Sök"
                     ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' >
                 </div>
                 <table ng-if="listType == 'pjäser'" class="contenttable">

@@ -105,10 +105,6 @@ littb.controller("libraryCtrl", function(
         s.rowLimit = 30
     }
 
-    backend.getAboutAuthors().then(function(data) {
-        s.aboutAuthors = data
-    })
-
     const aboutDef = $q.defer()
     s.onAboutAuthorChange = _.once(function($event) {
         console.log("onAboutAuthorChange", s.filters.about_authors)
@@ -205,6 +201,15 @@ littb.controller("libraryCtrl", function(
         s.authorSearching = false
     })
 
+    $q.all([backend.getAboutAuthors(), authors]).then(function([authorIds]) {
+        console.log("authorIds", authorIds)
+        s.aboutAuthors = _.orderBy(authorIds, auth => {
+            if (s.authorsById[auth]) {
+                return s.authorsById[auth].surname
+            }
+        })
+    })
+
     backend.getPopularAuthors().then(auths => (s.popularAuthors = auths))
 
     // , 10
@@ -245,6 +250,7 @@ littb.controller("libraryCtrl", function(
             s.showInitial = false
             s.showPopularAuth = false
             s.showPopular = false
+            s.showRecent = false
             s.fetchTitles()
             if (s.rowfilter) {
                 fetchAudio()
@@ -351,7 +357,7 @@ littb.controller("libraryCtrl", function(
 
         s.titleSearching = true
         return backend
-            .getTitles(null, "imported|desc,sortfield|asc", null, false, true)
+            .getTitles(null, "imported|desc,sortfield|asc", null, true)
             .then(function({ titles }) {
                 s.titleSearching = false
                 s.titleGroups = _.groupBy(titles, "imported")
