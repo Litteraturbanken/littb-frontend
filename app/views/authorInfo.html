@@ -1,7 +1,7 @@
 <meta-desc>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</meta-desc>
 <page-title>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</page-title>
-<img ng-if="!slaMode && !isDramaweb" bkg-img class="no-gradient" src="../img/forf2_bkg.jpg"></img>
-<img ng-if="isDramaweb" bkg-img class="no-gradient" src="../img/dramawebben_fade_more.jpg"></img>
+<img ng-if="!slaMode && showpage != 'dramawebben'" bkg-img class="no-gradient" src="../img/forf2_bkg.jpg"></img>
+<img class="dw_bkg" ng-if="showpage == 'dramawebben'" bkg-img class="no-gradient" src="../img/dramawebben_fade_more.jpg"></img>
 <!-- <img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img> -->
 
 <!-- <img ng-if="slaMode && showpage != 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img> -->
@@ -15,28 +15,28 @@
 
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
-        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro || authorInfo.dramawebben.intro"><a href="/forfattare/{{author}}{{isDramaweb ? '?dw' : ''}}">Introduktion</a></li>
+        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/forfattare/{{author}}{{isDramaweb ? '?dw' : ''}}">Introduktion</a></li>
+        <li ng-show="authorInfo.dramawebben" ng-class="{active : showpage == 'dramawebben'}"><a href="/forfattare/{{author}}/dramawebben">Dramawebben</a></li>
         <li ng-class="{active : showpage == 'titlar'}"><a href="/forfattare/{{author}}/titlar{{isDramaweb ? '?dw' : ''}}">Verk</a></li>
         <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/forfattare/{{author}}/presentation">Presentation</a></li>
         <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/forfattare/{{author}}/las-mer">Läs mer</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/forfattare/{{author}}/mer">Mer</a></li>
         <li ng-if="authorInfo.searchable"><a href="/sok?forfattare={{author}}&avancerad">Sök i texterna</a></li>
-        <li ng-if="isDramaweb"><a href="/dramawebben">Till Dramawebben</a></li>
+        <!-- <li ng-if="isDramaweb"><a href="/dramawebben">Till Dramawebben</a></li> -->
     </ul>
     
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
             <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div class="introtext content" ng-class="{show_more: show_more}">
-                <div ng-bind-html="getIntro() | trust"></div>
+                <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div class="introauthor">
                     <em>{{authorsById[normalizeAuthor(getIntroAuthor())].full_name}}</em>
-                    <div class="sc" ng-if="isDramaweb"><a href="/dramawebben">Dramawebben</a></div>
                 </div>
 
 
-                <div class="source" ng-if="authorInfo.sources && !isDramaweb">
+                <div class="source" ng-if="authorInfo.sources">
                     <span class="source_header sc" ng-if="authorInfo.sources.length > 1">
                         Källor
                     </span>
@@ -66,7 +66,7 @@
 
 
             <div class="portrait_container">
-                <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{isDramaweb ? authorInfo.dramawebben.largeImage : authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
+                <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
                 <figcaption ng-bind-html="(isDramaweb ? authorInfo.dramawebben.picture_info : authorInfo.pictureinfo) | trust"></figcaption>
 
             </div>
@@ -133,6 +133,39 @@
             
         </script>
 
+        <div ng-switch-when="dramawebben">
+            <div class="introtext content" ng-class="{show_more: show_more}">
+                <div ng-bind-html="authorInfo.dramawebben.intro || authorInfo.intro | trust"></div>
+                <div class="introauthor">
+                    <em>{{authorsById[normalizeAuthor(authorInfo.dramawebben.intro_author || authorInfo.intro_author)].full_name}}</em>
+                    <div class="sc"><a href="/dramawebben">Dramawebben</a></div>
+                </div>
+                <div class="source" ng-if="authorInfo.dramawebben.sources">
+                    <span class="source_header sc" ng-if="authorInfo.sources.length > 1">
+                        Källor
+                    </span>
+                    <span class="source_header sc" ng-if="authorInfo.sources.length == 1">
+                        Källa
+                    </span>
+                    
+                    <ul>
+                        <li ng-repeat="item in authorInfo.dramawebben.sources">
+                            <div class="source_content" ng-bind-html="item | trust"></div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="pseudonym" ng-show="authorInfo.pseudonym.length">
+                    <span class="sc">Pseudonym<span ng-show="authorInfo.pseudonym.length > 1">er</span></span>
+                   <span ng-repeat="nym in authorInfo.pseudonym">
+                       <em>{{nym.full_name}}</em><span ng-show="!$last">, </span>
+                   </span> 
+                </div>
+            </div>
+            <div class="portrait_container">
+                <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.dramawebben.largeImage}}" >
+                <figcaption ng-bind-html="authorInfo.dramawebben.picture_info | trust"></figcaption>
+            </div>
+        </div>
         <div ng-switch-when="titlar">
             <ng-include src="'listing.html'"></ng-include>
         </div>

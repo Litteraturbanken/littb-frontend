@@ -250,7 +250,6 @@ body.modal-open {
             @include small-caps();
             font-size: 0.8em;
             color : $primarycolor;
-            margin-bottom: 0;
             
         }
         td:first-of-type {
@@ -333,11 +332,42 @@ body.modal-open {
         }
     }
     .logo[src$='dramawebben_svart.svg'] {
-        height : 70px;
+        height : 65px;
         margin: -19px -26px 0 -16px;
     }
     .dw_logo .logo {
         margin-top: 0.5rem;
+    }
+    .introheader {
+        font-size: 0.9em;
+        color: $primarycolor;
+        @include small-caps();
+        margin-bottom: 0;
+    }
+    .introheader + .workintro {
+        margin-top: 0;
+    }
+    .heading, .introheader {
+        margin-top: 1.4em;
+        margin-bottom: 0.4em;
+    }
+    .workintro, .history {
+        p:first-of-type {
+        }
+        p + p {
+            text-indent: 1.5em;
+        }
+        p {
+            margin:0;
+        }
+
+        p em:only-child {
+            text-align: right;
+            display: block;
+            margin-right: 3em;
+            margin-bottom: 1em;
+        }
+
     }
     .provenance {
         margin : 2em 0;

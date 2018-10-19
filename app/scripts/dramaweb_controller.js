@@ -344,7 +344,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
     }, 100)
 
     backend.getDramawebTitles().then(data => {
-        s.rows = data.works
+        s.rows = util.sortTitles(data.works)
         authors.then(function() {
             s.authorData = _.map(data.authors, author_id => s.authorsById[author_id])
             s.authorData = util.sortAuthors(s.authorData)

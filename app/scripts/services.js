@@ -19,6 +19,22 @@ if (_.str.startsWith(location.host, "litteraturbanken")) {
     STRIX_URL = "/api"
 }
 
+function sortBy(list, field) {
+    let trans = {
+        ..._.fromPairs(
+            _.zip(
+                "ÁÂÃÇÈÉÊËÌÍÎÏÑÒÓÔÕØÙÚÛÜÝàáâãçèéêëìíîïñòóôõøùúûüýÿ".split(""),
+                "AAACEEEEIIIINOOOOÖUUUUYaaaaceeeeiiiinooooöuuuuyy".split("")
+            )
+        ),
+        ...{ Ä: "Å", Å: "Ä", ä: "å", å: "ä" }
+    }
+    return _.orderBy(list, function(item) {
+        const transpose = char => trans[char] || char
+        return _.map(item[field].toUpperCase(), transpose).join("")
+    })
+}
+
 littb.factory(
     "debounce",
     $timeout =>
@@ -123,10 +139,10 @@ littb.factory("util", function($location) {
         },
 
         sortAuthors(authorList) {
-            return _.orderBy(authorList, function(auth) {
-                const transpose = char => ({ Ä: "Å", Å: "Ä", ä: "å", å: "ä" }[char] || char)
-                return _.map(auth.name_for_index.toUpperCase(), transpose).join("")
-            })
+            return sortBy(authorList, "name_for_index")
+        },
+        sortTitles(titleList) {
+            return sortBy(titleList, "sortkey")
         },
 
         getKeywordTextfilter(filterObj) {
@@ -160,20 +176,20 @@ littb.factory("util", function($location) {
                 return output
             }
             const rest = _.omit(
-                filterObj,
+                _.omitBy(filterObj, _.isEmpty),
                 "keywords",
                 "languages",
-                "mediatypes",
-                "about_authors",
-                "authors"
+                "mediatypes"
+                // "about_authors",
+                // "main_author.author_id"
             )
             const filter_or = makeObj(filterObj.mediatypes)
             const filter_and = _.extend(
                 rest,
                 makeObj(filterObj.languages),
-                makeObj(filterObj.keywords),
-                makeObj(filterObj.about_authors),
-                makeObj(filterObj.authors)
+                makeObj(filterObj.keywords)
+                // makeObj(filterObj.about_authors),
+                // makeObj(filterObj["main_author.author_id"])
             )
             return { filter_or, filter_and }
         },
@@ -407,15 +423,6 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         return $http(_.merge(defaultConfig, config))
     }
 
-    const objFromAttrs = function(elem) {
-        if (!elem) {
-            return null
-        }
-        return _.fromPairs(
-            Array.from(elem.attributes).map(attrib => [util.normalize(attrib.name), attrib.value])
-        )
-    }
-
     return {
         getHtmlFile(url) {
             return http({
@@ -546,7 +553,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 author = `/${author}`
             }
             if (getAll) {
-                params.to = 500
+                params.to = 600
             }
 
             return $http({
@@ -901,8 +908,8 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             const params = {
                 exclude: "text,parts,sourcedesc,pages,errata",
                 include:
-                    "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben,keyword,startpagename",
-                filter_and: { "provenance.library": "Dramawebben" },
+                    "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben,keyword,startpagename,sortkey",
+                filter_and: { "provenance.library": "Dramawebben", texttype: "drama" },
                 sort_field: "sortkey|asc",
                 show_all: true,
                 to: 10000,
@@ -1563,8 +1570,8 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
             for (let key in this.currentParams) {
                 // TODO text_attrs are not more
                 const val = this.currentParams[key]
-                if (key === "text_attrs" && val.length) {
-                    merged[`s_${key}`] = val.join(",")
+                if (key === "text_filter" && !_.isEmpty(val)) {
+                    merged[`s_${key}`] = JSON.stringify(val)
                 } else {
                     merged[`s_${key}`] = val
                 }
@@ -1580,8 +1587,9 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
             const author = metadata.authors[0].author_id
             const titleid = metadata.title_id
 
-            return `/forfattare/${author}/titlar/${titleid}
-                /sida/${matches[0].attrs.n}/${metadata.mediatype}?${merged}`
+            return `/forfattare/${author}/titlar/${titleid}/sida/${matches[0].attrs.n}/${
+                metadata.mediatype
+            }?${merged}`
         }
 
         next() {

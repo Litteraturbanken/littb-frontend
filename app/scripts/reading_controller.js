@@ -377,7 +377,7 @@ littb.controller("readingCtrl", function(
                 } // toss out ended parts
                 return startix > findIndex
             })
-        ) //or (endix <= findIndex)
+        ) // or (endix <= findIndex)
 
         if (maybePart) {
             return maybePart[1]
@@ -837,7 +837,7 @@ littb.controller("readingCtrl", function(
         }
     })
 
-    //# ORD OCH SAK
+    // # ORD OCH SAK
     backend.ordOchSak(author, title).then(
         function(ordOchSak) {
             s.ordOchSakAll = ordOchSak
@@ -857,18 +857,18 @@ littb.controller("readingCtrl", function(
         )
     }
 
-    //# TODO
-    //s.markOosEntry = (entry) ->
+    // # TODO
+    // s.markOosEntry = (entry) ->
     //    for id in entry.ids
     //        fromSpan = $(".etext #"+id.from)
     //        toSpan = $(".etext #"+id.to)
     //        all = fromSpan.nextUntil(toSpan).add(fromSpan).add(toSpan)
     //        all.addClass("markee")
     //
-    //s.unmarkOosEntries = () ->
+    // s.unmarkOosEntries = () ->
     //    $(".etext .markee").removeClass("markee")
 
-    //# END ORD OCH SAK
+    // # END ORD OCH SAK
 
     s.$on("img_expand", function(evt, src) {
         s.activeSrc = src
@@ -880,7 +880,7 @@ littb.controller("readingCtrl", function(
         })
     })
 
-    //# START SEARCH
+    // # START SEARCH
 
     s.getCleanUrl = () => $location.url().split("?")[0]
 

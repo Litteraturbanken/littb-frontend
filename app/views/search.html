@@ -7,34 +7,14 @@
     <h1>Textsökning <span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span> </h1>
 
     <form class="submit_form" ng-submit="onSearchSubmit(query)">
-        <div class="top_row">
-            <div class="left_col">
-                <input class="query" ng-model="query" autofocus type="text" focusable>
-                <i class="spinner fa fa-spinner fa-pulse"></i>
-                <button class="submit btn">Sök</button>
-                
-                <search-opts></search-opts>
-                
-                
-                
-                <!-- <div class="slider">
-                    <div ui-slider min="0" max="20" ng-model="sliderVal"></div>
+        <div class="row top_row">
+            <input class="query" ng-model="query" autofocus type="text" focusable>
+            <i ng-show="searching" class="spinner fa fa-spinner fa-pulse"></i>
+            <button ng-hide="searching" class="submit btn">Sök</button>
             
-                </div> -->
-            </div>
-            
-            <div class="right_col">
-                <ul class="options">
-                    <li ng-repeat="opt in filterOpts">
-                        <span ng-click="opt_change(opt)" ng-style="{visibility: opt.selected ? 'visible' : 'hidden'}">✓</span>
-                        <a ng-click="opt_change(opt)" ng-bind-html="opt.label | trust"></a>
-                    </li>
-                </ul>
-            
-            </div>
+            <search-opts></search-opts>
         </div>
-
-
+            
         <div class="bottom_row">
                 <div class="right">
 
@@ -95,29 +75,38 @@
                 
             
                 <div class="left">
-                    <div ng-if="authorsById" class="auth_select_container" ng-show="auth_select_rendered">
-                        <select multiple class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="filters.about_authors" data-placeholder="Författare" ng-change="onAuthChange()" >
-                            <option value="main_author.author_id:{{author.author_id}}" ng-repeat="author in authors | orderBy:'name_for_index'  track by $index" on-finish-render="onAuthSelectRender()">
-                                {{author.full_name}}
+                    <div class="auth_select_container">
+                        <select multiple class="filter_select author_select" 
+                                ui-select2="authorSelectSetup" 
+                                ng-model="filters['main_author.author_id']" 
+                                data-placeholder="Författare" 
+                                ng-change="onAuthChange()">
+                            <option value=""></option>
+                            <option value='{{auth.author_id}}' ng-repeat="auth in authors">
+                                {{auth.full_name}}
                             </option>
                         </select> 
+                        <i ng-if="loadingAuthors" class="spinner fa fa-spinner fa-pulse"></i>
                     </div>
                     <select multiple class="filter_select about_select"
                             ui-select2="authorSelectSetup"
-                            ng-model="filters.about_authors" 
+                            ng-model="filters.authorkeyword" 
                             data-placeholder="Om ett författarskap" 
                             ng-change="onAboutAuthorChange($event)">
 
                         <option value=""></option>
-                        <option value='authorkeyword:{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
+                        <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
                     </select>
                     <div class="title_select_container">
                         <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
-                            <option value="{{title.lbworkid}}" ng-repeat="title in titles | orderBy:titleSort | filter:{searchable : 'true'}">{{title.shorttitle || title.title}}</option>
+                            <option value="{{title.lbworkid}}" ng-repeat="title in titles">{{title.shorttitle || title.title}}</option>
                         </select>
+
+                        <i ng-if="loadingTitles" class="spinner fa fa-spinner fa-pulse"></i>
+
                     </div>
 
-                    <div class="textfields">
+                    <!-- <div class="textfields">
                         <div class="checkbox" ng-class="{disabled : isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = false">
                             <div class="check">✓</div>
                             <p class="expl advanced_text auth">
@@ -131,7 +120,7 @@
                                 Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)
                             </p>
                         </div>
-                    </div>
+                    </div> -->
 
                     <!-- Välj sedan i fältet till höger vilka <span class="sc">titlar</span> av de valda författarna som du vill söka i. (Lämna fältet blankt för att söka i alla deras sökbara texter.) -->
                     
@@ -271,7 +260,6 @@
 
 
 
-        <!-- <p>Du kan välja att söka i verk av alla författare som finns i Litteraturbanken eller bara en viss författare. Om du väljer en viss författare kan du dessutom välja att söka antingen i samtliga verk av den författaren, eller i ett enstaka verk. Det går också att välja om man vill söka i korrekturläst eller ej korrekturläst text. I träfflistan visas träffar i icke korrekturlästa texter med grå text.</p>  -->
     </div>
 
     <!-- -->

@@ -312,6 +312,7 @@ window.littb = angular
                 [
                     "/forfattare/:author",
                     "/forfattare/:author/titlar",
+                    "/forfattare/:author/dramawebben",
                     "/forfattare/:author/bibliografi",
                     "/forfattare/:author/presentation",
                     "/forfattare/:author/mer",
@@ -670,8 +671,8 @@ littb.filter("trust", $sce => input => $sce.trustAsHtml(input))
 littb.filter("normalizeAuthor", function() {
     let trans = _.fromPairs(
         _.zip(
-            "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ",
-            "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy"
+            "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ".split(""),
+            "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy".split("")
         )
     )
     trans = _.extend(

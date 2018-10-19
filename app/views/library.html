@@ -36,12 +36,12 @@
                 <div class="row title_select_container about_container">
                     <select multiple class="filter_select about_select"
                             ui-select2 
-                            ng-model="filters.about_authors" 
+                            ng-model="filters.authorkeyword" 
                             data-placeholder="Om ett författarskap" 
                             ng-change="onAboutAuthorChange($event)">
 
                         <option value=""></option>
-                        <option value='authorkeyword:{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
+                        <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
                     </select>
                 </div>
                 
@@ -141,7 +141,7 @@
                 </div>
             </div>
             
-            <div class="col-lg-8 box title">
+            <div class="col-lg-7 box title">
                 <div class="scroll-area" list-scroll>
                     <ul id="table" class="list">
                         <li class="spinner_row" ng-show="titleSearching">

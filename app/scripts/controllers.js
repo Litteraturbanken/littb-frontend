@@ -60,16 +60,16 @@ littb.filter(
 )
 
 littb.filter("downloadMediatypes", () => obj => {
-    if (!obj) {
+    if (!obj || !obj.mediatypes) {
         return []
     }
     return obj.mediatypes.filter(x => x.downloadable)
 })
 
 littb.filter("readMediatypes", function() {
-    const read = ["etext", "faksimil"]
+    const read = ["etext", "faksimil", "infopost"]
     return obj => {
-        if (!obj) {
+        if (!obj || !obj.mediatypes) {
             return []
         }
         return obj.mediatypes.filter(x => read.includes(x.label))
@@ -237,7 +237,7 @@ littb.controller("biblinfoCtrl", function($scope, backend) {
     return s.submit()
 })
 
-littb.controller("authorInfoCtrl", function(
+littb.controller("authorInfoCtrl", function authorInfoCtrl(
     $scope,
     $location,
     $rootScope,
@@ -336,6 +336,7 @@ littb.controller("authorInfoCtrl", function(
     s.getPageTitle = page =>
         ({
             titlar: "Verk i Litteraturbanken",
+            dramawebben: "Introduktion av Dramawebben",
             semer: "Mera om",
             biblinfo: "Bibliografisk databas",
             jamfor: "Textkritisk verkstad",
@@ -451,7 +452,7 @@ littb.controller("authorInfoCtrl", function(
             label: "Tillgängliga verk",
             data: null,
             showAuthor: false,
-            def: backend.getTextByAuthor(s.author, "etext,faksimil,pdf", "main,scholar")
+            def: backend.getTextByAuthor(s.author, "etext,faksimil,pdf,infopost", "main,scholar")
         },
         {
             label: "Dikter, noveller, essäer, etc. som ingår i andra verk",
@@ -540,7 +541,7 @@ littb.controller("authorInfoCtrl", function(
             }))(item)
     }
 
-    return backend.getAuthorInfo(s.author).then(
+    backend.getAuthorInfo(s.author).then(
         function(data) {
             s.authorInfo = data
 
@@ -550,7 +551,12 @@ littb.controller("authorInfoCtrl", function(
                 {
                     label: `Verk om ${s.authorInfo.full_name}`,
                     data: null,
-                    def: backend.getTextByAuthor(s.author, "etext,faksimil,pdf", null, true),
+                    def: backend.getTextByAuthor(
+                        s.author,
+                        "etext,faksimil,pdf,infopost",
+                        null,
+                        true
+                    ),
                     showAuthor(work) {
                         return work["authors"]
                     }
@@ -606,7 +612,7 @@ littb.controller("authorInfoCtrl", function(
     )
 })
 
-littb.controller("audioListCtrl", function(
+littb.controller("audioListCtrl", function audioListCtrl(
     $scope,
     backend,
     util,
@@ -1230,7 +1236,6 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
             provtmpl = _.map(provData, prov => `<a href='${prov.link}'>${prov.fullname}</a>`).join(
                 " – "
             )
-            console.log("provtmpl", provtmpl)
             s.licenseData = _.template(licenseData)({
                 provenance: provtmpl
             })

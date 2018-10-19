@@ -2,6 +2,7 @@ const _ = window._
 const $ = window.$
 const c = window.console
 const littb = window.littb
+const safeApply = window.safeApply
 
 const getAuthorSelectSetup = (s, $filter) => ({
     templateResult(data) {
@@ -9,10 +10,9 @@ const getAuthorSelectSetup = (s, $filter) => ({
             return
         }
         // return data.text
-        console.log("data.id", data.id)
-        const author = s.authorsById[data.id.split(":")[1]]
+        const author = s.authorsById[data.id]
         // TODO This shouldn't happen
-        if (!author) return data.id.split(":")[1]
+        if (!author) return data.id
 
         let firstname = ""
         if (!author.name_for_index) {
@@ -28,7 +28,8 @@ const getAuthorSelectSetup = (s, $filter) => ({
     },
 
     templateSelection(item) {
-        return s.authorsById[item.id.split(":")[1]].surname
+        if (!s.authorsById || !item.id) return
+        return s.authorsById[item.id].surname
     }
     // item.text
 })
@@ -59,35 +60,37 @@ littb.controller("searchCtrl", function(
         s.auth_select_rendered = true
     }
     s.onKeywordChange = () => {}
-    s.selectedAuthors = []
+    // s.selectedAuthors = []
     s.selectedTitles = []
     s.selectedKeywords = []
 
     s.filters = {
         "main_author.gender": $location.search()["kön"],
-        about_authors: [],
+        authorkeyword: [],
         keywords: [],
-        languages: []
+        languages: [],
+        "main_author.author_id": []
     }
 
-    // s.proofread = 'all'
-    // s._selectedAuthors = ["AbeniusM", "AdelborgO"]
-    // Object.defineProperty s, 'selectedAuthors',
-    //   get: ->
-    //     this._selectedAuthors
-    //   set: (val) ->
-    //     c.log("setter", val)
-    //     this._selectedAuthors = val
+    const listKeys = _.pick($location.search(), "keywords", "languages", "authorkeyword")
+    _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
+    s.filters = _.omitBy(s.filters, _.isNil)
+    if ($location.search().forfattare) {
+        s.filters["main_author.author_id"] = $location.search().forfattare.split(",")
+    }
 
     s.onAuthChange = _.once(function() {
-        console.log("onAuthChange")
+        console.log("onAuthChange", $location.search().forfattare)
         if ($location.search().forfattare) {
             let oldVal = $location.search().forfattare.split(",")
-            return $timeout(function() {
-                s.selectedAuthors = oldVal
-                $("select.author_select").val(oldVal)
-                return $("select.author_select").trigger("change")
-            }, 0)
+            authors.then(() => {
+                $timeout(function() {
+                    s.filters["main_author.author_id"] = oldVal
+                    // s.selectedAuthors = oldVal
+                    $("select.author_select").val(oldVal)
+                    return $("select.author_select").trigger("change")
+                }, 0)
+            })
         }
     })
 
@@ -118,25 +121,38 @@ littb.controller("searchCtrl", function(
 
     $timeout(() => s.$broadcast("focus"), 100)
 
+    function getListener(selector, loadingFlag) {
+        let listener = function(event) {
+            safeApply(s, () => {
+                s[loadingFlag] = true
+                refreshTitles().then(() => {
+                    s[loadingFlag] = false
+                    $timeout(() => {
+                        $(selector)
+                            .off({ "select2:opening": listener })
+                            .select2("open")
+                            .on("select2:opening", listener)
+                    }, 0)
+                })
+            })
+            event.preventDefault()
+        }
+        return listener
+    }
+    $("select.title_select").on(
+        "select2:opening",
+        getListener("select.title_select", "loadingTitles")
+    )
+    $("select.author_select").on(
+        "select2:opening",
+        getListener("select.author_select", "loadingAuthors")
+    )
+
     s.titleSelectSetup = {
         language: {
             noResults: () => "Inga resultat"
         }
     }
-    //     formatResult : (data) ->
-    //         return "<span class='title'>#{data.text}</span>"
-
-    //     formatSelection : (item) ->
-    //         item.text
-    // }
-
-    // const initTitle = _.once(function(titlesById) {
-    //     if (!$location.search().titel) {
-    //         return
-    //     }
-
-    //     s.selected_title = titlesById[$location.search().titel]
-    // })
 
     s.titleChange = () => {
         // $location.search("titel", s.selected_title?.work_title_id or null)
@@ -165,39 +181,74 @@ littb.controller("searchCtrl", function(
     // for the author / about author search check
     s.isAuthorSearch = true
 
-    // const aboutDef = backend.getAboutAuthors()
-    // $q.all([aboutDef, authors]).then(function([aboutAuthorIds, [authorList, authorsById]]) {
-    //     s.aboutAuthors = _.uniq(_.map(aboutAuthorIds, id => authorsById[id]))
-    // })
-    backend.getAboutAuthors().then(function(data) {
+    const aboutDef = $q.defer()
+    s.onAboutAuthorChange = _.once(function($event) {
+        console.log("onAboutAuthorChange", s.filters.authorkeyword)
+        if ($location.search().authorkeyword) {
+            s.filters.authorkeyword = ($location.search().authorkeyword || "").split(",")
+        }
+        console.log("aboutDef.resolve()")
+        aboutDef.resolve()
+    })
+    let aboutFetchPromise = backend.getAboutAuthors()
+    aboutFetchPromise.then(data => {
+        console.log("aboutFetchPromise")
         s.aboutAuthors = data
     })
+    // $q.all([aboutFetchPromise, aboutDef.promise, authors]).then(function() {
+    $q.all([authors]).then(function() {
+        console.log("all about")
+        return $timeout(() => {
+            $(".about_select,.author_select").select2()
+        }, 0)
+    })
 
-    s.getAuthorDatasource = function() {
-        if (s.isAuthorAboutSearch) {
-            return s.aboutAuthors
-        } else {
-            return s.authors
-        }
+    // s.getAuthorDatasource = function() {
+    //     if (s.isAuthorAboutSearch) {
+    //         return s.aboutAuthors
+    //     } else {
+    //         return s.authors
+    //     }
+    // }
+
+    function refreshTitles() {
+        let includes = "shorttitle,title,lbworkid,authors.author_id,mediatype,searchable"
+        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+        // s.loadingTitles = true
+
+        return backend
+            .getTitles(
+                null,
+                "sortkey|asc",
+                null,
+                false,
+                false,
+                includes,
+                filter_or,
+                { searchable: true, ...filter_and },
+                true
+            )
+            .then(({ titles, author_aggs }) => {
+                // s.loadingTitles = false
+                s.titles = titles
+                authors.then(() => {
+                    if (!s.filters["main_author.author_id"].length) {
+                        s.authors = util.sortAuthors(
+                            _.map(author_aggs, item => s.authorsById[item.author_id])
+                        )
+                    }
+                })
+            })
     }
 
     authors.then(function([authorList, authorsById]) {
-        s.authors = _.filter(authorList, "searchable")
+        // s.authors = _.filter(authorList, "searchable")
         s.authorsById = authorsById
-        const change = _.memoize(function(newAuthors) {
-            if (!newAuthors) {
-                return
-            }
-            c.log("change newAuthors", newAuthors)
-            return backend
-                .getTextByAuthor(newAuthors, "etext,faksimil", null, s.isAuthorAboutSearch)
-                .then(titles => (s.titles = titles))
-        })
 
-        if ($location.search().forfattare) {
-            const auths = $location.search().forfattare.split(",")
-            s.selectedAuthors = auths
-        }
+        // if ($location.search().forfattare) {
+        //     const auths = $location.search().forfattare.split(",")
+        //     s.selectedAuthors = auths
+        // }
 
         if ($location.search().titlar) {
             s.selectedTitles = $location.search().titlar.split(",")
@@ -207,17 +258,17 @@ littb.controller("searchCtrl", function(
         }
         const listValIn = val => (val || "").split(",")
         const listValOut = val => {
-            console.log("val", val, typeof val)
+            c.log("val", val)
             return (val || []).join(",")
         }
-        return util.setupHashComplex(s, [
+        util.setupHashComplex(s, [
             {
                 key: "forfattare",
                 // expr : "selected_author.pseudonymfor || selected_author.author_id"
-                expr: "selectedAuthors",
+                expr: "filters['main_author.author_id']",
                 val_in: listValIn,
-                val_out: listValOut,
-                post_change: change
+                val_out: listValOut
+                // post_change: change
             },
             {
                 key: "titlar",
@@ -226,12 +277,31 @@ littb.controller("searchCtrl", function(
                 val_out: listValOut
             },
             {
-                key: "keyword",
-                expr: "selectedKeywords",
+                key: "kön",
+                expr: "filters['main_author.gender']",
+                default: "all"
+                // post_change: refreshTitles
+            },
+            {
+                key: "languages",
+                expr: "filters.languages",
                 val_in: listValIn,
                 val_out: listValOut
             },
-
+            {
+                key: "keywords",
+                expr: "filters.keywords",
+                val_in: listValIn,
+                val_out: listValOut
+                // post_change: refreshTitles
+            },
+            {
+                key: "authorkeyword",
+                expr: "filters.authorkeyword",
+                val_in: listValIn,
+                val_out: listValOut
+                // post_change: refreshTitles
+            },
             {
                 key: "sok_filter",
                 expr: "nav_filter",
@@ -241,12 +311,12 @@ littb.controller("searchCtrl", function(
                         s.searching = true
 
                         const args = { from: 0, to: s.num_hits - 1 }
-                        if (s.isAuthorAboutSearch) {
-                            args["about_authors"] = author_id
-                        } else {
-                            args["authors"] = author_id
-                        }
+                        // if (s.isAuthorAboutSearch) {
+                        //     args["about_authors"] = author_id
+                        // } else {
+                        // }
                         // args["author"] = author_id
+                        args["authors"] = author_id
 
                         searchData.modifySearch(args).then(function([sentsWithHeaders]) {
                             c.log("modifySearch args", arguments)
@@ -313,21 +383,6 @@ littb.controller("searchCtrl", function(
 
     const getSearchArgs = function(from, to) {
         let filter_params = []
-        // if (!s.filterOpts[0].selected) {
-        //     // search all texts is false
-        //     // searchAnom = _.find(s.filterOpts, {key: "is_anom"}).selected
-        //     const object = _.groupBy(s.filterOpts, "group")
-        //     for (let groupKey in object) {
-        //         const group = object[groupKey]
-        //         if (groupKey === "undefined") {
-        //             continue
-        //         }
-        //         const selected = _.filter(group, "selected")
-        //         if (selected.length === 1) {
-        //             filter_params.push(selected[0].param)
-        //         }
-        //     }
-        // }
 
         filter_params = _.fromPairs(filter_params)
 
@@ -345,13 +400,6 @@ littb.controller("searchCtrl", function(
         if (suffix) {
             args.suffix = true
         }
-        // infix = $location.search().infix
-        // if prefix or suffix or infix
-        //     args.phrase = false
-        //     if prefix or suffix
-        //         prefix = if prefix then "*" else ""
-        //         suffix = if suffix then "*" else ""
-        //         args.query = suffix + args.query + prefix
         _.extend(args, filter_params)
 
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
@@ -451,67 +499,6 @@ littb.controller("searchCtrl", function(
 
     s.$on("$destroy", () => $document.off("keydown", onKeyDown))
 
-    // s.sortStruct = [
-    //     {label: "SÖK I ALLA TEXTER", val: "lastname", selected: true}
-    //     {label: "INKLUDERA KOMMENTARER OCH", val: "imprintyear", selected: false}
-    //     {label: "SORTERA EFTER SÖKORDET I ALFABETISK ORDNING", val: "hit", selected: false}
-    // ]
-
-    // {label: "Inkludera <span class='sc'>KOMMENTARER & FÖRKLARINGAR</span>", val: "all_texts", selected: true}
-    // {label: 'Sök i <span class="sc">svenska</span> orginalverk', val: "lang_swedish", selected: true}
-    // {label: 'Sök i texter <span class="sc">översatta</span> från andra språk', val: "trans_from", selected: true}
-    // {label: 'Sök i texter <span class="sc">översatta</span> till andra språk', val: "trans_to", selected: true}
-    s.filterOpts = [
-        // {
-        //     label: "Sök i <span class='sc'>ALLA TEXTER</span>",
-        //     // param: "all_texts",
-        //     selected: true,
-        //     key: "all_texts"
-        // },
-        // {
-        //     label: 'Sök i <span class="sc">moderniserade</span> texter',
-        //     param: ["modernized", true],
-        //     selected: true,
-        //     group: 0,
-        //     key: "is_modernized"
-        // },
-        // {
-        //     label: 'Sök i <span class="sc">ej moderniserade</span> texter',
-        //     param: ["modernized", false],
-        //     selected: true,
-        //     group: 0,
-        //     key: "not_modernized"
-        // },
-        // {
-        //     label: 'Sök i <span class="sc">korrekturlästa</span> texter',
-        //     param: ["proofread", true],
-        //     selected: true,
-        //     group: 1,
-        //     key: "is_proofread"
-        // },
-        // {
-        //     label: 'Sök i <span class="sc">ej korrekturlästa</span> texter',
-        //     param: ["proofread", false],
-        //     selected: true,
-        //     group: 1,
-        //     key: "not_proofread"
-        // },
-        // {
-        //     label: 'Sök i texter skrivna av <span class="sc">kvinnor</span>',
-        //     param: ["gender", "female"],
-        //     selected: true,
-        //     group: 2,
-        //     key: "gender_female"
-        // },
-        // {
-        //     label: 'Sök i texter skrivna av <span class="sc">män</span>',
-        //     param: ["gender", "male"],
-        //     selected: true,
-        //     group: 2,
-        //     key: "gender_male"
-        // }
-    ]
-
     s.options = {
         sortSelected: "lastname"
     }
@@ -584,44 +571,6 @@ littb.controller("searchCtrl", function(
 
         return def
     }
-
-    // s.opt_change = function(opt) {
-    //     const commit = () => (s.search_filter_opts = _.map(_.map(s.filterOpts, "selected"), Number))
-    //     if (opt.key === "all_texts") {
-    //         for (let o of s.filterOpts) {
-    //             o.selected = true
-    //         }
-    //         commit()
-    //         return
-    //     }
-
-    //     // isDeselect = opt.selected
-    //     opt.selected = !opt.selected
-
-    //     const group = _.filter(s.filterOpts, o => o.group === opt.group)
-    //     c.log("group", group)
-
-    //     if (!_.some(group, "selected")) {
-    //         const i = _.indexOf(group, opt)
-    //         ;(group[i + 1] || group[0]).selected = true
-
-    //         commit()
-    //         return
-    //     }
-
-    //     if (!_.every(s.filterOpts, "selected")) {
-    //         s.filterOpts[0].selected = false
-    //     }
-    //     if (!_.filter(s.filterOpts, "selected").length) {
-    //         opt.selected = true
-    //     }
-
-    //     if (_.every(s.filterOpts.slice(1), "selected")) {
-    //         s.filterOpts[0].selected = true
-    //     }
-
-    //     return commit()
-    // }
 
     return util.setupHashComplex(s, [
         {

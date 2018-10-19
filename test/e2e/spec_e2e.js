@@ -29,10 +29,20 @@ describe("library works", function() {
         expect(rows.count()).toEqual(1)
     })
 
-    it("should link correctly to reading mode", () =>
+    it("should link correctly to reading mode from popular", () => {
         expect(element(By.css("li.link.first li:first-of-type a")).getAttribute("href")).toEqual(
             `http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`
-        ))
+        )
+    })
+
+    it("should link correctly to reading mode from filtered", () => {
+        const filter = element(By.model("filter"))
+        filter.sendKeys("aniara")
+        filter.sendKeys(protractor.Key.ENTER)
+        expect(element(By.css("li.link.first li:first-of-type a")).getAttribute("href")).toEqual(
+            `http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`
+        )
+    })
 })
 
 describe("titles", function() {
@@ -70,7 +80,7 @@ describe("reader", function() {
 
     it("should change page on click", function() {
         get("/forfattare/StrindbergA/titlar/Fadren/sida/3/etext")
-        return element(By.css(".pager_ctrls a[rel=next]"))
+        element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(linkUrl =>
                 expect(linkUrl).toBe(
@@ -82,7 +92,7 @@ describe("reader", function() {
     it("should correctly handle pagestep", function() {
         get("/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil")
 
-        return element(By.css(".pager_ctrls a[rel=next]"))
+        element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(function(linkUrl) {
                 browser.get(linkUrl)
@@ -90,6 +100,14 @@ describe("reader", function() {
                     `http://${HOST}:9000/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
                 )
             })
+    })
+
+    it("should load workinfo from the correct mediatype", function() {
+        get("/forfattare/LagerlofS/titlar/Dunungen/sida/1/etext")
+
+        expect(element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href")).toBe(
+            `http://${HOST}:9000/forfattare/LagerlofS/titlar/Dunungen/sida/2/etext`
+        )
     })
 })
 

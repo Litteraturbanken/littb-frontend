@@ -52,6 +52,9 @@ only screen and (max-width: 760px),
     }
     
     .page-library {
+        #mainview {
+            width : auto;
+        }
         #leftCorridor, #mainview {
             display : block;
         }

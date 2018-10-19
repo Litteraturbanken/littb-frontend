@@ -24,8 +24,18 @@
           "no-multi-spaces" : "off",
           "keyword-spacing" : "off",
           "eqeqeq" : "off",
-          "camelcase" : "off"
+          "camelcase" : "off",
+          "object-curly-spacing" : "off",
+          "spaced-comment" : "off"
 
           },
-  globals: {}
+  globals: {
+    "_": true,
+    $ : true,
+    c: true,
+    angular: true,
+    isDev : true,
+    littb : true
+
+  }
 }

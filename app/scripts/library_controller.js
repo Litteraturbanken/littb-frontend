@@ -52,7 +52,7 @@ littb.controller("libraryCtrl", function(
     s.show_more = $location.search().avancerat != null
     s.filters = {
         "main_author.gender": $location.search()["kön"],
-        about_authors: [],
+        authorkeyword: [],
         keywords: [],
         languages: [],
         mediatypes: []
@@ -63,7 +63,7 @@ littb.controller("libraryCtrl", function(
         "keywords",
         "languages",
         "mediatypes",
-        "about_authors"
+        "authorkeyword"
     )
     _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
     s.filters = _.omitBy(s.filters, _.isNil)
@@ -107,12 +107,12 @@ littb.controller("libraryCtrl", function(
 
     const aboutDef = $q.defer()
     s.onAboutAuthorChange = _.once(function($event) {
-        console.log("onAboutAuthorChange", s.filters.about_authors)
-        if ($location.search().about_authors) {
-            s.filters.about_authors = ($location.search().about_authors || "").split(",")
+        console.log("onAboutAuthorChange", s.filters.authorkeyword)
+        if ($location.search().authorkeyword) {
+            s.filters.authorkeyword = ($location.search().authorkeyword || "").split(",")
         }
 
-        return aboutDef.resolve()
+        aboutDef.resolve()
     })
 
     $q.all([aboutDef.promise, authors]).then(function() {
@@ -291,7 +291,7 @@ littb.controller("libraryCtrl", function(
     function fetchWorks() {
         s.titleSearching = true
         const include =
-            "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable" +
+            "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable," +
             "authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub"
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // if (!_.toPairs(text_filter).length) {
@@ -430,6 +430,10 @@ littb.controller("libraryCtrl", function(
     // if $location.search().keyword
     //     s.selectedKeywords = $location.search().keyword?.split(",")
 
+    const listValIn = val => (val || "").split(",")
+    const listValOut = val => {
+        return (val || []).join(",")
+    }
     util.setupHashComplex(s, [
         {
             key: "filter",
@@ -448,42 +452,26 @@ littb.controller("libraryCtrl", function(
         {
             key: "languages",
             expr: "filters.languages",
-            val_in(val) {
-                return (val || "").split(",")
-            },
-            val_out(val) {
-                return (val || []).join(",")
-            }
+            val_in: listValIn,
+            val_out: listValOut
         },
         {
             key: "keywords",
             expr: "filters.keywords",
-            val_in(val) {
-                return (val || "").split(",")
-            },
-            val_out(val) {
-                return (val || []).join(",")
-            }
+            val_in: listValIn,
+            val_out: listValOut
         },
         {
             key: "mediatypes",
             expr: "filters.mediatypes",
-            val_in(val) {
-                return (val || "").split(",")
-            },
-            val_out(val) {
-                return (val || []).join(",")
-            }
+            val_in: listValIn,
+            val_out: listValOut
         },
         {
             key: "about_authors",
-            expr: "filters.about_authors",
-            val_in(val) {
-                return (val || "").split(",")
-            },
-            val_out(val) {
-                return (val || []).join(",")
-            }
+            expr: "filters.authorkeyword",
+            val_in: listValIn,
+            val_out: listValOut
         },
         {
             key: "avancerat",

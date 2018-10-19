@@ -107,7 +107,10 @@
         <div class="subnav">
             <ul>
                 <li ng-show="workinfo.parts.length"><a ng-click="show_chapters = true">Innehållsförteckning</a></li>
-                <li><a ng-click="openModal()">Mer om boken</a></li>
+                <li>
+                    <a ng-hide="workinfo.texttype == 'drama'" ng-click="openModal()">Mer om boken</a>
+                    <a ng-show="workinfo.texttype == 'drama'" ng-click="openModal()">Mer om pjäsen</a>
+                </li>
                 <li><a ng-click="activateFocus()">Läsfokus</a></li>
                 <li>
                     <a ng-show="!workinfo.searchable" class="disabled">Sök i verket</a> 
