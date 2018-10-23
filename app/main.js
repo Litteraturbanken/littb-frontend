@@ -26,6 +26,7 @@ require("./lib/angular-locale_sv-se.js")
 require("./lib/FileSaver.js")
 
 require("./scripts/app.js")
+require("./scripts/util.js")
 require("./scripts/services.js")
 require("./scripts/directives.js")
 require("./scripts/reading_controller.js")

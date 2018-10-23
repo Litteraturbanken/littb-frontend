@@ -24,8 +24,6 @@ littb.controller("readingCtrl", function(
     s.isEditor = false
     s._ = { humanize: _.humanize }
 
-    s.isDramaweb = $location.hash() === "dw"
-
     $window.scrollTo(0, 0)
     let t = $.now()
 
@@ -144,7 +142,8 @@ littb.controller("readingCtrl", function(
         }
         return s.$apply(function() {
             switch (event.which) {
-                case 39:
+                case 78: // n
+                case 39: // arrow right
                     if (
                         navigator.userAgent.indexOf("Firefox") !== -1 ||
                         $rootElement.prop("scrollWidth") - $window.scrollX === $($window).width()
@@ -152,8 +151,9 @@ littb.controller("readingCtrl", function(
                         return s.nextPage()
                     }
                     break
-                case 37:
-                    if ($window.scrollX === 0) {
+                case 70: // f
+                case 37: // arrow left
+                    if ($window.scrollX < 10) {
                         return s.prevPage()
                     }
                     break
@@ -239,7 +239,7 @@ littb.controller("readingCtrl", function(
         if (s.isEditor) {
             return `/editor/${$routeParams.lbid}/ix/0/${$routeParams.mediatype}` + search
         } else {
-            return `/forfattare/${author}/titlar/${title}/sida/${s.startpage}/${mediatype}` + search
+            return s.getPageUrl(s.startpage)
         }
     }
 
@@ -278,7 +278,7 @@ littb.controller("readingCtrl", function(
         if (s.isEditor) {
             return `/editor/${$routeParams.lbid}/ix/${s.endIx}/${$routeParams.mediatype}`
         } else {
-            return `/forfattare/${author}/titlar/${title}/sida/${s.endpage}/${mediatype}`
+            return s.getPageUrl(s.endpage)
         }
     }
 
@@ -684,7 +684,7 @@ littb.controller("readingCtrl", function(
         def.then(function(workinfo) {
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
-            const steps = []
+
             if (s.etextPageMapping == null) {
                 s.etextPageMapping = {}
             }
@@ -702,7 +702,8 @@ littb.controller("readingCtrl", function(
                 s.pagename = pagename = s.startpage
             }
             s.pageix = s.pagemap[`page_${pagename}`]
-            return c.log("s.pagename", pagename)
+            c.log("s.pagename", pagename)
+            s.isDramaweb = !!workinfo.dramawebben
         })
 
         return def
@@ -822,7 +823,7 @@ littb.controller("readingCtrl", function(
             return false
         }
         if (isIncrement) {
-            return s.sizes[(s.size - 1 || 0) + 1]
+            return !s.sizes[(s.size - 1 || 0) + 1]
         } else {
             return !s.sizes[(s.size - 1 || 0) - 1]
         }

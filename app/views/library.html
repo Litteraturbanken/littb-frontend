@@ -110,32 +110,8 @@
                             ng-click="authorClick($event, author)" 
                             on-finish-render="authorRender()" 
                             id="{{author.author_id}}">
-                            <!-- ng-click="authorHeaderClick($event, author)" -->
                             <a ng-href="/forfattare/{{author.author_id}}/" class="item_header" ><span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span> {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
-                                <!-- <i ng-show="author._infoSearching" class="item_preloader fa fa-spinner"></i> -->
                             </a>
-                    
-                            <!-- <div collapse="!author._collapsed" >
-                                <div class="collapse-content">
-                                    <div class="info show_all" ng-show="author.data.intro">
-                                        <div ng-bind-html="author.data.intro | trust" ></div>
-                                        <em>{{authorsById[normalizeAuthor(author.data['introAuthor'])].full_name}}</em> 
-                                    </div>
-                                    <ul class="links">
-                                        <li><a href="/forfattare/{{::author.author_id}}">
-                                            Gå till författarens sida
-                                            </a></li>
-                                        <li><a href="/forfattare/{{::author.author_id}}/titlar">
-                                             Visa författarens verk</a>
-                                        </li>
-                                        <li ng-if="author.searchable"><a href="/sok?forfattare={{author.author_id}}&avancerad">
-                                             Sök i författarens verk</a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div> -->
-                        
-                    
                         </li>
                     </ul>
                 </div>
@@ -246,7 +222,7 @@
                             </div>
                         </li>
                         <li ng-show="!showAllParts && parts_hits > 30">
-                            <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchTitles()">
+                            <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
                                 Visa alla <span class="num">{{parts_hits}}</span> träffar
                             </button>
                         </li>

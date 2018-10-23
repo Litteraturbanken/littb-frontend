@@ -11,7 +11,7 @@ describe("library authors", function() {
         filter.sendKeys("adelb")
         filter.sendKeys(protractor.Key.ENTER)
         rows = element.all(By.repeater("author in getAuthorData()"))
-        expect(rows.count()).toEqual(3)
+        expect(rows.count()).toEqual(4)
     })
 })
 
@@ -56,7 +56,7 @@ describe("titles", function() {
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         let num = element(By.css(".show_all .num"))
-        expect(num.getText()).toEqual("812")
+        expect(num.getText()).toEqual("813")
     })
 })
 

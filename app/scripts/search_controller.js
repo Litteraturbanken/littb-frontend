@@ -564,11 +564,16 @@ littb.controller("searchCtrl", function(
             s.total_pages = Math.ceil(s.doc_hits / s.num_hits)
 
             s.sentsWithHeaders = _.flatten(sentsWithHeaders)
-            s.authorStatsData = author_aggs
+
             s.searching = false
             hasSearchInit = true
         })
-
+        $q.all([def, authors]).then(function([[sentsWithHeaders, author_aggs]]) {
+            s.authorStatsData = _.orderBy(
+                author_aggs,
+                auth => s.authorsById[auth.author_id].name_for_index
+            )
+        })
         return def
     }
 

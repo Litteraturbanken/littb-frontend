@@ -530,8 +530,9 @@ input:focus, button.btn:focus {
     z-index: 9999;
 }
 .tooltip.left .tooltip-inner {
-    margin-left: -145px;
-    width: 350px;
+    margin-left: -195px;
+    max-width: 450px;
+    width : 240px;
 }
 .fixed {
     position : fixed;

@@ -189,37 +189,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         s.authorsById = authorsById
         s.authorList = authorList
     })
-    s.authorSelectSetup = {
-        formatResult(data) {
-            if (!s.authorsById) {
-                return
-            }
-            const author = s.authorsById[data.id]
-            if (!author) {
-                return data.text
-            }
-
-            let firstname = ""
-            if (author.name_for_index.split(",").length > 1) {
-                firstname = `<span class='firstname'>, ${
-                    author.name_for_index.split(",")[1]
-                }</span>`
-            }
-
-            return `<span>
-                        <span class="surname sc">${author.surname}</span>${firstname} 
-                        <span class="year">${$filter("authorYear")(author)}</span>
-                    </span>`
-        },
-
-        formatSelection(item) {
-            try {
-                return s.authorsById[item.id].surname
-            } catch (e) {
-                return "Välj författare"
-            }
-        }
-    }
+    s.authorSelectSetup = util.getAuthorSelectConf(s)
 
     s.onAuthorChange = _.once(function() {
         console.log("onAuthorChange", $location.search().author)

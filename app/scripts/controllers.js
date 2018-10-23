@@ -263,10 +263,6 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
     s.show_large = false
     s.show_more = true
 
-    if ($location.search().dw) {
-        s.isDramaweb = true
-    }
-
     s.getIntro = function() {
         if (!s.authorInfo) {
             return
@@ -602,7 +598,13 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
                     (s.authorInfo.dramawebben && s.authorInfo.dramawebben.intro)
                 )
             ) {
-                return $location.url(`/forfattare/${s.author}/titlar`).replace()
+                $location.url(`/forfattare/${s.author}/titlar`).replace()
+            } else if (
+                !s.authorInfo.intro &&
+                s.authorInfo.dramawebben &&
+                s.authorInfo.dramawebben.intro
+            ) {
+                $location.url(`/forfattare/${s.author}/dramawebben`).replace()
             }
         },
         function(data) {
@@ -696,35 +698,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
     )
     // s.authorIds = epubAuthorIds
 
-    s.authorSelectSetup = {
-        templateResult(data) {
-            const author = s.authorsById[data.id]
-            if (!author) {
-                return data.text
-            }
-
-            let firstname = ""
-            if (author.name_for_index.split(",").length > 1) {
-                firstname = `<span class='firstname'>, ${
-                    author.name_for_index.split(",")[1]
-                }</span>`
-            }
-
-            return $(`<span>
-                    <span class="surname sc">${author.surname}</span>
-                    ${firstname} 
-                    <span class="year">${$filter("authorYear")(author)}</span> 
-                </span>`)
-        },
-
-        templateSelection(item) {
-            try {
-                return s.authorsById[item.id].surname
-            } catch (e) {
-                return "Välj författare"
-            }
-        }
-    }
+    s.authorSelectSetup = util.getAuthorSelectConf(s)
 
     s.genderSelectSetup = {}
 

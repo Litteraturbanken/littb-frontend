@@ -251,7 +251,7 @@ littb.controller("libraryCtrl", function(
             s.showPopularAuth = false
             s.showPopular = false
             s.showRecent = false
-            s.fetchTitles()
+            s.fetchParts()
             if (s.rowfilter) {
                 fetchAudio()
             }
@@ -266,7 +266,7 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    s.fetchTitles = () => {
+    s.fetchParts = () => {
         // unless s.filter then return
         s.partSearching = true
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
@@ -387,13 +387,6 @@ littb.controller("libraryCtrl", function(
                 `/forfattare/${author_id}/titlar/${s.getTitleId(row)}/` +
                 `sida/${row.startpagename}/${mediatype}`
             )
-        }
-    }
-
-    s.authorHeaderClick = function($event, author) {
-        if (s.selectedAuth === author && author._collapsed) {
-            author._collapsed = false
-            if ($event) $event.stopPropagation()
         }
     }
 

@@ -173,6 +173,9 @@ body.modal-open {
     }
 }
 .about-modal {
+    a:hover {
+        color : $primarycolor;
+    }
     .header {
         margin-top : 1em;
         margin-bottom : 2em;
@@ -361,7 +364,7 @@ body.modal-open {
             margin:0;
         }
 
-        p em:only-child {
+        .author {
             text-align: right;
             display: block;
             margin-right: 3em;

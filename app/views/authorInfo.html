@@ -15,9 +15,9 @@
 
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
-        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/forfattare/{{author}}{{isDramaweb ? '?dw' : ''}}">Introduktion</a></li>
+        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/forfattare/{{author}}">Introduktion</a></li>
         <li ng-show="authorInfo.dramawebben" ng-class="{active : showpage == 'dramawebben'}"><a href="/forfattare/{{author}}/dramawebben">Dramawebben</a></li>
-        <li ng-class="{active : showpage == 'titlar'}"><a href="/forfattare/{{author}}/titlar{{isDramaweb ? '?dw' : ''}}">Verk</a></li>
+        <li ng-class="{active : showpage == 'titlar'}"><a href="/forfattare/{{author}}/titlar">Verk</a></li>
         <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/forfattare/{{author}}/presentation">Presentation</a></li>
         <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/forfattare/{{author}}/las-mer">Läs mer</a></li>
@@ -67,10 +67,9 @@
 
             <div class="portrait_container">
                 <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
-                <figcaption ng-bind-html="(isDramaweb ? authorInfo.dramawebben.picture_info : authorInfo.pictureinfo) | trust"></figcaption>
+                <figcaption ng-bind-html="authorInfo.pictureinfo | trust"></figcaption>
 
             </div>
-            
 
             <div class="show_more_btn" ng-show="!show_more"> <i class="fa fa-caret-down"></i> <a href="" ng-click="show_more = true"> LÄS MER</a></div>
             
@@ -106,7 +105,13 @@
                                     {{work.shorttitle || work.title}}
                                 </a>
                                 <a class="title" ng-if="work.doc_type != 'audio'" 
+                                    ng-hide="work.doc_type == 'infopost'"
                                     ng-href="{{work.mediatypes[0].url + '?om-boken'}}"
+                                    tooltip="{{getTitleTooltip(work)}}">
+                                    {{work.shorttitle || work.title}}
+                                </a>
+                                <a class="title" ng-if="work.doc_type == 'infopost'" 
+                                    ng-href="{{work.mediatypes[0].url}}"
                                     tooltip="{{getTitleTooltip(work)}}">
                                     {{work.shorttitle || work.title}}
                                 </a>
@@ -162,8 +167,9 @@
                 </div>
             </div>
             <div class="portrait_container">
-                <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.dramawebben.largeImage}}" >
+                <img ng-show="authorInfo.dramawebben.picture" class="author_img" ng-src="{{authorInfo.dramawebben.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
                 <figcaption ng-bind-html="authorInfo.dramawebben.picture_info | trust"></figcaption>
+
             </div>
         </div>
         <div ng-switch-when="titlar">
