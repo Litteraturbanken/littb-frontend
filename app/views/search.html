@@ -23,12 +23,20 @@
                                 ng-model="filters.keywords" data-placeholder="Välj samling" 
                                 ng-change="onKeywordChange()" >
                             <option value=""></option>
-                            <option value='provenance.library:Dramawebben'>Dramawebben</option>
+                            <option value="texttype:brev">Brev</option>
+                            <option value="texttype:drama">Dramatik</option>
+                            <option value="texttype:novellsamling;novell">Noveller</option>
+                            <option value="texttype:diktsamling;dikt">Poesi</option>
+                            <option value="texttype:roman">Romaner</option>
+                            <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
+                            <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
+                            <option value='keyword:Humor'>Humor</option>
+                            <option value="texttype:reseskildring">Reseskildringar</option>
+                            <option value='keyword:Dramawebben'>Dramawebben</option>
+                            <option value='keyword:SLS-FI'>SLS Finland</option>
+                            <option value='provenance.library:SVELITT'>SLS Sverige</option>
                             <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
-                            <option value='provenance.library:SVELITT'>Svenska litteratursällskapet (SE)</option>
-                            <option value='keyword:Barnlitteratur'>Barnlitteratur</option>
                             <option value='keyword:sentpajorden'>Sent på jorden</option>
-                            <option value='authorkeyword:StrindbergA'>Om August Strindberg</option>
                         </select>
                     </div>
 
@@ -56,16 +64,6 @@
                         <option value="male">Manliga författare</option>
                         </option>
                     </select>
-                    
-                    <!-- <p class="expl advanced_text textfields" ng-show="isAuthorSearch">
-                        Lämna fältet ovan tomt för att söka i de valda författarnas <span class="sc">samtliga sökbara verk</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
-                    </p> -->
-                    <p class="expl advanced_text textfields" ng-hide="isAuthorSearch">
-                        Lämna fältet ovan tomt för att söka i samtliga sökbara verk <span class="sc">om ett visst författarskap</span>. Välj ett eller flera verk för att <span class="sc">begränsa</span> sökningen. 
-                    </p>
-                    <!-- <p class="expl advanced_text">
-                        Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)
-                    </p> -->
                     
 
                     <div class="text simple_text">Vill du göra mer avancerade sökningar i texterna? Då kan du klicka på <a ng-click="advanced = true"><i class="fa fa-play"></i> <span class="sc">Avancerade sökmöjligheter</span></a> </div>
@@ -99,7 +97,9 @@
                     </select>
                     <div class="title_select_container">
                         <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
+                            <option ng-if="titles_hits > 30" disabled>Visar de första 30 titlarna</option>
                             <option value="{{title.lbworkid}}" ng-repeat="title in titles">{{title.shorttitle || title.title}}</option>
+                            <!-- <option ng-click="onAllTitlesClick()">Visa alla</option> -->
                         </select>
 
                         <i ng-if="loadingTitles" class="spinner fa fa-spinner fa-pulse"></i>

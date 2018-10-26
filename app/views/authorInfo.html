@@ -177,6 +177,17 @@
         </div>
         <div ng-switch-when="mer">
             <!-- <div class="content" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div> -->
+
+            <section ng-if="authorInfo.external_ref.length">
+                <h2>Läs mer</h2>
+                <ul class="external">
+                    <li ng-repeat="ref in authorInfo.external_ref">
+                        <a ng-href="/{{ref.url}}">{{ref.label}}</a>
+                    </li>
+                </ul>
+                
+            </section>
+
            <ng-include src="'listing.html'"></ng-include>
         </div>
     

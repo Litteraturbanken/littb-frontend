@@ -319,9 +319,9 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params
             }).then(function(response) {
                 c.log("response", response)
-                const { data, author_aggregation } = response.data
+                const { data, author_aggregation, hits } = response.data
 
-                return { titles: expandMediatypes(data), author_aggs: author_aggregation }
+                return { titles: expandMediatypes(data), author_aggs: author_aggregation, hits }
             })
         },
 
@@ -524,6 +524,9 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
         logLibrary(filter) {
+            if (!filter) {
+                filter = "[alla]"
+            }
             return $http({
                 url: `${STRIX_URL}/log_library/${filter}`
             })

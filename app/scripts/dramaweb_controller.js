@@ -49,6 +49,18 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         _.mapValues(_.pick($location.search(), ...rangeKeys), val => val.split(","))
     )
 
+    s.$watch(
+        () => _.keys($location.search()).join(""),
+        () => {
+            s.hasFilters = _.keys($location.search()).length
+            console.log("hasFilters", s.hasFilters)
+        }
+    )
+    s.clearFilters = () => {
+        $location.search({})
+        window.location.reload()
+    }
+
     const updateRoute = function() {
         s.showpage = $location.path().split("/")[2] || "start"
         s.isStartPage = s.showpage === "start"
@@ -285,7 +297,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
             }
 
             if (s.filters.isChildrensPlay) {
-                if (!item.keyword || !item.includes("Barnlitteratur")) {
+                if (!item.keyword || !item.keyword.includes("Barnlitteratur")) {
                     return false
                 }
             }

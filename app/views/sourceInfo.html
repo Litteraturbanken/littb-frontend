@@ -43,7 +43,7 @@
                 ng-show="workinfo.librisid" 
                 >Verket i <a ng-href="{{'https://libris.kb.se/bib/' + workinfo.librisid}}" target="_blank">Libris</a></div>
 
-            <div class="dw_logo" ng-show="workinfo.dramawebben"><a href="/dramawebben"><img class="logo" src="../img/dramawebben_svart.svg" alt="Dramawebben"></a></div>
+            <div class="dw_logo" ng-show="workinfo.dramawebben && workinfo.dramawebben.workintro"><a href="/dramawebben"><img class="logo" src="../img/dramawebben_svart.svg" alt="Dramawebben"></a></div>
         </div>
 
 
@@ -53,7 +53,7 @@
         </div>
     </div>
     
-    <h3 class="sc introheader" ng-if="workinfo.dramawebben">Handling</h3>
+    <h3 class="sc introheader" ng-if="workinfo.dramawebben.workintro">Handling</h3>
     <p class="workintro" ng-bind-html="workinfo.workintro | trust"></p>
 
     <div class="dramaweb" ng-if="dramaweb">

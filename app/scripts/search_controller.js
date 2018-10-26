@@ -148,6 +148,9 @@ littb.controller("searchCtrl", function(
         getListener("select.author_select", "loadingAuthors")
     )
 
+    s.onAllTitlesClick = () => {
+        c.log("onAllTitlesClick")
+    }
     s.titleSelectSetup = {
         language: {
             noResults: () => "Inga resultat"
@@ -196,8 +199,13 @@ littb.controller("searchCtrl", function(
         s.aboutAuthors = data
     })
     // $q.all([aboutFetchPromise, aboutDef.promise, authors]).then(function() {
-    $q.all([authors]).then(function() {
-        console.log("all about")
+    authors.then(function([authorList, authorsById]) {
+        if ($location.search().forfattare) {
+            s.authors = $location
+                .search()
+                .forfattare.split(",")
+                .map(id => authorsById[id])
+        }
         return $timeout(() => {
             $(".about_select,.author_select").select2()
         }, 0)
@@ -228,9 +236,10 @@ littb.controller("searchCtrl", function(
                 { searchable: true, ...filter_and },
                 true
             )
-            .then(({ titles, author_aggs }) => {
+            .then(({ titles, author_aggs, hits }) => {
                 // s.loadingTitles = false
                 s.titles = titles
+                s.titles_hits = hits
                 authors.then(() => {
                     if (!s.filters["main_author.author_id"].length) {
                         s.authors = util.sortAuthors(

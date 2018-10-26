@@ -252,7 +252,7 @@ littb.controller("libraryCtrl", function(
             s.showPopular = false
             s.showRecent = false
             s.fetchParts()
-            if (s.rowfilter) {
+            if (s.rowfilter || ($location.search()["kön"] && hasActiveFilter() == 1)) {
                 fetchAudio()
             }
             fetchWorks()
@@ -286,7 +286,16 @@ littb.controller("libraryCtrl", function(
                 sort_field: "title.raw|asc",
                 partial_string: true
             })
-            .then(titleArray => (s.audio_list = titleArray))
+            .then(titleArray => {
+                if ($location.search()["kön"]) {
+                    s.audio_list = _.filter(
+                        titleArray,
+                        audio => audio.authors[0].gender == $location.search()["kön"]
+                    )
+                } else {
+                    s.audio_list = titleArray
+                }
+            })
 
     function fetchWorks() {
         s.titleSearching = true

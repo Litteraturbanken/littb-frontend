@@ -4870,7 +4870,11 @@ grundform-clean {
 
         }
     }
-    
+    .clear_filter {
+        padding: 4px 10px 4px 11px;
+        font-size: 1.6rem;
+        @include small-caps();
+    }
     .logo_link_monogram {
         // @include logo("white_white");
         display : none;
@@ -4928,6 +4932,7 @@ grundform-clean {
 
     .select2-container {
         width: 200px !important;
+        margin-bottom: 0;
     }
     .select2-container--open .select2-dropdown--below {
         top : 0;
@@ -4938,6 +4943,7 @@ grundform-clean {
         td:first-child {
             @include small-caps();
             padding-right : 50px;
+            vertical-align: top;
         }
     }
     

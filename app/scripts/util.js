@@ -136,9 +136,9 @@ littb.factory("util", function util($location, $filter) {
                 for (let kw of list || []) {
                     const [key, val] = kw.split(":")
                     if (output[key]) {
-                        output[key].push(val)
+                        output[key] = output[key].concat(val.split(";"))
                     } else {
-                        output[key] = [val]
+                        output[key] = val.split(";")
                     }
                 }
                 return output
