@@ -251,7 +251,8 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 filter_string,
                 to,
                 filter_or,
-                filter_and
+                filter_and,
+                author_aggregation: true
             }
 
             if (partial_string) {
@@ -263,9 +264,11 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params
             }).then(function(response) {
                 c.log("getParts data", response)
+                let { data, hits, author_aggregation } = response.data
                 return {
-                    titleArray: expandMediatypes(response.data.data),
-                    hits: response.data.hits
+                    titleArray: expandMediatypes(data),
+                    hits: hits,
+                    author_aggs: author_aggregation
                 }
             })
         },

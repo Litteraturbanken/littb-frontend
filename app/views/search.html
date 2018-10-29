@@ -97,6 +97,7 @@
                     </select>
                     <div class="title_select_container">
                         <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
+                            <!-- <option ng-if="titles_hits > 30" disabled>Visar de första 30 titlarna</option> -->
                             <option ng-if="titles_hits > 30" disabled>Visar de första 30 titlarna</option>
                             <option value="{{title.lbworkid}}" ng-repeat="title in titles">{{title.shorttitle || title.title}}</option>
                             <!-- <option ng-click="onAllTitlesClick()">Visa alla</option> -->

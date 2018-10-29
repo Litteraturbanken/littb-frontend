@@ -1591,6 +1591,7 @@ body > .header {
             margin-top : 2em;
             // padding-bottom : 2em;
             margin-bottom : 2em;
+            margin-left: -15px;
             & > * {
                 display: inline-block;
                 width : 40%;
@@ -2638,7 +2639,10 @@ $partnav-width : 170px;
             // width : 500px;    
             line-height : 1.4;
         }
-
+        
+        .drama_subtitle {
+            margin-bottom: 1em;
+        }
         
 
         // really for authorTitles

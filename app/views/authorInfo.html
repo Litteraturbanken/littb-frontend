@@ -143,7 +143,7 @@
                 <div ng-bind-html="authorInfo.dramawebben.intro || authorInfo.intro | trust"></div>
                 <div class="introauthor">
                     <em>{{authorsById[normalizeAuthor(authorInfo.dramawebben.intro_author || authorInfo.intro_author)].full_name}}</em>
-                    <div class="sc"><a href="/dramawebben">Dramawebben</a></div>
+                    <div class="drama_subtitle sc"><a href="/dramawebben">Dramawebben</a></div>
                 </div>
                 <div class="source" ng-if="authorInfo.dramawebben.sources">
                     <span class="source_header sc" ng-if="authorInfo.sources.length > 1">
@@ -163,6 +163,12 @@
                     <span class="sc">Pseudonym<span ng-show="authorInfo.pseudonym.length > 1">er</span></span>
                    <span ng-repeat="nym in authorInfo.pseudonym">
                        <em>{{nym.full_name}}</em><span ng-show="!$last">, </span>
+                   </span> 
+                </div>
+                <div class="other_name" ng-show="authorInfo.other_name.length">
+                    <span class="sc">Andra namn</span>
+                   <span ng-repeat="name in authorInfo.other_name">
+                       <em>{{name}}</em><span ng-show="!$last">, </span>
                    </span> 
                 </div>
             </div>

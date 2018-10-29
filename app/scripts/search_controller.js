@@ -210,7 +210,7 @@ littb.controller("searchCtrl", function(
             $(".about_select,.author_select").select2()
         }, 0)
     })
-
+    s.getTitlesHits = () => s.titles_hits
     // s.getAuthorDatasource = function() {
     //     if (s.isAuthorAboutSearch) {
     //         return s.aboutAuthors

@@ -233,7 +233,7 @@ littb.controller("libraryCtrl", function(
             return s.authorData
         } else {
             // s.authorData
-            return s.currentAuthors
+            return _.uniq([].concat(s.currentAuthors, s.currentPartAuthors), "author_id")
         }
     }
     let hasActiveFilter = () => {
@@ -252,7 +252,9 @@ littb.controller("libraryCtrl", function(
             s.showPopular = false
             s.showRecent = false
             s.fetchParts()
-            if (s.rowfilter || ($location.search()["kön"] && hasActiveFilter() == 1)) {
+            let isOnlyGenderFilterActive = $location.search()["kön"] && hasActiveFilter() == 1
+            let isNoFilterActive = !hasActiveFilter()
+            if ((s.rowfilter && isNoFilterActive) || isOnlyGenderFilterActive) {
                 fetchAudio()
             }
             fetchWorks()
@@ -270,13 +272,20 @@ littb.controller("libraryCtrl", function(
         // unless s.filter then return
         s.partSearching = true
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
-        backend
+
+        let def = backend
             .getParts(s.rowfilter, true, filter_or, filter_and, s.showAllParts ? 10000 : 30)
-            .then(({ titleArray, hits }) => {
+            .then(({ titleArray, hits, author_aggs }) => {
                 s.all_titles = titleArray
                 s.partSearching = false
                 s.parts_hits = hits
+                return { titleArray, hits, author_aggs }
             })
+        $q.all([def, authors]).then(([{ author_aggs }]) => {
+            s.currentPartAuthors = util.sortAuthors(
+                author_aggs.map(({ author_id }) => s.authorsById[author_id])
+            )
+        })
     }
 
     var fetchAudio = () =>
