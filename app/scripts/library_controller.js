@@ -256,6 +256,8 @@ littb.controller("libraryCtrl", function(
             let isNoFilterActive = !hasActiveFilter()
             if ((s.rowfilter && isNoFilterActive) || isOnlyGenderFilterActive) {
                 fetchAudio()
+            } else {
+                s.audio_list = null
             }
             fetchWorks()
             // if not (_.toPairs(getKeywordTextfilter()).length or s.about_authors_filter?.length)
