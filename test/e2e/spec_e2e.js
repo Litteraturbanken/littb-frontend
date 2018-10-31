@@ -117,7 +117,7 @@ describe("editor", function() {
     it("should change page on click", function() {
         get("/editor/lb238704/ix/3/f")
 
-        return element(By.css(".pager_ctrls a[rel=next]"))
+        element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(function() {
                 element(By.css(".pager_ctrls a[rel=next]")).click()
@@ -131,7 +131,7 @@ describe("editor", function() {
 
     it("should correctly handle pagestep", function() {
         get("/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil")
-        return element(By.css(".pager_ctrls a[rel=next]"))
+        element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(function(linkUrl) {
                 browser.get(linkUrl)
@@ -139,6 +139,12 @@ describe("editor", function() {
                     `http://${HOST}:9000/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
                 )
             })
+    })
+    it("should show so modal", function() {
+        get("/forfattare/SoderbergH/titlar/DoktorGlas/sida/1/etext?so=damm")
+        expect(
+            element(By.css(".modal-dialog lemma[id=lnr132506] grundform")).getText("href")
+        ).toEqual("damm")
     })
 })
 

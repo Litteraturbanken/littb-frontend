@@ -2363,6 +2363,9 @@ $partnav-width : 170px;
             margin-bottom : 0.3em;
             a {
                 color : $primarycolor;
+                &:hover {
+                    color : #333;
+                }
             }
         }
 

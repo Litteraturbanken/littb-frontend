@@ -386,6 +386,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     const output = response.data[prov.library]
                     if (!output) {
                         c.warn(`Library name '${prov.library}' not in provenance.json`, prov)
+                        continue
                     }
                     if (i > 0 && prov.text2) {
                         textField = "text2"
@@ -613,12 +614,12 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             }).then(response => expandMediatypes(response.data.data), err => c.log("err", err))
         },
 
-        getPartsInOthersWorks(author_id, list_about) {
+        getPartsInOthersWorks(author_id, sortkey, list_about) {
             if (list_about == null) {
                 list_about = false
             }
             const params = {
-                sort_field: "sortkey|desc"
+                sort_field: sortkey
             }
             if (list_about) {
                 params["about_author"] = true

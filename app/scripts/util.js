@@ -10,7 +10,7 @@ function sortBy(list, field) {
     }
     return _.orderBy(list, function(item) {
         const transpose = char => trans[char] || char
-        return _.map(item[field].toUpperCase(), transpose).join("")
+        return _.map(_.get(item, field).toUpperCase(), transpose).join("")
     })
 }
 

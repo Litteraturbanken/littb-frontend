@@ -454,7 +454,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
             label: "Dikter, noveller, essäer, etc. som ingår i andra verk",
             data: null,
             showAuthor: false,
-            def: backend.getPartsInOthersWorks(s.author)
+            def: backend.getPartsInOthersWorks(s.author, "sortkey|desc")
         },
         {
             label: "Som fotograf",
@@ -524,7 +524,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         if (obj.showAuthor === false) {
             return "sortkey"
         } else {
-            return ["authors[0].surname", "sortkey"]
+            return ["main_author.name_for_index", "sortkey"]
         }
     }
 
@@ -560,7 +560,11 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
                 {
                     label: `Kortare texter om ${s.authorInfo.full_name}`,
                     data: null,
-                    def: backend.getPartsInOthersWorks(s.author, true),
+                    def: backend.getPartsInOthersWorks(
+                        s.author,
+                        "main_author.name_for_index|desc",
+                        true
+                    ),
                     showAuthor(work) {
                         return work["authors"] || work["work_authors"]
                     }
