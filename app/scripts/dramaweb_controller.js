@@ -57,8 +57,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         }
     )
     s.clearFilters = () => {
-        $location.search({})
-        window.location.reload()
+        window.location.search = ""
     }
 
     const updateRoute = function() {
@@ -272,7 +271,11 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
             }
 
             if (s.filters.author && s.filters.author !== "all") {
-                if (item.authors[0].author_id !== s.filters.author) {
+                if (
+                    !_.some(
+                        _.filter(item.authors, ({ author_id }) => s.filters.author == author_id)
+                    )
+                ) {
                     return false
                 }
             }

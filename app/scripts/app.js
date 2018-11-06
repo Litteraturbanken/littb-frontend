@@ -90,12 +90,12 @@ window.littb = angular
                     route = [route]
                 }
                 for (let r of route) {
-                    if (r.split("/")[1] === "forfattare") {
-                        const shortRoute = r
-                            .replace(/^\/forfattare\//, "/f/")
-                            .replace("/titlar/", "/t/")
-                        $routeProvider.when(shortRoute, obj)
-                    }
+                    // if (r.split("/")[1] === "forfattare") {
+                    //     const shortRoute = r
+                    //         .replace(/^\/forfattare\//, "/f/")
+                    //         .replace("/titlar/", "/t/")
+                    //     $routeProvider.when(shortRoute, obj)
+                    // }
 
                     $routeProvider.when(r, obj)
                 }
@@ -363,6 +363,34 @@ window.littb = angular
                 ]
             })
 
+            .when("/f/:author/t/:title/:mediatype", {
+                redirectTo(routeParams, path, searchVars) {
+                    console.log("searchVars", path, searchVars)
+
+                    let suffix = _.toPairs(searchVars)
+                        .map(([key, val]) => {
+                            if (val === true) {
+                                return key
+                            } else {
+                                return key + "=" + val
+                            }
+                        })
+                        .join("&")
+                    return (
+                        `/forfattare/${routeParams.author}/titlar/${routeParams.title}/${
+                            { e: "etext", f: "faksimil" }[routeParams.mediatype]
+                        }` + (suffix ? "?" + suffix : "")
+                    )
+                }
+            })
+            .when("/f/:author/t/:title/sida/:pagename/:mediatype", {
+                redirectTo(routeParams, path, searchVars) {
+                    return `/forfattare/${routeParams.author}/titlar/${routeParams.title}/sida/${
+                        routeParams.pagename
+                    }/${{ e: "etext", f: "faksimil" }[routeParams.mediatype] ||
+                        routeParams.mediatype}`
+                }
+            })
             .when("/forfattare/:author/titlar/:title/:mediatype", {
                 templateUrl: require("../views/reader.html"),
                 controller: "readingCtrl",

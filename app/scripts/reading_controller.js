@@ -351,6 +351,9 @@ littb.controller("readingCtrl", function(
         return _.filter(s.workinfo.parts, function(part) {
             const startix = s.pagemap[`page_${part.startpagename}`]
             const endix = s.pagemap[`page_${part.endpagename}`]
+            if (_.isUndefined(startix) || _.isUndefined(endix)) {
+                c.warn("Incorrect value, startix", startix, "endix", endix)
+            }
             return s.pageix <= endix && s.pageix >= startix
         })
     }
@@ -409,6 +412,7 @@ littb.controller("readingCtrl", function(
             return
         }
 
+        c.log("partstart", s.pageix, s.workinfo.partStartArray)
         const partStartingHere = _.find(s.workinfo.partStartArray, function([i, part]) {
             return i === s.pageix
         })
