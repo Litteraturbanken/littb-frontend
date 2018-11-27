@@ -209,8 +209,10 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
 
             const text_filter = {}
             const params = {
-                has_epub: true,
                 to: size || 10000,
+                filter_and: {
+                    has_epub: true
+                },
                 include:
                     "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id," +
                     "authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name",

@@ -412,7 +412,6 @@ littb.controller("readingCtrl", function(
             return
         }
 
-        c.log("partstart", s.pageix, s.workinfo.partStartArray)
         const partStartingHere = _.find(s.workinfo.partStartArray, function([i, part]) {
             return i === s.pageix
         })

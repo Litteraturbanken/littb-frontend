@@ -519,11 +519,11 @@ littb.controller("searchCtrl", function(
         return s.newSearch(query)
     }
 
-    s.searchAllInWork = (sentenceObj, index) =>
+    s.searchAllInWork = (sentenceObj, index) => {
         searchData.getMoreHighlights(sentenceObj).then(function(sents) {
             let startIndex = null
             // find section start index
-            for (let i in _.range(index - 1, -1)) {
+            for (let i of _.range(index, -1)) {
                 const row = s.sentsWithHeaders[i]
                 if (row.isHeader) {
                     startIndex = i
@@ -531,8 +531,10 @@ littb.controller("searchCtrl", function(
                 }
             }
 
+            console.log("startIndex", startIndex)
             s.sentsWithHeaders.splice(startIndex, index - startIndex + 1, ...sents)
         })
+    }
 
     s.newSearch = function(query) {
         if (hasSearchInit) {
