@@ -1,20 +1,18 @@
-
-
 exports.config = {
   // The address of a running selenium server.
   seleniumAddress: "http://" + (process.env.SELENIUM || "localhost") + ":4444/wd/hub",
 
   // Capabilities to be passed to the webdriver instance.
   capabilities: {
-    'browserName': 'chrome',
-    'chromeOptions': {
-       'args': ['--disable-extensions', '--window-size=1500,900', "--privileged", "--headless"]
-     }
+    browserName: "chrome",
+    chromeOptions: {
+      args: ["--disable-extensions", "--window-size=1500,900"]
+    }
   },
 
   // Spec patterns are relative to the current working directly when
   // protractor is called.
-  specs: ['spec_e2e.js'],
+  specs: ["spec_e2e.js"],
 
   // chromeOnly: true,
   // directConnect: true,
@@ -26,7 +24,7 @@ exports.config = {
   },
   // directConnect: true,
   // restartBrowserBetweenTests: true,
-  framework: 'jasmine2',
+  framework: "jasmine2",
   // plugins: [{
   //     package: 'protractor-screenshoter-plugin',
   //     screenshotPath: './REPORTS/e2e',
@@ -38,10 +36,8 @@ exports.config = {
   // }],
 
   onPrepare: function() {
-      // returning the promise makes protractor wait for the reporter config before executing tests
-      // return global.browser.getProcessedConfig().then(function(config) {
-      // });
+    // returning the promise makes protractor wait for the reporter config before executing tests
+    // return global.browser.getProcessedConfig().then(function(config) {
+    // });
   }
-
-
-};
+}
