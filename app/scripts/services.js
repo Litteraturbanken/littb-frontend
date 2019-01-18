@@ -524,10 +524,18 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
-        logDownload(author, title, lbworkid) {
-            return $http({
+        logDownload(author, title, lbworkid, mediatype) {
+            $http({
                 url: `${STRIX_URL}/log_download/${author}/${title}/${lbworkid}`
             })
+            if (window.getGA()) {
+                window.getGA().send({
+                    hitType: "event",
+                    eventCategory: "download",
+                    eventAction: mediatype,
+                    eventLabel: `${lbworkid} – ${author} – ${title}`
+                })
+            }
         },
         logLibrary(filter) {
             if (!filter) {

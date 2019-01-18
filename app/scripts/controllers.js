@@ -743,12 +743,13 @@ littb.controller("epubListCtrl", function epubListCtrl(
     // return true
 
     s.log = function(row) {
-        const filename = s.getFilename(row)
+        // const filename = s.getFilename(row)
         if (!isDev) {
-            return backend.logDownload(
+            backend.logDownload(
                 row.authors[0].surname,
-                encodeURIComponent(row.shorttitle),
-                row.lbworkid
+                row.shorttitle || row.title,
+                row.lbworkid,
+                "epub"
             )
         }
     }
@@ -1223,6 +1224,14 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
             s.dramaweb = new Dramaweb(s.workinfo.dramawebben)
         }
     })
+
+    s.log = workinfo => {
+        backend.logDownload(
+            workinfo.authors[0].surname,
+            workinfo.shorttitle || workinfo.title,
+            workinfo.lbworkid
+        )
+    }
 
     s.getValidAuthors = function() {
         if (!s.workinfo) {

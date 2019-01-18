@@ -3,6 +3,11 @@
 _.templateSettings = { interpolate: /\{\{(.+?)\}\}/g }
 
 window.isDev = location.hostname !== "litteraturbanken.se"
+window.getGA = () => {
+    if (window.ga) {
+        return window.ga.getAll()[0]
+    }
+}
 
 let routeStartCurrent = null
 
@@ -525,6 +530,10 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
     $rootScope.$on("$routeChangeStart", (event, next, current) => (routeStartCurrent = current))
 
     $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
+        if (window.getGA()) {
+            window.getGA().send("pageview", location.pathname)
+        }
+
         let className
         if (newRoute.controller === "startCtrl") {
             $("title:first").text(`Litteraturbanken | ${newRoute.title}`)
