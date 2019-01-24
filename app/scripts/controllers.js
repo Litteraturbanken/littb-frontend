@@ -946,7 +946,7 @@ littb.controller("autocompleteCtrl", function(
                 let menu = [
                     {
                         label: "Start",
-                        url: "/start",
+                        url: "/",
                         typeLabel: "Gå till sidan"
                     },
                     {

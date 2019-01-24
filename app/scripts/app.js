@@ -525,7 +525,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
         } else if ($rootScope.isSla) {
             return "/forfattare/LagerlofS"
         } else {
-            return "/start"
+            return "/"
         }
     }
 
