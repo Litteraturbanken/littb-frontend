@@ -744,14 +744,12 @@ littb.controller("epubListCtrl", function epubListCtrl(
 
     s.log = function(row) {
         // const filename = s.getFilename(row)
-        if (!isDev) {
-            backend.logDownload(
-                row.authors[0].surname,
-                row.shorttitle || row.title,
-                row.lbworkid,
-                "epub"
-            )
-        }
+        backend.logDownload(
+            row.authors[0].surname,
+            row.shorttitle || row.title,
+            row.lbworkid,
+            "epub"
+        )
     }
     // location.href = "/txt/epub/#{filename}.epub"
 
@@ -1225,11 +1223,12 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
         }
     })
 
-    s.log = workinfo => {
+    s.log = (workinfo, mediatype) => {
         backend.logDownload(
             workinfo.authors[0].surname,
             workinfo.shorttitle || workinfo.title,
-            workinfo.lbworkid
+            workinfo.lbworkid,
+            mediatype
         )
     }
 

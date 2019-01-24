@@ -13,7 +13,7 @@ RUN yarn global add protractor && \
     webdriver-manager update --standalone false --gecko false
 
 COPY package.json yarn.lock ./
-RUN yarn install
+RUN yarn install && chown -R pptruser:pptruser /app/node_modules
 #RUN node_modules/protractor/bin/webdriver-manager update
 # If you are building your code for production
 # RUN npm install --only=production
