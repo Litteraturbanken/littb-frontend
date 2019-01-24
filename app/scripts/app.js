@@ -33,6 +33,10 @@ $.fn.outerHTML = function() {
         .html()
 }
 
+function onRouteReject() {
+    window.gtag("config", window.gtagID, { page_path: window.location.pathname })
+}
+
 _.templateSettings.interpolate = /{{([\s\S]+?)}}/g
 
 const authorResolve = [
@@ -49,6 +53,7 @@ const authorResolve = [
             $route.current.params.author === $routeParams.author
         ) {
             def.reject()
+            onRouteReject()
         } else {
             def.resolve()
         }
@@ -109,9 +114,9 @@ window.littb = angular
         const router = new Router()
 
         router
-            .when("", { redirectTo: "/start" })
-            .when("/", { redirectTo: "/start" })
-            .when("/start", {
+            // .when("", { redirectTo: "/start" })
+            // .when("/", { redirectTo: "/start" })
+            .when("/", {
                 templateUrl: require("../views/start.html"),
                 controller: "startCtrl",
                 title: "Svenska klassiker som e-bok och epub"
@@ -170,6 +175,7 @@ window.littb = angular
                             ) {
                                 c.log("reject about route")
                                 def.reject()
+                                onRouteReject()
                             } else {
                                 def.resolve()
                             }
@@ -215,6 +221,7 @@ window.littb = angular
                             ) {
                                 c.log("reject about route")
                                 def.reject()
+                                onRouteReject()
                             } else {
                                 def.resolve()
                             }
@@ -225,6 +232,34 @@ window.littb = angular
             })
 
             .when("/hjalp", { redirectTo: "/om/hjalp" })
+            .when("/dramawebben/pjas/:legacyurl", {
+                template: "<div></div>",
+                controller: [
+                    "$scope",
+                    "backend",
+                    "$routeParams",
+                    "$location",
+                    function($scope, backend, $routeParams, $location) {
+                        let legacyurl = $routeParams.legacyurl
+
+                        // const params = {
+                        //     authorid: $routeParams.author,
+                        //     titlepath: $routeParams.title
+                        // }
+                        // backend
+                        //     .getSourceInfo(params)
+                        //     .then(data =>
+                        //         $location
+                        //             .url(
+                        //                 `/forfattare/${$routeParams.author}/titlar/${
+                        //                     $routeParams.title
+                        //                 }/sida/${data.startpagename}/${data.mediatype}?om-boken`
+                        //             )
+                        //             .replace()
+                        //     )
+                    }
+                ]
+            })
             .when(
                 [
                     "/dramawebben",
@@ -250,6 +285,7 @@ window.littb = angular
                                     $route.current.controller === "dramawebCtrl"
                                 ) {
                                     def.reject()
+                                    onRouteReject()
                                 } else {
                                     def.resolve()
                                 }
@@ -434,6 +470,7 @@ window.littb = angular
                                     if (_.isEqual(current, prev)) {
                                         c.log("reject reader change")
                                         def.reject()
+                                        onRouteReject()
                                     } else {
                                         def.resolve()
                                     }
@@ -525,6 +562,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
     $rootScope.$on("$routeChangeStart", (event, next, current) => (routeStartCurrent = current))
 
     $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
+        console.log("$routeChangeSuccess", window.location.pathname)
         window.gtag("config", window.gtagID, { page_path: window.location.pathname })
 
         let className
