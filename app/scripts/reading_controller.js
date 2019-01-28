@@ -777,6 +777,9 @@ littb.controller("readingCtrl", function(
                 } else {
                     s.pagename = val
                     s.pageix = s.pagemap[`page_${s.pagename}`]
+                    if (typeof s.pageix == "undefined") {
+                        return
+                    }
                     promise = fetchPage(s.pageix)
                 }
 

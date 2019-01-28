@@ -1028,3 +1028,14 @@ littb.directive("searchOpts", ($location, util) => ({
         }
     }
 }))
+
+// littb.directive("littbErr", $interpolate => ({
+//     link($scope, element, attr) {
+//         const code = $interpolate(element.attr("code"))
+//         const msg = $interpolate(element.attr("msg"))
+//         element.attr("littb-err-code", code)
+//         if (msg) {
+//             element.attr("littb-err-msg", msg)
+//         }
+//     }
+// }))
