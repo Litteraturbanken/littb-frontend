@@ -7,7 +7,9 @@
         <!-- Global site tag (gtag.js) - Google Analytics -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=UA-132486790-1"></script>
         <script>
-            if (document.location.hostname == "litteraturbanken.se") {
+            if (document.location.hostname == "litteraturbanken.se" &&
+                navigator.userAgent != "littb-snapshot") {
+                console.log("Logging to GA active.")
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
                 gtag('js', new Date());
@@ -16,6 +18,7 @@
                 gtag('config', window.gtagID);
 
             } else {
+                console.log("Logging to GA not active.")
                 function gtag(...args) {
                     console.log("gtag", ...args)
                 }
