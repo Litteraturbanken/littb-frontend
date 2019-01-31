@@ -516,7 +516,7 @@ littb.controller("searchCtrl", function(
         $anchorScroll("results")
         // s.resetAuthorFilter()
         s.nav_filter = null
-        return s.newSearch(query)
+        s.newSearch(query)
     }
 
     s.searchAllInWork = (sentenceObj, index) => {
@@ -546,9 +546,7 @@ littb.controller("searchCtrl", function(
         if (!q) {
             return
         }
-        if (q) {
-            $location.search("fras", q)
-        }
+        $location.search("fras", q)
         s.query = q
         s.pageTitle = q
         const from = s.current_page * s.num_hits

@@ -515,6 +515,10 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
         logQR(code, url) {
+            window.gtag("event", "qr_scan", {
+                event_category: "code"
+            })
+
             return $http({
                 url: `${STRIX_URL}/log_qr`,
                 params: {
@@ -540,17 +544,27 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             if (!filter) {
                 filter = "[alla]"
             }
-            return $http({
+
+            window.gtag("event", "search", {
+                event_category: "library",
+                event_label: filter
+            })
+
+            $http({
                 url: `${STRIX_URL}/log_library/${filter}`
             })
         },
         logQuicksearch(filter_val, label) {
-            return $http({
+            window.gtag("event", "search", {
+                event_category: "quicksearch",
+                event_label: label + " – " + filter_val
+            })
+            $http({
                 url: `${STRIX_URL}/log_quicksearch/${filter_val}/${label}`
             })
         },
         logError(type, payload) {
-            return $http({
+            $http({
                 url: `${STRIX_URL}/log_error/${type}`,
                 params: payload
             })
@@ -1421,6 +1435,10 @@ littb.factory("SearchWorkData", function(SearchData, $q, $http) {
         }
 
         newSearch(params) {
+            window.gtag("event", "search", {
+                event_category: "search_work",
+                event_label: params.query
+            })
             super.newSearch(params)
             this.n_times = 0
         }

@@ -12,7 +12,7 @@
                 navigator.userAgent != "littb-snapshot") {
                 console.log("Logging to GA active.")
                 window.dataLayer = window.dataLayer || [];
-                window.gtag = () => {window.dataLayer.push(arguments);}
+                window.gtag = function() {window.dataLayer.push(arguments);}
                 gtag('js', new Date());
 
                 window.gtagID = 'UA-132486790-1'
@@ -20,8 +20,8 @@
 
             } else {
                 console.log("Logging to GA not active.")
-                window.gtag = (...args) => {
-                    console.log("gtag", ...args)
+                window.gtag = function() {
+                    console.log("gtag", arguments)
                 }
             }
           
