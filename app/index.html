@@ -7,11 +7,12 @@
         <!-- Global site tag (gtag.js) - Google Analytics -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=UA-132486790-1"></script>
         <script>
+            window.gtag = () => {}
             if (document.location.hostname == "litteraturbanken.se" &&
                 navigator.userAgent != "littb-snapshot") {
                 console.log("Logging to GA active.")
                 window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
+                window.gtag = () => {window.dataLayer.push(arguments);}
                 gtag('js', new Date());
 
                 window.gtagID = 'UA-132486790-1'
@@ -19,7 +20,7 @@
 
             } else {
                 console.log("Logging to GA not active.")
-                function gtag(...args) {
+                window.gtag = (...args) => {
                     console.log("gtag", ...args)
                 }
             }
