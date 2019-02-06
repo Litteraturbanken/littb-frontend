@@ -557,7 +557,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         logQuicksearch(filter_val, label) {
             window.gtag("event", "search", {
                 event_category: "quicksearch",
-                event_label: label + " – " + filter_val
+                event_label: filter_val + " -> " + label
             })
             $http({
                 url: `${STRIX_URL}/log_quicksearch/${filter_val}/${label}`
@@ -697,7 +697,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 exclude: "text,parts,sourcedesc,pages,errata",
                 include:
                     "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben,keyword,startpagename,sortkey",
-                filter_and: { "provenance.library": "Dramawebben", texttype: "drama" },
+                filter_and: { "provenance.library": "Dramawebben", texttype: "drama", "dramawebben.legacy-url" : "/pjas/fiskargossarne" },
                 sort_field: "sortkey|asc",
                 show_all: true,
                 to: 10000,

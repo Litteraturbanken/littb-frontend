@@ -81,9 +81,7 @@ window.littb = angular
         "ngAnimate",
         "ngAria",
         "ngTouch",
-        // 'ui.select'
         "ui.select2",
-        // 'ngScrollEvent'
         "dibari.angular-ellipsis",
         "rzModule"
     ])
