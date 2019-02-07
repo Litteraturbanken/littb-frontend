@@ -692,7 +692,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         },
 
         // "dramawebben.legacy-url" : "/pjas/fiskargossarne"
-        getDramawebTitles() {
+        getDramawebTitles(legacy_url = null) {
             const params = {
                 exclude: "text,parts,sourcedesc,pages,errata",
                 include:
@@ -703,7 +703,12 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 to: 10000,
                 author_aggregation: true
             }
+            if(legacy_url) {
+                params.filter_and['dramawebben.legacy_url'] = legacy_url
+                params.to = 10
+                params.author_aggregation = false
 
+            }
             // if include
             //     params.include = include
             // if sort_key

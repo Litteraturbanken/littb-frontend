@@ -87,7 +87,6 @@ window.littb = angular
     ])
     .config(function($routeProvider) {
         window.Router = class Router {
-            constructor() {}
             when(route, obj) {
                 if (!_.isArray(route)) {
                     route = [route]
@@ -109,7 +108,7 @@ window.littb = angular
             }
         }
 
-        const router = new Router()
+        const router = new window.Router()
 
         router
             // .when("", { redirectTo: "/start" })
@@ -238,24 +237,22 @@ window.littb = angular
                     "$routeParams",
                     "$location",
                     function($scope, backend, $routeParams, $location) {
-                        let legacyurl = "/pjas/" +  $routeParams.legacyurl
-                        console.log("legacyurl", legacyurl)
-
-                        // const params = {
-                        //     authorid: $routeParams.author,
-                        //     titlepath: $routeParams.title
-                        // }
-                        // backend
-                        //     .getSourceInfo(params)
-                        //     .then(data =>
-                        //         $location
-                        //             .url(
-                        //                 `/forfattare/${$routeParams.author}/titlar/${
-                        //                     $routeParams.title
-                        //                 }/sida/${data.startpagename}/${data.mediatype}?om-boken`
-                        //             )
-                        //             .replace()
-                        //     )
+                        let legacyurl = "/pjas/" + $routeParams.legacyurl
+                        backend.getDramawebTitles(legacyurl).then(({ works }) => {
+                            if (works.length) {
+                                let work = works[0]
+                                let author = work.authors[0].author_id
+                                $location
+                                    .url(
+                                        `/forfattare/${author}/titlar/${work.titlepath}/sida/${
+                                            work.startpagename
+                                        }/${work.mediatype}`
+                                    )
+                                    .replace()
+                            } else {
+                                $location.url("/dramawebben/pjäser/").replace()
+                            }
+                        })
                     }
                 ]
             })
