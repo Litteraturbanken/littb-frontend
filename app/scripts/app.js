@@ -238,7 +238,8 @@ window.littb = angular
                     "$routeParams",
                     "$location",
                     function($scope, backend, $routeParams, $location) {
-                        let legacyurl = $routeParams.legacyurl
+                        let legacyurl = "/pjas/" +  $routeParams.legacyurl
+                        console.log("legacyurl", legacyurl)
 
                         // const params = {
                         //     authorid: $routeParams.author,

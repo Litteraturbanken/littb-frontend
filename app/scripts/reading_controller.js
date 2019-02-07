@@ -37,9 +37,7 @@ littb.controller("readingCtrl", function(
         mediatype = s.mediatype = { f: "faksimil", e: "etext" }[s.mediatype]
     }
     
-    if(mediatype == "epub") {
-        window.location.pathname = $location.path().replace("/epub", "/etext")
-    } 
+    s.suggestEtext = () => window.location.href.replace("/epub", "/etext")
 
     s.pageToLoad = pagename
 

@@ -3,14 +3,17 @@
 </meta-desc>
 <page-title>{{workinfo.title}} sida {{pagename}} {{mediatype}}</page-title>
 <div ng-if="workinfo && !isDefined(pageix)" littb-err code='404' msg="Page {{pagename}} not found.">Hittar ingen sida '{{pagename}}' i verket.</div>
-<div ng-if="!['etext', 'faksimil'].includes(mediatype) && !isEditor" littb-err code='404' msg="Invalid mediatype '{{mediatype}}'.">Mediatypen '{{mediatype}}' går inte att visa i läsläget.</div>
+<div ng-if="!['etext', 'faksimil', 'epub'].includes(mediatype) && !isEditor" littb-err code='404' msg="Invalid mediatype '{{mediatype}}'.">Mediatypen '{{mediatype}}' går inte att visa i läsläget.</div>
+<div ng-if="mediatype == 'epub' && !isEditor" littb-err code='404' msg="Invalid mediatype '{{mediatype}}'.">
+    Felaktig adress. <a ng-href="{{suggestEtext()}}" class="link">Söker du etexten?</a>
+</div>
 <div class="reader_main" ng-hide="!isDefined(pageix)"
      ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, first_load : first_load, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr(), border : border}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
 
     <!-- <div class="preloader">Hämtar sida <span class="dots_blink"></span></div> -->
     <div class="preloader pull-right"><i class="spinner fa fa-spinner fa-pulse"></i></div>
 
-    <div class="" ng-if="error">Ett fel inträffade vid sidhämtningen. </div>
+    <div class="" ng-if="error" littb-err code='500' msg="An error occurred.">Ett fel inträffade vid sidhämtningen. </div>
     <div css="/txt/css/{{workinfo.lbworkid}}-etext.css" if="workinfo && mediatype == 'etext' || isParallel"></div>
     <div class="etext txt"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="first_load && etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>

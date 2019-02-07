@@ -120,10 +120,6 @@ $fa-font-path: "~font-awesome/fonts";
 .font-normal {
     @include font-normal();
 }
-.italic {
-    font-style: italic;
-}
-
 
 @mixin topLinks() {
     margin-bottom : 1.8em;
@@ -244,6 +240,10 @@ th {
         box-shadow: inset -200px -200px 400px 30px white;
     }
 
+}
+
+.link {
+    @include dotted($primarycolor);
 }
 
 // * {

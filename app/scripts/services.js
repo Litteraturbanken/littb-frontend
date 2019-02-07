@@ -6,9 +6,8 @@ const c = window.console
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-// STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+// let STRIX_URL = "/api"
 
 if (_.str.startsWith(location.host, "demolittbred")) {
     STRIX_URL = "http://demolittbdev.spraakdata.gu.se/api"
@@ -692,12 +691,13 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return def.promise
         },
 
+        // "dramawebben.legacy-url" : "/pjas/fiskargossarne"
         getDramawebTitles() {
             const params = {
                 exclude: "text,parts,sourcedesc,pages,errata",
                 include:
                     "shorttitle,title,lbworkid,titlepath,authors,title_id,mediatype,dramawebben,keyword,startpagename,sortkey",
-                filter_and: { "provenance.library": "Dramawebben", texttype: "drama", "dramawebben.legacy-url" : "/pjas/fiskargossarne" },
+                filter_and: { "provenance.library": "Dramawebben", texttype: "drama" },
                 sort_field: "sortkey|asc",
                 show_all: true,
                 to: 10000,
