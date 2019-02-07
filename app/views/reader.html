@@ -3,7 +3,7 @@
 </meta-desc>
 <page-title>{{workinfo.title}} sida {{pagename}} {{mediatype}}</page-title>
 <div ng-if="workinfo && !isDefined(pageix)" littb-err code='404' msg="Page {{pagename}} not found.">Hittar ingen sida '{{pagename}}' i verket.</div>
-<!-- <div ng-if="(mediatype != 'etext' || mediatype != 'faksimil') && !isEditor" littb-err code='404' msg="Invalid mediatype '{{mediatype}}'.">Mediatypen '{{mediatype}}' går inte att visa i läsläget.</div> -->
+<div ng-if="!['etext', 'faksimil'].includes(mediatype) && !isEditor" littb-err code='404' msg="Invalid mediatype '{{mediatype}}'.">Mediatypen '{{mediatype}}' går inte att visa i läsläget.</div>
 <div class="reader_main" ng-hide="!isDefined(pageix)"
      ng-class="{'state-parallel' : isParallel, 'state-not-parallel' : !isParallel, searching:loading, first_load : first_load, editor: isEditor, focus : isFocus, 'type-faksimil' : mediatype == 'faksimil', 'ocr' : isOcr(), border : border}" ng-click="showFocusBar = !showFocusBar" ng-style="getTransform()">
 

@@ -30,17 +30,16 @@ littb.controller("readingCtrl", function(
     let { title, author, mediatype, pagename } = $routeParams
     _.extend(s, _.pick($routeParams, "title", "author", "mediatype"))
 
-    if(!['etext', 'faksimil'].includes(mediatype)) {
-        // console.log("$location.path", $location.path().replace("/epub", "/etext"))
-        // $location.path($location.path().replace("/epub", "/etext")).replace()
-        window.location.pathname = $location.path().replace("/epub", "/etext")
-    }
 
     if ("ix" in $routeParams) {
         s.isEditor = true
         s.pageix = Number($routeParams.ix)
         mediatype = s.mediatype = { f: "faksimil", e: "etext" }[s.mediatype]
     }
+    
+    if(mediatype == "epub") {
+        window.location.pathname = $location.path().replace("/epub", "/etext")
+    } 
 
     s.pageToLoad = pagename
 
