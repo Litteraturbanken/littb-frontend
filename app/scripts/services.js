@@ -206,7 +206,6 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         getEpub(size, filterTxt, authorid, sort_field) {
             const url = `${STRIX_URL}/list_all/etext`
 
-            const text_filter = {}
             const params = {
                 to: size || 10000,
                 filter_and: {
@@ -221,13 +220,13 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
 
             if (authorid) {
                 // url += "/" + authorid
-                text_filter["main_author.author_id"] = authorid
+                params.filter_and["main_author.author_id"] = authorid
             }
             if (filterTxt) {
                 params.filter_string = filterTxt
             }
 
-            params.text_filter = JSON.stringify(text_filter)
+            params.filter_and = JSON.stringify(params.filter_and)
 
             return $http({
                 url,
