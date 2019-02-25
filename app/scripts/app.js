@@ -256,6 +256,27 @@ window.littb = angular
                     }
                 ]
             })
+            .when("/dramawebben/forfattare/:legacyurl", {
+                template: "<div></div>",
+                controller: [
+                    "$scope",
+                    "backend",
+                    "$routeParams",
+                    "$location",
+                    function($scope, backend, $routeParams, $location) {
+                        let legacyurl = "forfattare/" + $routeParams.legacyurl
+                        
+                        backend.getLegacyAuthor(legacyurl).then(auth => {
+                            if(auth) {
+                                let author = auth.author_id
+                                $location.url(`/forfattare/${author}/dramawebben`).replace()
+                            } else {
+                                $location.url("/dramawebben/pjäser/").replace()
+                            }
+                        }) 
+                    }
+                ]
+            })
             .when(
                 [
                     "/dramawebben",

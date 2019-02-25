@@ -6,8 +6,8 @@ const c = window.console
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-// let STRIX_URL = "/api"
+// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+let STRIX_URL = "/api"
 
 if (_.str.startsWith(location.host, "demolittbred")) {
     STRIX_URL = "http://demolittbdev.spraakdata.gu.se/api"
@@ -271,6 +271,19 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     hits: hits,
                     author_aggs: author_aggregation
                 }
+            })
+        },
+        getLegacyAuthor(legacy_url) {
+            let params = {filter_and: {"dramawebben.legacy_url" : legacy_url}, includes: ['authors.author_id']}
+            return $http({
+                url: `${STRIX_URL}/list_all/author`,
+                params
+            }).then(function(response) {
+                c.log("response", response)
+                const { data } = response.data
+
+                return data[0]
+
             })
         },
 
