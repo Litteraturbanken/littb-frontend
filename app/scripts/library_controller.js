@@ -232,8 +232,13 @@ littb.controller("libraryCtrl", function(
         } else if (s.showInitial) {
             return s.authorData
         } else {
-            // s.authorData
-            return _.uniq([].concat(s.currentAuthors, s.currentPartAuthors), "author_id")
+            return _.orderBy(
+                _.uniq(
+                    [].concat(s.currentAuthors, s.currentPartAuthors),
+                    "author_id",
+                    "name_for_index"
+                )
+            )
         }
     }
     let hasActiveFilter = () => {

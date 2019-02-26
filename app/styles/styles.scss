@@ -529,6 +529,10 @@ input:focus, button.btn:focus {
     font-size : 0.7em;
     z-index: 9999;
 }
+.tooltip-inner {
+    max-width: 300px;
+    // max-height : 00px;
+}
 .tooltip.left .tooltip-inner {
     margin-left: -195px;
     max-width: 450px;

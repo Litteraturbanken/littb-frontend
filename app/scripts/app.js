@@ -241,14 +241,7 @@ window.littb = angular
                         backend.getDramawebTitles(legacyurl).then(({ works }) => {
                             if (works.length) {
                                 let work = works[0]
-                                let author = work.authors[0].author_id
-                                $location
-                                    .url(
-                                        `/forfattare/${author}/titlar/${work.titlepath}/sida/${
-                                            work.startpagename
-                                        }/${work.mediatype}`
-                                    )
-                                    .replace()
+                                $location.url(work.mediatypes[0].url).replace()
                             } else {
                                 $location.url("/dramawebben/pjäser/").replace()
                             }
@@ -265,15 +258,15 @@ window.littb = angular
                     "$location",
                     function($scope, backend, $routeParams, $location) {
                         let legacyurl = "forfattare/" + $routeParams.legacyurl
-                        
+
                         backend.getLegacyAuthor(legacyurl).then(auth => {
-                            if(auth) {
+                            if (auth) {
                                 let author = auth.author_id
                                 $location.url(`/forfattare/${author}/dramawebben`).replace()
                             } else {
                                 $location.url("/dramawebben/pjäser/").replace()
                             }
-                        }) 
+                        })
                     }
                 ]
             })

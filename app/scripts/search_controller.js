@@ -78,6 +78,10 @@ littb.controller("searchCtrl", function(
     if ($location.search().forfattare) {
         s.filters["main_author.author_id"] = $location.search().forfattare.split(",")
     }
+    if ($location.search().titlar) {
+        s.selectedTitles = $location.search().titlar.split(",")
+        refreshTitles()
+    }
 
     s.onAuthChange = _.once(function() {
         console.log("onAuthChange", $location.search().forfattare)
@@ -95,13 +99,17 @@ littb.controller("searchCtrl", function(
     })
 
     s.onTitleChange = _.once(function() {
+        console.log("onTitleChange", $location.search().titlar)
         if ($location.search().titlar) {
             let oldVal = $location.search().titlar.split(",")
-            return $timeout(function() {
-                s.selectedTitles = oldVal
-                $("select.title_select").val(oldVal)
-                return $("select.title_select").trigger("change")
-            }, 100)
+            authors.then(() => {
+                $timeout(function() {
+                    s.selectedTitles = oldVal
+                    $("select.title_select").val(oldVal)
+                    console.log("oldVal", oldVal)
+                    return $("select.title_select").trigger("change")
+                }, 0)
+            })
         }
     })
 
@@ -259,9 +267,9 @@ littb.controller("searchCtrl", function(
         //     s.selectedAuthors = auths
         // }
 
-        if ($location.search().titlar) {
-            s.selectedTitles = $location.search().titlar.split(",")
-        }
+        // if ($location.search().titlar) {
+        //     s.selectedTitles = $location.search().titlar.split(",")
+        // }
         if ($location.search().sok_filter) {
             s.nav_filter = $location.search().sok_filter
         }

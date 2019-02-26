@@ -30,18 +30,18 @@ describe("library works", function() {
     })
 
     it("should link correctly to reading mode from popular", () => {
-        expect(element(By.css("li.link.first li:first-of-type a")).getAttribute("href")).toEqual(
-            `http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`
-        )
+        expect(
+            element(By.css("li.work_link.first li:first-of-type a")).getAttribute("href")
+        ).toEqual(`http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`)
     })
 
     it("should link correctly to reading mode from filtered", () => {
         const filter = element(By.model("filter"))
         filter.sendKeys("aniara")
         filter.sendKeys(protractor.Key.ENTER)
-        expect(element(By.css("li.link.first li:first-of-type a")).getAttribute("href")).toEqual(
-            `http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`
-        )
+        expect(
+            element(By.css("li.work_link.first li:first-of-type a")).getAttribute("href")
+        ).toEqual(`http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`)
     })
 })
 
