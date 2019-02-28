@@ -340,6 +340,12 @@ littb.controller("libraryCtrl", function(
             console.log("titleArray after all", titles)
 
             s.titleArray = titles
+            if(!titles.length) {
+                window.gtag("event", "search-no-hits", {
+                    event_category: "library",
+                    event_label: s.filter
+                })
+            }
             s.currentAuthors = util.sortAuthors(
                 author_aggs.map(({ author_id }) => s.authorsById[author_id])
             )
