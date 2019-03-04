@@ -91,15 +91,24 @@
             </div>
         </form>
         
-        <div class="row box_container">
-            
-            <div class="col-lg-4 box author">
+        <!-- <div class="row box_container"> -->
+        <div class="row">
 
-                <div class="scroll-area" list-scroll> <!-- scroll-to="selectedAuth.author_id" target="parent" offset="getCollapseOffset(collapse_index) + 16" collapsing="offset" index="collapse_index" -->
+            <div class="btn-group">
+                <label class="sc btn btn-primary" 
+                    ng-model="listType" btn-radio="'works'" ng-click="listType = 'works'">Verk</label>
+                <label class="sc btn btn-primary" 
+                    ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors'">Författare</label>
+                <label class="sc btn btn-primary" 
+                    ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts'">Dikter, noveller, essäer, etc.</label>
+            </div>
+            
+            <div class="col-12 box author" ng-if="listType == 'authors'">
+
+                <div class="scroll-area" list-scroll> 
                     <ul class="list">
                         <li class="spinner_row" ng-show="authorSearching">
                             <i class="spinner fa fa-spinner fa-pulse"></i>
-                            <!-- <span class="auth_spinner spinner" us-spinner="{lines : 8 ,radius:7, width:4.5, length: 5.5}"></span> -->
                         </li>
                         <li class="part_header top_header" ng-show="authorData.length">
                             
@@ -129,7 +138,7 @@
                 </div>
             </div>
             
-            <div class="col-lg-7 box title">
+            <div class="col-12 box title">
                 <div class="scroll-area" list-scroll>
                     <ul id="table" class="list">
                         <li class="spinner_row" ng-show="titleSearching">

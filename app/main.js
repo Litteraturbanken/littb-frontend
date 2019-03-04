@@ -17,6 +17,7 @@ require("angular-ui-select2/src/select2.js")
 window._.str = require("underscore.string")
 
 require("./styles/bootstrap.scss")
+require("./styles/bootstrap4-custom.scss")
 require("./styles/styles.scss")
 
 require("./lib/jquery.ui.position.js")

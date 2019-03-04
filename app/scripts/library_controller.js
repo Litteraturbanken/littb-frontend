@@ -50,6 +50,9 @@ littb.controller("libraryCtrl", function(
     s.showPopularAuth = true
     s.showInitial = true
     s.show_more = $location.search().avancerat != null
+
+    s.listType = $location.search().visa || 'works'
+
     s.filters = {
         "main_author.gender": $location.search()["kön"],
         authorkeyword: [],

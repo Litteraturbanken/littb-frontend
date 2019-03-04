@@ -286,6 +286,15 @@ th {
     margin: 0 0.7em;
 }
 
+.btn-group label.btn {
+    text-transform: lowercase !important;
+    padding : 0.2em 0.9em 0.4em 0.9em;
+    font-size: 16px;
+    &:hover {
+        background-color: #333 !important;
+    }
+}
+
 .box_container {
     position:relative;
     height: 80vh;
@@ -3080,7 +3089,7 @@ $partnav-width : 170px;
                 -moz-osx-font-smoothing: grayscale;
             }
         }
-        .btn {
+        .submit.btn {
             // font-size: 0.8em;
             background-color : white;
             border : 1px solid #333;
@@ -5068,14 +5077,6 @@ grundform-clean {
         }
     }
 
-    .btn-group label.btn {
-        text-transform: lowercase !important;
-        padding : 0.2em 0.9em 0.4em 0.9em;
-        font-size: 16px;
-        &:hover {
-            background-color: #333 !important;
-        }
-    }
     .filter_btn {
         @include small-caps();
         padding : 0.2em 0.9em 0.4em 0.9em;
