@@ -1,6 +1,13 @@
 const path = require("path")
+const glob = require('glob')
 const CopyWebpackPlugin = require("copy-webpack-plugin")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
+
+const PurgecssPlugin = require('purgecss-webpack-plugin')
+
+const PATHS = {
+  src: path.join(__dirname, 'app')
+}
 
 module.exports = {
   entry: "./app/main.js",
@@ -141,7 +148,11 @@ module.exports = {
         from: "./app/views/sla/",
         to: "views/sla/"
       }
-    ])
+    ]),
+    new PurgecssPlugin({
+      paths: glob.sync(`${PATHS.src}/**/*`,  { nodir: true }),
+      // whitelistPatterns : [/page-.*/]
+    })
   ],
   output: {
     filename: "[contenthash].[name].js",
