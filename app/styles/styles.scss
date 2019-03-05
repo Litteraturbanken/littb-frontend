@@ -3,6 +3,12 @@
 $fa-font-path: "~font-awesome/fonts";
 @import '~font-awesome/scss/font-awesome.scss';
 
+@tailwind preflight;
+
+@tailwind components;
+
+@tailwind utilities;
+
 @font-face {
     font-family: "Requiem Text A", "Requiem Text B";
     font-style: normal;
@@ -3060,6 +3066,28 @@ $partnav-width : 170px;
                 }
             }
         }
+        
+        .btn-group {
+            .btn {
+                background-color : white;
+                padding : 0.2em 0.9em 0.4em 0.9em;
+                border-color : #333;
+                margin-right: 0.1em;
+                &:hover {
+                    background-color : #999 !important;
+                }
+                &.active {
+                    box-shadow: none;
+                    background-color: #999 !important;
+                    color : white;
+                }
+                &:focus {
+                    outline: none;
+                }
+            }
+            // padding : inherit;
+
+        }
 
         .mediatype_opts {
             font-size: 0.8em;
@@ -3194,6 +3222,7 @@ $partnav-width : 170px;
 
         }
         .box {
+            padding : 1.2em;
             min-width: 370px;
             background-color: rgba(255,255,255,0.55);
             border : 1px solid #333;
@@ -3224,10 +3253,12 @@ $partnav-width : 170px;
             //     // right:  0;
 
             // }
+        }
+        .result {
+            margin-left : 0.8em;
             &.author {
                 // width : 400px;
                 // flex : 0 auto;
-                margin-right : 1em;
                 .info {
                     margin-top : 1em;
                     margin-bottom : 1em;
