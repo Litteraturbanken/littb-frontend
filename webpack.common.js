@@ -1,13 +1,17 @@
 const path = require("path")
 const glob = require("glob")
+const devMode = process.env.NODE_ENV !== "production"
+
+const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const CopyWebpackPlugin = require("copy-webpack-plugin")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
-
 const PurgecssPlugin = require("purgecss-webpack-plugin")
 
 const PATHS = {
     src: path.join(__dirname, "app")
 }
+
+const tailwindcss = require("tailwindcss")
 
 module.exports = {
     entry: "./app/main.js",
@@ -61,7 +65,7 @@ module.exports = {
             {
                 test: /\.(sa|sc|c)ss$/,
                 use: [
-                    "style-loader", // creates style nodes from JS strings
+                    devMode ? "style-loader" : MiniCssExtractPlugin.loader,
                     {
                         loader: "css-loader",
                         options: {
@@ -71,7 +75,7 @@ module.exports = {
                     {
                         loader: "postcss-loader",
                         options: {
-                            plugins: () => [require("autoprefixer")]
+                            plugins: [tailwindcss("./tailwind.js"), require("autoprefixer")()]
                             // sourceMap: process.env.NODE_ENV !== "production"
                         }
                     },
@@ -139,6 +143,10 @@ module.exports = {
             template: "./app/index.html",
             filename: "./index.html"
         }),
+        new MiniCssExtractPlugin({
+            filename: devMode ? "[name].css" : "[name].[hash].css",
+            chunkFilename: devMode ? "[id].css" : "[id].[hash].css"
+        }),
         new CopyWebpackPlugin([
             // {
             //   from: "./app/index.html",
@@ -163,7 +171,7 @@ module.exports = {
         })
     ],
     output: {
-        filename: "[contenthash].[name].js",
+        filename: "[hash].[name].js",
         path: path.resolve(__dirname, "dist"),
         globalObject: "this",
         publicPath: "/"

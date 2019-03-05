@@ -92,25 +92,27 @@
         </form>
         
         <!-- <div class="row box_container"> -->
-        <div class="row">
+        <div class="row box" >
 
-            <div class="btn-group">
-                <label class="sc btn btn-primary" 
+            <div class="btn-group p-0 mb-10 ">
+                <label class="sc btn btn-small" 
                     ng-model="listType" btn-radio="'works'" ng-click="listType = 'works'">Verk</label>
-                <label class="sc btn btn-primary" 
+                <label class="sc btn btn-small" 
                     ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors'">Författare</label>
-                <label class="sc btn btn-primary" 
+                <label class="sc btn btn-small" 
                     ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts'">Dikter, noveller, essäer, etc.</label>
+                <label class="sc btn btn-small" 
+                    ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud & bild</label>
             </div>
             
-            <div class="col-12 box author" ng-if="listType == 'authors'">
+            <div class="result col-12 author pl-0" ng-if="listType == 'authors'">
 
                 <div class="scroll-area" list-scroll> 
                     <ul class="list">
                         <li class="spinner_row" ng-show="authorSearching">
                             <i class="spinner fa fa-spinner fa-pulse"></i>
                         </li>
-                        <li class="part_header top_header" ng-show="authorData.length">
+                        <!-- <li class="part_header top_header" ng-show="authorData.length">
                             
                             <a class="popular"
                                 ng-show="showInitial"
@@ -122,7 +124,7 @@
 
                             <a class="filtered" ng-show="!showInitial">Författare</a>
                             <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
-                        </li>
+                        </li> -->
                         <li ng-show="!authorSearching && !(getAuthorData()).length">
                             Inga träffar.
                         </li>
@@ -138,32 +140,18 @@
                 </div>
             </div>
             
-            <div class="col-12 box title">
+            <div class="result col-12 title pl-0" ng-if="listType == 'works'">
                 <div class="scroll-area" list-scroll>
-                    <ul id="table" class="list">
-                        <li class="spinner_row" ng-show="titleSearching">
-                            <i class="spinner fa fa-spinner fa-pulse"></i>
-                        </li>    
+                    <table id="table" class="list w-full">
+                        <tr class="spinner_row" ng-show="titleSearching">
+                            <td>
+                                <i class="spinner fa fa-spinner fa-pulse"></i>
+                            </td>
+                        </tr>
 
-                        <!-- audio -->
-                        <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
-                            Ur ljudarkivet
-                        </li>
                         
-                        <li ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
-                        
-                            <div class="header" tooltip="{{row.title}}">
-                                <span class="title">
-                                    <a ng-href="/ljudarkivet?spela={{row.file}}">
-                                    {{row.shorttitle}}
-                                    </a>
-                                </span>
-                                
-                                <span class="author"><a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
-                            </div>
-                        </li>
                     
-                        <li class="part_header top_header" ng-hide="titleSearching">
+                        <!-- <tr class="part_header top_header" ng-hide="titleSearching">
                             <a class="popular"
                                 ng-show="showInitial"
                                 ng-disabled="showPopular"
@@ -177,19 +165,22 @@
                                 ng-disabled="!(showPopular || showRecent)"  ng-click="showAllWorks()">Samtliga verk</a>
                             <a class="filtered" ng-show="!showInitial">Hela verk</a>
                             <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
-                        </li>
+                        </li> -->
 
-                        <li ng-show="!titleSearching && !listVisibleTitles().length">
-                            Inga träffar. 
-                        </li>
+                        <tr ng-show="!titleSearching && !listVisibleTitles().length">
+                            <td>Inga träffar. </td>
+                        </tr>
                         <!-- orderBy | 'sortkey' -->
-                        <li class="work_link" 
+                        <tr class="work_link" 
                             ng-repeat="row in listVisibleTitles() | limitTo: rowLimit" 
                             on-finish-render="titleRender()"
                             ng-class="{'first' : $first}"
                             >
-                            <h3 ng-if="row.isHeader" class="row_title part_header">{{row.label}}</h3>
-                            <div ng-if="!row.isHeader" 
+                            <td ng-if="row.isHeader">
+                                <h3  class="row_title part_header">{{row.label}}</h3>
+                            </td>
+                            <td ng-if="!row.isHeader" >
+                                <div 
                                  top="$parent.title_off" 
                                  ng-click="titleClick($event, row)"
                                  id="{{getUniqId(row)}}">
@@ -197,7 +188,8 @@
                                     <span class="title" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
                                         <a ng-click="titleHeaderClick($event, row)" >{{row.shorttitle || row.title}} </a>
                                     </span>
-                                    <span class="author"><a ng-href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a> <span ng-if="row.authors[0].authortype == 'editor'">(red.)</span></a> <span ng-if="row.authors[0].authortype == 'illustrator'">(ill.)</span></span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" -->
+                                    
+                                    
                                 </div>
                                 <div collapse="!row._collapsed">
                                     <div class="collapse-content">
@@ -219,36 +211,75 @@
                                         </ul>
                                     </div>
                                 </div>
-                            </div>
+                            </div></td>
 
-                        </li>
+                            <td class="align-top"><span>{{row.sort_date.plain}}</span></td>
+                            <td class="align-top text-right"><span class="author">
+                                        <a ng-href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a> 
+                                        <span ng-if="row.authors[0].authortype == 'editor'">(red.)</span></a> 
+                                        <span ng-if="row.authors[0].authortype == 'illustrator'">(ill.)</span>
+                                    </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" --></td>
+
+                        </tr>
                         
-                        <li class="part_header" ng-hide="partSearching || showInitial">
-                            Dikter, noveller, essäer, etc.
-                        </li>
-                        <li class="" ng-show="!showInitial && !partSearching && !all_titles.length">
-                            Inga träffar.
-                        </li>
-                    
-                        <li ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
-                    
-                            <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500">
-                                <span class="title">
-                                    <a ng-href="/forfattare/{{row.work_authors[0].author_id}}/titlar/{{row.work_title_id}}/sida/{{row.startpagename}}/{{row.mediatype}}">
-                                    {{row.shorttitle || row.title}}
-                                    </a>
-                                </span>
-                                
-                                <span class="author"><a ng-href="/forfattare/{{row.work_authors[0].author_id}}">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
-                            </div>
-                        </li>
-                        <li ng-show="!showAllParts && parts_hits > 30">
-                            <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
-                                Visa alla <span class="num">{{parts_hits}}</span> träffar
-                            </button>
-                        </li>
-                    </ul>
+                        
+                    </table>
                 </div>
+            </div>
+
+            <div class="result col-12 parts pl-0" ng-if="listType == 'audio'">
+                <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
+                    Ur ljudarkivet
+                </li>
+                <ul class="list">
+                    <li ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
+                    
+                        <div class="header" tooltip="{{row.title}}">
+                            <span class="title">
+                                <a ng-href="/ljudarkivet?spela={{row.file}}">
+                                {{row.shorttitle}}
+                                </a>
+                            </span>
+                            
+                            <span class="author"><a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
+                        </div>
+                    </li>
+                    
+                </ul>
+            </div>
+            <div class="result col-12 parts pl-0" ng-if="listType == 'parts'">
+
+                <ul class="list">
+                    <li class="part_header" ng-hide="partSearching || showInitial">
+                        Dikter, noveller, essäer, etc.
+                    </li>
+                    <li class="" ng-show="!showInitial && !partSearching && !all_titles.length">
+                        Inga träffar.
+                    </li>
+                    
+                    <li ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
+                    
+                        <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500">
+                            <span class="title">
+                                <a ng-href="/forfattare/{{row.work_authors[0].author_id}}/titlar/{{row.work_title_id}}/sida/{{row.startpagename}}/{{row.mediatype}}">
+                                {{row.shorttitle || row.title}}
+                                </a>
+                            </span>
+                            
+                            <span class="author">
+                                <a ng-href="/forfattare/{{row.work_authors[0].author_id}}">{{getPartAuthor(row).surname}}</a> 
+                                <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> 
+                                <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span>
+                            </span>
+                        </div>
+                    </li>
+                    <li ng-show="!showAllParts && parts_hits > 30">
+                        <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
+                            Visa alla <span class="num">{{parts_hits}}</span> träffar
+                        </button>
+                    </li>
+                </ul>
+
             </div>
 
         </div>
