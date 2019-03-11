@@ -26,7 +26,8 @@
           "eqeqeq" : "off",
           "camelcase" : "off",
           "object-curly-spacing" : "off",
-          "spaced-comment" : "off"
+          "spaced-comment" : "off",
+          "standard/computed-property-even-spacing" : "off"
 
           },
   globals: {

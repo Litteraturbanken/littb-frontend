@@ -436,14 +436,21 @@ window.littb = angular
                     )
                 }
             })
-            .when("/f/:author/t/:title/sida/:pagename/:mediatype", {
-                redirectTo(routeParams, path, searchVars) {
-                    return `/forfattare/${routeParams.author}/titlar/${routeParams.title}/sida/${
-                        routeParams.pagename
-                    }/${{ e: "etext", f: "faksimil" }[routeParams.mediatype] ||
-                        routeParams.mediatype}`
+            .when(
+                [
+                    "/f/:author/t/:title/sida/:pagename/:mediatype",
+                    "/f/:author/t/:title/s/:pagename/:mediatype"
+                ],
+                {
+                    redirectTo(routeParams, path, searchVars) {
+                        return `/forfattare/${routeParams.author}/titlar/${
+                            routeParams.title
+                        }/sida/${routeParams.pagename}/${{ e: "etext", f: "faksimil" }[
+                            routeParams.mediatype
+                        ] || routeParams.mediatype}`
+                    }
                 }
-            })
+            )
             .when("/forfattare/:author/titlar/:title/:mediatype", {
                 templateUrl: require("../views/reader.html"),
                 controller: "readingCtrl",
