@@ -188,11 +188,13 @@ littb.controller("libraryCtrl", function(
     }
 
     s.titleRender = function() {
-        if ($location.search()["title"] && s.titleByPath) {
+        if ($location.search()["title"] && s.titleByPath && s.titleByPath[$location.search()["title"]]) {
             const title = s.titleByPath[$location.search()["title"]][0]
             s.titleClick(null, title)
             const id = s.getUniqId(title)
             s.$emit("listScroll", id)
+        } else {
+            $location.search("title", null).replace()
         }
     }
 
@@ -320,7 +322,7 @@ littb.controller("libraryCtrl", function(
         s.titleSearching = true
         const include =
             "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable," +
-            "authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub"
+            "authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub,sort_date.plain"
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // if (!_.toPairs(text_filter).length) {
         //     text_filter = null
@@ -507,7 +509,13 @@ littb.controller("libraryCtrl", function(
         {
             key: "alla_titlar",
             expr: "showAllParts"
-        }
+        },
+        {
+            key: "visa",
+            expr: "listType",
+            default : "works"
+        },
+
     ])
 
     s.listVisibleTitles = function() {

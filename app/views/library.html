@@ -8,7 +8,11 @@
             
             <div class="">
                 <div class="row main_input">
-                    <input class="filter_input" autofocus ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' type="text" ng-model="filter" placeholder="Skriv författarnamn eller titel">
+                    <input class="filter_input" autofocus 
+                        ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
+                        type="text" 
+                        ng-model="filter" 
+                        placeholder="Skriv författarnamn eller titel">
                     <button class="submit btn">Sök</button>
                 </div>
                 <div class="row title_select_container">
@@ -20,7 +24,6 @@
                         <option value="all">Alla författare</option>
                         <option value="female">Kvinnliga författare</option>    
                         <option value="male">Manliga författare</option>
-                        </option>
                     </select>
                 </div>
                 <div class="row title_select_container">
@@ -59,8 +62,8 @@
                 
                 <div class="row more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
 
-                <div class="row more_container" ng-class="{show_more : show_more}" ng-show="show_more">
-                    <div class="title_select_container">
+                <div class="more_container" ng-class="{show_more : show_more}" ng-show="show_more">
+                    <div class="row title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
                             <option value=""></option>
                             <option value="mediatype:etext">Etext</option>
@@ -69,7 +72,7 @@
                             <option value="mediatype:pdf">PDF</option>
                         </select>
                     </div>
-                    <div class="title_select_container">
+                    <div class="row title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
                             <option value=""></option>
                             <option value="modernized:true">Moderniserat språk</option>
@@ -133,7 +136,10 @@
                             ng-click="authorClick($event, author)" 
                             on-finish-render="authorRender()" 
                             id="{{author.author_id}}">
-                            <a ng-href="/forfattare/{{author.author_id}}/" class="item_header" ><span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span> {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
+                            <a ng-href="/forfattare/{{author.author_id}}/" class="item_header" >
+                                <span class="surname">{{author.name_for_index.split(',')[0]}}</span>
+                                <span ng-show="author.name_for_index.split(',').length > 1">,</span> 
+                                {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
                             </a>
                         </li>
                     </ul>
@@ -213,10 +219,10 @@
                                 </div>
                             </div></td>
 
-                            <td class="align-top"><span>{{row.sort_date.plain}}</span></td>
+                            <td class="align-top text-right"><span>{{row.sort_date.plain}}</span></td>
                             <td class="align-top text-right"><span class="author">
                                         <a ng-href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a> 
-                                        <span ng-if="row.authors[0].authortype == 'editor'">(red.)</span></a> 
+                                        <span ng-if="row.authors[0].authortype == 'editor'">(red.)</span> 
                                         <span ng-if="row.authors[0].authortype == 'illustrator'">(ill.)</span>
                                     </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" --></td>
 
@@ -227,58 +233,61 @@
                 </div>
             </div>
 
-            <div class="result col-12 parts pl-0" ng-if="listType == 'audio'">
-                <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
+            <div class="result col-12 title pl-0" ng-if="listType == 'audio'">
+                <!-- <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
                     Ur ljudarkivet
-                </li>
-                <ul class="list">
-                    <li ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
+                </li> -->
+                <table class="w-full">
+                    <tr ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
                     
-                        <div class="header" tooltip="{{row.title}}">
-                            <span class="title">
-                                <a ng-href="/ljudarkivet?spela={{row.file}}">
-                                {{row.shorttitle}}
-                                </a>
-                            </span>
-                            
-                            <span class="author"><a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span></span>
-                        </div>
+                        <!-- <div class="header" > -->
+                        <td tooltip="{{row.title}}" class="title">
+                            <a ng-href="/ljudarkivet?spela={{row.file}}">
+                            {{row.shorttitle}}
+                            </a>
+                        </td>
+                        
+                        <td class="author text-right">
+                            <a ng-click="authorClick($event, authorsById[row.authors[0].author_id])">{{getPartAuthor(row).surname}}</a> 
+                            <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span>
+                            <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span>
+                        </td>
+                        <!-- </div> -->
                     </li>
                     
-                </ul>
+                </table>
             </div>
-            <div class="result col-12 parts pl-0" ng-if="listType == 'parts'">
+            <div class="result col-12 title pl-0" ng-if="listType == 'parts'">
 
-                <ul class="list">
-                    <li class="part_header" ng-hide="partSearching || showInitial">
-                        Dikter, noveller, essäer, etc.
-                    </li>
-                    <li class="" ng-show="!showInitial && !partSearching && !all_titles.length">
-                        Inga träffar.
-                    </li>
+                <table class="w-full">
+                    <tr class="" ng-show="!showInitial && !partSearching && !all_titles.length">
+                        <td>Inga träffar.</td>
+                    </tr>
                     
-                    <li ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
+                    <tr ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
                     
-                        <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500">
-                            <span class="title">
+                        <!-- <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500"> -->
+                            <td class="title" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}">
                                 <a ng-href="/forfattare/{{row.work_authors[0].author_id}}/titlar/{{row.work_title_id}}/sida/{{row.startpagename}}/{{row.mediatype}}">
                                 {{row.shorttitle || row.title}}
                                 </a>
-                            </span>
-                            
-                            <span class="author">
+                            </td>
+                            <td class=" text-right">{{row.sort_date.plain}}</td>
+                            <td class="author text-right">
                                 <a ng-href="/forfattare/{{row.work_authors[0].author_id}}">{{getPartAuthor(row).surname}}</a> 
-                                <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span></a> 
+                                <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span>
                                 <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span>
-                            </span>
-                        </div>
-                    </li>
-                    <li ng-show="!showAllParts && parts_hits > 30">
-                        <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
-                            Visa alla <span class="num">{{parts_hits}}</span> träffar
-                        </button>
-                    </li>
-                </ul>
+                            </td>
+                        <!-- </div> -->
+                    </tr>
+                    <tr ng-show="!showAllParts && parts_hits > 30">
+                        <td>
+                            <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
+                                Visa alla <span class="num">{{parts_hits}}</span> träffar
+                            </button>
+                        </td>
+                    </tr>
+                </table>
 
             </div>
 
