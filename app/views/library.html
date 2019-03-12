@@ -59,6 +59,14 @@
                         <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
                     </select>
                 </div>
+
+                <!-- <div class="row auth_select_container">
+                    <select class="filter_select author_select" ui-select2="sortSelectSetup" ng-model="sort" data-placeholder="Sortering" ng-change="" >
+                        <option value=""></option>
+                        <option value="popularity|desc">Popularitet</option>
+                        <option value="sortkey|asc">Titel</option>
+                    </select> 
+                </div> -->
                 
                 <div class="row more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
 
@@ -99,19 +107,23 @@
 
             <div class="btn-group p-0 mb-10 ">
                 <label class="sc btn btn-small" 
-                    ng-model="listType" btn-radio="'works'" ng-click="listType = 'works'">Verk</label>
+                    ng-model="listType" btn-radio="'works'" ng-click="listType = 'works'">
+                    Verk <span class="num_hits" ng-show="titleArray.length">({{titleArray.length}})</span>
+                </label>
                 <label class="sc btn btn-small" 
-                    ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors'">Författare</label>
+                    ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors'">
+                    Författare <span class="num_hits">({{getAuthorData().length}})</span>
+                </label>
                 <label class="sc btn btn-small" 
-                    ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts'">Dikter, noveller, essäer, etc.</label>
+                    ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts'">Dikter, noveller, essäer, etc. <span class="num_hits" ng-show="parts_hits">({{ parts_hits }})</span></label>
                 <label class="sc btn btn-small" 
-                    ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud & bild</label>
+                    ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud & bild <span class="num_hits" ng-show="audio_list.length">({{audio_list.length}})</span></label>
             </div>
             
-            <div class="result col-12 author pl-0" ng-if="listType == 'authors'">
+            <div class="result col-12 author pl-0 sm:ml-3" ng-if="listType == 'authors'">
 
-                <div class="scroll-area" list-scroll> 
-                    <ul class="list">
+                <div class=""> 
+                    <ul class="">
                         <li class="spinner_row" ng-show="authorSearching">
                             <i class="spinner fa fa-spinner fa-pulse"></i>
                         </li>
@@ -146,9 +158,9 @@
                 </div>
             </div>
             
-            <div class="result col-12 title pl-0" ng-if="listType == 'works'">
-                <div class="scroll-area" list-scroll>
-                    <table id="table" class="list w-full">
+            <div class="result col-12 title pl-0 sm:ml-3 " ng-if="listType == 'works'">
+                <div class="table-responsive-sm" >
+                    <table id="table" class="table w-full">
                         <tr class="spinner_row" ng-show="titleSearching">
                             <td>
                                 <i class="spinner fa fa-spinner fa-pulse"></i>
@@ -233,11 +245,11 @@
                 </div>
             </div>
 
-            <div class="result col-12 title pl-0" ng-if="listType == 'audio'">
+            <div class="result col-12 title pl-0 sm:ml-3" ng-if="listType == 'audio'">
                 <!-- <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
                     Ur ljudarkivet
                 </li> -->
-                <table class="w-full">
+                <table class="table w-full">
                     <tr ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
                     
                         <!-- <div class="header" > -->
@@ -257,37 +269,39 @@
                     
                 </table>
             </div>
-            <div class="result col-12 title pl-0" ng-if="listType == 'parts'">
+            <div class="result col-12 title pl-0 sm:ml-3" ng-if="listType == 'parts'">
 
-                <table class="w-full">
-                    <tr class="" ng-show="!showInitial && !partSearching && !all_titles.length">
-                        <td>Inga träffar.</td>
-                    </tr>
-                    
-                    <tr ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
-                    
-                        <!-- <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500"> -->
-                            <td class="title" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}">
-                                <a ng-href="/forfattare/{{row.work_authors[0].author_id}}/titlar/{{row.work_title_id}}/sida/{{row.startpagename}}/{{row.mediatype}}">
-                                {{row.shorttitle || row.title}}
-                                </a>
+                <div class="table-responsive-sm">
+                    <table class="table">
+                        <tr class="" ng-show="!showInitial && !partSearching && !all_titles.length">
+                            <td>Inga träffar.</td>
+                        </tr>
+                        
+                        <tr ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
+                        
+                            <!-- <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500"> -->
+                                <td class="title" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}">
+                                    <a ng-href="/forfattare/{{row.work_authors[0].author_id}}/titlar/{{row.work_title_id}}/sida/{{row.startpagename}}/{{row.mediatype}}">
+                                    {{row.shorttitle || row.title}}
+                                    </a>
+                                </td>
+                                <td class=" text-right">{{row.sort_date.plain}}</td>
+                                <td class="author text-right">
+                                    <a ng-href="/forfattare/{{row.work_authors[0].author_id}}">{{getPartAuthor(row).surname}}</a> 
+                                    <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span>
+                                    <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span>
+                                </td>
+                            <!-- </div> -->
+                        </tr>
+                        <tr ng-show="!showAllParts && parts_hits > 30">
+                            <td>
+                                <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
+                                    Visa alla <span class="num">{{parts_hits}}</span> träffar
+                                </button>
                             </td>
-                            <td class=" text-right">{{row.sort_date.plain}}</td>
-                            <td class="author text-right">
-                                <a ng-href="/forfattare/{{row.work_authors[0].author_id}}">{{getPartAuthor(row).surname}}</a> 
-                                <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span>
-                                <span ng-if="getPartAuthor(row).authortype == 'illustrator'">(ill.)</span>
-                            </td>
-                        <!-- </div> -->
-                    </tr>
-                    <tr ng-show="!showAllParts && parts_hits > 30">
-                        <td>
-                            <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
-                                Visa alla <span class="num">{{parts_hits}}</span> träffar
-                            </button>
-                        </td>
-                    </tr>
-                </table>
+                        </tr>
+                    </table>
+                </div>
 
             </div>
 
