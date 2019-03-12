@@ -119,43 +119,6 @@
                     ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud & bild <span class="num_hits" ng-show="audio_list.length">({{audio_list.length}})</span></label>
             </div>
             
-            <div class="result col-12 author pl-0 sm:ml-3" ng-if="listType == 'authors'">
-
-                <div class=""> 
-                    <ul class="">
-                        <li class="spinner_row" ng-show="authorSearching">
-                            <i class="spinner fa fa-spinner fa-pulse"></i>
-                        </li>
-                        <!-- <li class="part_header top_header" ng-show="authorData.length">
-                            
-                            <a class="popular"
-                                ng-show="showInitial"
-                                ng-disabled="showPopularAuth"
-                                ng-click="showPopularAuth = true">Populära författare</a> 
-                            <a class="works" 
-                                ng-show="showInitial" 
-                                ng-disabled="!showPopularAuth"  ng-click="showPopularAuth = false">Alla Författare</a>
-
-                            <a class="filtered" ng-show="!showInitial">Författare</a>
-                            <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
-                        </li> -->
-                        <li ng-show="!authorSearching && !(getAuthorData()).length">
-                            Inga träffar.
-                        </li>
-
-                        <li ng-repeat="author in getAuthorData() | limitTo: rowLimit track by author.author_id"
-                            ng-click="authorClick($event, author)" 
-                            on-finish-render="authorRender()" 
-                            id="{{author.author_id}}">
-                            <a ng-href="/forfattare/{{author.author_id}}/" class="item_header" >
-                                <span class="surname">{{author.name_for_index.split(',')[0]}}</span>
-                                <span ng-show="author.name_for_index.split(',').length > 1">,</span> 
-                                {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
             
             <div class="result col-12 title pl-0 sm:ml-3 " ng-if="listType == 'works'">
                 <div class="table-responsive-sm" >
@@ -241,6 +204,44 @@
                         
                         
                     </table>
+                </div>
+            </div>
+
+            <div class="result col-12 author pl-0 sm:ml-3" ng-if="listType == 'authors'">
+
+                <div class=""> 
+                    <ul class="">
+                        <li class="spinner_row" ng-show="authorSearching">
+                            <i class="spinner fa fa-spinner fa-pulse"></i>
+                        </li>
+                        <!-- <li class="part_header top_header" ng-show="authorData.length">
+                            
+                            <a class="popular"
+                                ng-show="showInitial"
+                                ng-disabled="showPopularAuth"
+                                ng-click="showPopularAuth = true">Populära författare</a> 
+                            <a class="works" 
+                                ng-show="showInitial" 
+                                ng-disabled="!showPopularAuth"  ng-click="showPopularAuth = false">Alla Författare</a>
+
+                            <a class="filtered" ng-show="!showInitial">Författare</a>
+                            <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
+                        </li> -->
+                        <li ng-show="!authorSearching && !(getAuthorData()).length">
+                            Inga träffar.
+                        </li>
+
+                        <li ng-repeat="author in getAuthorData() | limitTo: rowLimit track by author.author_id"
+                            ng-click="authorClick($event, author)" 
+                            on-finish-render="authorRender()" 
+                            id="{{author.author_id}}">
+                            <a ng-href="/forfattare/{{author.author_id}}/" class="item_header" >
+                                <span class="surname">{{author.name_for_index.split(',')[0]}}</span>
+                                <span ng-show="author.name_for_index.split(',').length > 1">,</span> 
+                                {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
 
