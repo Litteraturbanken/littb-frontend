@@ -51,7 +51,7 @@ littb.controller("libraryCtrl", function(
     s.showInitial = true
     s.show_more = $location.search().avancerat != null
 
-    s.listType = $location.search().visa || 'works'
+    s.listType = $location.search().visa || "works"
 
     s.filters = {
         "main_author.gender": $location.search()["kön"],
@@ -159,6 +159,7 @@ littb.controller("libraryCtrl", function(
         s.rowfilter = ""
         s.all_titles = null
         s.audio_list = null
+        s.allCurrentAuthors = null
 
         if (!s.popularTitles) {
             getPopularTitles()
@@ -188,7 +189,11 @@ littb.controller("libraryCtrl", function(
     }
 
     s.titleRender = function() {
-        if ($location.search()["title"] && s.titleByPath && s.titleByPath[$location.search()["title"]]) {
+        if (
+            $location.search()["title"] &&
+            s.titleByPath &&
+            s.titleByPath[$location.search()["title"]]
+        ) {
             const title = s.titleByPath[$location.search()["title"]][0]
             s.titleClick(null, title)
             const id = s.getUniqId(title)
@@ -218,6 +223,13 @@ littb.controller("libraryCtrl", function(
     backend.getPopularAuthors().then(auths => (s.popularAuthors = auths))
 
     // , 10
+    s.sort = "popularity|desc"
+    s.sortSelectSetup = {
+        minimumResultsForSearch: -1,
+        templateSelection(item) {
+            return `Sortering: ${item.text}`
+        }
+    }
 
     s.getAuthorData = function() {
         if (s.showPopularAuth) {
@@ -238,11 +250,8 @@ littb.controller("libraryCtrl", function(
             return s.authorData
         } else {
             return _.orderBy(
-                _.uniq(
-                    [].concat(s.currentAuthors, s.currentPartAuthors),
-                    "author_id",
-                    "name_for_index"
-                )
+                _.uniq([].concat(s.currentAuthors, s.currentPartAuthors), "author_id"),
+                "name_for_index"
             )
         }
     }
@@ -345,7 +354,7 @@ littb.controller("libraryCtrl", function(
             console.log("titleArray after all", titles)
 
             s.titleArray = titles
-            if(!titles.length) {
+            if (!titles.length) {
                 window.gtag("event", "search-no-hits", {
                     event_category: "library",
                     event_label: s.filter
@@ -513,9 +522,8 @@ littb.controller("libraryCtrl", function(
         {
             key: "visa",
             expr: "listType",
-            default : "works"
-        },
-
+            default: "works"
+        }
     ])
 
     s.listVisibleTitles = function() {

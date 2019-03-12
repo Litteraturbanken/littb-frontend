@@ -427,6 +427,11 @@ th {
 
 
 // bootstrap overrides
+.table th, .table td {
+    border : none;
+    padding: 1px;
+}
+
 .select2-container {
     width : 300px !important;
     border: none;
@@ -3206,24 +3211,9 @@ $partnav-width : 170px;
             height : auto;
             display : block;
         }
-        .list {
-            // padding-left: 1.5em;
-            // padding-right: 1.5em;
-            // padding: 1.5em;
-        }
-        .scroll-area {
-            // position: absolute;
-            // top: 0;
-            // bottom: 0;
-            // left: 0;
-            // right: 0;
-            // overflow-y: auto;
-            // -webkit-clip-path: polygon(0 2%, 0 97%, 95% 97%, 95% 100%, 100% 100%, 100% 0, 95% 0%, 95% 3%);
-
-        }
         .box {
             padding : 1.2em;
-            min-width: 370px;
+            // min-width: 370px;
             background-color: rgba(255,255,255,0.55);
             border : 1px solid #333;
             position: relative;
@@ -3255,7 +3245,6 @@ $partnav-width : 170px;
             // }
         }
         .result {
-            margin-left : 0.8em;
             &.author {
                 // width : 400px;
                 // flex : 0 auto;
