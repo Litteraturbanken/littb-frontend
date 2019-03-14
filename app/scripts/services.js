@@ -273,7 +273,10 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
         getLegacyAuthor(legacy_url) {
-            let params = {filter_and: {"dramawebben.legacy_url" : legacy_url}, includes: ['authors.author_id']}
+            let params = {
+                filter_and: { "dramawebben.legacy_url": legacy_url },
+                includes: ["authors.author_id"]
+            }
             return $http({
                 url: `${STRIX_URL}/list_all/author`,
                 params
@@ -282,53 +285,75 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 const { data } = response.data
 
                 return data[0]
-
             })
         },
 
         getTitles(
-            author,
-            sort_key,
-            filter_string,
-            // about_author,
-            getAll,
-            partial_string = false,
-            include = null,
-            filter_or = null,
-            filter_and = null,
-            author_aggregation = null
+            options
+            // author,
+            // sort_key,
+            // filter_string,
+            // // about_author,
+            // getAll,
+            // partial_string = false,
+            // include = null,
+            // filter_or = null,
+            // filter_and = null,
+            // author_aggregation = null
         ) {
-            if (getAll == null) {
-                getAll = false
+            let defaults = {
+                from: 0,
+                to: 100,
+                sort_key: "sortkey",
+                sort_dir: "asc"
             }
+            let {
+                from,
+                to,
+                sort_key,
+                sort_dir,
+                filter_or,
+                filter_and,
+                include,
+                filter_string,
+                author_aggregation,
+                partial_string,
+                author
+            } = Object.assign({}, defaults, options)
+
+            // if (getAll == null) {
+            //     getAll = false
+            // }
             const params = _.omitBy(
                 {
                     exclude: "text,parts,sourcedesc,pages,errata",
+                    from,
+                    to,
                     filter_or,
                     filter_and,
                     include,
                     filter_string,
-                    // about_author,
                     author_aggregation,
-                    partial_string
+                    partial_string,
+                    sort_field: sort_key + "|" + sort_dir
                 },
                 val => _.isEmpty(val) && typeof val !== "boolean"
             )
 
-            if (sort_key) {
-                params.sort_field = sort_key
-                params.to = 30
-            } else {
-                params.sort_field = "sortkey|asc"
-                params.to = 10000
-            }
+            // if (sort_key) {
+            //     params.sort_field = sort_key
+            //     params.to = 30
+            // } else {
+            //     params.sort_field = "sortkey|asc"
+            //     params.to = 10000
+            // }
 
             if (author) {
                 author = `/${author}`
             }
-            if (getAll) {
-                params.to = 600
-            }
+            // if (getAll) {
+            //     params.to = 600
+            // }
 
             return $http({
                 url: `${STRIX_URL}/list_all/etext,faksimil,pdf` + (author || ""),
@@ -715,11 +740,10 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 to: 10000,
                 author_aggregation: true
             }
-            if(legacy_url) {
-                params.filter_and['dramawebben.legacy_url'] = legacy_url
+            if (legacy_url) {
+                params.filter_and["dramawebben.legacy_url"] = legacy_url
                 params.to = 10
                 params.author_aggregation = false
-
             }
             // if include
             //     params.include = include

@@ -46,9 +46,6 @@ module.exports = {
         ],
         stats: { colors: true },
         historyApiFallback: true
-        // historyApiFallback: {
-        //     index: "/index.html"
-        // }
     },
     module: {
         rules: [
@@ -170,10 +167,21 @@ module.exports = {
             // whitelistPatterns : [/page-.*/]
         })
     ],
+    // optimization: {
+    //   splitChunks: {
+    //     cacheGroups: {
+    //       styles: {
+    //         name: 'styles',
+    //         test: /\.css$/,
+    //         chunks: 'all',
+    //         enforce: true
+    //       }
+    //     }
+    //   }
+    // },
     output: {
         filename: "[hash].[name].js",
         path: path.resolve(__dirname, "dist"),
         globalObject: "this",
         publicPath: "/"
-    }
 }
