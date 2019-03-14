@@ -173,7 +173,8 @@ littb.controller("statsCtrl", function($scope, backend) {
 
     backend.getStats().then(data => (s.statsData = data))
 
-    backend.getTitles(null, "popularity|desc").then(({ titles }) => {
+    // backend.getTitles(null, "popularity|desc").then(({ titles }) => {
+    backend.getTitles({ sort_key: "popularity", sort_dir: "desc" }).then(({ titles }) => {
         s.titleList = titles
     })
 
