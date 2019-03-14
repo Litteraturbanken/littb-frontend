@@ -248,6 +248,9 @@ th {
 
 }
 
+.primarycolor {
+    color : $primarycolor;
+}
 .link {
     @include dotted($primarycolor);
 }
@@ -563,6 +566,7 @@ input:focus, button.btn:focus {
 }
 
 html{
+  font-size : 16px;
   height: 100%;
 }
 body {
@@ -1395,47 +1399,6 @@ body > .header {
         .n_pages {
             margin-bottom: 1em;
         }
-        // .extended {
-        //     margin-top : 1em;
-        //     border : 1px lightgrey solid;
-        //     padding : 10px;
-        //     h3 {
-        //         margin : 0.3em 0;
-        //     }
-        //     .columns {
-        //         > div {
-        //             width : 49%;
-        //             display: inline-block;
-
-        //             label {
-        //                 display : block;
-        //             }
-        //         }
-        //         #title_select {
-        //             width : 245px;
-        //         }
-        //         #author_select {
-        //             width : 232px;
-        //         }
-        //     }
-        //     .chks {
-        //         margin-top : 1em;
-        //         input {
-        //             margin-left : 1em;
-        //         }
-        //     }
-        //     .also_include {
-        //         label {
-        //             margin-right : 0.9em;
-        //         }    
-        //         #prefix {
-        //             margin-left : 1em;
-        //         }
-        //         #infix {
-        //             margin-left : 1em;
-        //         }
-        //     }
-        // }
         .submit_form {
             margin-top: 1em;
             margin-bottom: 3em;
@@ -1466,12 +1429,6 @@ body > .header {
         .advanced .title_select_container {
             display : block;
         }
-        // .expl {
-        //     display: none;
-        // }
-        // .advanced .expl.expl_auth, .advanced .expl.expl_about {
-        //     display : block;
-        // }
         .simple_text {display : block;}
         .advanced_text {display : none;}
         .advanced .simple_text {display : none;}
@@ -2944,7 +2901,7 @@ $partnav-width : 170px;
         form {
             max-width : 750px;
             background-color: rgba(255,255,255,0.55);
-            padding: 0.8em 0.8em 0.8em 1.6em;
+            // padding: 0.8em 0.8em 0.8em 1.6em;
             border: 1px solid #333;
             overflow-x : auto;
 
@@ -2952,7 +2909,7 @@ $partnav-width : 170px;
             .filter_input, .keyword_select {
                 border : 1px solid #333;
                 // margin-top : 0.4em;
-                width: 300px;
+                max-width: 300px;
                 height: 40px;
                 padding: 8px;
                 color: #333;
@@ -3016,7 +2973,7 @@ $partnav-width : 170px;
                 overflow: visible;
                 align-items: center;
                 .select2-selection__choice {
-                    font-size: 1.4rem;
+                    font-size: 1rem;
                     white-space: nowrap;
                     padding-bottom : 2px;
                 }
@@ -3030,7 +2987,7 @@ $partnav-width : 170px;
             .more {
                 padding-left : 2px;
                 margin-top: 1em;
-                font-size: 1.6rem;
+                font-size: 1rem;
                 @include small-caps();
                 a {
                     color : $primarycolor;
@@ -3078,6 +3035,7 @@ $partnav-width : 170px;
                 padding : 0.2em 0.9em 0.4em 0.9em;
                 border-color : #333;
                 margin-right: 0.1em;
+                margin-bottom: 0.1em;
                 &:hover {
                     background-color : #999 !important;
                 }
@@ -3128,9 +3086,6 @@ $partnav-width : 170px;
             padding : 0.8em 1.1em 0.6em 1.1em;
             vertical-align: middle;
         }
-        .contenttable {
-            margin-top : 2em;
-        }
         th {
             padding-bottom : 1em;
         }
@@ -3140,33 +3095,6 @@ $partnav-width : 170px;
         .authorselect {
             width : 220px;
         }
-        // .info_box {
-        //     width : 350px;
-        //     height : 250px;
-        //     padding: 10px;
-        //     margin-left: 5px;
-        //     border: 1px solid grey;
-        //     position: absolute;
-        //     // left : -40px;
-        //     background-color: fade-out(white, 0.2);
-
-        //     &.auth {
-        //         .info {
-        //             // height : 70%;
-        //             // overflow-y: hidden;
-        //         }
-        //     }
-            
-        //     &.title {
-        //         left: 105px;
-
-        //         .author {
-        //             @include small-caps;
-        //             // text-transform: uppercase;
-        //             color: $primarycolor;
-        //         }
-        //     }
-        // }
         .collapse-content {
             font-size : 0.9em;
             text-transform: initial;
@@ -3205,14 +3133,8 @@ $partnav-width : 170px;
             }
         }
         
-        .box_container {
-            // width : 70%;
-            // width : 70vw;
-            height : auto;
-            display : block;
-        }
         .box {
-            padding : 1.2em;
+            // padding : 1.2em;
             // min-width: 370px;
             background-color: rgba(255,255,255,0.55);
             border : 1px solid #333;
@@ -3245,6 +3167,42 @@ $partnav-width : 170px;
             // }
         }
         .result {
+            .top_header {
+                margin-top : 0;
+                li {
+                    margin-right: 1em;
+                }
+                a {
+                    color : $primarycolor;
+                    &:hover {
+                        color : #333;
+                    }
+                }
+                a[disabled="disabled"] {
+                    color : #333;
+                    cursor : default;
+                    &:hover {
+                        color : #333;
+                    }
+                }
+                .filtered {
+                    color : $primarycolor;
+                }
+                .reset {
+                    margin-left: 2em;
+                    // fz
+
+                    &:before {
+                        content: "[ ";
+                        font-size: 0.8em;
+                    }
+                    &:after {
+                        content: " ]";
+                        font-size: 0.8em;
+                    }
+
+                }
+            }
             &.author {
                 // width : 400px;
                 // flex : 0 auto;
@@ -3305,7 +3263,6 @@ $partnav-width : 170px;
             }
             .part_header {
                 @include small-caps();
-                margin-top : 2em;
                 margin-bottom : 1em;
                 color : $primarycolor;
                 &.audio {
@@ -3315,43 +3272,7 @@ $partnav-width : 170px;
             .last_audio {
                 margin-bottom: 2em;
             }
-            .top_header {
-                margin-top : 0;
-
-                .popular, .recent {
-                    margin-right: 1em;
-                }
-                a {
-                    color : #333;
-                    &:hover {
-                        color : $primarycolor;
-                    }
-                }
-                [disabled="disabled"] {
-                    color : $primarycolor;
-                    cursor : default;
-                    &:hover {
-                        color : $primarycolor;
-                    }
-                }
-                .filtered {
-                    color : $primarycolor;
-                }
-                .reset {
-                    margin-left: 2em;
-                    // fz
-
-                    &:before {
-                        content: "[ ";
-                        font-size: 0.8em;
-                    }
-                    &:after {
-                        content: " ]";
-                        font-size: 0.8em;
-                    }
-
-                }
-            }
+            
             &.title {
                 .first_part {
                 }
@@ -4899,20 +4820,19 @@ grundform-clean {
             }
 
             h2 {
-                    margin-top: 1em;
-                    color: white;
-                    font-size: 3.5rem !important;
-                    margin-top: 0;
-                    @include small-caps();
-                    -webkit-font-smoothing: antialiased;
-                    -moz-osx-font-smoothing: grayscale;
-                }
-
+                margin-top: 1em;
+                color: white;
+                font-size: 2.2rem !important;
+                margin-top: 0;
+                @include small-caps();
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
         }
     }
     .clear_filter {
         padding: 4px 10px 4px 11px;
-        font-size: 1.6rem;
+        font-size: 1rem;
         @include small-caps();
     }
     .logo_link_monogram {
@@ -4996,7 +4916,7 @@ grundform-clean {
         h2:first-child {
             margin-top: 1em;
             color: white;
-            font-size: 2.5rem;
+            font-size: 1.2rem;
             margin-top: 0;
         }
 

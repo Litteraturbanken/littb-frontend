@@ -224,12 +224,44 @@ littb.controller("libraryCtrl", function(
 
     // , 10
     s.sort = "popularity|desc"
-    s.sortSelectSetup = {
-        minimumResultsForSearch: -1,
-        templateSelection(item) {
-            return `Sortering: ${item.text}`
+    s.onSortClick = item => {
+        for (let obj of s.sortItems) {
+            obj.active = false
         }
+        item.active = true
+        s.sort = item.val
+        // s.refreshData(`${item.val}|${item.dir}`)
     }
+    s.sortItems = [
+        {
+            label: "Titel",
+            val: "title",
+            dir: "asc"
+            // show : ['works', 'titles', "audio", ]
+        },
+        {
+            label: "Författare",
+            val: "authors[0].full_name",
+            dir: "asc"
+        },
+        {
+            label: "Populärt",
+            val: "popularity",
+            dir: "desc",
+            active: true
+        },
+        {
+            label: "Kronologiskt",
+            val: "sort_year.date",
+            dir: "desc"
+        }
+    ]
+    // s.sortSelectSetup = {
+    //     minimumResultsForSearch: -1,
+    //     templateSelection(item) {
+    //         return `Sortering: ${item.text}`
+    //     }
+    // }
 
     s.getAuthorData = function() {
         if (s.showPopularAuth) {
@@ -340,7 +372,7 @@ littb.controller("libraryCtrl", function(
 
         const def = backend.getTitles(
             null, // authors
-            null,
+            null, // sortkey
             s.filter,
             // !!about_authors,
             false,
@@ -523,6 +555,11 @@ littb.controller("libraryCtrl", function(
             key: "visa",
             expr: "listType",
             default: "works"
+        },
+        {
+            key: "sortering",
+            expr: "sort"
+            // default : "popularity|desc"
         }
     ])
 
