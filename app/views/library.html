@@ -4,18 +4,18 @@
 <!-- <img bkg-img src="img/sok_moln.jpg"></img> -->
 <div ng-class="{searching:searching}">
     <div id="controls">
-        <form class="row" ng-submit="searchTitle()">
+        <form class="sm:p-6 p-2" ng-submit="searchTitle()">
             
             <div class="">
-                <div class="row main_input">
-                    <input class="filter_input" autofocus 
+                <div class="main_input row no-gutters">
+                    <input class="filter_input col-9" autofocus 
                         ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
                         type="text" 
                         ng-model="filter" 
                         placeholder="Skriv författarnamn eller titel">
-                    <button class="submit btn">Sök</button>
+                    <button class="submit btn col-auto">Sök</button>
                 </div>
-                <div class="row title_select_container">
+                <div class="title_select_container">
                     <select  class="gender_select" 
                              ui-select2="{minimumResultsForSearch: -1}" 
                              ng-model="filters['main_author.gender']" 
@@ -26,7 +26,7 @@
                         <option value="male">Manliga författare</option>
                     </select>
                 </div>
-                <div class="row title_select_container">
+                <div class="title_select_container">
                     <select multiple class="filter_select keyword_select" ui-select2 ui-select2="{placeholder: 'Välj samling'}" ng-model="filters.keywords" data-placeholder="Välj samling" >
                         <option value=""></option>
                         <option value="texttype:brev">Brev</option>
@@ -48,7 +48,7 @@
                         <option value='keyword:OrdenPrövas'>Orden prövas. Harry Martinson</option>
                     </select>
                 </div>
-                <div class="row title_select_container about_container">
+                <div class="title_select_container about_container">
                     <select multiple class="filter_select about_select"
                             ui-select2 
                             ng-model="filters.authorkeyword" 
@@ -68,10 +68,10 @@
                     </select> 
                 </div> -->
                 
-                <div class="row more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
+                <div class="more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
 
                 <div class="more_container" ng-class="{show_more : show_more}" ng-show="show_more">
-                    <div class="row title_select_container">
+                    <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
                             <option value=""></option>
                             <option value="mediatype:etext">Etext</option>
@@ -80,7 +80,7 @@
                             <option value="mediatype:pdf">PDF</option>
                         </select>
                     </div>
-                    <div class="row title_select_container">
+                    <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
                             <option value=""></option>
                             <option value="modernized:true">Moderniserat språk</option>
@@ -103,7 +103,7 @@
         </form>
         
         <!-- <div class="row box_container"> -->
-        <div class="row box" >
+        <div class="box sm:p-6 p-2 max-w-xl" >
 
             <div class="btn-group p-0 mb-10 ">
                 <label class="sc btn btn-small" 
@@ -121,7 +121,32 @@
             </div>
             
             
-            <div class="result col-12 title pl-0 sm:ml-3 " ng-if="listType == 'works'">
+            <div class="result title pl-0 sm:ml-3 " ng-if="listType == 'works'">
+                <div class="inline-block sc mr-2">Sortera på:</div>
+                <ul class="part_header top_header mb-4 text-lg inline-block" ng-hide="titleSearching">
+
+                    <li class="inline-block sc" ng-repeat="item in sortItems" >
+                        <a href="" ng-click="onSortClick(item)">{{item.label}}</a>
+                        <i ng-show="item.active" 
+                           class="fa fa-arrows-v text-grey-darkest text-sm"
+                           ng-click="item.dir = item.dir == 'asc' ? 'desc' : 'asc'"></i>
+                    </li>
+                    
+                    <!-- <li class="inline-block sc"><a href="">Titel</a></li>
+                    <li class="inline-block sc"><a href="">Författare</a></li>
+                    <li class="inline-block sc"><a class="popular primarycolor"
+                            ng-disabled="showPopular"
+                            ng-click="popClick()">Populärt</a> </li>
+                    <li class="inline-block sc"><a class="recent primarycolor"
+                            ng-disabled="showRecent"
+                            ng-click="fetchRecent()">Nytillkommet</a> </li> -->
+                        <!-- <a class="works" 
+                            ng-disabled="!(showPopular || showRecent)"  ng-click="showAllWorks()">Samtliga verk</a>
+                        <a class="filtered" ng-show="!showInitial">Hela verk</a> -->
+                    <li class="inline-block sc">
+                        <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
+                    </li>
+                </ul>
                 <div class="table-responsive-sm" >
                     <table id="table" class="table w-full">
                         <tr class="spinner_row" ng-show="titleSearching">
@@ -132,21 +157,6 @@
 
                         
                     
-                        <!-- <tr class="part_header top_header" ng-hide="titleSearching">
-                            <a class="popular"
-                                ng-show="showInitial"
-                                ng-disabled="showPopular"
-                                ng-click="popClick()">Populära verk</a> 
-                            <a class="recent"
-                                ng-show="showInitial"
-                                ng-disabled="showRecent"
-                                ng-click="fetchRecent()">Nytillkomna verk</a> 
-                            <a class="works" 
-                                ng-show="showInitial" 
-                                ng-disabled="!(showPopular || showRecent)"  ng-click="showAllWorks()">Samtliga verk</a>
-                            <a class="filtered" ng-show="!showInitial">Hela verk</a>
-                            <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
-                        </li> -->
 
                         <tr ng-show="!titleSearching && !listVisibleTitles().length">
                             <td>Inga träffar. </td>
@@ -208,7 +218,7 @@
                 </div>
             </div>
 
-            <div class="result col-12 author pl-0 sm:ml-3" ng-if="listType == 'authors'">
+            <div class="result author pl-0 sm:ml-3" ng-if="listType == 'authors'">
 
                 <div class=""> 
                     <ul class="">
@@ -246,7 +256,7 @@
                 </div>
             </div>
 
-            <div class="result col-12 title pl-0 sm:ml-3" ng-if="listType == 'audio'">
+            <div class="result title pl-0 sm:ml-3" ng-if="listType == 'audio'">
                 <!-- <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
                     Ur ljudarkivet
                 </li> -->
@@ -270,7 +280,7 @@
                     
                 </table>
             </div>
-            <div class="result col-12 title pl-0 sm:ml-3" ng-if="listType == 'parts'">
+            <div class="result title pl-0 sm:ml-3" ng-if="listType == 'parts'">
 
                 <div class="table-responsive-sm">
                     <table class="table">
