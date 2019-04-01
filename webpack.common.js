@@ -1,6 +1,6 @@
 const path = require("path")
 
-// const devMode = process.env.NODE_ENV !== 'production'
+// const devMode = process.env.NODE_ENV !== "production"
 const devMode = false
 
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")

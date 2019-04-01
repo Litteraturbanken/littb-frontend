@@ -6,8 +6,8 @@ const c = window.console
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-let STRIX_URL = "/api"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+// let STRIX_URL = "/api"
 
 if (_.str.startsWith(location.host, "demolittbred")) {
     STRIX_URL = "http://demolittbdev.spraakdata.gu.se/api"
@@ -64,7 +64,8 @@ const expandMediatypes = function(works, mainMediatype) {
     const order = ["etext", "faksimil", "epub", "pdf", "infopost"]
     const groups = _.groupBy(works, item => item.titlepath + item.lbworkid)
     const output = []
-    const getMainAuthor = metadata => (metadata.work_authors || metadata.authors)[0]
+    const getMainAuthor = metadata =>
+        (metadata.work_authors || metadata.authors || [metadata.main_author])[0]
 
     const makeObj = function(metadata) {
         if (metadata.mediatype === "pdf") {
@@ -288,56 +289,21 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
-        getTitles(
-            options
-            // author,
-            // sort_key,
-            // filter_string,
-            // // about_author,
-            // getAll,
-            // partial_string = false,
-            // include = null,
-            // filter_or = null,
-            // filter_and = null,
-            // author_aggregation = null
-        ) {
+        getTitles(types, options) {
             let defaults = {
                 from: 0,
                 to: 100,
-                sort_key: "sortkey",
-                sort_dir: "asc"
+                sort_field: "sortkey|asc"
             }
-            let {
-                from,
-                to,
-                sort_key,
-                sort_dir,
-                filter_or,
-                filter_and,
-                include,
-                filter_string,
-                author_aggregation,
-                partial_string,
-                author
-            } = Object.assign({}, defaults, options)
+            let { author, author_aggs, ...opts } = Object.assign({}, defaults, options)
 
-            // if (getAll == null) {
-            //     getAll = false
-            // }
             const params = _.omitBy(
                 {
                     exclude: "text,parts,sourcedesc,pages,errata",
-                    from,
-                    to,
-                    filter_or,
-                    filter_and,
-                    include,
-                    filter_string,
-                    author_aggregation,
-                    partial_string,
-                    sort_field: sort_key + "|" + sort_dir
+                    author_aggregation: author_aggs,
+                    ...opts
                 },
-                val => _.isEmpty(val) && typeof val !== "boolean"
+                val => _.isNull(val)
             )
 
             // if (sort_key) {
@@ -356,7 +322,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             // }
 
             return $http({
-                url: `${STRIX_URL}/list_all/etext,faksimil,pdf` + (author || ""),
+                url: `${STRIX_URL}/list_all/${types}` + (author || ""),
                 params
             }).then(function(response) {
                 c.log("response", response)
@@ -379,7 +345,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     include:
                         "surname,author_id,birth,death,full_name,pseudonym,name_for_index,dramawebben"
                 }
-            }).then(response => response.data.data)
+            }).then(response => response.data)
         },
         getAuthorList(include, exclude) {
             const def = $q.defer()
