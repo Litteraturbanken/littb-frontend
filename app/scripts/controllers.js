@@ -173,10 +173,11 @@ littb.controller("statsCtrl", function($scope, backend) {
 
     backend.getStats().then(data => (s.statsData = data))
 
-    // backend.getTitles(null, "popularity|desc").then(({ titles }) => {
-    backend.getTitles({ sort_key: "popularity", sort_dir: "desc" }).then(({ titles }) => {
-        s.titleList = titles
-    })
+    backend
+        .getTitles("etext,faksimil", { sort_field: "popularity|desc", to: 30 })
+        .then(({ titles }) => {
+            s.titleList = titles
+        })
 
     return backend.getEpub(30).then(({ data, hits }) => (s.epubList = data))
 })
@@ -762,7 +763,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
         if (newVal === null) {
             s.authorFilter = $location.search().authorFilter
         } else {
-            return s.refreshData()
+            s.refreshData()
         }
     }
 
@@ -773,9 +774,8 @@ littb.controller("epubListCtrl", function epubListCtrl(
         }
         s.searching = true
         const size = s.filterTxt || s.showAll ? 10000 : 30
-        let authorFilter = null
         if (s.authorFilter !== "alla") {
-            ;({ authorFilter } = s)
+            var { authorFilter } = s
         }
 
         return backend
@@ -1106,7 +1106,7 @@ littb.controller("idCtrl", function($scope, backend, $routeParams, $location) {
         s.id = ""
     }
 
-    backend.getTitles().then(titleArray => (s.data = titleArray))
+    backend.getTitles("etext,faksimil", { to: 10000 }).then(titleArray => (s.data = titleArray))
 
     s.idFilter = function(row) {
         if (!s.id) {

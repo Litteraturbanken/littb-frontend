@@ -108,28 +108,27 @@
             <div class="btn-group p-0 mb-10 ">
                 <label class="sc btn btn-small" 
                     ng-model="listType" btn-radio="'works'" ng-click="listType = 'works'">
-                    Verk <span class="num_hits" ng-show="titleArray.length">({{titleArray.length}})</span>
+                    Verk <span class="num_hits" ng-show="titleHits">({{titleHits}})</span>
                 </label>
                 <label class="sc btn btn-small" 
                     ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors'">
-                    Författare <span class="num_hits">({{getAuthorData().length}})</span>
+                    Författare <span class="num_hits">({{authHits}})</span>
                 </label>
                 <label class="sc btn btn-small" 
                     ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts'">Dikter, noveller, essäer, etc. <span class="num_hits" ng-show="parts_hits">({{ parts_hits }})</span></label>
                 <label class="sc btn btn-small" 
-                    ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud & bild <span class="num_hits" ng-show="audio_list.length">({{audio_list.length}})</span></label>
+                    ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljudarkivet <span class="num_hits" ng-show="audio_list.length">({{audio_list.length}})</span></label>
             </div>
             
             
-            <div class="result title pl-0 sm:ml-3 " ng-if="listType == 'works'">
+            <div class="result title pl-0 ml-3 " ng-if="listType == 'works'">
                 <div class="inline-block sc mr-2">Sortera på:</div>
                 <ul class="part_header top_header mb-4 text-lg inline-block" ng-hide="titleSearching">
 
-                    <li class="inline-block sc" ng-repeat="item in sortItems" >
+                    <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
                         <a href="" ng-click="onSortClick(item)">{{item.label}}</a>
                         <i ng-show="item.active" 
-                           class="fa fa-arrows-v text-grey-darkest text-sm"
-                           ng-click="item.dir = item.dir == 'asc' ? 'desc' : 'asc'"></i>
+                           class="fa fa-arrows-v text-grey-darkest text-sm"></i>
                     </li>
                     
                     <!-- <li class="inline-block sc"><a href="">Titel</a></li>
@@ -158,12 +157,12 @@
                         
                     
 
-                        <tr ng-show="!titleSearching && !listVisibleTitles().length">
+                        <tr ng-show="!titleSearching && !titleArray.length">
                             <td>Inga träffar. </td>
                         </tr>
                         <!-- orderBy | 'sortkey' -->
                         <tr class="work_link" 
-                            ng-repeat="row in listVisibleTitles() | limitTo: rowLimit" 
+                            ng-repeat="row in titleArray" 
                             on-finish-render="titleRender()"
                             ng-class="{'first' : $first}"
                             >
@@ -183,7 +182,7 @@
                                     
                                 </div>
                                 <div collapse="!row._collapsed">
-                                    <div class="collapse-content">
+                                    <div class="collapse-content" >
                                         <ul class="links">
                                             <li ng-repeat="mediatype in row | readMediatypes">
                                                 <a ng-href="{{mediatype.url}}">Läs som {{mediatype.label}}</a>
@@ -204,13 +203,25 @@
                                 </div>
                             </div></td>
 
-                            <td class="align-top text-right"><span>{{row.sort_date.plain}}</span></td>
+                            <td class="align-top text-left hidden sm:table-cell"><span>{{row.sort_date.plain}}</span></td>
                             <td class="align-top text-right"><span class="author">
-                                        <a ng-href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a> 
-                                        <span ng-if="row.authors[0].authortype == 'editor'">(red.)</span> 
-                                        <span ng-if="row.authors[0].authortype == 'illustrator'">(ill.)</span>
+                                        <a ng-href="/forfattare/{{row.main_author.author_id}}">{{row.main_author.surname}}</a> 
+                                        <span ng-if="row.main_author.type == 'editor'">(red.)</span> 
+                                        <span ng-if="row.main_author.type == 'illustrator'">(ill.)</span>
                                     </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" --></td>
 
+                        </tr>
+
+                        <tr ng-show="!showAllWorks && titleHits > 30">
+                            <td>
+                                <button class="btn btn-sm show_all"  ng-click="(showAllWorks = true) && fetchParts()">
+                                    Visa alla <span class="num">{{titleHits}}</span> träffar
+                                </button>
+                            </td>
+                        </tr>
+
+                        <tr ng-if="">
+                            <td>Visa alla <span class="num">{{titleHits}}</span> träffar</td>
                         </tr>
                         
                         
@@ -219,7 +230,7 @@
             </div>
 
             <div class="result author pl-0 sm:ml-3" ng-if="listType == 'authors'">
-
+                <sort-list ></sort-list>
                 <div class=""> 
                     <ul class="">
                         <li class="spinner_row" ng-show="authorSearching">
@@ -260,6 +271,7 @@
                 <!-- <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
                     Ur ljudarkivet
                 </li> -->
+                <sort-list ></sort-list>
                 <table class="table w-full">
                     <tr ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
                     
@@ -281,10 +293,10 @@
                 </table>
             </div>
             <div class="result title pl-0 sm:ml-3" ng-if="listType == 'parts'">
-
+                <sort-list ></sort-list>
                 <div class="table-responsive-sm">
                     <table class="table">
-                        <tr class="" ng-show="!showInitial && !partSearching && !all_titles.length">
+                        <tr class="" ng-show="!partSearching && !all_titles.length">
                             <td>Inga träffar.</td>
                         </tr>
                         
@@ -296,7 +308,7 @@
                                     {{row.shorttitle || row.title}}
                                     </a>
                                 </td>
-                                <td class=" text-right">{{row.sort_date.plain}}</td>
+                                <td class="hidden sm:table-cell">{{row.sort_date.plain}}</td>
                                 <td class="author text-right">
                                     <a ng-href="/forfattare/{{row.work_authors[0].author_id}}">{{getPartAuthor(row).surname}}</a> 
                                     <span ng-if="getPartAuthor(row).authortype == 'editor'">(red.)</span>

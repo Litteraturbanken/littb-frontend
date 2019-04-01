@@ -4,31 +4,26 @@ const $ = window.$
 const isDev = window.isDev
 const c = window.console
 
-function detectIE() {
-    const ua = window.navigator.userAgent
+littb.directive("sortList", () => ({
+    restrict: "E",
+    template: `
+    <div>
+    <div class="inline-block sc mr-2">Sortera på:</div>
+    <ul class="part_header top_header mb-4 text-lg inline-block">
 
-    const msie = ua.indexOf("MSIE ")
-    if (msie > 0) {
-        // IE 10 or older => return version number
-        return parseInt(ua.substring(msie + 5, ua.indexOf(".", msie)), 10)
-    }
-
-    const trident = ua.indexOf("Trident/")
-    if (trident > 0) {
-        // IE 11 => return version number
-        const rv = ua.indexOf("rv:")
-        return parseInt(ua.substring(rv + 3, ua.indexOf(".", rv)), 10)
-    }
-
-    const edge = ua.indexOf("Edge/")
-    if (edge > 0) {
-        // Edge (IE 12+) => return version number
-        return parseInt(ua.substring(edge + 5, ua.indexOf(".", edge)), 10)
-    }
-
-    // other browser
-    return false
-}
+        <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
+            <a href="" ng-click="onSortClick(item)">{{item.label}}</a>
+            <i ng-show="item.active" 
+               class="fa fa-arrows-v text-grey-darkest text-sm"></i>
+        </li>
+        
+        <li class="inline-block sc">
+            <a class="reset" ng-show="!showInitial" ng-click="resetView()">återställ</a>
+        </li>
+    </ul>
+    </div>
+    `
+}))
 
 littb.controller("libraryCtrl", function(
     $scope,
@@ -44,9 +39,10 @@ littb.controller("libraryCtrl", function(
 ) {
     const s = $scope
     s.showAllParts = !!$location.search().alla_titlar
+    s.showAllWorks = !!$location.search().alla_verk
     s.titleSearching = false
     s.authorSearching = true
-    s.showPopular = true
+    // s.showPopular = true
     s.showPopularAuth = true
     s.showInitial = true
     s.show_more = $location.search().avancerat != null
@@ -101,13 +97,6 @@ littb.controller("libraryCtrl", function(
         )
     }
 
-    const isIE = detectIE()
-    c.log("isIE", isIE)
-
-    if (isIE && isIE < 12) {
-        s.rowLimit = 30
-    }
-
     const aboutDef = $q.defer()
     s.onAboutAuthorChange = _.once(function($event) {
         console.log("onAboutAuthorChange", s.filters.authorkeyword)
@@ -134,22 +123,22 @@ littb.controller("libraryCtrl", function(
     //     })
     // }
 
-    function getPopularTitles() {
-        s.titleSearching = true
-        backend.getTitles(null, "popularity|desc").then(function({ titles }) {
-            s.titleSearching = false
-            s.popularTitles = titles
-            s.titleByPath = _.groupBy(titles, item => item.titlepath)
+    // function getPopularTitles() {
+    //     s.titleSearching = true
+    //     backend.getTitles({ sort_field: "popularity|desc" }).then(function({ titles }) {
+    //         s.titleSearching = false
+    //         s.popularTitles = titles
+    //         s.titleByPath = _.groupBy(titles, item => item.titlepath)
 
-            return titles
-        })
-    }
+    //         return titles
+    //     })
+    // }
 
     s.resetView = function() {
         console.log("resetView")
         s.showInitial = true
         s.showPopularAuth = true
-        s.showPopular = true
+        // s.showPopular = true
         s.showRecent = false
 
         s.filters = {}
@@ -161,9 +150,9 @@ littb.controller("libraryCtrl", function(
         s.audio_list = null
         s.allCurrentAuthors = null
 
-        if (!s.popularTitles) {
-            getPopularTitles()
-        }
+        // if (!s.popularTitles) {
+        //     getPopularTitles()
+        // }
     }
 
     s.hasMediatype = function(titleobj, mediatype) {
@@ -189,6 +178,7 @@ littb.controller("libraryCtrl", function(
     }
 
     s.titleRender = function() {
+        console.log("titleRender")
         if (
             $location.search()["title"] &&
             s.titleByPath &&
@@ -212,7 +202,6 @@ littb.controller("libraryCtrl", function(
     })
 
     $q.all([backend.getAboutAuthors(), authors]).then(function([authorIds]) {
-        console.log("authorIds", authorIds)
         s.aboutAuthors = _.orderBy(authorIds, auth => {
             if (s.authorsById[auth]) {
                 return s.authorsById[auth].surname
@@ -220,49 +209,121 @@ littb.controller("libraryCtrl", function(
         })
     })
 
-    backend.getPopularAuthors().then(auths => (s.popularAuthors = auths))
+    backend.getPopularAuthors().then(({ auths, hits }) => {
+        s.popularAuthors = auths
+        s.authHits = hits
+    })
 
     // , 10
-    s.sort = "popularity|desc"
-    s.onSortClick = item => {
-        for (let obj of s.sortItems) {
-            obj.active = false
-        }
-        item.active = true
-        s.sort = item.val
-        // s.refreshData(`${item.val}|${item.dir}`)
+    s.sort = {
+        works: "popularity|desc",
+        authors: "popularity|desc",
+        parts: "sortkey|asc",
+        audio: "title.raw|asc"
     }
-    s.sortItems = [
-        {
-            label: "Titel",
-            val: "title",
-            dir: "asc"
-            // show : ['works', 'titles', "audio", ]
-        },
-        {
-            label: "Författare",
-            val: "authors[0].full_name",
-            dir: "asc"
-        },
-        {
-            label: "Populärt",
-            val: "popularity",
-            dir: "desc",
-            active: true
-        },
-        {
-            label: "Kronologiskt",
-            val: "sort_year.date",
-            dir: "desc"
+    s.onSortClick = item => {
+        console.log("item", item)
+        if (item.active) {
+            item.dir = item.dir == "asc" ? "desc" : "asc"
+        } else {
+            for (let obj of s.sortItems[s.listType]) {
+                obj.active = false
+            }
+            item.active = true
         }
-    ]
+        s.sort[s.listType] = item.val + "|" + item.dir
+        refreshData(s.listType)
+    }
+    s.sortItems = {
+        works: [
+            {
+                label: "Titel",
+                val: "sortkey",
+                dir: "asc"
+                // show : ['works', 'titles', "audio", ]
+            },
+            {
+                label: "Författare",
+                val: "main_author.name_for_index",
+                dir: "asc"
+            },
+            {
+                label: "Populärt",
+                val: "popularity",
+                dir: "desc",
+                active: true
+            },
+            {
+                label: "Kronologiskt",
+                val: "sort_date.date",
+                dir: "desc"
+            }
+        ],
+        authors: [
+            { label: "Namn", val: "name_for_index", dir: "asc" },
+            { label: "Kronologiskt", val: "birth.date", dir: "asc" }
+        ],
+        parts: [
+            {
+                label: "Titel",
+                val: "sortkey",
+                dir: "asc",
+                active: true
+            },
+            {
+                label: "Författare",
+                val: "main_author.name_for_index",
+                dir: "asc"
+            }
+            // {
+            //     label: "Populärt",
+            //     val: "popularity",
+            //     dir: "desc",
+            //     active: true
+            // },
+            // {
+            //     label: "Kronologiskt",
+            //     val: "sort_date.date",
+            //     dir: "desc"
+            // }
+        ],
+        audio: [
+            {
+                label: "Titel",
+                val: "title.raw",
+                dir: "asc",
+                active: true
+            },
+            {
+                label: "Författare",
+                val: "main_author.name_for_index",
+                dir: "asc"
+            },
+            {
+                label: "Uppläsare",
+                val: "main_reader.name_for_index",
+                dir: "asc"
+            }
+        ]
+    }
     // s.sortSelectSetup = {
     //     minimumResultsForSearch: -1,
     //     templateSelection(item) {
     //         return `Sortering: ${item.text}`
     //     }
     // }
+    function refreshData() {
+        if (s.listType == "works") {
+            s.fetchWorks()
+        } else if (s.listType == "parts") {
+            s.fetchParts()
+        } else if (s.listType == "audio") {
+            fetchAudio()
+        }
+        // else if( s.listType == "author") {
 
+        // }
+    }
     s.getAuthorData = function() {
         if (s.showPopularAuth) {
             return s.popularAuthors
@@ -300,7 +361,7 @@ littb.controller("libraryCtrl", function(
         if (s.rowfilter || hasActiveFilter() || $location.search().about_authors_filter) {
             s.showInitial = false
             s.showPopularAuth = false
-            s.showPopular = false
+            // s.showPopular = false
             s.showRecent = false
             s.fetchParts()
             let isOnlyGenderFilterActive = $location.search()["kön"] && hasActiveFilter() == 1
@@ -310,14 +371,17 @@ littb.controller("libraryCtrl", function(
             } else {
                 s.audio_list = null
             }
-            fetchWorks()
+            s.fetchWorks()
             // if not (_.toPairs(getKeywordTextfilter()).length or s.about_authors_filter?.length)
             //     fetchAudio()
             if (!isDev) {
                 backend.logLibrary(s.rowfilter)
             }
         } else {
-            s.resetView()
+            // s.resetView()
+            s.fetchWorks()
+            fetchAudio()
+            s.fetchParts()
         }
     }
 
@@ -327,12 +391,21 @@ littb.controller("libraryCtrl", function(
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
 
         let def = backend
-            .getParts(s.rowfilter, true, filter_or, filter_and, s.showAllParts ? 10000 : 30)
-            .then(({ titleArray, hits, author_aggs }) => {
-                s.all_titles = titleArray
+            .getTitles("etext-part,faksimil-part", {
+                sort_field: s.sort.parts,
+                filter_string: s.rowfilter,
+                filter_or,
+                filter_and,
+                author_aggs: true,
+                partial_string: true
+                // to: fix paging
+            })
+            // s.rowfilter, true, filter_or, filter_and, s.showAllParts ? 10000 : 30)
+            .then(({ titles, hits, author_aggs }) => {
+                s.all_titles = titles
                 s.partSearching = false
                 s.parts_hits = hits
-                return { titleArray, hits, author_aggs }
+                return { titles, hits, author_aggs }
             })
         $q.all([def, authors]).then(([{ author_aggs }]) => {
             s.currentPartAuthors = util.sortAuthors(
@@ -345,7 +418,7 @@ littb.controller("libraryCtrl", function(
         backend
             .getAudioList({
                 string_filter: s.rowfilter,
-                sort_field: "title.raw|asc",
+                sort_field: s.sort["audio"],
                 partial_string: true
             })
             .then(titleArray => {
@@ -359,33 +432,32 @@ littb.controller("libraryCtrl", function(
                 }
             })
 
-    function fetchWorks() {
+    s.fetchWorks = () => {
         s.titleSearching = true
         const include =
             "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable," +
-            "authors.author_id,work_authors.author_id,authors.surname,authors.type,startpagename,has_epub,sort_date.plain"
+            "main_author.author_id,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain"
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // if (!_.toPairs(text_filter).length) {
         //     text_filter = null
         // }
         // const about_authors = $location.search().about_authors_filter
 
-        const def = backend.getTitles(
-            null, // authors
-            null, // sortkey
-            s.filter,
-            // !!about_authors,
-            false,
-            true, // parial string
+        const def = backend.getTitles("etext,faksimil,pdf", {
+            sort_field: s.sort.works,
+            filter_string: s.filter,
+            to: s.showAllWorks ? 10000 : 100,
             include,
             filter_or,
             filter_and,
-            true // author_aggs
-        )
-        $q.all([def, authors]).then(([{ titles, author_aggs }]) => {
+            partial_string: true,
+            author_aggs: true
+        })
+        $q.all([def, authors]).then(([{ titles, author_aggs, hits }]) => {
             console.log("titleArray after all", titles)
 
             s.titleArray = titles
+            s.titleHits = hits
             if (!titles.length) {
                 window.gtag("event", "search-no-hits", {
                     event_category: "library",
@@ -401,25 +473,25 @@ littb.controller("libraryCtrl", function(
         })
     }
 
-    s.showAllWorks = function() {
-        s.showPopular = false
-        s.showRecent = false
-        s.filter = ""
-        s.rowfilter = ""
-        s.titleArray = null
-        fetchWorks()
-    }
+    // s.showAllWorks = function() {
+    //     s.showPopular = false
+    //     s.showRecent = false
+    //     s.filter = ""
+    //     s.rowfilter = ""
+    //     s.titleArray = null
+    //     fetchWorks()
+    // }
 
-    s.popClick = function() {
-        s.showRecent = false
-        s.showPopular = true
-        if (!s.popularTitles) {
-            getPopularTitles()
-        }
-    }
+    // s.popClick = function() {
+    //     s.showRecent = false
+    //     s.showPopular = true
+    //     if (!s.popularTitles) {
+    //         getPopularTitles()
+    //     }
+    // }
 
     s.fetchRecent = function() {
-        s.showPopular = false
+        // s.showPopular = false
         s.showRecent = true
         s.filter = ""
         s.rowfilter = ""
@@ -434,7 +506,7 @@ littb.controller("libraryCtrl", function(
 
         s.titleSearching = true
         return backend
-            .getTitles(null, "imported|desc,sortfield|asc", null, true)
+            .getTitles("etext,faksimil,pdf", { sort_field: "imported|desc,sortfield|asc", to: 600 })
             .then(function({ titles }) {
                 s.titleSearching = false
                 s.titleGroups = _.groupBy(titles, "imported")
@@ -552,22 +624,26 @@ littb.controller("libraryCtrl", function(
             expr: "showAllParts"
         },
         {
+            key: "alla_verk",
+            expr: "showAllWorks"
+        },
+        {
             key: "visa",
             expr: "listType",
             default: "works"
-        },
-        {
-            key: "sortering",
-            expr: "sort"
-            // default : "popularity|desc"
         }
+        // {
+        // key: "sortering",
+        // expr: "sort"
+        // default : "popularity|desc"
+        // }
     ])
 
-    s.listVisibleTitles = function() {
-        if (s.showInitial && s.showPopular) {
-            return s.popularTitles
-        } else {
-            return s.titleArray
-        }
-    }
+    // s.listVisibleTitles = function() {
+    //     if (s.showInitial && s.showPopular) {
+    //         return s.popularTitles
+    //     } else {
+    //         return s.titleArray
+    //     }
+    // }
 })
