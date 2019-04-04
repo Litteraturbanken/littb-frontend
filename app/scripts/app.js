@@ -557,7 +557,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
     $rootScope.gotoExternal = function(path, event) {
         event.preventDefault()
         event.stopPropagation()
-        window.location.pathname = path
+        window.location = "https://litteraturbanken.se" + path
     }
 
     $rootScope.setTitle = function(title) {
