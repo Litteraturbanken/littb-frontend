@@ -17,10 +17,29 @@ module.exports = merge(common, {
     plugins: [
         new PurgecssPlugin({
             paths: glob.sync(`${PATHS.src}/**/*`, { nodir: true }),
-            whitelistPatterns: [/page-.*/, /select2/]
+            whitelistPatternsChildren: [
+                /page-.*/,
+                /select2/,
+                /modal.*/,
+                /tooltip.*/,
+                /\.site-.*/,
+                /\.content/,
+                /\.sect1/
+            ]
         }),
         new CleanWebpackPlugin(["dist"]),
-        new CompressionPlugin({})
+        new CompressionPlugin({}),
+        new CompressionPlugin({
+            filename(name) {
+                return name.replace(/.gz$/, ".br")
+            },
+            algorithm: "brotliCompress",
+            test: /\.(js|css|html|svg)$/,
+            compressionOptions: { level: 11 },
+            threshold: 10240,
+            minRatio: 0.8,
+            deleteOriginalAssets: false
+        })
     ],
     module: {
         rules: [
@@ -55,7 +74,8 @@ module.exports = merge(common, {
             new OptimizeCSSAssetsPlugin({})
         ]
     },
-    mode: "production",
+    // mode: "production",
+    mode: "development",
     output: {
         path: path.join(__dirname, "dist")
     }

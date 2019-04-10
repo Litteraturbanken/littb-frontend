@@ -18,6 +18,8 @@ window._.str = require("underscore.string")
 
 require("./styles/bootstrap.scss")
 require("./styles/bootstrap4-custom.scss")
+require("./styles/tailwind.css")
+require("font-awesome/scss/font-awesome.scss")
 require("./styles/styles.scss")
 
 require("./lib/jquery.ui.position.js")

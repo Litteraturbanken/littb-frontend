@@ -828,11 +828,6 @@ littb.controller("helpCtrl", function($scope, $http, util, $location) {
     })
 })
 
-littb.controller("newCtrl", function($scope, $http, util, $location, backend) {
-    let s
-    s = $scope
-})
-
 // backend.getTitles(null, "imported|desc", null, false, true).then (titleArray) ->
 //     s.titleList = titleArray
 

@@ -1,11 +1,11 @@
 @charset "UTF-8";
 @import "triangle"; 
-$fa-font-path: "~font-awesome/fonts";
-@import '~font-awesome/scss/font-awesome.scss';
+// $fa-font-path: "~font-awesome/fonts";
+// @import '~font-awesome/scss/font-awesome.scss';
 
-@tailwind preflight;
-@tailwind components;
-@tailwind utilities;
+// @tailwind preflight;
+// @tailwind components;
+// @tailwind utilities;
 
 h1 {
     font-size: 2em;
@@ -4400,6 +4400,7 @@ grundform-clean {
       }
     }
 
+    /* purgecss ignore */
     .sect1 {
     
         .titlepage .title {
@@ -4453,85 +4454,6 @@ grundform-clean {
     a.para {
         border-bottom : inherit; # override style.scss
     } */
-}
-
-
-
-.page-new {
-
-    .author {
-        @include small-caps();
-        // color : $primarycolor;
-    }
-    li {
-        max-width : initial;
-    }
-    ul {
-        font-size: 0.9em;
-    }
-    .num {
-        font-size: 0.9em;
-        display : inline-block;
-        margin-right: 0.7em;
-        width : 2em;
-        vertical-align: top;
-        text-align: right;
-
-    }
-    .title {
-        display : inline-block;
-        max-width : 30em;
-        vertical-align: top;
-    }
-    
-    .logo_link_monogram {
-        background: url("../img/lb_monogram_white_black.svg") no-repeat;
-        background-size: cover;
-    }
-
-    h1 {
-        color : white;
-    }
-    .mainnav {
-        a {
-            color  : white;
-        }
-        a:hover {
-            color : black;
-        }
-
-    }
-
-
-    p {
-        max-width: initial;
-    }
-    .container {
-        width : 800px;
-
-
-        h3 {
-            @include small-caps();
-            color : $primarycolor;
-        }
-        // @include container();
-        background-color : rgba(255, 255, 255, 0.55);
-        padding : 1em;
-        padding-left : 2em;
-        border: 1px solid #333;
-        height: 75vh;
-        overflow-y: auto;
-
-        font-size: 0.8em;
-
-        em {
-            font-style : normal;
-        }
-
-        & > .lista {
-
-        }
-    }
 }
 
 .page-presentation {
