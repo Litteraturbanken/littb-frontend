@@ -4205,7 +4205,7 @@ grundform-clean {
         
 
     }
-
+    /* purgecss ignore */
     .content {
         
         h1 {
@@ -4244,6 +4244,16 @@ grundform-clean {
                 margin-bottom : 1em;
                 max-width : 500px;
             }
+        }
+        .sect1 {
+        
+            .titlepage .title {
+                display: none;
+            }
+            .sect2 .titlepage .title {
+                display: block;
+            }
+            
         }
     }
 
@@ -4400,17 +4410,6 @@ grundform-clean {
       }
     }
 
-    /* purgecss ignore */
-    .sect1 {
-    
-        .titlepage .title {
-            display: none;
-        }
-        .sect2 .titlepage .title {
-            display: block;
-        }
-        
-    }
     p {
         max-width : inherit;
     }

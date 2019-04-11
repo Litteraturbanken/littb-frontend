@@ -52,6 +52,7 @@
         "eslint-plugin-standard": "^4.0.0",
         "extract-loader": "^2.0.1",
         "file-loader": "^1.1.11",
+        "glob-all": "^3.1.0",
         "html-loader": "^0.5.5",
         "html-webpack-plugin": "^3.2.0",
         "mini-css-extract-plugin": "^0.5.0",
