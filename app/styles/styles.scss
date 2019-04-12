@@ -1,11 +1,5 @@
 @charset "UTF-8";
 @import "triangle"; 
-// $fa-font-path: "~font-awesome/fonts";
-// @import '~font-awesome/scss/font-awesome.scss';
-
-// @tailwind preflight;
-// @tailwind components;
-// @tailwind utilities;
 
 h1 {
     font-size: 2em;
@@ -3193,20 +3187,6 @@ $partnav-width : 170px;
                 }
                 .filtered {
                     color : $primarycolor;
-                }
-                .reset {
-                    margin-left: 2em;
-                    // fz
-
-                    &:before {
-                        content: "[ ";
-                        font-size: 0.8em;
-                    }
-                    &:after {
-                        content: " ]";
-                        font-size: 0.8em;
-                    }
-
                 }
             }
             &.author {
