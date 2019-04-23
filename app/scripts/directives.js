@@ -839,7 +839,7 @@ const overflowLoad = function(s, element) {
         $(this).css("max-width", "initial")
         const actualWidth = $(this).width()
         $(this).css("max-width", maxWidth)
-        if ($(this).width() < actualWidth) {
+        if ($(this).width() - actualWidth > 100) {
             c.log("overflowing image found", element, $(this).width(), actualWidth)
             element.parent().addClass("img-overflow")
             if (btn != null) {

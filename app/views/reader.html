@@ -26,7 +26,11 @@
     </div>
 
     <div class="img_area" ng-style="{'width' : workinfo.width['size_' + size] + 'px'}">
-        <img faksimil-img class="faksimil" ng-style="{'max-width' : workinfo.width['size_' + size] + 'px'}" ng-src="{{url}}" ng-show="mediatype == 'faksimil' || isParallel">
+        <img faksimil-img class="faksimil" 
+        ng-style="{'max-width' : workinfo.width['size_' + size] + 'px'}" 
+        ng-src="{{url}}" 
+        ng-srcset="{{srcset}}"
+        ng-show="mediatype == 'faksimil' || isParallel">
     </div>
     <!-- <div square ng-repeat="obj in coors" ng-show="x"
          class="faksimilMarkee" ng-class="{long : obj.w > 150}"></div> -->

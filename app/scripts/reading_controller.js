@@ -30,13 +30,12 @@ littb.controller("readingCtrl", function(
     let { title, author, mediatype, pagename } = $routeParams
     _.extend(s, _.pick($routeParams, "title", "author", "mediatype"))
 
-
     if ("ix" in $routeParams) {
         s.isEditor = true
         s.pageix = Number($routeParams.ix)
         mediatype = s.mediatype = { f: "faksimil", e: "etext" }[s.mediatype]
     }
-    
+
     s.suggestEtext = () => window.location.href.replace("/epub", "/etext")
 
     s.pageToLoad = pagename
@@ -747,7 +746,15 @@ littb.controller("readingCtrl", function(
                 basename = s.workinfo.filenameMap[ix]
             }
             const filename = _.str.lpad(basename, 4, "0")
-            s.url = `/txt/${id}/${id}_${s.size}/${id}_${s.size}_${filename}.jpeg`
+            let urlFromSize = size => `/txt/${id}/${id}_${size}/${id}_${size}_${filename}.jpeg`
+            s.url = urlFromSize(s.size)
+            if (s.size < 4) {
+                s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(s.size + 2)} 2x`
+            } else if (s.size == 4) {
+                s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(5)} 2x`
+            } else {
+                s.srcset = ""
+            }
             const def = $q.defer()
             def.resolve()
             return def.promise
