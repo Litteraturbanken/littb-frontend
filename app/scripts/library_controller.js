@@ -190,6 +190,10 @@ littb.controller("libraryCtrl", function(
         s.authorSearching = false
     })
 
+    s.filterChange = () => {
+        console.log("filterchange")
+    }
+
     $q.all([backend.getAboutAuthors(), authors]).then(function([authorIds]) {
         s.aboutAuthors = _.orderBy(authorIds, auth => {
             if (s.authorsById[auth]) {
@@ -223,7 +227,17 @@ littb.controller("libraryCtrl", function(
             $location.search({ sort: item.search })
         }
         s.sort[s.listType] = item.val + "|" + item.dir
-        s.refreshData(s.listType)
+
+        if (s.listType == "works") {
+            s.fetchWorks(false)
+        } else if (s.listType == "parts") {
+            s.fetchParts(false)
+        } else if (s.listType == "audio") {
+            fetchAudio(false)
+        } else if (s.listType == "authors") {
+            s.setAuthorData()
+        }
+        // s.refreshData()
     }
     s.sortItems = {
         works: [
@@ -258,6 +272,7 @@ littb.controller("libraryCtrl", function(
         ],
         authors: [
             { label: "Namn", val: "name_for_index", dir: "asc" },
+            { label: "Popularitet", val: "popularity", dir: "desc" },
             { label: "Kronologiskt", val: "birth.date", dir: "asc" }
         ],
         parts: [
@@ -319,37 +334,39 @@ littb.controller("libraryCtrl", function(
         s.fetchWorks(s.listType !== "works")
         s.fetchParts(s.listType !== "parts")
         fetchAudio(s.listType !== "audio")
-        // if (s.listType == "works") {
-        // } else if (s.listType == "parts") {
-        // } else if (s.listType == "audio") {
-        // }
-        // else if( s.listType == "author") {
-
-        // }
     }
-    s.getAuthorData = function() {
-        // if (s.showPopularAuth) {
-        //     return s.popularAuthors
-        // else
-        //     filters = getKeywordTextfilter()
-        //     if _.toPairs(filters).length
-        //         return _.filter s.authorData, (auth) ->
-        //             conds = []
-        //             if filters['provenance.library'] == "Dramawebben"
-        //                 conds.push(auth.dramaweb?)
+    // s.getAuthorData = function() {
+    // if (s.showPopularAuth) {
+    //     return s.popularAuthors
+    // else
+    //     filters = getKeywordTextfilter()
+    //     if _.toPairs(filters).length
+    //         return _.filter s.authorData, (auth) ->
+    //             conds = []
+    //             if filters['provenance.library'] == "Dramawebben"
+    //                 conds.push(auth.dramaweb?)
 
-        //             if filters['main_author.gender']
-        //                 conds.push(auth.gender == filters['main_author.gender'])
+    //             if filters['main_author.gender']
+    //                 conds.push(auth.gender == filters['main_author.gender'])
 
-        //             return _.every conds
-        // } else if (s.showInitial) {
-        //     return s.authorData
-        // } else {
-        return _.orderBy(
+    //             return _.every conds
+    // } else if (s.showInitial) {
+    //     return s.authorData
+    // } else {
+    // return _.orderBy(
+    //     _.uniq([].concat(s.currentAuthors, s.currentPartAuthors), "author_id"),
+    //     "name_for_index"
+    // )
+    // }
+    // }
+    s.setAuthorData = function() {
+        let [key, dir] = (s.sort.authors || "").split("|")
+        console.log("setAuthorData key, dir", key, dir)
+        s.authorData = _.orderBy(
             _.uniq([].concat(s.currentAuthors, s.currentPartAuthors), "author_id"),
-            "name_for_index"
+            key || "name_for_index",
+            dir || "asc"
         )
-        // }
     }
     let hasActiveFilter = () => {
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
@@ -382,6 +399,7 @@ littb.controller("libraryCtrl", function(
             s.currentPartAuthors = util.sortAuthors(
                 author_aggs.map(({ author_id }) => s.authorsById[author_id])
             )
+            s.setAuthorData()
         })
     }
 
@@ -443,12 +461,13 @@ littb.controller("libraryCtrl", function(
             if (isSearchRecent) {
                 s.titleArray = decorateRecent(titles)
             } else {
-                s.titles = titles
+                s.titleArray = titles
             }
             s.titleHits = hits
             s.currentAuthors = util.sortAuthors(
                 author_aggs.map(({ author_id }) => s.authorsById[author_id])
             )
+            s.setAuthorData()
 
             s.titleSearching = false
         })
