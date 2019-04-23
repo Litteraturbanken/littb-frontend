@@ -11,7 +11,7 @@
                     <input class="filter_input col-9" autofocus 
                         ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
                         type="text" 
-                        ng-model="filter" 
+                        ng-change="refreshData()" ng-model="filter" 
                         placeholder="Skriv författarnamn eller titel">
                     <button class="submit btn col-auto">Sök</button>
                     <button class="submit btn col-auto" ng-show="!showInitial" ng-click="resetView()">
@@ -21,7 +21,7 @@
                 <div class="title_select_container">
                     <select  class="gender_select" 
                              ui-select2="{minimumResultsForSearch: -1}" 
-                             ng-model="filters['main_author.gender']" 
+                             ng-change="refreshData()" ng-model="filters['main_author.gender']" 
                              data-placeholder="Välj kön" >
                         <option value=""></option>
                         <option value="all">Alla författare</option>
@@ -30,7 +30,7 @@
                     </select>
                 </div>
                 <div class="title_select_container">
-                    <select multiple class="filter_select keyword_select" ui-select2 ui-select2="{placeholder: 'Välj samling'}" ng-model="filters.keywords" data-placeholder="Välj samling" >
+                    <select multiple class="filter_select keyword_select" ui-select2 ui-select2="{placeholder: 'Välj samling'}" ng-change="refreshData()" ng-model="filters.keywords" data-placeholder="Välj samling" >
                         <option value=""></option>
                         <option value="texttype:brev">Brev</option>
                         <option value="texttype:drama">Dramatik</option>
@@ -53,7 +53,7 @@
                 <div class="title_select_container about_container">
                     <select multiple class="filter_select about_select"
                             ui-select2 
-                            ng-model="filters.authorkeyword" 
+                            ng-change="refreshData()" ng-model="filters.authorkeyword" 
                             data-placeholder="Om ett författarskap" 
                             ng-change="onAboutAuthorChange($event)">
 
@@ -74,7 +74,7 @@
 
                 <div class="more_container" ng-class="{show_more : show_more}" ng-show="show_more">
                     <div class="title_select_container">
-                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-change="refreshData()" ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
                             <option value=""></option>
                             <option value="mediatype:etext">Etext</option>
                             <option value="mediatype:faksimil">Faksimil</option>
@@ -83,7 +83,7 @@
                         </select>
                     </div>
                     <div class="title_select_container">
-                        <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
+                        <select multiple class="filter_select keyword_select" ui-select2 ng-change="refreshData()" ng-model="filters.languages" data-placeholder="Språk …">
                             <option value=""></option>
                             <option value="modernized:true">Moderniserat språk</option>
                             <option value="modernized:false">Ej moderniserat språk</option>
@@ -113,8 +113,8 @@
                     Verk <span class="num_hits" ng-show="titleHits">({{titleHits}})</span>
                 </label>
                 <label class="sc btn btn-small" 
-                    ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors'">
-                    Författare <span class="num_hits">({{getAuthorData().length}})</span>
+                    ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors' && setAuthorData()">
+                    Författare <span class="num_hits">({{authorData.length}})</span>
                 </label>
                 <label class="sc btn btn-small" 
                     ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikter, noveller, essäer, etc. <span class="num_hits" ng-show="parts_hits">({{ parts_hits }})</span></label>
@@ -247,17 +247,16 @@
 
                             <a class="filtered" ng-show="!showInitial">Författare</a>
                         </li> -->
-                        <li ng-show="!authorSearching && !(getAuthorData()).length">
+                        <li ng-show="!authorSearching && !(authorData).length">
                             Inga träffar.
                         </li>
 
-                        <li ng-repeat="author in getAuthorData() | limitTo: rowLimit track by author.author_id"
+                        <li ng-repeat="author in authorData track by author.author_id"
                             ng-click="authorClick($event, author)" 
                             on-finish-render="authorRender()" 
                             id="{{author.author_id}}">
-                            <a ng-href="/forfattare/{{author.author_id}}/" class="item_header" >
-                                <span class="surname">{{author.name_for_index.split(',')[0]}}</span>
-                                <span ng-show="author.name_for_index.split(',').length > 1">,</span> 
+                            <a ng-href="/forfattare/{{author.author_id}}/" class="" >
+                                <span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span>
                                 {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
                             </a>
                         </li>
