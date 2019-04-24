@@ -748,12 +748,14 @@ littb.controller("readingCtrl", function(
             const filename = _.str.lpad(basename, 4, "0")
             let urlFromSize = size => `/txt/${id}/${id}_${size}/${id}_${size}_${filename}.jpeg`
             s.url = urlFromSize(s.size)
+            console.log("s.size", s.size)
             if (s.size < 4) {
                 s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(s.size + 2)} 2x`
             } else if (s.size == 4) {
                 s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(5)} 2x`
             } else {
-                s.srcset = ""
+                $(".img_area .faksimil").attr("srcset", null)
+                s.srcset = null
             }
             const def = $q.defer()
             def.resolve()
