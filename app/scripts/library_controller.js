@@ -565,6 +565,22 @@ littb.controller("libraryCtrl", function(
     s.getPartAuthor = part =>
         (part.authors != null ? part.authors[0] : undefined) || part.work_authors[0]
 
+    s.dl_mode = true
+    s.setDownloadMode = () => {
+        s.dl_mode = true
+    }
+
+    s.toggleDownload = row => {
+        console.log("row", row._download)
+    }
+
+    s.getSelectedDownloads = () => {
+        if (!s.titleArray) {
+            return
+        }
+        return s.titleArray.filter(item => item._download)
+    }
+
     if ($location.search().filter) {
         s.filter = $location.search().filter
     }
