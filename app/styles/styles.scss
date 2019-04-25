@@ -2854,6 +2854,8 @@ $partnav-width : 170px;
 
 .page-library {
     display : inline-flex;
+    width : 100%;
+    padding-right : 0;
     .tooltip {
         font-size : 0.7em;
     }
@@ -2887,9 +2889,10 @@ $partnav-width : 170px;
         -moz-osx-font-smoothing: grayscale;
     }
     #mainview {
-        width : calc(100vw - #{$left-area-width});
+        // width : calc(100vw - #{$left-area-width});
         // width : 100%;
         // padding-bottom : 4em;
+        flex-grow: 1;
         h1 {
             color : white;
         }
@@ -3297,9 +3300,21 @@ $partnav-width : 170px;
                 }
             }
         }
+        .dl {
+            width : 16rem;
+            background-color: rgba(255,255,255,0.55);
+            border : 1px solid #333;
+            font-size : 0.8em;
+        }
         .show_all {
             margin-top: 1em;
             margin-bottom: 1em;
+        }
+
+        .dl_mode {
+            tr:hover {
+                background-color : rgba(255,255,255,0.30);
+            }
         }
         
     } // #mainview
