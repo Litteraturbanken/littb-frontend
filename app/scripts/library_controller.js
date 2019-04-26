@@ -429,13 +429,15 @@ littb.controller("libraryCtrl", function(
         s.titleSearching = true
 
         let isSearchRecent = $location.search().sort == "nytillkommet"
-
+        // TODO: {"_exists": "export>"} if dl_mode
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // if (!_.toPairs(text_filter).length) {
         //     text_filter = null
         // }
         // const about_authors = $location.search().about_authors_filter
-
+        if (s.dl_mode) {
+            filter_and["_exists"] = "export>"
+        }
         const def = backend.getTitles("etext,faksimil,pdf", {
             sort_field: s.sort.works,
             filter_string: s.filter,

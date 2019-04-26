@@ -3305,6 +3305,8 @@ $partnav-width : 170px;
             background-color: rgba(255,255,255,0.55);
             border : 1px solid #333;
             font-size : 0.8em;
+            top : 1rem;
+            height : calc(100vh - 2rem);
         }
         .show_all {
             margin-top: 1em;
