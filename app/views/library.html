@@ -159,7 +159,7 @@
                                     <h3  class="row_title part_header">{{row.label}}</h3>
                                 </td>
                                 <td ng-if="dl_mode && !row.isHeader">
-                                    <input type="checkbox" ng-model="row._download" ng-change="toggleDownload(row)">
+                                    <input type="checkbox" ng-model="row._download" ng-change="toggleDownload(row)" ng-click="$event.stopPropagation()">
                                 </td>
                                 <td ng-if="!row.isHeader" >
                                     <div 
@@ -204,20 +204,12 @@
 
                             </tr>
 
-                            <tr ng-show="!showAllWorks && titleHits > 30">
-                                <td>
-                                    <button class="btn btn-sm show_all"  ng-click="(showAllWorks = true) && fetchParts()">
-                                        Visa alla <span class="num">{{titleHits}}</span> träffar
-                                    </button>
-                                </td>
-                            </tr>
-
-                            <tr ng-if="">
-                                <td>Visa alla <span class="num">{{titleHits}}</span> träffar</td>
-                            </tr>
-                            
-                            
                         </table>
+                        <div ng-show="!showAllWorks && titleHits > 30">
+                            <button class="btn btn-sm show_all"  ng-click="(showAllWorks = true) && fetchParts()">
+                                Visa alla <span class="num">{{titleHits}}</span> träffar
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -320,15 +312,18 @@
 
             </div>
 
-            <div class="dl p-4 ">
-                <h3 class="uppercase text-xl">Nedladdning</h3>
-                <!-- <button class="btn text-sm" ng-click="state_add = true">Lägg till…</button> -->
-
-                <ul>
-                    <li ng-repeat="row in getSelectedDownloads()">
-                        {{row.main_author.surname}} – {{row.shorttitle || row.title}}
-                    </li>
-                </ul>
+            <div>
+                <div class="dl p-4 sticky flex flex-col">
+                    <h3 class="uppercase text-xl">Nedladdning</h3>
+                    <!-- <button class="btn text-sm" ng-click="state_add = true">Lägg till…</button> -->
+                
+                    <ul class="flex-grow">
+                        <li ng-repeat="row in getSelectedDownloads()">
+                            {{row.main_author.surname}} – {{row.shorttitle || row.title}}
+                        </li>
+                    </ul>
+                    <div class="footer"><button class="btn text-sm">Rensa</button><button class="btn text-sm">Ladda ner</button></div>
+                </div>
             </div>
         </div>
     </div>
