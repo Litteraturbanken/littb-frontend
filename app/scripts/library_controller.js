@@ -443,7 +443,7 @@ littb.controller("libraryCtrl", function(
             filter_string: s.filter,
             include:
                 "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported," +
-                "main_author.author_id,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain",
+                "main_author.author_id,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain,export",
             filter_or,
             filter_and,
             partial_string: true,
@@ -578,9 +578,51 @@ littb.controller("libraryCtrl", function(
 
     s.getSelectedDownloads = () => {
         if (!s.titleArray) {
-            return
+            return []
         }
         return s.titleArray.filter(item => item._download)
+    }
+
+    let exportsFromMediatypes = mediatypes => {
+        let dls = s.getSelectedDownloads()
+        let output = []
+        for (let dl of dls) {
+            for (let mt of dl.mediatypes) {
+                if (mediatypes.includes(mt.label)) {
+                    output.push(mt.export)
+                }
+            }
+        }
+        return _.flatten(output)
+    }
+
+    s.getExports = mediatype => {
+        // let types = _.uniq(_.flatten(_.map(dls, dl => _.map(dl.export, "type"))))
+        let exports = exportsFromMediatypes([mediatype])
+        return _.uniqBy(exports, "type")
+    }
+
+    s.toggleDownloadType = (mediatype, downloadtype) => {
+        let exports = exportsFromMediatypes([mediatype])
+        for (let exp of exports) {
+            exp._selected = exp.type == downloadtype
+        }
+    }
+
+    s.getDownloadSet = () => {
+        return exportsFromMediatypes(["etext", "faksimil"]).filter(exp => exp._selected)
+    }
+
+    s.getSize = () => {
+        let size = _.reduce(_.map(s.getDownloadSet() || [], "size"), _.add)
+        if (!size) {
+            return null
+        }
+        return (size / (1024 * 1024)).toFixed(2) // MB
+    }
+    s.onDownload = () => {
+        let exports = s.getDownloadSet()
+        backend.downloadExport(exports)
     }
 
     if ($location.search().filter) {

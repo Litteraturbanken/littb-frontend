@@ -321,7 +321,28 @@
                             {{row.main_author.surname}} – {{row.shorttitle || row.title}}
                         </li>
                     </ul>
-                    <div class="footer"><button class="btn text-sm">Rensa</button><button class="btn text-sm">Ladda ner</button></div>
+                    <div class="footer">
+                        Etext:
+                        <ul>
+                            <li ng-repeat="exp in getExports('etext')">
+                                <button class="btn" ng-class="{active : exp._selected}" ng-click="exp._selected = !exp._selected">
+                                    {{exp.type}}
+                                </button>
+                            </li>
+                        </ul>
+
+                        Faksimil:
+                        <ul>
+                            <li ng-repeat="exp in getExports('faksimil')">
+                                <button class="btn" ng-class="{active : exp._selected}" ng-click="exp._selected = !exp._selected">    
+                                    {{exp.type}}
+                                </button>
+                            </li>
+                        </ul>
+                        <div ng-show="getSize()">Storlek: {{getSize()}} MB</div>
+                        <button class="btn text-sm">Rensa</button>
+                        <button class="btn text-sm" ng-click="onDownload()">Ladda ner</button>
+                    </div>
                 </div>
             </div>
         </div>

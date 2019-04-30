@@ -88,7 +88,12 @@ const expandMediatypes = function(works, mainMediatype) {
                     getMainAuthor(metadata).author_id
                 }/titlar/${metadata.work_title_id || metadata.title_id}/sida/${
                     metadata.startpagename
-                }/${metadata.mediatype}`
+                }/${metadata.mediatype}`,
+                export: _.map(metadata.export, exp => {
+                    exp.lbworkid = metadata.lbworkid
+                    exp.mediatype = metadata.mediatype
+                    return exp
+                })
             }
         }
     }
@@ -944,6 +949,17 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
+        downloadExport(exports) {
+            // /api/download?files=lb124-etext-xml,lb456-etext-txt
+            let files = exports.map(exp => `${exp.lbworkid}-${exp.mediatype}-${exp.type}`)
+            return http({
+                url: "/api/download",
+                params: {
+                    files: files.join(",")
+                }
+            })
+        },
+
         autocomplete(filterstr) {
             return $http({
                 url: `${STRIX_URL}/autocomplete/${filterstr}`
@@ -951,8 +967,9 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 // c.log "autocomplete response", response
                 let data
                 const content = response.data
-                if (content.suggest && content.suggest.length)
+                if (content.suggest && content.suggest.length) {
                     c.log("suggest!", content.suggest[0].text, "score", content.suggest[0].score)
+                }
                 if (!(content.data.length || (content.suggest && content.suggest.length))) {
                     data = [
                         {
