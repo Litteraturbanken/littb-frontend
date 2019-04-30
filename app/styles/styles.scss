@@ -3303,6 +3303,7 @@ $partnav-width : 170px;
         }
         .dl {
             width : 16rem;
+            transition: width 200ms ease-in-out;
             background-color: rgba(255,255,255,0.55);
             border : 1px solid #333;
             font-size : 0.8em;
