@@ -112,7 +112,7 @@
                 <div class="btn-group p-0 mb-10 ">
                     <label class="sc btn btn-small" 
                         ng-model="listType" btn-radio="'works'" ng-click="listType = 'works' && fetchWorks()">
-                        Verk<span class="num_hits" ng-show="titleHits">: {{titleHits}}</span>
+                        Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
                     </label>
                     <label class="sc btn btn-small" ng-class="{disabled: !authorData.length}" 
                         ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors' && setAuthorData()">
@@ -120,99 +120,96 @@
                     </label>
                     <label class="sc btn btn-small" ng-class="{disabled: !parts_hits}" 
                         ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikter, noveller, etc.<span class="num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
-                    <label class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
-                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'epub'">Epub<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label>
+                    <label class="sc btn btn-small" ng-class="{disabled: !titleModel.epub_hits}" 
+                        ng-model="listType" btn-radio="'epub'" ng-click="listType = 'epub' && fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></label>
                     <label class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
                         ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label>
                 </div>
                 
                 
-                <div class="result title pl-0 ml-3 " ng-if="listType == 'works'">
-                    <div class="inline-block sc mr-2">Sortera:</div>
-                    <ul class="part_header top_header mb-4 text-lg inline-block" ng-hide="titleSearching">
+                <ng-include src="'works.html'" ng-if="listType == 'works'"></ng-include>
 
-                        <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
-                            <a href="" ng-click="onSortClick(item)">{{item.label}}</a>
-                            <!-- <i ng-show="item.active" 
-                               class="fa fa-arrows-v text-grey-darkest text-sm"></i> -->
-                        </li>
-                        
-                    </ul>
-                    <div class="table-responsive-sm" >
-                        <table id="table" class="table w-full">
-                            <tr class="spinner_row" ng-show="titleSearching">
-                                <td>
-                                    <i class="spinner fa fa-spinner fa-pulse"></i>
-                                </td>
-                            </tr>
-
-                            <tr ng-show="!titleSearching && !titleArray.length">
-                                <td>Inga träffar. </td>
-                            </tr>
-                            <tr class="work_link" 
-                                ng-repeat="row in titleArray" 
-                                on-finish-render="titleRender()"
-                                ng-class="{'first' : $first}"
-                                ng-click="toggleDownload(row, true)"
-                                >
-                                <td ng-if="row.isHeader">
-                                    <h3  class="row_title part_header">{{row.label}}</h3>
-                                </td>
-                                <td ng-if="dl_mode && !row.isHeader">
-                                    <input type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
-                                </td>
-                                <td class="title" ng-if="!row.isHeader" >
-                                    <div 
-                                     top="$parent.title_off" 
-                                     ng-click="!dl_mode && titleClick($event, row)"
-                                     id="{{getUniqId(row)}}">
-                                    <div class="header">
-                                        <span class="title" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
-                                            <a ng-click="titleHeaderClick($event, row)" >{{row.shorttitle || row.title}} </a>
-                                        </span>
-                                        
-                                        
-                                    </div>
-                                    <div collapse="!row._collapsed">
-                                        <div class="collapse-content" >
-                                            <ul class="links">
-                                                <li ng-repeat="mediatype in row | readMediatypes">
-                                                    <a ng-href="{{mediatype.url}}">Läs som {{mediatype.label}}</a>
-                                                </li>
-                                                <li ng-repeat="mediatype in row | downloadMediatypes">
-                                                    <a ng-href="{{mediatype.url}}" target="_self">Ladda ner {{mediatype.label}}</a>
-                                                </li>
-                                                
-                                                <li ng-show="::row.searchable">
-                                                    <a ng-href="/sok?forfattare={{row.authors[0].author_id}}&titlar={{row.lbworkid}}&avancerad">Gör en sökning i verket</a>
-                                                </li>
-                                                
-                                                <li ng-show="hasMediatype(row, 'etext') || hasMediatype(row, 'faksimil')">
-                                                    <a ng-href="{{row.mediatypes[0].url + '/?om-boken'}}">Läs mer om verket</a>
-                                                </li>
-                                            </ul>
+                <script type="text/ng-template" id="works.html">
+                    <div class="result title pl-0 ml-3 " >
+                        <sort-list ></sort-list>
+                        <div class="table-responsive-sm" >
+                            <table id="table" class="table w-full">
+                                <tr class="spinner_row" ng-show="titleSearching">
+                                    <td>
+                                        <i class="spinner fa fa-spinner fa-pulse"></i>
+                                    </td>
+                                </tr>
+                    
+                                <tr ng-show="!titleSearching && !titleModel[listType].length">
+                                    <td>Inga träffar. </td>
+                                </tr>
+                                <tr class="work_link" 
+                                    ng-repeat="row in titleModel[listType]" 
+                                    on-finish-render="titleRender()"
+                                    ng-class="{'first' : $first}"
+                                    ng-click="toggleDownload(row, true)"
+                                    >
+                                    <td ng-if="row.isHeader">
+                                        <h3  class="row_title part_header">{{row.label}}</h3>
+                                    </td>
+                                    <td ng-if="dl_mode && !row.isHeader">
+                                        <input type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
+                                    </td>
+                                    <td class="title" ng-if="!row.isHeader" >
+                                        <div 
+                                         top="$parent.title_off" 
+                                         ng-click="!dl_mode && titleClick($event, row)"
+                                         id="{{getUniqId(row)}}">
+                                        <div class="header">
+                                            <span class="title" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
+                                                <a ng-if="listType == 'works'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
+                                                <a ng-if="listType == 'epub'" 
+                                                   ng-href="/txt/epub/{{row.main_author.author_id + '_' + (row.work_title_id || row.title_id)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>
+                                            </span>
+                                            
+                                            
                                         </div>
-                                    </div>
-                                </div></td>
-
-                                <td class="align-top text-left hidden sm:table-cell"><span>{{row.sort_date.plain}}</span></td>
-                                <td class="align-top text-right"><span class="author">
-                                            <a ng-href="/forfattare/{{row.main_author.author_id}}">{{row.main_author.surname}}</a> 
-                                            <span ng-if="row.main_author.type == 'editor'">(red.)</span> 
-                                            <span ng-if="row.main_author.type == 'illustrator'">(ill.)</span>
-                                        </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" --></td>
-
-                            </tr>
-
-                        </table>
-                        <div ng-show="!showAllWorks && titleHits > 30">
-                            <button class="btn btn-sm show_all"  ng-click="(showAllWorks = true) && fetchParts()">
-                                Visa alla <span class="num">{{titleHits}}</span> träffar
-                            </button>
+                                        <div ng-if="listType == 'works'" collapse="!row._collapsed">
+                                            <div class="collapse-content" >
+                                                <ul class="links">
+                                                    <li ng-repeat="mediatype in row | readMediatypes">
+                                                        <a ng-href="{{mediatype.url}}">Läs som {{mediatype.label}}</a>
+                                                    </li>
+                                                    <li ng-repeat="mediatype in row | downloadMediatypes">
+                                                        <a ng-href="{{mediatype.url}}" target="_self">Ladda ner {{mediatype.label}}</a>
+                                                    </li>
+                                                    
+                                                    <li ng-show="::row.searchable">
+                                                        <a ng-href="/sok?forfattare={{row.authors[0].author_id}}&titlar={{row.lbworkid}}&avancerad">Gör en sökning i verket</a>
+                                                    </li>
+                                                    
+                                                    <li ng-show="hasMediatype(row, 'etext') || hasMediatype(row, 'faksimil')">
+                                                        <a ng-href="{{row.mediatypes[0].url + '/?om-boken'}}">Läs mer om verket</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div></td>
+                    
+                                    <td class="align-top text-left hidden sm:table-cell"><span>{{row.sort_date.plain}}</span></td>
+                                    <td class="align-top text-right"><span class="author">
+                                                <a ng-href="/forfattare/{{row.main_author.author_id}}">{{row.main_author.surname}}</a> 
+                                                <span ng-if="row.main_author.type == 'editor'">(red.)</span> 
+                                                <span ng-if="row.main_author.type == 'illustrator'">(ill.)</span>
+                                            </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" --></td>
+                    
+                                </tr>
+                    
+                            </table>
+                            <div ng-show="!titleModel['show_all_' + listType] && titleModel[listType + '_hits'] > 30">
+                                <button class="btn btn-sm show_all"  ng-click="(titleModel['show_all_' + listType] = true) && fetchWorks(false, listType == 'epub')">
+                                    Visa alla <span class="num">{{titleModel[listType + '_hits']}}</span> träffar
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-
+                </script>
+                    
                 <div class="result author pl-0 sm:ml-3" ng-if="listType == 'authors'">
                     <sort-list ></sort-list>
                     <div class=""> 
@@ -229,13 +226,13 @@
                                 <a class="works" 
                                     ng-show="showInitial" 
                                     ng-disabled="!showPopularAuth"  ng-click="showPopularAuth = false">Alla Författare</a>
-
+                
                                 <a class="filtered" ng-show="!showInitial">Författare</a>
                             </li> -->
                             <li ng-show="!authorSearching && !(authorData).length">
                                 Inga träffar.
                             </li>
-
+                
                             <li ng-repeat="author in authorData track by author.author_id"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()" 
@@ -248,6 +245,8 @@
                         </ul>
                     </div>
                 </div>
+                
+                <ng-include src="'works.html'" ng-if="listType == 'epub'"></ng-include>
 
                 <div class="result title pl-0 sm:ml-3" ng-if="listType == 'audio'">
                     <!-- <li class="part_header audio" ng-hide="showInitial || !audio_list.length">

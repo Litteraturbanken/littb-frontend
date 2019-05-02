@@ -3171,6 +3171,11 @@ $partnav-width : 170px;
             // }
         }
         .result {
+            .sort_item {
+                &.active,&:hover,&:active {
+                    text-decoration : underline;
+                }
+            }
             .top_header {
                 margin-top : 0;
                 li {

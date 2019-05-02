@@ -8,13 +8,11 @@ littb.directive("sortList", () => ({
     restrict: "E",
     template: `
     <div>
-    <div class="inline-block sc mr-2">Sortera på:</div>
+    <div class="inline-block sc mr-2">Sortera: </div>
     <ul class="part_header top_header mb-4 text-lg inline-block">
 
         <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
-            <a href="" ng-click="onSortClick(item)">{{item.label}}</a>
-            <i ng-show="item.active" 
-               class="fa fa-arrows-v text-grey-darkest text-sm"></i>
+            <a class="sort_item" href="" ng-click="onSortClick(item)" ng-class="{active : item.active}">{{item.label}}</a>
         </li>
     </ul>
     </div>
@@ -168,6 +166,9 @@ littb.controller("libraryCtrl", function(
 
     s.titleRender = function() {
         console.log("titleRender")
+        if (s.listType == "epub") {
+            return
+        }
         if (
             $location.search()["title"] &&
             s.titleByPath &&
@@ -225,13 +226,17 @@ littb.controller("libraryCtrl", function(
         }
         if (item.search) {
             $location.search({ sort: item.search })
+        } else {
+            $location.search({ sort: null })
         }
         s.sort[s.listType] = item.val + "|" + item.dir
 
         if (s.listType == "works") {
-            s.fetchWorks(false)
+            s.fetchWorks(false, false)
         } else if (s.listType == "parts") {
             s.fetchParts(false)
+        } else if (s.listType == "epub") {
+            s.fetchWorks(false, true)
         } else if (s.listType == "audio") {
             fetchAudio(false)
         } else if (s.listType == "authors") {
@@ -318,6 +323,7 @@ littb.controller("libraryCtrl", function(
             }
         ]
     }
+    s.sortItems["epub"] = _.cloneDeep(s.sortItems.works)
     // s.sortSelectSetup = {
     //     minimumResultsForSearch: -1,
     //     templateSelection(item) {
@@ -331,7 +337,8 @@ littb.controller("libraryCtrl", function(
             backend.logLibrary(s.rowfilter)
         }
 
-        s.fetchWorks(s.listType !== "works")
+        s.fetchWorks(s.listType !== "works", false)
+        s.fetchWorks(s.listType !== "epub", true)
         s.fetchParts(s.listType !== "parts")
         fetchAudio(s.listType !== "audio")
     }
@@ -421,7 +428,15 @@ littb.controller("libraryCtrl", function(
                 }
             })
 
-    s.fetchWorks = countOnly => {
+    s.titleModel = {
+        works: [],
+        epub: [],
+        works_hits: 0,
+        epub_hits: 0,
+        show_all_works: false,
+        show_all_epub: false
+    }
+    s.fetchWorks = (countOnly, epubOnly) => {
         let size = { from: 0, to: s.showAllWorks ? 10000 : 100 }
         if (countOnly) {
             size = { from: 0, to: 0 }
@@ -437,6 +452,9 @@ littb.controller("libraryCtrl", function(
         // const about_authors = $location.search().about_authors_filter
         if (s.dl_mode) {
             filter_and["_exists"] = "export>"
+        }
+        if (epubOnly) {
+            filter_and.has_epub = true
         }
         const def = backend.getTitles("etext,faksimil,pdf", {
             sort_field: s.sort.works,
@@ -461,11 +479,12 @@ littb.controller("libraryCtrl", function(
             s.titleByPath = _.groupBy(titles, item => item.titlepath)
 
             if (isSearchRecent) {
-                s.titleArray = decorateRecent(titles)
+                s.titleModel[epubOnly ? "epub" : "works"] = decorateRecent(titles)
             } else {
-                s.titleArray = titles
+                s.titleModel[epubOnly ? "epub" : "works"] = titles
             }
-            s.titleHits = hits
+            s.titleModel[epubOnly ? "epub_hits" : "works_hits"] = hits
+            // s.titleHits = hits
             s.currentAuthors = util.sortAuthors(
                 author_aggs.map(({ author_id }) => s.authorsById[author_id])
             )
@@ -498,13 +517,13 @@ littb.controller("libraryCtrl", function(
             return [Number(day), months[month - 1], year].join(" ")
         }
 
-        s.titleGroups = _.groupBy(titles, "imported")
+        let titleGroups = _.groupBy(titles, "imported")
 
         let output = []
-        for (let datestr in s.titleGroups) {
+        for (let datestr in titleGroups) {
             // TODO: fix locale format, 'femte maj 2017'
             // output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
-            const titles = s.titleGroups[datestr]
+            const titles = titleGroups[datestr]
             output.push({ isHeader: true, label: dateFmt(datestr) })
             output = output.concat(_.sortBy(titles, ["sortfield"]))
         }
@@ -567,7 +586,7 @@ littb.controller("libraryCtrl", function(
     s.getPartAuthor = part =>
         (part.authors != null ? part.authors[0] : undefined) || part.work_authors[0]
 
-    s.dl_mode = true
+    s.dl_mode = false
     s.setDownloadMode = () => {
         s.dl_mode = true
     }
