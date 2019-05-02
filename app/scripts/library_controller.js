@@ -258,12 +258,12 @@ littb.controller("libraryCtrl", function(
                 active: true
             },
             {
-                label: "Kronologiskt",
+                label: "Årtal",
                 val: "sort_date.date",
                 dir: "desc"
             },
             {
-                label: "Tillkommet",
+                label: "Nytillkommet",
                 // val: "imported|desc,sortfield|asc",
                 val: "imported",
                 dir: "desc",
@@ -273,7 +273,7 @@ littb.controller("libraryCtrl", function(
         authors: [
             { label: "Namn", val: "name_for_index", dir: "asc" },
             { label: "Popularitet", val: "popularity", dir: "desc" },
-            { label: "Kronologiskt", val: "birth.date", dir: "asc" }
+            { label: "Årtal", val: "birth.date", dir: "asc" }
         ],
         parts: [
             {
@@ -294,7 +294,7 @@ littb.controller("libraryCtrl", function(
             //     active: true
             // },
             // {
-            //     label: "Kronologiskt",
+            //     label: "Årtal",
             //     val: "sort_date.date",
             //     dir: "desc"
             // }
@@ -572,8 +572,16 @@ littb.controller("libraryCtrl", function(
         s.dl_mode = true
     }
 
-    s.toggleDownload = row => {
-        console.log("row", row._download)
+    s.downloads = []
+    s.toggleDownload = (row, toggle) => {
+        if (toggle) {
+            row._download = !row._download
+        }
+        if (row._download) {
+            s.downloads.push(row)
+        } else {
+            _.pull(s.downloads, row)
+        }
     }
 
     s.getSelectedDownloads = () => {
@@ -583,8 +591,15 @@ littb.controller("libraryCtrl", function(
         return s.titleArray.filter(item => item._download)
     }
 
+    s.clearDownloads = () => {
+        for (let dl of s.downloads) {
+            dl._download = false
+        }
+        s.downloads = []
+    }
+
     let exportsFromMediatypes = mediatypes => {
-        let dls = s.getSelectedDownloads()
+        let dls = s.downloads
         let output = []
         for (let dl of dls) {
             for (let mt of dl.mediatypes) {
@@ -597,7 +612,6 @@ littb.controller("libraryCtrl", function(
     }
 
     s.getExports = mediatype => {
-        // let types = _.uniq(_.flatten(_.map(dls, dl => _.map(dl.export, "type"))))
         let exports = exportsFromMediatypes([mediatype])
         return _.uniqBy(exports, "type")
     }
@@ -617,6 +631,9 @@ littb.controller("libraryCtrl", function(
         let size = _.reduce(_.map(s.getDownloadSet() || [], "size"), _.add)
         if (!size) {
             return null
+        }
+        if (size < 1050000) {
+            return Math.round(size / 1024).toString() + " KB" // KB
         }
         return (size / (1024 * 1024)).toFixed(2) // MB
     }
