@@ -2990,7 +2990,6 @@ $partnav-width : 170px;
 
             .more {
                 padding-left : 2px;
-                margin-top: 1em;
                 font-size: 1rem;
                 @include small-caps();
                 a {
@@ -3093,8 +3092,10 @@ $partnav-width : 170px;
         th {
             padding-bottom : 1em;
         }
+        td.title {
+            max-width : 380px;
+        }
         td {
-            max-width : 160px;
         }
         .authorselect {
             width : 220px;
@@ -3308,7 +3309,8 @@ $partnav-width : 170px;
             border : 1px solid #333;
             font-size : 0.8em;
             top : 1rem;
-            height : calc(100vh - 2rem);
+            min-height : 17rem;
+            max-height : calc(100vh - 2rem);
         }
         .show_all {
             margin-top: 1em;

@@ -71,8 +71,7 @@
                     </select> 
                 </div> -->
                 
-                <div class="more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
-
+                <div class="more mt-2" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
                 <div class="more_container" ng-class="{show_more : show_more}" ng-show="show_more">
                     <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-change="refreshData()" ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
@@ -102,38 +101,41 @@
                         </select>
                     </div>
                 </div>
-                <a class="btn text-xs submit pull-right" ng-click="setDownloadMode()">Ladda ner…</a>
+                <div class="more"><a ng-click="setDownloadMode()"><i class="fa fa-caret-right"></i> Ladda ner källmaterial</a></div>
+                <!-- <a class="btn text-xs submit pull-right" ng-click="setDownloadMode()">Ladda ner…</a> -->
             </div>
         </form>
         
         <!-- <div class="row box_container"> -->
-        <div class="inline-flex items-stretch justify-between w-full">
+        <div class="inline-flex items-stretch w-full">
             <div class="box sm:p-6 p-2 max-w-xl" >
 
                 <div class="btn-group p-0 mb-10 ">
                     <label class="sc btn btn-small" 
                         ng-model="listType" btn-radio="'works'" ng-click="listType = 'works' && fetchWorks()">
-                        Verk <span class="num_hits" ng-show="titleHits">({{titleHits}})</span>
+                        Verk<span class="num_hits" ng-show="titleHits">: {{titleHits}}</span>
                     </label>
-                    <label class="sc btn btn-small" 
+                    <label class="sc btn btn-small" ng-class="{disabled: !authorData.length}" 
                         ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors' && setAuthorData()">
-                        Författare <span class="num_hits">({{authorData.length}})</span>
+                        Författare<span class="num_hits">: {{authorData.length}}</span>
                     </label>
-                    <label class="sc btn btn-small" 
-                        ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikter, noveller, essäer, etc. <span class="num_hits" ng-show="parts_hits">({{ parts_hits }})</span></label>
-                    <label class="sc btn btn-small" 
-                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljudarkivet <span class="num_hits" ng-show="audio_list.length">({{audio_list.length}})</span></label>
+                    <label class="sc btn btn-small" ng-class="{disabled: !parts_hits}" 
+                        ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikter, noveller, etc.<span class="num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
+                    <label class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
+                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'epub'">Epub<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label>
+                    <label class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
+                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label>
                 </div>
                 
                 
                 <div class="result title pl-0 ml-3 " ng-if="listType == 'works'">
-                    <div class="inline-block sc mr-2">Sortera på:</div>
+                    <div class="inline-block sc mr-2">Sortera:</div>
                     <ul class="part_header top_header mb-4 text-lg inline-block" ng-hide="titleSearching">
 
                         <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
                             <a href="" ng-click="onSortClick(item)">{{item.label}}</a>
-                            <i ng-show="item.active" 
-                               class="fa fa-arrows-v text-grey-darkest text-sm"></i>
+                            <!-- <i ng-show="item.active" 
+                               class="fa fa-arrows-v text-grey-darkest text-sm"></i> -->
                         </li>
                         
                     </ul>
@@ -148,20 +150,19 @@
                             <tr ng-show="!titleSearching && !titleArray.length">
                                 <td>Inga träffar. </td>
                             </tr>
-                            <!-- orderBy | 'sortkey' -->
                             <tr class="work_link" 
                                 ng-repeat="row in titleArray" 
                                 on-finish-render="titleRender()"
                                 ng-class="{'first' : $first}"
-                                ng-click="row._download = !row._download"
+                                ng-click="toggleDownload(row, true)"
                                 >
                                 <td ng-if="row.isHeader">
                                     <h3  class="row_title part_header">{{row.label}}</h3>
                                 </td>
                                 <td ng-if="dl_mode && !row.isHeader">
-                                    <input type="checkbox" ng-model="row._download" ng-change="toggleDownload(row)" ng-click="$event.stopPropagation()">
+                                    <input type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
                                 </td>
-                                <td ng-if="!row.isHeader" >
+                                <td class="title" ng-if="!row.isHeader" >
                                     <div 
                                      top="$parent.title_off" 
                                      ng-click="!dl_mode && titleClick($event, row)"
@@ -313,36 +314,44 @@
             </div>
 
             <div>
-                <div class="dl p-4 sticky flex flex-col">
+                <div class="dl ml-4 p-4 sticky flex flex-col">
                     <h3 class="uppercase text-xl">Nedladdning</h3>
                     <!-- <button class="btn text-sm" ng-click="state_add = true">Lägg till…</button> -->
+
+
+                    <div class="footer">
+
+                        <div ng-if="getExports('etext').length">
+                            <span class="sc">Etext</span>
+                            <ul>
+                                <li ng-repeat="exp in getExports('etext')">
+                                    <button class="btn" ng-class="{active : exp._selected}" ng-click="exp._selected = !exp._selected">
+                                        {{exp.type}}
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div ng-if="getExports('faksimil').length">
+                            <span class="sc">Faksimil</span>
+                            <ul>
+                                <li ng-repeat="exp in getExports('faksimil')">
+                                    <button class="btn" ng-class="{active : exp._selected}" ng-click="exp._selected = !exp._selected">    
+                                        {{exp.type}}
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                        <button class="btn text-sm" ng-click="clearDownloads()">Rensa</button>
+                        <button class="btn text-sm" ng-click="onDownload()" ng-class="{disabled : !getSize()}">Ladda ner {{getSize()}}</button>
+
                 
                     <ul class="flex-grow">
-                        <li ng-repeat="row in getSelectedDownloads()">
-                            {{row.main_author.surname}} – {{row.shorttitle || row.title}}
+                        <li ng-repeat="row in downloads">
+                            <span class="sc">{{row.main_author.surname}}</span> {{row.shorttitle || row.title}}
                         </li>
                     </ul>
-                    <div class="footer">
-                        Etext:
-                        <ul>
-                            <li ng-repeat="exp in getExports('etext')">
-                                <button class="btn" ng-class="{active : exp._selected}" ng-click="exp._selected = !exp._selected">
-                                    {{exp.type}}
-                                </button>
-                            </li>
-                        </ul>
 
-                        Faksimil:
-                        <ul>
-                            <li ng-repeat="exp in getExports('faksimil')">
-                                <button class="btn" ng-class="{active : exp._selected}" ng-click="exp._selected = !exp._selected">    
-                                    {{exp.type}}
-                                </button>
-                            </li>
-                        </ul>
-                        <div ng-show="getSize()">Storlek: {{getSize()}} MB</div>
-                        <button class="btn text-sm">Rensa</button>
-                        <button class="btn text-sm" ng-click="onDownload()">Ladda ner</button>
                     </div>
                 </div>
             </div>
