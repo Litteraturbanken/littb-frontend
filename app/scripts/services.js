@@ -949,17 +949,6 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
-        downloadExport(exports) {
-            // /api/download?files=lb124-etext-xml,lb456-etext-txt
-            let files = exports.map(exp => `${exp.lbworkid}-${exp.mediatype}-${exp.type}`)
-            return http({
-                url: "/api/download",
-                params: {
-                    files: files.join(",")
-                }
-            })
-        },
-
         autocomplete(filterstr) {
             return $http({
                 url: `${STRIX_URL}/autocomplete/${filterstr}`

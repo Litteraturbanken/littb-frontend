@@ -437,7 +437,9 @@ littb.controller("libraryCtrl", function(
         show_all_epub: false
     }
     s.fetchWorks = (countOnly, epubOnly) => {
-        let size = { from: 0, to: s.showAllWorks ? 10000 : 100 }
+        let listID = epubOnly ? "epub" : "works"
+        let show_all = s.titleModel["show_all_" + listID]
+        let size = { from: 0, to: show_all ? 10000 : 100 }
         if (countOnly) {
             size = { from: 0, to: 0 }
         }
@@ -586,9 +588,11 @@ littb.controller("libraryCtrl", function(
     s.getPartAuthor = part =>
         (part.authors != null ? part.authors[0] : undefined) || part.work_authors[0]
 
-    s.dl_mode = false
+    s.dl_mode = $location.search().nedladdning
     s.setDownloadMode = () => {
+        s.listType = "works"
         s.dl_mode = true
+        s.fetchWorks(false, false)
     }
 
     s.downloads = []
@@ -656,9 +660,10 @@ littb.controller("libraryCtrl", function(
         }
         return (size / (1024 * 1024)).toFixed(2) // MB
     }
-    s.onDownload = () => {
+    s.getDownloadUrl = () => {
         let exports = s.getDownloadSet()
-        backend.downloadExport(exports)
+        let files = exports.map(exp => `${exp.lbworkid}-${exp.mediatype}-${exp.type}`)
+        return "/api/download?files=" + files.join(",")
     }
 
     if ($location.search().filter) {
@@ -728,6 +733,10 @@ littb.controller("libraryCtrl", function(
             key: "visa",
             expr: "listType",
             default: "works"
+        },
+        {
+            key: "nedladdning",
+            expr: "dl_mode"
         }
         // {
         // key: "sortering",

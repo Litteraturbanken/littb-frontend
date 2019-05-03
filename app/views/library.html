@@ -311,7 +311,7 @@
 
             </div>
 
-            <div>
+            <div ng-if="dl_mode">
                 <div class="dl ml-4 p-4 sticky flex flex-col">
                     <h3 class="uppercase text-xl">Nedladdning</h3>
                     <!-- <button class="btn text-sm" ng-click="state_add = true">Lägg till…</button> -->
@@ -341,7 +341,7 @@
                             </ul>
                         </div>
                         <button class="btn text-sm" ng-click="clearDownloads()">Rensa</button>
-                        <button class="btn text-sm" ng-click="onDownload()" ng-class="{disabled : !getSize()}">Ladda ner {{getSize()}}</button>
+                        <a class="btn text-sm" ng-href="{{getDownloadUrl()}}" ng-class="{disabled : !getSize()}" target="_self" download>Ladda ner {{getSize()}}</a>
 
                 
                     <ul class="flex-grow">
