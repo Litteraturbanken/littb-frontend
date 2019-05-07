@@ -35,6 +35,9 @@ module.exports = {
         ],
         stats: { colors: true },
         historyApiFallback: true
+        // historyApiFallback: {
+        //     index: "/index.html"
+        // }
     },
     module: {
         rules: [
@@ -151,6 +154,7 @@ module.exports = {
     output: {
         filename: "[contenthash].[name].js",
         path: path.resolve(__dirname, "dist"),
-        globalObject: "this"
+        globalObject: "this",
+        publicPath: "/"
     }
 }

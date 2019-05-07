@@ -123,6 +123,13 @@ window.littb = angular
                 templateUrl: require("../views/presentations.html"),
                 controller: "presentationCtrl"
             })
+            .when("/p/:folder/:doc", {
+                redirectTo(routeParams, path, searchVars) {
+                    let folder = { s: "specialomraden", v: "vandringar" }[routeParams.folder]
+                    console.log("folder", routeParams, folder)
+                    return `/presentationer/${folder}/${routeParams.doc}`
+                }
+            })
             .when("/presentationer/:folder/:doc", {
                 controller: [
                     "$scope",
