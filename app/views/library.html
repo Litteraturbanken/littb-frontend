@@ -101,7 +101,14 @@
                         </select>
                     </div>
                 </div>
-                <div class="more"><a ng-click="setDownloadMode()"><i class="fa fa-caret-right"></i> Ladda ner källmaterial</a></div>
+                <div class="more" ng-class="{show_more : dl_mode}">
+                    <a ng-click="setDownloadMode()"><i class="fa fa-caret-right"></i> 
+                        <span ng-if="!dl_mode">Ladda ner källmaterial</span>
+                        <span ng-if="dl_mode">Avbryt nedladdningen</span>
+            </a></div>
+                <div class="more_container" ng-class="{show_more : dl_mode}" ng-show="dl_mode">
+                    <a class="sc btn btn-small mt-2" ng-click="onSelectVisible()">Markera synliga verk</a>
+                </div>
                 <!-- <a class="btn text-xs submit pull-right" ng-click="setDownloadMode()">Ladda ner…</a> -->
             </div>
         </form>
@@ -313,30 +320,34 @@
             </div>
 
             <div ng-if="dl_mode">
-                <div class="dl ml-4 p-4 sticky flex flex-col">
+                <div class="dl ml-4 p-4 sticky flex flex-col overflow-auto">
                     <h3 class="uppercase text-xl">Nedladdning</h3>
                     <!-- <button class="btn text-sm" ng-click="state_add = true">Lägg till…</button> -->
 
 
                     <div class="footer">
 
-                        <div ng-if="getExports('etext').length">
+                        <div>
                             <span class="sc">Etext</span>
                             <ul>
-                                <li ng-repeat="exp in getExports('etext')">
-                                    <button class="btn" ng-class="{active : exp._selected}" ng-click="exp._selected = !exp._selected">
-                                        {{exp.type}}
+                                <!-- <li ng-repeat="exp in getExports('etext')"> -->
+                                <li ng-repeat="type in typesConf.etext">
+                                    <button class="btn" ng-class="{active : type.selected, disabled : !exportsFromMediatypes('etext', [type.id]).length}" ng-click="type.selected = !type.selected">
+                                        {{type.label || type.id}}
                                     </button>
                                 </li>
                             </ul>
                         </div>
 
-                        <div ng-if="getExports('faksimil').length">
+                        <div>
                             <span class="sc">Faksimil</span>
                             <ul>
-                                <li ng-repeat="exp in getExports('faksimil')">
-                                    <button class="btn" ng-class="{active : exp._selected}" ng-click="exp._selected = !exp._selected">    
-                                        {{exp.type}}
+                                <!-- <li ng-repeat="exp in getExports('faksimil')"> -->
+                                <li ng-repeat="type in typesConf.faksimil">
+                                    <button class="btn" 
+                                            ng-class="{active : type.selected, disabled : !exportsFromMediatypes('faksimil', [type.id]).length}" 
+                                            ng-click="type.selected = !type.selected">
+                                        {{type.label || type.id}}
                                     </button>
                                 </li>
                             </ul>
@@ -345,7 +356,7 @@
                         <a class="btn text-sm" ng-href="{{getDownloadUrl()}}" ng-class="{disabled : !getSize()}" target="_self" download>Ladda ner {{getSize()}}</a>
 
                 
-                    <ul class="flex-grow">
+                    <ul class="mt-2 flex-grow">
                         <li ng-repeat="row in downloads">
                             <span class="sc">{{row.main_author.surname}}</span> {{row.shorttitle || row.title}}
                         </li>

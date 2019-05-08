@@ -39,6 +39,7 @@ littb.controller("libraryCtrl", function(
     // s.showPopular = true
     s.showInitial = true
     s.show_more = $location.search().avancerat != null
+    s.show_dl = $location.search().avancerat != null
 
     s.listType = $location.search().visa || "works"
 
@@ -590,9 +591,21 @@ littb.controller("libraryCtrl", function(
 
     s.dl_mode = $location.search().nedladdning
     s.setDownloadMode = () => {
-        s.listType = "works"
-        s.dl_mode = true
-        s.fetchWorks(false, false)
+        if (!s.dl_mode) {
+            s.listType = "works"
+            s.dl_mode = true
+            s.fetchWorks(false, false)
+        } else {
+            s.dl_mode = false
+            s.fetchWorks(false, false)
+        }
+    }
+
+    s.onSelectVisible = () => {
+        for (let row of s.titleModel.works) {
+            row._download = true
+        }
+        s.downloads = _.uniq([...s.downloads, ...s.titleModel.works])
     }
 
     s.downloads = []
@@ -607,13 +620,6 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    s.getSelectedDownloads = () => {
-        if (!s.titleArray) {
-            return []
-        }
-        return s.titleArray.filter(item => item._download)
-    }
-
     s.clearDownloads = () => {
         for (let dl of s.downloads) {
             dl._download = false
@@ -621,33 +627,51 @@ littb.controller("libraryCtrl", function(
         s.downloads = []
     }
 
-    let exportsFromMediatypes = mediatypes => {
-        let dls = s.downloads
+    s.exportsFromMediatypes = (mediatype, types) => {
         let output = []
-        for (let dl of dls) {
+        for (let dl of s.downloads) {
             for (let mt of dl.mediatypes) {
-                if (mediatypes.includes(mt.label)) {
-                    output.push(mt.export)
+                if (mediatype == mt.label) {
+                    output = [...output, ...mt.export.filter(exp => types.includes(exp.type))]
                 }
             }
         }
-        return _.flatten(output)
+        return output
     }
 
-    s.getExports = mediatype => {
-        let exports = exportsFromMediatypes([mediatype])
-        return _.uniqBy(exports, "type")
+    // s.getExports = mediatype => {
+    //     let exports = s.exportsFromMediatypes([mediatype])
+    //     return _.uniqBy(exports, "type")
+    // }
+
+    // s.toggleDownloadType = (mediatype, downloadtype) => {
+    //     let exports = s.exportsFromMediatypes([mediatype])
+    //     for (let exp of exports) {
+    //         exp._selected = exp.type == downloadtype
+    //     }
+    // }
+
+    s.typesConf = {
+        etext: [{ id: "txt", label: "text" }, { id: "workdb" }, { id: "xml" }],
+        faksimil: [{ id: "txt", label: "text" }, { id: "workdb" }, { id: "xml" }, { id: "pdf" }]
     }
 
-    s.toggleDownloadType = (mediatype, downloadtype) => {
-        let exports = exportsFromMediatypes([mediatype])
-        for (let exp of exports) {
-            exp._selected = exp.type == downloadtype
-        }
-    }
+    // s.toggleDownloadType = (mediatype, type) => {
+    //     _.find(s.typesConf[mediatype], item => item.label == type).selected = true
+    // }
 
     s.getDownloadSet = () => {
-        return exportsFromMediatypes(["etext", "faksimil"]).filter(exp => exp._selected)
+        let { etext, faksimil } = s.typesConf
+        etext = _.filter(etext, "selected")
+        faksimil = _.filter(faksimil, "selected")
+        let output = []
+        if (etext.length) {
+            output = [...output, ...s.exportsFromMediatypes("etext", _.map(etext, "id"))]
+        }
+        if (faksimil.length) {
+            output = [...output, ...s.exportsFromMediatypes("faksimil", _.map(faksimil, "id"))]
+        }
+        return output
     }
 
     s.getSize = () => {
@@ -656,9 +680,9 @@ littb.controller("libraryCtrl", function(
             return null
         }
         if (size < 1050000) {
-            return Math.round(size / 1024).toString() + " KB" // KB
+            return Math.round(size / 1024).toString() + " KB"
         }
-        return (size / (1024 * 1024)).toFixed(2) // MB
+        return (size / (1024 * 1024)).toFixed(2) + "MB"
     }
     s.getDownloadUrl = () => {
         let exports = s.getDownloadSet()
@@ -717,6 +741,20 @@ littb.controller("libraryCtrl", function(
             val_in: listValIn,
             val_out: listValOut
         },
+        // {
+        // TODO: deep linking to download list: needs backend support for getting
+        // a list of works given a list of lbworkids
+        //     key: "nedladdningar",
+        //     expr: "downloads",
+        //     val_in: val => {
+        //         if(!s.titleModel.works) {return}
+        //         s.clearDownloads()
+
+        //         for(let lbworkid of val.split(",")) {
+
+        //         }
+        //     val_out: listValOut
+        // },
         {
             key: "avancerat",
             expr: "show_more"
