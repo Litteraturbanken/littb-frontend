@@ -220,35 +220,7 @@ littb.controller("libraryCtrl", function(
         parts: "sortkey|asc",
         audio: "title.raw|asc"
     }
-    s.onSortClick = item => {
-        if (item.active) {
-            item.dir = item.dir == "asc" ? "desc" : "asc"
-        } else {
-            for (let obj of s.sortItems[s.listType]) {
-                obj.active = false
-            }
-            item.active = true
-        }
-        if (item.search) {
-            $location.search("sort", item.search)
-        } else {
-            $location.search("sort", null)
-        }
-        s.sort[s.listType] = item.val + "|" + item.dir
 
-        if (s.listType == "works") {
-            s.fetchWorks(false, false)
-        } else if (s.listType == "parts") {
-            s.fetchParts(false)
-        } else if (s.listType == "epub") {
-            s.fetchWorks(false, true)
-        } else if (s.listType == "audio") {
-            fetchAudio(false)
-        } else if (s.listType == "authors") {
-            s.setAuthorData()
-        }
-        // s.refreshData()
-    }
     s.sortItems = {
         works: [
             {
@@ -382,6 +354,12 @@ littb.controller("libraryCtrl", function(
     s.setAuthorData = function() {
         let [key, dir] = (s.sort.authors || "").split("|")
         let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
+        console.log(
+            "s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors",
+            s.currentAuthors.length,
+            s.currentPartAuthors.length,
+            s.currentAudioAuthors.length
+        )
 
         if (s.filters["main_author.gender"]) {
             authors = authors.filter(item => item.gender == s.filters["main_author.gender"])
@@ -404,6 +382,7 @@ littb.controller("libraryCtrl", function(
                 dir || "asc"
             )
         }
+        console.log("setAuthorData", s.authorData.length)
     }
     let hasActiveFilter = () => {
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
@@ -463,6 +442,7 @@ littb.controller("libraryCtrl", function(
             })
         $q.all([def, authors]).then(([authorids]) => {
             s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
+            s.setAuthorData()
         })
     }
 
@@ -532,6 +512,47 @@ littb.controller("libraryCtrl", function(
 
             s.titleSearching = false
         })
+    }
+
+    s.onSortClick = item => {
+        if (item.active) {
+            item.dir = item.dir == "asc" ? "desc" : "asc"
+        } else {
+            for (let obj of s.sortItems[s.listType]) {
+                obj.active = false
+            }
+            item.active = true
+        }
+        if (item.search) {
+            $location.search("sort", item.search)
+        } else {
+            $location.search("sort", null)
+        }
+        s.sort[s.listType] = item.val + "|" + item.dir
+
+        if (s.listType == "works") {
+            s.fetchWorks(false, false)
+        } else if (s.listType == "parts") {
+            s.fetchParts(false)
+        } else if (s.listType == "epub") {
+            s.fetchWorks(false, true)
+        } else if (s.listType == "audio") {
+            fetchAudio(false)
+        } else if (s.listType == "authors") {
+            s.setAuthorData()
+        }
+        // s.refreshData()
+    }
+    let sortInit = $location.search().sort || "popularitet"
+
+    let sortItem = _.find(s.sortItems[s.listType], function(item) {
+        return item.search == sortInit
+    })
+    if (sortItem) {
+        s.onSortClick(sortItem)
+    } else {
+        console.warn("Sort state init failed", s.listType, sortInit)
+        $location.search({})
     }
 
     // s.showAllWorks = function() {
@@ -739,6 +760,7 @@ littb.controller("libraryCtrl", function(
     const listValOut = val => {
         return (val || []).join(",")
     }
+    let isInitListType = false
     util.setupHashComplex(s, [
         {
             key: "filter",
@@ -808,9 +830,19 @@ littb.controller("libraryCtrl", function(
             key: "visa",
             expr: "listType",
             default: "works",
-            post_change: function(val) {
-                console.log("val", val)
-                $location.search("sort", null)
+            post_change: function(listType) {
+                if (isInitListType) {
+                    let sortItem = _.find(s.sortItems[listType || "works"], function(item) {
+                        return item.active
+                    })
+
+                    if (sortItem.search) {
+                        $location.search("sort", sortItem.search)
+                    } else {
+                        $location.search("sort", null)
+                    }
+                }
+                isInitListType = true
             }
         },
         {

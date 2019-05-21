@@ -372,7 +372,7 @@
         margin-top: 8.4em;
         width : auto;
     }
-    p, #{headers()} {
+    p, h1,h2,h3,h4,h5,h6 {
         max-width: $column_width;
     }
     .ulink {
