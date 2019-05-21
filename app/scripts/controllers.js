@@ -1176,7 +1176,7 @@ class Dramaweb {
                 other_roles: "Antal övriga",
                 number_of_pages: "Antal sidor",
                 number_of_acts: "Antal akter",
-                history: "Uppsättningshistorik"
+                history: "Teaterkritik"
             }[key] || key
         )
     }
