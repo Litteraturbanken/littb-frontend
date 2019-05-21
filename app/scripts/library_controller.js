@@ -61,6 +61,10 @@ littb.controller("libraryCtrl", function(
     _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
     s.filters = _.omitBy(s.filters, _.isNil)
 
+    s.currentAuthors = []
+    s.currentPartAuthors = []
+    s.currentAudioAuthors = []
+
     s.normalizeAuthor = $filter("normalizeAuthor")
 
     s.getTitleTooltip = function(attrs) {
@@ -369,12 +373,29 @@ littb.controller("libraryCtrl", function(
     // }
     s.setAuthorData = function() {
         let [key, dir] = (s.sort.authors || "").split("|")
-        console.log("setAuthorData key, dir", key, dir)
-        s.authorData = _.orderBy(
-            _.uniq([].concat(s.currentAuthors, s.currentPartAuthors), "author_id"),
-            key || "name_for_index",
-            dir || "asc"
-        )
+        let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
+
+        if (s.filters["main_author.gender"]) {
+            authors = authors.filter(item => item.gender == s.filters["main_author.gender"])
+        }
+        authors = _.uniq(authors, "author_id")
+        if (key == "name_for_index") {
+            s.authorData = util.sortAuthors(authors, dir)
+        } else {
+            s.authorData = _.orderBy(
+                authors,
+                auth => {
+                    if (key == "popularity") {
+                        return auth.popularity || 0
+                    } else if (key == "birth.date") {
+                        return _.get(auth, "birth.date") || 0
+                    } else {
+                        return auth[key]
+                    }
+                },
+                dir || "asc"
+            )
+        }
     }
     let hasActiveFilter = () => {
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
@@ -404,15 +425,13 @@ littb.controller("libraryCtrl", function(
                 return { titles, hits, author_aggs }
             })
         $q.all([def, authors]).then(([{ author_aggs }]) => {
-            s.currentPartAuthors = util.sortAuthors(
-                author_aggs.map(({ author_id }) => s.authorsById[author_id])
-            )
+            s.currentPartAuthors = author_aggs.map(({ author_id }) => s.authorsById[author_id])
             s.setAuthorData()
         })
     }
 
-    var fetchAudio = () =>
-        backend
+    var fetchAudio = () => {
+        let def = backend
             .getAudioList({
                 string_filter: s.rowfilter,
                 sort_field: s.sort["audio"],
@@ -427,7 +446,17 @@ littb.controller("libraryCtrl", function(
                 } else {
                     s.audio_list = titleArray
                 }
+
+                return _.flatten(
+                    _.map(s.audio_list, item => {
+                        return _.map([...item.authors, ...item.readers], "author_id")
+                    })
+                )
             })
+        $q.all([def, authors]).then(([authorids]) => {
+            s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
+        })
+    }
 
     s.titleModel = {
         works: [],
@@ -488,9 +517,9 @@ littb.controller("libraryCtrl", function(
             }
             s.titleModel[epubOnly ? "epub_hits" : "works_hits"] = hits
             // s.titleHits = hits
-            s.currentAuthors = util.sortAuthors(
-                author_aggs.map(({ author_id }) => s.authorsById[author_id])
-            )
+            if (!epubOnly) {
+                s.currentAuthors = author_aggs.map(({ author_id }) => s.authorsById[author_id])
+            }
             s.setAuthorData()
 
             s.titleSearching = false
