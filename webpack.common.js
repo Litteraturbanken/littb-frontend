@@ -13,6 +13,8 @@ const PATHS = {
 
 const tailwindcss = require("tailwindcss")
 
+const Fiber = require("fibers")
+
 module.exports = {
     entry: "./app/main.js",
     devServer: {
@@ -81,6 +83,8 @@ module.exports = {
                         options: {
                             // sourceMap: process.env.NODE_ENV !== "production",
                             // sourceMapContents: false
+                            implementation: require("sass"),
+                            fiber: Fiber
                         }
                     }
                 ]
