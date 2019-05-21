@@ -3202,57 +3202,15 @@ $partnav-width : 170px;
             &.author {
                 // width : 400px;
                 // flex : 0 auto;
-                .info {
-                    margin-top : 1em;
-                    margin-bottom : 1em;
-                    padding-left : 1.7em;
-                    border-left : 1px dotted $primarycolor;
-                    // max-height : 6.6em;
-                    // overflow: hidden;
-                    // color : grey;
-                    &:not(.show_all):hover:after {
-                        content : "visa mer";
-                    }
-                    // &.show_all {
-                    //     max-height : initial;
-                    //     color : inherit;
-                    // }
-                    & > p:first-of-type {
-                        margin-top : 0;
-                    }
-                    p + br {
-                        display : none;
-                    }
-                    & > p:last-of-type {
-                        margin-bottom : 0;
-                    }
-                    br + br {
-                        display : none;
-                    }
+
+                li {
+                    line-height : 1.2;
                 }
 
-                .item_header {
-                    display: block;
-                    margin-left: 2em;
-                    text-indent: -2em;
-                    cursor : pointer;
-                    text-transform: initial;
-                    .surname {
-                        text-transform: uppercase;
-                        font-size : 0.9em;
-
-                    }
-
-                    .item_preloader {
-                        margin-left : 2em;
-                    }
+                .surname {
+                    text-transform: uppercase;
+                    font-size : 0.9em;
                 }
-
-                .info.show_min:hover {
-                    color : $primarycolor;
-
-                }
-
             }
             .row_title {
                 font-size: 1em;

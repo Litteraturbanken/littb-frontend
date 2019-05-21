@@ -1,4 +1,4 @@
-function sortBy(list, field) {
+function sortBy(list, field, dir) {
     let trans = {
         ..._.fromPairs(
             _.zip(
@@ -8,10 +8,14 @@ function sortBy(list, field) {
         ),
         ...{ Ä: "Å", Å: "Ä", ä: "å", å: "ä" }
     }
-    return _.orderBy(list, function(item) {
-        const transpose = char => trans[char] || char
-        return _.map(_.get(item, field).toUpperCase(), transpose).join("")
-    })
+    return _.orderBy(
+        list,
+        function(item) {
+            const transpose = char => trans[char] || char
+            return _.map(_.get(item, field).toUpperCase(), transpose).join("")
+        },
+        dir || "asc"
+    )
 }
 
 littb.factory("util", function util($location, $filter) {
@@ -77,8 +81,8 @@ littb.factory("util", function util($location, $filter) {
             })
         },
 
-        sortAuthors(authorList) {
-            return sortBy(authorList, "name_for_index")
+        sortAuthors(authorList, dir) {
+            return sortBy(authorList, "name_for_index", dir)
         },
         sortTitles(titleList) {
             return sortBy(titleList, "sortkey")

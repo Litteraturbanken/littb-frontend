@@ -1069,8 +1069,21 @@ littb.factory("authors", function(backend, $q) {
                 "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources")
         )
         .then(function(authors) {
-            const authorsById = _.fromPairs(_.map(authors, item => [item.author_id, item]))
+            let authorsById = _.fromPairs(_.map(authors, item => [item.author_id, item]))
             // c.log "authorsById", authorsById
+
+            if (isDev) {
+                authorsById = new Proxy(authorsById, {
+                    get: function(obj, key) {
+                        if (!obj[key]) {
+                            console.warn("ID missing in author database:", key)
+                        } else {
+                            return obj[key]
+                        }
+                    }
+                })
+            }
+
             return def.resolve([authors, authorsById])
         })
 
