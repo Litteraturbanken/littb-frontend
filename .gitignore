@@ -7,3 +7,4 @@ temp
 app/scripts/bin
 app/styles/styles.css
 test/reports
+stage.sh
