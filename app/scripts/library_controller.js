@@ -230,9 +230,9 @@ littb.controller("libraryCtrl", function(
             item.active = true
         }
         if (item.search) {
-            $location.search({ sort: item.search })
+            $location.search("sort", item.search)
         } else {
-            $location.search({ sort: null })
+            $location.search("sort", null)
         }
         s.sort[s.listType] = item.val + "|" + item.dir
 
@@ -254,36 +254,55 @@ littb.controller("libraryCtrl", function(
             {
                 label: "Titel",
                 val: "sortkey",
-                dir: "asc"
+                dir: "asc",
+                search: "titlar"
             },
             {
                 label: "Författare",
                 val: "main_author.name_for_index",
-                dir: "asc"
+                dir: "asc",
+                search: "forfattare"
             },
             {
                 label: "Populärt",
                 val: "popularity",
                 dir: "desc",
-                active: true
+                active: true,
+                search: "popularitet"
             },
             {
                 label: "Årtal",
                 val: "sort_date.date",
-                dir: "desc"
+                dir: "desc",
+                search: "kronologi"
             },
             {
                 label: "Nytillkommet",
-                // val: "imported|desc,sortfield|asc",
                 val: "imported",
                 dir: "desc",
                 search: "nytillkommet"
             }
         ],
         authors: [
-            { label: "Namn", val: "name_for_index", dir: "asc" },
-            { label: "Popularitet", val: "popularity", dir: "desc" },
-            { label: "Årtal", val: "birth.date", dir: "asc" }
+            {
+                label: "Namn",
+                val: "name_for_index",
+                dir: "asc",
+                search: "namn"
+            },
+            {
+                label: "Popularitet",
+                val: "popularity",
+                dir: "desc",
+                search: "popularitet",
+                active: true
+            },
+            {
+                label: "Årtal",
+                val: "birth.date",
+                dir: "asc",
+                search: "kronologi"
+            }
         ],
         parts: [
             {
@@ -297,17 +316,6 @@ littb.controller("libraryCtrl", function(
                 val: "main_author.name_for_index",
                 dir: "asc"
             }
-            // {
-            //     label: "Populärt",
-            //     val: "popularity",
-            //     dir: "desc",
-            //     active: true
-            // },
-            // {
-            //     label: "Årtal",
-            //     val: "sort_date.date",
-            //     dir: "desc"
-            // }
         ],
         audio: [
             {
@@ -388,7 +396,7 @@ littb.controller("libraryCtrl", function(
                     if (key == "popularity") {
                         return auth.popularity || 0
                     } else if (key == "birth.date") {
-                        return _.get(auth, "birth.date") || 0
+                        return Number(_.get(auth, "birth.date") || 0)
                     } else {
                         return auth[key]
                     }
@@ -799,7 +807,11 @@ littb.controller("libraryCtrl", function(
         {
             key: "visa",
             expr: "listType",
-            default: "works"
+            default: "works",
+            post_change: function(val) {
+                console.log("val", val)
+                $location.search("sort", null)
+            }
         },
         {
             key: "nedladdning",
