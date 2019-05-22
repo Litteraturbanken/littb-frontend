@@ -43,6 +43,8 @@ littb.controller("libraryCtrl", function(
 
     s.listType = $location.search().visa || "works"
 
+    s.authLimit = 150
+
     s.filters = {
         "main_author.gender": $location.search()["kön"],
         authorkeyword: [],
@@ -111,27 +113,6 @@ littb.controller("libraryCtrl", function(
         }, 100)
     })
 
-    // s.filterAuthor = function(author) {
-    //     if (!author) return
-    //     const exprs = (s.rowfilter || "").split(" ")
-
-    //     return _.every(exprs, function(expr) {
-    //         const pseudonym = _.map(author.pseudonym, "full_name").join(" ")
-    //         return new RegExp(expr, "i").test(author.full_name + pseudonym)
-    //     })
-    // }
-
-    // function getPopularTitles() {
-    //     s.titleSearching = true
-    //     backend.getTitles({ sort_field: "popularity|desc" }).then(function({ titles }) {
-    //         s.titleSearching = false
-    //         s.popularTitles = titles
-    //         s.titleByPath = _.groupBy(titles, item => item.titlepath)
-
-    //         return titles
-    //     })
-    // }
-
     s.resetView = function() {
         console.log("resetView")
         s.showInitial = true
@@ -192,7 +173,7 @@ littb.controller("libraryCtrl", function(
     // $timeout () ->
     authors.then(function([authorList, authorsById]) {
         s.authorsById = authorsById
-        s.authorData = _.filter(authorList, item => item.show)
+        // s.authorData = _.filter(authorList, item => item.show)
         s.authorSearching = false
     })
 
@@ -208,12 +189,6 @@ littb.controller("libraryCtrl", function(
         })
     })
 
-    // backend.getPopularAuthors().then(({ auths, hits }) => {
-    //     s.popularAuthors = auths
-    //     s.authHits = hits
-    // })
-
-    // , 10
     s.sort = {
         works: "popularity|desc",
         authors: "popularity|desc",
@@ -309,12 +284,7 @@ littb.controller("libraryCtrl", function(
         ]
     }
     s.sortItems["epub"] = _.cloneDeep(s.sortItems.works)
-    // s.sortSelectSetup = {
-    //     minimumResultsForSearch: -1,
-    //     templateSelection(item) {
-    //         return `Sortering: ${item.text}`
-    //     }
-    // }
+
     s.refreshData = function() {
         s.selectedTitle = null
         s.rowfilter = s.filter
@@ -327,39 +297,11 @@ littb.controller("libraryCtrl", function(
         s.fetchParts(s.listType !== "parts")
         fetchAudio(s.listType !== "audio")
     }
-    // s.getAuthorData = function() {
-    // if (s.showPopularAuth) {
-    //     return s.popularAuthors
-    // else
-    //     filters = getKeywordTextfilter()
-    //     if _.toPairs(filters).length
-    //         return _.filter s.authorData, (auth) ->
-    //             conds = []
-    //             if filters['provenance.library'] == "Dramawebben"
-    //                 conds.push(auth.dramaweb?)
 
-    //             if filters['main_author.gender']
-    //                 conds.push(auth.gender == filters['main_author.gender'])
-
-    //             return _.every conds
-    // } else if (s.showInitial) {
-    //     return s.authorData
-    // } else {
-    // return _.orderBy(
-    //     _.uniq([].concat(s.currentAuthors, s.currentPartAuthors), "author_id"),
-    //     "name_for_index"
-    // )
-    // }
-    // }
     s.setAuthorData = function() {
         let [key, dir] = (s.sort.authors || "").split("|")
+        console.log("key, dir", key, dir)
         let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
-        console.log(
-            "s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors",
-            s.currentAuthors.length,
-            s.currentPartAuthors.length,
-            s.currentAudioAuthors.length
-        )
 
         if (s.filters["main_author.gender"]) {
             authors = authors.filter(item => item.gender == s.filters["main_author.gender"])
@@ -372,7 +314,7 @@ littb.controller("libraryCtrl", function(
                 authors,
                 auth => {
                     if (key == "popularity") {
-                        return auth.popularity || 0
+                        return Number(auth.popularity || 0)
                     } else if (key == "birth.date") {
                         return Number(_.get(auth, "birth.date") || 0)
                     } else {
@@ -381,12 +323,10 @@ littb.controller("libraryCtrl", function(
                 },
                 dir || "asc"
             )
+            // if (!s.showAllAuthors) {
+            //     s.authorData = s.authorData.slice(0, s.authLimit)
+            // }
         }
-        console.log("setAuthorData", s.authorData.length)
-    }
-    let hasActiveFilter = () => {
-        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
-        return _.toPairs({ ...filter_and, ...filter_or }).length
     }
 
     s.fetchParts = () => {
@@ -514,8 +454,8 @@ littb.controller("libraryCtrl", function(
         })
     }
 
-    s.onSortClick = item => {
-        if (item.active) {
+    s.onSortClick = (item, noSwitchDir) => {
+        if (item.active && !noSwitchDir) {
             item.dir = item.dir == "asc" ? "desc" : "asc"
         } else {
             for (let obj of s.sortItems[s.listType]) {
@@ -549,7 +489,7 @@ littb.controller("libraryCtrl", function(
         return item.search == sortInit
     })
     if (sortItem) {
-        s.onSortClick(sortItem)
+        s.onSortClick(sortItem, true)
     } else {
         console.warn("Sort state init failed", s.listType, sortInit)
         $location.search({})
