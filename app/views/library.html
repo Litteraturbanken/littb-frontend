@@ -241,7 +241,7 @@
                                 Inga träffar.
                             </li>
                 
-                            <li ng-repeat="author in authorData track by author.author_id"
+                            <li ng-repeat="author in authorData | limitTo:(authLimit || Infinity) track by author.author_id"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()" 
                                 id="{{author.author_id}}">
@@ -249,6 +249,12 @@
                                     <span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span>
                                     {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
                                 </a>
+                            </li>
+
+                            <li ng-show="authLimit && authorData.length > authLimit">
+                                <button class="btn btn-sm show_all"  ng-click="(authLimit = 0) || setAuthorData()">
+                                    Visa alla <span class="num">{{authorData.length}}</span> träffar
+                                </button>
                             </li>
                         </ul>
                     </div>
@@ -278,7 +284,7 @@
                             </td>
                             <!-- </div> -->
                         </tr>
-                        
+
                     </table>
                 </div>
                 <div class="result title pl-0 sm:ml-3" ng-if="listType == 'parts'">
