@@ -303,9 +303,21 @@ littb.controller("libraryCtrl", function(
         console.log("key, dir", key, dir)
         let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
 
-        if (s.filters["main_author.gender"]) {
-            authors = authors.filter(item => item.gender == s.filters["main_author.gender"])
-        }
+        // if (s.filters["main_author.gender"]) {
+        //     authors = authors.filter(item => item.gender == s.filters["main_author.gender"])
+        // }
+
+        authors = authors.filter(item => {
+            let conds = []
+            if (s.filters["main_author.gender"]) {
+                conds.push(item.gender == s.filters["main_author.gender"])
+            }
+            if (s.filter) {
+                conds.push(item.name_for_index.toLowerCase().match(s.filter))
+            }
+            return conds.every(Boolean)
+        })
+
         authors = _.uniq(authors, "author_id")
         if (key == "name_for_index") {
             s.authorData = util.sortAuthors(authors, dir)
@@ -428,7 +440,7 @@ littb.controller("libraryCtrl", function(
             author_aggs: true,
             ...size
         })
-        $q.all([def, authors]).then(([{ titles, author_aggs, hits }]) => {
+        $q.all([def, authors]).then(([{ titles, author_aggs, hits, distinct_hits }]) => {
             console.log("titleArray after all", titles)
             if (!titles.length) {
                 window.gtag("event", "search-no-hits", {
@@ -443,7 +455,7 @@ littb.controller("libraryCtrl", function(
             } else {
                 s.titleModel[epubOnly ? "epub" : "works"] = titles
             }
-            s.titleModel[epubOnly ? "epub_hits" : "works_hits"] = hits
+            s.titleModel[epubOnly ? "epub_hits" : "works_hits"] = distinct_hits
             // s.titleHits = hits
             if (!epubOnly) {
                 s.currentAuthors = author_aggs.map(({ author_id }) => s.authorsById[author_id])

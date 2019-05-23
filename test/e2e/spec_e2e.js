@@ -1,46 +1,44 @@
 const HOST = process.env.LITTB_DOCKER_HOST || "localhost"
 const get = url => browser.get(`http://${HOST}:9000` + url)
 describe("library authors", function() {
-    let rows = null
     beforeEach(function() {
-        get("/bibliotek")
+        get("/bibliotek?sort=popularitet&visa=authors")
     })
 
     it("should filter using the input", function() {
         const filter = element(By.model("filter"))
         filter.sendKeys("adelb")
-        filter.sendKeys(protractor.Key.ENTER)
-        rows = element.all(By.repeater("author in getAuthorData()"))
-        expect(rows.count()).toEqual(4)
+        filter.sendKeys(protractor.Key.TAB)
+        expect(element.all(By.css(".author_row")).count()).toEqual(1)
     })
 })
 
 describe("library works", function() {
-    let rows = null
     beforeEach(function() {
         get("/bibliotek")
-        rows = element.all(By.repeater("row in listVisibleTitles()"))
     })
 
     it("should filter works using the input", function() {
         const filter = element(By.model("filter"))
         filter.sendKeys("constru")
-        filter.sendKeys(protractor.Key.ENTER)
-        expect(rows.count()).toEqual(1)
+        filter.sendKeys(protractor.Key.TAB)
+        // browser.wait(() => rows.count() == 1)
+
+        expect(element.all(By.css(".work_link")).count()).toEqual(1)
     })
 
     it("should link correctly to reading mode from popular", () => {
         expect(
-            element(By.css("li.work_link.first li:first-of-type a")).getAttribute("href")
+            element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
         ).toEqual(`http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`)
     })
 
     it("should link correctly to reading mode from filtered", () => {
         const filter = element(By.model("filter"))
         filter.sendKeys("aniara")
-        filter.sendKeys(protractor.Key.ENTER)
+        // filter.sendKeys(protractor.Key.ENTER)
         expect(
-            element(By.css("li.work_link.first li:first-of-type a")).getAttribute("href")
+            element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
         ).toEqual(`http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`)
     })
 })
@@ -55,8 +53,8 @@ describe("titles", function() {
         const filter = element(By.model("filter"))
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
-        let num = element(By.css(".show_all .num"))
-        expect(num.getText()).toEqual("815")
+        let num = element(By.css(".parts.num_hits"))
+        expect(num.getText()).toEqual(": 818")
     })
 })
 

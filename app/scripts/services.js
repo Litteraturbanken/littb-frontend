@@ -331,9 +331,14 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params
             }).then(function(response) {
                 c.log("response", response)
-                const { data, author_aggregation, hits } = response.data
+                const { data, author_aggregation, hits, distinct_hits } = response.data
 
-                return { titles: expandMediatypes(data), author_aggs: author_aggregation, hits }
+                return {
+                    titles: expandMediatypes(data),
+                    author_aggs: author_aggregation,
+                    hits,
+                    distinct_hits
+                }
             })
         },
 
