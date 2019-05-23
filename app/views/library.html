@@ -9,7 +9,7 @@
             <div class="">
                 <div class="main_input row no-gutters">
                     <input class="filter_input col-9" autofocus 
-                        ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
+                        ng-model-options='{debounce : {default : 300, blur : 0}, updateOn: "default blur"}' 
                         type="text" 
                         ng-change="refreshData()" ng-model="filter" 
                         placeholder="Skriv författarnamn eller titel">
@@ -127,7 +127,7 @@
                         Författare<span class="num_hits">: {{authorData.length}}</span>
                     </label>
                     <label class="sc btn btn-small" ng-class="{disabled: !parts_hits}" 
-                        ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikter, noveller, etc.<span class="num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
+                        ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikter, noveller, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
                     <label class="sc btn btn-small" ng-class="{disabled: !titleModel.epub_hits}" 
                         ng-model="listType" btn-radio="'epub'" ng-click="listType = 'epub' && fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></label>
                     <label class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
@@ -210,7 +210,8 @@
                     
                             </table>
                             <div ng-show="!titleModel['show_all_' + listType] && titleModel[listType + '_hits'] > 30">
-                                <button class="btn btn-sm show_all"  ng-click="(titleModel['show_all_' + listType] = true) && fetchWorks(false, listType == 'epub')">
+                                <button class="btn btn-sm show_all"
+                                ng-class="'show_all_' + listType"  ng-click="(titleModel['show_all_' + listType] = true) && fetchWorks(false, listType == 'epub')">
                                     Visa alla <span class="num">{{titleModel[listType + '_hits']}}</span> träffar
                                 </button>
                             </div>
@@ -242,6 +243,7 @@
                             </li>
                 
                             <li ng-repeat="author in authorData | limitTo:(authLimit || Infinity) track by author.author_id"
+                                class="author_row"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()" 
                                 id="{{author.author_id}}">
