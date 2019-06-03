@@ -23,7 +23,14 @@ module.exports = merge(common, {
                 ],
                 { nodir: true }
             ),
-            whitelistPatternsChildren: [/page-.*/, /select2/, /modal.*/, /tooltip.*/, /site-.*/],
+            whitelistPatternsChildren: [
+                /page-.*/,
+                /select2/,
+                /modal.*/,
+                /tooltip.*/,
+                /site-.*/,
+                /popup.*/
+            ],
             extractors: [{ extractor: TailwindExtractor, extensions: ["html", "js"] }]
         }),
         new CleanWebpackPlugin(["dist"]),
@@ -63,16 +70,18 @@ module.exports = merge(common, {
         ]
     },
     optimization: {
-        splitChunks: {
-            cacheGroups: {
-                styles: {
-                    name: "styles",
-                    test: /\.css$/,
-                    chunks: "all",
-                    enforce: true
-                }
-            }
-        },
+        // this is throwing off the order of included css libraries
+        // and so has been disabled.
+        // splitChunks: {
+        //     cacheGroups: {
+        //         styles: {
+        //             name: "styles",
+        //             test: /\.css$/,
+        //             chunks: "all",
+        //             enforce: true
+        //         }
+        //     }
+        // },
         minimizer: [
             new UglifyJsPlugin({
                 cache: true,

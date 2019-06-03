@@ -430,6 +430,14 @@ th {
 
 
 // bootstrap overrides
+.popover {
+    max-width : unset;
+}
+.popover-title {
+    font-size : 1rem;
+    text-transform: uppercase;
+    background-color : #dedede;
+}
 .table th, .table td {
     border : none;
     padding: 1px;
@@ -2888,6 +2896,15 @@ $partnav-width : 170px;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
+
+    .btn:active, .btn.active {
+        box-shadow: none;
+        /* border: 2px inset #7a1400; */
+        background-color: darkgrey;
+        color: white;
+        border-color: #333;
+    }
+
     #mainview {
         // width : calc(100vw - #{$left-area-width});
         // width : 100%;

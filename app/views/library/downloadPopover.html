@@ -1,0 +1,27 @@
+<div class="flex justify-between w-64">
+    <div class="mr-4">
+        <h3 class="uppercase text-base">Etext</h3>
+        <ul>
+            <!-- <li ng-repeat="exp in getExports('etext')"> -->
+            <li ng-repeat="type in typesConf.etext">
+                <button class="btn w-full mb-1" ng-class="{active : type.selected, disabled : !exportsFromMediatypes('etext', [type.id]).length}" ng-click="type.selected = !type.selected">
+                    {{type.label || type.id}}
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div>
+        <h3 class="uppercase text-base">Faksimil</h3>
+        <ul>
+            <li ng-repeat="type in typesConf.faksimil">
+                <button class="btn w-full mb-1" 
+                        ng-class="{active : type.selected, disabled : !exportsFromMediatypes('faksimil', [type.id]).length}" 
+                        ng-click="type.selected = !type.selected">
+                    {{type.label || type.id}}
+                </button>
+            </li>
+        </ul>
+    </div>
+</div>
+<a class="btn text-sm pull-right mb-4 mt-8" ng-class="{disabled : !getSize()}" ng-click="onDownload()">Hämta  {{getSize()}}</a>

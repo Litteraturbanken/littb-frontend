@@ -73,6 +73,7 @@ window.littb = angular
         "template/modal/backdrop.html",
         "template/modal/window.html",
         "template/tooltip/tooltip-popup.html",
+        "template/popover/popover.html",
         "template/typeahead/typeahead-popup.html",
         "template/typeahead/typeahead-match.html",
         "template/tabs/tabset.html",
