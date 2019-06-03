@@ -34,6 +34,7 @@ littb.controller("libraryCtrl", function(
     const s = $scope
     s.showAllParts = !!$location.search().alla_titlar
     s.showAllWorks = !!$location.search().alla_verk
+    s.worksListURL = require("../views/library/works_list.html")
     s.titleSearching = false
     s.authorSearching = true
     // s.showPopular = true
@@ -459,6 +460,14 @@ littb.controller("libraryCtrl", function(
             // s.titleHits = hits
             if (!epubOnly) {
                 s.currentAuthors = author_aggs.map(({ author_id }) => s.authorsById[author_id])
+                // make sure checkbox appears selected for works added to download list
+                if (s.dl_mode && s.downloads.length) {
+                    for (let row of s.downloads) {
+                        if (s.titleByPath[row.titlepath]) {
+                            s.titleByPath[row.titlepath][0]._download = true
+                        }
+                    }
+                }
             }
             s.setAuthorData()
 
@@ -599,11 +608,13 @@ littb.controller("libraryCtrl", function(
     s.getPartAuthor = part =>
         (part.authors != null ? part.authors[0] : undefined) || part.work_authors[0]
 
+    s.downloadPopoverURL = require("../views/library/downloadPopover.html")
     s.dl_mode = $location.search().nedladdning
     s.setDownloadMode = () => {
         if (!s.dl_mode) {
             s.listType = "works"
             s.dl_mode = true
+            s.downloads = []
             s.fetchWorks(false, false)
         } else {
             s.dl_mode = false
@@ -618,6 +629,8 @@ littb.controller("libraryCtrl", function(
         s.downloads = _.uniq([...s.downloads, ...s.titleModel.works])
     }
 
+    let notIsRowEq = (r1, r2) => !(r1.titlepath == r2.titlepath && r1.lbworkid == r2.lbworkid)
+
     s.downloads = []
     s.toggleDownload = (row, toggle) => {
         if (toggle) {
@@ -626,7 +639,7 @@ littb.controller("libraryCtrl", function(
         if (row._download) {
             s.downloads.push(row)
         } else {
-            _.pull(s.downloads, row)
+            s.downloads = _.filter(s.downloads, item => notIsRowEq(item, row))
         }
     }
 
@@ -694,10 +707,30 @@ littb.controller("libraryCtrl", function(
         }
         return (size / (1024 * 1024)).toFixed(2) + "MB"
     }
-    s.getDownloadUrl = () => {
-        let exports = s.getDownloadSet()
-        let files = exports.map(exp => `${exp.lbworkid}-${exp.mediatype}-${exp.type}`)
-        return "/api/download?files=" + files.join(",")
+    // s.getDownloadUrl = () => {
+    //     let exports = s.getDownloadSet()
+    //     let files = exports.map(exp => `${exp.lbworkid}-${exp.mediatype}-${exp.type}`)
+    //     return "/api/download?files=" + files.join(",")
+    // }
+    s.onClickOutside = () => {
+        console.log("onClickOutside")
+    }
+    s.onShowPopup = () => {}
+    document.addEventListener("click", function() {
+        if ($(".popover").length) {
+            window.safeApply(s, () => (s.hidePopup = true))
+            window.safeApply(s, () => (s.hidePopup = false))
+        }
+    })
+    $("body").on("click", ".popover", function(event) {
+        console.log("popover click")
+        event.stopPropagation()
+    })
+    // s.$on("$destoy", () => {
+    //     $("body").off("click", ".popover")
+    // })
+    s.onDownload = () => {
+        backend.downloadFiles(s.getDownloadSet())
     }
 
     if ($location.search().filter) {

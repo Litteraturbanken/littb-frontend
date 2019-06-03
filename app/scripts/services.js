@@ -754,6 +754,18 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
+        downloadFiles(exports) {
+            let files = exports.map(exp => `${exp.lbworkid}-${exp.mediatype}-${exp.type}`).join(",")
+
+            let submit = $('<input type="submit" />')
+            let form = $(`<form action="/api/download" method="POST">
+                <input type="hidden" name="files" value="${files}" />
+                </form>`).appendTo("body")
+
+            submit.appendTo(form).click()
+            form.remove()
+        },
+
         searchLexicon(str, id, useWildcard, doSearchId, strict) {
             let params
             const def = $q.defer()
