@@ -295,7 +295,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
-        getTitles(types, options) {
+        getTitles(types, options, disableGrouping = false) {
             let defaults = {
                 from: 0,
                 to: 100,
@@ -335,7 +335,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 const { data, author_aggregation, hits, distinct_hits } = response.data
 
                 return {
-                    titles: expandMediatypes(data),
+                    titles: disableGrouping ? data : expandMediatypes(data),
                     author_aggs: author_aggregation,
                     hits,
                     distinct_hits

@@ -180,7 +180,7 @@
                     </div>
                 </div>
                 
-                <ng-include src="'works.html'" ng-if="listType == 'epub'"></ng-include>
+                <ng-include src="worksListURL" ng-if="listType == 'epub'"></ng-include>
 
                 <div class="result title pl-0 sm:ml-3" ng-if="listType == 'audio'">
                     <!-- <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
@@ -193,7 +193,7 @@
                             <!-- <div class="header" > -->
                             <td tooltip="{{row.title}}" class="title">
                                 <a ng-href="/ljudarkivet?spela={{row.file}}">
-                                {{row.shorttitle}}
+                                {{row.title}}
                                 </a>
                             </td>
                             
