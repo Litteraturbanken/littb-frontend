@@ -108,6 +108,7 @@
                                     ng-href="{{work.mediatypes[0].url + '?om-boken'}}"
                                     tooltip="{{getTitleTooltip(work)}}">
                                     {{work.shorttitle || work.title}}
+                                    <span ng-if="work.imprintyear">({{work.imprintyear}})</span>
                                 </a>
                                 <a class="title" ng-if="work.doc_type == 'infopost'" 
                                     ng-href="{{work.mediatypes[0].url}}"
@@ -124,7 +125,7 @@
                                     <a class="author" href="/forfattare/{{work.work_authors[0].author_id}}">
                                         {{work.work_authors[0].surname}}:
                                     </a> 
-                                    <span class="extras_title">{{work.workshorttitle}}</span>
+                                    <span class="extras_title">{{work.workshorttitle}}</span> <span ng-if="work.imprintyear">({{work.imprintyear}})</span>
                                 </div>
                                 
                                 <span class="dots"></span>

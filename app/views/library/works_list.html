@@ -1,12 +1,10 @@
 <div class="result title pl-0 ml-3 " >
     <sort-list ></sort-list>
     <div class="table-responsive-sm" >
-        <table id="table" class="table w-full">
-            <tr class="spinner_row" ng-show="titleSearching">
-                <td>
-                    <i class="spinner fa fa-spinner fa-pulse"></i>
-                </td>
-            </tr>
+        <div class="spinner_row" ng-show="titleSearching">
+            <i class="spinner fa fa-spinner fa-pulse"></i>
+        </div>
+        <table id="table" class="table w-full table-fixed">
 
             <tr ng-show="!titleSearching && !titleModel[listType].length">
                 <td>Inga träffar. </td>
@@ -20,16 +18,16 @@
                 <td ng-if="row.isHeader">
                     <h3  class="row_title part_header">{{row.label}}</h3>
                 </td>
-                <td ng-if="dl_mode && !row.isHeader">
-                    <input type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
+                <td class="w-6" ng-if="dl_mode && !row.isHeader">
+                    <input class="" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
                 </td>
-                <td class="title" ng-if="!row.isHeader" >
+                <td class="title_col" ng-if="!row.isHeader" >
                     <div 
                      top="$parent.title_off" 
                      ng-click="!dl_mode && titleClick($event, row)"
                      id="{{getUniqId(row)}}">
                     <div class="header">
-                        <span class="title" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
+                        <span class="title_inner" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
                             <a ng-if="listType == 'works'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
                             <a ng-if="listType == 'epub'" 
                                ng-href="/txt/epub/{{row.main_author.author_id + '_' + (row.work_title_id || row.title_id)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>
@@ -59,7 +57,7 @@
                     </div>
                 </div></td>
 
-                <td class="align-top text-left hidden sm:table-cell"><span>{{row.sort_date.plain}}</span></td>
+                <td class="align-top text-left hidden sm:table-cell w-16"><span>{{row.sort_date.plain}}</span></td>
                 <td class="align-top text-right"><span class="author">
                             <a ng-href="/forfattare/{{row.main_author.author_id}}">{{row.main_author.surname}}</a> 
                             <span ng-if="row.main_author.type == 'editor'">(red.)</span> 

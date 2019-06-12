@@ -12,7 +12,9 @@ littb.directive("sortList", () => ({
     <ul class="part_header top_header mb-4 text-lg inline-block">
 
         <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
-            <a class="sort_item" href="" ng-click="onSortClick(item)" ng-class="{active : item.active}">{{item.label}}</a>
+            <a class="sort_item" href="" ng-click="onSortClick(item)" 
+                ng-class="{active : item.active}" ng-disabled="item.active">{{item.label}}</a>
+                
         </li>
     </ul>
     </div>
@@ -225,7 +227,7 @@ littb.controller("libraryCtrl", function(
                 search: "kronologi"
             },
             {
-                label: "Nytillkommet",
+                label: "Nytt",
                 val: "imported",
                 dir: "desc",
                 search: "nytillkommet"
@@ -239,7 +241,7 @@ littb.controller("libraryCtrl", function(
                 search: "namn"
             },
             {
-                label: "Popularitet",
+                label: "Populärt",
                 val: "popularity",
                 dir: "desc",
                 search: "popularitet",
@@ -298,7 +300,9 @@ littb.controller("libraryCtrl", function(
         s.fetchParts(s.listType !== "parts")
         fetchAudio(s.listType !== "audio")
     }
-
+    s.capitalizeLabel = (label) => {
+        return {pdf : "PDF", xml : "XML"}[label] || label
+    }
     s.setAuthorData = function() {
         let [key, dir] = (s.sort.authors || "").split("|")
         console.log("key, dir", key, dir)
@@ -314,7 +318,12 @@ littb.controller("libraryCtrl", function(
                 conds.push(item.gender == s.filters["main_author.gender"])
             }
             if (s.filter) {
-                conds.push(item.name_for_index.toLowerCase().match(s.filter))
+                conds.push(
+                    s.filter
+                        .split(" ")
+                        .map(str => item.name_for_index.toLowerCase().match(str))
+                        .some(Boolean)
+                )
             }
             return conds.every(Boolean)
         })
@@ -371,11 +380,14 @@ littb.controller("libraryCtrl", function(
     }
 
     var fetchAudio = () => {
+        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         let def = backend
             .getAudioList({
                 string_filter: s.rowfilter,
                 sort_field: s.sort["audio"],
-                partial_string: true
+                partial_string: true,
+                // filter_or,
+                // filter_and
             })
             .then(titleArray => {
                 if ($location.search()["kön"]) {
