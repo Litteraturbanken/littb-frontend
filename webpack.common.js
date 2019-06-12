@@ -34,6 +34,7 @@ module.exports = {
                     "/%C3%B6vers%C3%A4ttarlexikon"
                 ],
                 target: "http://demolittb.spraakdata.gu.se",
+                // target: "https://litteraturbanken.se",
                 changeOrigin: true
             }
         ],

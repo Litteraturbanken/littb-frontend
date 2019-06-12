@@ -1,27 +1,31 @@
-<div class="flex justify-between w-64">
+<div class="flex justify-between w-48">
     <div class="mr-4">
         <h3 class="uppercase text-base">Etext</h3>
-        <ul>
+        <ul class="checks">
             <!-- <li ng-repeat="exp in getExports('etext')"> -->
             <li ng-repeat="type in typesConf.etext">
-                <button class="btn w-full mb-1" ng-class="{active : type.selected, disabled : !exportsFromMediatypes('etext', [type.id]).length}" ng-click="type.selected = !type.selected">
-                    {{type.label || type.id}}
-                </button>
+                <input type="checkbox" ng-model="type.selected" class="mb-1 mr-1" ng-class="{active : type.selected, disabled : !exportsFromMediatypes('etext', [type.id]).length}">
+
+
+                <label class="capitalize" for="">{{capitalizeLabel(type.label || type.id)}}</label>
             </li>
         </ul>
     </div>
     
-    <div>
+    <div class="mx-2">
         <h3 class="uppercase text-base">Faksimil</h3>
-        <ul>
+        <ul class="checks">
             <li ng-repeat="type in typesConf.faksimil">
-                <button class="btn w-full mb-1" 
+                <input type="checkbox" ng-model="type.selected" class="mb-1 mr-1" 
                         ng-class="{active : type.selected, disabled : !exportsFromMediatypes('faksimil', [type.id]).length}" 
-                        ng-click="type.selected = !type.selected">
-                    {{type.label || type.id}}
-                </button>
+                       >
+
+                <label class="capitalize" for="">{{capitalizeLabel(type.label || type.id)}}</label>
             </li>
         </ul>
     </div>
 </div>
-<a class="btn text-sm pull-right mb-4 mt-8" ng-class="{disabled : !getSize()}" ng-click="onDownload()">Hämta  {{getSize()}}</a>
+<div class="mt-8 mb-4 flex justify-between">
+    <span class="text-sm self-center">{{getSize()}} </span>
+    <a class="btn text-xs pull-right" ng-class="{disabled : !getSize()}" ng-click="onDownload()">Hämta <i class="fa fa-download ml-2"></i></a>
+</div>

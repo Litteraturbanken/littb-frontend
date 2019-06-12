@@ -432,11 +432,13 @@ th {
 // bootstrap overrides
 .popover {
     max-width : unset;
+    border-radius: 0;
 }
 .popover-title {
     font-size : 1rem;
     text-transform: uppercase;
-    background-color : #dedede;
+    background-color : #f1f1f1;
+    border-radius: 0;
 }
 .table th, .table td {
     border : none;
@@ -2867,11 +2869,16 @@ $partnav-width : 170px;
     .tooltip {
         font-size : 0.7em;
     }
+    .popover {
+        .btn {
+            padding: 0.2em 0.9em 0.2em 0.9em;
+        }
+    }
     .select2-selection__choice {
         font-size: 0.8em;
     }
     .logo_link_monogram {
-        background-image: url("../img/lb_monogram_red_white.svg");
+        background-image: url("../img/lb_monogram_white_white.svg");
     }
     #leftCorridor {
         // flex : 0 1 auto
@@ -2882,7 +2889,7 @@ $partnav-width : 170px;
             }
         }
 
-        margin-right: 80px;
+        margin-right: 66px;
     }
     #rightCorridor {
         display : none;
@@ -2905,6 +2912,10 @@ $partnav-width : 170px;
         border-color: #333;
     }
 
+    .checks {
+        font-size : 0.8em;
+    }
+
     #mainview {
         // width : calc(100vw - #{$left-area-width});
         // width : 100%;
@@ -2917,6 +2928,14 @@ $partnav-width : 170px;
             vertical-align: bottom;
             position: relative;
             top : 1px;
+        }
+        .download_item {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            &:hover {
+                background-color: rgba(255, 255, 255, .3);
+            }
         }
         form {
             max-width : 750px;
@@ -3188,9 +3207,16 @@ $partnav-width : 170px;
             // }
         }
         .result {
+            table td {
+                padding-right: 4px;
+                padding-left: 4px;
+            }
             .sort_item {
                 &.active,&:hover,&:active {
-                    text-decoration : underline;
+                    // color : lightgrey;
+                }
+                &[disabled] {
+                    opacity : 0.7;
                 }
             }
             .top_header {
@@ -3255,20 +3281,23 @@ $partnav-width : 170px;
 
                 }
                 .header {
-                    display : flex;
-                    justify-content : space-around;
+                    // display : flex;
 
                     // & > * {
                         
                     // }
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                 }
-                .title {
-                    flex : 1;
+                .title_col {
+                    width : 57%;
+                    // flex : 1;
                     // color: $primarycolor;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
                     margin-right: 0.3em;
+                    .title_inner {
+
+                    }
                 }
                 .author {
                     // text-transform: uppercase;
@@ -4437,6 +4466,12 @@ grundform-clean {
 .page-presentation {
     background-position-y : -100px !important;
     
+    &:not(.subpage) {
+        h1, .intro {
+            color : white;
+        }
+    }
+
     table {
         max-width : 900px;
         thead, thead * {
@@ -4448,7 +4483,7 @@ grundform-clean {
     }
 
     .logo_link_monogram {
-        background: url("../img/lb_monogram_black_white.svg") no-repeat;
+        background: url("../img/lb_monogram_white_white.svg") no-repeat;
         background-size: cover;
     }
 
@@ -4465,6 +4500,13 @@ grundform-clean {
         ul a {
             @include dotted($primarycolor);
         }
+    }
+
+    .content {
+        height : auto;
+        // overflow : visible;
+        // padding : 0;
+        // background : none;
     }
 
     &.subpage {

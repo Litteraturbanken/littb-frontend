@@ -978,7 +978,7 @@ littb.controller("autocompleteCtrl", function(
                     },
                     {
                         label: "Nytillkommet",
-                        url: "/nytt",
+                        url: "/bibliotek?sort=nytillkommet",
                         typeLabel: "Gå till sidan"
                     },
                     {
