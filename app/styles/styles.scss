@@ -538,7 +538,7 @@ input:focus, button.btn:focus {
 .btn {
     background-color: $transp;
     border-radius: 0;
-    padding: 0.4em 0.9em 0.2em 0.9em;
+    // padding: 0.4em 0.9em 0.2em 0.9em;
     text-transform: uppercase;
     border: 1px solid #999;
     transition : all 200ms;
@@ -3071,7 +3071,7 @@ $partnav-width : 170px;
         .btn-group {
             .btn {
                 background-color : white;
-                padding : 0.2em 0.9em 0.4em 0.9em;
+                // padding : 0.2em 0.9em 0.4em 0.9em;
                 border-color : #333;
                 margin-right: 0.1em;
                 margin-bottom: 0.1em;
@@ -3119,11 +3119,11 @@ $partnav-width : 170px;
             }
         }
         .submit.btn {
-            // font-size: 0.8em;
-            background-color : white;
-            border : 1px solid #333;
-            padding : 0.8em 1.1em 0.6em 1.1em;
+            background-color: white;
+            border: 1px solid #333;
             vertical-align: middle;
+            padding-right: 12px;
+            padding-left: 12px;
         }
         th {
             padding-bottom : 1em;
@@ -3312,7 +3312,7 @@ $partnav-width : 170px;
             }
         }
         .dl {
-            width : 16rem;
+            width : 17rem;
             transition: width 200ms ease-in-out;
             background-color: rgba(255,255,255,0.55);
             border : 1px solid #333;

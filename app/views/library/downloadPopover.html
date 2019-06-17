@@ -1,13 +1,19 @@
-<div class="flex justify-between w-48">
+<div class="text-sm italic">
+{{exportsFromMediatypes('etext', ['workdb']).length}} etext<span ng-if="exportsFromMediatypes('etext', ['workdb']).length != 1">er</span> vald<span ng-if="exportsFromMediatypes('etext', ['workdb']).length != 1">a</span>,
+
+{{exportsFromMediatypes('faksimil', ['workdb']).length}} faksimil<span ng-if="exportsFromMediatypes('faksimil', ['workdb']).length != 1">er</span> vald<span ng-if="exportsFromMediatypes('faksimil', ['workdb']).length != 1">a</span>
+
+</div>
+<div class="flex justify-between w-64">
     <div class="mr-4">
         <h3 class="uppercase text-base">Etext</h3>
         <ul class="checks">
             <!-- <li ng-repeat="exp in getExports('etext')"> -->
-            <li ng-repeat="type in typesConf.etext">
-                <input type="checkbox" ng-model="type.selected" class="mb-1 mr-1" ng-class="{active : type.selected, disabled : !exportsFromMediatypes('etext', [type.id]).length}">
+            <li ng-repeat="type in typesConf.etext" class="whitespace-no-wrap">
+                <input type="checkbox" id="etext_{{$index}}" ng-model="type.selected" class="mb-1 mr-1" 
+                       ng-disabled="!exportsFromMediatypes('etext', [type.id]).length">
 
-
-                <label class="capitalize" for="">{{capitalizeLabel(type.label || type.id)}}</label>
+                <label class="capitalize" for="etext_{{$index}}" ng-class="{active : type.selected, 'text-grey' : !exportsFromMediatypes('etext', [type.id]).length}">{{capitalizeLabel(type.label || type.id)}}</label>
             </li>
         </ul>
     </div>
@@ -15,12 +21,13 @@
     <div class="mx-2">
         <h3 class="uppercase text-base">Faksimil</h3>
         <ul class="checks">
-            <li ng-repeat="type in typesConf.faksimil">
-                <input type="checkbox" ng-model="type.selected" class="mb-1 mr-1" 
-                        ng-class="{active : type.selected, disabled : !exportsFromMediatypes('faksimil', [type.id]).length}" 
-                       >
+            <li ng-repeat="type in typesConf.faksimil" class="whitespace-no-wrap">
+                <input type="checkbox" id="faksimil_{{$index}}" ng-model="type.selected" class="mb-1 mr-1" 
+                       ng-disabled="!exportsFromMediatypes('faksimil', [type.id]).length">
 
-                <label class="capitalize" for="">{{capitalizeLabel(type.label || type.id)}}</label>
+                <label class="capitalize" for="faksimil_{{$index}}" ng-class="{active : type.selected, 'text-grey' : !exportsFromMediatypes('faksimil', [type.id]).length}">{{capitalizeLabel(type.label || type.id)}}</label>
+
+                <div class="text-sm italic text-grey-dark" ng-if="type.disabled">Kommer snart</div>
             </li>
         </ul>
     </div>

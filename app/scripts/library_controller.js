@@ -202,16 +202,17 @@ littb.controller("libraryCtrl", function(
     s.sortItems = {
         works: [
             {
+                label: "Författare",
+                val: "main_author.name_for_index",
+                suffix : ",sortkey|asc",
+                dir: "asc",
+                search: "forfattare"
+            },
+            {
                 label: "Titel",
                 val: "sortkey",
                 dir: "asc",
                 search: "titlar"
-            },
-            {
-                label: "Författare",
-                val: "main_author.name_for_index",
-                dir: "asc",
-                search: "forfattare"
             },
             {
                 label: "Populärt",
@@ -221,7 +222,7 @@ littb.controller("libraryCtrl", function(
                 search: "popularitet"
             },
             {
-                label: "Årtal",
+                label: "Tryckår",
                 val: "sort_date.date",
                 dir: "desc",
                 search: "kronologi"
@@ -256,28 +257,28 @@ littb.controller("libraryCtrl", function(
         ],
         parts: [
             {
+                label: "Författare",
+                val: "main_author.name_for_index",
+                dir: "asc"
+            },
+            {
                 label: "Titel",
                 val: "sortkey",
                 dir: "asc",
                 active: true
             },
+        ],
+        audio: [
             {
                 label: "Författare",
                 val: "main_author.name_for_index",
                 dir: "asc"
-            }
-        ],
-        audio: [
+            },
             {
                 label: "Titel",
                 val: "title.raw",
                 dir: "asc",
                 active: true
-            },
-            {
-                label: "Författare",
-                val: "main_author.name_for_index",
-                dir: "asc"
             },
             {
                 label: "Uppläsare",
@@ -529,7 +530,7 @@ littb.controller("libraryCtrl", function(
         } else {
             $location.search("sort", null)
         }
-        s.sort[s.listType] = item.val + "|" + item.dir
+        s.sort[s.listType] = item.val + "|" + item.dir + (item.suffix || "")
 
         if (s.listType == "works") {
             s.fetchWorks(false, false)
@@ -715,8 +716,8 @@ littb.controller("libraryCtrl", function(
     // }
 
     s.typesConf = {
-        etext: [{ id: "txt", label: "text" }, { id: "workdb" }, { id: "xml" }],
-        faksimil: [{ id: "txt", label: "text" }, { id: "workdb" }, { id: "xml" }, { id: "pdf" }]
+        etext: [{ id: "txt", label: "text" }, { id: "workdb", label: "Metadata" }, { id: "xml" }],
+        faksimil: [{ id: "txt", label: "text" }, { id: "workdb", label: "Metadata" }, { id: "xml" }, { id: "pdf", disabled : true }]
     }
 
     // s.toggleDownloadType = (mediatype, type) => {

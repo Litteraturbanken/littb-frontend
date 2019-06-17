@@ -104,10 +104,10 @@
                 <div class="more" ng-class="{show_more : dl_mode}">
                     <a ng-click="setDownloadMode()"><i class="fa fa-caret-right"></i> 
                         <span ng-if="!dl_mode">Ladda ner källmaterial</span>
-                        <span ng-if="dl_mode">Avbryt nedladdningen</span>
+                        <span ng-if="dl_mode">Stäng källmaterial</span>
             </a></div>
                 <div class="more_container" ng-class="{show_more : dl_mode}" ng-show="dl_mode">
-                    <a class="sc btn btn-small mt-2" ng-click="onSelectVisible()">Markera synliga verk</a>
+                    <a class="sc btn btn-small" ng-click="onSelectVisible()">Välj alla verk i listan</a>
                 </div>
                 <!-- <a class="btn text-xs submit pull-right" ng-click="setDownloadMode()">Ladda ner…</a> -->
             </div>
@@ -118,19 +118,19 @@
             <div class="box sm:p-6 p-2 max-w-xl" >
 
                 <div class="btn-group p-0 mb-10 ">
+                    <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 
+                        ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors' && setAuthorData()">
+                        <span ng-if="!dl_mode">Förf.</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
+                    </label>
                     <label class="sc btn btn-small" 
                         ng-model="listType" btn-radio="'works'" ng-click="listType = 'works' && fetchWorks()">
                         Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
                     </label>
-                    <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 
-                        ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors' && setAuthorData()">
-                        Förf.<span class="num_hits">: {{authorData.length}}</span>
-                    </label>
-                    <label class="sc btn btn-small" ng-class="{disabled: dl_mode ||  !parts_hits}" 
+                    <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !parts_hits}" 
                         ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
-                    <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !titleModel.epub_hits}" 
+                    <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !titleModel.epub_hits}" 
                         ng-model="listType" btn-radio="'epub'" ng-click="listType = 'epub' && fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></label>
-                    <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !audio_list.length}" 
+                    <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
                         ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label>
                 </div>
                 
@@ -257,19 +257,19 @@
                         
                         <button class="btn text-sm mb-4" ng-click="clearDownloads()" ng-class="{disabled : !downloads.length}">Rensa</button>
 
-                        <a class="btn text-sm mb-4"
+                        <button class="btn text-sm mb-4"
                             ng-click="$event.stopPropagation()"
                             ng-class="{disabled : !downloads.length}"
                             popover-template="hidePopup ? undefined : downloadPopoverURL" 
                             popover-title="Välj format"
                             popover-placement="left">
-                            Ladda ner
+                            Välj format
                             <i class="fa fa-download ml-2"></i>
-                        </a>
+                        </button>
 
                 
                     <ul class="mt-2 mb-2 flex-grow">
-                        <li class="download_item" ng-repeat="row in downloads"
+                        <li class="download_item hover:line-through" ng-repeat="row in downloads"
                         ng-click="toggleDownload(row, true)">
                             <span class="sc">{{row.main_author.surname}}</span> {{row.shorttitle || row.title}}
                         </li>
