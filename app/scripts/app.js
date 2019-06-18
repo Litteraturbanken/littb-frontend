@@ -195,12 +195,12 @@ window.littb = angular
             })
             .when("/om/aktuellt", {
                 redirectTo() {
-                    return "/bibliotek?nytillkommet"
+                    return "/bibliotek?sort=nytillkommet"
                 }
             })
             .when("/nytt", {
                 redirectTo() {
-                    return "/bibliotek?nytillkommet"
+                    return "/bibliotek?sort=nytillkommet"
                 }
             })
             .when("/om/:page", {
@@ -385,9 +385,7 @@ window.littb = angular
             )
             .when("/forfattare/:author/titlar/:title/info/:mediatype", {
                 redirectTo(routeParams, path, searchVars) {
-                    return `/forfattare/${routeParams.author}/titlar/${routeParams.title}/${
-                        routeParams.mediatype
-                    }/?om-boken`
+                    return `/forfattare/${routeParams.author}/titlar/${routeParams.title}/${routeParams.mediatype}/?om-boken`
                 }
             })
             .when(["/forfattare/:author/titlar/:title", "/forfattare/:author/titlar/:title/info"], {
@@ -407,9 +405,7 @@ window.littb = angular
                             .then(data =>
                                 $location
                                     .url(
-                                        `/forfattare/${$routeParams.author}/titlar/${
-                                            $routeParams.title
-                                        }/sida/${data.startpagename}/${data.mediatype}?om-boken`
+                                        `/forfattare/${$routeParams.author}/titlar/${$routeParams.title}/sida/${data.startpagename}/${data.mediatype}?om-boken`
                                     )
                                     .replace()
                             )

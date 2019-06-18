@@ -188,7 +188,8 @@ littb.controller("readingCtrl", function(
             event.preventDefault()
         }
         if (s.isEditor) {
-            s.pageix = s.pageix + s.getStep()
+            console.log("s.pageix + s.getStep()", s.pageix, s.getStep())
+            s.pageix = s.pageix + (s.getStep() || 1)
             // s.pageix = s.pageix + 1
             s.pageToLoad = s.pageix
             return
@@ -211,7 +212,7 @@ littb.controller("readingCtrl", function(
         }
         // unless s.pagemap then return
         if (s.isEditor) {
-            s.pageix = s.pageix - s.getStep()
+            s.pageix = s.pageix - (s.getStep() || 1)
             // s.pageix = s.pageix - 1
             s.pageToLoad = s.pageix
             return
@@ -735,6 +736,7 @@ littb.controller("readingCtrl", function(
 
     const infoDef = initSourceInfo()
     const fetchPage = function(ix) {
+        console.log("fetchPage", ix)
         if (mediatype === "etext") {
             return downloadPage(ix)
         } else {
@@ -748,7 +750,7 @@ littb.controller("readingCtrl", function(
             const filename = _.str.lpad(basename, 4, "0")
             let urlFromSize = size => `/txt/${id}/${id}_${size}/${id}_${size}_${filename}.jpeg`
             s.url = urlFromSize(s.size)
-            if(s.sizes) {
+            if (s.sizes) {
                 if (s.size < 4 && s.sizes[s.size + 2]) {
                     s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(s.size + 2)} 2x`
                 } else if (s.size == 4 && s.sizes[3] && s.sizes[4]) {
@@ -757,7 +759,6 @@ littb.controller("readingCtrl", function(
                     $(".img_area .faksimil").attr("srcset", null)
                     s.srcset = null
                 }
-
             }
             const def = $q.defer()
             def.resolve()
@@ -765,10 +766,10 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    const loadPage = val =>
+    const loadPage = val => {
+        c.log("loadPage", val)
         infoDef.then(
             function() {
-                c.log("loadPage", val)
                 if ($route.current.controller !== "readingCtrl") {
                     c.log("resisted page load")
                     return
@@ -815,7 +816,7 @@ littb.controller("readingCtrl", function(
             },
 
             function(err) {
-                c.log("page load error", err, $location.path())
+                c.log("page load error", err, $location.path(), val)
 
                 if (s.isEditor) {
                     fetchPage(Number(val)).then(function() {})
@@ -831,6 +832,7 @@ littb.controller("readingCtrl", function(
                 }
             }
         )
+    }
 
     s.setSize = function(index) {
         c.log("setsize", index)
