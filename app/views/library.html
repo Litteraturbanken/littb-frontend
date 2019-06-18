@@ -120,7 +120,7 @@
                 <div class="btn-group p-0 mb-10 ">
                     <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 
                         ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors' && setAuthorData()">
-                        <span ng-if="!dl_mode">Förf.</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
+                        <span ng-if="!dl_mode">Författare</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
                     </label>
                     <label class="sc btn btn-small" 
                         ng-model="listType" btn-radio="'works'" ng-click="listType = 'works' && fetchWorks()">

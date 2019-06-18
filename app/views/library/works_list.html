@@ -24,7 +24,7 @@
                 <td class="title_col" ng-if="!row.isHeader" >
 
                     <div class="whitespace-no-wrap">
-                        <input class="mr-2" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
+                        <input ng-if="dl_mode" class="mr-2" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
                         <div 
                          top="$parent.title_off" 
                          ng-click="!dl_mode && titleClick($event, row)"
