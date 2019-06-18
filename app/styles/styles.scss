@@ -2867,7 +2867,7 @@ $partnav-width : 170px;
 .page-library {
     display : inline-flex;
     width : 100%;
-    padding-right : 0;
+    // padding-right : 0;
     .tooltip {
         font-size : 0.7em;
     }
@@ -2943,7 +2943,7 @@ $partnav-width : 170px;
             max-width : 750px;
             background-color: rgba(255,255,255,0.55);
             // padding: 0.8em 0.8em 0.8em 1.6em;
-            border: 1px solid #333;
+            // border: 1px solid #333;
             overflow-x : auto;
 
 
@@ -3074,8 +3074,8 @@ $partnav-width : 170px;
                 background-color : white;
                 // padding : 0.2em 0.9em 0.4em 0.9em;
                 border-color : #333;
-                margin-right: 0.1em;
-                margin-bottom: 0.1em;
+                margin-right: 0.2em;
+                margin-bottom: 0.3em;
                 &:hover {
                     background-color : #999 !important;
                 }
@@ -3179,7 +3179,7 @@ $partnav-width : 170px;
             // padding : 1.2em;
             // min-width: 370px;
             background-color: rgba(255,255,255,0.55);
-            border : 1px solid #333;
+            // border : 1px solid #333;
             position: relative;
             font-size : 0.8em;
             text-transform: initial;

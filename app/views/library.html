@@ -1,10 +1,10 @@
 <meta-desc>Blädda bland Litteraturbankens författare och titlar.</meta-desc>
-<h1>Botanisera i biblioteket</h1> <!-- samlingarna -->
+<h1 class="text-4xl ">Botanisera i biblioteket</h1> <!-- samlingarna -->
 <!--  <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span> -->
 <img bkg-img src="../img/library.jpg"></img>
 <div ng-class="{searching:searching, dl_mode : dl_mode}">
     <div id="controls">
-        <form class="sm:p-5 p-2" ng-submit="refreshData()">
+        <form class="sm:p-5 p-2 sm:border border-black" ng-submit="refreshData()">
             
             <div class="">
                 <div class="main_input row no-gutters">
@@ -115,7 +115,7 @@
         
         <!-- <div class="row box_container"> -->
         <div class="inline-flex items-stretch w-full">
-            <div class="box sm:p-6 p-2 max-w-xl" >
+            <div class="box sm:p-6 p-2 max-w-xl sm:border border-black" >
 
                 <div class="btn-group p-0 mb-10 ">
                     <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 
