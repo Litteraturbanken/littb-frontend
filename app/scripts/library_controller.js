@@ -13,7 +13,9 @@ littb.directive("sortList", () => ({
 
         <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
             <a class="sort_item" href="" ng-click="onSortClick(item)" 
-                ng-class="{active : item.active}" ng-disabled="item.active">{{item.label}}</a>
+                ng-class="{active : item.active}">{{item.label}}</a>
+                <i class="fa fa-caret-down" ng-show="item.active && !item.reversed"></i>
+                <i class="fa fa-caret-up" ng-show="item.active && item.reversed"></i>
                 
         </li>
     </ul>
@@ -204,7 +206,7 @@ littb.controller("libraryCtrl", function(
             {
                 label: "Författare",
                 val: "main_author.name_for_index",
-                suffix : ",sortkey|asc",
+                suffix: ",sortkey|asc",
                 dir: "asc",
                 search: "forfattare"
             },
@@ -266,7 +268,7 @@ littb.controller("libraryCtrl", function(
                 val: "sortkey",
                 dir: "asc",
                 active: true
-            },
+            }
         ],
         audio: [
             {
@@ -301,8 +303,8 @@ littb.controller("libraryCtrl", function(
         s.fetchParts(s.listType !== "parts")
         fetchAudio(s.listType !== "audio")
     }
-    s.capitalizeLabel = (label) => {
-        return {pdf : "PDF", xml : "XML"}[label] || label
+    s.capitalizeLabel = label => {
+        return { pdf: "PDF", xml: "XML" }[label] || label
     }
     s.setAuthorData = function() {
         let [key, dir] = (s.sort.authors || "").split("|")
@@ -384,33 +386,35 @@ littb.controller("libraryCtrl", function(
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
 
         let def = backend
-            .getTitles("audio", {
-                sort_field: s.sort.audio,
-                filter_string: s.rowfilter,
-                filter_or,
-                filter_and,
-                author_aggs: false,
-                partial_string: true,
-                to: 10000,
-                include: "authors.author_id,authors.surname,title,file,readers.author_id,readers.surname"
-            }, true)
+            .getTitles(
+                "audio",
+                {
+                    sort_field: s.sort.audio,
+                    filter_string: s.rowfilter,
+                    filter_or,
+                    filter_and,
+                    author_aggs: false,
+                    partial_string: true,
+                    to: 10000,
+                    include:
+                        "authors.author_id,authors.surname,title,file,readers.author_id,readers.surname"
+                },
+                true
+            )
             .then(({ titles, hits }) => {
                 s.audio_list = titles
                 console.log("titles", titles)
                 // s.parts_hits = hits
                 return _.flatten(
-                            _.map(s.audio_list, item => {
-                                return _.map([...item.authors, ...item.readers], "author_id")
-                            })
-                        )
+                    _.map(s.audio_list, item => {
+                        return _.map([...item.authors, ...item.readers], "author_id")
                     })
+                )
+            })
         $q.all([def, authors]).then(([authorids]) => {
             s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
             s.setAuthorData()
         })
-
-
-
 
         // let def = backend
         //     .getAudioList({
@@ -519,6 +523,7 @@ littb.controller("libraryCtrl", function(
     s.onSortClick = (item, noSwitchDir) => {
         if (item.active && !noSwitchDir) {
             item.dir = item.dir == "asc" ? "desc" : "asc"
+            item.reversed = !item.reversed
         } else {
             for (let obj of s.sortItems[s.listType]) {
                 obj.active = false
@@ -717,7 +722,12 @@ littb.controller("libraryCtrl", function(
 
     s.typesConf = {
         etext: [{ id: "txt", label: "text" }, { id: "workdb", label: "Metadata" }, { id: "xml" }],
-        faksimil: [{ id: "txt", label: "text" }, { id: "workdb", label: "Metadata" }, { id: "xml" }, { id: "pdf", disabled : true }]
+        faksimil: [
+            { id: "txt", label: "text" },
+            { id: "workdb", label: "Metadata" },
+            { id: "xml" },
+            { id: "pdf", disabled: true }
+        ]
     }
 
     // s.toggleDownloadType = (mediatype, type) => {

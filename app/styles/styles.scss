@@ -433,6 +433,7 @@ th {
 .popover {
     max-width : unset;
     border-radius: 0;
+    font-family: inherit;
 }
 .popover-title {
     font-size : 1rem;
@@ -3211,6 +3212,14 @@ $partnav-width : 170px;
             table td {
                 padding-right: 4px;
                 padding-left: 4px;
+            }
+            .header_container {
+                max-width : calc(100% - 2rem);
+            }
+            .type_header {
+                overflow: visible;
+                white-space: nowrap;
+                max-width: 1px;
             }
             .sort_item {
                 &.active,&:hover,&:active {

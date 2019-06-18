@@ -37,7 +37,7 @@ module.exports = {
                     "/so",
                     "/%C3%B6vers%C3%A4ttarlexikon"
                 ],
-                target: "http://demolittb.spraakdata.gu.se",
+                target: "https://red.litteraturbanken.se",
                 // target: "https://litteraturbanken.se",
                 changeOrigin: true
             },

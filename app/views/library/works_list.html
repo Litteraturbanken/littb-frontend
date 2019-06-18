@@ -15,25 +15,30 @@
                 ng-class="{'first' : $first}"
                 ng-click="toggleDownload(row, true)"
                 >
-                <td ng-if="row.isHeader">
+                <td ng-if="row.isHeader" class="type_header">
                     <h3  class="row_title part_header">{{row.label}}</h3>
                 </td>
-                <td class="w-6" ng-if="dl_mode && !row.isHeader">
+                <!-- <td class="w-6" ng-if="dl_mode && !row.isHeader">
                     <input class="" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
-                </td>
+                </td> -->
                 <td class="title_col" ng-if="!row.isHeader" >
-                    <div 
-                     top="$parent.title_off" 
-                     ng-click="!dl_mode && titleClick($event, row)"
-                     id="{{getUniqId(row)}}">
-                    <div class="header">
-                        <span class="title_inner" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
-                            <a ng-if="listType == 'works'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
-                            <a ng-if="listType == 'epub'" 
-                               ng-href="/txt/epub/{{row.main_author.author_id + '_' + (row.work_title_id || row.title_id)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>
-                        </span>
-                        
-                        
+
+                    <div class="whitespace-no-wrap">
+                        <input class="mr-2" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
+                        <div 
+                         top="$parent.title_off" 
+                         ng-click="!dl_mode && titleClick($event, row)"
+                         id="{{getUniqId(row)}}"
+                         class="header_container inline-block align-middle">
+                        <div class="header">
+                            <span class="title_inner" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
+                                <a ng-if="listType == 'works'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
+                                <a ng-if="listType == 'epub'" 
+                                   ng-href="/txt/epub/{{row.main_author.author_id + '_' + (row.work_title_id || row.title_id)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>
+                            </span>
+                            
+                            
+                        </div>
                     </div>
                     <div ng-if="listType == 'works'" collapse="!row._collapsed">
                         <div class="collapse-content" >
@@ -57,7 +62,7 @@
                     </div>
                 </div></td>
 
-                <td class="align-top text-left hidden sm:table-cell w-16"><span>{{row.sort_date.plain}}</span></td>
+                <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap"><span>{{row.sort_date.plain}}</span></td>
                 <td class="align-top text-right"><span class="author">
                             <a ng-href="/forfattare/{{row.main_author.author_id}}">{{row.main_author.surname}}</a> 
                             <span ng-if="row.main_author.type == 'editor'">(red.)</span> 
