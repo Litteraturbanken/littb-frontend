@@ -106,8 +106,9 @@
                         <span ng-if="!dl_mode">Ladda ner källmaterial</span>
                         <span ng-if="dl_mode">Stäng källmaterial</span>
             </a></div>
-                <div class="more_container" ng-class="{show_more : dl_mode}" ng-show="dl_mode">
-                    <a class="sc btn btn-small" ng-click="onSelectVisible()">Välj alla verk i listan</a>
+                <div class="more_container h-8 relative" ng-class="{show_more : dl_mode}" ng-show="dl_mode">
+                    <a class="sc btn btn-small absolute pin-l" ng-show="!isAllVisibleSelected()" ng-click="onSelectVisible()">Välj alla verk i listan</a>
+                    <a class="sc btn btn-small absolute pin-l" ng-show="isAllVisibleSelected()" ng-click="onDeselectVisible()">Avmarkera alla verk i listan</a>
                 </div>
                 <!-- <a class="btn text-xs submit pull-right" ng-click="setDownloadMode()">Ladda ner…</a> -->
             </div>

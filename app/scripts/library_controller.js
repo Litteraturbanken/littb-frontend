@@ -664,6 +664,21 @@ littb.controller("libraryCtrl", function(
         }
         s.downloads = _.uniq([...s.downloads, ...works])
     }
+    s.onDeselectVisible = () => {
+        let works = []
+        for (let row of s.titleModel.works) {
+            if (!row.isHeader) {
+                row._download = false
+                works.push(row)
+            }
+        }
+        s.downloads = _.difference(s.downloads, works)
+    }
+
+    s.isAllVisibleSelected = () => {
+        let rows = _.omit(s.titleModel.works, "isHeader")
+        return _.every(rows, "_download")
+    }
 
     let notIsRowEq = (r1, r2) => !(r1.titlepath == r2.titlepath && r1.lbworkid == r2.lbworkid)
 
@@ -749,18 +764,15 @@ littb.controller("libraryCtrl", function(
         }
         return (size / (1024 * 1024)).toFixed(2) + "MB"
     }
-    // s.getDownloadUrl = () => {
-    //     let exports = s.getDownloadSet()
-    //     let files = exports.map(exp => `${exp.lbworkid}-${exp.mediatype}-${exp.type}`)
-    //     return "/api/download?files=" + files.join(",")
-    // }
-    s.onClickOutside = () => {
-        console.log("onClickOutside")
-    }
-    s.onShowPopup = () => {}
+
     document.addEventListener("click", function() {
         if ($(".popover").length) {
-            window.safeApply(s, () => (s.hidePopup = true))
+            window.safeApply(s, () => {
+                for (let type of [...s.typesConf.etext, ...s.typesConf.faksimil]) {
+                    type.selected = false
+                }
+                s.hidePopup = true
+            })
             window.safeApply(s, () => (s.hidePopup = false))
         }
     })
