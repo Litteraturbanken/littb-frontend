@@ -176,7 +176,7 @@
                     <table class="table w-full">
                         <tr ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
                         
-                            <td tooltip="{{row.title}}" class="title">
+                            <td tooltip="{{row.title}}" class="title whitespace-no-wrap">
                                 <a ng-href="/ljudarkivet?spela={{row.file}}">
                                 {{row.title}}
                                 </a>
