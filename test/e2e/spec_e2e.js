@@ -107,6 +107,13 @@ describe("reader", function() {
             `http://${HOST}:9000/forfattare/LagerlofS/titlar/Dunungen/sida/2/etext`
         )
     })
+
+    it("should show SO modal", function() {
+        get("/forfattare/SoderbergH/titlar/DoktorGlas/sida/1/etext?so=damm")
+        expect(
+            element(By.css(".modal-dialog lemma[id=lnr132506] grundform")).getText("href")
+        ).toEqual("damm")
+    })
 })
 
 describe("editor", function() {
@@ -125,24 +132,6 @@ describe("editor", function() {
                     `http://${HOST}:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg`
                 )
             })
-    })
-
-    it("should correctly handle pagestep", function() {
-        get("/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil")
-        element(By.css(".pager_ctrls a[rel=next]"))
-            .getAttribute("href")
-            .then(function(linkUrl) {
-                browser.get(linkUrl)
-                expect(browser.getCurrentUrl()).toBe(
-                    `http://${HOST}:9000/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
-                )
-            })
-    })
-    it("should show so modal", function() {
-        get("/forfattare/SoderbergH/titlar/DoktorGlas/sida/1/etext?so=damm")
-        expect(
-            element(By.css(".modal-dialog lemma[id=lnr132506] grundform")).getText("href")
-        ).toEqual("damm")
     })
 })
 
