@@ -3336,8 +3336,11 @@ $partnav-width : 170px;
         }
 
         .dl_mode {
-            tr:hover {
+            tr:not(.header):hover {
                 background-color : rgba(255,255,255,0.30);
+            }
+            tr.header {
+                cursor: unset;
             }
         }
         

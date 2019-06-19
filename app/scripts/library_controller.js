@@ -36,6 +36,7 @@ littb.controller("libraryCtrl", function(
     $filter
 ) {
     const s = $scope
+    s.filter = $location.search().filter || ""
     s.showAllParts = !!$location.search().alla_titlar
     s.showAllWorks = !!$location.search().alla_verk
     s.worksListURL = require("../views/library/works_list.html")
@@ -366,7 +367,11 @@ littb.controller("libraryCtrl", function(
                 filter_or,
                 filter_and,
                 author_aggs: true,
-                partial_string: true
+                partial_string: true,
+                include:
+                    "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable," +
+                    "main_author.author_id,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
+                    "authors,work_authors"
                 // to: fix paging
             })
             // s.rowfilter, true, filter_or, filter_and, s.showAllParts ? 10000 : 30)
@@ -478,7 +483,7 @@ littb.controller("libraryCtrl", function(
             sort_field: s.sort.works,
             filter_string: s.filter,
             include:
-                "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported," +
+                "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported,sortfield," +
                 "main_author.author_id,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain,export",
             filter_or,
             filter_and,
@@ -669,16 +674,21 @@ littb.controller("libraryCtrl", function(
     }
 
     s.onSelectVisible = () => {
+        let works = []
         for (let row of s.titleModel.works) {
-            row._download = true
+            if (!row.isHeader) {
+                row._download = true
+                works.push(row)
+            }
         }
-        s.downloads = _.uniq([...s.downloads, ...s.titleModel.works])
+        s.downloads = _.uniq([...s.downloads, ...works])
     }
 
     let notIsRowEq = (r1, r2) => !(r1.titlepath == r2.titlepath && r1.lbworkid == r2.lbworkid)
 
     s.downloads = []
     s.toggleDownload = (row, toggle) => {
+        if (row.isHeader) return
         if (toggle) {
             row._download = !row._download
         }
@@ -784,9 +794,6 @@ littb.controller("libraryCtrl", function(
         backend.downloadFiles(s.getDownloadSet())
     }
 
-    if ($location.search().filter) {
-        s.filter = $location.search().filter
-    }
     // if $location.search().keyword
     //     s.selectedKeywords = $location.search().keyword?.split(",")
 

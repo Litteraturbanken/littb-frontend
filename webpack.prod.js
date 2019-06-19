@@ -34,18 +34,18 @@ module.exports = merge(common, {
             extractors: [{ extractor: TailwindExtractor, extensions: ["html", "js"] }]
         }),
         new CleanWebpackPlugin(["dist"]),
-        new CompressionPlugin({}),
-        new CompressionPlugin({
-            filename(name) {
-                return name.replace(/.gz$/, ".br")
-            },
-            algorithm: "brotliCompress",
-            test: /\.(js|css|html|svg)$/,
-            compressionOptions: { level: 11 },
-            threshold: 10240,
-            minRatio: 0.8,
-            deleteOriginalAssets: false
-        })
+        new CompressionPlugin({})
+        // new CompressionPlugin({
+        //     filename(name) {
+        //         return name.replace(/.gz$/, ".br")
+        //     },
+        //     algorithm: "brotliCompress",
+        //     test: /\.(js|css|html|svg)$/,
+        //     compressionOptions: { level: 11 },
+        //     threshold: 10240,
+        //     minRatio: 0.8,
+        //     deleteOriginalAssets: false
+        // })
     ],
     module: {
         rules: [

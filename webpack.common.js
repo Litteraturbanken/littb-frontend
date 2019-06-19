@@ -1,15 +1,9 @@
 const path = require("path")
-const glob = require("glob")
 const devMode = process.env.NODE_ENV !== "production"
 
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const CopyWebpackPlugin = require("copy-webpack-plugin")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
-const PurgecssPlugin = require("purgecss-webpack-plugin")
-
-const PATHS = {
-    src: path.join(__dirname, "app")
-}
 
 const tailwindcss = require("tailwindcss")
 
@@ -166,11 +160,7 @@ module.exports = {
                 from: "./app/views/sla/",
                 to: "views/sla/"
             }
-        ]),
-        new PurgecssPlugin({
-            paths: glob.sync(`${PATHS.src}/**/*`, { nodir: true })
-            // whitelistPatterns : [/page-.*/]
-        })
+        ])
     ],
     // optimization: {
     //   splitChunks: {

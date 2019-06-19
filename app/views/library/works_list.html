@@ -12,7 +12,7 @@
             <tr class="work_link" 
                 ng-repeat="row in titleModel[listType]" 
                 on-finish-render="titleRender()"
-                ng-class="{'first' : $first}"
+                ng-class="{'first' : $first, header: row.isHeader}"
                 ng-click="toggleDownload(row, true)"
                 >
                 <td ng-if="row.isHeader" class="type_header">
