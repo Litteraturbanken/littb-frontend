@@ -145,18 +145,6 @@
                             <li class="spinner_row" ng-show="authorSearching">
                                 <i class="spinner fa fa-spinner fa-pulse"></i>
                             </li>
-                            <!-- <li class="part_header top_header" ng-show="authorData.length">
-                                
-                                <a class="popular"
-                                    ng-show="showInitial"
-                                    ng-disabled="showPopularAuth"
-                                    ng-click="showPopularAuth = true">Populära författare</a> 
-                                <a class="works" 
-                                    ng-show="showInitial" 
-                                    ng-disabled="!showPopularAuth"  ng-click="showPopularAuth = false">Alla Författare</a>
-                
-                                <a class="filtered" ng-show="!showInitial">Författare</a>
-                            </li> -->
                             <li ng-show="!authorSearching && !(authorData).length">
                                 Inga träffar.
                             </li>
@@ -184,14 +172,10 @@
                 <ng-include src="worksListURL" ng-if="listType == 'epub'"></ng-include>
 
                 <div class="result title pl-0 sm:ml-3" ng-if="listType == 'audio'">
-                    <!-- <li class="part_header audio" ng-hide="showInitial || !audio_list.length">
-                        Ur ljudarkivet
-                    </li> -->
                     <sort-list ></sort-list>
                     <table class="table w-full">
                         <tr ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
                         
-                            <!-- <div class="header" > -->
                             <td tooltip="{{row.title}}" class="title">
                                 <a ng-href="/ljudarkivet?spela={{row.file}}">
                                 {{row.title}}
@@ -202,7 +186,6 @@
                                 <span ng-if="row.readers[0].author_id != row.authors[0].author_id"><a ng-href="/forfattare/{{row.readers[0].author_id}}">{{row.readers[0].surname}}</a> <span class="lowercase">läser</span></span>
                                 <a ng-href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a> 
                             </td>
-                            <!-- </div> -->
                         </tr>
 
                     </table>
@@ -223,7 +206,7 @@
                                         {{row.shorttitle || row.title}}
                                         </a>
                                     </td>
-                                    <td class="hidden sm:table-cell">{{row.sort_date.plain}}</td>
+                                    <td class="hidden sm:table-cell">{{row.imprintyear}}</td>
                                     <td class="author text-right">
                                         <a ng-href="/forfattare/{{getPartAuthor(row).author_id}}">{{getPartAuthor(row).surname}}</a> 
                                         <span ng-if="getPartAuthor(row).type == 'editor'">(red.)</span>
@@ -231,7 +214,7 @@
                                     </td>
                                 <!-- </div> -->
                             </tr>
-                            <tr ng-show="!showAllParts && parts_hits > 30">
+                            <tr ng-show="!showAllParts && parts_hits > 30 && parts_hits < 3000">
                                 <td>
                                     <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
                                         Visa alla <span class="num">{{parts_hits}}</span> träffar

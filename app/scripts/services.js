@@ -78,9 +78,7 @@ const expandMediatypes = function(works, mainMediatype) {
         } else if (metadata.mediatype === "infopost") {
             return {
                 label: metadata.mediatype,
-                url: `/dramawebben/pjäser?om-boken&author_id=${
-                    metadata.authors[0].author_id
-                }&titlepath=${metadata.titlepath}`
+                url: `/dramawebben/pjäser?om-boken&author_id=${metadata.authors[0].author_id}&titlepath=${metadata.titlepath}`
             }
         } else {
             return {
@@ -219,7 +217,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     has_epub: true
                 },
                 include:
-                    "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id," +
+                    "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,imprintyear," +
                     "authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name",
                 exclude: "text,parts,sourcedesc,pages,errata",
                 sort_field: sort_field || "epub_popularity|desc"
@@ -608,18 +606,12 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
 
                     // for auth in data
                     if (auth.picture) {
-                        auth.smallImage = `/red/forfattare/${auth.author_id}/${
-                            auth.author_id
-                        }_small.jpeg`
-                        auth.largeImage = `/red/forfattare/${auth.author_id}/${
-                            auth.author_id
-                        }_large.jpeg`
+                        auth.smallImage = `/red/forfattare/${auth.author_id}/${auth.author_id}_small.jpeg`
+                        auth.largeImage = `/red/forfattare/${auth.author_id}/${auth.author_id}_large.jpeg`
                     }
 
                     if (auth.dramawebben != null ? auth.dramawebben.picture : undefined) {
-                        auth.dramawebben.largeImage = `/red/forfattare/${auth.author_id}/${
-                            auth.author_id
-                        }_dw_large.jpeg`
+                        auth.dramawebben.largeImage = `/red/forfattare/${auth.author_id}/${auth.author_id}_dw_large.jpeg`
                     }
 
                     return auth
@@ -1016,17 +1008,13 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 for (let item of content.data) {
                     if (["etext", "faksimil"].includes(item.doc_type)) {
                         const title_id = item.work_title_id || item.title_id
-                        item.url = `/forfattare/${
-                            item.authors[0].author_id
-                        }/titlar/${title_id}/sida/${item.startpagename}/${item.doc_type}`
+                        item.url = `/forfattare/${item.authors[0].author_id}/titlar/${title_id}/sida/${item.startpagename}/${item.doc_type}`
                         item.label = `${item.authors[0].surname} – ${item.shorttitle || item.title}`
                         item.typeLabel = "Verk"
                         item.mediatypeLabel = item.doc_type
                     }
                     if (["etext-part", "faksimil-part"].includes(item.doc_type)) {
-                        item.url = `/forfattare/${item.work_authors[0].author_id}/titlar/${
-                            item.work_title_id
-                        }/sida/${item.startpagename}/${item.mediatype}`
+                        item.url = `/forfattare/${item.work_authors[0].author_id}/titlar/${item.work_title_id}/sida/${item.startpagename}/${item.mediatype}`
                         item.label = `${
                             (item.authors != null ? item.authors[0] : item.work_authors[0]).surname
                         } – ${item.shorttitle || item.title}`
@@ -1419,9 +1407,7 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
             const author = metadata.authors[0].author_id
             const titleid = metadata.title_id
 
-            return `/forfattare/${author}/titlar/${titleid}/sida/${matches[0].attrs.n}/${
-                metadata.mediatype
-            }?${merged}`
+            return `/forfattare/${author}/titlar/${titleid}/sida/${matches[0].attrs.n}/${metadata.mediatype}?${merged}`
         }
 
         next() {

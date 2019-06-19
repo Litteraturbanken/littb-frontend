@@ -369,7 +369,7 @@ littb.controller("libraryCtrl", function(
                 author_aggs: true,
                 partial_string: true,
                 include:
-                    "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable," +
+                    "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imprintyear," +
                     "main_author.author_id,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
                     "authors,work_authors"
                 // to: fix paging
@@ -483,7 +483,7 @@ littb.controller("libraryCtrl", function(
             sort_field: s.sort.works,
             filter_string: s.filter,
             include:
-                "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported,sortfield," +
+                "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported,sortfield,imprintyear," +
                 "main_author.author_id,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain,export",
             filter_or,
             filter_and,
@@ -602,25 +602,6 @@ littb.controller("libraryCtrl", function(
         }
         return output
     }
-
-    // s.fetchRecent = function() {
-    //     s.filter = ""
-    //     s.rowfilter = ""
-    //     s.titleArray = null
-
-    //     s.titleSearching = true
-    //     return backend
-    //         .getTitles("etext,faksimil,pdf", {
-    //             sort_field: "imported|asc,sortfield|asc",
-    //             include: workInclude + ","
-    //         })
-    //         .then(function({ titles, hits }) {
-    //             s.titleSearching = false
-    //             s.titleHits = hits
-
-    //             s.titleArray = output
-    //         })
-    // }
 
     s.getUrl = function(row, mediatype) {
         const author_id = row.authors[0].workauthor || row.authors[0].author_id
