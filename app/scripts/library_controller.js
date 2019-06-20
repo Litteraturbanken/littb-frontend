@@ -226,7 +226,7 @@ littb.controller("libraryCtrl", function(
             },
             {
                 label: "Tryckår",
-                val: "sort_date.date",
+                val: "sort_date_imprint.date",
                 dir: "desc",
                 search: "kronologi"
             },
@@ -369,7 +369,7 @@ littb.controller("libraryCtrl", function(
                 author_aggs: true,
                 partial_string: true,
                 include:
-                    "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imprintyear," +
+                    "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
                     "main_author.author_id,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
                     "authors,work_authors"
                 // to: fix paging
@@ -483,7 +483,7 @@ littb.controller("libraryCtrl", function(
             sort_field: s.sort.works,
             filter_string: s.filter,
             include:
-                "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported,sortfield,imprintyear," +
+                "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                 "main_author.author_id,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain,export",
             filter_or,
             filter_and,

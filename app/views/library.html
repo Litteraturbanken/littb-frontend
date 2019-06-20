@@ -207,7 +207,7 @@
                                         {{row.shorttitle || row.title}}
                                         </a>
                                     </td>
-                                    <td class="hidden sm:table-cell">{{row.imprintyear}}</td>
+                                    <td class="hidden sm:table-cell">{{row.sort_date_imprint.plain}}</td>
                                     <td class="author text-right">
                                         <a ng-href="/forfattare/{{getPartAuthor(row).author_id}}">{{getPartAuthor(row).surname}}</a> 
                                         <span ng-if="getPartAuthor(row).type == 'editor'">(red.)</span>

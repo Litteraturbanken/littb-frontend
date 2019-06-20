@@ -53,7 +53,7 @@
                 tooltip-placement="{{workinfo.title.length > 75 ? 'left' : 'top'}}">
                 {{workinfo.showtitle || workinfo.shorttitle || workinfo.title}}
             </a>
-            <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
+            <span tooltip="Tryckår" ng-show="workinfo.sort_date_imprint.plain">({{workinfo.sort_date_imprint.plain}})</span>
         </div>
         
         <hr>
@@ -177,7 +177,7 @@
                 <div class="header">
                     <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:true | trust"></h2>
                     <h2 class="title">
-                        {{workinfo.title}} <span tooltip="Tryckår" ng-show="workinfo.imprintyear">({{workinfo.imprintyear}})</span>
+                        {{workinfo.title}} <span tooltip="Tryckår" ng-show="workinfo.sort_date_imprint.plain">({{workinfo.sort_date_imprint.plain}})</span>
                      </h2>
                 </div>
 

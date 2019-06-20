@@ -217,7 +217,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     has_epub: true
                 },
                 include:
-                    "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,imprintyear," +
+                    "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,sort_date_imprint.plain," +
                     "authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name",
                 exclude: "text,parts,sourcedesc,pages,errata",
                 sort_field: sort_field || "epub_popularity|desc"
