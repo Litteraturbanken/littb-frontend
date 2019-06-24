@@ -810,7 +810,16 @@ littb.controller("libraryCtrl", function(
     //     $("body").off("click", ".popover")
     // })
     s.onDownload = () => {
-        backend.downloadFiles(s.getDownloadSet())
+        let exports = s.getDownloadSet()
+        let groups = _.groupBy(exports, exp => `${exp.mediatype}+${exp.type}`)
+        let label = _.toPairs(groups)
+            .map(([key, list]) => `${key}: ${list.length}`)
+            .join(", ")
+        window.gtag("event", "source-material", {
+            event_category: "download",
+            event_label: label
+        })
+        backend.downloadFiles(exports)
     }
 
     // if $location.search().keyword
