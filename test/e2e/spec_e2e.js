@@ -30,7 +30,7 @@ describe("library works", function() {
     it("should link correctly to reading mode from popular", () => {
         expect(
             element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
-        ).toEqual(`http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`)
+        ).toEqual(`http://${HOST}:9000/forfattare/SoderbergH/titlar/DoktorGlas/sida/-2/etext`)
     })
 
     it("should link correctly to reading mode from filtered", () => {

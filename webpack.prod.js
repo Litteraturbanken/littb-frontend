@@ -7,6 +7,7 @@ const UglifyJsPlugin = require("uglifyjs-webpack-plugin")
 const CompressionPlugin = require("compression-webpack-plugin")
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin")
 const PurgecssPlugin = require("purgecss-webpack-plugin")
+var Visualizer = require("webpack-visualizer-plugin")
 class TailwindExtractor {
     static extract(content) {
         return content.match(/[A-Za-z0-9-_:\/]+/g) || []
@@ -34,7 +35,8 @@ module.exports = merge(common, {
             extractors: [{ extractor: TailwindExtractor, extensions: ["html", "js"] }]
         }),
         new CleanWebpackPlugin(["dist"]),
-        new CompressionPlugin({})
+        new CompressionPlugin({}),
+        new Visualizer()
         // new CompressionPlugin({
         //     filename(name) {
         //         return name.replace(/.gz$/, ".br")
