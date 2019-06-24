@@ -197,6 +197,7 @@ littb.controller("libraryCtrl", function(
 
     s.sort = {
         works: "popularity|desc",
+        epub: "popularity|desc",
         authors: "popularity|desc",
         parts: "sortkey|asc",
         audio: "title.raw|asc"
@@ -491,7 +492,7 @@ littb.controller("libraryCtrl", function(
             filter_and.has_epub = true
         }
         const def = backend.getTitles("etext,faksimil,pdf", {
-            sort_field: s.sort.works,
+            sort_field: s.sort[listID],
             filter_string: s.filter,
             include:
                 "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
