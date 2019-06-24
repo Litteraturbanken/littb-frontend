@@ -38,7 +38,7 @@ littb.controller("libraryCtrl", function(
     const s = $scope
     s.filter = $location.search().filter || ""
     s.showAllParts = !!$location.search().alla_titlar
-    s.showAllWorks = !!$location.search().alla_verk
+    // s.showAllWorks = !!$location.search().alla_verk
     s.worksListURL = require("../views/library/works_list.html")
     s.titleSearching = false
     s.authorSearching = true
@@ -339,6 +339,12 @@ littb.controller("libraryCtrl", function(
             s.authorData = _.orderBy(
                 authors,
                 auth => {
+                    if (!auth) {
+                        console.warn(
+                            "Undefined author found. Is something missing from the authordb?"
+                        )
+                        return
+                    }
                     if (key == "popularity") {
                         return Number(auth.popularity || 0)
                     } else if (key == "birth.date") {
@@ -355,10 +361,16 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    s.fetchParts = () => {
+    s.fetchParts = countOnly => {
         // unless s.filter then return
         s.partSearching = true
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+
+        console.log("fetchParts showAllParts", s.showAllParts)
+        let size = { from: 0, to: s.showAllParts ? 10000 : 100 }
+        if (countOnly) {
+            size = { from: 0, to: 0 }
+        }
 
         let def = backend
             .getTitles("etext-part,faksimil-part", {
@@ -371,10 +383,9 @@ littb.controller("libraryCtrl", function(
                 include:
                     "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
                     "main_author.author_id,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
-                    "authors,work_authors"
-                // to: fix paging
+                    "authors,work_authors",
+                ...size
             })
-            // s.rowfilter, true, filter_or, filter_and, s.showAllParts ? 10000 : 30)
             .then(({ titles, hits, author_aggs }) => {
                 s.all_titles = titles
                 s.partSearching = false
@@ -654,6 +665,17 @@ littb.controller("libraryCtrl", function(
         }
     }
 
+    s.genderSelectSetup = {
+        minimumResultsForSearch: -1,
+        templateSelection(item) {
+            if (!item.id || item.id == "all") {
+                return "Välj kön"
+            } else {
+                return item.text
+            }
+        }
+    }
+
     s.onSelectVisible = () => {
         let works = []
         for (let row of s.titleModel.works) {
@@ -727,11 +749,15 @@ littb.controller("libraryCtrl", function(
     // }
 
     s.typesConf = {
-        etext: [{ id: "txt", label: "text" }, { id: "workdb", label: "Metadata" }, { id: "xml" }],
-        faksimil: [
-            { id: "txt", label: "text" },
-            { id: "workdb", label: "Metadata" },
+        etext: [
+            { id: "txt", label: "ren text" },
             { id: "xml" },
+            { id: "workdb", label: "Metadata" }
+        ],
+        faksimil: [
+            { id: "txt", label: "ren text" },
+            { id: "xml" },
+            { id: "workdb", label: "Metadata" },
             { id: "pdf", disabled: true }
         ]
     }
@@ -858,10 +884,10 @@ littb.controller("libraryCtrl", function(
             key: "alla_titlar",
             expr: "showAllParts"
         },
-        {
-            key: "alla_verk",
-            expr: "showAllWorks"
-        },
+        // {
+        //     key: "alla_verk",
+        //     expr: "showAllWorks"
+        // },
         {
             key: "visa",
             expr: "listType",

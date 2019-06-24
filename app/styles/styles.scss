@@ -2871,6 +2871,9 @@ $partnav-width : 170px;
     .tooltip {
         font-size : 0.7em;
     }
+    .select2-selection__rendered[title="Alla författare"] {
+        color : #9e9e9e;
+    }
     .more_container .btn {
         background-color: #efefef;
     }
@@ -3038,15 +3041,18 @@ $partnav-width : 170px;
                         color : black;
                     }
                 }
-                .fa-caret-right {
-                    transition: all 200ms;
-                    vertical-align: middle;
-                    margin-right: 2px;
-                }
-                &.show_more {
-                    .fa-caret-right {
-                        transform : rotate(90deg);
-                    }
+                // .fa-caret-right {
+                //     transition: all 200ms;
+                //     vertical-align: middle;
+                //     margin-right: 2px;
+                // }
+                // &.show_more {
+                //     .fa-caret-right {
+                //         transform : rotate(90deg);
+                //     }
+                // }
+                .fa-download {
+                    font-size: 0.85em;
                 }
             }
             .more_container.ng-hide {

@@ -20,11 +20,10 @@
                 </div>
                 <div class="title_select_container">
                     <select  class="gender_select" 
-                             ui-select2="{minimumResultsForSearch: -1}" 
+                             ui-select2="genderSelectSetup" 
                              ng-change="refreshData()" ng-model="filters['main_author.gender']" 
-                             data-placeholder="Välj kön" >
-                        <option value=""></option>
-                        <option value="all">Alla författare</option>
+                             >
+                        <option value="">Alla författare</option>
                         <option value="female">Kvinnliga författare</option>    
                         <option value="male">Manliga författare</option>
                     </select>
@@ -46,9 +45,10 @@
                         <option value='keyword:Dramawebben'>Dramawebben</option>
                         <option value='keyword:SLS-FI'>SLS Finland</option>
                         <option value='provenance.library:SVELITT'>SLS Sverige</option>
+                        <option value='provenance.library:SFS'>Svenska fornskriftsällskapet</option>
                         <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
-                        <option value='keyword:sentpajorden'>Sent på jorden</option>
-                        <option value='keyword:OrdenPrövas'>Orden prövas. Harry Martinson</option>
+                        <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
+                        <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
                     </select>
                 </div>
                 <div class="title_select_container about_container">
@@ -71,7 +71,7 @@
                     </select> 
                 </div> -->
                 
-                <div class="more mt-2" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="fa fa-caret-right"></i> Visa fler inställningar </a></div>
+                <div class="more mt-2" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-plus-square-o mr-1"></i> Visa fler inställningar </a></div>
                 <div class="more_container" ng-class="{show_more : show_more}" ng-show="show_more">
                     <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-change="refreshData()" ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
@@ -102,8 +102,10 @@
                     </div>
                 </div>
                 <div class="more" ng-class="{show_more : dl_mode}">
-                    <a ng-click="setDownloadMode()"><i class="fa fa-caret-right"></i> 
-                        <span ng-if="!dl_mode">Ladda ner källmaterial</span>
+                    <a ng-click="setDownloadMode()">
+                        <!-- <i class="fa fa-caret-right"></i>  -->
+                        <i class="fa fa-download color-black mr-1 text-xs"></i>
+                        <span ng-if="!dl_mode"> Ladda ner källmaterial</span>
                         <span ng-if="dl_mode">Stäng källmaterial</span>
             </a></div>
                 <div class="more_container h-8 relative" ng-class="{show_more : dl_mode}" ng-show="dl_mode">
@@ -217,7 +219,7 @@
                             </tr>
                             <tr ng-show="!showAllParts && parts_hits > 30 && parts_hits < 3000">
                                 <td>
-                                    <button class="btn btn-sm show_all"  ng-click="(showAllParts = true) && fetchParts()">
+                                    <button class="btn btn-sm show_all"  ng-click="($parent.showAllParts = true) && fetchParts()">
                                         Visa alla <span class="num">{{parts_hits}}</span> träffar
                                     </button>
                                 </td>

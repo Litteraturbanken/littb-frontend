@@ -706,8 +706,6 @@ littb.controller("epubListCtrl", function epubListCtrl(
 
     s.authorSelectSetup = util.getAuthorSelectConf(s)
 
-    s.genderSelectSetup = {}
-
     s.sortSelectSetup = {
         minimumResultsForSearch: -1,
         templateSelection(item) {
