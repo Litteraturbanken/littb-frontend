@@ -1,5 +1,6 @@
 const path = require("path")
 const devMode = process.env.NODE_ENV !== "production"
+// const devMode = true
 
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const CopyWebpackPlugin = require("copy-webpack-plugin")
@@ -69,7 +70,7 @@ module.exports = {
                     {
                         loader: "postcss-loader",
                         options: {
-                            plugins: [tailwindcss("./tailwind.js"), require("autoprefixer")()]
+                            // plugins: [tailwindcss("./tailwind.js"), require("autoprefixer")()]
                             // sourceMap: process.env.NODE_ENV !== "production"
                         }
                     },

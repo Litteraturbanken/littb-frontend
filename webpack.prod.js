@@ -1,39 +1,14 @@
 const path = require("path")
 const common = require("./webpack.common.js")
 const merge = require("webpack-merge")
-const glob = require("glob-all")
 const CleanWebpackPlugin = require("clean-webpack-plugin")
 const UglifyJsPlugin = require("uglifyjs-webpack-plugin")
 const CompressionPlugin = require("compression-webpack-plugin")
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin")
-const PurgecssPlugin = require("purgecss-webpack-plugin")
 var Visualizer = require("webpack-visualizer-plugin")
-class TailwindExtractor {
-    static extract(content) {
-        return content.match(/[A-Za-z0-9-_:\/]+/g) || []
-    }
-}
 
 module.exports = merge(common, {
     plugins: [
-        new PurgecssPlugin({
-            paths: glob.sync(
-                [
-                    path.join(__dirname, "app/index.html"),
-                    path.join(__dirname, "app/**/*.{html,js}")
-                ],
-                { nodir: true }
-            ),
-            whitelistPatternsChildren: [
-                /page-.*/,
-                /select2/,
-                /modal.*/,
-                /tooltip.*/,
-                /site-.*/,
-                /popup.*/
-            ],
-            extractors: [{ extractor: TailwindExtractor, extensions: ["html", "js"] }]
-        }),
         new CleanWebpackPlugin(["dist"]),
         new CompressionPlugin({}),
         new Visualizer()
