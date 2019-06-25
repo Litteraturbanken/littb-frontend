@@ -23,7 +23,8 @@ module.exports = {
                       /modal.*/,
                       /tooltip.*/,
                       /site-.*/,
-                      /popup.*/
+                      /popup.*/,
+                      /autocomplete/
                   ],
                   extractors: [{ extractor: TailwindExtractor, extensions: ["html", "js"] }]
               }),

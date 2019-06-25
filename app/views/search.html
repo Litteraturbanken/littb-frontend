@@ -8,7 +8,7 @@
 
     <form class="submit_form" ng-submit="onSearchSubmit(query)">
         <div class="row top_row">
-            <input class="query" ng-model="query" autofocus type="text" focusable>
+            <input class="query py-4" ng-model="query" autofocus type="text" focusable>
             <i ng-show="searching" class="spinner fa fa-spinner fa-pulse"></i>
             <button ng-hide="searching" class="submit btn">Sök</button>
             
@@ -84,8 +84,9 @@
                                 data-placeholder="Författare" 
                                 ng-change="onAuthChange()">
                             <option value=""></option>
-                            <option value='{{auth.author_id}}' ng-repeat="auth in authors">
-                                {{auth.full_name}}
+                            <option value='{{author.author_id}}' ng-repeat="author in authors">
+                                <span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span>
+                                                                    {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
                             </option>
                         </select> 
                         <i ng-if="loadingAuthors" class="spinner fa fa-spinner fa-pulse"></i>

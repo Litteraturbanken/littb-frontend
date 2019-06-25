@@ -11,18 +11,18 @@ module.exports = merge(common, {
     plugins: [
         new CleanWebpackPlugin(["dist"]),
         new CompressionPlugin({}),
-        new Visualizer()
-        // new CompressionPlugin({
-        //     filename(name) {
-        //         return name.replace(/.gz$/, ".br")
-        //     },
-        //     algorithm: "brotliCompress",
-        //     test: /\.(js|css|html|svg)$/,
-        //     compressionOptions: { level: 11 },
-        //     threshold: 10240,
-        //     minRatio: 0.8,
-        //     deleteOriginalAssets: false
-        // })
+        new Visualizer(),
+        new CompressionPlugin({
+            filename(name) {
+                return name.replace(/.gz$/, ".br")
+            },
+            algorithm: "brotliCompress",
+            test: /\.(js|css|html|svg)$/,
+            compressionOptions: { level: 11 },
+            threshold: 10240,
+            minRatio: 0.8,
+            deleteOriginalAssets: false
+        })
     ],
     module: {
         rules: [

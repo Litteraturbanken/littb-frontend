@@ -1346,7 +1346,9 @@ body > .header {
     //     .top_row .submit {display : none;}
     //     .top_row .spinner {display : inline-block;}
     // }
-
+    input[type="text"] {
+        border: 1px solid lightgrey;
+    }
     .surname {
         @include small-caps();
     }
@@ -1479,8 +1481,9 @@ body > .header {
 
             i {
                 position: relative;
-                top : 7px;
-                left : 3px;
+                top: 7px;
+                left: 7px;
+                height: 18px;
             }
 
         }

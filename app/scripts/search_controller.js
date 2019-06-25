@@ -129,11 +129,11 @@ littb.controller("searchCtrl", function(
 
     $timeout(() => s.$broadcast("focus"), 100)
 
-    function getListener(selector, loadingFlag) {
+    function getListener(selector, loadingFlag, countOnly) {
         let listener = function(event) {
             safeApply(s, () => {
                 s[loadingFlag] = true
-                refreshTitles().then(() => {
+                refreshTitles(countOnly).then(() => {
                     s[loadingFlag] = false
                     $timeout(() => {
                         $(selector)
@@ -149,11 +149,11 @@ littb.controller("searchCtrl", function(
     }
     $("select.title_select").on(
         "select2:opening",
-        getListener("select.title_select", "loadingTitles")
+        getListener("select.title_select", "loadingTitles", false)
     )
     $("select.author_select").on(
         "select2:opening",
-        getListener("select.author_select", "loadingAuthors")
+        getListener("select.author_select", "loadingAuthors", true)
     )
 
     s.onAllTitlesClick = () => {
@@ -227,23 +227,21 @@ littb.controller("searchCtrl", function(
     //     }
     // }
 
-    function refreshTitles() {
-        let includes = "shorttitle,title,lbworkid,authors.author_id,mediatype,searchable"
+    function refreshTitles(countOnly) {
+        let include = "shorttitle,title,lbworkid,authors.author_id,mediatype,searchable"
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // s.loadingTitles = true
 
         return backend
-            .getTitles(
-                null,
-                "sortkey|asc",
-                null,
-                false,
-                false,
-                includes,
+            .getTitles("etext,faksimil", {
+                sort_field: "sortkey|asc",
+                include,
                 filter_or,
-                { searchable: true, ...filter_and },
-                true
-            )
+                filter_and: { searchable: true, ...filter_and },
+                to: countOnly ? 0 : 30,
+                filter_string: "",
+                author_aggs: true
+            })
             .then(({ titles, author_aggs, hits }) => {
                 // s.loadingTitles = false
                 s.titles = titles
