@@ -486,7 +486,7 @@ littb.controller("libraryCtrl", function(
         // }
         // const about_authors = $location.search().about_authors_filter
         if (s.dl_mode) {
-            filter_and["_exists"] = "export>"
+            filter_and["export>type"] = ["xml", "txt", "workdb"]
         }
         if (epubOnly) {
             filter_and.has_epub = true

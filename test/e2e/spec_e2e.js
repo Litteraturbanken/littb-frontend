@@ -114,6 +114,17 @@ describe("reader", function() {
             element(By.css(".modal-dialog lemma[id=lnr132506] grundform")).getText("href")
         ).toEqual("damm")
     })
+
+    it("should show srcset correctly", function() {
+        get("/forfattare/BureusJ/titlar/SmaragdinaTabvla/sida/1/faksimil")
+        expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual(
+            "/txt/lb2514233/lb2514233_3/lb2514233_3_0001.jpeg 1x,/txt/lb2514233/lb2514233_5/lb2514233_5_0001.jpeg 2x"
+        )
+    })
+    it("should not show srcset", function() {
+        get("/forfattare/BellmanCM/titlar/FredmansEpistlesSongs/sida/V/faksimil")
+        expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual("")
+    })
 })
 
 describe("editor", function() {

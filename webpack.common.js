@@ -6,8 +6,6 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const CopyWebpackPlugin = require("copy-webpack-plugin")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
 
-const tailwindcss = require("tailwindcss")
-
 const Fiber = require("fibers")
 
 module.exports = {

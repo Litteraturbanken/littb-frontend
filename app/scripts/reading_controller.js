@@ -751,7 +751,8 @@ littb.controller("readingCtrl", function(
             let urlFromSize = size => `/txt/${id}/${id}_${size}/${id}_${size}_${filename}.jpeg`
             s.url = urlFromSize(s.size)
             if (s.sizes) {
-                if (s.size < 4 && s.sizes[s.size + 2]) {
+                console.log("srcset", s.size, s.sizes)
+                if (s.size < 4 && s.sizes[s.size + 2 - 1]) {
                     s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(s.size + 2)} 2x`
                 } else if (s.size == 4 && s.sizes[3] && s.sizes[4]) {
                     s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(5)} 2x`
