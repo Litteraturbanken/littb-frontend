@@ -259,6 +259,8 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
     if ($route.current.$$route.isSla) {
         s.slaMode = true
         s.author = "LagerlofS"
+        s.biblInfoLocation = require("../views/sla/biblinfo.html")
+        s.compareLocation = require("../views/sla/textjamforelse.html")
     }
 
     s.showpage = null
@@ -378,6 +380,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         let url
         c.log("refreshExternalDoc", page, routeParams.omtexternaDoc)
         if (s.slaMode) {
+            if (s.showpage == "jamfor") return
             let doc
             if (page === "omtexterna" && !routeParams.omtexternaDoc) {
                 doc = "omtexterna.html"

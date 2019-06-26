@@ -87,7 +87,14 @@ module.exports = {
                 test: /\.html$/,
                 exclude: /.*index.html/,
                 use: [
-                    { loader: "file-loader?name=[hash].[name].[ext]" },
+                    {
+                        loader: "file-loader",
+                        options: {
+                            name: "[hash].[name].[ext]",
+                            outputPath: "assets/"
+                        }
+                    },
+
                     {
                         loader: "extract-loader",
                         options: { publicPath: "" }
@@ -105,8 +112,8 @@ module.exports = {
                         loader: "file-loader",
                         options: {
                             name: "[name].[ext]",
-                            outputPath: "fonts/" // where the fonts will go
-                            // publicPath: '../'       // override the default path
+                            outputPath: "assets/fonts/", // where the fonts will go
+                            publicPath: "../assets/fonts/" // override the default path
                         }
                     }
                 ]
@@ -119,8 +126,8 @@ module.exports = {
                         loader: "file-loader",
                         options: {
                             name: "[hash].[name].[ext]",
-                            outputPath: "img/" // where the fonts will go
-                            // publicPath: '../'       // override the default path
+                            outputPath: "assets/img/", // where the fonts will go
+                            publicPath: "../assets/img/" // override the default path
                         }
                     }
                     // {
@@ -139,8 +146,8 @@ module.exports = {
             filename: "./index.html"
         }),
         new MiniCssExtractPlugin({
-            filename: devMode ? "[name].css" : "[name].[hash].css",
-            chunkFilename: devMode ? "[id].css" : "[id].[hash].css"
+            filename: devMode ? "[name].css" : "assets/[name].[hash].css",
+            chunkFilename: devMode ? "[id].css" : "assets/[id].[hash].css"
         }),
         new CopyWebpackPlugin([
             // {
@@ -149,15 +156,15 @@ module.exports = {
             // },
             {
                 from: "./app/img/favicons",
-                to: "img/favicons"
+                to: "assets/img/favicons"
             },
             {
                 from: "./app/img/lb_monogram_white_white.svg",
-                to: "img/"
+                to: "assets/img/"
             },
             {
                 from: "./app/views/sla/",
-                to: "views/sla/"
+                to: "assets/views/sla/"
             }
         ])
     ],
@@ -174,9 +181,9 @@ module.exports = {
     //   }
     // },
     output: {
-        filename: "[hash].[name].js",
+        filename: "assets/[hash].[name].js",
         path: path.resolve(__dirname, "dist"),
         globalObject: "this",
-        publicPath: "/"
+        publicPath: ""
     }
 }

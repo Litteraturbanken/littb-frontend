@@ -11,7 +11,7 @@ module.exports = merge(common, {
     plugins: [
         new CleanWebpackPlugin(["dist"]),
         new CompressionPlugin({}),
-        new Visualizer(),
+        // new Visualizer(),
         new CompressionPlugin({
             filename(name) {
                 return name.replace(/.gz$/, ".br")

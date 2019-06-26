@@ -851,7 +851,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
 
         getDiff(workgroup, myWits, ...ids) {
             const def = $q.defer()
-            const url = `/views/sla/kollationering-${workgroup.toLowerCase()}.xml`
+            const url = `/assets/views/sla/kollationering-${workgroup.toLowerCase()}.xml`
 
             http({
                 url,
@@ -888,9 +888,9 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             const def = $q.defer()
 
             const titlemap = {
-                OsynligaLankarSLA: "/views/sla/OLOrdSak-output.xml",
-                GostaBerlingsSaga1SLA: "/views/sla/GBOrdSakForstaDel-output.xml",
-                GostaBerlingsSaga2SLA: "/views/sla/GBOrdSakAndraDel-output.xml"
+                OsynligaLankarSLA: "/assets/views/sla/OLOrdSak-output.xml",
+                GostaBerlingsSaga1SLA: "/assets/views/sla/GBOrdSakForstaDel-output.xml",
+                GostaBerlingsSaga2SLA: "/assets/views/sla/GBOrdSakAndraDel-output.xml"
             }
 
             const url = titlemap[title]
