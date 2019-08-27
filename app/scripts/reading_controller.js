@@ -734,6 +734,24 @@ littb.controller("readingCtrl", function(
         return def
     }
 
+    const getSrcsetSize = () => {
+        if (s.size < 4 && s.sizes && s.sizes[s.size + 2 - 1]) {
+            return s.size + 2
+        }
+    }
+
+    s.getWidthConstraint = () => {
+        if (!s.workinfo) return
+        console.log("getSrcsetSize()", getSrcsetSize(), s.size)
+        let maybeSize = getSrcsetSize()
+        if (typeof maybeSize != "undefined") {
+            let width = Number(s.workinfo.width["size_" + maybeSize])
+            return width / 2 // not all size 5 are twice as large as size 2
+        }
+        // return s.workinfo.width["size_" + (getSrcsetSize() || s.size)]
+        return s.workinfo.width["size_" + s.size]
+    }
+
     const infoDef = initSourceInfo()
     const fetchPage = function(ix) {
         console.log("fetchPage", ix)
@@ -752,8 +770,10 @@ littb.controller("readingCtrl", function(
             s.url = urlFromSize(s.size)
             if (s.sizes) {
                 console.log("srcset", s.size, s.sizes)
-                if (s.size < 4 && s.sizes[s.size + 2 - 1]) {
-                    s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(s.size + 2)} 2x`
+                let maybeSize = getSrcsetSize()
+                // if (s.size < 4 && s.sizes[s.size + 2 - 1]) {
+                if (typeof maybeSize != "undefined") {
+                    s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(maybeSize)} 2x`
                     // } else if (s.size == 4 && s.sizes[3] && s.sizes[4]) {
                     //     s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(5)} 2x`
                 } else {
