@@ -54,7 +54,7 @@
     </div>
     
     <h3 class="sc introheader" ng-if="workinfo.dramawebben.workintro">Handling</h3>
-    <p class="workintro" ng-bind-html="workinfo.workintro | trust"></p>
+    <div class="workintro mt-4" ng-if="workinfo.workintro" ng-bind-html="workinfo.workintro | trust"></div>
 
     <div class="dramaweb" ng-if="dramaweb">
         <table>

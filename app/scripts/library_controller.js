@@ -792,7 +792,7 @@ littb.controller("libraryCtrl", function(
         return (size / (1024 * 1024)).toFixed(2) + "MB"
     }
 
-    document.addEventListener("click", function() {
+    function clickhandler() {
         if ($(".popover").length) {
             window.safeApply(s, () => {
                 for (let type of [...s.typesConf.etext, ...s.typesConf.faksimil]) {
@@ -802,14 +802,15 @@ littb.controller("libraryCtrl", function(
             })
             window.safeApply(s, () => (s.hidePopup = false))
         }
-    })
+    }
+    document.addEventListener("click", clickhandler)
     $("body").on("click", ".popover", function(event) {
         console.log("popover click")
         event.stopPropagation()
     })
-    // s.$on("$destoy", () => {
-    //     $("body").off("click", ".popover")
-    // })
+    s.$on("$destroy", () => {
+        $("body").off("click", ".popover")
+    })
     s.onDownload = () => {
         let exports = s.getDownloadSet()
         let groups = _.groupBy(exports, exp => `${exp.mediatype}+${exp.type}`)

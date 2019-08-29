@@ -743,12 +743,11 @@ littb.controller("readingCtrl", function(
     s.getWidthConstraint = () => {
         if (!s.workinfo) return
         console.log("getSrcsetSize()", getSrcsetSize(), s.size)
-        let maybeSize = getSrcsetSize()
-        if (typeof maybeSize != "undefined") {
-            let width = Number(s.workinfo.width["size_" + maybeSize])
-            return width / 2 // not all size 5 are twice as large as size 2
-        }
-        // return s.workinfo.width["size_" + (getSrcsetSize() || s.size)]
+        // let maybeSize = getSrcsetSize()
+        // if (typeof maybeSize != "undefined") {
+        //     let width = Number(s.workinfo.width["size_" + maybeSize])
+        //     return width / 2 // not all size 5 are twice as large as size 2
+        // }
         return s.workinfo.width["size_" + s.size]
     }
 
