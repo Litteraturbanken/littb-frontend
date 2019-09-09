@@ -26,7 +26,8 @@ module.exports = {
                       /popup.*/,
                       /autocomplete/,
                       /rzslider/,
-                      /rz-.*/
+                      /rz-.*/,
+                      /content/
                   ],
                   extractors: [{ extractor: TailwindExtractor, extensions: ["html", "js"] }]
               }),
