@@ -65,18 +65,18 @@ littb.controller("searchCtrl", function(
     s.selectedKeywords = []
 
     s.filters = {
-        "main_author.gender": $location.search()["kön"],
+        "authors.gender": $location.search()["kön"],
         authorkeyword: [],
         keywords: [],
         languages: [],
-        "main_author.author_id": []
+        "authors>author_id": []
     }
 
     const listKeys = _.pick($location.search(), "keywords", "languages", "authorkeyword")
     _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
     s.filters = _.omitBy(s.filters, _.isNil)
     if ($location.search().forfattare) {
-        s.filters["main_author.author_id"] = $location.search().forfattare.split(",")
+        s.filters["authors>author_id"] = $location.search().forfattare.split(",")
     }
     if ($location.search().titlar) {
         s.selectedTitles = $location.search().titlar.split(",")
@@ -89,7 +89,7 @@ littb.controller("searchCtrl", function(
             let oldVal = $location.search().forfattare.split(",")
             authors.then(() => {
                 $timeout(function() {
-                    s.filters["main_author.author_id"] = oldVal
+                    s.filters["authors>author_id"] = oldVal
                     // s.selectedAuthors = oldVal
                     $("select.author_select").val(oldVal)
                     return $("select.author_select").trigger("change")
@@ -247,7 +247,7 @@ littb.controller("searchCtrl", function(
                 s.titles = titles
                 s.titles_hits = hits
                 authors.then(() => {
-                    if (!s.filters["main_author.author_id"].length) {
+                    if (!s.filters["authors>author_id"].length) {
                         s.authors = util.sortAuthors(
                             _.map(author_aggs, item => s.authorsById[item.author_id])
                         )
@@ -280,7 +280,7 @@ littb.controller("searchCtrl", function(
             {
                 key: "forfattare",
                 // expr : "selected_author.pseudonymfor || selected_author.author_id"
-                expr: "filters['main_author.author_id']",
+                expr: "filters['authors>author_id']",
                 val_in: listValIn,
                 val_out: listValOut
                 // post_change: change
@@ -293,7 +293,7 @@ littb.controller("searchCtrl", function(
             },
             {
                 key: "kön",
-                expr: "filters['main_author.gender']",
+                expr: "filters['authors.gender']",
                 default: "all"
                 // post_change: refreshTitles
             },
