@@ -12,7 +12,7 @@ class TailwindExtractor {
 
 module.exports = {
     plugins: [
-        tailwindcss("./tailwind.js"),
+        tailwindcss("./tailwind.conf.js"),
         devMode
             ? undefined
             : purgecss({
