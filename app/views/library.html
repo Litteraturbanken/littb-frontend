@@ -4,7 +4,7 @@
 <img bkg-img src="../img/library.jpg"></img>
 <div ng-class="{searching:searching, dl_mode : dl_mode}">
     <div id="controls">
-        <form class="sm:p-5 p-2 sm:border border-black" ng-submit="refreshData()">
+        <form class="sm:p-5 p-2 sm:border border-gray-900" ng-submit="refreshData()">
             
             <div class="">
                 <div class="main_input row no-gutters">
@@ -109,8 +109,8 @@
                         <span ng-if="dl_mode">Stäng källmaterial</span>
             </a></div>
                 <div class="more_container h-8 relative" ng-class="{show_more : dl_mode}" ng-show="dl_mode">
-                    <a class="sc btn btn-small absolute pin-l" ng-show="!isAllVisibleSelected()" ng-click="onSelectVisible()">Välj alla verk i listan</a>
-                    <a class="sc btn btn-small absolute pin-l" ng-show="isAllVisibleSelected()" ng-click="onDeselectVisible()">Avmarkera alla verk i listan</a>
+                    <a class="sc btn btn-small absolute left" ng-show="!isAllVisibleSelected()" ng-click="onSelectVisible()">Välj alla verk i listan</a>
+                    <a class="sc btn btn-small absolute left" ng-show="isAllVisibleSelected()" ng-click="onDeselectVisible()">Avmarkera alla verk i listan</a>
                 </div>
                 <!-- <a class="btn text-xs submit pull-right" ng-click="setDownloadMode()">Ladda ner…</a> -->
             </div>
@@ -118,7 +118,7 @@
         
         <!-- <div class="row box_container"> -->
         <div class="inline-flex items-stretch w-full">
-            <div class="box sm:p-6 p-2 max-w-xl sm:border border-black" >
+            <div class="box sm:p-6 p-2 max-w-4xl sm:border border-gray-900" >
 
                 <div class="btn-group p-0 mb-10 ">
                     <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 

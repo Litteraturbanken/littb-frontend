@@ -13,7 +13,7 @@
                 <input type="checkbox" id="etext_{{$index}}" ng-model="type.selected" class="mb-1 mr-1" 
                        ng-disabled="!exportsFromMediatypes('etext', [type.id]).length">
 
-                <label class="capitalize" for="etext_{{$index}}" ng-class="{active : type.selected, 'text-grey' : !exportsFromMediatypes('etext', [type.id]).length}">{{capitalizeLabel(type.label || type.id)}}</label>
+                <label class="capitalize" for="etext_{{$index}}" ng-class="{active : type.selected, 'text-gray-500' : !exportsFromMediatypes('etext', [type.id]).length}">{{capitalizeLabel(type.label || type.id)}}</label>
             </li>
         </ul>
     </div>
@@ -27,7 +27,7 @@
 
                 <label class="capitalize" for="faksimil_{{$index}}" ng-class="{active : type.selected, 'text-grey' : !exportsFromMediatypes('faksimil', [type.id]).length}">{{capitalizeLabel(type.label || type.id)}}</label>
 
-                <div class="text-sm italic text-grey-dark" ng-if="type.disabled">Kommer snart</div>
+                <div class="text-sm italic text-gray-600" ng-if="type.disabled">Kommer snart</div>
             </li>
         </ul>
     </div>
