@@ -133,8 +133,8 @@
                         ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
                     <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !titleModel.epub_hits}" 
                         ng-model="listType" btn-radio="'epub'" ng-click="listType = 'epub' && fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></label>
-                    <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
-                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label>
+                    <!-- <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
+                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label> -->
                 </div>
                 
                 
