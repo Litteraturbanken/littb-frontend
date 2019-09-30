@@ -303,7 +303,7 @@ littb.controller("libraryCtrl", function(
         s.fetchWorks(s.listType !== "works", false)
         s.fetchWorks(s.listType !== "epub", true)
         s.fetchParts(s.listType !== "parts")
-        fetchAudio(s.listType !== "audio")
+        // fetchAudio(s.listType !== "audio")
     }
     s.capitalizeLabel = label => {
         return { pdf: "PDF", xml: "XML" }[label] || label
@@ -560,11 +560,12 @@ littb.controller("libraryCtrl", function(
             s.fetchParts(false)
         } else if (s.listType == "epub") {
             s.fetchWorks(false, true)
-        } else if (s.listType == "audio") {
-            fetchAudio(false)
         } else if (s.listType == "authors") {
             s.setAuthorData()
         }
+        // else if (s.listType == "audio") {
+        //     fetchAudio(false)
+        // }
         // s.refreshData()
     }
     let sortInit = $location.search().sort || "popularitet"

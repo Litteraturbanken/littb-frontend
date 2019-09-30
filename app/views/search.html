@@ -80,12 +80,12 @@
                     <div class="auth_select_container">
                         <select multiple class="filter_select author_select" 
                                 ui-select2="authorSelectSetup" 
-                                ng-model="filters['main_author.author_id']" 
+                                ng-model="filters['authors>author_id']" 
                                 data-placeholder="Författare" 
                                 ng-change="onAuthChange()">
                             <option value=""></option>
                             <option value='{{author.author_id}}' ng-repeat="author in authors">
-                                <span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span>
+                                <span class="surname">{{author.name_for_index.split(',')[0] + (author.name_for_index.split(',').length > 1 ? ", " : "")}}</span>
                                                                     {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
                             </option>
                         </select> 

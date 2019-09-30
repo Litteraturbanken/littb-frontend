@@ -123,6 +123,10 @@ h3 {
     text-transform: none;
 }
 
+ul.litt-list {
+    max-width : 700px;
+}
+
 .font-normal {
     @include font-normal();
 }
@@ -4201,6 +4205,12 @@ grundform-clean {
             color : #333;
             * {
                 color : #333;
+            }
+        }
+        .sect1 {
+        
+            .titlepage .title {
+                display: none;
             }
         }
     }

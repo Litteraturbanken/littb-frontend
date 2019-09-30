@@ -174,7 +174,7 @@
                 
                 <ng-include src="worksListURL" ng-if="listType == 'epub'"></ng-include>
 
-                <div class="result title pl-0 sm:ml-3" ng-if="listType == 'audio'">
+                <!-- <div class="result title pl-0 sm:ml-3" ng-if="listType == 'audio'">
                     <sort-list ></sort-list>
                     <table class="table w-full">
                         <tr ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
@@ -192,7 +192,7 @@
                         </tr>
 
                     </table>
-                </div>
+                </div> -->
                 <div class="result title pl-0 sm:ml-3" ng-if="listType == 'parts'">
                     <sort-list ></sort-list>
                     <div class="table-responsive-sm">

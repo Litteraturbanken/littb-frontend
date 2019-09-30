@@ -508,22 +508,22 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
                 "etext,faksimil,pdf,etext-part,faksimil-part",
                 "translator"
             )
-        },
-        {
-            label: "Som uppläsare",
-            data: null,
-            showAuthor(work) {
-                return work["authors"]
-            },
-            def: backend.getAudioList({ reader: s.author })
-        },
-        {
-            label: "Uppläsningar",
-            data: null,
-            showAuthor: false,
-            def: backend.getAudioList({ author_id: s.author }),
-            audioExtras: true
         }
+        // {
+        //     label: "Som uppläsare",
+        //     data: null,
+        //     showAuthor(work) {
+        //         return work["authors"]
+        //     },
+        //     def: backend.getAudioList({ reader: s.author })
+        // },
+        // {
+        //     label: "Uppläsningar",
+        //     data: null,
+        //     showAuthor: false,
+        //     def: backend.getAudioList({ author_id: s.author }),
+        //     audioExtras: true
+        // }
     ]
     s.getSortOrder = function(obj) {
         if (obj.showAuthor === false) {
