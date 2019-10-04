@@ -6,9 +6,9 @@ const c = window.console
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (_.str.startsWith(location.host, "demolittbred")) {
     STRIX_URL = "http://demolittbdev.spraakdata.gu.se/api"
@@ -330,15 +330,22 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params
             }).then(function(response) {
                 c.log("response", response)
-                const { data, author_aggregation, hits, distinct_hits } = response.data
+                const { data, author_aggregation, hits, distinct_hits, suggest } = response.data
 
                 return {
                     titles: disableGrouping ? data : expandMediatypes(data),
                     author_aggs: author_aggregation,
                     hits,
-                    distinct_hits
+                    distinct_hits,
+                    suggest
                 }
             })
+        },
+
+        getAuthorSuggest(str) {
+            return $http({
+                url: `${STRIX_URL}/list_all/author?filter_string=${str}&to=0&suggest=true`
+            }).then(response => response.data.suggest)
         },
 
         getAboutAuthors() {

@@ -360,6 +360,14 @@ littb.controller("libraryCtrl", function(
             //     s.authorData = s.authorData.slice(0, s.authLimit)
             // }
         }
+
+        if (!s.authorData.length) {
+            backend.getAuthorSuggest(s.filter).then(suggest => {
+                if (suggest.length) {
+                    s.authorSuggest = suggest
+                }
+            })
+        }
     }
 
     s.fetchParts = countOnly => {
@@ -381,16 +389,18 @@ littb.controller("libraryCtrl", function(
                 filter_and,
                 author_aggs: true,
                 partial_string: true,
+                suggest: true,
                 include:
                     "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
                     "main_author.author_id,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
                     "authors,work_authors",
                 ...size
             })
-            .then(({ titles, hits, author_aggs }) => {
+            .then(({ titles, suggest, hits, author_aggs }) => {
                 s.all_titles = titles
                 s.partSearching = false
                 s.parts_hits = hits
+                s.partSuggest = suggest
                 return { titles, hits, author_aggs }
             })
         $q.all([def, authors]).then(([{ author_aggs }]) => {
@@ -461,6 +471,11 @@ littb.controller("libraryCtrl", function(
         // })
     }
 
+    s.setFilter = f => {
+        s.filter = f
+        s.refreshData()
+    }
+
     s.titleModel = {
         works: [],
         epub: [],
@@ -501,9 +516,10 @@ littb.controller("libraryCtrl", function(
             filter_and,
             partial_string: true,
             author_aggs: true,
+            suggest: true,
             ...size
         })
-        $q.all([def, authors]).then(([{ titles, author_aggs, hits, distinct_hits }]) => {
+        $q.all([def, authors]).then(([{ titles, author_aggs, suggest, hits, distinct_hits }]) => {
             console.log("titleArray after all", titles)
             if (!titles.length) {
                 window.gtag("event", "search-no-hits", {
@@ -519,6 +535,7 @@ littb.controller("libraryCtrl", function(
                 s.titleModel[epubOnly ? "epub" : "works"] = titles
             }
             s.titleModel[epubOnly ? "epub_hits" : "works_hits"] = distinct_hits
+            s.titleModel[epubOnly ? "epub_suggest" : "works_suggest"] = suggest
             // s.titleHits = hits
             if (!epubOnly) {
                 s.currentAuthors = author_aggs.map(({ author_id }) => s.authorsById[author_id])
@@ -823,6 +840,13 @@ littb.controller("libraryCtrl", function(
             event_label: label
         })
         backend.downloadFiles(exports)
+    }
+
+    s.autocomplete = val => {
+        // return backend.autocomplete(val).then(function(data) {
+        //     console.log("autocomplete", data, val)
+        //     return data
+        // })
     }
 
     // if $location.search().keyword

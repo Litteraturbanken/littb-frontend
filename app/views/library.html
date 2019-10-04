@@ -148,8 +148,8 @@
                             <li class="spinner_row" ng-show="authorSearching">
                                 <i class="spinner fa fa-spinner fa-pulse"></i>
                             </li>
-                            <li ng-show="!authorSearching && !(authorData).length">
-                                Inga träffar.
+                            <li class="text-lg" ng-show="!authorSearching && !authorData.length">
+                                Inga träffar. <span ng-show='authorSuggest[0]'>Menade du <a class="link" ng-click='setFilter(authorSuggest[0].text)'>{{authorSuggest[0].text}}</a>?</span>
                             </li>
                 
                             <li ng-repeat="author in authorData | limitTo:(authLimit || Infinity) track by author.author_id"
@@ -197,8 +197,8 @@
                     <sort-list ></sort-list>
                     <div class="table-responsive-sm">
                         <table class="table">
-                            <tr class="" ng-show="!partSearching && !all_titles.length">
-                                <td>Inga träffar.</td>
+                            <tr class="text-lg" ng-show="!partSearching && !all_titles.length">
+                                <td>Inga träffar. <span ng-show='partSuggest[0]'>Menade du <a class="link" ng-click='setFilter(partSuggest[0].text)'>{{partSuggest[0].text}}</a>?</span></td>
                             </tr>
                             
                             <tr ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
