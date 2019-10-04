@@ -10,12 +10,11 @@ let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 // let STRIX_URL = "https://litteraturbanken.se/api"
 let STRIX_URL = "/api"
 
-if (_.str.startsWith(location.host, "demolittbred")) {
-    STRIX_URL = "http://demolittbdev.spraakdata.gu.se/api"
-} else if (_.str.startsWith(location.host, "demolittb")) {
-    STRIX_URL = "/api"
-}
-if (_.str.startsWith(location.host, "litteraturbanken")) {
+if (
+    _.str.startsWith(location.host, "red.l") ||
+    _.str.startsWith(location.host, "dev.l") ||
+    _.str.startsWith(location.host, "litteraturbanken")
+) {
     STRIX_URL = "/api"
 }
 
