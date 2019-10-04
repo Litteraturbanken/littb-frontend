@@ -365,6 +365,8 @@ littb.controller("libraryCtrl", function(
             backend.getAuthorSuggest(s.filter).then(suggest => {
                 if (suggest.length) {
                     s.authorSuggest = suggest
+                } else {
+                    s.authorSuggest = null
                 }
             })
         }
