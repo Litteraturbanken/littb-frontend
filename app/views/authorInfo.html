@@ -84,7 +84,7 @@
                     <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                         <tr ng-repeat="work in titleobj.data | orderBy:getSortOrder(titleobj) track by $index">
                             <td class="mediatypes">
-                                <a ng-if="work.doc_type == 'audio'" ng-href="/ljudarkivet?spela={{work.file}}">Lyssna</a>
+                                <!-- <a ng-if="work.doc_type == 'audio'" ng-href="/ljudarkivet?spela={{work.file}}">Lyssna</a> -->
                                 <span ng-repeat="mediatype in work | readMediatypes track by $index ">
                                     <a ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
                                     <span ng-show="!last">&nbsp; </span>
@@ -98,11 +98,11 @@
                                 <a href="/forfattare/{{titleobj.showAuthor(work)[0].author_id}}">{{titleobj.showAuthor(work)[0].name_for_index}}</a>
                             </td>
                             <td>
-                                <a class="title" ng-if="work.doc_type == 'audio'" 
+                                <!-- <a class="title" ng-if="work.doc_type == 'audio'" 
                                     ng-href="/ljudarkivet?spela={{work.file}}"
                                     tooltip="{{getTitleTooltip(work)}}">
                                     {{work.shorttitle || work.title}}
-                                </a>
+                                </a> -->
                                 <a class="title" ng-if="work.doc_type != 'audio'" 
                                     ng-hide="work.doc_type == 'infopost'"
                                     ng-href="{{work.mediatypes[0].url + '?om-boken'}}"

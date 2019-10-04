@@ -37,7 +37,7 @@
                          id="{{getUniqId(row)}}"
                          class="header_container inline-block align-middle">
                         <div class="header">
-                            <span class="title_inner" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
+                            <span class="title_inner" tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" tooltip-append-to-body >
                                 <a ng-if="listType == 'works'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
                                 <a ng-if="listType == 'epub'" 
                                    ng-href="/txt/epub/{{row.main_author.author_id + '_' + (row.work_title_id || row.title_id)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>

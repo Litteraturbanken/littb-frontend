@@ -957,8 +957,8 @@ littb.controller("autocompleteCtrl", function(
                         typeLabel: "Gå till sidan"
                     },
                     {
-                        label: "Ljudarkivet",
-                        url: "/ljudarkivet",
+                        label: "Ljud och bild",
+                        url: "/ljudochbild",
                         typeLabel: "Gå till sidan"
                     },
                     {

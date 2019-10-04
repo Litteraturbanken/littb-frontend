@@ -339,6 +339,11 @@ window.littb = angular
                 reloadOnSearch: false,
                 title: "Litteraturbankens uppläsningar"
             })
+            .when("/ljudochbild", {
+                redirectTo: () => {
+                    window.location = "https://litteraturbanken.se/ljudochbild"
+                }
+            })
             .when("/forfattare", { redirectTo: "/bibliotek" })
 
             .when(

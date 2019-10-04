@@ -1035,11 +1035,11 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                         item.typeLabel = "Författare"
                     }
 
-                    if (item.doc_type === "audio") {
-                        item.url = `/ljudarkivet?spela=${item.file}`
-                        item.label = item.title
-                        item.typeLabel = "Ur ljudarkivet"
-                    }
+                    // if (item.doc_type === "audio") {
+                    //     item.url = `/ljudarkivet?spela=${item.file}`
+                    //     item.label = item.title
+                    //     item.typeLabel = "Ur ljudarkivet"
+                    // }
                 }
 
                 return content.data
