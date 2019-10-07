@@ -13,7 +13,7 @@ littb.controller("textjamforelseCtrl", function(
     $animate,
     $rootScope,
     $location,
-    $modal,
+    $uibModal,
     backend,
     $window,
     $timeout
@@ -463,9 +463,7 @@ littb.controller("textjamforelseCtrl", function(
                         doAddPageToContext = false
                         for (page of Array.from(pages)) {
                             if (!page.usedInContext) {
-                                html += `<span class="koll-context-pb wit ${page.wit}">${
-                                    page.n
-                                }</span>`
+                                html += `<span class="koll-context-pb wit ${page.wit}">${page.n}</span>`
                                 page.usedInContext = true
                             }
                         }

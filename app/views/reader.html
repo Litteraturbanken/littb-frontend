@@ -50,11 +50,11 @@
         <div>
             <div class="author" ng-bind-html="getValidAuthors() | formatAuthors:true | trust"></div>
             <a  class="title" ng-click="openModal()" 
-                tooltip="{{workinfo.title != workinfo.shorttitle ? workinfo.title : ''}}" 
+                uib-tooltip="{{workinfo.title != workinfo.shorttitle ? workinfo.title : ''}}" 
                 tooltip-placement="{{workinfo.title.length > 75 ? 'left' : 'top'}}">
                 {{workinfo.showtitle || workinfo.shorttitle || workinfo.title}}
             </a>
-            <span tooltip="Tryckår" ng-show="workinfo.sort_date_imprint.plain">({{workinfo.sort_date_imprint.plain}})</span>
+            <span uib-tooltip="Tryckår" ng-show="workinfo.sort_date_imprint.plain">({{workinfo.sort_date_imprint.plain}})</span>
         </div>
         
         <hr>
@@ -72,7 +72,7 @@
             <div 
                  data-ellipsis 
                  ng-bind="getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title" 
-                 tooltip="{{getCurrentPart().title != getCurrentPart().navtitle ? getCurrentPart().title : ''}}" 
+                 uib-tooltip="{{getCurrentPart().title != getCurrentPart().navtitle ? getCurrentPart().title : ''}}" 
                  tooltip-placement="left"
                  tooltip-append-to-body
                  class="navtitle"></div>
@@ -126,7 +126,7 @@
                     <a ng-show="!workinfo.searchable" class="disabled">Sök i verket</a> 
                     <a ng-show="workinfo.searchable" ng-click="openSearchWorks()">Sök i verket</a> 
 
-                    <div collapse="!show_search_work" class="searchbox" >
+                    <div uib-collapse="!show_search_work" class="searchbox" >
                         <div class="collapse-content">
                             <div class="header">
                                 <div class="auth">
@@ -178,12 +178,12 @@
                 <div class="header">
                     <h2 class="author sc" ng-bind-html="getValidAuthors() | formatAuthors:true | trust"></h2>
                     <h2 class="title">
-                        {{workinfo.title}} <span tooltip="Tryckår" ng-show="workinfo.sort_date_imprint.plain">({{workinfo.sort_date_imprint.plain}})</span>
+                        {{workinfo.title}} <span uib-tooltip="Tryckår" ng-show="workinfo.sort_date_imprint.plain">({{workinfo.sort_date_imprint.plain}})</span>
                      </h2>
                 </div>
 
                 <ul class="part_menu" >
-                    <li ng-repeat="part in workinfo.parts" tooltip="{{part.title}}">
+                    <li ng-repeat="part in workinfo.parts" uib-tooltip="{{part.title}}">
                         <span>
                             <span ng-repeat="auth in part.authors" class="author">{{authorById[auth.author_id].surname}}<span ng-show="!$last">, </span> </span>
                         </span>
@@ -303,7 +303,7 @@
                 <ul class="work_parts">
                     <li><a ng-click="gotopage(startpage)">[Start]</a></li>
                     <li ng-repeat="part in workinfo.parts">
-                        <a ng-click="gotopage(part.startpagename)">{{part.showtitle}}</a>
+                        <a ng-click="gotopage(part.startpagename)">{{part.navtitle || part.shorttitle || part.title}}</a>
                     </li>
                 </ul>
             </div>

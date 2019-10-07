@@ -100,19 +100,19 @@
                             <td>
                                 <!-- <a class="title" ng-if="work.doc_type == 'audio'" 
                                     ng-href="/ljudarkivet?spela={{work.file}}"
-                                    tooltip="{{getTitleTooltip(work)}}">
+                                    uib-tooltip="{{getTitleTooltip(work)}}">
                                     {{work.shorttitle || work.title}}
                                 </a> -->
                                 <a class="title" ng-if="work.doc_type != 'audio'" 
                                     ng-hide="work.doc_type == 'infopost'"
                                     ng-href="{{work.mediatypes[0].url + '?om-boken'}}"
-                                    tooltip="{{getTitleTooltip(work)}}">
+                                    uib-tooltip="{{getTitleTooltip(work)}}">
                                     {{work.shorttitle || work.title}}
                                     <span ng-if="work.imprintyear">({{work.imprintyear}})</span>
                                 </a>
                                 <a class="title" ng-if="work.doc_type == 'infopost'" 
                                     ng-href="{{work.mediatypes[0].url}}"
-                                    tooltip="{{getTitleTooltip(work)}}">
+                                    uib-tooltip="{{getTitleTooltip(work)}}">
                                     {{work.shorttitle || work.title}}
                                 </a>
                                 

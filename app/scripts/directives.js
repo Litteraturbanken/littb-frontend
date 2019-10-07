@@ -414,6 +414,7 @@ littb.directive("popper", $rootElement => ({
         popper: "@"
     },
     link(scope, elem, attrs) {
+        console.log("popper link")
         const popup = elem.next()
         popup.appendTo("body").hide()
         const closePopup = () => popup.hide()
@@ -426,6 +427,7 @@ littb.directive("popper", $rootElement => ({
         //     popper =
 
         elem.on("click", function(event) {
+            console.log("elem click")
             if (popup.is(":visible")) {
                 closePopup()
             } else {

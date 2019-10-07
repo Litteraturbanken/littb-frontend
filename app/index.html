@@ -145,7 +145,7 @@
         </script>
 
         <script type="text/ng-template" id="customTemplate.html">
-          <a tooltip="{{match.label}}" tooltip-popup-delay="500" tooltip-placement="right">
+          <a uib-tooltip="{{match.label}}" tooltip-popup-delay="500" tooltip-placement="right">
               <span class="type_label">
                 {{match.model.typeLabel}}<span ng-if="match.model.mediatypeLabel">,</span> {{match.model.mediatypeLabel}}
               </span>
@@ -159,7 +159,7 @@
                 
                 <input type="text" id="autocomplete"
                     ng-model="completeObj"
-                    typeahead="item as item.label for item in (forceShow || autocomplete($viewValue))"
+                    uib-typeahead="item as item.label for item in (forceShow || autocomplete($viewValue))"
                     typeahead-trigger
                     focusable
                     typeahead-wait-ms="200"

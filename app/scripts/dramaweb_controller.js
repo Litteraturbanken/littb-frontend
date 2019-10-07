@@ -25,7 +25,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
     $q,
     $filter,
     $rootElement,
-    $modal,
+    $uibModal,
     $timeout
 ) {
     const s = $scope
@@ -168,7 +168,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
 
                     s.workinfoPromise.then(function(workinfo) {
                         s.workinfo = workinfo
-                        const about_modal = $modal.open({
+                        const about_modal = $uibModal.open({
                             templateUrl: "sourceInfoModal.html",
                             scope: s,
                             windowClass: "about"

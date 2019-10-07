@@ -122,17 +122,17 @@
 
                 <div class="btn-group p-0 mb-10 ">
                     <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 
-                        ng-model="listType" btn-radio="'authors'" ng-click="listType = 'authors' && setAuthorData()">
+                        ng-model="listType" uib-btn-radio="'authors'" ng-click="setAuthorData()">
                         <span ng-if="!dl_mode">Författare</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
                     </label>
                     <label class="sc btn btn-small" 
-                        ng-model="listType" btn-radio="'works'" ng-click="listType = 'works' && fetchWorks()">
+                        ng-model="listType" uib-btn-radio="'works'" ng-click="fetchWorks()">
                         Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
                     </label>
                     <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !parts_hits}" 
-                        ng-model="listType" btn-radio="'parts'" ng-click="listType = 'parts' && fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
+                        ng-model="listType" uib-btn-radio="'parts'" ng-click="fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
                     <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !titleModel.epub_hits}" 
-                        ng-model="listType" btn-radio="'epub'" ng-click="listType = 'epub' && fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></label>
+                        ng-model="listType" uib-btn-radio="'epub'" ng-click="fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></label>
                     <!-- <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
                         ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label> -->
                 </div>
@@ -179,7 +179,7 @@
                     <table class="table w-full">
                         <tr ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
                         
-                            <td tooltip="{{row.title}}" class="title whitespace-no-wrap">
+                            <td uib-tooltip="{{row.title}}" class="title whitespace-no-wrap">
                                 <a ng-href="/ljudarkivet?spela={{row.file}}">
                                 {{row.title}}
                                 </a>
@@ -203,8 +203,8 @@
                             
                             <tr ng-repeat="row in all_titles" class="parts" ng-class="{first_part : $first}">
                             
-                                <!-- <div class="header" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500"> -->
-                                    <td class="title" tooltip="{{::row.title != row.shorttitle ? row.title : ''}}">
+                                <!-- <div class="header" uib-tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500"> -->
+                                    <td class="title" uib-tooltip="{{::row.title != row.shorttitle ? row.title : ''}}">
                                         <a ng-href="/forfattare/{{row.work_authors[0].author_id}}/titlar/{{row.work_title_id}}/sida/{{row.startpagename}}/{{row.mediatype}}">
                                         {{row.shorttitle || row.title}}
                                         </a>

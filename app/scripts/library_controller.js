@@ -48,6 +48,7 @@ littb.controller("libraryCtrl", function(
     s.show_dl = $location.search().avancerat != null
 
     s.listType = $location.search().visa || "works"
+    console.log("listType init", s.listType)
 
     s.authLimit = 150
 
@@ -309,6 +310,7 @@ littb.controller("libraryCtrl", function(
         return { pdf: "PDF", xml: "XML" }[label] || label
     }
     s.setAuthorData = function() {
+        console.log("setAuthorData", s.listType)
         let [key, dir] = (s.sort.authors || "").split("|")
         console.log("key, dir", key, dir)
         let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
@@ -931,6 +933,7 @@ littb.controller("libraryCtrl", function(
             expr: "listType",
             default: "works",
             post_change: function(listType) {
+                console.log("post_change listType", listType)
                 if (isInitListType) {
                     let sortItem = _.find(s.sortItems[listType || "works"], function(item) {
                         return item.active

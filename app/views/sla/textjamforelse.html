@@ -27,7 +27,7 @@
         <button type="{{worksToCompare.length>= 2 ? 'submit':'button'}}"
                 class="btn btn-default btn-small"
                 ng-class="{active: loading, disabled: worksToCompare.length < 2}"
-                tooltip="{{worksToCompare.length < 2 ? 'Välj åtminstone två utgåvor att jämföra först!' : null}}"
+                uib-tooltip="{{worksToCompare.length < 2 ? 'Välj åtminstone två utgåvor att jämföra först!' : null}}"
                 tooltip-placement="right">Jämför</button>
         <button type="button"
                 class="btn btn-default btn-small"
@@ -89,11 +89,11 @@
     <div class="context-version" 
          ng-class="baseWit == version.wit ? 'base' : myHover"  
          ng-repeat="version in contextVersions">
-        <a class="fa fa-book" ng-href="{{version.url}}" tooltip="Gå till verkets infosida."/>
+        <a class="fa fa-book" ng-href="{{version.url}}" uib-tooltip="Gå till verkets infosida."/>
         <span class="title">{{version.title}}
         </span>
         <span ng-if="baseWit == version.wit" 
-              tooltip="Denna utgåva är vald som grundutgåva">☆</span>
+              uib-tooltip="Denna utgåva är vald som grundutgåva">☆</span>
         <i ng-show="baseWit != version.wit && myHover">★</i>
         <div id="context-versions-controls">
             <span class="control show-in-text" 

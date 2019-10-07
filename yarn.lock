@@ -829,9 +829,10 @@ angular-touch@1.5.9:
   version "1.5.9"
   resolved "https://registry.yarnpkg.com/angular-touch/-/angular-touch-1.5.9.tgz#d280981d9ab9c76f1c8f306bf3997fe92604bf8b"
 
-angular-ui-bootstrap@0.13.3:
-  version "0.13.3"
-  resolved "https://registry.yarnpkg.com/angular-ui-bootstrap/-/angular-ui-bootstrap-0.13.3.tgz#d7620803c8744f38f95fd3e930777b2feff31505"
+angular-ui-bootstrap@^2.5.6:
+  version "2.5.6"
+  resolved "https://registry.yarnpkg.com/angular-ui-bootstrap/-/angular-ui-bootstrap-2.5.6.tgz#23937322ec641a6fbee16498cc32452aa199e7c5"
+  integrity sha512-yzcHpPMLQl0232nDzm5P4iAFTFQ9dMw0QgFLuKYbDj9M0xJ62z0oudYD/Lvh1pWfRsukiytP4Xj6BHOSrSXP8A==
 
 angular-ui-select2@^0.0.5:
   version "0.0.5"

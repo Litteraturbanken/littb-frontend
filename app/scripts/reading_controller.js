@@ -13,7 +13,7 @@ littb.controller("readingCtrl", function(
     $window,
     $rootElement,
     authors,
-    $modal,
+    $uibModal,
     $templateCache,
     $http,
     $q,
@@ -574,7 +574,7 @@ littb.controller("readingCtrl", function(
             default: "no",
             post_change(val) {
                 if (val) {
-                    about_modal = $modal.open({
+                    about_modal = $uibModal.open({
                         templateUrl: "sourceInfoModal.html",
                         scope: s,
                         windowClass: "about"
@@ -597,7 +597,7 @@ littb.controller("readingCtrl", function(
             scope_name: "show_chapters",
             post_change(val) {
                 if (val) {
-                    chapter_modal = $modal.open({
+                    chapter_modal = $uibModal.open({
                         templateUrl: "chapters.html",
                         scope: s,
                         windowClass: "chapters"
@@ -915,7 +915,7 @@ littb.controller("readingCtrl", function(
 
     s.$on("img_expand", function(evt, src) {
         s.activeSrc = src
-        $modal.open({
+        $uibModal.open({
             templateUrl: "img_full.html",
             scope: s,
             windowClass: "img_full",

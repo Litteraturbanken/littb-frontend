@@ -902,7 +902,7 @@ littb.controller("autocompleteCtrl", function(
     $location,
     $window,
     $timeout,
-    $modal,
+    $uibModal,
     $http
 ) {
     const s = $scope
@@ -1068,7 +1068,7 @@ littb.controller("autocompleteCtrl", function(
     const show = function() {
         // s.show_autocomplete = true
 
-        s.modal = $modal.open({
+        s.modal = $uibModal.open({
             templateUrl: "autocomplete.html",
             scope: s,
             windowClass: "autocomplete",
@@ -1300,7 +1300,7 @@ littb.controller("lexiconCtrl", function(
     $rootScope,
     $q,
     $timeout,
-    $modal,
+    $uibModal,
     util,
     $window
 ) {
@@ -1330,7 +1330,7 @@ littb.controller("lexiconCtrl", function(
         if (!modal) {
             s.$broadcast("blur")
 
-            modal = $modal.open({
+            modal = $uibModal.open({
                 templateUrl: "so_modal_template.html",
                 scope: s
             })

@@ -70,14 +70,14 @@ window.littb = angular
     .module("littbApp", [
         "ngRoute",
         "ui.bootstrap",
-        "template/modal/backdrop.html",
-        "template/modal/window.html",
-        "template/tooltip/tooltip-popup.html",
-        "template/popover/popover.html",
-        "template/typeahead/typeahead-popup.html",
-        "template/typeahead/typeahead-match.html",
-        "template/tabs/tabset.html",
-        "template/tabs/tab.html",
+        // "template/modal/backdrop.html",
+        // "template/modal/window.html",
+        // "template/tooltip/tooltip-popup.html",
+        // "template/popover/popover.html",
+        // "template/typeahead/typeahead-popup.html",
+        // "template/typeahead/typeahead-match.html",
+        // "template/tabs/tabset.html",
+        // "template/tabs/tab.html",
         "angularSpinner",
         "ngAnimate",
         "ngAria",
@@ -524,11 +524,11 @@ window.littb = angular
             })
     })
 
-littb.config(function($httpProvider, $locationProvider, $tooltipProvider) {
+littb.config(function($httpProvider, $locationProvider, $uibTooltipProvider) {
     $locationProvider.html5Mode(true)
     $locationProvider.hashPrefix("!")
     delete $httpProvider.defaults.headers.common["X-Requested-With"]
-    $tooltipProvider.options({
+    $uibTooltipProvider.options({
         appendToBody: true
     })
 })
