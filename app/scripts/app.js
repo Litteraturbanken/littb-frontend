@@ -1,5 +1,12 @@
 /** @format */
 
+import collapse from "angular-ui-bootstrap/src/collapse"
+import tooltip from "angular-ui-bootstrap/src/tooltip"
+import modal from "angular-ui-bootstrap/src/modal"
+import typeahead from "angular-ui-bootstrap/src/typeahead"
+import popover from "angular-ui-bootstrap/src/popover"
+import buttons from "angular-ui-bootstrap/src/buttons"
+
 _.templateSettings = { interpolate: /\{\{(.+?)\}\}/g }
 
 window.isDev = location.hostname !== "litteraturbanken.se"
@@ -69,7 +76,7 @@ window.getScope = () =>
 window.littb = angular
     .module("littbApp", [
         "ngRoute",
-        "ui.bootstrap",
+        // "ui.bootstrap",
         // "template/modal/backdrop.html",
         // "template/modal/window.html",
         // "template/tooltip/tooltip-popup.html",
@@ -78,6 +85,12 @@ window.littb = angular
         // "template/typeahead/typeahead-match.html",
         // "template/tabs/tabset.html",
         // "template/tabs/tab.html",
+        collapse,
+        tooltip,
+        modal,
+        typeahead,
+        popover,
+        buttons,
         "angularSpinner",
         "ngAnimate",
         "ngAria",
