@@ -263,26 +263,30 @@
     <div ng-show="isFocus" class="rightCover" ng-click="nextPage($event)" to-body></div>
     <div ng-show="isFocus && showFocusBar" class="bottomBar" set-class="{'ng-hide-remove' : !isFocus}" to-body>
         
-        <a popper my="middle bottom-25" at="bottom middle" >
+        <!-- <a popper my="middle bottom-25" at="bottom middle" > -->
+        <a uib-popover-template="'text_menu.html'" popover-placement="top-left">
             <span class="letters sans bold">A a</span>
             <!-- <span ng-include="'img/focus_letters.svg'" class="sizeBtn"> -->
         </a>
-        <div class="popper_menu popover top text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
-            <div class="arrow"></div>
-            <div class="popover_inner">
+        <script type="text/ng-template" id="text_menu.html">
+            <div class="text_menu text" ng-class="{'type-faksimil' : mediatype == 'faksimil'}">
+                <div class="arrow"></div>
+                <div class="popover_inner">
 
-                <ul ng-show="mediatype == 'etext'">
-                    <li><button ng-click="incrFontSize($event, -0.1)" class="small_text btn btn-small">Mindre <br> text</button> 
-                    <button ng-click="incrFontSize($event, 0.1)" class="btn btn-small pull-right">Större <br> text</button></li>
-                </ul>
-                <div class="size_picker" ng-show="mediatype == 'faksimil'">
-                    <button ng-click="setSize(size - 1)" ng-disabled="!sizes[((size - 1) || 0) - 1]" class="small_text btn btn-small">Mindre</button>
-                    <button ng-click="setSize(size + 1)" ng-disabled="!sizes[((size - 1) || 0) + 1]" class="small_text btn btn-small">Större</button>
+                    <ul ng-show="mediatype == 'etext'">
+                        <li><button ng-click="incrFontSize($event, -0.1)" class="small_text btn btn-small">Mindre <br> text</button> 
+                        <button ng-click="incrFontSize($event, 0.1)" class="btn btn-small pull-right">Större <br> text</button></li>
+                    </ul>
+                    <div class="size_picker" ng-show="mediatype == 'faksimil'">
+                        <button ng-click="setSize(size - 1)" ng-disabled="!sizes[((size - 1) || 0) - 1]" class="small_text btn btn-small">Mindre</button>
+                        <button ng-click="setSize(size + 1)" ng-disabled="!sizes[((size - 1) || 0) + 1]" class="small_text btn btn-small">Större</button>
+                    </div>
+                    <div class="night_switch on" ng-if="mediatype!= 'faksimil' && !$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Nattläge</div></div>
+                    <div class="night_switch off" ng-if="mediatype!= 'faksimil' && $root._night_mode" ng-click="$root._night_mode = false"><span class="icon"></span> <div class="label">Ljust läge</div></div>
                 </div>
-                <div class="night_switch on" ng-if="mediatype!= 'faksimil' && !$root._night_mode" ng-click="$root._night_mode = true"><span class="icon"></span> <div class="label">Nattläge</div></div>
-                <div class="night_switch off" ng-if="mediatype!= 'faksimil' && $root._night_mode" ng-click="$root._night_mode = false"><span class="icon"></span> <div class="label">Ljust läge</div></div>
             </div>
-        </div>
+
+        </script>
 
 
         <a class="nav left" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
@@ -293,21 +297,26 @@
             <!-- <i class="fa fa-forward"></i> -->
         </a>
 
-        <a popper my="middle bottom-25" at="bottom middle" >
+
+        <a uib-popover-template="'parts_menu.html'" popover-placement="top-right">
             <i class="fa fa-list-ul"></i>
         </a>
 
-        <div class="popper_menu popover top parts">
-            <div class="arrow"></div>
-            <div class="popover_inner">
-                <ul class="work_parts">
-                    <li><a ng-click="gotopage(startpage)">[Start]</a></li>
-                    <li ng-repeat="part in workinfo.parts">
-                        <a ng-click="gotopage(part.startpagename)">{{part.navtitle || part.shorttitle || part.title}}</a>
-                    </li>
-                </ul>
+        <script type="text/ng-template" id="parts_menu.html">
+            <div class="text_menu parts">
+                <div class="arrow"></div>
+                <div class="popover_inner">
+                    <ul class="work_parts">
+                        <li><a ng-click="gotopage(startpage)">[Start]</a></li>
+                        <li ng-repeat="part in workinfo.parts">
+                            <a ng-click="gotopage(part.startpagename)">{{part.navtitle || part.shorttitle || part.title}}</a>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
+        </script>
+
+
         <a ng-click="closeFocus($event)">
             <i class="close_btn fa fa-times"></i>
         </a>

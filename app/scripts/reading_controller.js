@@ -99,7 +99,7 @@ littb.controller("readingCtrl", function(
         const out = {}
         for (let [to, t] of _.zip(addPrefixes("transform-origin"), addPrefixes("transform"))) {
             out[t] = val
-            out[to] = "top"
+            out[to] = "left top"
         }
 
         return out

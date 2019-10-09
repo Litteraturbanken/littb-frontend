@@ -140,7 +140,7 @@
 .bottomBar.ng-hide-remove {opacity : 0; bottom : -100px; }        
 .bottomBar.ng-hide-remove-active {opacity : 1; bottom : 0; } 
 
-.type-faksimil.text.popper_menu {
+.type-faksimil.text.text_menu {
     width : 191px;
     padding : 0.5em;
     .size_picker {
@@ -152,7 +152,7 @@
     }
 
 }
-.popper_menu.text {
+.text_menu.text {
     width : 190px;
     .popover_inner {
         padding : 0.5em;
@@ -170,7 +170,7 @@
         cursor : pointer;
         .label {
             display : inline-block;
-            vertical-align: top;
+            vertical-align: middle;
             margin-left : 0.4em;
         }
         .icon {
@@ -179,6 +179,7 @@
             display : inline-block;
             border: 1px solid grey;
             border-radius : 4px;
+            vertical-align: middle;
         }
         &.on {
             .icon {
@@ -192,8 +193,7 @@
         }
     }
 }
-.popper_menu.parts {
-    display : none;
+.text_menu.parts {
     .popover_inner {
         // padding : 0.5em;
         padding : 1em 0 1em 1em;
