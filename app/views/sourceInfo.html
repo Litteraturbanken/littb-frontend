@@ -32,10 +32,13 @@
                 Ladda ner 
                 <a class="sc" ng-href="{{(workinfo | downloadMediatypes)[0].url}}" target="_self" download ng-click="log(workinfo, (workinfo | downloadMediatypes)[0].label)" ng-touch="log(workinfo, (workinfo | downloadMediatypes)[0].label)"
                 >{{(workinfo | downloadMediatypes)[0].label}}</a> 
+                <span ng-show="getFileSize('epub')">({{getFileSize('epub')}})</span>
                 <span ng-show="(workinfo | downloadMediatypes).length > 1">
                     eller <a class="sc" ng-href="{{(workinfo | downloadMediatypes)[1].url}}" target="_self" download ng-click="log(workinfo, (workinfo | downloadMediatypes)[1].label)" ng-touch="log(workinfo, (workinfo | downloadMediatypes)[1].label)"
-                    >{{(workinfo | downloadMediatypes)[1].label}}</a> <!-- ng-click="downloadFile(getDownloadMediatypes()[1].url)" ({{getFileSize(getDownloadMediatypes()[1])}}) -->
+                    >{{(workinfo | downloadMediatypes)[1].label}}
+            </a> <!-- ng-click="downloadFile(getDownloadMediatypes()[1].url)" ({{getFileSize(getDownloadMediatypes()[1])}}) -->
                 </span>
+                
 
             </div>
             <div class="mediatypes sc"

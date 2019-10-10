@@ -1275,15 +1275,24 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
         })
     }
 
-    s.getFileSize = function(mediatype) {
-        // TODO: this is broken
-        if (!(s.workinfo && mediatype)) {
-            return
+    s.getFileSize = mediatype => {
+        console.log("mediatype", mediatype)
+        // TODO: fix for pdf as well.
+        if (s.workinfo && mediatype == "epub") {
+            const exp = _.find(s.workinfo.export, item => item.type == mediatype)
+            const kb = exp.size / 1024
+            return Math.round(kb) + " KB"
         }
-        const size = s.workinfo[mediatype].file_size
-        const kb = size / 1024
-        return Math.round(kb) + " KB"
     }
+
+    // s.getFileSize = function(mediatype) {
+    //     if (!(s.workinfo && mediatype)) {
+    //         return
+    //     }
+    //     const size = s.workinfo[mediatype].file_size
+    //     const kb = size / 1024
+    //     return Math.round(kb) + " KB"
+    // }
 
     if (!s.mediatype) {
         s.mediatype = s.workinfo.mediatypes[0]
