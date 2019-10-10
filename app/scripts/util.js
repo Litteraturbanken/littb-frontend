@@ -89,7 +89,25 @@ littb.factory("util", function util($location, $filter) {
         },
         getAuthorSelectConf(s) {
             return {
+                matcher(params, data) {
+                    if (!params.term) return data
+                    if (!data || !data.id || data.id == "all" || data.id == "") return false
+                    const author = s.authorsById[data.id]
+                    if (!author) return false
+                    const terms = params.term.split(" ")
+                    const matches = _.every(
+                        _.flatten(
+                            _.map(terms, term => author.full_name.match(new RegExp(term, "i")))
+                        )
+                    )
+
+                    if (matches) {
+                        return data
+                    }
+                    return false
+                },
                 templateResult(data) {
+                    if (!data.id) return
                     const author = s.authorsById[data.id]
                     if (!author) {
                         return data.text

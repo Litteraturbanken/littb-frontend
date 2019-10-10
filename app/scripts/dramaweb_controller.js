@@ -248,7 +248,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
             const searchstr = [author.full_name, author.birth.plain, author.death.plain]
                 .join(" ")
                 .toLowerCase()
-            for (let str of s.filters.filterTxt.split(" ")) {
+            for (let str of s.filters.filterTxt.toLowerCase().split(" ")) {
                 if (!searchstr.match(str)) {
                     return false
                 }
