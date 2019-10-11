@@ -1276,7 +1276,6 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
     }
 
     s.getFileSize = mediatype => {
-        console.log("mediatype", mediatype)
         // TODO: fix for pdf as well.
         if (s.workinfo && mediatype == "epub") {
             const exp = _.find(s.workinfo.export, item => item.type == mediatype)
