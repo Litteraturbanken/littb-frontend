@@ -328,7 +328,12 @@ littb.controller("libraryCtrl", function(
                 conds.push(
                     s.filter
                         .split(" ")
-                        .map(str => item.name_for_index.toLowerCase().match(str))
+                        .map(str => {
+                            let search =
+                                item.name_for_index + _.map(item.pseudonym, "full_name").join(" ")
+
+                            return search.match(new RegExp(str, "i"))
+                        })
                         .some(Boolean)
                 )
             }
