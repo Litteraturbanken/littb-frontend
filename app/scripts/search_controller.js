@@ -238,7 +238,7 @@ littb.controller("searchCtrl", function(
                 include,
                 filter_or,
                 filter_and: { searchable: true, ...filter_and },
-                to: countOnly ? 0 : 10000,
+                to: countOnly ? 0 : 30,
                 filter_string: "",
                 author_aggs: true
             })
