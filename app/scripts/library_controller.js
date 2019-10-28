@@ -331,7 +331,6 @@ littb.controller("libraryCtrl", function(
                         .map(str => {
                             let search =
                                 item.name_for_index + _.map(item.pseudonym, "full_name").join(" ")
-
                             return search.match(new RegExp(str, "i"))
                         })
                         .some(Boolean)
@@ -370,7 +369,7 @@ littb.controller("libraryCtrl", function(
 
         if (!s.authorData.length) {
             backend.getAuthorSuggest(s.filter).then(suggest => {
-                if (suggest.length) {
+                if (suggest && suggest.length) {
                     s.authorSuggest = suggest
                 } else {
                     s.authorSuggest = null

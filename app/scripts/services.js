@@ -946,7 +946,6 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             const filename = _.str.lpad(ix, 5, "0")
             const url = `txt/${lbworkid}/ocr_${filename}.html`
             return this.getHtmlFile(url).then(function(response) {
-                SIZE_VALS = [625, 750, 1100, 1500, 2050]
                 const html = response.data.firstChild
                 // c.log $(html)
                 const max = _.max(
@@ -957,6 +956,9 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                         Number
                     )
                 )
+                if (window.devicePixelRatio == 2) {
+                    SIZE_VALS = [625, 750, 1025, 1500, 2050]
+                }
                 const overlayFactors = _.map(SIZE_VALS, val => val / max)
 
                 const xmlSerializer = new XMLSerializer()
