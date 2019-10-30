@@ -72,12 +72,14 @@ const expandMediatypes = function(works, mainMediatype) {
             return {
                 label: metadata.mediatype,
                 url: `txt/${metadata.lbworkid}/${metadata.lbworkid}.pdf`,
-                downloadable: true
+                downloadable: true,
+                imported: metadata.imported
             }
         } else if (metadata.mediatype === "infopost") {
             return {
                 label: metadata.mediatype,
-                url: `/dramawebben/pjäser?om-boken&author_id=${metadata.authors[0].author_id}&titlepath=${metadata.titlepath}`
+                url: `/dramawebben/pjäser?om-boken&author_id=${metadata.authors[0].author_id}&titlepath=${metadata.titlepath}`,
+                imported: metadata.imported
             }
         } else {
             return {
@@ -87,6 +89,7 @@ const expandMediatypes = function(works, mainMediatype) {
                 }/titlar/${metadata.work_title_id || metadata.title_id}/sida/${
                     metadata.startpagename
                 }/${metadata.mediatype}`,
+                imported: metadata.imported,
                 export: _.map(metadata.export, exp => {
                     exp.lbworkid = metadata.lbworkid
                     exp.mediatype = metadata.mediatype

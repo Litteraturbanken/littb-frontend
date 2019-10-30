@@ -496,6 +496,7 @@ littb.controller("libraryCtrl", function(
         let listID = epubOnly ? "epub" : "works"
         let show_all = s.titleModel["show_all_" + listID]
         let size = { from: 0, to: show_all ? 10000 : 100 }
+        // let size = { from: 0, to: show_all ? 300 : 100 }
         if (countOnly) {
             size = { from: 0, to: 0 }
         }
@@ -628,10 +629,11 @@ littb.controller("libraryCtrl", function(
             return [Number(day), months[month - 1], year].join(" ")
         }
 
-        let titleGroups = _.groupBy(titles, "imported")
+        let titleGroups = _.groupBy(titles, item => _.max(_.map(item.mediatypes, "imported")))
 
         let output = []
-        for (let datestr in titleGroups) {
+        let datestrs = _.keys(titleGroups).sort()
+        for (let datestr of datestrs) {
             // TODO: fix locale format, 'femte maj 2017'
             // output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
             const titles = titleGroups[datestr]
