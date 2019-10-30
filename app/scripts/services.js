@@ -126,9 +126,9 @@ const expandMediatypes = function(works, mainMediatype) {
             }
         }
 
-        let exports = _.find(group, "export").export
+        let exports = _.find(group, "export")
         if (exports) {
-            main.export = exports
+            main.export = exports.export
         }
 
         const sortMedia = item => _.indexOf(order, item.label)
