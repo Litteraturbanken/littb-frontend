@@ -57,7 +57,7 @@
                                 </li>
                                 
                                 <li ng-show="::row.searchable">
-                                    <a ng-href="/sok?forfattare={{row.authors[0].author_id}}&titlar={{row.lbworkid}}&avancerad">Gör en sökning i verket</a>
+                                    <a ng-href="/sok?forfattare={{row.main_author.author_id}}&titlar={{row.lbworkid}}&avancerad">Gör en sökning i verket</a>
                                 </li>
                                 
                                 <li ng-show="hasMediatype(row, 'etext') || hasMediatype(row, 'faksimil')">

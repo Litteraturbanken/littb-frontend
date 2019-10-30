@@ -219,13 +219,6 @@ littb.controller("searchCtrl", function(
         }, 0)
     })
     s.getTitlesHits = () => s.titles_hits
-    // s.getAuthorDatasource = function() {
-    //     if (s.isAuthorAboutSearch) {
-    //         return s.aboutAuthors
-    //     } else {
-    //         return s.authors
-    //     }
-    // }
 
     function refreshTitles(countOnly) {
         let include = "shorttitle,title,lbworkid,authors.author_id,mediatype,searchable"
@@ -257,17 +250,8 @@ littb.controller("searchCtrl", function(
     }
 
     authors.then(function([authorList, authorsById]) {
-        // s.authors = _.filter(authorList, "searchable")
         s.authorsById = authorsById
 
-        // if ($location.search().forfattare) {
-        //     const auths = $location.search().forfattare.split(",")
-        //     s.selectedAuthors = auths
-        // }
-
-        // if ($location.search().titlar) {
-        //     s.selectedTitles = $location.search().titlar.split(",")
-        // }
         if ($location.search().sok_filter) {
             s.nav_filter = $location.search().sok_filter
         }
@@ -437,14 +421,8 @@ littb.controller("searchCtrl", function(
         if ($location.search().fuzzy) {
             args.fuzzy = true
         }
-        // if searchAnom
-        //     args.anonymous = false
 
         return args
-
-        // s.save_search = (currentIndex) ->
-        //     c.log "save_search", $location.url()
-        // s.$root.prevSearchState = `/${$location.url()}`
     }
 
     s.getSetVal = (sent, val) => _.str.trim(sent.structs[val], "|").split("|")[0]
@@ -608,24 +586,6 @@ littb.controller("searchCtrl", function(
             key: "avancerad",
             scope_name: "advanced"
         },
-        // {
-        //     key: "filter",
-        //     scope_name: "search_filter_opts",
-        //     val_in(val) {
-        //         if (!val) return
-        //         for (let [i, bool] of val.split(",")) {
-        //             bool = Boolean(Number(bool))
-        //             s.filterOpts[i].selected = bool
-        //         }
-
-        //         return val.split(",")
-        //     },
-
-        //     val_out(val) {
-        //         return (val || []).join(",")
-        //     }
-        // },
-
         {
             key: "fras",
             post_change(val) {
