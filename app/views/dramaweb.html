@@ -74,12 +74,12 @@
                     </select>
                     
                     <div class="auth_select_container">
-                        <div ng-show="listType == 'pjäser'" class="btn-group" dropdown auto-close="outsideClick" on-toggle="onDropdownToggle(open)">
-                            <button type="button" class="btn btn-primary filter_btn" dropdown-toggle >
+                        <div ng-show="listType == 'pjäser'" class="btn-group" uib-dropdown auto-close="outsideClick" on-toggle="onDropdownToggle(open)">
+                            <button type="button" class="btn btn-primary filter_btn" uib-dropdown-toggle >
                                 Akter och roller <span class="caret"></span>
                             </button>
 
-                            <ul ng-if="rows.length" class="dropdown-menu "  role="menu" aria-labelledby="single-button" ng-click="$event.stopPropagation()">
+                            <ul uib-dropdown-menu ng-if="rows.length" class="dropdown-menu "  role="menu" aria-labelledby="single-button" ng-click="$event.stopPropagation()">
                                 <li role="menuitem" ng-class="{dirty: filterDirty['number_of_acts']}">
                                     <span class="label">Antal akter</span>
                                     <div class="number_input">

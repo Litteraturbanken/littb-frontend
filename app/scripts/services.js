@@ -126,6 +126,11 @@ const expandMediatypes = function(works, mainMediatype) {
             }
         }
 
+        let exports = _.find(group, "export").export
+        if (exports) {
+            main.export = exports
+        }
+
         const sortMedia = item => _.indexOf(order, item.label)
 
         main.mediatypes = _.sortBy(mediatypes, sortMedia)

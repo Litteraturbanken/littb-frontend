@@ -6,6 +6,7 @@ import modal from "angular-ui-bootstrap/src/modal"
 import typeahead from "angular-ui-bootstrap/src/typeahead"
 import popover from "angular-ui-bootstrap/src/popover"
 import buttons from "angular-ui-bootstrap/src/buttons"
+import dropdown from "angular-ui-bootstrap/src/dropdown"
 
 _.templateSettings = { interpolate: /\{\{(.+?)\}\}/g }
 
@@ -82,6 +83,7 @@ window.littb = angular
         typeahead,
         popover,
         buttons,
+        dropdown,
         "angularSpinner",
         "ngAnimate",
         "ngAria",
