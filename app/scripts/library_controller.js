@@ -632,7 +632,9 @@ littb.controller("libraryCtrl", function(
         let titleGroups = _.groupBy(titles, item => _.max(_.map(item.mediatypes, "imported")))
 
         let output = []
-        let datestrs = _.keys(titleGroups).sort()
+        let dir = _.last(s.sort[s.listType].split("|"))
+        let datestrs = _.orderBy(_.keys(titleGroups), String, dir)
+
         for (let datestr of datestrs) {
             // TODO: fix locale format, 'femte maj 2017'
             // output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
