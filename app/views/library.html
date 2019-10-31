@@ -218,14 +218,19 @@
                                     </td>
                                 <!-- </div> -->
                             </tr>
-                            <tr ng-show="!showAllParts && parts_hits > 30 && parts_hits < 3000">
+                            <!-- <tr ng-show="!showAllParts && parts_hits > 30 && parts_hits < 3000">
                                 <td>
                                     <button class="btn btn-sm show_all"  ng-click="($parent.showAllParts = true) && fetchParts()">
                                         Visa alla <span class="num">{{parts_hits}}</span> träffar
                                     </button>
                                 </td>
-                            </tr>
+                            </tr> -->
+
                         </table>
+                        <div ng-show="parts_hits > 100">
+                            <ul class="pagination-sm" uib-pagination items-per-page="100" force-ellipses="true" total-items="parts_hits" max-size="10" ng-model="parts_currentpage" ng-change="request()"
+                            next-text="Nästa" previous-text="Föregående"></ul>
+                        </div>
                     </div>
 
                 </div>

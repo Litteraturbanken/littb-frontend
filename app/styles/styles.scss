@@ -774,8 +774,11 @@ a[disabled="disabled"] {
 a[ng-click] {
     cursor : pointer;
 }
-button, [role="button"] {
+[role="button"] {
     cursor: inherit;
+}
+.btn[role="button"] {
+    cursor: pointer;
 }
 p a, pictureinfo a {
     @include dotted($primarycolor);

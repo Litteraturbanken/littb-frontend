@@ -7,6 +7,7 @@ import typeahead from "angular-ui-bootstrap/src/typeahead"
 import popover from "angular-ui-bootstrap/src/popover"
 import buttons from "angular-ui-bootstrap/src/buttons"
 import dropdown from "angular-ui-bootstrap/src/dropdown"
+import pagination from "angular-ui-bootstrap/src/pagination"
 
 _.templateSettings = { interpolate: /\{\{(.+?)\}\}/g }
 
@@ -84,6 +85,7 @@ window.littb = angular
         popover,
         buttons,
         dropdown,
+        pagination,
         "angularSpinner",
         "ngAnimate",
         "ngAria",

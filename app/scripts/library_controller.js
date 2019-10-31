@@ -46,6 +46,7 @@ littb.controller("libraryCtrl", function(
     s.showInitial = true
     s.show_more = $location.search().avancerat != null
     s.show_dl = $location.search().avancerat != null
+    s.parts_currentpage = 1
 
     s.listType = $location.search().visa || "works"
     console.log("listType init", s.listType)
@@ -490,13 +491,20 @@ littb.controller("libraryCtrl", function(
         works_hits: 0,
         epub_hits: 0,
         show_all_works: false,
-        show_all_epub: false
+        show_all_epub: false,
+        works_currentpage: 1,
+        epub_currentpage: 1
     }
     s.fetchWorks = (countOnly, epubOnly) => {
         let listID = epubOnly ? "epub" : "works"
-        let show_all = s.titleModel["show_all_" + listID]
-        let size = { from: 0, to: show_all ? 10000 : 100 }
+        // let show_all = s.titleModel["show_all_" + listID]
+        // let size = { from: 0, to: show_all ? 10000 : 100 }
         // let size = { from: 0, to: show_all ? 300 : 100 }
+        let page = s.titleModel[s.listType + "_currentpage"] - 1
+        let size = {
+            from: page * 100,
+            to: (page + 1) * 100
+        }
         if (countOnly) {
             size = { from: 0, to: 0 }
         }
@@ -561,6 +569,18 @@ littb.controller("libraryCtrl", function(
 
             s.titleSearching = false
         })
+    }
+
+    s.request = function() {
+        if (s.listType == "works") {
+            s.fetchWorks(false, false)
+        } else if (s.listType == "parts") {
+            s.fetchParts(false)
+        } else if (s.listType == "epub") {
+            s.fetchWorks(false, true)
+        } else if (s.listType == "authors") {
+            s.setAuthorData()
+        }
     }
 
     s.onSortClick = (item, noSwitchDir) => {
