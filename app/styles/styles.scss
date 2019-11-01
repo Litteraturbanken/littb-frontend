@@ -237,6 +237,23 @@ th {
 
 }
 
+.rzslider .rz-pointer {
+    width: 15px;
+    height: 15px;
+    background-color : white;
+    border: 1px solid darkgrey;
+    box-shadow: 1px 1px 3px grey;
+    top: -6px;
+    &:after {
+        display: none;
+    }
+}
+.rz-bar {
+    background-color: rgba($primarycolor, 0.5); 
+}
+.rz-bar.rz-selection {
+    background-color: $primarycolor; 
+}
 
 @mixin bkgimg($url) {
     &:after {
@@ -5038,24 +5055,6 @@ grundform-clean {
             justify-content: space-between;
             .number_input {
                 width: 100%;
-            }
-
-            .rzslider .rz-pointer {
-                width: 15px;
-                height: 15px;
-                background-color : white;
-                border: 1px solid darkgrey;
-                box-shadow: 1px 1px 3px grey;
-                top: -6px;
-                &:after {
-                    display: none;
-                }
-            }
-            .rz-bar {
-                background-color: rgba($primarycolor, 0.5); 
-            }
-            .rz-bar.rz-selection {
-                background-color: $primarycolor; 
             }
         }
     }

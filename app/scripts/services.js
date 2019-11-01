@@ -6,9 +6,9 @@ const c = window.console
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -950,7 +950,17 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return def.promise
         },
 
-        fetchOverlayData(lbworkid, ix) {
+        getImprintRange() {
+            return $http({
+                url: `${STRIX_URL}/imprint_range`
+            }).then(response => {
+                let { start_year, end_year } = response.data
+                return [start_year.value_as_string, end_year.value_as_string].map(Number)
+            })
+        },
+
+        fetchOverlayData(lbworkid, ix, size_vals) {
+            console.log("size_vals", size_vals)
             const filename = _.str.lpad(ix, 5, "0")
             const url = `txt/${lbworkid}/ocr_${filename}.html`
             return this.getHtmlFile(url).then(function(response) {
@@ -965,9 +975,14 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     )
                 )
                 if (window.devicePixelRatio == 2) {
-                    SIZE_VALS = [625, 750, 1025, 1500, 2050]
+                    //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
+                    //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
+                    size_vals[0] = size_vals[2] / 2
+                    size_vals[1] = size_vals[3] / 2
+                    size_vals[2] = size_vals[4] / 2
                 }
-                const overlayFactors = _.map(SIZE_VALS, val => val / max)
+                const x_factor = 0.97
+                const overlayFactors = _.map(size_vals, val => (val / max) * x_factor)
 
                 const xmlSerializer = new XMLSerializer()
                 const result = xmlSerializer.serializeToString(html)

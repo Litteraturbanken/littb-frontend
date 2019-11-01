@@ -58,8 +58,24 @@ littb.controller("libraryCtrl", function(
         authorkeyword: [],
         keywords: [],
         languages: [],
-        mediatypes: []
+        mediatypes: [],
+        "sort_date_imprint.date:range": []
     }
+
+    backend.getImprintRange().then(([floor, ceil]) => {
+        s.sliderConf = {
+            floor,
+            ceil,
+            onEnd: () => {
+                $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
+                s.refreshData()
+            }
+        }
+
+        let [from, to] = ($location.search().intervall || "").split(",")
+        s.filters["sort_date_imprint.date:range"][0] = from || floor
+        s.filters["sort_date_imprint.date:range"][1] = to || ceil
+    })
 
     const listKeys = _.pick(
         $location.search(),
@@ -513,6 +529,7 @@ littb.controller("libraryCtrl", function(
         let isSearchRecent = $location.search().sort == "nytillkommet"
         // TODO: {"_exists": "export>"} if dl_mode
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+        console.log("filter_and", filter_and)
         // if (!_.toPairs(text_filter).length) {
         //     text_filter = null
         // }
@@ -930,6 +947,12 @@ littb.controller("libraryCtrl", function(
             val_in: listValIn,
             val_out: listValOut
         },
+        // {
+        //     key: "intervall",
+        //     expr: "filters['sort_date_imprint.date:range']",
+        //     val_in: listValIn,
+        //     val_out: listValOut
+        // },
         // {
         // TODO: deep linking to download list: needs backend support for getting
         // a list of works given a list of lbworkids

@@ -147,7 +147,8 @@ littb.factory("util", function util($location, $filter) {
             //         "proofread:true": "proofread:true",
             //         "language:deu": "language:deu"
             //     },
-            //     mediatypes: ["has_epub:true", "mediatype:faksimil"]
+            //     mediatypes: ["has_epub:true", "mediatype:faksimil"],
+            //     'sort_date_imprint.date:range' : [1200, 1900]
             // }
 
             if (filterObj["main_author.gender"] === "all") {
@@ -173,6 +174,11 @@ littb.factory("util", function util($location, $filter) {
                 // "about_authors",
                 // "main_author.author_id"
             )
+            if (rest["sort_date_imprint.date:range"]) {
+                rest["sort_date_imprint.date:range"] = rest["sort_date_imprint.date:range"].join(
+                    ","
+                )
+            }
             const filter_or = makeObj(filterObj.mediatypes)
             const filter_and = _.extend(
                 rest,
