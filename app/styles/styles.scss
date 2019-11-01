@@ -254,6 +254,9 @@ th {
 .rz-bar.rz-selection {
     background-color: $primarycolor; 
 }
+.rzslider .rz-bubble, .rzslider .rz-bubble.rz-limit {
+    color : #333;
+}
 
 @mixin bkgimg($url) {
     &:after {
@@ -2984,7 +2987,7 @@ $partnav-width : 170px;
             }
         }
         form {
-            max-width : 750px;
+            max-width : 895px;
             background-color: rgba(255,255,255,0.55);
             // padding: 0.8em 0.8em 0.8em 1.6em;
             // border: 1px solid #333;
