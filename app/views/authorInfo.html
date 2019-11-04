@@ -17,6 +17,7 @@
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/forfattare/{{author}}">Introduktion</a></li>
         <li ng-show="authorInfo.dramawebben" ng-class="{active : showpage == 'dramawebben'}"><a href="/forfattare/{{author}}/dramawebben">Dramawebben</a></li>
         <li ng-class="{active : showpage == 'titlar'}"><a href="/forfattare/{{author}}/titlar">Verk</a></li>
+        <li><a href="https://litteraturbanken.se/ljudochbild/forfattare/{{author.toLowerCase()}}" target="_blank">Ljud</a></li>
         <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/forfattare/{{author}}/presentation">Presentation</a></li>
         <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
         <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/forfattare/{{author}}/las-mer">Läs mer</a></li>
