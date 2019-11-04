@@ -2929,6 +2929,34 @@ $partnav-width : 170px;
     .logo_link_monogram {
         background-image: url("../img/lb_monogram_white_white.svg");
     }
+
+
+    .chronology_inputs input {
+        width : 2.5rem;
+    }
+
+    .rzslider {
+        margin-right: 1.85rem;
+        .rz-bubble {
+            display : none;
+        }
+        .rz-bar {
+            height : 8px;
+            &:not(.rz-selection) {
+                background-color: white;
+            }
+        }
+        .rz-pointer {
+            height : 20px;
+            width : 20px;
+        }
+
+    }
+
+    .chronology {
+        font-size: 1rem;
+    }
+
     #leftCorridor {
         // flex : 0 1 auto
         .mainnav a {
