@@ -131,7 +131,7 @@
                 </rzslider>
 
                 <div class="whitespace-no-wrap self-center chronology_inputs">
-                    <input type="text" class="text-sm text-center py-1" ng-model="filters['sort_date_imprint.date:range'][0]"> <span class="text-sm  sc">till </span> <input type="text" class="text-sm text-center py-1" ng-model="filters['sort_date_imprint.date:range'][1]">
+                    <input type="text" class="text-sm text-center py-1" ng-change="refreshData()" ng-model="filters['sort_date_imprint.date:range'][0]"> <span class="text-sm  sc">till </span> <input type="text" class="text-sm text-center py-1" ng-change="refreshData()" ng-model="filters['sort_date_imprint.date:range'][1]">
                 </div>
             </div>
 
@@ -178,7 +178,7 @@
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()" 
                                 id="{{author.author_id}}">
-                                <a ng-href="/forfattare/{{author.author_id}}/" class="" >
+                                <a ng-href="/forfattare/{{author.author_id}}/" class="">
                                     <span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span>
                                     {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
                                 </a>
