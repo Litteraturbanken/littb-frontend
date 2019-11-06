@@ -975,6 +975,16 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
+        hasAudioPage(authorid) {
+            return $http({
+                url: "https://litteraturbanken.se/ljudochbild/wp-json/wp/v2/pages",
+                params: {
+                    slug: authorid.toLowerCase(),
+                    _fields: "slug"
+                }
+            }).then(response => response.data.length)
+        },
+
         autocomplete(filterstr) {
             return $http({
                 url: `${STRIX_URL}/autocomplete/${filterstr}`

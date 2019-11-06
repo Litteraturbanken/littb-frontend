@@ -267,6 +267,8 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
     s.show_large = false
     s.show_more = true
 
+    backend.hasAudioPage(s.author).then(hasPage => (s.hasAudioPage = hasPage))
+
     s.getIntro = function() {
         if (!s.authorInfo) {
             return
