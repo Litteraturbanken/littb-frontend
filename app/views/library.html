@@ -124,7 +124,7 @@
             </div>
 
             <div class="flex">
-                <rzslider class="mt-4   " step="1" 
+                <rzslider class="mt-4   " step="1" ng-class="[sliderActive, {active: sliderActive}]"
                         rz-slider-model="filters['sort_date_imprint.date:range'][0]" 
                         rz-slider-high="filters['sort_date_imprint.date:range'][1]" 
                         rz-slider-options="sliderConf" >

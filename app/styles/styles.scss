@@ -2939,6 +2939,20 @@ $partnav-width : 170px;
         margin-right: 1.85rem;
         .rz-bubble {
             display : none;
+            background-color: rgba(0,0,0,0.7);
+            border-radius: 4px;
+            color : white;
+
+        }
+        &.active.max {
+            .rz-bubble.rz-model-high {
+                display: block;
+            }
+        }
+        &.active.min {
+            .rz-bubble.rz-model-value {
+                display: block;
+            }
         }
         .rz-bar {
             height : 8px;

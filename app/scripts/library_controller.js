@@ -66,7 +66,11 @@ littb.controller("libraryCtrl", function(
         s.sliderConf = {
             floor,
             ceil,
+            onStart: (sliderId, modelValue, highValue, pointerType) => {
+                s.sliderActive = pointerType
+            },
             onEnd: () => {
+                s.sliderActive = null
                 $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
                 s.refreshData()
             }
