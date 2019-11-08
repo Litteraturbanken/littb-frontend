@@ -2938,20 +2938,30 @@ $partnav-width : 170px;
     .rzslider {
         margin-right: 1.85rem;
         .rz-bubble {
-            display : none;
+            // display : none;
+            opacity: 0;
+            transition: opacity 150ms ease-in-out;
             background-color: rgba(0,0,0,0.7);
             border-radius: 4px;
             color : white;
 
         }
+        &.active {
+            [class='rz-bubble'] {
+                // display: block;
+                opacity: 1;
+            }
+        }
         &.active.max {
             .rz-bubble.rz-model-high {
-                display: block;
+                // display: block;
+                opacity: 1;
             }
         }
         &.active.min {
             .rz-bubble.rz-model-value {
-                display: block;
+                // display: block;
+                opacity: 1;
             }
         }
         .rz-bar {
