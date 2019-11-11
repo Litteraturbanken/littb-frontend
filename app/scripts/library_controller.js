@@ -59,27 +59,35 @@ littb.controller("libraryCtrl", function(
         keywords: [],
         languages: [],
         mediatypes: [],
-        "sort_date_imprint.date:range": []
+        "sort_date_imprint.date:range": $location.search().intervall
+            ? $location.search().intervall.split(",")
+            : []
+    }
+    console.log("s.filters", JSON.stringify(s.filters))
+
+    s.onSliderChange = () => {
+        $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
+        s.refreshData()
     }
 
-    backend.getImprintRange().then(([floor, ceil]) => {
-        s.sliderConf = {
-            floor,
-            ceil,
-            onStart: (sliderId, modelValue, highValue, pointerType) => {
-                s.sliderActive = pointerType
-            },
-            onEnd: () => {
-                s.sliderActive = null
-                $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
-                s.refreshData()
-            }
-        }
+    // backend.getImprintRange().then(([floor, ceil]) => {
+    //     s.sliderConf = {
+    //         floor,
+    //         ceil,
+    //         onStart: (sliderId, modelValue, highValue, pointerType) => {
+    //             s.sliderActive = pointerType
+    //         },
+    //         onEnd: () => {
+    //             s.sliderActive = null
+    //             $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
+    //             s.refreshData()
+    //         }
+    //     }
 
-        let [from, to] = ($location.search().intervall || "").split(",")
-        s.filters["sort_date_imprint.date:range"][0] = from || floor
-        s.filters["sort_date_imprint.date:range"][1] = to || ceil
-    })
+    //     let [from, to] = ($location.search().intervall || "").split(",")
+    //     s.filters["sort_date_imprint.date:range"][0] = from || floor
+    //     s.filters["sort_date_imprint.date:range"][1] = to || ceil
+    // })
 
     const listKeys = _.pick(
         $location.search(),

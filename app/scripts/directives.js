@@ -1032,6 +1032,61 @@ littb.directive("searchOpts", ($location, util) => ({
     }
 }))
 
+littb.directive("chronology", ($location, backend, util) => ({
+    template: `
+            <div class="flex">
+                <rzslider class="mt-4 slider-large" step="1" ng-class="[sliderActive, {active: sliderActive}]"
+                        rz-slider-model="from" 
+                        rz-slider-high="to" 
+                        rz-slider-options="sliderConf" >
+                </rzslider>
+
+                <div class="whitespace-no-wrap self-center chronology_inputs">
+                    <input type="text" 
+                           class="text-sm text-center py-1" 
+                           ng-keyup="change()" 
+                           ng-model="from"> 
+                   <span class="text-sm  sc">till </span> 
+                   <input type="text" 
+                          class="text-sm text-center py-1" 
+                          ng-keyup="change()" 
+                          ng-model="to">
+
+                </div>
+            </div>
+            `,
+    scope: {
+        from: "=",
+        to: "=",
+        change: "&"
+    },
+    link($scope, element, attr) {
+        const s = $scope
+        backend.getImprintRange().then(([floor, ceil]) => {
+            s.from = s.from || floor
+            s.to = s.to || ceil
+            s.sliderConf = {
+                floor,
+                ceil,
+                onStart: (sliderId, modelValue, highValue, pointerType) => {
+                    s.sliderActive = pointerType
+                },
+                onEnd: () => {
+                    s.sliderActive = null
+                    // $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
+                    s.change()
+                }
+            }
+            // s.change()
+            // let [from, to] = ($location.search().intervall || "").split(",")
+            // s.from = from || floor
+            // s.to = to || ceil
+            // s.filters["sort_date_imprint.date:range"][0] = from || floor
+            // s.filters["sort_date_imprint.date:range"][1] = to || ceil
+        })
+    }
+}))
+
 // littb.directive("littbErr", $interpolate => ({
 //     link($scope, element, attr) {
 //         const code = $interpolate(element.attr("code"))

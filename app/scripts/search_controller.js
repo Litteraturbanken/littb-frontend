@@ -69,7 +69,14 @@ littb.controller("searchCtrl", function(
         authorkeyword: [],
         keywords: [],
         languages: [],
-        "authors>author_id": []
+        "authors>author_id": [],
+        "sort_date_imprint.date:range": $location.search().intervall
+            ? $location.search().intervall.split(",")
+            : []
+    }
+
+    s.onSliderChange = () => {
+        $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
     }
 
     const listKeys = _.pick($location.search(), "keywords", "languages", "authorkeyword")

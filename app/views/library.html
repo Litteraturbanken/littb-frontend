@@ -123,8 +123,14 @@
                 <!-- <span>{{filters['sort_date_imprint.date:range'][0]}}</span>–<span>{{filters['sort_date_imprint.date:range'][1]}}</span> -->
             </div>
 
-            <div class="flex">
-                <rzslider class="mt-4   " step="1" ng-class="[sliderActive, {active: sliderActive}]"
+            <chronology 
+                from="filters['sort_date_imprint.date:range'][0]" 
+                to="filters['sort_date_imprint.date:range'][1]" 
+                change="onSliderChange()">
+            </chronology>
+
+            <!-- <div class="flex">
+                <rzslider class="mt-4 slider-large" step="1" ng-class="[sliderActive, {active: sliderActive}]"
                         rz-slider-model="filters['sort_date_imprint.date:range'][0]" 
                         rz-slider-high="filters['sort_date_imprint.date:range'][1]" 
                         rz-slider-options="sliderConf" >
@@ -133,7 +139,7 @@
                 <div class="whitespace-no-wrap self-center chronology_inputs">
                     <input type="text" class="text-sm text-center py-1" ng-change="refreshData()" ng-model="filters['sort_date_imprint.date:range'][0]"> <span class="text-sm  sc">till </span> <input type="text" class="text-sm text-center py-1" ng-change="refreshData()" ng-model="filters['sort_date_imprint.date:range'][1]">
                 </div>
-            </div>
+            </div> -->
 
         </form>
         

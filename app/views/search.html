@@ -15,7 +15,17 @@
         </div>
         <search-opts class="row"></search-opts>
             
+        <chronology 
+            class="block max-w-3xl row pr-2 row"
+            from="filters['sort_date_imprint.date:range'][0]" 
+            to="filters['sort_date_imprint.date:range'][1]" 
+            change="onSliderChange()">
+        </chronology>
+
         <div class="bottom_row">
+
+
+
                 <div class="right">
 
                     <div class="title_select_container">
@@ -142,7 +152,7 @@
         
     </form>
 
-    <div class="results_container" ng-class="{searching:searching}" id="results" >
+    <div class="row results_container" ng-class="{searching:searching}" id="results" >
         <!-- <div class="table_viewport" ng-show="kwic" ng-scroll-event="updateOnScrollEvents($event, isEndEvent)"  > -->
         <div class="table_viewport" ng-show="getSentsWithHeadersFromState()">
             <!-- <div class="table_container" ng-style="{height : totalHeight}" > -->

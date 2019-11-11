@@ -127,10 +127,6 @@ img {
     text-transform: none;
 }
 
-ul.litt-list {
-    max-width : 700px;
-}
-
 .font-normal {
     @include font-normal();
 }
@@ -256,6 +252,64 @@ th {
 }
 .rzslider .rz-bubble, .rzslider .rz-bubble.rz-limit {
     color : #333;
+}
+
+.chronology_inputs input {
+    width : 2.5rem;
+}
+
+.slider-large.rzslider {
+    margin-right: 1.85rem;
+    .rz-bubble {
+        opacity: 0;
+        transition: opacity 150ms ease-in-out;
+        background-color: rgba(0,0,0,0.7);
+        border-radius: 4px;
+        color : white;
+
+    }
+    &.active {
+        [class='rz-bubble'] {
+            opacity: 1;
+        }
+    }
+    &.active.max {
+        .rz-bubble.rz-model-high {
+            opacity: 1;
+        }
+    }
+    &.active.min {
+        .rz-bubble.rz-model-value {
+            opacity: 1;
+        }
+    }
+    .rz-bar {
+        height : 8px;
+        &:not(.rz-selection) {
+            background-color: white;
+        }
+    }
+    .rz-pointer {
+        height : 20px;
+        width : 20px;
+    }
+}
+
+ul.litt-list {
+    max-width : 700px;
+    li {
+        position: relative;
+        // list-style: initial;
+        &:before {
+            position: absolute;
+            content: "*";
+            color : $primarycolor;
+            left: -17px;
+            top: 1px;
+            font-size: 1.4em;
+            z-index: 300;
+        }
+    }
 }
 
 @mixin bkgimg($url) {
@@ -2928,53 +2982,6 @@ $partnav-width : 170px;
     }
     .logo_link_monogram {
         background-image: url("../img/lb_monogram_white_white.svg");
-    }
-
-
-    .chronology_inputs input {
-        width : 2.5rem;
-    }
-
-    .rzslider {
-        margin-right: 1.85rem;
-        .rz-bubble {
-            // display : none;
-            opacity: 0;
-            transition: opacity 150ms ease-in-out;
-            background-color: rgba(0,0,0,0.7);
-            border-radius: 4px;
-            color : white;
-
-        }
-        &.active {
-            [class='rz-bubble'] {
-                // display: block;
-                opacity: 1;
-            }
-        }
-        &.active.max {
-            .rz-bubble.rz-model-high {
-                // display: block;
-                opacity: 1;
-            }
-        }
-        &.active.min {
-            .rz-bubble.rz-model-value {
-                // display: block;
-                opacity: 1;
-            }
-        }
-        .rz-bar {
-            height : 8px;
-            &:not(.rz-selection) {
-                background-color: white;
-            }
-        }
-        .rz-pointer {
-            height : 20px;
-            width : 20px;
-        }
-
     }
 
     .chronology {
