@@ -62,7 +62,7 @@
                     <!-- <th> <div sort-triangles val="['authors[0].name_for_index', 'sortkey']" tuple="sorttuple"></div> </th>
                     <th> <div sort-triangles val="['sortkey', 'authors[0].name_for_index']" tuple="sorttuple"></div> </th> -->
                 </thead>
-                <tbody><tr ng-repeat="row in rows" class="tablerow" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
+                <tbody><tr ng-repeat="row in rows" class="tablerow hover:bg-gray-300" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
                         <td>
                             <a ng-href="/forfattare/{{::row.authors[0].author_id}}" >{{::getAuthor(row)}}</a>
                         </td>
