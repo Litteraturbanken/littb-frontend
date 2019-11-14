@@ -8,16 +8,16 @@
     <tr ng-repeat="row in data | filter:idFilter | filter:rowFilter track by $index" >
         <td>{{row.lbworkid}}</td>
         <td>
-            <a href="/forfattare/{{row.authors[0].author_id}}">{{row.authors[0].surname}}</a>
+            <a href="/forfattare/{{row.authors[0].authorid}}">{{row.authors[0].surname}}</a>
         </td>
         <td>
-            <a href="/forfattare/{{row.authors[0].author_id}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.shorttitle || row.title}}</a>
+            <a href="/forfattare/{{row.authors[0].authorid}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.shorttitle || row.title}}</a>
         </td>
         <td>
             <span ng-repeat="type in row.mediatypes track by $index">
             
                 <span ng-show="!$first">:::</span>
-                <a href="/forfattare/{{row.authors[0].author_id}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
+                <a href="/forfattare/{{row.authors[0].authorid}}/titlar/{{row.titlepath}}/{{type.label}}">{{type.label}}</a>
             </span>
         </td>
     </tr>

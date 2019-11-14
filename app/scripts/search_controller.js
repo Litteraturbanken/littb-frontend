@@ -69,7 +69,7 @@ littb.controller("searchCtrl", function(
         authorkeyword: [],
         keywords: [],
         languages: [],
-        "authors>author_id": [],
+        "authors>authorid": [],
         "sort_date_imprint.date:range": $location.search().intervall
             ? $location.search().intervall.split(",")
             : []
@@ -83,7 +83,7 @@ littb.controller("searchCtrl", function(
     _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
     s.filters = _.omitBy(s.filters, _.isNil)
     if ($location.search().forfattare) {
-        s.filters["authors>author_id"] = $location.search().forfattare.split(",")
+        s.filters["authors>authorid"] = $location.search().forfattare.split(",")
     }
     if ($location.search().titlar) {
         s.selectedTitles = $location.search().titlar.split(",")
@@ -96,7 +96,7 @@ littb.controller("searchCtrl", function(
             let oldVal = $location.search().forfattare.split(",")
             authors.then(() => {
                 $timeout(function() {
-                    s.filters["authors>author_id"] = oldVal
+                    s.filters["authors>authorid"] = oldVal
                     // s.selectedAuthors = oldVal
                     $("select.author_select").val(oldVal)
                     return $("select.author_select").trigger("change")
@@ -187,7 +187,7 @@ littb.controller("searchCtrl", function(
         })
     }
 
-    s.setAuthorFilter = author_id => (s.nav_filter = author_id)
+    s.setAuthorFilter = authorid => (s.nav_filter = authorid)
 
     s.authorChange = function() {
         $location.search("titel", null)
@@ -228,7 +228,7 @@ littb.controller("searchCtrl", function(
     s.getTitlesHits = () => s.titles_hits
 
     function refreshTitles(countOnly, filterstr) {
-        let include = "shorttitle,title,lbworkid,authors.author_id,mediatype,searchable"
+        let include = "shorttitle,title,lbworkid,authors.authorid,mediatype,searchable"
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // s.loadingTitles = true
         let resultlimit = s.filters["authors>author_id"].length ? 10000 : 30
@@ -247,9 +247,9 @@ littb.controller("searchCtrl", function(
                 s.titles = titles
                 s.titles_hits = hits
                 authors.then(() => {
-                    if (!s.filters["authors>author_id"].length) {
+                    if (!s.filters["authors>authorid"].length) {
                         s.authors = util.sortAuthors(
-                            _.map(author_aggs, item => s.authorsById[item.author_id])
+                            _.map(author_aggs, item => s.authorsById[item.authorid])
                         )
                     }
                 })
@@ -270,8 +270,8 @@ littb.controller("searchCtrl", function(
         util.setupHashComplex(s, [
             {
                 key: "forfattare",
-                // expr : "selected_author.pseudonymfor || selected_author.author_id"
-                expr: "filters['authors>author_id']",
+                // expr : "selected_author.pseudonymfor || selected_author.authorid"
+                expr: "filters['authors>authorid']",
                 val_in: listValIn,
                 val_out: listValOut
                 // post_change: change
@@ -311,18 +311,18 @@ littb.controller("searchCtrl", function(
             {
                 key: "sok_filter",
                 expr: "nav_filter",
-                post_change(author_id) {
-                    if (author_id) {
-                        c.log("do modifySearch", author_id)
+                post_change(authorid) {
+                    if (authorid) {
+                        c.log("do modifySearch", authorid)
                         s.searching = true
 
                         const args = { from: 0, to: s.num_hits - 1 }
                         // if (s.isAuthorAboutSearch) {
-                        //     args["about_authors"] = author_id
+                        //     args["about_authors"] = authorid
                         // } else {
                         // }
-                        // args["author"] = author_id
-                        args["authors"] = author_id
+                        // args["author"] = authorid
+                        args["authors"] = authorid
 
                         searchData.modifySearch(args).then(function([sentsWithHeaders]) {
                             c.log("modifySearch args", arguments)
@@ -571,7 +571,7 @@ littb.controller("searchCtrl", function(
         $q.all([def, authors]).then(function([[sentsWithHeaders, author_aggs]]) {
             s.authorStatsData = _.orderBy(
                 author_aggs,
-                auth => s.authorsById[auth.author_id].name_for_index
+                auth => s.authorsById[auth.authorid].name_for_index
             )
         })
         return def

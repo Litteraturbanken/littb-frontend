@@ -91,11 +91,11 @@
                     <div class="auth_select_container">
                         <select multiple class="filter_select author_select" 
                                 ui-select2="authorSelectSetup" 
-                                ng-model="filters['authors>author_id']" 
+                                ng-model="filters['authors>authorid']" 
                                 data-placeholder="Författare" 
                                 ng-change="onAuthChange()">
                             <option value=""></option>
-                            <option value='{{author.author_id}}' ng-repeat="author in authors">
+                            <option value='{{author.authorid}}' ng-repeat="author in authors">
                                 <span class="surname">{{author.name_for_index.split(',')[0] + (author.name_for_index.split(',').length > 1 ? ", " : "")}}</span>
                                                                     {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
                             </option>
@@ -176,7 +176,7 @@
                         </td>
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content">
-                                <span class="author">{{authorsById[sent.metadata.authors[0].author_id].name_for_index}}</span> <span class="title" uib-tooltip="{{sent.metadata.title}}"><a ng-href="/forfattare/{{sent.metadata.authors[0].author_id}}/titlar/{{sent.metadata.title_id}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
+                                <span class="author">{{authorsById[sent.metadata.authors[0].authorid].name_for_index}}</span> <span class="title" uib-tooltip="{{sent.metadata.title}}"><a ng-href="/forfattare/{{sent.metadata.authors[0].authorid}}/titlar/{{sent.metadata.title_id}}/{{sent.metadata.mediatype}}?om-boken">{{sent.metadata.title}}</a></span>
                             </div>
                         </td>
 
@@ -269,8 +269,8 @@
 
             <li ng-repeat="obj in authorStatsData"  >
                 <!-- <a ng-class="{selected: obj.pos == current_page}" ng-click="gotoPage(obj.pos)">{{obj.author}}</a> -->
-                <a  ng-class="{selected : nav_filter == obj.author_id}" 
-                    ng-click="setAuthorFilter(obj.author_id)">{{authorsById[obj.author_id].surname}}</a>
+                <a  ng-class="{selected : nav_filter == obj.authorid}" 
+                    ng-click="setAuthorFilter(obj.authorid)">{{authorsById[obj.authorid].surname}}</a>
                 <!-- {{obj.doc_count}} -->
             </li>
         </ul>

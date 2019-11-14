@@ -10,7 +10,7 @@
                 <table class="contenttable">
                     <tbody><tr ng-repeat="row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]" id="{{::row.authors[0].name_for_index.toUpperCase()}}">
                             <td>
-                                ”{{row.title}}” av <span class="author">{{row.authors[0].surname || row.authors[0].author_id}}</span>
+                                ”{{row.title}}” av <span class="author">{{row.authors[0].surname || row.authors[0].authorid}}</span>
                             </td>
                             <td class="play">
                                 <a ng-click="setPlayObj(row)">Lyssna</a>
@@ -21,9 +21,9 @@
             <div class="img_container right_col">
                 <div style="display:inline-block" >
                     <img 
-                        ng-src="/red/forfattare/{{rows[0].readers[0].author_id}}/{{rows[0].readers[0].author_id}}_large.jpeg" 
-                        alt="{{authorsById[rows[0].readers[0].author_id].full_name || 'Info om uppläsare saknas'}}">
-                    <figcaption ng-bind-html="authorsById[rows[0].readers[0].author_id].pictureinfo | trust"></figcaption>
+                        ng-src="/red/forfattare/{{rows[0].readers[0].authorid}}/{{rows[0].readers[0].authorid}}_large.jpeg" 
+                        alt="{{authorsById[rows[0].readers[0].authorid].full_name || 'Info om uppläsare saknas'}}">
+                    <figcaption ng-bind-html="authorsById[rows[0].readers[0].authorid].pictureinfo | trust"></figcaption>
                 </div>
             </div>
             <div ng-show="rowLimit" class="rowlimit sc">Visar de första 30 träffarna</div>

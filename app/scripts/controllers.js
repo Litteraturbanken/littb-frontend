@@ -33,7 +33,7 @@ littb.filter(
 
             const linkify = auth =>
                 $("<a>")
-                    .attr("href", `/forfattare/${auth.author_id}`)
+                    .attr("href", `/forfattare/${auth.authorid}`)
                     .html(stringify(auth))
                     .outerHTML()
 
@@ -349,7 +349,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
 
     s.getUrl = function(work) {
         let url
-        const auth = s.getWorkAuthor(work.authors).author_id
+        const auth = s.getWorkAuthor(work.authors).authorid
         if (work.mediatype === "epub") {
             url = `txt/epub/${auth}_${work.work_title_id}.epub`
         } else if (work.mediatype === "pdf") {
@@ -523,7 +523,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         //     label: "Uppläsningar",
         //     data: null,
         //     showAuthor: false,
-        //     def: backend.getAudioList({ author_id: s.author }),
+        //     def: backend.getAudioList({ authorid: s.author }),
         //     audioExtras: true
         // }
     ]
@@ -724,7 +724,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
             return
         }
         const author = s.authorsById[s.authorFilter]
-        if (author && author.author_id !== item.authors[0].author_id) {
+        if (author && author.authorid !== item.authors[0].authorid) {
             return false
         }
         if (s.filterTxt) {
@@ -758,7 +758,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
     }
     // location.href = "/txt/epub/#{filename}.epub"
 
-    s.getFilename = row => row.authors[0].author_id + "_" + (row.work_title_id || row.title_id)
+    s.getFilename = row => row.authors[0].authorid + "_" + (row.work_title_id || row.title_id)
 
     s.onAuthChange = function(newVal) {
         // hack for state issue with select2 broadcasting change event
@@ -792,7 +792,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
     }
 
     // s.authorData = _.unique authors, false, (item) ->
-    //     item.author_id
+    //     item.authorid
 
     util.setupHashComplex(s, [
         {

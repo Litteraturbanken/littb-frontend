@@ -162,7 +162,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
             post_change(val) {
                 if (val) {
                     s.workinfoPromise = backend.getInfopost(
-                        $location.search().author_id,
+                        $location.search().authorid,
                         $location.search().titlepath
                     )
 
@@ -177,11 +177,11 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
                         about_modal.result.then(
                             function() {
                                 s.show_about = false
-                                $location.search({ author_id: null, titlepath: null })
+                                $location.search({ authorid: null, titlepath: null })
                             },
                             function() {
                                 s.show_about = false
-                                $location.search({ author_id: null, titlepath: null })
+                                $location.search({ authorid: null, titlepath: null })
                             }
                         )
                     })
@@ -272,9 +272,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
 
             if (s.filters.author && s.filters.author !== "all") {
                 if (
-                    !_.some(
-                        _.filter(item.authors, ({ author_id }) => s.filters.author == author_id)
-                    )
+                    !_.some(_.filter(item.authors, ({ authorid }) => s.filters.author == authorid))
                 ) {
                     return false
                 }
@@ -331,7 +329,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
     backend.getDramawebTitles().then(data => {
         s.rows = util.sortTitles(data.works)
         authors.then(function() {
-            s.authorData = _.map(data.authors, author_id => s.authorsById[author_id])
+            s.authorData = _.map(data.authors, authorid => s.authorsById[authorid])
             s.authorData = util.sortAuthors(s.authorData)
         })
 

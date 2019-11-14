@@ -368,7 +368,7 @@ littb.controller("libraryCtrl", function(
             return conds.every(Boolean)
         })
 
-        authors = _.uniq(authors, "author_id")
+        authors = _.uniq(authors, "authorid")
         if (key == "name_for_index") {
             s.authorData = util.sortAuthors(authors, dir)
         } else {
@@ -429,7 +429,7 @@ littb.controller("libraryCtrl", function(
                 suggest: true,
                 include:
                     "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
-                    "main_author.author_id,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
+                    "main_author.authorid,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
                     "authors,work_authors",
                 ...size
             })
@@ -441,7 +441,7 @@ littb.controller("libraryCtrl", function(
                 return { titles, hits, author_aggs }
             })
         $q.all([def, authors]).then(([{ author_aggs }]) => {
-            s.currentPartAuthors = author_aggs.map(({ author_id }) => s.authorsById[author_id])
+            s.currentPartAuthors = author_aggs.map(({ authorid }) => s.authorsById[authorid])
             s.setAuthorData()
         })
     }
@@ -461,7 +461,7 @@ littb.controller("libraryCtrl", function(
                     partial_string: true,
                     to: 10000,
                     include:
-                        "authors.author_id,authors.surname,title,file,readers.author_id,readers.surname"
+                        "authors.authorid,authors.surname,title,file,readers.authorid,readers.surname"
                 },
                 true
             )
@@ -471,7 +471,7 @@ littb.controller("libraryCtrl", function(
                 // s.parts_hits = hits
                 return _.flatten(
                     _.map(s.audio_list, item => {
-                        return _.map([...item.authors, ...item.readers], "author_id")
+                        return _.map([...item.authors, ...item.readers], "authorid")
                     })
                 )
             })
@@ -498,7 +498,7 @@ littb.controller("libraryCtrl", function(
 
         //         return _.flatten(
         //             _.map(s.audio_list, item => {
-        //                 return _.map([...item.authors, ...item.readers], "author_id")
+        //                 return _.map([...item.authors, ...item.readers], "authorid")
         //             })
         //         )
         //     })
@@ -557,7 +557,7 @@ littb.controller("libraryCtrl", function(
             filter_string: s.filter,
             include:
                 "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
-                "main_author.author_id,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain,export",
+                "main_author.authorid,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain,export",
             filter_or,
             filter_and,
             partial_string: true,
@@ -584,7 +584,7 @@ littb.controller("libraryCtrl", function(
             s.titleModel[epubOnly ? "epub_suggest" : "works_suggest"] = suggest
             // s.titleHits = hits
             if (!epubOnly) {
-                s.currentAuthors = author_aggs.map(({ author_id }) => s.authorsById[author_id])
+                s.currentAuthors = author_aggs.map(({ authorid }) => s.authorsById[authorid])
                 // make sure checkbox appears selected for works added to download list
                 if (s.dl_mode && s.downloads.length) {
                     for (let row of s.downloads) {
@@ -695,15 +695,15 @@ littb.controller("libraryCtrl", function(
     }
 
     s.getUrl = function(row, mediatype) {
-        const author_id = row.authors[0].workauthor || row.authors[0].author_id
+        const authorid = row.authors[0].workauthor || row.authors[0].authorid
 
         if (mediatype === "epub") {
-            return `txt/epub/${author_id}_${row.work_title_id}.epub`
+            return `txt/epub/${authorid}_${row.work_title_id}.epub`
         } else if (mediatype === "pdf") {
             return `txt/${row.lbworkid}/${row.lbworkid}.pdf`
         } else {
             return (
-                `/forfattare/${author_id}/titlar/${s.getTitleId(row)}/` +
+                `/forfattare/${authorid}/titlar/${s.getTitleId(row)}/` +
                 `sida/${row.startpagename}/${mediatype}`
             )
         }

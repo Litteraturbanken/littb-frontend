@@ -60,12 +60,12 @@
         <hr>
         <div class="current_part">
             <div class="header">
-                <a ng-href="/forfattare/{{getCurrentPart().authors[0].author_id}}" ng-show="getCurrentPart().authors.length == 1">{{authorById[getCurrentPart().authors[0].author_id].full_name}}</a>
+                <a ng-href="/forfattare/{{getCurrentPart().authors[0].authorid}}" ng-show="getCurrentPart().authors.length == 1">{{authorById[getCurrentPart().authors[0].authorid].full_name}}</a>
                 
                 <a ng-repeat="auth in getCurrentPart().authors" 
-                    ng-href="/forfattare/{{auth.author_id}}"
+                    ng-href="/forfattare/{{auth.authorid}}"
                     ng-show="getCurrentPart().authors.length > 1"
-                >{{authorById[auth.author_id].surname}}<span ng-if="!$last">, </span></a>
+                >{{authorById[auth.authorid].surname}}<span ng-if="!$last">, </span></a>
                 
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
@@ -185,7 +185,7 @@
                 <ul class="part_menu" >
                     <li ng-repeat="part in workinfo.parts" uib-tooltip="{{part.title}}">
                         <span>
-                            <span ng-repeat="auth in part.authors" class="author">{{authorById[auth.author_id].surname}}<span ng-show="!$last">, </span> </span>
+                            <span ng-repeat="auth in part.authors" class="author">{{authorById[auth.authorid].surname}}<span ng-show="!$last">, </span> </span>
                         </span>
                         <span class="title">
                             <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.shorttitle || part.title}}</a>

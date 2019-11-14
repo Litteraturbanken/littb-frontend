@@ -96,7 +96,7 @@
                                 </span>
                             </td>
                             <td ng-if="titleobj.showAuthor">
-                                <a href="/forfattare/{{titleobj.showAuthor(work)[0].author_id}}">{{titleobj.showAuthor(work)[0].name_for_index}}</a>
+                                <a href="/forfattare/{{titleobj.showAuthor(work)[0].authorid}}">{{titleobj.showAuthor(work)[0].name_for_index}}</a>
                             </td>
                             <td>
                                 <!-- <a class="title" ng-if="work.doc_type == 'audio'" 
@@ -118,12 +118,12 @@
                                 </a>
                                 
                                 <div class="extras" ng-if="titleobj.audioExtras" >
-                                    <a class="author" href="/forfattare/{{work.readers[0].author_id}}">
+                                    <a class="author" href="/forfattare/{{work.readers[0].authorid}}">
                                         Uppläsare: {{work.readers[0].full_name}}
                                     </a> 
                                 </div>
                                 <div class="extras" ng-if="$parent.$index != 0 && work.workshorttitle">i
-                                    <a class="author" href="/forfattare/{{work.work_authors[0].author_id}}">
+                                    <a class="author" href="/forfattare/{{work.work_authors[0].authorid}}">
                                         {{work.work_authors[0].surname}}:
                                     </a> 
                                     <span class="extras_title">{{work.workshorttitle}}</span> <span ng-if="work.imprintyear">({{work.imprintyear}})</span>

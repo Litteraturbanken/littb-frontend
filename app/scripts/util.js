@@ -172,7 +172,7 @@ littb.factory("util", function util($location, $filter) {
                 "languages",
                 "mediatypes"
                 // "about_authors",
-                // "main_author.author_id"
+                // "main_author.authorid"
             )
             if (rest["sort_date_imprint.date:range"]) {
                 rest["sort_date_imprint.date:range"] = rest["sort_date_imprint.date:range"].join(
@@ -185,7 +185,7 @@ littb.factory("util", function util($location, $filter) {
                 makeObj(filterObj.languages),
                 makeObj(filterObj.keywords)
                 // makeObj(filterObj.about_authors),
-                // makeObj(filterObj["main_author.author_id"])
+                // makeObj(filterObj["main_author.authorid"])
             )
             return { filter_or, filter_and }
         },

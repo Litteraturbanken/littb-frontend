@@ -277,7 +277,7 @@ window.littb = angular
 
                         backend.getLegacyAuthor(legacyurl).then(auth => {
                             if (auth) {
-                                let author = auth.author_id
+                                let author = auth.authorid
                                 $location.url(`/forfattare/${author}/dramawebben`).replace()
                             } else {
                                 $location.url("/dramawebben/pjäser/").replace()
@@ -787,11 +787,11 @@ littb.filter("normalizeAuthor", function() {
             )
         )
     )
-    return function(author_id) {
-        if (!author_id) {
+    return function(authorid) {
+        if (!authorid) {
             return
         }
-        const ret = _.map(author_id.split(""), char => trans[char] || char).join("")
+        const ret = _.map(authorid.split(""), char => trans[char] || char).join("")
 
         return ret
     }

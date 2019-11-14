@@ -42,7 +42,7 @@
                         ng-change="onAuthorChange()">
                             <option value="">Välj författare</option>
                             <option value="all">Alla författare</option>
-                            <option value="{{author.author_id}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
+                            <option value="{{author.authorid}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
                                 <span class="lastname">{{author.surname}}</span>
                             </option>
                         </select> 
@@ -143,7 +143,7 @@
                 </div>
                 <table ng-if="listType == 'pjäser'" class="contenttable">
                     <tr ng-repeat="row in getFilteredRows()" >
-                        <td class="author"><a ng-href="/forfattare/{{::row.authors[0].author_id}}/dramawebben" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
+                        <td class="author"><a ng-href="/forfattare/{{::row.authors[0].authorid}}/dramawebben" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
                         </td>
                         <td class="title"><a ng-href="{{::row.mediatypes[0].url + '#dw'}}">{{row.shorttitle ||  row.title}}</a></td>
 
@@ -159,7 +159,7 @@
                 </table>
                 <table ng-if="listType == 'författare'" class="contenttable authors">
                     <tr ng-repeat="author in authorData | filter:authorFilter">
-                        <td class="author"><a ng-href="/forfattare/{{::author.author_id}}/dramawebben" ng-bind-html="::getAuthor(author) | trust" ></a>
+                        <td class="author"><a ng-href="/forfattare/{{::author.authorid}}/dramawebben" ng-bind-html="::getAuthor(author) | trust" ></a>
                         </td>
                         <td class="">{{author | authorYear}}</td>
                     </tr>

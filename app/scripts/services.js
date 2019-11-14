@@ -7,8 +7,8 @@ const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 // let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-// let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+let STRIX_URL = "https://dev.litteraturbanken.se/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -78,14 +78,14 @@ const expandMediatypes = function(works, mainMediatype) {
         } else if (metadata.mediatype === "infopost") {
             return {
                 label: metadata.mediatype,
-                url: `/dramawebben/pjäser?om-boken&author_id=${metadata.authors[0].author_id}&titlepath=${metadata.titlepath}`,
+                url: `/dramawebben/pjäser?om-boken&authorid=${metadata.authors[0].authorid}&titlepath=${metadata.titlepath}`,
                 imported: metadata.imported
             }
         } else {
             return {
                 label: metadata.mediatype,
                 url: `/forfattare/${
-                    getMainAuthor(metadata).author_id
+                    getMainAuthor(metadata).authorid
                 }/titlar/${metadata.work_title_id || metadata.title_id}/sida/${
                     metadata.startpagename
                 }/${metadata.mediatype}`,
@@ -121,7 +121,7 @@ const expandMediatypes = function(works, mainMediatype) {
             if (work.has_epub) {
                 mediatypes.push({
                     label: "epub",
-                    url: `txt/epub/${getMainAuthor(work).author_id}_${work.work_title_id ||
+                    url: `txt/epub/${getMainAuthor(work).authorid}_${work.work_title_id ||
                         work.title_id}.epub`,
                     downloadable: true
                 })
@@ -224,7 +224,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     has_epub: true
                 },
                 include:
-                    "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.author_id,sort_date_imprint.plain," +
+                    "lbworkid,titlepath,sortkey,title,title_id,work_title_id,shorttitle,mediatype,authors.authorid,sort_date_imprint.plain," +
                     "authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name",
                 exclude: "text,parts,sourcedesc,pages,errata",
                 sort_field: sort_field || "epub_popularity|desc"
@@ -232,7 +232,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
 
             if (authorid) {
                 // url += "/" + authorid
-                params.filter_and["main_author.author_id"] = authorid
+                params.filter_and["main_author.authorid"] = authorid
             }
             if (filterTxt) {
                 params.filter_string = filterTxt
@@ -287,7 +287,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         getLegacyAuthor(legacy_url) {
             let params = {
                 filter_and: { "dramawebben.legacy_url": legacy_url },
-                includes: ["authors.author_id"]
+                includes: ["authors.authorid"]
             }
             return $http({
                 url: `${STRIX_URL}/list_all/author`,
@@ -366,7 +366,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 url: `${STRIX_URL}/get_popular_authors`,
                 params: {
                     include:
-                        "surname,author_id,birth,death,full_name,pseudonym,name_for_index,dramawebben"
+                        "surname,authorid,birth,death,full_name,pseudonym,name_for_index,dramawebben"
                 }
             }).then(response => response.data)
         },
@@ -611,21 +611,21 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
-        getAuthorInfo(author_id) {
+        getAuthorInfo(authorid) {
             return $http({
-                url: `${STRIX_URL}/get_lb_author/` + author_id
+                url: `${STRIX_URL}/get_lb_author/` + authorid
             }).then(
                 function(response) {
                     const auth = response.data.data
 
                     // for auth in data
                     if (auth.picture) {
-                        auth.smallImage = `/red/forfattare/${auth.author_id}/${auth.author_id}_small.jpeg`
-                        auth.largeImage = `/red/forfattare/${auth.author_id}/${auth.author_id}_large.jpeg`
+                        auth.smallImage = `/red/forfattare/${auth.authorid}/${auth.authorid}_small.jpeg`
+                        auth.largeImage = `/red/forfattare/${auth.authorid}/${auth.authorid}_large.jpeg`
                     }
 
                     if (auth.dramawebben != null ? auth.dramawebben.picture : undefined) {
-                        auth.dramawebben.largeImage = `/red/forfattare/${auth.author_id}/${auth.author_id}_dw_large.jpeg`
+                        auth.dramawebben.largeImage = `/red/forfattare/${auth.authorid}/${auth.authorid}_dw_large.jpeg`
                     }
 
                     return auth
@@ -634,7 +634,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             )
         },
 
-        getTextByAuthor(author_id, textType, maybeAuthType, list_about) {
+        getTextByAuthor(authorid, textType, maybeAuthType, list_about) {
             if (list_about == null) {
                 list_about = false
             }
@@ -651,12 +651,12 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             }
 
             return $http({
-                url: `${STRIX_URL}/list_all/${textType}/${author_id}`,
+                url: `${STRIX_URL}/list_all/${textType}/${authorid}`,
                 params
             }).then(response => expandMediatypes(response.data.data), err => c.log("err", err))
         },
 
-        getPartsInOthersWorks(author_id, sortkey, list_about) {
+        getPartsInOthersWorks(authorid, sortkey, list_about) {
             if (list_about == null) {
                 list_about = false
             }
@@ -667,7 +667,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params["about_author"] = true
             }
             return $http({
-                url: `${STRIX_URL}/list_parts_in_others_works/` + author_id,
+                url: `${STRIX_URL}/list_parts_in_others_works/` + authorid,
                 params
             }).then(
                 response => expandMediatypes(response.data.data),
@@ -684,7 +684,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
-        getTitlesByAuthor(author_id, cache, aboutAuthors) {
+        getTitlesByAuthor(authorid, cache, aboutAuthors) {
             // TODO: repace this with getTitles?
             // serviceName = if aboutAuthors then "get-works-by-author-keyword" else "get-titles-by-author"
             if (aboutAuthors == null) {
@@ -698,7 +698,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 params.aboutAuthors = true
             }
 
-            const url = `${STRIX_URL}/list_all/etext,faksimil/${author_id}`
+            const url = `${STRIX_URL}/list_all/etext,faksimil/${authorid}`
             const req = {
                 url,
                 params
@@ -755,7 +755,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 const titles = response.data.data
 
                 return {
-                    authors: _.map(response.data.author_aggregation, "author_id"),
+                    authors: _.map(response.data.author_aggregation, "authorid"),
                     works: expandMediatypes(titles)
                 }
             })
@@ -1049,13 +1049,13 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 for (let item of content.data) {
                     if (["etext", "faksimil"].includes(item.doc_type)) {
                         const title_id = item.work_title_id || item.title_id
-                        item.url = `/forfattare/${item.authors[0].author_id}/titlar/${title_id}/sida/${item.startpagename}/${item.doc_type}`
+                        item.url = `/forfattare/${item.authors[0].authorid}/titlar/${title_id}/sida/${item.startpagename}/${item.doc_type}`
                         item.label = `${item.authors[0].surname} – ${item.shorttitle || item.title}`
                         item.typeLabel = "Verk"
                         item.mediatypeLabel = item.doc_type
                     }
                     if (["etext-part", "faksimil-part"].includes(item.doc_type)) {
-                        item.url = `/forfattare/${item.work_authors[0].author_id}/titlar/${item.work_title_id}/sida/${item.startpagename}/${item.mediatype}`
+                        item.url = `/forfattare/${item.work_authors[0].authorid}/titlar/${item.work_title_id}/sida/${item.startpagename}/${item.mediatype}`
                         item.label = `${
                             (item.authors != null ? item.authors[0] : item.work_authors[0]).surname
                         } – ${item.shorttitle || item.title}`
@@ -1064,7 +1064,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     }
 
                     if (item.doc_type === "author") {
-                        item.url = `/forfattare/${item.author_id}`
+                        item.url = `/forfattare/${item.authorid}`
                         item.label = item.name_for_index
                         item.typeLabel = "Författare"
                     }
@@ -1116,7 +1116,7 @@ littb.factory("authors", function(backend, $q) {
                 "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources")
         )
         .then(function(authors) {
-            let authorsById = _.fromPairs(_.map(authors, item => [item.author_id, item]))
+            let authorsById = _.fromPairs(_.map(authors, item => [item.authorid, item]))
             // c.log "authorsById", authorsById
 
             if (isDev) {
@@ -1299,7 +1299,7 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
             let params = {
                 include: this.include,
                 number_of_fragments: num_fragments + 1,
-                // authors: _.map sentenceData.metadata.authors, "author_id"
+                // authors: _.map sentenceData.metadata.authors, "authorid"
                 work_ids: sentenceData.metadata.lbworkid,
                 from: 0,
                 to: 1
@@ -1445,7 +1445,7 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
                 .invokeMap("join", "=")
                 .join("&")
 
-            const author = metadata.authors[0].author_id
+            const author = metadata.authors[0].authorid
             const titleid = metadata.title_id
 
             return `/forfattare/${author}/titlar/${titleid}/sida/${matches[0].attrs.n}/${metadata.mediatype}?${merged}`

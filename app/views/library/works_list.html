@@ -40,7 +40,7 @@
                             <span class="title_inner" uib-tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
                                 <a ng-if="listType == 'works'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
                                 <a ng-if="listType == 'epub'" 
-                                   ng-href="/txt/epub/{{row.main_author.author_id + '_' + (row.work_title_id || row.title_id)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>
+                                   ng-href="/txt/epub/{{row.main_author.authorid + '_' + (row.work_title_id || row.title_id)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>
                             </span>
                             
                             
@@ -57,7 +57,7 @@
                                 </li>
                                 
                                 <li ng-show="::row.searchable">
-                                    <a ng-href="/sok?forfattare={{row.main_author.author_id}}&titlar={{row.lbworkid}}&avancerad">Gör en sökning i verket</a>
+                                    <a ng-href="/sok?forfattare={{row.main_author.authorid}}&titlar={{row.lbworkid}}&avancerad">Gör en sökning i verket</a>
                                 </li>
                                 
                                 <li ng-show="hasMediatype(row, 'etext') || hasMediatype(row, 'faksimil')">
@@ -70,10 +70,10 @@
 
                 <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap"><span>{{row.sort_date_imprint.plain}}</span></td>
                 <td class="align-top text-right"><span class="author">
-                            <a ng-href="/forfattare/{{row.main_author.author_id}}">{{row.main_author.surname}}</a> 
+                            <a ng-href="/forfattare/{{row.main_author.authorid}}">{{row.main_author.surname}}</a> 
                             <span ng-if="row.main_author.type == 'editor'">(red.)</span> 
                             <span ng-if="row.main_author.type == 'illustrator'">(ill.)</span>
-                        </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].author_id])" --></td>
+                        </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].authorid])" --></td>
 
             </tr>
 
