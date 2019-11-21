@@ -337,6 +337,22 @@ ul.litt-list {
     @include dotted($primarycolor);
 }
 
+.list-item {
+    font-size: 1rem;
+    li {
+        position: relative;
+    }
+    li:before {
+        position: absolute;
+        content: "*";
+        color: #7A1400;
+        left: -17px;
+        top: 1px;
+        font-size: 1.4em;
+        z-index: 300;
+    }
+}
+
 // * {
 //     @include box-sizing(border-box);
 // }
@@ -2903,6 +2919,12 @@ $partnav-width : 170px;
                 max-width : 300px;
             }
 
+            .ext_links {
+                background-color : rgba(255, 255, 255, 0.7);
+                h3 {
+                    font-size: 1.1rem;
+                }
+            }
             
         }
 

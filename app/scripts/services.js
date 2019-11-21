@@ -8,6 +8,7 @@ let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 // let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 let STRIX_URL = "https://dev.litteraturbanken.se/api"
+// let STRIX_URL = "https://litteraturbanken.se/api"
 // let STRIX_URL = "/api"
 
 if (

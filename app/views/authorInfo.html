@@ -69,6 +69,19 @@
                 <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
                 <figcaption ng-bind-html="authorInfo.pictureinfo | trust"></figcaption>
 
+                <div class="ext_links w-100 border border-gray-600 p-4 mt-4" 
+                    ng-if="authorInfo.wikidata.sbl_link || authorInfo.wikidata.skbl_link || authorInfo.wikidata.sol" >
+                    <h3 class="sc mt-0">Uppslagsverk</h3>
+                    <ul class="list-item pl-4 ">
+                        <li ng-if="authorInfo.wikidata.sbl_link"><a target="_blank"  ng-href="https://sok.riksarkivet.se/sbl/Presentation.aspx?id={{authorInfo.wikidata.sbl_link}}">Svenskt biografiskt lexikon</a></li>
+                        <li ng-if="authorInfo.wikidata.skbl_link"><a target="_blank"  ng-href="https://www.skbl.se/en/article/{{authorInfo.wikidata.skbl_link}}">Svenskt kvinnobiografiskt lexikon</a></li>
+                        <li ng-if="authorInfo.wikidata.sol_link"><a target="_blank"  ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{authorInfo.wikidata.sol_link}}">Svenskt översättarlexikon</a></li>
+                    </ul>
+                    
+                    
+                    
+                </div>
+
             </div>
 
             <div class="show_more_btn" ng-show="!show_more"> <i class="fa fa-caret-down"></i> <a href="" ng-click="show_more = true"> LÄS MER</a></div>
