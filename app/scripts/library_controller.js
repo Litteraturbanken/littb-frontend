@@ -177,7 +177,7 @@ littb.controller("libraryCtrl", function(
         return _.intersection(order, list).concat(_.difference(list, order))
     }
 
-    s.getTitleId = row => row.work_title_id
+    s.getTitleId = row => row.work_titleid
 
     s.getUniqId = function(title) {
         if (!title) {
@@ -428,7 +428,7 @@ littb.controller("libraryCtrl", function(
                 partial_string: true,
                 suggest: true,
                 include:
-                    "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
+                    "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
                     "authors,work_authors",
                 ...size
@@ -556,7 +556,7 @@ littb.controller("libraryCtrl", function(
             sort_field: s.sort[listID],
             filter_string: s.filter,
             include:
-                "lbworkid,titlepath,title,title_id,work_title_id,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
+                "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                 "main_author.authorid,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain,export",
             filter_or,
             filter_and,
@@ -698,7 +698,7 @@ littb.controller("libraryCtrl", function(
         const authorid = row.authors[0].workauthor || row.authors[0].authorid
 
         if (mediatype === "epub") {
-            return `txt/epub/${authorid}_${row.work_title_id}.epub`
+            return `txt/epub/${authorid}_${row.work_titleid}.epub`
         } else if (mediatype === "pdf") {
             return `txt/${row.lbworkid}/${row.lbworkid}.pdf`
         } else {

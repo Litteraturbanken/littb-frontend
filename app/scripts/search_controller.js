@@ -173,7 +173,7 @@ littb.controller("searchCtrl", function(
     }
 
     s.titleChange = () => {
-        // $location.search("titel", s.selected_title?.work_title_id or null)
+        // $location.search("titel", s.selected_title?.work_titleid or null)
         let workid = null
         if (s.selected_title && s.selected_title.lbworkid) workid = s.selected_title.lbworkid
         $location.search("titel", workid)

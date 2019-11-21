@@ -33,7 +33,7 @@ littb.filter(
 
             const linkify = auth =>
                 $("<a>")
-                    .attr("href", `/forfattare/${auth.authorid}`)
+                    .attr("href", `/forfattare/${auth.authorid_norm}`)
                     .html(stringify(auth))
                     .outerHTML()
 
@@ -351,12 +351,12 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         let url
         const auth = s.getWorkAuthor(work.authors).authorid
         if (work.mediatype === "epub") {
-            url = `txt/epub/${auth}_${work.work_title_id}.epub`
+            url = `txt/epub/${auth}_${work.work_titleid}.epub`
         } else if (work.mediatype === "pdf") {
             // url += "info"
             url = `txt/${work.lbworkid}/${work.lbworkid}.pdf`
         } else {
-            url = `/forfattare/${auth}/titlar/${work.work_title_id}/`
+            url = `/forfattare/${auth}/titlar/${work.work_titleid}/`
             url += `sida/${work.startpagename}/${work.mediatype}`
         }
         return url
@@ -758,7 +758,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
     }
     // location.href = "/txt/epub/#{filename}.epub"
 
-    s.getFilename = row => row.authors[0].authorid + "_" + (row.work_title_id || row.title_id)
+    s.getFilename = row => row.authors[0].authorid + "_" + (row.work_titleid || row.titleid)
 
     s.onAuthChange = function(newVal) {
         // hack for state issue with select2 broadcasting change event

@@ -48,6 +48,14 @@ function onRouteReject() {
 
 _.templateSettings.interpolate = /{{([\s\S]+?)}}/g
 
+const authorRedirect = function(routeParams, path, searchVars) {
+    let auth = routeParams.author
+    let normalizeAuthor = normalizeAuthorFilter()
+    if (auth != normalizeAuthor(auth)) {
+        return path.replace(auth, normalizeAuthor(auth))
+    }
+}
+
 const authorResolve = [
     "$q",
     "$routeParams",
@@ -391,6 +399,7 @@ window.littb = angular
                 {
                     templateUrl: require("../views/authorInfo.html"),
                     controller: "authorInfoCtrl",
+                    redirectTo: authorRedirect,
                     resolve: {
                         r: authorResolve
                     }
@@ -469,12 +478,14 @@ window.littb = angular
             .when(
                 [
                     "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
+                    // "/författare/:author/titlar/:title/sida/:pagename/:mediatype",
                     "/editor/:lbid/ix/:ix/:mediatype"
                 ],
                 {
                     templateUrl: require("../views/reader.html"),
                     controller: "readingCtrl",
                     reloadOnSearch: false,
+                    redirectTo: authorRedirect,
                     resolve: {
                         r: [
                             "$q",
@@ -771,7 +782,7 @@ littb.filter(
 
 littb.filter("trust", $sce => input => $sce.trustAsHtml(input))
 
-littb.filter("normalizeAuthor", function() {
+function normalizeAuthorFilter() {
     let trans = _.fromPairs(
         _.zip(
             "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ".split(""),
@@ -795,4 +806,6 @@ littb.filter("normalizeAuthor", function() {
 
         return ret
     }
-})
+}
+
+littb.filter("normalizeAuthor", normalizeAuthorFilter)

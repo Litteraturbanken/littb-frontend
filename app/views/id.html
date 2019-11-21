@@ -11,7 +11,7 @@
             <a href="/forfattare/{{row.authors[0].authorid}}">{{row.authors[0].surname}}</a>
         </td>
         <td>
-            <a href="/forfattare/{{row.authors[0].authorid}}/titlar/{{row.work_title_id}}/{{row.mediatype}}">{{row.shorttitle || row.title}}</a>
+            <a href="/forfattare/{{row.authors[0].authorid}}/titlar/{{row.work_titleid}}/{{row.mediatype}}">{{row.shorttitle || row.title}}</a>
         </td>
         <td>
             <span ng-repeat="type in row.mediatypes track by $index">
