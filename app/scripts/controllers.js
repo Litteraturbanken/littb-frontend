@@ -33,7 +33,7 @@ littb.filter(
 
             const linkify = auth =>
                 $("<a>")
-                    .attr("href", `/forfattare/${auth.authorid_norm}`)
+                    .attr("href", `/forfattare/${auth.authorid}`)
                     .html(stringify(auth))
                     .outerHTML()
 
