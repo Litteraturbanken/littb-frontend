@@ -621,12 +621,12 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
 
                     // for auth in data
                     if (auth.picture) {
-                        auth.smallImage = `/red/forfattare/${auth.authorid}/${auth.authorid}_small.jpeg`
-                        auth.largeImage = `/red/forfattare/${auth.authorid}/${auth.authorid}_large.jpeg`
+                        auth.smallImage = `/red/forfattare/${auth.authorid_norm}/${auth.authorid_norm}_small.jpeg`
+                        auth.largeImage = `/red/forfattare/${auth.authorid_norm}/${auth.authorid_norm}_large.jpeg`
                     }
 
                     if (auth.dramawebben != null ? auth.dramawebben.picture : undefined) {
-                        auth.dramawebben.largeImage = `/red/forfattare/${auth.authorid}/${auth.authorid}_dw_large.jpeg`
+                        auth.dramawebben.largeImage = `/red/forfattare/${auth.authorid_norm}/${auth.authorid_norm}_dw_large.jpeg`
                     }
 
                     return auth
