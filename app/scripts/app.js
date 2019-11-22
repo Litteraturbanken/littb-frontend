@@ -50,10 +50,10 @@ _.templateSettings.interpolate = /{{([\s\S]+?)}}/g
 
 const authorRedirect = function(routeParams, path, searchVars) {
     let auth = routeParams.author
-    let normalizeAuthor = normalizeAuthorFilter()
-    if (auth != normalizeAuthor(auth)) {
-        return path.replace(auth, normalizeAuthor(auth))
-    }
+    // let normalizeAuthor = normalizeAuthorFilter()
+    // if (auth != normalizeAuthor(auth)) {
+    //     return path.replace(auth, normalizeAuthor(auth))
+    // }
 }
 
 const authorResolve = [
