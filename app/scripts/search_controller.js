@@ -220,19 +220,19 @@ littb.controller("searchCtrl", function(
     })
     s.getTitlesHits = () => s.titles_hits
 
-    function refreshTitles(countOnly) {
+    function refreshTitles(countOnly, filterstr) {
         let include = "shorttitle,title,lbworkid,authors.author_id,mediatype,searchable"
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // s.loadingTitles = true
-
+        let resultlimit = s.filters["authors>author_id"].length ? 10000 : 30
         return backend
             .getTitles("etext,faksimil", {
                 sort_field: "sortkey|asc",
                 include,
                 filter_or,
                 filter_and: { searchable: true, ...filter_and },
-                to: countOnly ? 0 : 30,
-                filter_string: "",
+                to: countOnly ? 0 : resultlimit,
+                filter_string: filterstr || "",
                 author_aggs: true
             })
             .then(({ titles, author_aggs, hits }) => {
