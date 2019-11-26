@@ -7,7 +7,9 @@ const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 // let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-let STRIX_URL = "https://dev.litteraturbanken.se/api"
+let STRIX_URL = process.env.API_VER
+    ? `https://${API_VER}.litteraturbanken.se/api`
+    : "https://dev.litteraturbanken.se/api"
 // let STRIX_URL = "https://litteraturbanken.se/api"
 // let STRIX_URL = "/api"
 
@@ -999,6 +1001,22 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     _fields: "slug"
                 }
             }).then(response => response.data.length)
+        },
+
+        unNormalizeAuthorid(authorid) {
+            return $http({
+                url: `${STRIX_URL}/get_author/${authorid}`
+            }).then(response => response.data.data.authorid)
+        },
+        unNormalizeTitleid(mediatype, titleid) {
+            return $http({
+                url: `${STRIX_URL}/list_all/${mediatype}`,
+                params: {
+                    filter_and: {
+                        titleid
+                    }
+                }
+            }).then(response => response.data.data[0].titleid)
         },
 
         autocomplete(filterstr) {

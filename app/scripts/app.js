@@ -48,14 +48,6 @@ function onRouteReject() {
 
 _.templateSettings.interpolate = /{{([\s\S]+?)}}/g
 
-const authorRedirect = function(routeParams, path, searchVars) {
-    let auth = routeParams.author
-    // let normalizeAuthor = normalizeAuthorFilter()
-    // if (auth != normalizeAuthor(auth)) {
-    //     return path.replace(auth, normalizeAuthor(auth))
-    // }
-}
-
 const authorResolve = [
     "$q",
     "$routeParams",
@@ -65,6 +57,7 @@ const authorResolve = [
         c.log("resolve", $routeParams, $route)
         if (
             routeStartCurrent != null &&
+            routeStartCurrent.$$route != null &&
             routeStartCurrent.$$route.controller === "authorInfoCtrl" &&
             $route.current.controller === "authorInfoCtrl" &&
             $route.current.params.author === $routeParams.author
@@ -109,9 +102,9 @@ window.littb = angular
                     route = [route]
                 }
                 for (let r of route) {
-                    // if (r.split("/")[1] === "forfattare") {
+                    // if (r.split("/")[1] === "författare") {
                     //     const shortRoute = r
-                    //         .replace(/^\/forfattare\//, "/f/")
+                    //         .replace(/^\/författare\//, "/f/")
                     //         .replace("/titlar/", "/t/")
                     //     $routeProvider.when(shortRoute, obj)
                     // }
@@ -273,7 +266,7 @@ window.littb = angular
                     }
                 ]
             })
-            .when("/dramawebben/forfattare/:legacyurl", {
+            .when("/dramawebben/författare/:legacyurl", {
                 template: "<div></div>",
                 controller: [
                     "$scope",
@@ -281,12 +274,12 @@ window.littb = angular
                     "$routeParams",
                     "$location",
                     function($scope, backend, $routeParams, $location) {
-                        let legacyurl = "forfattare/" + $routeParams.legacyurl
+                        let legacyurl = "författare/" + $routeParams.legacyurl
 
                         backend.getLegacyAuthor(legacyurl).then(auth => {
                             if (auth) {
                                 let author = auth.authorid
-                                $location.url(`/forfattare/${author}/dramawebben`).replace()
+                                $location.url(`/författare/${author}/dramawebben`).replace()
                             } else {
                                 $location.url("/dramawebben/pjäser/").replace()
                             }
@@ -360,18 +353,18 @@ window.littb = angular
                     window.location = "https://litteraturbanken.se/ljudochbild"
                 }
             })
-            .when("/forfattare", { redirectTo: "/bibliotek" })
+            .when(["/forfattare"], { redirectTo: "/bibliotek" })
 
             .when(
                 [
-                    "/forfattare/LagerlofS",
-                    "/forfattare/LagerlofS/titlar",
-                    "/forfattare/LagerlofS/bibliografi",
-                    "/forfattare/LagerlofS/presentation",
-                    "/forfattare/LagerlofS/biblinfo",
-                    "/forfattare/LagerlofS/jamfor",
-                    "/forfattare/LagerlofS/omtexterna",
-                    "/forfattare/LagerlofS/omtexterna/:omtexternaDoc"
+                    "/författare/LagerlofS",
+                    "/författare/LagerlofS/titlar",
+                    "/författare/LagerlofS/bibliografi",
+                    "/författare/LagerlofS/presentation",
+                    "/författare/LagerlofS/biblinfo",
+                    "/författare/LagerlofS/jamfor",
+                    "/författare/LagerlofS/omtexterna",
+                    "/författare/LagerlofS/omtexterna/:omtexternaDoc"
                 ],
                 {
                     templateUrl: require("../views/authorInfo.html"),
@@ -385,32 +378,31 @@ window.littb = angular
             )
             .when(
                 [
-                    "/forfattare/:author",
-                    "/forfattare/:author/titlar",
-                    "/forfattare/:author/dramawebben",
-                    "/forfattare/:author/bibliografi",
-                    "/forfattare/:author/presentation",
-                    "/forfattare/:author/mer",
-                    "/forfattare/:author/semer",
-                    "/forfattare/:author/biblinfo",
-                    "/forfattare/:author/jamfor",
-                    "/forfattare/:author/omtexterna/:omtexternaDoc?"
+                    "/författare/:author",
+                    "/författare/:author/titlar",
+                    "/författare/:author/dramawebben",
+                    "/författare/:author/bibliografi",
+                    "/författare/:author/presentation",
+                    "/författare/:author/mer",
+                    "/författare/:author/semer",
+                    "/författare/:author/biblinfo",
+                    "/författare/:author/jamfor",
+                    "/författare/:author/omtexterna/:omtexternaDoc?"
                 ],
                 {
                     templateUrl: require("../views/authorInfo.html"),
                     controller: "authorInfoCtrl",
-                    redirectTo: authorRedirect,
                     resolve: {
                         r: authorResolve
                     }
                 }
             )
-            .when("/forfattare/:author/titlar/:title/info/:mediatype", {
+            .when("/författare/:author/titlar/:title/info/:mediatype", {
                 redirectTo(routeParams, path, searchVars) {
-                    return `/forfattare/${routeParams.author}/titlar/${routeParams.title}/${routeParams.mediatype}/?om-boken`
+                    return `/författare/${routeParams.author}/titlar/${routeParams.title}/${routeParams.mediatype}/?om-boken`
                 }
             })
-            .when(["/forfattare/:author/titlar/:title", "/forfattare/:author/titlar/:title/info"], {
+            .when(["/författare/:author/titlar/:title", "/författare/:author/titlar/:title/info"], {
                 template: "<div></div>",
                 controller: [
                     "$scope",
@@ -427,7 +419,7 @@ window.littb = angular
                             .then(data =>
                                 $location
                                     .url(
-                                        `/forfattare/${$routeParams.author}/titlar/${$routeParams.title}/sida/${data.startpagename}/${data.mediatype}?om-boken`
+                                        `/författare/${$routeParams.author}/titlar/${$routeParams.title}/sida/${data.startpagename}/${data.mediatype}?om-boken`
                                     )
                                     .replace()
                             )
@@ -449,7 +441,7 @@ window.littb = angular
                         })
                         .join("&")
                     return (
-                        `/forfattare/${routeParams.author}/titlar/${routeParams.title}/${
+                        `/författare/${routeParams.author}/titlar/${routeParams.title}/${
                             { e: "etext", f: "faksimil" }[routeParams.mediatype]
                         }` + (suffix ? "?" + suffix : "")
                     )
@@ -462,7 +454,7 @@ window.littb = angular
                 ],
                 {
                     redirectTo(routeParams, path, searchVars) {
-                        return `/forfattare/${routeParams.author}/titlar/${
+                        return `/författare/${routeParams.author}/titlar/${
                             routeParams.title
                         }/sida/${routeParams.pagename}/${{ e: "etext", f: "faksimil" }[
                             routeParams.mediatype
@@ -470,14 +462,14 @@ window.littb = angular
                     }
                 }
             )
-            .when("/forfattare/:author/titlar/:title/:mediatype", {
+            .when("/författare/:author/titlar/:title/:mediatype", {
                 templateUrl: require("../views/reader.html"),
                 controller: "readingCtrl",
                 reloadOnSearch: false
             })
             .when(
                 [
-                    "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype",
+                    "/författare/:author/titlar/:title/sida/:pagename/:mediatype",
                     // "/författare/:author/titlar/:title/sida/:pagename/:mediatype",
                     "/editor/:lbid/ix/:ix/:mediatype"
                 ],
@@ -485,7 +477,6 @@ window.littb = angular
                     templateUrl: require("../views/reader.html"),
                     controller: "readingCtrl",
                     reloadOnSearch: false,
-                    redirectTo: authorRedirect,
                     resolve: {
                         r: [
                             "$q",
@@ -503,6 +494,7 @@ window.littb = angular
 
                                 if (
                                     routeStartCurrent != null &&
+                                    routeStartCurrent.$$route != null &&
                                     routeStartCurrent.$$route.controller === "readingCtrl" &&
                                     $route.current.controller === "readingCtrl"
                                 ) {
@@ -535,6 +527,41 @@ window.littb = angular
                 controller: "idCtrl"
             })
             .otherwise({
+                resolve: {
+                    redirect: [
+                        "$q",
+                        "$location",
+                        "backend",
+                        _.once(function($q, $location, backend) {
+                            if ($location.path().startsWith("/forfattare")) {
+                                // "/författare/:author/titlar/:title/sida/:pagename/:mediatype"
+
+                                let segments = $location.path().split("/")
+
+                                // segments[4] = backend.normalizeTitleid(segments[4])
+                                let translate = [backend.unNormalizeAuthorid(segments[2])]
+                                if (segments[4]) {
+                                    translate.push(
+                                        backend.unNormalizeTitleid(segments[7], segments[4])
+                                    )
+                                }
+
+                                return $q.all(translate).then(([authorid, titleid]) => {
+                                    segments[1] = "författare"
+                                    segments[2] = authorid
+                                    if (titleid) segments[4] = titleid
+                                    $location.path(segments.join("/")).replace()
+                                })
+                            }
+                        })
+                    ]
+                },
+                // redirectTo(routeParams, path, searchVars) {
+                //     console.log("otherwise", routeParams, path, searchVars)
+                //     let injector = angular.injector(["ng"])
+                //     let $http = injector.get("$http")
+
+                // },
                 template: `<p littb-err code='404' msg="Page not found.">Du har angett en adress som inte finns på Litteraturbanken.</p> 
                             <p>Använd browserns bakåtknapp för att komma tillbaka till 
                             sidan du var på innan, eller klicka på någon av 
@@ -569,7 +596,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
         if ($rootScope.isSchool) {
             return "/skola"
         } else if ($rootScope.isSla) {
-            return "/forfattare/LagerlofS"
+            return "/författare/LagerlofS"
         } else {
             return "/"
         }

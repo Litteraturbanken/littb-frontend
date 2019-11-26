@@ -254,7 +254,7 @@ littb.controller("readingCtrl", function(
         // newix = s.pageix - 1
         if (`ix_${newix}` in s.pagemap) {
             const page = s.pagemap[`ix_${newix}`]
-            return `/forfattare/${author}/titlar/${title}/sida/${page}/${mediatype}`
+            return `/författare/${author}/titlar/${title}/sida/${page}/${mediatype}`
         } else {
             return ""
         }
@@ -271,7 +271,7 @@ littb.controller("readingCtrl", function(
         // newix = s.pageix + 1
         if (`ix_${newix}` in s.pagemap) {
             const page = s.pagemap[`ix_${newix}`]
-            return `/forfattare/${author}/titlar/${title}/sida/${page}/${mediatype}`
+            return `/författare/${author}/titlar/${title}/sida/${page}/${mediatype}`
         } else {
             return ""
         }
@@ -295,7 +295,7 @@ littb.controller("readingCtrl", function(
             suffix = `?${search[1]}`
         }
 
-        return `/forfattare/${author}/titlar/${title}/sida/${page}/${s.mediatype}` + suffix
+        return `/författare/${author}/titlar/${title}/sida/${page}/${s.mediatype}` + suffix
     }
 
     s.gotopage = function(page, event) {
@@ -644,7 +644,7 @@ littb.controller("readingCtrl", function(
             if (s.isEditor) {
                 url = `/editor/${$routeParams.lbid}/ix/${val}/${$routeParams.mediatype}`
             } else {
-                url = `/forfattare/${author}/titlar/${title}/sida/${val}/${mediatype}`
+                url = `/författare/${author}/titlar/${title}/sida/${val}/${mediatype}`
             }
 
             const prevpath = $location.path()
