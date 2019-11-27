@@ -33,7 +33,7 @@ littb.filter(
 
             const linkify = auth =>
                 $("<a>")
-                    .attr("href", `/forfattare/${auth.authorid}`)
+                    .attr("href", `/författare/${auth.authorid}`)
                     .html(stringify(auth))
                     .outerHTML()
 
@@ -356,7 +356,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
             // url += "info"
             url = `txt/${work.lbworkid}/${work.lbworkid}.pdf`
         } else {
-            url = `/forfattare/${auth}/titlar/${work.work_titleid}/`
+            url = `/författare/${auth}/titlar/${work.work_titleid}/`
             url += `sida/${work.startpagename}/${work.mediatype}`
         }
         return url
@@ -609,13 +609,13 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
                     (s.authorInfo.dramawebben && s.authorInfo.dramawebben.intro)
                 )
             ) {
-                $location.url(`/forfattare/${s.author}/titlar`).replace()
+                $location.url(`/författare/${s.author}/titlar`).replace()
             } else if (
                 !s.authorInfo.intro &&
                 s.authorInfo.dramawebben &&
                 s.authorInfo.dramawebben.intro
             ) {
-                $location.url(`/forfattare/${s.author}/dramawebben`).replace()
+                $location.url(`/författare/${s.author}/dramawebben`).replace()
             }
         },
         function(data) {
@@ -1253,7 +1253,7 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
             return s.workinfo.pdf.url
         }
 
-        return `/forfattare/${s.author}/titlar/${s.title}/${mediatype}`
+        return `/författare/${s.author}/titlar/${s.title}/${mediatype}`
     }
 
     s.getSourceImage = function() {

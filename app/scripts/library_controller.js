@@ -703,7 +703,7 @@ littb.controller("libraryCtrl", function(
             return `txt/${row.lbworkid}/${row.lbworkid}.pdf`
         } else {
             return (
-                `/forfattare/${authorid}/titlar/${s.getTitleId(row)}/` +
+                `/författare/${authorid}/titlar/${s.getTitleId(row)}/` +
                 `sida/${row.startpagename}/${mediatype}`
             )
         }

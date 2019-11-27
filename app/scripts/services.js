@@ -7,11 +7,8 @@ const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
 // let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
-let STRIX_URL = process.env.API_VER
-    ? `https://${API_VER}.litteraturbanken.se/api`
-    : "https://dev.litteraturbanken.se/api"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-// let STRIX_URL = "/api"
+let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -87,7 +84,7 @@ const expandMediatypes = function(works, mainMediatype) {
         } else {
             return {
                 label: metadata.mediatype,
-                url: `/forfattare/${
+                url: `/författare/${
                     getMainAuthor(metadata).authorid
                 }/titlar/${metadata.work_titleid || metadata.titleid}/sida/${
                     metadata.startpagename
@@ -1068,13 +1065,13 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 for (let item of content.data) {
                     if (["etext", "faksimil"].includes(item.doc_type)) {
                         const titleid = item.work_titleid || item.titleid
-                        item.url = `/forfattare/${item.authors[0].authorid}/titlar/${titleid}/sida/${item.startpagename}/${item.doc_type}`
+                        item.url = `/författare/${item.authors[0].authorid}/titlar/${titleid}/sida/${item.startpagename}/${item.doc_type}`
                         item.label = `${item.authors[0].surname} – ${item.shorttitle || item.title}`
                         item.typeLabel = "Verk"
                         item.mediatypeLabel = item.doc_type
                     }
                     if (["etext-part", "faksimil-part"].includes(item.doc_type)) {
-                        item.url = `/forfattare/${item.work_authors[0].authorid}/titlar/${item.work_titleid}/sida/${item.startpagename}/${item.mediatype}`
+                        item.url = `/författare/${item.work_authors[0].authorid}/titlar/${item.work_titleid}/sida/${item.startpagename}/${item.mediatype}`
                         item.label = `${
                             (item.authors != null ? item.authors[0] : item.work_authors[0]).surname
                         } – ${item.shorttitle || item.title}`
@@ -1083,7 +1080,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     }
 
                     if (item.doc_type === "author") {
-                        item.url = `/forfattare/${item.authorid}`
+                        item.url = `/författare/${item.authorid}`
                         item.label = item.name_for_index
                         item.typeLabel = "Författare"
                     }
@@ -1467,7 +1464,7 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
             const author = metadata.authors[0].authorid
             const titleid = metadata.titleid
 
-            return `/forfattare/${author}/titlar/${titleid}/sida/${matches[0].attrs.n}/${metadata.mediatype}?${merged}`
+            return `/författare/${author}/titlar/${titleid}/sida/${matches[0].attrs.n}/${metadata.mediatype}?${merged}`
         }
 
         next() {

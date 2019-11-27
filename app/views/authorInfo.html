@@ -14,14 +14,14 @@
 
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
-        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/forfattare/{{author}}">Introduktion</a></li>
-        <li ng-show="authorInfo.dramawebben" ng-class="{active : showpage == 'dramawebben'}"><a href="/forfattare/{{author}}/dramawebben">Dramawebben</a></li>
-        <li ng-class="{active : showpage == 'titlar'}"><a href="/forfattare/{{author}}/titlar">Verk</a></li>
-        <li ng-if="hasAudioPage"><a href="https://litteraturbanken.se/ljudochbild/forfattare/{{author.toLowerCase()}}" target="_blank">Ljud</a></li>
-        <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/forfattare/{{author}}/presentation">Presentation</a></li>
-        <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
-        <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/forfattare/{{author}}/las-mer">Läs mer</a></li>
-        <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/forfattare/{{author}}/mer">Mer</a></li>
+        <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/författare/{{author}}">Introduktion</a></li>
+        <li ng-show="authorInfo.dramawebben" ng-class="{active : showpage == 'dramawebben'}"><a href="/författare/{{author}}/dramawebben">Dramawebben</a></li>
+        <li ng-class="{active : showpage == 'titlar'}"><a href="/författare/{{author}}/titlar">Verk</a></li>
+        <li ng-if="hasAudioPage"><a href="https://litteraturbanken.se/ljudochbild/författare/{{author.toLowerCase()}}" target="_blank">Ljud</a></li>
+        <li ng-show="authorInfo.presentation" ng-class="{active : showpage == 'presentation'}"><a href="/författare/{{author}}/presentation">Presentation</a></li>
+        <li ng-show="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/författare/{{author}}/bibliografi">Bibliografi</a></li>
+        <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/författare/{{author}}/las-mer">Läs mer</a></li>
+        <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/författare/{{author}}/mer">Mer</a></li>
         <li ng-if="authorInfo.searchable"><a href="/sok?forfattare={{author}}&avancerad">Sök i texterna</a></li>
         <!-- <li ng-if="isDramaweb"><a href="/dramawebben">Till Dramawebben</a></li> -->
     </ul>
@@ -110,7 +110,7 @@
                                 </span>
                             </td>
                             <td ng-if="titleobj.showAuthor">
-                                <a href="/forfattare/{{titleobj.showAuthor(work)[0].authorid}}">{{titleobj.showAuthor(work)[0].name_for_index}}</a>
+                                <a href="/författare/{{titleobj.showAuthor(work)[0].authorid}}">{{titleobj.showAuthor(work)[0].name_for_index}}</a>
                             </td>
                             <td>
                                 <!-- <a class="title" ng-if="work.doc_type == 'audio'" 
@@ -132,12 +132,12 @@
                                 </a>
                                 
                                 <div class="extras" ng-if="titleobj.audioExtras" >
-                                    <a class="author" href="/forfattare/{{work.readers[0].authorid}}">
+                                    <a class="author" href="/författare/{{work.readers[0].authorid}}">
                                         Uppläsare: {{work.readers[0].full_name}}
                                     </a> 
                                 </div>
                                 <div class="extras" ng-if="$parent.$index != 0 && work.workshorttitle">i
-                                    <a class="author" href="/forfattare/{{work.work_authors[0].authorid}}">
+                                    <a class="author" href="/författare/{{work.work_authors[0].authorid}}">
                                         {{work.work_authors[0].surname}}:
                                     </a> 
                                     <span class="extras_title">{{work.workshorttitle}}</span> <span ng-if="work.imprintyear">({{work.imprintyear}})</span>
@@ -228,20 +228,20 @@
 
 <div toolkit>
     <div ng-show="slaMode">
-        <a href="/forfattare/LagerlofS" class="sla_logo"></a>
+        <a href="/författare/LagerlofS" class="sla_logo"></a>
         <ul class="subnav" role="navigation">
             <li>
-                <a ng-href="/forfattare/{{author}}/titlar" >Verk i LB</a>
+                <a ng-href="/författare/{{author}}/titlar" >Verk i LB</a>
             </li>
-            <li><a ng-href="/forfattare/{{author}}" >Introduktion</a></li>
-            <li><a ng-href="/forfattare/{{author}}/presentation">Presentation</a></li>
-            <li><a ng-href="/forfattare/{{author}}/bibliografi">Bibliografi</a></li>
+            <li><a ng-href="/författare/{{author}}" >Introduktion</a></li>
+            <li><a ng-href="/författare/{{author}}/presentation">Presentation</a></li>
+            <li><a ng-href="/författare/{{author}}/bibliografi">Bibliografi</a></li>
             <li ng-repeat="ref in authorInfo.externalref">
                 <a ng-href="/{{ref.url}}">{{ref.label}}</a>
             </li>
             <ul ng-if="slaMode">
-                <li><a ng-href="/forfattare/{{author}}/jamfor">Textkritik</a></li>
-                <li><a ng-href="/forfattare/{{author}}/omtexterna">Vetenskap</a></li>
+                <li><a ng-href="/författare/{{author}}/jamfor">Textkritik</a></li>
+                <li><a ng-href="/författare/{{author}}/omtexterna">Vetenskap</a></li>
             </ul>
         </ul>
     </div>

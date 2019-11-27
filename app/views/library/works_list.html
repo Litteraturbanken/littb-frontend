@@ -70,7 +70,7 @@
 
                 <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap"><span>{{row.sort_date_imprint.plain}}</span></td>
                 <td class="align-top text-right"><span class="author">
-                            <a ng-href="/forfattare/{{row.main_author.authorid}}">{{row.main_author.surname}}</a> 
+                            <a ng-href="/författare/{{row.main_author.authorid}}">{{row.main_author.surname}}</a> 
                             <span ng-if="row.main_author.type == 'editor'">(red.)</span> 
                             <span ng-if="row.main_author.type == 'illustrator'">(ill.)</span>
                         </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].authorid])" --></td>

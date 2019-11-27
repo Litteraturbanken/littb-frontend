@@ -15,17 +15,17 @@
     <h3>De mest lästa verken</h3>
     <ul>
         <li ng-repeat="title in titleList">
-            <span class="num">{{$index + 1}}. </span> <a ng-href="/forfattare/{{title.authors[0].authorid}}/titlar/{{title.titleid}}/sida/{{title.startpagename}}/{{title.mediatype}}">{{title.shorttitle || title.title}}</a>
+            <span class="num">{{$index + 1}}. </span> <a ng-href="/författare/{{title.authors[0].authorid}}/titlar/{{title.titleid}}/sida/{{title.startpagename}}/{{title.mediatype}}">{{title.shorttitle || title.title}}</a>
             
 
-            <a class="author pull-right" ng-href="/forfattare/{{title.authors[0].authorid}}">{{title.authors[0].surname || title.authors[0].full_name}}</a>
+            <a class="author pull-right" ng-href="/författare/{{title.authors[0].authorid}}">{{title.authors[0].surname || title.authors[0].full_name}}</a>
         </li>
     </ul>
     <h3>De mest nedladdade epubarna</h3>
     <ul>
         <li ng-repeat="title in epubList">
             <span class="num">{{$index + 1}}. </span> <a ng-href="/txt/epub/{{title.authors[0].authorid}}_{{title.work_titleid || title.titleid}}.epub" download target="_self">{{title.shorttitle || title.title}}</a>
-            <a class="author pull-right" ng-href="/forfattare/{{title.authors[0].authorid}}">{{title.authors[0].surname || title.authors[0].full_name}}</a>
+            <a class="author pull-right" ng-href="/författare/{{title.authors[0].authorid}}">{{title.authors[0].surname || title.authors[0].full_name}}</a>
     
         </li>
     </ul>

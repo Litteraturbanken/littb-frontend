@@ -582,7 +582,7 @@ littb.controller("textjamforelseCtrl", function(
                 myWits.push(wit)
                 ids.push(work.id)
                 s.witTitles[wit] = work.title
-                s.witUrls[wit] = `/forfattare/LagerlofS/titlar/${work.path}/info/`
+                s.witUrls[wit] = `/författare/LagerlofS/titlar/${work.path}/info/`
             }
         }
 

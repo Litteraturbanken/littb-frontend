@@ -534,13 +534,18 @@ window.littb = angular
                         "backend",
                         _.once(function($q, $location, backend) {
                             if ($location.path().startsWith("/forfattare")) {
-                                // "/författare/:author/titlar/:title/sida/:pagename/:mediatype"
+                                // example urls we're rewriting here:
+                                // "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype"
+                                // /forfattare/HoijerB/titlar/DenPhilosophiskaConstruktionen/info
 
                                 let segments = $location.path().split("/")
+                                console.log("segments", segments)
 
                                 // segments[4] = backend.normalizeTitleid(segments[4])
                                 let translate = [backend.unNormalizeAuthorid(segments[2])]
-                                if (segments[4]) {
+
+                                if (segments[5] != "info" && segments[4] && segments[7]) {
+                                    // 7 mediatype, 4 titleid
                                     translate.push(
                                         backend.unNormalizeTitleid(segments[7], segments[4])
                                     )

@@ -30,7 +30,9 @@ describe("library works", function() {
     it("should link correctly to reading mode from popular", () => {
         expect(
             element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
-        ).toEqual(`http://${HOST}:9000/forfattare/SoderbergH/titlar/DoktorGlas/sida/-2/etext`)
+        ).toEqual(
+            `http://${HOST}:9000/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext`
+        )
     })
 
     it("should link correctly to reading mode from filtered", () => {
@@ -39,7 +41,7 @@ describe("library works", function() {
         // filter.sendKeys(protractor.Key.ENTER)
         expect(
             element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
-        ).toEqual(`http://${HOST}:9000/forfattare/MartinsonH/titlar/Aniara/sida/5/etext`)
+        ).toEqual(`http://${HOST}:9000/f%C3%B6rfattare/MartinsonH/titlar/Aniara/sida/5/etext`)
     })
 })
 
@@ -77,52 +79,52 @@ describe("reader", function() {
     // beforeEach () ->
 
     it("should change page on click", function() {
-        get("/forfattare/StrindbergA/titlar/Fadren/sida/3/etext")
+        get("/f%C3%B6rfattare/StrindbergA/titlar/Fadren/sida/3/etext")
         element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(linkUrl =>
                 expect(linkUrl).toBe(
-                    `http://${HOST}:9000/forfattare/StrindbergA/titlar/Fadren/sida/4/etext`
+                    `http://${HOST}:9000/f%C3%B6rfattare/StrindbergA/titlar/Fadren/sida/4/etext`
                 )
             )
     })
 
     it("should correctly handle pagestep", function() {
-        get("/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil")
+        get("/f%C3%B6rfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil")
 
         element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(function(linkUrl) {
                 browser.get(linkUrl)
                 expect(browser.getCurrentUrl()).toBe(
-                    `http://${HOST}:9000/forfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
+                    `http://${HOST}:9000/f%C3%B6rfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
                 )
             })
     })
 
     it("should load workinfo from the correct mediatype", function() {
-        get("/forfattare/LagerlofS/titlar/Dunungen/sida/1/etext")
+        get("/f%C3%B6rfattare/LagerlofS/titlar/Dunungen/sida/1/etext")
 
         expect(element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href")).toBe(
-            `http://${HOST}:9000/forfattare/LagerlofS/titlar/Dunungen/sida/2/etext`
+            `http://${HOST}:9000/f%C3%B6rfattare/LagerlofS/titlar/Dunungen/sida/2/etext`
         )
     })
 
     it("should show SO modal", function() {
-        get("/forfattare/SoderbergH/titlar/DoktorGlas/sida/1/etext?so=damm")
+        get("/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/1/etext?so=damm")
         expect(
             element(By.css(".modal-dialog lemma[id=lnr132506] grundform")).getText("href")
         ).toEqual("damm")
     })
 
     it("should show srcset correctly", function() {
-        get("/forfattare/BureusJ/titlar/SmaragdinaTabvla/sida/1/faksimil")
+        get("/f%C3%B6rfattare/BureusJ/titlar/SmaragdinaTabvla/sida/1/faksimil")
         expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual(
             "/txt/lb2514233/lb2514233_3/lb2514233_3_0001.jpeg 1x,/txt/lb2514233/lb2514233_5/lb2514233_5_0001.jpeg 2x"
         )
     })
     it("should not show srcset", function() {
-        get("/forfattare/BellmanCM/titlar/FredmansEpistlesSongs/sida/V/faksimil")
+        get("/f%C3%B6rfattare/BellmanCM/titlar/FredmansEpistlesSongs/sida/V/faksimil")
         expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual("")
     })
 })
@@ -165,54 +167,54 @@ describe("parts navigation", function() {
     const currentPartName = () => element(By.css(".current_part .navtitle"))
 
     it("should handle parts with parent parts", function() {
-        get("/forfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil")
+        get("/f%C3%B6rfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `http://${HOST}:9000/forfattare/RydbergV/titlar/Singoalla1885/sida/20/faksimil`
+            `http://${HOST}:9000/f%C3%B6rfattare/RydbergV/titlar/Singoalla1885/sida/20/faksimil`
         )
     })
 
     it("should handle many parts on same page, prev", function() {
-        get("/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil")
+        get("/f%C3%B6rfattare/Anonym/titlar/ABC1746/sida/X/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `http://${HOST}:9000/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil`
+            `http://${HOST}:9000/f%C3%B6rfattare/Anonym/titlar/ABC1746/sida/IX/faksimil`
         )
     })
 
     it("should handle many parts on same page, next", function() {
-        get("/forfattare/Anonym/titlar/ABC1746/sida/IX/faksimil")
+        get("/f%C3%B6rfattare/Anonym/titlar/ABC1746/sida/IX/faksimil")
         expect(nextPart().getAttribute("href")).toBe(
-            `http://${HOST}:9000/forfattare/Anonym/titlar/ABC1746/sida/X/faksimil`
+            `http://${HOST}:9000/f%C3%B6rfattare/Anonym/titlar/ABC1746/sida/X/faksimil`
         )
     })
 
     it("should give a prev part despite prev page being between parts", function() {
-        get("/forfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil")
+        get("/f%C3%B6rfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `http://${HOST}:9000/forfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil`
+            `http://${HOST}:9000/f%C3%B6rfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil`
         )
     })
 
     it("should find a single page part on the prev page", function() {
-        get("/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil")
+        get("/f%C3%B6rfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `http://${HOST}:9000/forfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil`
+            `http://${HOST}:9000/f%C3%B6rfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil`
         )
     })
 
     it("should show current part name instead of ended part", function() {
-        get("/forfattare/Euripides/titlar/Elektra1843/sida/9/faksimil")
+        get("/f%C3%B6rfattare/Euripides/titlar/Elektra1843/sida/9/faksimil")
         expect(currentPartName().getText()).toBe("[Pjäsen]")
     })
 
     it("should go to beginning of current part rather than previous part", function() {
-        get("/forfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil")
+        get("/f%C3%B6rfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `http://${HOST}:9000/forfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil`
+            `http://${HOST}:9000/f%C3%B6rfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil`
         )
     })
 
     it("should disable prev if before first part", function() {
-        get("/forfattare/OmarKhayyam/titlar/UmrKhaiyamRubaIyat/sida/1/faksimil")
+        get("/f%C3%B6rfattare/OmarKhayyam/titlar/UmrKhaiyamRubaIyat/sida/1/faksimil")
         expect(prevPart().getAttribute("class")).toBe("prev_part disabled")
     })
 })

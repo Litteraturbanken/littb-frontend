@@ -149,7 +149,7 @@ const getStudentCtrl = id => [
                 },
                 {
                     label: "Den heliga natten",
-                    url: "/forfattare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil?storlek=1",
+                    url: "/författare/LagerlofS/titlar/DenHeligaNatten/sida/1/faksimil?storlek=1",
                     if: ["f-5"]
                 }
 
