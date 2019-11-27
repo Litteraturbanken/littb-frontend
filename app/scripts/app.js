@@ -532,7 +532,7 @@ window.littb = angular
                         "$q",
                         "$location",
                         "backend",
-                        _.once(function($q, $location, backend) {
+                        function($q, $location, backend) {
                             if ($location.path().startsWith("/forfattare")) {
                                 // example urls we're rewriting here:
                                 // "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype"
@@ -558,7 +558,7 @@ window.littb = angular
                                     $location.path(segments.join("/")).replace()
                                 })
                             }
-                        })
+                        }
                     ]
                 },
                 // redirectTo(routeParams, path, searchVars) {
