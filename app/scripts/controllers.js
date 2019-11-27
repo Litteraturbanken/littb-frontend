@@ -291,6 +291,12 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         }
     }
 
+    s.getWikiImage = () => {
+        if (window.isDev && s.authorInfo) {
+            return s.authorInfo.wikidata.image
+        }
+    }
+
     s.normalizeAuthor = $filter("normalizeAuthor")
 
     s.titleSort = util.titleSort
