@@ -231,7 +231,8 @@ littb.controller("searchCtrl", function(
         let include = "shorttitle,title,lbworkid,authors.authorid,mediatype,searchable"
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
         // s.loadingTitles = true
-        let resultlimit = s.filters["authors>author_id"].length ? 10000 : 30
+        console.log("s.filters", s.filters)
+        let resultlimit = s.filters["authors>authorid"].length ? 10000 : 30
         return backend
             .getTitles("etext,faksimil", {
                 sort_field: "sortkey|asc",
