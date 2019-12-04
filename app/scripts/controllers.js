@@ -251,7 +251,8 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
     $route,
     authors,
     $q,
-    $filter
+    $filter,
+    $http
 ) {
     const s = $scope
     _.extend(s, $routeParams)
@@ -295,6 +296,15 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         if (window.isDev && s.authorInfo) {
             return s.authorInfo.wikidata.image
         }
+    }
+    s.onSubmitWikiImage = url => {
+        $http({
+            url: "http://localhost:4321",
+            params: {
+                cmd: "add_wikidata_authorimage",
+                url
+            }
+        })
     }
 
     s.normalizeAuthor = $filter("normalizeAuthor")
@@ -1048,15 +1058,6 @@ littb.controller("autocompleteCtrl", function(
                         }
                     })
                 }
-                // ,
-                //     label : "/öppna"
-                //     alt : ["öppna"]
-                //     typeLabel: "[Red.]"
-                //     action : () ->
-                //         info = $(".reader_main").scope?().workinfo
-                //         win = window.open("littb-open://?lbworkid=#{info.lbworkid}&mediatype=#{info.mediatype}")
-                //         win.onload = () => win.close()
-                //         return false
 
                 if (["readingCtrl", "authorInfoCtrl"].includes($route.current.$$route.controller)) {
                     const key = { readingCtrl: "workinfo", authorInfoCtrl: "authorInfo" }[
@@ -1072,6 +1073,32 @@ littb.controller("autocompleteCtrl", function(
                                 s.info = $("#mainview").scope()[key]
                             }
                             return false
+                        }
+                    })
+                    menu.push({
+                        label: "/öppna",
+                        alt: ["öppna", "open"],
+                        typeLabel: "[Red.]",
+                        action() {
+                            if ($("#mainview").scope) {
+                                let { mediatype, lbworkid, authorid_norm } = $("#mainview").scope()[
+                                    key
+                                ]
+                                let params = {}
+                                if (key == "workinfo") {
+                                    params = { mediatype, lbworkid }
+                                } else if (key == "authorInfo") {
+                                    params = { mediatype, authorid: authorid_norm }
+                                }
+                                $.get(`http://localhost:4321/`, params).fail(function(response) {
+                                    safeApply(s, () =>
+                                        s.$emit("notify", "Hittade inte red-tjänsten.")
+                                    )
+                                })
+
+                                s.close()
+                                return false
+                            }
                         }
                     })
                 }

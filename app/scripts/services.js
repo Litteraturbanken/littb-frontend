@@ -6,9 +6,9 @@ const c = window.console
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-// let STRIX_URL = "/api"
+let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -1002,6 +1002,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: `${STRIX_URL}/list_all/${mediatype}`,
                 params: {
+                    include: "titleid",
                     filter_and: {
                         titleid
                     }
@@ -1055,6 +1056,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 }
                 // for item in data.suggest
 
+                content.data = _.filter(content.data, item => item.doc_type != "audio")
                 for (let item of content.data) {
                     if (["etext", "faksimil"].includes(item.doc_type)) {
                         const titleid = item.work_titleid || item.titleid

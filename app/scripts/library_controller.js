@@ -216,7 +216,10 @@ littb.controller("libraryCtrl", function(
     // $timeout () ->
     authors.then(function([authorList, authorsById]) {
         s.authorsById = authorsById
-        // s.authorData = _.filter(authorList, item => item.show)
+        s.withPortraits = _.filter(
+            authorList,
+            item => !item.picture && item.wikidata && item.wikidata.image
+        )
         s.authorSearching = false
     })
 
