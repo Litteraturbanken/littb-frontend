@@ -357,14 +357,14 @@ window.littb = angular
 
             .when(
                 [
-                    "/författare/LagerlofS",
-                    "/författare/LagerlofS/titlar",
-                    "/författare/LagerlofS/bibliografi",
-                    "/författare/LagerlofS/presentation",
-                    "/författare/LagerlofS/biblinfo",
-                    "/författare/LagerlofS/jamfor",
-                    "/författare/LagerlofS/omtexterna",
-                    "/författare/LagerlofS/omtexterna/:omtexternaDoc"
+                    "/författare/LagerlöfS",
+                    "/författare/LagerlöfS/titlar",
+                    "/författare/LagerlöfS/bibliografi",
+                    "/författare/LagerlöfS/presentation",
+                    "/författare/LagerlöfS/biblinfo",
+                    "/författare/LagerlöfS/jamfor",
+                    "/författare/LagerlöfS/omtexterna",
+                    "/författare/LagerlöfS/omtexterna/:omtexternaDoc"
                 ],
                 {
                     templateUrl: require("../views/authorInfo.html"),
@@ -601,7 +601,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
         if ($rootScope.isSchool) {
             return "/skola"
         } else if ($rootScope.isSla) {
-            return "/författare/LagerlofS"
+            return "/författare/LagerlöfS"
         } else {
             return "/"
         }

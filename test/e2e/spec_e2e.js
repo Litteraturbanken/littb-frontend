@@ -147,6 +147,21 @@ describe("editor", function() {
             })
     })
 })
+describe("search links", function() {
+    beforeEach(() => get("/sök?forfattare=MartinsonH&titlar=lb441882&avancerad"))
+
+    it("should preselect author and title", function() {
+        let main = element(by.id("mainview"))
+        main.evaluate("selectedTitles").then(val => {
+            expect(val.length).toBe(1)
+            expect(val[0]).toEqual("lb441882")
+        })
+
+        main.evaluate("filters['authors>authorid'][0]").then(val => {
+            expect(val).toEqual("MartinsonH")
+        })
+    })
+})
 
 describe("search", function() {
     beforeEach(() => get("/sök"))

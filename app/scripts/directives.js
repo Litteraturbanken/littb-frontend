@@ -1035,13 +1035,14 @@ littb.directive("searchOpts", ($location, util) => ({
 littb.directive("chronology", ($location, backend, util) => ({
     template: `
             <div class="flex">
-                <rzslider class="mt-4 slider-large" step="1" ng-class="[sliderActive, {active: sliderActive}]"
+                <rzslider class="mt-3 slider-large" step="1" ng-class="[sliderActive, {active: sliderActive}]"
                         rz-slider-model="from" 
                         rz-slider-high="to" 
                         rz-slider-options="sliderConf" >
                 </rzslider>
 
                 <div class="whitespace-no-wrap self-center chronology_inputs">
+                    <span class="text-sm sc">Tryckår: </span>
                     <input type="text" 
                            class="text-sm text-center py-1" 
                            ng-keyup="change()" 
