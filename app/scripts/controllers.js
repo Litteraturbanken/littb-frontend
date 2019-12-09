@@ -251,8 +251,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
     $route,
     authors,
     $q,
-    $filter,
-    $http
+    $filter
 ) {
     const s = $scope
     _.extend(s, $routeParams)
@@ -1086,14 +1085,20 @@ littb.controller("autocompleteCtrl", function(
                                 ]
                                 let params = {}
                                 if (key == "workinfo") {
-                                    params = { mediatype, lbworkid }
+                                    params = {
+                                        cmd: "open_title",
+                                        mediatype,
+                                        lbworkid
+                                    }
                                 } else if (key == "authorInfo") {
-                                    params = { mediatype, authorid: authorid_norm }
+                                    params = { cmd: "open_auth", lbworkid }
                                 }
-                                $.get(`http://localhost:4321/`, params).fail(function(response) {
-                                    safeApply(s, () =>
-                                        s.$emit("notify", "Hittade inte red-tjänsten.")
-                                    )
+                                $http({
+                                    url: `http://localhost:4321/`,
+                                    params
+                                }).then(_.noop, response => {
+                                    console.log("response", response)
+                                    s.$emit("notify", "Hittade inte red-tjänsten.")
                                 })
 
                                 s.close()
