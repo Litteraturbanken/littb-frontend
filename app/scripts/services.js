@@ -959,8 +959,9 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             })
         },
 
-        fetchOverlayData(lbworkid, ix, size_vals) {
+        fetchOverlayData(lbworkid, ix) {
             console.log("size_vals", size_vals)
+            let size_vals = SIZE_VALS
             const filename = _.str.lpad(ix, 5, "0")
             const url = `txt/${lbworkid}/ocr_${filename}.html`
             return this.getHtmlFile(url).then(function(response) {
