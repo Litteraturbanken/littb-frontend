@@ -159,6 +159,13 @@ littb.controller("readingCtrl", function(
                         return s.prevPage()
                     }
                     break
+                case 77: // m
+                    if (s.isEditor) {
+                        let ix = s.pageix + 10
+                        s.pageix = ix
+                        s.pageToLoad = ix
+                    }
+                    break
             }
         })
     }
