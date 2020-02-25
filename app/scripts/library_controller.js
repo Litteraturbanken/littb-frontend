@@ -67,6 +67,7 @@ littb.controller("libraryCtrl", function(
 
     s.onSliderChange = () => {
         $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
+        s.parts_page.current = 1
         s.refreshData()
     }
 
@@ -159,6 +160,7 @@ littb.controller("libraryCtrl", function(
         s.rowfilter = ""
         s.all_titles = null
         s.audio_list = null
+        s.parts_page.current = 1
         s.refreshData()
     }
 
@@ -409,6 +411,7 @@ littb.controller("libraryCtrl", function(
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
 
         let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
+        console.log("size", size)
         if (countOnly) {
             size = { from: 0, to: 0 }
         }
@@ -505,6 +508,7 @@ littb.controller("libraryCtrl", function(
 
     s.setFilter = f => {
         s.filter = f
+        s.parts_page.current = 1
         s.refreshData()
     }
 
@@ -599,6 +603,7 @@ littb.controller("libraryCtrl", function(
         if (s.listType == "works") {
             s.fetchWorks(false, false)
         } else if (s.listType == "parts") {
+            s.parts_page.current = 1
             s.fetchParts(false)
         } else if (s.listType == "epub") {
             s.fetchWorks(false, true)
@@ -627,6 +632,7 @@ littb.controller("libraryCtrl", function(
         if (s.listType == "works") {
             s.fetchWorks(false, false)
         } else if (s.listType == "parts") {
+            s.parts_page.current = 1
             s.fetchParts(false)
         } else if (s.listType == "epub") {
             s.fetchWorks(false, true)
