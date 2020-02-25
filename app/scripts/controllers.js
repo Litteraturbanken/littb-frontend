@@ -392,14 +392,14 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
             if (doc) {
                 url = `/red/sla/${doc}`
             } else {
-                url = `/red/forfattare/${s.author}/${page}/index.html`
+                url = `/red/forfattare/${s.authorInfo.authorid_norm}/${page}/index.html`
             }
         } else {
             // url = s.authorInfo[page]
             if (page === "mer") {
                 page = "semer"
             }
-            url = `/red/forfattare/${s.author}/${page}/index.html`
+            url = `/red/forfattare/${s.authorInfo.authorid_norm}/${page}/index.html`
             c.log("url", url)
         }
 

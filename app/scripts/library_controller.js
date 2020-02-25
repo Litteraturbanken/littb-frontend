@@ -36,8 +36,8 @@ littb.controller("libraryCtrl", function(
     $filter
 ) {
     const s = $scope
+
     s.filter = $location.search().filter || ""
-    s.showAllParts = !!$location.search().alla_titlar
     // s.showAllWorks = !!$location.search().alla_verk
     s.worksListURL = require("../views/library/works_list.html")
     s.titleSearching = false
@@ -46,10 +46,11 @@ littb.controller("libraryCtrl", function(
     s.showInitial = true
     s.show_more = $location.search().avancerat != null
     s.show_dl = $location.search().avancerat != null
-    s.parts_currentpage = 1
+    s.parts_page = {
+        current: Number($location.search().sida) || 1
+    }
 
     s.listType = $location.search().visa || "works"
-    console.log("listType init", s.listType)
 
     s.authLimit = 150
 
@@ -63,7 +64,6 @@ littb.controller("libraryCtrl", function(
             ? $location.search().intervall.split(",")
             : []
     }
-    console.log("s.filters", JSON.stringify(s.filters))
 
     s.onSliderChange = () => {
         $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
@@ -135,7 +135,6 @@ littb.controller("libraryCtrl", function(
 
     const aboutDef = $q.defer()
     s.onAboutAuthorChange = _.once(function($event) {
-        console.log("onAboutAuthorChange", s.filters.authorkeyword)
         if ($location.search().authorkeyword) {
             s.filters.authorkeyword = ($location.search().authorkeyword || "").split(",")
         }
@@ -150,7 +149,6 @@ littb.controller("libraryCtrl", function(
     })
 
     s.resetView = function() {
-        console.log("resetView")
         s.showInitial = true
         // s.showPopular = true
 
@@ -339,9 +337,7 @@ littb.controller("libraryCtrl", function(
         return { pdf: "PDF", xml: "XML" }[label] || label
     }
     s.setAuthorData = function() {
-        console.log("setAuthorData", s.listType)
         let [key, dir] = (s.sort.authors || "").split("|")
-        console.log("key, dir", key, dir)
         let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
 
         // if (s.filters["main_author.gender"]) {
@@ -412,8 +408,7 @@ littb.controller("libraryCtrl", function(
         s.partSearching = true
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
 
-        console.log("fetchParts showAllParts", s.showAllParts)
-        let size = { from: 0, to: s.showAllParts ? 10000 : 100 }
+        let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
         if (countOnly) {
             size = { from: 0, to: 0 }
         }
@@ -446,67 +441,67 @@ littb.controller("libraryCtrl", function(
         })
     }
 
-    var fetchAudio = () => {
-        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+    // var fetchAudio = () => {
+    //     let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
 
-        let def = backend
-            .getTitles(
-                "audio",
-                {
-                    sort_field: s.sort.audio,
-                    filter_string: s.rowfilter,
-                    filter_or,
-                    filter_and,
-                    author_aggs: false,
-                    partial_string: true,
-                    to: 10000,
-                    include:
-                        "authors.authorid,authors.surname,title,file,readers.authorid,readers.surname"
-                },
-                true
-            )
-            .then(({ titles, hits }) => {
-                s.audio_list = titles
-                console.log("titles", titles)
-                // s.parts_hits = hits
-                return _.flatten(
-                    _.map(s.audio_list, item => {
-                        return _.map([...item.authors, ...item.readers], "authorid")
-                    })
-                )
-            })
-        $q.all([def, authors]).then(([authorids]) => {
-            s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
-            s.setAuthorData()
-        })
+    //     let def = backend
+    //         .getTitles(
+    //             "audio",
+    //             {
+    //                 sort_field: s.sort.audio,
+    //                 filter_string: s.rowfilter,
+    //                 filter_or,
+    //                 filter_and,
+    //                 author_aggs: false,
+    //                 partial_string: true,
+    //                 to: 10000,
+    //                 include:
+    //                     "authors.authorid,authors.surname,title,file,readers.authorid,readers.surname"
+    //             },
+    //             true
+    //         )
+    //         .then(({ titles, hits }) => {
+    //             s.audio_list = titles
+    //             console.log("titles", titles)
+    //             // s.parts_hits = hits
+    //             return _.flatten(
+    //                 _.map(s.audio_list, item => {
+    //                     return _.map([...item.authors, ...item.readers], "authorid")
+    //                 })
+    //             )
+    //         })
+    //     $q.all([def, authors]).then(([authorids]) => {
+    //         s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
+    //         s.setAuthorData()
+    //     })
 
-        // let def = backend
-        //     .getAudioList({
-        //         string_filter: s.rowfilter,
-        //         sort_field: s.sort["audio"],
-        //         partial_string: true,
-        //     })
-        //     .then(titleArray => {
-        //         if ($location.search()["kön"]) {
-        //             s.audio_list = _.filter(
-        //                 titleArray,
-        //                 audio => audio.authors[0].gender == $location.search()["kön"]
-        //             )
-        //         } else {
-        //             s.audio_list = titleArray
-        //         }
+    // let def = backend
+    //     .getAudioList({
+    //         string_filter: s.rowfilter,
+    //         sort_field: s.sort["audio"],
+    //         partial_string: true,
+    //     })
+    //     .then(titleArray => {
+    //         if ($location.search()["kön"]) {
+    //             s.audio_list = _.filter(
+    //                 titleArray,
+    //                 audio => audio.authors[0].gender == $location.search()["kön"]
+    //             )
+    //         } else {
+    //             s.audio_list = titleArray
+    //         }
 
-        //         return _.flatten(
-        //             _.map(s.audio_list, item => {
-        //                 return _.map([...item.authors, ...item.readers], "authorid")
-        //             })
-        //         )
-        //     })
-        // $q.all([def, authors]).then(([authorids]) => {
-        //     s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
-        //     s.setAuthorData()
-        // })
-    }
+    //         return _.flatten(
+    //             _.map(s.audio_list, item => {
+    //                 return _.map([...item.authors, ...item.readers], "authorid")
+    //             })
+    //         )
+    //     })
+    // $q.all([def, authors]).then(([authorids]) => {
+    //     s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
+    //     s.setAuthorData()
+    // })
+    // }
 
     s.setFilter = f => {
         s.filter = f
@@ -1014,6 +1009,12 @@ littb.controller("libraryCtrl", function(
         {
             key: "nedladdning",
             expr: "dl_mode"
+        },
+        {
+            key: "sida",
+            expr: "parts_page.current",
+            val_in: Number,
+            default: 1
         }
         // {
         // key: "sortering",
