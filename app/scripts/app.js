@@ -353,6 +353,11 @@ window.littb = angular
                     window.location = "https://litteraturbanken.se/ljudochbild"
                 }
             })
+            .when("/bibliotekariesidor/", {
+                redirectTo: () => {
+                    window.location = "https://litteraturbanken.se/bibliotekariesidor/"
+                }
+            })
             .when(["/forfattare"], { redirectTo: "/bibliotek" })
 
             .when(
