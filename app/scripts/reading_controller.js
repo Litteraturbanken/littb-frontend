@@ -667,10 +667,12 @@ littb.controller("readingCtrl", function(
 
     s.isDefined = angular.isDefined
     s.getOverlayCss = function(obj) {
-        if (!s.overlayFactors) {
-            return {}
-        }
-        const fac = s.overlayFactors[s.size - 1]
+        if (!s.overlayWidth) return {}
+        // if (!s.overlayFactors) {
+        //     return {}
+        // }
+        // const fac = s.overlayFactors[s.size - 1]
+        const fac = s.imageWidth / s.overlayWidth
         return {
             left: fac * obj.x + "px",
             top: fac * obj.y + "px"
@@ -749,13 +751,13 @@ littb.controller("readingCtrl", function(
 
     s.getWidthConstraint = () => {
         if (!s.workinfo) return
-        console.log("getSrcsetSize()", getSrcsetSize(), s.size)
+        // console.log("getSrcsetSize()", getSrcsetSize(), s.size)
         // let maybeSize = getSrcsetSize()
         // if (typeof maybeSize != "undefined") {
         //     let width = Number(s.workinfo.width["size_" + maybeSize])
         //     return width / 2 // not all size 5 are twice as large as size 2
         // }
-        return s.workinfo.width["size_" + s.size]
+        return Number(s.workinfo.width["size_" + s.size])
     }
 
     const infoDef = initSourceInfo()
@@ -792,6 +794,15 @@ littb.controller("readingCtrl", function(
             return def.promise
         }
     }
+
+    s.min = Math.min
+    s.onImageLoad = () => {
+        console.log("img load", $("img.faksimil").prop("width"))
+        s.imageWidth = $("img.faksimil").prop("width")
+    }
+    // $("body").on("load", "img.faksimil", function() {
+    //     window.safeApply(s, () => (s.imageWidth = $("img.faksimil").prop("naturalWidth")))
+    // })
 
     const loadPage = val => {
         c.log("loadPage", val)
@@ -835,8 +846,9 @@ littb.controller("readingCtrl", function(
                 if (mediatype === "faksimil" && s.workinfo.searchable) {
                     return backend
                         .fetchOverlayData(s.workinfo.lbworkid, s.pageix)
-                        .then(function([overlayHtml, overlayFactors]) {
-                            s.overlayFactors = overlayFactors
+                        .then(function([overlayHtml, overlayWidth]) {
+                            // s.overlayFactors = overlayFactors
+                            s.overlayWidth = overlayWidth
                             s.overlayHtml = overlayHtml
                         })
                 }

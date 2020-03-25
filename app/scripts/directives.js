@@ -830,6 +830,17 @@ littb.directive("listScroll", () => ({
     }
 }))
 
+littb.directive("imageonload", function() {
+    return {
+        restrict: "A",
+        link: function(scope, element, attrs) {
+            element.bind("load", function() {
+                scope.$apply(attrs.imageonload)
+            })
+        }
+    }
+})
+
 // littb.directive "ornament", () ->
 //     restrict : "C"
 
@@ -841,7 +852,6 @@ const overflowLoad = function(s, element) {
         $(this).css("max-width", "initial")
         const actualWidth = $(this).width()
         $(this).css("max-width", maxWidth)
-        console.log("$(this).width() - actualWidth", $(this).width(), actualWidth)
         if (actualWidth - $(this).width() > 100) {
             c.log("overflowing image found", element, $(this).width(), actualWidth)
             element.parent().addClass("img-overflow")

@@ -960,34 +960,31 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         },
 
         fetchOverlayData(lbworkid, ix) {
-            console.log("size_vals", size_vals)
-            let size_vals = SIZE_VALS
+            // console.log("size_vals", size_vals)
+            // let size_vals = SIZE_VALS
             const filename = _.str.lpad(ix, 5, "0")
             const url = `txt/${lbworkid}/ocr_${filename}.html`
             return this.getHtmlFile(url).then(function(response) {
                 const html = response.data.firstChild
                 // c.log $(html)
-                const max = _.max(
-                    _.map(
-                        $(html)
-                            .data("size")
-                            .split("x"),
-                        Number
-                    )
+                const overlayWidth = Number(
+                    $(html)
+                        .data("size")
+                        .split("x")[0]
                 )
                 if (window.devicePixelRatio == 2) {
                     //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
                     //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
-                    size_vals[0] = size_vals[2] / 2
-                    size_vals[1] = size_vals[3] / 2
-                    size_vals[2] = size_vals[4] / 2
+                    // size_vals[0] = size_vals[2] / 2
+                    // size_vals[1] = size_vals[3] / 2
+                    // size_vals[2] = size_vals[4] / 2
                 }
-                const x_factor = 0.97
-                const overlayFactors = _.map(size_vals, val => (val / max) * x_factor)
+                // const x_factor = 0.97
+                // const overlayFactors = _.map(size_vals, val => (val / max) * x_factor)
 
                 const xmlSerializer = new XMLSerializer()
                 const result = xmlSerializer.serializeToString(html)
-                return [result, overlayFactors]
+                return [result, overlayWidth]
             })
         },
 
