@@ -350,12 +350,17 @@ window.littb = angular
             })
             .when("/ljudochbild", {
                 redirectTo: () => {
-                    window.location = "https://litteraturbanken.se/ljudochbild"
+                    window.location.replace("https://litteraturbanken.se/ljudochbild")
                 }
             })
             .when("/bibliotekariesidor/", {
                 redirectTo: () => {
-                    window.location = "https://litteraturbanken.se/bibliotekariesidor/"
+                    window.location.replace("https://litteraturbanken.se/bibliotekariesidor/")
+                }
+            })
+            .when("/skolan/lararsida/", {
+                redirectTo: () => {
+                    window.location.replace("https://litteraturbanken.se/skolan/lararsida/")
                 }
             })
             .when(["/forfattare"], { redirectTo: "/bibliotek" })
