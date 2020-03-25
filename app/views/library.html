@@ -236,7 +236,7 @@
                                         {{row.shorttitle || row.title}}
                                         </a>
                                     </td>
-                                    <td class="hidden sm:table-cell">{{row.sort_date_imprint.plain}}</td>
+                                    <td class="hidden sm:table-cell"><a ng-click="setDateRange(row.sort_date_imprint.plain, row.sort_date_imprint.plain)">{{row.sort_date_imprint.plain}}</a></td>
                                     <td class="author text-right">
                                         <a ng-href="/författare/{{getPartAuthor(row).authorid}}">{{getPartAuthor(row).surname}}</a> 
                                         <span ng-if="getPartAuthor(row).type == 'editor'">(red.)</span>

@@ -177,6 +177,13 @@ littb.controller("libraryCtrl", function(
         return _.intersection(order, list).concat(_.difference(list, order))
     }
 
+    s.setDateRange = (from, to) => {
+        console.log("from, to", from, to)
+        s.filters["sort_date_imprint.date:range"][0] = from
+        s.filters["sort_date_imprint.date:range"][1] = to
+        s.onSliderChange()
+    }
+
     s.getTitleId = row => row.work_titleid
 
     s.getUniqId = function(title) {
