@@ -358,6 +358,11 @@ window.littb = angular
                     window.location.replace("https://litteraturbanken.se/bibliotekariesidor/")
                 }
             })
+            .when("/diktensmuseum/", {
+                redirectTo: () => {
+                    window.location.replace("https://litteraturbanken.se/diktensmuseum/")
+                }
+            })
             .when("/skolan/lararsida/", {
                 redirectTo: () => {
                     window.location.replace("https://litteraturbanken.se/skolan/lararsida/")

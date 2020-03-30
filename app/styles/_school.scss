@@ -1,7 +1,7 @@
 @charset "utf-8";
 
 
-.site-sla, .site-school {
+.site-sla {
     #leftCorridor {
         display : inline-flex;
         flex-direction: column;
@@ -28,32 +28,32 @@
                 cursor : default;
             }
         }
-        .logo_link_monogram {
+        // .logo_link_monogram {
 
-            order: 2;
-            background: url("../img/lb_monogram_white_white.svg") no-repeat;
-            background-size: cover;
-            height: 129px;
-            width: 170px;
-            left: 9px;
-            top: -6px;
-            margin-bottom: 0em;
-            position: relative;
-            display: block;
+        //     order: 2;
+        //     background: url("../img/lb_monogram_white_white.svg") no-repeat;
+        //     background-size: cover;
+        //     height: 129px;
+        //     width: 170px;
+        //     left: 9px;
+        //     top: -6px;
+        //     margin-bottom: 0em;
+        //     position: relative;
+        //     display: block;
 
-        }
+        // }
 
-        .mainnav {
-            align-self : flex-end;
-            order: 3;
-            font-size: 0.8em;
-            a {
-               color : white;
-               &:hover {
-                color: #333;
-               }
-            }
-        }
+        // .mainnav {
+        //     align-self : flex-end;
+        //     order: 3;
+        //     font-size: 0.8em;
+        //     a {
+        //        color : white;
+        //        &:hover {
+        //         color: #333;
+        //        }
+        //     }
+        // }
         
     }
     .content {
