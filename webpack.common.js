@@ -27,8 +27,7 @@ module.exports = {
                     "/authordb",
                     "/xhr",
                     "/ws",
-                    "/so",
-                    "/%C3%B6vers%C3%A4ttarlexikon"
+                    "/so"
                 ],
                 target: "https://red.litteraturbanken.se",
                 // target: "https://litteraturbanken.se",

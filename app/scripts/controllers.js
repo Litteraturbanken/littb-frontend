@@ -258,7 +258,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
 
     if ($route.current.$$route.isSla) {
         s.slaMode = true
-        s.author = "LagerlofS"
+        s.author = "LagerlöfS"
         s.biblInfoLocation = require("../views/sla/biblinfo.html")
         s.compareLocation = require("../views/sla/textjamforelse.html")
     }
@@ -373,9 +373,9 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         return def.promise
     }
 
-    if (s.slaMode) {
-        getHtml("/red/sla/OmSelmaLagerlofArkivet.html").then(xml => (s.slaIntro = xml))
-    }
+    // if (s.slaMode) {
+    //     getHtml("/red/sla/OmSelmaLagerlofArkivet.html").then(xml => (s.slaIntro = xml))
+    // }
 
     const refreshExternalDoc = function(page, routeParams) {
         // sla hack

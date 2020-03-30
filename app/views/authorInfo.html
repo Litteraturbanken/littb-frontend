@@ -1,6 +1,6 @@
 <meta-desc>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</meta-desc>
 <page-title>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</page-title>
-<img ng-if="!slaMode && showpage != 'dramawebben'" bkg-img class="no-gradient" src="../img/forf2_bkg.jpg"></img>
+<img ng-if="showpage != 'dramawebben'" bkg-img class="no-gradient" src="../img/forf2_bkg.jpg"></img>
 <img class="dw_bkg" ng-if="showpage == 'dramawebben'" bkg-img class="no-gradient" src="../img/dramawebben_fade_more.jpg"></img>
 <!-- <img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img> -->
 
@@ -28,7 +28,6 @@
     
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
-            <div class="sla_intro" ng-if="slaMode" ng-bind-html="slaIntro | trust"></div>
             <div class="introtext content" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div class="introauthor">
@@ -93,8 +92,7 @@
             <div ng-class="{content : slaMode}">
                 
                 <div ng-repeat="titleobj in getDataSource()" ng-show="authorInfo && titleobj.data.length">
-                    <h2 ng-show="!slaMode" ng-show="titleobj.data.length">{{titleobj.label}}</h2>
-                    <h1 ng-show="slaMode" ng-show="titleobj.data.length">{{titleobj.label}}</h1>
+                    <h2 ng-show="titleobj.data.length">{{titleobj.label}}</h2>
 
                     <table class="contenttable" ng-class="{extra_wide : titleobj.showAuthor}">
                         <tr ng-repeat="work in titleobj.data | orderBy:getSortOrder(titleobj) track by $index">
@@ -225,24 +223,3 @@
     
 </div>
 
-
-<div toolkit>
-    <div ng-show="slaMode">
-        <a href="/författare/LagerlofS" class="sla_logo"></a>
-        <ul class="subnav" role="navigation">
-            <li>
-                <a ng-href="/författare/{{author}}/titlar" >Verk i LB</a>
-            </li>
-            <li><a ng-href="/författare/{{author}}" >Introduktion</a></li>
-            <li><a ng-href="/författare/{{author}}/presentation">Presentation</a></li>
-            <li><a ng-href="/författare/{{author}}/bibliografi">Bibliografi</a></li>
-            <li ng-repeat="ref in authorInfo.externalref">
-                <a ng-href="/{{ref.url}}">{{ref.label}}</a>
-            </li>
-            <ul ng-if="slaMode">
-                <li><a ng-href="/författare/{{author}}/jamfor">Textkritik</a></li>
-                <li><a ng-href="/författare/{{author}}/omtexterna">Vetenskap</a></li>
-            </ul>
-        </ul>
-    </div>
-</div>

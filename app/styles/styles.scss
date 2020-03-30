@@ -2709,18 +2709,6 @@ $partnav-width : 170px;
         box-shadow: inset -410px -460px 400px 30px white;
     }
 
-    &:not(.site-sla) {
-        .content {
-            overflow : visible;
-            border : none;
-            height : auto;
-            background: none;
-            padding : 0;
-            h2 {
-                font-size: inherit;
-            }
-        }    
-    }
     .content h2 {
         font-size: inherit;
     }
@@ -4302,113 +4290,28 @@ grundform-clean {
 }
 
 
-@import "_school";
+// @import "_school";
 
 
 .site-sla {
-    .portrait_container {
-        display: none !important;
-    }
-    #bkgimg:after {
-        display : none;
-    }
-    background-color : black;
-    #bkgimg img {
-        opacity : 0.8;
-    }
-    p a {
-        @include dotted(lightgrey);
-        background: linear-gradient(90deg, lightgrey 25%, rgba(0, 0, 0, 0) 0%) repeat-x;
-        background-size: .15em 2px;
-        background-position: 0 85%;
-    }
-
-    .sla_intro, .sla_intro * {
-        -webkit-font-smoothing: antialiased;
-        color : white;
-        a:hover {
-            color : #333;
-            * {
-                color : #333;
+        .content {
+            
+            h1 {
+                font-size : 1.3em;
+                margin-bottom: 1em;
+                font-family: "Requiem Text SC A","Requiem Text SC B";
+                text-transform: lowercase;
+                color: #7A1400;
+                color: #7A1400;
+                // margin-top: 1.4em;
             }
+        }
+        hr {
+            display: none;
         }
         .sect1 {
         
-            .titlepage .title {
-                display: none;
-            }
-        }
-    }
-    #leftCorridor {
-        width : 200px;
-        .subnav {
-            font-size: 1em;
-            margin-bottom : 5em;
-        }
-        * {
-            color : white;
-            a:hover {
-                color : $primarycolor;
-            }
-        }
-        
 
-        .sla_logo {
-            background: url("../img/sla_logga_white_white.svg") no-repeat;
-            height: 162px;
-            width: 420px;
-            margin-bottom: 0;
-            display: inline-block;
-            vertical-align: bottom;
-            background-size: contain;
-            margin-top: 20px;
-
-        }
-
-        
-
-    }
-    .content {
-        
-        h1 {
-            font-size : 1.3em;
-            margin-bottom: 1em;
-            font-family: "Requiem Text SC A","Requiem Text SC B";
-            text-transform: lowercase;
-            color: #7A1400;
-            color: #7A1400;
-            // margin-top: 1.4em;
-        }
-
-        a,span,em,p,div,h3,i {
-            color : #333;
-        }
-        a {
-            color : #333;
-            &:hover {
-                color : $primarycolor;
-            }
-        }
-
-        
-
-        .contenttable {
-            width : 660px !important;
-            .title {
-                color : #333;
-            }
-            .title:hover {
-                color : $primarycolor;
-            }
-        }
-        .lagerlof_bibliografi {
-            li {
-                margin-bottom : 1em;
-                max-width : 500px;
-            }
-        }
-        .sect1 {
-        
             .titlepage .title {
                 display: none;
             }
@@ -4417,170 +4320,284 @@ grundform-clean {
             }
             
         }
-    }
+}
 
-    #mainview {
-        margin-top : 11em;
+// .site-sla {
+//     .portrait_container {
+//         display: none !important;
+//     }
+//     #bkgimg:after {
+//         display : none;
+//     }
+//     background-color : black;
+//     #bkgimg img {
+//         opacity : 0.8;
+//     }
+//     p a {
+//         @include dotted(lightgrey);
+//         background: linear-gradient(90deg, lightgrey 25%, rgba(0, 0, 0, 0) 0%) repeat-x;
+//         background-size: .15em 2px;
+//         background-position: 0 85%;
+//     }
 
-        .introtext {
-            display: inline-block;
-            vertical-align: top;
+//     .sla_intro, .sla_intro * {
+//         -webkit-font-smoothing: antialiased;
+//         color : white;
+//         a:hover {
+//             color : #333;
+//             * {
+//                 color : #333;
+//             }
+//         }
+//         .sect1 {
+        
+//             .titlepage .title {
+//                 display: none;
+//             }
+//         }
+//     }
+//     #leftCorridor {
+//         width : 200px;
+//         .subnav {
+//             font-size: 1em;
+//             margin-bottom : 5em;
+//         }
+//         * {
+//             color : white;
+//             a:hover {
+//                 color : $primarycolor;
+//             }
+//         }
+        
 
-        }
-        & > div > h1, .links {
-            display : none;
-        }
-    }
+//         .sla_logo {
+//             background: url("../img/sla_logga_white_white.svg") no-repeat;
+//             height: 162px;
+//             width: 420px;
+//             margin-bottom: 0;
+//             display: inline-block;
+//             vertical-align: bottom;
+//             background-size: contain;
+//             margin-top: 20px;
 
-    // .links {
-    //     display : none;
-    // }
+//         }
 
-    h2 {
-        margin-top : 4em;
-    }
-    h3 {
-        margin-top : 2em;
-        font-size : 1.2em;
-    }
-    &.page-authorInfo #mainview p {
-        max-width : 500px;
-    }
-    .separator {
-        text-align : center;
-    }
-    table, table * {
-        border-color : #999;
-        border-collapse: collapse;
-    }
-    .author_img {
-        display : none;
-    }
-    .panel.jamfor {
-        background-color : fade-out(#fff, 0.6);
-        h2 {
-            margin-top : 1em;
-        }
-    }
-    .sla_intro {
-        display: inline-block;
-        vertical-align: top;
-        margin-right: 3em;
-        // margin-top : 2em;
-        h1 {
-            margin-top: 0;
-            font-size : 1.4em;
-        }
-    }
+        
 
-    table {
-        border : none;
-        border-collapse: collapse;
-        width : 450px;
-        max-width : 100%;
-        td {
-            padding : 4px;
-        }
+//     }
+//     .content {
+        
+//         h1 {
+//             font-size : 1.3em;
+//             margin-bottom: 1em;
+//             font-family: "Requiem Text SC A","Requiem Text SC B";
+//             text-transform: lowercase;
+//             color: #7A1400;
+//             color: #7A1400;
+//             // margin-top: 1.4em;
+//         }
 
-    }
-    .contenttable td:first-child > *:first-child {
-        background-color: transparent;
-    }
-    .literallayout {
-        margin-left : 1em;
-        p {
-            margin-top : 0;
-            margin-bottom: 0.1em;
-        }
-        & + p {
-            display : none;
-        }
-    }
+//         a,span,em,p,div,h3,i {
+//             color : #333;
+//         }
+//         a {
+//             color : #333;
+//             &:hover {
+//                 color : $primarycolor;
+//             }
+//         }
 
-    .listitem p {
-        margin : 0;
-    }
+        
 
-    ol.orderedlist li {
-        margin-bottom : 0.5em;
-        list-style-type: decimal;
-        max-width : 420px;
-        margin-right : 1em;
-    }
+//         .contenttable {
+//             width : 660px !important;
+//             .title {
+//                 color : #333;
+//             }
+//             .title:hover {
+//                 color : $primarycolor;
+//             }
+//         }
+//         .lagerlof_bibliografi {
+//             li {
+//                 margin-bottom : 1em;
+//                 max-width : 500px;
+//             }
+//         }
+//         .sect1 {
+        
+//             .titlepage .title {
+//                 display: none;
+//             }
+//             .sect2 .titlepage .title {
+//                 display: block;
+//             }
+            
+//         }
+//     }
+
+//     #mainview {
+//         margin-top : 11em;
+
+//         .introtext {
+//             display: inline-block;
+//             vertical-align: top;
+
+//         }
+//         & > div > h1, .links {
+//             display : none;
+//         }
+//     }
+
+//     // .links {
+//     //     display : none;
+//     // }
+
+//     h2 {
+//         margin-top : 4em;
+//     }
+//     h3 {
+//         margin-top : 2em;
+//         font-size : 1.2em;
+//     }
+//     &.page-authorInfo #mainview p {
+//         max-width : 500px;
+//     }
+//     .separator {
+//         text-align : center;
+//     }
+//     table, table * {
+//         border-color : #999;
+//         border-collapse: collapse;
+//     }
+//     .author_img {
+//         display : none;
+//     }
+//     .panel.jamfor {
+//         background-color : fade-out(#fff, 0.6);
+//         h2 {
+//             margin-top : 1em;
+//         }
+//     }
+//     .sla_intro {
+//         display: inline-block;
+//         vertical-align: top;
+//         margin-right: 3em;
+//         // margin-top : 2em;
+//         h1 {
+//             margin-top: 0;
+//             font-size : 1.4em;
+//         }
+//     }
+
+//     table {
+//         border : none;
+//         border-collapse: collapse;
+//         width : 450px;
+//         max-width : 100%;
+//         td {
+//             padding : 4px;
+//         }
+
+//     }
+//     .contenttable td:first-child > *:first-child {
+//         background-color: transparent;
+//     }
+//     .literallayout {
+//         margin-left : 1em;
+//         p {
+//             margin-top : 0;
+//             margin-bottom: 0.1em;
+//         }
+//         & + p {
+//             display : none;
+//         }
+//     }
+
+//     .listitem p {
+//         margin : 0;
+//     }
+
+//     ol.orderedlist li {
+//         margin-bottom : 0.5em;
+//         list-style-type: decimal;
+//         max-width : 420px;
+//         margin-right : 1em;
+//     }
 
     
-    .header {
+//     .header {
         
         
-    }
+//     }
 
-    .toc {
-        display : none;
-    }
-    .titlepage {
-        .title {
-            // display : none;
-        }
-        hr {
-            display: none;
-        }
-    }
-    h3.author {
-        margin-bottom : 3em;
-    }
-    h3.author:before {
-        content: "Av ";
-        display : inline;
-    }
-    .blockquote {
-        width : 85%;
-    }
-    .footnotes {
-        .footnote {
-            a {
-                color : inherit;
-                border-bottom : none;
-                cursor : default;
-                pointer-events : none;
+//     .toc {
+//         display : none;
+//     }
+//     .titlepage {
+//         .title {
+//             // display : none;
+//         }
+//         hr {
+//             display: none;
+//         }
+//     }
+//     h3.author {
+//         margin-bottom : 3em;
+//     }
+//     h3.author:before {
+//         content: "Av ";
+//         display : inline;
+//     }
+//     .blockquote {
+//         width : 85%;
+//     }
+//     .footnotes {
+//         .footnote {
+//             a {
+//                 color : inherit;
+//                 border-bottom : none;
+//                 cursor : default;
+//                 pointer-events : none;
 
-                &:first-of-type {
-                    margin-right : 1px;
-                }
-            }
-        }
-        &:before {
-            content : "Noter";
-            margin-top : 4em;
-            display : block;
-            font-size : 1.5em;
-        }
-        hr {
-            display : none;
-        }   
-    }
+//                 &:first-of-type {
+//                     margin-right : 1px;
+//                 }
+//             }
+//         }
+//         &:before {
+//             content : "Noter";
+//             margin-top : 4em;
+//             display : block;
+//             font-size : 1.5em;
+//         }
+//         hr {
+//             display : none;
+//         }   
+//     }
 
-    .note_popover {
-      transition: opacity linear 100ms;
-      opacity : 1;
+//     .note_popover {
+//       transition: opacity linear 100ms;
+//       opacity : 1;
 
-      &.ng-hide-add,
-      &.ng-hide-remove {
-        display:block!important;
-      }  
-      &.ng-hide {
-        opacity:0;
-      }
-    }
+//       &.ng-hide-add,
+//       &.ng-hide-remove {
+//         display:block!important;
+//       }  
+//       &.ng-hide {
+//         opacity:0;
+//       }
+//     }
 
-    p {
-        max-width : inherit;
-    }
+//     p {
+//         max-width : inherit;
+//     }
 
-    .italic {
-        font-style: italic;
-    }
+//     .italic {
+//         font-style: italic;
+//     }
 
-}
+// }
 
 
 

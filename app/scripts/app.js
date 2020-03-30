@@ -367,11 +367,6 @@ window.littb = angular
 
             .when(
                 [
-                    "/författare/LagerlöfS",
-                    "/författare/LagerlöfS/titlar",
-                    "/författare/LagerlöfS/bibliografi",
-                    "/författare/LagerlöfS/presentation",
-                    "/författare/LagerlöfS/biblinfo",
                     "/författare/LagerlöfS/jamfor",
                     "/författare/LagerlöfS/omtexterna",
                     "/författare/LagerlöfS/omtexterna/:omtexternaDoc"
@@ -606,16 +601,6 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
         window.location.pathname = $(this).attr("href")
         return false
     })
-
-    $rootScope.getLogoUrl = function() {
-        if ($rootScope.isSchool) {
-            return "/skola"
-        } else if ($rootScope.isSla) {
-            return "/författare/LagerlöfS"
-        } else {
-            return "/"
-        }
-    }
 
     // just in case the above deferred fails.
     $timeout(() => $rootElement.addClass("ready").removeClass("not_ready"), 1000)
