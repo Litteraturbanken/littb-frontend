@@ -348,14 +348,21 @@ window.littb = angular
                 reloadOnSearch: false,
                 title: "Litteraturbankens uppläsningar"
             })
-            .when("/ljudochbild", {
+            .when("/ljudochbild/:subadress*", {
                 redirectTo: $routeParams => {
                     window.location.replace(
                         "https://litteraturbanken.se/ljudochbild/" + $routeParams.subadress
                     )
                 }
             })
-            .when("/bibliotekariesidor/", {
+            .when("/översättarlexikon/:subadress*", {
+                redirectTo: $routeParams => {
+                    window.location.replace(
+                        "https://litteraturbanken.se/översättarlexikon/" + $routeParams.subadress
+                    )
+                }
+            })
+            .when("/bibliotekariesidor/:subadress*", {
                 redirectTo: $routeParams => {
                     window.location.replace(
                         "https://litteraturbanken.se/bibliotekariesidor/" + $routeParams.subadress
@@ -369,10 +376,10 @@ window.littb = angular
                     )
                 }
             })
-            .when("/skolan/lararsida/", {
+            .when("/skolan/:subadress*", {
                 redirectTo: $routeParams => {
                     window.location.replace(
-                        "https://litteraturbanken.se/skolan/lararsida/" + $routeParams.subadress
+                        "https://litteraturbanken.se/skolan/" + $routeParams.subadress
                     )
                 }
             })
