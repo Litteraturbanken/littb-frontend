@@ -844,6 +844,7 @@ littb.controller("textjamforelseCtrl", function(
         return div.show()
     }
 
+    /* This stopped working
     s.saveToFile = function() {
         // order wits but with base wit first
         let i, title
@@ -897,8 +898,8 @@ CollateX för kollationeringssteget.</p>
                 "</h3>\n" +
                 "<p>" +
                 "Författare: " +
-                s.authorInfo.fullName
-            ;+"</p>"
+                s.authorInfo.fullName +
+                "</p>"
         }
         data += '<h2 id="app">Textkritisk apparat</h2>\n'
         // add all the rows
@@ -923,13 +924,13 @@ CollateX för kollationeringssteget.</p>
                     }
                 }
                 data += '<div class="app">'
-                data += `<span class=\"page\">s ${page}</span> `
+                data += `<span class="page">s ${page}</span> `
                 for (i = 0; i < orderedWits.length; i++) {
                     wit = orderedWits[i]
                     data += rdgs[wit]
                     if (i !== 0) {
                         const wstr = `w${i}`
-                        data += ` <a class=\"wit\" href=\"#${wstr}\">${wstr}</a>`
+                        data += ` <a class="wit" href="#${wstr}">${wstr}</a>`
                     }
                     if (i + 1 !== orderedWits.length) {
                         data += '<span class="marker"> | </span>'
@@ -944,6 +945,7 @@ CollateX för kollationeringssteget.</p>
         const blob = new Blob([data], { type: "text/plain;charset=utf-8" })
         return saveAs(blob, `Kollation - ${s.work.title}.html`)
     }
+    */
 
     //# setup jquery event handlers for displaying differences in the text, etc.
     $("#koll-text")

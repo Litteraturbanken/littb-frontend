@@ -349,23 +349,31 @@ window.littb = angular
                 title: "Litteraturbankens uppläsningar"
             })
             .when("/ljudochbild", {
-                redirectTo: () => {
-                    window.location.replace("https://litteraturbanken.se/ljudochbild")
+                redirectTo: $routeParams => {
+                    window.location.replace(
+                        "https://litteraturbanken.se/ljudochbild/" + $routeParams.subadress
+                    )
                 }
             })
             .when("/bibliotekariesidor/", {
-                redirectTo: () => {
-                    window.location.replace("https://litteraturbanken.se/bibliotekariesidor/")
+                redirectTo: $routeParams => {
+                    window.location.replace(
+                        "https://litteraturbanken.se/bibliotekariesidor/" + $routeParams.subadress
+                    )
                 }
             })
-            .when("/diktensmuseum/", {
-                redirectTo: () => {
-                    window.location.replace("https://litteraturbanken.se/diktensmuseum/")
+            .when("/diktensmuseum/:subadress*", {
+                redirectTo: $routeParams => {
+                    window.location.replace(
+                        "https://litteraturbanken.se/diktensmuseum/" + $routeParams.subadress
+                    )
                 }
             })
             .when("/skolan/lararsida/", {
-                redirectTo: () => {
-                    window.location.replace("https://litteraturbanken.se/skolan/lararsida/")
+                redirectTo: $routeParams => {
+                    window.location.replace(
+                        "https://litteraturbanken.se/skolan/lararsida/" + $routeParams.subadress
+                    )
                 }
             })
             .when(["/forfattare"], { redirectTo: "/bibliotek" })
@@ -660,15 +668,6 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
 
         if (newRoute.controller != null ? newRoute.controller.replace : undefined) {
             $rootElement.addClass(`page-${newRoute.controller.replace("Ctrl", "")}`)
-        }
-
-        if (newRoute.school) {
-            $rootScope.isSchool = true
-            $rootElement.addClass("site-school")
-            className = _.last(newRoute.templateUrl.split("/")).split(".")[0]
-            $rootElement.addClass(`page-${className}`)
-        } else {
-            delete $rootScope.isSchool
         }
 
         if ($rootScope.dramasubpage) {

@@ -31,7 +31,7 @@
             <div class="introtext content" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div class="introauthor">
-                    <em>{{authorsById[normalizeAuthor(getIntroAuthor())].full_name}}</em>
+                    <em>{{authorsById[getIntroAuthor()].full_name}}</em>
                 </div>
 
 
@@ -73,7 +73,7 @@
                     <h3 class="sc mt-0">Uppslagsverk</h3>
                     <ul class="list-item pl-4 ">
                         <li ng-if="authorInfo.wikidata.sbl_link"><a target="_blank"  ng-href="https://sok.riksarkivet.se/sbl/Presentation.aspx?id={{authorInfo.wikidata.sbl_link}}">Svenskt biografiskt lexikon</a></li>
-                        <li ng-if="authorInfo.wikidata.skbl_link"><a target="_blank"  ng-href="https://www.skbl.se/en/article/{{authorInfo.wikidata.skbl_link}}">Svenskt kvinnobiografiskt lexikon</a></li>
+                        <li ng-if="authorInfo.wikidata.skbl_link"><a target="_blank"  ng-href="https://www.skbl.se/sv/article/{{authorInfo.wikidata.skbl_link}}">Svenskt kvinnobiografiskt lexikon</a></li>
                         <li ng-if="authorInfo.wikidata.sol_link"><a target="_blank"  ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{authorInfo.wikidata.sol_link}}">Svenskt översättarlexikon</a></li>
                         <li ng-if="authorInfo.wikidata.wikipedia"><a target="_blank"  ng-href="{{authorInfo.wikidata.wikipedia}}">Wikipedia</a></li>
                     </ul>
@@ -155,7 +155,7 @@
             <div class="introtext content" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.dramawebben.intro || authorInfo.intro | trust"></div>
                 <div class="introauthor">
-                    <em>{{authorsById[normalizeAuthor(authorInfo.dramawebben.intro_author || authorInfo.intro_author)].full_name}}</em>
+                    <em>{{authorsById[authorInfo.dramawebben.intro_author || authorInfo.intro_author].full_name}}</em>
                     <div class="drama_subtitle sc"><a href="/dramawebben">Dramawebben</a></div>
                 </div>
                 <div class="source" ng-if="authorInfo.dramawebben.sources">

@@ -35,7 +35,7 @@ require("./scripts/library_controller.js")
 require("./scripts/dramaweb_controller.js")
 require("./scripts/controllers.js")
 require("./scripts/lagerlof.js")
-require("./scripts/school.js")
+// require("./scripts/school.js")
 
 // require("./index.html")
 // require('file-loader?name=[name].[ext]!./index.html')

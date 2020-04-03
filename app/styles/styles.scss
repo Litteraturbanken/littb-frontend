@@ -4290,9 +4290,6 @@ grundform-clean {
 }
 
 
-@import "_school";
-
-
 .site-sla {
     // .portrait_container {
     //     display: none !important;
@@ -4327,43 +4324,27 @@ grundform-clean {
             }
         }
     }
-    // #leftCorridor {
-    //     width : 200px;
-    //     .subnav {
-    //         font-size: 1em;
-    //         margin-bottom : 5em;
-    //     }
-    //     * {
-    //         color : white;
-    //         a:hover {
-    //             color : $primarycolor;
-    //         }
-    //     }
-        
-
-    //     .sla_logo {
-    //         background: url("../img/sla_logga_white_white.svg") no-repeat;
-    //         height: 162px;
-    //         width: 420px;
-    //         margin-bottom: 0;
-    //         display: inline-block;
-    //         vertical-align: bottom;
-    //         background-size: contain;
-    //         margin-top: 20px;
-
-    //     }
-
-        
-
-    // }
     .content {
-        
         h1 {
             font-size : 1.3em;
             margin-bottom: 1em;
             font-family: "Requiem Text SC A","Requiem Text SC B";
             text-transform: lowercase;
             color: #7A1400;
+
+            .italic {
+                font-style: normal;
+            }
+            span {
+                // border-bottom: 1px solid darkgrey;
+                // padding-bottom: 2px;
+            }
+            a {
+                color : #333;
+                &:hover {
+                    color : $primarycolor;
+                }
+            }
             // margin-top: 1.4em;
         }
 
