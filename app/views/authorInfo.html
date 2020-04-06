@@ -28,7 +28,7 @@
     
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
-            <div class="introtext content" ng-class="{show_more: show_more}">
+            <div class="introtext" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div class="introauthor">
                     <em>{{authorsById[getIntroAuthor()].full_name}}</em>
@@ -216,7 +216,7 @@
     
         <!-- <div ng-switch-default id="author-info-external"></div> -->
         <div ng-switch-default>
-           <div class="content" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
+           <div class="" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
        </div>
     </div>
 

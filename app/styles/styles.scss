@@ -597,7 +597,7 @@ ul.litt-list {
     }
     .select2-selection__rendered {
         padding: 0;
-        white-space: normal;
+        // white-space: normal;
         @include small-caps();
     }
     .select2-selection__choice__remove {

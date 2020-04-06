@@ -1089,6 +1089,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     //     item.typeLabel = "Ur ljudarkivet"
                     // }
                 }
+                content.data = content.data.filter(item => item.doc_type != "audio")
 
                 return content.data
             })
