@@ -348,38 +348,42 @@ window.littb = angular
                 reloadOnSearch: false,
                 title: "Litteraturbankens uppläsningar"
             })
-            .when("/ljudochbild/:subadress*", {
+            .when(["/ljudochbild/", "/ljudochbild/:subadress*"], {
                 redirectTo: $routeParams => {
                     window.location.replace(
-                        "https://litteraturbanken.se/ljudochbild/" + $routeParams.subadress
+                        "https://litteraturbanken.se/ljudochbild/" + ($routeParams.subadress || "")
                     )
                 }
             })
-            .when("/översättarlexikon/:subadress*", {
+            .when(["/översättarlexikon/", "/översättarlexikon/:subadress*"], {
                 redirectTo: $routeParams => {
+                    console.log("$routeParams", $routeParams)
                     window.location.replace(
-                        "https://litteraturbanken.se/översättarlexikon/" + $routeParams.subadress
+                        "https://litteraturbanken.se/översättarlexikon/" +
+                            ($routeParams.subadress || "")
                     )
                 }
             })
-            .when("/bibliotekariesidor/:subadress*", {
+            .when(["/bibliotekariesidor/", "/bibliotekariesidor/:subadress*"], {
                 redirectTo: $routeParams => {
                     window.location.replace(
-                        "https://litteraturbanken.se/bibliotekariesidor/" + $routeParams.subadress
+                        "https://litteraturbanken.se/bibliotekariesidor/" +
+                            ($routeParams.subadress || "")
                     )
                 }
             })
-            .when("/diktensmuseum/:subadress*", {
+            .when(["/diktensmuseum/", "/diktensmuseum/:subadress*"], {
                 redirectTo: $routeParams => {
                     window.location.replace(
-                        "https://litteraturbanken.se/diktensmuseum/" + $routeParams.subadress
+                        "https://litteraturbanken.se/diktensmuseum/" +
+                            ($routeParams.subadress || "")
                     )
                 }
             })
-            .when("/skolan/:subadress*", {
+            .when(["/skolan/", "/skolan/:subadress*"], {
                 redirectTo: $routeParams => {
                     window.location.replace(
-                        "https://litteraturbanken.se/skolan/" + $routeParams.subadress
+                        "https://litteraturbanken.se/skolan/" + ($routeParams.subadress || "")
                     )
                 }
             })
