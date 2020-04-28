@@ -56,7 +56,7 @@ describe("titles", function() {
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         let num = element(By.css(".parts.num_hits"))
-        expect(num.getText()).toEqual(": 821")
+        expect(num.getText()).toEqual(": 822")
     })
 })
 
@@ -71,7 +71,7 @@ describe("epubList", function() {
         filter.sendKeys("nordanf")
         // rows = element.all(By.repeater("row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]"))
         let rows = element.all(By.css(".tablerow"))
-        expect(rows.count()).toEqual(1)
+        expect(rows.count()).toEqual(2)
     })
 })
 

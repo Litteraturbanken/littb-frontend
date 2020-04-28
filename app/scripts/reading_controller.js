@@ -25,7 +25,6 @@ littb.controller("readingCtrl", function(
     s._ = { humanize: _.humanize }
 
     $window.scrollTo(0, 0)
-    let t = $.now()
 
     let { title, author, mediatype, pagename } = $routeParams
     _.extend(s, _.pick($routeParams, "title", "author", "mediatype"))
