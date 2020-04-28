@@ -666,20 +666,22 @@ littb.controller("readingCtrl", function(
     // ), 300, {leading:true})
 
     s.isDefined = angular.isDefined
-    s.getOverlayCss = function(obj) {
-        if (!s.overlayWidth) return {}
-        // if (!s.overlayFactors) {
-        //     return {}
-        // }
-        // const fac = s.overlayFactors[s.size - 1]
-        const fac = s.imageWidth / s.overlayWidth
-        return {
-            left: fac * obj.x + "px",
-            top: fac * obj.y + "px"
-            // width : fac * obj.w
-            // height : fac * obj.h
-        }
-    }
+    // s.getOverlayCss = function(obj) {
+    //     console.log("getOverlayCss", s.overlayWidth)
+    //     if (!s.overlayWidth) return {}
+    //     // if (!s.overlayFactors) {
+    //     //     return {}
+    //     // }
+    //     // const fac = s.overlayFactors[s.size - 1]
+    //     const fac = s.imageWidth / s.overlayWidth
+    //     console.log("imageWidth", s.imageWidth)
+    //     return {
+    //         left: fac * obj.x + "px",
+    //         top: fac * obj.y + "px"
+    //         // width : fac * obj.w
+    //         // height : fac * obj.h
+    //     }
+    // }
 
     const initSourceInfo = function() {
         let params

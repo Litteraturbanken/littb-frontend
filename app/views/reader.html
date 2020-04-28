@@ -21,7 +21,7 @@
     <div selection-sniffer
         class="overlay"
         ng-if="mediatype == 'faksimil' && overlayHtml" 
-        ng-style="{width: workinfo.width['size_' + size - 1] + 'px', transform: 'scale(' + overlayFactors[size - 1] + ')'}"
+        ng-style="{width: workinfo.width['size_' + size - 1] + 'px', transform: 'scale(' + imageWidth / overlayWidth + ')'}"
         compile="overlayHtml | setMarkee:markee_from:markee_to" > 
     </div>
 
@@ -29,6 +29,7 @@
         ng-style="{'width' : getWidthConstraint() + 'px'}" 
         ng-if="mediatype == 'faksimil' || isParallel">
         <img faksimil-img class="faksimil" 
+        imageonload="onImageLoad()"
         ng-style="{'max-width' : getWidthConstraint() + 'px'}" 
         ng-src="{{url}}" 
         ng-srcset="{{srcset}}">
