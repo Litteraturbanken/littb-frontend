@@ -427,17 +427,23 @@ ul.litt-list {
     }
 }
 
+.no-bg {
+    background-color : transparent;
 
+}
 .content {
     margin-bottom : 5em;
     font-size: 0.9em;
-    @include container();
-    background-color : rgba(255, 255, 255, 0.75);
 
-    padding : 1em 2em;
-    border: 1px solid #333;
-    height: 75vh;
-    overflow-y: auto;
+
+    &:not(.unbox) {
+        @include container();
+        background-color : rgba(255, 255, 255, 0.75);
+        border: 1px solid #333;
+        height: 75vh;
+        overflow-y: auto;
+        padding : 1em 2em;
+    }
 
     
 

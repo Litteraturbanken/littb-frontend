@@ -28,7 +28,7 @@
     
     <div class="page_content" ng-switch="showpage">
         <div ng-switch-when="introduktion">
-            <div class="introtext" ng-class="{show_more: show_more}">
+            <div class="introtext content unbox" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div class="introauthor">
                     <em>{{authorsById[getIntroAuthor()].full_name}}</em>
@@ -73,7 +73,7 @@
                     <h3 class="sc mt-0">Uppslagsverk</h3>
                     <ul class="list-item pl-4 ">
                         <li ng-if="authorInfo.wikidata.sbl_link"><a target="_blank"  ng-href="https://sok.riksarkivet.se/sbl/Presentation.aspx?id={{authorInfo.wikidata.sbl_link}}">Svenskt biografiskt lexikon</a></li>
-                        <li ng-if="authorInfo.wikidata.skbl_link"><a target="_blank"  ng-href="https://www.skbl.se/sv/article/{{authorInfo.wikidata.skbl_link}}">Svenskt kvinnobiografiskt lexikon</a></li>
+                        <li ng-if="authorInfo.wikidata.skbl_link"><a target="_blank"  ng-href="https://www.skbl.se/sv/artikel/{{authorInfo.wikidata.skbl_link}}">Svenskt kvinnobiografiskt lexikon</a></li>
                         <li ng-if="authorInfo.wikidata.sol_link"><a target="_blank"  ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{authorInfo.wikidata.sol_link}}">Svenskt översättarlexikon</a></li>
                         <li ng-if="authorInfo.wikidata.wikipedia"><a target="_blank"  ng-href="{{authorInfo.wikidata.wikipedia}}">Wikipedia</a></li>
                     </ul>
@@ -89,7 +89,7 @@
         </div>
 
         <script type="text/ng-template" id="listing.html">
-            <div ng-class="{content : slaMode}">
+            <div class="unbox" ng-class="{content : slaMode}">
                 
                 <div ng-repeat="titleobj in getDataSource()" ng-show="authorInfo && titleobj.data.length">
                     <h2 ng-show="titleobj.data.length">{{titleobj.label}}</h2>
@@ -216,7 +216,7 @@
     
         <!-- <div ng-switch-default id="author-info-external"></div> -->
         <div ng-switch-default>
-           <div class="" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
+           <div class="content unbox" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div>
        </div>
     </div>
 
