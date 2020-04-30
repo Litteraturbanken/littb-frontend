@@ -147,8 +147,8 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
     // $http.defaults.transformResponse = (data, headers) ->
     // localStorageCache = $angularCacheFactory "localStorageCache",
     //     storageMode: 'localStorage'
-    const parseXML = function(data) {
-        let xml = null
+    const parseHTML = function(data) {
+        let html = null
         let tmp = null
         if (!data || typeof data !== "string") {
             return null
@@ -157,21 +157,15 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             if (window.DOMParser) {
                 // Standard
                 tmp = new DOMParser()
-                xml = tmp.parseFromString(data, "text/xml")
-            } else {
-                // IE
-                // c.log "data", data.replace /<\?xml.*/, ''
-                xml = new window.ActiveXObject("Microsoft.XMLDOM")
-                xml.async = "false"
-                xml.loadXML(data)
+                html = tmp.parseFromString(data, "text/html")
             }
         } catch (e) {
-            xml = "undefined"
+            html = "undefined"
         }
-        if (!xml || !xml.documentElement || xml.getElementsByTagName("parsererror").length) {
-            jQuery.error(`Invalid XML: ${data}`)
+        if (!html || !html.documentElement || html.getElementsByTagName("parsererror").length) {
+            jQuery.error(`Invalid html: ${data}`)
         }
-        return xml
+        return html
     }
 
     const http = function(config) {
@@ -181,7 +175,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 username: "app"
             },
             transformResponse(data, headers) {
-                const output = parseXML(data)
+                const output = parseHTML(data)
                 if ($("fel", output).length) {
                     c.log("xml parse error:", $("fel", output).text())
                 }
@@ -965,7 +959,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             const filename = _.str.lpad(ix, 5, "0")
             const url = `txt/${lbworkid}/ocr_${filename}.html`
             return this.getHtmlFile(url).then(function(response) {
-                const html = response.data.firstChild
+                const html = response.data.querySelector("body > div")
                 // c.log $(html)
                 const overlayWidth = Number(
                     $(html)

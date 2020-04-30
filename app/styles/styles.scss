@@ -2521,6 +2521,7 @@ $partnav-width : 170px;
                 vertical-align: bottom;
                 margin-left: 6px;
                 font-size : 0.7em;
+                border: 1px solid lightgray;
             }
             .fa {
                 font-size : 1em;
@@ -2740,6 +2741,9 @@ $partnav-width : 170px;
         p {
             // width : 500px;    
             line-height : 1.4;
+            a {
+                @include dotted($primarycolor);
+            }
         }
         
         .drama_subtitle {
@@ -2776,10 +2780,6 @@ $partnav-width : 170px;
                 
             }
             .title {
-                // display : block;
-                font-size : 0.95em;
-                // text-indent: -1.5em;
-                // padding-left: 1.5em;
             }
             .extras {
                 font-size : 0.85em;
@@ -4602,11 +4602,18 @@ grundform-clean {
 
     table {
         max-width : 900px;
+
         thead, thead * {
             @include small-caps();
         }
         td {
             padding-right: 1em;
+            a {
+                @include dotted($primarycolor);
+                // &:hover{
+                //     color : #333;
+                // } 
+            }
         }
     }
 

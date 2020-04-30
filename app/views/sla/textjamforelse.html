@@ -34,6 +34,15 @@
                 ng-show="haveText"
                 ng-click="saveToFile()">Spara textjämförelsen</button> -->
     </div>
+    <div class='panel-body' ng-show="!haveText">
+        <h2>Så här fungerar det</h2>
+        <p>Välj först vilket verks upplagor du vill välja genom att klicka på nedåtpilen i
+        rullmenyn och sedan klicka på önskat verk. Du väljer därefter upplagor genom att på Mac hålla ner ”cmd”-tangenten och på PC ”Ctrl”-tangenten och klicka på önskade upplagor.
+        Varianter markeras med rosa färg och när du för musen över markerade ord visas
+        skillnader och i vilken upplaga de förekommer.</p>
+        <h2>How it works</h2>
+        <p>Choose which editions to compare by clicking at the down-arrow in the menu and then select a title. Then, by pressing the ”cmd”-key (on a Mac) and the ”Ctrl”-key (on a PC), select the editions you want to compare. Words which have variants will be highlighted in pink. Moving the pointer over words will reveal variants; it will also provide information on the relevant editions.</p>
+    </div>
 </form>
 <div ng-show="haveText">
     <hr>
@@ -49,19 +58,7 @@
             <label for="showBulk">Visa hela texten</label>
         </span>
     </div>
-</div>
-<div class='panel jamfor'
-     toolkit 
-     toolkit-id="toolkit-right">
-    <div class='panel-body'>
-        <h2>Så här fungerar det</h2>
-        <p>Välj först vilket verks upplagor du vill välja genom att klicka på nedåtpilen i
-        rullmenyn och sedan klicka på önskat verk. Du väljer därefter upplagor genom att på Mac hålla ner ”cmd”-tangenten och på PC ”Ctrl”-tangenten och klicka på önskade upplagor.
-        Varianter markeras med rosa färg och när du för musen över markerade ord visas
-        skillnader och i vilken upplaga de förekommer.</p>
-        <h2>How it works</h2>
-        <p>Choose which editions to compare by clicking at the down-arrow in the menu and then select a title. Then, by pressing the ”cmd”-key (on a Mac) and the ”Ctrl”-key (on a PC), select the editions you want to compare. Words which have variants will be highlighted in pink. Moving the pointer over words will reveal variants; it will also provide information on the relevant editions.</p>
-    </div>
+    
 </div>
 
 <div>
