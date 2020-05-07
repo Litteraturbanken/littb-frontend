@@ -720,6 +720,25 @@ littb.controller("readingCtrl", function(
             s.pageix = s.pagemap[`page_${pagename}`]
             c.log("s.pagename", pagename)
             s.isDramaweb = !!workinfo.dramawebben
+
+            s.sliderConf = {
+                floor: 0,
+                ceil: s.workinfo.page_count - 1,
+                translate: val => s.pagemap["ix_" + val],
+                onStart: (sliderId, modelValue, highValue, pointerType) => {
+                    s.sliderActive = pointerType
+                },
+                onEnd: () => {
+                    s.sliderActive = null
+                    // $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
+                    // s.change()
+                    if (s.isEditor) {
+                        s.pageToLoad = s.pageix
+                    } else {
+                        s.setPage(s.pageix)
+                    }
+                }
+            }
         })
 
         return def
@@ -1018,6 +1037,8 @@ littb.controller("readingCtrl", function(
         s.show_search_work = !s.show_search_work
         return $timeout(() => s.$broadcast("focus.search_work"), 0)
     }
+
+    s.sliderActive = null
 
     s.searchWork = function(query) {
         c.log("searchWork", query)
