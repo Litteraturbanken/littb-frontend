@@ -1131,7 +1131,7 @@ littb.factory("authors", function(backend, $q) {
             if (isDev) {
                 authorsById = new Proxy(authorsById, {
                     get: function(obj, key) {
-                        if (!obj[key]) {
+                        if (key != "undefined" && key && !obj[key]) {
                             console.warn("ID missing in author database:", key)
                         } else {
                             return obj[key]

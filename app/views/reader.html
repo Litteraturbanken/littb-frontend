@@ -157,10 +157,11 @@
                         </div>
                     </div>
                 </li>
-                <li><a ng-href="/sok?avancerad&forfattare={{author}}" ng-disabled="!hasSearchable(authorById[author])">Sök i författarens texter</a></li>
+                <li><a ng-href="/sok?avancerad&forfattare={{author}}" ng-disabled="!hasSearchable(author)">Sök i författarens texter</a></li>
                 <li><a ng-href="/dramawebben"><img ng-if="isDramaweb" class="dw_logo" src="../img/dramawebben_svart.svg" alt=""></a></li>
                 <!-- <li>Dela boken</li> -->
             </ul>
+            <a ng-href="{{workinfo.mediatypes[0].url}}" ng-if="$routeParams.ix && workinfo" class="submit btn">Stäng editor</a>
         </div>
 
         

@@ -1024,6 +1024,19 @@ littb.controller("autocompleteCtrl", function(
                             return false
                         }
                     })
+
+                    menu.push({
+                        label: "/editor",
+                        alt: ["editor", "red"],
+                        typeLabel: "[Red.]",
+                        action() {
+                            let lbworkid = $(".reader_main").scope().workinfo.lbworkid
+                            let ix = $(".reader_main").scope().pageix
+                            let mediatype = $(".reader_main").scope().workinfo.mediatype[0]
+                            window.location.pathname = `/editor/${lbworkid}/ix/${ix}/${mediatype}`
+                            return false
+                        }
+                    })
                 }
                 // ,
                 //     label : "/öppna"

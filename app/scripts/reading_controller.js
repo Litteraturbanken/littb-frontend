@@ -21,6 +21,7 @@ littb.controller("readingCtrl", function(
 ) {
     let args, key, searchData, val
     const s = $scope
+    s.$routeParams = $routeParams
     s.isEditor = false
     s._ = { humanize: _.humanize }
 
@@ -69,7 +70,7 @@ littb.controller("readingCtrl", function(
         if (!authorid || !s.authorById) {
             return
         }
-        return s.authorById[author].searchable
+        return s.authorById[authorid].searchable
     }
 
     s.closeFocus = event => (s.isFocus = false)
@@ -284,8 +285,10 @@ littb.controller("readingCtrl", function(
     }
 
     s.getLastPageUrl = function() {
-        if (s.isEditor) {
-            return `/editor/${$routeParams.lbid}/ix/${s.endIx}/${$routeParams.mediatype}`
+        if (s.isEditor && !s.workinfo) {
+            return ""
+        } else if (s.isEditor) {
+            return `/editor/${s.workinfo.lbworkid}/ix/${s.workinfo.page_count - 1}/${mediatype[0]}`
         } else {
             return s.getPageUrl(s.endpage)
         }
@@ -447,6 +450,10 @@ littb.controller("readingCtrl", function(
         }
         const [i, newPart] = next
 
+        if (s.isEditor) {
+            return `/editor/${s.workinfo.lbworkid}/ix/${i}/${mediatype[0]}`
+        }
+
         return s.getPageUrl(newPart.startpagename)
     }
 
@@ -481,6 +488,10 @@ littb.controller("readingCtrl", function(
 
         if (!prev) {
             return ""
+        }
+
+        if (s.isEditor) {
+            return `/editor/${s.workinfo.lbworkid}/ix/${i}/${mediatype[0]}`
         }
 
         return s.getPageUrl(prev.startpagename)
@@ -700,6 +711,11 @@ littb.controller("readingCtrl", function(
         def.then(function(workinfo) {
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
+
+            if (s.isEditor) {
+                author = s.author = workinfo.authors[0].authorid
+                title = s.title = workinfo.titlepath
+            }
 
             if (s.etextPageMapping == null) {
                 s.etextPageMapping = {}
