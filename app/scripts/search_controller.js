@@ -66,7 +66,7 @@ littb.controller("searchCtrl", function(
     s.selectedKeywords = []
 
     console.log("$rootScope.searchState", $rootScope.searchState)
-    $rootScope.$on("$routeChangeStart", (event, newRoute, prevRoute) => {
+    let routeChangeUnbind = s.$on("$routeChangeStart", (event, newRoute, prevRoute) => {
         console.log("leave search", window.location.search)
         $rootScope.searchState["queryparams"] = window.location.search
     })
@@ -505,7 +505,10 @@ littb.controller("searchCtrl", function(
 
     $document.on("keydown", onKeyDown)
 
-    s.$on("$destroy", () => $document.off("keydown", onKeyDown))
+    s.$on("$destroy", () => {
+        $document.off("keydown", onKeyDown)
+        routeChangeUnbind()
+    })
 
     s.options = {
         sortSelected: "lastname"
