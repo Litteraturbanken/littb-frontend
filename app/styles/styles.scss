@@ -2026,8 +2026,9 @@ $partnav-width : 170px;
             height: 70px;
         }
         .rz-bar {
-            background-color: rgba($primarycolor, 0.5); 
+            // background-color: rgba($primarycolor, 0.5); 
             // background-color: $primarycolor;
+            border: 1px solid darkgray;
         }
     }
     // height : 100%;
@@ -2442,7 +2443,6 @@ $partnav-width : 170px;
             text-align: left;
         }
         .subnav {
-            margin-top : 3em;
             @include small-caps();
             line-height: 1;
             white-space: nowrap;

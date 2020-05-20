@@ -79,12 +79,7 @@
                  class="navtitle"></div>
         </div>
         <hr class="lower">
-        <div class="w-11/12">
-            <rzslider class="mt-3 slider-large" step="1" ng-class="[sliderActive, {active: sliderActive}]"
-                    rz-slider-model="pageix" 
-                    rz-slider-options="sliderConf" >
-            </rzslider>
-        </div>
+        
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
             
             <a class="prev_part" ng-href="{{getPrevPartUrl()}}" ng-class="{disabled : !getPrevPartUrl()}">Gå bakåt en del</a>
@@ -120,8 +115,14 @@
             <span class="expl small">Du kan också bläddra med tangentbordets piltangenter.</span>
         </div>
         
+        <div class="w-11/12">
+            <rzslider class="mt-3 slider-large" step="1" ng-class="[sliderActive, {active: sliderActive}]"
+                    rz-slider-model="pageix" 
+                    rz-slider-options="sliderConf" >
+            </rzslider>
+        </div>
         
-        <div class="subnav">
+        <div class="subnav mt-10">
             <ul>
                 <li ng-show="workinfo.parts.length"><a ng-click="show_chapters = true">Innehållsförteckning</a></li>
                 <li>
