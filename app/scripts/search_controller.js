@@ -41,6 +41,7 @@ littb.controller("searchCtrl", function(
     $document,
     $window,
     $rootElement,
+    $rootScope,
     $q,
     $timeout,
     util,
@@ -63,6 +64,12 @@ littb.controller("searchCtrl", function(
     // s.selectedAuthors = []
     s.selectedTitles = []
     s.selectedKeywords = []
+
+    console.log("$rootScope.searchState", $rootScope.searchState)
+    $rootScope.$on("$routeChangeStart", (event, newRoute, prevRoute) => {
+        console.log("leave search", window.location.search)
+        $rootScope.searchState["queryparams"] = window.location.search
+    })
 
     s.filters = {
         "authors.gender": $location.search()["kön"],

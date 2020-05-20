@@ -621,11 +621,6 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
     const firstRoute = $q.defer()
     firstRoute.promise.then(() => $rootElement.addClass("ready").removeClass("not_ready"))
 
-    $("body").on("click", "a[href^='/översättarlexikon/']", function() {
-        window.location.pathname = $(this).attr("href")
-        return false
-    })
-
     // just in case the above deferred fails.
     $timeout(() => $rootElement.addClass("ready").removeClass("not_ready"), 1000)
 
@@ -723,33 +718,8 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
         })
     })
 
-    /*
-    $rootScope.scrollPos = {} # scroll position of each view
-    $(window).on "scroll", ->
-        * false between $routeChangeStart and $routeChangeSuccess
-        if $rootScope.okSaveScroll
-            if $(window).scrollTop()
-                $rootScope.scrollPos[$location.path()] = $(window).scrollTop()
-
-
-    *console.log($rootScope.scrollPos);
-    $rootScope.scrollClear = (path) ->
-        $rootScope.scrollPos[path] = 0
-
-    $rootScope.$on "$routeChangeStart", ->
-        $rootScope.okSaveScroll = false
-
-    $rootScope.$on "$routeChangeSuccess", ->
-        $rootScope.okSaveScroll = true
-        *     c.log "$routeChangeSuccess"
-        *     $timeout (-> # wait for DOM, then restore scroll position
-                
-        *     ), 0
-
-*/
-
-    // $rootScope._showmenu_mobile = false;
     $rootScope._focus_mode = true
+    $rootScope.searchState = {}
 })
 
 littb.filter(
