@@ -266,7 +266,7 @@ window.littb = angular
                     }
                 ]
             })
-            .when("/dramawebben/författare/:legacyurl", {
+            .when("/dramawebben/forfattare/:legacyurl", {
                 template: "<div></div>",
                 controller: [
                     "$scope",
@@ -274,7 +274,7 @@ window.littb = angular
                     "$routeParams",
                     "$location",
                     function($scope, backend, $routeParams, $location) {
-                        let legacyurl = "författare/" + $routeParams.legacyurl
+                        let legacyurl = "forfattare/" + $routeParams.legacyurl
 
                         backend.getLegacyAuthor(legacyurl).then(auth => {
                             if (auth) {
@@ -350,41 +350,41 @@ window.littb = angular
             })
             .when(["/ljudochbild/", "/ljudochbild/:subadress*"], {
                 redirectTo: $routeParams => {
-                    window.location.replace(
+                    window.location.href =
                         "https://litteraturbanken.se/ljudochbild/" + ($routeParams.subadress || "")
-                    )
+                    return "/"
                 }
             })
             .when(["/översättarlexikon/", "/översättarlexikon/:subadress*"], {
                 redirectTo: $routeParams => {
                     console.log("$routeParams", $routeParams)
-                    window.location.replace(
+                    window.location.href =
                         "https://litteraturbanken.se/översättarlexikon/" +
-                            ($routeParams.subadress || "")
-                    )
+                        ($routeParams.subadress || "")
+                    return "/"
                 }
             })
             .when(["/bibliotekariesidor/", "/bibliotekariesidor/:subadress*"], {
                 redirectTo: $routeParams => {
-                    window.location.replace(
+                    window.location.href =
                         "https://litteraturbanken.se/bibliotekariesidor/" +
-                            ($routeParams.subadress || "")
-                    )
+                        ($routeParams.subadress || "")
+                    return "/"
                 }
             })
             .when(["/diktensmuseum/", "/diktensmuseum/:subadress*"], {
                 redirectTo: $routeParams => {
-                    window.location.replace(
+                    window.location.href =
                         "https://litteraturbanken.se/diktensmuseum/" +
-                            ($routeParams.subadress || "")
-                    )
+                        ($routeParams.subadress || "")
+                    return "/"
                 }
             })
             .when(["/skolan/", "/skolan/:subadress*"], {
                 redirectTo: $routeParams => {
-                    window.location.replace(
+                    window.location.href =
                         "https://litteraturbanken.se/skolan/" + ($routeParams.subadress || "")
-                    )
+                    return "/"
                 }
             })
             .when(["/forfattare"], { redirectTo: "/bibliotek" })

@@ -70,13 +70,16 @@
                 
             </div>
             <!-- <h5 class="chapt_header sc">Kapitel</h5> -->
-            <div 
-                 data-ellipsis 
-                 ng-bind="getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title" 
+            <div ng-if="workinfo"
                  uib-tooltip="{{getCurrentPart().title != getCurrentPart().navtitle ? getCurrentPart().title : ''}}" 
                  tooltip-placement="left"
                  tooltip-append-to-body
-                 class="navtitle"></div>
+                 >
+                     <p 
+                        class="navtitle"
+                        data-ellipsis 
+                        data-ng-bind="getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title"></p>
+                 </div>
         </div>
         <hr class="lower">
         
@@ -240,6 +243,7 @@
 
                     <li><a ng-show="prevSearchState" ng-href="{{prevSearchState}}">Tillbaka till söksidan</a> </li>
                     <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Stäng träffvisningen</a> </li>
+                    <li ng-show="searchState['queryparams']"><a ng-href="/sök{{searchState['queryparams']}}" ng-click="close_hits()" >Tillbaka till sökningen</a> </li>
 
                     
                 </ul>

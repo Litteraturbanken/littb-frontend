@@ -524,17 +524,16 @@ littb.controller("searchCtrl", function(
     s.searchAllInWork = (sentenceObj, index) => {
         searchData.getMoreHighlights(sentenceObj).then(function(sents) {
             let startIndex = null
+            let currentSents = s.getSentsWithHeadersFromState()
             // find section start index
             for (let i of _.range(index, -1)) {
-                const row = s.sentsWithHeaders[i]
+                const row = currentSents[i]
                 if (row.isHeader) {
                     startIndex = i
                     break
                 }
             }
-
-            console.log("startIndex", startIndex)
-            s.sentsWithHeaders.splice(startIndex, index - startIndex + 1, ...sents)
+            currentSents.splice(startIndex, index - startIndex + 1, ...sents)
         })
     }
 

@@ -281,7 +281,8 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         getLegacyAuthor(legacy_url) {
             let params = {
                 filter_and: { "dramawebben.legacy_url": legacy_url },
-                includes: ["authors.authorid"]
+                includes: ["authors.authorid"],
+                show_all: true
             }
             return $http({
                 url: `${STRIX_URL}/list_all/author`,
@@ -1315,6 +1316,8 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
             }
 
             params = _.extend({}, this.currentParams, params)
+            delete params.text_filter
+            delete params.authors
 
             return $http({
                 url: `${STRIX_URL}/search/${this.currentParams.query}`,

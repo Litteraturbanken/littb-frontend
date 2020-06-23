@@ -6,7 +6,7 @@ require("angular-route")
 require("angular-touch")
 require("angular-spinner")
 require("angular-aria")
-require("angular-ellipsis")
+require("./lib/angular-ellipsis.js")
 require("angularjs-slider")
 require("angularjs-slider/dist/rzslider.css")
 

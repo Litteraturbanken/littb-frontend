@@ -2020,6 +2020,16 @@ $partnav-width : 170px;
     @import "focus_mode";
     #rightCorridor {
         display : inline-block;
+
+        .rzslider .rz-bar {
+            border-radius: 7px;
+            border-color: #d2b7b7;
+
+        }
+        
+        .slider-large.rzslider .rz-bar:not(.rz-selection) {
+            background-color: #e1caca;    
+        }
         .dw_logo {
             margin-left: -23px;
             opacity: 0.8;

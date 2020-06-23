@@ -247,7 +247,10 @@ littb.controller("readingCtrl", function(
     s.getFirstPageUrl = function() {
         const { search } = window.location
         if (s.isEditor) {
-            return `/editor/${$routeParams.lbid}/ix/0/${$routeParams.mediatype}` + search
+            let startpageix = s.startpage ? s.pagemap[`page_${s.startpage}`] : 0
+            return (
+                `/editor/${$routeParams.lbid}/ix/${startpageix}/${$routeParams.mediatype}` + search
+            )
         } else {
             return s.getPageUrl(s.startpage)
         }
