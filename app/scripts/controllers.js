@@ -813,6 +813,10 @@ littb.controller("epubListCtrl", function epubListCtrl(
 littb.controller("helpCtrl", function($scope, $http, util, $location) {
     const s = $scope
     const url = "/red/om/hjalp/hjalp.html"
+    s.onNavClick = id => {
+        s.ankare = id
+        $location.search("ankare", id)
+    }
     return $http.get(url).success(function(data) {
         s.htmlContent = data
         s.labelArray = []

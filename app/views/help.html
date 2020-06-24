@@ -1,9 +1,9 @@
-<div class="help_content content" scroll-to="ankare" offset="230"
+<div class="help_content content unbox" scroll-to="ankare" offset="40"
     ng-controller="helpCtrl" class="page-help" ng-bind-html="htmlContent | trust">
     <div toolkit>
-        <ul class="help_submenu">
+        <ul class="help_submenu sticky">
             <li ng-repeat="item in labelArray">
-                <a ng-click="$parent.ankare = item.id">{{item.label}}</a>
+                <a ng-click="onNavClick(item.id)">{{item.label}}</a>
             </li>
         </ul>
 

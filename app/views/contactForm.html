@@ -28,8 +28,9 @@
             <p>
                 Vill du få Litteraturbankens utskick? Skriv in din epostadress här.
             </p>
-            <form name="subscribeform" class="subscribeform" ng-submit="subscribe()" novalidate>
-                <label for="newsletterEmail">Epost</label> <input id="newsletterEmail" ng-model="newsletterEmail" required type="email"> 
+            <form name="subscribeform" class="subscribeform flex pr-2" ng-submit="subscribe()" novalidate>
+                <label class="pt-1" for="newsletterEmail">Epost</label> 
+                <input class="mr-4 flex-grow" id="newsletterEmail" ng-model="newsletterEmail" required type="email"> 
                 <button class="btn submit" ng-disabled="subscribeform.$pristine || (subscribeform.$dirty && subscribeform.$invalid)">Skicka</button>
             </form>
         </div>

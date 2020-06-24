@@ -619,7 +619,7 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    s.onSortClick = (item, noSwitchDir) => {
+    s.onSortClick = (item, noSwitchDir, replace) => {
         if (item.active && !noSwitchDir) {
             item.dir = item.dir == "asc" ? "desc" : "asc"
             item.reversed = !item.reversed
@@ -631,6 +631,9 @@ littb.controller("libraryCtrl", function(
         }
         if (item.search) {
             $location.search("sort", item.search)
+            if (replace) {
+                $location.replace()
+            }
         } else {
             $location.search("sort", null)
         }
@@ -657,7 +660,7 @@ littb.controller("libraryCtrl", function(
         return item.search == sortInit
     })
     if (sortItem) {
-        s.onSortClick(sortItem, true)
+        s.onSortClick(sortItem, true, true)
     } else {
         console.warn("Sort state init failed", s.listType, sortInit)
         $location.search({})

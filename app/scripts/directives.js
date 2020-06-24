@@ -183,9 +183,13 @@ littb.directive("scrollTo", ($window, $timeout) =>
                         offset = Number(scope.$eval(elem.attr("offset")) || 0)
                         c.log("offset", offset)
                     }
-                    return elem.animate({
-                        scrollTop: elem.scrollTop() + target.position().top - offset
-                    })
+                    $("html, body").animate(
+                        { scrollTop: elem.scrollTop() + target.position().top - offset },
+                        1000
+                    )
+                    // return $(window).animate({
+                    //     scrollTop: elem.scrollTop() + target.position().top - offset
+                    // })
                     // elem.scrollTop()
                 })
             })
@@ -511,82 +515,82 @@ littb.directive("downloadBtn", () => ({
     }
 }))
 
-littb.directive("schoolAffix", $window => ({
-    restrict: "EA",
-    link(scope, elem, attrs) {
-        const detectScrollDir = function(fDown, fUp) {
-            let lastScrollTop = 0
-            const delta = 5
-            const f = function(event) {
-                const st = $(this).scrollTop()
-                if (Math.abs(lastScrollTop - st) <= delta) {
-                    return
-                }
-                if (st > lastScrollTop) {
-                    if (typeof fDown === "function") {
-                        fDown()
-                    }
-                } else {
-                    if (typeof fUp === "function") {
-                        fUp()
-                    }
-                }
-                lastScrollTop = st
-            }
-            $(window).on("scroll", f)
+// littb.directive("schoolAffix", $window => ({
+//     restrict: "EA",
+//     link(scope, elem, attrs) {
+//         const detectScrollDir = function(fDown, fUp) {
+//             let lastScrollTop = 0
+//             const delta = 5
+//             const f = function(event) {
+//                 const st = $(this).scrollTop()
+//                 if (Math.abs(lastScrollTop - st) <= delta) {
+//                     return
+//                 }
+//                 if (st > lastScrollTop) {
+//                     if (typeof fDown === "function") {
+//                         fDown()
+//                     }
+//                 } else {
+//                     if (typeof fUp === "function") {
+//                         fUp()
+//                     }
+//                 }
+//                 lastScrollTop = st
+//             }
+//             $(window).on("scroll", f)
 
-            return () => $(window).off("scroll", f)
-        }
+//             return () => $(window).off("scroll", f)
+//         }
 
-        const reset = function() {
-            elem.removeClass("affix-disable")
-            return elem.css({
-                top: "",
-                left: ""
-            })
-        }
+//         const reset = function() {
+//             elem.removeClass("affix-disable")
+//             return elem.css({
+//                 top: "",
+//                 left: ""
+//             })
+//         }
 
-        const detach = function(height) {
-            const isTooTall = height > $(window).height()
-            const hasScrolledFromTop = window.scrollY > $(".nav_sidebar").offset().top
+//         const detach = function(height) {
+//             const isTooTall = height > $(window).height()
+//             const hasScrolledFromTop = window.scrollY > $(".nav_sidebar").offset().top
 
-            if (isTooTall && hasScrolledFromTop && !elem.is(".affix-disable")) {
-                elem.addClass("affix-disable")
-                return elem.css({
-                    top: window.scrollY + 5,
-                    left: $(".nav_sidebar").offset().left
-                })
-            }
-        }
+//             if (isTooTall && hasScrolledFromTop && !elem.is(".affix-disable")) {
+//                 elem.addClass("affix-disable")
+//                 return elem.css({
+//                     top: window.scrollY + 5,
+//                     left: $(".nav_sidebar").offset().left
+//                 })
+//             }
+//         }
 
-        const killDetect = detectScrollDir(() => detach(elem.height()), reset)
+//         const killDetect = detectScrollDir(() => detach(elem.height()), reset)
 
-        scope.$on("$destroy", () => killDetect())
+//         scope.$on("$destroy", () => killDetect())
 
-        const onWatch = height => detach(height)
+//         const onWatch = height => detach(height)
 
-        scope.getHeight = () => elem.height()
-        scope.$watch("getHeight()", onWatch)
+//         scope.getHeight = () => elem.height()
+//         scope.$watch("getHeight()", onWatch)
 
-        onWatch()
+//         onWatch()
 
-        return elem.affix({
-            offset: {
-                top: elem.offset().top
-            }
-        })
-    }
-}))
-littb.directive("affix", $window => ({
-    restrict: "EA",
-    link(scope, elem, attrs) {
-        return elem.affix({
-            offset: {
-                top: elem.offset().top
-            }
-        })
-    }
-}))
+//         return elem.affix({
+//             offset: {
+//                 top: elem.offsetTop - window.scrollY
+//             }
+//         })
+//     }
+// }))
+// littb.directive("affix", $window => ({
+//     restrict: "EA",
+//     link(scope, elem, attrs) {
+//         return elem.affix({
+//             offset: {
+//                 top: elem.offsetTop - window.scrollY
+//             }
+//         })
+//     }
+// }))
 
 littb.directive("setClass", () => ({
     link(scope, elem, attrs) {
