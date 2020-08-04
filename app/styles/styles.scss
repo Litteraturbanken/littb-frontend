@@ -209,11 +209,14 @@ th {
 
 @mixin dotted($color) {
     & {
-        background: linear-gradient(90deg, 
-                    $color 26%, transparent 0) /* 60%: ratio between dash-gap */
-                    repeat-x;
-        background-size: .15em 2px; /* .25em: Width of dash+gap, 2px: thickness of underline */
-        background-position: 0 85%; /* vertical position of underline */
+        text-decoration-color: $primarycolor;
+        text-decoration-style: solid;
+        text-decoration-line: underline;
+        // background: linear-gradient(90deg, 
+        //             $color 26%, transparent 0) /* 60%: ratio between dash-gap */
+        //             repeat-x;
+        // background-size: .15em 2px; /* .25em: Width of dash+gap, 2px: thickness of underline */
+        // background-position: 0 85%; /* vertical position of underline */
         // text-shadow: .05em 0 white, -.05em 0 white; /* create gap between descenders and underline */
         
         /* For hover */
@@ -1043,15 +1046,15 @@ hr {
 
 a {
     color : #333;
-    text-decoration: none;
+    // text-decoration: none;
 }
 a:hover {
     color : $primarycolor;
-    text-decoration: none;
+    // text-decoration: none;
 }
 a:focus {
     color : $primarycolor;
-    text-decoration: none;
+    // text-decoration: none;
 }
 a.disabled {
     color : lightgrey;
