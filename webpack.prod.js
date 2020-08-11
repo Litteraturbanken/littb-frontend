@@ -5,13 +5,17 @@ const CleanWebpackPlugin = require("clean-webpack-plugin")
 const UglifyJsPlugin = require("uglifyjs-webpack-plugin")
 const CompressionPlugin = require("compression-webpack-plugin")
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin")
-var Visualizer = require("webpack-visualizer-plugin")
+const {BundleAnalyzerPlugin} = require('webpack-bundle-analyzer')
 
 module.exports = merge(common, {
     plugins: [
         new CleanWebpackPlugin(["dist"]),
+        new BundleAnalyzerPlugin({
+            // creates a report.html in the dist folder.
+            analyzerMode: "static",
+            openAnalyzer: false
+        }),
         new CompressionPlugin({}),
-        // new Visualizer(),
         new CompressionPlugin({
             filename(name) {
                 return name.replace(/.gz$/, ".br")
