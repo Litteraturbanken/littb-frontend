@@ -2942,7 +2942,10 @@ $partnav-width : 170px;
 
 
         .links {
-            @include topLinks()
+            @include topLinks();
+            li:only-of-type {
+                display : none;
+            }
         }
 
         .img_large {

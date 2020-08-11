@@ -1,4 +1,4 @@
-<page-title>{{getValidAuthors() | formatAuthors}} – {{workinfo.title}}. Om boken</page-title>
+<page-title>{{getValidAuthors() | formatAuthors:false:true}} – {{workinfo.title}}. Om boken</page-title>
 <meta-desc>{{getValidAuthors() | formatAuthors:false:true}} – {{workinfo.title}}. Om boken</meta-desc>
 <div class="maincontent" ng-class="{searching:!workinfo}" ng-controller="sourceInfoCtrl">
     <div ng-show="loading" class="preloader">Hämtar <span class="dots_blink"></span></div>
