@@ -20,10 +20,10 @@ littb.directive("sortList", () => ({
         </li>
     </ul>
     </div>
-    `
+    `,
 }))
 
-littb.controller("libraryCtrl", function(
+littb.controller("libraryCtrl", function (
     $scope,
     backend,
     util,
@@ -47,7 +47,7 @@ littb.controller("libraryCtrl", function(
     s.show_more = $location.search().avancerat != null
     s.show_dl = $location.search().avancerat != null
     s.parts_page = {
-        current: Number($location.search().sida) || 1
+        current: Number($location.search().sida) || 1,
     }
 
     s.listType = $location.search().visa || "works"
@@ -62,7 +62,7 @@ littb.controller("libraryCtrl", function(
         mediatypes: [],
         "sort_date_imprint.date:range": $location.search().intervall
             ? $location.search().intervall.split(",")
-            : []
+            : [],
     }
 
     s.onSliderChange = () => {
@@ -97,7 +97,10 @@ littb.controller("libraryCtrl", function(
         "mediatypes",
         "authorkeyword"
     )
-    _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
+    _.extend(
+        s.filters,
+        _.mapValues(listKeys, (val) => val.split(","))
+    )
     s.filters = _.omitBy(s.filters, _.isNil)
 
     s.currentAuthors = []
@@ -106,7 +109,7 @@ littb.controller("libraryCtrl", function(
 
     s.normalizeAuthor = $filter("normalizeAuthor")
 
-    s.getTitleTooltip = function(attrs) {
+    s.getTitleTooltip = function (attrs) {
         if (!attrs) {
             return
         }
@@ -115,12 +118,12 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    s.filterTitle = function(row) {
-        const auths = _.map(row.authors, auth => auth.full_name).join(" ")
+    s.filterTitle = function (row) {
+        const auths = _.map(row.authors, (auth) => auth.full_name).join(" ")
 
         const exprs = s.rowfilter.split(" ")
 
-        return _.every(exprs, expr =>
+        return _.every(exprs, (expr) =>
             new RegExp(expr, "i").test(
                 row.itemAttrs.title +
                     " " +
@@ -135,7 +138,7 @@ littb.controller("libraryCtrl", function(
     }
 
     const aboutDef = $q.defer()
-    s.onAboutAuthorChange = _.once(function($event) {
+    s.onAboutAuthorChange = _.once(function ($event) {
         if ($location.search().authorkeyword) {
             s.filters.authorkeyword = ($location.search().authorkeyword || "").split(",")
         }
@@ -143,13 +146,13 @@ littb.controller("libraryCtrl", function(
         aboutDef.resolve()
     })
 
-    $q.all([aboutDef.promise, authors]).then(function() {
+    $q.all([aboutDef.promise, authors]).then(function () {
         return $timeout(() => {
             $(".about_select").select2()
         }, 100)
     })
 
-    s.resetView = function() {
+    s.resetView = function () {
         s.showInitial = true
         // s.showPopular = true
 
@@ -164,14 +167,14 @@ littb.controller("libraryCtrl", function(
         s.refreshData()
     }
 
-    s.hasMediatype = function(titleobj, mediatype) {
+    s.hasMediatype = function (titleobj, mediatype) {
         return _.map(titleobj.mediatypes, "label").includes(mediatype)
     }
 
     s.pickMediatypes = (titleobj, mediatypeLabels) =>
-        _.filter(titleobj.mediatypes, item => mediatypeLabels.includes(item.label))
+        _.filter(titleobj.mediatypes, (item) => mediatypeLabels.includes(item.label))
 
-    s.sortMedia = function(list) {
+    s.sortMedia = function (list) {
         const order = ["etext", "faksimil", "epub", "pdf"]
         // first keep the keys in the order list, then readd the ones that weren't there.
         return _.intersection(order, list).concat(_.difference(list, order))
@@ -184,16 +187,16 @@ littb.controller("libraryCtrl", function(
         s.onSliderChange()
     }
 
-    s.getTitleId = row => row.work_titleid
+    s.getTitleId = (row) => row.work_titleid
 
-    s.getUniqId = function(title) {
+    s.getUniqId = function (title) {
         if (!title) {
             return
         }
         return title.lbworkid + (title.titlepath.split("/")[1] || "")
     }
 
-    s.titleRender = function() {
+    s.titleRender = function () {
         console.log("titleRender")
         if (s.listType == "epub") {
             return
@@ -214,7 +217,7 @@ littb.controller("libraryCtrl", function(
 
     // use timeout to make sure the page shows before loading authors
     // $timeout () ->
-    authors.then(function([authorList, authorsById]) {
+    authors.then(function ([authorList, authorsById]) {
         s.authorsById = authorsById
         // s.authorData = _.filter(authorList, item => item.show)
         s.authorSearching = false
@@ -224,8 +227,8 @@ littb.controller("libraryCtrl", function(
         console.log("filterchange")
     }
 
-    $q.all([backend.getAboutAuthors(), authors]).then(function([authorIds]) {
-        s.aboutAuthors = _.orderBy(authorIds, auth => {
+    $q.all([backend.getAboutAuthors(), authors]).then(function ([authorIds]) {
+        s.aboutAuthors = _.orderBy(authorIds, (auth) => {
             if (s.authorsById[auth]) {
                 return s.authorsById[auth].surname
             }
@@ -237,7 +240,7 @@ littb.controller("libraryCtrl", function(
         epub: "popularity|desc",
         authors: "popularity|desc",
         parts: "sortkey|asc",
-        audio: "title.raw|asc"
+        audio: "title.raw|asc",
     }
 
     s.sortItems = {
@@ -247,90 +250,90 @@ littb.controller("libraryCtrl", function(
                 val: "main_author.name_for_index",
                 suffix: ",sortkey|asc",
                 dir: "asc",
-                search: "forfattare"
+                search: "forfattare",
             },
             {
                 label: "Titel",
                 val: "sortkey",
                 dir: "asc",
-                search: "titlar"
+                search: "titlar",
             },
             {
                 label: "Populärt",
                 val: "popularity",
                 dir: "desc",
                 active: true,
-                search: "popularitet"
+                search: "popularitet",
             },
             {
                 label: "Tryckår",
                 val: "sort_date_imprint.date",
                 dir: "desc",
-                search: "kronologi"
+                search: "kronologi",
             },
             {
                 label: "Nytt",
                 val: "imported",
                 dir: "desc",
-                search: "nytillkommet"
-            }
+                search: "nytillkommet",
+            },
         ],
         authors: [
             {
                 label: "Namn",
                 val: "name_for_index",
                 dir: "asc",
-                search: "namn"
+                search: "namn",
             },
             {
                 label: "Populärt",
                 val: "popularity",
                 dir: "desc",
                 search: "popularitet",
-                active: true
+                active: true,
             },
             {
                 label: "Årtal",
                 val: "birth.date",
                 dir: "asc",
-                search: "kronologi"
-            }
+                search: "kronologi",
+            },
         ],
         parts: [
             {
                 label: "Författare",
                 val: "main_author.name_for_index",
-                dir: "asc"
+                dir: "asc",
             },
             {
                 label: "Titel",
                 val: "sortkey",
                 dir: "asc",
-                active: true
-            }
+                active: true,
+            },
         ],
         audio: [
             {
                 label: "Författare",
                 val: "main_author.name_for_index",
-                dir: "asc"
+                dir: "asc",
             },
             {
                 label: "Titel",
                 val: "title.raw",
                 dir: "asc",
-                active: true
+                active: true,
             },
             {
                 label: "Uppläsare",
                 val: "main_reader.name_for_index",
-                dir: "asc"
-            }
-        ]
+                dir: "asc",
+            },
+        ],
     }
     s.sortItems["epub"] = _.cloneDeep(s.sortItems.works)
 
-    s.refreshData = function() {
+    s.refreshData = function () {
         s.selectedTitle = null
         s.rowfilter = s.filter
         if (!isDev) {
@@ -342,10 +345,10 @@ littb.controller("libraryCtrl", function(
         s.fetchParts(s.listType !== "parts")
         // fetchAudio(s.listType !== "audio")
     }
-    s.capitalizeLabel = label => {
+    s.capitalizeLabel = (label) => {
         return { pdf: "PDF", xml: "XML" }[label] || label
     }
-    s.setAuthorData = function() {
+    s.setAuthorData = function () {
         let [key, dir] = (s.sort.authors || "").split("|")
         let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
 
@@ -353,7 +356,7 @@ littb.controller("libraryCtrl", function(
         //     authors = authors.filter(item => item.gender == s.filters["main_author.gender"])
         // }
 
-        authors = authors.filter(item => {
+        authors = authors.filter((item) => {
             let conds = []
             if (s.filters["main_author.gender"]) {
                 conds.push(item.gender == s.filters["main_author.gender"])
@@ -362,7 +365,7 @@ littb.controller("libraryCtrl", function(
                 conds.push(
                     s.filter
                         .split(" ")
-                        .map(str => {
+                        .map((str) => {
                             let search =
                                 item.name_for_index + _.map(item.pseudonym, "full_name").join(" ")
                             return search.match(new RegExp(str, "i"))
@@ -379,7 +382,7 @@ littb.controller("libraryCtrl", function(
         } else {
             s.authorData = _.orderBy(
                 authors,
-                auth => {
+                (auth) => {
                     if (!auth) {
                         console.warn(
                             "Undefined author found. Is something missing from the authordb?"
@@ -402,7 +405,7 @@ littb.controller("libraryCtrl", function(
         }
 
         if (!s.authorData.length) {
-            backend.getAuthorSuggest(s.filter).then(suggest => {
+            backend.getAuthorSuggest(s.filter).then((suggest) => {
                 if (suggest && suggest.length) {
                     s.authorSuggest = suggest
                 } else {
@@ -412,7 +415,7 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    s.fetchParts = countOnly => {
+    s.fetchParts = (countOnly) => {
         // unless s.filter then return
         s.partSearching = true
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
@@ -436,7 +439,7 @@ littb.controller("libraryCtrl", function(
                     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
                     "authors,work_authors",
-                ...size
+                ...size,
             })
             .then(({ titles, suggest, hits, author_aggs }) => {
                 s.all_titles = titles
@@ -513,7 +516,7 @@ littb.controller("libraryCtrl", function(
     // })
     // }
 
-    s.setFilter = f => {
+    s.setFilter = (f) => {
         s.filter = f
         s.parts_page.current = 1
         s.refreshData()
@@ -527,7 +530,7 @@ littb.controller("libraryCtrl", function(
         show_all_works: false,
         show_all_epub: false,
         works_currentpage: 1,
-        epub_currentpage: 1
+        epub_currentpage: 1,
     }
     s.fetchWorks = (countOnly, epubOnly) => {
         let listID = epubOnly ? "epub" : "works"
@@ -537,7 +540,7 @@ littb.controller("libraryCtrl", function(
         let page = s.titleModel[s.listType + "_currentpage"] - 1
         let size = {
             from: page * 100,
-            to: (page + 1) * 100
+            to: (page + 1) * 100,
         }
         if (countOnly) {
             size = { from: 0, to: 0 }
@@ -563,23 +566,23 @@ littb.controller("libraryCtrl", function(
             filter_string: s.filter,
             include:
                 "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
-                "main_author.authorid,main_author.surname,main_author.type,startpagename,has_epub,sort_date.plain,export",
+                "main_author.authorid,main_author.surname,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export",
             filter_or,
             filter_and,
             partial_string: true,
             author_aggs: true,
             suggest: true,
-            ...size
+            ...size,
         })
         $q.all([def, authors]).then(([{ titles, author_aggs, suggest, hits, distinct_hits }]) => {
             console.log("titleArray after all", titles)
             if (!titles.length) {
                 window.gtag("event", "search-no-hits", {
                     event_category: "library",
-                    event_label: s.filter
+                    event_label: s.filter,
                 })
             }
-            s.titleByPath = _.groupBy(titles, item => item.titlepath)
+            s.titleByPath = _.groupBy(titles, (item) => item.titlepath)
 
             if (isSearchRecent) {
                 s.titleModel[epubOnly ? "epub" : "works"] = decorateRecent(titles)
@@ -606,7 +609,7 @@ littb.controller("libraryCtrl", function(
         })
     }
 
-    s.request = function() {
+    s.request = function () {
         if (s.listType == "works") {
             s.fetchWorks(false, false)
         } else if (s.listType == "parts") {
@@ -656,7 +659,7 @@ littb.controller("libraryCtrl", function(
     }
     let sortInit = $location.search().sort || "popularitet"
 
-    let sortItem = _.find(s.sortItems[s.listType], function(item) {
+    let sortItem = _.find(s.sortItems[s.listType], function (item) {
         return item.search == sortInit
     })
     if (sortItem) {
@@ -682,14 +685,14 @@ littb.controller("libraryCtrl", function(
     // }
 
     function decorateRecent(titles) {
-        const dateFmt = function(datestr) {
+        const dateFmt = function (datestr) {
             const months = `januari,februari,mars,april,maj,juni,juli,
                             augusti,september,oktober,november,december`.split(",")
             const [year, month, day] = datestr.split("-")
             return [Number(day), months[month - 1], year].join(" ")
         }
 
-        let titleGroups = _.groupBy(titles, item => _.max(_.map(item.mediatypes, "imported")))
+        let titleGroups = _.groupBy(titles, (item) => _.max(_.map(item.mediatypes, "imported")))
 
         let output = []
         let dir = _.last(s.sort[s.listType].split("|"))
@@ -705,7 +708,7 @@ littb.controller("libraryCtrl", function(
         return output
     }
 
-    s.getUrl = function(row, mediatype) {
+    s.getUrl = function (row, mediatype) {
         const authorid = row.authors[0].workauthor || row.authors[0].authorid
 
         if (mediatype === "epub") {
@@ -720,14 +723,14 @@ littb.controller("libraryCtrl", function(
         }
     }
 
-    s.titleHeaderClick = function($event, title) {
+    s.titleHeaderClick = function ($event, title) {
         if (s.selectedTitle === title && title._collapsed) {
             title._collapsed = false
             if ($event) $event.stopPropagation()
         }
     }
 
-    s.titleClick = function($event, title) {
+    s.titleClick = function ($event, title) {
         if (s.selectedTitle !== title) {
             if (s.selectedTitle != null) {
                 s.selectedTitle._collapsed = false
@@ -739,7 +742,7 @@ littb.controller("libraryCtrl", function(
         $location.search("title", title.titlepath)
     }
 
-    s.getPartAuthor = part =>
+    s.getPartAuthor = (part) =>
         (part.authors != null ? part.authors[0] : undefined) || part.work_authors[0]
 
     s.downloadPopoverURL = require("../views/library/downloadPopover.html")
@@ -764,7 +767,7 @@ littb.controller("libraryCtrl", function(
             } else {
                 return item.text
             }
-        }
+        },
     }
 
     s.onSelectVisible = () => {
@@ -804,7 +807,7 @@ littb.controller("libraryCtrl", function(
         if (row._download) {
             s.downloads.push(row)
         } else {
-            s.downloads = _.filter(s.downloads, item => notIsRowEq(item, row))
+            s.downloads = _.filter(s.downloads, (item) => notIsRowEq(item, row))
         }
     }
 
@@ -820,7 +823,7 @@ littb.controller("libraryCtrl", function(
         for (let dl of s.downloads) {
             for (let mt of dl.mediatypes) {
                 if (mediatype == mt.label) {
-                    output = [...output, ...mt.export.filter(exp => types.includes(exp.type))]
+                    output = [...output, ...mt.export.filter((exp) => types.includes(exp.type))]
                 }
             }
         }
@@ -843,14 +846,14 @@ littb.controller("libraryCtrl", function(
         etext: [
             { id: "txt", label: "ren text" },
             { id: "xml" },
-            { id: "workdb", label: "Metadata" }
+            { id: "workdb", label: "Metadata" },
         ],
         faksimil: [
             { id: "txt", label: "ren text" },
             { id: "xml" },
             { id: "workdb", label: "Metadata" },
-            { id: "pdf", disabled: true }
-        ]
+            { id: "pdf", disabled: true },
+        ],
     }
 
     // s.toggleDownloadType = (mediatype, type) => {
@@ -894,7 +897,7 @@ littb.controller("libraryCtrl", function(
         }
     }
     document.addEventListener("click", clickhandler)
-    $("body").on("click", ".popover", function(event) {
+    $("body").on("click", ".popover", function (event) {
         console.log("popover click")
         event.stopPropagation()
     })
@@ -903,18 +906,18 @@ littb.controller("libraryCtrl", function(
     })
     s.onDownload = () => {
         let exports = s.getDownloadSet()
-        let groups = _.groupBy(exports, exp => `${exp.mediatype}+${exp.type}`)
+        let groups = _.groupBy(exports, (exp) => `${exp.mediatype}+${exp.type}`)
         let label = _.toPairs(groups)
             .map(([key, list]) => `${key}: ${list.length}`)
             .join(", ")
         window.gtag("event", "source-material", {
             event_category: "download",
-            event_label: label
+            event_label: label,
         })
         backend.downloadFiles(exports)
     }
 
-    s.autocomplete = val => {
+    s.autocomplete = (val) => {
         // return backend.autocomplete(val).then(function(data) {
         //     console.log("autocomplete", data, val)
         //     return data
@@ -926,8 +929,8 @@ littb.controller("libraryCtrl", function(
 
     s.refreshData()
 
-    const listValIn = val => (val || "").split(",")
-    const listValOut = val => {
+    const listValIn = (val) => (val || "").split(",")
+    const listValOut = (val) => {
         return (val || []).join(",")
     }
     let isInitListType = false
@@ -935,7 +938,7 @@ littb.controller("libraryCtrl", function(
         {
             key: "filter",
             // scope_name : "rowfilter"
-            replace: false
+            replace: false,
         },
         // {
         //     key: "nytillkommet",
@@ -944,31 +947,31 @@ littb.controller("libraryCtrl", function(
         {
             key: "kön",
             expr: "filters['main_author.gender']",
-            default: "all"
+            default: "all",
         },
         {
             key: "languages",
             expr: "filters.languages",
             val_in: listValIn,
-            val_out: listValOut
+            val_out: listValOut,
         },
         {
             key: "keywords",
             expr: "filters.keywords",
             val_in: listValIn,
-            val_out: listValOut
+            val_out: listValOut,
         },
         {
             key: "mediatypes",
             expr: "filters.mediatypes",
             val_in: listValIn,
-            val_out: listValOut
+            val_out: listValOut,
         },
         {
             key: "about_authors",
             expr: "filters.authorkeyword",
             val_in: listValIn,
-            val_out: listValOut
+            val_out: listValOut,
         },
         // {
         //     key: "intervall",
@@ -992,11 +995,11 @@ littb.controller("libraryCtrl", function(
         // },
         {
             key: "avancerat",
-            expr: "show_more"
+            expr: "show_more",
         },
         {
             key: "alla_titlar",
-            expr: "showAllParts"
+            expr: "showAllParts",
         },
         // {
         //     key: "alla_verk",
@@ -1006,10 +1009,10 @@ littb.controller("libraryCtrl", function(
             key: "visa",
             expr: "listType",
             default: "works",
-            post_change: function(listType) {
+            post_change: function (listType) {
                 console.log("post_change listType", listType)
                 if (isInitListType) {
-                    let sortItem = _.find(s.sortItems[listType || "works"], function(item) {
+                    let sortItem = _.find(s.sortItems[listType || "works"], function (item) {
                         return item.active
                     })
 
@@ -1020,18 +1023,18 @@ littb.controller("libraryCtrl", function(
                     }
                 }
                 isInitListType = true
-            }
+            },
         },
         {
             key: "nedladdning",
-            expr: "dl_mode"
+            expr: "dl_mode",
         },
         {
             key: "sida",
             expr: "parts_page.current",
             val_in: Number,
-            default: 1
-        }
+            default: 1,
+        },
         // {
         // key: "sortering",
         // expr: "sort"
