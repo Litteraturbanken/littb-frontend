@@ -64,11 +64,18 @@
             </div>
 
 
-            <div class="portrait_container">
-                <img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
-                <figcaption ng-bind-html="authorInfo.pictureinfo | trust"></figcaption>
+            <ng-include src="'portrait.html'"></ng-include>
 
-                <div class="ext_links w-100 border border-gray-600 p-4 mt-4" 
+            <div class="show_more_btn" ng-show="!show_more"> <i class="fa fa-caret-down"></i> <a href="" ng-click="show_more = true"> LÄS MER</a></div>
+            
+        </div>
+
+        <script type="text/ng-template" id="portrait.html">
+            <div class="portrait_container">
+                <div class="shadow-lg border mt-2 border-gray-400"><img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
+                <figcaption class="bg-white bg-opacity-75 p-3" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption></div>
+
+                <div class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75" 
                     ng-if="authorInfo.wikidata.sbl_link || authorInfo.wikidata.skbl_link || authorInfo.wikidata.sol_link || authorInfo.wikidata.wikipedia" >
                     <h3 class="sc mt-0">Uppslagsverk</h3>
                     <ul class="list-item pl-4 ">
@@ -77,16 +84,9 @@
                         <li ng-if="authorInfo.wikidata.sol_link"><a target="_blank"  ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{authorInfo.wikidata.sol_link}}">Svenskt översättarlexikon</a></li>
                         <li ng-if="authorInfo.wikidata.wikipedia"><a target="_blank"  ng-href="{{authorInfo.wikidata.wikipedia}}">Wikipedia</a></li>
                     </ul>
-                    
-                    
-                    
                 </div>
-
             </div>
-
-            <div class="show_more_btn" ng-show="!show_more"> <i class="fa fa-caret-down"></i> <a href="" ng-click="show_more = true"> LÄS MER</a></div>
-            
-        </div>
+        </script>
 
         <script type="text/ng-template" id="listing.html">
             <div class="unbox" ng-class="{content : slaMode}">
@@ -191,8 +191,9 @@
 
             </div>
         </div>
-        <div ng-switch-when="titlar">
+        <div ng-switch-when="titlar" class="flex">
             <ng-include src="'listing.html'"></ng-include>
+            <ng-include class="" src="'portrait.html'"></ng-include>
         </div>
         <div ng-switch-when="mer">
             <!-- <div class="content" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div> -->
