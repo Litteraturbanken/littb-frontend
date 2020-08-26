@@ -18,17 +18,17 @@ angular
     .directive("ellipsis", [
         "$timeout",
         "$window",
-        function($timeout, $window) {
+        function ($timeout, $window) {
             return {
                 restrict: "A",
                 scope: {
                     ngBind: "=",
                     ellipsisAppend: "@",
                     ellipsisAppendClick: "&",
-                    ellipsisSymbol: "@"
+                    ellipsisSymbol: "@",
                 },
-                compile: function(elem, attr, linker) {
-                    return function(scope, element, attributes) {
+                compile: function (elem, attr, linker) {
+                    return function (scope, element, attributes) {
                         /* Window Resize Variables */
                         attributes.lastWindowResizeTime = 0
                         attributes.lastWindowResizeWidth = 0
@@ -65,7 +65,7 @@ angular
                                     element.html(scope.ngBind + appendString)
 
                                     // Set complete text and remove one word at a time, until there is no overflow
-                                    for (; i < bindArrayStartingLength; i++) {
+                                    for (; i < bindArrayStartingLength - 1; i++) {
                                         bindArray.pop()
                                         element.html(bindArray.join(" ") + appendString)
 
@@ -84,7 +84,7 @@ angular
                                         typeof scope.ellipsisAppendClick !== "undefined" &&
                                         scope.ellipsisAppendClick !== ""
                                     ) {
-                                        element.find("span").bind("click", function(e) {
+                                        element.find("span").bind("click", function (e) {
                                             scope.$apply(scope.ellipsisAppendClick)
                                         })
                                     }
@@ -111,8 +111,8 @@ angular
                         /**
                          *    Execute ellipsis truncate on ngBind update
                          */
-                        scope.$watch("ngBind", function() {
-                            $timeout(function() {
+                        scope.$watch("ngBind", function () {
+                            $timeout(function () {
                                 buildEllipsis()
                             }, 300)
                         })
@@ -120,17 +120,17 @@ angular
                         /**
                          *    Execute ellipsis truncate on ngBind update
                          */
-                        scope.$watch("ellipsisAppend", function() {
+                        scope.$watch("ellipsisAppend", function () {
                             buildEllipsis()
                         })
 
                         /**
                          *    When window width or height changes - re-init truncation
                          */
-                        angular.element($window).bind("resize", function() {
+                        angular.element($window).bind("resize", function () {
                             $timeout.cancel(attributes.lastWindowTimeoutEvent)
 
-                            attributes.lastWindowTimeoutEvent = $timeout(function() {
+                            attributes.lastWindowTimeoutEvent = $timeout(function () {
                                 if (
                                     attributes.lastWindowResizeWidth != window.innerWidth ||
                                     attributes.lastWindowResizeHeight != window.innerHeight
@@ -143,7 +143,7 @@ angular
                             }, 75)
                         })
                     }
-                }
+                },
             }
-        }
+        },
     ])
