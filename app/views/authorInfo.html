@@ -72,13 +72,13 @@
 
         <script type="text/ng-template" id="portrait.html">
             <div class="portrait_container">
-                <div class="shadow-lg border mt-2 border-gray-400"><img ng-show="authorInfo.smallImage" class="mb-2 author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
-                <figcaption class="bg-white bg-opacity-75 p-3" ng-if="authorInfo.pictureinfo" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption></div>
+                <div class="shadow-lg border mt-2 border-gray-500 border-opacity-50"><img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
+                <figcaption class="bg-white bg-opacity-75 p-3 text-base" ng-if="authorInfo.pictureinfo" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption></div>
                 
                 <!-- Only for red. -->
-                <img ng-if="isDev" class="author_img mb-0" ng-src="{{getWikiImage()}}" >
-                <figcaption ng-if="isDev" class="wikidata_uncleared" ng-show="getWikiImage()">
-                    <span class="hover:hidden">[RED] FRÅN WIKIMEDIA</span>
+                <img ng-if="isDev && !authorInfo.smallImage" class="author_img mb-0" ng-src="{{getWikiImage()}}" >
+                <figcaption ng-if="isDev && !authorInfo.smallImage" class="wikidata_uncleared p-2 text-sm" ng-show="getWikiImage()">
+                    [RED] FRÅN WIKIMEDIA
                 </figcaption>
 
                 <div class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75" 

@@ -618,6 +618,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL
     $rootScope.sourceInfo = require("../views/sourceInfo.html")
+    $rootScope.isDev = window.isDev
     const firstRoute = $q.defer()
     firstRoute.promise.then(() => $rootElement.addClass("ready").removeClass("not_ready"))
 
