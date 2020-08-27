@@ -73,7 +73,7 @@
         <script type="text/ng-template" id="portrait.html">
             <div class="portrait_container">
                 <div class="shadow-lg border mt-2 border-gray-400"><img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
-                <figcaption class="bg-white bg-opacity-75 p-3" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption></div>
+                <figcaption class="bg-white bg-opacity-75 p-3" ng-if="authorInfo.pictureinfo" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption></div>
 
                 <div class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75" 
                     ng-if="authorInfo.wikidata.sbl_link || authorInfo.wikidata.skbl_link || authorInfo.wikidata.sol_link || authorInfo.wikidata.wikipedia" >
