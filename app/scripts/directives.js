@@ -16,7 +16,7 @@ littb.directive("toolkit", () => ({
         } else {
             replaced = $(`#${id} > *`).replaceWith(element)
         }
-        scope.$on("$destroy", function() {
+        scope.$on("$destroy", function () {
             if (attrs.toolkitReplace) {
                 element.replaceWith(replaced)
             } else {
@@ -31,8 +31,8 @@ littb.directive("css", () => ({
     scope: { css: "@", evalIf: "&if" },
     compile(elm, attrs) {
         elm.remove()
-        return function(scope, iElement, iAttrs) {
-            scope.$watch("css", function(val) {
+        return function (scope, iElement, iAttrs) {
+            scope.$watch("css", function (val) {
                 if (scope.evalIf()) {
                     $("#reading_css").attr("href", val)
                 }
@@ -52,7 +52,7 @@ littb.directive("pagetitle", () => ({
     }
 }))
 
-littb.directive("toBody", function($compile) {
+littb.directive("toBody", function ($compile) {
     return {
         restrict: "A",
         compile(elm, attrs) {
@@ -61,7 +61,7 @@ littb.directive("toBody", function($compile) {
             const wrapper = $("<div>").append(elm)
             const cmp = $compile(wrapper.html())
 
-            return function(scope, iElement, iAttrs) {
+            return function (scope, iElement, iAttrs) {
                 const newElem = cmp(scope)
                 $("body").append(newElem)
                 scope.$on("$destroy", () => newElem.remove())
@@ -90,11 +90,11 @@ littb.directive("sortTriangles", () => ({
         s.enabled = [true, true]
         const tupMatches = tup =>
             _.every(
-                _.map(_.zip(val, tup), function([item1, item2]) {
+                _.map(_.zip(val, tup), function ([item1, item2]) {
                     return item1 === item2
                 })
             )
-        s.$watch("tuple", function([newval, dir]) {
+        s.$watch("tuple", function ([newval, dir]) {
             s.active = tupMatches(newval)
             c.log("active", s.active)
             s.enabled = [!dir, dir]
@@ -121,9 +121,9 @@ littb.directive("square", () => ({
         coors.left = coors.x
 
         coors = _.fromPairs(
-            _.map(coors, function(val, key) {
+            _.map(coors, function (val, key) {
                 val = Number(val)
-                const expand = function(val) {
+                const expand = function (val) {
                     const n = ["top", "left"].includes(key) ? EXPAND_SIZE * -1 : EXPAND_SIZE * 2
                     return val + n
                 }
@@ -143,13 +143,13 @@ littb.directive("clickOutside", $document => ({
     link(scope, elem, attr, ctrl) {
         let handler, handler1
         let skip = false
-        elem.bind("click", function(e) {
+        elem.bind("click", function (e) {
             skip = true
         })
 
         $document.bind(
             "click",
-            (handler = function(e) {
+            (handler = function (e) {
                 if (!skip) {
                     scope.$eval(attr.clickOutside, { $event: e }) // event object can be accessed as $event, as with ng-click
                 }
@@ -157,7 +157,7 @@ littb.directive("clickOutside", $document => ({
             })
         )
 
-        elem.on("$destroy", function() {
+        elem.on("$destroy", function () {
             $document.off("click", handler)
         })
     }
@@ -167,32 +167,35 @@ littb.directive("scrollTo", ($window, $timeout) =>
     // scope : scrollTo : "="
     ({
         link(scope, elem, attr) {
-            scope.$watch(() => scope.$eval(elem.attr("scroll-to")), function(val) {
-                if (!val) {
-                    return
-                }
-                const target = elem.find(`#${val}`)
-                if (!target.length) {
-                    return
-                }
-
-                return $timeout(function() {
-                    let offset = 0
-                    // c.log "animate to offset", (scope.$eval elem.attr("offset"))
-                    if (attr.offset) {
-                        offset = Number(scope.$eval(elem.attr("offset")) || 0)
-                        c.log("offset", offset)
+            scope.$watch(
+                () => scope.$eval(elem.attr("scroll-to")),
+                function (val) {
+                    if (!val) {
+                        return
                     }
-                    $("html, body").animate(
-                        { scrollTop: elem.scrollTop() + target.position().top - offset },
-                        1000
-                    )
-                    // return $(window).animate({
-                    //     scrollTop: elem.scrollTop() + target.position().top - offset
-                    // })
-                    // elem.scrollTop()
-                })
-            })
+                    const target = elem.find(`#${val}`)
+                    if (!target.length) {
+                        return
+                    }
+
+                    return $timeout(function () {
+                        let offset = 0
+                        // c.log "animate to offset", (scope.$eval elem.attr("offset"))
+                        if (attr.offset) {
+                            offset = Number(scope.$eval(elem.attr("offset")) || 0)
+                            c.log("offset", offset)
+                        }
+                        $("html, body").animate(
+                            { scrollTop: elem.scrollTop() + target.position().top - offset },
+                            1000
+                        )
+                        // return $(window).animate({
+                        //     scrollTop: elem.scrollTop() + target.position().top - offset
+                        // })
+                        // elem.scrollTop()
+                    })
+                }
+            )
         }
     })
 )
@@ -203,15 +206,15 @@ littb.directive("collapsing", ($window, $timeout) => ({
         index: "="
     },
     link(scope, elem, attr) {
-        return scope.$watch(() => elem.find(".in.collapsing").height(), function(val) {
-            scope.collapsing = val
-            if (elem.find(".in.collapsing").scope()) {
-                return elem
-                    .find(".in.collapsing")
-                    .scope()
-                    .$eval("$index")
+        return scope.$watch(
+            () => elem.find(".in.collapsing").height(),
+            function (val) {
+                scope.collapsing = val
+                if (elem.find(".in.collapsing").scope()) {
+                    return elem.find(".in.collapsing").scope().$eval("$index")
+                }
             }
-        })
+        )
     }
 }))
 
@@ -220,21 +223,19 @@ littb.directive("soArticle", ($compile, $location, $window) => ({
         soArticle: "="
     },
     link(scope, elem, attrs) {
-        scope.$watch("soArticle", function(val) {
+        scope.$watch("soArticle", function (val) {
             const newElem = $compile(_.str.trim(val))(scope)
             return elem.html(newElem)
         })
 
         scope.lex = () => $location.search().lex
 
-        return scope.$watch("lex()", function(val) {
+        return scope.$watch("lex()", function (val) {
             if (!val) {
                 return
             }
             if (elem.find(`#${val}`).length) {
-                elem.find(`#${val}`)
-                    .get(0)
-                    .scrollIntoView()
+                elem.find(`#${val}`).get(0).scrollIntoView()
             }
         })
     }
@@ -243,7 +244,7 @@ littb.directive("soArticle", ($compile, $location, $window) => ({
 littb.directive("hvord", (backend, $location) => ({
     restrict: "E",
     link(scope, elem, attr) {
-        elem.on("click", function() {
+        elem.on("click", function () {
             const id = elem.prev("hvtag").text()
             if (id) {
                 // $location.search("lex", id)
@@ -265,18 +266,18 @@ littb.directive("selectionSniffer", $window => ({
         let box = $()
 
         $("html").on("click", () => box.remove())
-        $("body").on("mousedown", ".search_dict", function() {
+        $("body").on("mousedown", ".search_dict", function () {
             c.log("search click!", $window.getSelection().toString())
             scope.$emit("search_dict", _.str.trim($window.getSelection().toString()))
             return false
         })
 
-        scope.$on("$destroy", function() {
+        scope.$on("$destroy", function () {
             $("body").off("mousedown", ".search_dict")
             return $("body > .search_dict").remove()
         })
 
-        const showIndicator = function(target) {
+        const showIndicator = function (target) {
             // return false # CURRENTLY S.O. IS DISABLED
             c.log("showIndicator", target)
             box.remove()
@@ -296,19 +297,13 @@ littb.directive("selectionSniffer", $window => ({
         // we use debounce to account for doubleclick
         elem.on(
             "mouseup",
-            _.debounce(function(event) {
+            _.debounce(function (event) {
                 if (!$window.getSelection) return
                 const sel = $window.getSelection().toString()
                 const isOneWord = sel && !Array.from(_.str.trim(sel)).includes(" ")
                 c.log("isOneWord", sel, isOneWord, event.target)
 
-                if (
-                    isOneWord &&
-                    ($(event.target).is(".w") ||
-                        $(event.target)
-                            .parent()
-                            .is(".w"))
-                ) {
+                if (isOneWord && ($(event.target).is(".w") || $(event.target).parent().is(".w"))) {
                     showIndicator(event.target)
                 }
             }, 500)
@@ -337,7 +332,7 @@ littb.directive("alertPopup", ($rootElement, $timeout, $rootScope) => ({
     link(scope, elem, attr) {
         scope.text = null
         scope.show = false
-        $rootScope.$on("notify", function(event, text) {
+        $rootScope.$on("notify", function (event, text) {
             scope.text = text
             scope.show = true
             $timeout(() => (scope.show = false), 4000)
@@ -348,12 +343,12 @@ littb.directive("alertPopup", ($rootElement, $timeout, $rootScope) => ({
 littb.directive("focusable", () => ({
     link(scope, elem, attr) {
         const evtsuffix = attr.focusable ? `.${attr.focusable}` : ""
-        scope.$on(`focus${evtsuffix}`, function() {
+        scope.$on(`focus${evtsuffix}`, function () {
             c.log("focus!")
             elem.focus()
         })
 
-        scope.$on("blur", function() {
+        scope.$on("blur", function () {
             c.log("blur!", elem)
             setTimeout(() => elem.blur(), 100)
         })
@@ -386,12 +381,15 @@ littb.directive("pageTitle", $interpolate => ({
     link(scope, elm, attrs) {
         elm.remove()
         const inpl = $interpolate(elm.text())
-        const wtch = scope.$watch(s => inpl(s), function(val) {
-            if (val) {
-                val += " | Litteraturbanken"
+        const wtch = scope.$watch(
+            s => inpl(s),
+            function (val) {
+                if (val) {
+                    val += " | Litteraturbanken"
+                }
+                $("head > title").text(val || "Litteraturbanken")
             }
-            $("head > title").text(val || "Litteraturbanken")
-        })
+        )
 
         scope.$on("$destroy", () => wtch())
     }
@@ -400,7 +398,7 @@ littb.directive("pageTitle", $interpolate => ({
 littb.directive("sticky", () => ({
     link(scope, element, attrs) {
         element.origTop = element.offset().top
-        $(document).on("scroll.sticky", function(evt) {
+        $(document).on("scroll.sticky", function (evt) {
             //c.log "scroll", $(document).scrollTop(), element.origTop
             if ($(document).scrollTop() >= element.origTop) {
                 return element.addClass("sticky")
@@ -430,7 +428,7 @@ littb.directive("popper", $rootElement => ({
         // scope.$watch (() -> popup.is(":visible")), (isVisible) ->
         //     popper =
 
-        elem.on("click", function(event) {
+        elem.on("click", function (event) {
             console.log("elem click")
             if (popup.is(":visible")) {
                 closePopup()
@@ -454,7 +452,7 @@ littb.directive("popper", $rootElement => ({
 
         $rootElement.on("click", () => closePopup())
 
-        return scope.$on(`popper.open.${scope.popper}`, function() {
+        return scope.$on(`popper.open.${scope.popper}`, function () {
             c.log("on popper open", elem)
             return setTimeout(() => elem.click(), 0)
         })
@@ -483,7 +481,7 @@ littb.directive("popper", $rootElement => ({
 //             return (x for [x, y] in _.toPairs output when y).join " "
 
 littb.directive("insert", () => (scope, elem, attr) =>
-    scope.watch("doc", function() {
+    scope.watch("doc", function () {
         c.log("insert doc", scope.doc)
         return elem.html(scope.doc || "")
     })
@@ -503,7 +501,7 @@ littb.directive("downloadBtn", () => ({
     `,
     link(scope, elem, attr) {
         c.log("attr", attr)
-        scope.getUrl = function(filename) {
+        scope.getUrl = function (filename) {
             if (attr.isLyrik != null) {
                 const segments = filename.split("/")
                 segments.splice(-1, 0, "pdf")
@@ -621,7 +619,7 @@ littb.directive("footnotePopup", ($window, $location, $compile) => ({
 
         popupTmpl = $compile(popupTmpl)(s)
             .appendTo("body")
-            .click(function(event) {
+            .click(function (event) {
                 const target = $(event.target)
                 event.preventDefault()
 
@@ -637,7 +635,7 @@ littb.directive("footnotePopup", ($window, $location, $compile) => ({
             .show()
         s.show = false
 
-        return elem.on("click", "a.footnote[href^=#ftn]", function(event) {
+        return elem.on("click", "a.footnote[href^=#ftn]", function (event) {
             if (s.show) {
                 $(document).click()
                 return false
@@ -648,7 +646,7 @@ littb.directive("footnotePopup", ($window, $location, $compile) => ({
             const target = $(event.currentTarget)
             const id = _.str.lstrip(target.attr("href"), "#")
 
-            s.$apply(function() {
+            s.$apply(function () {
                 s.content = s.mapping[id]
                 s.show = true
             })
@@ -718,13 +716,19 @@ littb.directive("height", () => ({
         height: "="
     },
     link(scope, elem, attr) {
-        return scope.$watch(() => elem.outerHeight(), val => (scope.height = val))
+        return scope.$watch(
+            () => elem.outerHeight(),
+            val => (scope.height = val)
+        )
     }
 }))
 
-littb.directive("firstHeight", function() {
+littb.directive("firstHeight", function () {
     const setWatch = (scope, elem) =>
-        scope.$watch(() => elem.outerHeight(), val => (scope.firstHeight = val))
+        scope.$watch(
+            () => elem.outerHeight(),
+            val => (scope.firstHeight = val)
+        )
 
     return {
         scope: {
@@ -768,7 +772,7 @@ littb.directive("bkgImg", ($rootElement, $timeout) => ({
                 }),
             0
         )
-        scope.$on("$destroy", function() {
+        scope.$on("$destroy", function () {
             c.log("bkg destroy")
 
             // element.remove()
@@ -782,7 +786,7 @@ littb.directive("bkgImg", ($rootElement, $timeout) => ({
             })
         })
 
-        return scope.$on("$routeChangeStart", function(event, next, current) {
+        return scope.$on("$routeChangeStart", function (event, next, current) {
             if (!next.$$route) {
                 return
             }
@@ -795,12 +799,12 @@ littb.directive("listScroll", () => ({
     link($scope, element, attr) {
         const s = $scope
 
-        s.$on("listScroll", function($event, id) {
+        s.$on("listScroll", function ($event, id) {
             c.log("id", id)
             return element.find(`#${id}`).click()
         })
 
-        return element.on("click", "li", function(event) {
+        return element.on("click", "li", function (event) {
             const targetScope = $(event.currentTarget).scope()
             const closing = element.find(".in.collapsing")
 
@@ -834,11 +838,11 @@ littb.directive("listScroll", () => ({
     }
 }))
 
-littb.directive("imageonload", function() {
+littb.directive("imageonload", function () {
     return {
         restrict: "A",
-        link: function(scope, element, attrs) {
-            element.bind("load", function() {
+        link: function (scope, element, attrs) {
+            element.bind("load", function () {
                 scope.$apply(attrs.imageonload)
             })
         }
@@ -848,10 +852,10 @@ littb.directive("imageonload", function() {
 // littb.directive "ornament", () ->
 //     restrict : "C"
 
-const overflowLoad = function(s, element) {
+const overflowLoad = function (s, element) {
     let btn = null
 
-    element.load(function() {
+    element.load(function () {
         const maxWidth = $(this).css("max-width")
         $(this).css("max-width", "initial")
         const actualWidth = $(this).width()
@@ -880,13 +884,13 @@ littb.directive("graphicimg", () => ({
     restrict: "C",
     compile(elm, attrs) {
         if (_.str.endsWith(elm.attr("src"), ".svg")) {
-            elm.load(elm.attr("src"), function(data) {
+            elm.load(elm.attr("src"), function (data) {
                 let [, , width, height] = data.match(/viewBox="(.+?)"/)[1].split(" ")
                 elm.width(width)
                 return elm.height(height)
             })
         }
-        return function($scope, element, attr) {
+        return function ($scope, element, attr) {
             const s = $scope
             if (_.str.endsWith(element.attr("src"), "svg")) {
                 return
@@ -908,7 +912,7 @@ littb.directive("compile", $compile => ({
     link($scope, element, attr) {
         const s = $scope
 
-        return s.$watch(attr.compile, function(val) {
+        return s.$watch(attr.compile, function (val) {
             const tmpl = $compile(val)(s)
             return element.html(tmpl)
         })
@@ -992,7 +996,7 @@ littb.directive("searchOpts", ($location, util) => ({
             }
         ])
 
-        s.searchOptSelect = function(sel) {
+        s.searchOptSelect = function (sel) {
             const o = s.searchOptionsMenu
 
             const currents = _.filter(_.values(o), "selected")

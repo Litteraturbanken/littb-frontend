@@ -10,13 +10,13 @@ const littb = angular.module("littbApp")
 littb.filter(
     "formatAuthors",
     () =>
-        function(authorlist, makeLink, noHTML) {
+        function (authorlist, makeLink, noHTML) {
             let et, strings
             if (!authorlist || !authorlist.length) {
                 return
             }
 
-            const stringify = function(auth) {
+            const stringify = function (auth) {
                 let suffix =
                     {
                         editor: " <span class='authortype'>red.</span>",
@@ -66,7 +66,7 @@ littb.filter("downloadMediatypes", () => obj => {
     return obj.mediatypes.filter(x => x.downloadable)
 })
 
-littb.filter("readMediatypes", function() {
+littb.filter("readMediatypes", function () {
     const read = ["etext", "faksimil", "infopost"]
     return obj => {
         if (!obj || !obj.mediatypes) {
@@ -82,7 +82,7 @@ c.timeEnd = angular.noop
 littb.filter(
     "authorYear",
     () =>
-        function(obj) {
+        function (obj) {
             if (!obj) {
                 return
             }
@@ -105,7 +105,7 @@ littb.filter(
 littb.controller(
     "startCtrl",
     ($scope, $location) =>
-        ($scope.gotoTitle = function(query) {
+        ($scope.gotoTitle = function (query) {
             let url
             if (!query) {
                 url = "/titlar"
@@ -117,7 +117,7 @@ littb.controller(
         })
 )
 
-littb.controller("contactFormCtrl", function($scope, backend, $timeout, $location) {
+littb.controller("contactFormCtrl", function ($scope, backend, $timeout, $location) {
     const s = $scope
 
     const fromSchool = $location.search().skola != null
@@ -132,12 +132,12 @@ littb.controller("contactFormCtrl", function($scope, backend, $timeout, $locatio
     s.showError = false
 
     const done = () =>
-        $timeout(function() {
+        $timeout(function () {
             s.showContact = false
             s.showNewsletter = false
         }, 4000)
 
-    const err = function() {
+    const err = function () {
         s.showError = true
         s.showContact = false
         s.showNewsletter = false
@@ -145,7 +145,7 @@ littb.controller("contactFormCtrl", function($scope, backend, $timeout, $locatio
         return $timeout(() => (s.showError = false), 4000)
     }
 
-    s.submitContactForm = function() {
+    s.submitContactForm = function () {
         let msg
         if (fromSchool) {
             msg = `[skola] ${s.message}`
@@ -154,21 +154,21 @@ littb.controller("contactFormCtrl", function($scope, backend, $timeout, $locatio
         }
         // svenskt oversattarlexikon?
 
-        return backend.submitContactForm(s.name, s.email, msg, isSOL).then(function() {
+        return backend.submitContactForm(s.name, s.email, msg, isSOL).then(function () {
             s.showContact = true
             done()
         }, err)
     }
-    s.subscribe = function() {
+    s.subscribe = function () {
         const msg = s.newsletterEmail + " vill bli tillagd på utskickslistan."
-        backend.submitContactForm("Utskickslista", s.newsletterEmail, msg).then(function() {
+        backend.submitContactForm("Utskickslista", s.newsletterEmail, msg).then(function () {
             s.showNewsletter = true
             done()
         }, err)
     }
 })
 
-littb.controller("statsCtrl", function($scope, backend) {
+littb.controller("statsCtrl", function ($scope, backend) {
     const s = $scope
 
     backend.getStats().then(data => (s.statsData = data))
@@ -182,7 +182,7 @@ littb.controller("statsCtrl", function($scope, backend) {
     return backend.getEpub(30).then(({ data, hits }) => (s.epubList = data))
 })
 
-littb.controller("biblinfoCtrl", function($scope, backend) {
+littb.controller("biblinfoCtrl", function ($scope, backend) {
     const s = $scope
     let limit = true
     s.showHit = 0
@@ -191,16 +191,16 @@ littb.controller("biblinfoCtrl", function($scope, backend) {
 
     s.showAll = () => (limit = false)
 
-    s.increment = function() {
+    s.increment = function () {
         limit = true
         return (s.entries != null ? s.entries[s.showHit + 1] : undefined) && s.showHit++
     }
-    s.decrement = function() {
+    s.decrement = function () {
         limit = true
         return s.showHit && s.showHit--
     }
 
-    s.getEntries = function() {
+    s.getEntries = function () {
         if (limit) {
             return [s.entries != null ? s.entries[s.showHit] : undefined]
         } else {
@@ -208,19 +208,19 @@ littb.controller("biblinfoCtrl", function($scope, backend) {
         }
     }
 
-    s.getColumn1 = function(entry) {
+    s.getColumn1 = function (entry) {
         const pairs = _.toPairs(entry)
         const splitAt = Math.floor(pairs.length / 2)
         return _.fromPairs(pairs.slice(0, +splitAt + 1 || undefined))
     }
 
-    s.getColumn2 = function(entry) {
+    s.getColumn2 = function (entry) {
         const pairs = _.toPairs(entry)
         const splitAt = Math.floor(pairs.length / 2)
         return _.fromPairs(pairs.slice(splitAt + 1))
     }
 
-    s.submit = function() {
+    s.submit = function () {
         let wf
         const names = ["manus", "tryckt_material", "annat_tryckt", "forskning"]
         const params = names.filter(x => s[x]).map(x => `resurs=${x}`)
@@ -229,7 +229,7 @@ littb.controller("biblinfoCtrl", function($scope, backend) {
         }
         s.searching = true
 
-        return backend.getBiblinfo(params.join("&"), wf).then(function(data) {
+        return backend.getBiblinfo(params.join("&"), wf).then(function (data) {
             s.entries = data
             s.num_hits = data.length
             s.searching = false
@@ -269,7 +269,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
 
     backend.hasAudioPage(s.author).then(hasPage => (s.hasAudioPage = hasPage))
 
-    s.getIntro = function() {
+    s.getIntro = function () {
         if (!s.authorInfo) {
             return
         }
@@ -280,7 +280,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         }
     }
 
-    s.getIntroAuthor = function() {
+    s.getIntroAuthor = function () {
         if (!s.authorInfo) {
             return
         }
@@ -310,13 +310,13 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
 
     s.titleSort = util.titleSort
 
-    authors.then(function([authorList, authorsById]) {
+    authors.then(function ([authorList, authorsById]) {
         s.authorsById = authorsById
     })
 
     // s.authorError = (s.normalizeAuthor s.author) not of s.authorsById
 
-    s.showLargeImage = function($event) {
+    s.showLargeImage = function ($event) {
         c.log("showLargeImage", s.show_large)
         if (s.show_large) {
             return
@@ -324,7 +324,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         s.show_large = true
         $event.stopPropagation()
 
-        $document.one("click", function(event) {
+        $document.one("click", function (event) {
             if (event.button !== 0) {
                 return
             }
@@ -332,7 +332,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         })
     }
 
-    s.getTitleTooltip = function(attrs) {
+    s.getTitleTooltip = function (attrs) {
         if (!attrs) {
             return
         }
@@ -341,7 +341,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         }
     }
 
-    const refreshRoute = function() {
+    const refreshRoute = function () {
         s.showpage = $location.path().split("/")[3]
         if (!s.showpage) {
             s.showpage = "introduktion"
@@ -362,7 +362,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
 
     s.getAllTitles = () => [].concat(s.groupedTitles, s.groupedWorks, s.groupedEditorWorks)
 
-    s.getUrl = function(work) {
+    s.getUrl = function (work) {
         let url
         const auth = s.getWorkAuthor(work.authors).authorid
         if (work.mediatype === "epub") {
@@ -377,9 +377,9 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         return url
     }
 
-    const getHtml = function(url) {
+    const getHtml = function (url) {
         const def = $q.defer()
-        $http.get(url).success(function(xml) {
+        $http.get(url).success(function (xml) {
             const from = xml.indexOf("<body>")
             const to = xml.indexOf("</body>")
             xml = xml.slice(from, to + "</body>".length)
@@ -392,7 +392,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
     //     getHtml("/red/sla/OmSelmaLagerlofArkivet.html").then(xml => (s.slaIntro = xml))
     // }
 
-    const refreshExternalDoc = function(page, routeParams) {
+    const refreshExternalDoc = function (page, routeParams) {
         // sla hack
         let url
         c.log("refreshExternalDoc", page, routeParams.omtexternaDoc)
@@ -423,7 +423,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         }
 
         if (!["introduktion", "titlar"].includes(s.showpage)) {
-            return getHtml(url).then(function(xml) {
+            return getHtml(url).then(function (xml) {
                 s.externalDoc = xml
                 if (s.showpage === "omtexterna") {
                     s.pagelinks = harvestLinks(s.externalDoc)
@@ -434,7 +434,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         }
     }
 
-    var harvestLinks = function(doc) {
+    var harvestLinks = function (doc) {
         const elemsTuples = $(".footnotes .footnote[id^=ftn]", doc)
             .get()
             .map(elem => [$(elem).attr("id"), $(elem).html()])
@@ -444,7 +444,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
 
     refreshRoute()
 
-    s.$on("$routeChangeError", function(event, current, prev, rejection) {
+    s.$on("$routeChangeError", function (event, current, prev, rejection) {
         _.extend(s, current.pathParams)
 
         refreshRoute()
@@ -452,7 +452,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         return refreshExternalDoc(s.showpage, current.pathParams)
     })
 
-    s.getDataSource = function() {
+    s.getDataSource = function () {
         if (s.showpage === "titlar") {
             return s.titleStruct
         } else if (s.showpage === "mer") {
@@ -542,7 +542,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
         //     audioExtras: true
         // }
     ]
-    s.getSortOrder = function(obj) {
+    s.getSortOrder = function (obj) {
         if (obj.showAuthor === false) {
             return "sortkey"
         } else {
@@ -553,14 +553,14 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
     for (var item of s.titleStruct) {
         // TODO: error handling?
         ;(item =>
-            item.def.then(function(data) {
+            item.def.then(function (data) {
                 c.log("then", data)
                 item.data = data
             }))(item)
     }
 
     backend.getAuthorInfo(s.author).then(
-        function(data) {
+        function (data) {
             s.authorInfo = data
 
             refreshExternalDoc(s.showpage, $routeParams)
@@ -633,7 +633,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
                 $location.url(`/författare/${s.author}/dramawebben`).replace()
             }
         },
-        function(data) {
+        function (data) {
             c.log("authorinfo error", arguments)
             s.authorError = true
         }
@@ -652,28 +652,24 @@ littb.controller("audioListCtrl", function audioListCtrl(
     const s = $scope
     s.play_obj = null
 
-    s.setPlayObj = function(obj) {
+    s.setPlayObj = function (obj) {
         s.play_obj = obj
         $location.search("spela", obj.file)
 
-        return $timeout(() =>
-            $("#audioplayer")
-                .get(0)
-                .play()
-        )
+        return $timeout(() => $("#audioplayer").get(0).play())
     }
 
-    s.getAuthor = function(author) {
+    s.getAuthor = function (author) {
         const [last, first] = (author.name_for_index || "").split(",")
 
         return _.compact([last.toUpperCase(), first]).join(",")
     }
 
-    authors.then(function([authorList, authorsById]) {
+    authors.then(function ([authorList, authorsById]) {
         s.authorsById = authorsById
     })
 
-    return backend.getAudioList({ sort_field: "order|asc" }).then(function(audioList) {
+    return backend.getAudioList({ sort_field: "order|asc" }).then(function (audioList) {
         c.log("audioList", audioList)
         s.fileGroups = _.groupBy(audioList, "section")
 
@@ -688,7 +684,7 @@ littb.controller("audioListCtrl", function audioListCtrl(
         }
 
         return $("#audioplayer").bind("ended", () =>
-            s.$apply(function() {
+            s.$apply(function () {
                 if (audioList[s.play_obj.i + 1]) {
                     return s.setPlayObj(audioList[s.play_obj.i + 1])
                 }
@@ -734,7 +730,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
     }
 
     const has = (one, two) => one.toLowerCase().indexOf(two.toLowerCase()) !== -1
-    s.rowFilter = function(item) {
+    s.rowFilter = function (item) {
         if (!s.authorsById) {
             return
         }
@@ -750,7 +746,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
         return true
     }
 
-    s.getAuthor = function(row) {
+    s.getAuthor = function (row) {
         const [last, first] = row.authors[0].name_for_index.split(",")
         let auth = _.compact([last.toUpperCase(), first]).join(",")
         if (row.authors[0].type === "editor") {
@@ -762,7 +758,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
     // s.log = (filename) ->
     // return true
 
-    s.log = function(row) {
+    s.log = function (row) {
         // const filename = s.getFilename(row)
         backend.logDownload(
             row.authors[0].surname,
@@ -775,7 +771,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
 
     s.getFilename = row => row.authors[0].authorid + "_" + (row.work_titleid || row.titleid)
 
-    s.onAuthChange = function(newVal) {
+    s.onAuthChange = function (newVal) {
         // hack for state issue with select2 broadcasting change event
         // at init, causing reset of location value
         if (newVal === null) {
@@ -785,7 +781,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
         }
     }
 
-    s.refreshData = function(str) {
+    s.refreshData = function (str) {
         // | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]"
         if (s.authorFilter === null) {
             return
@@ -798,7 +794,7 @@ littb.controller("epubListCtrl", function epubListCtrl(
 
         return backend
             .getEpub(size, s.filterTxt, authorFilter, s.sort)
-            .then(function({ data, hits }) {
+            .then(function ({ data, hits }) {
                 s.searching = false
                 s.rows = data
                 s.hits = hits
@@ -825,14 +821,14 @@ littb.controller("epubListCtrl", function epubListCtrl(
     return s.refreshData()
 })
 
-littb.controller("helpCtrl", function($scope, $http, util, $location) {
+littb.controller("helpCtrl", function ($scope, $http, util, $location) {
     const s = $scope
     const url = "/red/om/hjalp/hjalp.html"
     s.onNavClick = id => {
         s.ankare = id
         $location.search("ankare", id)
     }
-    return $http.get(url).success(function(data) {
+    return $http.get(url).success(function (data) {
         s.htmlContent = data
         s.labelArray = []
         for (let elem of $("[id]", data).get()) {
@@ -855,12 +851,12 @@ littb.controller("helpCtrl", function($scope, $http, util, $location) {
 
 //     s.titleGroups = _.groupBy titleArray, "imported"
 
-littb.controller("aboutCtrl", function($scope, $http, util, $location, $routeParams) {
+littb.controller("aboutCtrl", function ($scope, $http, util, $location, $routeParams) {
     const s = $scope
     // s.$watch ( () -> $routeParams.page), () ->
     //     c.log "$routeParams.page", $routeParams.page
     _.extend(s, $routeParams)
-    s.$on("$routeChangeError", function(event, current, prev, rejection) {
+    s.$on("$routeChangeError", function (event, current, prev, rejection) {
         c.log("route change", current.pathParams)
         return _.extend(s, current.pathParams)
     })
@@ -882,11 +878,11 @@ littb.controller("aboutCtrl", function($scope, $http, util, $location, $routePar
         }[page])
 })
 
-littb.controller("presentationCtrl", function($scope, $http, $routeParams, $location, util) {
+littb.controller("presentationCtrl", function ($scope, $http, $routeParams, $location, util) {
     const s = $scope
     const url = "/red/presentationer/presentationerForfattare.html"
     s.isMain = true
-    return $http.get(url).success(function(data) {
+    return $http.get(url).success(function (data) {
         s.doc = data
         return util.setupHash(s, {
             ankare(val) {
@@ -900,7 +896,7 @@ littb.controller("presentationCtrl", function($scope, $http, $routeParams, $loca
     })
 })
 
-littb.controller("omtexternaCtrl", function($scope, $routeParams) {
+littb.controller("omtexternaCtrl", function ($scope, $routeParams) {
     const docPath = "/red/sla/omtexterna/"
     $scope.doc = docPath + ($routeParams["doc"] || "omtexterna.html")
 })
@@ -908,7 +904,7 @@ littb.controller("omtexternaCtrl", function($scope, $routeParams) {
 littb.filter(
     "correctLink",
     () =>
-        function(html) {
+        function (html) {
             const wrapper = $("<div>").append(html)
             const img = $("img", wrapper)
             img.attr("src", `/red/bilder/gemensamt/${img.attr("src")}`)
@@ -916,7 +912,7 @@ littb.filter(
         }
 )
 
-littb.controller("autocompleteCtrl", function(
+littb.controller("autocompleteCtrl", function (
     $scope,
     backend,
     $route,
@@ -929,7 +925,7 @@ littb.controller("autocompleteCtrl", function(
     const s = $scope
     const modal = null
     let prevFilter = null
-    s.close = function() {
+    s.close = function () {
         s.lbworkid = null
         s.$broadcast("blur")
         // s.show_autocomplete = false
@@ -941,7 +937,7 @@ littb.controller("autocompleteCtrl", function(
         s.modal = null
     }
 
-    s.onSelect = function(val) {
+    s.onSelect = function (val) {
         c.log("scope", s)
         if (!isDev) {
             backend.logQuicksearch(prevFilter, val.label)
@@ -956,10 +952,10 @@ littb.controller("autocompleteCtrl", function(
         }
     }
 
-    s.autocomplete = function(val) {
+    s.autocomplete = function (val) {
         if (val) {
             prevFilter = val
-            return backend.autocomplete(val).then(function(data) {
+            return backend.autocomplete(val).then(function (data) {
                 console.log("data", data, val, s)
                 let menu = [
                     {
@@ -1108,7 +1104,7 @@ littb.controller("autocompleteCtrl", function(
                     })
                 }
 
-                menu = _.filter(menu, function(item) {
+                menu = _.filter(menu, function (item) {
                     // if !isDev and item.typeLabel == "[Red.]" then return false
                     const exp = new RegExp(`^${val}`, "gi")
                     // alt = new RegExp(val, "gi")
@@ -1122,7 +1118,7 @@ littb.controller("autocompleteCtrl", function(
         }
     }
 
-    const show = function() {
+    const show = function () {
         // s.show_autocomplete = true
 
         s.modal = $uibModal.open({
@@ -1136,7 +1132,7 @@ littb.controller("autocompleteCtrl", function(
     }
     // s.show_autocomplete = false
     s.$on("show_autocomplete", () => show())
-    return $($window).on("keyup", function(event) {
+    return $($window).on("keyup", function (event) {
         //tab
         if (event.which === 83 && !$("input:focus,textarea:focus,select:focus").length) {
             return s.$apply(() => show())
@@ -1147,7 +1143,7 @@ littb.controller("autocompleteCtrl", function(
     })
 })
 
-littb.controller("idCtrl", function($scope, backend, $routeParams, $location) {
+littb.controller("idCtrl", function ($scope, backend, $routeParams, $location) {
     const s = $scope
     _.extend(s, $routeParams)
     if (s.id) {
@@ -1161,14 +1157,14 @@ littb.controller("idCtrl", function($scope, backend, $routeParams, $location) {
 
     backend.getTitles("etext,faksimil", { to: 10000 }).then(titleArray => (s.data = titleArray))
 
-    s.idFilter = function(row) {
+    s.idFilter = function (row) {
         if (!s.id) {
             return true
         }
         return row.lbworkid === s.id
     }
 
-    s.rowFilter = function(row) {
+    s.rowFilter = function (row) {
         if (!s.titles.length) {
             return true
         }
@@ -1185,7 +1181,7 @@ littb.controller("idCtrl", function($scope, backend, $routeParams, $location) {
         )
     }
 
-    s.textareaChange = function(titles) {
+    s.textareaChange = function (titles) {
         s.id = ""
         s.titles = _.map(titles.split("\n"), row => _.str.strip(row.split("–")[1] || row))
     }
@@ -1256,12 +1252,12 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
     s.isOpen = false
     s.show_large = false
 
-    s.workinfoPromise.then(function() {
+    s.workinfoPromise.then(function () {
         c.log("workinfo", s.workinfo)
         const prov = backend.getProvenance(s.workinfo)
         const lic = backend.getLicense(s.workinfo)
 
-        $q.all([prov, lic]).then(function([provData, licenseData]) {
+        $q.all([prov, lic]).then(function ([provData, licenseData]) {
             let provtmpl = ""
             s.provenanceData = provData
             provtmpl = _.map(provData, prov => `<a href='${prov.link}'>${prov.fullname}</a>`).join(
@@ -1286,19 +1282,19 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
         )
     }
 
-    s.getValidAuthors = function() {
+    s.getValidAuthors = function () {
         if (!s.workinfo) {
             return
         }
         return s.workinfo.authors
     }
 
-    s.toggleErrata = function() {
+    s.toggleErrata = function () {
         s.errataLimit = s.isOpen ? 8 : 1000
         s.isOpen = !s.isOpen
     }
 
-    s.getUrl = function(mediatype) {
+    s.getUrl = function (mediatype) {
         if (!s.workinfo) {
             return
         }
@@ -1311,20 +1307,20 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
         return `/författare/${s.author}/titlar/${s.title}/${mediatype}`
     }
 
-    s.getSourceImage = function() {
+    s.getSourceImage = function () {
         if (s.workinfo) {
             return `/txt/${s.workinfo.lbworkid}/${s.workinfo.lbworkid}_small.jpeg`
         }
     }
 
-    s.showLargeImage = function($event) {
+    s.showLargeImage = function ($event) {
         if (s.show_large) {
             return
         }
         s.show_large = true
         $event.stopPropagation()
 
-        $document.one("click", function(event) {
+        $document.one("click", function (event) {
             if (event.button !== 0) {
                 return
             }
@@ -1353,12 +1349,12 @@ littb.controller("sourceInfoCtrl", function sourceInfoCtrl(
     if (!s.mediatype) {
         s.mediatype = s.workinfo.mediatypes[0]
     }
-    authors.then(function([authorList, authorsById]) {
+    authors.then(function ([authorList, authorsById]) {
         s.authorsById = authorsById
     })
 })
 
-littb.controller("lexiconCtrl", function(
+littb.controller("lexiconCtrl", function (
     $scope,
     backend,
     $location,
@@ -1375,7 +1371,7 @@ littb.controller("lexiconCtrl", function(
 
     let modal = null
 
-    s.keydown = function(event) {
+    s.keydown = function (event) {
         if (event.keyCode === 40) {
             // down arrow
             // TODO: this is pretty bad but couldn't be done using the typeahead directive
@@ -1389,7 +1385,7 @@ littb.controller("lexiconCtrl", function(
         }
     }
 
-    s.showModal = function() {
+    s.showModal = function () {
         c.log("showModal", modal)
         s.lexemes = s.lex_article.lexemes
         if (!modal) {
@@ -1400,26 +1396,29 @@ littb.controller("lexiconCtrl", function(
                 scope: s
             })
 
-            modal.result.then(() => s.closeModal(), () => s.closeModal())
+            modal.result.then(
+                () => s.closeModal(),
+                () => s.closeModal()
+            )
         }
     }
 
     s.clickX = () => modal.close()
 
-    s.closeModal = function() {
+    s.closeModal = function () {
         s.lex_article = null
         s.lexid = null
         modal = null
     }
 
-    const reportDictError = function() {
+    const reportDictError = function () {
         s.$emit("notify", "Hittade inget uppslag")
         s.dict_searching = false
     }
 
     s.lexid = null
 
-    $rootScope.$on("search_dict", function(event, lemma, id, doSearchId) {
+    $rootScope.$on("search_dict", function (event, lemma, id, doSearchId) {
         c.log("search_dict event", lemma, id, doSearchId)
         if (doSearchId) {
             s.lexid = false
@@ -1428,12 +1427,12 @@ littb.controller("lexiconCtrl", function(
         s.dict_searching = true
 
         const def = backend.searchLexicon(lemma, id, false, doSearchId, true)
-        def.catch(function() {
+        def.catch(function () {
             c.log("searchLexicon catch")
             reportDictError()
         })
 
-        def.then(function(data) {
+        def.then(function (data) {
             c.log("searchLexicon then", data)
             s.dict_searching = false
 
@@ -1455,7 +1454,7 @@ littb.controller("lexiconCtrl", function(
         })
     })
 
-    s.getWords = function(val) {
+    s.getWords = function (val) {
         c.log("getWords", val)
         if (!val) {
             return
@@ -1463,7 +1462,7 @@ littb.controller("lexiconCtrl", function(
         s.dict_searching = true
         const def = backend.searchLexicon(val, null, true)
         const timeout = $timeout(angular.noop, 800)
-        def.catch(function() {
+        def.catch(function () {
             s.dict_searching = false
             reportDictError()
         })

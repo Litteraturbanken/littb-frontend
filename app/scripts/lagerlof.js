@@ -8,7 +8,7 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-littb.controller("textjamforelseCtrl", function(
+littb.controller("textjamforelseCtrl", function (
     $scope,
     $animate,
     $rootScope,
@@ -114,13 +114,13 @@ littb.controller("textjamforelseCtrl", function(
 
     // $animate.enabled(false)
 
-    const makeHTMLold = function(data, myWits) {
-        const cleanAppsNew = function(data, myWits) {
+    const makeHTMLold = function (data, myWits) {
+        const cleanAppsNew = function (data, myWits) {
             // build wit filter and split cache
             let c1, c2, c3, c4, c5, c6
             const filterCache = {}
             const splitCache = {}
-            var makeCache = function(k0, v0, i0, stop) {
+            var makeCache = function (k0, v0, i0, stop) {
                 let i = i0
                 while (i <= stop) {
                     const wit = `w${i}`
@@ -155,7 +155,7 @@ littb.controller("textjamforelseCtrl", function(
             let skipToAppEnd = false
             let c0 = (c1 = c2 = c3 = c4 = c5 = c6 = 0)
 
-            const mergeApps = function(app1, app2) {
+            const mergeApps = function (app1, app2) {
                 let rdg1, rdg2
                 let app1len = app1.length
                 const app2len = app2.length
@@ -167,7 +167,7 @@ littb.controller("textjamforelseCtrl", function(
                     app2len > 1 &&
                     app2len === app1len &&
                     (app2len === 2 ||
-                        (function() {
+                        (function () {
                             for (let rdg1 of Array.from(app1)) {
                                 let appHasWit = false
                                 for (let rdg2 of Array.from(app2)) {
@@ -388,7 +388,7 @@ littb.controller("textjamforelseCtrl", function(
             return apps
         }
 
-        const makeHtmlFromApps = function(apps) {
+        const makeHtmlFromApps = function (apps) {
             // make html
             let wit
             let html = ""
@@ -406,7 +406,7 @@ littb.controller("textjamforelseCtrl", function(
 
             let doAddPageToContext = false
 
-            const startContext = function() {
+            const startContext = function () {
                 oddContext = !oddContext
                 if (oddContext) {
                     html += "<span class='koll-context odd'>"
@@ -417,7 +417,7 @@ littb.controller("textjamforelseCtrl", function(
                 return (doAddPageToContext = true)
             }
 
-            const endContext = function() {
+            const endContext = function () {
                 html += "</span>"
                 return (hasContext = false)
             }
@@ -559,7 +559,7 @@ littb.controller("textjamforelseCtrl", function(
         return html
     }
 
-    s.submit = function() {
+    s.submit = function () {
         c.log("submit textjamforelse")
         c.log("title", s.work.title)
         c.log("workgroup", s.work.workgroup)
@@ -592,7 +592,7 @@ littb.controller("textjamforelseCtrl", function(
         s.error = false
 
         backend.getDiff(workgroup, myWits, ...Array.from(ids)).then(
-            function(data) {
+            function (data) {
                 // c.time 'makeHTML all'
                 //c.profile 'makeHTML all'
 
@@ -610,7 +610,7 @@ littb.controller("textjamforelseCtrl", function(
             //c.profileEnd 'makeHTML all'
             // c.timeEnd('makeHTML all');
 
-            function(reason) {
+            function (reason) {
                 s.loading = false
                 return (s.error = true)
             }
@@ -625,7 +625,7 @@ littb.controller("textjamforelseCtrl", function(
     }
     // s.showBulk = false # reset showBulk
 
-    const substr10bulks = function(startIndex, html) {
+    const substr10bulks = function (startIndex, html) {
         const start = nthIndexOf(html, "<span class='bulk'", startIndex)
         const end = nthIndexOf(html, "<span class='bulk'", startIndex + 50)
         if (start === -1) {
@@ -638,7 +638,7 @@ littb.controller("textjamforelseCtrl", function(
         return html.substr(start, end)
     }
 
-    var nthIndexOf = function(str, subStr, n) {
+    var nthIndexOf = function (str, subStr, n) {
         let c = 0
         let i = -1
         while (true) {
@@ -649,7 +649,7 @@ littb.controller("textjamforelseCtrl", function(
         }
     }
 
-    var lastNthIndexOf = function(str, subStr, n) {
+    var lastNthIndexOf = function (str, subStr, n) {
         let c = 0
         let i = str.length
         while (true) {
@@ -660,7 +660,7 @@ littb.controller("textjamforelseCtrl", function(
         }
     }
 
-    s.changeBaseWit = function(wit) {
+    s.changeBaseWit = function (wit) {
         let preWitChangeOffset
         if (contextVersionsContext) {
             // keep track of the context offset to adjust window scrollTop after change
@@ -673,7 +673,7 @@ littb.controller("textjamforelseCtrl", function(
 
         if (contextVersionsContext) {
             // adjust scrollTop after base wit change takes place
-            return $timeout(function() {
+            return $timeout(function () {
                 // scroll context at same offset as before
                 scrollToElem(contextVersionsContext, preWitChangeOffset)
                 return repositionContextVersionsDiv()
@@ -685,7 +685,7 @@ littb.controller("textjamforelseCtrl", function(
 
     var scrollToElem = (elem, offset) => $($window).scrollTop(elem.offset().top - offset)
 
-    s.onClickOutsideContextVersionsDiv = function(evt) {
+    s.onClickOutsideContextVersionsDiv = function (evt) {
         if (s.contextVersions) {
             // first click outside
             return s.closeContextVersionsDiv()
@@ -696,15 +696,15 @@ littb.controller("textjamforelseCtrl", function(
         }
     }
 
-    s.closeContextVersionsDiv = function() {
+    s.closeContextVersionsDiv = function () {
         if (s.contextVersions) {
             $("#context-versions-div").hide()
             return (s.contextVersions = null)
         }
     }
 
-    s.showContextVersionsDiv = function(contextSpan) {
-        const contextVersionsHtml = function() {
+    s.showContextVersionsDiv = function (contextSpan) {
+        const contextVersionsHtml = function () {
             let wit
             const result = (() => {
                 const result1 = []
@@ -766,7 +766,7 @@ littb.controller("textjamforelseCtrl", function(
     var removeContextHighlightStyle = elem => (elem.style.backgroundColor = "")
     // $(elem).removeClass('highlight')
 
-    var repositionContextVersionsDiv = function(contextRect) {
+    var repositionContextVersionsDiv = function (contextRect) {
         const div = $("#context-versions-div")
         if (!contextRect) {
             contextRect = contextVersionsContext[0].getBoundingClientRect()
@@ -792,7 +792,7 @@ littb.controller("textjamforelseCtrl", function(
         }
     }
 
-    s.highlightVersionsDivChanges = function(evt) {
+    s.highlightVersionsDivChanges = function (evt) {
         const i = $(evt.target).index() + 1
         const e = $("#context-versions-div").find(`.context > :nth-child(${i})`)
         return e.toggleClass("highlight")
@@ -800,7 +800,7 @@ littb.controller("textjamforelseCtrl", function(
 
     s.unhighlightVersionsDivChanges = evt => $(".koll-changed.highlight").removeClass("highlight")
 
-    s.showInText = function(evt, doShow) {
+    s.showInText = function (evt, doShow) {
         // c.log 'showInText', evt
         if (doShow == null) {
             doShow = true
@@ -820,7 +820,7 @@ littb.controller("textjamforelseCtrl", function(
         )
     }
 
-    const showDiffDiv = function(changedSpan) {
+    const showDiffDiv = function (changedSpan) {
         let html = ""
         const sorted = _.sortBy(changedSpan.children(), "className")
         for (let witElem of Array.from(sorted)) {
@@ -949,7 +949,7 @@ CollateX för kollationeringssteget.</p>
 
     //# setup jquery event handlers for displaying differences in the text, etc.
     $("#koll-text")
-        .on("click", ".koll-context", function(evt) {
+        .on("click", ".koll-context", function (evt) {
             const target = evt.currentTarget
             if (
                 contextVersionsContext === null ||
@@ -960,7 +960,7 @@ CollateX för kollationeringssteget.</p>
                 return evt.stopPropagation()
             } // keep ContextVersionsDiv from immediately hiding again
         })
-        .on("mouseover", ".koll-changed", function() {
+        .on("mouseover", ".koll-changed", function () {
             return showDiffDiv($(this))
         })
         .on("mouseout", ".koll-changed", () => $("#diff-div").hide())

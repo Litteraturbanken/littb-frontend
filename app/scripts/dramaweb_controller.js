@@ -60,7 +60,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         window.location.search = ""
     }
 
-    const updateRoute = function() {
+    const updateRoute = function () {
         s.showpage = $location.path().split("/")[2] || "start"
         s.isStartPage = s.showpage === "start"
         // s.$root.dramasubpage = !s.isStartPage
@@ -71,14 +71,14 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
     }
 
     updateRoute()
-    s.$on("$routeChangeError", function(event, current, prev, rejection) {
+    s.$on("$routeChangeError", function (event, current, prev, rejection) {
         console.log("routeChangeError", event, current, prev, rejection)
         // _.extend s, current.pathParams
         updateRoute()
     })
 
     s.filterDirty = {}
-    s.onDropdownToggle = function(isOpen) {
+    s.onDropdownToggle = function (isOpen) {
         console.log("onDropdownToggle", isOpen)
 
         if (!isOpen && _.keys(s.filterDirty).length) {
@@ -92,7 +92,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         }
     }
 
-    s.onMediatypeChange = function() {
+    s.onMediatypeChange = function () {
         if (s.filters.mediatype === "all") {
             s.filters.mediatype = ""
         }
@@ -166,7 +166,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
                         $location.search().titlepath
                     )
 
-                    s.workinfoPromise.then(function(workinfo) {
+                    s.workinfoPromise.then(function (workinfo) {
                         s.workinfo = workinfo
                         const about_modal = $uibModal.open({
                             templateUrl: "sourceInfoModal.html",
@@ -175,11 +175,11 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
                         })
 
                         about_modal.result.then(
-                            function() {
+                            function () {
                                 s.show_about = false
                                 $location.search({ authorid: null, titlepath: null })
                             },
-                            function() {
+                            function () {
                                 s.show_about = false
                                 $location.search({ authorid: null, titlepath: null })
                             }
@@ -196,38 +196,38 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         }
     ])
 
-    authors.then(function([authorList, authorsById]) {
+    authors.then(function ([authorList, authorsById]) {
         s.authorsById = authorsById
         s.authorList = authorList
     })
     s.authorSelectSetup = util.getAuthorSelectConf(s)
 
-    s.onAuthorChange = _.once(function() {
+    s.onAuthorChange = _.once(function () {
         console.log("onAuthorChange", $location.search().author)
         if ($location.search().author) {
             s.filters.author = $location.search().author
         }
     })
 
-    s.onGenderChange = _.once(function() {
+    s.onGenderChange = _.once(function () {
         console.log("$location.search().gender", $location.search().gender)
         if ($location.search().gender) {
             s.filters.gender = $location.search().gender
         }
     })
 
-    s.onRadioClick = function(newType) {
+    s.onRadioClick = function (newType) {
         c.log("onRadioClick", s.listType)
         s.listType = newType
     }
 
     s.listType = "pjäser"
 
-    s.formatInterval = function([from, width]) {
+    s.formatInterval = function ([from, width]) {
         return `${from}–${width + from}`
     }
 
-    s.getAuthor = function(author) {
+    s.getAuthor = function (author) {
         let [last, first] = author.name_for_index.split(",")
 
         if (first) {
@@ -239,7 +239,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         return _.compact([`<span class='sc'>${last}</span>`, first]).join(",")
     }
 
-    s.authorFilter = function(author) {
+    s.authorFilter = function (author) {
         if (s.filters.gender && s.filters.gender !== "all") {
             return s.filters.gender === author.gender
         }
@@ -258,8 +258,8 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
         return true
     }
 
-    s.getFilteredRows = _.throttle(function() {
-        const ret = _.filter(s.rows, function(item) {
+    s.getFilteredRows = _.throttle(function () {
+        const ret = _.filter(s.rows, function (item) {
             // if not (_.filter item.authors, (auth) -> auth.gender == s.filters.gender).length
             //     # return false
             if (
@@ -328,7 +328,7 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
 
     backend.getDramawebTitles().then(data => {
         s.rows = util.sortTitles(data.works)
-        authors.then(function() {
+        authors.then(function () {
             s.authorData = _.map(data.authors, authorid => s.authorsById[authorid])
             s.authorData = util.sortAuthors(s.authorData)
         })

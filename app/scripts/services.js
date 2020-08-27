@@ -21,7 +21,7 @@ if (
 littb.factory(
     "debounce",
     $timeout =>
-        function(func, wait, options) {
+        function (func, wait, options) {
             let leading
             let args = null
             let inited = null
@@ -30,7 +30,7 @@ littb.factory(
             let timeoutDeferred = null
             let trailing = true
 
-            const delayed = function() {
+            const delayed = function () {
                 inited = timeoutDeferred = null
                 if (trailing) {
                     result = func.apply(thisArg, args)
@@ -43,7 +43,7 @@ littb.factory(
                 ;({ leading } = options)
                 trailing = "trailing" in options ? options.trailing : trailing
             }
-            return function() {
+            return function () {
                 args = arguments
                 thisArg = this
                 $timeout.cancel(timeoutDeferred)
@@ -60,14 +60,14 @@ littb.factory(
 
 // writeDownloadableUrl = (toWorkObj) ->
 
-const expandMediatypes = function(works, mainMediatype) {
+const expandMediatypes = function (works, mainMediatype) {
     const order = ["etext", "faksimil", "epub", "pdf", "infopost"]
     const groups = _.groupBy(works, item => item.titlepath + item.lbworkid)
     const output = []
     const getMainAuthor = metadata =>
         (metadata.work_authors || metadata.authors || [metadata.main_author])[0]
 
-    const makeObj = function(metadata) {
+    const makeObj = function (metadata) {
         if (metadata.mediatype === "pdf") {
             return {
                 label: metadata.mediatype,
@@ -84,11 +84,9 @@ const expandMediatypes = function(works, mainMediatype) {
         } else {
             return {
                 label: metadata.mediatype,
-                url: `/författare/${
-                    getMainAuthor(metadata).authorid
-                }/titlar/${metadata.work_titleid || metadata.titleid}/sida/${
-                    metadata.startpagename
-                }/${metadata.mediatype}`,
+                url: `/författare/${getMainAuthor(metadata).authorid}/titlar/${
+                    metadata.work_titleid || metadata.titleid
+                }/sida/${metadata.startpagename}/${metadata.mediatype}`,
                 imported: metadata.imported,
                 export: _.map(metadata.export, exp => {
                     exp.lbworkid = metadata.lbworkid
@@ -101,7 +99,7 @@ const expandMediatypes = function(works, mainMediatype) {
 
     for (let key in groups) {
         let group = groups[key]
-        const sortWorks = function(work) {
+        const sortWorks = function (work) {
             if (mainMediatype && work.mediatype === mainMediatype) {
                 return -10
             } else {
@@ -121,8 +119,9 @@ const expandMediatypes = function(works, mainMediatype) {
             if (work.has_epub) {
                 mediatypes.push({
                     label: "epub",
-                    url: `txt/epub/${getMainAuthor(work).authorid}_${work.work_titleid ||
-                        work.titleid}.epub`,
+                    url: `txt/epub/${getMainAuthor(work).authorid}_${
+                        work.work_titleid || work.titleid
+                    }.epub`,
                     downloadable: true
                 })
                 break
@@ -143,11 +142,11 @@ const expandMediatypes = function(works, mainMediatype) {
     return output
 }
 
-littb.factory("backend", function($http, $q, util, $timeout, $sce) {
+littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
     // $http.defaults.transformResponse = (data, headers) ->
     // localStorageCache = $angularCacheFactory "localStorageCache",
     //     storageMode: 'localStorage'
-    const parseHTML = function(data) {
+    const parseHTML = function (data) {
         let html = null
         let tmp = null
         if (!data || typeof data !== "string") {
@@ -168,7 +167,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         return html
     }
 
-    const http = function(config) {
+    const http = function (config) {
         const defaultConfig = {
             method: "GET",
             params: {
@@ -197,7 +196,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: `${STRIX_URL}/get_audio`,
                 params: params || {}
-            }).then(function(response) {
+            }).then(function (response) {
                 const audioList = response.data.data
                 for (let i = 0; i < audioList.length; i++) {
                     const item = audioList[i]
@@ -268,7 +267,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: `${STRIX_URL}/list_all/etext-part,faksimil-part`,
                 params
-            }).then(function(response) {
+            }).then(function (response) {
                 c.log("getParts data", response)
                 let { data, hits, author_aggregation } = response.data
                 return {
@@ -287,7 +286,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: `${STRIX_URL}/list_all/author`,
                 params
-            }).then(function(response) {
+            }).then(function (response) {
                 c.log("response", response)
                 const { data } = response.data
 
@@ -330,7 +329,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: `${STRIX_URL}/list_all/${types}` + (author || ""),
                 params
-            }).then(function(response) {
+            }).then(function (response) {
                 c.log("response", response)
                 const { data, author_aggregation, hits, distinct_hits, suggest } = response.data
 
@@ -380,7 +379,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 method: "GET",
                 cache: true,
                 params
-            }).success(function(response) {
+            }).success(function (response) {
                 c.log("getAuthorList", response)
                 return def.resolve(response.data)
             })
@@ -399,7 +398,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: "/red/etc/provenance/provenance.json",
                 cache: true
-            }).then(function(response) {
+            }).then(function (response) {
                 const provData = []
                 const iterable = workinfo.provenance || []
                 for (let i = 0; i < iterable.length; i++) {
@@ -446,7 +445,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 url,
                 params
             })
-                .success(function(response) {
+                .success(function (response) {
                     let workinfo
                     if (response.hits === 0) {
                         def.reject("not_found")
@@ -489,15 +488,12 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     workinfo.errata = $("tr", workinfo.errata)
                         .get()
                         .map(tr =>
-                            _($(tr).find("td"))
-                                .map(util.getInnerXML)
-                                .map(_.str.strip)
-                                .value()
+                            _($(tr).find("td")).map(util.getInnerXML).map(_.str.strip).value()
                         )
 
                     workinfo.partStartArray = _(workinfo.parts)
                         .map(part => [workinfo.pagemap[`page_${part.startpagename}`], part])
-                        .sortBy(function([i, part]) {
+                        .sortBy(function ([i, part]) {
                             return i
                         })
                         .value()
@@ -518,7 +514,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     authorid,
                     titlepath
                 }
-            }).then(function(response) {
+            }).then(function (response) {
                 console.log("response.data.data", response.data.data)
                 let { data } = response.data
 
@@ -593,7 +589,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         getBackgroundConf() {
             return http({
                 url: "/red/bilder/bakgrundsbilder/backgrounds.xml"
-            }).then(function(response) {
+            }).then(function (response) {
                 const output = {}
                 for (let node of Array.from($("background", response.data))) {
                     output[$(node).attr("target")] = {
@@ -610,7 +606,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: `${STRIX_URL}/get_author/` + authorid
             }).then(
-                function(response) {
+                function (response) {
                     const auth = response.data.data
 
                     // for auth in data
@@ -648,7 +644,10 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: `${STRIX_URL}/list_all/${textType}/${authorid}`,
                 params
-            }).then(response => expandMediatypes(response.data.data), err => c.log("err", err))
+            }).then(
+                response => expandMediatypes(response.data.data),
+                err => c.log("err", err)
+            )
         },
 
         getPartsInOthersWorks(authorid, sortkey, list_about) {
@@ -673,7 +672,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         getStats() {
             return $http({
                 url: `${STRIX_URL}/get_stats`
-            }).then(function(response) {
+            }).then(function (response) {
                 c.log("response", response)
                 return response.data
             })
@@ -746,7 +745,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             return $http({
                 url: `${STRIX_URL}/list_all/etext,faksimil,pdf,infopost`,
                 params
-            }).then(function(response) {
+            }).then(function (response) {
                 const titles = response.data.data
 
                 return {
@@ -791,7 +790,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 // transformResponse : (data, headers) ->
                 //     c.log "transformResponse", data, headers
             })
-                .success(function(xml) {
+                .success(function (xml) {
                     c.log("searchLexicon success", xml)
 
                     if ($(xml).text() === "Inga träffar") {
@@ -803,15 +802,13 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                         .get()
                         .map(article => ({
                             baseform: $("grundform-clean:first", article).text(),
-                            id: $("lemma", article)
-                                .first()
-                                .attr("id"),
+                            id: $("lemma", article).first().attr("id"),
                             // lexemes : (_.map $("lexem", article), util.getInnerXML).join("\n")
                             lexemes: util.getInnerXML(article)
                         }))
 
                     // window.output = output
-                    output = _.sortBy(output, function(item) {
+                    output = _.sortBy(output, function (item) {
                         if (item.baseform === str) {
                             return "aaaaaaaaa"
                         }
@@ -843,7 +840,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     username: "app",
                     wf
                 }
-            }).success(function(xml) {
+            }).success(function (xml) {
                 const output = $("entry", xml)
                     .get()
                     .map(entry => ({
@@ -866,7 +863,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                 url,
                 transformResponse: null
             })
-                .success(function(xml) {
+                .success(function (xml) {
                     const output = xml
                     return def.resolve(output)
                 })
@@ -919,7 +916,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
                     url,
                     params: ""
                 })
-                    .success(function(xml) {
+                    .success(function (xml) {
                         const data = []
                         for (let entry of $("glossentry", xml)) {
                             const pages = []
@@ -959,14 +956,10 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
             // let size_vals = SIZE_VALS
             const filename = _.str.lpad(ix, 5, "0")
             const url = `txt/${lbworkid}/ocr_${filename}.html`
-            return this.getHtmlFile(url).then(function(response) {
+            return this.getHtmlFile(url).then(function (response) {
                 const html = response.data.querySelector("body > div")
                 // c.log $(html)
-                const overlayWidth = Number(
-                    $(html)
-                        .data("size")
-                        .split("x")[0]
-                )
+                const overlayWidth = Number($(html).data("size").split("x")[0])
                 if (window.devicePixelRatio == 2) {
                     //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
                     //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
@@ -1013,7 +1006,7 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
         autocomplete(filterstr) {
             return $http({
                 url: `${STRIX_URL}/autocomplete/${filterstr}`
-            }).then(function(response) {
+            }).then(function (response) {
                 // c.log "autocomplete response", response
                 let data
                 const content = response.data
@@ -1094,12 +1087,12 @@ littb.factory("backend", function($http, $q, util, $timeout, $sce) {
     }
 })
 
-littb.factory("bkgConf", function(backend) {
+littb.factory("bkgConf", function (backend) {
     const confPromise = backend.getBackgroundConf()
 
     return {
         get(page) {
-            return confPromise.then(function(conf) {
+            return confPromise.then(function (conf) {
                 c.log("conf", conf, page)
 
                 if (conf[page]) {
@@ -1117,7 +1110,7 @@ littb.factory("bkgConf", function(backend) {
     }
 })
 
-littb.factory("authors", function(backend, $q) {
+littb.factory("authors", function (backend, $q) {
     let exclude
     const def = $q.defer()
     // @promise = def.promise
@@ -1127,13 +1120,13 @@ littb.factory("authors", function(backend, $q) {
             (exclude =
                 "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources")
         )
-        .then(function(authors) {
+        .then(function (authors) {
             let authorsById = _.fromPairs(_.map(authors, item => [item.authorid, item]))
             // c.log "authorsById", authorsById
 
             if (isDev) {
                 authorsById = new Proxy(authorsById, {
-                    get: function(obj, key) {
+                    get: function (obj, key) {
                         if (key != "undefined" && key && !obj[key]) {
                             console.warn("ID missing in author database:", key)
                         } else {
@@ -1149,7 +1142,7 @@ littb.factory("authors", function(backend, $q) {
     return def.promise
 })
 
-littb.factory("SearchData", function(backend, $q, $http, $location) {
+littb.factory("SearchData", function (backend, $q, $http, $location) {
     let SearchData
     return (SearchData = class SearchData {
         constructor() {
@@ -1430,11 +1423,11 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
                 traffslut: _.last(matches).attrs.wid
             })
 
-            let merged = _(matchParams).reduce(function(obj1, obj2) {
+            let merged = _(matchParams).reduce(function (obj1, obj2) {
                 if (!obj1) {
                     return {}
                 }
-                return _.merge({}, obj1, obj2, function(a, b) {
+                return _.merge({}, obj1, obj2, function (a, b) {
                     if (!a) {
                         return b
                     }
@@ -1454,10 +1447,7 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
 
             merged["s_lbworkid"] = metadata.lbworkid
             merged.hit_index = index
-            merged = _(merged)
-                .toPairs()
-                .invokeMap("join", "=")
-                .join("&")
+            merged = _(merged).toPairs().invokeMap("join", "=").join("&")
 
             const author = metadata.authors[0].authorid
             const titleid = metadata.titleid
@@ -1508,7 +1498,7 @@ littb.factory("SearchData", function(backend, $q, $http, $location) {
 
 // return new SearchData()
 
-littb.factory("SearchWorkData", function(SearchData, $q, $http) {
+littb.factory("SearchWorkData", function (SearchData, $q, $http) {
     // c.log "searchWorkData", SearchData
     let SearchWorkData
     return (SearchWorkData = class SearchWorkData extends SearchData {
@@ -1565,7 +1555,7 @@ littb.factory("SearchWorkData", function(SearchData, $q, $http) {
             }
 
             const self = this
-            source.onerror = function(event) {
+            source.onerror = function (event) {
                 c.log("eventsource closed", event)
                 this.close()
                 self.scope.$apply(() => (self.isCounting = false))

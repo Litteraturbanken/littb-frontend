@@ -10,7 +10,7 @@ function sortBy(list, field, dir) {
     }
     return _.orderBy(
         list,
-        function(item) {
+        function (item) {
             const transpose = char => trans[char] || char
             return _.map(_.get(item, field).toUpperCase(), transpose).join("")
         },
@@ -24,7 +24,7 @@ littb.factory("util", function util($location, $filter) {
     const MOZ_HACK_REGEXP = /^moz([A-Z])/
     const camelCase = name =>
         name
-            .replace(SPECIAL_CHARS_REGEXP, function(_, separator, letter, offset) {
+            .replace(SPECIAL_CHARS_REGEXP, function (_, separator, letter, offset) {
                 if (offset) {
                     return letter.toUpperCase()
                 } else {
@@ -33,7 +33,7 @@ littb.factory("util", function util($location, $filter) {
             })
             .replace(MOZ_HACK_REGEXP, "Moz$1")
 
-    const xml2Str = function(xmlNode) {
+    const xml2Str = function (xmlNode) {
         try {
             // Gecko- and Webkit-based browsers (Firefox, Chrome), Opera.
             return new XMLSerializer().serializeToString(xmlNode)
@@ -67,7 +67,7 @@ littb.factory("util", function util($location, $filter) {
         },
 
         titleSort(a) {
-            return _.map(a.sortkey.split(/(\d+)/), function(item) {
+            return _.map(a.sortkey.split(/(\d+)/), function (item) {
                 if (Number(item)) {
                     const zeroes = _.map(
                         _.range(0, 10 - item.toString().length + 1),
@@ -242,7 +242,7 @@ littb.factory("util", function util($location, $filter) {
                 scope.$watch(
                     watch,
                     ((obj, watch) =>
-                        function(val) {
+                        function (val) {
                             // c.log "before val", scope.$eval watch
                             val = (obj.val_out || _.identity)(val)
                             if (val === obj.default) {
@@ -262,7 +262,7 @@ littb.factory("util", function util($location, $filter) {
         },
 
         setupHash(scope, ...nameConfig) {
-            const names = _.map(nameConfig, function(item) {
+            const names = _.map(nameConfig, function (item) {
                 if (_.isObject(item)) {
                     return _.head(_.toPairs(item))[0]
                 } else {
@@ -285,7 +285,7 @@ littb.factory("util", function util($location, $filter) {
                 scope.$watch(
                     name,
                     (name =>
-                        function(val) {
+                        function (val) {
                             $location.search(name, val || null)
                             if (callback) {
                                 return callback(val)

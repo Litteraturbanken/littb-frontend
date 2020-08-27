@@ -1,4 +1,4 @@
-littb.controller("readingCtrl", function(
+littb.controller("readingCtrl", function (
     $scope,
     backend,
     $routeParams,
@@ -61,12 +61,12 @@ littb.controller("readingCtrl", function(
     s.showFocusBar = true
     s.isOcr = () => $location.search().ocr != null
 
-    s.activateFocus = function() {
+    s.activateFocus = function () {
         s.isFocus = true
         s.showFocusBar = true
     }
 
-    s.hasSearchable = function(authorid) {
+    s.hasSearchable = function (authorid) {
         if (!authorid || !s.authorById) {
             return
         }
@@ -75,12 +75,12 @@ littb.controller("readingCtrl", function(
 
     s.closeFocus = event => (s.isFocus = false)
 
-    s.incrFontSize = function(event, fac) {
+    s.incrFontSize = function (event, fac) {
         event.stopPropagation()
         s.fontSizeFactor += fac
     }
 
-    s.getFontSizeFactor = function() {
+    s.getFontSizeFactor = function () {
         if (s.isFocus) {
             return s.fontSizeFactor
         } else {
@@ -88,7 +88,7 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.getTransform = function() {
+    s.getTransform = function () {
         if (!s.isFocus) {
             return {}
         }
@@ -107,7 +107,7 @@ littb.controller("readingCtrl", function(
 
     s.openModal = () => (s.show_about = true)
 
-    s.onPartClick = function(startpage) {
+    s.onPartClick = function (startpage) {
         s.gotopage(startpage)
         s.showPopup = false
         s.show_chapters = false
@@ -118,7 +118,7 @@ littb.controller("readingCtrl", function(
 
     const thisRoute = $route.current
 
-    const changeHit = function(newHit) {
+    const changeHit = function (newHit) {
         c.log("newHit", newHit)
         const from_id = newHit.highlights[0].wid
         const to_id = _.last(newHit.highlights).wid
@@ -132,17 +132,17 @@ littb.controller("readingCtrl", function(
 
     s.prevHit = () => searchData.prev().then(changeHit)
 
-    s.close_hits = function() {
+    s.close_hits = function () {
         searchData.reset()
         s.resetHitMarkings()
         s.show_search_work = false
     }
 
-    const onKeyDown = function(event) {
+    const onKeyDown = function (event) {
         if (event.metaKey || event.ctrlKey || event.altKey) {
             return
         }
-        return s.$apply(function() {
+        return s.$apply(function () {
             switch (event.which) {
                 case 78: // n
                 case 39: // arrow right
@@ -172,7 +172,7 @@ littb.controller("readingCtrl", function(
 
     $document.on("keydown", onKeyDown)
 
-    s.getPage = function() {
+    s.getPage = function () {
         if (s.isEditor) {
             return $route.current.pathParams.ix
         } else {
@@ -180,7 +180,7 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.setPage = function(ix) {
+    s.setPage = function (ix) {
         s.pageix = ix
         s.pageToLoad = s.pagemap[`ix_${s.pageix}`]
     }
@@ -190,7 +190,7 @@ littb.controller("readingCtrl", function(
         return s.workinfo.stepmap[s.pageix] || s.workinfo.pagestep || 1
     }
 
-    s.nextPage = function(event) {
+    s.nextPage = function (event) {
         if (event != null) {
             event.preventDefault()
         }
@@ -213,7 +213,7 @@ littb.controller("readingCtrl", function(
     // else
     //     s.setPage(0)
 
-    s.prevPage = function(event) {
+    s.prevPage = function (event) {
         if (event != null) {
             event.preventDefault()
         }
@@ -233,7 +233,7 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.isBeforeStartpage = function(pageix) {
+    s.isBeforeStartpage = function (pageix) {
         if (s.isEditor) {
             return false
         }
@@ -244,7 +244,7 @@ littb.controller("readingCtrl", function(
         return pageix <= startix
     }
 
-    s.getFirstPageUrl = function() {
+    s.getFirstPageUrl = function () {
         const { search } = window.location
         if (s.isEditor) {
             let startpageix = s.startpage ? s.pagemap[`page_${s.startpage}`] : 0
@@ -256,7 +256,7 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.getPrevPageUrl = function() {
+    s.getPrevPageUrl = function () {
         if (!s.pagemap) {
             return
         }
@@ -270,7 +270,7 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.getNextPageUrl = function() {
+    s.getNextPageUrl = function () {
         if (!s.endpage) {
             return
         }
@@ -287,7 +287,7 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.getLastPageUrl = function() {
+    s.getLastPageUrl = function () {
         if (s.isEditor && !s.workinfo) {
             return ""
         } else if (s.isEditor) {
@@ -297,7 +297,7 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.getPageUrl = function(page) {
+    s.getPageUrl = function (page) {
         if (!page) {
             return ""
         }
@@ -310,7 +310,7 @@ littb.controller("readingCtrl", function(
         return `/författare/${author}/titlar/${title}/sida/${page}/${s.mediatype}` + suffix
     }
 
-    s.gotopage = function(page, event) {
+    s.gotopage = function (page, event) {
         s.showGotoInput = false
         c.log("preventDefault", page)
         if (event != null) {
@@ -325,7 +325,7 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.onGotoClick = function() {
+    s.onGotoClick = function () {
         if (s.showGotoInput) {
             s.showGotoInput = false
             return
@@ -334,7 +334,7 @@ littb.controller("readingCtrl", function(
         $timeout(() => s.$broadcast("focus"), 0)
     }
 
-    s.toStartPage = function(event) {
+    s.toStartPage = function (event) {
         if (event != null) {
             event.preventDefault()
         }
@@ -346,12 +346,12 @@ littb.controller("readingCtrl", function(
         }
     }
 
-    s.mouseover = function(event) {
+    s.mouseover = function (event) {
         c.log("mouseover")
         s.showPopup = true
     }
 
-    s.getTooltip = function(part) {
+    s.getTooltip = function (part) {
         if (part.navtitle !== part.showtitle) {
             return part.showtitle
         }
@@ -359,11 +359,11 @@ littb.controller("readingCtrl", function(
 
     const partStartsOnPage = part => s.pagemap[`page_${part.startpagename}`] === s.pageix
 
-    const getAllCurrentParts = function() {
+    const getAllCurrentParts = function () {
         if (!s.workinfo) {
             return
         }
-        return _.filter(s.workinfo.parts, function(part) {
+        return _.filter(s.workinfo.parts, function (part) {
             const startix = s.pagemap[`page_${part.startpagename}`]
             const endix = s.pagemap[`page_${part.endpagename}`]
             if (_.isUndefined(startix) || _.isUndefined(endix)) {
@@ -374,15 +374,15 @@ littb.controller("readingCtrl", function(
     }
 
     const findShortest = parts =>
-        _.min(parts, function(part) {
+        _.min(parts, function (part) {
             const startix = s.pagemap[`page_${part.startpagename}`]
             const endix = s.pagemap[`page_${part.endpagename}`]
             return endix - startix
         })
 
-    const getLastSeenPart = function(findIndex, filterEnded, ignoreCurrent) {
+    const getLastSeenPart = function (findIndex, filterEnded, ignoreCurrent) {
         const maybePart = _.last(
-            _.dropRightWhile(s.workinfo.partStartArray, function([startix, part]) {
+            _.dropRightWhile(s.workinfo.partStartArray, function ([startix, part]) {
                 if (part === ignoreCurrent) {
                     return true
                 } // always go back a part
@@ -403,11 +403,11 @@ littb.controller("readingCtrl", function(
 
         // we could be on a page between two parts
         // so find the last part that ended
-        const decorated = _.map(s.workinfo.partStartArray, function([i, part]) {
+        const decorated = _.map(s.workinfo.partStartArray, function ([i, part]) {
             return [findIndex - s.pagemap[`page_${part.endpagename}`], part]
         })
 
-        const [diff, part] = _.min(decorated, function([num, part]) {
+        const [diff, part] = _.min(decorated, function ([num, part]) {
             if (num < 0) {
                 return 10000
             } else {
@@ -417,7 +417,7 @@ littb.controller("readingCtrl", function(
         return part
     }
 
-    s.getCurrentPart = function() {
+    s.getCurrentPart = function () {
         if (!s.workinfo) {
             return
         }
@@ -427,7 +427,7 @@ littb.controller("readingCtrl", function(
             return
         }
 
-        const partStartingHere = _.find(s.workinfo.partStartArray, function([i, part]) {
+        const partStartingHere = _.find(s.workinfo.partStartArray, function ([i, part]) {
             return i === s.pageix
         })
 
@@ -435,7 +435,7 @@ littb.controller("readingCtrl", function(
         return getLastSeenPart(s.pageix, true)
     }
 
-    s.getNextPartUrl = function() {
+    s.getNextPartUrl = function () {
         if (!s.workinfo) {
             return
         }
@@ -443,7 +443,7 @@ littb.controller("readingCtrl", function(
         const findIndex = s.pageix + 1 // should always go one page fwd
 
         const next = _.first(
-            _.dropWhile(s.workinfo.partStartArray, function([i, part]) {
+            _.dropWhile(s.workinfo.partStartArray, function ([i, part]) {
                 return i < findIndex
             })
         )
@@ -460,7 +460,7 @@ littb.controller("readingCtrl", function(
         return s.getPageUrl(newPart.startpagename)
     }
 
-    s.getPrevPartUrl = function() {
+    s.getPrevPartUrl = function () {
         if (!s.workinfo) {
             return
         }
@@ -502,28 +502,28 @@ littb.controller("readingCtrl", function(
 
     s.toggleParallel = () => (s.isParallel = !s.isParallel)
 
-    s.supportsParallel = function() {
+    s.supportsParallel = function () {
         if (!s.workinfo) {
             return
         }
         return s.workinfo.mediatypes.includes("etext") && s.workinfo.mediatypes.includes("faksimil")
     }
 
-    s.getValidAuthors = function() {
+    s.getValidAuthors = function () {
         if (!s.authorById || !s.workinfo) {
             return
         }
         return s.workinfo.authors
     }
 
-    authors.then(function([authorData, authorById]) {
+    authors.then(function ([authorData, authorById]) {
         s.authorById = authorById
     })
 
     s.size = $location.search().size || 3
     c.log("s.size", s.size)
 
-    const recalcCoors = function(val) {
+    const recalcCoors = function (val) {
         if (!s.x) {
             return
         }
@@ -534,7 +534,7 @@ littb.controller("readingCtrl", function(
             const pairs = _.toPairs(_.pick(s, "x", "y", "height", "width"))
             s.coors.push(
                 _.fromPairs(
-                    _.map(pairs, function([key, val]) {
+                    _.map(pairs, function ([key, val]) {
                         return [key, val.split("|")[i].split(",")[s.size - 1]]
                     })
                 )
@@ -654,7 +654,7 @@ littb.controller("readingCtrl", function(
 
     const watches = []
     watches.push(
-        s.$watch("pageToLoad", function(val) {
+        s.$watch("pageToLoad", function (val) {
             // c.log "pagename", val
             let url
             if (val == null) {
@@ -696,7 +696,7 @@ littb.controller("readingCtrl", function(
     //     }
     // }
 
-    const initSourceInfo = function() {
+    const initSourceInfo = function () {
         let params
         if (s.isEditor) {
             params = {
@@ -711,7 +711,7 @@ littb.controller("readingCtrl", function(
 
         const def = backend.getSourceInfo(params, mediatype)
         s.workinfoPromise = def
-        def.then(function(workinfo) {
+        def.then(function (workinfo) {
             s.workinfo = workinfo
             s.pagemap = workinfo.pagemap
 
@@ -767,12 +767,12 @@ littb.controller("readingCtrl", function(
         return def
     }
 
-    const downloadPage = function(pageix) {
+    const downloadPage = function (pageix) {
         const filename = _.str.lpad(pageix, 5, "0")
         const id = $routeParams.lbid || s.workinfo.lbworkid
         const url = `txt/${id}/res_${filename}.html`
         const def = backend.getHtmlFile(url)
-        def.then(function(html) {
+        def.then(function (html) {
             // since we use hard line breaks, soft hyphen needs to be replaced by actual hyphen
             const xmlSerializer = new XMLSerializer()
             const childNodes = []
@@ -804,7 +804,7 @@ littb.controller("readingCtrl", function(
     }
 
     const infoDef = initSourceInfo()
-    const fetchPage = function(ix) {
+    const fetchPage = function (ix) {
         console.log("fetchPage", ix)
         if (mediatype === "etext") {
             return downloadPage(ix)
@@ -850,7 +850,7 @@ littb.controller("readingCtrl", function(
     const loadPage = val => {
         c.log("loadPage", val)
         infoDef.then(
-            function() {
+            function () {
                 if ($route.current.controller !== "readingCtrl") {
                     c.log("resisted page load")
                     return
@@ -879,7 +879,7 @@ littb.controller("readingCtrl", function(
                     promise = fetchPage(s.pageix)
                 }
 
-                promise.then(function(html) {
+                promise.then(function (html) {
                     c.log("onFirstLoad")
                     s.first_load = true
                     s.loading = false
@@ -889,7 +889,7 @@ littb.controller("readingCtrl", function(
                 if (mediatype === "faksimil" && s.workinfo.searchable) {
                     return backend
                         .fetchOverlayData(s.workinfo.lbworkid, s.pageix)
-                        .then(function([overlayHtml, overlayWidth]) {
+                        .then(function ([overlayHtml, overlayWidth]) {
                             // s.overlayFactors = overlayFactors
                             s.overlayWidth = overlayWidth
                             s.overlayHtml = overlayHtml
@@ -897,11 +897,11 @@ littb.controller("readingCtrl", function(
                 }
             },
 
-            function(err) {
+            function (err) {
                 c.log("page load error", err, $location.path(), val)
 
                 if (s.isEditor) {
-                    fetchPage(Number(val)).then(function() {})
+                    fetchPage(Number(val)).then(function () {})
                     s.loading = false
                     s.first_load = true
                 } else {
@@ -916,13 +916,13 @@ littb.controller("readingCtrl", function(
         )
     }
 
-    s.setSize = function(index) {
+    s.setSize = function (index) {
         c.log("setsize", index)
         s.size = index
         return loadPage(s.getPage())
     }
 
-    s.isSizeDisabled = function(isIncrement) {
+    s.isSizeDisabled = function (isIncrement) {
         if (s.isEditor || !s.sizes) {
             return false
         }
@@ -935,7 +935,7 @@ littb.controller("readingCtrl", function(
 
     watches.push(s.$watch("getPage()", debounce(loadPage, 200, { leading: false })))
 
-    s.$on("$destroy", function() {
+    s.$on("$destroy", function () {
         $document.off("keydown", onKeyDown)
         for (w of watches) {
             w()
@@ -944,16 +944,16 @@ littb.controller("readingCtrl", function(
 
     // # ORD OCH SAK
     backend.ordOchSak(author, title).then(
-        function(ordOchSak) {
+        function (ordOchSak) {
             s.ordOchSakAll = ordOchSak
             s.$watch("pagename", updateOrdOchSak)
             return updateOrdOchSak()
         },
-        function(error) {}
+        function (error) {}
     )
     // c.log 'failed to get ord och sak', error
 
-    var updateOrdOchSak = function() {
+    var updateOrdOchSak = function () {
         if (!s.ordOchSakAll || !s.pagename) {
             return
         }
@@ -975,7 +975,7 @@ littb.controller("readingCtrl", function(
 
     // # END ORD OCH SAK
 
-    s.$on("img_expand", function(evt, src) {
+    s.$on("img_expand", function (evt, src) {
         s.activeSrc = src
         $uibModal.open({
             templateUrl: "img_full.html",
@@ -1003,7 +1003,7 @@ littb.controller("readingCtrl", function(
             mediatype
         }
         s.search_query = query
-        const getScopeVars = function(args) {
+        const getScopeVars = function (args) {
             const output = {}
             if (args.word_form_only) {
                 output.lemma = true
@@ -1036,7 +1036,7 @@ littb.controller("readingCtrl", function(
         searchData.get(searchData.current).then(changeHit)
     }
 
-    s.onGotoHitInput = function() {
+    s.onGotoHitInput = function () {
         if (s.showGotoHitInput) {
             s.showGotoHitInput = false
             return
@@ -1045,7 +1045,7 @@ littb.controller("readingCtrl", function(
         return $timeout(() => s.$broadcast("focus"), 0)
     }
 
-    s.onGotoHit = function(hit) {
+    s.onGotoHit = function (hit) {
         if (hit > searchData.total_hits) {
             return
         }
@@ -1056,14 +1056,14 @@ littb.controller("readingCtrl", function(
         return searchData.get(hit).then(changeHit)
     }
 
-    s.openSearchWorks = function() {
+    s.openSearchWorks = function () {
         s.show_search_work = !s.show_search_work
         return $timeout(() => s.$broadcast("focus.search_work"), 0)
     }
 
     s.sliderActive = null
 
-    s.searchWork = function(query) {
+    s.searchWork = function (query) {
         c.log("searchWork", query)
 
         s.$root.prevSearchState = null
@@ -1100,7 +1100,7 @@ littb.controller("readingCtrl", function(
 
         searchData.newSearch(args)
         searchData.current = 0
-        return searchData.get(0).then(function(hit) {
+        return searchData.get(0).then(function (hit) {
             c.log("hit", hit)
             if (!hit) {
                 return

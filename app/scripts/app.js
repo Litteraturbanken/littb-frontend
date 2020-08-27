@@ -26,7 +26,7 @@ if (location.hash.length && _.startsWith(location.hash, "#!%2F")) {
     location.hash = _.str.lstrip(location.hash, "#")
 }
 
-window.safeApply = function(scope, fn) {
+window.safeApply = function (scope, fn) {
     if (scope.$$phase || scope.$root.$$phase) {
         fn(scope)
     } else {
@@ -34,12 +34,8 @@ window.safeApply = function(scope, fn) {
     }
 }
 
-$.fn.outerHTML = function() {
-    return $(this)
-        .clone()
-        .wrap("<div></div>")
-        .parent()
-        .html()
+$.fn.outerHTML = function () {
+    return $(this).clone().wrap("<div></div>").parent().html()
 }
 
 function onRouteReject() {
@@ -52,7 +48,7 @@ const authorResolve = [
     "$q",
     "$routeParams",
     "$route",
-    function($q, $routeParams, $route) {
+    function ($q, $routeParams, $route) {
         const def = $q.defer()
         c.log("resolve", $routeParams, $route)
         if (
@@ -71,10 +67,7 @@ const authorResolve = [
     }
 ]
 
-window.getScope = () =>
-    $("#mainview")
-        .children()
-        .scope()
+window.getScope = () => $("#mainview").children().scope()
 
 window.littb = angular
     .module("littbApp", [
@@ -95,7 +88,7 @@ window.littb = angular
         "dibari.angular-ellipsis",
         "rzModule"
     ])
-    .config(function($routeProvider) {
+    .config(function ($routeProvider) {
         window.Router = class Router {
             when(route, obj) {
                 if (!_.isArray(route)) {
@@ -147,7 +140,7 @@ window.littb = angular
                     "$http",
                     "util",
                     "$rootElement",
-                    function($scope, $routeParams, $http, util, $rootElement) {
+                    function ($scope, $routeParams, $http, util, $rootElement) {
                         c.log("presentation ctrl init")
                         $rootElement.addClass("page-presentation")
                         $rootElement.addClass("subpage")
@@ -158,15 +151,10 @@ window.littb = angular
 
                         return $http
                             .get(`/red/presentationer/${$routeParams.folder}/${$routeParams.doc}`)
-                            .success(function(data) {
+                            .success(function (data) {
                                 $scope.doc = data
-                                $scope.title = $(`<root>${data}</root>`)
-                                    .find("h1")
-                                    .text()
-                                $scope.title = $scope.title
-                                    .split(" ")
-                                    .slice(0, 5)
-                                    .join(" ")
+                                $scope.title = $(`<root>${data}</root>`).find("h1").text()
+                                $scope.title = $scope.title.split(" ").slice(0, 5).join(" ")
                                 $scope.setTitle($scope.title)
                             })
                     }
@@ -177,7 +165,7 @@ window.littb = angular
                         "$routeParams",
                         "$route",
                         "$rootScope",
-                        function($q, $routeParams, $route, $rootScope) {
+                        function ($q, $routeParams, $route, $rootScope) {
                             console.log("$routeParams", $routeParams, routeStartCurrent, $route)
                             const def = $q.defer()
 
@@ -224,7 +212,7 @@ window.littb = angular
                         "$routeParams",
                         "$route",
                         "$rootScope",
-                        function($q, $routeParams, $route, $rootScope) {
+                        function ($q, $routeParams, $route, $rootScope) {
                             const def = $q.defer()
 
                             if (
@@ -253,7 +241,7 @@ window.littb = angular
                     "backend",
                     "$routeParams",
                     "$location",
-                    function($scope, backend, $routeParams, $location) {
+                    function ($scope, backend, $routeParams, $location) {
                         let legacyurl = "/pjas/" + $routeParams.legacyurl
                         backend.getDramawebTitles(legacyurl).then(({ works }) => {
                             if (works.length) {
@@ -273,7 +261,7 @@ window.littb = angular
                     "backend",
                     "$routeParams",
                     "$location",
-                    function($scope, backend, $routeParams, $location) {
+                    function ($scope, backend, $routeParams, $location) {
                         let legacyurl = "forfattare/" + $routeParams.legacyurl
 
                         backend.getLegacyAuthor(legacyurl).then(auth => {
@@ -304,7 +292,7 @@ window.littb = angular
                             "$q",
                             "$routeParams",
                             "$route",
-                            function($q, $routeParams, $route) {
+                            function ($q, $routeParams, $route) {
                                 const def = $q.defer()
                                 if (
                                     routeStartCurrent != null &&
@@ -438,7 +426,7 @@ window.littb = angular
                     "backend",
                     "$routeParams",
                     "$location",
-                    function($scope, backend, $routeParams, $location) {
+                    function ($scope, backend, $routeParams, $location) {
                         const params = {
                             authorid: $routeParams.author,
                             titlepath: $routeParams.title
@@ -485,9 +473,10 @@ window.littb = angular
                     redirectTo(routeParams, path, searchVars) {
                         return `/författare/${routeParams.author}/titlar/${
                             routeParams.title
-                        }/sida/${routeParams.pagename}/${{ e: "etext", f: "faksimil" }[
+                        }/sida/${routeParams.pagename}/${
+                            { e: "etext", f: "faksimil" }[routeParams.mediatype] ||
                             routeParams.mediatype
-                        ] || routeParams.mediatype}`
+                        }`
                     }
                 }
             )
@@ -512,7 +501,7 @@ window.littb = angular
                             "$routeParams",
                             "$route",
                             "$rootScope",
-                            function($q, $routeParams, $route, $rootScope) {
+                            function ($q, $routeParams, $route, $rootScope) {
                                 const def = $q.defer()
 
                                 if (_.isEmpty($routeParams)) {
@@ -561,7 +550,7 @@ window.littb = angular
                         "$q",
                         "$location",
                         "backend",
-                        function($q, $location, backend) {
+                        function ($q, $location, backend) {
                             if ($location.path().startsWith("/forfattare")) {
                                 // example urls we're rewriting here:
                                 // "/forfattare/:author/titlar/:title/sida/:pagename/:mediatype"
@@ -604,7 +593,7 @@ window.littb = angular
             })
     })
 
-littb.config(function($httpProvider, $locationProvider, $uibTooltipProvider) {
+littb.config(function ($httpProvider, $locationProvider, $uibTooltipProvider) {
     $locationProvider.html5Mode(true)
     $locationProvider.hashPrefix("!")
     delete $httpProvider.defaults.headers.common["X-Requested-With"]
@@ -613,7 +602,7 @@ littb.config(function($httpProvider, $locationProvider, $uibTooltipProvider) {
     })
 })
 
-littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
+littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
     c.log("run search params", $location.search())
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL
@@ -625,7 +614,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
     // just in case the above deferred fails.
     $timeout(() => $rootElement.addClass("ready").removeClass("not_ready"), 1000)
 
-    const stripClass = function(prefix) {
+    const stripClass = function (prefix) {
         const re = new RegExp(`\\ ?${prefix}\\-\\w+`, "g")
 
         let cls = $rootElement.attr("class")
@@ -637,13 +626,13 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
 
     $rootScope.goto = path => $location.url(path)
 
-    $rootScope.gotoExternal = function(path, event) {
+    $rootScope.gotoExternal = function (path, event) {
         event.preventDefault()
         event.stopPropagation()
         window.location = "https://litteraturbanken.se" + path
     }
 
-    $rootScope.setTitle = function(title) {
+    $rootScope.setTitle = function (title) {
         if (title) {
             title = title + " | Litteraturbanken"
         } else {
@@ -654,7 +643,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
 
     $rootScope.$on("$routeChangeStart", (event, next, current) => (routeStartCurrent = current))
 
-    $rootScope.$on("$routeChangeSuccess", function(event, newRoute, prevRoute) {
+    $rootScope.$on("$routeChangeSuccess", function (event, newRoute, prevRoute) {
         console.log("$routeChangeSuccess", window.location.pathname)
         window.gtag("config", window.gtagID, { page_path: window.location.pathname })
 
@@ -698,7 +687,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
 
         $("#confObjStyle").text("")
         stripClass("bkg")
-        bkgConf.get(path).then(function(confObj) {
+        bkgConf.get(path).then(function (confObj) {
             c.log("bkgConf", confObj)
             if (confObj) {
                 $("body").css({
@@ -726,7 +715,7 @@ littb.run(function($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
 littb.filter(
     "setMarkee",
     () =>
-        function(input, fromid, toid) {
+        function (input, fromid, toid) {
             if (!(fromid || toid)) {
                 return input
             }
@@ -737,16 +726,8 @@ littb.filter(
                 if (navigator.userAgent.search("Firefox") > -1) {
                     markee.parent().css("position", "relative")
                 }
-                if (
-                    $(`#${fromid}`, input)
-                        .next()
-                        .text() === "-"
-                ) {
-                    $(`#${fromid}`, input)
-                        .next()
-                        .next("br")
-                        .next()
-                        .addClass("markee")
+                if ($(`#${fromid}`, input).next().text() === "-") {
+                    $(`#${fromid}`, input).next().next("br").next().addClass("markee")
                 }
             } else {
                 $(`#${fromid}`, input)
@@ -766,28 +747,22 @@ littb.filter(
 littb.filter(
     "numberFmt",
     () =>
-        function(input) {
+        function (input) {
             if (!input) {
                 return input
             }
             if (input.toString().length < 5) {
                 return input
             }
-            input = _.map(
-                input
-                    .toString()
-                    .split("")
-                    .reverse(),
-                function(item, i) {
-                    if (!i) {
-                        return item
-                    }
-                    if (i % 3 === 0) {
-                        return [item, " "]
-                    }
+            input = _.map(input.toString().split("").reverse(), function (item, i) {
+                if (!i) {
                     return item
                 }
-            )
+                if (i % 3 === 0) {
+                    return [item, " "]
+                }
+                return item
+            })
 
             return _.flatten(input.reverse()).join("")
         }
@@ -811,7 +786,7 @@ function normalizeAuthorFilter() {
             )
         )
     )
-    return function(authorid) {
+    return function (authorid) {
         if (!authorid) {
             return
         }

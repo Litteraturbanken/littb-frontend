@@ -34,7 +34,7 @@ const getAuthorSelectSetup = (s, $filter) => ({
     // item.text
 })
 
-littb.controller("searchCtrl", function(
+littb.controller("searchCtrl", function (
     $scope,
     backend,
     $location,
@@ -56,7 +56,7 @@ littb.controller("searchCtrl", function(
     s.open = true
     let hasSearchInit = false
     s.auth_select_rendered = false
-    s.onAuthSelectRender = function() {
+    s.onAuthSelectRender = function () {
         c.log("onAuthSelectRender")
         s.auth_select_rendered = true
     }
@@ -87,7 +87,10 @@ littb.controller("searchCtrl", function(
     }
 
     const listKeys = _.pick($location.search(), "keywords", "languages", "authorkeyword")
-    _.extend(s.filters, _.mapValues(listKeys, val => val.split(",")))
+    _.extend(
+        s.filters,
+        _.mapValues(listKeys, val => val.split(","))
+    )
     s.filters = _.omitBy(s.filters, _.isNil)
     if ($location.search().forfattare) {
         s.filters["authors>authorid"] = $location.search().forfattare.split(",")
@@ -97,12 +100,12 @@ littb.controller("searchCtrl", function(
         refreshTitles()
     }
 
-    s.onAuthChange = _.once(function() {
+    s.onAuthChange = _.once(function () {
         console.log("onAuthChange", $location.search().forfattare)
         if ($location.search().forfattare) {
             let oldVal = $location.search().forfattare.split(",")
             authors.then(() => {
-                $timeout(function() {
+                $timeout(function () {
                     s.filters["authors>authorid"] = oldVal
                     // s.selectedAuthors = oldVal
                     $("select.author_select").val(oldVal)
@@ -112,12 +115,12 @@ littb.controller("searchCtrl", function(
         }
     })
 
-    s.onTitleChange = _.once(function() {
+    s.onTitleChange = _.once(function () {
         console.log("onTitleChange", $location.search().titlar)
         if ($location.search().titlar) {
             let oldVal = $location.search().titlar.split(",")
             authors.then(() => {
-                $timeout(function() {
+                $timeout(function () {
                     s.selectedTitles = oldVal
                     $("select.title_select").val(oldVal)
                     console.log("oldVal", oldVal)
@@ -129,7 +132,7 @@ littb.controller("searchCtrl", function(
 
     if ($location.search().keyword) {
         let oldVal = $location.search().keyword.split(",")
-        $timeout(function() {
+        $timeout(function () {
             s.selectedKeywords = oldVal
             console.log("selectedKeywords", s.selectedKeywords)
             $("select.keyword_select").val(oldVal)
@@ -144,7 +147,7 @@ littb.controller("searchCtrl", function(
     $timeout(() => s.$broadcast("focus"), 100)
 
     function getListener(selector, loadingFlag, countOnly) {
-        let listener = function(event) {
+        let listener = function (event) {
             safeApply(s, () => {
                 s[loadingFlag] = true
                 refreshTitles(countOnly).then(() => {
@@ -186,9 +189,9 @@ littb.controller("searchCtrl", function(
         $location.search("titel", workid)
     }
 
-    s.resetAuthorFilter = function() {
+    s.resetAuthorFilter = function () {
         s.nav_filter = null
-        return searchData.resetMod().then(function([sentsWithHeaders]) {
+        return searchData.resetMod().then(function ([sentsWithHeaders]) {
             // s.kwic = kwic
             s.sentsWithHeaders = sentsWithHeaders
         })
@@ -196,7 +199,7 @@ littb.controller("searchCtrl", function(
 
     s.setAuthorFilter = authorid => (s.nav_filter = authorid)
 
-    s.authorChange = function() {
+    s.authorChange = function () {
         $location.search("titel", null)
         s.selected_title = ""
     }
@@ -207,7 +210,7 @@ littb.controller("searchCtrl", function(
     s.isAuthorSearch = true
 
     const aboutDef = $q.defer()
-    s.onAboutAuthorChange = _.once(function($event) {
+    s.onAboutAuthorChange = _.once(function ($event) {
         console.log("onAboutAuthorChange", s.filters.authorkeyword)
         if ($location.search().authorkeyword) {
             s.filters.authorkeyword = ($location.search().authorkeyword || "").split(",")
@@ -221,7 +224,7 @@ littb.controller("searchCtrl", function(
         s.aboutAuthors = data
     })
     // $q.all([aboutFetchPromise, aboutDef.promise, authors]).then(function() {
-    authors.then(function([authorList, authorsById]) {
+    authors.then(function ([authorList, authorsById]) {
         if ($location.search().forfattare) {
             s.authors = $location
                 .search()
@@ -264,7 +267,7 @@ littb.controller("searchCtrl", function(
             })
     }
 
-    authors.then(function([authorList, authorsById]) {
+    authors.then(function ([authorList, authorsById]) {
         s.authorsById = authorsById
 
         if ($location.search().sok_filter) {
@@ -332,7 +335,7 @@ littb.controller("searchCtrl", function(
                         // args["author"] = authorid
                         args["authors"] = authorid
 
-                        searchData.modifySearch(args).then(function([sentsWithHeaders]) {
+                        searchData.modifySearch(args).then(function ([sentsWithHeaders]) {
                             c.log("modifySearch args", arguments)
                             s.searching = false
                             s.sentsNavFilter = sentsWithHeaders
@@ -343,7 +346,7 @@ littb.controller("searchCtrl", function(
         ])
     })
 
-    s.getSentsWithHeadersFromState = function() {
+    s.getSentsWithHeadersFromState = function () {
         if ($location.search().sok_filter) {
             return s.sentsNavFilter
         } else {
@@ -355,12 +358,12 @@ littb.controller("searchCtrl", function(
     s.num_hits = searchData.NUM_HITS
     s.current_page = 0
 
-    s.nextPage = function() {
+    s.nextPage = function () {
         // if (s.current_page  * s.num_hits) + s.kwic.length < s.doc_hits
         s.current_page++
         return s.gotoPage(s.current_page)
     }
-    s.prevPage = function() {
+    s.prevPage = function () {
         if (!s.current_page || s.current_page === 0) {
             return
         }
@@ -371,7 +374,7 @@ littb.controller("searchCtrl", function(
     s.firstPage = () => s.gotoPage(0)
     s.lastPage = () => s.gotoPage(s.total_pages - 1)
 
-    s.gotoPage = function(page) {
+    s.gotoPage = function (page) {
         if (page > s.total_pages - 1) {
             return
         }
@@ -383,7 +386,7 @@ littb.controller("searchCtrl", function(
         s.search(from, from + s.num_hits)
     }
 
-    s.onGotoHitInput = function() {
+    s.onGotoHitInput = function () {
         if (s.total_pages === 1) {
             return
         }
@@ -395,7 +398,7 @@ littb.controller("searchCtrl", function(
         $timeout(() => s.$broadcast("focus"), 0)
     }
 
-    const getSearchArgs = function(from, to) {
+    const getSearchArgs = function (from, to) {
         let filter_params = []
 
         filter_params = _.fromPairs(filter_params)
@@ -442,14 +445,14 @@ littb.controller("searchCtrl", function(
 
     s.getSetVal = (sent, val) => _.str.trim(sent.structs[val], "|").split("|")[0]
 
-    s.selectLeft = function(sentence) {
+    s.selectLeft = function (sentence) {
         if (!sentence.match) {
             return
         }
         return sentence.tokens.slice(0, sentence.match.start)
     }
 
-    s.selectMatch = function(sentence) {
+    s.selectMatch = function (sentence) {
         if (!sentence.match) {
             return
         }
@@ -457,7 +460,7 @@ littb.controller("searchCtrl", function(
         return sentence.tokens.slice(from, sentence.match.end)
     }
 
-    s.selectRight = function(sentence) {
+    s.selectRight = function (sentence) {
         if (!sentence.match) {
             return
         }
@@ -466,24 +469,24 @@ littb.controller("searchCtrl", function(
         return sentence.tokens.slice(from, len)
     }
 
-    s.setPageNum = function(num) {
+    s.setPageNum = function (num) {
         c.log("setPageNum", num)
         s.current_page = num
         return s.search()
     }
 
-    s.getMaxHit = function() {
+    s.getMaxHit = function () {
         if (!(searchData.data && searchData.data.length)) {
             return
         }
         return Math.min(s.doc_hits, (s.current_page + 1) * s.num_hits)
     }
 
-    const onKeyDown = function(event) {
+    const onKeyDown = function (event) {
         if (event.metaKey || event.ctrlKey || event.altKey || $("input:focus").length) {
             return
         }
-        return s.$apply(function() {
+        return s.$apply(function () {
             switch (event.which) {
                 case 39:
                     if (
@@ -514,7 +517,7 @@ littb.controller("searchCtrl", function(
         sortSelected: "lastname"
     }
 
-    s.onSearchSubmit = function(query) {
+    s.onSearchSubmit = function (query) {
         $anchorScroll("results")
         // s.resetAuthorFilter()
         s.nav_filter = null
@@ -522,7 +525,7 @@ littb.controller("searchCtrl", function(
     }
 
     s.searchAllInWork = (sentenceObj, index) => {
-        searchData.getMoreHighlights(sentenceObj).then(function(sents) {
+        searchData.getMoreHighlights(sentenceObj).then(function (sents) {
             let startIndex = null
             let currentSents = s.getSentsWithHeadersFromState()
             // find section start index
@@ -537,7 +540,7 @@ littb.controller("searchCtrl", function(
         })
     }
 
-    s.newSearch = function(query) {
+    s.newSearch = function (query) {
         if (hasSearchInit) {
             s.current_page = 0
         }
@@ -559,7 +562,7 @@ littb.controller("searchCtrl", function(
     }
 
     // s.search = debounce((query, from, to) ->
-    s.search = function(from, to) {
+    s.search = function (from, to) {
         s.searching = true
 
         // const args = getSearchArgs(from, to)
@@ -567,7 +570,7 @@ littb.controller("searchCtrl", function(
 
         // def = backend.searchWorks(args)
         const def = searchData.slice(from, to)
-        def.then(function([sentsWithHeaders, author_aggs]) {
+        def.then(function ([sentsWithHeaders, author_aggs]) {
             c.log("search data slice", searchData.total_hits)
 
             s.doc_hits = searchData.total_doc_hits
@@ -578,7 +581,7 @@ littb.controller("searchCtrl", function(
             s.searching = false
             hasSearchInit = true
         })
-        $q.all([def, authors]).then(function([[sentsWithHeaders, author_aggs]]) {
+        $q.all([def, authors]).then(function ([[sentsWithHeaders, author_aggs]]) {
             s.authorStatsData = _.orderBy(
                 author_aggs,
                 auth => s.authorsById[auth.authorid].name_for_index
