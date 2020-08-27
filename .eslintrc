@@ -36,7 +36,8 @@
     c: true,
     angular: true,
     isDev : true,
-    littb : true
+    littb : true,
+    safeApply: true
 
   }
 }

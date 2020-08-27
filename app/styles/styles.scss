@@ -2920,7 +2920,16 @@ $partnav-width : 170px;
 
             .author_img {
                 opacity : 1;
+                border: 1px solid grey;
+                margin-top: 5px;
                 max-width : 300px;
+            }
+            .wikidata_uncleared {
+                width: 100%;
+                color : white;
+                text-align: center;
+                padding: 1em;
+                background-color: rgba(122, 20, 0, 0.3)
             }
             figcaption {
                 font-size: 0.8em;
