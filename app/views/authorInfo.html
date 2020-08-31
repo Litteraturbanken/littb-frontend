@@ -72,8 +72,10 @@
 
         <script type="text/ng-template" id="portrait.html">
             <div class="portrait_container">
-                <div class="shadow-lg border mt-2 border-gray-500 border-opacity-50"><img ng-show="authorInfo.smallImage" class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
-                <figcaption class="bg-white bg-opacity-75 p-3 text-base" ng-if="authorInfo.pictureinfo" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption></div>
+                <div class="shadow-lg border mt-2 border-gray-500 border-opacity-50" ng-show="authorInfo.smallImage">
+                    <img class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
+                    <figcaption class="bg-white bg-opacity-75 p-3 text-base" ng-if="authorInfo.pictureinfo" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption>
+                </div>
                 
                 <!-- Only for red. -->
                 <img ng-if="isDev && !authorInfo.smallImage" class="author_img mb-0" ng-src="{{getWikiImage()}}" >

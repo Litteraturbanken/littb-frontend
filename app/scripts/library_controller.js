@@ -351,6 +351,9 @@ littb.controller("libraryCtrl", function (
     s.capitalizeLabel = label => {
         return { pdf: "PDF", xml: "XML" }[label] || label
     }
+
+    let scandinavianFolding = str => str.toLowerCase().replace("æ", "ä").replace("ø", "ö")
+
     s.setAuthorData = function () {
         let [key, dir] = (s.sort.authors || "").split("|")
         let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
@@ -370,8 +373,17 @@ littb.controller("libraryCtrl", function (
                         .split(" ")
                         .map(str => {
                             let search =
-                                item.name_for_index + _.map(item.pseudonym, "full_name").join(" ")
-                            return search.match(new RegExp(str, "i"))
+                                item.full_name + " " + _.map(item.pseudonym, "full_name").join(" ")
+                            // s.normalizeAuthor(item.full_name)
+
+                            return (
+                                scandinavianFolding(search).match(
+                                    new RegExp(scandinavianFolding(str), "i")
+                                ) ||
+                                s
+                                    .normalizeAuthor(search)
+                                    .match(new RegExp(s.normalizeAuthor(str), "i"))
+                            )
                         })
                         .some(Boolean)
                 )
