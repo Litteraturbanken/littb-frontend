@@ -292,7 +292,7 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
     }
 
     s.getWikiImage = () => {
-        if (window.isDev && s.authorInfo) {
+        if (window.isDev && s.authorInfo && s.authorInfo.wikidata) {
             return s.authorInfo.wikidata.image
         }
     }

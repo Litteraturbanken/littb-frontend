@@ -374,7 +374,6 @@ littb.controller("libraryCtrl", function (
                         .map(str => {
                             let search =
                                 item.full_name + " " + _.map(item.pseudonym, "full_name").join(" ")
-                            // s.normalizeAuthor(item.full_name)
 
                             return (
                                 scandinavianFolding(search).match(
