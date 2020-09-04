@@ -1,3 +1,3 @@
 {
-  "plugins": ["@babel/transform-runtime", ["angularjs-annotate"]]
+  "plugins": ["@babel/transform-runtime", "@babel/plugin-proposal-optional-chaining", ["angularjs-annotate"]]
 }

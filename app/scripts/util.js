@@ -155,8 +155,8 @@ littb.factory("util", function util($location, $filter) {
                 delete filterObj["main_author.gender"]
             }
             function makeObj(list) {
-                let output = {}
-                for (let kw of list || []) {
+                const output = {}
+                for (const kw of list || []) {
                     const [key, val] = kw.split(":")
                     if (output[key]) {
                         output[key] = output[key].concat(val.split(";"))
@@ -174,10 +174,15 @@ littb.factory("util", function util($location, $filter) {
                 // "about_authors",
                 // "main_author.authorid"
             )
-            if (rest["sort_date_imprint.date:range"]) {
+            if (
+                rest["sort_date_imprint.date:range"]?.length &&
+                !rest["sort_date_imprint.date:range"].some(Number.isNaN)
+            ) {
                 rest["sort_date_imprint.date:range"] = rest["sort_date_imprint.date:range"].join(
                     ","
                 )
+            } else {
+                delete rest["sort_date_imprint.date:range"]
             }
             const filter_or = makeObj(filterObj.mediatypes)
             const filter_and = _.extend(

@@ -7,14 +7,14 @@
         <form class="sm:p-5 p-2 sm:border border-gray-900" ng-submit="refreshData()">
             
             <div class="">
-                <div class="main_input row no-gutters">
-                    <input class="filter_input col-9" autofocus 
+                <div class="main_input flex flex-wrap -mt-4">
+                    <input class="filter_input mt-4 mr-4 flex-grow" autofocus 
                         ng-model-options='{debounce : {default : 300, blur : 0}, updateOn: "default blur"}' 
                         type="text" 
                         ng-change="refreshData()" ng-model="filter" 
                         placeholder="Skriv författarnamn eller titel">
-                    <button class="submit btn col-auto">Sök</button>
-                    <button class="submit btn col-auto" ng-show="!showInitial" ng-click="resetView()">
+                    <button class="submit btn mt-4 mr-2">Sök</button>
+                    <button class="mt-4 uppercase border border-gray-900 text-sm text-gray-900 px-4 py-2 hover:text-gray-700 hover:border-gray-700 transition duration-200 focus:outline-none opacity-0" ng-click="resetView()" ng-class="{'opacity-100': !isPristine()}">
                         Återställ
                     </button>
                 </div>
@@ -124,6 +124,8 @@
             </div>
 
             <chronology 
+                floor="chronology_floor"
+                ceil="chronology_ceil"
                 from="filters['sort_date_imprint.date:range'][0]" 
                 to="filters['sort_date_imprint.date:range'][1]" 
                 change="onSliderChange()">

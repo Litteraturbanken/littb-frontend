@@ -296,15 +296,6 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
             return s.authorInfo.wikidata.image
         }
     }
-    s.onSubmitWikiImage = url => {
-        $http({
-            url: "http://localhost:4321",
-            params: {
-                cmd: "add_wikidata_authorimage",
-                url
-            }
-        })
-    }
 
     s.normalizeAuthor = $filter("normalizeAuthor")
 

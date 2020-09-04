@@ -1077,13 +1077,22 @@ littb.directive("chronology", ($location, backend, util) => ({
     scope: {
         from: "=",
         to: "=",
-        change: "&"
+        change: "&",
+        floor: "=?",
+        ceil: "=?"
     },
     link($scope, element, attr) {
         const s = $scope
+        $scope.$on("chronology-reset", () => {
+            s.from = s.sliderConf.floor
+            s.to = s.sliderConf.ceil
+            $location.search("intervall", null)
+        })
         backend.getImprintRange().then(([floor, ceil]) => {
             s.from = s.from || floor
             s.to = s.to || ceil
+            s.floor = floor
+            s.ceil = ceil
             s.sliderConf = {
                 floor,
                 ceil,

@@ -1,6 +1,6 @@
 {
   root: true,
-  parserOptions: {ecmaVersion: 2018},
+  parserOptions: {ecmaVersion: 2020},
   env: {
     browser: true,
     node : true
@@ -27,7 +27,8 @@
           "camelcase" : "off",
           "object-curly-spacing" : "off",
           "spaced-comment" : "off",
-          "standard/computed-property-even-spacing" : "off"
+          "standard/computed-property-even-spacing" : "off",
+          "prefer-const": "off"
 
           },
   globals: {
