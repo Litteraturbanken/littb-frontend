@@ -930,7 +930,6 @@ littb.directive("searchOpts", ($location, util) => ({
             `,
     link($scope, element, attr) {
         const s = $scope
-
         s.searchOptionsMenu = {
             default: {
                 label: "SÖK EFTER ORD ELLER FRAS",
@@ -947,7 +946,8 @@ littb.directive("searchOpts", ($location, util) => ({
             modernize: {
                 label: "INKLUDERA ÄLDRE STAVNINGSFORMER",
                 val: "modernize",
-                selected: $location.search().modernize
+                // selected: !("ej_modern" in $location.search())
+                selected: $location.search().ej_modern
             },
             lemma: {
                 label: "INKLUDERA BÖJNINGSFORMER",
@@ -979,7 +979,15 @@ littb.directive("searchOpts", ($location, util) => ({
 
         s.searchOptionsItems = _.values(s.searchOptionsMenu)
 
+        // s.neg = (key) => searchOptionsMenu[key].selected
+
         util.setupHashComplex(s, [
+            {
+                key: "ej_modern",
+                expr: "searchOptionsMenu.modernize.selected",
+                val_in: val => !val,
+                val_out: val => !val
+            },
             {
                 key: "prefix",
                 expr: "searchOptionsMenu.prefix.selected"
@@ -1025,6 +1033,7 @@ littb.directive("searchOpts", ($location, util) => ({
             }
             if (["prefix", "suffix"].includes(sel.val)) {
                 o.default.selected = false
+                o.modernize.selected = false
                 o.lemma.selected = false
                 sel.selected = !o[sel.val].selected
                 if (isDeselect) {
@@ -1047,6 +1056,15 @@ littb.directive("searchOpts", ($location, util) => ({
             if (sel.val === "fuzzy") {
                 deselectAll()
                 o.fuzzy.selected = true
+                return
+            }
+            if (sel.val === "modernize") {
+                // deselectAll()
+                o.modernize.selected = !o.modernize.selected
+                if (o.modernize.selected) {
+                    deselectAll()
+                    o.default.selected = true
+                }
                 return
             }
             if (isDeselect) {

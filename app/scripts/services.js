@@ -6,9 +6,9 @@ const c = window.console
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -1532,6 +1532,9 @@ littb.factory("SearchWorkData", function (SearchData, $q, $http) {
             if (params.word_form_only != null) {
                 queryParams.push("word_form_only")
             }
+            // if (params.include_modernized != null) {
+            //     queryParams.push("include_modernized")
+            // }
 
             this.isCounting = true
             const source = new EventSource(

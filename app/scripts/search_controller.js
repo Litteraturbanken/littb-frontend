@@ -439,6 +439,9 @@ littb.controller("searchCtrl", function (
         if ($location.search().fuzzy) {
             args.fuzzy = true
         }
+        if ($location.search().ej_modern) {
+            args.include_modernized = false
+        }
 
         return args
     }
