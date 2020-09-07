@@ -14,7 +14,7 @@
                         ng-change="refreshData()" ng-model="filter" 
                         placeholder="Skriv författarnamn eller titel">
                     <button class="submit btn mt-4 mr-2">Sök</button>
-                    <button class="mt-4 uppercase border border-gray-900 text-sm text-gray-900 px-4 py-2 hover:bg-white transition duration-200 focus:outline-none opacity-0" ng-click="resetView()" ng-class="{'opacity-100': !isPristine()}">
+                    <button class="reset mt-4 uppercase border border-gray-900 text-sm text-gray-900 px-4 py-2 hover:bg-white ng-fade transition duration-200 focus:outline-none" ng-click="resetView()" ng-show="!isPristine()">
                         Återställ
                     </button>
                 </div>

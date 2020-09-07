@@ -6,7 +6,7 @@
         </div>
         <table id="table" class="table w-full table-fixed">
 
-            <tr ng-show="!titleSearching && !titleModel[listType].length">
+            <tr ng-show="!initialLoading && !titleSearching && !titleModel[listType].length">
                 <td class="text-lg">Inga träffar. <span ng-show='titleModel[listType + "_suggest"][0]'>Menade du <a class="link" ng-click='setFilter(titleModel[listType + "_suggest"][0].text)'>{{titleModel[listType + "_suggest"][0].text}}</a>?</span></td>
             </tr>
             <tr class="work_link" 

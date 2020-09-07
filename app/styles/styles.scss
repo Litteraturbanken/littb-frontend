@@ -197,6 +197,10 @@ th {
     font-weight : normal;
 }
 
+.ng-fade.ng-hide {
+    opacity: 0;
+}
+
 @mixin primarygradient {
     background-image: linear-gradient($primarycolor, darken($primarycolor, 7%));
 }
