@@ -947,7 +947,7 @@ littb.directive("searchOpts", ($location, util) => ({
                 label: "INKLUDERA ÄLDRE STAVNINGSFORMER",
                 val: "modernize",
                 // selected: !("ej_modern" in $location.search())
-                selected: $location.search().ej_modern
+                selected: !$location.search().ej_modern
             },
             lemma: {
                 label: "INKLUDERA BÖJNINGSFORMER",
