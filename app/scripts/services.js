@@ -7,9 +7,9 @@ import bodybuilder from "bodybuilder"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -311,7 +311,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             })
         },
 
-        getTitles(types, options, disableGrouping = false) {
+        getTitles(types, options, disableGrouping = false, relevance = false) {
             let defaults = {
                 from: 0,
                 to: 100,
@@ -338,6 +338,9 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
 
             if (author) {
                 author = `/${author}`
+            }
+            if (relevance) {
+                params.relevance = true
             }
             // if (getAll) {
             //     params.to = 600

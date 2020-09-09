@@ -56,8 +56,7 @@ littb.controller("libraryCtrl", function (
     })
 
     $timeout(() => s.$broadcast("focus"))
-
-    s.listType = $location.search().visa || "works"
+    s.listType = $location.search().visa || "all"
 
     s.authLimit = 150
 
@@ -345,6 +344,10 @@ littb.controller("libraryCtrl", function (
             backend.logLibrary(s.rowfilter)
         }
 
+        if (s.listType == "all") {
+            s.fetchByRelevance()
+        }
+
         return Promise.all([
             s.fetchWorks(s.listType !== "works", false),
             s.fetchWorks(s.listType !== "epub", true),
@@ -431,6 +434,51 @@ littb.controller("libraryCtrl", function (
                 }
             })
         }
+    }
+
+    s.fetchByRelevance = countOnly => {
+        s.relevanceSearching = true
+
+        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+
+        let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
+        console.log("size", size)
+        if (countOnly) {
+            size = { from: 0, to: 0 }
+        }
+
+        let def = backend
+            .getTitles(
+                "etext,faksimil,etext-part,faksimil-part,author",
+                {
+                    filter_string: s.rowfilter,
+                    filter_or,
+                    filter_and,
+                    author_aggs: false,
+                    relevance: true,
+                    // suggest: true,
+                    // include:
+                    //     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
+                    //     "main_author.authorid,main_author.surname,main_author.type,startpagename,sort_date.plain,export," +
+                    //     "authors,work_authors",
+                    ...size
+                },
+                // TODO: we should be grouping, need to filter out authors though.
+                true
+            )
+            // .then(({ titles, suggest, hits }) => {
+            .then(({ titles, hits }) => {
+                s.relevanceData = titles
+                // s.all_titles = titles
+                // s.partSearching = false
+                // s.parts_hits = hits
+                return { titles, hits }
+            })
+        return def.promise
+        // $q.all([def, authors]).then(([{ author_aggs }]) => {
+        //     s.currentPartAuthors = author_aggs.map(({ authorid }) => s.authorsById[authorid])
+        //     s.setAuthorData()
+        // })
     }
 
     s.fetchParts = countOnly => {
@@ -629,18 +677,18 @@ littb.controller("libraryCtrl", function (
             })
     }
 
-    s.request = function () {
-        if (s.listType == "works") {
-            s.fetchWorks(false, false)
-        } else if (s.listType == "parts") {
-            s.parts_page.current = 1
-            s.fetchParts(false)
-        } else if (s.listType == "epub") {
-            s.fetchWorks(false, true)
-        } else if (s.listType == "authors") {
-            s.setAuthorData()
-        }
-    }
+    // s.request = function () {
+    //     if (s.listType == "works") {
+    //         s.fetchWorks(false, false)
+    //     } else if (s.listType == "parts") {
+    //         s.parts_page.current = 1
+    //         s.fetchParts(false)
+    //     } else if (s.listType == "epub") {
+    //         s.fetchWorks(false, true)
+    //     } else if (s.listType == "authors") {
+    //         s.setAuthorData()
+    //     }
+    // }
 
     s.onSortClick = (item, noSwitchDir, replace, requestSortedData = true) => {
         console.log("onSortClick")
@@ -1036,11 +1084,12 @@ littb.controller("libraryCtrl", function (
         {
             key: "visa",
             expr: "listType",
-            default: "works",
+            default: "all",
             post_change: function (listType) {
                 console.log("post_change listType", listType)
+                if (listType == "all") return
                 if (isInitListType) {
-                    let sortItem = _.find(s.sortItems[listType || "works"], function (item) {
+                    let sortItem = _.find(s.sortItems[listType || "all"], function (item) {
                         return item.active
                     })
 

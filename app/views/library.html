@@ -150,6 +150,10 @@
             <div class="box sm:p-6 p-2 max-w-4xl sm:border border-gray-900 flex-grow" >
 
                 <div class="btn-group p-0 mb-10 ">
+                    <label class="sc btn btn-small" ng-class="" 
+                        ng-model="listType" uib-btn-radio="'all'" ng-click="fetchByRelevance()">
+                        Allt
+                    </label>
                     <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 
                         ng-model="listType" uib-btn-radio="'authors'" ng-click="setAuthorData()">
                         <span ng-if="!dl_mode">Författare</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
@@ -170,6 +174,40 @@
                 <ng-include src="worksListURL" ng-if="listType == 'works'"></ng-include>
 
                     
+                <div class="result author pl-0 sm:ml-3" ng-if="listType == 'all'">
+                    <div class=""> 
+                        <table class="">
+                            <tr class="spinner_row" ng-show="authorSearching">
+                                <td><i class="spinner fa fa-spinner fa-pulse"></i></td>
+                            </tr>
+                            <!-- <li class="text-lg" ng-show="!authorSearching && !authorData.length">
+                                Inga träffar. <span ng-show='authorSuggest[0]'>Menade du <a class="link" ng-click='setFilter(authorSuggest[0].text)'>{{authorSuggest[0].text}}</a>?</span>
+                            </li> -->
+                
+                            <tr ng-repeat="item in relevanceData"
+                                class="author_row"
+                                ng-click="authorClick($event, author)" 
+                                on-finish-render="authorRender()">
+                                <td><span class="sc primarycolor">{{item.doc_type}}</span></td>
+                                <td>
+                                <a v-if="item.authorid" ng-href="/författare/{{item.authorid}}/" class="">
+                                    <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
+                                    {{item.name_for_index.split(",")[1]}} {{item | authorYear}}
+                                </a>
+                                <span v-if="!item.authorid">
+                                    {{item.shorttitle || item.title}}
+                                </span>
+                                </td>
+                            </tr>
+
+                            <!-- <li ng-show="authLimit && authorData.length > authLimit">
+                                <button class="btn btn-sm show_all"  ng-click="(authLimit = 0) || setAuthorData()">
+                                    Visa alla <span class="num">{{authorData.length}}</span> träffar
+                                </button>
+                            </li> -->
+                        </table>
+                    </div>
+                </div>
                 <div class="result author pl-0 sm:ml-3" ng-if="listType == 'authors'">
                     <sort-list ></sort-list>
                     <div class=""> 
