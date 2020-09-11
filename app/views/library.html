@@ -185,10 +185,12 @@
                             </li> -->
                 
                             <tr ng-repeat="item in relevanceData"
-                                class="author_row"
+                                class="author_row align-top"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()">
-                                <td><span class="sc primarycolor">{{item.doc_type}}</span></td>
+                                <td class="text-right"><span class="sc primarycolor whitespace-no-wrap">
+                                    {{item.texttype || {'author': "Författare"}[item.doc_type]}}
+                                </span></td>
                                 <td>
                                 <a v-if="item.authorid" ng-href="/författare/{{item.authorid}}/" class="">
                                     <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
@@ -198,6 +200,14 @@
                                     {{item.shorttitle || item.title}}
                                 </span>
                                 </td>
+
+                                <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap"><a ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)">{{item.sort_date_imprint.plain}}</a></td>
+                                <td class="align-top text-right sc primarycolor"><span class="author">
+                                            <a ng-href="/författare/{{item.main_author.authorid}}">{{item.main_author.surname}}</a> 
+                                            <span ng-if="item.main_author.type == 'editor'">(red.)</span> 
+                                            <span ng-if="item.main_author.type == 'illustrator'">(ill.)</span>
+                                        </span> <!-- ng-click="authorClick($event, authorsById[item.author[0].authorid])" --></td>
+
                             </tr>
 
                             <!-- <li ng-show="authLimit && authorData.length > authLimit">
