@@ -942,17 +942,16 @@ littb.directive("searchOpts", ($location, util) => ({
                     $location.search().lemma
                 )
             },
-            // TODO: fix me.
+            lemma: {
+                label: "INKLUDERA BÖJNINGSFORMER",
+                val: "lemma",
+                selected: $location.search().lemma
+            },
             modernize: {
                 label: "INKLUDERA ÄLDRE STAVNINGSFORMER",
                 val: "modernize",
                 // selected: !("ej_modern" in $location.search())
                 selected: !$location.search().ej_modern
-            },
-            lemma: {
-                label: "INKLUDERA BÖJNINGSFORMER",
-                val: "lemma",
-                selected: $location.search().lemma
             },
             // fuzzy : {
             //     label : "Suddig sökning"

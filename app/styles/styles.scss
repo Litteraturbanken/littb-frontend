@@ -2068,6 +2068,10 @@ $partnav-width : 170px;
     .select2-container .select2-search--inline .select2-search__field {
         margin-top: 0 !important;
     }
+
+    .search_opts_widget {
+        white-space: nowrap;
+    }
     
     #mainview {
         font-size : 1em;
