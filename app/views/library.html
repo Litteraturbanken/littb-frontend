@@ -196,6 +196,14 @@
                                     <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
                                     {{item.name_for_index.split(",")[1]}} {{item | authorYear}}
                                 </a>
+                                <div v-if="item.authorid">
+                                    <ul>
+                                        <li ng-repeat="highlight in item.highlight.intro" ng-class="{flip: $parent.$odd}">
+                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
+                                        </li>
+                                    </ul>
+
+                                </div>
                                 <span v-if="!item.authorid">
                                     {{item.shorttitle || item.title}}
                                 </span>
