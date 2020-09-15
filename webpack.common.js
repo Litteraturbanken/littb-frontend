@@ -2,7 +2,6 @@ const path = require("path")
 const devMode = process.env.NODE_ENV !== "production"
 // const devMode = true
 
-const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 const CopyWebpackPlugin = require("copy-webpack-plugin")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
 
@@ -57,7 +56,8 @@ module.exports = {
             {
                 test: /\.(sa|sc|c)ss$/,
                 use: [
-                    devMode ? "style-loader" : MiniCssExtractPlugin.loader,
+                    // devMode ? "style-loader" : MiniCssExtractPlugin.loader,
+                    "style-loader",
                     {
                         loader: "css-loader",
                         options: {

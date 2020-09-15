@@ -5,6 +5,7 @@
  ** Default: https://github.com/tailwindcss/tailwindcss/blob/master/stubs/defaultConfig.stub.js
  */
 module.exports = {
+    purge: ["./app/**/*.js", "./app/**/*.html"],
     theme: {
         extend: {
             colors: {

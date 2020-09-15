@@ -1,5 +1,4 @@
 const tailwindcss = require("tailwindcss")
-const purgecss = require("@fullhuman/postcss-purgecss")
 const autoprefixer = require("autoprefixer")
 
 const devMode = process.env.NODE_ENV !== "production"
@@ -13,24 +12,24 @@ class TailwindExtractor {
 module.exports = {
     plugins: [
         tailwindcss("./tailwind.conf.js"),
-        devMode
-            ? undefined
-            : purgecss({
-                  content: ["./app/**/*{.html,.js}", "./app/index.html"],
-                  whitelistPatternsChildren: [
-                      /page-.*/,
-                      /select2/,
-                      /modal.*/,
-                      /tooltip.*/,
-                      /site-.*/,
-                      /popup.*/,
-                      /autocomplete/,
-                      /rzslider/,
-                      /rz-.*/,
-                      /content/
-                  ],
-                  extractors: [{ extractor: TailwindExtractor, extensions: ["html", "js"] }]
-              }),
+        // devMode
+        //     ? undefined
+        //     : purgecss({
+        //           content: ["./app/**/*{.html,.js}", "./app/index.html"],
+        //           whitelistPatternsChildren: [
+        //               /page-.*/,
+        //               /select2/,
+        //               /modal.*/,
+        //               /tooltip.*/,
+        //               /site-.*/,
+        //               /popup.*/,
+        //               /autocomplete/,
+        //               /rzslider/,
+        //               /rz-.*/,
+        //               /content/
+        //           ],
+        //           extractors: [{ extractor: TailwindExtractor, extensions: ["html", "js"] }]
+        //       }),
         autoprefixer
     ]
 }
