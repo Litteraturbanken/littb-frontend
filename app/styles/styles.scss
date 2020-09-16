@@ -1471,7 +1471,9 @@ body > .header {
     .select2-drop {
     }
 
-
+    .select2-selection.select2-selection--single {
+        border: 1px solid lightgray !important;
+    }
 
     ul.select2-choices {
         padding-top : 2px;
@@ -1703,7 +1705,6 @@ body > .header {
             margin-top : 2em;
             // padding-bottom : 2em;
             margin-bottom : 2em;
-            margin-left: -15px;
             & > * {
                 display: inline-block;
                 width : 40%;

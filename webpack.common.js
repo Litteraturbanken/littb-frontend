@@ -144,10 +144,6 @@ module.exports = {
             template: "./app/index.html",
             filename: "./index.html"
         }),
-        new MiniCssExtractPlugin({
-            filename: devMode ? "[name].css" : "assets/[name].[hash].css",
-            chunkFilename: devMode ? "[id].css" : "assets/[id].[hash].css"
-        }),
         new CopyWebpackPlugin([
             // {
             //   from: "./app/index.html",

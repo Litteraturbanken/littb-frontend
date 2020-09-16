@@ -7,24 +7,22 @@
     <h1>Textsökning <span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span> </h1>
 
     <form class="submit_form" ng-submit="onSearchSubmit(query)">
-        <div class="row top_row">
+        <div class="top_row">
             <input class="query py-4" ng-model="query" autofocus type="text" focusable>
             <i ng-show="searching" class="spinner fa fa-spinner fa-pulse"></i>
             <button ng-hide="searching" class="submit btn">Sök</button>
             
         </div>
-        <search-opts class="row"></search-opts>
+        <search-opts class=""></search-opts>
             
         <chronology 
-            class="block max-w-3xl row pr-2 row"
+            class="block max-w-3xl pr-2 "
             from="filters['sort_date_imprint.date:range'][0]" 
             to="filters['sort_date_imprint.date:range'][1]" 
             change="onSliderChange()">
         </chronology>
 
         <div class="bottom_row">
-
-
 
                 <div class="right">
 

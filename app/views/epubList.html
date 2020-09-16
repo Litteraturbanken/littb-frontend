@@ -7,7 +7,7 @@
             
         <p class="preamble">Det här är en lista över de titlar som Litteraturbanken erbjuder i formatet <em>epub</em> – ett filformat som passar för de flesta mobila läsare, t. ex. läsplattor och avancerade mobiltelefoner. Läs mer om epub på <a href="/om/hjalp?ankare=Epub">hjälpsidan</a>.</p>
         
-        <div class="row ctrls">
+        <div class="ctrls lg:flex">
 
             <!-- <ui-select ng-model="authorFilter" theme="select2" 
                        close-on-select="true" style="width: 300px;" title="Författare"
@@ -26,7 +26,7 @@
                   </ui-select-choices>
                 </ui-select> -->
 
-            <div class="auth_select_container col-lg-3">
+            <div class="auth_select_container mr-2 flex-grow">
                 <select  class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="authorFilter" data-placeholder="Författare" ng-change="onAuthChange(authorFilter)" >
                     <option value=""></option>
                     <option value="alla">Alla författare</option>
@@ -37,14 +37,14 @@
             </div>
             
 
-            <div class="col-lg-3">
+            <div class="mr-2 flex-grow">
                 <input class="filter"  
                     ng-model="filterTxt" autofocus 
                     ng-change="refreshData()"
                     ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
                     placeholder="Sök">
             </div>
-            <div class="auth_select_container col-lg-4">
+            <div class="auth_select_container flex-grow">
                 <select class="filter_select author_select" ui-select2="sortSelectSetup" ng-model="sort" data-placeholder="Sortering" ng-change="refreshData()" >
                     <option value=""></option>
                     <option value="epub_popularity|desc">Popularitet</option>

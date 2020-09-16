@@ -54,6 +54,24 @@ only screen and (max-width: 760px),
         width: auto; 
         margin: 0; 
     }
+
+    .page-search {
+        background: none !important;
+        #mainview {
+            width : auto;
+            .bottom_row > * {
+                width: auto;
+            }
+
+            .table_container table {
+                overflow: auto;
+            }
+
+            .results_container > div, .results_container > ul {
+                max-height : unset;
+            }
+        }
+    }
     
     .page-library {
         #mainview {
