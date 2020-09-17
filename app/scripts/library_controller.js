@@ -49,6 +49,8 @@ littb.controller("libraryCtrl", function (
         current: Number($location.search().sida) || 1
     }
 
+    $timeout(() => s.$broadcast("focus"))
+
     s.listType = $location.search().visa || "works"
 
     s.authLimit = 150

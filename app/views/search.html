@@ -4,7 +4,7 @@
 <div ng-class="{searching:searching, advanced : advanced, simple: !advanced}">
     
 
-    <h1>Textsökning <span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span> </h1>
+    <h1>Textsökning <span class="hidden lg:inline"><span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span></span> </h1>
 
     <form class="submit_form" ng-submit="onSearchSubmit(query)">
         <div class="top_row">
@@ -23,6 +23,64 @@
         </chronology>
 
         <div class="bottom_row">
+                <div class="left">
+                    <div class="auth_select_container">
+                        <select multiple class="filter_select author_select" 
+                                ui-select2="authorSelectSetup" 
+                                ng-model="filters['authors>authorid']" 
+                                data-placeholder="Författare" 
+                                ng-change="onAuthChange()">
+                            <option value=""></option>
+                            <option value='{{author.authorid}}' ng-repeat="author in authors">
+                                <span class="surname">{{author.name_for_index.split(',')[0] + (author.name_for_index.split(',').length > 1 ? ", " : "")}}</span>
+                                                                    {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
+                            </option>
+                        </select> 
+                        <i ng-if="loadingAuthors" class="spinner fa fa-spinner fa-pulse"></i>
+                    </div>
+                    <div class="title_select_container">
+                        <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
+                            <!-- <option ng-if="titles_hits > 30" disabled>Visar de första 30 titlarna</option> -->
+                            <option ng-if="titles_hits > 30 && !filters['authors>author_id'].length" disabled>Visar de första 30 titlarna</option>
+                            <option value="{{title.lbworkid}}" ng-repeat="title in titles">{{title.shorttitle || title.title}}</option>
+                            <!-- <option ng-click="onAllTitlesClick()">Visa alla</option> -->
+                        </select>
+
+                        <i ng-if="loadingTitles" class="spinner fa fa-spinner fa-pulse"></i>
+
+                    </div>
+                    <div class="about_select_container">
+                        <select multiple class="filter_select about_select"
+                                ui-select2="authorSelectSetup"
+                                ng-model="filters.authorkeyword" 
+                                data-placeholder="Om ett författarskap" 
+                                ng-change="onAboutAuthorChange($event)">
+                        <option value=""></option>
+                        <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
+                    </select>
+                    </div>
+
+
+                    <!-- <div class="textfields">
+                        <div class="checkbox" ng-class="{disabled : isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = false">
+                            <div class="check">✓</div>
+                            <p class="expl advanced_text auth">
+                                För att söka i specifika <span class="sc">författarskap</span>: skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> författarskap.) 
+                            </p>
+                        </div>
+                        
+                        <div class="checkbox" ng-class="{disabled : !isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = true">
+                            <div class="check check2">✓</div>
+                            <p class="expl advanced_text auth">
+                                Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)
+                            </p>
+                        </div>
+                    </div> -->
+
+                    <!-- Välj sedan i fältet till höger vilka <span class="sc">titlar</span> av de valda författarna som du vill söka i. (Lämna fältet blankt för att söka i alla deras sökbara texter.) -->
+                    
+                </div>
+
 
                 <div class="right">
 
@@ -53,20 +111,9 @@
                         </select>
                     </div>
 
-                    <select multiple class="filter_select keyword_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
-                        <option value=""></option>
-                        <option value="modernized:true">Moderniserat språk</option>
-                        <option value="modernized:false">Ej moderniserat språk</option>
-                        <option value="proofread:true">Korrekturläst</option>
-                        <option value="proofread:false">Ej korrekturläst</option>
-                        <option value="language:swe">Svenska</option>
-                        <option value="language:eng">Engelska</option>
-                        <option value="language:deu">Tyska</option>
-                        <option value="language:fra">Franska</option>
-                        <option value="language:lat">Latin</option>
-                        <!-- <option value="">Skrivet av kvinnor</option>
-                        <option value="">Skrivet av män</option> -->
-                    </select>
+                    
+
+                    <div class="mb-1">
                     <select  class="gender_select" 
                              ui-select2="{minimumResultsForSearch: -1}" 
                              ng-model="filters['main_author.gender']" 
@@ -77,70 +124,30 @@
                         <option value="male">Manliga författare</option>
                         </option>
                     </select>
-                    
+                    </div>
 
-                    <div class="text simple_text">Vill du göra mer avancerade sökningar i texterna? Då kan du klicka på <a ng-click="advanced = true"><i class="fa fa-play"></i> <span class="sc">Avancerade sökmöjligheter</span></a> </div>
-                    <div class="text advanced_text">Vill du förenkla sökformuläret? <br>Då kan du klicka på <a ng-click="advanced = false"><i class="fa fa-play"></i> <span class="sc">Enkel sökning</span></a> </div>
-                </div>
-
-                
-            
-                <div class="left">
-                    <div class="auth_select_container">
-                        <select multiple class="filter_select author_select" 
-                                ui-select2="authorSelectSetup" 
-                                ng-model="filters['authors>authorid']" 
-                                data-placeholder="Författare" 
-                                ng-change="onAuthChange()">
+                    <div class="lang_select_container">
+                        <select multiple class="filter_select lang_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
                             <option value=""></option>
-                            <option value='{{author.authorid}}' ng-repeat="author in authors">
-                                <span class="surname">{{author.name_for_index.split(',')[0] + (author.name_for_index.split(',').length > 1 ? ", " : "")}}</span>
-                                                                    {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
-                            </option>
-                        </select> 
-                        <i ng-if="loadingAuthors" class="spinner fa fa-spinner fa-pulse"></i>
-                    </div>
-                    <select multiple class="filter_select about_select"
-                            ui-select2="authorSelectSetup"
-                            ng-model="filters.authorkeyword" 
-                            data-placeholder="Om ett författarskap" 
-                            ng-change="onAboutAuthorChange($event)">
-
-                        <option value=""></option>
-                        <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
-                    </select>
-                    <div class="title_select_container">
-                        <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
-                            <!-- <option ng-if="titles_hits > 30" disabled>Visar de första 30 titlarna</option> -->
-                            <option ng-if="titles_hits > 30 && !filters['authors>author_id'].length" disabled>Visar de första 30 titlarna</option>
-                            <option value="{{title.lbworkid}}" ng-repeat="title in titles">{{title.shorttitle || title.title}}</option>
-                            <!-- <option ng-click="onAllTitlesClick()">Visa alla</option> -->
+                            <option value="modernized:true">Moderniserat språk</option>
+                            <option value="modernized:false">Ej moderniserat språk</option>
+                            <option value="proofread:true">Korrekturläst</option>
+                            <option value="proofread:false">Ej korrekturläst</option>
+                            <option value="language:swe">Svenska</option>
+                            <option value="language:eng">Engelska</option>
+                            <option value="language:deu">Tyska</option>
+                            <option value="language:fra">Franska</option>
+                            <option value="language:lat">Latin</option>
+                            <!-- <option value="">Skrivet av kvinnor</option>
+                            <option value="">Skrivet av män</option> -->
                         </select>
-
-                        <i ng-if="loadingTitles" class="spinner fa fa-spinner fa-pulse"></i>
-
                     </div>
-
-                    <!-- <div class="textfields">
-                        <div class="checkbox" ng-class="{disabled : isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = false">
-                            <div class="check">✓</div>
-                            <p class="expl advanced_text auth">
-                                För att söka i specifika <span class="sc">författarskap</span>: skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> författarskap.) 
-                            </p>
-                        </div>
-                        
-                        <div class="checkbox" ng-class="{disabled : !isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = true">
-                            <div class="check check2">✓</div>
-                            <p class="expl advanced_text auth">
-                                Sök i texter som handlar <span class="sc">om ett författarskap</span>. Skriv början på ett namn & välj ett eller flera i listan. (Som förval utförs sökningen i <span class="sc">alla</span> texter.)
-                            </p>
-                        </div>
-                    </div> -->
-
-                    <!-- Välj sedan i fältet till höger vilka <span class="sc">titlar</span> av de valda författarna som du vill söka i. (Lämna fältet blankt för att söka i alla deras sökbara texter.) -->
                     
+
                 </div>
             </div>
+                <div class="text simple_text max-w-sm">Vill du göra mer avancerade sökningar i texterna?<br> Då kan du klicka på <a ng-click="advanced = true"><i class="fa fa-play"></i> <span class="sc">Avancerade sökmöjligheter</span></a> </div>
+                <div class="text advanced_text">Vill du förenkla sökformuläret? <br>Då kan du klicka på <a ng-click="advanced = false"><i class="fa fa-play"></i> <span class="sc">Enkel sökning</span></a> </div>
             
 
         <p ng-show="false" class="expl advanced_text">
@@ -262,7 +269,7 @@
             </div>
             
         </div>
-        <ul class="navigator" ng-hide="!getSentsWithHeadersFromState().length" ng-style="{'max-height': container_height}">
+        <ul class="hidden md:block navigator" ng-hide="!getSentsWithHeadersFromState().length" ng-style="{'max-height': container_height}">
             <li><a ng-click="resetAuthorFilter()" ng-class="{selected : !nav_filter}">Visa alla</a></li>
 
             <li ng-repeat="obj in authorStatsData"  >

@@ -691,11 +691,14 @@ littb.controller("epubListCtrl", function epubListCtrl(
     authors,
     $filter,
     $q,
-    $location
+    $location,
+    $timeout
 ) {
     const s = $scope
     s.searching = true
     s.authorFilter = $location.search().authorFilter
+
+    $timeout(() => s.$broadcast("focus"))
 
     if ($location.search().qr) {
         backend.logQR($location.search().qr, $location.url())

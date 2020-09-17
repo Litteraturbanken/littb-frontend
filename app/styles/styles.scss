@@ -1553,12 +1553,14 @@ body > .header {
             }
         }
 
-        .auth_select_container,
-        .title_select_container {
+        // .title_select_container,
+        // .auth_select_container,
+        .about_select_container,
+        .lang_select_container {
             display : none;
         }
-        .advanced .auth_select_container,
-        .advanced .title_select_container {
+        .advanced .lang_select_container,
+        .advanced .about_select_container {
             display : block;
         }
         .simple_text {display : block;}

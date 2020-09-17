@@ -64,6 +64,7 @@ littb.controller("searchCtrl", function (
     // s.selectedAuthors = []
     s.selectedTitles = []
     s.selectedKeywords = []
+    $timeout(() => s.$broadcast("focus"))
 
     console.log("$rootScope.searchState", $rootScope.searchState)
     let routeChangeUnbind = s.$on("$routeChangeStart", (event, newRoute, prevRoute) => {
@@ -84,6 +85,7 @@ littb.controller("searchCtrl", function (
 
     s.onSliderChange = () => {
         $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
+        if (s.query) s.onSearchSubmit(s.query)
     }
 
     const listKeys = _.pick($location.search(), "keywords", "languages", "authorkeyword")

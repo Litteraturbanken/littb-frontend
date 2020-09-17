@@ -39,7 +39,7 @@
 
             <div class="mr-2 flex-grow">
                 <input class="filter"  
-                    ng-model="filterTxt" autofocus 
+                    ng-model="filterTxt" autofocus focusable
                     ng-change="refreshData()"
                     ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' 
                     placeholder="Sök">
