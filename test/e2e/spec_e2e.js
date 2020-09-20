@@ -1,11 +1,11 @@
 const HOST = process.env.LITTB_DOCKER_HOST || "localhost"
 const get = url => browser.get(`http://${HOST}:9000` + url)
-describe("library authors", function() {
-    beforeEach(function() {
+describe("library authors", function () {
+    beforeEach(function () {
         get("/bibliotek?sort=popularitet&visa=authors")
     })
 
-    it("should filter using the input", function() {
+    it("should filter using the input", function () {
         const filter = element(By.model("filter"))
         filter.sendKeys("adelb")
         filter.sendKeys(protractor.Key.TAB)
@@ -13,12 +13,12 @@ describe("library authors", function() {
     })
 })
 
-describe("library works", function() {
-    beforeEach(function() {
+describe("library works", function () {
+    beforeEach(function () {
         get("/bibliotek")
     })
 
-    it("should filter works using the input", function() {
+    it("should filter works using the input", function () {
         const filter = element(By.model("filter"))
         filter.sendKeys("constru")
         filter.sendKeys(protractor.Key.TAB)
@@ -45,28 +45,28 @@ describe("library works", function() {
     })
 })
 
-describe("titles", function() {
+describe("titles", function () {
     let rows = null
-    beforeEach(function() {
+    beforeEach(function () {
         get("/bibliotek")
     })
 
-    it("should filter titles using the input", function() {
+    it("should filter titles using the input", function () {
         const filter = element(By.model("filter"))
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         let num = element(By.css(".parts.num_hits"))
-        expect(num.getText()).toEqual(": 822")
+        expect(num.getText()).toEqual(": 824")
     })
 })
 
-describe("epubList", function() {
+describe("epubList", function () {
     let rows = null
-    beforeEach(function() {
+    beforeEach(function () {
         get("/epub")
     })
 
-    it("should filter using the input", function() {
+    it("should filter using the input", function () {
         const filter = element(By.model("filterTxt"))
         filter.sendKeys("nordanf")
         // rows = element.all(By.repeater("row in rows | filter:rowFilter | orderBy:sorttuple[0]:sorttuple[1]"))
@@ -75,10 +75,10 @@ describe("epubList", function() {
     })
 })
 
-describe("reader", function() {
+describe("reader", function () {
     // beforeEach () ->
 
-    it("should change page on click", function() {
+    it("should change page on click", function () {
         get("/f%C3%B6rfattare/StrindbergA/titlar/Fadren/sida/3/etext")
         element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
@@ -89,12 +89,12 @@ describe("reader", function() {
             )
     })
 
-    it("should correctly handle pagestep", function() {
+    it("should correctly handle pagestep", function () {
         get("/f%C3%B6rfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil")
 
         element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
-            .then(function(linkUrl) {
+            .then(function (linkUrl) {
                 browser.get(linkUrl)
                 expect(browser.getCurrentUrl()).toBe(
                     `http://${HOST}:9000/f%C3%B6rfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
@@ -102,7 +102,7 @@ describe("reader", function() {
             })
     })
 
-    it("should load workinfo from the correct mediatype", function() {
+    it("should load workinfo from the correct mediatype", function () {
         get("/f%C3%B6rfattare/LagerlofS/titlar/Dunungen/sida/1/etext")
 
         expect(element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href")).toBe(
@@ -110,34 +110,34 @@ describe("reader", function() {
         )
     })
 
-    it("should show SO modal", function() {
+    it("should show SO modal", function () {
         get("/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/1/etext?so=damm")
         expect(
             element(By.css(".modal-dialog lemma[id=lnr132506] grundform")).getText("href")
         ).toEqual("damm")
     })
 
-    it("should show srcset correctly", function() {
+    it("should show srcset correctly", function () {
         get("/f%C3%B6rfattare/BureusJ/titlar/SmaragdinaTabvla/sida/1/faksimil")
         expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual(
             "/txt/lb2514233/lb2514233_3/lb2514233_3_0001.jpeg 1x,/txt/lb2514233/lb2514233_5/lb2514233_5_0001.jpeg 2x"
         )
     })
-    it("should not show srcset", function() {
+    it("should not show srcset", function () {
         get("/f%C3%B6rfattare/BellmanCM/titlar/FredmansEpistlesSongs/sida/V/faksimil")
         expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual("")
     })
 })
 
-describe("editor", function() {
+describe("editor", function () {
     // beforeEach () ->
 
-    it("should change page on click", function() {
+    it("should change page on click", function () {
         get("/editor/lb238704/ix/3/f")
 
         element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
-            .then(function() {
+            .then(function () {
                 element(By.css(".pager_ctrls a[rel=next]")).click()
                 expect(browser.getCurrentUrl()).toBe(`http://${HOST}:9000/editor/lb238704/ix/4/f`)
 
@@ -147,10 +147,10 @@ describe("editor", function() {
             })
     })
 })
-describe("search links", function() {
+describe("search links", function () {
     beforeEach(() => get("/sök?forfattare=MartinsonH&titlar=lb441882&avancerad"))
 
-    it("should preselect author and title", function() {
+    it("should preselect author and title", function () {
         let main = element(by.id("mainview"))
         main.evaluate("selectedTitles").then(val => {
             expect(val.length).toBe(1)
@@ -163,72 +163,72 @@ describe("search links", function() {
     })
 })
 
-describe("search", function() {
+describe("search", function () {
     beforeEach(() => get("/sök"))
 
-    it("should give search results. ", function() {
+    it("should give search results. ", function () {
         const input = element(By.model("query"))
         input.sendKeys("kriget är förklarat !")
         input.sendKeys(protractor.Key.ENTER)
 
         const rows = element.all(By.css(".sentence"))
-        expect(rows.count()).toEqual(1)
+        expect(rows.count()).toEqual(2)
     })
 })
 
-describe("parts navigation", function() {
+describe("parts navigation", function () {
     const prevPart = () => element(By.css(".pager_ctrls a.prev_part"))
     const nextPart = () => element(By.css(".pager_ctrls a.next_part"))
     const currentPartName = () => element(By.css(".current_part .navtitle"))
 
-    it("should handle parts with parent parts", function() {
+    it("should handle parts with parent parts", function () {
         get("/f%C3%B6rfattare/RydbergV/titlar/Singoalla1885/sida/25/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
             `http://${HOST}:9000/f%C3%B6rfattare/RydbergV/titlar/Singoalla1885/sida/20/faksimil`
         )
     })
 
-    it("should handle many parts on same page, prev", function() {
+    it("should handle many parts on same page, prev", function () {
         get("/f%C3%B6rfattare/Anonym/titlar/ABC1746/sida/X/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
             `http://${HOST}:9000/f%C3%B6rfattare/Anonym/titlar/ABC1746/sida/IX/faksimil`
         )
     })
 
-    it("should handle many parts on same page, next", function() {
+    it("should handle many parts on same page, next", function () {
         get("/f%C3%B6rfattare/Anonym/titlar/ABC1746/sida/IX/faksimil")
         expect(nextPart().getAttribute("href")).toBe(
             `http://${HOST}:9000/f%C3%B6rfattare/Anonym/titlar/ABC1746/sida/X/faksimil`
         )
     })
 
-    it("should give a prev part despite prev page being between parts", function() {
+    it("should give a prev part despite prev page being between parts", function () {
         get("/f%C3%B6rfattare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
             `http://${HOST}:9000/f%C3%B6rfattare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil`
         )
     })
 
-    it("should find a single page part on the prev page", function() {
+    it("should find a single page part on the prev page", function () {
         get("/f%C3%B6rfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
             `http://${HOST}:9000/f%C3%B6rfattare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil`
         )
     })
 
-    it("should show current part name instead of ended part", function() {
+    it("should show current part name instead of ended part", function () {
         get("/f%C3%B6rfattare/Euripides/titlar/Elektra1843/sida/9/faksimil")
         expect(currentPartName().getText()).toBe("[Pjäsen]")
     })
 
-    it("should go to beginning of current part rather than previous part", function() {
+    it("should go to beginning of current part rather than previous part", function () {
         get("/f%C3%B6rfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
             `http://${HOST}:9000/f%C3%B6rfattare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil`
         )
     })
 
-    it("should disable prev if before first part", function() {
+    it("should disable prev if before first part", function () {
         get("/f%C3%B6rfattare/OmarKhayyam/titlar/UmrKhaiyamRubaIyat/sida/1/faksimil")
         expect(prevPart().getAttribute("class")).toBe("prev_part disabled")
     })
