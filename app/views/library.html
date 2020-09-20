@@ -152,7 +152,7 @@
                 <div class="btn-group p-0 mb-10 ">
                     <label class="sc btn btn-small" ng-class="" 
                         ng-model="listType" uib-btn-radio="'all'" ng-click="fetchByRelevance()">
-                        Allt
+                        Alla träffar
                     </label>
                     <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 
                         ng-model="listType" uib-btn-radio="'authors'" ng-click="setAuthorData()">
@@ -198,7 +198,7 @@
                                 </a>
                                 <div v-if="item.authorid">
                                     <ul>
-                                        <li ng-repeat="highlight in item.highlight.intro" ng-class="{flip: $parent.$odd}">
+                                        <li ng-repeat="highlight in item.highlight.intro" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
                                             ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
                                         </li>
                                     </ul>
