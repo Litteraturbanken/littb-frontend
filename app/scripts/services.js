@@ -6,9 +6,9 @@ const c = window.console
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -873,6 +873,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
         },
 
         submitContactForm(name, email, message, isSOL) {
+            let canceller = $q.defer()
+            const timeoutDef = $timeout(() => canceller.resolve("timeout"), 30000)
             const params = {
                 sender_name: name,
                 sender_address: email,
@@ -886,8 +888,9 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             }
             return $http({
                 url: `${STRIX_URL}/contact`,
-                params
-            })
+                params,
+                timeout: canceller.promise
+            }).then(() => $timeout.cancel(timeoutDef))
         },
 
         ordOchSak(author, title) {

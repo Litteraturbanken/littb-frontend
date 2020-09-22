@@ -141,6 +141,7 @@ littb.controller("contactFormCtrl", function ($scope, backend, $timeout, $locati
         s.showError = true
         s.showContact = false
         s.showNewsletter = false
+        s.isLoading = false
 
         return $timeout(() => (s.showError = false), 4000)
     }
@@ -153,8 +154,9 @@ littb.controller("contactFormCtrl", function ($scope, backend, $timeout, $locati
             msg = s.message
         }
         // svenskt oversattarlexikon?
-
+        s.isLoading = true
         return backend.submitContactForm(s.name, s.email, msg, isSOL).then(function () {
+            s.isLoading = false
             s.showContact = true
             done()
         }, err)
@@ -1012,6 +1014,11 @@ littb.controller("autocompleteCtrl", function (
                         label: "Hjälp",
                         url: "/om/hjalp",
                         alt: ["hjalp"],
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Kontakt",
+                        url: "/om/kontakt",
                         typeLabel: "Gå till sidan"
                     },
                     {

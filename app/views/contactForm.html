@@ -18,8 +18,9 @@
             <div class="msg_box">
                 <textarea ng-model="message" required></textarea>
                 <div class="error_msg">Meddelandet är tomt.</div>
-                <div class="submit_container">
-                    <button class="btn submit pull-right" ng-disabled="form.$pristine || (form.$dirty && form.$invalid)">Skicka</button>
+                <div class="submit_container flex justify-end">
+                    <div class="pt-1 pr-2 ng-fade" ng-show="isLoading"><i class="spinner fa fa-spinner fa-pulse"></i></div>
+                    <button class="btn submit" ng-disabled="form.$pristine || (form.$dirty && form.$invalid)">Skicka</button>
                     <div style="clear:both;"></div>
                 </div>
             </div>
@@ -32,6 +33,7 @@
                 <label class="pt-1" for="newsletterEmail">Epost</label> 
                 <input class="mr-4 flex-grow" id="newsletterEmail" ng-model="newsletterEmail" required type="email"> 
                 <button class="btn submit" ng-disabled="subscribeform.$pristine || (subscribeform.$dirty && subscribeform.$invalid)">Skicka</button>
+
             </form>
         </div>
     </div>
