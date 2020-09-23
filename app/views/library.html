@@ -175,6 +175,7 @@
 
                     
                 <div class="result author pl-0 sm:ml-3" ng-if="listType == 'all'">
+                    <sort-list></sort-list>
                     <div class=""> 
                         <table class="">
                             <tr class="spinner_row" ng-show="authorSearching">
@@ -204,9 +205,23 @@
                                     </ul>
 
                                 </div>
-                                <span v-if="!item.authorid">
+                                <div v-if="!item.authorid" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
                                     {{item.shorttitle || item.title}}
-                                </span>
+
+
+                                    <ul>
+                                        <li ng-repeat="highlight in item.highlight.title" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
+                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
+                                        </li>
+                                        <li ng-if="!item.highlight.title" ng-repeat="highlight in item.highlight['title.search']" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
+                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
+                                        </li>
+                                        <li ng-repeat="highlight in item.highlight['parts.title']" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
+                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
+                                        </li>
+                                    </ul>
+
+                                </div>
                                 </td>
 
                                 <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap"><a ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)">{{item.sort_date_imprint.plain}}</a></td>
