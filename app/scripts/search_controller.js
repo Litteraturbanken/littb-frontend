@@ -72,12 +72,18 @@ littb.controller("searchCtrl", function (
         $rootScope.searchState["queryparams"] = window.location.search
     })
 
-    s.filters = {
-        "authors.gender": $location.search()["kön"],
+    let filterDefaults = {
+        "authors.gender": null,
         authorkeyword: [],
         keywords: [],
         languages: [],
         "authors>authorid": [],
+        "sort_date_imprint.date:range": []
+    }
+
+    s.filters = {
+        ...filterDefaults,
+        "authors.gender": $location.search()["kön"],
         "sort_date_imprint.date:range": $location.search().intervall
             ? $location.search().intervall.split(",")
             : []
@@ -190,7 +196,13 @@ littb.controller("searchCtrl", function (
         if (s.selected_title && s.selected_title.lbworkid) workid = s.selected_title.lbworkid
         $location.search("titel", workid)
     }
-
+    s.resetView = () => {
+        $location.search({})
+        $timeout(() => window.location.reload(), 0)
+    }
+    s.isPristine = () => {
+        return !Object.keys(_.omit($location.search(), "avancerad")).length
+    }
     s.resetAuthorFilter = function () {
         s.nav_filter = null
         return searchData.resetMod().then(function ([sentsWithHeaders]) {

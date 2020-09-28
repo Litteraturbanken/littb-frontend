@@ -7,10 +7,14 @@
     <h1>Textsökning <span class="hidden lg:inline"><span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span></span> </h1>
 
     <form class="submit_form" ng-submit="onSearchSubmit(query)">
-        <div class="top_row">
-            <input class="query py-4" ng-model="query" autofocus type="text" focusable>
-            <i ng-show="searching" class="spinner fa fa-spinner fa-pulse"></i>
-            <button ng-hide="searching" class="submit btn">Sök</button>
+        <div class="top_row -mt-2 flex max-w-full ">
+            <input class="query py-1 mt-2" ng-model="query" autofocus type="text" focusable>
+            <i ng-show="searching" class="spinner fa fa-spinner fa-pulse mt-2"></i>
+            <button ng-hide="searching" class="submit mt-2 mr-2 bg-white bg-opacity-75 border border-gray-500 px-3 uppercase sc">Sök</button>
+
+            <button class="reset sc mt-2 uppercase border border-gray-500 bg-white bg-opacity-25 px-4 py-2 hover:bg-white ng-fade transition duration-200 focus:outline-none" ng-click="resetView()" ng-show="!isPristine()">
+                Återställ
+            </button>
             
         </div>
         <search-opts class=""></search-opts>
