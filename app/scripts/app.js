@@ -710,6 +710,7 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
 
     $rootScope._focus_mode = true
     $rootScope.searchState = {}
+    $rootScope.libraryState = {}
 })
 
 littb.filter(

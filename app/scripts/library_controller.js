@@ -33,7 +33,8 @@ littb.controller("libraryCtrl", function (
     $rootElement,
     $anchorScroll,
     $q,
-    $filter
+    $filter,
+    $rootScope
 ) {
     const s = $scope
 
@@ -48,6 +49,11 @@ littb.controller("libraryCtrl", function (
     s.parts_page = {
         current: Number($location.search().sida) || 1
     }
+
+    let routeChangeUnbind = s.$on("$routeChangeStart", (event, newRoute, prevRoute) => {
+        console.log("leave search", window.location.search)
+        $rootScope.libraryState.queryparams = window.location.search
+    })
 
     $timeout(() => s.$broadcast("focus"))
 
@@ -917,6 +923,7 @@ littb.controller("libraryCtrl", function (
         event.stopPropagation()
     })
     s.$on("$destroy", () => {
+        routeChangeUnbind()
         $("body").off("click", ".popover")
     })
     s.onDownload = () => {
