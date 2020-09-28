@@ -28,7 +28,8 @@
           "object-curly-spacing" : "off",
           "spaced-comment" : "off",
           "standard/computed-property-even-spacing" : "off",
-          "prefer-const": "off"
+          "prefer-const": "off",
+          "dot-notation": "off"
 
           },
   globals: {
