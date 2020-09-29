@@ -1,10 +1,10 @@
-<div class="result title pl-0 sm:ml-3 " >
+<div class="result title pl-0 sm:ml-3 flex-column min-h-500" >
     <sort-list ></sort-list>
-    <div class="table-responsive-sm" >
-        <div class="spinner_row" ng-show="titleSearching">
+    <div class="" >
+        <div class="spinner_row ng-fade transition duration-200" ng-show="titleSearching">
             <i class="spinner fa fa-spinner fa-pulse"></i>
         </div>
-        <table id="table" class="table w-full table-fixed">
+        <table id="table" class="table w-full table-fixed flex-grow">
 
             <tr ng-show="!initialLoading && !titleSearching && !titleModel[listType].length">
                 <td class="text-lg">Inga träffar. <span ng-show='titleModel[listType + "_suggest"][0]'>Menade du <a class="link" ng-click='setFilter(titleModel[listType + "_suggest"][0].text)'>{{titleModel[listType + "_suggest"][0].text}}</a>?</span></td>

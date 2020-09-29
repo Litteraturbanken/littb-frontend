@@ -201,6 +201,10 @@ th {
     opacity: 0;
 }
 
+.min-h-500 {
+    min-height : 500px;
+}
+
 @mixin primarygradient {
     background-image: linear-gradient($primarycolor, darken($primarycolor, 7%));
 }

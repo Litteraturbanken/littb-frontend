@@ -335,7 +335,10 @@ littb.controller("libraryCtrl", function (
     }
     s.sortItems["epub"] = _.cloneDeep(s.sortItems.works)
 
-    s.refreshData = function () {
+    s.refreshData = function (isInitial) {
+        if (!isInitial) {
+            s.parts_page.current = 1
+        }
         s.selectedTitle = null
         s.rowfilter = s.filter
         if (!isDev) {
@@ -950,7 +953,7 @@ littb.controller("libraryCtrl", function (
     //     s.selectedKeywords = $location.search().keyword?.split(",")
 
     s.initialLoading = true
-    s.refreshData().then(() => {
+    s.refreshData(true).then(() => {
         s.initialLoading = false
     })
 
