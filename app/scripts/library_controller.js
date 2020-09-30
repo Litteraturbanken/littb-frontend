@@ -456,6 +456,7 @@ littb.controller("libraryCtrl", function (
                     filter_and,
                     author_aggs: false,
                     relevance: true,
+                    show_all: false, // TODO: remove this to hide show: false
                     // suggest: true,
                     // include:
                     //     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,sort_date_imprint.plain," +

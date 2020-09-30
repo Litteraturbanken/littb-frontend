@@ -193,11 +193,11 @@
                                     {{item.texttype || {'author': "Författare"}[item.doc_type]}}
                                 </span></td>
                                 <td>
-                                <a v-if="item.authorid" ng-href="/författare/{{item.authorid}}/" class="">
-                                    <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
-                                    {{item.name_for_index.split(",")[1]}} {{item | authorYear}}
-                                </a>
-                                <div v-if="item.authorid">
+                                <div v-if="item._index.endsWith('author')">
+                                    <a ng-href="/författare/{{item.authorid}}/" class="">
+                                        <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
+                                        {{item.name_for_index.split(",")[1]}} {{item | authorYear}}
+                                    </a>
                                     <ul>
                                         <li ng-repeat="highlight in item.highlight.intro" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
                                             ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
@@ -205,7 +205,25 @@
                                     </ul>
 
                                 </div>
-                                <div v-if="!item.authorid" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
+                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_presentations'">
+                                    <a ng-href="{{item.url}}">{{item.title}}</a> (Kringtexter)
+                                </div>
+                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_sol'">
+                                    <a ng-href="{{item.url}}">{{item.article.ArticleName}}</a> (Översättarlexikon)
+
+                                    <ul>
+                                        <li ng-repeat="highlight in item.highlight['article.ArticleText']" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
+                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_vastsvenska'">
+                                    <a ng-href="{{item.url}}">{{item.header}}</a> (Litteraturkartan)
+                                </div>
+                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_ljudochbild'">
+                                    <a ng-href="{{item.url}}">{{item.title}}</a> (Ljud och bild)
+                                </div>
+                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part'].includes(item._index.split('_')[1])" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
                                     {{item.shorttitle || item.title}}
 
 

@@ -339,9 +339,6 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             if (author) {
                 author = `/${author}`
             }
-            if (relevance) {
-                params.relevance = true
-            }
             // if (getAll) {
             //     params.to = 600
             // }
