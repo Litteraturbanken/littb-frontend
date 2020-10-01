@@ -435,21 +435,38 @@ littb.controller("libraryCtrl", function (
             })
         }
     }
-
+    s.getLabelBySource = item => {
+        if (item.texttype) {
+            return item.texttype
+        } else if (item._index.split("_")[1] == "wordpress") {
+            return {
+                ljudochbild: "Ljud och bild",
+                diktensmuseum: "Diktens museum",
+                skolan: "Skolan",
+                bibliotekariesidor: "Bibliotekariesidor"
+            }[item.source]
+        } else {
+            return {
+                presentations: "Kringtexter",
+                vastsvenska: "Litteraturkartan",
+                sol: "Översättarlexikon",
+                author: "Författare"
+            }[item._index.split("_")[1]]
+        }
+    }
     s.fetchByRelevance = countOnly => {
         s.relevanceSearching = true
 
         let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
 
         let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
-        console.log("size", size)
         if (countOnly) {
             size = { from: 0, to: 0 }
         }
 
         let def = backend
             .getTitles(
-                "etext,faksimil,etext-part,faksimil-part,author",
+                "etext,faksimil,etext-part,faksimil-part,author,presentations,sol,vastsvenska,wordpress",
                 {
                     filter_string: s.rowfilter,
                     filter_or,

@@ -190,7 +190,7 @@
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()">
                                 <td class="text-right"><span class="sc primarycolor whitespace-no-wrap">
-                                    {{item.texttype || {'author': "Författare"}[item.doc_type]}}
+                                    {{getLabelBySource(item)}}
                                 </span></td>
                                 <td>
                                 <div v-if="item._index.endsWith('author')">
@@ -206,10 +206,10 @@
 
                                 </div>
                                 <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_presentations'">
-                                    <a ng-href="{{item.url}}">{{item.title}}</a> (Kringtexter)
+                                    <a ng-href="{{item.url}}">{{item.title}}</a>
                                 </div>
                                 <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_sol'">
-                                    <a ng-href="{{item.url}}">{{item.article.ArticleName}}</a> (Översättarlexikon)
+                                    <a ng-href="{{item.url}}">{{item.article.ArticleName}}</a>
 
                                     <ul>
                                         <li ng-repeat="highlight in item.highlight['article.ArticleText']" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
@@ -218,10 +218,20 @@
                                     </ul>
                                 </div>
                                 <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_vastsvenska'">
-                                    <a ng-href="{{item.url}}">{{item.header}}</a> (Litteraturkartan)
+                                    <a ng-href="{{item.url}}">{{item.header}}</a>
+                                    <ul>
+                                        <li ng-repeat="highlight in item.highlight.free_text" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
+                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
+                                        </li>
+                                    </ul>
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_ljudochbild'">
-                                    <a ng-href="{{item.url}}">{{item.title}}</a> (Ljud och bild)
+                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_wordpress'">
+                                    <a ng-href="{{item.url}}">{{item.title}}</a>
+                                    <ul>
+                                        <li ng-repeat="highlight in item.highlight.content" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
+                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
+                                        </li>
+                                    </ul>
                                 </div>
                                 <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part'].includes(item._index.split('_')[1])" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
                                     {{item.shorttitle || item.title}}
