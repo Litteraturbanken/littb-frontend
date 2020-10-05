@@ -13,6 +13,8 @@ _.templateSettings = { interpolate: /\{\{(.+?)\}\}/g }
 
 window.isDev = location.hostname !== "litteraturbanken.se"
 
+let c = window.console
+
 let routeStartCurrent = null
 
 if (location.hash.length && _.startsWith(location.hash, "#!%2F")) {
@@ -609,7 +611,7 @@ littb.config(function ($httpProvider, $locationProvider, $uibTooltipProvider) {
 })
 
 littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
-    c.log("run search params", $location.search())
+    console.log("run search params", $location.search())
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL
     $rootScope.sourceInfo = require("../views/sourceInfo.html")

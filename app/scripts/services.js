@@ -391,17 +391,15 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             if (exclude) {
                 params.exclude = exclude
             }
-            $http({
+            return $http({
                 url,
                 method: "GET",
                 cache: true,
                 params
-            }).success(function (response) {
+            }).then(function (response) {
                 c.log("getAuthorList", response)
-                return def.resolve(response.data)
+                return response.data.data
             })
-
-            return def.promise
         },
 
         getLicense(workinfo) {
@@ -453,74 +451,65 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
         },
         getSourceInfo(params, mediatype) {
             // TODO: mediatype can be null?
-            const def = $q.defer()
             const url = `${STRIX_URL}/get_work_info`
             // params = {}
             // key is titlepath or lbworkid
             // params[key] = value
-            $http({
+            return $http({
                 url,
                 params
-            })
-                .success(function (response) {
-                    let workinfo
-                    if (response.hits === 0) {
-                        def.reject("not_found")
-                        return
+            }).then(function (response) {
+                let workinfo
+                if (response.data.hits === 0) {
+                    // def.reject("not_found")
+                    throw Error("not_found")
+                }
+
+                let works = response.data.data
+                works = expandMediatypes(works, mediatype)
+
+                if (mediatype) {
+                    for (let work of works) {
+                        if (work.mediatype === mediatype) {
+                            workinfo = work
+                            break
+                        }
                     }
-
-                    let works = response.data
-                    works = expandMediatypes(works, mediatype)
-
-                    c.log("works", works)
-
-                    if (mediatype) {
-                        for (let work of works) {
-                            if (work.mediatype === mediatype) {
-                                workinfo = work
-                                break
-                            }
-                        }
-                        if (!workinfo) {
-                            workinfo = works[0]
-                        }
-                    } else {
+                    if (!workinfo) {
                         workinfo = works[0]
                     }
+                } else {
+                    workinfo = works[0]
+                }
 
-                    workinfo.pagemap = {}
-                    workinfo.stepmap = {}
-                    workinfo.pagestep = Number(workinfo.pagestep)
-                    workinfo.filenameMap = []
-                    for (let pg of workinfo.pages) {
-                        workinfo.pagemap[`page_${pg.pagename}`] = pg.pageindex
-                        workinfo.pagemap[`ix_${pg.pageindex}`] = pg.pagename
-                        workinfo.filenameMap[pg.pageindex] = pg.imagenumber
-                        if (pg.pagestep) {
-                            workinfo.stepmap[pg.pageindex] = Number(pg.pagestep)
-                        }
+                workinfo.pagemap = {}
+                workinfo.stepmap = {}
+                workinfo.pagestep = Number(workinfo.pagestep)
+                workinfo.filenameMap = []
+                for (let pg of workinfo.pages) {
+                    workinfo.pagemap[`page_${pg.pagename}`] = pg.pageindex
+                    workinfo.pagemap[`ix_${pg.pageindex}`] = pg.pagename
+                    workinfo.filenameMap[pg.pageindex] = pg.imagenumber
+                    if (pg.pagestep) {
+                        workinfo.stepmap[pg.pageindex] = Number(pg.pagestep)
                     }
-                    delete workinfo.pages
+                }
+                delete workinfo.pages
 
-                    workinfo.errata = $("tr", workinfo.errata)
-                        .get()
-                        .map(tr =>
-                            _($(tr).find("td")).map(util.getInnerXML).map(_.str.strip).value()
-                        )
+                workinfo.errata = $("tr", workinfo.errata)
+                    .get()
+                    .map(tr => _($(tr).find("td")).map(util.getInnerXML).map(_.str.strip).value())
 
-                    workinfo.partStartArray = _(workinfo.parts)
-                        .map(part => [workinfo.pagemap[`page_${part.startpagename}`], part])
-                        .sortBy(function ([i, part]) {
-                            return i
-                        })
-                        .value()
+                workinfo.partStartArray = _(workinfo.parts)
+                    .map(part => [workinfo.pagemap[`page_${part.startpagename}`], part])
+                    .sortBy(function ([i, part]) {
+                        return i
+                    })
+                    .value()
 
-                    c.log("getSourceInfo", workinfo)
-                    return def.resolve(workinfo)
-                })
-                .error(xml => def.reject(xml))
-
-            return def.promise
+                c.log("getSourceInfo", workinfo)
+                return workinfo
+            })
         },
 
         getInfopost(authorid, titlepath) {
@@ -537,7 +526,6 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
 
                 data = expandMediatypes(data, "infopost")
 
-                console.log("data[0]", data[0])
                 return data[0]
             })
         },
@@ -701,7 +689,6 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             if (aboutAuthors == null) {
                 aboutAuthors = false
             }
-            const def = $q.defer()
 
             const params = { include: "shorttitle,lbworkid,titlepath,searchable" }
 
@@ -717,9 +704,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             if (cache) {
                 req.cache = true
             }
-            $http(req).success(data => def.resolve(data.data))
-
-            return def.promise
+            return $http(req).then(response => response.data.data)
         },
 
         // "dramawebben.legacy-url" : "/pjas/fiskargossarne"
@@ -786,7 +771,6 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
 
         searchLexicon(str, id, useWildcard, doSearchId, strict) {
             let params
-            const def = $q.defer()
             const url = "/so/"
             // c.log "searchId", searchId
             if (doSearchId) {
@@ -800,64 +784,60 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                 params["strict"] = true
             }
 
-            http({
+            return http({
                 url,
                 params
 
                 // transformResponse : (data, headers) ->
                 //     c.log "transformResponse", data, headers
-            })
-                .success(function (xml) {
-                    c.log("searchLexicon success", xml)
+            }).then(function (response) {
+                let xml = response.data
+                c.log("searchLexicon success", xml)
 
-                    if ($(xml).text() === "Inga träffar") {
-                        def.reject()
-                        return
+                if ($(xml).text() === "Inga träffar") {
+                    throw new Error("no_hits")
+                }
+
+                let output = $("artikel", xml)
+                    .get()
+                    .map(article => ({
+                        baseform: $("grundform-clean:first", article).text(),
+                        id: $("lemma", article).first().attr("id"),
+                        // lexemes : (_.map $("lexem", article), util.getInnerXML).join("\n")
+                        lexemes: util.getInnerXML(article)
+                    }))
+
+                // window.output = output
+                output = _.sortBy(output, function (item) {
+                    if (item.baseform === str) {
+                        return "aaaaaaaaa"
                     }
-
-                    let output = $("artikel", xml)
-                        .get()
-                        .map(article => ({
-                            baseform: $("grundform-clean:first", article).text(),
-                            id: $("lemma", article).first().attr("id"),
-                            // lexemes : (_.map $("lexem", article), util.getInnerXML).join("\n")
-                            lexemes: util.getInnerXML(article)
-                        }))
-
-                    // window.output = output
-                    output = _.sortBy(output, function (item) {
-                        if (item.baseform === str) {
-                            return "aaaaaaaaa"
-                        }
-                        return item.baseform.toLowerCase()
-                    })
-
-                    c.log("lexicon def resolve")
-
-                    if (!output.length) {
-                        def.reject()
-                    }
-
-                    return def.resolve(output)
+                    return item.baseform.toLowerCase()
                 })
-                .error(() => def.reject())
+
+                c.log("lexicon def resolve")
+
+                if (!output.length) {
+                    throw new Error("no_hits")
+                }
+                return output
+            })
 
             return def.promise
         },
 
         getBiblinfo(params, wf) {
-            const def = $q.defer()
-
             const url = `http://demolittb.spraakdata.gu.se/sla-bibliografi/?${params}`
 
-            $http({
+            return $http({
                 url,
                 method: "GET",
                 params: {
                     username: "app",
                     wf
                 }
-            }).success(function (xml) {
+            }).then(function (response) {
+                let xml = response.data
                 const output = $("entry", xml)
                     .get()
                     .map(entry => ({
@@ -867,26 +847,19 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                         archive: util.getInnerXML($("manusarchive ArchiveID", entry))
                     }))
 
-                return def.resolve(output)
+                return output
             })
-            return def.promise
         },
 
         getDiff(workgroup, myWits, ...ids) {
-            const def = $q.defer()
             const url = `/assets/views/sla/kollationering-${workgroup.toLowerCase()}.xml`
 
-            http({
+            return http({
                 url,
                 transformResponse: null
+            }).then(function (response) {
+                return response.data
             })
-                .success(function (xml) {
-                    const output = xml
-                    return def.resolve(output)
-                })
-                .error(why => def.reject(why))
-
-            return def.promise
         },
 
         submitContactForm(name, email, message, isSOL) {
@@ -911,8 +884,6 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
         },
 
         ordOchSak(author, title) {
-            const def = $q.defer()
-
             const titlemap = {
                 OsynligaLankarSLA: "/assets/views/sla/OLOrdSak-output.xml",
                 GostaBerlingsSaga1SLA: "/assets/views/sla/GBOrdSakForstaDel-output.xml",
@@ -922,44 +893,33 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             const url = titlemap[title]
 
             if (!url) {
-                def.reject(
-                    `${title} not of ${(() => {
-                        const result = []
-                        for (let t in titlemap) {
-                            result.push(t)
-                        }
-                        return result
-                    })()}`
-                )
+                throw new Error("title not valid: " + title)
             } else {
-                http({
+                return http({
                     url,
                     params: ""
-                })
-                    .success(function (xml) {
-                        const data = []
-                        for (let entry of $("glossentry", xml)) {
-                            const pages = []
-                            try {
-                                for (let page of $("page", entry)) {
-                                    pages.push(page.textContent)
-                                }
-                                data.push({
-                                    pages,
-                                    ord: $("glossterm", entry)[0].textContent,
-                                    forklaring: $("glossdef para", entry)[0].textContent
-                                })
-                            } catch (ex) {
-                                c.error("invalid entry?", entry)
+                }).then(function (response) {
+                    let xml = response.data
+                    const data = []
+                    for (let entry of $("glossentry", xml)) {
+                        const pages = []
+                        try {
+                            for (let page of $("page", entry)) {
+                                pages.push(page.textContent)
                             }
+                            data.push({
+                                pages,
+                                ord: $("glossterm", entry)[0].textContent,
+                                forklaring: $("glossdef para", entry)[0].textContent
+                            })
+                        } catch (ex) {
+                            c.error("invalid entry?", entry)
                         }
+                    }
 
-                        return def.resolve(data)
-                    })
-                    .error(def.reject)
+                    return data
+                })
             }
-
-            return def.promise
         },
 
         getImprintRange() {
@@ -1199,9 +1159,9 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
                 url: `${STRIX_URL}/search_count/${query}`,
                 params: _.omit(params, "number_of_fragments", "from", "to"),
                 cache: true
-            }).success(response => {
+            }).then(response => {
                 c.log("count all", response)
-                this.total_hits = response.total_highlights
+                this.total_hits = response.data.total_highlights
                 return c.log("@total_hits", this.total_hits)
             })
 

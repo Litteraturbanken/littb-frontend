@@ -193,16 +193,12 @@
                                     {{getLabelBySource(item)}}
                                 </span></td>
                                 <td>
-                                <div v-if="item._index.endsWith('author')">
+                                <div ng-if="item._index.endsWith('author')">
                                     <a ng-href="/författare/{{item.authorid}}/" class="">
                                         <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
                                         {{item.name_for_index.split(",")[1]}} {{item | authorYear}}
                                     </a>
-                                    <ul>
-                                        <li ng-repeat="highlight in item.highlight.intro" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
-                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
-                                        </li>
-                                    </ul>
+                                    <highlights list="item.highlight.intro"></highlights>
 
                                 </div>
                                 <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_presentations'">
@@ -211,31 +207,24 @@
                                 <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_sol'">
                                     <a ng-href="{{item.url}}">{{item.article.ArticleName}}</a>
 
-                                    <ul>
-                                        <li ng-repeat="highlight in item.highlight['article.ArticleText']" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
-                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
-                                        </li>
-                                    </ul>
+                                    <highlights list="item.highlight['article.ArticleText']"></highlights>
                                 </div>
                                 <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_vastsvenska'">
                                     <a ng-href="{{item.url}}">{{item.header}}</a>
-                                    <ul>
-                                        <li ng-repeat="highlight in item.highlight.free_text" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
-                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
-                                        </li>
-                                    </ul>
+
+                                    <highlights list="item.highlight.free_text"></highlights>
                                 </div>
                                 <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_wordpress'">
                                     <a ng-href="{{item.url}}">{{item.title}}</a>
-                                    <ul>
-                                        <li ng-repeat="highlight in item.highlight.content" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
-                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
-                                        </li>
-                                    </ul>
+                                    <highlights list="item.highlight.content"></highlights>
                                 </div>
                                 <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part'].includes(item._index.split('_')[1])" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
                                     {{item.shorttitle || item.title}}
 
+
+                                    <highlights list="item.highlight.title"></highlights>
+                                    <highlights ng-if="!item.highlight.title" list="item.highlight['title.search']"></highlights>
+                                    <highlights list="item.highlight['parts.title']"></highlights>
 
                                     <ul>
                                         <li ng-repeat="highlight in item.highlight.title" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">

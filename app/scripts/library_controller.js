@@ -23,6 +23,19 @@ littb.directive("sortList", () => ({
     `
 }))
 
+littb.component("highlights", {
+    template: `
+        <ul>
+            <li ng-repeat="highlight in $ctrl.list track by $index" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
+                ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
+            </li>
+        </ul>
+    `,
+    bindings: {
+        list: "="
+    }
+})
+
 littb.controller("libraryCtrl", function (
     $scope,
     backend,

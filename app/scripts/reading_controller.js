@@ -956,15 +956,17 @@ littb.controller("readingCtrl", function (
         }
     })
 
-    // # ORD OCH SAK
-    backend.ordOchSak(author, title).then(
-        function (ordOchSak) {
-            s.ordOchSakAll = ordOchSak
-            s.$watch("pagename", updateOrdOchSak)
-            return updateOrdOchSak()
-        },
-        function (error) {}
-    )
+    try {
+        // # ORD OCH SAK
+        backend.ordOchSak(author, title).then(
+            function (ordOchSak) {
+                s.ordOchSakAll = ordOchSak
+                s.$watch("pagename", updateOrdOchSak)
+                return updateOrdOchSak()
+            },
+            function (error) {}
+        )
+    } catch (e) {}
     // c.log 'failed to get ord och sak', error
 
     var updateOrdOchSak = function () {

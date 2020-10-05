@@ -876,17 +876,20 @@ amdefine@>=0.0.4:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/amdefine/-/amdefine-1.0.1.tgz#4a5282ac164729e93619bcfd3ad151f817ce91f5"
 
-angular-animate@1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/angular-animate/-/angular-animate-1.4.0.tgz#5c1ffaa9a9bfb5bd6e9be788c6c58c822513ba70"
+angular-animate@1.7.9:
+  version "1.7.9"
+  resolved "https://registry.yarnpkg.com/angular-animate/-/angular-animate-1.7.9.tgz#a397f82434c1e7ed5b7a298fa70fc3de989a6785"
+  integrity sha512-fV+AISy/HTzurQH2ngsJg+lLIvfu0ahc1h4AYKauaXVw97rZc2k4iUA1bMstiEyClsdayQX568kjQc1NK+oYhw==
 
-angular-aria@~1.4.8:
-  version "1.4.14"
-  resolved "https://registry.yarnpkg.com/angular-aria/-/angular-aria-1.4.14.tgz#4c8157181c9f6707314d15c7c2a9cbcbb1eb639e"
+angular-aria@~1.7.9:
+  version "1.7.9"
+  resolved "https://registry.yarnpkg.com/angular-aria/-/angular-aria-1.7.9.tgz#90c61895ffbd876e95915222b32a7bd0070af7e3"
+  integrity sha512-luI3Jemd1AbOQW0krdzfEG3fM0IFtLY0bSSqIDEx3POE0XjKIC1MkrO8Csyq9PPgueLphyAPofzUwZ8YeZ88SA==
 
-angular-route@1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/angular-route/-/angular-route-1.4.0.tgz#59800031e16ffa1c4bc1ffbcc703f7f41727cec2"
+angular-route@1.7.9:
+  version "1.7.9"
+  resolved "https://registry.yarnpkg.com/angular-route/-/angular-route-1.7.9.tgz#f9910a2af0ba3ad7a969c5dd369b8360d0d5e4ef"
+  integrity sha512-vRoj5hzdQtWbODhWJqDzD1iNOEfCKshO6GFBuPVV7RHlPjzIc4R2dHCc7Qiv/8F3LDxJDohc6vSnTDMLHuaqeA==
 
 angular-spinner@^1.0.1:
   version "1.0.1"
@@ -907,9 +910,10 @@ angular-ui-select2@^0.0.5:
   version "0.0.5"
   resolved "https://registry.yarnpkg.com/angular-ui-select2/-/angular-ui-select2-0.0.5.tgz#15e7643afd69ca9063d405eb3be2f95dd5ec87f5"
 
-angular@1.4.14:
-  version "1.4.14"
-  resolved "https://registry.yarnpkg.com/angular/-/angular-1.4.14.tgz#9d0feaf60ce6e52ce50f49ee328656d1e1875c37"
+angular@1.7.9:
+  version "1.7.9"
+  resolved "https://registry.yarnpkg.com/angular/-/angular-1.7.9.tgz#e52616e8701c17724c3c238cfe4f9446fd570bc4"
+  integrity sha512-5se7ZpcOtu0MBFlzGv5dsM1quQDoDeUTwZrWjGtTNA7O88cD8TEk5IEKCTDa3uECV9XnvKREVUr7du1ACiWGFQ==
 
 angularjs-slider@^6.6.1:
   version "6.6.1"
