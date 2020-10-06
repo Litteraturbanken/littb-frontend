@@ -250,6 +250,7 @@ littb.controller("libraryCtrl", function (
     })
 
     s.sort = {
+        all: "_score|desc",
         works: "popularity|desc",
         epub: "popularity|desc",
         authors: "popularity|desc",
@@ -258,6 +259,28 @@ littb.controller("libraryCtrl", function (
     }
 
     s.sortItems = {
+        all: [
+            {
+                label: "Relevans",
+                val: "_score",
+                search: "relevans",
+                dir: "desc",
+                active: true
+            },
+            {
+                label: "Författare",
+                val: "main_author.name_for_index",
+                suffix: ",sortkey|asc",
+                dir: "asc",
+                search: "forfattare"
+            },
+            {
+                label: "Titel",
+                val: "sortkey",
+                dir: "asc",
+                search: "titlar"
+            }
+        ],
         works: [
             {
                 label: "Författare",
@@ -487,6 +510,7 @@ littb.controller("libraryCtrl", function (
                     author_aggs: false,
                     relevance: true,
                     show_all: false, // TODO: remove this to hide show: false
+                    sort_field: s.sort.all,
                     // suggest: true,
                     // include:
                     //     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,sort_date_imprint.plain," +
@@ -722,7 +746,7 @@ littb.controller("libraryCtrl", function (
     // }
 
     s.onSortClick = (item, noSwitchDir, replace, requestSortedData = true) => {
-        console.log("onSortClick")
+        console.log("onSortClick", s.listType)
         if (item.active && !noSwitchDir) {
             item.dir = item.dir == "asc" ? "desc" : "asc"
             item.reversed = !item.reversed
@@ -745,7 +769,9 @@ littb.controller("libraryCtrl", function (
         if (!requestSortedData) {
             return
         }
-        if (s.listType == "works") {
+        if (s.listType == "all") {
+            s.fetchByRelevance(false)
+        } else if (s.listType == "works") {
             s.fetchWorks(false, false)
         } else if (s.listType == "parts") {
             s.parts_page.current = 1
@@ -1118,7 +1144,7 @@ littb.controller("libraryCtrl", function (
             default: "all",
             post_change: function (listType) {
                 console.log("post_change listType", listType)
-                if (listType == "all") return
+                // if (listType == "all") return
                 if (isInitListType) {
                     let sortItem = _.find(s.sortItems[listType || "all"], function (item) {
                         return item.active

@@ -226,18 +226,6 @@
                                     <highlights ng-if="!item.highlight.title" list="item.highlight['title.search']"></highlights>
                                     <highlights list="item.highlight['parts.title']"></highlights>
 
-                                    <ul>
-                                        <li ng-repeat="highlight in item.highlight.title" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
-                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
-                                        </li>
-                                        <li ng-if="!item.highlight.title" ng-repeat="highlight in item.highlight['title.search']" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
-                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
-                                        </li>
-                                        <li ng-repeat="highlight in item.highlight['parts.title']" ng-class="{flip: $parent.$odd}" class="whitespace-no-wrap">
-                                            ”… <span class="highlight text-xs" ng-bind-html="highlight | trust"></span> …”   
-                                        </li>
-                                    </ul>
-
                                 </div>
                                 </td>
 
