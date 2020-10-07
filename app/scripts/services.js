@@ -958,6 +958,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             // console.log("size_vals", size_vals)
             // let size_vals = SIZE_VALS
             const filename = _.str.lpad(ix, 5, "0")
+            console.log("filename", filename, ix)
             const url = `txt/${lbworkid}/ocr_${filename}.html`
             return this.getHtmlFile(url).then(function (response) {
                 const html = response.data.querySelector("body > div")

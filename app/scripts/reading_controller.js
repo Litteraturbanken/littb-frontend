@@ -33,6 +33,7 @@ littb.controller("readingCtrl", function (
     if ("ix" in $routeParams) {
         s.isEditor = true
         s.pageix = Number($routeParams.ix)
+        s.editorLbWorkId = $routeParams.lbid
         mediatype = s.mediatype = { f: "faksimil", e: "etext" }[s.mediatype]
     }
 
@@ -886,6 +887,7 @@ littb.controller("readingCtrl", function (
                     return onFirstLoad()
                 })
 
+                // console.log("mediatype", mediatype)
                 if (mediatype === "faksimil" && s.workinfo.searchable) {
                     return backend
                         .fetchOverlayData(s.workinfo.lbworkid, s.pageix)
@@ -914,6 +916,15 @@ littb.controller("readingCtrl", function (
                 }
             }
         )
+    }
+    if (mediatype === "faksimil" && s.isEditor) {
+        backend
+            .fetchOverlayData(s.editorLbWorkId, s.pageix)
+            .then(function ([overlayHtml, overlayWidth]) {
+                // s.overlayFactors = overlayFactors
+                s.overlayWidth = overlayWidth
+                s.overlayHtml = overlayHtml
+            })
     }
 
     s.setSize = function (index) {
