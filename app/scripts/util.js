@@ -214,7 +214,7 @@ littb.factory("util", function util($location, $filter) {
                 for (let obj of config) {
                     let val = $location.search()[obj.key]
                     if (val == null) {
-                        if (obj.default) {
+                        if ("default" in obj) {
                             val = obj.default
                         } else {
                             if (typeof obj.post_change === "function") {
