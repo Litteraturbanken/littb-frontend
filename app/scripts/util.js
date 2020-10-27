@@ -89,6 +89,7 @@ littb.factory("util", function util($location, $filter) {
         },
         getAuthorSelectConf(s) {
             return {
+                noResults: () => "Inga resultat",
                 matcher(params, data) {
                     if (!params.term) return data
                     if (!data || !data.id || data.id == "all" || data.id == "") return false
