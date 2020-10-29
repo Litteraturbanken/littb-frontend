@@ -150,7 +150,7 @@
 
                             <div class="ctrls" ng-class="{searching : searchData.isSearching}">
                                 <form ng-submit="searchWork(search_query)">
-                                    <input focusable="search_work" type="text" ng-model="search_query"> 
+                                    <input class="border border-gray-300" focusable="search_work" type="text" ng-model="search_query" > 
                                     <i class="spinner fa fa-spinner fa-pulse"></i>
                                     <button type="submit" class="submit btn">Sök</button>
 
@@ -225,10 +225,10 @@
                 <ul class="ctrls">
 
                     <div class="arrows">
-                        <button rel="prev" class="submit btn navicon left" ng-click="prevHit()">
+                        <button rel="prev" class="submit btn navicon left" ng-disabled="searchData.current == 0" ng-click="prevHit()">
                             <i class="fa fa-angle-left"></i>
                         </button>
-                        <button rel="next" class="submit btn navicon" ng-class="{disabled : searchData.current + 1 == searchData.total_hits}" ng-click="nextHit()">
+                        <button rel="next" class="submit btn navicon" ng-disabled="isLastHit()" ng-click="nextHit()">
                             <i class="fa fa-angle-right"></i>
                         </button>
                     </div>
@@ -237,7 +237,7 @@
                     <li><a ng-click="onGotoHit(searchData.total_hits)">Gå till sista träffen</a></li>
                     <li  ng-class="{open : showGotoHitInput}"><a ng-click="onGotoHitInput()">Gå direkt till träff . . .</a> 
                         <form ng-submit="onGotoHit(gotoHitInput)" ng-show="showGotoHitInput">
-                            <input focusable type="text" ng-model="gotoHitInput"> <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>    
+                            <input class="border border-gray-300" focusable type="text" ng-model="gotoHitInput"> <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>    
                         </form>
                     </li>
 

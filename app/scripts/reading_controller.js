@@ -133,7 +133,10 @@ littb.controller("readingCtrl", function (
 
     s.prevHit = () => searchData.prev().then(changeHit)
 
+    s.isLastHit = () => searchData.current + 1 == searchData.total_hits
+
     s.close_hits = function () {
+        s.search_query = ""
         searchData.reset()
         s.resetHitMarkings()
         s.show_search_work = false
