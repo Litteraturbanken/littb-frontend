@@ -74,7 +74,7 @@ littb.controller("libraryCtrl", function (
     s.authLimit = 150
 
     s.filters = {
-        "main_author.gender": $location.search()["kön"],
+        gender: $location.search()["kön"],
         authorkeyword: [],
         keywords: [],
         languages: [],
@@ -98,7 +98,7 @@ littb.controller("libraryCtrl", function (
             Object.values(
                 _.pick(s.filters, ["authorkeyword", "keywords", "languages", "mediatypes"])
             ).every(arr => !arr.length) &&
-            !s.filters["main_author.gender"] &&
+            !s.filters.gender &&
             s.chronology_floor == from &&
             s.chronology_ceil == to
         )
@@ -401,14 +401,10 @@ littb.controller("libraryCtrl", function (
         let [key, dir] = (s.sort.authors || "").split("|")
         let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
 
-        // if (s.filters["main_author.gender"]) {
-        //     authors = authors.filter(item => item.gender == s.filters["main_author.gender"])
-        // }
-
         authors = authors.filter(item => {
             let conds = []
-            if (s.filters["main_author.gender"]) {
-                conds.push(item.gender == s.filters["main_author.gender"])
+            if (s.filters.gender) {
+                conds.push(item.gender == s.filters.gender)
             }
             if (s.filter) {
                 conds.push(
@@ -471,6 +467,7 @@ littb.controller("libraryCtrl", function (
             })
         }
     }
+    s.getIndex = longindex => longindex.split("_")[1]
     s.getLabelBySource = item => {
         if (item.texttype) {
             return item.texttype
@@ -1079,7 +1076,7 @@ littb.controller("libraryCtrl", function (
         // },
         {
             key: "kön",
-            expr: "filters['main_author.gender']",
+            expr: "filters.gender",
             default: "all"
         },
         {

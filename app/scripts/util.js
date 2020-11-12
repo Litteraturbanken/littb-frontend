@@ -152,8 +152,13 @@ littb.factory("util", function util($location, $filter) {
             //     'sort_date_imprint.date:range' : [1200, 1900]
             // }
 
-            if (filterObj["main_author.gender"] === "all") {
-                delete filterObj["main_author.gender"]
+            let filter_or = {}
+
+            if (filterObj.gender === "all") {
+                delete filterObj["gender"]
+            } else {
+                filter_or["main_author.gender"] = filterObj.gender
+                filter_or["gender"] = filterObj.gender
             }
             function makeObj(list) {
                 const output = {}
@@ -185,7 +190,7 @@ littb.factory("util", function util($location, $filter) {
             } else {
                 delete rest["sort_date_imprint.date:range"]
             }
-            const filter_or = makeObj(filterObj.mediatypes)
+            filter_or = { ...filter_or, ...makeObj(filterObj.mediatypes) }
             const filter_and = _.extend(
                 rest,
                 makeObj(filterObj.languages),

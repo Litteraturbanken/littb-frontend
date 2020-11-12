@@ -201,24 +201,24 @@
                                     <highlights list="item.highlight.intro_text"></highlights>
 
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_presentations'">
+                                <div class="whitespace-no-wrap" ng-if="getIndex(item._index) == 'presentations'">
                                     <a ng-href="{{item.url}}">{{item.title}}</a>
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_sol'">
+                                <div class="whitespace-no-wrap" ng-if="getIndex(item._index) == 'sol'">
                                     <a ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{item.article.URLName}}">{{item.article.ArticleName}}</a>
 
                                     <highlights list="item.highlight['article.ArticleText']"></highlights>
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_vastsvenska'">
+                                <div class="whitespace-no-wrap" ng-if="getIndex(item._index) == 'vastsvenska'">
                                     <a ng-href="https://dev.litteraturbanken.se/?id={{item.placeid}}&article={{item.id}}">{{item.header}}</a>
 
                                     <highlights list="item.highlight.free_text"></highlights>
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="item._index == 'littb-dev_wordpress'">
+                                <div class="whitespace-no-wrap" ng-if="getIndex(item._index) == 'wordpress'">
                                     <a ng-href="{{item.link}}">{{item.title}}</a>
                                     <highlights list="item.highlight.content"></highlights>
                                 </div>
-                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part'].includes(item._index.split('_')[1])" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
+                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part'].includes(getIndex(item._index))" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
                                     {{item.shorttitle || item.title}}
 
 
