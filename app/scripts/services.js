@@ -2,6 +2,7 @@ const angular = window.angular
 const _ = window._
 const jQuery = window.jQuery
 const c = window.console
+import bodybuilder from "bodybuilder"
 
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
@@ -209,29 +210,29 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
         },
 
         getEpub(size, filterTxt, authorid, sort_field) {
-            const url = `${STRIX_URL}/list_all/etext`
+            let query = bodybuilder().filter("term", "has_epub", true)
+
+            if (authorid)
+                query.query("nested", "path", "authors", q =>
+                    q
+                        .query("match", "authors.authorid", authorid)
+                        .notQuery("exists", "authors.type")
+                )
+            if (filterTxt)
+                query.query("multi_match", "query", filterTxt, {
+                    fields: ["main_author.full_name.search", "title.search"]
+                })
+            const url = `${STRIX_URL}/query/etext`
 
             const params = {
                 to: size || 10000,
-                filter_and: {
-                    has_epub: true
-                },
                 include:
                     "lbworkid,titlepath,sortkey,title,titleid,work_titleid,shorttitle,mediatype,authors.authorid,sort_date_imprint.plain," +
                     "authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name",
                 exclude: "text,parts,sourcedesc,pages,errata",
-                sort_field: sort_field || "epub_popularity|desc"
+                sort_field: sort_field || "epub_popularity|desc",
+                search: JSON.stringify(query.build())
             }
-
-            if (authorid) {
-                // url += "/" + authorid
-                params.filter_and["main_author.authorid"] = authorid
-            }
-            if (filterTxt) {
-                params.filter_string = filterTxt
-            }
-
-            params.filter_and = JSON.stringify(params.filter_and)
 
             return $http({
                 url,

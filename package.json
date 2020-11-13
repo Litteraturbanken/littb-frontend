@@ -20,6 +20,7 @@
         "angular-ui-bootstrap": "^2.5.6",
         "angular-ui-select2": "^0.0.5",
         "angularjs-slider": "^6.6.1",
+        "bodybuilder": "^2.2.21",
         "bootstrap-sass": "~3.4.1",
         "font-awesome": "~4.4.0",
         "jquery": "1.11.1",
@@ -74,5 +75,8 @@
     },
     "engines": {
         "node": ">=0.10.0"
+    },
+    "optionalDependencies": {
+        "axios": "^0.21.0"
     }
 }
