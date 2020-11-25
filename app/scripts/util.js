@@ -22,6 +22,7 @@ littb.factory("util", function util($location, $filter) {
     const PREFIX_REGEXP = /^(x[:\-_]|data[:\-_])/i
     const SPECIAL_CHARS_REGEXP = /([:\-_]+(.))/g
     const MOZ_HACK_REGEXP = /^moz([A-Z])/
+    let makeFilterObj = null
     const camelCase = name =>
         name
             .replace(SPECIAL_CHARS_REGEXP, function (_, separator, letter, offset) {
@@ -136,6 +137,18 @@ littb.factory("util", function util($location, $filter) {
                 }
             }
         },
+        makeFilterObj: (makeFilterObj = function (list) {
+            const output = {}
+            for (const kw of list || []) {
+                const [key, val] = kw.split(":")
+                if (output[key]) {
+                    output[key] = output[key].concat(val.split(";"))
+                } else {
+                    output[key] = val.split(";")
+                }
+            }
+            return output
+        }),
         getKeywordTextfilter(filterObj) {
             // sample
             // {
@@ -158,20 +171,9 @@ littb.factory("util", function util($location, $filter) {
                 delete filterObj["gender"]
             } else {
                 filter_or["main_author.gender"] = filterObj.gender
-                filter_or["gender"] = filterObj.gender
+                // filter_or["gender"] = filterObj.gender
             }
-            function makeObj(list) {
-                const output = {}
-                for (const kw of list || []) {
-                    const [key, val] = kw.split(":")
-                    if (output[key]) {
-                        output[key] = output[key].concat(val.split(";"))
-                    } else {
-                        output[key] = val.split(";")
-                    }
-                }
-                return output
-            }
+
             const rest = _.omit(
                 _.omitBy(filterObj, _.isEmpty),
                 "keywords",
@@ -190,13 +192,13 @@ littb.factory("util", function util($location, $filter) {
             } else {
                 delete rest["sort_date_imprint.date:range"]
             }
-            filter_or = { ...filter_or, ...makeObj(filterObj.mediatypes) }
+            filter_or = { ...filter_or, ...makeFilterObj(filterObj.mediatypes) }
             const filter_and = _.extend(
                 rest,
-                makeObj(filterObj.languages),
-                makeObj(filterObj.keywords)
-                // makeObj(filterObj.about_authors),
-                // makeObj(filterObj["main_author.authorid"])
+                makeFilterObj(filterObj.languages),
+                makeFilterObj(filterObj.keywords)
+                // makeFilterObj(filterObj.about_authors),
+                // makeFilterObj(filterObj["main_author.authorid"])
             )
             return { filter_or, filter_and }
         },

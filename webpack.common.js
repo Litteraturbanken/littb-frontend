@@ -54,6 +54,16 @@ module.exports = {
                 }
             },
             {
+                test: /\.tsx?$/,
+                use: {
+                    loader: "ts-loader",
+                    options: {
+                        configFile: path.resolve(__dirname, "tsconfig.json")
+                    }
+                },
+                exclude: /node_modules/
+            },
+            {
                 test: /\.(sa|sc|c)ss$/,
                 use: [
                     // devMode ? "style-loader" : MiniCssExtractPlugin.loader,

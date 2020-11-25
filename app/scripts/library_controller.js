@@ -467,11 +467,11 @@ littb.controller("libraryCtrl", function (
             })
         }
     }
-    s.getIndex = longindex => longindex.split("_")[1]
+    s.getIndex = longindex => longindex
     s.getLabelBySource = item => {
         if (item.texttype) {
             return item.texttype
-        } else if (item._index.split("_")[1] == "wordpress") {
+        } else if (item._index == "wordpress") {
             return {
                 ljudochbild: "Ljud och bild",
                 diktensmuseum: "Diktens museum",
@@ -484,29 +484,32 @@ littb.controller("libraryCtrl", function (
                 vastsvenska: "Litteraturkartan",
                 sol: "Översättarlexikon",
                 author: "Författare"
-            }[item._index.split("_")[1]]
+            }[item._index]
         }
     }
     s.fetchByRelevance = countOnly => {
         s.relevanceSearching = true
 
-        let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+        // let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+        console.log("s.filters", s.filters)
 
-        let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
+        // let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
+        let size = { to: 100 }
         if (countOnly) {
             size = { from: 0, to: 0 }
         }
 
         let def = backend
-            .getTitles(
+            .relevanceSearch(
                 "etext,faksimil,etext-part,faksimil-part,author,presentations,sol,vastsvenska,wordpress",
                 {
                     filter_string: s.rowfilter,
-                    filter_or,
-                    filter_and,
-                    author_aggs: false,
-                    relevance: true,
-                    show_all: false, // TODO: remove this to hide show: false
+                    filters: s.filters,
+                    // filter_or,
+                    // filter_and,
+                    // author_aggs: false,
+                    // relevance: true,
+                    show_all: false,
                     sort_field: s.sort.all,
                     // suggest: true,
                     // include:
