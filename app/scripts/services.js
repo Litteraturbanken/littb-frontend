@@ -1506,7 +1506,9 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
 littb.factory("SearchWorkData", function (SearchData, $q, $http) {
     // c.log "searchWorkData", SearchData
     let SearchWorkData
-    return (SearchWorkData = class SearchWorkData extends SearchData {
+    return (SearchWorkData = class SearchWorkData extends (
+        SearchData
+    ) {
         constructor(scope) {
             super()
             this.n_times = 0

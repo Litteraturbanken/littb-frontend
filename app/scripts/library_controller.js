@@ -727,7 +727,7 @@ littb.controller("libraryCtrl", function (
             // output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
             const titles = titleGroups[datestr]
             output.push({ isHeader: true, label: dateFmt(datestr) })
-            output = output.concat(_.sortBy(titles, ["sortfield"]))
+            output = output.concat(_.sortBy(titles, item => item.sortfield.toLowerCase()))
         }
         return output
     }

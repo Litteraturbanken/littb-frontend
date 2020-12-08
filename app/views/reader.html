@@ -125,13 +125,22 @@
             </rzslider>
         </div>
         
+        
         <div class="subnav mt-10">
+            <script type="text/ng-template" id="download.html">
+                <button class="btn">Ladda ner</button>
+            </script>
             <ul>
                 <li ng-show="workinfo.parts.length"><a ng-click="show_chapters = true">Innehållsförteckning</a></li>
                 <li>
                     <a ng-hide="workinfo.texttype == 'drama'" ng-click="openModal()">Mer om boken</a>
                     <a ng-show="workinfo.texttype == 'drama'" ng-click="openModal()">Mer om pjäsen</a>
                 </li>
+                <!-- <li><a
+                    uib-popover-template="'download.html'" 
+                    uib-popover-title="Ladda ner"
+                    uib-popover-placement="left">
+                    Ladda ner PDF</a></li> -->
                 <li><a ng-click="activateFocus()">Läsfokus</a></li>
                 <li>
                     <a ng-show="!workinfo.searchable" class="disabled">Sök i verket</a> 
