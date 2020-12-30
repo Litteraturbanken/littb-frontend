@@ -178,13 +178,23 @@
                     <sort-list></sort-list>
                     <div class=""> 
                         <table class="">
-                            <tr class="spinner_row" ng-show="authorSearching">
+                            <tr class="spinner_row" ng-show="relevanceSearching">
                                 <td><i class="spinner fa fa-spinner fa-pulse"></i></td>
                             </tr>
                             <!-- <li class="text-lg" ng-show="!authorSearching && !authorData.length">
                                 Inga träffar. <span ng-show='authorSuggest[0]'>Menade du <a class="link" ng-click='setFilter(authorSuggest[0].text)'>{{authorSuggest[0].text}}</a>?</span>
                             </li> -->
                 
+                            <tr class="text-lg" ng-show="!relevanceSearching && relevanceSuggest.length && relevanceSuggest[0].freq > (relevanceData.length * 5)">
+                                
+                                <td colspan="3" ng-if="relevanceError">
+                                    Ett fel uppstod. 
+                                </td>
+                                <td colspan="3" class="pb-4" ng-if="!relevanceError">
+                                    <span ng-show="!relevanceData.length">Inga träffar.</span> <span ng-show='relevanceSuggest[0]'>Menade du <a class="link" ng-click='setFilter(relevanceSuggest[0].text)'>{{relevanceSuggest[0].text}}</a>?</span>
+                                </td>
+                            </tr>
+                            
                             <tr ng-repeat="item in relevanceData"
                                 class="author_row align-top"
                                 ng-click="authorClick($event, author)" 
@@ -198,23 +208,24 @@
                                         <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
                                         {{item.name_for_index.split(",")[1]}} {{item | authorYear}}
                                     </a>
-                                    <highlights list="item.highlight.intro_text"></highlights>
+                                    <highlights list="item.highlight.intro"></highlights>
 
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="getIndex(item._index) == 'presentations'">
+                                <div class="" ng-if="getIndex(item._index) == 'presentations'">
                                     <a ng-href="{{item.url}}">{{item.title}}</a>
+                                    <highlights list="item.highlight.content"></highlights>
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="getIndex(item._index) == 'sol'">
+                                <div class="" ng-if="getIndex(item._index) == 'sol'">
                                     <a ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{item.article.URLName}}">{{item.article.ArticleName}}</a>
 
                                     <highlights list="item.highlight['article.ArticleText']"></highlights>
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="getIndex(item._index) == 'vastsvenska'">
+                                <div class="" ng-if="getIndex(item._index) == 'vastsvenska'">
                                     <a ng-href="https://dev.litteraturbanken.se/?id={{item.placeid}}&article={{item.id}}">{{item.header}}</a>
 
                                     <highlights list="item.highlight.free_text"></highlights>
                                 </div>
-                                <div class="whitespace-no-wrap" ng-if="getIndex(item._index) == 'wordpress'">
+                                <div class="" ng-if="getIndex(item._index) == 'wordpress'">
                                     <a ng-href="{{item.link}}">{{item.title}}</a>
                                     <highlights list="item.highlight.content"></highlights>
                                 </div>
@@ -229,7 +240,11 @@
                                 </div>
                                 </td>
 
-                                <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap"><a ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)">{{item.sort_date_imprint.plain}}</a></td>
+                                <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap">
+                                    <a ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)">
+                                        {{item.sort_date_imprint.plain}}
+                                    </a>
+                                </td>
                                 <td class="align-top text-right sc primarycolor"><span class="author">
                                             <a ng-href="/författare/{{item.main_author.authorid}}">{{item.main_author.surname}}</a> 
                                             <span ng-if="item.main_author.type == 'editor'">(red.)</span> 

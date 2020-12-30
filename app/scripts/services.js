@@ -429,10 +429,11 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                 c.log("response", response)
                 // const { data, author_aggregation, hits, distinct_hits, suggest } = response.data
                 // TODO: bring back suggest
-                const { data, hits } = response.data
+                const { data, suggest, hits } = response.data
 
                 return {
                     titles: disableGrouping ? data : expandMediatypes(data),
+                    suggest,
                     hits
                     // distinct_hits,
                     // suggest
