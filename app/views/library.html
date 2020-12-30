@@ -230,12 +230,17 @@
                                     <highlights list="item.highlight.content"></highlights>
                                 </div>
                                 <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part'].includes(getIndex(item._index))" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
-                                    {{item.shorttitle || item.title}}
+                                    
+                                    <a ng-if="['etext', 'faksimil'].includes(getIndex(item._index))" ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
+                                    <a ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))" ng-href="/författare/{{getPartAuthor(item).authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
 
 
                                     <highlights list="item.highlight.title"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight['title.search']"></highlights>
+                                    <highlights ng-if="!item.highlight.title" list="item.highlight.title_modernized"></highlights>
+
                                     <highlights list="item.highlight['parts.title']"></highlights>
+                                    <highlights ng-if="!item.highlight['parts.title']" list="item.highlight['parts.title_modernized']"></highlights>
 
                                 </div>
                                 </td>
