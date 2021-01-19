@@ -352,6 +352,12 @@ window.littb = angular
                     return "/"
                 }
             })
+            .when(["/litteraturkartan/"], {
+                redirectTo: $routeParams => {
+                    window.location.pathname = "/litteraturkartan/"
+                    return "/"
+                }
+            })
             .when(["/bibliotekariesidor/", "/bibliotekariesidor/:subadress*"], {
                 redirectTo: $routeParams => {
                     window.location.href =
@@ -586,7 +592,7 @@ window.littb = angular
 
                 // },
                 template: `<p littb-err code='404' msg="Page not found.">Du har angett en adress som inte finns på Litteraturbanken.</p> 
-                            <p>Använd browserns bakåtknapp för att komma tillbaka till 
+                            <p>Använd webbläsarens bakåtknapp för att komma tillbaka till 
                             sidan du var på innan, eller klicka på någon av 
                             länkarna till vänster.</p>`,
                 title: "Sidan kan inte hittas"

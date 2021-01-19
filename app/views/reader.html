@@ -1,7 +1,7 @@
 <meta-desc>
     {{workinfo.shorttitle || workinfo.title}} av {{authorById[author].full_name}}. {{getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title}}, sida {{pagename}} som {{mediatype}}
 </meta-desc>
-<page-title>{{workinfo.title}} sida {{pagename}} {{mediatype}}</page-title>
+<page-title>{{workinfo.shorttitle || workinfo.title}} sida {{pagename}} {{mediatype}}</page-title>
 <div ng-if="workinfo && !isDefined(pageix)" littb-err code='404' msg="Page {{pagename}} not found.">Hittar ingen sida '{{pagename}}' i verket.</div>
 <div ng-if="!['etext', 'faksimil', 'epub'].includes(mediatype) && !isEditor" littb-err code='404' msg="Invalid mediatype '{{mediatype}}'.">Mediatypen '{{mediatype}}' går inte att visa i läsläget.</div>
 <div ng-if="mediatype == 'epub' && !isEditor" littb-err code='404' msg="Invalid mediatype '{{mediatype}}'.">
