@@ -510,7 +510,7 @@ littb.controller(
 
             try {
                 let { titles, hits, suggest } = await backend.relevanceSearch(
-                    "etext,faksimil,etext-part,faksimil-part,author,presentations,sol,vastsvenska,wordpress",
+                    "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,vastsvenska,wordpress",
                     {
                         filter_string: s.rowfilter,
                         filters: s.filters,

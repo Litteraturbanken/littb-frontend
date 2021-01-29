@@ -229,10 +229,11 @@
                                     <a ng-href="{{item.link}}">{{item.title}}</a>
                                     <highlights list="item.highlight.content"></highlights>
                                 </div>
-                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part'].includes(getIndex(item._index))" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
+                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
                                     
                                     <a ng-if="['etext', 'faksimil'].includes(getIndex(item._index))" ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
                                     <a ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))" ng-href="/författare/{{getPartAuthor(item).authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
+                                    <a ng-if="['pdf'].includes(getIndex(item._index))" ng-href="/txt/{{item.lbworkid}}/{{item.lbworkid}}.pdf" download target="_self">{{item.shorttitle || item.title}}</a>
 
 
                                     <highlights list="item.highlight.title"></highlights>

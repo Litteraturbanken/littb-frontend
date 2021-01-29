@@ -120,6 +120,7 @@ function applyTemplate(template, obj) {
     val = val.replace(/,([\}\]])/g, "$1")
     console.log("val", val)
     console.log("val", JSON.stringify(JSON.parse(val), null, 2))
+    return JSON.parse(val)
 }
 
 export function fromFilters(filters: FilterObj) {
@@ -151,6 +152,9 @@ export function fromFilters(filters: FilterObj) {
                 # }
                 # if(this.keywords && this.keywords.length) {
                     ${getQuery("keywords", filters.keywords)}
+                # }
+                # if(this.mediatypes && this.mediatypes.length) {
+                    ${getQuery("mediatypes", filters.mediatypes)}
                 # }
             ]
             }
