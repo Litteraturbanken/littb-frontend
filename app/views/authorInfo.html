@@ -91,6 +91,7 @@
                         <li ng-if="authorInfo.wikidata.skbl_link"><a target="_blank"  ng-href="https://www.skbl.se/sv/artikel/{{authorInfo.wikidata.skbl_link}}">Svenskt kvinnobiografiskt lexikon</a></li>
                         <li ng-if="authorInfo.wikidata.sol_link"><a target="_blank"  ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{authorInfo.wikidata.sol_link}}">Svenskt översättarlexikon</a></li>
                         <li ng-if="authorInfo.wikidata.wikipedia"><a target="_blank"  ng-href="{{authorInfo.wikidata.wikipedia}}">Wikipedia</a></li>
+                        <li ng-if="hasMapArticle"><a target="_blank"  ng-href="https://litteraturbanken.se/litteraturkartan?s=lb_author.authorid:{{authorInfo.authorid}}">Litteraturkartan</a></li>
                     </ul>
                 </div>
             </div>

@@ -245,7 +245,23 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
 
             return $http({ url }).then(response => response.data)
         },
-
+        authorHasMapArticle(authorid) {
+            const url = `${STRIX_URL}/query/vastsvenska`
+            return $http({
+                url,
+                params: {
+                    to: 0,
+                    search: JSON.stringify({
+                        query: {
+                            query_string: {
+                                query: "lb_author.authorid:" + authorid,
+                                fields: ["lb_author.authorid"]
+                            }
+                        }
+                    })
+                }
+            }).then(response => response.data.hits > 0)
+        },
         getParts(filter_string, partial_string, filter_or, filter_and, to) {
             if (partial_string == null) {
                 partial_string = false
