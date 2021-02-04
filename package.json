@@ -59,7 +59,6 @@
         "ng-annotate-webpack-plugin": "^0.3.0",
         "optimize-css-assets-webpack-plugin": "^5.0.3",
         "postcss-loader": "^3.0.0",
-        "prettier": "^2.2.1",
         "protractor": "latest",
         "protractor-html-screenshot-reporter": "0.0.21",
         "requirejs": "^2.1.15",

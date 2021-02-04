@@ -285,7 +285,19 @@ littb.controller(
                     val: "sortkey",
                     dir: "asc",
                     search: "titlar"
-                }
+                },
+                // {
+                //     label: "Tryckår",
+                //     val: "sort_date_imprint.date",
+                //     dir: "desc",
+                //     search: "kronologi"
+                // },
+                // {
+                //     label: "Nytt",
+                //     val: "imported",
+                //     dir: "desc",
+                //     search: "nytillkommet"
+                // }
             ],
             works: [
                 {
@@ -500,7 +512,11 @@ littb.controller(
             s.relevanceError = false
 
             // let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
-            console.log("s.filters", s.filters)
+            console.log("s.filters", s.filters, s.chronology_floor, s.chronology_ceil)
+            let filters = {...s.filters}
+            if(filters["sort_date_imprint.date:range"][0] == s.chronology_floor && filters["sort_date_imprint.date:range"][1] == s.chronology_ceil) {
+                delete filters["sort_date_imprint.date:range"]
+            }
 
             // let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
             let size = { to: 100 }
@@ -513,7 +529,7 @@ littb.controller(
                     "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,vastsvenska,wordpress",
                     {
                         filter_string: s.rowfilter,
-                        filters: s.filters,
+                        filters: filters,
                         // filter_or,
                         // filter_and,
                         // author_aggs: false,
@@ -700,7 +716,7 @@ littb.controller(
                 filter_string: s.filter,
                 include:
                     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
-                    "main_author.authorid,main_author.surname,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export",
+                    "main_author.authorid,main_author.surname,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
                 filter_or,
                 filter_and,
                 partial_string: true,
@@ -746,19 +762,6 @@ littb.controller(
                     s.titleSearching = false
                 })
         }
-
-        // s.request = function () {
-        //     if (s.listType == "works") {
-        //         s.fetchWorks(false, false)
-        //     } else if (s.listType == "parts") {
-        //         s.parts_page.current = 1
-        //         s.fetchParts(false)
-        //     } else if (s.listType == "epub") {
-        //         s.fetchWorks(false, true)
-        //     } else if (s.listType == "authors") {
-        //         s.setAuthorData()
-        //     }
-        // }
 
         s.onSortClick = (item, noSwitchDir, replace, requestSortedData = true) => {
             console.log("onSortClick", s.listType)
@@ -812,21 +815,6 @@ littb.controller(
             console.warn("Sort state init failed", s.listType, sortInit)
             $location.search({})
         }
-
-        // s.showAllWorks = function() {
-        //     s.showPopular = false
-        //     s.filter = ""
-        //     s.rowfilter = ""
-        //     s.titleArray = null
-        //     fetchWorks()
-        // }
-
-        // s.popClick = function() {
-        //     s.showPopular = true
-        //     if (!s.popularTitles) {
-        //         getPopularTitles()
-        //     }
-        // }
 
         function decorateRecent(titles) {
             const dateFmt = function (datestr) {

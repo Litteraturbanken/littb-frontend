@@ -85,7 +85,7 @@
             </button>
         </div> -->
         <div ng-show="titleModel[listType + '_hits'] > 100">
-            <ul class="pagination-sm sc" uib-pagination items-per-page="100" force-ellipses="true" total-items="titleModel[listType + '_hits']" max-size="10" ng-model="titleModel[listType + '_currentpage']" ng-change="request()"
+            <ul class="pagination-sm sc" uib-pagination items-per-page="100" force-ellipses="true" total-items="titleModel[listType + '_hits']" max-size="10" ng-model="titleModel[listType + '_currentpage']" ng-change="fetchWorks(false, listType == 'epub')"
             next-text="Nästa" previous-text="Föregående"></ul>
         </div>
     </div>

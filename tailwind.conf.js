@@ -8,6 +8,10 @@ module.exports = {
     purge: ["./app/**/*.js", "./app/**/*.html"],
     theme: {
         extend: {
+            opacity: {
+                85: "0.85",
+                90: "0.90"
+            },
             colors: {
                 // neutral gray
                 gray: {
