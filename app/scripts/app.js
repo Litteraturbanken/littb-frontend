@@ -153,7 +153,7 @@ window.littb = angular
 
                         return $http
                             .get(`/red/presentationer/${$routeParams.folder}/${$routeParams.doc}`)
-                            .success(function (data) {
+                            .then(function ({data}) {
                                 $scope.doc = data
                                 $scope.title = $(`<root>${data}</root>`).find("h1").text()
                                 $scope.title = $scope.title.split(" ").slice(0, 5).join(" ")

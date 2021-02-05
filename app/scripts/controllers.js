@@ -373,7 +373,8 @@ littb.controller("authorInfoCtrl", function authorInfoCtrl(
 
     const getHtml = function (url) {
         const def = $q.defer()
-        $http.get(url).success(function (xml) {
+        $http.get(url).then(function (response) {
+            let xml = response.data
             const from = xml.indexOf("<body>")
             const to = xml.indexOf("</body>")
             xml = xml.slice(from, to + "</body>".length)
@@ -825,7 +826,7 @@ littb.controller("helpCtrl", function ($scope, $http, util, $location) {
         s.ankare = id
         $location.search("ankare", id)
     }
-    return $http.get(url).success(function (data) {
+    return $http.get(url).then(function ({data}) {
         s.htmlContent = data
         s.labelArray = []
         for (let elem of $("[id]", data).get()) {
@@ -879,7 +880,7 @@ littb.controller("presentationCtrl", function ($scope, $http, $routeParams, $loc
     const s = $scope
     const url = "/red/presentationer/presentationerForfattare.html"
     s.isMain = true
-    return $http.get(url).success(function (data) {
+    return $http.get(url).then(function ({data}) {
         s.doc = data
         return util.setupHash(s, {
             ankare(val) {
