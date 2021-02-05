@@ -329,6 +329,7 @@ littb.controller(
                 {
                     label: "Nytt",
                     val: "imported",
+                    suffix: ",main_author.name_for_index|asc,sort_date_imprint.date|asc",
                     dir: "desc",
                     search: "nytillkommet"
                 }
@@ -827,15 +828,14 @@ littb.controller(
             let titleGroups = _.groupBy(titles, item => _.max(_.map(item.mediatypes, "imported")))
 
             let output = []
-            let dir = _.last(s.sort[s.listType].split("|"))
-            let datestrs = _.orderBy(_.keys(titleGroups), String, dir)
+            let datestrs = _.keys(titleGroups)
 
             for (let datestr of datestrs) {
                 // TODO: fix locale format, 'femte maj 2017'
                 // output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
                 const titles = titleGroups[datestr]
                 output.push({ isHeader: true, label: dateFmt(datestr) })
-                output = output.concat(_.sortBy(titles, item => item.sortfield.toLowerCase()))
+                output = output.concat(titles)
             }
             return output
         }
