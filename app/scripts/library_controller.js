@@ -329,7 +329,7 @@ littb.controller(
                 {
                     label: "Nytt",
                     val: "imported",
-                    suffix: ",main_author.name_for_index|asc,sort_date_imprint.date|asc",
+                    suffix: ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
                     dir: "desc",
                     search: "nytillkommet"
                 }
@@ -392,6 +392,8 @@ littb.controller(
         s.refreshData = function (isInitial) {
             if (!isInitial) {
                 s.parts_page.current = 1
+                s.titleModel['epub_currentpage'] = 1
+                s.titleModel['works_currentpage'] = 1
             }
             s.selectedTitle = null
             s.rowfilter = s.filter
