@@ -178,7 +178,8 @@ littb.factory("util", function util($location, $filter) {
                 _.omitBy(filterObj, _.isEmpty),
                 "keywords",
                 "languages",
-                "mediatypes"
+                "mediatypes",
+                "gender"
                 // "about_authors",
                 // "main_author.authorid"
             )
