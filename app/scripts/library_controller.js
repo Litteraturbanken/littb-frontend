@@ -63,7 +63,11 @@ littb.controller(
         // s.showPopular = true
         s.show_more = $location.search().avancerat != null
         s.show_dl = $location.search().avancerat != null
+        // TODO: refactor state variable to keep track of these
         s.parts_page = {
+            current: Number($location.search().sida) || 1
+        }
+        s.relevance_page = {
             current: Number($location.search().sida) || 1
         }
 
@@ -285,7 +289,7 @@ littb.controller(
                     val: "sortkey",
                     dir: "asc",
                     search: "titlar"
-                },
+                }
                 // {
                 //     label: "Tryckår",
                 //     val: "sort_date_imprint.date",
@@ -329,7 +333,8 @@ littb.controller(
                 {
                     label: "Nytt",
                     val: "imported",
-                    suffix: ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
+                    suffix:
+                        ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
                     dir: "desc",
                     search: "nytillkommet"
                 }
@@ -391,9 +396,10 @@ littb.controller(
 
         s.refreshData = function (isInitial) {
             if (!isInitial) {
+                s.relevance_page.current = 1
                 s.parts_page.current = 1
-                s.titleModel['epub_currentpage'] = 1
-                s.titleModel['works_currentpage'] = 1
+                s.titleModel["epub_currentpage"] = 1
+                s.titleModel["works_currentpage"] = 1
             }
             s.selectedTitle = null
             s.rowfilter = s.filter
@@ -514,15 +520,19 @@ littb.controller(
             s.relevanceSearching = true
             s.relevanceError = false
 
-            // let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
-            console.log("s.filters", s.filters, s.chronology_floor, s.chronology_ceil)
-            let filters = {...s.filters}
-            if(filters["sort_date_imprint.date:range"][0] == s.chronology_floor && filters["sort_date_imprint.date:range"][1] == s.chronology_ceil) {
+            let filters = { ...s.filters }
+            if (
+                filters["sort_date_imprint.date:range"][0] == s.chronology_floor &&
+                filters["sort_date_imprint.date:range"][1] == s.chronology_ceil
+            ) {
                 delete filters["sort_date_imprint.date:range"]
             }
 
-            // let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
-            let size = { to: 100 }
+            let size = {
+                from: (s.relevance_page.current - 1) * 100,
+                to: s.relevance_page.current * 100
+            }
+            // let size = { to: 100 }
             if (countOnly) {
                 size = { from: 0, to: 0 }
             }
@@ -553,6 +563,7 @@ littb.controller(
                 s.relevanceData = titles
                 s.relevanceSuggest = suggest
                 s.relevanceSearching = false
+                s.relevance_hits = hits
                 s.$apply()
                 return { titles, hits }
             } catch (e) {
@@ -672,6 +683,7 @@ littb.controller(
         s.setFilter = f => {
             s.filter = f
             s.parts_page.current = 1
+            s.relevance_page.current = 1
             s.refreshData()
         }
 
@@ -791,6 +803,7 @@ littb.controller(
                 return
             }
             if (s.listType == "all") {
+                s.relevance_page.current = 1
                 s.fetchByRelevance(false)
             } else if (s.listType == "works") {
                 s.fetchWorks(false, false)
