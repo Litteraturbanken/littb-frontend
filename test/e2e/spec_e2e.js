@@ -15,7 +15,7 @@ describe("library authors", function () {
 
 describe("library works", function () {
     beforeEach(function () {
-        get("/bibliotek")
+        get("/bibliotek?visa=works")
     })
 
     it("should filter works using the input", function () {
@@ -42,6 +42,26 @@ describe("library works", function () {
         expect(
             element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
         ).toEqual(`http://${HOST}:9000/f%C3%B6rfattare/MartinsonH/titlar/Aniara/sida/5/etext`)
+    })
+})
+
+fdescribe("library relevance", function () {
+    let filter
+    let getMostRelTitle = () =>
+        element.all(By.css(".result.relevance tr[ng-repeat] a")).first().getText()
+
+    beforeEach(function () {
+        get("/bibliotek")
+        filter = element(By.model("filter"))
+    })
+
+    it("should give more popular first", () => {
+        filter.sendKeys("glas")
+        expect(getMostRelTitle()).toEqual("Doktor Glas")
+    })
+    xit("should score surname hits above popularity", () => {
+        filter.sendKeys("öman poetisk")
+        expect(getMostRelTitle()).toEqual("Poetisk läsebok för folkskolan")
     })
 })
 

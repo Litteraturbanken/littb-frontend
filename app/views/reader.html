@@ -172,7 +172,7 @@
                 </li>
                 <li><a ng-href="/sok?avancerad&forfattare={{author}}" ng-disabled="!hasSearchable(author)">Sök i författarens texter</a></li>
                 <li><a ng-href="/dramawebben"><img ng-if="isDramaweb" class="dw_logo" src="../img/dramawebben_svart.svg" alt=""></a></li>
-                <li class="-ml-px opacity-85"><a class="block w-3/6 -ml-3" ng-href="/bibliotek"><img ng-if="workinfo.keyword.includes('1800')" class="object-contain" src="../img/lb_logga_nyavägar_2.2021.svg" alt=""></a></li>
+                <li class="-ml-px"><a class="block w-3/6 -ml-3" ng-href="/bibliotek"><img ng-if="workinfo.keyword.includes('1800')" class="object-contain" src="../img/lb_logga_nyavägar_2.2021.svg" alt=""></a></li>
                 <!-- <li>Dela boken</li> -->
             </ul>
             <a ng-href="{{workinfo.mediatypes[0].url}}" ng-if="$routeParams.ix && workinfo" class="submit btn">Stäng editor</a>

@@ -48,7 +48,7 @@
                         <option value='provenance.library:SFS'>Svenska fornskriftsällskapet</option>
                         <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
                         <option value='provenance.library:SVA'>Svenskt visarkiv</option>
-                        <option value='keyword:1800'>1800-talsprojektet</option>
+                        <option value='keyword:1800'>Nya vägar till 1800-talet</option>
                         <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
                         <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
                     </select>
@@ -175,7 +175,7 @@
                 <ng-include src="worksListURL" ng-if="listType == 'works'"></ng-include>
 
                     
-                <div class="result author pl-0 sm:ml-3" ng-if="listType == 'all'">
+                <div class="result relevance pl-0 sm:ml-3" ng-if="listType == 'all'">
                     <sort-list></sort-list>
                     <div class=""> 
                         <table class="">
@@ -197,7 +197,7 @@
                             </tr>
                             
                             <tr ng-repeat="item in relevanceData"
-                                class="author_row align-top"
+                                class="align-top"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()">
                                 <td class="text-right"><span class="sc primarycolor whitespace-no-wrap">
