@@ -45,7 +45,7 @@ describe("library works", function () {
     })
 })
 
-fdescribe("library relevance", function () {
+describe("library relevance", function () {
     let filter
     let getMostRelTitle = () =>
         element.all(By.css(".result.relevance tr[ng-repeat] a")).first().getText()
