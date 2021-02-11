@@ -29,7 +29,10 @@
                     </select>
                 </div>
                 <div class="title_select_container">
-                    <select multiple class="filter_select keyword_select" ui-select2 ui-select2="{placeholder: 'Välj samling'}" ng-change="refreshData()" ng-model="filters.keywords" data-placeholder="Välj samling" >
+                    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Välj samling'}"
+                            ng-change="refreshData()"
+                            ng-model="filters.keywords"
+                            data-placeholder="Välj samling" >
                         <option value=""></option>
                         <option value="texttype:brev">Brev</option>
                         <option value="texttype:drama">Dramatik</option>
@@ -51,6 +54,13 @@
                         <option value='keyword:1800'>Nya vägar till 1800-talet</option>
                         <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
                         <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
+                        <option value='source:vastsvenska'>Litteraturkartan</option>
+                        <option value='source:ljudochbild'>Ljud & Bild</option>
+                        <option value='source:presentations'>Kringtexter</option>
+                        <option value='source:bibliotekariesidor'>Bibliotikariesidorna</option>
+                        <option value='source:diktensmuseum'>Diktens museum</option>
+                        <option value='source:skolan'>Litteraturbankens skola</option>
+                        <option value='source:sol'>Översättarlexikon</option>
                     </select>
                 </div>
                 <div class="title_select_container about_container">
@@ -175,7 +185,7 @@
                 <ng-include src="worksListURL" ng-if="listType == 'works'"></ng-include>
 
                     
-                <div class="result relevance pl-0 sm:ml-3" ng-if="listType == 'all'">
+                <div class="result relevance pl-0 sm:ml-3 w-full sm:w-auto" ng-if="listType == 'all'">
                     <sort-list></sort-list>
                     <div class=""> 
                         <table class="">
@@ -197,10 +207,10 @@
                             </tr>
                             
                             <tr ng-repeat="item in relevanceData"
-                                class="align-top"
+                                class="align-top sm:table-row flex justify-between"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()">
-                                <td class="text-right"><span class="sc primarycolor whitespace-no-wrap">
+                                <td class="text-right hidden sm:table-cell"><span class="sc primarycolor whitespace-no-wrap">
                                     {{getLabelBySource(item)}}
                                 </span></td>
                                 <td>

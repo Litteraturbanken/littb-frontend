@@ -20,14 +20,14 @@ interface FilterList {
     mediatype?: string
 }
 
-let filters: FilterObj = {
-    authorkeyword: ["AgardhCA", "AgrellA"],
-    keywords: ["texttype:drama", "keyword:Barnlitteratur"],
-    languages: ["modernized:true", "language:lat"],
-    mediatypes: ["has_epub:true", "mediatype:pdf"],
-    "sort_date_imprint.date:range": [1248, 2020],
-    gender: "female"
-}
+// let filters: FilterObj = {
+//     authorkeyword: ["AgardhCA", "AgrellA"],
+//     keywords: ["texttype:drama", "keyword:Barnlitteratur"],
+//     languages: ["modernized:true", "language:lat"],
+//     mediatypes: ["has_epub:true", "mediatype:pdf"],
+//     "sort_date_imprint.date:range": [1248, 2020],
+//     gender: "female"
+// }
 
 let makeFilterObj = (list: string[]): FilterList => {
     const output = {}
