@@ -3,7 +3,7 @@ import bodybuilder from "bodybuilder"
 let builder = bodybuilder()
 interface FilterObj {
     gender?: string
-    authorkeyword?: string[]
+    "authorkeyword>authorid"?: string[]
     keywords?: string[]
     languages?: string[]
     mediatypes?: string[]
@@ -140,10 +140,16 @@ export function fromFilters(filters: FilterObj) {
                     this["sort_date_imprint.date:range"]
                 )},
                 # }
-                # if(this.authorkeyword && this.authorkeyword.length) {
+                # if(this['authorkeyword>authorid'] && this['authorkeyword>authorid'].length) {
                 {
-                    "terms": {
-                    "authorkeyword.raw": \${this.authorkeyword}
+                    "nested": {
+                        "path": "authorkeyword",
+                        "query": {
+                            "terms": {
+                                "authorkeyword.authorid": \${this['authorkeyword>authorid']}
+                            }
+                        }
+
                     }
                 },
                 # }

@@ -221,8 +221,10 @@ littb.controller(
 
         const aboutDef = $q.defer()
         s.onAboutAuthorChange = _.once(function ($event) {
-            if ($location.search().authorkeyword) {
-                s.filters.authorkeyword = ($location.search().authorkeyword || "").split(",")
+            if ($location.search().about_authors) {
+                s.filters["authorkeyword>authorid"] = (
+                    $location.search().about_authors || ""
+                ).split(",")
             }
 
             aboutDef.resolve()
@@ -1189,7 +1191,7 @@ littb.controller(
             },
             {
                 key: "about_authors",
-                expr: "filters.authorkeyword",
+                expr: "filters['authorkeyword>authorid']",
                 val_in: listValIn,
                 val_out: listValOut
             },

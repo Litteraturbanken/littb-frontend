@@ -180,8 +180,8 @@ littb.factory("util", function util($location, $filter) {
                 "keywords_aux",
                 "languages",
                 "mediatypes",
-                "gender"
-                // "about_authors",
+                "gender",
+                "about_authors"
                 // "main_author.authorid"
             )
             if (
@@ -198,7 +198,8 @@ littb.factory("util", function util($location, $filter) {
             const filter_and = _.extend(
                 rest,
                 makeFilterObj(filterObj.languages),
-                makeFilterObj(filterObj.keywords)
+                makeFilterObj(filterObj.keywords),
+                makeFilterObj(filterObj.about_authors)
                 //, ...(filterObj.keywords_aux || [])
                 // makeFilterObj(filterObj.about_authors),
                 // makeFilterObj(filterObj["main_author.authorid"])

@@ -20,6 +20,8 @@ if (
     STRIX_URL = "/api"
 }
 
+var relevanceCanceller
+
 littb.factory(
     "debounce",
     $timeout =>
@@ -362,6 +364,10 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
         },
 
         relevanceSearch(types, { filters, ...options }, disableGrouping = false) {
+            if (relevanceCanceller) {
+                relevanceCanceller.resolve()
+            }
+            relevanceCanceller = $q.defer()
             // let query = bodybuilder()
             // if (filters.gender == "all") delete filters.gender
             filters = _.omitBy(
@@ -424,6 +430,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             )
             return $http({
                 url: `${STRIX_URL}/relevance/${types}`,
+                timeout: relevanceCanceller.promise,
                 params
             }).then(function (response) {
                 c.log("response", response)
