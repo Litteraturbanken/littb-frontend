@@ -104,11 +104,10 @@ littb.controller(
         const s = $scope
 
         s.filter = $location.search().filter || ""
-        // s.showAllWorks = !!$location.search().alla_verk
         s.worksListURL = require("../views/library/works_list.html")
         s.titleSearching = false
         s.authorSearching = true
-        // s.showPopular = true
+
         s.show_more = $location.search().avancerat != null
         s.show_dl = $location.search().avancerat != null
         // TODO: refactor state variable to keep track of these
@@ -139,6 +138,8 @@ littb.controller(
                 ? $location.search().intervall.split(",")
                 : []
         }
+
+        s.keywords_aux = $location.search().keywords_aux?.split(",")
 
         s.onSliderChange = () => {
             $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
@@ -187,6 +188,17 @@ littb.controller(
                 return attrs.title
             }
         }
+
+        var popState
+        window.addEventListener(
+            "popstate",
+            (popState = () => {
+                safeApply(s, () => {
+                    console.log("popstate", $location.search().visa)
+                    s.listType = $location.search().visa || "all"
+                })
+            })
+        )
 
         s.filterTitle = function (row) {
             const auths = _.map(row.authors, auth => auth.full_name).join(" ")
@@ -1104,6 +1116,7 @@ littb.controller(
             event.stopPropagation()
         })
         s.$on("$destroy", () => {
+            window.removeEventListener("popstate", popState)
             routeChangeUnbind()
             $("body").off("click", ".popover")
         })
@@ -1216,6 +1229,7 @@ littb.controller(
                 key: "visa",
                 expr: "listType",
                 default: "all",
+                replace: false,
                 post_change: function (listType) {
                     console.log("post_change listType", listType)
                     // if (listType == "all") return
