@@ -143,7 +143,7 @@ export function fromFilters(filters: FilterObj) {
                 # if(this.authorkeyword && this.authorkeyword.length) {
                 {
                     "terms": {
-                    "authorkeyword": \${this.authorkeyword}
+                    "authorkeyword.raw": \${this.authorkeyword}
                     }
                 },
                 # }

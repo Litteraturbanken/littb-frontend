@@ -577,7 +577,16 @@ ul.litt-list {
 
 .select2-results {
     font-size: 0.8em;
-    max-height : 410px;
+    // max-height : 510px;
+}
+.select2-container--default .select2-results > .select2-results__options {
+    max-height : 350px;
+}
+@screen sm {
+    .select2-container--default .select2-results > .select2-results__options {
+        max-height : min(500px, 70vh)
+    }
+
 }
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
     background-color: lighten(lightgrey, 10%);

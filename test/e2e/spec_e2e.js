@@ -59,7 +59,7 @@ describe("library relevance", function () {
         filter.sendKeys("glas")
         expect(getMostRelTitle()).toEqual("Doktor Glas")
     })
-    xit("should score surname hits above popularity", () => {
+    it("should score surname hits above popularity", () => {
         filter.sendKeys("öman poetisk")
         expect(getMostRelTitle()).toEqual("Poetisk läsebok för folkskolan")
     })

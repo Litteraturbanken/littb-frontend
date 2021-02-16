@@ -29,39 +29,7 @@
                     </select>
                 </div>
                 <div class="title_select_container">
-                    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Välj samling'}"
-                            ng-change="refreshData()"
-                            ng-model="filters.keywords"
-                            data-placeholder="Välj samling" >
-                        <option value=""></option>
-                        <option value="texttype:brev">Brev</option>
-                        <option value="texttype:drama">Dramatik</option>
-                        <option value="texttype:novellsamling;novell">Noveller</option>
-                        <option value="texttype:diktsamling;dikt">Poesi</option>
-                        <option value="texttype:roman">Romaner</option>
-                        <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
-                        <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
-                        <option value='keyword:Humor'>Humor</option>
-                        <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
-                        <option value="texttype:reseskildring">Reseskildringar</option>
-                        <option value='keyword:Rösträtt'>Rösträtt</option>
-                        <option value='keyword:Dramawebben'>Dramawebben</option>
-                        <option value='keyword:SLS-FI'>SLS Finland</option>
-                        <option value='provenance.library:SVELITT'>SLS Sverige</option>
-                        <option value='provenance.library:SFS'>Svenska fornskriftsällskapet</option>
-                        <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
-                        <option value='provenance.library:SVA'>Svenskt visarkiv</option>
-                        <option value='keyword:1800'>Nya vägar till 1800-talet</option>
-                        <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
-                        <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
-                        <option value='source:vastsvenska'>Litteraturkartan</option>
-                        <option value='source:ljudochbild'>Ljud & Bild</option>
-                        <option value='source:presentations'>Kringtexter</option>
-                        <option value='source:bibliotekariesidor'>Bibliotikariesidorna</option>
-                        <option value='source:diktensmuseum'>Diktens museum</option>
-                        <option value='source:skolan'>Litteraturbankens skola</option>
-                        <option value='source:sol'>Översättarlexikon</option>
-                    </select>
+                    <keyword-select model="filters.keywords" on-change="filters.keywords = keywords; refreshData()"></keyword-select>
                 </div>
                 <div class="title_select_container about_container">
                     <select multiple class="filter_select about_select"
@@ -83,8 +51,37 @@
                     </select> 
                 </div> -->
                 
-                <div class="more mt-2" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-plus-square-o mr-1"></i> Visa fler inställningar </a></div>
-                <div class="more_container" ng-class="{show_more : show_more}" ng-show="show_more">
+                <div class="more mt-2" ng-show="!show_more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-plus-square-o mr-1"></i> Visa fler inställningar </a></div>
+                <div class="more mt-2" ng-show="show_more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-minus-square-o mr-1"></i> Visa färre inställningar </a></div>
+                <div class="more_container mt-2 mb-2" ng-class="{show_more : show_more}" ng-show="show_more">
+
+
+                    <div class="">
+                        <div class="text-sm mb-2 max-w-sm">
+                        <!-- Endast verk sorterat i samlingen  -->
+                        Snäva in ditt samlingsfilter genom att lägga till ytterligare 
+                        krav på vilka samlingar en träff måste vara sorterad inom.
+                        
+                            <div ng-show="filters.keywords.length || filters_aux.length">
+                                Nuvarande filter:
+                                <div ng-show="filters.keywords.length">
+                                     <span ng-if="filters.keywords.length > 2">En av</span> [<span ng-repeat="kw in filters.keywords">{{kw.split(":")[1]}}<span ng-if="!$last"> </span></span>]
+                                </div>
+                                <div ng-show="keywords_aux.length">Även <span ng-repeat="kw in keywords_aux"> <span ng-if="$last && keywords_aux.length > 1">och</span> {{kw.split(":")[1]}} </span>  </div>
+                            </div>
+
+                        </div>
+
+                            <keyword-select class="block" model="keywords_aux" on-change="keywords_aux = keywords; refreshData()"></keyword-select>
+                    </div>
+                    
+                    
+                    <!-- <div class="flex items-center space-x-4 my-4">
+                        <input type="checkbox"> <span class="inline-block w-64 text-sm">Kombinera valen av samlingar med 
+                            logiskt OCH iställer för ELLER. Du får färre träffar, som då ingår i alla valda samlingar. </span>
+                        
+                    </div> -->
+                    
                     <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-change="refreshData()" ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
                             <option value=""></option>

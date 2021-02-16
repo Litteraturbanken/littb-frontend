@@ -177,6 +177,7 @@ littb.factory("util", function util($location, $filter) {
             const rest = _.omit(
                 _.omitBy(filterObj, _.isEmpty),
                 "keywords",
+                "keywords_aux",
                 "languages",
                 "mediatypes",
                 "gender"
@@ -198,6 +199,7 @@ littb.factory("util", function util($location, $filter) {
                 rest,
                 makeFilterObj(filterObj.languages),
                 makeFilterObj(filterObj.keywords)
+                //, ...(filterObj.keywords_aux || [])
                 // makeFilterObj(filterObj.about_authors),
                 // makeFilterObj(filterObj["main_author.authorid"])
             )

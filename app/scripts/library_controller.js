@@ -6,22 +6,70 @@ const c = window.console
 
 littb.directive("sortList", () => ({
     restrict: "E",
-    template: `
+    template: String.raw`
     <div>
-    <div class="inline-block sc mr-2">Sortera: </div>
-    <ul class="part_header top_header mb-4 text-lg inline-block">
-
-        <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
-            <a class="sort_item" href="" ng-click="onSortClick(item)" 
+        <div class="inline-block sc mr-2">Sortera: </div>
+        <ul class="part_header top_header mb-4 text-lg inline-block">
+        
+            <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
+                <a class="sort_item" href="" ng-click="onSortClick(item)" 
                 ng-class="{active : item.active}">{{item.label}}</a>
-                <i class="fa fa-caret-down" ng-show="item.active && !item.reversed"></i>
-                <i class="fa fa-caret-up" ng-show="item.active && item.reversed"></i>
-                
-        </li>
-    </ul>
+            <i class="fa fa-caret-down" ng-show="item.active && !item.reversed"></i>
+            <i class="fa fa-caret-up" ng-show="item.active && item.reversed"></i>
+            
+            </li>
+        </ul>
     </div>
     `
 }))
+littb.component("keywordSelect", {
+    template: String.raw`
+    
+    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Välj samling'}"
+            ng-change="$ctrl.onChange({keywords: $ctrl.model})"
+            ng-model="$ctrl.model"
+            data-placeholder="Välj samling" >
+        <option value=""></option>
+        <option value="texttype:brev">Brev</option>
+        <option value="texttype:drama">Dramatik</option>
+        <option value="texttype:novellsamling;novell">Noveller</option>
+        <option value="texttype:diktsamling;dikt">Poesi</option>
+        <option value="texttype:roman">Romaner</option>
+        <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
+        <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
+        <option value='keyword:Humor'>Humor</option>
+        <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
+        <option value="texttype:reseskildring">Reseskildringar</option>
+        <option value='keyword:Rösträtt'>Rösträtt</option>
+        <option value='keyword:Dramawebben'>Dramawebben</option>
+        <option value='keyword:SLS-FI'>SLS Finland</option>
+        <option value='provenance.library:SVELITT'>SLS Sverige</option>
+        <option value='provenance.library:SFS'>Svenska fornskriftsällskapet</option>
+        <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
+        <option value='provenance.library:SVA'>Svenskt visarkiv</option>
+        <option value='keyword:1800'>Nya vägar till 1800-talet</option>
+        <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
+        <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
+        <option value='source:vastsvenska'>Litteraturkartan</option>
+        <option value='source:ljudochbild'>Ljud & Bild</option>
+        <option value='source:presentations'>Kringtexter</option>
+        <option value='source:bibliotekariesidor'>Bibliotikariesidorna</option>
+        <option value='source:diktensmuseum'>Diktens museum</option>
+        <option value='source:skolan'>Litteraturbankens skola</option>
+        <option value='source:sol'>Översättarlexikon</option>
+    </select>`,
+    bindings: {
+        model: "<",
+        onChange: "&"
+    },
+    controller($scope, $element, $attrs) {
+        var ctrl = this
+
+        // $element.on("change:select2", () => {
+        //     console.log("🚀 ~ file: library_controller.js ~ line 69 ~ change:select2", this.model)
+        // })
+    }
+})
 
 littb.component("highlights", {
     template: String.raw`
@@ -541,7 +589,7 @@ littb.controller(
                 let { titles, hits, suggest } = await backend.relevanceSearch(
                     "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,vastsvenska,wordpress",
                     {
-                        filter_string: s.rowfilter,
+                        filter_string: expandQuery(s.rowfilter),
                         filters: filters,
                         // filter_or,
                         // filter_and,
@@ -579,6 +627,14 @@ littb.controller(
             // })
         }
 
+        function expandQuery(query) {
+            // let keywords_aux = $location.search().keywords_aux?.split(",")
+            if (s.keywords_aux?.length) {
+                return `(${s.keywords_aux.join(" AND ")}) ${query}`
+            }
+            return query
+        }
+
         s.fetchParts = countOnly => {
             // unless s.filter then return
             s.partSearching = true
@@ -593,7 +649,7 @@ littb.controller(
             let def = backend
                 .getTitles("etext-part,faksimil-part", {
                     sort_field: s.sort.parts,
-                    filter_string: s.rowfilter,
+                    filter_string: expandQuery(s.rowfilter),
                     filter_or,
                     filter_and,
                     author_aggs: true,
@@ -728,7 +784,7 @@ littb.controller(
             }
             const def = backend.getTitles("etext,faksimil,pdf", {
                 sort_field: s.sort[listID],
-                filter_string: s.filter,
+                filter_string: expandQuery(s.rowfilter),
                 include:
                     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
@@ -1074,11 +1130,6 @@ littb.controller(
         // if $location.search().keyword
         //     s.selectedKeywords = $location.search().keyword?.split(",")
 
-        s.initialLoading = true
-        s.refreshData(true).then(() => {
-            s.initialLoading = false
-        })
-
         const listValIn = val => (val || "").split(",")
         const listValOut = val => {
             return (val || []).join(",")
@@ -1108,6 +1159,12 @@ littb.controller(
             {
                 key: "keywords",
                 expr: "filters.keywords",
+                val_in: listValIn,
+                val_out: listValOut
+            },
+            {
+                key: "keywords_aux",
+                expr: "keywords_aux",
                 val_in: listValIn,
                 val_out: listValOut
             },
@@ -1192,6 +1249,11 @@ littb.controller(
             // default : "popularity|desc"
             // }
         ])
+
+        s.initialLoading = true
+        s.refreshData(true).then(() => {
+            s.initialLoading = false
+        })
 
         // s.listVisibleTitles = function() {
         //     if (s.showInitial && s.showPopular) {
