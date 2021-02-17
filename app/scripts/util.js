@@ -194,11 +194,14 @@ littb.factory("util", function util($location, $filter) {
             } else {
                 delete rest["sort_date_imprint.date:range"]
             }
-            filter_or = { ...filter_or, ...makeFilterObj(filterObj.mediatypes) }
+            filter_or = {
+                ...filter_or,
+                ...makeFilterObj(filterObj.mediatypes),
+                ...makeFilterObj(filterObj.keywords)
+            }
             const filter_and = _.extend(
                 rest,
                 makeFilterObj(filterObj.languages),
-                makeFilterObj(filterObj.keywords),
                 makeFilterObj(filterObj.about_authors)
                 //, ...(filterObj.keywords_aux || [])
                 // makeFilterObj(filterObj.about_authors),

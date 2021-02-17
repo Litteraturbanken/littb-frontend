@@ -25,10 +25,10 @@ littb.directive("sortList", () => ({
 littb.component("keywordSelect", {
     template: String.raw`
     
-    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: $ctrl.label}"
+    <select multiple class="filter_select keyword_select" ui-select2
             ng-change="$ctrl.onChange({keywords: $ctrl.model})"
             ng-model="$ctrl.model"
-             >
+             data-placeholder="{{$ctrl.label}}">
         <option value=""></option>
         <option value="texttype:brev">Brev</option>
         <option value="texttype:drama">Dramatik</option>
@@ -140,7 +140,7 @@ littb.controller(
                 : []
         }
 
-        s.keywords_aux = $location.search().keywords_aux?.split(",")
+        s.keywords_aux = $location.search().keywords_aux?.split(",") || []
 
         s.onSliderChange = () => {
             $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
@@ -157,6 +157,7 @@ littb.controller(
                     _.pick(s.filters, ["authorkeyword", "keywords", "languages", "mediatypes"])
                 ).every(arr => !arr.length) &&
                 !s.filters.gender &&
+                !s.keywords_aux.length &&
                 s.chronology_floor == from &&
                 s.chronology_ceil == to
             )
@@ -248,6 +249,7 @@ littb.controller(
             s.rowfilter = ""
             s.all_titles = null
             s.audio_list = null
+            s.keywords_aux = []
             s.parts_page.current = 1
         }
 

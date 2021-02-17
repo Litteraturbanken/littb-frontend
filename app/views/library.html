@@ -174,6 +174,10 @@
                         ng-model="listType" uib-btn-radio="'works'" ng-click="fetchWorks()">
                         Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
                     </label>
+                    <label class="sc btn btn-small" 
+                        ng-model="listType" uib-btn-radio="'works'" ng-click="fetchWorks()">
+                        Nytt<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
+                    </label>
                     <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !parts_hits}" 
                         ng-model="listType" uib-btn-radio="'parts'" ng-click="fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
                     <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !titleModel.epub_hits}" 
@@ -241,7 +245,7 @@
                                     <a ng-href="{{item.link}}">{{item.title}}</a>
                                     <highlights list="item.highlight.content"></highlights>
                                 </div>
-                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))" uib-tooltip="{{item.title != item.shorttitle ? item.title : ''}}" tooltip-popup-delay="500">
+                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))" uib-tooltip="{{(item.title != item.shorttitle ? item.title : '') + (isDev ? '\npopularity: ' + item.popularity : '')}}" tooltip-popup-delay="500">
                                     
                                     <a ng-if="['etext', 'faksimil'].includes(getIndex(item._index))" ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
                                     <a ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))" ng-href="/författare/{{getPartAuthor(item).authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
