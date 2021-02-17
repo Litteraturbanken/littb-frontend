@@ -29,7 +29,9 @@
                     </select>
                 </div>
                 <div class="title_select_container">
-                    <keyword-select model="filters.keywords" on-change="filters.keywords = keywords; refreshData()"></keyword-select>
+                    <keyword-select label="Välj samling" 
+                                    model="filters.keywords" 
+                                    on-change="filters.keywords = keywords; refreshData()"></keyword-select>
                 </div>
                 <div class="title_select_container about_container">
                     <select multiple class="filter_select about_select"
@@ -57,22 +59,24 @@
 
 
                     <div class="">
-                        <div class="text-sm mb-2 max-w-sm">
+                        <div class="text-sm mb-4 max-w-sm">
                         <!-- Endast verk sorterat i samlingen  -->
-                        Snäva in ditt samlingsfilter genom att lägga till ytterligare 
-                        krav på vilka samlingar en träff måste vara sorterad inom.
+                        Får du för många träffar? Välj ytterligare samlingar
+                        (en eller flera) i menyn <span class="sc">AVGRÄNSA SÖKNINGEN</span> här nedanför. 
+                        Ju fler samlingar du väljer, desto färre sökträffar får du. 
+
+
                         
-                            <div ng-show="filters.keywords.length || filters_aux.length">
-                                Nuvarande filter:
+                            <!-- <div ng-show="filters.keywords.length || filters_aux.length">
                                 <div ng-show="filters.keywords.length">
-                                     <span ng-if="filters.keywords.length > 2">En av</span> [<span ng-repeat="kw in filters.keywords">{{kw.split(":")[1]}}<span ng-if="!$last"> </span></span>]
+                                     <span ng-if="filters.keywords.length > 2">Val som ökar sökavgränsningens storlek: </span> <span ng-repeat="kw in filters.keywords"><span ng-if="$last"> och </span>{{kw.split(":")[1]}}<span ng-if="$index < filters.keywords.length - 2">, </span></span>.
                                 </div>
-                                <div ng-show="keywords_aux.length">Även <span ng-repeat="kw in keywords_aux"> <span ng-if="$last && keywords_aux.length > 1">och</span> {{kw.split(":")[1]}} </span>  </div>
-                            </div>
+                                <div ng-show="keywords_aux.length">Val som snävar in: <span ng-repeat="kw in keywords_aux"> <span ng-if="$last && keywords_aux.length > 1">och</span> {{kw.split(":")[1]}} </span>  </div>
+                            </div> -->
 
                         </div>
 
-                            <keyword-select class="block" model="keywords_aux" on-change="keywords_aux = keywords; refreshData()"></keyword-select>
+                            <keyword-select class="block" label="Avgränsa sökningen" model="keywords_aux" on-change="keywords_aux = keywords; refreshData()"></keyword-select>
                     </div>
                     
                     
@@ -229,7 +233,7 @@
                                     <highlights list="item.highlight['article.ArticleText']"></highlights>
                                 </div>
                                 <div class="" ng-if="getIndex(item._index) == 'vastsvenska'">
-                                    <a ng-href="https://dev.litteraturbanken.se/?id={{item.placeid}}&article={{item.id}}">{{item.header}}</a>
+                                    <a ng-href="https://litteraturbanken.se/litteraturkartan/?id={{item.placeid}}&article={{item.id}}">{{item.header}}</a>
 
                                     <highlights list="item.highlight.free_text"></highlights>
                                 </div>

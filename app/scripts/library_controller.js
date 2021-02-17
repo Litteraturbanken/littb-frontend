@@ -25,10 +25,10 @@ littb.directive("sortList", () => ({
 littb.component("keywordSelect", {
     template: String.raw`
     
-    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: 'Välj samling'}"
+    <select multiple class="filter_select keyword_select" ui-select2="{placeholder: $ctrl.label}"
             ng-change="$ctrl.onChange({keywords: $ctrl.model})"
             ng-model="$ctrl.model"
-            data-placeholder="Välj samling" >
+             >
         <option value=""></option>
         <option value="texttype:brev">Brev</option>
         <option value="texttype:drama">Dramatik</option>
@@ -53,12 +53,13 @@ littb.component("keywordSelect", {
         <option value='source:vastsvenska'>Litteraturkartan</option>
         <option value='source:ljudochbild'>Ljud & Bild</option>
         <option value='source:presentations'>Kringtexter</option>
-        <option value='source:bibliotekariesidor'>Bibliotikariesidorna</option>
+        <option value='source:bibliotekariesidor'>Bibliotekariesidorna</option>
         <option value='source:diktensmuseum'>Diktens museum</option>
         <option value='source:skolan'>Litteraturbankens skola</option>
         <option value='source:sol'>Översättarlexikon</option>
     </select>`,
     bindings: {
+        label: "@",
         model: "<",
         onChange: "&"
     },
@@ -629,10 +630,12 @@ littb.controller(
                 s.$apply()
                 return { titles, hits }
             } catch (e) {
-                console.error("relevance error", e)
-                s.relevanceSearching = false
-                s.relevanceError = true
-                s.$apply()
+                if (!e.xhrStatus == "abort") {
+                    console.error("relevance error", e)
+                    s.relevanceSearching = false
+                    s.relevanceError = true
+                    s.$apply()
+                }
             }
 
             // $q.all([def, authors]).then(([{ author_aggs }]) => {
