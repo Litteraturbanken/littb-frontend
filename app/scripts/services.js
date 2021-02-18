@@ -2,6 +2,7 @@ const angular = window.angular
 const _ = window._
 const jQuery = window.jQuery
 const c = window.console
+import bodybuilder from "bodybuilder"
 import { fromFilters } from "./query.ts"
 
 const littb = angular.module("littbApp")

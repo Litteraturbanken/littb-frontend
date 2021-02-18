@@ -31,7 +31,7 @@ littb.component("keywordSelect", {
              data-placeholder="{{$ctrl.label}}">
         <option value=""></option>
         <option value="texttype:brev">Brev</option>
-        <option value="texttype:drama">Dramatik</option>
+        <option value="texttype:drama" data-disabled="true">Dramatik</option>
         <option value="texttype:novellsamling;novell">Noveller</option>
         <option value="texttype:diktsamling;dikt">Poesi</option>
         <option value="texttype:roman">Romaner</option>
@@ -61,10 +61,29 @@ littb.component("keywordSelect", {
     bindings: {
         label: "@",
         model: "<",
-        onChange: "&"
+        onChange: "&",
+        disableOnKeyword: "@"
     },
-    controller($scope, $element, $attrs) {
+    controller($scope, $element, $attrs, $location) {
         var ctrl = this
+
+        if ($attrs.disableOnKeyword !== undefined) {
+            var unwatch = $scope.$watch(
+                () => $location.search().keywords,
+                val => {
+                    if (!val) return
+                    $("option", $element).attr("disabled", null)
+                    let opts = val.split(",").map(item => `option[value='${item}']`)
+                    $(opts.join(","), $element).attr("disabled", "disabled")
+                    $element.find("select").select2()
+                }
+            )
+        }
+
+        ctrl.$onDestroy = () => {
+            console.log("🚀 ~ file: library_controller.js ~ line 83 ~ onDestroy")
+            unwatch?.()
+        }
 
         // $element.on("change:select2", () => {
         //     console.log("🚀 ~ file: library_controller.js ~ line 69 ~ change:select2", this.model)
