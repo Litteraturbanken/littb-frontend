@@ -9,7 +9,7 @@ littb.directive("sortList", () => ({
     template: String.raw`
     <div>
         <div class="inline-block sc mr-2">Sortera: </div>
-        <ul class="part_header top_header mb-4 text-lg inline-block">
+        <ul class="part_header top_header mb-4 inline-block">
         
             <li class="inline-block sc" ng-repeat="item in sortItems[listType]" >
                 <a class="sort_item" href="" ng-click="onSortClick(item)" 
@@ -129,6 +129,14 @@ littb.controller(
 
         s.authLimit = 150
 
+        s.isHide1800 = () => $location.search().hide1800
+        s.toggle1800 = () => {
+            if (!s.isHide1800()) $location.search("hide1800", true)
+            else $location.search("hide1800", null)
+            // s.hide1800 = !s.hide1800
+            s.fetchRecent(false)
+        }
+
         s.filters = {
             gender: $location.search()["kön"],
             authorkeyword: [],
@@ -159,7 +167,8 @@ littb.controller(
                 !s.filters.gender &&
                 !s.keywords_aux.length &&
                 s.chronology_floor == from &&
-                s.chronology_ceil == to
+                s.chronology_ceil == to &&
+                !$location.search().hide1800
             )
         }
 
@@ -251,6 +260,7 @@ littb.controller(
             s.audio_list = null
             s.keywords_aux = []
             s.parts_page.current = 1
+            $location.search("hide1800", null)
         }
 
         s.hasMediatype = function (titleobj, mediatype) {
@@ -394,14 +404,25 @@ littb.controller(
                     val: "sort_date_imprint.date",
                     dir: "desc",
                     search: "kronologi"
-                },
+                }
+                // {
+                //     label: "Nytt",
+                //     val: "imported",
+                //     suffix:
+                //         ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
+                //     dir: "desc",
+                //     search: "nytillkommet"
+                // }
+            ],
+            latest: [
                 {
                     label: "Nytt",
                     val: "imported",
                     suffix:
                         ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
                     dir: "desc",
-                    search: "nytillkommet"
+                    search: "nytillkommet",
+                    active: true
                 }
             ],
             authors: [
@@ -465,6 +486,7 @@ littb.controller(
                 s.parts_page.current = 1
                 s.titleModel["epub_currentpage"] = 1
                 s.titleModel["works_currentpage"] = 1
+                s.titleModel["latest_currentpage"] = 1
             }
             s.selectedTitle = null
             s.rowfilter = s.filter
@@ -476,6 +498,9 @@ littb.controller(
                 s.fetchByRelevance()
             }
 
+            if (s.listType == "latest") {
+                s.fetchRecent(false)
+            }
             return Promise.all([
                 s.fetchWorks(s.listType !== "works", false),
                 s.fetchWorks(s.listType !== "epub", true),
@@ -765,15 +790,21 @@ littb.controller(
         s.titleModel = {
             works: [],
             epub: [],
+            latest: [],
             works_hits: 0,
             epub_hits: 0,
-            show_all_works: false,
-            show_all_epub: false,
+            latest_hits: 0,
             works_currentpage: 1,
-            epub_currentpage: 1
+            epub_currentpage: 1,
+            latest_currentpage: 1
         }
-        s.fetchWorks = (countOnly, epubOnly) => {
+        s.fetchRecent = countOnly => {
+            s.fetchWorks(countOnly, false, true)
+        }
+
+        s.fetchWorks = (countOnly, epubOnly, isSearchRecent) => {
             let listID = epubOnly ? "epub" : "works"
+            if (isSearchRecent) listID = "latest"
             // let show_all = s.titleModel["show_all_" + listID]
             // let size = { from: 0, to: show_all ? 10000 : 100 }
             // let size = { from: 0, to: show_all ? 300 : 100 }
@@ -787,9 +818,13 @@ littb.controller(
             }
             s.titleSearching = true
 
-            let isSearchRecent = $location.search().sort == "nytillkommet"
+            // let isSearchRecent = $location.search().sort == "nytillkommet"
             // TODO: {"_exists": "export>"} if dl_mode
             let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+            let filter_string = expandQuery(s.rowfilter)
+            if ($location.search().hide1800) {
+                filter_string = "-keyword:1800 " + filter_string
+            }
             console.log("filter_and", filter_and)
             // if (!_.toPairs(text_filter).length) {
             //     text_filter = null
@@ -803,7 +838,7 @@ littb.controller(
             }
             const def = backend.getTitles("etext,faksimil,pdf", {
                 sort_field: s.sort[listID],
-                filter_string: expandQuery(s.rowfilter),
+                filter_string,
                 include:
                     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
@@ -827,12 +862,11 @@ littb.controller(
                     s.titleByPath = _.groupBy(titles, item => item.titlepath)
 
                     if (isSearchRecent) {
-                        s.titleModel[epubOnly ? "epub" : "works"] = decorateRecent(titles)
-                    } else {
-                        s.titleModel[epubOnly ? "epub" : "works"] = titles
+                        titles = decorateRecent(titles)
                     }
-                    s.titleModel[epubOnly ? "epub_hits" : "works_hits"] = distinct_hits
-                    s.titleModel[epubOnly ? "epub_suggest" : "works_suggest"] = suggest
+                    s.titleModel[listID] = titles
+                    s.titleModel[listID + "_hits"] = distinct_hits
+                    s.titleModel[listID + "_suggest"] = suggest
                     // s.titleHits = hits
                     if (!epubOnly) {
                         s.currentAuthors = author_aggs.map(
@@ -889,6 +923,8 @@ littb.controller(
                 s.fetchWorks(false, true)
             } else if (s.listType == "authors") {
                 s.setAuthorData()
+            } else if (s.listType == "latest") {
+                s.fetchRecent()
             }
             // else if (s.listType == "audio") {
             //     fetchAudio(false)
@@ -915,19 +951,25 @@ littb.controller(
                 return [Number(day), months[month - 1], year].join(" ")
             }
 
-            let titleGroups = _.groupBy(titles, item => _.max(_.map(item.mediatypes, "imported")))
+            // let [only1800, rest] = _.partition(titles, item => item.keyword?.includes("1800"))
+            let groupTitles = (titles, label) => {
+                let output = []
+                let titleGroups = _.groupBy(titles, item =>
+                    _.max(_.map(item.mediatypes, "imported"))
+                )
 
-            let output = []
-            let datestrs = _.keys(titleGroups)
-
-            for (let datestr of datestrs) {
-                // TODO: fix locale format, 'femte maj 2017'
-                // output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
-                const titles = titleGroups[datestr]
-                output.push({ isHeader: true, label: dateFmt(datestr) })
-                output = output.concat(titles)
+                let datestrs = _.keys(titleGroups)
+                if (label) label = ": " + label
+                for (let datestr of datestrs) {
+                    // TODO: fix locale format, 'femte maj 2017'
+                    // output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
+                    const titles = titleGroups[datestr]
+                    output.push({ isHeader: true, label: dateFmt(datestr) + label })
+                    output = output.concat(titles)
+                }
+                return output
             }
-            return output
+            return groupTitles(titles, "")
         }
 
         s.getUrl = function (row, mediatype) {

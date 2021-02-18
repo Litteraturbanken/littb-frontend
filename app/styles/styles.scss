@@ -68,7 +68,9 @@ img {
     font-weight: 800;
 }
 
-
+[role=button].cursor-pointer {
+    cursor: pointer;
+}
 
 
 :focus {

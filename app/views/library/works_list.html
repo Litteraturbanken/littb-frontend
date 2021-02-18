@@ -1,5 +1,12 @@
 <div class="result title pl-0 sm:ml-3 flex-column min-h-500" >
-    <sort-list ></sort-list>
+    <div class="flex items-baseline">
+    	<sort-list ></sort-list>
+    	<span class="sc ml-4">
+            <span ng-if="!isHide1800()">Dölj verk:</span> 
+            <span ng-if="isHide1800()">Visa även från:</span> 
+            <span class="text-primary ml-2 hover:text-gray-900 cursor-pointer"
+                  ng-click="toggle1800()">Nya vägar till det förflutna</span></span>
+    </div>
     <div class="" >
         <div class="spinner_row ng-fade transition duration-200" ng-show="titleSearching">
             <i class="spinner fa fa-spinner fa-pulse"></i>
@@ -38,7 +45,7 @@
                          class="header_container inline-block align-middle">
                         <div class="header">
                             <span class="title_inner" uib-tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
-                                <a ng-if="listType == 'works'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
+                                <a ng-if="listType == 'works' || listType == 'latest'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
                                 <a ng-if="listType == 'epub'" 
                                    ng-href="/txt/epub/{{row.main_author.authorid + '_' + (row.work_titleid || row.titleid)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>
                             </span>
@@ -46,7 +53,7 @@
                             
                         </div>
                     </div>
-                    <div ng-if="listType == 'works'" uib-collapse="!row._collapsed">
+                    <div ng-if="listType == 'works' || listType == 'latest'" uib-collapse="!row._collapsed">
                         <div class="collapse-content" >
                             <ul class="links">
                                 <li ng-repeat="mediatype in row | readMediatypes">
@@ -85,8 +92,11 @@
             </button>
         </div> -->
         <div ng-show="titleModel[listType + '_hits'] > 100">
-            <ul class="pagination-sm sc" uib-pagination items-per-page="100" force-ellipses="true" total-items="titleModel[listType + '_hits']" max-size="10" ng-model="titleModel[listType + '_currentpage']" ng-change="fetchWorks(false, listType == 'epub')"
-            next-text="Nästa" previous-text="Föregående"></ul>
+            <ul class="pagination-sm sc" uib-pagination items-per-page="100" 
+                force-ellipses="true" total-items="titleModel[listType + '_hits']" max-size="10" 
+                ng-model="titleModel[listType + '_currentpage']" 
+                ng-change="listType == 'latest' ? fetchRecent(false) : fetchWorks(false, listType == 'epub')"
+                next-text="Nästa" previous-text="Föregående"></ul>
         </div>
     </div>
 </div>
