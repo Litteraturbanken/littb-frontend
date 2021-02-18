@@ -175,8 +175,9 @@
                         Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
                     </label>
                     <label class="sc btn btn-small" 
-                        ng-model="listType" uib-btn-radio="'latest'" ng-click="fetchLatest()">
-                        Nytt<span class="num_hits" ng-show="titleModel.recent_hits">: {{titleModel.recent_hits}}</span>
+                        ng-model="listType" uib-btn-radio="'latest'" ng-click="fetchRecent()">
+                        Nytt
+                        <!-- <span class="num_hits" ng-show="titleModel.latest_hits">: {{titleModel.latest_hits}}</span> -->
                     </label>
                     <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !parts_hits}" 
                         ng-model="listType" uib-btn-radio="'parts'" ng-click="fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>

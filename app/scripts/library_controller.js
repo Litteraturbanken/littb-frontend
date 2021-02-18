@@ -340,7 +340,8 @@ littb.controller(
             epub: "popularity|desc",
             authors: "popularity|desc",
             parts: "sortkey|asc",
-            audio: "title.raw|asc"
+            audio: "title.raw|asc",
+            latest: "imported|desc"
         }
 
         s.sortItems = {

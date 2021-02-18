@@ -2,7 +2,6 @@ const angular = window.angular
 const _ = window._
 const jQuery = window.jQuery
 const c = window.console
-import bodybuilder from "bodybuilder"
 import { fromFilters } from "./query.ts"
 
 const littb = angular.module("littbApp")
@@ -368,60 +367,14 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                 relevanceCanceller.resolve()
             }
             relevanceCanceller = $q.defer()
-            // let query = bodybuilder()
-            // if (filters.gender == "all") delete filters.gender
             filters = _.omitBy(
                 filters,
                 val => _.isNil(val) || _.isNaN(val) || (!_.isNumber(val) && _.isEmpty(val))
             )
-            /*
-            for (let [key, val] of Object.entries(filters)) {
-                switch (key) {
-                    case "gender":
-                        query
-                            .orQuery("match", "gender", val)
-                            .orQuery("nested", "path", "authors", { ignore_unmapped: true }, q =>
-                                q
-                                    .query("match", "authors.gender", val)
-                                    .notQuery("exists", "authors.type")
-                            )
-                        break
-
-                    case "sort_date_imprint.date:range":
-                        let range = { gte: val[0], lte: val[1] }
-                        query
-                            .query("range", "sort_date_imprint.date", range)
-                            .orQuery("range", "birth.date", range)
-                            .orQuery("range", "death.date", range)
-                        break
-                    case "languages":
-                    case "keywords":
-                        console.log("util.makeFilterObj(val)", util.makeFilterObj(val))
-                        query.filter("terms", util.makeFilterObj(val))
-                        break
-                    case "mediatypes":
-                        let { has_epub, mediatype } = util.makeFilterObj(val)
-                        // let innerQuery = bodybuilder().orQuery("terms", { mediatype })
-                        // if (has_epub) innerQuery.orQuery("match", "has_epub", true)
-                        query.orFilter("terms", { mediatype })
-                        if (has_epub)
-                            query.orFilter("term", "has_epub", true).filterMinimumShouldMatch(1)
-                        // query.query("bool", {
-                        //     should: [innerQuery.build().query],
-                        //     queryMinimumShouldMatch: 1
-                        // })
-
-                        break
-                    case "authorkeyword":
-                        query.filter("terms", key, val)
-                        break
-                }
-            }
-            */
-            // console.log("query.build()", JSON.stringify(query.build(), null, 2))
             const params = _.omitBy(
                 {
-                    exclude: "text,parts,sourcedesc,pages,errata",
+                    exclude:
+                        "text,parts,sourcedesc,pages,errata,intro,content,article.ArticleText,works,intro_text,bibliography_types",
                     // author_aggregation: author_aggs,
                     ...options,
                     search: fromFilters(filters)
