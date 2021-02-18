@@ -224,7 +224,8 @@
                                 <div ng-if="item._index.endsWith('author')">
                                     <a ng-href="/författare/{{item.authorid}}/" class="">
                                         <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
-                                        {{item.name_for_index.split(",")[1]}} {{item | authorYear}}
+                                        {{item.name_for_index.split(",")[1]}} 
+                                        <!-- {{item | authorYear}} -->
                                     </a>
                                     <highlights list="item.highlight.intro"></highlights>
 
@@ -268,6 +269,10 @@
                                     <a ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)">
                                         {{item.sort_date_imprint.plain}}
                                     </a>
+
+                                    <div ng-if="item._index.endsWith('author')">
+                                        {{item | authorYear}}
+                                    </div>
                                 </td>
                                 <td class="align-top text-right sc primarycolor"><span class="author">
                                             <a ng-href="/författare/{{item.main_author.authorid}}">{{item.main_author.surname}}</a> 
