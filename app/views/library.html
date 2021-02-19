@@ -158,7 +158,7 @@
         </form>
         
         <!-- <div class="row box_container"> -->
-        <div class="flex items-stretch w-full">
+        <div class="flex items-stretch w-full sm:max-w-4xl">
             <div class="box sm:p-6 p-2 sm:border border-gray-900 flex-grow" >
 
                 <div class="btn-group p-0 mb-10 ">
@@ -192,10 +192,10 @@
                 <ng-include src="worksListURL" ng-if="listType == 'latest'"></ng-include>
 
                     
-                <div class="result relevance pl-0 sm:ml-3 w-full sm:w-auto" ng-if="listType == 'all'">
+                <div class="result relevance pl-0 sm:ml-3 lg:ml-0 w-full sm:w-auto" ng-if="listType == 'all'">
                     <sort-list></sort-list>
                     <div class=""> 
-                        <table class="">
+                        <table class="w-full">
                             <tr class="spinner_row" ng-show="relevanceSearching">
                                 <td><i class="spinner fa fa-spinner fa-pulse"></i></td>
                             </tr>
@@ -217,7 +217,7 @@
                                 class="align-top sm:table-row flex justify-between"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()">
-                                <td class="text-right hidden sm:table-cell"><span class="sc primarycolor whitespace-no-wrap">
+                                <td class="text-right hidden sm:table-cell w-px"><span class="sc primarycolor whitespace-no-wrap">
                                     {{getLabelBySource(item)}}
                                 </span></td>
                                 <td>
@@ -230,31 +230,34 @@
                                     <highlights list="item.highlight.intro"></highlights>
 
                                 </div>
-                                <div class="" ng-if="getIndex(item._index) == 'presentations'">
+                                <div class="" ng-if="getIndex(item._index) == 'presentations'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="{{item.url}}">{{item.title}}</a>
                                     <highlights list="item.highlight.content"></highlights>
                                 </div>
-                                <div class="" ng-if="getIndex(item._index) == 'sol'">
+                                <div class="" ng-if="getIndex(item._index) == 'sol'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{item.article.URLName}}">{{item.article.ArticleName}}</a>
 
                                     <highlights list="item.highlight['article.ArticleText']"></highlights>
                                 </div>
-                                <div class="" ng-if="getIndex(item._index) == 'vastsvenska'">
+                                <div class="" ng-if="getIndex(item._index) == 'vastsvenska'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="https://litteraturbanken.se/litteraturkartan/?id={{item.placeid}}&article={{item.id}}">{{item.header}}</a>
 
                                     <highlights list="item.highlight.free_text"></highlights>
                                 </div>
-                                <div class="" ng-if="getIndex(item._index) == 'wordpress'">
+                                <div class="" ng-if="getIndex(item._index) == 'wordpress'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="{{item.link}}">{{item.title}}</a>
                                     <highlights list="item.highlight.content"></highlights>
                                 </div>
-                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))" uib-tooltip="{{(item.title != item.shorttitle ? item.title : '') + (isDev ? '\npopularity: ' + item.popularity : '')}}" tooltip-popup-delay="500">
+                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))" 
+                                    uib-tooltip="{{(item.title != item.shorttitle ? item.title : '') + (isDev ? '\npopularity: ' + item.popularity : '')}}" 
+                                    tooltip-popup-delay="500">
                                     
                                     <a ng-if="['etext', 'faksimil'].includes(getIndex(item._index))" ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
                                     <a ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))" ng-href="/författare/{{getPartAuthor(item).authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
                                     <a ng-if="['pdf'].includes(getIndex(item._index))" ng-href="/txt/{{item.lbworkid}}/{{item.lbworkid}}.pdf" download target="_self">{{item.shorttitle || item.title}}</a>
 
 
+                                    <highlights list="item.highlight.workintro"></highlights>
                                     <highlights list="item.highlight.title"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight['title.search']"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight.title_modernized"></highlights>
@@ -265,16 +268,17 @@
                                 </div>
                                 </td>
 
-                                <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap">
+                                <td class="align-top text-right hidden sm:table-cell w-16 whitespace-no-wrap">
                                     <a ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)">
                                         {{item.sort_date_imprint.plain}}
                                     </a>
 
                                     <div ng-if="item._index.endsWith('author')">
-                                        {{item | authorYear}}
+                                        
+                                        <a ng-click="setDateRange(item.birth.plain, item.death.plain)">{{item | authorYear}}</a>
                                     </div>
                                 </td>
-                                <td class="align-top text-right sc primarycolor"><span class="author">
+                                <td class="align-top text-right sc primarycolor pl-4"><span class="author">
                                             <a ng-href="/författare/{{item.main_author.authorid}}">{{item.main_author.surname}}</a> 
                                             <span ng-if="item.main_author.type == 'editor'">(red.)</span> 
                                             <span ng-if="item.main_author.type == 'illustrator'">(ill.)</span>

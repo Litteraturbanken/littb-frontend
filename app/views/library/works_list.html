@@ -1,7 +1,7 @@
 <div class="result title pl-0 sm:ml-3 flex-column min-h-500" >
-    <div class="flex items-baseline" ng-if="listType == 'latest'">
+    <div class="flex items-baseline">
     	<sort-list ></sort-list>
-    	<span class="sc ml-4">
+    	<span class="sc ml-4" ng-if="listType == 'latest'">
             <span ng-if="!isHide1800()">Dölj verk:</span> 
             <span ng-if="isHide1800()">Visa även från:</span> 
             <span class="text-primary ml-2 hover:text-gray-900 cursor-pointer"

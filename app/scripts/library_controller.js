@@ -360,7 +360,8 @@ littb.controller(
             authors: "popularity|desc",
             parts: "sortkey|asc",
             audio: "title.raw|asc",
-            latest: "imported|desc"
+            latest:
+                "imported|desc,main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc"
         }
 
         s.sortItems = {
@@ -384,6 +385,12 @@ littb.controller(
                     val: "sortkey",
                     dir: "asc",
                     search: "titlar"
+                },
+                {
+                    label: "Tryckår",
+                    val: "sort_date_imprint.date",
+                    dir: "desc",
+                    search: "kronologi"
                 }
                 // {
                 //     label: "Tryckår",

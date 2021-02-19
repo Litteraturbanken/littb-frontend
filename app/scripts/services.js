@@ -375,7 +375,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             const params = _.omitBy(
                 {
                     exclude:
-                        "text,parts,sourcedesc,pages,errata,intro,content,article.ArticleText,works,intro_text,bibliography_types",
+                        "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types",
                     // author_aggregation: author_aggs,
                     ...options,
                     search: fromFilters(filters)

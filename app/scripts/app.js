@@ -153,7 +153,7 @@ window.littb = angular
 
                         return $http
                             .get(`/red/presentationer/${$routeParams.folder}/${$routeParams.doc}`)
-                            .then(function ({data}) {
+                            .then(function ({ data }) {
                                 $scope.doc = data
                                 $scope.title = $(`<root>${data}</root>`).find("h1").text()
                                 $scope.title = $scope.title.split(" ").slice(0, 5).join(" ")
@@ -342,7 +342,7 @@ window.littb = angular
                 redirectTo: $routeParams => {
                     window.location.href =
                         "https://litteraturbanken.se/ljudochbild/" + ($routeParams.subadress || "")
-                    return "/"
+                    return "/#external"
                 }
             })
             .when(["/översättarlexikon/", "/översättarlexikon/:subadress*"], {
@@ -351,13 +351,13 @@ window.littb = angular
                     window.location.href =
                         "https://litteraturbanken.se/översättarlexikon/" +
                         ($routeParams.subadress || "")
-                    return "/"
+                    return "/#external"
                 }
             })
             .when(["/litteraturkartan/"], {
                 redirectTo: $routeParams => {
                     window.location.pathname = "/litteraturkartan/"
-                    return "/"
+                    return "/#external"
                 }
             })
             .when(["/bibliotekariesidor/", "/bibliotekariesidor/:subadress*"], {
@@ -365,7 +365,7 @@ window.littb = angular
                     window.location.href =
                         "https://litteraturbanken.se/bibliotekariesidor/" +
                         ($routeParams.subadress || "")
-                    return "/"
+                    return "/#external"
                 }
             })
             .when(["/diktensmuseum/", "/diktensmuseum/:subadress*"], {
@@ -373,14 +373,14 @@ window.littb = angular
                     window.location.href =
                         "https://litteraturbanken.se/diktensmuseum/" +
                         ($routeParams.subadress || "")
-                    return "/"
+                    return "/#external"
                 }
             })
             .when(["/skolan/", "/skolan/:subadress*"], {
                 redirectTo: $routeParams => {
                     window.location.href =
                         "https://litteraturbanken.se/skolan/" + ($routeParams.subadress || "")
-                    return "/"
+                    return "/#external"
                 }
             })
             .when(["/forfattare"], { redirectTo: "/bibliotek" })
@@ -611,6 +611,9 @@ littb.config(function ($httpProvider, $locationProvider, $uibTooltipProvider) {
 })
 
 littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
+    if (window.location.pathname == "/" && $location.hash()) {
+        window.location.hash = ""
+    }
     console.log("run search params", $location.search())
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL
@@ -652,8 +655,9 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
     $rootScope.$on("$routeChangeStart", (event, next, current) => (routeStartCurrent = current))
 
     $rootScope.$on("$routeChangeSuccess", function (event, newRoute, prevRoute) {
-        console.log("$routeChangeSuccess", window.location.pathname)
-        window.gtag("config", window.gtagID, { page_path: window.location.pathname })
+        if (window.location.hash !== "#external") {
+            window.gtag("config", window.gtagID, { page_path: window.location.pathname })
+        }
 
         let className
         if (newRoute.controller === "startCtrl") {

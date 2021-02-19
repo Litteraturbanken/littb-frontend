@@ -3403,9 +3403,9 @@ $partnav-width : 170px;
             // }
         }
         .result {
-            table td {
-                padding-right: 4px;
-                padding-left: 4px;
+            table {
+                border-spacing: 8px 2px;
+                border-collapse: separate;
             }
             .header_container {
                 max-width : calc(100% - 2rem);
