@@ -35,27 +35,28 @@ littb.component("keywordSelect", {
         <option value="texttype:novellsamling;novell">Noveller</option>
         <option value="texttype:diktsamling;dikt">Poesi</option>
         <option value="texttype:roman">Romaner</option>
+        
         <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
+        <option value='source:bibliotekariesidor'>Bibliotekariesidorna</option>
+        <option value='source:diktensmuseum'>Diktens museum</option>
+        <option value='keyword:Dramawebben'>Dramawebben</option>
         <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
+        <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
+        <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
         <option value='keyword:Humor'>Humor</option>
-        <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
+        <option value='source:presentations'>Kringtexter</option>
+        <option value='source:skolan'>Litteraturbankens skola</option>
+        <option value='source:vastsvenska'>Litteraturkartan</option>
+        <option value='source:ljudochbild'>Ljud & Bild</option>
+        <option value='keyword:1800'>Nya vägar till 1800-talet</option>
         <option value="texttype:reseskildring">Reseskildringar</option>
         <option value='keyword:Rösträtt'>Rösträtt</option>
-        <option value='keyword:Dramawebben'>Dramawebben</option>
+        <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
         <option value='keyword:SLS-FI'>SLS Finland</option>
         <option value='provenance.library:SVELITT'>SLS Sverige</option>
         <option value='provenance.library:SFS'>Svenska fornskriftsällskapet</option>
         <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
         <option value='provenance.library:SVA'>Svenskt visarkiv</option>
-        <option value='keyword:1800'>Nya vägar till 1800-talet</option>
-        <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
-        <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
-        <option value='source:vastsvenska'>Litteraturkartan</option>
-        <option value='source:ljudochbild'>Ljud & Bild</option>
-        <option value='source:presentations'>Kringtexter</option>
-        <option value='source:bibliotekariesidor'>Bibliotekariesidorna</option>
-        <option value='source:diktensmuseum'>Diktens museum</option>
-        <option value='source:skolan'>Litteraturbankens skola</option>
         <option value='source:sol'>Översättarlexikon</option>
     </select>`,
     bindings: {
@@ -153,6 +154,7 @@ littb.controller(
             if (!s.isHide1800()) $location.search("hide1800", true)
             else $location.search("hide1800", null)
             // s.hide1800 = !s.hide1800
+            s.titleModel.latest_currentpage = 1
             s.fetchRecent(false)
         }
 
