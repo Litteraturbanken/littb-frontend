@@ -711,7 +711,14 @@ littb.controller(
         s.fetchParts = countOnly => {
             // unless s.filter then return
             s.partSearching = true
-            let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+            let filters = { ...s.filters }
+            if (
+                filters["sort_date_imprint.date:range"][0] == s.chronology_floor &&
+                filters["sort_date_imprint.date:range"][1] == s.chronology_ceil
+            ) {
+                delete filters["sort_date_imprint.date:range"]
+            }
+            let { filter_or, filter_and } = util.getKeywordTextfilter(filters)
 
             let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
             console.log("size", size)
@@ -849,7 +856,14 @@ littb.controller(
 
             // let isSearchRecent = $location.search().sort == "nytillkommet"
             // TODO: {"_exists": "export>"} if dl_mode
-            let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+            let filters = { ...s.filters }
+            if (
+                filters["sort_date_imprint.date:range"][0] == s.chronology_floor &&
+                filters["sort_date_imprint.date:range"][1] == s.chronology_ceil
+            ) {
+                delete filters["sort_date_imprint.date:range"]
+            }
+            let { filter_or, filter_and } = util.getKeywordTextfilter(filters)
             let filter_string = expandQuery(s.rowfilter)
             if ($location.search().hide1800) {
                 filter_string = "-keyword:1800 " + filter_string
@@ -870,7 +884,7 @@ littb.controller(
                 filter_string,
                 include:
                     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
-                    "main_author.authorid,main_author.surname,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
+                    "main_author.authorid,main_author.surname,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
                 filter_or,
                 filter_and,
                 partial_string: true,

@@ -118,9 +118,9 @@ img {
     font-family: "Requiem Text SC A", "Requiem Text SC B";
     text-transform: lowercase !important;
 }
-.sc {
-    @include small-caps();
-}
+// .sc {
+//     @include small-caps();
+// }
 .italic {
     font-style: italic;
 }
@@ -3133,7 +3133,7 @@ $partnav-width : 170px;
             }
         }
         form {
-            max-width : 895px;
+            // max-width : 895px;
             background-color: rgba(255,255,255,0.55);
             // padding: 0.8em 0.8em 0.8em 1.6em;
             // border: 1px solid #333;

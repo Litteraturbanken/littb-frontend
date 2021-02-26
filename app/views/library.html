@@ -4,7 +4,7 @@
 <img bkg-img src="../img/library.jpg"></img>
 <div ng-class="{searching:searching, dl_mode : dl_mode}">
     <div id="controls">
-        <form class="sm:p-5 p-2 sm:border border-gray-900" ng-submit="refreshData()">
+        <form class="sm:p-5 p-2 sm:border border-gray-900 w-full sm:max-w-5xl" ng-submit="refreshData()">
             
             <div class="">
                 <div class="main_input flex flex-wrap -mt-4">
@@ -158,7 +158,7 @@
         </form>
         
         <!-- <div class="row box_container"> -->
-        <div class="flex items-stretch w-full sm:max-w-4xl">
+        <div class="flex items-stretch w-full sm:max-w-5xl">
             <div class="box sm:p-6 p-2 sm:border border-gray-900 flex-grow" >
 
                 <div class="btn-group p-0 mb-10 ">
@@ -214,18 +214,18 @@
                             </tr>
                             
                             <tr ng-repeat="item in relevanceData"
-                                class="align-top sm:table-row flex justify-between pb-2 sm:pb-0"
+                                class="align-top sm:table-row flex flex-col justify-between pb-2 sm:pb-0"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()">
-                                <td class="text-right hidden sm:table-cell w-px"><span class="sc primarycolor whitespace-no-wrap">
+                                <td class="sm:text-right sm:table-cell w-px"><span class="sc primarycolor whitespace-no-wrap">
                                     {{getLabelBySource(item)}}
                                 </span></td>
-                                <td>
+                                <td class="order-2">
                                 <div ng-if="item._index.endsWith('author')">
                                     <a ng-href="/författare/{{item.authorid}}/" class="">
                                         <span class="surname">{{item.name_for_index.split(',')[0]}}</span><span ng-show="item.name_for_index.split(',').length > 1">,</span>
                                         {{item.name_for_index.split(",")[1]}} 
-                                        <!-- {{item | authorYear}} -->
+                                        <a class="sm:hidden" ng-if="item | authorYear" ng-click="setDateRange(item.birth.plain, item.death.plain)">({{item | authorYear}})</a>
                                     </a>
                                     <highlights list="item.highlight.intro"></highlights>
 
@@ -248,7 +248,7 @@
                                     <a ng-href="{{item.link}}">{{item.title}}</a>
                                     <highlights list="item.highlight.content"></highlights>
                                 </div>
-                                <div ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))" 
+                                <div class="max-w-sm" ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))" 
                                     uib-tooltip="{{(item.title != item.shorttitle ? item.title : '') + (isDev ? '\npopularity: ' + item.popularity : '')}}" 
                                     tooltip-popup-delay="500">
                                     
@@ -257,7 +257,9 @@
                                     <a ng-if="['pdf'].includes(getIndex(item._index))" ng-href="/txt/{{item.lbworkid}}/{{item.lbworkid}}.pdf" download target="_self">{{item.shorttitle || item.title}}</a>
 
 
-                                    <highlights list="item.highlight.workintro"></highlights>
+                                    <a ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}?om-boken">
+                                        <highlights list="item.highlight.workintro"></highlights>
+                                    </a>
                                     <highlights list="item.highlight.title"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight['title.search']"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight.title_modernized"></highlights>
@@ -268,7 +270,7 @@
                                 </div>
                                 </td>
 
-                                <td class="align-top text-right hidden sm:table-cell w-16 whitespace-no-wrap">
+                                <td class="align-top sm:text-right hidden sm:table-cell w-16 whitespace-no-wrap">
                                     <a ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)">
                                         {{item.sort_date_imprint.plain}}
                                     </a>
@@ -278,8 +280,15 @@
                                         <a ng-click="setDateRange(item.birth.plain, item.death.plain)">{{item | authorYear}}</a>
                                     </div>
                                 </td>
-                                <td class="align-top text-right sc primarycolor pl-4"><span class="author">
-                                            <a ng-href="/författare/{{item.main_author.authorid}}">{{item.main_author.surname}}</a> 
+                                <td class="align-top sm:text-right sm:sc primarycolor sm:pl-4 order-1"><span class="author">
+                                    <div class="text-gray-800" ng-if="item._index.endsWith('presentations') || item._index.endsWith('vastsvenska')">
+                                        {{item.article_author}}
+                                    </div>
+                                    <div class="text-gray-800" ng-if="item._index.endsWith('sol')">
+                                        {{item.contributors.FirstName}} {{item.contributors.LastName}}
+                                    </div>
+                                    
+                                            <a ng-href="/författare/{{item.main_author.authorid}}">{{item.main_author.full_name}}</a> 
                                             <span ng-if="item.main_author.type == 'editor'">(red.)</span> 
                                             <span ng-if="item.main_author.type == 'illustrator'">(ill.)</span>
                                         </span> <!-- ng-click="authorClick($event, authorsById[item.author[0].authorid])" --></td>

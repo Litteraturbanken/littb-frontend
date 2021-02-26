@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+    @responsive {
+        .sc {
+            font-family: "Requiem Text SC A", "Requiem Text SC B";
+            text-transform: lowercase !important;
+        }
+    }
+}
