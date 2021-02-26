@@ -161,7 +161,7 @@
         <div class="flex items-stretch w-full sm:max-w-5xl">
             <div class="box sm:p-6 p-2 sm:border border-gray-900 flex-grow" >
 
-                <div class="btn-group p-0 mb-10 ">
+                <div class="btn-group p-0 mb-4 sm:mb-10 ">
                     <label class="sc btn btn-small" ng-class="" 
                         ng-model="listType" uib-btn-radio="'all'" ng-click="fetchByRelevance()">
                         Alla träffar
@@ -194,7 +194,7 @@
                     
                 <div class="result relevance pl-0 sm:ml-3 lg:ml-0 w-full sm:w-auto" ng-if="listType == 'all'">
                     <sort-list></sort-list>
-                    <div class=""> 
+                    <div class="mt-4"> 
                         <table class="w-full">
                             <tr class="spinner_row" ng-show="relevanceSearching">
                                 <td><i class="spinner fa fa-spinner fa-pulse"></i></td>
@@ -214,10 +214,10 @@
                             </tr>
                             
                             <tr ng-repeat="item in relevanceData"
-                                class="align-top sm:table-row flex flex-col justify-between pb-2 sm:pb-0"
+                                class="align-top sm:table-row flex flex-col justify-between pb-2 sm:pb-0 -ml-2 text-lg"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()">
-                                <td class="sm:text-right sm:table-cell w-px"><span class="sc primarycolor whitespace-no-wrap">
+                                <td class="sm:text-right sm:table-cell w-px"><span class="sc primarycolor whitespace-no-wrap text-base">
                                     {{getLabelBySource(item)}}
                                 </span></td>
                                 <td class="order-2">

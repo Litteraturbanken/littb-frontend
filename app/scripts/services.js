@@ -1217,7 +1217,14 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
 
                 this.total_doc_hits = response.data.hits
                 this.compactLeftContext(response.data.data)
+                let isShort = ({ word }) => word.length < 30
 
+                for (let item of response.data.data) {
+                    for (let hl of item.highlight) {
+                        hl.left_context = hl.left_context.filter(isShort)
+                        hl.right_context = hl.right_context.filter(isShort)
+                    }
+                }
                 const sentsWithHeaders = _.flatten(
                     this.decorateData(response.data.data, this.NUM_HIGHLIGHTS)
                 )
