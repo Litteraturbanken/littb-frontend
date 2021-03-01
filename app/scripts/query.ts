@@ -64,11 +64,10 @@ let getQuery = (key, val) => {
             break
 
         case "sort_date_imprint.date:range":
-            let range = { gte: val[0], lte: val[1] }
-            query
-                .query("range", "sort_date_imprint.date", range)
-                .orQuery("range", "birth.date", range)
-                .orQuery("range", "death.date", range)
+            let range = `[${val[0]} TO ${val[1]}]`
+            query.query("query_string", {
+                query: `sort_date_imprint.date:${range} OR birth.date:${range} OR death.date:${range}`
+            })
             break
         case "languages":
         case "keywords":

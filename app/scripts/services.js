@@ -392,6 +392,13 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                 // TODO: bring back suggest
                 const { data, suggest, hits } = response.data
 
+                const groups = _.groupBy(data, item => item.titlepath + item.lbworkid)
+                for (let item of data) {
+                    if (groups[item.titlepath + item.lbworkid].length > 1) {
+                        item.hasAmbigousMediatype = true
+                    }
+                }
+
                 return {
                     titles: disableGrouping ? data : expandMediatypes(data),
                     suggest,
