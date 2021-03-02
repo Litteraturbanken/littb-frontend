@@ -15,7 +15,8 @@ let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 if (
     _.str.startsWith(location.host, "red.l") ||
     _.str.startsWith(location.host, "dev.l") ||
-    _.str.startsWith(location.host, "litteraturbanken")
+    _.str.startsWith(location.host, "litteraturbanken") ||
+    process.env.NODE_ENV === "production"
 ) {
     STRIX_URL = "/api"
 }
