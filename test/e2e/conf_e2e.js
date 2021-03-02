@@ -23,7 +23,7 @@ exports.config = {
     defaultTimeoutInterval: 30000
   },
   directConnect: true,
-  restartBrowserBetweenTests: true,
+  // restartBrowserBetweenTests: true,
   framework: "jasmine2",
   // plugins: [{
   //     package: 'protractor-screenshoter-plugin',

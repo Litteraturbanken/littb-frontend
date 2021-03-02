@@ -252,7 +252,7 @@
                                     uib-tooltip="{{(item.title != item.shorttitle ? item.title : '') + (isDev ? '\npopularity: ' + item.popularity : '')}}" 
                                     tooltip-popup-delay="500">
                                     
-                                    <a ng-if="['etext', 'faksimil'].includes(getIndex(item._index))" ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">
+                                    <a ng-if="['etext', 'faksimil'].includes(getIndex(item._index))" ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.work_titleid || item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">
                                         {{item.shorttitle || item.title}}
                                     </a>
                                     <a ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))" ng-href="/författare/{{getPartAuthor(item).authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
@@ -260,7 +260,7 @@
                                     <a ng-if="['pdf'].includes(getIndex(item._index))" ng-href="/txt/{{item.lbworkid}}/{{item.lbworkid}}.pdf" download target="_self">{{item.shorttitle || item.title}}</a>
 
 
-                                    <a ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}?om-boken">
+                                    <a ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.work_titleid || item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}?om-boken">
                                         <highlights list="item.highlight.workintro"></highlights>
                                     </a>
                                     <highlights list="item.highlight.title"></highlights>

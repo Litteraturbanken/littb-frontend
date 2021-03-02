@@ -58,7 +58,7 @@ describe("library relevance", function () {
     it("should contain various external sources in default list", () => {
         let elems = element.all(By.css(".result.relevance tr[ng-repeat] td:first-child span"))
         expect(elems.getText()).toContain("ljud och bild")
-        expect(elems.getText()).toContain("diktensmuseum")
+        expect(elems.getText()).toContain("diktens museum")
     })
 
     it("should give more popular first", () => {
@@ -83,7 +83,7 @@ describe("titles", function () {
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         let num = element(By.css(".parts.num_hits"))
-        expect(num.getText()).toEqual(": 824")
+        expect(num.getText()).toEqual(": 797")
     })
 })
 
@@ -195,11 +195,11 @@ describe("search", function () {
 
     it("should give search results. ", function () {
         const input = element(By.model("query"))
-        input.sendKeys("kriget är förklarat !")
+        input.sendKeys("kriget är förklarat!")
         input.sendKeys(protractor.Key.ENTER)
 
         const rows = element.all(By.css(".sentence"))
-        expect(rows.count()).toEqual(2)
+        expect(rows.count()).toEqual(1)
     })
 })
 
