@@ -82,7 +82,6 @@ littb.component("keywordSelect", {
         }
 
         ctrl.$onDestroy = () => {
-            console.log("🚀 ~ file: library_controller.js ~ line 83 ~ onDestroy")
             unwatch?.()
         }
 
