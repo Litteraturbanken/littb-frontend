@@ -274,7 +274,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             const params = {
                 exclude: "text,parts,sourcedesc,pages,errata",
                 sort_field: "sortkey|asc",
-                filter_string,
+                filter_string: filter_string.replace(/(\w)-(\w)/g, "$1 $2"),
                 to,
                 filter_or,
                 filter_and,
@@ -332,21 +332,13 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                 val => _.isNull(val)
             )
 
-            // if (sort_key) {
-            //     params.sort_field = sort_key
-            //     params.to = 30
-            // } else {
-            //     params.sort_field = "sortkey|asc"
-            //     params.to = 10000
-            // }
-
             if (author) {
                 author = `/${author}`
             }
-            // if (getAll) {
-            //     params.to = 600
-            // }
 
+            if (params.filter_string) {
+                params.filter_string = params.filter_string.replace(/(\w)-(\w)/g, "$1 $2")
+            }
             return $http({
                 url: `${STRIX_URL}/list_all/${types}` + (author || ""),
                 params
