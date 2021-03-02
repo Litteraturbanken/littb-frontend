@@ -1,4 +1,4 @@
-FROM node:10.13-alpine
+FROM node:12.18-alpine
 
 # Create app directory
 WORKDIR /usr/src/app
@@ -7,13 +7,12 @@ WORKDIR /usr/src/app
 # COPY package.json .
 # For npm@5 or later, copy package-lock.json as well
 
-RUN yarn global add protractor && \
-    yarn global add npm-run-all && \
-    yarn global add wait-on && \
-    webdriver-manager update --standalone false --gecko false
+# RUN yarn global add protractor && \
+RUN yarn global add npm-run-all wait-on
+#     webdriver-manager update --standalone false --gecko false
 
 COPY package.json yarn.lock ./
-RUN yarn install --ignore-optional
+RUN yarn install --ignore-optional && npx webdriver-manager update --standalone false --gecko false
 #RUN node_modules/protractor/bin/webdriver-manager update
 # If you are building your code for production
 # RUN npm install --only=production

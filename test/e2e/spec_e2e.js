@@ -55,10 +55,16 @@ describe("library relevance", function () {
         filter = element(By.model("filter"))
     })
 
+    fit("should contain various external sources in default list", () => {
+        let elems = element.all(By.css(".result.relevance tr[ng-repeat] td:first-child span"))
+        expect(elems.getText()).toContain("Ljud och bild")
+    })
+
     it("should give more popular first", () => {
         filter.sendKeys("glas")
         expect(getMostRelTitle()).toEqual("Doktor Glas")
     })
+
     it("should score surname hits above popularity", () => {
         filter.sendKeys("öman poetisk")
         expect(getMostRelTitle()).toEqual("Poetisk läsebok för folkskolan")

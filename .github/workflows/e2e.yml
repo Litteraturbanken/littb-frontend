@@ -15,5 +15,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Angular Github Actions
-      uses: mayurrawte/github-angular-actions@latest
+    # - name: Angular Github Actions
+      # uses: mayurrawte/github-angular-actions@latest
+    - name: Use Node.js 
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.18.3
+    # - name: Set up JDK 11
+    #   uses: actions/setup-java@v1
+    #   with:
+    #     java-version: 1.11
+    - name: Setup environment
+      run: |
+        yarn global add npm-run-all wait-on protractor
+        webdriver-manager update --standalone chrome --gecko false
+    - name: Main repo
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        yarn --frozen-lockfile
+    - name: Run tests
+      run: |
+        webdriver-manager start &
+        yarn dev &
+        wait-on --delay 500 --interval 500 http://localhost:9000 http://localhost:4444 
+        protractor test/e2e/conf_e2e.js
+        echo "exited tests with code $?"

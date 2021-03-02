@@ -89,6 +89,8 @@ littb.controller("readingCtrl", function (
         }
     }
 
+    s.nyaVagarUrl = require("../img/lb_logga_nyavägar_2.2021.svg")
+    
     s.getTransform = function () {
         if (!s.isFocus) {
             return {}
