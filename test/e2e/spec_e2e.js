@@ -59,6 +59,8 @@ describe("library relevance", function () {
         let elems = element.all(By.css(".result.relevance tr[ng-repeat] td:first-child span"))
         expect(elems.getText()).toContain("ljud och bild")
         expect(elems.getText()).toContain("diktens museum")
+        expect(elems.getText()).toContain("kringtexter")
+        expect(elems.getText()).toContain("skolan")
     })
 
     it("should give more popular first", () => {
@@ -83,7 +85,7 @@ describe("titles", function () {
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         let num = element(By.css(".parts.num_hits"))
-        expect(num.getText()).toEqual(": 797")
+        expect(num.getText()).toEqual(": 823")
     })
 })
 
