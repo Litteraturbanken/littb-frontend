@@ -27,7 +27,7 @@ jobs:
     #     java-version: 1.11
     - name: Setup environment
       run: |
-        yarn global add npm-run-all wait-on protractor
+        yarn global add npm-run-all wait-on protractor webdriver-manager
         webdriver-manager update --standalone chrome --gecko false
     - name: Main repo
       uses: actions/checkout@v2
