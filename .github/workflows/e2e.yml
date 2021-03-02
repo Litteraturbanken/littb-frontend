@@ -36,8 +36,8 @@ jobs:
         npx webdriver-manager update --standalone chrome --gecko false
     - name: Run tests
       run: |
-        webdriver-manager start &
+        npx webdriver-manager start &
         yarn dev &
-        wait-on --delay 500 --interval 500 http://localhost:9000 http://localhost:4444 
-        protractor test/e2e/conf_e2e.js
+        npx wait-on --delay 500 --interval 500 http://localhost:9000 http://localhost:4444 
+        npx protractor test/e2e/conf_e2e.js
         echo "exited tests with code $?"
