@@ -39,5 +39,6 @@ jobs:
         # npx webdriver-manager start &
         yarn serve-dist &
         npx wait-on http://localhost:9000
+        sleep 5
         npx protractor --browser chrome test/e2e/conf_e2e.js
         echo "exited tests with code $?"
