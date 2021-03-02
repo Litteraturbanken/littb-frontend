@@ -79,7 +79,7 @@
         "node": ">=0.10.0"
     },
     "optionalDependencies": {
-        "axios": "^0.21.0"
+        "axios": "^0.21.1"
     },
     "resolutions": {
         "protractor/webdriver-manager": "12.1.8"
