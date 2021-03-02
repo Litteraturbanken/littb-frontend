@@ -1,12 +1,12 @@
 exports.config = {
   // The address of a running selenium server.
-  seleniumAddress: "http://" + (process.env.SELENIUM || "localhost") + ":4444/wd/hub",
+  // seleniumAddress: "http://" + (process.env.SELENIUM || "localhost") + ":4444/wd/hub",
 
   // Capabilities to be passed to the webdriver instance.
   capabilities: {
     browserName: "chrome",
     chromeOptions: {
-      args: ["--disable-extensions", "--window-size=1500,900"]
+      args: ["--disable-extensions", "--window-size=1500,900", "--privileged", "--headless", '--no-sandbox']
     }
   },
 
@@ -22,8 +22,8 @@ exports.config = {
     showColors: true,
     defaultTimeoutInterval: 30000
   },
-  // directConnect: true,
-  // restartBrowserBetweenTests: true,
+  directConnect: true,
+  restartBrowserBetweenTests: true,
   framework: "jasmine2",
   // plugins: [{
   //     package: 'protractor-screenshoter-plugin',

@@ -57,7 +57,7 @@ describe("library relevance", function () {
 
     fit("should contain various external sources in default list", () => {
         let elems = element.all(By.css(".result.relevance tr[ng-repeat] td:first-child span"))
-        expect(elems.getText()).toContain("Ljud och bild")
+        expect(elems.getText()).toContain("ljud och bild")
     })
 
     it("should give more popular first", () => {
