@@ -76,7 +76,7 @@
                 </div></td>
 
                 <td class="align-top text-left hidden sm:table-cell w-16 whitespace-no-wrap"><a ng-click="setDateRange(row.sort_date_imprint.plain, row.sort_date_imprint.plain)">{{row.sort_date_imprint.plain}}</a></td>
-                <td class="align-top text-right"><span class="author">
+                <td class="align-top text-right"><span class="author" uib-tooltip="{{row.main_author.full_name }} {{row.main_author | authorYear:true}}">
                             <a ng-href="/författare/{{row.main_author.authorid}}">{{row.main_author.surname}}</a> 
                             <span ng-if="row.main_author.type == 'editor'">(red.)</span> 
                             <span ng-if="row.main_author.type == 'illustrator'">(ill.)</span>

@@ -82,23 +82,30 @@ c.timeEnd = angular.noop
 littb.filter(
     "authorYear",
     () =>
-        function (obj) {
+        function (obj, parens) {
             if (!obj) {
                 return
             }
             const isFalsy = val => !val || val === "0000"
             const birth = obj.birth != null ? obj.birth.plain : undefined
-            const death = obj.death != null ? obj.death.plain : undefined
+            const death = obj.death?.plain
             if (isFalsy(birth) && isFalsy(death)) {
                 return ""
             }
+            let ret = ""
             if (isFalsy(death)) {
-                return `f. ${birth}`
+                ret = `f. ${birth}`
+            } else if (isFalsy(birth)) {
+                ret = `d. ${death}`
+            } else {
+                ret = `${birth}-${death}`
             }
-            if (isFalsy(birth)) {
-                return `d. ${death}`
+
+            if (parens) {
+                return `(${ret})`
+            } else {
+                return ret
             }
-            return `${birth}-${death}`
         }
 )
 
