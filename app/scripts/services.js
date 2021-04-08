@@ -579,7 +579,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
         },
         logQR(code, url) {
             window.gtag("event", "qr_scan", {
-                event_category: "code"
+                event_category: "code",
+                anonymize_ip: true
             })
 
             return $http({
@@ -600,7 +601,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
 
             window.gtag("event", mediatype, {
                 event_category: "download",
-                event_label: `${lbworkid} – ${author} – ${title}`
+                event_label: `${lbworkid} – ${author} – ${title}`,
+                anonymize_ip: true
             })
         },
         logLibrary(filter) {
@@ -610,7 +612,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
 
             window.gtag("event", "search", {
                 event_category: "library",
-                event_label: filter
+                event_label: filter,
+                anonymize_ip: true
             })
 
             $http({
@@ -620,7 +623,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
         logQuicksearch(filter_val, label) {
             window.gtag("event", "search", {
                 event_category: "quicksearch",
-                event_label: filter_val + " -> " + label
+                event_label: filter_val + " -> " + label,
+                anonymize_ip: true
             })
             $http({
                 url: `${STRIX_URL}/log_quicksearch/${filter_val}/${label}`
@@ -1542,7 +1546,8 @@ littb.factory("SearchWorkData", function (SearchData, $q, $http) {
         newSearch(params) {
             window.gtag("event", "search", {
                 event_category: "search_work",
-                event_label: params.query
+                event_label: params.query,
+                anonymize_ip: true
             })
             super.newSearch(params)
             this.n_times = 0

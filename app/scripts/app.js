@@ -41,7 +41,10 @@ $.fn.outerHTML = function () {
 }
 
 function onRouteReject() {
-    window.gtag("config", window.gtagID, { page_path: window.location.pathname })
+    window.gtag("config", window.gtagID, {
+        page_path: window.location.pathname,
+        anonymize_ip: true
+    })
 }
 
 _.templateSettings.interpolate = /{{([\s\S]+?)}}/g
@@ -656,7 +659,10 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
 
     $rootScope.$on("$routeChangeSuccess", function (event, newRoute, prevRoute) {
         if (window.location.hash !== "#external") {
-            window.gtag("config", window.gtagID, { page_path: window.location.pathname })
+            window.gtag("config", window.gtagID, {
+                page_path: window.location.pathname,
+                anonymize_ip: true
+            })
         }
 
         let className

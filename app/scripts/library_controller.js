@@ -898,7 +898,8 @@ littb.controller(
                     if (!titles.length) {
                         window.gtag("event", "search-no-hits", {
                             event_category: "library",
-                            event_label: s.filter
+                            event_label: s.filter,
+                            anonymize_ip: true
                         })
                     }
                     s.titleByPath = _.groupBy(titles, item => item.titlepath)
@@ -1219,7 +1220,8 @@ littb.controller(
                 .join(", ")
             window.gtag("event", "source-material", {
                 event_category: "download",
-                event_label: label
+                event_label: label,
+                anonymize_ip: true
             })
             backend.downloadFiles(exports)
         }
