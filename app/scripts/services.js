@@ -8,9 +8,9 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
+// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5000"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-// let STRIX_URL = "/api"
+let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -337,7 +337,10 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             }
 
             if (params.filter_string) {
-                params.filter_string = params.filter_string.replace(/(\w)-(\w)/g, "$1 $2")
+                params.filter_string = params.filter_string.replace(
+                    /([A-Öa-ö])-([A-Öa-ö])/g,
+                    "$1 $2"
+                )
             }
             return $http({
                 url: `${STRIX_URL}/list_all/${types}` + (author || ""),

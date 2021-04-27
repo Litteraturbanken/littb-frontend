@@ -924,7 +924,9 @@ littb.controller(
                             }
                         }
                     }
-                    s.setAuthorData()
+                    if (!isSearchRecent) {
+                        s.setAuthorData()
+                    }
 
                     s.titleSearching = false
                 })
