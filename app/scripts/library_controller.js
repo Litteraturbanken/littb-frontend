@@ -46,7 +46,7 @@ littb.component("keywordSelect", {
         <option value='keyword:Humor'>Humor</option>
         <option value='source:presentations'>Kringtexter</option>
         <option value='source:skolan'>Litteraturbankens skola</option>
-        <option value='source:vastsvenska'>Litteraturkartan</option>
+        <option value='source:litteraturkartan'>Litteraturkartan</option>
         <option value='source:ljudochbild'>Ljud & Bild</option>
         <option value='keyword:1800'>Nya vägar till 1800-talet</option>
         <option value="texttype:reseskildring">Reseskildringar</option>
@@ -628,7 +628,7 @@ littb.controller(
             } else {
                 return {
                     presentations: "Kringtexter",
-                    vastsvenska: "Litteraturkartan",
+                    litteraturkartan: "Litteraturkartan",
                     sol: "Översättarlexikon",
                     author: "Författare"
                 }[item._index]
@@ -657,7 +657,7 @@ littb.controller(
 
             try {
                 let { titles, hits, suggest } = await backend.relevanceSearch(
-                    "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,vastsvenska,wordpress",
+                    "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress",
                     {
                         filter_string: expandQuery(s.rowfilter),
                         filters: filters,

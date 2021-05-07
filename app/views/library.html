@@ -239,7 +239,7 @@
 
                                     <highlights list="item.highlight['article.ArticleText']"></highlights>
                                 </div>
-                                <div class="" ng-if="getIndex(item._index) == 'vastsvenska'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
+                                <div class="" ng-if="getIndex(item._index) == 'litteraturkartan'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="https://litteraturbanken.se/litteraturkartan/?id={{item.placeid}}&article={{item.id}}">{{item.header}}</a>
 
                                     <highlights list="item.highlight.free_text"></highlights>
@@ -284,7 +284,7 @@
                                     </div>
                                 </td>
                                 <td class="align-top sm:text-right sm:sc primarycolor sm:pl-4 order-1"><span class="author">
-                                    <div class="text-gray-800" ng-if="item._index.endsWith('presentations') || item._index.endsWith('vastsvenska')">
+                                    <div class="text-gray-800" ng-if="item._index.endsWith('presentations') || item._index.endsWith('litteraturkartan')">
                                         {{item.article_author}}
                                     </div>
                                     <div class="text-gray-800" ng-if="item._index.endsWith('sol')">

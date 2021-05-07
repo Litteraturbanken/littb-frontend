@@ -250,7 +250,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             return $http({ url }).then(response => response.data)
         },
         authorHasMapArticle(authorid) {
-            const url = `${STRIX_URL}/query/vastsvenska`
+            const url = `${STRIX_URL}/query/Litteraturkartan`
             return $http({
                 url,
                 params: {
