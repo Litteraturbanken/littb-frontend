@@ -757,21 +757,32 @@ littb.directive("bkgImg", ($rootElement, $timeout) => ({
     restrict: "EA",
     template: ` <img > `,
     replace: true,
-    scope: {},
+    scope: {
+        preload: "="
+    },
     //     src: "@"
 
     link(scope, element, attr) {
         // element.appendTo "#bkgimg"
-        const src = element.attr("src")
+
         element.remove()
 
-        $timeout(
-            () =>
-                $("body").css({
-                    background: `url('${src}') no-repeat`
-                }),
-            0
-        )
+        if (scope.preload) {
+            scope.preload.then(val => {
+                $("html").css({
+                    background: `#333 url('${val.default}') no-repeat`
+                })
+            })
+        } else {
+            $timeout(
+                () =>
+                    $("html").css({
+                        background: `#333 url('${element.attr("src")}') no-repeat`
+                    }),
+                0
+            )
+        }
+
         scope.$on("$destroy", function () {
             c.log("bkg destroy")
 
@@ -781,7 +792,7 @@ littb.directive("bkgImg", ($rootElement, $timeout) => ({
                 c.log("block remove bkg")
                 return
             }
-            return $("body").css({
+            $("html").css({
                 "background-image": "none"
             })
         })

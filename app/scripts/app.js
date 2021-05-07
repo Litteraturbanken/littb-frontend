@@ -617,7 +617,12 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
     if (window.location.pathname == "/" && $location.hash()) {
         window.location.hash = ""
     }
-    console.log("run search params", $location.search())
+
+    // $rootScope.libraryBkg = import(/* webpackPrefetch: true */ "../img/library.jpg")
+    $rootScope.libraryBkg = import(
+        /* webpackPrefetch: true */ "!!url-loader?limit=100000000!../img/library.jpg"
+    )
+
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL
     $rootScope.sourceInfo = require("../views/sourceInfo.html")
