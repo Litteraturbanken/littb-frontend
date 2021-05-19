@@ -5,7 +5,7 @@ const CleanWebpackPlugin = require("clean-webpack-plugin")
 const UglifyJsPlugin = require("uglifyjs-webpack-plugin")
 const CompressionPlugin = require("compression-webpack-plugin")
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin")
-const {BundleAnalyzerPlugin} = require('webpack-bundle-analyzer')
+const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer")
 
 module.exports = merge(common, {
     plugins: [
@@ -80,5 +80,17 @@ module.exports = merge(common, {
     mode: "production",
     output: {
         path: path.join(__dirname, "dist")
+    },
+    optimization: {
+        runtimeChunk: "single",
+        splitChunks: {
+            cacheGroups: {
+                vendor: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name: "vendors",
+                    chunks: "all"
+                }
+            }
+        }
     }
 })

@@ -618,9 +618,8 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
         window.location.hash = ""
     }
 
-    // $rootScope.libraryBkg = import(/* webpackPrefetch: true */ "../img/library.jpg")
     $rootScope.libraryBkg = import(
-        /* webpackPrefetch: true */ "!!url-loader?limit=100000000!../img/library.jpg"
+        /* webpackChunkName: "library_bkg", webpackPrefetch: true */ "!!url-loader?limit=100000000!../img/library.jpg"
     )
 
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css

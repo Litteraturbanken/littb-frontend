@@ -191,6 +191,9 @@ $content-top-margin : 1em;
 
 $textcolor : #333;
 $primarycolor : #7A1400;
+:root {
+    --primary-color: #7A1400;
+}
 $dotted : thin dotted #7A1400;
 
 $transp : rgba(255,255,255,0.3);
@@ -1118,21 +1121,6 @@ label {
     display : inline;
 }
 
-// #logo {
-//     height: 26px;
-//     left: -8px;
-//     top : 3px;
-//     position: relative;
-// }
-.logo_link {
-    background-image: url("/bilder/LBlogga.svg");
-    background-size: contain;
-    background-repeat: no-repeat;
-    height : 29px;
-    left: -10px;
-    margin-bottom: -5px;
-    position : relative;
-}
 
 body > .header {
     margin-bottom : 1.5em;
@@ -1149,12 +1137,14 @@ body > .header {
     background-image: url("../img/lb_monogram_#{$color}.svg");
 }
 
-.logo_link_monogram {
-    background: url("../img/lb_monogram_red_black.svg") no-repeat;
-    background-size: cover;
-    height: 230px;
-    width: 240px;
-    left: 9px;
+.lb-logo {
+    // background: url("../img/lb_monogram_red_black.svg") no-repeat;
+    // background-size: cover;
+    // height: 230px;
+    margin-top: -2rem;
+    width: 140%;
+    left: 12px;
+    
     margin-bottom: 1em;
     position : relative;
     display: block;
@@ -1227,15 +1217,10 @@ body > .header {
             display: block;
         }
     }
-    .logo_link_monogram {
-        @include logo("red_white");
-        // background: url("../img/lb_monogram_red_white.svg") no-repeat;
-        // background-size: cover;
-        margin-top: 0.9em;
-        height: 280px;
-        width: 360px;
-        left: 13px;
-        margin-bottom : 1em !important;
+    .lb-logo {
+        width : 94%;
+        margin-top: 1rem;
+        left : 5px;
     }
     .mainnav {
         margin-right : 8rem;
@@ -2730,9 +2715,9 @@ $partnav-width : 170px;
 
 
 .page-authorInfo {
-    .logo_link_monogram {
-        // background-image: url("../img/lb_monogram_red_white.svg");
-        @include logo(red_white);
+    .lb-logo {
+        --logo-l-color: var(--primary-color);
+        --logo-b-color: white;
     }
 
     .logo.dramaweb {
@@ -3034,8 +3019,9 @@ $partnav-width : 170px;
     .select2-selection__choice {
         font-size: 0.8em;
     }
-    .logo_link_monogram {
-        background-image: url("../img/lb_monogram_white_white.svg");
+    .lb-logo {
+        --logo-l-color: white;
+        --logo-b-color: white;
     }
     .highlight p {
         display: inline;
@@ -3630,9 +3616,9 @@ $partnav-width : 170px;
 //     background-image : none;
 //     background-color: white;
 // }
-    .logo_link_monogram {
-        background: url("../img/lb_monogram_red_white.svg") no-repeat;
-        background-size: cover;
+    .lb-logo {
+        --logo-l-color: var(--primary-color);
+        --logo-b-color: white;
     }
 
     .mainnav, .preamble {
@@ -3942,9 +3928,9 @@ $partnav-width : 170px;
         }
     }
 
-    .logo_link_monogram {
-        background: url("../img/lb_monogram_red_black.svg") no-repeat;
-        background-size: cover;
+    .lb-logo {
+        --logo-l-color: var(--primary-color);
+        --logo-b-color: black;
     }
 
     .contenttable {
@@ -4680,9 +4666,9 @@ grundform-clean {
         }
     }
 
-    .logo_link_monogram {
-        background: url("../img/lb_monogram_white_white.svg") no-repeat;
-        background-size: cover;
+    .lb-logo {
+        --logo-l-color: white;
+        --logo-b-color: white;
     }
 
     .mainnav {
@@ -4708,9 +4694,9 @@ grundform-clean {
     }
 
     &.subpage {
-        .logo_link_monogram {
-            background: url("../img/lb_monogram_red_black.svg") no-repeat;
-            background-size: cover;
+        .lb-logo {
+            --logo-l-color: var(--primary-color);
+            --logo-b-color: black;
         }
         .mainnav {
             a {
@@ -4848,8 +4834,9 @@ grundform-clean {
         margin-right: 0;
     }
 
-    .logo_link_monogram {
-        @include logo("red_black");
+    .lb-logo {
+        --logo-l-color: var(--primary-color);
+        --logo-b-color: black;
     }
 
     .links {
