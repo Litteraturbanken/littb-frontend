@@ -3,6 +3,10 @@
     .mainnav {
         margin-bottom: 3em;
     }
+    .lb-logo {
+        --logo-l-color: var(--primary-color);
+        --logo-b-color: black;
+    }
     #leftCorridor {
         margin-right : 80px;
 
