@@ -93,6 +93,34 @@ window.littb = angular
         "dibari.angular-ellipsis",
         "rzModule"
     ])
+    .component("dynamicWrapper", {
+        controller: function widgetClientCtrl($scope, $compile, $element) {
+            var self = this
+            // self.$onInit = function () {
+            //     renderWidget(self.name, self.payload)
+            // }
+            self.$onChanges = function () {
+                console.log("🚀 ~ file: app.js ~ line 113 ~ onChanges")
+                renderWidget(self.name, self.payload)
+            }
+            function renderWidget(name, payload) {
+                var template = "<" + name
+
+                if (payload) {
+                    $scope.payload = payload
+                    template += ' payload="payload"'
+                }
+
+                template += "></" + name + ">"
+                $element.append($compile(template)($scope))
+            }
+        },
+        bindings: {
+            name: "@",
+            payload: "=?"
+        }
+    })
+    // .service("lazyLoader", LazyLoader)
     .config(function ($routeProvider) {
         window.Router = class Router {
             when(route, obj) {
@@ -491,64 +519,99 @@ window.littb = angular
                     }
                 }
             )
-            .when("/författare/:author/titlar/:title/:mediatype", {
-                templateUrl: require("../views/reader.html"),
-                controller: "readingCtrl",
-                reloadOnSearch: false
-            })
+            // .when("/författare/:author/titlar/:title/:mediatype", {
+
             .when(
                 [
+                    "/författare/:author/titlar/:title/:mediatype",
                     "/författare/:author/titlar/:title/sida/:pagename/:mediatype",
-                    // "/författare/:author/titlar/:title/sida/:pagename/:mediatype",
                     "/editor/:lbid/ix/:ix/:mediatype"
                 ],
                 {
-                    templateUrl: require("../views/reader.html"),
-                    controller: "readingCtrl",
+                    // templateUrl: require("../views/reader.html"),
+                    template: `<dynamic-wrapper name="{{$resolve.lazy ? 'reading' : 'div'}}"></dynamic-wrapper>`,
+                    // template: () => {
+                    //     console.log("template func")
+                    //     return `<div ng-if="$resolve.lazy"><reading></reading></div>`
+                    // },
+                    // controller: function ($scope) {
+                    //     console.log("🚀 ~ file: app.js ~ line 507 ~ $scope", $scope)
+                    // },
+                    // controller: "readingCtrl",
                     reloadOnSearch: false,
+                    reloadOnUrl: false,
+                    isReader: true,
                     resolve: {
-                        r: [
+                        lazy: [
                             "$q",
-                            "$routeParams",
-                            "$route",
-                            "$rootScope",
-                            function ($q, $routeParams, $route, $rootScope) {
-                                const def = $q.defer()
-
-                                if (_.isEmpty($routeParams)) {
-                                    def.resolve()
-                                }
-                                // return def.promise
-                                // if we're only changing pages in the reader, don't change route
-
-                                if (
-                                    routeStartCurrent != null &&
-                                    routeStartCurrent.$$route != null &&
-                                    routeStartCurrent.$$route.controller === "readingCtrl" &&
-                                    $route.current.controller === "readingCtrl"
-                                ) {
-                                    const cmp = ["author", "mediatype", "title"]
-                                    if ("lbid" in $route.current.params) {
-                                        cmp.push("lbid")
-                                    }
-                                    const current = _.pick($route.current.params, ...cmp)
-                                    const prev = _.pick(routeStartCurrent.params, ...cmp)
-                                    if (_.isEqual(current, prev)) {
-                                        c.log("reject reader change")
-                                        def.reject()
-                                        onRouteReject()
-                                    } else {
-                                        def.resolve()
-                                    }
-                                } else {
-                                    def.resolve()
-                                }
-                                return def.promise
+                            "$injector",
+                            function ($q, $injector) {
+                                let deferred = $q.defer()
+                                import(
+                                    /* webpackChunkName: "reading_module" */ "./components/reader/readingModule.js"
+                                ).then(moduleName => {
+                                    $injector.loadNewModules([moduleName.default])
+                                    deferred.resolve(true)
+                                })
+                                return deferred.promise
                             }
                         ]
                     }
                 }
             )
+            // .when(
+            //     [
+            //         "/författare/:author/titlar/:title/sida/:pagename/:mediatype",
+            //         "/editor/:lbid/ix/:ix/:mediatype"
+            //     ],
+            //     {
+            //         templateUrl: require("../views/reader.html"),
+            //         controller: "readingCtrl",
+            //         reloadOnSearch: false,
+            //         reloadOnUrl: false,
+            //         resolve: {
+            //             r: [
+            //                 "$q",
+            //                 "$routeParams",
+            //                 "$route",
+            //                 "$rootScope",
+            //                 function ($q, $routeParams, $route, $rootScope) {
+            //                     const def = $q.defer()
+
+            //                     if (_.isEmpty($routeParams)) {
+            //                         def.resolve()
+            //                     }
+            //                     // return def.promise
+            //                     // if we're only changing pages in the reader, don't change route
+
+            //                     if (
+            //                         routeStartCurrent != null &&
+            //                         routeStartCurrent.$$route != null &&
+            //                         routeStartCurrent.$$route.controller === "readingCtrl" &&
+            //                         $route.current.controller === "readingCtrl"
+            //                     ) {
+            //                         const cmp = ["author", "mediatype", "title"]
+            //                         if ("lbid" in $route.current.params) {
+            //                             cmp.push("lbid")
+            //                         }
+            //                         const current = _.pick($route.current.params, ...cmp)
+            //                         const prev = _.pick(routeStartCurrent.params, ...cmp)
+            //                         if (_.isEqual(current, prev)) {
+            //                             c.log("reject reader change")
+            //                             def.reject()
+            //                             onRouteReject()
+            //                         } else {
+            //                             def.resolve()
+            //                         }
+            //                     } else {
+            //                         def.resolve()
+            //                     }
+            //                     return def.promise
+            //                 }
+            //             ]
+            //         }
+            //     }
+            // )
 
             .when("/kontakt", { redirectTo: "/om/kontakt" })
             .when(["/id/:id", "/id"], {
@@ -684,7 +747,9 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
         stripClass("page")
         stripClass("site")
 
-        if (newRoute.controller != null ? newRoute.controller.replace : undefined) {
+        if (newRoute.isReader) {
+            $rootElement.addClass(`page-reading`)
+        } else if (newRoute.controller != null ? newRoute.controller.replace : undefined) {
             $rootElement.addClass(`page-${newRoute.controller.replace("Ctrl", "")}`)
         }
 

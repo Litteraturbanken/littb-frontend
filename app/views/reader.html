@@ -171,7 +171,7 @@
                     </div>
                 </li>
                 <li><a ng-href="/sök?avancerad&forfattare={{author}}" ng-disabled="!hasSearchable(author)">Sök i författarens texter</a></li>
-                <li><a ng-href="/dramawebben"><img ng-if="isDramaweb" class="dw_logo" src="../img/dramawebben_svart.svg" alt=""></a></li>
+                <li><a ng-href="/dramawebben"><img ng-if="isDramaweb" class="dw_logo" ng-src="{{dwUrl}}" alt="Dramawebben logotyp"></a></li>
                 <li class="-ml-px"><a class="block w-3/6 -ml-3" ng-href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"><img ng-if="workinfo.keyword.includes('1800')" class="object-contain" ng-src="{{nyaVagarUrl}}" alt="Logotyp för Nya vägar"></a></li>
                 <!-- <li>Dela boken</li> -->
             </ul>

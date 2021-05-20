@@ -134,7 +134,7 @@ module.exports = {
                     {
                         loader: "file-loader",
                         options: {
-                            name: "[hash].[name].[ext]",
+                            name: "[contenthash].[name].[ext]",
                             outputPath: "assets/img/", // where the fonts will go
                             publicPath: "../assets/img/" // override the default path
                         }
@@ -185,6 +185,11 @@ module.exports = {
     //     }
     //   }
     // },
+    resolve: {
+        alias: {
+            "@": path.resolve("app")
+        }
+    },
     output: {
         filename: "assets/[hash].[name].js",
         path: path.resolve(__dirname, "dist"),

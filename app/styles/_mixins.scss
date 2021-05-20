@@ -1,0 +1,81 @@
+$primarycolor : #7A1400;
+$inline-block-alignment : top;
+$sans : "Verlag A", "Verlag B", sans-serif;
+
+$main-menu-width : 225px;
+$left-gutter-width : 40px;
+$right-gutter-width : 120px;
+$page-width : 900px;
+$right-corridor-width : 250px;
+$left-area-width: $left-gutter-width + $right-gutter-width + $right-corridor-width;
+$mainview-width : $page-width - $main-menu-width - $left-area-width;
+
+$content-top-margin : 1em;
+
+@mixin small-caps {
+    font-family: "Requiem Text SC A", "Requiem Text SC B";
+    text-transform: lowercase !important;
+}
+
+@mixin font-normal {
+    font-family: "Requiem Text A", "Requiem Text B";
+    text-transform: none;
+}
+
+@mixin topLinks() {
+    margin-bottom : 1.8em;
+    
+    // @include container();
+    font-size: 0.9em;
+    // text-transform: uppercase;
+    @include small-caps();
+    margin-left: 0.1em;
+    li {
+        display: inline-block;
+        // margin-bottom : 5px;
+        &:not(:first-of-type):before {
+            margin-left : 0.3em;
+            content: "*";
+            font-size: 1.8em;
+            line-height: 0;
+            position: relative;
+            top: 13px;
+            left: -3px;
+            padding-right: 6px;
+            color : black;
+        }
+        a {
+            color : $primarycolor;
+            &:hover {
+                color: #333;
+            }
+        }
+        &.active {
+            a {
+                color : #333;
+                cursor: default;
+            }
+        }
+    }
+    li:last-of-type {
+        margin-bottom :0;
+    }
+}
+
+@mixin primarygradient {
+    background-image: linear-gradient($primarycolor, darken($primarycolor, 7%));
+}
+
+@mixin container {
+    background-color: rgba(255,255,255,0.3);
+    border: 1px solid darkgrey;
+    padding: 0.8em;
+}
+
+@mixin dotted($color) {
+    & {
+        text-decoration-color: $primarycolor;
+        text-decoration-style: solid;
+        text-decoration-line: underline;
+    }
+}
