@@ -1349,7 +1349,7 @@ littb.controller(
             // TODO: fix for pdf as well.
             if (s.workinfo && mediatype == "epub") {
                 const exp = _.find(s.workinfo.export, item => item.type == mediatype)
-                const kb = exp.size / 1024
+                const kb = exp?.size / 1024
                 return Math.round(kb) + " KB"
             }
         }

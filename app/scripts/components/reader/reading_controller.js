@@ -192,7 +192,6 @@ export default function (
     s.setPage = function (ix) {
         s.pageix = ix
         s.pageToLoad = s.pagemap[`ix_${s.pageix}`]
-        console.log("🚀 ~ file: reading_controller.js ~ line 194 ~ pageToLoad", s.pageToLoad)
     }
 
     s.getStep = () => {
@@ -205,7 +204,6 @@ export default function (
             event.preventDefault()
         }
         if (s.isEditor) {
-            console.log("s.pageix + s.getStep()", s.pageix, s.getStep())
             s.pageix = s.pageix + (s.getStep() || 1)
             // s.pageix = s.pageix + 1
             s.pageToLoad = s.pageix
@@ -665,7 +663,6 @@ export default function (
     const watches = []
     watches.push(
         s.$watch("pageToLoad", function (val) {
-            console.log("🚀 ~ file: reading_controller.js ~ line 666 ~ val", val)
             let url
             if (val == null) {
                 return
@@ -815,7 +812,6 @@ export default function (
 
     const infoDef = initSourceInfo()
     const fetchPage = function (ix) {
-        console.log("fetchPage", ix)
         if (mediatype === "etext") {
             return downloadPage(ix)
         } else {
@@ -830,7 +826,6 @@ export default function (
             let urlFromSize = size => `/txt/${id}/${id}_${size}/${id}_${size}_${filename}.jpeg`
             s.url = urlFromSize(s.size)
             if (s.sizes) {
-                console.log("srcset", s.size, s.sizes)
                 let maybeSize = getSrcsetSize()
                 // if (s.size < 4 && s.sizes[s.size + 2 - 1]) {
                 if (typeof maybeSize != "undefined") {
