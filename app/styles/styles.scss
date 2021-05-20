@@ -1037,21 +1037,24 @@ body > .header {
         width : 28%;
     }
 }
-@mixin logo($color) {
-    background-image: url("../img/lb_monogram_#{$color}.svg");
-}
 
 .lb-logo {
-    // background: url("../img/lb_monogram_red_black.svg") no-repeat;
-    // background-size: cover;
-    // height: 230px;
-    margin-top: -2rem;
-    width: 140%;
-    left: 12px;
+    width: 260px;
+    height: 230px;
+    left: 8px;
     
+    margin-top: 0.8em;
     margin-bottom: 1em;
     position : relative;
-    display: block;
+    path {
+        transition: fill 500ms ease-in-out; 
+    }
+}
+.logo_link_monogram {
+    position: relative;
+    left: 40px;
+    overflow: hidden;
+    margin-right : 0;
 }
 
 #bkgimg {
@@ -1122,9 +1125,16 @@ body > .header {
         }
     }
     .lb-logo {
-        width : 94%;
+        max-width : 94%;
         margin-top: 1rem;
-        left : 5px;
+        height : 280px;
+    }
+    .logo_link_monogram {
+        position: relative;
+        left: 50px;
+        overflow: hidden;
+        margin-right: 0;
+        width: 280px;
     }
     .mainnav {
         margin-right : 8rem;
