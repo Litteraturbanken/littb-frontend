@@ -9,7 +9,7 @@
         <h3 class="uppercase text-base">Etext</h3>
         <ul class="checks">
             <!-- <li ng-repeat="exp in getExports('etext')"> -->
-            <li ng-repeat="type in typesConf.etext" class="whitespace-no-wrap">
+            <li ng-repeat="type in typesConf.etext" class="whitespace-nowrap">
                 <input type="checkbox" id="etext_{{$index}}" ng-model="type.selected" class="mb-1 mr-1" 
                        ng-disabled="!exportsFromMediatypes('etext', [type.id]).length">
 
@@ -21,7 +21,7 @@
     <div class="mx-2">
         <h3 class="uppercase text-base">Faksimil</h3>
         <ul class="checks">
-            <li ng-repeat="type in typesConf.faksimil" class="whitespace-no-wrap">
+            <li ng-repeat="type in typesConf.faksimil" class="whitespace-nowrap">
                 <input type="checkbox" id="faksimil_{{$index}}" ng-model="type.selected" class="mb-1 mr-1" 
                        ng-disabled="!exportsFromMediatypes('faksimil', [type.id]).length">
 

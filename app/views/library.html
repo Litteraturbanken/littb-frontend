@@ -151,7 +151,7 @@
                         rz-slider-options="sliderConf" >
                 </rzslider>
 
-                <div class="whitespace-no-wrap self-center chronology_inputs">
+                <div class="whitespace-nowrap self-center chronology_inputs">
                     <input type="text" class="text-sm text-center py-1" ng-change="refreshData()" ng-model="filters['sort_date_imprint.date:range'][0]"> <span class="text-sm  sc">till </span> <input type="text" class="text-sm text-center py-1" ng-change="refreshData()" ng-model="filters['sort_date_imprint.date:range'][1]">
                 </div>
             </div> -->
@@ -204,7 +204,7 @@
                                 Inga träffar. <span ng-show='authorSuggest[0]'>Menade du <a class="link" ng-click='setFilter(authorSuggest[0].text)'>{{authorSuggest[0].text}}</a>?</span>
                             </li> -->
                 
-                            <tr class="text-lg" ng-show="!relevanceSearching && relevanceSuggest.length && relevanceSuggest[0].freq > (relevanceData.length * 5)">
+                            <tr class="text-lg leading-normal" ng-show="!relevanceSearching && relevanceSuggest.length && relevanceSuggest[0].freq > (relevanceData.length * 5)">
                                 
                                 <td colspan="3" ng-if="relevanceError">
                                     Ett fel uppstod. 
@@ -215,10 +215,10 @@
                             </tr>
                             
                             <tr ng-repeat="item in relevanceData"
-                                class="align-top sm:table-row flex flex-col justify-between pb-2 sm:pb-0 -ml-2 text-lg"
+                                class="align-top sm:table-row flex flex-col justify-between pb-2 sm:pb-0 -ml-2 text-lg leading-tight"
                                 ng-click="authorClick($event, author)" 
                                 on-finish-render="authorRender()">
-                                <td class="sm:text-right sm:table-cell w-px"><span class="sc primarycolor whitespace-no-wrap text-base">
+                                <td class="sm:text-right sm:table-cell w-px"><span class="sc primarycolor whitespace-nowrap text-base leading-none">
                                     {{getLabelBySource(item)}}
                                 </span></td>
                                 <td class="order-2">
@@ -274,7 +274,7 @@
                                 </div>
                                 </td>
 
-                                <td class="align-top sm:text-right hidden sm:table-cell w-16 whitespace-no-wrap">
+                                <td class="align-top sm:text-right hidden sm:table-cell w-16 whitespace-nowrap">
                                     <a ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)">
                                         {{item.sort_date_imprint.plain}}
                                     </a>
@@ -356,7 +356,7 @@
                     <table class="table w-full">
                         <tr ng-repeat="row in audio_list" class="parts" ng-class="{first_audio : $first, last_audio : $last}">
                         
-                            <td uib-tooltip="{{row.title}}" class="title whitespace-no-wrap">
+                            <td uib-tooltip="{{row.title}}" class="title whitespace-nowrap">
                                 <a ng-href="/ljudarkivet?spela={{row.file}}">
                                 {{row.title}}
                                 </a>

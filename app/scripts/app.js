@@ -94,27 +94,31 @@ window.littb = angular
         "rzModule"
     ])
     .component("dynamicWrapper", {
-        controller: function widgetClientCtrl($scope, $compile, $element) {
-            var self = this
-            // self.$onInit = function () {
-            //     renderWidget(self.name, self.payload)
-            // }
-            self.$onChanges = function () {
-                console.log("🚀 ~ file: app.js ~ line 113 ~ onChanges")
-                renderWidget(self.name, self.payload)
-            }
-            function renderWidget(name, payload) {
-                var template = "<" + name
-
-                if (payload) {
-                    $scope.payload = payload
-                    template += ' payload="payload"'
+        controller: [
+            "$scope",
+            "$compile",
+            "$element",
+            function widgetClientCtrl($scope, $compile, $element) {
+                var self = this
+                // self.$onInit = function () {
+                //     renderWidget(self.name, self.payload)
+                // }
+                self.$onChanges = function () {
+                    renderWidget(self.name, self.payload)
                 }
+                function renderWidget(name, payload) {
+                    var template = "<" + name
 
-                template += "></" + name + ">"
-                $element.append($compile(template)($scope))
+                    if (payload) {
+                        $scope.payload = payload
+                        template += ' payload="payload"'
+                    }
+
+                    template += "></" + name + ">"
+                    $element.append($compile(template)($scope))
+                }
             }
-        },
+        ],
         bindings: {
             name: "@",
             payload: "=?"
@@ -150,7 +154,7 @@ window.littb = angular
             // .when("", { redirectTo: "/start" })
             // .when("/", { redirectTo: "/start" })
             .when("/", {
-                templateUrl: require("../views/start.html"),
+                template: `<div>${require("!raw-loader!../views/start.html").default}</div>`,
                 controller: "startCtrl",
                 title: "Svenska klassiker som e-bok och epub"
             })
@@ -684,6 +688,7 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
     $rootScope.libraryBkg = import(
         /* webpackChunkName: "library_bkg", webpackPrefetch: true */ "!!url-loader?limit=100000000!../img/library.jpg"
     )
+    $rootScope.SAlogo = require("../img/SA_logo.svg")
 
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL

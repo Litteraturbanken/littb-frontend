@@ -96,7 +96,7 @@ littb.component("highlights", {
         <ul>
             <li ng-repeat="highlight in $ctrl.list track by $index" 
                 ng-class="{flip: $parent.$odd}" 
-                class="sm:whitespace-no-wrap">
+                class="sm:whitespace-nowrap">
                 ”… <span class="highlight text-xs relative z-10" ng-bind-html="highlight | trust"></span> …”   
             </li>
         </ul>
