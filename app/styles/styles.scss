@@ -1167,7 +1167,7 @@ body > .header {
         }
         .news {
             margin-top: 2em;
-            li {
+            li:not([class*='text-']) {
                 font-size : 0.8em;
             }   
         }
@@ -1195,7 +1195,6 @@ body > .header {
         .about {
             margin-top: 3em;
             text-transform: uppercase;
-            font-size: 0.5em;
             a {
                 color : white;
             }

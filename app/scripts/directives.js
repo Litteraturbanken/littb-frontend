@@ -766,18 +766,18 @@ littb.directive("bkgImg", ($rootElement, $timeout) => ({
         // element.appendTo "#bkgimg"
 
         element.remove()
-
+        let color = attr.color || ""
         if (scope.preload) {
             scope.preload.then(val => {
                 $("html").css({
-                    background: `url('${val.default}') no-repeat`
+                    background: `${color} url('${val.default}') no-repeat`
                 })
             })
         } else {
             $timeout(
                 () =>
                     $("html").css({
-                        background: `url('${element.attr("src")}') no-repeat`
+                        background: `${color} url('${element.attr("src")}') no-repeat`
                     }),
                 0
             )
@@ -1093,7 +1093,7 @@ littb.directive("chronology", ($location, backend, util) => ({
                         rz-slider-options="sliderConf" >
                 </rzslider>
 
-                <div class="whitespace-nowrap self-center chronology_inputs">
+                <div class="whitespace-no-wrap self-center chronology_inputs">
                     <span class="text-sm sc">Tryckår: </span>
                     <input type="text" 
                            class="text-sm text-center py-1" 

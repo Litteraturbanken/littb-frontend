@@ -1148,7 +1148,7 @@ littb.factory("authors", function (backend, $q) {
         .getAuthorList(
             null,
             (exclude =
-                "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources")
+                "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben")
         )
         .then(function (authors) {
             let authorsById = _.fromPairs(_.map(authors, item => [item.authorid, item]))
