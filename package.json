@@ -11,7 +11,7 @@
         "serve-dist": "NODE_ENV=production webpack-dev-server  --config webpack.prod.js --env prod --compress  --host 0.0.0.0 --disable-host-check"
     },
     "dependencies": {
-        "angular": "1.7.9",
+        "angular": "1.8.0",
         "angular-animate": "1.7.9",
         "angular-aria": "~1.7.9",
         "angular-route": "1.7.9",
