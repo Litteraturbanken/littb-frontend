@@ -128,7 +128,19 @@ module.exports = {
                 ]
             },
             {
-                test: /\.(jpe?g|png|gif|svg)$/i,
+                test: /\.svg$/i,
+                exclude: /.*fontawesome-webfont.svg/,
+                use: [
+                    {
+                        loader: "file-loader"
+                    },
+                    {
+                        loader: "svgo-loader"
+                    }
+                ]
+            },
+            {
+                test: /\.(jpe?g|png|gif)$/i,
                 exclude: /.*fontawesome-webfont.svg/,
                 use: [
                     {

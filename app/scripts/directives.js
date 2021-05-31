@@ -793,7 +793,8 @@ littb.directive("bkgImg", ($rootElement, $timeout) => ({
                 return
             }
             $("html").css({
-                "background-image": "none"
+                "background-image": "none",
+                "background-color": "unset"
             })
         })
 

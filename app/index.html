@@ -201,6 +201,7 @@
             >
                 
                 <input type="text" id="autocomplete"
+                    class="text-gray-900"
                     ng-model="completeObj"
                     uib-typeahead="item as item.label for item in (forceShow || autocomplete($viewValue))"
                     typeahead-trigger
