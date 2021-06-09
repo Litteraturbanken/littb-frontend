@@ -1062,15 +1062,14 @@ littb.controller(
                             }
                         })
                     }
-
                     if (
-                        ["readingCtrl", "authorInfoCtrl"].includes(
-                            $route.current.$$route.controller
-                        )
+                        $route.current.$$route.isReader ||
+                        $route.current.$$route.controller == "authorInfoCtrl"
                     ) {
-                        const key = { readingCtrl: "workinfo", authorInfoCtrl: "authorInfo" }[
-                            $route.current.$$route.controller
-                        ]
+                        const getInfo = () =>
+                            $route.current.$$route.isReader
+                                ? $(".reader_main").scope().workinfo
+                                : $("#mainview").scope().authorInfo
 
                         menu.push({
                             label: "/info",
@@ -1078,7 +1077,7 @@ littb.controller(
                             typeLabel: "[Red.]",
                             action() {
                                 if ($("#mainview").scope) {
-                                    s.info = $("#mainview").scope()[key]
+                                    s.info = getInfo()
                                 }
                                 return false
                             }
@@ -1089,9 +1088,8 @@ littb.controller(
                             typeLabel: "[Red.]",
                             action() {
                                 if ($("#mainview").scope) {
-                                    let { mediatype, lbworkid, authorid_norm } = $(
-                                        "#mainview"
-                                    ).scope()[key]
+                                    let { mediatype, lbworkid, authorid_norm } =
+                                        $("#mainview").scope()[key]
                                     let params = {}
                                     if (key == "workinfo") {
                                         params = {

@@ -688,7 +688,7 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
     $rootScope.libraryBkg = import(
         /* webpackChunkName: "library_bkg", webpackPrefetch: true */ "!!url-loader?limit=100000000!../img/library.jpg"
     )
-    $rootScope.SAlogo = require("../img/SA_logo.svg")
+    $rootScope.SA_logo = require("../img/SA_logo_type.svg")
 
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL

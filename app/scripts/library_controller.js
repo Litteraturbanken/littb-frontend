@@ -361,8 +361,7 @@ littb.controller(
             authors: "popularity|desc",
             parts: "sortkey|asc",
             audio: "title.raw|asc",
-            latest:
-                "imported|desc,main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc"
+            latest: "imported|desc,main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc"
         }
 
         s.sortItems = {
@@ -446,8 +445,7 @@ littb.controller(
                 {
                     label: "Nytt",
                     val: "imported",
-                    suffix:
-                        ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
+                    suffix: ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
                     dir: "desc",
                     search: "nytillkommet",
                     active: true
@@ -658,6 +656,7 @@ littb.controller(
             try {
                 let { titles, hits, suggest } = await backend.relevanceSearch(
                     "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress",
+                    // "etext,faksimil,pdf,etext-part,faksimil-part,author",
                     {
                         filter_string: expandQuery(s.rowfilter),
                         filters: filters,

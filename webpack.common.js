@@ -132,7 +132,12 @@ module.exports = {
                 exclude: /.*fontawesome-webfont.svg/,
                 use: [
                     {
-                        loader: "file-loader"
+                        loader: "file-loader",
+                        options: {
+                            name: "[contenthash].[name].[ext]",
+                            outputPath: "assets/img/", // where the fonts will go
+                            publicPath: "../assets/img/" // override the default path
+                        }
                     },
                     {
                         loader: "svgo-loader"

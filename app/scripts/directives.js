@@ -1094,7 +1094,7 @@ littb.directive("chronology", ($location, backend, util) => ({
                         rz-slider-options="sliderConf" >
                 </rzslider>
 
-                <div class="whitespace-no-wrap self-center chronology_inputs">
+                <div class="whitespace-nowrap self-center chronology_inputs">
                     <span class="text-sm sc">Tryckår: </span>
                     <input type="text" 
                            class="text-sm text-center py-1" 
