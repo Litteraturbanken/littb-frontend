@@ -241,10 +241,10 @@
 
 
                     <li class="arrows">
-                        <button rel="next" class="submit btn navicon left" ng-click="prevPage()">
+                        <button rel="next" class="submit btn navicon left" ng-click="prevPage()" ng-disabled="current_page == 0">
                             <i class="fa fa-angle-left"></i>
                         </button>
-                        <button rel="prev" class="submit btn navicon" ng-click="nextPage()">
+                        <button rel="prev" class="submit btn navicon" ng-click="nextPage()" ng-disabled="(current_page + 1) == total_pages">
                             <i class="fa fa-angle-right"></i>
                         </button>
                     </li>
