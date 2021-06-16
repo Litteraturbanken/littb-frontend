@@ -124,7 +124,7 @@ describe("reader", function () {
             .then(function (linkUrl) {
                 get(linkUrl)
                 expect(browser.getCurrentUrl()).toBe(
-                    `/författare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
+                    `http://${HOST}:9000/f%C3%B6rfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil'`
                 )
             })
     })
