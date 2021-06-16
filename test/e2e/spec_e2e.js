@@ -120,7 +120,7 @@ describe("reader", function () {
         element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(function (linkUrl) {
-                browser.get(linkUrl)
+                browser.get(`http://${HOST}` + linkUrl)
                 expect(browser.getCurrentUrl()).toBe(
                     `/författare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
                 )
@@ -167,7 +167,7 @@ describe("editor", function () {
                 expect(browser.getCurrentUrl()).toBe(`http://localhost:9000/editor/lb238704/ix/4/f`)
 
                 expect(element(By.css("img.faksimil")).getAttribute("src")).toEqual(
-                    `txt/lb238704/lb238704_3/lb238704_3_0005.jpeg`
+                    `/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg`
                 )
             })
     })
