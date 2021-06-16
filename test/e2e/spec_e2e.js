@@ -1,3 +1,5 @@
+import { browser } from "protractor"
+
 const HOST = process.env.LITTB_DOCKER_HOST || "localhost"
 const get = url => browser.get(`http://${HOST}:9000` + url)
 describe("library authors", function () {
@@ -120,7 +122,7 @@ describe("reader", function () {
         element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(function (linkUrl) {
-                browser.get(`http://${HOST}` + linkUrl)
+                get(linkUrl)
                 expect(browser.getCurrentUrl()).toBe(
                     `/författare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
                 )
