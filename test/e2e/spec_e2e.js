@@ -1,4 +1,4 @@
-import { browser } from "protractor"
+let { browser } = require("protractor")
 
 const HOST = process.env.LITTB_DOCKER_HOST || "localhost"
 const get = url => browser.get(`http://${HOST}:9000` + url)
