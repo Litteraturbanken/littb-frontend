@@ -197,6 +197,7 @@ describe("search", function () {
         const input = element(By.model("query"))
         input.sendKeys("kriget är förklarat!")
         input.sendKeys(protractor.Key.ENTER)
+        browser.sleep(10)
 
         const rows = element.all(By.css(".sentence"))
         expect(rows.count()).toEqual(1)
