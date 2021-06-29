@@ -232,7 +232,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                 to: size || 10000,
                 include:
                     "lbworkid,titlepath,sortkey,title,titleid,work_titleid,shorttitle,mediatype,authors.authorid,sort_date_imprint.plain," +
-                    "authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name",
+                    "authors.name_for_index,authors.authortype,startpagename,authors.surname,authors.full_name,authors.type",
                 exclude: "text,parts,sourcedesc,pages,errata",
                 sort_field: sort_field || "epub_popularity|desc",
                 search: JSON.stringify(query.build())

@@ -1036,7 +1036,7 @@ littb.controller(
                         }
                     ]
 
-                    if ($route.current.$$route.controller === "readingCtrl") {
+                    if ($route.current.$$route.isReader) {
                         menu.push({
                             label: "/id",
                             alt: ["id", "red"],

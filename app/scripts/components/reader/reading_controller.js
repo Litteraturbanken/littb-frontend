@@ -16,8 +16,6 @@ export default [
     "$rootElement",
     "authors",
     "$uibModal",
-    "$templateCache",
-    "$http",
     "$q",
     "$filter",
     function (
@@ -36,8 +34,6 @@ export default [
         $rootElement,
         authors,
         $uibModal,
-        $templateCache,
-        $http,
         $q,
         $filter
     ) {
@@ -49,19 +45,20 @@ export default [
 
         $window.scrollTo(0, 0)
 
-        let { title, author, mediatype, pagename } = $routeParams
-        _.extend(s, _.pick($routeParams, "title", "author", "mediatype"))
+        let applyRouteParams = params => {
+            _.extend(s, _.pick($routeParams, "title", "author", "mediatype"))
 
-        if ("ix" in $routeParams) {
-            s.isEditor = true
-            s.pageix = Number($routeParams.ix)
-            s.pageToLoad = s.pageix
-            s.editorLbWorkId = $routeParams.lbid
-            mediatype = s.mediatype = { f: "faksimil", e: "etext" }[s.mediatype]
-        } else {
-            s.pagename = $routeParams.pagename
+            if ("ix" in $routeParams) {
+                s.isEditor = true
+                s.pageix = Number($routeParams.ix)
+                s.pageToLoad = s.pageix
+                s.editorLbWorkId = $routeParams.lbid
+                s.mediatype = { f: "faksimil", e: "etext" }[s.mediatype]
+            } else {
+                s.pagename = $routeParams.pagename
+            }
         }
-
+        applyRouteParams($routeParams)
         s.suggestEtext = () => window.location.href.replace("/epub", "/etext")
 
         // s.pageToLoad = pagename
@@ -295,7 +292,7 @@ export default [
             // newix = s.pageix - 1
             if (`ix_${newix}` in s.pagemap) {
                 const page = s.pagemap[`ix_${newix}`]
-                return `/författare/${author}/titlar/${title}/sida/${page}/${mediatype}`
+                return `/författare/${s.author}/titlar/${s.title}/sida/${page}/${s.mediatype}`
             } else {
                 return ""
             }
@@ -312,7 +309,7 @@ export default [
             // newix = s.pageix + 1
             if (`ix_${newix}` in s.pagemap) {
                 const page = s.pagemap[`ix_${newix}`]
-                return `/författare/${author}/titlar/${title}/sida/${page}/${mediatype}`
+                return `/författare/${s.author}/titlar/${s.title}/sida/${page}/${s.mediatype}`
             } else {
                 return ""
             }
@@ -323,7 +320,7 @@ export default [
                 return ""
             } else if (s.isEditor) {
                 return `/editor/${s.workinfo.lbworkid}/ix/${s.workinfo.page_count - 1}/${
-                    mediatype[0]
+                    s.mediatype[0]
                 }`
             } else {
                 return s.getPageUrl(s.endpage)
@@ -340,7 +337,7 @@ export default [
                 suffix = `?${search[1]}`
             }
 
-            return `/författare/${author}/titlar/${title}/sida/${page}/${s.mediatype}` + suffix
+            return `/författare/${s.author}/titlar/${s.title}/sida/${page}/${s.mediatype}` + suffix
         }
 
         s.gotopage = function (page, event) {
@@ -487,7 +484,7 @@ export default [
             const [i, newPart] = next
 
             if (s.isEditor) {
-                return `/editor/${s.workinfo.lbworkid}/ix/${i}/${mediatype[0]}`
+                return `/editor/${s.workinfo.lbworkid}/ix/${i}/${s.mediatype[0]}`
             }
 
             return s.getPageUrl(newPart.startpagename)
@@ -527,7 +524,7 @@ export default [
             }
 
             if (s.isEditor) {
-                return `/editor/${s.workinfo.lbworkid}/ix/${i}/${mediatype[0]}`
+                return `/editor/${s.workinfo.lbworkid}/ix/${i}/${s.mediatype[0]}`
             }
 
             return s.getPageUrl(prev.startpagename)
@@ -674,7 +671,7 @@ export default [
         ])
 
         // s.showFocusBar = s.isFocus
-        if (mediatype === "faksimil") {
+        if (s.mediatype === "faksimil") {
             util.setupHashComplex(s, [
                 {
                     key: "storlek",
@@ -700,7 +697,7 @@ export default [
                 if (s.isEditor) {
                     url = `/editor/${$routeParams.lbid}/ix/${val}/${$routeParams.mediatype}`
                 } else {
-                    url = `/författare/${author}/titlar/${title}/sida/${val}/${mediatype}`
+                    url = `/författare/${s.author}/titlar/${s.title}/sida/${val}/${s.mediatype}`
                 }
 
                 const prevpath = $location.path()
@@ -740,27 +737,27 @@ export default [
                 }
             } else {
                 params = {
-                    titlepath: title,
-                    authorid: author
+                    titlepath: s.title,
+                    authorid: s.author
                 }
             }
 
-            const def = backend.getSourceInfo(params, mediatype)
+            const def = backend.getSourceInfo(params, s.mediatype)
             s.workinfoPromise = def
             def.then(function (workinfo) {
                 s.workinfo = workinfo
                 s.pagemap = workinfo.pagemap
 
                 if (s.isEditor) {
-                    author = s.author = workinfo.authors[0].authorid
-                    title = s.title = workinfo.titlepath
+                    s.author = workinfo.authors[0].authorid
+                    s.title = workinfo.titlepath
                 }
 
                 if (s.etextPageMapping == null) {
                     s.etextPageMapping = {}
                 }
 
-                if (mediatype === "faksimil") {
+                if (s.mediatype === "faksimil") {
                     s.sizes = new Array(5)
                     for (let i of s.workinfo.faksimil_sizes) {
                         s.sizes[i] = true
@@ -769,8 +766,8 @@ export default [
 
                 s.startpage = workinfo.startpagename
                 s.endpage = workinfo.endpagename
-                if (pagename == null) {
-                    s.pagename = pagename = s.startpage
+                if (s.pagename == null) {
+                    s.pagename = s.startpage
                 }
 
                 s.isDramaweb = !!workinfo.dramawebben
@@ -839,7 +836,7 @@ export default [
 
         const infoDef = initSourceInfo()
         const fetchPage = function (ix) {
-            if (mediatype === "etext") {
+            if (s.mediatype === "etext") {
                 return downloadPage(ix)
             } else {
                 let basename
@@ -880,16 +877,18 @@ export default [
         // })
         s.$on("$routeUpdate", (event, { params }) => {
             console.log("update", params)
-
-            if (s.isEditor) {
-                s.pageix = Number(params.ix)
-                // s.pageToLoad = Number(params.ix)
+            if (params.title != s.title) {
+                $route.reload()
             } else {
-                s.pagename = params.pagename
-                s.pageix = s.pagemap[`page_${s.pagename}`]
-                s.gotopage(params.pagename)
-                // s.setPage(s.pageix)
+                if (s.isEditor) {
+                    s.pageix = Number(params.ix)
+                } else {
+                    s.pagename = params.pagename
+                    s.pageix = s.pagemap[`page_${s.pagename}`]
+                    s.gotopage(params.pagename)
+                }
             }
+            // applyRouteParams(params)
         })
         const loadPage = val => {
             c.log("loadPage", val)
@@ -903,7 +902,7 @@ export default [
                     s.error = false
 
                     if (!s.isEditor && !isDev) {
-                        backend.logPage(s.pageix, s.workinfo.lbworkid, mediatype)
+                        backend.logPage(s.pageix, s.workinfo.lbworkid, s.mediatype)
                     }
 
                     if ($location.search().sok) {
@@ -931,7 +930,7 @@ export default [
                     })
 
                     // console.log("mediatype", mediatype)
-                    if (mediatype === "faksimil" && s.workinfo.searchable) {
+                    if (s.mediatype === "faksimil" && s.workinfo.searchable) {
                         return backend
                             .fetchOverlayData(s.workinfo.lbworkid, s.pageix)
                             .then(function ([overlayHtml, overlayWidth]) {
@@ -960,7 +959,7 @@ export default [
                 }
             )
         }
-        if (mediatype === "faksimil" && s.isEditor) {
+        if (s.mediatype === "faksimil" && s.isEditor) {
             backend
                 .fetchOverlayData(s.editorLbWorkId, s.pageix)
                 .then(function ([overlayHtml, overlayWidth]) {
@@ -1056,7 +1055,7 @@ export default [
         const query = $location.search().s_query
         if (query) {
             args = {
-                mediatype
+                mediatype: s.mediatype
             }
             s.search_query = query
             const getScopeVars = function (args) {
@@ -1131,7 +1130,7 @@ export default [
                 prefix: $location.search().prefix,
                 suffix: $location.search().suffix,
                 // infix: $location.search().infix
-                mediatype
+                mediatype: s.mediatype
             }
             if (!$location.search().lemma) {
                 args.word_form_only = true

@@ -3740,6 +3740,7 @@ grundform-clean {
         display : inline;
     }
     .blockquote {
+        text-indent: 0;
         width : 85%;
     }
     .footnotes {
@@ -4034,7 +4035,7 @@ grundform-clean {
         margin-top: 1em;
     }
     div > p:first-child, 
-    p + blockquote,
+    blockquote + p,
     h3 + p,
     h2 + p, 
     h1 + p

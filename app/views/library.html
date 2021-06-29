@@ -284,7 +284,7 @@
                                         <a ng-click="setDateRange(item.birth.plain, item.death.plain)">{{item | authorYear}}</a>
                                     </div>
                                 </td>
-                                <td class="align-top sm:text-right sm:sc primarycolor sm:pl-4 order-1"><span class="author">
+                                <td class="align-top sm:text-right sm:sc sm:pl-4 order-1"><span class="author">
                                     <div class="text-gray-800" ng-if="item._index.endsWith('presentations') || item._index.endsWith('litteraturkartan')">
                                         {{item.article_author}}
                                     </div>
@@ -293,8 +293,8 @@
                                     </div>
                                     
                                             <a ng-href="/författare/{{item.main_author.authorid}}">{{item.main_author.full_name}}</a> 
-                                            <span ng-if="item.main_author.type == 'editor'">(red.)</span> 
-                                            <span ng-if="item.main_author.type == 'illustrator'">(ill.)</span>
+                                            <span class="" ng-if="item.main_author.type == 'editor'">(red.)</span> 
+                                            <span class="" ng-if="item.main_author.type == 'illustrator'">(ill.)</span>
                                         </span> <!-- ng-click="authorClick($event, authorsById[item.author[0].authorid])" --></td>
 
                             </tr>

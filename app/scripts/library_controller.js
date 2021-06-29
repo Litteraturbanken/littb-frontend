@@ -361,7 +361,7 @@ littb.controller(
             authors: "popularity|desc",
             parts: "sortkey|asc",
             audio: "title.raw|asc",
-            latest: "imported|desc,main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc"
+            latest: "imported|desc,main_author.name_for_index|asc,sortfield|asc"
         }
 
         s.sortItems = {
