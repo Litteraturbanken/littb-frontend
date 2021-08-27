@@ -735,6 +735,7 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
                 page_path: window.location.pathname,
                 anonymize_ip: true
             })
+            window._paq.push(["trackPageView"])
         }
 
         let className
