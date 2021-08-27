@@ -119,7 +119,7 @@ describe("reader", function () {
         get("/författare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil")
 
         expect(element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href")).toEqual(
-            `/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
+            `${författare}/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
         )
     })
 
@@ -141,7 +141,7 @@ describe("reader", function () {
     it("should show srcset correctly", function () {
         get("/författare/BureusJ/titlar/SmaragdinaTabvla/sida/1/faksimil")
         expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual(
-            `http://${HOST}:9000/txt/lb2514233/lb2514233_3/lb2514233_3_0001.jpeg 1x,/txt/lb2514233/lb2514233_5/lb2514233_5_0001.jpeg 2x`
+            `/txt/lb2514233/lb2514233_3/lb2514233_3_0001.jpeg 1x,/txt/lb2514233/lb2514233_5/lb2514233_5_0001.jpeg 2x`
         )
     })
     it("should not show srcset", function () {
@@ -163,7 +163,7 @@ describe("editor", function () {
                 expect(browser.getCurrentUrl()).toBe(`http://localhost:9000/editor/lb238704/ix/4/f`)
 
                 expect(element(By.css("img.faksimil")).getAttribute("src")).toEqual(
-                    `/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg`
+                    `http://${HOST}:9000/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg`
                 )
             })
     })
