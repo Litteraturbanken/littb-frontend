@@ -1944,6 +1944,9 @@ body > .header {
                 @include dotted($primarycolor);
             }
         }
+        ul {
+            max-width : 500px;
+        }
         
         .drama_subtitle {
             margin-bottom: 1em;
@@ -2012,21 +2015,6 @@ body > .header {
         }
         .content {
             font-size: 1em;
-        }
-        .introtext {
-            display: inline-block;
-            vertical-align: top;
-            padding-right : 1em;
-            height : 14.5em;
-            overflow-y: hidden;
-            max-width : 500px;
-            &.show_more {
-                height: auto;
-            }
-            p:first-child {
-                margin-top: 0;
-            }
-
             .source_header { 
                 margin-top: 1.5em;
                 margin-bottom: 0.5em;
@@ -2036,7 +2024,7 @@ body > .header {
             .source ul {
                 padding-left: 1em;
             }
-            .source ul li {
+            .source ul li, ul.source li {
                 position: relative;
                 // list-style: initial;
                 &:before {
@@ -2051,6 +2039,22 @@ body > .header {
                 .source_content {
                     // display: inline-block;
                 }
+                
+                max-width : 500px;
+        }
+        .introtext {
+            display: inline-block;
+            vertical-align: top;
+            padding-right : 1em;
+            height : 14.5em;
+            overflow-y: hidden;
+            &.show_more {
+                height: auto;
+            }
+            p:first-child {
+                margin-top: 0;
+            }
+
 
 
             }

@@ -337,10 +337,9 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             }
 
             if (params.filter_string) {
-                params.filter_string = params.filter_string.replace(
-                    /([A-Öa-ö])-([A-Öa-ö])/g,
-                    "$1 $2"
-                )
+                params.filter_string = params.filter_string
+                    .replace(/([A-Öa-ö])[-–—]([A-Öa-ö])/g, "$1 $2")
+                    .replace(/[.,!"“'”]/g, "")
             }
             return $http({
                 url: `${STRIX_URL}/list_all/${types}` + (author || ""),

@@ -166,7 +166,7 @@ export default [
         }
 
         const onKeyDown = function (event) {
-            if (event.metaKey || event.ctrlKey || event.altKey) {
+            if (event.metaKey || event.ctrlKey || event.altKey || $("body.modal-open").length) {
                 return
             }
             return s.$apply(function () {
