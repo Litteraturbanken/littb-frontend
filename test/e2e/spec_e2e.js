@@ -33,7 +33,7 @@ describe("library works", function () {
     it("should link correctly to reading mode from popular", () => {
         expect(
             element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
-        ).toEqual(`${författare}/SöderbergH/titlar/DoktorGlas/sida/-2/etext`)
+        ).toEqual(`${författare}/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext`)
     })
 
     it("should link correctly to reading mode from filtered", () => {
@@ -86,7 +86,7 @@ describe("titles", function () {
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         let num = element(By.css(".parts.num_hits"))
-        expect(num.getText()).toEqual(": 825")
+        expect(num.getText()).toEqual(": 829")
     })
 })
 
@@ -110,24 +110,17 @@ describe("reader", function () {
 
     it("should change page on click", function () {
         get("/författare/StrindbergA/titlar/Fadren/sida/3/etext")
-        element(By.css(".pager_ctrls a[rel=next]"))
-            .getAttribute("href")
-            .then(linkUrl =>
-                expect(linkUrl).toBe(`${författare}/StrindbergA/titlar/Fadren/sida/4/etext`)
-            )
+        expect(element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href")).toEqual(
+            `${författare}/StrindbergA/titlar/Fadren/sida/4/etext`
+        )
     })
 
     it("should correctly handle pagestep", function () {
         get("/författare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-7/faksimil")
 
-        element(By.css(".pager_ctrls a[rel=next]"))
-            .getAttribute("href")
-            .then(function (linkUrl) {
-                get(linkUrl)
-                expect(browser.getCurrentUrl()).toBe(
-                    `http://${HOST}:9000/f%C3%B6rfattare/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
-                )
-            })
+        expect(element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href")).toEqual(
+            `/SilfverstolpeM/titlar/ManneDetGarAn/sida/-5/faksimil`
+        )
     })
 
     it("should load workinfo from the correct mediatype", function () {
@@ -148,7 +141,7 @@ describe("reader", function () {
     it("should show srcset correctly", function () {
         get("/författare/BureusJ/titlar/SmaragdinaTabvla/sida/1/faksimil")
         expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual(
-            "/txt/lb2514233/lb2514233_3/lb2514233_3_0001.jpeg 1x,/txt/lb2514233/lb2514233_5/lb2514233_5_0001.jpeg 2x"
+            `http://${HOST}:9000/txt/lb2514233/lb2514233_3/lb2514233_3_0001.jpeg 1x,/txt/lb2514233/lb2514233_5/lb2514233_5_0001.jpeg 2x`
         )
     })
     it("should not show srcset", function () {
@@ -251,7 +244,7 @@ describe("parts navigation", function () {
     })
 
     it("should go to beginning of current part rather than previous part", function () {
-        get("${författare}/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil")
+        get("/författare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
             `${författare}/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil`
         )
