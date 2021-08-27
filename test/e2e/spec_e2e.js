@@ -2,6 +2,7 @@ let { browser } = require("protractor")
 
 const HOST = process.env.LITTB_DOCKER_HOST || "localhost"
 const get = url => browser.get(`http://${HOST}:9000` + url)
+const författare = `http://${HOST}:9000/f%C3%B6rfattare`
 describe("library authors", function () {
     beforeEach(function () {
         get("/bibliotek?sort=popularitet&visa=authors")
@@ -32,7 +33,7 @@ describe("library works", function () {
     it("should link correctly to reading mode from popular", () => {
         expect(
             element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
-        ).toEqual(`/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext`)
+        ).toEqual(`${författare}/SöderbergH/titlar/DoktorGlas/sida/-2/etext`)
     })
 
     it("should link correctly to reading mode from filtered", () => {
@@ -41,7 +42,7 @@ describe("library works", function () {
         // filter.sendKeys(protractor.Key.ENTER)
         expect(
             element(By.css("tr.work_link.first li:first-of-type a")).getAttribute("href")
-        ).toEqual(`/författare/MartinsonH/titlar/Aniara/sida/5/etext`)
+        ).toEqual(`${författare}/MartinsonH/titlar/Aniara/sida/5/etext`)
     })
 })
 
@@ -112,7 +113,7 @@ describe("reader", function () {
         element(By.css(".pager_ctrls a[rel=next]"))
             .getAttribute("href")
             .then(linkUrl =>
-                expect(linkUrl).toBe(`/författare/StrindbergA/titlar/Fadren/sida/4/etext`)
+                expect(linkUrl).toBe(`${författare}/StrindbergA/titlar/Fadren/sida/4/etext`)
             )
     })
 
@@ -133,7 +134,7 @@ describe("reader", function () {
         get("/författare/LagerlofS/titlar/Dunungen/sida/1/etext")
 
         expect(element(By.css(".pager_ctrls a[rel=next]")).getAttribute("href")).toBe(
-            `/författare/LagerlofS/titlar/Dunungen/sida/2/etext`
+            `${författare}/LagerlofS/titlar/Dunungen/sida/2/etext`
         )
     })
 
@@ -152,7 +153,7 @@ describe("reader", function () {
     })
     it("should not show srcset", function () {
         get("/författare/BellmanCM/titlar/FredmansEpistlesSongs/sida/V/faksimil")
-        expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual(null)
+        expect(element(By.css("img.faksimil")).getAttribute("srcset")).toEqual("")
     })
 })
 
@@ -212,35 +213,35 @@ describe("parts navigation", function () {
     it("should handle parts with parent parts", function () {
         get("/författare/RydbergV/titlar/Singoalla1885/sida/25/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `/författare/RydbergV/titlar/Singoalla1885/sida/20/faksimil`
+            `${författare}/RydbergV/titlar/Singoalla1885/sida/20/faksimil`
         )
     })
 
     it("should handle many parts on same page, prev", function () {
         get("/författare/Anonym/titlar/ABC1746/sida/X/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `/författare/Anonym/titlar/ABC1746/sida/IX/faksimil`
+            `${författare}/Anonym/titlar/ABC1746/sida/IX/faksimil`
         )
     })
 
     it("should handle many parts on same page, next", function () {
         get("/författare/Anonym/titlar/ABC1746/sida/IX/faksimil")
         expect(nextPart().getAttribute("href")).toBe(
-            `/författare/Anonym/titlar/ABC1746/sida/X/faksimil`
+            `${författare}/Anonym/titlar/ABC1746/sida/X/faksimil`
         )
     })
 
     it("should give a prev part despite prev page being between parts", function () {
         get("/författare/BremerF/titlar/NyaTeckningar5/sida/II/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `/författare/BremerF/titlar/NyaTeckningar5/sida/244/faksimil`
+            `${författare}/BremerF/titlar/NyaTeckningar5/sida/244/faksimil`
         )
     })
 
     it("should find a single page part on the prev page", function () {
         get("/författare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXIII/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `/författare/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil`
+            `${författare}/BellmanCM/titlar/BellmanStandardupplagan1/sida/CLXXII/faksimil`
         )
     })
 
@@ -250,9 +251,9 @@ describe("parts navigation", function () {
     })
 
     it("should go to beginning of current part rather than previous part", function () {
-        get("/författare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil")
+        get("${författare}/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/325/faksimil")
         expect(prevPart().getAttribute("href")).toBe(
-            `/författare/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil`
+            `${författare}/SvenskaAkademien/titlar/SvenskaAkademiens4/sida/311/faksimil`
         )
     })
 
