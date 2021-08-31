@@ -1944,9 +1944,6 @@ body > .header {
                 @include dotted($primarycolor);
             }
         }
-        ul {
-            max-width : 500px;
-        }
         
         .drama_subtitle {
             margin-bottom: 1em;
@@ -2015,6 +2012,9 @@ body > .header {
         }
         .content {
             font-size: 1em;
+            ul {
+                max-width : 500px;
+            }
             .source_header { 
                 margin-top: 1.5em;
                 margin-bottom: 0.5em;
@@ -2102,7 +2102,6 @@ body > .header {
             display: inline-block;
             vertical-align: top;
             // text-align: center;
-            margin-left : 2em;
 
             .author_img {
                 opacity : 1;

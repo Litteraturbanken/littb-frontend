@@ -27,7 +27,7 @@
     </ul>
     
     <div class="page_content" ng-switch="showpage">
-        <div ng-switch-when="introduktion">
+        <div ng-switch-when="introduktion" class="lg:flex">
             <div class="introtext content unbox" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.intro | trust"></div>
                 <div class="introauthor">
@@ -71,7 +71,7 @@
         </div>
 
         <script type="text/ng-template" id="portrait.html">
-            <div class="portrait_container">
+            <div class="portrait_container lg:ml-8">
                 <div class="shadow-lg border mt-2 border-gray-500 border-opacity-50" ng-show="authorInfo.smallImage">
                     <img class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
                     <figcaption class="bg-white bg-opacity-75 p-3 text-base" ng-if="authorInfo.pictureinfo" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption>

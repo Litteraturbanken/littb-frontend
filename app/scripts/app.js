@@ -45,6 +45,7 @@ function onRouteReject() {
         page_path: window.location.pathname,
         anonymize_ip: true
     })
+    window._paq.push(["trackPageView"])
 }
 
 _.templateSettings.interpolate = /{{([\s\S]+?)}}/g

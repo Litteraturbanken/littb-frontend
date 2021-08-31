@@ -886,6 +886,12 @@ export default [
                     s.pagename = params.pagename
                     s.pageix = s.pagemap[`page_${s.pagename}`]
                     s.gotopage(params.pagename)
+
+                    window.gtag("config", window.gtagID, {
+                        page_path: window.location.pathname,
+                        anonymize_ip: true
+                    })
+                    window._paq.push(["trackPageView"])
                 }
             }
             // applyRouteParams(params)
