@@ -33,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         yarn --frozen-lockfile
-        npx webdriver-manager update --standalone chrome --gecko false
+        npx webdriver-manager update --standalone chrome --versions.chrome=2.46 --gecko false
     - name: Run tests
       run: |
         # npx webdriver-manager start &
