@@ -125,18 +125,27 @@
                                     uib-tooltip="{{getTitleTooltip(work)}}">
                                     {{work.shorttitle || work.title}}
                                 </a> -->
-                                <a class="title" ng-if="work.doc_type != 'audio'" 
-                                    ng-hide="work.doc_type == 'infopost'"
-                                    ng-href="{{work.mediatypes[0].url + '?om-boken'}}"
-                                    uib-tooltip="{{getTitleTooltip(work)}}">
-                                    {{work.shorttitle || work.title}}
-                                    <span ng-if="work.imprintyear">({{work.imprintyear}})</span>
-                                </a>
-                                <a class="title" ng-if="work.doc_type == 'infopost'" 
-                                    ng-href="{{work.mediatypes[0].url}}"
-                                    uib-tooltip="{{getTitleTooltip(work)}}">
-                                    {{work.shorttitle || work.title}}
-                                </a>
+
+
+                                
+                                <span class="title" uib-tooltip="{{getTitleTooltip(work)}}">
+                                    <a ng-if="work.doc_type != 'audio' && (work | readMediatypes).length" 
+                                        ng-hide="work.doc_type == 'infopost'"
+                                        ng-href="{{work.mediatypes[0].url + '?om-boken'}}" >
+                                        {{work.shorttitle || work.title}}
+                                        <span ng-if="work.imprintyear">({{work.imprintyear}})</span>
+                                    </a>
+                                    <a ng-if="!(work | readMediatypes).length && (work | downloadMediatypes).length" 
+                                        ng-href="{{work.mediatypes[0].url}}" target="_self" >
+                                        {{work.shorttitle || work.title}}
+                                        <span ng-if="work.imprintyear">({{work.imprintyear}})</span>
+                                    </a>
+                                    <a ng-if="work.doc_type == 'infopost'" 
+                                        ng-href="{{work.mediatypes[0].url}}">
+                                        {{work.shorttitle || work.title}}
+                                    </a>
+
+                                </span>
                                 
                                 <div class="extras" ng-if="titleobj.audioExtras" >
                                     <a class="author" href="/författare/{{work.readers[0].authorid}}">

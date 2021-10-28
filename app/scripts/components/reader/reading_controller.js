@@ -875,8 +875,9 @@ export default [
         // $("body").on("load", "img.faksimil", function() {
         //     window.safeApply(s, () => (s.imageWidth = $("img.faksimil").prop("naturalWidth")))
         // })
-        s.$on("$routeUpdate", (event, { params }) => {
-            console.log("update", params)
+        s.$on("$routeUpdate", (event, route) => {
+            console.log("update", route)
+            let params = route.params
             if (params.title != s.title) {
                 $route.reload()
             } else {
