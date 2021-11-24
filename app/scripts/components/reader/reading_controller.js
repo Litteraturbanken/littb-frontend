@@ -798,10 +798,25 @@ export default [
             return def
         }
 
-        const downloadPage = function (pageix) {
-            const filename = _.str.lpad(pageix, 5, "0")
+        const getDownloadPageUrl = function (pageix, size) {
             const id = $routeParams.lbid || s.workinfo.lbworkid
-            const url = `txt/${id}/res_${filename}.html`
+            if (s.mediatype === "etext") {
+                const filename = _.str.lpad(pageix, 5, "0")
+                return `/txt/${id}/res_${filename}.html`
+            } else {
+                if (s.isEditor) {
+                    var basename = pageix + 1
+                } else {
+                    basename = s.workinfo.filenameMap[pageix]
+                }
+                const filename = _.str.lpad(basename, 4, "0")
+                return `/txt/${id}/${id}_${size}/${id}_${size}_${filename}.jpeg`
+            }
+        }
+
+        const downloadPage = function (pageix) {
+            let url = getDownloadPageUrl(pageix)
+            $("#prefetch").attr("href", getDownloadPageUrl(pageix + 1))
             const def = backend.getHtmlFile(url)
             def.then(function (html) {
                 // since we use hard line breaks, soft hyphen needs to be replaced by actual hyphen
@@ -839,24 +854,20 @@ export default [
             if (s.mediatype === "etext") {
                 return downloadPage(ix)
             } else {
-                let basename
-                const id = $routeParams.lbid || s.workinfo.lbworkid
-                if (s.isEditor) {
-                    basename = ix + 1
-                } else {
-                    basename = s.workinfo.filenameMap[ix]
-                }
-                const filename = _.str.lpad(basename, 4, "0")
-                let urlFromSize = size => `/txt/${id}/${id}_${size}/${id}_${size}_${filename}.jpeg`
-                s.url = urlFromSize(s.size)
+                s.url = getDownloadPageUrl(ix, s.size)
                 if (s.sizes) {
                     let maybeSize = getSrcsetSize()
                     // if (s.size < 4 && s.sizes[s.size + 2 - 1]) {
                     if (typeof maybeSize != "undefined") {
-                        s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(maybeSize)} 2x`
+                        $("#prefetch").attr("href", getDownloadPageUrl(ix + 1, maybeSize))
+                        s.srcset = `${getDownloadPageUrl(ix, s.size)} 1x, ${getDownloadPageUrl(
+                            ix,
+                            maybeSize
+                        )} 2x`
                         // } else if (s.size == 4 && s.sizes[3] && s.sizes[4]) {
                         //     s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(5)} 2x`
                     } else {
+                        $("#prefetch").attr("href", getDownloadPageUrl(ix + 1, size))
                         $(".img_area .faksimil").attr("srcset", null)
                         s.srcset = null
                     }
@@ -878,6 +889,7 @@ export default [
         s.$on("$routeUpdate", (event, route) => {
             console.log("update", route)
             let params = route.params
+            let nextPath = `/författare/${params.author}/titlar/${params.title}/sida/${params.pagename}/:mediatype`
             if (params.title != s.title) {
                 $route.reload()
             } else {
@@ -889,7 +901,7 @@ export default [
                     s.gotopage(params.pagename)
 
                     window.gtag("config", window.gtagID, {
-                        page_path: window.location.pathname,
+                        page_path: nextPath,
                         anonymize_ip: true
                     })
                     window._paq.push(["trackPageView"])
