@@ -26,7 +26,7 @@ littb.directive("toolkit", () => ({
     }
 }))
 
-littb.directive("css", () => ({
+littb.directive("css", $http => ({
     restrict: "EA",
     scope: { css: "@", evalIf: "&if" },
     compile(elm, attrs) {
@@ -34,11 +34,13 @@ littb.directive("css", () => ({
         return function (scope, iElement, iAttrs) {
             scope.$watch("css", function (val) {
                 if (scope.evalIf()) {
-                    $("#reading_css").attr("href", val)
+                    $http.get(val).then(function (response) {
+                        $("#reading_css").text(response.data)
+                    })
                 }
             })
 
-            scope.$on("$destroy", () => $("#reading_css").attr("href", null))
+            scope.$on("$destroy", () => $("#reading_css").text(""))
         }
     }
 }))
@@ -480,11 +482,13 @@ littb.directive("popper", $rootElement => ({
 
 //             return (x for [x, y] in _.toPairs output when y).join " "
 
-littb.directive("insert", () => (scope, elem, attr) =>
-    scope.watch("doc", function () {
-        c.log("insert doc", scope.doc)
-        return elem.html(scope.doc || "")
-    })
+littb.directive(
+    "insert",
+    () => (scope, elem, attr) =>
+        scope.watch("doc", function () {
+            c.log("insert doc", scope.doc)
+            return elem.html(scope.doc || "")
+        })
 )
 
 littb.directive("downloadBtn", () => ({

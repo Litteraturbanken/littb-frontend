@@ -1,3 +1,3 @@
 #!/bin/sh
-rsync --delete -r dist/* fklittb@demo.spraakdata.gu.se:/export/htdocs_littb && \
+rsync --delete -r dist/* lb-apache:/home/johan/sites/red.lb.se && \
 yarn test
