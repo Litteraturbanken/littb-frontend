@@ -307,7 +307,7 @@ littb.controller(
 
         s.getWikiImage = () => {
             if (window.isDev && s.authorInfo && s.authorInfo.wikidata) {
-                return s.authorInfo.wikidata.image
+                return s.authorInfo.wikidata.image.replace(/^http:/, "https:")
             }
         }
 

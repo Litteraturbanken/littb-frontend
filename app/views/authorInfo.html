@@ -170,7 +170,7 @@
         </script>
 
         <div ng-switch-when="dramawebben">
-            <div class="introtext content" ng-class="{show_more: show_more}">
+            <div class="introtext content sm:inline-block" ng-class="{show_more: show_more}">
                 <div ng-bind-html="authorInfo.dramawebben.intro || authorInfo.intro | trust"></div>
                 <div class="introauthor">
                     <em>{{authorsById[authorInfo.dramawebben.intro_author || authorInfo.intro_author].full_name}}</em>
@@ -203,7 +203,7 @@
                    </span> 
                 </div>
             </div>
-            <div class="portrait_container">
+            <div class="portrait_container sm:inline-block sm:ml-8">
                 <img ng-show="authorInfo.dramawebben.picture" class="author_img" ng-src="{{authorInfo.dramawebben.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
                 <figcaption ng-bind-html="authorInfo.dramawebben.picture_info | trust"></figcaption>
 
