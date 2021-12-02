@@ -867,7 +867,7 @@ export default [
                         // } else if (s.size == 4 && s.sizes[3] && s.sizes[4]) {
                         //     s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(5)} 2x`
                     } else {
-                        $("#prefetch").attr("href", getDownloadPageUrl(ix + 1, size))
+                        $("#prefetch").attr("href", getDownloadPageUrl(ix + 1, s.size))
                         $(".img_area .faksimil").attr("srcset", null)
                         s.srcset = null
                     }

@@ -86,7 +86,7 @@ describe("titles", function () {
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         let num = element(By.css(".parts.num_hits"))
-        expect(num.getText()).toEqual(": 829")
+        expect(num.getText()).toEqual(": 863")
     })
 })
 
@@ -194,7 +194,7 @@ describe("search", function () {
         browser.sleep(10)
 
         const rows = element.all(By.css(".sentence"))
-        expect(rows.count()).toEqual(1)
+        expect(rows.count()).toEqual(2)
     })
 })
 
