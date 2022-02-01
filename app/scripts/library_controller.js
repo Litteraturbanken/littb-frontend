@@ -1050,7 +1050,7 @@ littb.controller(
             $location.search("title", title.titlepath)
         }
 
-        s.getPartAuthor = part => part.work_authors?.[0] || part.authors[0]
+        s.getPartAuthor = part => part.authors?.[0] || part.work_authors?.[0]
 
         s.downloadPopoverURL = require("../views/library/downloadPopover.html")
         s.dl_mode = $location.search().nedladdning
