@@ -256,7 +256,7 @@
                                     <a ng-if="['etext', 'faksimil'].includes(getIndex(item._index))" ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.work_titleid || item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">
                                         {{item.shorttitle || item.title}}
                                     </a>
-                                    <a ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))" ng-href="/författare/{{getPartAuthor(item).authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
+                                    <a ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))" ng-href="/författare/{{item.work_authors[0].authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}">{{item.shorttitle || item.title}}</a>
                                     <span class="text-xs sc" ng-if="item.hasAmbigousMediatype">(<span class="text-primary">{{item.mediatype}}</span>)</span>
                                     <a ng-if="['pdf'].includes(getIndex(item._index))" ng-href="/txt/{{item.lbworkid}}/{{item.lbworkid}}.pdf" download target="_self">{{item.shorttitle || item.title}}</a>
 

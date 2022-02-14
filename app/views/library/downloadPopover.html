@@ -27,7 +27,7 @@
 
                 <label class="capitalize" for="faksimil_{{$index}}" ng-class="{active : type.selected, 'text-gray-500' : !exportsFromMediatypes('faksimil', [type.id]).length}">{{capitalizeLabel(type.label || type.id)}}</label>
 
-                <div class="text-sm italic text-gray-600" ng-if="type.disabled">Kommer snart</div>
+                <!-- <div class="text-sm italic text-gray-600" ng-if="type.disabled">Kommer snart</div> -->
             </li>
         </ul>
     </div>

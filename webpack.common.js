@@ -5,7 +5,7 @@ const devMode = process.env.NODE_ENV !== "production"
 const CopyWebpackPlugin = require("copy-webpack-plugin")
 const HtmlWebPackPlugin = require("html-webpack-plugin")
 
-const Fiber = require("fibers")
+// const Fiber = require("fibers")
 
 module.exports = {
     entry: "./app/main.js",
@@ -86,8 +86,8 @@ module.exports = {
                         options: {
                             // sourceMap: process.env.NODE_ENV !== "production",
                             // sourceMapContents: false
-                            implementation: require("sass"),
-                            fiber: Fiber
+                            implementation: require("sass")
+                            // fiber: Fiber
                         }
                     }
                 ]
