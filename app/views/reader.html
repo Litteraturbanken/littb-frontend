@@ -28,9 +28,10 @@
     <div class="img_area" 
         ng-style="{'width' : getWidthConstraint() + 'px'}" 
         ng-if="mediatype == 'faksimil' || isParallel">
-        <img faksimil-img class="faksimil" 
+        <img faksimil-img class="faksimil transform transition duration-200"  
+        
         imageonload="onImageLoad()"
-        ng-style="{'max-width' : getWidthConstraint() + 'px'}" 
+        ng-style="{'max-width' : getWidthConstraint() + 'px', 'transform': getRotate()}" 
         ng-src="{{url}}" 
         ng-srcset="{{srcset}}">
     </div>
@@ -263,6 +264,10 @@
                 <h2>Ändra storlek</h2>
                 <button ng-click="setSize(size - 1)" ng-disabled="isSizeDisabled(false)" class="small_text btn btn-small">Mindre</button>
                 <button ng-click="setSize(size + 1)" ng-disabled="isSizeDisabled(true)" class="small_text btn btn-small">Större</button>
+                
+                <h2 class="mt-4">Rotera</h2>
+                <button ng-click="rotate_left()" class="small_text btn btn-small">Vänster</button>
+                <button ng-click="rotate_right()" class="small_text btn btn-small">Höger</button>
 
 
                 <!-- <div ng-class="{selected : size, hidden : !isDefined(size)}" 

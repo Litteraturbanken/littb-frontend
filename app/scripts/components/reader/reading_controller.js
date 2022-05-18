@@ -165,6 +165,15 @@ export default [
             s.show_search_work = false
         }
 
+        s.rotateAmount = 0
+        s.getRotate = () => `rotate(${s.rotateAmount}deg)`
+        s.rotate_left = () => {
+            s.rotateAmount -= 90
+        }
+        s.rotate_right = () => {
+            s.rotateAmount += 90
+        }
+
         const onKeyDown = function (event) {
             if (event.metaKey || event.ctrlKey || event.altKey || $("body.modal-open").length) {
                 return
@@ -172,21 +181,33 @@ export default [
             return s.$apply(function () {
                 switch (event.which) {
                     case 78: // n
+                        s.nextPage()
+                        break
                     case 39: // arrow right
                         if (
-                            navigator.userAgent.indexOf("Firefox") !== -1 ||
                             $rootElement.prop("scrollWidth") - $window.scrollX ===
-                                $($window).width()
+                            $($window).width()
                         ) {
-                            return s.nextPage()
+                            s.nextPage()
                         }
                         break
                     case 70: // f
+                        s.prevPage()
+                        break
                     case 37: // arrow left
                         if ($window.scrollX < 10) {
-                            return s.prevPage()
+                            s.prevPage()
                         }
                         break
+                    case 126: // f15
+                    case 68: // d
+                        if (s.isEditor) {
+                            let ix = s.pageix - 10
+                            s.pageix = ix
+                            s.pageToLoad = ix
+                        }
+                        break
+                    case 127: // f16
                     case 77: // m
                         if (s.isEditor) {
                             let ix = s.pageix + 10

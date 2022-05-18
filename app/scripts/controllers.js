@@ -1044,6 +1044,7 @@ littb.controller(
                             action() {
                                 if ($(".reader_main").scope) {
                                     s.lbworkid = $(".reader_main").scope().workinfo.lbworkid
+                                    navigator.clipboard.writeText(s.lbworkid)
                                 }
                                 return false
                             }
@@ -1114,7 +1115,13 @@ littb.controller(
                             }
                         })
                     }
-
+                    if (val.match(/^lb.*/)) {
+                        menu.push({
+                            label: val,
+                            url: `/editor/${val}/ix/0/f`,
+                            typeLabel: "[Red.] Gå till faksimileditorn"
+                        })
+                    }
                     menu = _.filter(menu, function (item) {
                         // if !isDev and item.typeLabel == "[Red.]" then return false
                         const exp = new RegExp(`^${val}`, "gi")
