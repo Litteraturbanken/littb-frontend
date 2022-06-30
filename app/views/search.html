@@ -188,8 +188,8 @@
                             </div>
                         </td>
                         <td class="header" colspan="4" ng-if="sent.isHeader">
-                            <div class="header_content">
-                                <span class="author">{{authorsById[sent.metadata.authors[0].authorid].name_for_index}}</span> <span class="title" uib-tooltip="{{sent.metadata.title}}">
+                            <div class="header_content" uib-tooltip="{{sent.metadata.title}}">
+                                <span class="author">{{authorsById[sent.metadata.authors[0].authorid].name_for_index}}</span> <span class="title" >
                                     <a ng-href="{{::sent.href}}" ng-click="save_search($index)">
                                         {{sent.metadata.title}}
                                     </a></span>
