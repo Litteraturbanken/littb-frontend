@@ -51,7 +51,7 @@ littb.component("keywordSelect", {
         <option value='source:ljudochbild'>Ljud & Bild</option>
         <option value='keyword:1800'>Nya vägar till 1800-talet</option>
         <option value="texttype:reseskildring">Reseskildringar</option>
-        <option value="texttype:kistebrev">Kistebrev</option>
+        <!-- <option value="texttype:kistebrev">Kistebrev</option> -->
         <option value='keyword:Rösträtt'>Rösträtt</option>
         <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
         <option value='keyword:SLS-FI'>SLS Finland</option>
@@ -104,7 +104,23 @@ littb.component("highlights", {
         </ul>
     `,
     bindings: {
-        list: "="
+        list: "<",
+        isPhrase: "<"
+    },
+    controller($scope, $element, $attrs, $location) {
+        var ctrl = this
+        ctrl.$onChanges = () => {
+            if (ctrl.isPhrase && ctrl.list) {
+                ctrl.list = ctrl.list.filter(item => {
+                    if (Array.from(item.matchAll("class='hit'")).length > 1) {
+                        return true
+                    }
+                    return !["<em class='hit'>i</em>", "<em class='hit'>I</em>"].some(x =>
+                        item.includes(x)
+                    )
+                })
+            }
+        }
     }
 })
 

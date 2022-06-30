@@ -175,7 +175,13 @@ export default [
         }
 
         const onKeyDown = function (event) {
-            if (event.metaKey || event.ctrlKey || event.altKey || $("body.modal-open").length) {
+            if (
+                event.metaKey ||
+                event.ctrlKey ||
+                event.altKey ||
+                $("body.modal-open").length ||
+                $("input:focus").length
+            ) {
                 return
             }
             return s.$apply(function () {
@@ -857,6 +863,10 @@ export default [
             if (s.size < 4 && s.sizes && s.sizes[s.size + 2 - 1]) {
                 return s.size + 2
             }
+        }
+
+        s.getHeightConstraint = () => {
+            return [625, 750, 1100, 1500, 3050][s.size - 1]
         }
 
         s.getWidthConstraint = () => {

@@ -1679,11 +1679,13 @@ body > .header {
                         border-bottom : 1px solid darkgrey;
                         padding-right : 5px;
                         margin-bottom: 0.4em;
+                        overflow-x: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        max-width: 100%;
                     }
                     padding-top : 1em;
-                    overflow-x: hidden;
-                    text-overflow: ellipsis;
-                    max-width : 400px;
+                    max-width : 700px;
                     .author {
                         color: $primarycolor;
                         @include small-caps;

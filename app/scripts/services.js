@@ -1354,11 +1354,9 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
                 url: `${STRIX_URL}/search/${this.currentParams.query}`,
                 params
             }).then(response => {
-                c.log("getMoreHighlights response", response.data.data)
                 this.compactLeftContext(response.data.data)
 
                 const decorated = _.flatten(this.decorateData(response.data.data, num_fragments))
-                c.log("decorated", decorated)
                 if (_.last(decorated).overflow) {
                     _.last(decorated).at_highlight_page = at_page
                 }
@@ -1384,6 +1382,9 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
                         const obj = { metadata: item.source, highlight: high, index: row_index }
                         obj.href = this.parseUrls(obj, highlight_index)
                         work_rows.push(obj)
+                        if (highlight_index == 0) {
+                            work_rows[0].href = obj.href
+                        }
                         row_index++
                     }
                     if (item.overflow) {

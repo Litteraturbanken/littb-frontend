@@ -26,14 +26,14 @@
     </div>
 
     <div class="img_area" 
-        ng-style="{'width' : getWidthConstraint() + 'px'}" 
+        ng-style="{'width' : getWidthConstraint() + 'px', 'height': getHeightConstraint() + 'px'}" 
         ng-if="mediatype == 'faksimil' || isParallel">
-        <img faksimil-img class="faksimil transform transition duration-200"  
+        <img faksimil-img class="faksimil transform transition duration-200 h-full"  
+            imageonload="onImageLoad()"
+            ng-style="{'max-width' : getWidthConstraint() + 'px', 'transform': getRotate()}" 
+            ng-src="{{url}}" 
+            ng-srcset="{{srcset}}">
         
-        imageonload="onImageLoad()"
-        ng-style="{'max-width' : getWidthConstraint() + 'px', 'transform': getRotate()}" 
-        ng-src="{{url}}" 
-        ng-srcset="{{srcset}}">
     </div>
     <!-- <div square ng-repeat="obj in coors" ng-show="x"
          class="faksimilMarkee" ng-class="{long : obj.w > 150}"></div> -->
@@ -160,7 +160,7 @@
 
                             <div class="ctrls" ng-class="{searching : searchData.isSearching}">
                                 <form ng-submit="searchWork(search_query)">
-                                    <input class="border border-gray-300" focusable="search_work" type="text" ng-model="search_query" > 
+                                    <input class="border border-gray-300" focusable="search_work" type="search" ng-model="search_query" > 
                                     <i class="spinner fa fa-spinner fa-pulse"></i>
                                     <button type="submit" class="submit btn">Sök</button>
 
@@ -265,15 +265,16 @@
                 <button ng-click="setSize(size - 1)" ng-disabled="isSizeDisabled(false)" class="small_text btn btn-small">Mindre</button>
                 <button ng-click="setSize(size + 1)" ng-disabled="isSizeDisabled(true)" class="small_text btn btn-small">Större</button>
                 
-                <h2 class="mt-4">Rotera</h2>
-                <button ng-click="rotate_left()" class="small_text btn btn-small">Vänster</button>
-                <button ng-click="rotate_right()" class="small_text btn btn-small">Höger</button>
-
-
-                <!-- <div ng-class="{selected : size, hidden : !isDefined(size)}" 
-                     ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div> -->
                 
-            </div>
+                <!-- <div ng-class="{selected : size, hidden : !isDefined(size)}" 
+                    ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div> -->
+                    
+                </div>
+                <div ng-if="mediatype == 'faksimil'" class="size_picker hidden md:block">
+                    <h2 class="mt-4">Rotera</h2>
+                    <button ng-click="rotate_left()" class="small_text btn btn-small">Vänster</button>
+                    <button ng-click="rotate_right()" class="small_text btn btn-small">Höger</button>
+                </div>
         </div>
 
     <!-- <div toolkit>

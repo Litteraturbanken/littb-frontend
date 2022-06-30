@@ -228,26 +228,26 @@
                                         {{item.name_for_index.split(",")[1]}} 
                                         <a class="sm:hidden" ng-if="item | authorYear" ng-click="setDateRange(item.birth.plain, item.death.plain)">({{item | authorYear}})</a>
                                     </a>
-                                    <highlights list="item.highlight.intro"></highlights>
+                                    <highlights is-phrase="filter.includes(' ')" list="item.highlight.intro"></highlights>
 
                                 </div>
                                 <div class="" ng-if="getIndex(item._index) == 'presentations'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="{{item.url}}">{{item.title}}</a>
-                                    <highlights list="item.highlight.content"></highlights>
+                                    <highlights is-phrase="filter.includes(' ')" list="item.highlight.content"></highlights>
                                 </div>
                                 <div class="" ng-if="getIndex(item._index) == 'sol'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{item.article.URLName}}">{{item.article.ArticleName}}</a>
 
-                                    <highlights list="item.highlight['article.ArticleText']"></highlights>
+                                    <highlights is-phrase="filter.includes(' ')" list="item.highlight['article.ArticleText']"></highlights>
                                 </div>
                                 <div class="" ng-if="getIndex(item._index) == 'litteraturkartan'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="https://litteraturbanken.se/litteraturkartan/?id={{item.placeid}}&article={{item.id}}">{{item.header}}</a>
 
-                                    <highlights list="item.highlight.free_text"></highlights>
+                                    <highlights is-phrase="filter.includes(' ')" list="item.highlight.free_text"></highlights>
                                 </div>
                                 <div class="" ng-if="getIndex(item._index) == 'wordpress'" uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}">
                                     <a ng-href="{{item.link}}">{{item.title}}</a>
-                                    <highlights list="item.highlight.content"></highlights>
+                                    <highlights is-phrase="filter.includes(' ')" list="item.highlight.content"></highlights>
                                 </div>
                                 <div class="max-w-sm" ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))" 
                                     uib-tooltip="{{(item.title != item.shorttitle ? item.title : '') + (isDev ? '\npopularity: ' + item.popularity : '')}}" 
@@ -262,9 +262,9 @@
 
 
                                     <a ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.work_titleid || item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}?om-boken">
-                                        <highlights list="item.highlight.workintro"></highlights>
+                                        <highlights is-phrase="filter.includes(' ')" list="item.highlight.workintro"></highlights>
                                     </a>
-                                    <highlights list="item.highlight.title"></highlights>
+                                    <highlights is-phrase="filter.includes(' ')" list="item.highlight.title"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight['title.search']"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight.title_modernized"></highlights>
 
