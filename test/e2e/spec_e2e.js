@@ -86,7 +86,7 @@ describe("titles", function () {
         filter.sendKeys("psalm")
         filter.sendKeys(protractor.Key.ENTER)
         let num = element(By.css(".parts.num_hits"))
-        expect(num.getText()).toEqual(": 866")
+        expect(num.getText()).toEqual(": 867")
     })
 })
 

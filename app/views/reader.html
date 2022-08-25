@@ -19,17 +19,19 @@
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="first_load && etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
     
     <div selection-sniffer
-        class="overlay"
+        class="overlay overflow-hidden origin-top-left"
         ng-if="mediatype == 'faksimil' && overlayHtml" 
-        ng-style="{width: workinfo.width['size_' + size - 1] + 'px', transform: 'scale(' + imageWidth / overlayWidth + ')'}"
+        style="height: 625px;"
+        ng-style="{width: workinfo.width.size_1 + 'px', transform: 'scale(' + imageWidth / overlayWidth + ')'}"
         compile="overlayHtml | setMarkee:markee_from:markee_to" > 
     </div>
 
     <div class="img_area" 
-        ng-style="{'width' : getWidthConstraint() + 'px', 'height': getHeightConstraint() + 'px'}" 
+        ng-style="{'width' : getWidthConstraint() + 'px'}" 
         ng-if="mediatype == 'faksimil' || isParallel">
-        <img faksimil-img class="faksimil transform transition duration-200 h-full"  
+        <img faksimil-img class="faksimil transform transition duration-200"  
             imageonload="onImageLoad()"
+            ng-height="getWidthConstraint()"
             ng-style="{'max-width' : getWidthConstraint() + 'px', 'transform': getRotate()}" 
             ng-src="{{url}}" 
             ng-srcset="{{srcset}}">
@@ -270,7 +272,7 @@
                     ng-repeat="size in sizes track by $index" ng-click="setSize($index)">{{$index}}</div> -->
                     
                 </div>
-                <div ng-if="mediatype == 'faksimil'" class="size_picker hidden md:block">
+                <div ng-if="mediatype == 'faksimil'" class="size_picker hidden md:block relative z-40">
                     <h2 class="mt-4">Rotera</h2>
                     <button ng-click="rotate_left()" class="small_text btn btn-small">Vänster</button>
                     <button ng-click="rotate_right()" class="small_text btn btn-small">Höger</button>

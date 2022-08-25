@@ -33,7 +33,7 @@ module.exports = {
                 changeOrigin: true
             },
             {
-                context: ["/skolan"],
+                context: ["/skolan", "/cdn-cgi/image/"],
                 target: "https://litteraturbanken.se",
                 changeOrigin: true
             }

@@ -1666,7 +1666,9 @@ body > .header {
                 opacity : 1;
                 transition : opacity 400ms;
                 width : 100%;
-                display: block;
+                // table-layout: fixed;
+                width: 700px;
+                // display: block;
                 // position: absolute;
                 overflow: hidden;
                 white-space : nowrap;
@@ -1679,7 +1681,7 @@ body > .header {
                         border-bottom : 1px solid darkgrey;
                         padding-right : 5px;
                         margin-bottom: 0.4em;
-                        overflow-x: hidden;
+                        overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
                         max-width: 100%;

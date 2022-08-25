@@ -109,20 +109,30 @@ littb.filter(
         }
 )
 
-littb.controller(
-    "startCtrl",
-    ($scope, $location) =>
-        ($scope.gotoTitle = function (query) {
-            let url
-            if (!query) {
-                url = "/titlar"
-            } else {
-                url = `/titlar?filter=${query}&selectedLetter=${query[0].toUpperCase()}`
-            }
+littb.controller("startCtrl", ($scope, $location, $rootScope, $http, $compile) => {
+    $scope.gotoTitle = function (query) {
+        let url
+        if (!query) {
+            url = "/titlar"
+        } else {
+            url = `/titlar?filter=${query}&selectedLetter=${query[0].toUpperCase()}`
+        }
 
-            return $scope.goto(url)
-        })
-)
+        return $scope.goto(url)
+    }
+    // let url = "/red/om/start/startsida-ny.html?" + $rootScope.cacheKiller()
+    // $http.get(url).then(function (response) {
+    //     console.log("🚀 ~ file: controllers.js ~ line 126 ~ response.data", response.data)
+    //     let html = response.data
+    //     if (!isDev) {
+    //         html = html.replace(
+    //             /(\/red\/bilder\/bakgrundsbilder\/.*?.jpg)/,
+    //             "/cdn-cgi/image/format=auto/$1"
+    //         )
+    //     }
+    //     $scope.startpage = html
+    // })
+})
 
 littb.controller("contactFormCtrl", function ($scope, backend, $timeout, $location) {
     const s = $scope

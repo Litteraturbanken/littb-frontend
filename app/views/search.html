@@ -199,7 +199,7 @@
                         <td ng-if="sent.highlight" class="left_context"><!--
                             --><span ng-repeat="wd in sent.highlight.left_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
                         </td>
-                        <td ng-if="sent.highlight" class="match">
+                        <td ng-if="sent.highlight" class="match w-px whitespace-nowrap">
                             <span ng-repeat="wd in sent.highlight.match">
                                 <a ng-href="{{::sent.href}}" ng-click="save_search($index)"
                                     class="word" ng-class="{punct: wd._punct}">{{wd.word}}</a>
