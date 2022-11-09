@@ -1341,7 +1341,7 @@ littb.controller(
 
         s.getSourceImage = function () {
             if (s.workinfo) {
-                return `/txt/${s.workinfo.lbworkid}/${s.workinfo.lbworkid}_small.jpeg`
+                return `/txt/${s.workinfo.lbworkid}/${s.workinfo.lbworkid}_small.jpeg 1x, /txt/${s.workinfo.lbworkid}/${s.workinfo.lbworkid}_large.jpeg 2x `
             }
         }
 

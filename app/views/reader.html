@@ -18,14 +18,17 @@
     <div class="etext txt"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="first_load && etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
     
-    <div selection-sniffer
-        class="overlay overflow-hidden origin-top-left"
-        ng-if="mediatype == 'faksimil' && overlayHtml" 
-        style="height: 625px;"
-        ng-style="{width: workinfo.width.size_1 + 'px', transform: 'scale(' + imageWidth / overlayWidth + ')'}"
-        compile="overlayHtml | setMarkee:markee_from:markee_to" > 
+    <div  class="absolute overflow-hidden h-full w-full">
+        <div selection-sniffer
+            class="overlay overflow-hidden origin-top-left"
+            ng-if="mediatype == 'faksimil' && overlayHtml"
+            style="height: 625px;"
+            ng-style="{width: workinfo.width.size_1 + 'px', transform: 'scale(' + imageWidth / overlayWidth + ')'}"
+            compile="overlayHtml | setMarkee:markee_from:markee_to" >
+        </div>
+        <!-- <div style="height: 625px;" compile="overlayHtml | setMarkee:markee_from:markee_to" ng-style="{width: workinfo.width.size_1 + 'px', transform: 'scale(' + imageWidth / overlayWidth + ')'}"></div> -->
     </div>
-
+        
     <div class="img_area" 
         ng-style="{'width' : getWidthConstraint() + 'px'}" 
         ng-if="mediatype == 'faksimil' || isParallel">

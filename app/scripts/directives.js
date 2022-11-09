@@ -774,16 +774,14 @@ littb.directive("bkgImg", ($rootElement, $timeout) => ({
         if (scope.preload) {
             scope.preload.then(val => {
                 $("html").css({
-                    background: `${color} url('${val.default}') no-repeat`,
-                    "background-size": "120%"
+                    background: `${color} url('${val.default}') no-repeat`
                 })
             })
         } else {
             $timeout(
                 () =>
                     $("html").css({
-                        background: `${color} url('${element.attr("src")}') no-repeat`,
-                        "background-size": "120%"
+                        background: `${color} url('${element.attr("src")}') no-repeat`
                     }),
                 0
             )

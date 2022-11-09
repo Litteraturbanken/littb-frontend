@@ -580,9 +580,6 @@ export default [
             s.authorById = authorById
         })
 
-        s.size = $location.search().size || 3
-        c.log("s.size", s.size)
-
         const recalcCoors = function (val) {
             if (!s.x) {
                 return
@@ -921,7 +918,7 @@ export default [
             console.log("update", route)
             let params = route.params
             let nextPath = `/författare/${params.author}/titlar/${params.title}/sida/${params.pagename}/:mediatype`
-            if (params.title != s.title) {
+            if (params.title != s.title || params.mediatype != s.mediatype) {
                 $route.reload()
             } else {
                 if (s.isEditor) {

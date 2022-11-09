@@ -52,7 +52,12 @@
 
 
         <div class="col_right">
-            <img ng-show="workinfo.lbworkid" ng-src="{{getSourceImage()}}" ng-click="showLargeImage($event)" onerror="this.style.display = 'none';" >
+            <img class="border border-gray-200" 
+                ng-show="workinfo.lbworkid" 
+                ng-srcset="{{getSourceImage()}}" 
+                ng-click="showLargeImage($event)" 
+                width="200"
+                onerror="this.style.display = 'none';" >
         </div>
     </div>
     
