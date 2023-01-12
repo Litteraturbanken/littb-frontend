@@ -390,9 +390,9 @@ window.littb = angular
                     return "/#external"
                 }
             })
-            .when(["/litteraturkartan/"], {
+            .when(["/litteraturkartan/", "/litteraturkartan/:subadress*"], {
                 redirectTo: $routeParams => {
-                    window.location.pathname = "/litteraturkartan/"
+                    window.location.pathname = "/litteraturkartan/" + ($routeParams.subadress || "")
                     return "/#external"
                 }
             })
