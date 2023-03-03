@@ -207,19 +207,13 @@ export default [
                         break
                     case 126: // f15
                     case 68: // d
-                        if (s.isEditor) {
-                            let ix = s.pageix - 10
-                            s.pageix = ix
-                            s.pageToLoad = ix
-                        }
+                        s.pageix = s.pageix - 10
+                        s.pageToLoad = s.pageix
                         break
                     case 127: // f16
                     case 77: // m
-                        if (s.isEditor) {
-                            let ix = s.pageix + 10
-                            s.pageix = ix
-                            s.pageToLoad = ix
-                        }
+                        s.pageix = s.pageix + 10
+                        s.pageToLoad = s.pageix
                         break
                 }
             })
@@ -948,10 +942,6 @@ export default [
 
                     s.error = false
 
-                    if (!s.isEditor && !isDev) {
-                        backend.logPage(s.pageix, s.workinfo.lbworkid, s.mediatype)
-                    }
-
                     if ($location.search().sok) {
                         s.$broadcast("popper.open.searchPopup")
                     }
@@ -969,8 +959,10 @@ export default [
                         promise = fetchPage(s.pageix)
                     }
 
+                    if (!s.isEditor && !isDev) {
+                        backend.logPage(s.pageix, s.workinfo.lbworkid, s.mediatype)
+                    }
                     promise.then(function (html) {
-                        c.log("onFirstLoad")
                         s.first_load = true
                         s.loading = false
                         return onFirstLoad()

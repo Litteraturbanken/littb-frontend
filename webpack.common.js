@@ -181,6 +181,10 @@ module.exports = {
                 to: "assets/img/favicons"
             },
             {
+                from: "./app/img/favicons/favicon.ico",
+                to: "."
+            },
+            {
                 from: "./app/img/lb_monogram_white_white.svg",
                 to: "assets/img/"
             },

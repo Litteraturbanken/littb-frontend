@@ -76,7 +76,7 @@ littb.controller(
 
         let filterDefaults = {
             "authors.gender": null,
-            authorkeyword: [],
+            "authorkeyword>authorid": [],
             keywords: [],
             languages: [],
             "authors>authorid": [],
@@ -96,7 +96,7 @@ littb.controller(
             if (s.query) s.onSearchSubmit(s.query)
         }
 
-        const listKeys = _.pick($location.search(), "keywords", "languages", "authorkeyword")
+        const listKeys = _.pick($location.search(), "keywords", "languages")
         _.extend(
             s.filters,
             _.mapValues(listKeys, val => val.split(","))
@@ -104,6 +104,9 @@ littb.controller(
         s.filters = _.omitBy(s.filters, _.isNil)
         if ($location.search().forfattare) {
             s.filters["authors>authorid"] = $location.search().forfattare.split(",")
+        }
+        if ($location.search().authorkeyword) {
+            s.filters["authorkeyword>authorid"] = $location.search().authorkeyword.split(",")
         }
         if ($location.search().titlar) {
             s.selectedTitles = $location.search().titlar.split(",")
@@ -198,8 +201,10 @@ littb.controller(
             if (s.selected_title && s.selected_title.lbworkid) workid = s.selected_title.lbworkid
             $location.search("titel", workid)
         }
-        s.resetView = () => {
-            $location.search({})
+        s.resetView = event => {
+            event.preventDefault()
+            event.stopPropagation()
+            $location.search("")
             $timeout(() => window.location.reload(), 0)
         }
         s.isPristine = () => {
@@ -229,7 +234,9 @@ littb.controller(
         s.onAboutAuthorChange = _.once(function ($event) {
             console.log("onAboutAuthorChange", s.filters.authorkeyword)
             if ($location.search().authorkeyword) {
-                s.filters.authorkeyword = ($location.search().authorkeyword || "").split(",")
+                s.filters["authorkeyword>authorid"] = (
+                    $location.search().authorkeyword || ""
+                ).split(",")
             }
             console.log("aboutDef.resolve()")
             aboutDef.resolve()
@@ -330,7 +337,7 @@ littb.controller(
                 },
                 {
                     key: "authorkeyword",
-                    expr: "filters.authorkeyword",
+                    expr: "filters['authorkeyword>authorid']",
                     val_in: listValIn,
                     val_out: listValOut
                     // post_change: refreshTitles

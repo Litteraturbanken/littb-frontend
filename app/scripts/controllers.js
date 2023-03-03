@@ -152,6 +152,10 @@ littb.controller("contactFormCtrl", function ($scope, backend, $timeout, $locati
         $timeout(function () {
             s.showContact = false
             s.showNewsletter = false
+
+            s.name = null
+            s.email = null
+            s.message = null
         }, 4000)
 
     const err = function () {

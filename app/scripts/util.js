@@ -150,6 +150,7 @@ littb.factory("util", function util($location, $filter) {
             return output
         }),
         getKeywordTextfilter(filterObj) {
+            console.log("🚀 ~ file: util.js:153 ~ filterObj", filterObj)
             // sample
             // {
             //     gender: "main_author.gender:female",
@@ -188,9 +189,8 @@ littb.factory("util", function util($location, $filter) {
                 rest["sort_date_imprint.date:range"]?.length &&
                 !rest["sort_date_imprint.date:range"].some(Number.isNaN)
             ) {
-                rest["sort_date_imprint.date:range"] = rest["sort_date_imprint.date:range"].join(
-                    ","
-                )
+                rest["sort_date_imprint.date:range"] =
+                    rest["sort_date_imprint.date:range"].join(",")
             } else {
                 delete rest["sort_date_imprint.date:range"]
             }

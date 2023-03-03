@@ -8,11 +8,11 @@
 
     <form class="submit_form" ng-submit="onSearchSubmit(query)">
         <div class="top_row -mt-2 flex max-w-full ">
-            <input class="query py-1 mt-2" ng-model="query" autofocus type="text" focusable>
+            <input class="query py-1 mt-2" ng-model="query" autofocus type="search" focusable >
             <i ng-show="searching" class="spinner fa fa-spinner fa-pulse mt-2"></i>
             <button ng-hide="searching" class="submit mt-2 mr-2 bg-white bg-opacity-75 border border-gray-500 px-3 uppercase sc">Sök</button>
 
-            <button class="reset sc mt-2 uppercase border border-gray-500 bg-white bg-opacity-25 px-4 py-2 hover:bg-white ng-fade transition duration-200 focus:outline-none" ng-click="resetView()" ng-show="!isPristine()">
+            <button class="reset sc mt-2 uppercase border border-gray-500 bg-white bg-opacity-25 px-4 py-2 hover:bg-white ng-fade transition duration-200 focus:outline-none" ng-click="resetView($event)" ng-show="!isPristine()">
                 Återställ
             </button>
             
@@ -56,7 +56,7 @@
                     <div class="about_select_container">
                         <select multiple class="filter_select about_select"
                                 ui-select2="authorSelectSetup"
-                                ng-model="filters.authorkeyword" 
+                                ng-model="filters['authorkeyword>authorid']" 
                                 data-placeholder="Om ett författarskap" 
                                 ng-change="onAboutAuthorChange($event)">
                         <option value=""></option>

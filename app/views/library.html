@@ -3,6 +3,14 @@
 <!--  <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span> -->
 <!-- <img bkg-img src="../img/library.jpg"> -->
 <img bkg-img preload="libraryBkg">
+<script type="text/ng-template" id="libraryCustomTemplate.html">
+    <a uib-tooltip="{{match.label}}" tooltip-popup-delay="500" tooltip-placement="right">
+        <span class="type_label">
+        {{match.model.typeLabel}}<span ng-if="match.model.mediatypeLabel">,</span> {{match.model.mediatypeLabel}}
+        </span>
+        <span >{{match.label}}</span>
+    </a>
+</script>
 <div ng-class="{searching:searching, dl_mode : dl_mode}">
     <div id="controls">
         <form class="sm:p-5 p-2 sm:border border-gray-900 w-full sm:max-w-5xl" ng-submit="refreshData()">
@@ -11,9 +19,18 @@
                 <div class="main_input flex flex-wrap -mt-4">
                     <input class="filter_input mt-4 mr-4 flex-grow" autofocus focusable
                         ng-model-options='{debounce : {default : 300, blur : 0}, updateOn: "default blur"}' 
-                        type="text" 
+                        type="search" 
                         ng-change="refreshData()" ng-model="filter" 
-                        placeholder="Skriv författarnamn eller titel">
+                        placeholder="Skriv författarnamn eller titel"
+                        ng-model="completeObj"
+                        autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+                    >
+                    <!-- uib-typeahead="item as item.label for item in autocomplete($viewValue)"
+                    typeahead-trigger
+                    focusable
+                    typeahead-wait-ms="200"
+                    typeahead-on-select="onAutocompleteSelect(completeObj)"
+                    typeahead-template-url="libraryCustomTemplate.html" -->
                     <button class="submit btn mt-4 mr-2">Sök</button>
                     <button class="reset mt-4 uppercase border border-gray-900 text-sm text-gray-900 px-4 py-2 hover:bg-white ng-fade transition duration-200 focus:outline-none" ng-click="resetView()" ng-show="!isPristine()">
                         Återställ

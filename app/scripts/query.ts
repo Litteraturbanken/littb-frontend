@@ -1,6 +1,5 @@
 import bodybuilder from "bodybuilder"
 
-let builder = bodybuilder()
 interface FilterObj {
     gender?: string
     "authorkeyword>authorid"?: string[]
@@ -71,7 +70,6 @@ let getQuery = (key, val) => {
             break
         case "languages":
         case "keywords":
-            console.log("val", val)
             console.log("makeFilterObj(val)", makeFilterObj(val))
             let obj = makeFilterObj(val)
             for (let [filterkey, filterval] of Object.entries(makeFilterObj(val))) {
@@ -80,7 +78,9 @@ let getQuery = (key, val) => {
             break
         case "mediatypes":
             let { has_epub, mediatype } = makeFilterObj(val)
-            query.orFilter("terms", { mediatype })
+            if (mediatype) {
+                query.orFilter("terms", { mediatype })
+            }
             if (has_epub) query.orFilter("term", "has_epub", true).filterMinimumShouldMatch(1)
             break
         // case "authorkeyword":

@@ -112,7 +112,7 @@
                                     <span ng-show="!last">&nbsp; </span>
                                 </span>
                                 <span ng-repeat="mediatype in work | downloadMediatypes track by $index ">
-                                    <a ng-href="{{mediatype.url}}" target="_self">{{mediatype.label}}</a>
+                                    <a ng-href="{{mediatype.url}}" target="_self" download>{{mediatype.label}}</a>
                                     <span ng-show="!last">&nbsp; </span>
                                 </span>
                             </td>

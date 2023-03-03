@@ -45,7 +45,7 @@ littb.component("keywordSelect", {
         <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
         <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
         <option value='keyword:Humor'>Humor</option>
-        <option value='source:presentations'>Kringtexter</option>
+        <option value='texttype:kringtext OR _index:littb-red_presentations'>Kringtexter</option>
         <option value='source:skolan'>Litteraturbankens skola</option>
         <option value='source:litteraturkartan'>Litteraturkartan</option>
         <option value='source:ljudochbild'>Ljud & Bild</option>
@@ -173,6 +173,24 @@ littb.controller(
             // s.hide1800 = !s.hide1800
             s.titleModel.latest_currentpage = 1
             s.fetchRecent(false)
+        }
+
+        s.onAutocompleteSelect = item => {
+            console.log("🚀 ~ file: library_controller.js:179 ~ item", item)
+            if (item.url) {
+                $location.url(val.url)
+            }
+        }
+        s.autocomplete = val => {
+            if (val.match(/^lb.*/)) {
+                return [
+                    {
+                        label: val,
+                        url: `/editor/${val}/ix/0/f`,
+                        typeLabel: "[Red.] Gå till faksimileditorn"
+                    }
+                ]
+            }
         }
 
         s.filters = {
@@ -737,7 +755,6 @@ littb.controller(
             let { filter_or, filter_and } = util.getKeywordTextfilter(filters)
 
             let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
-            console.log("size", size)
             if (countOnly) {
                 size = { from: 0, to: 0 }
             }
@@ -769,68 +786,6 @@ littb.controller(
                 s.setAuthorData()
             })
         }
-
-        // var fetchAudio = () => {
-        //     let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
-
-        //     let def = backend
-        //         .getTitles(
-        //             "audio",
-        //             {
-        //                 sort_field: s.sort.audio,
-        //                 filter_string: s.rowfilter,
-        //                 filter_or,
-        //                 filter_and,
-        //                 author_aggs: false,
-        //                 partial_string: true,
-        //                 to: 10000,
-        //                 include:
-        //                     "authors.authorid,authors.surname,title,file,readers.authorid,readers.surname"
-        //             },
-        //             true
-        //         )
-        //         .then(({ titles, hits }) => {
-        //             s.audio_list = titles
-        //             console.log("titles", titles)
-        //             // s.parts_hits = hits
-        //             return _.flatten(
-        //                 _.map(s.audio_list, item => {
-        //                     return _.map([...item.authors, ...item.readers], "authorid")
-        //                 })
-        //             )
-        //         })
-        //     $q.all([def, authors]).then(([authorids]) => {
-        //         s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
-        //         s.setAuthorData()
-        //     })
-
-        // let def = backend
-        //     .getAudioList({
-        //         string_filter: s.rowfilter,
-        //         sort_field: s.sort["audio"],
-        //         partial_string: true,
-        //     })
-        //     .then(titleArray => {
-        //         if ($location.search()["kön"]) {
-        //             s.audio_list = _.filter(
-        //                 titleArray,
-        //                 audio => audio.authors[0].gender == $location.search()["kön"]
-        //             )
-        //         } else {
-        //             s.audio_list = titleArray
-        //         }
-
-        //         return _.flatten(
-        //             _.map(s.audio_list, item => {
-        //                 return _.map([...item.authors, ...item.readers], "authorid")
-        //             })
-        //         )
-        //     })
-        // $q.all([def, authors]).then(([authorids]) => {
-        //     s.currentAudioAuthors = authorids.map(authorid => s.authorsById[authorid])
-        //     s.setAuthorData()
-        // })
-        // }
 
         s.setFilter = f => {
             s.filter = f
@@ -1243,13 +1198,6 @@ littb.controller(
                 anonymize_ip: true
             })
             backend.downloadFiles(exports)
-        }
-
-        s.autocomplete = val => {
-            // return backend.autocomplete(val).then(function(data) {
-            //     console.log("autocomplete", data, val)
-            //     return data
-            // })
         }
 
         // if $location.search().keyword
