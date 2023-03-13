@@ -72,7 +72,8 @@
                             <a ng-href="/författare/{{::row.authors[0].authorid}}/titlar/{{::row.work_titleid || row.titleid}}/etext/?om-boken" >{{::row.shorttitle || row.title}}</a>
                         </td>
                         <td ng-click="log(row)" ng-touch="log(row)">
-                            <a ng-href="/txt/epub/{{getFilename(row)}}.epub" target="_self" download>Hämta</a>
+                            <a ng-href="{{host}}/txt/epub/{{getFilename(row)}}.epub" target="_self" download>Hämta</a>
+                            <!-- <a ng-href="http://localhost:5001/epub/{{getFilename(row)}}.epub" target="_self" download>Hämta</a> -->
                         </td>
                     </tr></tbody>
             </table>

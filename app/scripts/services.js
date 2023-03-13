@@ -8,8 +8,8 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
-let STRIX_URL = "https://litteraturbanken.se/api"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+// let STRIX_URL = "https://litteraturbanken.se/api"
 // let STRIX_URL = "/api"
 
 if (
@@ -21,6 +21,7 @@ if (
     STRIX_URL = "/api"
 }
 
+window.STRIX_URL = STRIX_URL
 var relevanceCanceller
 
 littb.factory(
@@ -214,7 +215,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
         },
 
         getEpub(size, filterTxt, authorid, sort_field) {
-            let query = bodybuilder().filter("term", "has_epub", true)
+            let query = bodybuilder().filter("term", "has_epub", true).filter("term", "show", true)
 
             if (authorid)
                 query.query("nested", "path", "authors", q =>

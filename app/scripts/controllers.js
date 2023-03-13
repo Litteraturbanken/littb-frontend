@@ -726,6 +726,8 @@ littb.controller(
         s.searching = true
         s.authorFilter = $location.search().authorFilter
 
+        s.host = new URL(location.href).origin
+
         $timeout(() => s.$broadcast("focus"))
 
         if ($location.search().qr) {
