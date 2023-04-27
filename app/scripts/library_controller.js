@@ -49,10 +49,11 @@ littb.component("keywordSelect", {
         <option value='source:skolan'>Litteraturbankens skola</option>
         <option value='source:litteraturkartan'>Litteraturkartan</option>
         <option value='source:ljudochbild'>Ljud & Bild</option>
-        <option value='keyword:1800'>Nya vägar till 1800-talet</option>
+        <option value='keyword:1800'>Nya vägar till det förflutna</option>
         <option value="texttype:reseskildring">Reseskildringar</option>
         <option value="texttype:kistebrev">Kistebrev</option>
         <option value='keyword:Rösträtt'>Rösträtt</option>
+        <option value='keyword:Sapmi'>Sápmi</option>
         <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
         <option value='keyword:SLS-FI'>SLS Finland</option>
         <option value='provenance.library:SVELITT'>SLS Sverige</option>

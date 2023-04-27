@@ -972,9 +972,15 @@ export default [
                     if (s.mediatype === "faksimil" && s.workinfo.searchable) {
                         return backend
                             .fetchOverlayData(s.workinfo.lbworkid, s.pageix)
-                            .then(function ([overlayHtml, overlayWidth]) {
+                            .then(function ([overlayHtml, overlayWidth, overlayHeight]) {
                                 // s.overlayFactors = overlayFactors
+                                console.log(
+                                    "🚀 ~ file: reading_controller.js:1005 ~ imageWidth, overlayWidth:",
+                                    s.imageWidth,
+                                    overlayWidth
+                                )
                                 s.overlayWidth = overlayWidth
+                                s.overlayHeight = overlayHeight
                                 s.overlayHtml = overlayHtml
                             })
                     }
@@ -1001,9 +1007,10 @@ export default [
         if (s.mediatype === "faksimil" && s.isEditor) {
             backend
                 .fetchOverlayData(s.editorLbWorkId, s.pageix)
-                .then(function ([overlayHtml, overlayWidth]) {
+                .then(function ([overlayHtml, overlayWidth, overlayHeight]) {
                     // s.overlayFactors = overlayFactors
                     s.overlayWidth = overlayWidth
+                    s.overlayHeight = overlayHeight
                     s.overlayHtml = overlayHtml
                 })
         }

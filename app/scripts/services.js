@@ -8,9 +8,9 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-// let STRIX_URL = "/api"
+let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -989,7 +989,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             return this.getHtmlFile(url).then(function (response) {
                 const html = response.data.querySelector("body > div")
                 // c.log $(html)
-                const overlayWidth = Number($(html).data("size").split("x")[0])
+                let [overlayWidth, overlayHeight] = $(html).data("size").split("x").map(Number)
                 if (window.devicePixelRatio == 2) {
                     //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
                     //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
@@ -1000,9 +1000,12 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                 // const x_factor = 0.97
                 // const overlayFactors = _.map(size_vals, val => (val / max) * x_factor)
 
+                let factor = 1
+                // let factor = 1100 / overlayHeight
+
                 const xmlSerializer = new XMLSerializer()
                 const result = xmlSerializer.serializeToString(html)
-                return [result, overlayWidth]
+                return [result, overlayWidth, overlayHeight]
             })
         },
 

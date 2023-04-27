@@ -893,7 +893,7 @@ littb.controller("aboutCtrl", function ($scope, $http, util, $location, $routePa
         ({
             ide: "/red/om/ide/omlitteraturbanken.html",
             hjalp: require("../views/help.html"),
-            vision: "/red/om/visioner/visioner.html",
+            mål: "/red/om/visioner/visioner.html",
             kontakt: require("../views/contactForm.html"),
             statistik: require("../views/stats.html"),
             rattigheter: "/red/om/rattigheter/rattigheter.html",
