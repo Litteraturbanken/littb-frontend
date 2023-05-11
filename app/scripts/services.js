@@ -259,7 +259,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                     search: JSON.stringify({
                         query: {
                             query_string: {
-                                query: "lb_author.authorid:" + authorid,
+                                query: "status:published AND lb_author.authorid:" + authorid,
                                 fields: ["lb_author.authorid"]
                             }
                         }
