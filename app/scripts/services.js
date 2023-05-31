@@ -988,7 +988,11 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             const url = `txt/${lbworkid}/ocr_${filename}.html`
             return this.getHtmlFile(url).then(function (response) {
                 const html = response.data.querySelector("body > div")
-                // c.log $(html)
+                if (navigator.userAgent.toLowerCase().indexOf("chrome") > -1) {
+                    for (let node of html.querySelectorAll(".w > span")) {
+                        node.innerHTML = node.innerHTML.replace(/ /g, "&nbsp;")
+                    }
+                }
                 let [overlayWidth, overlayHeight] = $(html).data("size").split("x").map(Number)
                 if (window.devicePixelRatio == 2) {
                     //     SIZE_VALS = [625, 750, 1025, 1500, 2050]
