@@ -235,7 +235,7 @@ export default [
         }
 
         s.getStep = () => {
-            if (!s.workinfo) return
+            if (!s.workinfo?.stepmap) return
             return s.workinfo.stepmap[s.pageix] || s.workinfo.pagestep || 1
         }
 
@@ -487,7 +487,7 @@ export default [
         }
 
         s.getNextPartUrl = function () {
-            if (!s.workinfo) {
+            if (!s.workinfo?.partStartArray?.length) {
                 return
             }
 
@@ -512,10 +512,7 @@ export default [
         }
 
         s.getPrevPartUrl = function () {
-            if (!s.workinfo) {
-                return
-            }
-            if (!s.workinfo.partStartArray.length) {
+            if (!s.workinfo?.partStartArray?.length) {
                 return
             }
 
@@ -861,7 +858,7 @@ export default [
         }
 
         s.getWidthConstraint = () => {
-            if (!s.workinfo) return
+            if (!s.workinfo?.width) return
             // console.log("getSrcsetSize()", getSrcsetSize(), s.size)
             // let maybeSize = getSrcsetSize()
             // if (typeof maybeSize != "undefined") {
@@ -926,6 +923,12 @@ export default [
                         page_path: nextPath,
                         anonymize_ip: true
                     })
+
+                    _paq.push(["setCustomUrl", decodeURI(window.location.pathname)])
+                    _paq.push([
+                        "setDocumentTitle",
+                        params.author + " – " + params.title + " s. " + params.pagename
+                    ])
                     window._paq.push(["trackPageView"])
                 }
             }
@@ -993,6 +996,9 @@ export default [
                         fetchPage(Number(val)).then(function () {})
                         s.loading = false
                         s.first_load = true
+                        backend.getPageCount($routeParams.lbid, s.mediatype).then(function (count) {
+                            s.workinfo = { page_count: count }
+                        })
                     } else {
                         s.error = true
                         if (!isDev) {

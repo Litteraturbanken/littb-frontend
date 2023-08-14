@@ -45,7 +45,7 @@ function onRouteReject() {
         page_path: window.location.pathname,
         anonymize_ip: true
     })
-    window._paq.push(["trackPageView"])
+    _paq.push(["trackPageView"])
 }
 
 _.templateSettings.interpolate = /{{([\s\S]+?)}}/g
@@ -736,7 +736,10 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
                 page_path: window.location.pathname,
                 anonymize_ip: true
             })
-            window._paq.push(["trackPageView"])
+            // console.log("🚀 ~ file: app.js:734 ~ newRoute:", newRoute.$$route.title)
+            _paq.push(["setCustomUrl", decodeURI(window.location.pathname)])
+            _paq.push(["setDocumentTitle", newRoute.$$route.title])
+            _paq.push(["trackPageView"])
         }
 
         let className

@@ -1040,6 +1040,12 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
             }).then(response => response.data.data[0].titleid)
         },
 
+        getPageCount(lbworkid, mediatype) {
+            return $http({
+                url: `${STRIX_URL}/count_pages/${lbworkid}/${mediatype}`
+            }).then(response => response.data.count)
+        },
+
         autocomplete(filterstr) {
             return $http({
                 url: `${STRIX_URL}/autocomplete/${filterstr}`

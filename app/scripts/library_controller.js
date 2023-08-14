@@ -30,8 +30,8 @@ littb.component("keywordSelect", {
             ng-model="$ctrl.model"
              data-placeholder="{{$ctrl.label}}">
         <option value=""></option>
-        <option value="texttype:brev">Brev</option>
-        <option value="texttype:drama" data-disabled="true">Dramatik</option>
+        <option value="texttype:brev,brevsamling">Brev</option>
+        <option value="texttype:drama,dramasamling" data-disabled="true">Dramatik</option>
         <option value="texttype:novellsamling;novell">Noveller</option>
         <option value="texttype:diktsamling;dikt">Poesi</option>
         <option value="texttype:roman">Romaner</option>

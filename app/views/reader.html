@@ -104,7 +104,7 @@
             </a>
             <br>
             <form class="goto" ng-submit="gotopage(gotoInput)" >
-                <a ng-click="onGotoClick()">Gå till sida . . . <span class="pages">{{pagename}} av {{endpage}}</span></a> <input focusable type="text" ng-show="showGotoInput" ng-model="gotoInput"> <i ng-show="showGotoInput" class="fa fa-angle-double-right"></i>
+                <a ng-click="onGotoClick()">Gå till sida . . . <span class="pages">{{pagename}} av {{endpage || workinfo.page_count}}</span></a> <input focusable type="text" ng-show="showGotoInput" ng-model="gotoInput"> <i ng-show="showGotoInput" class="fa fa-angle-double-right"></i>
             </form>
             
 
@@ -179,7 +179,7 @@
                 <li class="-ml-px"><a class="block w-3/6 -ml-3" ng-href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"><img ng-if="workinfo.keyword.includes('1800')" class="object-contain" ng-src="{{nyaVagarUrl}}" alt="Logotyp för Nya vägar"></a></li>
                 <!-- <li>Dela boken</li> -->
             </ul>
-            <a ng-href="{{workinfo.mediatypes[0].url}}" ng-if="$routeParams.ix && workinfo" class="submit btn">Stäng editor</a>
+            <a ng-href="{{workinfo.mediatypes[0].url}}" ng-if="$routeParams.ix && workinfo" class="submit btn mt-4 text-xs">Stäng editor</a>
         </div>
 
         

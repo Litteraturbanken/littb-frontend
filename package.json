@@ -5,9 +5,9 @@
     "author": "Johan Roxendal",
     "scripts": {
         "test": "protractor test/e2e/conf_e2e.js",
-        "build": "NODE_ENV=production webpack --config webpack.prod.js",
+        "build": "NODE_OPTIONS='--openssl-legacy-provider' NODE_ENV=production webpack --config webpack.prod.js",
         "protractor": "wait-on http://localhost:9000 && protractor test/e2e/conf_e2e.js",
-        "dev": "webpack-dev-server --config webpack.dev.js --host 0.0.0.0 --disable-host-check --hot",
+        "dev": "NODE_OPTIONS='--openssl-legacy-provider' webpack-dev-server --config webpack.dev.js --host 0.0.0.0 --disable-host-check --hot",
         "serve-dist": "NODE_ENV=production webpack-dev-server  --config webpack.prod.js --env prod --compress  --host 0.0.0.0 --disable-host-check"
     },
     "dependencies": {
