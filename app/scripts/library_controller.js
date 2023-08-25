@@ -30,8 +30,8 @@ littb.component("keywordSelect", {
             ng-model="$ctrl.model"
              data-placeholder="{{$ctrl.label}}">
         <option value=""></option>
-        <option value="texttype:brev,brevsamling">Brev</option>
-        <option value="texttype:drama,dramasamling" data-disabled="true">Dramatik</option>
+        <option value="texttype:brev;brevsamling">Brev</option>
+        <option value="texttype:drama;dramasamling" data-disabled="true">Dramatik</option>
         <option value="texttype:novellsamling;novell">Noveller</option>
         <option value="texttype:diktsamling;dikt">Poesi</option>
         <option value="texttype:roman">Romaner</option>
@@ -45,6 +45,7 @@ littb.component("keywordSelect", {
         <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
         <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
         <option value='keyword:Humor'>Humor</option>
+        <option value='keyword:LB-antologi'>Litteraturbankens antologier</option>
         <option value='texttype:kringtext OR _index:littb-red_presentations'>Kringtexter</option>
         <option value='source:skolan'>Litteraturbankens skola</option>
         <option value='source:litteraturkartan'>Litteraturkartan</option>
@@ -689,13 +690,14 @@ littb.controller(
             if (countOnly) {
                 size = { from: 0, to: 0 }
             }
-
+            let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
             try {
                 let { titles, hits, suggest } = await backend.relevanceSearch(
                     "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress",
                     // "etext,faksimil,pdf,etext-part,faksimil-part,author",
                     {
-                        filter_string: expandQuery(s.rowfilter),
+                        filter_string: s.rowfilter,
+                        keyword_aux: [...s.keywords_aux, ...maybeHide1800],
                         filters: filters,
                         // filter_or,
                         // filter_and,
@@ -735,14 +737,6 @@ littb.controller(
             // })
         }
 
-        function expandQuery(query) {
-            // let keywords_aux = $location.search().keywords_aux?.split(",")
-            if (s.keywords_aux?.length) {
-                return `(${s.keywords_aux.join(" AND ")}) ${query}`
-            }
-            return query
-        }
-
         s.fetchParts = countOnly => {
             // unless s.filter then return
             s.partSearching = true
@@ -759,11 +753,12 @@ littb.controller(
             if (countOnly) {
                 size = { from: 0, to: 0 }
             }
-
+            let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
             let def = backend
                 .getTitles("etext-part,faksimil-part", {
                     sort_field: s.sort.parts,
-                    filter_string: expandQuery(s.rowfilter),
+                    filter_string: s.rowfilter,
+                    keyword_aux: [...s.keywords_aux, ...maybeHide1800],
                     filter_or,
                     filter_and,
                     author_aggs: true,
@@ -836,10 +831,7 @@ littb.controller(
                 delete filters["sort_date_imprint.date:range"]
             }
             let { filter_or, filter_and } = util.getKeywordTextfilter(filters)
-            let filter_string = expandQuery(s.rowfilter)
-            if ($location.search().hide1800) {
-                filter_string = "-keyword:1800 " + filter_string
-            }
+
             console.log("filter_and", filter_and)
             // if (!_.toPairs(text_filter).length) {
             //     text_filter = null
@@ -851,9 +843,11 @@ littb.controller(
             if (epubOnly) {
                 filter_and.has_epub = true
             }
+            let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
             const def = backend.getTitles("etext,faksimil,pdf", {
                 sort_field: s.sort[listID],
-                filter_string,
+                filter_string: s.rowfilter,
+                keyword_aux: [...s.keywords_aux, ...maybeHide1800],
                 include:
                     "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
@@ -867,14 +861,19 @@ littb.controller(
             return $q
                 .all([def, authors])
                 .then(([{ titles, author_aggs, suggest, hits, distinct_hits }]) => {
-                    console.log("titleArray after all", titles)
-                    if (!titles.length) {
-                        window.gtag("event", "search-no-hits", {
-                            event_category: "library",
-                            event_label: s.filter,
-                            anonymize_ip: true
-                        })
-                    }
+                    console.log(
+                        "🚀 ~ file: library_controller.js:862 ~ hits, distinct_hits:",
+                        listID,
+                        hits,
+                        distinct_hits
+                    )
+                    // if (!titles.length) {
+                    //     window.gtag("event", "search-no-hits", {
+                    //         event_category: "library",
+                    //         event_label: s.filter,
+                    //         anonymize_ip: true
+                    //     })
+                    // }
                     s.titleByPath = _.groupBy(titles, item => item.titlepath)
 
                     if (isSearchRecent) {

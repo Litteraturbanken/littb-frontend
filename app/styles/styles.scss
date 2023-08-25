@@ -4486,7 +4486,13 @@ grundform-clean {
     }
 }
 
-
+.license img {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+.license p {
+    font-size: 1rem;
+}
 
 @import "modals";
 @import "mobile";

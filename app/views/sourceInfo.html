@@ -41,12 +41,30 @@
                 
 
             </div>
-            <div class="mediatypes sc"
-                ng-class="{larger : workinfo.workintro}"
-                ng-show="workinfo.librisid" 
-                >Verket i <a ng-href="{{'https://libris.kb.se/bib/' + workinfo.librisid}}" target="_blank">Libris</a></div>
 
+            
+            <div class="mediatypes sc"
+            ng-class="{larger : workinfo.workintro}"
+            ng-show="workinfo.librisid" 
+            >Verket i <a ng-href="{{'https://libris.kb.se/bib/' + workinfo.librisid}}" target="_blank">Libris</a></div>
+            
             <div class="dw_logo" ng-show="workinfo.dramawebben && workinfo.dramawebben.workintro"><a href="/dramawebben"><img class="logo" src="../img/dramawebben_svart.svg" alt="Dramawebben"></a></div>
+            
+            <div ng-if="workinfo.urn">
+                <details class="urn mt-2 text-sm cursor-pointer">
+                    <summary>Hänvisa till detta verk</summary>
+
+                    <div class="cursor-auto ml-4 border-l pl-4 mt-2">
+                        <p>URN är en permanent länk till ett digitalt objekt. Denna {{mediatype}}s URN är:  <code class="text-xs">https://urn.kb.se/resolve?urn={{workinfo.urn}}</code>
+                        <p class="mt-2">
+                            Använd denna länk när du hänvisar till verket
+                            så hittar du till fram även om det skulle flyttas i framtiden.
+                        </p>
+                    </p>
+                    <p class="mt-2"><a href="https://www.kb.se/isbn-och-utgivning/urnnbn.html" target="_blank">Läs mer om URN (extern länk).</a></p>
+                    </div>
+                </details>
+            </div>
         </div>
 
 
@@ -94,7 +112,7 @@
     </div>
     
     <div class="provenance" ng-repeat="prov in provenanceData">
-        <a ng-href="{{prov.link}}" ng-if="prov.image"><img class="logo" width="75" height="75" ng-src="red/bilder/gemensamt/{{prov.image}}"></a>
+        <a class="block mb-4" ng-href="{{prov.link}}" ng-if="prov.image"><img class="logo" width="75" height="75" ng-src="red/bilder/gemensamt/{{prov.image}}"></a>
         <p>{{prov.text}}</p>
     </div>
 
@@ -105,7 +123,7 @@
 
     <!-- onerror="this.style.visibility = 'hidden'" -->
     
-    <div class="license" ng-class="{drama: dramaweb}" ng-bind-html="licenseData | correctLink | trust"></div>
+    <div class="license mt-4" ng-if="licenseData" ng-class="{drama: dramaweb}" ng-bind-html="licenseData | correctLink | trust"></div>
     
     <div class="errata" ng-show="mediatype == 'etext'">
         <div class="header" ng-show="workinfo.errata.length">I {{mediatype}}en har följande ändringar gjorts mot originalet:</div>

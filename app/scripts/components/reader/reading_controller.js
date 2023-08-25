@@ -215,6 +215,11 @@ export default [
                         s.pageix = s.pageix + 10
                         s.pageToLoad = s.pageix
                         break
+                    case 128: // f17
+                    case 73: // i
+                        navigator.clipboard.writeText(s.editorLbWorkId || s.workinfo.lbworkid)
+                        s.$emit("notify", "Kopierade lbworkid")
+                        break
                 }
             })
         }

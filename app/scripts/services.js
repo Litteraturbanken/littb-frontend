@@ -66,6 +66,22 @@ littb.factory(
 
 // writeDownloadableUrl = (toWorkObj) ->
 
+function expandQuery(query, keyword_aux) {
+    // let keywords_aux = $location.search().keywords_aux?.split(",")
+    let aux = []
+    var output = query
+    if (keyword_aux.length) {
+        for (let item of keyword_aux) {
+            let [key, val] = item.split(":")
+            let vals = val.split(";")
+            aux.push(`${key}:(${vals.join(" OR ")})`)
+        }
+        output = `(${aux.join(" AND ")}) ${query}`
+    }
+
+    return output
+}
+
 const expandMediatypes = function (works, mainMediatype) {
     const order = ["etext", "faksimil", "epub", "pdf", "infopost"]
     const groups = _.groupBy(works, item => item.titlepath + item.lbworkid)
@@ -148,7 +164,7 @@ const expandMediatypes = function (works, mainMediatype) {
     return output
 }
 
-littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
+littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
     // $http.defaults.transformResponse = (data, headers) ->
     // localStorageCache = $angularCacheFactory "localStorageCache",
     //     storageMode: 'localStorage'
@@ -342,6 +358,9 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                     .replace(/([A-Öa-ö])[-–—]([A-Öa-ö])/g, "$1 $2")
                     .replace(/[.,!"“'”]/g, "")
             }
+
+            params.filter_string = expandQuery(params.filter_string, options.keyword_aux)
+
             return $http({
                 url: `${STRIX_URL}/list_all/${types}` + (author || ""),
                 params
@@ -368,6 +387,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce) {
                 filters,
                 val => _.isNil(val) || _.isNaN(val) || (!_.isNumber(val) && _.isEmpty(val))
             )
+            options.filter_string = expandQuery(options.filter_string, options.keyword_aux)
             const params = _.omitBy(
                 {
                     exclude:
