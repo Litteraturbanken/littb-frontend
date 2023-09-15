@@ -1114,6 +1114,9 @@ body > .header {
             display: block;
         }
     }
+    .sa-logo {
+        filter: saturate(0) brightness(var(--sa-logo-brightness, 6));
+    }
     .lb-logo {
         max-width : 94%;
         margin-top: 1rem;

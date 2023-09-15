@@ -359,7 +359,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
                     .replace(/[.,!"“'”]/g, "")
             }
 
-            params.filter_string = expandQuery(params.filter_string, options.keyword_aux)
+            params.filter_string = expandQuery(params.filter_string, options.keyword_aux || [])
 
             return $http({
                 url: `${STRIX_URL}/list_all/${types}` + (author || ""),
