@@ -142,6 +142,20 @@
         <img src="/txt/{{workinfo.lbworkid}}/cover_small.png" alt="">
     </div> -->
     <div class="clearfix"></div>
+
+    <div class="mt-4 text-sm" ng-if="similar && similar.length">
+        <hr class="mt-8 mb-4">
+        
+        <h3 class="text-lg">Liknande verk</h3>
+
+        <table >
+            <tr ng-repeat="work in similar">
+               <td class="text-right pr-4"><span class="sc text-primary">{{work.main_author.surname}}</span></td> 
+               <td><a ng-href="/forfattare/{{work.main_author.authorid}}/titlar/{{work.titleid}}/sida/{{work.startpagename}}/{{work.mediatype}}">{{work.shorttitle || work.showtitle || work.title}}</a></td> 
+            </tr>
+                 
+        </table>
+    </div>
 </div>
 
 <!-- <div toolkit>
