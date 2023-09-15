@@ -1310,9 +1310,7 @@ littb.controller(
                 s.dramaweb = new Dramaweb(s.workinfo.dramawebben)
             }
             $http
-                .get(
-                    `http://localhost:5001/get_similar/${s.workinfo.lbworkid}/${s.workinfo.mediatype}`
-                )
+                .get(`/api/get_similar/${s.workinfo.lbworkid}/${s.workinfo.mediatype}`)
                 .then(function (data) {
                     console.log("🚀 ~ file: controllers.js:1314 ~ data.data:", data.data.data)
                     s.similar = data.data.data
