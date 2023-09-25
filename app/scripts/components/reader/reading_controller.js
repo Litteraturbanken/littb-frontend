@@ -220,6 +220,12 @@ export default [
                         navigator.clipboard.writeText(s.editorLbWorkId || s.workinfo.lbworkid)
                         s.$emit("notify", "Kopierade lbworkid")
                         break
+                    case 129: // f18
+                    case 79: // o
+                        if (!$location.search().om_boken) {
+                            s.show_about = true
+                        }
+                        break
                 }
             })
         }

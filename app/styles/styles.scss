@@ -4122,7 +4122,9 @@ grundform-clean {
     // background-size: contain;
     // background-position: -100px -80px;
     
-    
+    [littb-err], [littb-err] ~ * {
+        color: white;    
+    }
 
     &.drama-dramasubpage {
         // background-image: url("../img/start_bkg_apr2018_light.jpg") !important;
