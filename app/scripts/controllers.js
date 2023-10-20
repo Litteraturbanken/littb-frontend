@@ -7,6 +7,35 @@ const c = (window.c =
     typeof console !== "undefined" && console !== null ? console : { log: _.noop })
 const littb = angular.module("littbApp")
 
+function sortObjectKeys(obj) {
+    // Separate keys into two arrays based on their type
+    let simpleKeys = []
+    let complexKeys = []
+    for (let key in obj) {
+        if (
+            typeof obj[key] === "string" ||
+            typeof obj[key] === "number" ||
+            typeof obj[key] === "boolean"
+        ) {
+            simpleKeys.push(key)
+        } else {
+            complexKeys.push(key)
+        }
+    }
+
+    // Sort each array of keys
+    simpleKeys.sort()
+    complexKeys.sort()
+
+    // Create a new object with the sorted keys
+    let sortedObj = {}
+    for (let key of simpleKeys.concat(complexKeys)) {
+        sortedObj[key] = obj[key]
+    }
+
+    return sortedObj
+}
+
 littb.filter(
     "formatAuthors",
     () =>
@@ -1094,7 +1123,10 @@ littb.controller(
                             typeLabel: "[Red.]",
                             action() {
                                 if ($("#mainview").scope) {
-                                    s.info = getInfo()
+                                    let obj = getInfo()
+                                    delete obj["filenameMap"]
+                                    delete obj["content_vector"]
+                                    s.info = JSON.stringify(sortObjectKeys(getInfo()), null, 2)
                                 }
                                 return false
                             }
@@ -1309,12 +1341,14 @@ littb.controller(
             if (s.workinfo.dramawebben) {
                 s.dramaweb = new Dramaweb(s.workinfo.dramawebben)
             }
-            $http
-                .get(`/api/get_similar/${s.workinfo.lbworkid}/${s.workinfo.mediatype}`)
-                .then(function (data) {
-                    console.log("🚀 ~ file: controllers.js:1314 ~ data.data:", data.data.data)
-                    s.similar = data.data.data
-                })
+            if (s.workinfo.content_vector) {
+                $http
+                    .get(`/api/get_similar/${s.workinfo.lbworkid}/${s.workinfo.mediatype}`)
+                    .then(function (data) {
+                        console.log("🚀 ~ file: controllers.js:1314 ~ data.data:", data.data.data)
+                        s.similar = data.data.data
+                    })
+            }
         })
         s.log = (workinfo, mediatype) => {
             backend.logDownload(

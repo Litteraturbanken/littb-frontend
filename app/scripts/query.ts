@@ -70,7 +70,6 @@ let getQuery = (key, val) => {
             break
         case "languages":
         case "keywords":
-            console.log("makeFilterObj(val)", makeFilterObj(val))
             let obj = makeFilterObj(val)
             for (let [filterkey, filterval] of Object.entries(makeFilterObj(val))) {
                 query.orQuery("terms", filterkey, filterval).queryMinimumShouldMatch(1)
@@ -156,10 +155,10 @@ export function fromFilters(filters: FilterObj) {
                     ${getQuery("languages", filters.languages)},
                 # }
                 # if(this.keywords && this.keywords.length) {
-                    ${getQuery("keywords", filters.keywords)}
+                    ${getQuery("keywords", filters.keywords)},
                 # }
                 # if(this.mediatypes && this.mediatypes.length) {
-                    ${getQuery("mediatypes", filters.mediatypes)}
+                    ${getQuery("mediatypes", filters.mediatypes)},
                 # }
             ]
             }

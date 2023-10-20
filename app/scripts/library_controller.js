@@ -671,6 +671,7 @@ littb.controller(
             }
         }
         s.fetchByRelevance = async countOnly => {
+            console.log("🚀 ~ file: library_controller.js:675 ~ fetchByRelevance:")
             s.relevanceSearching = true
             s.relevanceError = false
 

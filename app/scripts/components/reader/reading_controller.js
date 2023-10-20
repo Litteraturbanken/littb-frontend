@@ -175,16 +175,18 @@ export default [
         }
 
         const onKeyDown = function (event) {
-            if (
-                event.metaKey ||
-                event.ctrlKey ||
-                event.altKey ||
-                $("body.modal-open").length ||
-                $("input:focus").length
-            ) {
+            let abort = event.metaKey || event.ctrlKey || event.altKey || $("input:focus").length
+
+            let isToggleOpen = [79, 129].includes(event.which)
+            console.log("🚀 ~ file: reading_controller.js:181 ~ isToggleOpen:", isToggleOpen)
+            if (!isToggleOpen) {
+                abort = abort || $("body.modal-open").length
+            }
+
+            if (abort) {
                 return
             }
-            return s.$apply(function () {
+            s.$apply(function () {
                 switch (event.which) {
                     case 78: // n
                         s.nextPage()
@@ -222,9 +224,7 @@ export default [
                         break
                     case 129: // f18
                     case 79: // o
-                        if (!$location.search().om_boken) {
-                            s.show_about = true
-                        }
+                        s.show_about = !s.show_about
                         break
                 }
             })
@@ -650,7 +650,7 @@ export default [
             {
                 key: "om-boken",
                 scope_name: "show_about",
-                default: "no",
+                default: false,
                 post_change(val) {
                     if (val) {
                         about_modal = $uibModal.open({
@@ -768,7 +768,7 @@ export default [
                 }
             }
 
-            const def = backend.getSourceInfo(params, s.mediatype)
+            const def = backend.getSourceInfo({ exclude: "content_vector", ...params }, s.mediatype)
             s.workinfoPromise = def
             def.then(function (workinfo) {
                 s.workinfo = workinfo

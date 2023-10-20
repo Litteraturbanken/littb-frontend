@@ -222,7 +222,7 @@
         </script>
 
         <script type="text/ng-template" id="autocomplete.html">
-            <div class="modal-body" ng-controller="autocompleteCtrl"
+            <div class="modal-body" ng-class="{info:info}" ng-controller="autocompleteCtrl"
             >
                 
                 <input type="text" id="autocomplete"
@@ -238,7 +238,7 @@
                     placeholder="Gå till ett verk, en dikt, en novell eller en författare"
                 >
                 <pre ng-show="lbworkid">{{lbworkid}}</pre>
-                <pre ng-show="info">{{info | json}}</pre>
+                <pre ng-show="info">{{info}}</pre>
 
 
                 <div class="footer">

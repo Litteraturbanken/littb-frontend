@@ -18,7 +18,7 @@
     <div class="etext txt"
          selection-sniffer ng-show="mediatype == 'etext' || isParallel" ng-if="first_load && etext_html" compile="etext_html | setMarkee:markee_from:markee_to" ></div>
     
-    <div class="absolute overflow-hidden h-full w-full" ng-if="mediatype == 'faksimil' && overlayHtml">
+    <div class="absolute overflow-hidden h-full w-full" ng-if="(mediatype == 'faksimil' && workinfo.searchable) && overlayHtml">
         <div selection-sniffer
             class="overlay overflow-hidden origin-top-left"
             ng-style="{width: overlayWidth, height: overlayHeight, transform: 'scale(' + imageWidth / overlayWidth + ')'}"

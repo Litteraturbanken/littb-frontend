@@ -379,6 +379,12 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
         },
 
         relevanceSearch(types, { filters, ...options }, disableGrouping = false) {
+            console.log(
+                "🚀 ~ file: services.js:382 relevanceSearch ~ types, { filters, ...options }, disableGrouping:",
+                types,
+                { filters, ...options },
+                disableGrouping
+            )
             if (relevanceCanceller) {
                 relevanceCanceller.resolve()
             }
@@ -388,6 +394,14 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
                 val => _.isNil(val) || _.isNaN(val) || (!_.isNumber(val) && _.isEmpty(val))
             )
             options.filter_string = expandQuery(options.filter_string, options.keyword_aux)
+            try {
+                const filters = fromFilters(filters)
+            } catch (e) {
+                console.error(
+                    "query parser failed, probably related to json parse error in query.ts",
+                    e
+                )
+            }
             const params = _.omitBy(
                 {
                     exclude:
@@ -403,7 +417,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
                 timeout: relevanceCanceller.promise,
                 params
             }).then(function (response) {
-                c.log("response", response)
+                c.log("relevance response", response)
                 // const { data, author_aggregation, hits, distinct_hits, suggest } = response.data
                 // TODO: bring back suggest
                 const { data, suggest, hits } = response.data

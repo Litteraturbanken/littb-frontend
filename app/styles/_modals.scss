@@ -19,8 +19,10 @@ body.modal-open {
     .autocomplete {
         .modal-dialog {
             width : 700px;
+            &:has(.info) {
+                width: 90%;
+            }
         }
-        
     }
 }
 .autocomplete {
