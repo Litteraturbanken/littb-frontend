@@ -66,9 +66,14 @@ export default [
         s.searchData = searchData = null
         s.loading = true
         s.first_load = false
-        const onFirstLoad = _.once(() =>
-            $timeout(() => $("html, body").animate({ scrollLeft: "1000px" }, 1000), 0)
-        )
+        const onFirstLoad = _.once(() => {
+            // only if screen is small
+            if ($(window).width() < 768) {
+                $timeout(() => $("html, body").animate({ scrollLeft: "1000px" }, 1000), 0)
+            } else {
+                $timeout(() => $("html, body").animate({ scrollTop: "1000px" }, 1000), 0)
+            }
+        })
         s.showPopup = false
         s.error = false
         s.show_chapters = false // index modal
@@ -175,10 +180,9 @@ export default [
         }
 
         const onKeyDown = function (event) {
-            let abort = event.metaKey || event.ctrlKey || event.altKey || $("input:focus").length
+            let abort = event.metaKey || event.ctrlKey || $("input:focus").length
 
             let isToggleOpen = [79, 129].includes(event.which)
-            console.log("🚀 ~ file: reading_controller.js:181 ~ isToggleOpen:", isToggleOpen)
             if (!isToggleOpen) {
                 abort = abort || $("body.modal-open").length
             }
@@ -187,11 +191,11 @@ export default [
                 return
             }
             s.$apply(function () {
-                switch (event.which) {
-                    case 78: // n
+                switch (event.key) {
+                    case "n":
                         s.nextPage()
                         break
-                    case 39: // arrow right
+                    case "ArrowRight":
                         if (
                             $rootElement.prop("scrollWidth") - $window.scrollX ===
                             $($window).width()
@@ -199,31 +203,31 @@ export default [
                             s.nextPage()
                         }
                         break
-                    case 70: // f
+                    case "f":
                         s.prevPage()
                         break
-                    case 37: // arrow left
+                    case "ArrowLeft":
                         if ($window.scrollX < 10) {
                             s.prevPage()
                         }
                         break
-                    case 126: // f15
-                    case 68: // d
+                    case "F15":
+                    case "d":
                         s.pageix = s.pageix - 10
                         s.pageToLoad = s.pageix
                         break
-                    case 127: // f16
-                    case 77: // m
+                    case "F16":
+                    case "m":
                         s.pageix = s.pageix + 10
                         s.pageToLoad = s.pageix
                         break
-                    case 128: // f17
-                    case 73: // i
+                    case "F17":
+                    case "i":
                         navigator.clipboard.writeText(s.editorLbWorkId || s.workinfo.lbworkid)
                         s.$emit("notify", "Kopierade lbworkid")
                         break
-                    case 129: // f18
-                    case 79: // o
+                    case "F18":
+                    case "o":
                         s.show_about = !s.show_about
                         break
                 }

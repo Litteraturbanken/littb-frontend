@@ -89,9 +89,9 @@
         
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
             
-            <a class="prev_part" ng-href="{{getPrevPartUrl()}}" ng-class="{disabled : !getPrevPartUrl()}">Gå bakåt en del</a>
+            <a class="prev_part" title="Kortkommando: 'd'" ng-href="{{getPrevPartUrl()}}" ng-class="{disabled : !getPrevPartUrl()}">Gå bakåt en del</a>
             <br>
-            <a class="next_part" ng-class="{disabled : !getNextPartUrl()}" ng-href="{{getNextPartUrl()}}">Gå till nästa del</a>
+            <a class="next_part" title="Kortkommando: 'm'" ng-class="{disabled : !getNextPartUrl()}" ng-href="{{getNextPartUrl()}}">Gå till nästa del</a>
             <br>
             <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage(pageix)}"
                 > <!-- ng-click="gotopage(startpage, $event)" -->
@@ -108,12 +108,11 @@
             </form>
             
 
-            <a class="" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)">
-                
+            <a class="" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)" title="Kortkommando: 'f'">
                 <button class="submit btn navicon left" ng-click="$close()">
                     <i class="fa fa-angle-left "></i></button>
             </a>
-            <a class="" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}">
+            <a class="" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}" title="Kortkommando: 'n'">
                 <button class="submit btn navicon right" ng-click="$close()">
                     <i class="fa fa-angle-right right"></i>
                 </button>

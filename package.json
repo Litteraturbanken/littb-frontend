@@ -60,7 +60,7 @@
         "optimize-css-assets-webpack-plugin": "^5.0.3",
         "postcss": "^8.2.15",
         "postcss-loader": "4.0.3",
-        "protractor": "latest",
+        "protractor": "^7.0.0",
         "protractor-html-screenshot-reporter": "0.0.21",
         "raw-loader": "^4.0.2",
         "requirejs": "^2.1.15",
@@ -86,7 +86,5 @@
     "optionalDependencies": {
         "axios": "^0.21.0"
     },
-    "resolutions": {
-        "protractor/webdriver-manager": "12.1.8"
-    }
+    "resolutions": {}
 }

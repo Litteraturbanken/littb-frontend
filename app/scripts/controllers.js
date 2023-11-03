@@ -7,6 +7,28 @@ const c = (window.c =
     typeof console !== "undefined" && console !== null ? console : { log: _.noop })
 const littb = angular.module("littbApp")
 
+document.addEventListener("keydown", function (event) {
+    let abort = event.metaKey || event.ctrlKey || $("input:focus").length
+
+    if (abort) {
+        return
+    }
+
+    switch (event.key) {
+        case "F19":
+        case "®":
+            if (location.host == "localhost:9000") {
+                location.host = "litteraturbanken.se:80"
+            } else {
+                location.hostname =
+                    location.hostname == "litteraturbanken.se"
+                        ? "red.Litteraturbanken.se"
+                        : "litteraturbanken.se"
+            }
+            break
+    }
+})
+
 function sortObjectKeys(obj) {
     // Separate keys into two arrays based on their type
     let simpleKeys = []

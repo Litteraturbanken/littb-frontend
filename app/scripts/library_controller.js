@@ -38,6 +38,7 @@ littb.component("keywordSelect", {
         <option value="texttype:herdaminne">Herdaminnen</option>
         
         <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
+        <option value='keyword:Flickböcker'>Flickböcker</option>
         <option value='source:bibliotekariesidor'>Bibliotekariesidorna</option>
         <option value='source:diktensmuseum'>Diktens museum</option>
         <option value='keyword:Dramawebben'>Dramawebben</option>
