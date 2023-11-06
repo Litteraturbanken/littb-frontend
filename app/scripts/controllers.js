@@ -17,6 +17,7 @@ document.addEventListener("keydown", function (event) {
     switch (event.key) {
         case "F19":
         case "®":
+        case "ŗ":
             if (location.host == "localhost:9000") {
                 location.host = "litteraturbanken.se:80"
             } else {

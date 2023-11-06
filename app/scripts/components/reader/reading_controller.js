@@ -230,6 +230,8 @@ export default [
                     case "o":
                         s.show_about = !s.show_about
                         break
+                    case "Escape":
+                        s.isFocus = false
                 }
             })
         }

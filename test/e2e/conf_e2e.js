@@ -6,6 +6,8 @@ exports.config = {
     capabilities: {
         browserName: "chrome",
         chromeOptions: {
+            // binary: "/Applications/Google Chrome for Testing.app",
+            binary: process.env.CHROME_BIN || null,
             args: [
                 "--disable-extensions",
                 "--window-size=1500,900",
