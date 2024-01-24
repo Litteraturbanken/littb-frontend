@@ -1429,11 +1429,16 @@ littb.controller(
         }
 
         s.getFileSize = mediatype => {
-            // TODO: fix for pdf as well.
-            if (s.workinfo && mediatype == "epub") {
+            console.log("🚀 ~ mediatype:", mediatype)
+            if (s.workinfo && ["epub", "pdf"].includes(mediatype)) {
                 const exp = _.find(s.workinfo.export, item => item.type == mediatype)
                 const kb = exp?.size / 1024
-                return Math.round(kb) + " KB"
+                if (kb < 1024) {
+                    return Math.round(kb) + " KB"
+                } else {
+                    // two decimals
+                    return Math.round((kb / 1024) * 100) / 100 + " MB"
+                }
             }
         }
 

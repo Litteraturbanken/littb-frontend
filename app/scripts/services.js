@@ -144,6 +144,9 @@ const expandMediatypes = function (works, mainMediatype) {
                     url: `txt/epub/${getMainAuthor(work).authorid}_${
                         work.work_titleid || work.titleid
                     }.epub`,
+                    filename: `${getMainAuthor(work).authorid}_${
+                        work.work_titleid || work.titleid
+                    }`,
                     downloadable: true
                 })
                 break
@@ -153,6 +156,18 @@ const expandMediatypes = function (works, mainMediatype) {
         let exports = _.find(group, "export")
         if (exports) {
             main.export = exports.export
+            // is there an object in the export list of type pdf?
+            let pdfExport = _.find(exports.export, { type: "pdf" })
+            if (pdfExport) {
+                mediatypes.push({
+                    label: "pdf",
+                    url: `export/faksimil/${main.lbworkid}.pdf`,
+                    filename: `${getMainAuthor(main).authorid}_${
+                        main.work_titleid || main.titleid
+                    }`,
+                    downloadable: true
+                })
+            }
         }
 
         const sortMedia = item => _.indexOf(order, item.label)
@@ -394,21 +409,23 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
                 val => _.isNil(val) || _.isNaN(val) || (!_.isNumber(val) && _.isEmpty(val))
             )
             options.filter_string = expandQuery(options.filter_string, options.keyword_aux)
-            try {
-                const filters = fromFilters(filters)
-            } catch (e) {
-                console.error(
-                    "query parser failed, probably related to json parse error in query.ts",
-                    e
-                )
+            if (filters) {
+                try {
+                    filters = fromFilters(filters)
+                } catch (e) {
+                    console.error(
+                        "query parser failed, probably related to json parse error in query.ts",
+                        e
+                    )
+                }
             }
             const params = _.omitBy(
                 {
                     exclude:
-                        "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types",
+                        "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types,wikidata.wikipedia_text,content_vector",
                     // author_aggregation: author_aggs,
                     ...options,
-                    search: fromFilters(filters)
+                    search: filters
                 },
                 val => _.isNil(val) || (_.isPlainObject(val) && _.isEmpty(val))
             )

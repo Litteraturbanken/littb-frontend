@@ -2048,22 +2048,19 @@ body > .header {
                 }
                 
                 max-width : 500px;
-        }
-        .introtext {
-            display: inline-block;
-            vertical-align: top;
-            padding-right : 1em;
-            height : 14.5em;
-            overflow-y: hidden;
-            &.show_more {
-                height: auto;
             }
-            p:first-child {
-                margin-top: 0;
-            }
-
-
-
+            .introtext {
+                display: inline-block;
+                vertical-align: top;
+                padding-right : 1em;
+                height : 14.5em;
+                overflow-y: hidden;
+                &.show_more {
+                    height: auto;
+                }
+                p:first-child {
+                    margin-top: 0;
+                }
             }
         }
 
@@ -2078,6 +2075,7 @@ body > .header {
         }
         .other_name {
             margin-top: 1em;
+            max-width : 500px;
         }
 
         .show_more_btn {

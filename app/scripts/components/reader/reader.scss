@@ -524,9 +524,11 @@
             .navtitle {
                 max-width : 85%;
                 line-height : 1.3;
-                max-height : 5.5em;
-                overflow-y: hidden;
-                overflow-x: hidden;
+                max-height : 5.2em;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+                -webkit-line-clamp: 4;
             }
             margin-bottom : 3em;
         }

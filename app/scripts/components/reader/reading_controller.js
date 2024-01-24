@@ -68,10 +68,17 @@ export default [
         s.first_load = false
         const onFirstLoad = _.once(() => {
             // only if screen is small
-            if ($(window).width() < 768) {
+            if ($(window).width() > 768) {
                 $timeout(() => $("html, body").animate({ scrollLeft: "1000px" }, 1000), 0)
             } else {
-                $timeout(() => $("html, body").animate({ scrollTop: "1000px" }, 1000), 0)
+                $timeout(
+                    () =>
+                        $("html, body").animate(
+                            { scrollTop: $(".reader_main").offset().top.toString() + "px" },
+                            1000
+                        ),
+                    0
+                )
             }
         })
         s.showPopup = false
@@ -859,6 +866,9 @@ export default [
                 }
                 s.etext_html = childNodes.join("").replace(/­/g, "-") // there's a soft hyphen in there, trust me
                 return s.etext_html
+            }).catch(function (err) {
+                s.loading = false
+                s.error = true
             })
 
             return def

@@ -70,7 +70,7 @@ let getQuery = (key, val) => {
             break
         case "languages":
         case "keywords":
-            let obj = makeFilterObj(val)
+            // let obj = makeFilterObj(val)
             for (let [filterkey, filterval] of Object.entries(makeFilterObj(val))) {
                 query.orQuery("terms", filterkey, filterval).queryMinimumShouldMatch(1)
             }

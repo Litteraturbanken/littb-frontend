@@ -21,6 +21,12 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 18.17.1
+    - name: Install chrome
+      run: |
+        wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/114.0.5735.133/linux64/chrome-linux64.zip
+        unzip chrome-linux64.zip -d .
+        yarn --frozen-lockfile
+        npx webdriver-manager update --standalone chrome --gecko false
     - name: Setup environment
       run: |
         yarn global add npm-run-all wait-on
@@ -28,12 +34,6 @@ jobs:
       uses: actions/checkout@v2
     - name: Install dependencies
       run: |
-        yarn --frozen-lockfile
-        npx webdriver-manager update --standalone chrome --gecko false
-    - name: Install chrome
-      run: |
-        wget https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/114.0.5735.133/linux64/chrome-linux64.zip
-        unzip chrome-linux64.zip -d .
         yarn --frozen-lockfile
         npx webdriver-manager update --standalone chrome --gecko false
     - name: Run tests

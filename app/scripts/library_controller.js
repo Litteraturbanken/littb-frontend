@@ -47,7 +47,7 @@ littb.component("keywordSelect", {
         <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
         <option value='keyword:Humor'>Humor</option>
         <option value='keyword:LB-antologi'>Litteraturbankens antologier</option>
-        <option value='texttype:kringtext OR _index:littb-red_presentations'>Kringtexter</option>
+        <option value='texttype:kringtext'>Kringtexter</option>
         <option value='source:skolan'>Litteraturbankens skola</option>
         <option value='source:litteraturkartan'>Litteraturkartan</option>
         <option value='source:ljudochbild'>Ljud & Bild</option>

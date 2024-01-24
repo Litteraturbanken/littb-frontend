@@ -19,6 +19,7 @@ module.exports = {
                     "/api",
                     "/red",
                     "/txt",
+                    "/export",
                     "/query",
                     "/bilder",
                     "/css",

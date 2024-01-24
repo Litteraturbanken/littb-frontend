@@ -80,8 +80,7 @@
                  tooltip-append-to-body
                  >
                      <p 
-                        class="navtitle"
-                        data-ellipsis 
+                        class="navtitle line-clamp-2"
                         data-ng-bind="getCurrentPart().navtitle || getCurrentPart().shorttitle || getCurrentPart().title"></p>
                  </div>
         </div>
@@ -213,7 +212,7 @@
                             <span ng-repeat="auth in part.authors" class="author">{{authorById[auth.authorid].surname}}<span ng-show="!$last">, </span> </span>
                         </span>
                         <span class="title">
-                            <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)">{{part.navtitle || part.shorttitle || part.title}}</a>
+                            <a ng-touch="onPartClick(part.startpagename)" ng-click="onPartClick(part.startpagename)" ng-href="{{getPageUrl(part.startpagename)}}">{{part.navtitle || part.shorttitle || part.title}}</a>
                         </span>
 
                     </li>
