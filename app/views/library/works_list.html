@@ -60,7 +60,7 @@
                                     <a ng-href="{{mediatype.url}}">Läs som {{mediatype.label}}</a>
                                 </li>
                                 <li ng-repeat="mediatype in row | downloadMediatypes">
-                                    <a ng-href="{{mediatype.url}}" target="_self">Ladda ner {{mediatype.label}}</a>
+                                    <a ng-href="{{mediatype.url}}" target="_self" download="{{mediatype.filename}}.{{mediatype.url.split('.').slice(-1)[0]}}">Ladda ner {{mediatype.label}}</a>
                                 </li>
                                 
                                 <li ng-show="::row.searchable">

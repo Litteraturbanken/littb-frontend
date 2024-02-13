@@ -191,7 +191,9 @@ export default [
 
             let isToggleOpen = [79, 129].includes(event.which)
             if (!isToggleOpen) {
-                abort = abort || $("body.modal-open").length
+                if (event.key != "i") {
+                    abort = abort || $("body.modal-open").length
+                }
             }
 
             if (abort) {

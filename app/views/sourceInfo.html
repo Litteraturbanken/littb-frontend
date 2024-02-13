@@ -28,20 +28,20 @@
                     eller <a class="sc hover:underline" ng-href="{{(workinfo | readMediatypes)[1].url}}">{{(workinfo | readMediatypes)[1].label}}</a>
                 </span>
             </div>
-            <div ng-show="(workinfo | downloadMediatypes).length" class="mediatypes_also" ng-class="{larger : workinfo.workintro}"> 
+            <div ng-show="(workinfo | downloadMediatypes).length" class="mediatypes_also" ng-class="{larger : workinfo.workintro}" >  
                 Ladda ner 
-                <a class="sc hover:underline" ng-href="{{(workinfo | downloadMediatypes)[0].url}}" target="_self" download ng-click="log(workinfo, (workinfo | downloadMediatypes)[0].label)" ng-touch="log(workinfo, (workinfo | downloadMediatypes)[0].label)"
-                >{{(workinfo | downloadMediatypes)[0].label}}</a> 
-                <span ng-show="mediatype == 'epub' || mediatype == 'pdf'">({{getFileSize(mediatype)}})</span>
-                <span ng-show="(workinfo | downloadMediatypes).length > 1">
-                    eller <a class="sc hover:underline" 
-                             ng-href="{{(workinfo | downloadMediatypes)[1].url}}"
-                             target="_self"
-                             download="{{(workinfo | downloadMediatypes)[1].filename}}.pdf"
-                             ng-click="log(workinfo, (workinfo | downloadMediatypes)[1].label)" 
-                             ng-touch="log(workinfo, (workinfo | downloadMediatypes)[1].label)"
-                    >{{(workinfo | downloadMediatypes)[1].label}} <span>({{getFileSize('pdf')}})</span>
-            </a> <!-- ng-click="downloadFile(getDownloadMediatypes()[1].url)" ({{getFileSize(getDownloadMediatypes()[1])}}) -->
+                <!-- <a class="sc hover:underline" ng-href="{{(item.url}}" target="_self" download="{{item.filename}}.pdf" 
+                    ng-click="log(workinfo, item.label)" ng-touch="log(workinfo, item.label)" -->
+                <span ng-repeat="item in (workinfo | downloadMediatypes)">
+                    <span ng-if="!$first && $last">eller</span>
+                        <a class="sc hover:underline" 
+                                 ng-href="{{item.url}}"
+                                 target="_self"
+                                 download="{{item.filename}}.{{item.label}}"
+                                 ng-click="log(workinfo, item.label)" 
+                                 ng-touch="log(workinfo, item.label)"
+                        >{{item.label}} <span>({{item.filesize}})</span>
+                        </a> 
                 </span>
                 
 

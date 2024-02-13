@@ -136,9 +136,18 @@ const expandMediatypes = function (works, mainMediatype) {
         let mediatypes = [makeObj(main)]
         mediatypes = mediatypes.concat(_.map(rest, makeObj))
 
-        // if main.has_epub
+        let getFileSize = size => {
+            const kb = size / 1024
+            if (kb < 1024) {
+                return Math.round(kb) + " KB"
+            } else {
+                return Math.round((kb / 1024) * 10) / 10 + " MB"
+            }
+        }
+
         for (let work of group) {
             if (work.has_epub) {
+                let epubExport = _.find(work.export, { type: "epub" })
                 mediatypes.push({
                     label: "epub",
                     url: `txt/epub/${getMainAuthor(work).authorid}_${
@@ -147,29 +156,24 @@ const expandMediatypes = function (works, mainMediatype) {
                     filename: `${getMainAuthor(work).authorid}_${
                         work.work_titleid || work.titleid
                     }`,
+                    filesize: getFileSize(epubExport.size),
                     downloadable: true
                 })
-                break
+            } else {
+                let pdfExport = _.find(work.export, { type: "pdf" })
+                if (pdfExport) {
+                    mediatypes.push({
+                        label: "pdf",
+                        url: `export/faksimil/${main.lbworkid}.pdf`,
+                        filename: `${getMainAuthor(main).authorid}_${
+                            main.work_titleid || main.titleid
+                        }`,
+                        filesize: getFileSize(pdfExport.size),
+                        downloadable: true
+                    })
+                }
             }
         }
-
-        let exports = _.find(group, "export")
-        if (exports) {
-            main.export = exports.export
-            // is there an object in the export list of type pdf?
-            let pdfExport = _.find(exports.export, { type: "pdf" })
-            if (pdfExport) {
-                mediatypes.push({
-                    label: "pdf",
-                    url: `export/faksimil/${main.lbworkid}.pdf`,
-                    filename: `${getMainAuthor(main).authorid}_${
-                        main.work_titleid || main.titleid
-                    }`,
-                    downloadable: true
-                })
-            }
-        }
-
         const sortMedia = item => _.indexOf(order, item.label)
 
         main.mediatypes = _.sortBy(mediatypes, sortMedia)

@@ -239,6 +239,7 @@
             // top : -5px;
             // color : blue;
             color : transparent;
+            pointer-events: none;
             // user-select : none;
 
             .parent {
@@ -251,6 +252,7 @@
             }
             .w {
                 position: absolute;
+                pointer-events: all;
             }
             div {
                 display : block;

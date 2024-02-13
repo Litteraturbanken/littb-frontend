@@ -372,8 +372,8 @@ littb.controller(
         }
 
         s.getWikiImage = () => {
-            if (window.isDev && s.authorInfo && s.authorInfo.wikidata) {
-                return s.authorInfo.wikidata.image.replace(/^http:/, "https:")
+            if (window.isDev) {
+                return s?.authorInfo?.wikidata?.image?.replace(/^http:/, "https:")
             }
         }
 
@@ -646,12 +646,15 @@ littb.controller(
                     {
                         label: `Verk om ${s.authorInfo.full_name}`,
                         data: null,
-                        def: backend.getTextByAuthor(
-                            s.author,
-                            "etext,faksimil,pdf,infopost",
-                            null,
-                            true
-                        ),
+                        def: backend
+                            .getTextByAuthor(s.author, "etext,faksimil,pdf,infopost", null, true)
+                            .then(data => {
+                                s.maybePresentationWork = data.filter(x =>
+                                    x.keyword.includes("LB-presentation")
+                                )?.[0]
+                                console.log("🚀 ~ getTextByAuthor:", data, s.maybePresentationWork)
+                                return data
+                            }),
                         showAuthor(work) {
                             return work["authors"]
                         }
@@ -1426,20 +1429,6 @@ littb.controller(
                 }
                 return s.$apply(() => (s.show_large = false))
             })
-        }
-
-        s.getFileSize = mediatype => {
-            console.log("🚀 ~ mediatype:", mediatype)
-            if (s.workinfo && ["epub", "pdf"].includes(mediatype)) {
-                const exp = _.find(s.workinfo.export, item => item.type == mediatype)
-                const kb = exp?.size / 1024
-                if (kb < 1024) {
-                    return Math.round(kb) + " KB"
-                } else {
-                    // two decimals
-                    return Math.round((kb / 1024) * 100) / 100 + " MB"
-                }
-            }
         }
 
         // s.getFileSize = function(mediatype) {

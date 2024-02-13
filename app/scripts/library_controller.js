@@ -1134,7 +1134,7 @@ littb.controller(
                 { id: "txt", label: "ren text" },
                 { id: "xml" },
                 { id: "workdb", label: "Metadata" },
-                { id: "pdf", disabled: true }
+                { id: "pdf" }
             ]
         }
 
