@@ -235,6 +235,16 @@ export default [
                         navigator.clipboard.writeText(s.editorLbWorkId || s.workinfo.lbworkid)
                         s.$emit("notify", "Kopierade lbworkid")
                         break
+                    case "F21":
+                    case "u":
+                        if (s.workinfo.urn) {
+                            navigator.clipboard.writeText(s.workinfo.urn)
+                            s.$emit("notify", "Kopierade urn")
+                        } else {
+                            s.$emit("notify", "Ingen urn hittades")
+                        }
+                        break
+
                     case "F18":
                     case "o":
                         s.show_about = !s.show_about

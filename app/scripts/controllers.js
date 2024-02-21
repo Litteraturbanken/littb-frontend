@@ -27,6 +27,9 @@ document.addEventListener("keydown", function (event) {
                         : "litteraturbanken.se"
             }
             break
+        case "b":
+            location.href = $(".mainnav a[href^='/bibliotek']").attr("href")
+            break
     }
 })
 
@@ -1027,6 +1030,20 @@ littb.controller(
             }
         }
 
+        const getInfo = () =>
+            $route.current.$$route.isReader
+                ? $(".reader_main").scope().workinfo
+                : $("#mainview").scope().authorInfo
+
+        function infoAction() {
+            if ($("#mainview").scope) {
+                let obj = getInfo()
+                delete obj["filenameMap"]
+                delete obj["content_vector"]
+                s.info = JSON.stringify(sortObjectKeys(getInfo()), null, 2)
+            }
+        }
+
         s.autocomplete = function (val) {
             if (val) {
                 prevFilter = val
@@ -1138,22 +1155,12 @@ littb.controller(
                         $route.current.$$route.isReader ||
                         $route.current.$$route.controller == "authorInfoCtrl"
                     ) {
-                        const getInfo = () =>
-                            $route.current.$$route.isReader
-                                ? $(".reader_main").scope().workinfo
-                                : $("#mainview").scope().authorInfo
-
                         menu.push({
                             label: "/info",
                             alt: ["info", "db", "red"],
                             typeLabel: "[Red.]",
                             action() {
-                                if ($("#mainview").scope) {
-                                    let obj = getInfo()
-                                    delete obj["filenameMap"]
-                                    delete obj["content_vector"]
-                                    s.info = JSON.stringify(sortObjectKeys(getInfo()), null, 2)
-                                }
+                                infoAction()
                                 return false
                             }
                         })
@@ -1224,13 +1231,26 @@ littb.controller(
         }
         // s.show_autocomplete = false
         s.$on("show_autocomplete", () => show())
-        return $($window).on("keyup", function (event) {
-            //tab
-            if (event.which === 83 && !$("input:focus,textarea:focus,select:focus").length) {
-                return s.$apply(() => show())
-            } else if (event.which === 27) {
-                // escape
-                return s.$apply(() => s.close())
+        return $($window).on("keydown", function (event) {
+            switch (event.key) {
+                case "Escape":
+                    s.$apply(() => s.close())
+                    break
+                case "s":
+                    if (!$("input:focus,textarea:focus,select:focus").length) {
+                        s.$apply(() => show())
+                    }
+                    break
+                case "F20":
+                case "ı":
+                case "ī":
+                    if (!$("input:focus,textarea:focus,select:focus").length) {
+                        s.$apply(() => {
+                            show()
+                            infoAction()
+                        })
+                    }
+                    break
             }
         })
     }

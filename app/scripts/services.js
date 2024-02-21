@@ -146,8 +146,8 @@ const expandMediatypes = function (works, mainMediatype) {
         }
 
         for (let work of group) {
-            if (work.has_epub) {
-                let epubExport = _.find(work.export, { type: "epub" })
+            let epubExport = _.find(work.export, { type: "epub" })
+            if (epubExport) {
                 mediatypes.push({
                     label: "epub",
                     url: `txt/epub/${getMainAuthor(work).authorid}_${
