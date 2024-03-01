@@ -15,16 +15,15 @@
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 
         <li ng-class="{active : showpage == 'introduktion'}" ng-if="authorInfo.intro"><a href="/författare/{{author}}">Introduktion</a></li>
-        <li ng-if="authorInfo.dramawebben" ng-class="{active : showpage == 'dramawebben'}"><a href="/författare/{{author}}/dramawebben">Dramawebben</a></li>
         <li ng-class="{active : showpage == 'titlar'}"><a href="/författare/{{author}}/titlar">Verk</a></li>
         <li ng-if="hasAudioPage"><a ng-href="https://litteraturbanken.se/ljudochbild/författare/{{authorInfo.authorid_norm.toLowerCase()}}" target="_blank">Ljud</a></li>
-        <li ng-if="authorInfo.presentation || maybePresentationWork" ng-class="{active : showpage == 'presentation'}">
+        <!-- <li ng-if="authorInfo.presentation || maybePresentationWork" ng-class="{active : showpage == 'presentation'}">
             <a ng-if="authorInfo.presentation" href="/författare/{{author}}/presentation">Presentation</a>
             <a ng-if="!authorInfo.presentation && maybePresentationWork" href="/författare/{{maybePresentationWork.main_author.authorid}}/titlar/{{maybePresentationWork.titleid}}/sida/{{maybePresentationWork.startpagename}}/{{maybePresentationWork.mediatype}}">Presentation</a>
         </li>
-        <li ng-if="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/författare/{{author}}/bibliografi">Bibliografi</a></li>
-        <li ng-class="{active : showpage == 'mer'}" ng-if="authorInfo.show_more"><a ng-href="/författare/{{author}}/las-mer">Läs mer</a></li>
-        <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/författare/{{author}}/mer">Mer</a></li>
+        <li ng-if="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/författare/{{author}}/bibliografi">Bibliografi</a></li> -->
+        <!-- <li ng-class="{active : showpage == 'mer'}" ng-if="hasMore()"><a ng-href="/författare/{{author}}/mer">Mer</a></li> -->
+        <li ng-if="authorInfo.dramawebben" ng-class="{active : showpage == 'dramawebben'}"><a href="/författare/{{author}}/dramawebben">Dramawebben</a></li>
         <li ng-if="authorInfo.searchable"><a href="/sok?forfattare={{author}}&avancerad">Sök i texterna</a></li>
         <!-- <li ng-if="isDramaweb"><a href="/dramawebben">Till Dramawebben</a></li> -->
     </ul>
@@ -75,17 +74,37 @@
 
         <script type="text/ng-template" id="portrait.html">
             <div class="portrait_container lg:ml-8">
-                <div class="shadow-lg border mt-2 border-gray-500 border-opacity-50" ng-show="authorInfo.smallImage">
-                    <img class="author_img" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
+                <div class="shadow-lg mt-2 " ng-show="authorInfo.smallImage">
+                    <img class="author_img border border-gray-500 border-opacity-50" ng-src="{{authorInfo.largeImage}}" > <!-- ng-click="showLargeImage($event)" -->
                     <figcaption class="bg-white bg-opacity-75 p-3 text-base" ng-if="authorInfo.pictureinfo" ng-bind-html="authorInfo.pictureinfo | trust"></figcaption>
                 </div>
                 
                 <!-- Only for red. -->
                 <img ng-if="isDev && !authorInfo.smallImage" class="author_img mb-0" ng-src="{{getWikiImage()}}" >
                 <figcaption ng-if="isDev && !authorInfo.smallImage" class="wikidata_uncleared p-2 text-sm" ng-show="getWikiImage()">
-                    [RED] FRÅN WIKIMEDIA
+                    <a class="text-white" ng-href="{{getWikimediaFilePage(getWikiImage())}}">[RED] FRÅN WIKIMEDIA</a>
                 </figcaption>
 
+                <div class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75 max-w-xs" 
+                    ng-if="hasMore() || authorInfo.presentation || authorInfo.external_ref || authorInfo.bibliography" >
+                    <h3 class="sc mt-0">Mer om författarskapet</h3>
+                    <section>
+                    <ul class="list-item pl-4">
+                        <li ng-if="hasMore()">
+                            <a ng-href="/författare/{{authorInfo.authorid}}/mer">Texter om {{authorInfo.full_name}}</a>
+                        </li>
+                        <li ng-if="authorInfo.presentation || maybePresentationWork" ng-class="{active : showpage == 'presentation'}">
+                            <a ng-if="authorInfo.presentation" href="/författare/{{author}}/presentation">Presentation</a>
+                            <a ng-if="!authorInfo.presentation && maybePresentationWork" href="/författare/{{maybePresentationWork.main_author.authorid}}/titlar/{{maybePresentationWork.titleid}}/sida/{{maybePresentationWork.startpagename}}/{{maybePresentationWork.mediatype}}">Presentation</a>
+                        </li>
+                        <li ng-if="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/författare/{{author}}/bibliografi">Bibliografi</a></li>
+                        <li ng-repeat="ref in authorInfo.external_ref">
+                            <a ng-href="/{{ref.url}}">{{ref.label}}</a>
+                        </li>
+                    </ul>
+                
+            </section>
+                </div>
                 <div class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75" 
                     ng-if="authorInfo.wikidata.sbl_link || authorInfo.wikidata.skbl_link || authorInfo.wikidata.sol_link || authorInfo.wikidata.wikipedia" >
                     <h3 class="sc mt-0">Uppslagsverk</h3>
@@ -219,7 +238,7 @@
         <div ng-switch-when="mer">
             <!-- <div class="content" footnote-popup="noteMapping" ng-bind-html="externalDoc | trust"></div> -->
 
-            <section ng-if="authorInfo.external_ref.length">
+            <!-- <section ng-if="authorInfo.external_ref.length">
                 <h2>Läs mer</h2>
                 <ul class="external">
                     <li ng-repeat="ref in authorInfo.external_ref">
@@ -227,7 +246,7 @@
                     </li>
                 </ul>
                 
-            </section>
+            </section> -->
 
            <ng-include src="'listing.html'"></ng-include>
         </div>

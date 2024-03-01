@@ -375,6 +375,20 @@ littb.controller(
             }
         }
 
+        s.getWikimediaFilePage = imageUrl => {
+            // Extract the filename from the URL
+            let filename = imageUrl.split("/").pop()
+
+            // URL encode the filename
+            // let encodedFilename = encodeURIComponent(filename)
+
+            // Base URL of Wikimedia Commons file page
+            let baseUrl = "https://commons.wikimedia.org/wiki/File:"
+
+            // Return the file page URL
+            return baseUrl + filename
+        }
+
         s.getWikiImage = () => {
             if (window.isDev) {
                 return s?.authorInfo?.wikidata?.image?.replace(/^http:/, "https:")
