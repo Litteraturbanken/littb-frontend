@@ -653,7 +653,7 @@ littb.controller(
                             .getTextByAuthor(s.author, "etext,faksimil,pdf,infopost", null, true)
                             .then(data => {
                                 s.maybePresentationWork = data.filter(x =>
-                                    x.keyword.includes("LB-presentation")
+                                    x.keyword?.includes("LB-presentation")
                                 )?.[0]
                                 console.log("🚀 ~ getTextByAuthor:", data, s.maybePresentationWork)
                                 return data
