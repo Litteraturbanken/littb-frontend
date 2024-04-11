@@ -466,6 +466,9 @@ littb.controller(
                 args.include_modernized = false
             }
 
+            // args.sort_field = "sortfield"
+            args.sort_field = null
+
             return args
         }
 
@@ -608,10 +611,11 @@ littb.controller(
                 hasSearchInit = true
             })
             $q.all([def, authors]).then(function ([[sentsWithHeaders, author_aggs]]) {
-                s.authorStatsData = _.orderBy(
-                    author_aggs,
-                    auth => s.authorsById[auth.authorid].name_for_index
-                )
+                // s.authorStatsData = _.orderBy(
+                //     author_aggs,
+                //     auth => s.authorsById[auth.authorid].name_for_index
+                // )
+                s.authorStatsData = author_aggs
             })
             return def
         }

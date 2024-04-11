@@ -545,6 +545,16 @@ littb.controller(
         }
         s.sortItems["epub"] = _.cloneDeep(s.sortItems.works)
 
+        s.tabObjects = [
+            { label: "Enkel sökning", value: "enkel", current: true },
+            { label: "Utökad sökning", value: "utökad", current: false }
+            // { label: "Avancerad", value: "avancerad", current: false }
+        ]
+        s.tabClick = function (tab) {
+            s.tabObjects.forEach(tab => (tab.current = false))
+            tab.current = true
+        }
+
         s.refreshData = function (isInitial) {
             if (!isInitial) {
                 s.relevance_page.current = 1

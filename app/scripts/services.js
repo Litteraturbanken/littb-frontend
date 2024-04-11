@@ -8,9 +8,9 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -183,7 +183,7 @@ const expandMediatypes = function (works, mainMediatype) {
     return output
 }
 
-littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
+littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $filter) {
     // $http.defaults.transformResponse = (data, headers) ->
     // localStorageCache = $angularCacheFactory "localStorageCache",
     //     storageMode: 'localStorage'
@@ -429,7 +429,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
                         "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types,wikidata.wikipedia_text,content_vector",
                     // author_aggregation: author_aggs,
                     ...options,
-                    search: filters
+                    search: filters,
+                    vectorize: true
                 },
                 val => _.isNil(val) || (_.isPlainObject(val) && _.isEmpty(val))
             )
@@ -1130,10 +1131,6 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
                             label: content.suggest[0].text,
                             typeLabel: "Menade du",
                             action(scope) {
-                                // c.log ("autoc", @autocomplete)
-                                // return scope.autocomplete(content.suggest[0].text)
-                                // scope.autocomplete(content.suggest[0].text).then (data) ->
-                                // scope.$apply () ->
                                 $("#autocomplete")
                                     .controller("ngModel")
                                     .$setViewValue(content.suggest[0].text)
@@ -1166,8 +1163,10 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location) {
                     }
 
                     if (item.doc_type === "author") {
+                        let year = $filter("authorYear")(item)
+
                         item.url = `/författare/${item.authorid}`
-                        item.label = item.name_for_index
+                        item.label = item.name_for_index + (year ? ` (${year})` : "")
                         item.typeLabel = "Författare"
                     }
 
