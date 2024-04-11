@@ -1,5 +1,5 @@
 <meta-desc>Blädda bland Litteraturbankens författare och titlar.</meta-desc>
-<h1 class="text-4xl ">Botanisera i biblioteket</h1> <!-- samlingarna -->
+<h1 class="text-6xl ">Botanisera i biblioteket</h1> <!-- samlingarna -->
 <!--  <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span> -->
 <!-- <img bkg-img src="../img/library.jpg"> -->
 <img bkg-img preload="libraryBkg">
@@ -15,67 +15,93 @@
     <div id="controls">
         <form class="sm:p-5 p-2 sm:border border-gray-900 w-full sm:max-w-5xl" ng-submit="refreshData()">
             
-            <div class="">
-                <div class="main_input flex flex-wrap -mt-4">
-                    <input class="filter_input mt-4 mr-4 flex-grow" autofocus focusable
+             <div >
+            <!--    <div class="mb-8 bg-white bg-opacity-40 -m-5 pt-4 border-bottom border-black border-opacity-70">
+                    <div class="sm:hidden">
+                    <label for="tabs" class="sr-only">Välj enkel eller utökad sökning</label>
+                    <select id="tabs" name="tabs" class="block w-full rounded-md focus:border-primary ">
+                        <option ng-repeat="tab in tabObjects" ng-selected="tab.current">{{ tab.label }}</option>
+                    </select>
+                    </div>
+                    <div class="hidden sm:block">
+                        <div class="">
+                            <nav class="-mb-px flex" aria-label="Tabs">
+                                
+                            <a ng-repeat="tab in tabObjects" ng-click="tabClick(tab)"
+                                ng-href="#{{tab.value}}" 
+                                ng-class="[tab.current ? 'border-primary text-primary' : 'border-transparent text-gray-900 hover:border-gray-700 hover:text-primary transition-colors', 'w-1/6 border-b-2 pb-3 px-1 text-center uppercase text-xs']" 
+                                :aria-current="tab.current ? 'page' : undefined">{{ tab.label }}</a>
+                            </nav>
+                        </div>
+                    </div>
+                </div> -->
+                
+                <div class="main_input flex flex-wrap -ml-6 relative mb-8 items-center">
+                    <svg class="w-6 h-6 relative left-10 top-0 -mt-px" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#7A1400" > <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /> </svg>
+                    <input class="filter_input  mr-4 flex-grow py-3 text-lg pl-12 pr-4" autofocus focusable
                         ng-model-options='{debounce : {default : 300, blur : 0}, updateOn: "default blur"}' 
-                        type="search" 
                         ng-change="refreshData()" ng-model="filter" 
                         placeholder="Skriv författarnamn eller titel"
                         ng-model="completeObj"
                         autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
                     >
+                    <!-- <svg class="text-primary w-6 h-6 relative -left-20 top-9" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /> </svg> -->
+                    <svg class="reset text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 cursor-pointer" ng-show="!isPristine()" ng-click="resetView()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /> </svg>
+                    <button class="bg-white border border-black self-stretch px-4 focus:ring-1 focus:ring-inset focus:ring-primary" ng-click="show_more = !show_more" uib-tooltip="{{show_more ? 'Enkel sökning':'Utökad sökning' }}" tooltip-popup-delay="250" tooltip-placement="right">
+                        <!-- <svg class="filter w-8 h-8 relative top-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.0" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /> </svg> -->
+                        <svg class="filter w-6 h-6 relative top-0 inline-block text-gray-700" ng-show="!show_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" /> </svg>
+                        <svg class="filter w-6 h-6 relative top-0 inline-block text-gray-700" ng-show="show_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"> <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" /> </svg>
+
+
+                    </button>
+
+
+                    <!-- <svg class="w-6 h-6 relative -left-14 top-9 text-primary" ng-show="!isPristine()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /> </svg> -->
+                    <!-- <svg class="w-6 h-6 relative -left-14 top-9 text-primary" ng-show="!isPristine()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /> </svg> -->
+
                     <!-- uib-typeahead="item as item.label for item in autocomplete($viewValue)"
                     typeahead-trigger
                     focusable
                     typeahead-wait-ms="200"
                     typeahead-on-select="onAutocompleteSelect(completeObj)"
                     typeahead-template-url="libraryCustomTemplate.html" -->
-                    <button class="submit btn mt-4 mr-2">Sök</button>
-                    <button class="reset mt-4 uppercase border border-gray-900 text-sm text-gray-900 px-4 py-2 hover:bg-white ng-fade transition duration-200 focus:outline-none" ng-click="resetView()" ng-show="!isPristine()">
-                        Återställ
-                    </button>
+                    <!-- <button class="submit btn mt-4 mr-2 px-8 text-base">Sök</button> -->
                 </div>
-                <div class="title_select_container">
-                    <select  class="gender_select" 
-                             ui-select2="genderSelectSetup" 
-                             ng-change="refreshData()" ng-model="filters['gender']" 
-                             >
-                        <option value="">Alla författare</option>
-                        <option value="female">Kvinnliga författare</option>    
-                        <option value="male">Manliga författare</option>
-                    </select>
-                </div>
-                <div class="title_select_container">
-                    <keyword-select label="Välj samling" 
-                                    model="filters.keywords" 
-                                    on-change="filters.keywords = keywords; refreshData()"></keyword-select>
-                </div>
-                <div class="title_select_container about_container">
-                    <select multiple class="filter_select about_select"
-                            ui-select2 
-                            ng-change="refreshData()" ng-model="filters['authorkeyword>authorid']" 
-                            data-placeholder="Om ett författarskap" 
-                            ng-change="onAboutAuthorChange($event)">
+                <!-- main tab content -->
+                    
+    
+                    <!-- <div class="more mt-2" ng-show="!show_more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-plus-square-o mr-1"></i> Utökad sökning </a></div>
+                    <div class="more mt-2" ng-show="show_more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-minus-square-o mr-1"></i> Enkel sökning </a></div> -->
 
-                        <option value=""></option>
-                        <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
-                    </select>
-                </div>
+                    <div class="more_container mt-2 mb-2" ng-class="{show_more : show_more}" ng-show="show_more">
 
-                <!-- <div class="row auth_select_container">
-                    <select class="filter_select author_select" ui-select2="sortSelectSetup" ng-model="sort" data-placeholder="Sortering" ng-change="" >
-                        <option value=""></option>
-                        <option value="popularity|desc">Popularitet</option>
-                        <option value="sortkey|asc">Titel</option>
-                    </select> 
-                </div> -->
-                
-                <div class="more mt-2" ng-show="!show_more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-plus-square-o mr-1"></i> Visa fler inställningar </a></div>
-                <div class="more mt-2" ng-show="show_more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-minus-square-o mr-1"></i> Visa färre inställningar </a></div>
-                <div class="more_container mt-2 mb-2" ng-class="{show_more : show_more}" ng-show="show_more">
-
-
+                        <div class="title_select_container">
+                        <select  class="gender_select" 
+                                 ui-select2="genderSelectSetup" 
+                                 ng-change="refreshData()" ng-model="filters['gender']" 
+                                 >
+                            <option value="">Alla författare</option>
+                            <option value="female">Kvinnliga författare</option>    
+                            <option value="male">Manliga författare</option>
+                        </select>
+                    </div>
+                    <div class="title_select_container">
+                        <keyword-select label="Välj samling" 
+                                        model="filters.keywords" 
+                                        on-change="filters.keywords = keywords; refreshData()"></keyword-select>
+                    </div>
+                    <div class="title_select_container about_container">
+                        <select multiple class="filter_select about_select"
+                                ui-select2 
+                                ng-change="refreshData()" ng-model="filters['authorkeyword>authorid']" 
+                                data-placeholder="Om ett författarskap" 
+                                ng-change="onAboutAuthorChange($event)">
+    
+                            <option value=""></option>
+                            <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].full_name}}</option>
+                        </select>
+                    </div>
+                        
                     <div class="">
                         <div class="text-sm mb-4 max-w-sm">
                         <!-- Endast verk sorterat i samlingen  -->
@@ -103,7 +129,7 @@
                             logiskt OCH iställer för ELLER. Du får färre träffar, som då ingår i alla valda samlingar. </span>
                         
                     </div> -->
-                    
+                    <!--
                     <div class="title_select_container">
                         <select multiple class="filter_select keyword_select" ui-select2 ng-change="refreshData()" ng-model="filters.mediatypes" data-placeholder="Utgivningsformat" >
                             <option value=""></option>
@@ -126,41 +152,68 @@
                             <option value="language:fra">Franska</option>
                             <option value="language:lat">Latin</option>
                             <option value="language:smi">Samiska språk</option>
-                            <!-- <option value="">Skrivet av kvinnor</option>
-                            <option value="">Skrivet av män</option> -->
-
-
                         </select>
                     </div>
+                    -->     
                 </div>
-                <div class="more" ng-class="{show_more : dl_mode}">
+
+           
+                
+                <!-- <div class="more" ng-class="{show_more : dl_mode}">
                     <a ng-click="setDownloadMode()">
-                        <!-- <i class="fa fa-caret-right"></i>  -->
                         <i class="fa fa-download color-black mr-1 text-xs"></i>
                         <span ng-if="!dl_mode"> Ladda ner källmaterial</span>
                         <span ng-if="dl_mode">Stäng källmaterial</span>
-            </a></div>
+            </a></div> -->
                 <div class="more_container h-8 relative mb-4" ng-class="{show_more : dl_mode}" ng-show="dl_mode">
                     <a class="sc btn btn-small absolute left" ng-show="!isAllVisibleSelected()" ng-click="onSelectVisible()">Välj alla verk i listan</a>
                     <a class="sc btn btn-small absolute left" ng-show="isAllVisibleSelected()" ng-click="onDeselectVisible()">Avmarkera alla verk i listan</a>
                 </div>
                 <!-- <a class="btn text-xs submit pull-right" ng-click="setDownloadMode()">Ladda ner…</a> -->
             </div>
-
-
-            <div class="chronology primarycolor">
+            
+            <div class="chronology primarycolor ml-px pl-px">
                 <i class="fa fa-clock-o mr-1 ml-px"></i>
-                <span class="sc mt-8">Tidslinje: kronologisk sökning</span> 
+                <span class="sc mt-8 ">Tidslinje: kronologisk sökning</span> 
                 <!-- <span>{{filters['sort_date_imprint.date:range'][0]}}</span>–<span>{{filters['sort_date_imprint.date:range'][1]}}</span> -->
             </div>
 
             <chronology 
+                class="max-w-xl"
                 floor="chronology_floor"
                 ceil="chronology_ceil"
                 from="filters['sort_date_imprint.date:range'][0]" 
                 to="filters['sort_date_imprint.date:range'][1]" 
                 change="onSliderChange()">
             </chronology>
+            <div class="btn-group p-0 mt-4 sm:mt-6 ">
+                    <button class="sc btn btn-small text-base" ng-class="" 
+                        ng-model="listType" uib-btn-radio="'all'" ng-click="fetchByRelevance()">
+                        Alla träffar
+                    </button>
+                    <button class="sc btn btn-small text-base" ng-class="{disabled: dl_mode || !authorData.length}" 
+                        ng-model="listType" uib-btn-radio="'authors'" ng-click="setAuthorData()">
+                        <span ng-if="!dl_mode">Författare</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
+                    </button>
+                    <button class="sc btn btn-small text-base" 
+                        ng-model="listType" uib-btn-radio="'works'" ng-click="fetchWorks()">
+                        Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
+                    </button>
+                    <button class="sc btn btn-small text-base" 
+                        ng-model="listType" uib-btn-radio="'latest'" ng-click="fetchRecent()">
+                        Nytt
+                        <!-- <span class="num_hits" ng-show="titleModel.latest_hits">: {{titleModel.latest_hits}}</span> -->
+                    </button>
+                    <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !parts_hits}" 
+                        ng-model="listType" uib-btn-radio="'parts'" ng-click="fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></button>
+                    <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
+                        ng-model="listType" uib-btn-radio="'epub'" ng-click="fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></button>
+                    <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
+                        ng-model="listType" uib-btn-radio="'pdf'" ng-click="fetchWorks(false, true)">PDF<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></button>
+                    <!-- <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
+                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label> -->
+                </div>
+
 
             <!-- <div class="flex">
                 <rzslider class="mt-4 slider-large" step="1" ng-class="[sliderActive, {active: sliderActive}]"
@@ -173,39 +226,13 @@
                     <input type="text" class="text-sm text-center py-1" ng-change="refreshData()" ng-model="filters['sort_date_imprint.date:range'][0]"> <span class="text-sm  sc">till </span> <input type="text" class="text-sm text-center py-1" ng-change="refreshData()" ng-model="filters['sort_date_imprint.date:range'][1]">
                 </div>
             </div> -->
-
+        </div>
         </form>
         
         <!-- <div class="row box_container"> -->
         <div class="flex items-stretch w-full sm:max-w-5xl">
             <div class="box sm:p-6 p-2 sm:border border-gray-900 flex-grow" >
 
-                <div class="btn-group p-0 mb-4 sm:mb-10 ">
-                    <label class="sc btn btn-small" ng-class="" 
-                        ng-model="listType" uib-btn-radio="'all'" ng-click="fetchByRelevance()">
-                        Alla träffar
-                    </label>
-                    <label class="sc btn btn-small" ng-class="{disabled: dl_mode || !authorData.length}" 
-                        ng-model="listType" uib-btn-radio="'authors'" ng-click="setAuthorData()">
-                        <span ng-if="!dl_mode">Författare</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
-                    </label>
-                    <label class="sc btn btn-small" 
-                        ng-model="listType" uib-btn-radio="'works'" ng-click="fetchWorks()">
-                        Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
-                    </label>
-                    <label class="sc btn btn-small" 
-                        ng-model="listType" uib-btn-radio="'latest'" ng-click="fetchRecent()">
-                        Nytt
-                        <!-- <span class="num_hits" ng-show="titleModel.latest_hits">: {{titleModel.latest_hits}}</span> -->
-                    </label>
-                    <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !parts_hits}" 
-                        ng-model="listType" uib-btn-radio="'parts'" ng-click="fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></label>
-                    <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !titleModel.epub_hits}" 
-                        ng-model="listType" uib-btn-radio="'epub'" ng-click="fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></label>
-                    <!-- <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
-                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label> -->
-                </div>
-                
                 
                 <ng-include src="worksListURL" ng-if="listType == 'works'"></ng-include>
                 <ng-include src="worksListURL" ng-if="listType == 'latest'"></ng-include>
@@ -214,10 +241,10 @@
                 <div class="result relevance pl-0 sm:ml-3 lg:ml-0 w-full sm:w-auto" ng-if="listType == 'all'">
                     <sort-list></sort-list>
                     <div class="mt-4"> 
+                        <div class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0" ng-show="relevanceSearching">
+                            <i class="spinner fa fa-spinner fa-pulse"></i>
+                        </div>
                         <table class="w-full">
-                            <tr class="spinner_row" ng-show="relevanceSearching">
-                                <td><i class="spinner fa fa-spinner fa-pulse"></i></td>
-                            </tr>
                             <!-- <li class="text-lg" ng-show="!authorSearching && !authorData.length">
                                 Inga träffar. <span ng-show='authorSuggest[0]'>Menade du <a class="link" ng-click='setFilter(authorSuggest[0].text)'>{{authorSuggest[0].text}}</a>?</span>
                             </li> -->
@@ -285,6 +312,7 @@
                                     <highlights is-phrase="filter.includes(' ')" list="item.highlight.title"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight['title.search']"></highlights>
                                     <highlights ng-if="!item.highlight.title" list="item.highlight.title_modernized"></highlights>
+                                    <highlights ng-if="!item.highlight.title" list="item.highlight['title_modernized.search']"></highlights>
 
                                     <highlights list="item.highlight['parts.title']"></highlights>
                                     <highlights ng-if="!item.highlight['parts.title']" list="item.highlight['parts.title_modernized']"></highlights>
@@ -353,8 +381,7 @@
                                 on-finish-render="authorRender()" 
                                 id="{{author.authorid}}">
                                 <a ng-href="/författare/{{author.authorid}}/" class="">
-                                    <span class="surname">{{author.name_for_index.split(',')[0]}}</span><span ng-show="author.name_for_index.split(',').length > 1">,</span>
-                                    {{author.name_for_index.split(",")[1]}} {{author | authorYear}}
+                                    {{author.name_for_index}} {{author | authorYear}}
                                 </a>
                             </li>
 
@@ -389,7 +416,7 @@
                     </table>
                 </div> -->
                 <div class="result title flex-column min-h-500 pl-0 sm:ml-3" ng-show="listType == 'parts'">
-                    <div class="spinner_row ng-fade transition duration-300" ng-show="partSearching">
+                    <div class="spinner_row ng-fade transition duration-200 h-0" ng-show="partSearching">
                         <i class="spinner fa fa-spinner fa-pulse"></i>
                     </div>
                     <sort-list ></sort-list>

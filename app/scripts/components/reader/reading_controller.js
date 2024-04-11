@@ -238,7 +238,9 @@ export default [
                     case "F21":
                     case "u":
                         if (s.workinfo.urn) {
-                            navigator.clipboard.writeText(s.workinfo.urn)
+                            navigator.clipboard.writeText(
+                                "https://urn.kb.se/resolve?urn=" + s.workinfo.urn
+                            )
                             s.$emit("notify", "Kopierade urn")
                         } else {
                             s.$emit("notify", "Ingen urn hittades")

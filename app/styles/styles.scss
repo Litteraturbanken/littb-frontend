@@ -168,6 +168,10 @@ th {
     min-height : 500px;
 }
 
+.rzslider {
+    max-width: 600px;
+}
+
 .rzslider .rz-pointer {
     width: 15px;
     height: 15px;
@@ -1359,6 +1363,7 @@ body > .header {
     //     .top_row .submit {display : none;}
     //     .top_row .spinner {display : inline-block;}
     // }
+    background-size: cover !important;
     .lb-logo {
         --logo-l-color: var(--primary-color);
         --logo-b-color: black;
@@ -2280,7 +2285,7 @@ body > .header {
     .btn:active, .btn.active {
         box-shadow: none;
         /* border: 2px inset #7a1400; */
-        background-color: darkgrey;
+        background-color: var(--primary-color);
         color: white;
         border-color: #333;
     }
@@ -2321,12 +2326,12 @@ body > .header {
             .filter_input, .keyword_select {
                 border : 1px solid #333;
                 // margin-top : 0.4em;
-                max-width: 300px;
-                padding: 8px;
+                max-width: 450px;
+                // padding: 8px;
                 color: #333;
-                font-size: 0.8em;
-                padding-bottom: 6px;
-                padding-left: 19px;
+                // font-size: 0.8em;
+                // padding-bottom: 6px;
+                // padding-left: 19px;
                 vertical-align: middle;
             }
 
@@ -2340,8 +2345,8 @@ body > .header {
 
             }
             .main_input {
-                margin-bottom: 4px;
-                margin-bottom: 1em;
+                // margin-bottom: 4px;
+                // margin-bottom: 1em;
             }
             .select2-container {
                 // width : 100% !important;
@@ -2449,11 +2454,11 @@ body > .header {
                 margin-right: 0.2em;
                 margin-bottom: 0.3em;
                 &:hover {
-                    background-color : #999 !important;
+                    background-color : var(--primary-color) !important;
                 }
                 &.active {
                     box-shadow: none;
-                    background-color: #999 !important;
+                    background-color: var(--primary-color) !important;
                     color : white;
                 }
                 &:focus {
@@ -2493,10 +2498,10 @@ body > .header {
         }
         .submit.btn {
             background-color: white;
-            border: 1px solid #333;
+            border: 2px solid $primarycolor;
             vertical-align: middle;
-            padding-right: 12px;
-            padding-left: 12px;
+            // padding-right: 12px;
+            // padding-left: 12px;
         }
         th {
             padding-bottom : 1em;
@@ -2582,8 +2587,12 @@ body > .header {
         }
         .result {
             table {
-                border-spacing: 8px 2px;
-                border-collapse: separate;
+                border-spacing: 0;
+                border-collapse: collapse;
+                td {
+                    padding: 1px 0.5em;
+                
+                }
             }
             .header_container {
                 max-width : calc(100% - 2rem);

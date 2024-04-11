@@ -133,13 +133,6 @@ window.littb = angular
                     route = [route]
                 }
                 for (let r of route) {
-                    // if (r.split("/")[1] === "författare") {
-                    //     const shortRoute = r
-                    //         .replace(/^\/författare\//, "/f/")
-                    //         .replace("/titlar/", "/t/")
-                    //     $routeProvider.when(shortRoute, obj)
-                    // }
-
                     $routeProvider.when(r, obj)
                 }
                 return this
@@ -487,44 +480,6 @@ window.littb = angular
                     }
                 ]
             })
-
-            .when("/f/:author/t/:title/:mediatype", {
-                redirectTo(routeParams, path, searchVars) {
-                    console.log("searchVars", path, searchVars)
-
-                    let suffix = _.toPairs(searchVars)
-                        .map(([key, val]) => {
-                            if (val === true) {
-                                return key
-                            } else {
-                                return key + "=" + val
-                            }
-                        })
-                        .join("&")
-                    return (
-                        `/författare/${routeParams.author}/titlar/${routeParams.title}/${
-                            { e: "etext", f: "faksimil" }[routeParams.mediatype]
-                        }` + (suffix ? "?" + suffix : "")
-                    )
-                }
-            })
-            .when(
-                [
-                    "/f/:author/t/:title/sida/:pagename/:mediatype",
-                    "/f/:author/t/:title/s/:pagename/:mediatype"
-                ],
-                {
-                    redirectTo(routeParams, path, searchVars) {
-                        return `/författare/${routeParams.author}/titlar/${
-                            routeParams.title
-                        }/sida/${routeParams.pagename}/${
-                            { e: "etext", f: "faksimil" }[routeParams.mediatype] ||
-                            routeParams.mediatype
-                        }`
-                    }
-                }
-            )
-            // .when("/författare/:author/titlar/:title/:mediatype", {
 
             .when(
                 [

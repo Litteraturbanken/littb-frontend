@@ -116,19 +116,28 @@
             </a>
             <ul role="navigation" class="mainnav">
                 <li>
+                    <!-- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 text-white  inline-block relative -top-1">
+  <path d="M8.25 10.875a2.625 2.625 0 1 1 5.25 0 2.625 2.625 0 0 1-5.25 0Z" />
+  <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.125 4.5a4.125 4.125 0 1 0 2.338 7.524l2.007 2.006a.75.75 0 1 0 1.06-1.06l-2.006-2.007a4.125 4.125 0 0 0-3.399-6.463Z" clip-rule="evenodd" />
+</svg> -->
                     <a href="/bibliotek{{libraryState['queryparams']}}">Biblioteket</a>
                 </li>
                 <li>
-                    <a href="/epub">Epubfiler</a>
+                    <!-- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 text-white  inline-block relative -top-1">
+  <path d="M8.25 10.875a2.625 2.625 0 1 1 5.25 0 2.625 2.625 0 0 1-5.25 0Z" />
+  <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.125 4.5a4.125 4.125 0 1 0 2.338 7.524l2.007 2.006a.75.75 0 1 0 1.06-1.06l-2.006-2.007a4.125 4.125 0 0 0-3.399-6.463Z" clip-rule="evenodd" />
+</svg> -->
+                    <a ng-click="$broadcast('show_autocomplete')" title="Snabbkommando: 's'">Snabbsökning</a> 
                 </li>
                 <li>
-                    <a href="/ljudochbild/">Ljud <em>&</em> bild</a>
-                </li>
-                <li>
-                    <a ng-click="$broadcast('show_autocomplete')" title="Snabbkommando: 's'">Snabbsökning</a>
-                </li>
-                <li>
+                    <!-- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 text-white  inline-block relative -top-1">
+  <path d="M8.25 10.875a2.625 2.625 0 1 1 5.25 0 2.625 2.625 0 0 1-5.25 0Z" />
+  <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.125 4.5a4.125 4.125 0 1 0 2.338 7.524l2.007 2.006a.75.75 0 1 0 1.06-1.06l-2.006-2.007a4.125 4.125 0 0 0-3.399-6.463Z" clip-rule="evenodd" />
+</svg> -->
                     <a ng-href="/sök{{searchState['queryparams']}}">Sök i texterna</a>
+                </li>
+                <li>
+                    <a href="/bibliotek?visa=epub&sort=popularitet">Hämta e-böcker</a>
                 </li>
                 <li>
                     <a href="/presentationer">Presentationer</a>
@@ -149,6 +158,10 @@
                 <li>
                     <a href="/dramawebben">Dramawebben</a>
                 </li>
+                <li>
+                    <a href="/ljudochbild/">Ljud <em>&</em> bild</a>
+                </li>
+                
                 <li>
                     <a href="/skolan/">Skolan</a>
                 </li>
