@@ -355,91 +355,8 @@
         #toolkit {
             position : relative;
         }
-        .spinner_search {
-            color: $primarycolor;
-            opacity : 0;
-            transition : opacity 200ms;
-            position: absolute;
-            right : 0;
-            margin-top: -2em;
-        }
-        .spinner_search.searching {
-            opacity : 1;
-            transition : opacity 200ms;
-
-        }
-        #search_nav {
-            display : none;
-            text-align: right;
-            @include small-caps();
-            line-height : 1;
-            font-size: 0.8em;
-            // margin-top : 3em;
-            margin-bottom : 2em;
-
-            .search_again {
-                display : none;
-                margin-top: 1em;
-                text-align: right;
-
-                font-family : "Requiem Text A", "Requiem Text B", georgia, serif;
-                input {
-                    width: 120px;
-                    font-variant: normal;
-                    text-align: center;
-                    height: 2em;
-                }
-            }
-            &.searched_work {
-                .search_again {
-                    display : block;
-                }
-            }
-
-            .num {
-                font-size : 1.7em;
-            }
-            .arrows {
-                margin-top: 1.2em;
-                margin-bottom: 0.5em;
-                .navicon.left {
-                    margin-right : 4px;
-                }
-            }
-            .ctrls {
-                // float : right;
-                margin-top  : 1em;
-                img {
-                    cursor : pointer;
-                }
-                .arrows {
-                    position: relative;
-                    margin-top: 1em;
-                    
-                    button {
-                        line-height : 1;
-                    }
-                    button.left  {
-                        padding : 4px 9px;
-                    }
-                }
-                li {
-                    white-space: nowrap;
-                }
-                li.open {
-                    form {
-                        display: inline;
-                    }
-                    input {
-                        width : 40px;
-                        height: 16px;
-                        vertical-align: bottom;
-                        font-size: 0.7em;
-                    }
-                    
-                }
-            }
-        }
+        
+        
     }
 
     .navicon {
@@ -470,6 +387,103 @@
             width : 67%;
             margin :0;
             text-align: left;
+        }
+        #search_nav {
+            display: none;
+            // text-align: right;
+            @include small-caps();
+            line-height: 1;
+            // font-size: 0.8em;
+            // margin-top : 3em;
+            margin-bottom: 2em;
+
+            .search_again {
+                display: none;
+                margin-top: 1em;
+                text-align: right;
+
+                font-family: "Requiem Text A", "Requiem Text B", georgia, serif;
+
+                input {
+                    width: 120px;
+                    font-variant: normal;
+                    text-align: center;
+                    height: 2em;
+                }
+            }
+
+            &.searched_work {
+                .search_again {
+                    display: block;
+                }
+            }
+
+            .num {
+                font-size: 1.7em;
+            }
+
+            .arrows {
+                margin-top: 1.2em;
+                margin-bottom: 0.5em;
+
+                .navicon.left {
+                    margin-right: 4px;
+                }
+            }
+
+            .ctrls {
+                // float : right;
+                margin-top: 1em;
+
+                img {
+                    cursor: pointer;
+                }
+
+                .arrows {
+                    position: relative;
+                    margin-top: 1em;
+
+                    button {
+                        line-height: 1;
+                    }
+
+                    button.left {
+                        padding: 4px 9px;
+                    }
+                }
+
+                li {
+                    white-space: nowrap;
+                }
+
+                li.open {
+                    form {
+                        display: inline;
+                    }
+
+                    input {
+                        width: 40px;
+                        height: 16px;
+                        vertical-align: bottom;
+                        font-size: 0.7em;
+                    }
+
+                }
+            }
+        }
+        .spinner_search {
+            color: $primarycolor;
+            opacity: 0;
+            transition: opacity 200ms;
+            position: absolute;
+            right: 0;
+            margin-top: -2em;
+        }
+
+        .spinner_search.searching {
+            opacity: 1;
+            transition: opacity 200ms;
+
         }
         .subnav {
             @include small-caps();

@@ -88,34 +88,32 @@
         
         <div class="pager_ctrls" ng-click="resetHitMarkings()">
             
-            <a class="prev_part" title="Kortkommando: 'd'" ng-href="{{getPrevPartUrl()}}" ng-class="{disabled : !getPrevPartUrl()}">Gå bakåt en del</a>
+            <div class="flex text-base items-center">
+                <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage(pageix)}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"> <path fill-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 0 0 6 5.25v13.5a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5V15a.75.75 0 0 1 1.5 0v3.75a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3V5.25a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3V9A.75.75 0 0 1 15 9V5.25a1.5 1.5 0 0 0-1.5-1.5h-6Zm5.03 4.72a.75.75 0 0 1 0 1.06l-1.72 1.72h10.94a.75.75 0 0 1 0 1.5H10.81l1.72 1.72a.75.75 0 1 1-1.06 1.06l-3-3a.75.75 0 0 1 0-1.06l3-3a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" /> </svg>
+                </a>
+                <a class="prev_part bg-gray-900 rounded-full text-white p-1" role="navigation" title="Kortkommando: 'd'" ng-href="{{getPrevPartUrl()}}" ng-class="{disabled : !getPrevPartUrl()}"> <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" > <path d="M9.195 18.44c1.25.714 2.805-.189 2.805-1.629v-2.34l6.945 3.968c1.25.715 2.805-.188 2.805-1.628V8.69c0-1.44-1.555-2.343-2.805-1.628L12 11.029v-2.34c0-1.44-1.555-2.343-2.805-1.628l-7.108 4.061c-1.26.72-1.26 2.536 0 3.256l7.108 4.061Z" /> </svg> </a>
+                
+                <a class="" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)" title="Kortkommando: 'f'">
+                    <svg class="w-9 h-9" ng-click="$close()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" > <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-4.28 9.22a.75.75 0 0 0 0 1.06l3 3a.75.75 0 1 0 1.06-1.06l-1.72-1.72h5.69a.75.75 0 0 0 0-1.5h-5.69l1.72-1.72a.75.75 0 0 0-1.06-1.06l-3 3Z" clip-rule="evenodd" /> </svg>
+                </a>
+                    
+                <a class="" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}" title="Kortkommando: 'n'">
+                    <svg class="w-9 h-9" ng-click="$close()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" > <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm4.28 10.28a.75.75 0 0 0 0-1.06l-3-3a.75.75 0 1 0-1.06 1.06l1.72 1.72H8.25a.75.75 0 0 0 0 1.5h5.69l-1.72 1.72a.75.75 0 1 0 1.06 1.06l3-3Z" clip-rule="evenodd" /> </svg>
+                </a>
+                <a class="next_part bg-gray-900 rounded-full text-white p-1" role="navigation" title="Kortkommando: 'm'" ng-class="{disabled : !getNextPartUrl()}" ng-href="{{getNextPartUrl()}}"><svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" > <path d="M5.055 7.06C3.805 6.347 2.25 7.25 2.25 8.69v8.122c0 1.44 1.555 2.343 2.805 1.628L12 14.471v2.34c0 1.44 1.555 2.343 2.805 1.628l7.108-4.061c1.26-.72 1.26-2.536 0-3.256l-7.108-4.061C13.555 6.346 12 7.249 12 8.689v2.34L5.055 7.061Z" /> </svg> </a>
+                <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}"> 
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6"> <path fill-rule="evenodd" d="M16.5 3.75a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5V15a.75.75 0 0 0-1.5 0v3.75a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V5.25a3 3 0 0 0-3-3h-6a3 3 0 0 0-3 3V9A.75.75 0 1 0 9 9V5.25a1.5 1.5 0 0 1 1.5-1.5h6Zm-5.03 4.72a.75.75 0 0 0 0 1.06l1.72 1.72H2.25a.75.75 0 0 0 0 1.5h10.94l-1.72 1.72a.75.75 0 1 0 1.06 1.06l3-3a.75.75 0 0 0 0-1.06l-3-3a.75.75 0 0 0-1.06 0Z" clip-rule="evenodd" /> </svg>
+
+                </a>
+            </div>
             <br>
-            <a class="next_part" title="Kortkommando: 'm'" ng-class="{disabled : !getNextPartUrl()}" ng-href="{{getNextPartUrl()}}">Gå till nästa del</a>
-            <br>
-            <a ng-href="{{getFirstPageUrl()}}" ng-class="{disabled : isBeforeStartpage(pageix)}"
-                > <!-- ng-click="gotopage(startpage, $event)" -->
-                Gå till första sidan
-            </a>
-            <br>
-            <a ng-href="{{getLastPageUrl()}}" ng-class="{disabled : pagename == endpage}"
-                > <!-- ng-click="gotopage(endpage, $event)"-->
-                Gå till sista sidan
-            </a>
             <br>
             <form class="goto" ng-submit="gotopage(gotoInput)" >
                 <a ng-click="onGotoClick()">Gå till sida . . . <span class="pages">{{pagename}} av {{endpage || workinfo.page_count}}</span></a> <input focusable type="text" ng-show="showGotoInput" ng-model="gotoInput"> <i ng-show="showGotoInput" class="fa fa-angle-double-right"></i>
             </form>
             
 
-            <a class="" rel="prev" ng-class="{disabled : pageix == 0}" ng-href="{{getPrevPageUrl()}}" ng-click="prevPage($event)" title="Kortkommando: 'f'">
-                <button class="submit btn navicon left" ng-click="$close()">
-                    <i class="fa fa-angle-left "></i></button>
-            </a>
-            <a class="" rel="next" ng-href="{{getNextPageUrl()}}" ng-click="nextPage($event)" ng-class="{disabled : pagename == endpage}" title="Kortkommando: 'n'">
-                <button class="submit btn navicon right" ng-click="$close()">
-                    <i class="fa fa-angle-right right"></i>
-                </button>
-            </a>
 
             <span class="expl small">Du kan också bläddra med tangentbordets piltangenter.</span>
         </div>
@@ -175,6 +173,46 @@
                 <li><a ng-href="/sök?avancerad&forfattare={{author}}" ng-disabled="!hasSearchable(author)">Sök i författarens texter</a></li>
                 <li><a ng-href="/dramawebben"><img ng-if="isDramaweb" class="dw_logo" ng-src="{{dwUrl}}" alt="Dramawebben logotyp"></a></li>
                 <li class="-ml-px"><a class="block w-3/6 -ml-3" ng-href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"><img ng-if="workinfo.keyword.includes('1800')" class="object-contain" ng-src="{{nyaVagarUrl}}" alt="Logotyp för Nya vägar"></a></li>
+
+                <i class="spinner_search fa fa-spinner fa-pulse" ng-class="{searching : searchData.isCounting}"></i>
+            <li id="search_nav" class="text-sm mt-8" ng-style="{display : hasActiveSearch() ? 'block' : 'none'}">
+                <div class="text">
+                    <div>
+                        <span class="num">{{searchData.total_hits}}</span> 
+                        <span ng-show="searchData.total_hits > 1 || searchData.total_hits == 0">sökträffar</span>
+                        <span ng-show="searchData.total_hits == 1">sökträff</span>
+                    </div>
+                    <div ng-show="searchData.total_hits > 0">
+                        Träff <span>{{searchData.current + 1}}</span>, sida {{pagename}}
+                    </div>
+                </div>
+                <ul class="ctrls">
+
+                    <div class="arrows">
+                        <button rel="prev" class="submit btn navicon left" ng-disabled="searchData.current == 0" ng-click="prevHit()">
+                            <i class="fa fa-angle-left"></i>
+                        </button>
+                        <button rel="next" class="submit btn navicon" ng-disabled="isLastHit()" ng-click="nextHit()">
+                            <i class="fa fa-angle-right"></i>
+                        </button>
+                    </div>
+
+                    <li><a ng-click="onGotoHit(1)">Gå till första träffen</a></li>
+                    <li><a ng-click="onGotoHit(searchData.total_hits)">Gå till sista träffen</a></li>
+                    <li  ng-class="{open : showGotoHitInput}"><a ng-click="onGotoHitInput()">Gå direkt till träff . . .</a> 
+                        <form ng-submit="onGotoHit(gotoHitInput)" ng-show="showGotoHitInput">
+                            <input class="border border-gray-300" focusable type="text" ng-model="gotoHitInput"> <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>    
+                        </form>
+                    </li>
+
+                    <li><a ng-show="prevSearchState" ng-href="{{prevSearchState}}">Tillbaka till söksidan</a> </li>
+                    <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Stäng träffvisningen</a> </li>
+                    <li ng-show="searchState['queryparams']"><a ng-href="/sök{{searchState['queryparams']}}" ng-click="close_hits()" >Tillbaka till sökningen</a> </li>
+
+                    
+                </ul>
+
+            </li>
                 <!-- <li>Dela boken</li> -->
             </ul>
             <a ng-href="{{workinfo.mediatypes[0].url}}" ng-if="$routeParams.ix && workinfo" class="submit btn mt-4 text-xs">Stäng editor</a>
@@ -222,45 +260,7 @@
         </script>
 
         <div toolkit>
-            <i class="spinner_search fa fa-spinner fa-pulse" ng-class="{searching : searchData.isCounting}"></i>
-            <div id="search_nav" ng-style="{display : hasActiveSearch() ? 'block' : 'none'}">
-                <div class="text">
-                    <div>
-                        <span class="num">{{searchData.total_hits}}</span> 
-                        <span ng-show="searchData.total_hits > 1 || searchData.total_hits == 0">sökträffar</span>
-                        <span ng-show="searchData.total_hits == 1">sökträff</span>
-                    </div>
-                    <div ng-show="searchData.total_hits > 0">
-                        Träff <span>{{searchData.current + 1}}</span>, sida {{pagename}}
-                    </div>
-                </div>
-                <ul class="ctrls">
-
-                    <div class="arrows">
-                        <button rel="prev" class="submit btn navicon left" ng-disabled="searchData.current == 0" ng-click="prevHit()">
-                            <i class="fa fa-angle-left"></i>
-                        </button>
-                        <button rel="next" class="submit btn navicon" ng-disabled="isLastHit()" ng-click="nextHit()">
-                            <i class="fa fa-angle-right"></i>
-                        </button>
-                    </div>
-
-                    <li><a ng-click="onGotoHit(1)">Gå till första träffen</a></li>
-                    <li><a ng-click="onGotoHit(searchData.total_hits)">Gå till sista träffen</a></li>
-                    <li  ng-class="{open : showGotoHitInput}"><a ng-click="onGotoHitInput()">Gå direkt till träff . . .</a> 
-                        <form ng-submit="onGotoHit(gotoHitInput)" ng-show="showGotoHitInput">
-                            <input class="border border-gray-300" focusable type="text" ng-model="gotoHitInput"> <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>    
-                        </form>
-                    </li>
-
-                    <li><a ng-show="prevSearchState" ng-href="{{prevSearchState}}">Tillbaka till söksidan</a> </li>
-                    <li><a ng-href="{{getCleanUrl()}}" ng-click="close_hits()" >Stäng träffvisningen</a> </li>
-                    <li ng-show="searchState['queryparams']"><a ng-href="/sök{{searchState['queryparams']}}" ng-click="close_hits()" >Tillbaka till sökningen</a> </li>
-
-                    
-                </ul>
-
-            </div>
+            
             <div class="size_picker" ng-if="mediatype == 'faksimil'">
                 <h2>Ändra storlek</h2>
                 <button ng-click="setSize(size - 1)" ng-disabled="isSizeDisabled(false)" class="small_text btn btn-small">Mindre</button>

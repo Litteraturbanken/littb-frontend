@@ -169,7 +169,7 @@ th {
 }
 
 .rzslider {
-    max-width: 600px;
+    max-width: 400px;
 }
 
 .rzslider .rz-pointer {
@@ -1344,6 +1344,20 @@ body > .header {
 }
 
 .page-search {
+    // background: url("/red/bilder/bakgrundsbilder/sok_moln.jpg") no-repeat !important;
+    position: relative;
+    h1 {
+        margin-bottom: 4rem !important;
+    }
+    
+    // &:after {
+    //     background-color: rgba(255, 255, 255, 0.5);
+    //     top: 0;
+    //     left: 0;
+    //     right: 0;
+    //     bottom: 0;
+    //     position: absolute;
+    // }
     // .grid {
     //   width: 1000px;
     //   height: 1400px;
@@ -1363,10 +1377,10 @@ body > .header {
     //     .top_row .submit {display : none;}
     //     .top_row .spinner {display : inline-block;}
     // }
-    background-size: cover !important;
+    // background-size: cover !important;
     .lb-logo {
-        --logo-l-color: var(--primary-color);
-        --logo-b-color: black;
+        --logo-l-color: white;
+        --logo-b-color: white;
     }
     input[type="text"] {
         border: 1px solid lightgrey;
@@ -1388,14 +1402,18 @@ body > .header {
     .select2-drop .firstname, .select2-drop .year, .select2-drop .title {
         font-size: 0.9em;
     }
-
+    a {color: white;}
     #mainview {
-
+        color: white;
+        button, input {
+            color: #333;
+        }
         width : calc(100vw - #{$left-area-width});
 
         h1 {
             white-space: nowrap;
             margin-bottom : 2em;
+            color: white;
         }
         // width : 512px;
         font-size: 0.85em;
@@ -1461,18 +1479,18 @@ body > .header {
 
         // .title_select_container,
         // .auth_select_container,
-        .about_select_container,
-        .lang_select_container {
-            display : none;
-        }
-        .advanced .lang_select_container,
-        .advanced .about_select_container {
-            display : block;
-        }
-        .simple_text {display : block;}
-        .advanced_text {display : none;}
-        .advanced .simple_text {display : none;}
-        .advanced .advanced_text {display : inline-block;}
+        // .about_select_container,
+        // .lang_select_container {
+        //     display : none;
+        // }
+        // .advanced .lang_select_container,
+        // .advanced .about_select_container {
+        //     display : block;
+        // }
+        // .simple_text {display : block;}
+        // .advanced_text {display : none;}
+        // .advanced .simple_text {display : none;}
+        // .advanced .advanced_text {display : inline-block;}
         .text {
 
             // max-width : 330px;
@@ -1498,11 +1516,6 @@ body > .header {
             }
         }
         .top_row {
-            .query {
-                padding-left: 9px;
-                // width : 240px;
-            }
-
             i {
                 position: relative;
                 top: 7px;
@@ -1587,7 +1600,7 @@ body > .header {
         }
         .search_opts_widget {
             margin-top : 1em;
-            margin-bottom : 2em;
+            margin-bottom : 1em;
             @include small-caps();
             li {
                 cursor : pointer;
@@ -1613,7 +1626,7 @@ body > .header {
             margin-bottom : 2em;
             & > * {
                 display: inline-block;
-                width : 40%;
+                // width : 40%;
                 margin-right : 3.3em;
                 vertical-align: top;
             }
@@ -1631,11 +1644,9 @@ body > .header {
                 background-color : rgba(255,255,255,0.95);
                 display: inline-block;
                 vertical-align: top;    
-                max-height: 85vh;
+                // max-height: 85vh;
                 min-height: 200px;
                 width : 100%;
-
-                
             }
 
             .left_context .punct:first-of-type {
@@ -1665,6 +1676,10 @@ body > .header {
         }
 
         .table_container {
+            color: #333;
+            a {
+                color: #333;
+            }
             padding-left : 1.3em;
             width : 100%;
             overflow: hidden;
@@ -1773,7 +1788,8 @@ body > .header {
         }
     }
     #toolkit {
-
+        position: sticky;
+        top: 1rem;
         margin-top : 2.5em;
         font-size : 0.8em;
         @include small-caps;
@@ -1859,6 +1875,9 @@ body > .header {
         }
 
         .navigator {
+            a{
+                color:#333
+            }
             @include container();
             text-align: left;
             line-height : 1.1;
@@ -2324,7 +2343,6 @@ body > .header {
 
 
             .filter_input, .keyword_select {
-                border : 1px solid #333;
                 // margin-top : 0.4em;
                 max-width: 450px;
                 // padding: 8px;

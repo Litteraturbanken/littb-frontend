@@ -547,7 +547,7 @@ littb.controller(
         }
 
         s.onSearchSubmit = function (query) {
-            $anchorScroll("results")
+            // $anchorScroll("results")
             // s.resetAuthorFilter()
             s.nav_filter = null
             s.newSearch(query)

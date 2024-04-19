@@ -38,7 +38,7 @@
                 
                 <div class="main_input flex flex-wrap -ml-6 relative mb-8 items-center">
                     <svg class="w-6 h-6 relative left-10 top-0 -mt-px" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#7A1400" > <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /> </svg>
-                    <input class="filter_input  mr-4 flex-grow py-3 text-lg pl-12 pr-4" autofocus focusable
+                    <input class="filter_input border border-gray-500  mr-4 flex-grow py-3 text-lg pl-12 pr-4" autofocus focusable
                         ng-model-options='{debounce : {default : 300, blur : 0}, updateOn: "default blur"}' 
                         ng-change="refreshData()" ng-model="filter" 
                         placeholder="Skriv författarnamn eller titel"
@@ -46,8 +46,8 @@
                         autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
                     >
                     <!-- <svg class="text-primary w-6 h-6 relative -left-20 top-9" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /> </svg> -->
-                    <svg class="reset text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 cursor-pointer" ng-show="!isPristine()" ng-click="resetView()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /> </svg>
-                    <button class="bg-white border border-black self-stretch px-4 focus:ring-1 focus:ring-inset focus:ring-primary" ng-click="show_more = !show_more" uib-tooltip="{{show_more ? 'Enkel sökning':'Utökad sökning' }}" tooltip-popup-delay="250" tooltip-placement="right">
+                    <svg class="reset text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 -mr-8 cursor-pointer" ng-show="!isPristine()" ng-click="resetView()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /> </svg>
+                    <button class="bg-white border border-gray-500 self-stretch px-4 focus:ring-1 focus:ring-inset focus:ring-primary" ng-click="show_more = !show_more" uib-tooltip="{{show_more ? 'Enkel sökning':'Utökad sökning' }}" tooltip-popup-delay="250" tooltip-placement="right">
                         <!-- <svg class="filter w-8 h-8 relative top-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.0" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /> </svg> -->
                         <svg class="filter w-6 h-6 relative top-0 inline-block text-gray-700" ng-show="!show_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" /> </svg>
                         <svg class="filter w-6 h-6 relative top-0 inline-block text-gray-700" ng-show="show_more" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"> <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" /> </svg>
@@ -187,32 +187,32 @@
                 change="onSliderChange()">
             </chronology>
             <div class="btn-group p-0 mt-4 sm:mt-6 ">
-                    <button class="sc btn btn-small text-base" ng-class="" 
-                        ng-model="listType" uib-btn-radio="'all'" ng-click="fetchByRelevance()">
-                        Alla träffar
-                    </button>
-                    <button class="sc btn btn-small text-base" ng-class="{disabled: dl_mode || !authorData.length}" 
-                        ng-model="listType" uib-btn-radio="'authors'" ng-click="setAuthorData()">
-                        <span ng-if="!dl_mode">Författare</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
-                    </button>
-                    <button class="sc btn btn-small text-base" 
-                        ng-model="listType" uib-btn-radio="'works'" ng-click="fetchWorks()">
-                        Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
-                    </button>
-                    <button class="sc btn btn-small text-base" 
-                        ng-model="listType" uib-btn-radio="'latest'" ng-click="fetchRecent()">
-                        Nytt
-                        <!-- <span class="num_hits" ng-show="titleModel.latest_hits">: {{titleModel.latest_hits}}</span> -->
-                    </button>
-                    <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !parts_hits}" 
-                        ng-model="listType" uib-btn-radio="'parts'" ng-click="fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></button>
-                    <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
-                        ng-model="listType" uib-btn-radio="'epub'" ng-click="fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></button>
-                    <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
-                        ng-model="listType" uib-btn-radio="'pdf'" ng-click="fetchWorks(false, true)">PDF<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></button>
-                    <!-- <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
-                        ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label> -->
-                </div>
+                <button class="sc btn btn-small text-base" ng-class="" 
+                    ng-model="listType" uib-btn-radio="'all'" ng-click="fetchByRelevance()">
+                    Alla träffar
+                </button>
+                <button class="sc btn btn-small text-base" ng-class="{disabled: dl_mode || !authorData.length}" 
+                    ng-model="listType" uib-btn-radio="'authors'" ng-click="setAuthorData()">
+                    <span ng-if="!dl_mode">Författare</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
+                </button>
+                <button class="sc btn btn-small text-base" 
+                    ng-model="listType" uib-btn-radio="'works'" ng-click="fetchWorks()">
+                    Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
+                </button>
+                <button class="sc btn btn-small text-base" 
+                    ng-model="listType" uib-btn-radio="'latest'" ng-click="fetchRecent()">
+                    Nytt
+                    <!-- <span class="num_hits" ng-show="titleModel.latest_hits">: {{titleModel.latest_hits}}</span> -->
+                </button>
+                <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !parts_hits}" 
+                    ng-model="listType" uib-btn-radio="'parts'" ng-click="fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></button>
+                <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
+                    ng-model="listType" uib-btn-radio="'epub'" ng-click="fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></button>
+                <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
+                    ng-model="listType" uib-btn-radio="'pdf'" ng-click="fetchWorks(false, true)">PDF<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></button>
+                <!-- <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
+                    ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label> -->
+            </div>
 
 
             <!-- <div class="flex">
