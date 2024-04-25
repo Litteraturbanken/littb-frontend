@@ -187,7 +187,11 @@ export default [
         }
 
         const onKeyDown = function (event) {
-            let abort = event.metaKey || event.ctrlKey || $("input:focus").length
+            let abort =
+                event.metaKey ||
+                event.ctrlKey ||
+                $("input:focus").length ||
+                $("textarea:focus").length
 
             let isToggleOpen = [79, 129].includes(event.which)
             if (!isToggleOpen) {
@@ -222,13 +226,20 @@ export default [
                         break
                     case "F15":
                     case "d":
-                        s.pageix = s.pageix - 10
-                        s.pageToLoad = s.pageix
-                        break
+                        if (s.isEditor) {
+                            s.pageix = s.pageix - 10
+                            s.pageToLoad = s.pageix
+                            break
+                        } else {
+                            $location.path(s.getPrevPageUrl())
+                        }
                     case "F16":
                     case "m":
-                        s.pageix = s.pageix + 10
-                        s.pageToLoad = s.pageix
+                        if (s.isEditor) {
+                            s.pageix = s.pageix + 10
+                            s.pageToLoad = s.pageix
+                            $location.path(s.getNextPartUrl())
+                        }
                         break
                     case "F17":
                     case "i":

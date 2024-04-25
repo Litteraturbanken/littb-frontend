@@ -8,7 +8,8 @@ const c = (window.c =
 const littb = angular.module("littbApp")
 
 document.addEventListener("keydown", function (event) {
-    let abort = event.metaKey || event.ctrlKey || $("input:focus").length
+    let abort =
+        event.metaKey || event.ctrlKey || $("input:focus").length || $("textarea:focus").length
 
     if (abort) {
         return
