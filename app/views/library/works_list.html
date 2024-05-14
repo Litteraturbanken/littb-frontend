@@ -48,6 +48,15 @@
                                 <a ng-if="listType == 'works' || listType == 'latest'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
                                 <a ng-if="listType == 'epub'" 
                                    ng-href="/txt/epub/{{row.main_author.authorid + '_' + (row.work_titleid || row.titleid)}}.epub" target="_self" download>{{row.shorttitle || row.title}} </a>
+                                <a ng-if="listType == 'pdf'" class="" 
+                                    ng-href="{{getMediatype(row, 'pdf').url}}"
+                                    target="_self"
+                                    download="{{getMediatype(row, 'pdf').filename}}.{{getMediatype(row, 'pdf').label}}"
+                                    ng-click="log(workinfo, 'pdf')" 
+                                    ng-touch="log(workinfo, 'pdf')"
+                                >{{row.shorttitle || row.title}} 
+                                <!-- <span>({{getMediatype(row, 'pdf').filesize}})</span>  -->
+                            </a> 
                             </span>
                             
                             
@@ -82,11 +91,21 @@
                             <span ng-if="row.main_author.type == 'illustrator'">(ill.)</span>
                         </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].authorid])" --></td>
                 
-                <td class="text-right" ng-if="listType == 'epub'">
+                <td class="text-right" ng-if="['epub', 'pdf'].includes(listType)">
                     <a class="sc w-32 block"  
+                        ng-if="listType == 'epub'"
                         ng-href="/txt/epub/{{row.main_author.authorid + '_' + (row.work_titleid || row.titleid)}}.epub"
                         target="_self"
-                        download>Hämta </a></td>
+                        download>Hämta </a>
+
+                        <a ng-if="listType == 'pdf'" class="sc w-32 block"
+                            ng-href="{{getMediatype(row, 'pdf').url}}"
+                            target="_self"
+                            download="{{getMediatype(row, 'pdf').filename}}.{{getMediatype(row, 'pdf').label}}"
+                            ng-click="log(workinfo, 'pdf')" 
+                            ng-touch="log(workinfo, 'pdf')"
+                        >Hämta</a>
+                </td>
 
             </tr>
 

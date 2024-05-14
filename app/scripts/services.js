@@ -82,6 +82,15 @@ function expandQuery(query, keyword_aux) {
     return output
 }
 
+let getFileSize = size => {
+    const kb = size / 1024
+    if (kb < 1024) {
+        return Math.round(kb) + " KB"
+    } else {
+        return Math.round((kb / 1024) * 10) / 10 + " MB"
+    }
+}
+
 const expandMediatypes = function (works, mainMediatype) {
     const order = ["etext", "faksimil", "epub", "pdf", "infopost"]
     const groups = _.groupBy(works, item => item.titlepath + item.lbworkid)
@@ -135,15 +144,6 @@ const expandMediatypes = function (works, mainMediatype) {
 
         let mediatypes = [makeObj(main)]
         mediatypes = mediatypes.concat(_.map(rest, makeObj))
-
-        let getFileSize = size => {
-            const kb = size / 1024
-            if (kb < 1024) {
-                return Math.round(kb) + " KB"
-            } else {
-                return Math.round((kb / 1024) * 10) / 10 + " MB"
-            }
-        }
 
         for (let work of group) {
             let epubExport = _.find(work.export, { type: "epub" })

@@ -40,7 +40,7 @@
                                  download="{{item.filename}}.{{item.label}}"
                                  ng-click="log(workinfo, item.label)" 
                                  ng-touch="log(workinfo, item.label)"
-                        >{{item.label}} <span>({{item.filesize}})</span>
+                        >{{item.label}} <span ng-if="item.filesize">({{item.filesize}})</span>
                         </a> 
                 </span>
                 

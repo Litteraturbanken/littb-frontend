@@ -1,8 +1,9 @@
 <meta-desc>Blädda bland Litteraturbankens författare och titlar.</meta-desc>
-<h1 class="text-6xl ">Botanisera i biblioteket</h1> <!-- samlingarna -->
+<h1 class="text-6xl ml-12 ">Botanisera i biblioteket</h1> <!-- samlingarna -->
 <!--  <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span> -->
-<!-- <img bkg-img src="../img/library.jpg"> -->
-<img bkg-img preload="libraryBkg">
+<img bkg-img src="/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg">
+<!-- <img bkg-img ng-src="/red/bilder/bakgrundsbilder/{{listType == 'epub' ? 'sok_moln.jpg': 'biblioteket_bakgrund.jpg'}}"> -->
+<!-- <img bkg-img preload="libraryBkg"> -->
 <script type="text/ng-template" id="libraryCustomTemplate.html">
     <a uib-tooltip="{{match.label}}" tooltip-popup-delay="500" tooltip-placement="right">
         <span class="type_label">
@@ -11,7 +12,7 @@
         <span >{{match.label}}</span>
     </a>
 </script>
-<div ng-class="{searching:searching, dl_mode : dl_mode}">
+<div class="ml-12" ng-class="{searching:searching, dl_mode : dl_mode}">
     <div id="controls">
         <form class="sm:p-5 p-2 sm:border border-gray-900 w-full sm:max-w-5xl" ng-submit="refreshData()">
             
@@ -73,7 +74,7 @@
                     <!-- <div class="more mt-2" ng-show="!show_more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-plus-square-o mr-1"></i> Utökad sökning </a></div>
                     <div class="more mt-2" ng-show="show_more" ng-class="{show_more : show_more}"><a ng-click="show_more = !show_more" ><i class="align-middle fa fa-minus-square-o mr-1"></i> Enkel sökning </a></div> -->
 
-                    <div class="more_container mt-2 mb-2" ng-class="{show_more : show_more}" ng-show="show_more">
+                    <div class="more_container mt-2" ng-class="{show_more : show_more}" ng-show="show_more">
 
                         <div class="title_select_container">
                         <select  class="gender_select" 
@@ -86,7 +87,7 @@
                         </select>
                     </div>
                     <div class="title_select_container">
-                        <keyword-select label="Välj samling" 
+                        <keyword-select label="Filtrera: genre / tema / Utgivare" 
                                         model="filters.keywords" 
                                         on-change="filters.keywords = keywords; refreshData()"></keyword-select>
                     </div>
@@ -155,20 +156,21 @@
                         </select>
                     </div>
                     -->     
-                </div>
-
-           
-                
-                <!-- <div class="more" ng-class="{show_more : dl_mode}">
+                    <div class="more  ml-[2px] relative " ng-class="{show_more : dl_mode}">
                     <a ng-click="setDownloadMode()">
                         <i class="fa fa-download color-black mr-1 text-xs"></i>
                         <span ng-if="!dl_mode"> Ladda ner källmaterial</span>
                         <span ng-if="dl_mode">Stäng källmaterial</span>
-            </a></div> -->
+            </a></div>
                 <div class="more_container h-8 relative mb-4" ng-class="{show_more : dl_mode}" ng-show="dl_mode">
                     <a class="sc btn btn-small absolute left" ng-show="!isAllVisibleSelected()" ng-click="onSelectVisible()">Välj alla verk i listan</a>
                     <a class="sc btn btn-small absolute left" ng-show="isAllVisibleSelected()" ng-click="onDeselectVisible()">Avmarkera alla verk i listan</a>
                 </div>
+                </div>
+
+           
+                
+                
                 <!-- <a class="btn text-xs submit pull-right" ng-click="setDownloadMode()">Ladda ner…</a> -->
             </div>
             
@@ -187,19 +189,19 @@
                 change="onSliderChange()">
             </chronology>
             <div class="btn-group p-0 mt-4 sm:mt-6 ">
-                <button class="sc btn btn-small text-base" ng-class="" 
+                <button ng-show="listType != 'epub'" class="sc btn btn-small text-base" ng-class="" 
                     ng-model="listType" uib-btn-radio="'all'" ng-click="fetchByRelevance()">
                     Alla träffar
                 </button>
-                <button class="sc btn btn-small text-base" ng-class="{disabled: dl_mode || !authorData.length}" 
+                <button ng-show="listType != 'epub'" class="sc btn btn-small text-base" ng-class="{disabled: dl_mode || !authorData.length}" 
                     ng-model="listType" uib-btn-radio="'authors'" ng-click="setAuthorData()">
                     <span ng-if="!dl_mode">Författare</span><span ng-if="dl_mode">Författare</span><span class="num_hits">: {{authorData.length}}</span>
                 </button>
-                <button class="sc btn btn-small text-base" 
+                <button ng-show="listType != 'epub'" class="sc btn btn-small text-base" 
                     ng-model="listType" uib-btn-radio="'works'" ng-click="fetchWorks()">
                     Verk<span class="num_hits" ng-show="titleModel.works_hits">: {{titleModel.works_hits}}</span>
                 </button>
-                <button class="sc btn btn-small text-base" 
+                <button ng-show="listType != 'epub'" class="sc btn btn-small text-base" 
                     ng-model="listType" uib-btn-radio="'latest'" ng-click="fetchRecent()">
                     Nytt
                     <!-- <span class="num_hits" ng-show="titleModel.latest_hits">: {{titleModel.latest_hits}}</span> -->
@@ -208,8 +210,8 @@
                     ng-model="listType" uib-btn-radio="'parts'" ng-click="fetchParts()">Dikt, novell, etc.<span class="parts num_hits" ng-show="parts_hits">: {{ parts_hits }}</span></button>
                 <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
                     ng-model="listType" uib-btn-radio="'epub'" ng-click="fetchWorks(false, true)">Epub<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></button>
-                <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
-                    ng-model="listType" uib-btn-radio="'pdf'" ng-click="fetchWorks(false, true)">PDF<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.epub_hits}}</span></button>
+                <!-- <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
+                    ng-model="listType" uib-btn-radio="'pdf'" ng-click="fetchWorks(false, false, false, true)">PDF<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.pdf_hits}}</span></button> -->
                 <!-- <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
                     ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label> -->
             </div>
@@ -395,6 +397,7 @@
                 </div>
                 
                 <ng-include src="worksListURL" ng-if="listType == 'epub'"></ng-include>
+                <ng-include src="worksListURL" ng-if="listType == 'pdf'"></ng-include>
 
                 <!-- <div class="result title pl-0 sm:ml-3" ng-if="listType == 'audio'">
                     <sort-list ></sort-list>

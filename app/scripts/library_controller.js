@@ -178,6 +178,10 @@ littb.controller(
             s.fetchRecent(false)
         }
 
+        s.getMediatype = (row, mediatype) => {
+            return _.find(row.mediatypes, item => item.label == mediatype)
+        }
+
         s.onAutocompleteSelect = item => {
             console.log("🚀 ~ file: library_controller.js:179 ~ item", item)
             if (item.url) {
@@ -397,6 +401,7 @@ littb.controller(
             all: "_score|desc",
             works: "popularity|desc",
             epub: "popularity|desc",
+            pdf: "popularity|desc",
             authors: "popularity|desc",
             parts: "sortkey|asc",
             audio: "title.raw|asc",
@@ -560,6 +565,7 @@ littb.controller(
                 s.relevance_page.current = 1
                 s.parts_page.current = 1
                 s.titleModel["epub_currentpage"] = 1
+                s.titleModel["pdf_currentpage"] = 1
                 s.titleModel["works_currentpage"] = 1
                 s.titleModel["latest_currentpage"] = 1
             }
@@ -579,6 +585,7 @@ littb.controller(
             return Promise.all([
                 s.fetchWorks(s.listType !== "works", false),
                 s.fetchWorks(s.listType !== "epub", true),
+                s.fetchWorks(s.listType !== "pdf", false, false, true),
                 s.fetchParts(s.listType !== "parts")
             ])
             // fetchAudio(s.listType !== "audio")
@@ -805,20 +812,26 @@ littb.controller(
         s.titleModel = {
             works: [],
             epub: [],
+            pdf: [],
             latest: [],
             works_hits: 0,
             epub_hits: 0,
+            pdf_hits: 0,
             latest_hits: 0,
             works_currentpage: 1,
             epub_currentpage: 1,
+            pdf_currentpage: 1,
             latest_currentpage: 1
         }
         s.fetchRecent = countOnly => {
             s.fetchWorks(countOnly, false, true)
         }
 
-        s.fetchWorks = (countOnly, epubOnly, isSearchRecent) => {
-            let listID = epubOnly ? "epub" : "works"
+        s.fetchWorks = (countOnly, epubOnly, isSearchRecent, pdfOnly) => {
+            let listID = "works"
+            if (epubOnly) listID = "epub"
+            if (pdfOnly) listID = "pdf"
+
             if (isSearchRecent) listID = "latest"
             // let show_all = s.titleModel["show_all_" + listID]
             // let size = { from: 0, to: show_all ? 10000 : 100 }
@@ -854,6 +867,8 @@ littb.controller(
             }
             if (epubOnly) {
                 filter_and.has_epub = true
+            } else if (pdfOnly) {
+                filter_and["export>type"] = ["pdf"]
             }
             let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
             const def = backend.getTitles("etext,faksimil,pdf", {
@@ -950,6 +965,8 @@ littb.controller(
                 s.fetchParts(false)
             } else if (s.listType == "epub") {
                 s.fetchWorks(false, true)
+            } else if (s.listType == "pdf") {
+                s.fetchWorks(false, false, false, true)
             } else if (s.listType == "authors") {
                 s.setAuthorData()
             } else if (s.listType == "latest") {
@@ -1055,7 +1072,7 @@ littb.controller(
             minimumResultsForSearch: -1,
             templateSelection(item) {
                 if (!item.id || item.id == "all") {
-                    return "Välj kön"
+                    return "Filtrera: kvinnliga / manliga / alla"
                 } else {
                     return item.text
                 }

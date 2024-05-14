@@ -641,9 +641,9 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
         window.location.hash = ""
     }
 
-    $rootScope.libraryBkg = import(
-        /* webpackChunkName: "library_bkg", webpackPrefetch: true */ "!!url-loader?limit=100000000!../img/library.jpg"
-    )
+    // $rootScope.libraryBkg = import(
+    //     /* webpackChunkName: "library_bkg", webpackPrefetch: true */ "!!url-loader?limit=100000000!../img/biblioteket_bakgrund.jpg"
+    // )
     $rootScope.SA_logo = require("../img/SA_logo_type.svg")
 
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css

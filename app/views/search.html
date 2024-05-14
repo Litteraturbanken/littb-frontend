@@ -1,6 +1,6 @@
 <meta-desc>Sök i Litteraturbankens verk</meta-desc>
 <page-title> {{pageTitle ? 'Sök: "' + pageTitle + '"' : 'Sök' }}</page-title>
-<!-- <img bkg-img src="img/sok_bkg.jpg"></img> -->
+<!-- <img bkg-img src="img/sok_bkg.jpg"> -->
 <div ng-class="{searching:searching, advanced : advanced, simple: !advanced}">
     
 
@@ -38,6 +38,11 @@
         </div>
         <search-opts class=""></search-opts>
             
+        <div class="chronology text-white ml-px pl-px">
+                <i class="fa fa-clock-o mr-1 ml-px"></i>
+                <span class="sc mt-8 ">Tidslinje: kronologisk sökning</span> 
+                <!-- <span>{{filters['sort_date_imprint.date:range'][0]}}</span>–<span>{{filters['sort_date_imprint.date:range'][1]}}</span> -->
+            </div>
         <chronology 
             class="block max-w-3xl pr-2 "
             from="filters['sort_date_imprint.date:range'][0]" 

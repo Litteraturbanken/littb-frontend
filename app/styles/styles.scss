@@ -477,7 +477,7 @@ ul.litt-list {
 }
 
 .select2-container {
-    width : 300px !important;
+    width : 350px !important;
     border: none;
     margin-bottom: 5px;
 }
@@ -561,7 +561,7 @@ ul.litt-list {
 
 .select2-container .select2-search--inline .select2-search__field {
     margin-top: 0;
-    width : 300px !important;
+    width : 350px !important;
     @include small-caps();
     font-size : 0.8em;
     padding : 5px 5px 5px 10px;
@@ -2213,6 +2213,7 @@ body > .header {
 }
 
 .page-library {
+
     display : inline-flex;
     width : 100%;
     // padding-right : 0;
