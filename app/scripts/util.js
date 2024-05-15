@@ -168,7 +168,7 @@ littb.factory("util", function util($location, $filter) {
 
             let filter_or = {}
 
-            if (filterObj.gender === "all") {
+            if (filterObj.gender === "") {
                 delete filterObj["gender"]
             } else {
                 filter_or["main_author.gender"] = filterObj.gender

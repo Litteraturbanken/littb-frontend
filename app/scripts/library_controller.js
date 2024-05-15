@@ -26,44 +26,57 @@ littb.component("keywordSelect", {
     template: String.raw`
     
     <select multiple class="filter_select keyword_select" ui-select2
-            ng-change="$ctrl.onChange({keywords: $ctrl.model})"
-            ng-model="$ctrl.model"
-             data-placeholder="{{$ctrl.label}}">
-        <option value=""></option>
+        ng-change="$ctrl.onChange({keywords: $ctrl.model})"
+        ng-model="$ctrl.model"
+         data-placeholder="{{$ctrl.label}}">
+    <option value=""></option>
+    <optgroup label="Genre/form">
         <option value="texttype:brev;brevsamling">Brev</option>
         <option value="texttype:drama;dramasamling" data-disabled="true">Dramatik</option>
+        <option value="texttype:essä;essäsamling" data-disabled="true">Essäer</option>
         <option value="texttype:novellsamling;novell">Noveller</option>
         <option value="texttype:diktsamling;dikt">Poesi</option>
         <option value="texttype:roman">Romaner</option>
-        <option value="texttype:herdaminne">Herdaminnen</option>
+        <option value="texttype:sakprosa;kringtexter;avhandling;referensverk">Sakprosa</option>
         
         <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
+        <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
         <option value='keyword:Flickböcker'>Flickböcker</option>
+        <option value="texttype:herdaminne">Herdaminnen</option>
+        <option value='keyword:Humor'>Humoristiska verk</option>
+        <option value="texttype:kistebrev">Kistebrev</option>
+        <option value='texttype:kringtext'>Kringtexter</option>
+        <option value='texttype:kåseri;kåserisamling'>Kåserier</option>
+        <option value="texttype:reseskildring">Reseskildringar</option>
+        <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
+    </optgroup>
+    <optgroup label="Ämnesord">
+        <option value='keyword:Sapmi'>Sápmi</option>
+        <option value='keyword:Rösträtt'>Rösträtt</option>
+    </optgroup>
+    <optgroup label="Projekt">
+        <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
+        <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
+        <option value='keyword:LB-antologi'>Litteraturbankens antologier</option>
+        <option value='keyword:1800'>Nya vägar till det förflutna</option>
+    </optgroup>
+    <optgroup label="Avdelningar">
         <option value='source:bibliotekariesidor'>Bibliotekariesidorna</option>
         <option value='source:diktensmuseum'>Diktens museum</option>
         <option value='keyword:Dramawebben'>Dramawebben</option>
-        <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
-        <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
-        <option value='keyword:OrdenPrövas'>Harry Martinson. Orden prövas</option>
-        <option value='keyword:Humor'>Humor</option>
-        <option value='keyword:LB-antologi'>Litteraturbankens antologier</option>
-        <option value='texttype:kringtext'>Kringtexter</option>
         <option value='source:skolan'>Litteraturbankens skola</option>
         <option value='source:litteraturkartan'>Litteraturkartan</option>
         <option value='source:ljudochbild'>Ljud & Bild</option>
-        <option value='keyword:1800'>Nya vägar till det förflutna</option>
-        <option value="texttype:reseskildring">Reseskildringar</option>
-        <option value="texttype:kistebrev">Kistebrev</option>
-        <option value='keyword:Rösträtt'>Rösträtt</option>
-        <option value='keyword:Sapmi'>Sápmi</option>
-        <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
+        <option value='source:sol'>Översättarlexikon</option>
+    </optgroup>
+    <optgroup label="Utgivare">
         <option value='keyword:SLS-FI'>SLS Finland</option>
         <option value='provenance.library:SVELITT'>SLS Sverige</option>
-        <option value='provenance.library:SFS'>Svenska fornskriftsällskapet</option>
-        <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
+        <option value='provenance.library:SA'>Svenska Akademien</option>
+        <option value='provenance.library:SFS'>Svenska fornskriftssällskapet</option>
         <option value='provenance.library:SVA'>Svenskt visarkiv</option>
-        <option value='source:sol'>Översättarlexikon</option>
-    </select>`,
+    </optgroup>
+</select>`,
     bindings: {
         label: "@",
         model: "<",
@@ -160,7 +173,6 @@ littb.controller(
         }
 
         let routeChangeUnbind = s.$on("$routeChangeStart", (event, newRoute, prevRoute) => {
-            console.log("leave search", window.location.search)
             $rootScope.libraryState.queryparams = window.location.search
         })
 
@@ -219,6 +231,9 @@ littb.controller(
             s.refreshData()
         }
 
+        s.isEpub = $location.path() == "/epub"
+        s.isLibrary = $location.path() == "/bibliotek"
+
         s.isPristine = () => {
             if (s.initialLoading) return true
             let [from, to] = s.filters["sort_date_imprint.date:range"]
@@ -250,7 +265,6 @@ littb.controller(
 
         s.currentAuthors = []
         s.currentPartAuthors = []
-        s.currentAudioAuthors = []
 
         s.normalizeAuthor = $filter("normalizeAuthor")
 
@@ -320,10 +334,10 @@ littb.controller(
             s.filter = ""
             s.rowfilter = ""
             s.all_titles = null
-            s.audio_list = null
             s.keywords_aux = []
             s.parts_page.current = 1
             $location.search("hide1800", null)
+            s.refreshData()
         }
 
         s.hasMediatype = function (titleobj, mediatype) {
@@ -378,10 +392,10 @@ littb.controller(
         // $timeout () ->
         authors.then(function ([authorList, authorsById]) {
             s.authorsById = authorsById
-            s.withPortraits = _.filter(
-                authorList,
-                item => !item.picture && item.wikidata && item.wikidata.image
-            )
+            // s.withPortraits = _.filter(
+            //     authorList,
+            //     item => !item.picture && item.wikidata && item.wikidata.image
+            // )
             s.authorSearching = false
         })
 
@@ -404,7 +418,6 @@ littb.controller(
             pdf: "popularity|desc",
             authors: "popularity|desc",
             parts: "sortkey|asc",
-            audio: "title.raw|asc",
             latest: "imported|desc,main_author.name_for_index|asc,sortfield|asc"
         }
 
@@ -528,24 +541,6 @@ littb.controller(
                     dir: "asc",
                     active: true
                 }
-            ],
-            audio: [
-                {
-                    label: "Författare",
-                    val: "main_author.name_for_index",
-                    dir: "asc"
-                },
-                {
-                    label: "Titel",
-                    val: "title.raw",
-                    dir: "asc",
-                    active: true
-                },
-                {
-                    label: "Uppläsare",
-                    val: "main_reader.name_for_index",
-                    dir: "asc"
-                }
             ]
         }
         s.sortItems["epub"] = _.cloneDeep(s.sortItems.works)
@@ -582,13 +577,16 @@ littb.controller(
             if (s.listType == "latest") {
                 s.fetchRecent(false)
             }
-            return Promise.all([
-                s.fetchWorks(s.listType !== "works", false),
-                s.fetchWorks(s.listType !== "epub", true),
-                s.fetchWorks(s.listType !== "pdf", false, false, true),
-                s.fetchParts(s.listType !== "parts")
-            ])
-            // fetchAudio(s.listType !== "audio")
+            if (s.isLibrary) {
+                return Promise.all([
+                    s.fetchWorks(s.listType !== "works", false),
+                    s.fetchWorks(s.listType !== "epub", true),
+                    // s.fetchWorks(s.listType !== "pdf", false, false, true),
+                    s.fetchParts(s.listType !== "parts")
+                ])
+            } else {
+                return Promise.all([s.fetchWorks(s.listType !== "epub", true)])
+            }
         }
         s.capitalizeLabel = label => {
             return { pdf: "PDF", xml: "XML" }[label] || label
@@ -598,7 +596,8 @@ littb.controller(
 
         s.setAuthorData = function () {
             let [key, dir] = (s.sort.authors || "").split("|")
-            let authors = [].concat(s.currentAuthors, s.currentPartAuthors, s.currentAudioAuthors)
+            let authors = [].concat(s.currentAuthors, s.currentPartAuthors)
+            console.log("🚀 ~ currentPartAuthors:", s.currentPartAuthors)
 
             authors = authors.filter(item => {
                 let conds = []
@@ -749,11 +748,6 @@ littb.controller(
                     s.$apply()
                 }
             }
-
-            // $q.all([def, authors]).then(([{ author_aggs }]) => {
-            //     s.currentPartAuthors = author_aggs.map(({ authorid }) => s.authorsById[authorid])
-            //     s.setAuthorData()
-            // })
         }
 
         s.fetchParts = countOnly => {
@@ -876,7 +870,7 @@ littb.controller(
                 filter_string: s.rowfilter,
                 keyword_aux: [...s.keywords_aux, ...maybeHide1800],
                 include:
-                    "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
+                    "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
                 filter_or,
                 filter_and,
@@ -972,9 +966,6 @@ littb.controller(
             } else if (s.listType == "latest") {
                 s.fetchRecent()
             }
-            // else if (s.listType == "audio") {
-            //     fetchAudio(false)
-            // }
             // s.refreshData()
         }
         let sortInit = $location.search().sort || "popularitet"

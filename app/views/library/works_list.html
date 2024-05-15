@@ -11,7 +11,7 @@
         <div class="spinner_row ng-fade transition duration-200 h-0" ng-show="titleSearching">
             <i class="spinner fa fa-spinner fa-pulse"></i>
         </div>
-        <table id="table" class="table w-full table-fixed flex-grow">
+        <table id="table" class="table w-full flex-grow">
 
             <tr ng-show="!initialLoading && !titleSearching && !titleModel[listType].length">
                 <td class="text-lg">Inga träffar. <span ng-show='titleModel[listType + "_suggest"][0]'>Menade du <a class="link" ng-click='setFilter(titleModel[listType + "_suggest"][0].text)'>{{titleModel[listType + "_suggest"][0].text}}</a>?</span></td>
@@ -28,9 +28,9 @@
                 <!-- <td class="w-6" ng-if="dl_mode && !row.isHeader">
                     <input class="" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
                 </td> -->
-                <td class="title_col" ng-if="!row.isHeader" >
+                <td class="align-top" ng-if="!row.isHeader" >
 
-                    <div class="whitespace-nowrap">
+                    <div class="">
                         <input
                             ng-if="dl_mode"
                             class=""
@@ -42,8 +42,8 @@
                          top="$parent.title_off" 
                          ng-click="!dl_mode && titleClick($event, row)"
                          id="{{getUniqId(row)}}"
-                         class="header_container inline-block align-middle">
-                        <div class="header">
+                         class="header_container inline-block">
+                        <div class="header line-clamp-2">
                             <span class="title_inner" uib-tooltip="{{row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500" >
                                 <a ng-if="listType == 'works' || listType == 'latest'" ng-click="titleHeaderClick($event, row)">{{row.shorttitle || row.title}} </a>
                                 <a ng-if="listType == 'epub'" 
@@ -84,27 +84,28 @@
                     </div>
                 </div></td>
 
-                <td class="align-top text-left hidden sm:table-cell w-16 whitespace-nowrap"><a ng-click="setDateRange(row.sort_date_imprint.plain, row.sort_date_imprint.plain)">{{row.sort_date_imprint.plain}}</a></td>
-                <td class="align-top" ng-class="{'text-left': ['epub', 'pdf'].includes(listType), 'text-right': !['epub', 'pdf'].includes(listType)}"><span class="author" uib-tooltip="{{row.main_author.full_name }} {{row.main_author | authorYear:true}}">
-                            <a ng-href="/författare/{{row.main_author.authorid}}">{{row.main_author.surname}}</a> 
-                            <span ng-if="row.main_author.type == 'editor'">(red.)</span> 
-                            <span ng-if="row.main_author.type == 'illustrator'">(ill.)</span>
-                        </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].authorid])" --></td>
+                <td class="align-top text-left hidden sm:table-cell w-18"><a ng-click="setDateRange(row.sort_date_imprint.plain, row.sort_date_imprint.plain)">{{row.sort_date_imprint.plain}}</a></td>
+                <td class="align-top" ng-class="{'text-left': ['epub', 'pdf'].includes(listType), 'text-right': !['epub', 'pdf'].includes(listType)}">
+                    <span class="author" uib-tooltip="{{row.main_author.full_name }} {{row.main_author | authorYear:true}}">
+                        <a ng-href="/författare/{{row.main_author.authorid}}">{{row.main_author.surname}}</a> 
+                        <span class="text-gray-600 sc" ng-if="row.main_author.type == 'editor'">(red.)</span> 
+                        <span class="text-gray-600 sc" ng-if="row.main_author.type == 'illustrator'">(ill.)</span>
+                    </span> <!-- ng-click="authorClick($event, authorsById[row.author[0].authorid])" --></td>
                 
-                <td class="text-right" ng-if="['epub', 'pdf'].includes(listType)">
-                    <a class="sc w-32 block"  
+                <td class=" align-top whitespace-nowrap w-px" ng-if="['epub', 'pdf'].includes(listType)">
+                    <a class="sc block"  
                         ng-if="listType == 'epub'"
                         ng-href="/txt/epub/{{row.main_author.authorid + '_' + (row.work_titleid || row.titleid)}}.epub"
                         target="_self"
                         download>Hämta </a>
 
-                        <a ng-if="listType == 'pdf'" class="sc w-32 block"
-                            ng-href="{{getMediatype(row, 'pdf').url}}"
-                            target="_self"
-                            download="{{getMediatype(row, 'pdf').filename}}.{{getMediatype(row, 'pdf').label}}"
-                            ng-click="log(workinfo, 'pdf')" 
-                            ng-touch="log(workinfo, 'pdf')"
-                        >Hämta</a>
+                    <a ng-if="listType == 'pdf'" class="sc w-32 block"
+                        ng-href="{{getMediatype(row, 'pdf').url}}"
+                        target="_self"
+                        download="{{getMediatype(row, 'pdf').filename}}.{{getMediatype(row, 'pdf').label}}"
+                        ng-click="log(workinfo, 'pdf')" 
+                        ng-touch="log(workinfo, 'pdf')"
+                    >Hämta</a>
                 </td>
 
             </tr>

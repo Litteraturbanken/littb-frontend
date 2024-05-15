@@ -356,10 +356,10 @@ window.littb = angular
             })
             .when("/titlar", { redirectTo: "/bibliotek" })
             .when("/epub", {
-                templateUrl: require("../views/epubList.html"),
-                controller: "epubListCtrl",
+                templateUrl: require("../views/library.html"),
+                controller: "libraryCtrl",
                 reloadOnSearch: false,
-                title: "Gratis böcker för nerladdning i epubformat"
+                title: "E-böcker för nedladdning"
             })
             .when("/ljudarkivet", {
                 templateUrl: require("../views/audiolist.html"),
@@ -742,7 +742,7 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
         bkgConf.get(path).then(function (confObj) {
             c.log("bkgConf", confObj)
             if (confObj) {
-                $("body").css({
+                $("html").css({
                     background: `url('${confObj.url}') no-repeat`
                 })
 
@@ -753,7 +753,7 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
                     }
                 }
             } else {
-                $("body").css({
+                $("html").css({
                     "background-image": "none"
                 })
             }

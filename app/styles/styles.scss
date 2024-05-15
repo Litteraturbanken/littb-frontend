@@ -195,6 +195,7 @@ th {
 
 .chronology_inputs input {
     width : 2.5rem;
+    border: 1px solid #999 !important;
 }
 
 .slider-large.rzslider {
@@ -499,7 +500,8 @@ ul.litt-list {
 }
 @screen sm {
     .select2-container--default .select2-results > .select2-results__options {
-        max-height : min(500px, 70vh)
+        max-height : min(500px, 70vh);
+        overscroll-behavior: contain;
     }
 
 }
@@ -513,6 +515,22 @@ ul.litt-list {
     background-color: white !important;
     padding-left : 10px;
     font-size: 0.8em;
+}
+
+.select2-container--default .select2-results__group {
+    font-size: 1.1em;
+    font-weight: normal;
+    color: #999;
+    margin-left: 10px;
+    margin-top: 1rem;
+    padding-bottom: 0;
+}
+.select2-container--default .select2-results__options--nested {
+    margin-left: 1rem;
+    padding-bottom: 0;
+    .select2-results__option {
+        padding-left: 8px;
+    }
 }
 
 .select2-container--default .select2-selection--multiple, .select2-container--default .select2-selection--single {
@@ -2375,7 +2393,7 @@ body > .header {
                 }
             }
             .select2-selection--single {
-                border: 1px solid #333 !important;
+                border: 1px solid #999 !important;
                 padding-bottom: 29px;
                 .select2-selection__placeholder {
                     color: #666666de;
@@ -2383,7 +2401,7 @@ body > .header {
             }
             .select2-selection--multiple {
                 input {
-                    border: 1px solid #333;
+                    border: 1px solid #999 !important;
                     margin-right: 0.5em;
                 }
                 &:after {
@@ -2680,35 +2698,6 @@ body > .header {
             }
             
             &.title {
-                .first_part {
-                }
-                // max-width : 570px;
-                // min-width: 465px;
-                
-                // flex : 1 auto;
-
-                li {
-
-                }
-                .header {
-                    // display : flex;
-
-                    // & > * {
-                        
-                    // }
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                }
-                .title_col {
-                    width : 57%;
-                    // flex : 1;
-                    // color: $primarycolor;
-                    margin-right: 0.3em;
-                    .title_inner {
-
-                    }
-                }
                 .author {
                     // text-transform: uppercase;
                     // @include small-caps();
