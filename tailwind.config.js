@@ -5,10 +5,7 @@
  ** Default: https://github.com/tailwindcss/tailwindcss/blob/master/stubs/defaultConfig.stub.js
  */
 module.exports = {
-    purge: {
-        content: ["./app/**/*.js", "./app/**/*.html"],
-        layers: ["utilities"]
-    },
+    content: ["./app/**/*.js", "./app/**/*.html"],
     theme: {
         extend: {
             opacity: {

@@ -1024,17 +1024,13 @@ littb.controller(
             }
         }
 
-        s.titleHeaderClick = function ($event, title) {
-            if (s.selectedTitle === title && title._collapsed) {
-                title._collapsed = false
-                if ($event) $event.stopPropagation()
-            }
-        }
-
         s.titleClick = function ($event, title) {
-            if (s.selectedTitle !== title) {
-                if (s.selectedTitle != null) {
-                    s.selectedTitle._collapsed = false
+            if (s.selectedTitle) {
+                s.selectedTitle._collapsed = false
+                if (s.selectedTitle == title) {
+                    s.selectedTitle = null
+                    $location.search("title", null)
+                    return
                 }
             }
 

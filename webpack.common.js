@@ -12,7 +12,7 @@ module.exports = {
     devServer: {
         host: process.env.LITTB_HOST || "localhost",
         port: process.env.LITTB_PORT || 9000,
-        // hot : true,
+        hot: true,
         proxy: [
             {
                 context: [

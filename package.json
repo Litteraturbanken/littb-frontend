@@ -11,6 +11,7 @@
         "serve-dist": "NODE_ENV=production webpack-dev-server  --config webpack.prod.js --env prod --compress  --host 0.0.0.0 --disable-host-check"
     },
     "dependencies": {
+        "@tailwindcss/line-clamp": "^0.4.4",
         "angular": "1.7.9",
         "angular-animate": "1.7.9",
         "angular-aria": "~1.7.9",
@@ -56,6 +57,7 @@
         "glob-all": "^3.1.0",
         "html-loader": "^0.5.5",
         "html-webpack-plugin": "^3.2.0",
+        "modern-normalize": "^2.0.0",
         "ng-annotate-webpack-plugin": "^0.3.0",
         "optimize-css-assets-webpack-plugin": "^5.0.3",
         "postcss": "^8.2.15",
@@ -69,7 +71,7 @@
         "style-loader": "^0.21.0",
         "svg-url-loader": "^2.3.2",
         "svgo-loader": "^3.0.0",
-        "tailwindcss": "^2.1.2",
+        "tailwindcss": "^3.4.3",
         "ts-loader": "^8.0.11",
         "typescript": "^4.1.2",
         "uglifyjs-webpack-plugin": "^2.2.0",
