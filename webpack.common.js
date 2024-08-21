@@ -9,7 +9,6 @@ const HtmlWebPackPlugin = require("html-webpack-plugin")
 
 module.exports = {
     entry: "./app/main.js",
-    watch: true,
     devServer: {
         host: process.env.LITTB_HOST || "localhost",
         port: process.env.LITTB_PORT || 9000,
@@ -40,7 +39,7 @@ module.exports = {
                 changeOrigin: true
             }
         ],
-        stats: { colors: true },
+        // stats: { colors: true },
         historyApiFallback: true
     },
     module: {
