@@ -2,101 +2,190 @@
 <page-title> {{pageTitle ? 'Sök: "' + pageTitle + '"' : 'Sök' }}</page-title>
 <!-- <img bkg-img src="img/sok_bkg.jpg"> -->
 <div ng-class="{searching:searching, advanced : advanced, simple: !advanced}">
-    
-
-    <h1 class="text-6xl">Sök i texterna 
+    <h1 class="text-6xl">
+        Sök i texterna
         <!-- <span class="hidden lg:inline"><span class="star">*</span> <span ng-show="!advanced" class="sc">ENKEL SÖKNING</span> <span class="sc" ng-show="advanced">AVANCERAD SÖKNING</span></span>  -->
     </h1>
 
     <form class="submit_form" ng-submit="onSearchSubmit(query)">
-        <div class="top_row -mt-2 flex max-w-xl ">
+        <div class="top_row -mt-2 flex max-w-xl">
             <!-- <input class="query py-1 mt-2" ng-model="query" autofocus type="search" focusable > -->
 
             <div class="flex w-full items-stretch">
-                <svg class="w-6 h-6 relative  left-4 self-center top-0 -mt-px" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#7A1400" > <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /> </svg>
-                <input class=" -ml-6  mr-2 flex-grow py-3 text-lg pl-12 pr-4 border border-gray-500" autofocus focusable
+                <svg
+                    class="w-6 h-6 relative left-4 self-center top-0 -mt-px"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="#7A1400"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                    />
+                </svg>
+                <input
+                    class="-ml-6 mr-2 flex-grow py-3 text-lg pl-12 pr-4 border border-gray-500"
+                    autofocus
+                    focusable
                     ng-model-options='{debounce : {default : 300, blur : 0}, updateOn: "default blur"}'
                     ng-model="query"
                     placeholder=""
-                    autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="none"
+                    spellcheck="false"
+                />
+                <svg
+                    class="reset self-center text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 cursor-pointer -mr-6"
+                    ng-click="resetView($event)"
+                    ng-show="!isPristine()"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
                 >
-                <svg class="reset self-center text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 cursor-pointer -mr-6" ng-click="resetView($event)" ng-show="!isPristine()" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /> </svg>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
                 <button class="mr-2 bg-white border border-gray-500 w-14 uppercase sc">Sök</button>
-                <button class="bg-white border border-gray-500 self-stretch w-14 focus:ring-1 focus:ring-inset focus:ring-primary" uib-tooltip="{{advanced ? 'Enkel sökning':'Utökad sökning' }}" tooltip-popup-delay="250" tooltip-placement="right" ng-click="advanced = !advanced">
-                    <svg class="filter w-6 h-6 relative top-0 inline-block text-gray-700" ng-show="!advanced" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" /> </svg>
-                    <svg class="filter w-6 h-6 relative top-0 inline-block text-gray-700" ng-show="advanced" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"> <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12" /> </svg>
+                <button
+                    class="bg-white border border-gray-500 self-stretch w-14 focus:ring-1 focus:ring-inset focus:ring-primary"
+                    uib-tooltip="{{advanced ? 'Enkel sökning':'Utökad sökning' }}"
+                    tooltip-popup-delay="250"
+                    tooltip-placement="right"
+                    ng-click="advanced = !advanced"
+                >
+                    <svg
+                        class="filter w-6 h-6 relative top-0 inline-block text-gray-700"
+                        ng-show="!advanced"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25"
+                        />
+                    </svg>
+                    <svg
+                        class="filter w-6 h-6 relative top-0 inline-block text-gray-700"
+                        ng-show="advanced"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12"
+                        />
+                    </svg>
                 </button>
             </div>
-            
-            
-            
+
             <!-- <button class="reset sc mt-2 uppercase border border-gray-500 bg-white bg-opacity-25 px-4 py-2 hover:bg-white ng-fade transition duration-200 focus:outline-none" ng-click="resetView($event)" ng-show="!isPristine()">
                 Återställ
             </button> -->
-            
-            <div class="w-4"><i ng-show="searching" class="spinner fa fa-spinner fa-pulse mt-2"></i></div>
+
+            <div class="w-4">
+                <i ng-show="searching" class="spinner fa fa-spinner fa-pulse mt-2"></i>
+            </div>
         </div>
         <search-opts class=""></search-opts>
-            
+
         <div class="chronology text-white ml-px pl-px">
-                <i class="fa fa-clock-o mr-1 ml-px"></i>
-                <span class="sc mt-8 ">Tidslinje: kronologisk sökning</span> 
-                <!-- <span>{{filters['sort_date_imprint.date:range'][0]}}</span>–<span>{{filters['sort_date_imprint.date:range'][1]}}</span> -->
-            </div>
-        <chronology 
-            class="block max-w-3xl pr-2 "
-            from="filters['sort_date_imprint.date:range'][0]" 
-            to="filters['sort_date_imprint.date:range'][1]" 
-            change="onSliderChange()">
+            <i class="fa fa-clock-o mr-1 ml-px"></i>
+            <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
+            <!-- <span>{{filters['sort_date_imprint.date:range'][0]}}</span>–<span>{{filters['sort_date_imprint.date:range'][1]}}</span> -->
+        </div>
+        <chronology
+            class="block max-w-3xl pr-2"
+            from="filters['sort_date_imprint.date:range'][0]"
+            to="filters['sort_date_imprint.date:range'][1]"
+            change="onSliderChange()"
+        >
         </chronology>
 
         <div class="bottom_row" ng-show="advanced">
-                <div class="left">
-                    <div class="auth_select_container">
-                        <select multiple class="filter_select author_select" 
-                                ui-select2="authorSelectSetup" 
-                                ng-model="filters['authors>authorid']" 
-                                data-placeholder="Författarskap" 
-                                ng-change="onAuthChange()">
-                            <option value=""></option>
-                            <option value='{{author.authorid}}' ng-repeat="author in authors">
-                                {{author.name_for_index}} ({{author | authorYear}})
-                            </option>
-                        </select> 
-                        <div class="w-4 inline-block"><i ng-if="loadingAuthors" class="spinner fa fa-spinner fa-pulse"></i></div>
+            <div class="left">
+                <div class="auth_select_container">
+                    <select
+                        multiple
+                        class="filter_select author_select"
+                        ui-select2="authorSelectSetup"
+                        ng-model="filters['authors>authorid']"
+                        data-placeholder="Författarskap"
+                        ng-change="onAuthChange()"
+                    >
+                        <option value=""></option>
+                        <option value="{{author.authorid}}" ng-repeat="author in authors">
+                            {{author.name_for_index}} ({{author | authorYear}})
+                        </option>
+                    </select>
+                    <div class="w-4 inline-block">
+                        <i ng-if="loadingAuthors" class="spinner fa fa-spinner fa-pulse"></i>
                     </div>
-                    <div class="title_select_container">
-                        <select multiple class="filter_select title_select" ui-select2="titleSelectSetup" ng-model="selectedTitles" data-placeholder="Titlar" ng-change="onTitleChange()">
-                            <!-- <option ng-if="titles_hits > 30" disabled>Visar de första 30 titlarna</option> -->
-                            <option ng-if="titles_hits > 30 && !filters['authors>author_id'].length" disabled>Visar de första 30 titlarna</option>
-                            <option value="{{title.lbworkid}}" ng-repeat="title in titles">{{title.shorttitle || title.title}}</option>
-                            <!-- <option ng-click="onAllTitlesClick()">Visa alla</option> -->
-                        </select>
+                </div>
+                <div class="title_select_container">
+                    <select
+                        multiple
+                        class="filter_select title_select"
+                        ui-select2="titleSelectSetup"
+                        ng-model="selectedTitles"
+                        data-placeholder="Titlar"
+                        ng-change="onTitleChange()"
+                    >
+                        <!-- <option ng-if="titles_hits > 30" disabled>Visar de första 30 titlarna</option> -->
+                        <option
+                            ng-if="titles_hits > 30 && !filters['authors>author_id'].length"
+                            disabled
+                        >
+                            Visar de första 30 titlarna
+                        </option>
+                        <option value="{{title.lbworkid}}" ng-repeat="title in titles">
+                            {{title.shorttitle || title.title}}
+                        </option>
+                        <!-- <option ng-click="onAllTitlesClick()">Visa alla</option> -->
+                    </select>
 
-                        <div class="w-4 inline-block"><i ng-if="loadingTitles" class="spinner fa fa-spinner fa-pulse"></i></div>
-
+                    <div class="w-4 inline-block">
+                        <i ng-if="loadingTitles" class="spinner fa fa-spinner fa-pulse"></i>
                     </div>
-                    <div class="lang_select_container">
-                        <select multiple class="filter_select lang_select" ui-select2 ng-model="filters.languages" data-placeholder="Språk …">
-                            <option value=""></option>
-                            <option value="modernized:true">Moderniserat språk</option>
-                            <option value="modernized:false">Ej moderniserat språk</option>
-                            <option value="proofread:true">Korrekturläst</option>
-                            <option value="proofread:false">Ej korrekturläst</option>
-                            <option value="language:swe">Svenska</option>
-                            <option value="language:eng">Engelska</option>
-                            <option value="language:deu">Tyska</option>
-                            <option value="language:fra">Franska</option>
-                            <option value="language:lat">Latin</option>
-                            <option value="language:smi">Samiska språk</option>
-                            <!-- <option value="">Skrivet av kvinnor</option>
+                </div>
+                <div class="lang_select_container">
+                    <select
+                        multiple
+                        class="filter_select lang_select"
+                        ui-select2
+                        ng-model="filters.languages"
+                        data-placeholder="Språk …"
+                    >
+                        <option value=""></option>
+                        <option value="modernized:true">Moderniserat språk</option>
+                        <option value="modernized:false">Ej moderniserat språk</option>
+                        <option value="proofread:true">Korrekturläst</option>
+                        <option value="proofread:false">Ej korrekturläst</option>
+                        <option value="language:swe">Svenska</option>
+                        <option value="language:eng">Engelska</option>
+                        <option value="language:deu">Tyska</option>
+                        <option value="language:fra">Franska</option>
+                        <option value="language:lat">Latin</option>
+                        <option value="language:smi">Samiska språk</option>
+                        <!-- <option value="">Skrivet av kvinnor</option>
                             <option value="">Skrivet av män</option> -->
-                        </select>
-                    </div>
-                    
+                    </select>
+                </div>
 
-
-                    <!-- <div class="textfields">
+                <!-- <div class="textfields">
                         <div class="checkbox" ng-class="{disabled : isAuthorAboutSearch}" ng-click="isAuthorAboutSearch = false">
                             <div class="check">✓</div>
                             <p class="expl advanced_text auth">
@@ -112,155 +201,219 @@
                         </div>
                     </div> -->
 
-                    <!-- Välj sedan i fältet till höger vilka <span class="sc">titlar</span> av de valda författarna som du vill söka i. (Lämna fältet blankt för att söka i alla deras sökbara texter.) -->
-                    
-                </div>
+                <!-- Välj sedan i fältet till höger vilka <span class="sc">titlar</span> av de valda författarna som du vill söka i. (Lämna fältet blankt för att söka i alla deras sökbara texter.) -->
+            </div>
 
-
-                <div class="right">
-                    <div class="about_select_container">
-                        <select multiple class="filter_select about_select"
-                                ui-select2="authorSelectSetup"
-                                ng-model="filters['authorkeyword>authorid']" 
-                                data-placeholder="Om ett författarskap" 
-                                ng-change="onAboutAuthorChange($event)">
+            <div class="right">
+                <div class="about_select_container">
+                    <select
+                        multiple
+                        class="filter_select about_select"
+                        ui-select2="authorSelectSetup"
+                        ng-model="filters['authorkeyword>authorid']"
+                        data-placeholder="Om ett författarskap"
+                        ng-change="onAboutAuthorChange($event)"
+                    >
                         <option value=""></option>
-                        <option value='{{authorid}}' ng-repeat="authorid in aboutAuthors">{{authorsById[authorid].name_for_index}} ({{authorsById[authorid] | authorYear}})</option>
+                        <option value="{{authorid}}" ng-repeat="authorid in aboutAuthors">
+                            {{authorsById[authorid].name_for_index}} ({{authorsById[authorid] |
+                            authorYear}})
+                        </option>
                     </select>
-                    </div>
-                    <div class="title_select_container">
-                        <select multiple class="filter_select keyword_select" ui-select2 
-                                ng-model="filters.keywords" data-placeholder="Filtrera: genre / tema" 
-                                ng-change="onKeywordChange()" >
-                            <option value=""></option>
+                </div>
+                <div class="title_select_container">
+                    <select
+                        multiple
+                        class="filter_select keyword_select"
+                        ui-select2
+                        ng-model="filters.keywords"
+                        data-placeholder="Filtrera: Kategorier / Utgivare"
+                        ng-change="onKeywordChange()"
+                    >
+                        <option value=""></option>
+                        <optgroup label="Kategorier">
                             <option value="texttype:brev;brevsamling">Brev</option>
-                            <option value="texttype:drama;dramasamling">Dramatik</option>
+                            <option value="texttype:drama;dramasamling" data-disabled="true">
+                                Dramatik
+                            </option>
+                            <option value="texttype:essä;essäsamling" data-disabled="true">
+                                Essäer
+                            </option>
                             <option value="texttype:novellsamling;novell">Noveller</option>
                             <option value="texttype:diktsamling;dikt">Poesi</option>
                             <option value="texttype:roman">Romaner</option>
+                            <option value="texttype:sakprosa;kringtexter;avhandling;referensverk">
+                                Sakprosa
+                            </option>
+
+                            <option value="keyword:Barnlitteratur">
+                                Barn- och ungdomslitteratur
+                            </option>
+                            <option value="keyword:Finlandssvenskt">
+                                Finlandssvensk litteratur
+                            </option>
+                            <option value="keyword:Flickböcker">Flickböcker</option>
                             <option value="texttype:herdaminne">Herdaminnen</option>
-                            <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
-                            <option value='keyword:Flickböcker'>Flickböcker</option>
-                            <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
-                            <option value='keyword:Humor'>Humor</option>
-                            <option value='keyword:Sapmi'>Sápmi</option>
-                            <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
+                            <option value="keyword:Humor">Humoristiska verk</option>
+                            <option value="texttype:kistebrev">Kistebrev</option>
+                            <option value="texttype:kringtext">Kringtexter</option>
+                            <option value="texttype:kåseri;kåserisamling">Kåserier</option>
                             <option value="texttype:reseskildring">Reseskildringar</option>
-                            <option value='keyword:Rösträtt'>Rösträtt</option>
-                            <option value='keyword:Dramawebben'>Dramawebben</option>
-                            <option value='keyword:SLS-FI'>SLS Finland</option>
-                            <option value='provenance.library:SVELITT'>SLS Sverige</option>
-                            <option value='provenance.library:SFS'>Svenska fornskriftsällskapet</option>
-                            <option value='provenance.library:SVS'>Svenska vitterhetssamfundet</option>
-                            <option value='provenance.library:SVA'>Svenskt visarkiv</option>
-                            <option value='keyword:1800'>Nya vägar till det förflutna</option>
-                            <option value='keyword:sentpajorden'>Sent på jorden</option>
-                            <option value='keyword:OrdenPrövas'>Orden prövas. Harry Martinson</option>
-                        </select>
-                    </div>
+                            <option value="keyword:Rösträtt">Rösträtt</option>
+                            <option value="keyword:Sapmi">Sápmi</option>
+                            <option value="keyword:Folktryck">Skillingtryck och folktryck</option>
+                        </optgroup>
+                        <optgroup label="Projekt">
+                            <option value="keyword:sentpajorden">
+                                Gunnar Ekelöf. Sent på jorden
+                            </option>
+                            <option value="keyword:OrdenPrövas">
+                                Harry Martinson. Orden prövas
+                            </option>
+                            <option value="keyword:LB-antologi">
+                                Litteraturbankens antologier
+                            </option>
+                            <option value="keyword:1800">Nya vägar till det förflutna</option>
+                        </optgroup>
+                        <optgroup label="Avdelningar">
+                            <option value="source:bibliotekariesidor">Bibliotekariesidorna</option>
+                            <option value="source:diktensmuseum">Diktens museum</option>
+                            <option value="keyword:Dramawebben">Dramawebben</option>
+                            <option value="source:skolan">Litteraturbankens skola</option>
+                            <option value="source:litteraturkartan">Litteraturkartan</option>
+                            <option value="source:ljudochbild">Ljud & Bild</option>
+                            <option value="source:sol">Översättarlexikon</option>
+                        </optgroup>
+                        <optgroup label="Utgivare">
+                            <option value="keyword:SLS-FI">SLS Finland</option>
+                            <option value="provenance.library:SVELITT">SLS Sverige</option>
+                            <option value="provenance.library:SA">Svenska Akademien</option>
+                            <option value="provenance.library:SFS">
+                                Svenska fornskriftssällskapet
+                            </option>
+                            <option value="provenance.library:SVA">Svenskt visarkiv</option>
+                            <option value="provenance.library:SVS">
+                                Svenska Vitterhetssamfundet
+                            </option>
+                        </optgroup>
+                    </select>
+                </div>
 
-                    
-
-                    <div class="mb-1">
-                    <select  class="gender_select" 
-                             ui-select2="{minimumResultsForSearch: -1}" 
-                             ng-model="filters['main_author.gender']" 
-                             data-placeholder="Filtrera: kvinnliga / manliga / alla" >
+                <div class="mb-1">
+                    <select
+                        class="gender_select"
+                        ui-select2="{minimumResultsForSearch: -1}"
+                        ng-model="filters['main_author.gender']"
+                        data-placeholder="Filtrera: kvinnliga / manliga / alla"
+                    >
                         <option value=""></option>
                         <option value="all">Alla författare</option>
-                        <option value="female">Kvinnliga författare</option>    
+                        <option value="female">Kvinnliga författare</option>
                         <option value="male">Manliga författare</option>
                     </select>
-                    </div>
-
                 </div>
             </div>
-                <!-- <div class="text simple_text max-w-sm">Vill du göra mer avancerade sökningar i texterna?<br> Då kan du klicka på <a ng-click="advanced = true"><i class="fa fa-play"></i> <span class="sc">Avancerade sökmöjligheter</span></a> </div>
+        </div>
+        <!-- <div class="text simple_text max-w-sm">Vill du göra mer avancerade sökningar i texterna?<br> Då kan du klicka på <a ng-click="advanced = true"><i class="fa fa-play"></i> <span class="sc">Avancerade sökmöjligheter</span></a> </div>
                 <div class="text advanced_text">Vill du förenkla sökformuläret? <br>Då kan du klicka på <a ng-click="advanced = false"><i class="fa fa-play"></i> <span class="sc">Enkel sökning</span></a> </div> -->
-            
 
         <p ng-show="false" class="expl advanced_text">
-            Avgränsa sökningen efter tryckår. Dra i reglagen nedan för att filtrera sökurvalet till ett specifikt tidsspann.
+            Avgränsa sökningen efter tryckår. Dra i reglagen nedan för att filtrera sökurvalet till
+            ett specifikt tidsspann.
         </p>
-        
-        
     </form>
 
-    <div class="row results_container" ng-class="{searching:searching}" id="results" >
+    <div class="row results_container" ng-class="{searching:searching}" id="results">
         <!-- <div class="table_viewport" ng-show="kwic" ng-scroll-event="updateOnScrollEvents($event, isEndEvent)"  > -->
         <div class="table_viewport" ng-show="getSentsWithHeadersFromState()">
             <!-- <div class="table_container" ng-style="{height : totalHeight}" > -->
             <div class="table_container">
-                <div ng-if="!searching && getSentsWithHeadersFromState() && !getSentsWithHeadersFromState().length && !searchData.total_hits">Din sökning gav inga träffar</div>
-                
-            
-            
-                <table cellspacing="0" class="results" ng-style="{top : table_top}">
-                    
-                    <tr 
-                        on-finish-render="tableRenderComplete()" 
-                        ng-repeat="sent in getSentsWithHeadersFromState()" 
-                        ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.metadata.mediatype == 'faksimil'}" >
+                <div
+                    ng-if="!searching && getSentsWithHeadersFromState() && !getSentsWithHeadersFromState().length && !searchData.total_hits"
+                >
+                    Din sökning gav inga träffar
+                </div>
 
+                <table cellspacing="0" class="results" ng-style="{top : table_top}">
+                    <tr
+                        on-finish-render="tableRenderComplete()"
+                        ng-repeat="sent in getSentsWithHeadersFromState()"
+                        ng-class="{sentence: !sent.isHeader, even : $even, odd : $odd, is_faksimil : sent.metadata.mediatype == 'faksimil'}"
+                    >
                         <td ng-if="sent.overflow"></td>
                         <td ng-if="sent.overflow">
                             <div class="overflow sc">
-                                <hr>
-                                    <a class="more" ng-click="searchAllInWork(sent, $index)">Visa fler</a>
-                                <hr>
-                                
+                                <hr />
+                                <a class="more" ng-click="searchAllInWork(sent, $index)"
+                                    >Visa fler</a
+                                >
+                                <hr />
                             </div>
                         </td>
                         <td class="header" colspan="4" ng-if="sent.isHeader">
                             <div class="header_content" uib-tooltip="{{sent.metadata.title}}">
-                                <span class="author">{{authorsById[sent.metadata.authors[0].authorid].name_for_index}}</span> <span class="title" >
+                                <span class="author"
+                                    >{{authorsById[sent.metadata.authors[0].authorid].name_for_index}}</span
+                                >
+                                <span class="title">
                                     <a ng-href="{{::sent.href}}" ng-click="save_search($index)">
                                         {{sent.metadata.title}}
-                                    </a></span>
+                                    </a></span
+                                >
                             </div>
                         </td>
 
-                        <td ng-if="sent.highlight" class="left_context"><!--
-                            --><span ng-repeat="wd in sent.highlight.left_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
+                        <td ng-if="sent.highlight" class="left_context">
+                            <!--
+                            --><span
+                                ng-repeat="wd in sent.highlight.left_context"
+                                class="word"
+                                ng-class="{punct: wd._punct}"
+                                >{{wd.word}}
+                            </span>
                         </td>
                         <td ng-if="sent.highlight" class="match w-px whitespace-nowrap">
                             <span ng-repeat="wd in sent.highlight.match">
-                                <a ng-href="{{::sent.href}}" ng-click="save_search($index)"
-                                    class="word" ng-class="{punct: wd._punct}">{{wd.word}}</a>
+                                <a
+                                    ng-href="{{::sent.href}}"
+                                    ng-click="save_search($index)"
+                                    class="word"
+                                    ng-class="{punct: wd._punct}"
+                                    >{{wd.word}}</a
+                                >
                             </span>
                         </td>
                         <td ng-if="sent.highlight" class="right_context">
-                            <span ng-repeat="wd in sent.highlight.right_context" class="word" ng-class="{punct: wd._punct}">{{wd.word}} </span>
+                            <span
+                                ng-repeat="wd in sent.highlight.right_context"
+                                class="word"
+                                ng-class="{punct: wd._punct}"
+                                >{{wd.word}}
+                            </span>
                         </td>
-                        
                     </tr>
                 </table>
-                
-            
-            
             </div>
         </div>
-        
     </div>
 
     <div toolkit>
         <div class="littb_pager" ng-if="getSentsWithHeadersFromState()">
             <div>
-
-
                 <div class="hits_info">
-                    <div><div class="hits" ng-show="searchData.total_hits">{{searchData.total_hits}}</div> 
+                    <div>
+                        <div class="hits" ng-show="searchData.total_hits">
+                            {{searchData.total_hits}}
+                        </div>
                         <div class="hits_sub">
                             <span ng-show="searchData.total_hits > 1">sökträffar</span>
                             <span ng-show="searchData.total_hits == 1">sökträff</span>
                         </div>
                     </div>
-
                 </div>
 
-                Visar verk {{current_page  * num_hits + 1}}-{{getMaxHit()}} av 
-                {{doc_hits}},
-                sida {{current_page + 1}} av {{total_pages}}.
+                Visar verk {{current_page * num_hits + 1}}-{{getMaxHit()}} av {{doc_hits}}, sida
+                {{current_page + 1}} av {{total_pages}}.
 
                 <ul class="ctrl" ng-show="doc_hits > 1">
                     <!-- <li>
@@ -270,20 +423,24 @@
                     <li><a href="">Sortera efter tryckår</a></li>
                     <li><a href="">Sortera efter sökord</a></li> -->
 
-
                     <li class="arrows">
-                        <button rel="next" class="submit btn navicon left"
+                        <button
+                            rel="next"
+                            class="submit btn navicon left"
                             ng-click="prevPage()"
-                            ng-disabled="current_page == 0">
+                            ng-disabled="current_page == 0"
+                        >
                             <i class="fa fa-angle-left"></i>
                         </button>
-                        <button rel="prev" class="submit btn navicon"
+                        <button
+                            rel="prev"
+                            class="submit btn navicon"
                             ng-click="nextPage()"
-                            ng-disabled="(current_page + 1) == total_pages">
+                            ng-disabled="(current_page + 1) == total_pages"
+                        >
                             <i class="fa fa-angle-right"></i>
                         </button>
                     </li>
-
 
                     <!-- <li>
                         <a ng-click="prevPage()">Gå bakåt en träff</a>
@@ -294,33 +451,42 @@
                     <li>
                         <a ng-click="lastPage()">Gå till sista träffen</a>
                     </li>
-                    <li ng-disabled="total_pages == 1" ng-class="{open : showGotoHitInput}"><a ng-disabled="total_pages == 1" ng-click="onGotoHitInput()">Gå till träffsida . . .</a> 
+                    <li ng-disabled="total_pages == 1" ng-class="{open : showGotoHitInput}">
+                        <a ng-disabled="total_pages == 1" ng-click="onGotoHitInput()"
+                            >Gå till träffsida . . .</a
+                        >
                         <form ng-submit="gotoPage(gotoHitInput - 1)" ng-show="showGotoHitInput">
-                            <input focusable type="text" ng-model="gotoHitInput"> <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>    
+                            <input focusable type="text" ng-model="gotoHitInput" />
+                            <i ng-show="showGotoHitInput" class="fa fa-angle-double-right"></i>
                         </form>
                     </li>
                 </ul>
-            
+
                 <!-- <label>Gå till träffsida</label>
                 <form ng-submit="setPageNum(input_page - 1)">
                     <input class="input_page" ng-model="input_page"><span ng-click="setPageNum(input_page - 1)" submit-btn></span>
                 </form> -->
             </div>
-            
         </div>
-        <ul class="hidden md:block navigator" ng-hide="!getSentsWithHeadersFromState().length" ng-style="{'max-height': container_height}">
-            <li><a ng-click="resetAuthorFilter()" ng-class="{selected : !nav_filter}">Visa alla</a></li>
+        <ul
+            class="hidden md:block navigator"
+            ng-hide="!getSentsWithHeadersFromState().length"
+            ng-style="{'max-height': container_height}"
+        >
+            <li>
+                <a ng-click="resetAuthorFilter()" ng-class="{selected : !nav_filter}">Visa alla</a>
+            </li>
 
-            <li ng-repeat="obj in authorStatsData"  >
+            <li ng-repeat="obj in authorStatsData">
                 <!-- <a ng-class="{selected: obj.pos == current_page}" ng-click="gotoPage(obj.pos)">{{obj.author}}</a> -->
-                <a  ng-class="{selected : nav_filter == obj.authorid}" 
-                    ng-click="setAuthorFilter(obj.authorid)">{{authorsById[obj.authorid].name_for_index}}</a>
+                <a
+                    ng-class="{selected : nav_filter == obj.authorid}"
+                    ng-click="setAuthorFilter(obj.authorid)"
+                    >{{authorsById[obj.authorid].name_for_index}}</a
+                >
                 <!-- {{obj.doc_count}} -->
             </li>
         </ul>
-
-
-
     </div>
 
     <!-- -->

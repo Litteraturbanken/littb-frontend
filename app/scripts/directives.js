@@ -937,10 +937,10 @@ littb.directive("compile", $compile => ({
 
 littb.directive("searchOpts", ($location, util) => ({
     template: `
-            <ul class="search_opts_widget">
-                    <li ng-repeat="(key, opt) in searchOptionsItems" ng-class="{advanced_only: opt.advanced_only}">
+            <ul class="search_opts_widget inline-block">
+                    <li class="hover:text-primary" ng-repeat="(key, opt) in searchOptionsItems" ng-class="{advanced_only: opt.advanced_only}">
                         <span role="checkbox" aria-checked="{{opt.selected}}" ng-show="opt.selected">✓</span>
-                        <a ng-click="searchOptSelect(opt)">{{opt.label}}</a>
+                        <span role="button" ng-click="searchOptSelect(opt)">{{opt.label}}</span>
                     </li>
             </ul>
             `,

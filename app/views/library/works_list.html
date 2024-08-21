@@ -1,4 +1,4 @@
-<div class="result title pl-0 sm:ml-3 flex-column min-h-500">
+<div class="result title pl-0 flex-column min-h-500">
     <div class="flex items-baseline">
         <sort-list></sort-list>
         <span class="sc ml-4" ng-if="listType == 'latest'">
@@ -33,10 +33,10 @@
                 </td>
             </tr>
             <tr
-                class="work_link hover:bg-gray-300 hover:bg-opacity-50 transition-colors duration-150"
+                class="work_link transition-colors duration-150"
                 ng-repeat="row in titleModel[listType]"
                 on-finish-render="titleRender()"
-                ng-class="{'first' : $first, header: row.isHeader}"
+                ng-class="{'first' : $first, header: row.isHeader, 'hover:bg-gray-300 hover:bg-opacity-50': !row.isHeader}"
                 ng-click="toggleDownload(row, true)"
             >
                 <td ng-if="row.isHeader" class="type_header">
@@ -45,7 +45,7 @@
                 <!-- <td class="w-6" ng-if="dl_mode && !row.isHeader">
                     <input class="" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
                 </td> -->
-                <td class="" ng-if="!row.isHeader">
+                <td class="w-[400px]" ng-if="!row.isHeader">
                     <div class="">
                         <input
                             ng-if="dl_mode"
@@ -131,21 +131,25 @@
                     class="w-40"
                     ng-class="{'text-left': ['epub', 'pdf'].includes(listType), 'text-right': !['epub', 'pdf'].includes(listType)}"
                 >
-                    <span
-                        class="author uppercase text-sm"
-                        uib-tooltip="{{row.main_author.full_name }} {{row.main_author | authorYear:true}}"
-                    >
-                        <a ng-href="/författare/{{row.main_author.authorid}}"
-                            >{{row.main_author.surname}}</a
+                    <div class="w-80 text-ellipsis whitespace-nowrap overflow-hidden">
+                        <span
+                            class="author uppercase text-sm"
+                            uib-tooltip="{{row.main_author.full_name }} {{row.main_author | authorYear:true}}"
                         >
-                        <span class="text-gray-700 sc" ng-if="row.main_author.type == 'editor'"
-                            >(red.)</span
-                        >
-                        <span class="text-gray-700 sc" ng-if="row.main_author.type == 'illustrator'"
-                            >(ill.)</span
-                        >
-                    </span>
-                    <!-- ng-click="authorClick($event, authorsById[row.author[0].authorid])" -->
+                            <a ng-href="/författare/{{row.main_author.authorid}}"
+                                >{{row.main_author.surname}}</a
+                            >
+                            <span class="text-gray-700 sc" ng-if="row.main_author.type == 'editor'"
+                                >(red.)</span
+                            >
+                            <span
+                                class="text-gray-700 sc"
+                                ng-if="row.main_author.type == 'illustrator'"
+                                >(ill.)</span
+                            >
+                        </span>
+                        <!-- ng-click="authorClick($event, authorsById[row.author[0].authorid])" -->
+                    </div>
                 </td>
 
                 <td

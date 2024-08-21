@@ -9,6 +9,7 @@ const HtmlWebPackPlugin = require("html-webpack-plugin")
 
 module.exports = {
     entry: "./app/main.js",
+    watch: true,
     devServer: {
         host: process.env.LITTB_HOST || "localhost",
         port: process.env.LITTB_PORT || 9000,
@@ -77,10 +78,7 @@ module.exports = {
                     },
                     {
                         loader: "postcss-loader",
-                        options: {
-                            // plugins: [tailwindcss("./tailwind.js"), require("autoprefixer")()]
-                            // sourceMap: process.env.NODE_ENV !== "production"
-                        }
+                        options: {}
                     },
                     {
                         loader: "sass-loader",

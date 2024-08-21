@@ -30,7 +30,7 @@ littb.component("keywordSelect", {
         ng-model="$ctrl.model"
          data-placeholder="{{$ctrl.label}}">
     <option value=""></option>
-    <optgroup label="Genre/form">
+    <optgroup label="Kategorier">
         <option value="texttype:brev;brevsamling">Brev</option>
         <option value="texttype:drama;dramasamling" data-disabled="true">Dramatik</option>
         <option value="texttype:essä;essäsamling" data-disabled="true">Essäer</option>
@@ -48,11 +48,9 @@ littb.component("keywordSelect", {
         <option value='texttype:kringtext'>Kringtexter</option>
         <option value='texttype:kåseri;kåserisamling'>Kåserier</option>
         <option value="texttype:reseskildring">Reseskildringar</option>
-        <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
-    </optgroup>
-    <optgroup label="Ämnesord">
-        <option value='keyword:Sapmi'>Sápmi</option>
         <option value='keyword:Rösträtt'>Rösträtt</option>
+        <option value='keyword:Sapmi'>Sápmi</option>
+        <option value='keyword:Folktryck'>Skillingtryck och folktryck</option>
     </optgroup>
     <optgroup label="Projekt">
         <option value='keyword:sentpajorden'>Gunnar Ekelöf. Sent på jorden</option>
@@ -75,6 +73,7 @@ littb.component("keywordSelect", {
         <option value='provenance.library:SA'>Svenska Akademien</option>
         <option value='provenance.library:SFS'>Svenska fornskriftssällskapet</option>
         <option value='provenance.library:SVA'>Svenskt visarkiv</option>
+        <option value='provenance.library:SVS'>Svenska Vitterhetssamfundet</option>
     </optgroup>
 </select>`,
     bindings: {

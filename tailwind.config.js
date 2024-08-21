@@ -5,7 +5,14 @@
  ** Default: https://github.com/tailwindcss/tailwindcss/blob/master/stubs/defaultConfig.stub.js
  */
 module.exports = {
-    content: ["./app/**/*.js", "./app/**/*.html"],
+    content: {
+        files: ["./app/**/*.js", "./app/**/*.html"],
+        extract: {
+            e: content => {
+                return content.match(/[A-Za-z0-9-_:\/]+/g) || []
+            }
+        }
+    },
     theme: {
         extend: {
             opacity: {

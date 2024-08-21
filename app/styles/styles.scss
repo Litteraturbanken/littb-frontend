@@ -2305,7 +2305,7 @@ body > .header {
         .mainnav a {
             color : white;
             &:hover {
-                color : #333;
+                color : #999;
             }
         }
 
@@ -2628,17 +2628,24 @@ body > .header {
         }
         .result {
             table {
+                margin-left: -1.5rem;
+                width: calc(100% + 3rem);
                 border-spacing: 0;
                 border-collapse: collapse;
                 table-layout: fixed;
                 td {
-                    padding: 0px 0.5em;
+                    padding: 1px 0.5em;
                     vertical-align: text-top
-                
+                }
+                td:first-child {
+                    padding-left: 2rem;
+                }
+                td:last-child {
+                    padding-right: 1rem;
                 }
             }
             .header_container {
-                max-width : calc(100% - 2rem);
+                // max-width : calc(100% - 2rem);
             }
             .type_header {
                 overflow: visible;
@@ -2680,7 +2687,7 @@ body > .header {
                 // flex : 0 auto;
 
                 li {
-                    line-height : 1.4;
+                    // line-height : 1.4;
                 }
 
                 .surname {
