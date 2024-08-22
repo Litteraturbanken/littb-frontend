@@ -2593,39 +2593,6 @@ body > .header {
             }
         }
         
-        .box {
-            // padding : 1.2em;
-            // min-width: 370px;
-            background-color: rgba(255,255,255,0.65);
-            // border : 1px solid #333;
-            position: relative;
-            font-size : 0.8em;
-            text-transform: initial;
-            
-            .spinner_row {
-                text-align: center;
-            }
-            .spinner {
-                // height : 20px;
-                // width: 20px;
-                // display: block;
-                // margin: 0 auto;
-            }
-            // &:before{
-            //     border: 1px dotted black;
-            //     display: block;
-            //     // height : 1em;
-            //     position: fixed;
-            //     bottom : 0%;
-            //     left: 50%;
-            //     padding : 2em;
-            //     content: "";
-            //     background-color : white;
-            //     // left : 0;
-            //     // right:  0;
-
-            // }
-        }
         .result {
             table {
                 margin-left: -1.5rem;
@@ -2634,7 +2601,7 @@ body > .header {
                 border-collapse: collapse;
                 table-layout: fixed;
                 td {
-                    padding: 1px 0.5em;
+                    padding: 0px 0.5em;
                     vertical-align: text-top
                 }
                 td:first-child {

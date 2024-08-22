@@ -1,6 +1,6 @@
 <div class="result title pl-0 flex-column min-h-500">
     <div class="flex items-baseline">
-        <sort-list></sort-list>
+        <sort-list class="text-base"></sort-list>
         <span class="sc ml-4" ng-if="listType == 'latest'">
             <span ng-if="!isHide1800()">Dölj verk:</span>
             <span ng-if="isHide1800()">Visa även från:</span>
@@ -12,12 +12,15 @@
         >
     </div>
     <div class="">
-        <div class="spinner_row ng-fade transition duration-200 h-0" ng-show="titleSearching">
+        <div
+            class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
+            ng-show="titleModel[listType + '_searching']"
+        >
             <i class="spinner fa fa-spinner fa-pulse"></i>
         </div>
         <table id="table" class="table w-full flex-grow -ml-2">
             <tr
-                ng-show="!initialLoading && !titleSearching && !titleModel[listType].length"
+                ng-show="!initialLoading && !titleModel[listType + '_searching'] && !titleModel[listType].length"
                 class="transition duration-300"
             >
                 <td class="text-lg">
@@ -60,7 +63,9 @@
                             id="{{getUniqId(row)}}"
                             class="header_container"
                         >
-                            <div class="header text-lg leading-tight line-clamp-1">
+                            <div
+                                class="header text-lg leading-tight text-ellipsis whitespace-nowrap overflow-hidden"
+                            >
                                 <span
                                     class="title_inner"
                                     uib-tooltip="{{row.title != row.shorttitle ? row.title : ''}}"
@@ -121,7 +126,7 @@
                     </div>
                 </td>
 
-                <td class="text-left hidden sm:table-cell w-28">
+                <td class="text-left hidden sm:table-cell w-28 text-base">
                     <a
                         ng-click="setDateRange(row.sort_date_imprint.plain, row.sort_date_imprint.plain)"
                         >{{row.sort_date_imprint.plain}}</a
@@ -184,7 +189,7 @@
                 Visa alla <span class="num">{{titleModel[listType + '_hits']}}</span> träffar
             </button>
         </div> -->
-        <div ng-show="titleModel[listType + '_hits'] > 100">
+        <div ng-show="!titleModel[listType + '_searching'] && titleModel[listType + '_hits'] > 100">
             <ul
                 class="pagination-sm sc"
                 uib-pagination

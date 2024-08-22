@@ -57,7 +57,7 @@
                         />
                     </svg>
                     <input
-                        class="filter_input border border-gray-500 mr-4 flex-grow py-3 text-lg pl-12 pr-4"
+                        class="filter_input border border-gray-500 mr-4 flex-grow py-3 pl-12 pr-4 text-base"
                         autofocus
                         focusable
                         ng-model-options='{debounce : {default : 300, blur : 0}, updateOn: "default blur"}'
@@ -409,8 +409,8 @@
     </div>
     <div>
         <!-- <div class="row box_container"> -->
-        <div class="flex items-stretch w-full sm:max-w-5xl">
-            <div class="box sm:p-6 p-2 sm:border border-gray-900 flex-grow">
+        <div class="flex items-stretch w-full sm:max-w-5xl text-lg leading-tight">
+            <div class="bg-white/65 sm:p-6 p-2 sm:border border-gray-900 flex-grow">
                 <ng-include src="worksListURL" ng-if="listType == 'works'"></ng-include>
                 <ng-include src="worksListURL" ng-if="listType == 'latest'"></ng-include>
 
@@ -418,259 +418,255 @@
                     class="result relevance pl-0 sm:ml-3 lg:ml-0 w-full sm:w-auto"
                     ng-if="listType == 'all'"
                 >
-                    <sort-list></sort-list>
-                    <div class="mt-4">
+                    <sort-list class="text-base"></sort-list>
+                    <div class="">
                         <div
                             class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
-                            ng-show="relevanceSearching"
+                            ng-if="relevanceSearching"
                         >
                             <i class="spinner fa fa-spinner fa-pulse"></i>
                         </div>
-                        <table class="w-full">
-                            <!-- <li class="text-lg" ng-show="!authorSearching && !authorData.length">
+                        <div class="" ng-if="!relevanceSearching">
+                            <div ng-if="relevanceError">Ett fel uppstod.</div>
+                            <div class="pb-4" ng-if="!relevanceError && !relevanceData.length">
+                                <span>Inga träffar.</span>
+                                <span
+                                    ng-show="relevanceSuggest.length && relevanceSuggest[0].freq > (relevanceData.length * 5)"
+                                    >Menade du
+                                    <a class="link" ng-click="setFilter(relevanceSuggest[0].text)"
+                                        >{{relevanceSuggest[0].text}}</a
+                                    >?</span
+                                >
+                            </div>
+                            <table class="w-full">
+                                <!-- <li class="" ng-show="!authorSearching && !authorData.length">
                                 Inga träffar. <span ng-show='authorSuggest[0]'>Menade du <a class="link" ng-click='setFilter(authorSuggest[0].text)'>{{authorSuggest[0].text}}</a>?</span>
                             </li> -->
 
-                            <tr
-                                class="text-lg leading-none"
-                                ng-show="!relevanceSearching && relevanceSuggest.length && relevanceSuggest[0].freq > (relevanceData.length * 5)"
-                            >
-                                <td colspan="3" ng-if="relevanceError">Ett fel uppstod.</td>
-                                <td colspan="3" class="pb-4" ng-if="!relevanceError">
-                                    <span ng-show="!relevanceData.length">Inga träffar.</span>
-                                    <span ng-show="relevanceSuggest[0]"
-                                        >Menade du
-                                        <a
-                                            class="link"
-                                            ng-click="setFilter(relevanceSuggest[0].text)"
-                                            >{{relevanceSuggest[0].text}}</a
-                                        >?</span
-                                    >
-                                </td>
-                            </tr>
-
-                            <tr
-                                ng-repeat="item in relevanceData"
-                                class="sm:table-row flex flex-col justify-between pb-2 sm:pb-0 -ml-2 text-lg leading-none hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
-                                ng-click="authorClick($event, author)"
-                                on-finish-render="authorRender()"
-                            >
-                                <td class="sm:text-right sm:table-cell w-36">
-                                    <span
-                                        class="sc primarycolor whitespace-nowrap text-base leading-none"
-                                    >
-                                        {{getLabelBySource(item)}}
-                                    </span>
-                                </td>
-                                <td class="order-2">
-                                    <div ng-if="item._index.endsWith('author')">
-                                        <a ng-href="/författare/{{item.authorid}}/" class="">
-                                            <span class="surname"
-                                                >{{item.name_for_index.split(',')[0]}}</span
-                                            ><span
-                                                ng-show="item.name_for_index.split(',').length > 1"
-                                                >,</span
-                                            >
-                                            {{item.name_for_index.split(",")[1]}}
-                                            <a
-                                                class="sm:hidden"
-                                                ng-if="item | authorYear"
-                                                ng-click="setDateRange(item.birth.plain, item.death.plain)"
-                                                >({{item | authorYear}})</a
-                                            >
-                                        </a>
-                                        <highlights
-                                            is-phrase="filter.includes(' ')"
-                                            list="item.highlight.intro"
-                                        ></highlights>
-                                    </div>
-                                    <div
-                                        class=""
-                                        ng-if="getIndex(item._index) == 'presentations'"
-                                        uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}"
-                                    >
-                                        <a ng-href="{{item.url}}">{{item.title}}</a>
-                                        <highlights
-                                            is-phrase="filter.includes(' ')"
-                                            list="item.highlight.content"
-                                        ></highlights>
-                                    </div>
-                                    <div
-                                        class=""
-                                        ng-if="getIndex(item._index) == 'sol'"
-                                        uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}"
-                                    >
-                                        <a
-                                            ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{item.article.URLName}}"
-                                            >{{item.article.ArticleName}}</a
-                                        >
-
-                                        <highlights
-                                            is-phrase="filter.includes(' ')"
-                                            list="item.highlight['article.ArticleText']"
-                                        ></highlights>
-                                    </div>
-                                    <div
-                                        class=""
-                                        ng-if="getIndex(item._index) == 'litteraturkartan'"
-                                        uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}"
-                                    >
-                                        <a
-                                            ng-href="https://litteraturbanken.se/litteraturkartan/?id={{item.placeid}}&article={{item.id}}"
-                                            >{{item.header}}</a
-                                        >
-
-                                        <highlights
-                                            is-phrase="filter.includes(' ')"
-                                            list="item.highlight.free_text"
-                                        ></highlights>
-                                    </div>
-                                    <div
-                                        class=""
-                                        ng-if="getIndex(item._index) == 'wordpress'"
-                                        uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}"
-                                    >
-                                        <a ng-href="{{item.link}}">{{item.title}}</a>
-                                        <highlights
-                                            is-phrase="filter.includes(' ')"
-                                            list="item.highlight.content"
-                                        ></highlights>
-                                    </div>
-                                    <div
-                                        class="line-clamp-1 leading-tight"
-                                        ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))"
-                                        uib-tooltip="{{(item.title != item.shorttitle ? item.title : '') + (isDev ? '\npopularity: ' + item.popularity : '')}}"
-                                        tooltip-popup-delay="500"
-                                    >
-                                        <a
-                                            ng-if="['etext', 'faksimil'].includes(getIndex(item._index))"
-                                            ng-href="/författare/{{(item.work_authors && item.work_authors[0].authorid) || item.main_author.authorid}}/titlar/{{item.work_titleid || item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}"
-                                        >
-                                            {{item.shorttitle || item.title}}
-                                        </a>
-                                        <a
-                                            ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))"
-                                            ng-href="/författare/{{item.work_authors[0].authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}"
-                                            >{{item.shorttitle || item.title}}</a
-                                        >
-                                        <a
-                                            ng-if="['pdf'].includes(getIndex(item._index))"
-                                            ng-href="/txt/{{item.lbworkid}}/{{item.lbworkid}}.pdf"
-                                            download
-                                            target="_self"
-                                            >{{item.shorttitle || item.title}}</a
-                                        >
-                                        <span class="text-xs sc" ng-if="item.hasAmbigousMediatype"
-                                            >(<span class="text-primary">{{item.mediatype}}</span
-                                            >)</span
-                                        >
-
-                                        <a
-                                            ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.work_titleid || item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}?om-boken"
-                                        >
+                                <tr
+                                    ng-repeat="item in relevanceData"
+                                    class="sm:table-row flex flex-col justify-between pb-2 sm:pb-0 -ml-2 hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
+                                    ng-click="authorClick($event, author)"
+                                    on-finish-render="authorRender()"
+                                >
+                                    <td class="sm:text-right sm:table-cell w-44">
+                                        <span class="sc primarycolor whitespace-nowrap text-base">
+                                            {{getLabelBySource(item)}}
+                                        </span>
+                                    </td>
+                                    <td class="order-2">
+                                        <div ng-if="item._index.endsWith('author')">
+                                            <a ng-href="/författare/{{item.authorid}}/" class="">
+                                                <span class="surname"
+                                                    >{{item.name_for_index.split(',')[0]}}</span
+                                                ><span
+                                                    ng-show="item.name_for_index.split(',').length > 1"
+                                                    >,</span
+                                                >
+                                                {{item.name_for_index.split(",")[1]}}
+                                                <a
+                                                    class="sm:hidden"
+                                                    ng-if="item | authorYear"
+                                                    ng-click="setDateRange(item.birth.plain, item.death.plain)"
+                                                    >({{item | authorYear}})</a
+                                                >
+                                            </a>
                                             <highlights
                                                 is-phrase="filter.includes(' ')"
-                                                list="item.highlight.workintro"
+                                                list="item.highlight.intro"
                                             ></highlights>
-                                        </a>
-                                        <highlights
-                                            is-phrase="filter.includes(' ')"
-                                            list="item.highlight.title"
-                                        ></highlights>
-                                        <highlights
-                                            ng-if="!item.highlight.title"
-                                            list="item.highlight['title.search']"
-                                        ></highlights>
-                                        <highlights
-                                            ng-if="!item.highlight.title"
-                                            list="item.highlight.title_modernized"
-                                        ></highlights>
-                                        <highlights
-                                            ng-if="!item.highlight.title"
-                                            list="item.highlight['title_modernized.search']"
-                                        ></highlights>
+                                        </div>
+                                        <div
+                                            class=""
+                                            ng-if="getIndex(item._index) == 'presentations'"
+                                            uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}"
+                                        >
+                                            <a ng-href="{{item.url}}">{{item.title}}</a>
+                                            <highlights
+                                                is-phrase="filter.includes(' ')"
+                                                list="item.highlight.content"
+                                            ></highlights>
+                                        </div>
+                                        <div
+                                            class=""
+                                            ng-if="getIndex(item._index) == 'sol'"
+                                            uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}"
+                                        >
+                                            <a
+                                                ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{item.article.URLName}}"
+                                                >{{item.article.ArticleName}}</a
+                                            >
 
-                                        <highlights
-                                            list="item.highlight['parts.title']"
-                                        ></highlights>
-                                        <highlights
-                                            ng-if="!item.highlight['parts.title']"
-                                            list="item.highlight['parts.title_modernized']"
-                                        ></highlights>
-                                    </div>
-                                </td>
+                                            <highlights
+                                                is-phrase="filter.includes(' ')"
+                                                list="item.highlight['article.ArticleText']"
+                                            ></highlights>
+                                        </div>
+                                        <div
+                                            class=""
+                                            ng-if="getIndex(item._index) == 'litteraturkartan'"
+                                            uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}"
+                                        >
+                                            <a
+                                                ng-href="https://litteraturbanken.se/litteraturkartan/?id={{item.placeid}}&article={{item.id}}"
+                                                >{{item.header}}</a
+                                            >
 
-                                <td
-                                    class="sm:text-right hidden sm:table-cell text-base leading-none w-28 whitespace-nowrap"
-                                >
-                                    <a
-                                        ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)"
+                                            <highlights
+                                                is-phrase="filter.includes(' ')"
+                                                list="item.highlight.free_text"
+                                            ></highlights>
+                                        </div>
+                                        <div
+                                            class=""
+                                            ng-if="getIndex(item._index) == 'wordpress'"
+                                            uib-tooltip="{{isDev ? '\npopularity: ' + item.popularity : ''}}"
+                                        >
+                                            <a ng-href="{{item.link}}">{{item.title}}</a>
+                                            <highlights
+                                                is-phrase="filter.includes(' ')"
+                                                list="item.highlight.content"
+                                            ></highlights>
+                                        </div>
+                                        <div
+                                            class="whitespace-nowrap overflow-hidden text-ellipsis"
+                                            ng-if="['etext', 'faksimil', 'etext-part', 'faksimil-part', 'pdf'].includes(getIndex(item._index))"
+                                            uib-tooltip="{{(item.title != item.shorttitle ? item.title : '') + (isDev ? '\npopularity: ' + item.popularity : '')}}"
+                                            tooltip-popup-delay="500"
+                                        >
+                                            <a
+                                                ng-if="['etext', 'faksimil'].includes(getIndex(item._index))"
+                                                ng-href="/författare/{{(item.work_authors && item.work_authors[0].authorid) || item.main_author.authorid}}/titlar/{{item.work_titleid || item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}"
+                                            >
+                                                {{item.shorttitle || item.title}}
+                                            </a>
+                                            <a
+                                                ng-if="['etext-part', 'faksimil-part'].includes(getIndex(item._index))"
+                                                ng-href="/författare/{{item.work_authors[0].authorid}}/titlar/{{item.work_titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}"
+                                                >{{item.shorttitle || item.title}}</a
+                                            >
+                                            <a
+                                                ng-if="['pdf'].includes(getIndex(item._index))"
+                                                ng-href="/txt/{{item.lbworkid}}/{{item.lbworkid}}.pdf"
+                                                download
+                                                target="_self"
+                                                >{{item.shorttitle || item.title}}</a
+                                            >
+                                            <span
+                                                class="text-xs sc"
+                                                ng-if="item.hasAmbigousMediatype"
+                                                >(<span class="text-primary"
+                                                    >{{item.mediatype}}</span
+                                                >)</span
+                                            >
+
+                                            <a
+                                                ng-href="/författare/{{item.main_author.authorid}}/titlar/{{item.work_titleid || item.titleid}}/sida/{{item.startpagename}}/{{item.mediatype}}?om-boken"
+                                            >
+                                                <highlights
+                                                    is-phrase="filter.includes(' ')"
+                                                    list="item.highlight.workintro"
+                                                ></highlights>
+                                            </a>
+                                            <highlights
+                                                is-phrase="filter.includes(' ')"
+                                                list="item.highlight.title"
+                                            ></highlights>
+                                            <highlights
+                                                ng-if="!item.highlight.title"
+                                                list="item.highlight['title.search']"
+                                            ></highlights>
+                                            <highlights
+                                                ng-if="!item.highlight.title"
+                                                list="item.highlight.title_modernized"
+                                            ></highlights>
+                                            <highlights
+                                                ng-if="!item.highlight.title"
+                                                list="item.highlight['title_modernized.search']"
+                                            ></highlights>
+
+                                            <highlights
+                                                list="item.highlight['parts.title']"
+                                            ></highlights>
+                                            <highlights
+                                                ng-if="!item.highlight['parts.title']"
+                                                list="item.highlight['parts.title_modernized']"
+                                            ></highlights>
+                                        </div>
+                                    </td>
+
+                                    <td
+                                        class="sm:text-right hidden sm:table-cell text-base w-28 whitespace-nowrap"
                                     >
-                                        {{item.sort_date_imprint.plain}}
-                                    </a>
-
-                                    <div ng-if="item._index.endsWith('author')">
                                         <a
-                                            ng-click="setDateRange(item.birth.plain, item.death.plain)"
-                                            >{{item | authorYear}}</a
+                                            ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)"
                                         >
-                                    </div>
-                                </td>
-                                <td
-                                    class="sm:text-right sm:uppercase sm:text-sm sm:pl-4 order-1 sm:max-w-32"
-                                >
-                                    <span class="author">
-                                        <div
-                                            class="text-gray-800"
-                                            ng-if="item._index.endsWith('presentations') || item._index.endsWith('litteraturkartan')"
-                                        >
-                                            {{item.article_author}}
-                                        </div>
-                                        <div
-                                            class="text-gray-800"
-                                            ng-if="item._index.endsWith('sol')"
-                                        >
-                                            {{item.contributors.FirstName}}
-                                            {{item.contributors.LastName}}
-                                        </div>
+                                            {{item.sort_date_imprint.plain}}
+                                        </a>
 
-                                        <a ng-href="/författare/{{item.main_author.authorid}}"
-                                            >{{item.main_author.full_name}}</a
-                                        >
-                                        <span
-                                            class="text-gray-600 text-xs"
-                                            ng-if="item.main_author.type == 'editor'"
-                                            >(red.)</span
-                                        >
-                                        <span
-                                            class="text-gray-600 text-xs"
-                                            ng-if="item.main_author.type == 'illustrator'"
-                                            >(ill.)</span
-                                        >
-                                    </span>
-                                    <!-- ng-click="authorClick($event, authorsById[item.author[0].authorid])" -->
-                                </td>
-                            </tr>
+                                        <div ng-if="item._index.endsWith('author')">
+                                            <a
+                                                ng-click="setDateRange(item.birth.plain, item.death.plain)"
+                                                >{{item | authorYear}}</a
+                                            >
+                                        </div>
+                                    </td>
+                                    <td
+                                        class="sm:text-right sm:uppercase sm:text-sm sm:pl-4 order-1 sm:max-w-40"
+                                    >
+                                        <span class="author">
+                                            <div
+                                                class="text-gray-800"
+                                                ng-if="item._index.endsWith('presentations') || item._index.endsWith('litteraturkartan')"
+                                            >
+                                                {{item.article_author}}
+                                            </div>
+                                            <div
+                                                class="text-gray-800"
+                                                ng-if="item._index.endsWith('sol')"
+                                            >
+                                                {{item.contributors.FirstName}}
+                                                {{item.contributors.LastName}}
+                                            </div>
 
-                            <!-- <li ng-show="authLimit && authorData.length > authLimit">
+                                            <a ng-href="/författare/{{item.main_author.authorid}}"
+                                                >{{item.main_author.full_name}}</a
+                                            >
+                                            <span
+                                                class="text-gray-600 text-xs"
+                                                ng-if="item.main_author.type == 'editor'"
+                                                >(red.)</span
+                                            >
+                                            <span
+                                                class="text-gray-600 text-xs"
+                                                ng-if="item.main_author.type == 'illustrator'"
+                                                >(ill.)</span
+                                            >
+                                        </span>
+                                        <!-- ng-click="authorClick($event, authorsById[item.author[0].authorid])" -->
+                                    </td>
+                                </tr>
+
+                                <!-- <li ng-show="authLimit && authorData.length > authLimit">
                                 <button class="btn btn-sm show_all"  ng-click="(authLimit = 0) || setAuthorData()">
                                     Visa alla <span class="num">{{authorData.length}}</span> träffar
                                 </button>
                             </li> -->
-                        </table>
-                        <div ng-if="relevance_hits > 100">
-                            <ul
-                                class="pagination-sm sc"
-                                uib-pagination
-                                items-per-page="100"
-                                force-ellipses="true"
-                                total-items="relevance_hits"
-                                max-size="10"
-                                ng-model="relevance_page.current"
-                                ng-change="fetchByRelevance(false)"
-                                next-text="Nästa"
-                                previous-text="Föregående"
-                            ></ul>
+                            </table>
+                            <div ng-if="!relevanceSearching && relevance_hits > 100">
+                                <ul
+                                    class="pagination-sm sc"
+                                    uib-pagination
+                                    items-per-page="100"
+                                    force-ellipses="true"
+                                    total-items="relevance_hits"
+                                    max-size="10"
+                                    ng-model="relevance_page.current"
+                                    ng-change="fetchByRelevance(false)"
+                                    next-text="Nästa"
+                                    previous-text="Föregående"
+                                ></ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -682,10 +678,7 @@
                                 <tr class="spinner_row" ng-show="authorSearching">
                                     <td><i class="spinner fa fa-spinner fa-pulse"></i></td>
                                 </tr>
-                                <tr
-                                    class="text-lg"
-                                    ng-show="!authorSearching && !authorData.length"
-                                >
+                                <tr class="" ng-show="!authorSearching && !authorData.length">
                                     <td>
                                         Inga träffar.
                                         <span ng-show="authorSuggest[0]"
@@ -705,13 +698,13 @@
                                     class="hover:bg-gray-300 hover:bg-opacity-80"
                                 >
                                     <td
-                                        class="author_row text-lg leading-tight"
+                                        class="author_row"
                                         ng-click="authorClick($event, author)"
                                         id="{{author.authorid}}"
                                     >
                                         <a ng-href="/författare/{{author.authorid}}/" class="">
                                             <!-- {{author.name_for_index}} -->
-                                            <span class="sc"
+                                            <span class="uppercase"
                                                 >{{author.name_for_index.split(",")[0]}}</span
                                             ><span
                                                 ng-if="author.name_for_index.split(',').length > 1"
@@ -729,7 +722,8 @@
                                             ng-click="(authLimit = 0) || setAuthorData()"
                                         >
                                             Visa alla
-                                            <span class="num">{{authorData.length}}</span> träffar
+                                            <span class="num">{{authorData.length}}</span>
+                                            träffar
                                         </button>
                                     </td>
                                 </tr>
@@ -740,10 +734,7 @@
 
                 <ng-include src="worksListURL" ng-if="listType == 'epub'"></ng-include>
 
-                <div
-                    class="result title flex-column min-h-500 pl-0 sm:ml-3"
-                    ng-show="listType == 'parts'"
-                >
+                <div class="result title flex-column min-h-500 pl-0" ng-show="listType == 'parts'">
                     <div
                         class="spinner_row ng-fade transition duration-200 h-0"
                         ng-show="partSearching"
@@ -752,7 +743,7 @@
                     </div>
                     <sort-list></sort-list>
                     <table class="table flex-grow w-full">
-                        <tr class="text-lg" ng-show="!partSearching && !all_titles.length">
+                        <tr class="" ng-show="!partSearching && !all_titles.length">
                             <td>
                                 Inga träffar.
                                 <span ng-show="partSuggest[0]"
@@ -771,7 +762,7 @@
                         >
                             <!-- <div class="header" uib-tooltip="{{::row.title != row.shorttitle ? row.title : ''}}" tooltip-popup-delay="500"> -->
                             <td
-                                class="title text-lg leading-tight"
+                                class="title"
                                 uib-tooltip="{{::row.title != row.shorttitle ? row.title : ''}}"
                             >
                                 <a
@@ -860,8 +851,8 @@
                                 ng-repeat="row in downloads"
                                 ng-click="toggleDownload(row, true)"
                             >
-                                <span class="sc">{{row.main_author.surname}}</span> {{row.shorttitle
-                                || row.title}}
+                                <span class="sc">{{row.main_author.surname}}</span>
+                                {{row.shorttitle || row.title}}
                             </li>
                         </ul>
                     </div>

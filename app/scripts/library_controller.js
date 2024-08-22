@@ -838,6 +838,7 @@ littb.controller(
                 size = { from: 0, to: 0 }
             }
             s.titleSearching = true
+            s.titleModel[listID + "_searching"] = true
 
             // let isSearchRecent = $location.search().sort == "nytillkommet"
             // TODO: {"_exists": "export>"} if dl_mode
@@ -902,6 +903,7 @@ littb.controller(
                     s.titleModel[listID] = titles
                     s.titleModel[listID + "_hits"] = distinct_hits
                     s.titleModel[listID + "_suggest"] = suggest
+                    s.titleModel[listID + "_searching"] = false
                     // s.titleHits = hits
                     if (!epubOnly) {
                         s.currentAuthors = author_aggs.map(
