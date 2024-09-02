@@ -466,8 +466,8 @@ littb.controller(
                 args.include_modernized = false
             }
 
-            // args.sort_field = "sortfield"
-            args.sort_field = null
+            args.sort_field = "sortfield"
+            // args.sort_field = null
 
             return args
         }

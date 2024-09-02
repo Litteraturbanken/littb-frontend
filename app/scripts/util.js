@@ -150,7 +150,6 @@ littb.factory("util", function util($location, $filter) {
             return output
         }),
         getKeywordTextfilter(filterObj) {
-            console.log("🚀 ~ file: util.js:153 ~ filterObj", filterObj)
             // sample
             // {
             //     gender: "main_author.gender:female",

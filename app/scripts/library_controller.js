@@ -224,6 +224,12 @@ littb.controller(
 
         s.keywords_aux = $location.search().keywords_aux?.split(",") || []
 
+        s.onKeywordAuxChange = keywords => {
+            console.log("🚀 ~ keywords:", keywords, s.keyword_aux)
+            s.keywords_aux = keywords
+            s.refreshData()
+        }
+
         s.onSliderChange = () => {
             $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
             s.parts_page.current = 1
@@ -711,7 +717,6 @@ littb.controller(
             try {
                 let { titles, hits, suggest } = await backend.relevanceSearch(
                     "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress",
-                    // "etext,faksimil,pdf,etext-part,faksimil-part,author",
                     {
                         filter_string: s.rowfilter,
                         keyword_aux: [...s.keywords_aux, ...maybeHide1800],

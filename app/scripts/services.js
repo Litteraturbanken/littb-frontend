@@ -8,9 +8,9 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -1273,7 +1273,7 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
             delete params.query
             $http({
                 url: `${STRIX_URL}/search_count/${query}`,
-                params: _.omit(params, "number_of_fragments", "from", "to"),
+                params: _.omit(params, "number_of_fragments", "from", "to", "sort_field"),
                 cache: true
             }).then(response => {
                 c.log("count all", response)

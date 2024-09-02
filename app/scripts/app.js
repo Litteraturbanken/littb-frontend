@@ -359,7 +359,8 @@ window.littb = angular
                 templateUrl: require("../views/library.html"),
                 controller: "libraryCtrl",
                 reloadOnSearch: false,
-                title: "E-böcker för nedladdning"
+                title: "E-böcker för nedladdning",
+                isEpub: true
             })
             .when("/ljudarkivet", {
                 templateUrl: require("../views/audiolist.html"),
@@ -714,6 +715,8 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
 
         if (newRoute.isReader) {
             $rootElement.addClass(`page-reading`)
+        } else if (newRoute.isEpub) {
+            $rootElement.addClass("page-epub")
         } else if (newRoute.controller != null ? newRoute.controller.replace : undefined) {
             $rootElement.addClass(`page-${newRoute.controller.replace("Ctrl", "")}`)
         }

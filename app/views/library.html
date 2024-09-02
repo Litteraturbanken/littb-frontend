@@ -205,7 +205,7 @@
                             class="block"
                             label="Avgränsa sökningen"
                             model="keywords_aux"
-                            on-change="keywords_aux = keywords; refreshData()"
+                            on-change="onKeywordAuxChange(keywords)"
                         ></keyword-select>
                     </div>
 
@@ -214,7 +214,7 @@
                             logiskt OCH iställer för ELLER. Du får färre träffar, som då ingår i alla valda samlingar. </span>
                         
                     </div> -->
-                    <div class="title_select_container">
+                    <div class="title_select_container" ng-if="isLibrary">
                         <select
                             multiple
                             class="filter_select keyword_select"
