@@ -376,7 +376,7 @@ littb.controller(
 
         s.titleRender = function () {
             console.log("titleRender")
-            if (s.listType == "epub") {
+            if (s.listType == "epub" || s.listType == "pdf") {
                 return
             }
             if (
@@ -549,6 +549,7 @@ littb.controller(
             ]
         }
         s.sortItems["epub"] = _.cloneDeep(s.sortItems.works)
+        s.sortItems["pdf"] = _.cloneDeep(s.sortItems.works)
 
         s.tabObjects = [
             { label: "Enkel sökning", value: "enkel", current: true },
@@ -586,11 +587,14 @@ littb.controller(
                 return Promise.all([
                     s.fetchWorks(s.listType !== "works", false),
                     s.fetchWorks(s.listType !== "epub", true),
-                    // s.fetchWorks(s.listType !== "pdf", false, false, true),
+                    s.fetchWorks(s.listType !== "pdf", false, false, true),
                     s.fetchParts(s.listType !== "parts")
                 ])
             } else {
-                return Promise.all([s.fetchWorks(s.listType !== "epub", true)])
+                return Promise.all([
+                    s.fetchWorks(s.listType !== "epub", true),
+                    s.fetchWorks(s.listType !== "pdf", false, false, true)
+                ])
             }
         }
         s.capitalizeLabel = label => {
@@ -796,6 +800,7 @@ littb.controller(
                 })
             $q.all([def, authors]).then(([{ author_aggs }]) => {
                 s.currentPartAuthors = author_aggs.map(({ authorid }) => s.authorsById[authorid])
+                console.log("currentpartauthors part results obtained")
                 s.setAuthorData()
             })
         }
@@ -827,8 +832,12 @@ littb.controller(
 
         s.fetchWorks = (countOnly, epubOnly, isSearchRecent, pdfOnly) => {
             let listID = "works"
+            let maybeParams = {}
             if (epubOnly) listID = "epub"
-            if (pdfOnly) listID = "pdf"
+            if (pdfOnly) {
+                listID = "pdf"
+                maybeParams["pdfOnly"] = true
+            }
 
             if (isSearchRecent) listID = "latest"
             // let show_all = s.titleModel["show_all_" + listID]
@@ -867,7 +876,10 @@ littb.controller(
             if (epubOnly) {
                 filter_and.has_epub = true
             } else if (pdfOnly) {
-                filter_and["export>type"] = ["pdf"]
+                // filter_and["license"] = ["pd"]
+                // filter_and["export>type"] = ["pdf"]
+                // filter_or["mediatype"] = "pdf"
+                // var q = "(export>type:pdf AND license:pdf) OR mediatype:pdf"
             }
             let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
             const def = backend.getTitles("etext,faksimil,pdf", {
@@ -882,6 +894,7 @@ littb.controller(
                 partial_string: true,
                 author_aggs: true,
                 suggest: true,
+                ...maybeParams,
                 ...size
             })
             return $q
@@ -910,10 +923,11 @@ littb.controller(
                     s.titleModel[listID + "_suggest"] = suggest
                     s.titleModel[listID + "_searching"] = false
                     // s.titleHits = hits
-                    if (!epubOnly) {
+                    if (listID == "works" || listID == "parts") {
                         s.currentAuthors = author_aggs.map(
                             ({ authorid }) => s.authorsById[authorid]
                         )
+                        console.log("s.currentAuthors", s.currentAuthors)
                         // make sure checkbox appears selected for works added to download list
                         if (s.dl_mode && s.downloads.length) {
                             for (let row of s.downloads) {
@@ -923,7 +937,7 @@ littb.controller(
                             }
                         }
                     }
-                    if (!isSearchRecent) {
+                    if (listID == "works" || listID == "parts") {
                         s.setAuthorData()
                     }
 

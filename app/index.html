@@ -1,84 +1,132 @@
 <!DOCTYPE html>
 <html class="no-js">
     <head>
-        <base href="/">
-        <meta charset="utf-8"/>
+        <base href="/" />
+        <meta charset="utf-8" />
 
-        <link rel="prefetch" id="prefetch">
+        <link rel="prefetch" id="prefetch" />
 
         <!-- Global site tag (gtag.js) - Google Analytics -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=UA-132486790-1"></script>
         <script>
-            window.gtag = function() {}
-            if (document.location.hostname == "litteraturbanken.se" &&
-                navigator.userAgent != "littb-snapshot") {
+            window.gtag = function () {}
+            if (
+                document.location.hostname == "litteraturbanken.se" &&
+                navigator.userAgent != "littb-snapshot"
+            ) {
                 console.log("Logging to GA active.")
-                window.dataLayer = window.dataLayer || [];
-                window.gtag = function() {window.dataLayer.push(arguments);}
-                gtag('js', new Date());
+                window.dataLayer = window.dataLayer || []
+                window.gtag = function () {
+                    window.dataLayer.push(arguments)
+                }
+                gtag("js", new Date())
 
-                window.gtagID = 'UA-132486790-1'
-                gtag('config', window.gtagID);
-
+                window.gtagID = "UA-132486790-1"
+                gtag("config", window.gtagID)
             } else {
                 console.log("Logging to GA not active.")
-                window.gtag = function() {
+                window.gtag = function () {
                     console.log("gtag", arguments)
                 }
             }
-          
         </script>
 
         <!-- Matomo -->
         <script>
-        if (document.location.hostname == "litteraturbanken.se" &&
-            navigator.userAgent != "littb-snapshot") {
-            var _paq = window._paq = window._paq || [];
-            /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-            // _paq.push(['trackPageView']);
-            _paq.push(['enableLinkTracking']);
-            (function() {
-                var u="//lb.se/matomo/";
-                _paq.push(['setTrackerUrl', u+'matomo.php']);
-                _paq.push(['setSiteId', '1']);
-                var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-                g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-            })();
-        } else {
-            window._paq = {push: (...args) => {console.log("Matomo", args)}}
-        }
+            if (
+                document.location.hostname == "litteraturbanken.se" &&
+                navigator.userAgent != "littb-snapshot"
+            ) {
+                var _paq = (window._paq = window._paq || [])
+                /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+                // _paq.push(['trackPageView']);
+                _paq.push(["enableLinkTracking"])
+                ;(function () {
+                    var u = "//lb.se/matomo/"
+                    _paq.push(["setTrackerUrl", u + "matomo.php"])
+                    _paq.push(["setSiteId", "1"])
+                    var d = document,
+                        g = d.createElement("script"),
+                        s = d.getElementsByTagName("script")[0]
+                    g.async = true
+                    g.src = u + "matomo.js"
+                    s.parentNode.insertBefore(g, s)
+                })()
+            } else {
+                window._paq = {
+                    push: (...args) => {
+                        console.log("Matomo", args)
+                    }
+                }
+            }
         </script>
         <!-- End Matomo Code -->
 
-        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
-        <meta name="google-site-verification" content="GYTPY9q8YTxZgZLgC35X-rxVDPbZjLdfe1kakRWPqd0"
-         />
-        <meta name="google-site-verification" content="N0kL5tDA6UPMmyqv6bJBPNMsvOv27pcF7_ABjT94v5c" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <meta
+            name="google-site-verification"
+            content="GYTPY9q8YTxZgZLgC35X-rxVDPbZjLdfe1kakRWPqd0"
+        />
+        <meta
+            name="google-site-verification"
+            content="N0kL5tDA6UPMmyqv6bJBPNMsvOv27pcF7_ABjT94v5c"
+        />
         <meta name="msvalidate.01" content="36C8508B74F9ABEDA521C9217D70E66B" />
         <title>Litteraturbanken | Svenska klassiker som e-bok och epub</title>
-        <meta name="description" content="På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <meta
+            name="description"
+            content="På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
 
         <!-- <link rel="stylesheet" href="main.css"/> -->
-        <link rel="stylesheet" href="/red/css/etext.css"/>
-        
+        <link rel="stylesheet" href="/red/css/etext.css" />
+
         <!-- <link id="reading_css" href="" rel="stylesheet" type="text/css" /> -->
         <style id="reading_css"></style>
-        <link rel="stylesheet" type="text/css" href="https://cloud.typography.com/7426274/770508/css/fonts.css" />
-        
-        <!-- favicon stuff -->
-        <link rel="apple-touch-icon" sizes="180x180" href="assets/img/favicons/apple-touch-icon.png?v=dLBd3jp9bb">
-        <link rel="icon" type="image/png" href="assets/img/favicons/favicon-32x32.png?v=dLBd3jp9bb" sizes="32x32">
-        <link rel="icon" type="image/png" href="assets/img/favicons/favicon-16x16.png?v=dLBd3jp9bb" sizes="16x16">
-        <link rel="manifest" href="assets/img/favicons/manifest.json?v=dLBd3jp9bb">
-        <link rel="mask-icon" href="assets/img/favicons/safari-pinned-tab.svg?v=dLBd3jp9bb" color="#000">
-        <link rel="shortcut icon" href="assets/img/favicons/favicon.ico?v=dLBd3jp9bb">
-        <meta name="msapplication-config" content="assets/img/favicons/browserconfig.xml?v=dLBd3jp9bb">
-        <meta name="theme-color" content="#ffffff">
+        <link
+            rel="stylesheet"
+            type="text/css"
+            href="https://cloud.typography.com/7426274/770508/css/fonts.css"
+        />
 
-        <link rel="alternate" type="application/rss+xml" 
-          title="Podcast för ljudarkivet" 
-          href="https://litteraturbanken.se/red/ljud/feed.rss" />
+        <!-- favicon stuff -->
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="assets/img/favicons/apple-touch-icon.png?v=dLBd3jp9bb"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            href="assets/img/favicons/favicon-32x32.png?v=dLBd3jp9bb"
+            sizes="32x32"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            href="assets/img/favicons/favicon-16x16.png?v=dLBd3jp9bb"
+            sizes="16x16"
+        />
+        <link rel="manifest" href="assets/img/favicons/manifest.json?v=dLBd3jp9bb" />
+        <link
+            rel="mask-icon"
+            href="assets/img/favicons/safari-pinned-tab.svg?v=dLBd3jp9bb"
+            color="#000"
+        />
+        <link rel="shortcut icon" href="assets/img/favicons/favicon.ico?v=dLBd3jp9bb" />
+        <meta
+            name="msapplication-config"
+            content="assets/img/favicons/browserconfig.xml?v=dLBd3jp9bb"
+        />
+        <meta name="theme-color" content="#ffffff" />
+
+        <link
+            rel="alternate"
+            type="application/rss+xml"
+            title="Podcast för ljudarkivet"
+            href="https://litteraturbanken.se/red/ljud/feed.rss"
+        />
 
         <style id="confObjStyle"></style>
     </head>
@@ -87,32 +135,53 @@
 
         <div id="leftCorridor">
             <a class="logo_link_monogram block" ng-href="/">
-                <svg class="lb-logo inline-block" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 width="360" height="280" viewbox="70 0 469 600" xml:space="preserve" preserveaspectratio="xMinYMin">
-     <style type="text/css">
-
-	    .l-fill{fill:var(--logo-l-color, white);}
-	    .b-fill{fill:var(--logo-b-color, white);}
-    </style>
-<g>
-	<path class="b-fill" d="M370.36,577.35c-40.299,0-72.82,2.121-101.808,5.656c-1.414,0,0-3.535,0.707-4.242
+                <svg
+                    class="lb-logo inline-block"
+                    version="1.1"
+                    id="Layer_1"
+                    xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink"
+                    x="0px"
+                    y="0px"
+                    width="360"
+                    height="280"
+                    viewbox="70 0 469 600"
+                    xml:space="preserve"
+                    preserveaspectratio="xMinYMin"
+                >
+                    <style type="text/css">
+                        .l-fill {
+                            fill: var(--logo-l-color, white);
+                        }
+                        .b-fill {
+                            fill: var(--logo-b-color, white);
+                        }
+                    </style>
+                    <g>
+                        <path
+                            class="b-fill"
+                            d="M370.36,577.35c-40.299,0-72.82,2.121-101.808,5.656c-1.414,0,0-3.535,0.707-4.242
 		c63.63-5.655,68.579-4.948,68.579-116.654V250.009c0-111.706-4.242-110.999-69.286-118.069c-0.707,0-1.414-2.828,0-2.828
 		c28.987,3.535,49.489,4.949,89.789,4.949c16.261,0,61.509-2.828,84.133-2.828c74.942,0,137.865,34.643,137.865,101.808
 		c0,43.127-45.248,90.496-108.878,101.102v1.414c91.202-1.414,150.591,44.541,150.591,108.878
 		c0,76.355-63.63,136.451-165.438,136.451C433.282,580.885,386.62,577.35,370.36,577.35z M409.244,336.262
 		c86.961,0,122.312-25.451,122.312-94.737c0-74.942-43.834-101.101-106.05-101.101c-10.605,0-18.383,0-30.401,2.121
 		c-4.949,21.917-7.07,53.025-7.07,106.757v216.342c0,97.566,7.07,106.051,61.51,106.051c79.184,0,120.896-28.279,120.896-115.948
-		c0-72.113-51.611-120.189-161.196-115.948C408.537,339.797,408.537,336.262,409.244,336.262z"/>
-</g>
-<g>
-	<path class="l-fill" d="M507.364,492.948c-26.784,0-66.216-4.464-119.785-4.464c-73.655,0-154.751,2.231-208.32,5.951
+		c0-72.113-51.611-120.189-161.196-115.948C408.537,339.797,408.537,336.262,409.244,336.262z"
+                        />
+                    </g>
+                    <g>
+                        <path
+                            class="l-fill"
+                            d="M507.364,492.948c-26.784,0-66.216-4.464-119.785-4.464c-73.655,0-154.751,2.231-208.32,5.951
 		c-1.488,0,0-4.464,0.744-4.464c77.376-8.185,78.864-4.464,78.864-122.761v-223.2c0-117.552-3.721-116.809-72.168-124.249
 		c-0.744,0-2.232-2.976-0.744-2.976c31.249,3.72,65.473,5.208,107.137,5.208c31.248,0,67.704-2.232,90.023-5.208
 		c1.488,0,1.488,2.976,0.744,2.976c-71.424,5.952-72.168,11.16-72.168,124.249v223.201c0,96.721,8.185,105.648,47.616,105.648h40.92
 		c117.553,0,119.785-8.929,129.457-52.824c0,0,3.72-0.744,3.72,0c-2.231,19.344-5.952,45.384-10.416,61.008
-		C520.013,491.46,516.291,492.948,507.364,492.948z"/>
-</g>
-</svg>
+		C520.013,491.46,516.291,492.948,507.364,492.948z"
+                        />
+                    </g>
+                </svg>
             </a>
             <ul role="navigation" class="mainnav">
                 <li>
@@ -127,7 +196,9 @@
   <path d="M8.25 10.875a2.625 2.625 0 1 1 5.25 0 2.625 2.625 0 0 1-5.25 0Z" />
   <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.125 4.5a4.125 4.125 0 1 0 2.338 7.524l2.007 2.006a.75.75 0 1 0 1.06-1.06l-2.006-2.007a4.125 4.125 0 0 0-3.399-6.463Z" clip-rule="evenodd" />
 </svg> -->
-                    <a ng-click="$broadcast('show_autocomplete')" title="Snabbkommando: 's'">Snabbsökning</a> 
+                    <a ng-click="$broadcast('show_autocomplete')" title="Snabbkommando: 's'"
+                        >Snabbsökning</a
+                    >
                 </li>
                 <li>
                     <!-- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 text-white  inline-block relative -top-1">
@@ -146,10 +217,10 @@
                     <a href="https://litteraturbanken.se/diktensmuseum/">Diktens museum</a>
                 </li>
                 <li>
-                    <a href="/litteraturkartan/" >Litteraturkartan</a>
+                    <a href="/litteraturkartan/">Litteraturkartan</a>
                 </li>
                 <li>
-                    <a href="/översättarlexikon/" >Översättarlexikon</a>
+                    <a href="/översättarlexikon/">Översättarlexikon</a>
                 </li>
                 <li><a href="/bibliotekariesidor/shared-reading/">Shared reading</a></li>
                 <!-- <li>
@@ -161,7 +232,7 @@
                 <li>
                     <a href="/ljudochbild/">Ljud <em>&</em> bild</a>
                 </li>
-                
+
                 <li>
                     <a href="/skolan/">Skolan</a>
                 </li>
@@ -171,23 +242,34 @@
                 <!-- <li>
                     <img class="sla" src="/img/sla.svg">
                 </li> -->
-                
             </ul>
-            
-            <ul class="start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
+
+            <ul
+                class="start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display"
+            >
                 <li><a href="/skolan/lararsida/">Lärare</a></li>
                 <li><a href="/bibliotekariesidor/">Bibliotekarier</a></li>
             </ul>
 
-            <ul class="start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display">
+            <ul
+                class="start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display"
+            >
                 <li><a href="/om/english.html">English</a></li>
                 <li><a href="/om/deutsch.html">Deutsch</a></li>
                 <li><a href="/om/francais.html">Français</a></li>
             </ul>
 
-
-            <a class="sa-logo start-only block text-right mr-32 mt-6 relative left-1" href="https://www.svenskaakademien.se">
-                <img class="" ng-src="{{$root.SA_logo}}" width="90" height="90" alt="Logotyp för Svenska Akademien">
+            <a
+                class="sa-logo start-only block text-right mr-32 mt-6 relative left-1"
+                href="https://www.svenskaakademien.se"
+            >
+                <img
+                    class=""
+                    ng-src="{{$root.SA_logo}}"
+                    width="90"
+                    height="90"
+                    alt="Logotyp för Svenska Akademien"
+                />
             </a>
 
             <div id="toolkit"></div>
@@ -200,7 +282,7 @@
         <div id="bkgimg"></div>
         <alert-popup></alert-popup>
         <!-- <div class="nav_footer"></div> -->
-        
+
         <script type="text/ng-template" id="so_modal_template.html">
             <div role="dialog">
                 <div class="so_modal" ng-class="{loading : $parent.dict_searching}">
@@ -226,18 +308,18 @@
         </script>
 
         <script type="text/ng-template" id="customTemplate.html">
-          <a uib-tooltip="{{match.label}}" tooltip-popup-delay="500" tooltip-placement="right">
-              <span class="type_label">
-                {{match.model.typeLabel}}<span ng-if="match.model.mediatypeLabel">,</span> {{match.model.mediatypeLabel}}
-              </span>
-              <span >{{match.label}}</span>
-          </a>
+            <a uib-tooltip="{{match.label}}" tooltip-popup-delay="500" tooltip-placement="right">
+                <span class="type_label">
+                  {{match.model.typeLabel}}<span ng-if="match.model.mediatypeLabel">,</span> {{match.model.mediatypeLabel}}
+                </span>
+                <span >{{match.label}}</span>
+            </a>
         </script>
 
         <script type="text/ng-template" id="autocomplete.html">
-            <div class="modal-body" ng-class="{info:info}" ng-controller="autocompleteCtrl"
+            <div class="modal-body" ng-class="{info:info || htmlInfo}" ng-controller="autocompleteCtrl"
             >
-                
+
                 <input type="text" id="autocomplete"
                     class="text-gray-900"
                     ng-model="completeObj"
@@ -252,35 +334,53 @@
                 >
                 <pre ng-show="lbworkid">{{lbworkid}}</pre>
                 <pre ng-show="info">{{info}}</pre>
+                <div class="" ng-show="htmlInfo">
+                    <ul>
+                        <li class="mb-4" ng-repeat="item in htmlInfo" ng-show="item.url">
+                            <ul class="flex gap-2">
+                                <li ng-repeat="breadcrumb in item.breadcrumbs"><a class="!text-gray-600 hover:!text-gray-400" ng-href="{{breadcrumb.url}}">{{breadcrumb.label}}</a>
+                                <span class="!text-gray-600" ng-if="!$last"> > </span></li>
+                            </ul>
+                            <a class="!text-gray-800 hover:!text-gray-400 font-mono text-sm" ng-href="{{item.url}}" class="">/{{item.url.split("/").slice(4).join("/")}}</a></li>
+                    </ul>
+                </div>
 
 
                 <div class="footer">
                     <!-- <span class="">Pil upp / ner för att välja</span> -->
                     <span class="" >Gå till <a ng-click="close()" class="sc" href="/bibliotek">biblioteket</a> om du vill utföra mer avancerade sökningar</span>
 
-                    
+
                 </div>
 
             </div>
-             
         </script>
 
         <div ng-controller="autocompleteCtrl"></div>
-        <div style="display: none" class="word_search" ng-controller="lexiconCtrl" ng-class="{searching : dict_searching}">
+        <div
+            style="display: none"
+            class="word_search"
+            ng-controller="lexiconCtrl"
+            ng-class="{searching : dict_searching}"
+        >
             <div class="input_container">
-                <input  type="text"
-                        ng-model="lex_article"
-                        focusable
-                        placeholder="Slå i Svensk ordbok"
-                        typeahead-on-select="showModal(lex_article)"
-                        typeahead-wait-ms="300"
-                        typeahead="article as article.baseform for article in getWords($viewValue)"
-                        ng-keydown="keydown($event)"
-                        typeahead-trigger>
-                
-                <span class="so_spinner" us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"></span>
+                <input
+                    type="text"
+                    ng-model="lex_article"
+                    focusable
+                    placeholder="Slå i Svensk ordbok"
+                    typeahead-on-select="showModal(lex_article)"
+                    typeahead-wait-ms="300"
+                    typeahead="article as article.baseform for article in getWords($viewValue)"
+                    ng-keydown="keydown($event)"
+                    typeahead-trigger
+                />
+
+                <span
+                    class="so_spinner"
+                    us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"
+                ></span>
             </div>
-            
         </div>
         <div to-body alert-popup="dict_not_found"></div>
     </body>

@@ -8,9 +8,9 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-// let STRIX_URL = "/api"
+let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -161,7 +161,8 @@ const expandMediatypes = function (works, mainMediatype) {
                 })
             } else {
                 let pdfExport = _.find(work.export, { type: "pdf" })
-                if (pdfExport) {
+                let hasRealPDF = group.find(item => item.mediatype == "pdf")
+                if (!hasRealPDF && pdfExport) {
                     mediatypes.push({
                         label: "pdf",
                         url: `export/faksimil/${main.lbworkid}.pdf`,

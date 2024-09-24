@@ -1217,6 +1217,40 @@ littb.controller(
                             url: `/editor/${val}/ix/0/f`,
                             typeLabel: "[Red.] Gå till faksimileditorn"
                         })
+                        menu.push({
+                            label: val,
+                            typeLabel: "[Red.] Sök i ftp",
+                            action() {
+                                $http({
+                                    url: `https://red.litteraturbanken.se/hitta?q=${val}`
+                                }).then(
+                                    response => {
+                                        console.log("response", response.data)
+
+                                        s.htmlInfo = response.data.split("\n").map(url => {
+                                            url = url.replace(/\/mnt/, "//mnt")
+                                            let breadcrumbs = url
+                                                .split("/")
+                                                .slice(5)
+                                                .map((part, index) => ({
+                                                    label: part,
+                                                    url: url
+                                                        .split("/")
+                                                        .slice(0, index + 6)
+                                                        .join("/")
+                                                }))
+                                                .slice(0, -1)
+                                            return { url, breadcrumbs }
+                                        })
+                                    },
+                                    response => {
+                                        console.log("response", response)
+                                        s.$emit("notify", "Hittade inte red-tjänsten.")
+                                    }
+                                )
+                                return false
+                            }
+                        })
                     }
                     menu = _.filter(menu, function (item) {
                         // if !isDev and item.typeLabel == "[Red.]" then return false

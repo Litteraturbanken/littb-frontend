@@ -2608,7 +2608,7 @@ body > .header {
                     padding-left: 2rem;
                 }
                 td:last-child {
-                    padding-right: 1rem;
+                    padding-right: 2rem;
                 }
             }
             .header_container {
@@ -3757,7 +3757,7 @@ grundform-clean {
     
     background-image: url("../img/dramawebben.jpg") !important;
     background-repeat: no-repeat;
-    // background-size: contain;
+    background-size: cover;
     // background-position: -100px -80px;
     
     [littb-err], [littb-err] ~ * {

@@ -25,7 +25,7 @@
             >
                 <td class="text-lg">
                     Inga träffar.
-                    <span ng-show='titleModel[listType + "_suggest"][0]'
+                    <span ng-show="titleModel[listType + '_suggest'][0]"
                         >Menade du
                         <a
                             class="link"
@@ -72,7 +72,7 @@
                                     tooltip-popup-delay="500"
                                 >
                                     <a
-                                        ng-if="listType == 'epub'"
+                                        ng-if="listType == 'epub' || listType == 'pdf'"
                                         ng-href="{{row.mediatypes[0].url}}?om-boken"
                                         >{{row.shorttitle || row.title}}
                                     </a>
@@ -133,7 +133,7 @@
                     >
                 </td>
                 <td
-                    class="w-40"
+                    class="w-44"
                     ng-class="{'text-left': ['epub', 'pdf'].includes(listType), 'text-right': !['epub', 'pdf'].includes(listType)}"
                 >
                     <div class="text-ellipsis whitespace-nowrap overflow-hidden">
@@ -172,10 +172,10 @@
 
                     <a
                         ng-if="listType == 'pdf'"
-                        class="sc w-32 block"
+                        class="sc"
                         ng-href="{{getMediatype(row, 'pdf').url}}"
                         target="_self"
-                        download="{{getMediatype(row, 'pdf').filename}}.{{getMediatype(row, 'pdf').label}}"
+                        download="{{getMediatype(row, 'pdf').filename || (row.main_author.authorid + '_' + (row.work_titleid || row.titleid))}}.pdf"
                         ng-click="log(workinfo, 'pdf')"
                         ng-touch="log(workinfo, 'pdf')"
                         >Hämta</a

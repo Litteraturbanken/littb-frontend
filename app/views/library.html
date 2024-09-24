@@ -335,6 +335,16 @@
                 <button
                     ng-show="isLibrary"
                     class="sc btn btn-small text-base"
+                    ng-model="listType"
+                    uib-btn-radio="'latest'"
+                    ng-click="fetchRecent()"
+                >
+                    Nytt
+                    <!-- <span class="num_hits" ng-show="titleModel.latest_hits">: {{titleModel.latest_hits}}</span> -->
+                </button>
+                <button
+                    ng-show="isLibrary"
+                    class="sc btn btn-small text-base"
                     ng-class="{disabled: dl_mode || !authorData.length}"
                     ng-model="listType"
                     uib-btn-radio="'authors'"
@@ -353,16 +363,6 @@
                     Verk<span class="num_hits" ng-show="titleModel.works_hits"
                         >: {{titleModel.works_hits}}</span
                     >
-                </button>
-                <button
-                    ng-show="isLibrary"
-                    class="sc btn btn-small text-base"
-                    ng-model="listType"
-                    uib-btn-radio="'latest'"
-                    ng-click="fetchRecent()"
-                >
-                    Nytt
-                    <!-- <span class="num_hits" ng-show="titleModel.latest_hits">: {{titleModel.latest_hits}}</span> -->
                 </button>
                 <button
                     ng-show="isLibrary && !dl_mode"
@@ -388,8 +388,18 @@
                         >: {{titleModel.epub_hits}}</span
                     >
                 </button>
-                <!-- <button ng-show="!dl_mode" class="sc btn btn-small text-base" ng-class="{disabled: !titleModel.epub_hits}" 
-                    ng-model="listType" uib-btn-radio="'pdf'" ng-click="fetchWorks(false, false, false, true)">PDF<span class="num_hits" ng-show="titleModel.epub_hits">: {{titleModel.pdf_hits}}</span></button> -->
+                <button
+                    ng-show="!dl_mode"
+                    class="sc btn btn-small text-base"
+                    ng-class="{disabled: !titleModel.pdf_hits}"
+                    ng-model="listType"
+                    uib-btn-radio="'pdf'"
+                    ng-click="fetchWorks(false, false, false, true)"
+                >
+                    PDF<span class="num_hits" ng-show="titleModel.pdf_hits"
+                        >: {{titleModel.pdf_hits}}</span
+                    >
+                </button>
                 <!-- <label ng-show="!dl_mode" class="sc btn btn-small" ng-class="{disabled: !audio_list.length}" 
                     ng-model="listType" btn-radio="'audio'" ng-click="listType = 'audio'">Ljud<span class="num_hits" ng-show="audio_list.length">: {{audio_list.length}}</span></label> -->
             </div>
@@ -733,6 +743,7 @@
                 </div>
 
                 <ng-include src="worksListURL" ng-if="listType == 'epub'"></ng-include>
+                <ng-include src="worksListURL" ng-if="listType == 'pdf'"></ng-include>
 
                 <div class="result title flex-column min-h-500 pl-0" ng-show="listType == 'parts'">
                     <div

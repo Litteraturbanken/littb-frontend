@@ -257,7 +257,6 @@ export default [
                             s.$emit("notify", "Ingen urn hittades")
                         }
                         break
-
                     case "F18":
                     case "o":
                         s.show_about = !s.show_about
