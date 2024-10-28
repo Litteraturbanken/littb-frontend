@@ -198,7 +198,7 @@
                 total-items="titleModel[listType + '_hits']"
                 max-size="10"
                 ng-model="titleModel[listType + '_currentpage']"
-                ng-change="listType == 'latest' ? fetchRecent(false) : fetchWorks(false, listType == 'epub')"
+                ng-change="listType == 'latest' ? fetchRecent(false) : fetchWorks(false, listType == 'epub', false, listType == 'pdf')"
                 next-text="Nästa"
                 previous-text="Föregående"
             ></ul>

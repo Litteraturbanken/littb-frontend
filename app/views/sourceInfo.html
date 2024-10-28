@@ -20,7 +20,10 @@
     <div class="columns">
         <div class="col_left">
             <p class="sourcedesc" ng-bind-html="workinfo.sourcedesc | trust"></p>
-            <div class="sourcedescauthor">{{authorById[workinfo.sourcedescAuthor].full_name}}</div>
+            <div class="mb-8 text-right italic " >
+                <span ng-if="authorById[workinfo.sourcedescAuthor]">{{authorById[workinfo.sourcedescAuthor].full_name}}</span>
+                <span ng-if="!authorById[workinfo.sourcedescAuthor]">{{workinfo.sourcedescAuthor}}</span>
+            </div>
             
             <div ng-show="workinfo.mediatype" class="mediatypes" ng-class="{larger : workinfo.workintro}" ng-hide="workinfo.mediatype == 'infopost'">
                 Läs som <a class="sc hover:underline" ng-href="{{workinfo.mediatypes[0].url}}">{{workinfo.mediatypes[0].label}}</a>
@@ -86,6 +89,11 @@
     
     <h3 class="sc introheader" ng-if="workinfo.dramawebben.workintro">Handling</h3>
     <div class="workintro mt-4" ng-if="workinfo.workintro" ng-bind-html="workinfo.workintro | trust"></div>
+    <!-- <div class="mt-4 text-right italic">{{workinfo.workintro_author}}</div> -->
+    <div class="mb-8 text-right italic " >
+        <span ng-if="authorById[workinfo.workintro_author]">{{authorById[workinfo.workintro_author].full_name}}</span>
+        <span ng-if="!authorById[workinfo.workintro_author]">{{workinfo.workintro_author}}</span>
+    </div>
 
     <div class="dramaweb" ng-if="dramaweb">
         <table>

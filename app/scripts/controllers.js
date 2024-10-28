@@ -1053,6 +1053,7 @@ littb.controller(
         function infoAction() {
             if ($("#mainview").scope) {
                 let obj = getInfo()
+                if (!obj) return
                 delete obj["filenameMap"]
                 delete obj["content_vector"]
                 s.info = JSON.stringify(sortObjectKeys(getInfo()), null, 2)

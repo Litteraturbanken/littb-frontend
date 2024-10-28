@@ -2,6 +2,14 @@
 @import "triangle"; 
 @import "mixins";
 
+
+$screen-sm: 640px;
+$screen-md: 768px;
+$screen-lg: 1024px;
+$screen-xl: 1280px;
+$screen-2xl: 1536px;
+
+
 h1 {
     font-size: 2em;
     margin: 0.67em 0;
@@ -2593,19 +2601,22 @@ body > .header {
             }
         }
         
+        
         .result {
             table {
-                margin-left: -1.5rem;
-                width: calc(100% + 3rem);
+                @media (min-width: $screen-lg) {
+                    margin-left: -1.5rem;
+                    width: calc(100% + 3rem);
+                    td:first-child {
+                        padding-left: 2rem;
+                    }
+                }
                 border-spacing: 0;
                 border-collapse: collapse;
                 table-layout: fixed;
                 td {
                     padding: 0px 0.5em;
                     vertical-align: text-top
-                }
-                td:first-child {
-                    padding-left: 2rem;
                 }
                 td:last-child {
                     padding-right: 2rem;

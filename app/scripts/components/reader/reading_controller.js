@@ -199,7 +199,6 @@ export default [
                     abort = abort || $("body.modal-open").length
                 }
             }
-
             if (abort) {
                 return
             }
@@ -209,19 +208,35 @@ export default [
                         s.nextPage()
                         break
                     case "ArrowRight":
-                        if (
-                            $rootElement.prop("scrollWidth") - $window.scrollX ===
-                            $($window).width()
-                        ) {
+                        if (event.altKey && event.shiftKey) {
+                            s.setPage(s.pageix + 10)
+                        } else if (event.altKey) {
+                            $location.path(s.getNextPartUrl())
+                        } else if (event.shiftKey) {
                             s.nextPage()
+                        } else {
+                            if (
+                                $rootElement.prop("scrollWidth") - $window.scrollX ===
+                                $($window).width()
+                            ) {
+                                s.nextPage()
+                            }
                         }
                         break
                     case "f":
                         s.prevPage()
                         break
                     case "ArrowLeft":
-                        if ($window.scrollX < 10) {
+                        if (event.altKey && event.shiftKey) {
+                            s.setPage(s.pageix - 10)
+                        } else if (event.altKey) {
+                            $location.path(s.getPrevPartUrl())
+                        } else if (event.shiftKey) {
                             s.prevPage()
+                        } else {
+                            if ($window.scrollX < 10) {
+                                s.prevPage()
+                            }
                         }
                         break
                     case "F15":
@@ -231,13 +246,15 @@ export default [
                             s.pageToLoad = s.pageix
                             break
                         } else {
-                            $location.path(s.getPrevPageUrl())
+                            $location.path(s.getPrevPartUrl())
                         }
                     case "F16":
                     case "m":
                         if (s.isEditor) {
                             s.pageix = s.pageix + 10
                             s.pageToLoad = s.pageix
+                            break
+                        } else {
                             $location.path(s.getNextPartUrl())
                         }
                         break
@@ -278,8 +295,13 @@ export default [
         }
 
         s.setPage = function (ix) {
-            s.pageix = ix
-            s.pageToLoad = s.pagemap[`ix_${s.pageix}`]
+            if (s.isEditor) {
+                s.pageix = ix
+                s.pageToLoad = s.pageix
+            } else {
+                s.pageix = ix
+                s.pageToLoad = s.pagemap[`ix_${s.pageix}`]
+            }
         }
 
         s.getStep = () => {
@@ -416,12 +438,7 @@ export default [
                 event.preventDefault()
             }
             const ix = s.pagemap[`page_${page}`]
-            if (s.isEditor) {
-                s.pageix = ix
-                s.pageToLoad = ix
-            } else {
-                s.setPage(ix)
-            }
+            s.setPage(ix)
         }
 
         s.onGotoClick = function () {
@@ -751,7 +768,6 @@ export default [
         const watches = []
         watches.push(
             s.$watch("pageToLoad", function (val) {
-                console.log("🚀 ~ file: reading_controller.js ~ line 667 ~ val", val)
                 let url
                 if (val == null) {
                     return
@@ -772,25 +788,8 @@ export default [
                 }
             })
         )
-        // ), 300, {leading:true})
 
         s.isDefined = angular.isDefined
-        // s.getOverlayCss = function(obj) {
-        //     console.log("getOverlayCss", s.overlayWidth)
-        //     if (!s.overlayWidth) return {}
-        //     // if (!s.overlayFactors) {
-        //     //     return {}
-        //     // }
-        //     // const fac = s.overlayFactors[s.size - 1]
-        //     const fac = s.imageWidth / s.overlayWidth
-        //     console.log("imageWidth", s.imageWidth)
-        //     return {
-        //         left: fac * obj.x + "px",
-        //         top: fac * obj.y + "px"
-        //         // width : fac * obj.w
-        //         // height : fac * obj.h
-        //     }
-        // }
 
         const initSourceInfo = function () {
             let params

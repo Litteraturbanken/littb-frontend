@@ -610,6 +610,13 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                     .value()
 
                 c.log("getSourceInfo", workinfo)
+
+                let sourcedesc = $(`<div>${workinfo.sourcedesc}</div>`)
+                // workinfo.sourcedesc = .
+                workinfo.sourcedescAuthor = sourcedesc.find("sourcedesc-author").text()
+                $("sourcedesc-author", sourcedesc).remove()
+                workinfo.sourcedesc = sourcedesc.html()
+
                 return workinfo
             })
         },
@@ -1149,7 +1156,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 for (let item of content.data) {
                     if (["etext", "faksimil"].includes(item.doc_type)) {
                         const titleid = item.work_titleid || item.titleid
-                        item.url = `/författare/${item.authors[0].authorid}/titlar/${titleid}/sida/${item.startpagename}/${item.doc_type}`
+                        const authorid = item.work_authors?.[0].authorid || item.authors[0].authorid
+                        item.url = `/författare/${authorid}/titlar/${titleid}/sida/${item.startpagename}/${item.doc_type}`
                         item.label = `${item.authors[0].surname} – ${item.shorttitle || item.title}`
                         item.typeLabel = "Verk"
                         item.mediatypeLabel = item.doc_type

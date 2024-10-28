@@ -1,5 +1,5 @@
 <meta-desc>Blädda bland Litteraturbankens författare och titlar.</meta-desc>
-<h1 class="text-6xl sm:ml-12">{{:: isLibrary ? 'Botanisera i biblioteket' : 'Hämta e-böcker'}}</h1>
+<h1 class="text-6xl lg:ml-12">{{:: isLibrary ? 'Botanisera i biblioteket' : 'Hämta e-böcker'}}</h1>
 <!-- samlingarna -->
 <!--  <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span> -->
 <img ng-if="isLibrary" bkg-img src="/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg" />
@@ -14,21 +14,21 @@
         <span >{{match.label}}</span>
     </a>
 </script>
-<div class="sm:ml-12" ng-class="{searching:searching, dl_mode : dl_mode}">
+<div class="lg:ml-12" ng-class="{searching:searching, dl_mode : dl_mode}">
     <div id="controls">
         <form
-            class="sm:p-5 p-2 sm:border border-gray-900 w-full sm:max-w-5xl"
+            class="lg:p-5 p-2 lg:border border-gray-900 w-full lg:max-w-5xl"
             ng-submit="refreshData()"
         >
             <div>
                 <!--    <div class="mb-8 bg-white bg-opacity-40 -m-5 pt-4 border-bottom border-black border-opacity-70">
-                    <div class="sm:hidden">
+                    <div class="lg:hidden">
                     <label for="tabs" class="sr-only">Välj enkel eller utökad sökning</label>
                     <select id="tabs" name="tabs" class="block w-full rounded-md focus:border-primary ">
                         <option ng-repeat="tab in tabObjects" ng-selected="tab.current">{{ tab.label }}</option>
                     </select>
                     </div>
-                    <div class="hidden sm:block">
+                    <div class="hidden lg:block">
                         <div class="">
                             <nav class="-mb-px flex" aria-label="Tabs">
                                 
@@ -321,7 +321,7 @@
                 change="onSliderChange()"
             >
             </chronology>
-            <div class="btn-group p-0 mt-4 sm:mt-6">
+            <div class="btn-group p-0 mt-4 lg:mt-6">
                 <button
                     ng-show="isLibrary"
                     class="sc btn btn-small text-base"
@@ -419,13 +419,13 @@
     </div>
     <div>
         <!-- <div class="row box_container"> -->
-        <div class="flex items-stretch w-full sm:max-w-5xl text-lg leading-tight">
-            <div class="bg-white/65 sm:p-6 p-2 sm:border border-gray-900 flex-grow">
+        <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
+            <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
                 <ng-include src="worksListURL" ng-if="listType == 'works'"></ng-include>
                 <ng-include src="worksListURL" ng-if="listType == 'latest'"></ng-include>
 
                 <div
-                    class="result relevance pl-0 sm:ml-3 lg:ml-0 w-full sm:w-auto"
+                    class="result relevance pl-0 lg:ml-3 lg:ml-0 w-full lg:w-auto"
                     ng-if="listType == 'all'"
                 >
                     <sort-list class="text-base"></sort-list>
@@ -455,11 +455,11 @@
 
                                 <tr
                                     ng-repeat="item in relevanceData"
-                                    class="sm:table-row flex flex-col justify-between pb-2 sm:pb-0 -ml-2 hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
+                                    class="lg:table-row flex flex-col justify-between pb-2 lg:pb-0 -ml-2 hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
                                     ng-click="authorClick($event, author)"
                                     on-finish-render="authorRender()"
                                 >
-                                    <td class="sm:text-right sm:table-cell w-44">
+                                    <td class="lg:text-right lg:table-cell w-44">
                                         <span class="sc primarycolor whitespace-nowrap text-base">
                                             {{getLabelBySource(item)}}
                                         </span>
@@ -475,7 +475,7 @@
                                                 >
                                                 {{item.name_for_index.split(",")[1]}}
                                                 <a
-                                                    class="sm:hidden"
+                                                    class="lg:hidden"
                                                     ng-if="item | authorYear"
                                                     ng-click="setDateRange(item.birth.plain, item.death.plain)"
                                                     >({{item | authorYear}})</a
@@ -606,7 +606,7 @@
                                     </td>
 
                                     <td
-                                        class="sm:text-right hidden sm:table-cell text-base w-28 whitespace-nowrap"
+                                        class="lg:text-right hidden lg:table-cell text-base w-28 whitespace-nowrap"
                                     >
                                         <a
                                             ng-click="setDateRange(item.sort_date_imprint.plain, item.sort_date_imprint.plain)"
@@ -622,7 +622,7 @@
                                         </div>
                                     </td>
                                     <td
-                                        class="sm:text-right sm:uppercase sm:text-sm sm:pl-4 order-1 sm:max-w-40"
+                                        class="lg:text-right lg:uppercase lg:text-sm lg:pl-4 order-1 lg:max-w-40"
                                     >
                                         <span class="author">
                                             <div
@@ -720,7 +720,7 @@
                                                 ng-if="author.name_for_index.split(',').length > 1"
                                                 >,</span
                                             >
-                                            {{author.name_for_index.split(",")[1]}}
+                                            {{author.name_for_index.split(",").slice(1).join(",")}}
                                         </a>
                                     </td>
                                     <td>{{author | authorYear}}</td>
@@ -782,7 +782,7 @@
                                     {{row.shorttitle || row.title}}
                                 </a>
                             </td>
-                            <td class="hidden sm:table-cell w-28">
+                            <td class="hidden lg:table-cell w-28">
                                 <a
                                     ng-click="setDateRange(row.sort_date_imprint.plain, row.sort_date_imprint.plain)"
                                     >{{row.sort_date_imprint.plain}}</a
