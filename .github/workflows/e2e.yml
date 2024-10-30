@@ -38,9 +38,8 @@ jobs:
         npx webdriver-manager update --standalone chrome --gecko false
     - name: Run tests
       run: |
-        # npx webdriver-manager start &
         yarn serve-dist &
         npx wait-on http://localhost:9000
         sleep 5
-        $CHROME_BIN=chrome-linux64/chrome npx protractor --browser chrome test/e2e/conf_e2e.js
+        testcafe 'testcafe-browser-provider-puppeteer:emulation:device=Pixel 2' test/e2e/testcafe_e2e.js
         echo "exited tests with code $?"
