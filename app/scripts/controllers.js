@@ -348,7 +348,6 @@ littb.controller(
         s.show_large = false
         s.show_more = true
 
-        backend.hasAudioPage(s.author).then(hasPage => (s.hasAudioPage = hasPage))
         backend
             .authorHasMapArticle(s.author)
             .then(hasMapArticle => (s.hasMapArticle = hasMapArticle))
@@ -506,7 +505,6 @@ littb.controller(
                     page = "semer"
                 }
                 url = `/red/forfattare/${s.authorInfo.authorid_norm}/${page}/index.html`
-                c.log("url", url)
             }
 
             if (!url) {
@@ -659,7 +657,9 @@ littb.controller(
                 s.authorInfo = data
 
                 refreshExternalDoc(s.showpage, $routeParams)
-
+                backend
+                    .hasAudioPage(s.authorInfo.authorid_norm)
+                    .then(hasPage => (s.hasAudioPage = hasPage))
                 s.moreStruct = [
                     {
                         label: `Verk om ${s.authorInfo.full_name}`,
