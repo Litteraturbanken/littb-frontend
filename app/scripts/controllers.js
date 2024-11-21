@@ -34,6 +34,14 @@ document.addEventListener("keydown", function (event) {
     }
 })
 
+document.addEventListener("paste", function (event) {
+    const paste = (event.clipboardData || window.clipboardData).getData("text")
+    console.log("🚀 ~ paste:", paste)
+    if (/^lb.*/.test(paste)) {
+        window.location.href = `/editor/${paste}/ix/0/f`
+    }
+})
+
 function sortObjectKeys(obj) {
     // Separate keys into two arrays based on their type
     let simpleKeys = []
