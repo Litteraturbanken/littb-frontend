@@ -8,9 +8,9 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -102,6 +102,9 @@ const expandMediatypes = function (works, mainMediatype) {
         if (metadata.mediatype === "pdf") {
             return {
                 label: metadata.mediatype,
+                filename: `${getMainAuthor(metadata).authorid}_${
+                    metadata.work_titleid || metadata.titleid
+                }`,
                 url: `txt/${metadata.lbworkid}/${metadata.lbworkid}.pdf`,
                 downloadable: true,
                 imported: metadata.imported
@@ -145,6 +148,7 @@ const expandMediatypes = function (works, mainMediatype) {
         let mediatypes = [makeObj(main)]
         mediatypes = mediatypes.concat(_.map(rest, makeObj))
 
+        let hasRealPDF = group.find(item => item.mediatype == "pdf")
         for (let work of group) {
             let epubExport = _.find(work.export, { type: "epub" })
             if (epubExport) {
@@ -161,7 +165,7 @@ const expandMediatypes = function (works, mainMediatype) {
                 })
             } else {
                 let pdfExport = _.find(work.export, { type: "pdf" })
-                let hasRealPDF = group.find(item => item.mediatype == "pdf")
+
                 if (!hasRealPDF && pdfExport) {
                     mediatypes.push({
                         label: "pdf",

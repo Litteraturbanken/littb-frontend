@@ -362,12 +362,12 @@ window.littb = angular
                 title: "E-böcker för nedladdning",
                 isEpub: true
             })
-            .when("/ljudarkivet", {
-                templateUrl: require("../views/audiolist.html"),
-                controller: "audioListCtrl",
-                reloadOnSearch: false,
-                title: "Litteraturbankens uppläsningar"
-            })
+            // .when("/ljudarkivet", {
+            //     templateUrl: require("../views/audiolist.html"),
+            //     controller: "audioListCtrl",
+            //     reloadOnSearch: false,
+            //     title: "Litteraturbankens uppläsningar"
+            // })
             .when(["/ljudochbild/", "/ljudochbild/:subadress*"], {
                 redirectTo: $routeParams => {
                     window.location.href =

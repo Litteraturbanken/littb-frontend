@@ -73,7 +73,7 @@
                                 >
                                     <a
                                         ng-if="listType == 'epub' || listType == 'pdf'"
-                                        ng-href="{{row.mediatypes[0].url}}?om-boken"
+                                        ng-href="/författare/{{row.main_author.authorid}}/titlar/{{row.work_titleid || row.titleid}}/{{row.mediatype == 'pdf' ? 'faksimil' : row.mediatype}}?om-boken"
                                         >{{row.shorttitle || row.title}}
                                     </a>
 

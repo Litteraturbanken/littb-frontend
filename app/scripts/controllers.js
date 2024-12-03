@@ -36,9 +36,16 @@ document.addEventListener("keydown", function (event) {
 
 document.addEventListener("paste", function (event) {
     const paste = (event.clipboardData || window.clipboardData).getData("text")
-    console.log("🚀 ~ paste:", paste)
-    if (/^lb.*/.test(paste)) {
-        window.location.href = `/editor/${paste}/ix/0/f`
+    if ($(":focus").length) return
+    const lbPattern = /lb\w+/g
+    const matches = paste.match(lbPattern)
+    if (matches) {
+        if (matches.length === 1) {
+            window.location.href = `/editor/${matches[0]}/ix/0/f`
+        } else {
+            const filter = matches.map(match => `lbworkid:${match}`).join("%20OR%20")
+            window.location.href = `/bibliotek?filter=${filter}&visa=works&sort=popularitet`
+        }
     }
 })
 
@@ -355,6 +362,7 @@ littb.controller(
         s.showpage = null
         s.show_large = false
         s.show_more = true
+        s.authorError = false
 
         backend
             .authorHasMapArticle(s.author)
@@ -383,6 +391,9 @@ littb.controller(
         }
 
         s.getWikimediaFilePage = imageUrl => {
+            if (!imageUrl) {
+                return
+            }
             // Extract the filename from the URL
             let filename = imageUrl.split("/").pop()
 
@@ -491,6 +502,9 @@ littb.controller(
         // }
 
         const refreshExternalDoc = function (page, routeParams) {
+            if (!s.authorInfo) {
+                return
+            }
             // sla hack
             let url
             c.log("refreshExternalDoc", page, routeParams.omtexternaDoc)
@@ -662,6 +676,10 @@ littb.controller(
 
         backend.getAuthorInfo(s.author).then(
             function (data) {
+                if (!data) {
+                    return
+                }
+
                 s.authorInfo = data
 
                 refreshExternalDoc(s.showpage, $routeParams)
@@ -752,183 +770,6 @@ littb.controller(
     }
 )
 
-littb.controller(
-    "audioListCtrl",
-    function audioListCtrl($scope, backend, util, authors, $filter, $timeout, $location) {
-        const s = $scope
-        s.play_obj = null
-
-        s.setPlayObj = function (obj) {
-            s.play_obj = obj
-            $location.search("spela", obj.file)
-
-            return $timeout(() => $("#audioplayer").get(0).play())
-        }
-
-        s.getAuthor = function (author) {
-            const [last, first] = (author.name_for_index || "").split(",")
-
-            return _.compact([last.toUpperCase(), first]).join(",")
-        }
-
-        authors.then(function ([authorList, authorsById]) {
-            s.authorsById = authorsById
-        })
-
-        return backend.getAudioList({ sort_field: "order|asc" }).then(function (audioList) {
-            c.log("audioList", audioList)
-            s.fileGroups = _.groupBy(audioList, "section")
-
-            if ($location.search().spela) {
-                for (let item of audioList) {
-                    if (item.file === $location.search().spela) {
-                        s.setPlayObj(item)
-                    }
-                }
-            } else {
-                s.play_obj = audioList[0]
-            }
-
-            return $("#audioplayer").bind("ended", () =>
-                s.$apply(function () {
-                    if (audioList[s.play_obj.i + 1]) {
-                        return s.setPlayObj(audioList[s.play_obj.i + 1])
-                    }
-                })
-            )
-        })
-    }
-)
-
-littb.controller(
-    "epubListCtrl",
-    function epubListCtrl($scope, backend, util, authors, $filter, $q, $location, $timeout) {
-        const s = $scope
-        s.searching = true
-        s.authorFilter = $location.search().authorFilter
-
-        s.host = new URL(location.href).origin
-
-        $timeout(() => s.$broadcast("focus"))
-
-        if ($location.search().qr) {
-            backend.logQR($location.search().qr, $location.url())
-            $location.search("qr", null)
-        }
-
-        $q.all([authors, backend.getEpubAuthors()]).then(
-            ([[authorList, authorsById], epubAuthorIds]) => {
-                s.authorsById = authorsById
-                s.authorData = _.pick(authorsById, epubAuthorIds)
-                s.authorData = util.sortAuthors(s.authorData)
-            }
-        )
-        // s.authorIds = epubAuthorIds
-
-        s.authorSelectSetup = util.getAuthorSelectConf(s)
-
-        s.sortSelectSetup = {
-            minimumResultsForSearch: -1,
-            templateSelection(item) {
-                return `Sortering: ${item.text}`
-            }
-        }
-
-        const has = (one, two) => one.toLowerCase().indexOf(two.toLowerCase()) !== -1
-        s.rowFilter = function (item) {
-            if (!s.authorsById) {
-                return
-            }
-            const author = s.authorsById[s.authorFilter]
-            if (author && author.authorid !== item.authors[0].authorid) {
-                return false
-            }
-            if (s.filterTxt) {
-                if (
-                    !(has(item.authors[0].full_name, s.filterTxt) || has(item.title, s.filterTxt))
-                ) {
-                    return false
-                }
-            }
-            return true
-        }
-
-        s.getAuthor = function (row) {
-            const [last, first] = row.authors[0].name_for_index.split(",")
-            let auth = _.compact([last.toUpperCase(), first]).join(",")
-            if (row.authors[0].type === "editor") {
-                auth += " (red.)"
-            }
-            return auth
-        }
-
-        // s.log = (filename) ->
-        // return true
-
-        s.log = function (row) {
-            // const filename = s.getFilename(row)
-            backend.logDownload(
-                row.authors[0].surname,
-                row.shorttitle || row.title,
-                row.lbworkid,
-                "epub"
-            )
-        }
-        // location.href = "/txt/epub/#{filename}.epub"
-
-        s.getFilename = row => row.authors[0].authorid + "_" + (row.work_titleid || row.titleid)
-
-        s.onAuthChange = function (newVal) {
-            // hack for state issue with select2 broadcasting change event
-            // at init, causing reset of location value
-            if (newVal === null) {
-                s.authorFilter = $location.search().authorFilter
-            } else {
-                s.refreshData()
-            }
-        }
-
-        s.refreshData = function (str) {
-            // | filter:rowFilter | limitTo:rowLimit | orderBy:sorttuple[0]:sorttuple[1]"
-            if (s.authorFilter === null) {
-                return
-            }
-            s.searching = true
-            const size = s.filterTxt || s.showAll ? 10000 : 30
-            if (s.authorFilter !== "alla") {
-                var { authorFilter } = s
-            }
-
-            return backend
-                .getEpub(size, s.filterTxt, authorFilter, s.sort)
-                .then(function ({ data, hits }) {
-                    s.searching = false
-                    s.rows = data
-                    s.hits = hits
-                    authors = _.map(s.rows, row => row.authors[0])
-                })
-        }
-
-        // s.authorData = _.unique authors, false, (item) ->
-        //     item.authorid
-
-        util.setupHashComplex(s, [
-            {
-                key: "filter",
-                scope_name: "filterTxt"
-            },
-            { key: "authorFilter" },
-            {
-                key: "sort",
-                default: "epub_popularity|desc"
-            },
-            { key: "showAll" }
-        ])
-
-        return s.refreshData()
-    }
-)
-
 littb.controller("helpCtrl", function ($scope, $http, util, $location) {
     const s = $scope
     const url = "/red/om/hjalp/hjalp.html"
@@ -954,15 +795,8 @@ littb.controller("helpCtrl", function ($scope, $http, util, $location) {
     })
 })
 
-// backend.getTitles(null, "imported|desc", null, false, true).then (titleArray) ->
-//     s.titleList = titleArray
-
-//     s.titleGroups = _.groupBy titleArray, "imported"
-
 littb.controller("aboutCtrl", function ($scope, $http, util, $location, $routeParams) {
     const s = $scope
-    // s.$watch ( () -> $routeParams.page), () ->
-    //     c.log "$routeParams.page", $routeParams.page
     _.extend(s, $routeParams)
     s.$on("$routeChangeError", function (event, current, prev, rejection) {
         c.log("route change", current.pathParams)

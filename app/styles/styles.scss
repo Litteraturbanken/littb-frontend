@@ -2176,6 +2176,15 @@ body > .header {
             figcaption {
                 font-style : italic;
                 max-width : 300px;
+                a[href] {
+                    color : $primarycolor;
+                    &:hover {
+                        color : #666;
+                    }
+                }
+                em {
+                    font-style : normal;
+                }
             }
 
             .ext_links {
