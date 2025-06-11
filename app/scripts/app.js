@@ -579,6 +579,23 @@ window.littb = angular
                 templateURL: require("../views/id.html"),
                 controller: "idCtrl"
             })
+            .when("/historik", {
+                template: `
+                    <div>
+                        <h1>Senast lästa verk</h1>
+                        <ul ng-if="authorsById">
+                            <li ng-repeat="pageview in lastPageViews">
+                                <a ng-href="{{pageview.url}}">
+                                    <span>{{authorsById[pageview.author].full_name}}</span> – 
+                                    <span class="">{{pageview.label}}</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                `,
+                controller: "historyCtrl",
+                title: "History"
+            })
             .otherwise({
                 resolve: {
                     redirect: [
@@ -604,12 +621,20 @@ window.littb = angular
                                     )
                                 }
 
-                                return $q.all(translate).then(([authorid, titleid]) => {
-                                    segments[1] = "författare"
-                                    segments[2] = authorid
-                                    if (titleid) segments[4] = titleid
-                                    $location.path(segments.join("/")).replace()
-                                })
+                                console.log("translate", translate)
+                                return $q
+                                    .all(translate)
+                                    .then(([authorid, titleid]) => {
+                                        console.log("🚀 ~ authorid, titleid:", authorid, titleid)
+                                        segments[1] = "författare"
+                                        segments[2] = authorid
+                                        if (titleid) segments[4] = titleid
+                                        $location.path(segments.join("/")).replace()
+                                    })
+                                    .catch(err => {
+                                        console.error("Error in redirect", err)
+                                        // Handle error if needed
+                                    })
                             }
                         }
                     ]
@@ -761,11 +786,17 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
                 })
             }
         })
+
+        $rootScope.lastPageViews.push($location.path())
+        if ($rootScope.lastPageViews.length > 10) {
+            $rootScope.lastPageViews.shift()
+        }
     })
 
     $rootScope._focus_mode = true
     $rootScope.searchState = {}
     $rootScope.libraryState = {}
+    $rootScope.lastPageViews = []
 })
 
 littb.filter(
@@ -829,7 +860,7 @@ littb.filter("trust", $sce => input => $sce.trustAsHtml(input))
 function normalizeAuthorFilter() {
     let trans = _.fromPairs(
         _.zip(
-            "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöøùúûüýÿ".split(""),
+            "ÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝàáâãääåçèéêëìíîïñòóôõöøùúûüýÿ".split(""),
             "AAAAACEEEEIIIINOOOOOOUUUUYaaaaaaceeeeiiiinoooooouuuuyy".split("")
         )
     )
@@ -853,3 +884,7 @@ function normalizeAuthorFilter() {
 }
 
 littb.filter("normalizeAuthor", normalizeAuthorFilter)
+
+littb.controller("historyCtrl", function ($scope, $rootScope) {
+    $scope.lastPageViews = $rootScope.lastPageViews
+})

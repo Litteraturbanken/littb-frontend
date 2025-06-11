@@ -19,7 +19,8 @@
     </div> -->
     <div class="columns">
         <div class="col_left">
-            <p class="sourcedesc" ng-bind-html="workinfo.sourcedesc | trust"></p>
+            
+            <p class="sourcedesc" ng-show="workinfo.sourcedesc != 'null'" ng-bind-html="(workinfo.sourcedesc || '') | trust"></p>
             <div class="mb-8 text-right italic " >
                 <span ng-if="authorById[workinfo.sourcedescAuthor]">{{authorById[workinfo.sourcedescAuthor].full_name}}</span>
                 <span ng-if="!authorById[workinfo.sourcedescAuthor]">{{workinfo.sourcedescAuthor}}</span>
@@ -143,6 +144,7 @@
         <div ng-show="!workinfo.errata">Inga ändringar har gjorts mot orginalet.</div>
         <table class="errata_table">
             <tr ng-repeat="tup in workinfo.errata | limitTo:errataLimit">
+                <!-- <td ng-bind-html="tup[0] | trust"></td> -->
                 <td>{{tup[0]}}</td>
                 <td ng-bind-html="tup[1] | trust"></td>
             </tr>

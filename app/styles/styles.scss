@@ -4150,16 +4150,31 @@ grundform-clean {
 }
 
 .license img {
-    display: block;
-    margin-bottom: 0.5rem;
+    // display: block;
+    margin-bottom: 0.2rem;
+    width: 14px;
+    text-decoration: none;
+}
+.license a:has(img) {
+    text-decoration: none;
 }
 .license p {
     font-size: 1rem;
+}
+.license p + p {
+    margin-top: 1rem;
 }
 
 [uib-collapse].collapse {
     visibility: visible;
     
+}
+
+.page-history {
+    .lb-logo {
+            --logo-l-color: var(--primary-color);
+            --logo-b-color: black;
+        }
 }
 
 @import "modals";

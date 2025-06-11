@@ -84,27 +84,26 @@
                 <figcaption ng-if="isDev && !authorInfo.smallImage" class="wikidata_uncleared p-2 text-sm" ng-show="getWikiImage()">
                     <a class="text-white" ng-href="{{getWikimediaFilePage(getWikiImage())}}">[RED] FRÅN WIKIMEDIA</a>
                 </figcaption>
-
                 <div class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75 max-w-xs" 
                     ng-if="hasMore() || authorInfo.presentation || authorInfo.external_ref || authorInfo.bibliography" >
                     <h3 class="sc mt-0">Mer om författarskapet</h3>
                     <section>
-                    <ul class="list-item pl-4">
-                        <li ng-if="hasMore()">
-                            <a ng-href="/författare/{{authorInfo.authorid}}/mer">Texter om {{authorInfo.full_name}}</a>
-                        </li>
-                        <li ng-if="authorInfo.presentation || maybePresentationWork" ng-class="{active : showpage == 'presentation'}">
-                            <a ng-if="authorInfo.presentation" href="/författare/{{author}}/presentation">Presentation</a>
-                            <a ng-if="!authorInfo.presentation && maybePresentationWork" href="/författare/{{maybePresentationWork.main_author.authorid}}/titlar/{{maybePresentationWork.titleid}}/sida/{{maybePresentationWork.startpagename}}/{{maybePresentationWork.mediatype}}">Presentation</a>
-                        </li>
-                        <li ng-if="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/författare/{{author}}/bibliografi">Bibliografi</a></li>
-                        <li ng-repeat="ref in authorInfo.external_ref">
-                            <a ng-href="/{{ref.url}}">{{ref.label}}</a>
-                        </li>
-                        <li ng-if="hasMapArticle"><a target="_blank"  ng-href="https://litteraturbanken.se/litteraturkartan?s=lb_author.authorid:{{authorInfo.authorid}}">Litteraturkartan</a></li>
-                    </ul>
-                
-            </section>
+                        <ul class="list-item pl-4">
+                            <li ng-if="hasMore()">
+                                <a ng-href="/författare/{{authorInfo.authorid}}/mer">Texter om {{authorInfo.full_name}}</a>
+                            </li>
+                            <li ng-if="authorInfo.presentation || maybePresentationWork" ng-class="{active : showpage == 'presentation'}">
+                                <a ng-if="authorInfo.presentation" href="/författare/{{author}}/presentation">Presentation</a>
+                                <a ng-if="!authorInfo.presentation && maybePresentationWork" href="/författare/{{maybePresentationWork.main_author.authorid}}/titlar/{{maybePresentationWork.titleid}}/sida/{{maybePresentationWork.startpagename}}/{{maybePresentationWork.mediatype}}">Presentation</a>
+                            </li>
+                            <li ng-if="authorInfo.bibliography" ng-class="{active : showpage == 'bibliografi'}"><a href="/författare/{{author}}/bibliografi">Bibliografi</a></li>
+                            <li ng-repeat="ref in authorInfo.external_ref">
+                                <a ng-href="/{{ref.url}}">{{ref.label}}</a>
+                            </li>
+                            <li ng-if="hasMapArticle"><a target="_blank"  ng-href="https://litteraturbanken.se/litteraturkartan?s=lb_author.authorid:{{authorInfo.authorid}}">Litteraturkartan</a></li>
+                        </ul>
+                    
+                    </section>
                 </div>
                 <div class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75" 
                     ng-if="authorInfo.wikidata.sbl_link || authorInfo.wikidata.skbl_link || authorInfo.wikidata.sol_link || authorInfo.wikidata.wikipedia" >
@@ -112,7 +111,7 @@
                     <ul class="list-item pl-4 ">
                         <li ng-if="authorInfo.wikidata.sbl_link"><a target="_blank"  ng-href="https://sok.riksarkivet.se/sbl/Presentation.aspx?id={{authorInfo.wikidata.sbl_link}}">Svenskt biografiskt lexikon</a></li>
                         <li ng-if="authorInfo.wikidata.skbl_link"><a target="_blank"  ng-href="https://www.skbl.se/sv/artikel/{{authorInfo.wikidata.skbl_link}}">Svenskt kvinnobiografiskt lexikon</a></li>
-                        <li ng-if="authorInfo.wikidata.blf_link"><a target="_blank"  ng-href="https://blf.fi/artikel.php?id={{authorInfo.wikidata.blf_link}}">Svenskt kvinnobiografiskt lexikon</a></li>
+                        <li ng-if="authorInfo.wikidata.blf_link"><a target="_blank"  ng-href="https://blf.fi/artikel.php?id={{authorInfo.wikidata.blf_link}}">Biografiskt lexikon för Finland</a></li>
                         <li ng-if="authorInfo.wikidata.sol_link"><a target="_blank"  ng-href="https://litteraturbanken.se/översättarlexikon/artiklar/{{authorInfo.wikidata.sol_link}}">Svenskt översättarlexikon</a></li>
                         <li ng-if="authorInfo.wikidata.wikipedia"><a target="_blank"  ng-href="{{authorInfo.wikidata.wikipedia}}">Wikipedia</a></li>
                     </ul>

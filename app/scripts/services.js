@@ -8,9 +8,9 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-// let STRIX_URL = "/api"
+let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -619,7 +619,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 // workinfo.sourcedesc = .
                 workinfo.sourcedescAuthor = sourcedesc.find("sourcedesc-author").text()
                 $("sourcedesc-author", sourcedesc).remove()
-                workinfo.sourcedesc = sourcedesc.html()
+                workinfo.sourcedesc = sourcedesc.html() || ""
 
                 return workinfo
             })
@@ -729,6 +729,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 url: `${STRIX_URL}/get_author/` + authorid
             }).then(
                 function (response) {
+                    console.log("🚀 ~ response:", response)
                     const auth = response.data.data
 
                     // for auth in data
@@ -743,7 +744,10 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
 
                     return auth
                 },
-                err => c.log("getAuthorInfo error", err)
+                err => {
+                    c.log("getAuthorInfo error", err)
+                    throw err
+                }
             )
         },
 
@@ -1093,8 +1097,10 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
 
         unNormalizeAuthorid(authorid) {
             return $http({
-                url: `${STRIX_URL}/get_author/${authorid}`
-            }).then(response => response.data.data.authorid)
+                url: `${STRIX_URL}/query_string/author?q=authorid_norm:${authorid}&include=authorid`
+            }).then(response => {
+                return response.data.data[0].authorid
+            })
         },
         unNormalizeTitleid(mediatype, titleid) {
             return $http({
@@ -1102,10 +1108,12 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 params: {
                     include: "titleid",
                     filter_and: {
-                        titleid
+                        titleid_norm: titleid
                     }
                 }
-            }).then(response => response.data.data[0].titleid)
+            }).then(response => {
+                return response.data.data[0].titleid
+            })
         },
 
         getPageCount(lbworkid, mediatype) {
@@ -1315,6 +1323,7 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
                 const sentsWithHeaders = _.flatten(
                     this.decorateData(response.data.data, this.NUM_HIGHLIGHTS)
                 )
+                console.log("🚀 ~ sentsWithHeaders:", sentsWithHeaders)
 
                 return [sentsWithHeaders, response.data.author_aggregation]
             })
@@ -1452,6 +1461,7 @@ littb.factory("SearchData", function (backend, $q, $http, $location) {
 
                 let row_index = 0
                 for (let item of data) {
+                    console.log("🚀 ~ item:", item)
                     const work_rows = [{ isHeader: true, metadata: item.source }]
                     output.push(work_rows)
                     for (
@@ -1643,13 +1653,13 @@ littb.factory("SearchWorkData", function (SearchData, $q, $http) {
 
             const queryParams = ["init_hits=20"]
             if (params.prefix) {
-                queryParams.push("prefix")
+                queryParams.push("prefix=true")
             }
             if (params.suffix) {
-                queryParams.push("suffix")
+                queryParams.push("suffix=true")
             }
             if (params.word_form_only != null) {
-                queryParams.push("word_form_only")
+                queryParams.push("word_form_only=true")
             }
 
             this.isCounting = true

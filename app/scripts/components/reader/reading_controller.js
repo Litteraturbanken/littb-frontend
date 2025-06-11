@@ -280,6 +280,13 @@ export default [
                         break
                     case "Escape":
                         s.isFocus = false
+                        break
+                    case "å":
+                    case "[":
+                        window.location.pathname =
+                            window.location.pathname.split("/").slice(0, -1).join("/") +
+                            (s.mediatype == "etext" ? "/faksimil" : "/etext")
+                        break
                 }
             })
         }
@@ -808,6 +815,14 @@ export default [
             s.workinfoPromise = def
             def.then(function (workinfo) {
                 s.workinfo = workinfo
+                let metaElement = document.querySelector('meta[name="lbworkid"]')
+                if (!metaElement) {
+                    metaElement = document.createElement("meta")
+                    metaElement.name = "lbworkid"
+                    document.head.appendChild(metaElement)
+                }
+                metaElement.content = workinfo.lbworkid
+                document.head.appendChild(metaElement)
                 s.pagemap = workinfo.pagemap
 
                 if (s.isEditor) {
@@ -1015,23 +1030,45 @@ export default [
                     if (!s.isEditor && !isDev) {
                         backend.logPage(s.pageix, s.workinfo.lbworkid, s.mediatype)
                     }
+
+                    const id = $routeParams.lbid || s.workinfo.lbworkid
+                    const pageView = {
+                        pageix: s.pageix,
+                        pagename: s.pagename,
+                        timestamp: new Date().toISOString(),
+                        mediatype: s.mediatype,
+                        lbworkid: id,
+                        author: s.author,
+                        label: s.workinfo.shorttitle || s.workinfo.title,
+                        url: $location.url()
+                    }
+                    const lastPageViews = JSON.parse(localStorage.getItem("lastPageViews")) || []
+                    const existingIndex = lastPageViews.findIndex(
+                        view => view.lbworkid === id && view.mediatype === s.mediatype
+                    )
+
+                    if (existingIndex !== -1) {
+                        lastPageViews.splice(existingIndex, 1)
+                    }
+
+                    lastPageViews.unshift(pageView)
+
+                    if (lastPageViews.length > 50) {
+                        lastPageViews.pop()
+                    }
+
+                    localStorage.setItem("lastPageViews", JSON.stringify(lastPageViews))
+                    console.log("🚀 ~ lastPageViews:", lastPageViews)
                     promise.then(function (html) {
                         s.first_load = true
                         s.loading = false
                         return onFirstLoad()
                     })
 
-                    // console.log("mediatype", mediatype)
                     if (s.mediatype === "faksimil" && s.workinfo.searchable) {
                         return backend
                             .fetchOverlayData(s.workinfo.lbworkid, s.pageix)
                             .then(function ([overlayHtml, overlayWidth, overlayHeight]) {
-                                // s.overlayFactors = overlayFactors
-                                console.log(
-                                    "🚀 ~ file: reading_controller.js:1005 ~ imageWidth, overlayWidth:",
-                                    s.imageWidth,
-                                    overlayWidth
-                                )
                                 s.overlayWidth = overlayWidth
                                 s.overlayHeight = overlayHeight
                                 s.overlayHtml = overlayHtml

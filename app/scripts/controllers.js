@@ -31,6 +31,9 @@ document.addEventListener("keydown", function (event) {
         case "b":
             location.href = $(".mainnav a[href^='/bibliotek']").attr("href")
             break
+        case "h":
+            location.pathname = "/historik"
+            break
     }
 })
 
@@ -368,6 +371,32 @@ littb.controller(
             .authorHasMapArticle(s.author)
             .then(hasMapArticle => (s.hasMapArticle = hasMapArticle))
 
+        // Add keydown listener for "i" to copy author ID
+        const keydownHandler = function (event) {
+            let abort =
+                event.metaKey ||
+                event.ctrlKey ||
+                $("input:focus").length ||
+                $("textarea:focus").length
+
+            if (abort) {
+                return
+            }
+
+            if (event.key === "i" && s.author) {
+                navigator.clipboard.writeText(s.authorInfo.authorid_norm)
+                s.$emit("notify", "Kopierade authorid")
+                s.$apply()
+            }
+        }
+
+        document.addEventListener("keydown", keydownHandler)
+
+        // Clean up listener when scope is destroyed
+        s.$on("$destroy", function () {
+            document.removeEventListener("keydown", keydownHandler)
+        })
+
         s.getIntro = function () {
             if (!s.authorInfo) {
                 return
@@ -421,10 +450,7 @@ littb.controller(
             s.authorsById = authorsById
         })
 
-        // s.authorError = (s.normalizeAuthor s.author) not of s.authorsById
-
         s.showLargeImage = function ($event) {
-            c.log("showLargeImage", s.show_large)
             if (s.show_large) {
                 return
             }
@@ -574,7 +600,10 @@ littb.controller(
 
         s.sortOrder = works => works[0].sortkey
 
-        s.hasMore = () => _.flatten(_.map(s.moreStruct, "data")).length
+        s.hasMore = () => {
+            if (!s.authorInfo) return
+            return _.flatten(s.moreStruct.map(item => item.data || [])).length
+        }
 
         s.titleStruct = [
             {
@@ -696,7 +725,6 @@ littb.controller(
                                 s.maybePresentationWork = data.filter(x =>
                                     x.keyword?.includes("LB-presentation")
                                 )?.[0]
-                                console.log("🚀 ~ getTextByAuthor:", data, s.maybePresentationWork)
                                 return data
                             }),
                         showAuthor(work) {
@@ -848,8 +876,10 @@ littb.filter(
     () =>
         function (html) {
             const wrapper = $("<div>").append(html)
-            const img = $("img", wrapper)
-            img.attr("src", `/red/bilder/gemensamt/${img.attr("src")}`)
+            $("img", wrapper).each(function () {
+                const img = $(this)
+                img.attr("src", `/red/bilder/gemensamt/${img.attr("src")}`)
+            })
             return wrapper.html()
         }
 )
@@ -978,6 +1008,11 @@ littb.controller(
                         {
                             label: "Statistik",
                             url: "/om/statistik",
+                            typeLabel: "Gå till sidan"
+                        },
+                        {
+                            label: "Läshistorik",
+                            url: "/historik",
                             typeLabel: "Gå till sidan"
                         }
                     ]
@@ -1283,7 +1318,7 @@ littb.controller(
                 $http
                     .get(`/api/get_similar/${s.workinfo.lbworkid}/${s.workinfo.mediatype}`)
                     .then(function (data) {
-                        console.log("🚀 ~ file: controllers.js:1314 ~ data.data:", data.data.data)
+                        console.log("🚀 ~ file: controllers.js:1314 ~ data.data:", data.data)
                         s.similar = data.data.data
                     })
             }
@@ -1491,3 +1526,10 @@ littb.controller(
         ])
     }
 )
+
+littb.controller("historyCtrl", function ($scope, $rootScope, authors) {
+    $scope.lastPageViews = JSON.parse(localStorage.getItem("lastPageViews")) || []
+    authors.then(function ([authorList, authorsById]) {
+        $scope.authorsById = authorsById
+    })
+})

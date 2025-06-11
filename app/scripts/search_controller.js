@@ -505,7 +505,7 @@ littb.controller(
         }
 
         s.getMaxHit = function () {
-            if (!(searchData.data && searchData.data.length)) {
+            if (s.sentsWithHeaders?.length === 0) {
                 return
             }
             return Math.min(s.doc_hits, (s.current_page + 1) * s.num_hits)
@@ -606,6 +606,7 @@ littb.controller(
                 s.total_pages = Math.ceil(s.doc_hits / s.num_hits)
 
                 s.sentsWithHeaders = _.flatten(sentsWithHeaders)
+                console.log("🚀 ~ s.sentsWithHeaders:", s.sentsWithHeaders)
 
                 s.searching = false
                 hasSearchInit = true
