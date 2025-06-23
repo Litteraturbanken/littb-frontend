@@ -220,6 +220,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 username: "app"
             },
             transformResponse(data, headers) {
+                data = data.replaceAll("<a>", "&lt;a&gt;").replaceAll("</a>", "")
+                console.log("🚀 ~ data:", data)
                 const output = parseHTML(data)
                 if ($("fel", output).length) {
                     c.log("xml parse error:", $("fel", output).text())

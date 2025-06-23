@@ -840,6 +840,7 @@ littb.controller("aboutCtrl", function ($scope, $http, util, $location, $routePa
             kontakt: require("../views/contactForm.html"),
             statistik: require("../views/stats.html"),
             rattigheter: "/red/om/rattigheter/rattigheter.html",
+            tack: "/red/om/tack.html",
             organisation: "/red/om/ide/organisation.html",
             // "inenglish" : "/red/om/ide/inenglish.html",
             "english.html": "/red/om/ide/english.html",
