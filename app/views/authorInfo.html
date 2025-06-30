@@ -10,7 +10,7 @@
         <i class="spinner fa fa-spinner fa-pulse"></i>
     </div>
     <div class="error" ng-if="authorError" >Ett fel har inträffat: författarid <code>{{author}}</code> kan inte hittas. Kontrollera adressen.</div>
-    <h1>{{authorInfo.full_name}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
+    <h1 class="text-balance max-w-5xl">{{authorInfo.full_name}} <span class="author_year" ng-if="authorInfo | authorYear"> ({{authorInfo | authorYear}})</span></h1>
 
     <!-- <div ng-if="show_large" class="img_large"><img ng-src="{{authorInfo.largeImage}}"></div> -->
     <ul class="links" ng-show="authorInfo"> 

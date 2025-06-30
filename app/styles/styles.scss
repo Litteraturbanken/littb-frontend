@@ -168,6 +168,12 @@ th {
     font-weight : normal;
 }
 
+blockquote {
+    font-size: 0.8em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
 .ng-fade.ng-hide {
     opacity: 0;
 }
@@ -2061,7 +2067,6 @@ body > .header {
             }
         }
         h1 {
-            white-space : nowrap;
             // margin-bottom : 2em;
         }
         .author_year {

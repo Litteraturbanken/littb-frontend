@@ -1,72 +1,107 @@
 <!-- <meta-desc>Dramawebben</meta-desc>
 <page-title>Dramawebben</page-title> -->
 
-
 <div class="cover" ng-class="{show: !isStartPage}"></div>
 
 <div ng-class="{subpage : !isStartPage, startpage : isStartPage}">
     <div class="logo">
-        <h1><a href="/dramawebben"><img src="../img/dramawebben_vit.svg" alt="Dramawebben"></a></h1>
-        <h2>Fri svensk dramatik <br>hos Litteraturbanken</h2>
+        <h1>
+            <a href="/dramawebben"><img src="../img/dramawebben_vit.svg" alt="Dramawebben" /></a>
+        </h1>
+        <h2>Fri svensk dramatik <br />hos Litteraturbanken</h2>
     </div>
-    
+
     <div>
         <ul class="links">
             <!-- <li ng-class="{active: showpage == 'start'}"><a href="/dramawebben">Hem</a></li> -->
-            <li ng-class="{active: showpage == 'pjäser'}"><a href="/dramawebben/pjäser">Pjäser</a></li>
+            <li ng-class="{active: showpage == 'pjäser'}">
+                <a href="/dramawebben/pjäser">Pjäser</a>
+            </li>
             <!-- <li ng-class="{active: showpage == 'kronologi'}"><a href="">Kronologi</a></li> -->
-            <li ng-class="{active: showpage == 'kringtexter'}"><a href="/dramawebben/kringtexter">Mer läsning</a></li>
-            <li ng-class="{active: showpage == 'sok'}"><a href="/sok?avancerad&keywords=keyword:Dramawebben">Sök <span ng-if="isStartPage">i pjäserna</span></a></li>
+            <li ng-class="{active: showpage == 'kringtexter'}">
+                <a href="/dramawebben/kringtexter">Mer läsning</a>
+            </li>
+            <li ng-class="{active: showpage == 'sok'}">
+                <a href="/sok?avancerad&keywords=keyword:Dramawebben"
+                    >Sök <span ng-if="isStartPage">i pjäserna</span></a
+                >
+            </li>
 
-            <li><a href="/dramawebben/om">Om <span ng-if="isStartPage">dramawebben</span></a></li>
+            <li>
+                <a href="/dramawebben/om">Om <span ng-if="isStartPage">dramawebben</span></a>
+            </li>
             <li ng-class=""><a href="/">Till Litteraturbanken</a></li>
             <!-- <li><a href="">Litteraturbanken</a></li> -->
-
         </ul>
-        
-    
+
         <div class="page_content" ng-switch="showpage">
-            
             <div ng-switch-when="pjäser">
-                <p class="max-w-prose mb-8">I Dramawebben hittar du pjäser som har mer metadata, till exempel information om hur många roller det är. Det finns många fler pjäser i Litteraturbanken som du kan hitta i <a href="/bibliotek?keywords=texttype:drama;dramasamling&visa=works&sort=titlar">Biblioteket</a>.</p>
-                
+                <p class="max-w-prose mb-8">
+                    I Dramawebben hittar du pjäser som har mer metadata, till exempel information om
+                    hur många roller det är. Det finns många fler pjäser i Litteraturbanken som du
+                    kan hitta i
+                    <a href="/bibliotek?keywords=texttype:drama;dramasamling&visa=works&sort=titlar"
+                        >Biblioteket</a
+                    >.
+                </p>
 
                 <div class="controls">
                     <div class="btn-group">
-                        <label class="sc btn btn-primary" 
-                            ng-model="listType" btn-radio="'pjäser'" ng-click="onRadioClick('pjäser')">Pjäser</label>
-                        <label class="sc btn btn-primary" 
-                            ng-model="listType" btn-radio="'författare'" ng-click="onRadioClick('författare')">Författare</label>
+                        <label
+                            class="sc btn btn-primary"
+                            ng-model="listType"
+                            btn-radio="'pjäser'"
+                            ng-click="onRadioClick('pjäser')"
+                            >Pjäser</label
+                        >
+                        <label
+                            class="sc btn btn-primary"
+                            ng-model="listType"
+                            btn-radio="'författare'"
+                            ng-click="onRadioClick('författare')"
+                            >Författare</label
+                        >
                     </div>
 
                     <div class="auth_select_container" ng-show="listType == 'pjäser'">
-                        <select class="filter_select author_select" ui-select2="authorSelectSetup" ng-model="filters.author" data-placeholder="Författare" 
-                        ng-change="onAuthorChange()">
+                        <select
+                            class="filter_select author_select"
+                            ui-select2="authorSelectSetup"
+                            ng-model="filters.author"
+                            data-placeholder="Författare"
+                            ng-change="onAuthorChange()"
+                        >
                             <option value="">Välj författare</option>
                             <option value="all">Alla författare</option>
-                            <option value="{{author.authorid}}" ng-repeat="author in authorData | orderBy:'name_for_index'">
+                            <option
+                                value="{{author.authorid}}"
+                                ng-repeat="author in authorData | orderBy:'name_for_index'"
+                            >
                                 <span class="lastname">{{author.surname}}</span>
                             </option>
-                        </select> 
+                        </select>
                     </div>
-                    <select  class="gender_select" 
-                             ui-select2="{minimumResultsForSearch: -1}" 
-                             ng-model="filters.gender" 
-                             data-placeholder="Välj kön"
-                             ng-change="onGenderChange()">
+                    <select
+                        class="gender_select"
+                        ui-select2="{minimumResultsForSearch: -1}"
+                        ng-model="filters.gender"
+                        data-placeholder="Välj kön"
+                        ng-change="onGenderChange()"
+                    >
                         <option value=""></option>
                         <option value="all">Alla författare</option>
-                        <option value="female">Kvinnliga författare</option>    
+                        <option value="female">Kvinnliga författare</option>
                         <option value="male">Manliga författare</option>
-                        </option>
-                    </select> 
+                    </select>
 
-                    <select class="filter_select keyword_select" 
-                            ng-show="listType == 'pjäser'"
-                            ui-select2="{minimumResultsForSearch: -1}" 
-                            ng-model="filters.mediatype" 
-                            data-placeholder="Utgivningsformat"
-                            ng-change="onMediatypeChange()">
+                    <select
+                        class="filter_select keyword_select"
+                        ng-show="listType == 'pjäser'"
+                        ui-select2="{minimumResultsForSearch: -1}"
+                        ng-model="filters.mediatype"
+                        data-placeholder="Utgivningsformat"
+                        ng-change="onMediatypeChange()"
+                    >
                         <option value=""></option>
                         <option value="all">Visa alla</option>
                         <option value="etext">Etext</option>
@@ -74,48 +109,104 @@
                         <option value="pdf">PDF</option>
                         <option value="infopost">Verk som saknar text</option>
                     </select>
-                    
+
                     <div class="auth_select_container">
-                        <div ng-show="listType == 'pjäser'" class="btn-group" uib-dropdown auto-close="outsideClick" on-toggle="onDropdownToggle(open)">
-                            <button type="button" class="btn btn-primary filter_btn" uib-dropdown-toggle >
+                        <div
+                            ng-show="listType == 'pjäser'"
+                            class="btn-group"
+                            uib-dropdown
+                            auto-close="outsideClick"
+                            on-toggle="onDropdownToggle(open)"
+                        >
+                            <button
+                                type="button"
+                                class="btn btn-primary filter_btn"
+                                uib-dropdown-toggle
+                            >
                                 Akter och roller <span class="caret"></span>
                             </button>
 
-                            <ul uib-dropdown-menu ng-if="rows.length" class="dropdown-menu "  role="menu" aria-labelledby="single-button" ng-click="$event.stopPropagation()">
-                                <li role="menuitem" ng-class="{dirty: filterDirty['number_of_acts']}">
+                            <ul
+                                uib-dropdown-menu
+                                ng-if="rows.length"
+                                class="dropdown-menu"
+                                role="menu"
+                                aria-labelledby="single-button"
+                                ng-click="$event.stopPropagation()"
+                            >
+                                <li
+                                    role="menuitem"
+                                    ng-class="{dirty: filterDirty['number_of_acts']}"
+                                >
                                     <span class="label">Antal akter</span>
                                     <div class="number_input">
-                                        <rzslider step="1" rz-slider-model="filters.number_of_acts[0]" rz-slider-high="filters.number_of_acts[1]" rz-slider-options="sliderConf['number_of_acts']" ></rzslider>
+                                        <rzslider
+                                            step="1"
+                                            rz-slider-model="filters.number_of_acts[0]"
+                                            rz-slider-high="filters.number_of_acts[1]"
+                                            rz-slider-options="sliderConf['number_of_acts']"
+                                        ></rzslider>
                                     </div>
                                 </li>
-                                <li role="menuitem" ng-class="{dirty: filterDirty['number_of_roles']}">
+                                <li
+                                    role="menuitem"
+                                    ng-class="{dirty: filterDirty['number_of_roles']}"
+                                >
                                     <span class="label">Antal roller</span>
                                     <div class="number_input">
-                                        <rzslider step="1" rz-slider-model="filters.number_of_roles[0]" rz-slider-high="filters.number_of_roles[1]" rz-slider-options="sliderConf['number_of_roles']" ></rzslider>
+                                        <rzslider
+                                            step="1"
+                                            rz-slider-model="filters.number_of_roles[0]"
+                                            rz-slider-high="filters.number_of_roles[1]"
+                                            rz-slider-options="sliderConf['number_of_roles']"
+                                        ></rzslider>
                                     </div>
                                 </li>
-                                <li role="menuitem" ng-class="{dirty: filterDirty['number_of_pages']}">
+                                <li
+                                    role="menuitem"
+                                    ng-class="{dirty: filterDirty['number_of_pages']}"
+                                >
                                     <span class="label">Antal sidor</span>
                                     <div class="number_input">
-                                        <rzslider step="1" rz-slider-model="filters.number_of_pages[0]" rz-slider-high="filters.number_of_pages[1]" rz-slider-options="sliderConf['number_of_pages']" ></rzslider>
+                                        <rzslider
+                                            step="1"
+                                            rz-slider-model="filters.number_of_pages[0]"
+                                            rz-slider-high="filters.number_of_pages[1]"
+                                            rz-slider-options="sliderConf['number_of_pages']"
+                                        ></rzslider>
                                     </div>
                                 </li>
                                 <li role="menuitem" ng-class="{dirty: filterDirty['female_roles']}">
                                     <span class="label">Antal kvinnliga roller</span>
                                     <div class="number_input">
-                                        <rzslider step="1" rz-slider-model="filters.female_roles[0]" rz-slider-high="filters.female_roles[1]" rz-slider-options="sliderConf['female_roles']" ></rzslider>
+                                        <rzslider
+                                            step="1"
+                                            rz-slider-model="filters.female_roles[0]"
+                                            rz-slider-high="filters.female_roles[1]"
+                                            rz-slider-options="sliderConf['female_roles']"
+                                        ></rzslider>
                                     </div>
                                 </li>
                                 <li role="menuitem" ng-class="{dirty: filterDirty['male_roles']}">
                                     <span class="label">Antal manliga roller</span>
                                     <div class="number_input">
-                                        <rzslider step="1" rz-slider-model="filters.male_roles[0]" rz-slider-high="filters.male_roles[1]" rz-slider-options="sliderConf['male_roles']" ></rzslider>
+                                        <rzslider
+                                            step="1"
+                                            rz-slider-model="filters.male_roles[0]"
+                                            rz-slider-high="filters.male_roles[1]"
+                                            rz-slider-options="sliderConf['male_roles']"
+                                        ></rzslider>
                                     </div>
                                 </li>
                                 <li role="menuitem" ng-class="{dirty: filterDirty['other_roles']}">
                                     <span class="label">Antal övriga roller</span>
                                     <div class="number_input">
-                                        <rzslider step="1" rz-slider-model="filters.other_roles[0]" rz-slider-high="filters.other_roles[1]" rz-slider-options="sliderConf['other_roles']" ></rzslider>
+                                        <rzslider
+                                            step="1"
+                                            rz-slider-model="filters.other_roles[0]"
+                                            rz-slider-high="filters.other_roles[1]"
+                                            rz-slider-options="sliderConf['other_roles']"
+                                        ></rzslider>
                                     </div>
                                 </li>
                                 <!-- <li role="menuitem">
@@ -127,33 +218,64 @@
                                     </div>
                                 </li> -->
                                 <li role="menuitem">
-                                    <span class="label">Barnpjäs</span> 
-                                        <div class="fa check" 
-                                            ng-class="{'fa-check': filters.isChildrensPlay}" 
-                                            style="cursor: pointer"
-                                            ng-click="filters.isChildrensPlay = !filters.isChildrensPlay"></div> 
+                                    <span class="label">Barnpjäs</span>
+                                    <div
+                                        class="fa check"
+                                        ng-class="{'fa-check': filters.isChildrensPlay}"
+                                        style="cursor: pointer"
+                                        ng-click="filters.isChildrensPlay = !filters.isChildrensPlay"
+                                    ></div>
                                 </li>
                             </ul>
                         </div>
-
                     </div>
-                    
 
-                    <input class="filter" ng-model="filters.filterTxt" autofocus placeholder="Sök"
-                    ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}' >
-                    <button class="btn btn-small clear_filter" ng-show="hasFilters" ng-click="clearFilters()">Rensa filter</button>
+                    <input
+                        class="filter"
+                        ng-model="filters.filterTxt"
+                        autofocus
+                        placeholder="Sök"
+                        ng-model-options='{debounce : {default : 200, blur : 0}, updateOn: "default blur"}'
+                    />
+                    <button
+                        class="btn btn-small clear_filter"
+                        ng-show="hasFilters"
+                        ng-click="clearFilters()"
+                    >
+                        Rensa filter
+                    </button>
                 </div>
                 <table ng-if="listType == 'pjäser'" class="contenttable">
-                    <tr ng-repeat="row in getFilteredRows()" >
-                        <td class="author"><a ng-href="/författare/{{::row.authors[0].authorid}}/dramawebben" ng-bind-html="::getAuthor(row.authors[0]) | trust" ></a>
+                    <tr ng-repeat="row in getFilteredRows()">
+                        <td class="author">
+                            <a
+                                ng-href="/författare/{{::row.authors[0].authorid}}/dramawebben"
+                                ng-bind-html="::getAuthor(row.authors[0]) | trust"
+                            ></a>
                         </td>
-                        <td class="title"><a ng-href="{{::row.mediatypes[0].url + '#dw'}}">{{row.shorttitle ||  row.title}}</a></td>
+                        <td class="title">
+                            <a ng-href="{{::row.mediatypes[0].url + '#dw'}}"
+                                >{{row.shorttitle || row.title}}</a
+                            >
+                        </td>
 
                         <td>
                             <ul class="mediatypes">
                                 <li ng-repeat="mediatype in row.mediatypes">
-                                    <a ng-if="mediatype.downloadable" class="sc" target="_self" download ng-href="{{mediatype.url}}">{{mediatype.label}}</a>
-                                    <a ng-if="!mediatype.downloadable" class="sc" ng-href="{{mediatype.url + '#dw'}}">{{mediatype.label}}</a>
+                                    <a
+                                        ng-if="mediatype.downloadable"
+                                        class="sc"
+                                        target="_self"
+                                        download
+                                        ng-href="{{mediatype.url}}"
+                                        >{{mediatype.label}}</a
+                                    >
+                                    <a
+                                        ng-if="!mediatype.downloadable"
+                                        class="sc"
+                                        ng-href="{{mediatype.url + '#dw'}}"
+                                        >{{mediatype.label}}</a
+                                    >
                                 </li>
                             </ul>
                         </td>
@@ -161,41 +283,33 @@
                 </table>
                 <table ng-if="listType == 'författare'" class="contenttable authors">
                     <tr ng-repeat="author in authorData | filter:authorFilter">
-                        <td class="author"><a ng-href="/författare/{{::author.authorid}}/dramawebben" ng-bind-html="::getAuthor(author) | trust" ></a>
+                        <td class="author">
+                            <a
+                                ng-href="/författare/{{::author.authorid}}/dramawebben"
+                                ng-bind-html="::getAuthor(author) | trust"
+                            ></a>
                         </td>
                         <td class="">{{author | authorYear}}</td>
                     </tr>
                 </table>
-
-
             </div>
             <div ng-switch-when="om">
-
                 <div ng-include="'/red/dramawebben/om.html'"></div>
-
             </div>
             <div ng-switch-when="kringtexter">
                 <div ng-include="'/red/dramawebben/kringtexter/kringtexter.html'"></div>
-
             </div>
 
             <div ng-switch-when="sok">
-                
                 <div ng-controller="searchCtrl" ng-include="'views/search.html'"></div>
-
-
-
             </div>
         </div>
 
-    <script type="text/ng-template" id="sourceInfoModal.html">
-        <div class="about-modal modal-body">
-            <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
-            <ng-include src="sourceInfo"></ng-include>
-        </div>
-         
-    </script>
-    
-    
+        <script type="text/ng-template" id="sourceInfoModal.html">
+            <div class="about-modal modal-body">
+                <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
+                <ng-include src="sourceInfo"></ng-include>
+            </div>
+        </script>
     </div>
 </div>

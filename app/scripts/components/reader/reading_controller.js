@@ -894,7 +894,7 @@ export default [
         const downloadPage = function (pageix) {
             let url = getDownloadPageUrl(pageix)
             $("#prefetch").attr("href", getDownloadPageUrl(pageix + 1))
-            const def = backend.getHtmlFile(url)
+            const def = backend.getHtmlFile(url, false)
             def.then(function (html) {
                 // since we use hard line breaks, soft hyphen needs to be replaced by actual hyphen
                 const xmlSerializer = new XMLSerializer()

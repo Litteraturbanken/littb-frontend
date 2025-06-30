@@ -73,6 +73,7 @@ littb.component("keywordSelect", {
         <option value='provenance.library:SA'>Svenska Akademien</option>
         <option value='provenance.library:SFS'>Svenska fornskriftssällskapet</option>
         <option value='provenance.library:SVA'>Svenskt visarkiv</option>
+        <option value='author_ids:KunglSamfundet'>Kungl. Samfundet för utgivande av handskrifter</option>
         <option value='provenance.library:SVS'>Svenska Vitterhetssamfundet</option>
     </optgroup>
 </select>`,
@@ -423,7 +424,7 @@ littb.controller(
             pdf: "popularity|desc",
             authors: "popularity|desc",
             parts: "sortkey|asc",
-            latest: "imported|desc,main_author.name_for_index|asc,sortfield|asc"
+            latest: "imported|desc,sortfield|asc,sort_date_imprint.date|asc"
         }
 
         s.sortItems = {
@@ -454,18 +455,6 @@ littb.controller(
                     dir: "desc",
                     search: "kronologi"
                 }
-                // {
-                //     label: "Tryckår",
-                //     val: "sort_date_imprint.date",
-                //     dir: "desc",
-                //     search: "kronologi"
-                // },
-                // {
-                //     label: "Nytt",
-                //     val: "imported",
-                //     dir: "desc",
-                //     search: "nytillkommet"
-                // }
             ],
             works: [
                 {
@@ -494,20 +483,12 @@ littb.controller(
                     dir: "desc",
                     search: "kronologi"
                 }
-                // {
-                //     label: "Nytt",
-                //     val: "imported",
-                //     suffix:
-                //         ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
-                //     dir: "desc",
-                //     search: "nytillkommet"
-                // }
             ],
             latest: [
                 {
                     label: "Nytt",
                     val: "imported",
-                    suffix: ",main_author.name_for_index|asc,sort_date_imprint.date|asc,sortfield|asc",
+                    suffix: ",sortfield|asc,sort_date_imprint.date|asc",
                     dir: "desc",
                     search: "nytillkommet",
                     active: true
@@ -984,7 +965,7 @@ littb.controller(
             } else if (s.listType == "authors") {
                 s.setAuthorData()
             } else if (s.listType == "latest") {
-                s.fetchRecent()
+                s.fetchRecent(false)
             }
             // s.refreshData()
         }

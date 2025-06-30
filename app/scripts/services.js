@@ -213,18 +213,18 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
         return html
     }
 
-    const http = function (config) {
+    const http = function (config, isFaksimil) {
         const defaultConfig = {
             method: "GET",
             params: {
                 username: "app"
             },
             transformResponse(data, headers) {
-                data = data.replaceAll("<a>", "&lt;a&gt;").replaceAll("</a>", "")
+                if (isFaksimil) data = data.replaceAll("<a>", "&lt;a&gt;").replaceAll("</a>", "")
                 console.log("🚀 ~ data:", data)
                 const output = parseHTML(data)
                 if ($("fel", output).length) {
-                    c.log("xml parse error:", $("fel", output).text())
+                    console.log("xml parse error:", $("fel", output).text())
                 }
                 return output
             }
@@ -234,10 +234,8 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
     }
 
     return {
-        getHtmlFile(url) {
-            return http({
-                url
-            })
+        getHtmlFile(url, isFaksimil) {
+            return http({ url }, isFaksimil)
         },
 
         getAudioList(params) {
@@ -1060,7 +1058,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
             const filename = _.str.lpad(ix, 5, "0")
             console.log("filename", filename, ix)
             const url = `txt/${lbworkid}/ocr_${filename}.html`
-            return this.getHtmlFile(url).then(function (response) {
+            return this.getHtmlFile(url, true).then(function (response) {
                 const html = response.data.querySelector("body > div")
                 if (navigator.userAgent.toLowerCase().indexOf("chrome") > -1) {
                     for (let node of html.querySelectorAll(".w > span")) {
