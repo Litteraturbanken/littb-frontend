@@ -874,18 +874,20 @@ littb.controller(
                 filter_and,
                 partial_string: true,
                 author_aggs: true,
+                imported_aggregation: listID == "latest",
                 suggest: true,
                 ...maybeParams,
                 ...size
             })
             return $q
                 .all([def, authors])
-                .then(([{ titles, author_aggs, suggest, hits, distinct_hits }]) => {
+                .then(([{ titles, author_aggs, suggest, hits, distinct_hits, imported_aggs }]) => {
                     console.log(
                         "🚀 ~ file: library_controller.js:862 ~ hits, distinct_hits:",
                         listID,
                         hits,
-                        distinct_hits
+                        distinct_hits,
+                        imported_aggs
                     )
                     // if (!titles.length) {
                     //     window.gtag("event", "search-no-hits", {
@@ -897,7 +899,7 @@ littb.controller(
                     s.titleByPath = _.groupBy(titles, item => item.titlepath)
 
                     if (isSearchRecent) {
-                        titles = decorateRecent(titles)
+                        titles = decorateRecent(titles, imported_aggs)
                     }
                     s.titleModel[listID] = titles
                     s.titleModel[listID + "_hits"] = distinct_hits
@@ -981,12 +983,40 @@ littb.controller(
             $location.search({})
         }
 
-        function decorateRecent(titles) {
+        function decorateRecent(titles, imported_aggs) {
+            const toDatestr = val => {
+                if (!val && val !== 0) return null
+                if (typeof val === "string") {
+                    // Normalize potential ISO strings to YYYY-MM-DD
+                    const ds = val.split("T")[0]
+                    return /\d{4}-\d{2}-\d{2}/.test(ds) ? ds : null
+                }
+                if (typeof val === "number") {
+                    const d = new Date(val)
+                    const y = d.getUTCFullYear()
+                    const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+                    const day = String(d.getUTCDate()).padStart(2, "0")
+                    return `${y}-${m}-${day}`
+                }
+                return null
+            }
+
             const dateFmt = function (datestr) {
                 const months = `januari,februari,mars,april,maj,juni,juli,
-                            augusti,september,oktober,november,december`.split(",")
+                            augusti,september,oktober,november,december`
+                    .split(",")
+                    .map(s => s.trim())
                 const [year, month, day] = datestr.split("-")
                 return [Number(day), months[month - 1], year].join(" ")
+            }
+
+            // Build a lookup from imported date (YYYY-MM-DD) to doc_count
+            const docCountByDate = {}
+            if (Array.isArray(imported_aggs)) {
+                for (const agg of imported_aggs) {
+                    const key = toDatestr(agg.imported)
+                    if (key) docCountByDate[key] = agg.doc_count
+                }
             }
 
             // let [only1800, rest] = _.partition(titles, item => item.keyword?.includes("1800"))
@@ -1002,7 +1032,12 @@ littb.controller(
                     // TODO: fix locale format, 'femte maj 2017'
                     // output.push {isHeader : true, label : moment(datestr, "YYYY-MM-DD").format()}
                     const titles = titleGroups[datestr]
-                    output.push({ isHeader: true, label: dateFmt(datestr) + label })
+                    const count = docCountByDate[toDatestr(datestr)]
+                    const countLabel = typeof count === "number" ? ` (${count} verk)` : ""
+                    output.push({
+                        isHeader: true,
+                        label: dateFmt(toDatestr(datestr) || datestr) + countLabel + label
+                    })
                     output = output.concat(titles)
                 }
                 return output

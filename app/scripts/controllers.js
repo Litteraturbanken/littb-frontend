@@ -1018,75 +1018,22 @@ littb.controller(
                         }
                     ]
 
-                    if ($route.current.$$route.isReader) {
-                        menu.push({
-                            label: "/id",
-                            alt: ["id", "red"],
-                            typeLabel: "[Red.]",
-                            action() {
-                                if ($(".reader_main").scope) {
-                                    s.lbworkid = $(".reader_main").scope().workinfo.lbworkid
-                                    navigator.clipboard.writeText(s.lbworkid)
-                                }
-                                return false
-                            }
-                        })
-
-                        menu.push({
-                            label: "/editor",
-                            alt: ["editor", "red"],
-                            typeLabel: "[Red.]",
-                            action() {
-                                let lbworkid = $(".reader_main").scope().workinfo.lbworkid
-                                let ix = $(".reader_main").scope().pageix
-                                let mediatype = $(".reader_main").scope().workinfo.mediatype[0]
-                                window.location.pathname = `/editor/${lbworkid}/ix/${ix}/${mediatype}`
-                                return false
-                            }
-                        })
+                    function pushIfRed(obj) {
+                        if (isDev) {
+                            menu.push(obj)
+                        }
                     }
                     if (
                         $route.current.$$route.isReader ||
                         $route.current.$$route.controller == "authorInfoCtrl"
                     ) {
-                        menu.push({
+                        pushIfRed({
                             label: "/info",
                             alt: ["info", "db", "red"],
                             typeLabel: "[Red.]",
                             action() {
                                 infoAction()
                                 return false
-                            }
-                        })
-                        menu.push({
-                            label: "/öppna",
-                            alt: ["öppna", "open"],
-                            typeLabel: "[Red.]",
-                            action() {
-                                if ($("#mainview").scope) {
-                                    let { mediatype, lbworkid, authorid_norm } =
-                                        $("#mainview").scope()[key]
-                                    let params = {}
-                                    if (key == "workinfo") {
-                                        params = {
-                                            cmd: "open_title",
-                                            mediatype,
-                                            lbworkid
-                                        }
-                                    } else if (key == "authorInfo") {
-                                        params = { cmd: "open_auth", lbworkid }
-                                    }
-                                    $http({
-                                        url: `http://localhost:4321/`,
-                                        params
-                                    }).then(_.noop, response => {
-                                        console.log("response", response)
-                                        s.$emit("notify", "Hittade inte red-tjänsten.")
-                                    })
-
-                                    s.close()
-                                    return false
-                                }
                             }
                         })
                     }

@@ -389,12 +389,19 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 url: `${STRIX_URL}/list_all/${types}` + (author || ""),
                 params
             }).then(function (response) {
-                c.log("response", response)
-                const { data, author_aggregation, hits, distinct_hits, suggest } = response.data
+                const {
+                    data,
+                    author_aggregation,
+                    imported_aggregation,
+                    hits,
+                    distinct_hits,
+                    suggest
+                } = response.data
 
                 return {
                     titles: disableGrouping ? data : expandMediatypes(data),
                     author_aggs: author_aggregation,
+                    imported_aggs: imported_aggregation,
                     hits,
                     distinct_hits,
                     suggest
@@ -403,12 +410,6 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
         },
 
         relevanceSearch(types, { filters, ...options }, disableGrouping = false) {
-            console.log(
-                "🚀 ~ file: services.js:382 relevanceSearch ~ types, { filters, ...options }, disableGrouping:",
-                types,
-                { filters, ...options },
-                disableGrouping
-            )
             if (relevanceCanceller) {
                 relevanceCanceller.resolve()
             }
