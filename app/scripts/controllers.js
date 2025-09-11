@@ -1018,6 +1018,34 @@ littb.controller(
                         }
                     ]
 
+                    if ($route.current.$$route.isReader) {
+                        pushIfRed({
+                            label: "/id",
+                            alt: ["id", "red"],
+                            typeLabel: "[Red.]",
+                            action() {
+                                if ($(".reader_main").scope) {
+                                    s.lbworkid = $(".reader_main").scope().workinfo.lbworkid
+                                    navigator.clipboard.writeText(s.lbworkid)
+                                }
+                                return false
+                            }
+                        })
+
+                        pushIfRed({
+                            label: "/editor",
+                            alt: ["editor", "red"],
+                            typeLabel: "[Red.]",
+                            action() {
+                                let lbworkid = $(".reader_main").scope().workinfo.lbworkid
+                                let ix = $(".reader_main").scope().pageix
+                                let mediatype = $(".reader_main").scope().workinfo.mediatype[0]
+                                window.location.pathname = `/editor/${lbworkid}/ix/${ix}/${mediatype}`
+                                return false
+                            }
+                        })
+                    }
+
                     function pushIfRed(obj) {
                         if (isDev) {
                             menu.push(obj)
