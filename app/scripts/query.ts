@@ -68,9 +68,64 @@ let getQuery = (key, val) => {
                 query: `sort_date_imprint.date:${range} OR birth.date:${range} OR death.date:${range}`
             })
             break
-        case "languages":
+        case "languages": {
+            const filterMap = makeFilterObj(val) as Record<string, string[]>
+            const simpleFilters = { ...filterMap }
+            const translation = simpleFilters.translation
+            const original = simpleFilters.original
+            const foreign = simpleFilters.foreign
+            delete simpleFilters.translation
+            delete simpleFilters.original
+            delete simpleFilters.foreign
+            const hasTranslation = Array.isArray(translation) && translation.length > 0
+            const hasOriginal = Array.isArray(original) && original.length > 0
+            const hasForeign = Array.isArray(foreign) && foreign.length > 0
+            let hasClauses = false
+            const translationShould = [
+                { term: { keyword: "language-source" } },
+                { term: { keyword: "translated" } },
+                {
+                    nested: {
+                        path: "authors",
+                        query: { term: { "authors.type": "translator" } }
+                    }
+                }
+            ]
+
+            Object.entries(simpleFilters).forEach(([filterkey, filterval]) => {
+                if (Array.isArray(filterval) && filterval.length) {
+                    query.orQuery("terms", filterkey, filterval)
+                    hasClauses = true
+                }
+            })
+
+            if (hasTranslation) {
+                query.orQuery("bool", {
+                    should: translationShould,
+                    minimum_should_match: 1
+                })
+                hasClauses = true
+            }
+            if (hasOriginal) {
+                query.orQuery("bool", {
+                    must_not: translationShould
+                })
+                hasClauses = true
+            }
+            if (hasForeign) {
+                query.orQuery("bool", {
+                    must_not: [{ term: { language: "swe" } }],
+                    must: [{ exists: { field: "language" } }]
+                })
+                hasClauses = true
+            }
+
+            if (hasClauses) {
+                query.queryMinimumShouldMatch(1)
+            }
+            break
+        }
         case "keywords":
-            // let obj = makeFilterObj(val)
             for (let [filterkey, filterval] of Object.entries(makeFilterObj(val))) {
                 query.orQuery("terms", filterkey, filterval).queryMinimumShouldMatch(1)
             }

@@ -262,7 +262,8 @@ littb.controller(
 
         function refreshTitles(countOnly, filterstr) {
             let include = "shorttitle,title,lbworkid,authors.authorid,mediatype,searchable"
-            let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+            let { filter_or, filter_and, keyword_aux: languageAux } =
+                util.getKeywordTextfilter(s.filters)
             // s.loadingTitles = true
             console.log("s.filters", s.filters)
             let resultlimit = s.filters["authors>authorid"].length ? 10000 : 30
@@ -274,6 +275,7 @@ littb.controller(
                     filter_and: { searchable: true, ...filter_and },
                     to: countOnly ? 0 : resultlimit,
                     filter_string: filterstr || "",
+                    keyword_aux: languageAux,
                     author_aggs: true
                 })
                 .then(({ titles, author_aggs, hits }) => {
@@ -442,8 +444,12 @@ littb.controller(
             }
             _.extend(args, filter_params)
 
-            let { filter_or, filter_and } = util.getKeywordTextfilter(s.filters)
+            let { filter_or, filter_and, keyword_aux: languageAux } =
+                util.getKeywordTextfilter(s.filters)
             args.text_filter = { ...filter_or, ...filter_and }
+            if (languageAux.length) {
+                args.keyword_aux = languageAux
+            }
 
             if ($location.search().titlar) {
                 args.work_ids = $location.search().titlar

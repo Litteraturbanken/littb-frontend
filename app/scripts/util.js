@@ -193,6 +193,32 @@ littb.factory("util", function util($location, $filter) {
             } else {
                 delete rest["sort_date_imprint.date:range"]
             }
+            const rawLanguageFilters = makeFilterObj(filterObj.languages)
+            const hasTranslation = rawLanguageFilters.translation?.includes("true")
+            const hasOriginal = rawLanguageFilters.original?.includes("true")
+            const hasForeign = rawLanguageFilters.foreign?.includes("true")
+            delete rawLanguageFilters.translation
+            delete rawLanguageFilters.original
+            delete rawLanguageFilters.foreign
+            const languageKeywordAux = []
+            const translationClause =
+                '(keyword:"language-source" OR keyword:"translated" OR authors>type:translator)'
+
+            if (hasTranslation) {
+                languageKeywordAux.push(`RAW:${translationClause}`)
+            }
+            if (hasOriginal) {
+                languageKeywordAux.push(`RAW:NOT ${translationClause}`)
+            }
+            if (hasForeign) {
+                languageKeywordAux.push("RAW:-language:swe")
+                const existing = rest._exists ? [].concat(rest._exists) : []
+                if (!existing.includes("language")) {
+                    existing.push("language")
+                }
+                rest._exists = existing
+            }
+
             filter_or = {
                 ...filter_or,
                 ...makeFilterObj(filterObj.mediatypes),
@@ -200,13 +226,13 @@ littb.factory("util", function util($location, $filter) {
             }
             const filter_and = _.extend(
                 rest,
-                makeFilterObj(filterObj.languages),
+                rawLanguageFilters,
                 makeFilterObj(filterObj.about_authors)
                 //, ...(filterObj.keywords_aux || [])
                 // makeFilterObj(filterObj.about_authors),
                 // makeFilterObj(filterObj["main_author.authorid"])
             )
-            return { filter_or, filter_and }
+            return { filter_or, filter_and, keyword_aux: languageKeywordAux }
         },
 
         setupHashComplex(scope, config) {

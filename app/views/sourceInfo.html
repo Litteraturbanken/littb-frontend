@@ -22,8 +22,8 @@
             
             <p class="sourcedesc" ng-show="workinfo.sourcedesc != 'null'" ng-bind-html="(workinfo.sourcedesc || '') | trust"></p>
             <div class="mb-8 text-right italic " >
-                <span ng-if="authorById[workinfo.sourcedescAuthor]">{{authorById[workinfo.sourcedescAuthor].full_name}}</span>
-                <span ng-if="!authorById[workinfo.sourcedescAuthor]">{{workinfo.sourcedescAuthor}}</span>
+                <span ng-if="authorsById[workinfo.sourcedescAuthor]">{{authorsById[workinfo.sourcedescAuthor].full_name}}</span>
+                <span ng-if="!authorsById[workinfo.sourcedescAuthor]">{{workinfo.sourcedescAuthor}}</span>
             </div>
             
             <div ng-show="workinfo.mediatype" class="mediatypes" ng-class="{larger : workinfo.workintro}" ng-hide="workinfo.mediatype == 'infopost'">
@@ -50,7 +50,6 @@
                 
 
             </div>
-
             
             <div class="mediatypes sc"
             ng-class="{larger : workinfo.workintro}"
@@ -90,10 +89,9 @@
     
     <h3 class="sc introheader" ng-if="workinfo.dramawebben.workintro">Handling</h3>
     <div class="workintro mt-4" ng-if="workinfo.workintro" ng-bind-html="workinfo.workintro | trust"></div>
-    <!-- <div class="mt-4 text-right italic">{{workinfo.workintro_author}}</div> -->
     <div class="mb-8 text-right italic " >
-        <span ng-if="authorById[workinfo.workintro_author]">{{authorById[workinfo.workintro_author].full_name}}</span>
-        <span ng-if="!authorById[workinfo.workintro_author]">{{workinfo.workintro_author}}</span>
+        <span ng-if="authorsById[workinfo.workintro_author]">{{authorsById[workinfo.workintro_author].full_name}}</span>
+        <span ng-if="!authorsById[workinfo.workintro_author]">{{workinfo.workintro_author}}</span>
     </div>
 
     <div class="dramaweb" ng-if="dramaweb">

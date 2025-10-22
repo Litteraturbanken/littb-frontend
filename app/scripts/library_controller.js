@@ -749,7 +749,11 @@ littb.controller(
             ) {
                 delete filters["sort_date_imprint.date:range"]
             }
-            let { filter_or, filter_and } = util.getKeywordTextfilter(filters)
+            let {
+                filter_or,
+                filter_and,
+                keyword_aux: languageAux
+            } = util.getKeywordTextfilter(filters)
 
             let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
             if (countOnly) {
@@ -760,7 +764,7 @@ littb.controller(
                 .getTitles("etext-part,faksimil-part", {
                     sort_field: s.sort.parts,
                     filter_string: s.rowfilter,
-                    keyword_aux: [...s.keywords_aux, ...maybeHide1800],
+                    keyword_aux: [...s.keywords_aux, ...languageAux, ...maybeHide1800],
                     filter_or,
                     filter_and,
                     author_aggs: true,
@@ -844,29 +848,31 @@ littb.controller(
             ) {
                 delete filters["sort_date_imprint.date:range"]
             }
-            let { filter_or, filter_and } = util.getKeywordTextfilter(filters)
+            let {
+                filter_or,
+                filter_and,
+                keyword_aux: languageAux
+            } = util.getKeywordTextfilter(filters)
 
-            console.log("filter_and", filter_and)
+            console.log("filter_and", filter_and, "keyword_aux", languageAux)
             // if (!_.toPairs(text_filter).length) {
             //     text_filter = null
             // }
             // const about_authors = $location.search().about_authors_filter
+            let filter_string = s.rowfilter
             if (s.dl_mode) {
                 filter_and["export>type"] = ["xml", "txt", "workdb"]
             }
             if (epubOnly) {
                 filter_and.has_epub = true
             } else if (pdfOnly) {
-                // filter_and["license"] = ["pd"]
-                // filter_and["export>type"] = ["pdf"]
-                // filter_or["mediatype"] = "pdf"
-                // var q = "(export>type:pdf AND license:pdf) OR mediatype:pdf"
+                filter_string += " (export>type:pdf AND license:pd) OR mediatype:pdf"
             }
             let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
             const def = backend.getTitles("etext,faksimil,pdf", {
                 sort_field: s.sort[listID],
-                filter_string: s.rowfilter,
-                keyword_aux: [...s.keywords_aux, ...maybeHide1800],
+                filter_string,
+                keyword_aux: [...s.keywords_aux, ...languageAux, ...maybeHide1800],
                 include:
                     "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",

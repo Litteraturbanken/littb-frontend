@@ -720,10 +720,15 @@ littb.controller(
                         label: `Verk om ${s.authorInfo.full_name}`,
                         data: null,
                         def: backend
-                            .getTextByAuthor(s.author, "etext,faksimil,pdf,infopost", null, true)
+                            .getTextByAuthor(
+                                s.author,
+                                "etext,faksimil,pdf,infopost",
+                                null,
+                                true // about_author
+                            )
                             .then(data => {
                                 s.maybePresentationWork = data.filter(x =>
-                                    x.keyword?.includes("LB-presentation")
+                                    x.keyword?.includes("LB-författarpresentation")
                                 )?.[0]
                                 return data
                             }),

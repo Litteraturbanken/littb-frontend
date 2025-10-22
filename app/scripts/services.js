@@ -8,9 +8,9 @@ import { fromFilters } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -72,7 +72,14 @@ function expandQuery(query, keyword_aux) {
     var output = query
     if (keyword_aux.length) {
         for (let item of keyword_aux) {
-            let [key, val] = item.split(":")
+            const colonIndex = item.indexOf(":")
+            if (colonIndex === -1) continue
+            let key = item.slice(0, colonIndex)
+            let val = item.slice(colonIndex + 1)
+            if (key === "RAW") {
+                aux.push(val)
+                continue
+            }
             let vals = val.split(";")
             aux.push(`${key}:(${vals.join(" OR ")})`)
         }
@@ -80,6 +87,146 @@ function expandQuery(query, keyword_aux) {
     }
 
     return output
+}
+
+const LUCENE_SPECIAL_CHARS = /([+\-!(){}\[\]^"'~*?:\\\/])/g
+const LUCENE_NEEDS_QUOTES = /[\s+\-!(){}\[\]^"'~*?:\\\/]/ // includes whitespace and specials
+
+function escapeQueryValue(value) {
+    if (value === null || value === undefined) {
+        return ""
+    }
+    let str = String(value)
+    if (!str.length) {
+        return '""'
+    }
+    let escaped = str.replace(LUCENE_SPECIAL_CHARS, "\\$1")
+    if (LUCENE_NEEDS_QUOTES.test(str)) {
+        return `"${escaped}"`
+    }
+    return escaped
+}
+
+function normalizeField(field) {
+    return field.replace(/>/g, ".")
+}
+
+function buildRangeClause(field, value) {
+    if (!value) {
+        return ""
+    }
+    const [from, to] = String(value)
+        .split(",")
+        .map(part => part && part.trim())
+    const fromVal = from || "*"
+    const toVal = to || "*"
+    return `${normalizeField(field)}:[${fromVal} TO ${toVal}]`
+}
+
+function buildFilterClauses(filters) {
+    if (!filters) return []
+    const clauses = []
+    for (const [rawKey, rawVal] of Object.entries(filters)) {
+        if (rawVal === null || rawVal === undefined || rawVal === "") {
+            continue
+        }
+        const values = Array.isArray(rawVal) ? rawVal : [rawVal]
+        if (!values.length) continue
+
+        if (rawKey === "_exists") {
+            for (const val of values) {
+                if (!val) continue
+                clauses.push(`_exists_:${normalizeField(val)}`)
+            }
+            continue
+        }
+        if (rawKey === "_not_exists") {
+            for (const val of values) {
+                if (!val) continue
+                clauses.push(`NOT _exists_:${normalizeField(val)}`)
+            }
+            continue
+        }
+        if (rawKey.endsWith(":range")) {
+            const field = rawKey.replace(/:range$/, "")
+            for (const val of values) {
+                const clause = buildRangeClause(field, val)
+                if (clause) clauses.push(clause)
+            }
+            continue
+        }
+
+        const field = normalizeField(rawKey)
+        const cleanedValues = values.filter(val => val !== null && val !== undefined && val !== "")
+        if (!cleanedValues.length) continue
+
+        if (cleanedValues.length === 1) {
+            clauses.push(`${field}:${escapeQueryValue(cleanedValues[0])}`)
+        } else {
+            const inner = cleanedValues.map(val => `${field}:${escapeQueryValue(val)}`).join(" OR ")
+            clauses.push(`(${inner})`)
+        }
+    }
+    return clauses
+}
+
+function buildKeywordAuxClauses(keywordAux) {
+    if (!keywordAux) return []
+    const clauses = []
+    for (const entry of keywordAux) {
+        const sep = entry.indexOf(":")
+        if (sep === -1) continue
+        const key = entry.slice(0, sep)
+        const rest = entry.slice(sep + 1)
+        if (!rest && key !== "RAW") continue
+
+        if (key === "RAW") {
+            if (rest) clauses.push(rest)
+            continue
+        }
+
+        const prefix = key[0] === "-" || key[0] === "+" ? key[0] : ""
+        const field = prefix ? key.slice(1) : key
+        if (!field) continue
+
+        const values = rest.split(";").filter(Boolean)
+        if (!values.length) continue
+
+        const normalizedField = normalizeField(field)
+        if (values.length === 1) {
+            clauses.push(`${prefix}${normalizedField}:${escapeQueryValue(values[0])}`)
+        } else {
+            const inner = values.map(val => escapeQueryValue(val)).join(" OR ")
+            clauses.push(`${prefix}${normalizedField}:(${inner})`)
+        }
+    }
+    return clauses
+}
+
+function sanitizeFilterStringValue(str) {
+    if (!str) return ""
+    return str
+        .replace(/([A-Öa-ö])[-–—]([A-Öa-ö])/g, "$1 $2")
+        .replace(/[.,!"“'”]/g, "")
+        .trim()
+}
+
+function buildQueryString({ filterOr, filterAnd, keywordAux, filterString }) {
+    const clauses = []
+    clauses.push(...buildFilterClauses(filterOr))
+    clauses.push(...buildFilterClauses(filterAnd))
+    clauses.push(...buildKeywordAuxClauses(keywordAux))
+
+    const sanitizedFilter = sanitizeFilterStringValue(filterString)
+    if (sanitizedFilter) {
+        clauses.push(`(${sanitizedFilter})`)
+    }
+
+    const uniqueClauses = clauses.filter(Boolean)
+    if (!uniqueClauses.length) {
+        return "*"
+    }
+    return uniqueClauses.join(" AND ")
 }
 
 let getFileSize = size => {
@@ -221,7 +368,6 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
             },
             transformResponse(data, headers) {
                 if (isFaksimil) data = data.replaceAll("<a>", "&lt;a&gt;").replaceAll("</a>", "")
-                console.log("🚀 ~ data:", data)
                 const output = parseHTML(data)
                 if ($("fel", output).length) {
                     console.log("xml parse error:", $("fel", output).text())
@@ -363,12 +509,13 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 sort_field: "sortkey|asc"
             }
             let { author, author_aggs, ...opts } = Object.assign({}, defaults, options)
+            const { filter_or, filter_and, keyword_aux = [], filter_string, ...restOpts } = opts
 
             const params = _.omitBy(
                 {
                     exclude: "text,parts,sourcedesc,pages,errata",
                     author_aggregation: author_aggs,
-                    ...opts
+                    ...restOpts
                 },
                 val => _.isNull(val)
             )
@@ -377,16 +524,16 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 author = `/${author}`
             }
 
-            if (params.filter_string) {
-                params.filter_string = params.filter_string
-                    .replace(/([A-Öa-ö])[-–—]([A-Öa-ö])/g, "$1 $2")
-                    .replace(/[.,!"“'”]/g, "")
-            }
-
-            params.filter_string = expandQuery(params.filter_string, options.keyword_aux || [])
+            const q = buildQueryString({
+                filterOr: filter_or,
+                filterAnd: filter_and,
+                keywordAux: keyword_aux,
+                filterString: filter_string
+            })
+            params.q = q
 
             return $http({
-                url: `${STRIX_URL}/list_all/${types}` + (author || ""),
+                url: `${STRIX_URL}/query_string/${types}` + (author || ""),
                 params
             }).then(function (response) {
                 const {
