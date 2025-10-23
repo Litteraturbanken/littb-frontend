@@ -373,36 +373,43 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
                 }
             }
 
-            params.q = composeQuery({
-                filterQuery,
-                filterString: filter_string
-                // keywordAux
-            })
+            params.q =
+                "@default_field=title " +
+                composeQuery({
+                    filterQuery,
+                    filterString: filter_string
+                    // keywordAux
+                })
 
             return $http({
                 // NOTE: this enpoint uses Nest for expanding the query in the backend
                 // https://github.com/jroxendal/nest
                 url: `${STRIX_URL}/query_string/${types}` + (author || ""),
                 params
-            }).then(function (response) {
-                const {
-                    data,
-                    author_aggregation,
-                    imported_aggregation,
-                    hits,
-                    distinct_hits,
-                    suggest
-                } = response.data
-
-                return {
-                    titles: disableGrouping ? data : expandMediatypes(data),
-                    author_aggs: author_aggregation,
-                    imported_aggs: imported_aggregation,
-                    hits,
-                    distinct_hits,
-                    suggest
-                }
             })
+                .then(function (response) {
+                    const {
+                        data,
+                        author_aggregation,
+                        imported_aggregation,
+                        hits,
+                        distinct_hits,
+                        suggest
+                    } = response.data
+
+                    return {
+                        titles: disableGrouping ? data : expandMediatypes(data),
+                        author_aggs: author_aggregation,
+                        imported_aggs: imported_aggregation,
+                        hits,
+                        distinct_hits,
+                        suggest
+                    }
+                })
+                .catch(function (error) {
+                    c.error("getTitles error", error)
+                    throw error
+                })
         },
 
         relevanceSearch(types, { filters, ...options }, disableGrouping = false) {

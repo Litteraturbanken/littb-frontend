@@ -310,7 +310,7 @@ export const composeQuery = ({
     if (sanitizedFilter) {
         clauses.push(`(${sanitizedFilter})`)
     }
-    const base = clauses.length ? clauses.join(" AND ") : "*"
+    const base = clauses.length ? clauses.join(" AND ") : ""
     if (!keywordAux.length) {
         return base
     }

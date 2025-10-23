@@ -775,7 +775,7 @@ littb.controller(
             let def = backend
                 .getTitles("etext-part,faksimil-part", {
                     sort_field: s.sort.parts,
-                    q,
+                    q: q || "*",
                     author_aggs: true,
                     partial_string: true,
                     suggest: true,
@@ -874,7 +874,7 @@ littb.controller(
             const q = composeQuery({ filterQuery, filterString, keywordAux })
             const def = backend.getTitles("etext,faksimil,pdf", {
                 sort_field: s.sort[listID],
-                q,
+                q: q || "*",
                 include:
                     "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
@@ -931,6 +931,11 @@ littb.controller(
                     }
 
                     s.titleSearching = false
+                })
+                .catch(err => {
+                    console.error("fetchWorks error", err)
+                    s.titleSearching = false
+                    s.titleModel[listID + "_searching"] = false
                 })
         }
 
