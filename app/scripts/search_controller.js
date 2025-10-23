@@ -1,3 +1,5 @@
+import { buildFilterQuery, buildSearchFilterPayload, composeQuery } from "./query.ts"
+
 const _ = window._
 const $ = window.$
 const c = window.console
@@ -262,20 +264,23 @@ littb.controller(
 
         function refreshTitles(countOnly, filterstr) {
             let include = "shorttitle,title,lbworkid,authors.authorid,mediatype,searchable"
-            let { filter_or, filter_and, keyword_aux: languageAux } =
-                util.getKeywordTextfilter(s.filters)
-            // s.loadingTitles = true
+            const filtersForQuery = {
+                ...s.filters,
+                searchable: true
+            }
             console.log("s.filters", s.filters)
             let resultlimit = s.filters["authors>authorid"].length ? 10000 : 30
+            const filterQuery = buildFilterQuery(filtersForQuery)
+            const q = composeQuery({
+                filterQuery,
+                filterString: filterstr || ""
+            })
             return backend
                 .getTitles("etext,faksimil", {
                     sort_field: "sortkey|asc",
                     include,
-                    filter_or,
-                    filter_and: { searchable: true, ...filter_and },
+                    q,
                     to: countOnly ? 0 : resultlimit,
-                    filter_string: filterstr || "",
-                    keyword_aux: languageAux,
                     author_aggs: true
                 })
                 .then(({ titles, author_aggs, hits }) => {
@@ -444,11 +449,10 @@ littb.controller(
             }
             _.extend(args, filter_params)
 
-            let { filter_or, filter_and, keyword_aux: languageAux } =
-                util.getKeywordTextfilter(s.filters)
-            args.text_filter = { ...filter_or, ...filter_and }
-            if (languageAux.length) {
-                args.keyword_aux = languageAux
+            const { textFilter, keywordAux } = buildSearchFilterPayload(s.filters)
+            args.text_filter = textFilter
+            if (keywordAux.length) {
+                args.keyword_aux = keywordAux
             }
 
             if ($location.search().titlar) {

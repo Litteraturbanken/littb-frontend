@@ -10,3 +10,4 @@ test/reports
 stage.sh
 Caddyfile
 misc
+tmp

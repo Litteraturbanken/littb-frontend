@@ -1,3 +1,5 @@
+import { buildFilterMap } from "./query.ts"
+
 function sortBy(list, field, dir) {
     let trans = {
         ..._.fromPairs(
@@ -22,7 +24,6 @@ littb.factory("util", function util($location, $filter) {
     const PREFIX_REGEXP = /^(x[:\-_]|data[:\-_])/i
     const SPECIAL_CHARS_REGEXP = /([:\-_]+(.))/g
     const MOZ_HACK_REGEXP = /^moz([A-Z])/
-    let makeFilterObj = null
     const camelCase = name =>
         name
             .replace(SPECIAL_CHARS_REGEXP, function (_, separator, letter, offset) {
@@ -137,103 +138,7 @@ littb.factory("util", function util($location, $filter) {
                 }
             }
         },
-        makeFilterObj: (makeFilterObj = function (list) {
-            const output = {}
-            for (const kw of list || []) {
-                const [key, val] = kw.split(":")
-                if (output[key]) {
-                    output[key] = output[key].concat(val.split(";"))
-                } else {
-                    output[key] = val.split(";")
-                }
-            }
-            return output
-        }),
-        getKeywordTextfilter(filterObj) {
-            // sample
-            // {
-            //     gender: "main_author.gender:female",
-            //     keywords: ["provenance.library:Dramawebben"],
-            //     authors: ["StrindbergA"],
-            //     about_authors: ["StrindbergA"],
-            //     languages: {
-            //         "modernized:true": "modernized:true",
-            //         "proofread:true": "proofread:true",
-            //         "language:deu": "language:deu"
-            //     },
-            //     mediatypes: ["has_epub:true", "mediatype:faksimil"],
-            //     'sort_date_imprint.date:range' : [1200, 1900]
-            // }
-
-            let filter_or = {}
-
-            if (filterObj.gender === "") {
-                delete filterObj["gender"]
-            } else {
-                filter_or["main_author.gender"] = filterObj.gender
-                // filter_or["gender"] = filterObj.gender
-            }
-
-            const rest = _.omit(
-                _.omitBy(filterObj, _.isEmpty),
-                "keywords",
-                "keywords_aux",
-                "languages",
-                "mediatypes",
-                "gender",
-                "about_authors"
-                // "main_author.authorid"
-            )
-            if (
-                rest["sort_date_imprint.date:range"]?.length &&
-                !rest["sort_date_imprint.date:range"].some(Number.isNaN)
-            ) {
-                rest["sort_date_imprint.date:range"] =
-                    rest["sort_date_imprint.date:range"].join(",")
-            } else {
-                delete rest["sort_date_imprint.date:range"]
-            }
-            const rawLanguageFilters = makeFilterObj(filterObj.languages)
-            const hasTranslation = rawLanguageFilters.translation?.includes("true")
-            const hasOriginal = rawLanguageFilters.original?.includes("true")
-            const hasForeign = rawLanguageFilters.foreign?.includes("true")
-            delete rawLanguageFilters.translation
-            delete rawLanguageFilters.original
-            delete rawLanguageFilters.foreign
-            const languageKeywordAux = []
-            const translationClause =
-                '(keyword:"language-source" OR keyword:"translated" OR authors>type:translator)'
-
-            if (hasTranslation) {
-                languageKeywordAux.push(`RAW:${translationClause}`)
-            }
-            if (hasOriginal) {
-                languageKeywordAux.push(`RAW:NOT ${translationClause}`)
-            }
-            if (hasForeign) {
-                languageKeywordAux.push("RAW:-language:swe")
-                const existing = rest._exists ? [].concat(rest._exists) : []
-                if (!existing.includes("language")) {
-                    existing.push("language")
-                }
-                rest._exists = existing
-            }
-
-            filter_or = {
-                ...filter_or,
-                ...makeFilterObj(filterObj.mediatypes),
-                ...makeFilterObj(filterObj.keywords)
-            }
-            const filter_and = _.extend(
-                rest,
-                rawLanguageFilters,
-                makeFilterObj(filterObj.about_authors)
-                //, ...(filterObj.keywords_aux || [])
-                // makeFilterObj(filterObj.about_authors),
-                // makeFilterObj(filterObj["main_author.authorid"])
-            )
-            return { filter_or, filter_and, keyword_aux: languageKeywordAux }
-        },
+        makeFilterObj: buildFilterMap,
 
         setupHashComplex(scope, config) {
             // config = [

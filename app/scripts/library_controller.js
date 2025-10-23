@@ -1,3 +1,5 @@
+import { buildFilterQuery, composeQuery } from "./query.ts"
+
 const littb = window.littb
 const _ = window._
 const $ = window.$
@@ -594,6 +596,23 @@ littb.controller(
                 if (s.filters.gender) {
                     conds.push(item.gender == s.filters.gender)
                 }
+
+                function checkForName(name, query_token) {
+                    let matchesNormalized = true
+                    let matchesScandinavian = true
+                    try {
+                        matchesScandinavian = scandinavianFolding(name).match(
+                            new RegExp(scandinavianFolding(query_token), "i")
+                        )
+                    } catch (e) {}
+                    try {
+                        matchesNormalized = s
+                            .normalizeAuthor(name)
+                            .match(new RegExp(s.normalizeAuthor(query_token), "i"))
+                    } catch (e) {}
+                    return matchesNormalized && matchesScandinavian
+                }
+
                 if (s.filter) {
                     conds.push(
                         s.filter
@@ -604,14 +623,7 @@ littb.controller(
                                     " " +
                                     _.map(item.pseudonym, "full_name").join(" ")
 
-                                return (
-                                    scandinavianFolding(search).match(
-                                        new RegExp(scandinavianFolding(str), "i")
-                                    ) ||
-                                    s
-                                        .normalizeAuthor(search)
-                                        .match(new RegExp(s.normalizeAuthor(str), "i"))
-                                )
+                                return checkForName(search, str)
                             })
                             .some(Boolean)
                     )
@@ -678,7 +690,6 @@ littb.controller(
             }
         }
         s.fetchByRelevance = async countOnly => {
-            console.log("🚀 ~ file: library_controller.js:675 ~ fetchByRelevance:")
             s.relevanceSearching = true
             s.relevanceError = false
 
@@ -703,7 +714,7 @@ littb.controller(
                 let { titles, hits, suggest } = await backend.relevanceSearch(
                     "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress",
                     {
-                        filter_string: s.rowfilter,
+                        q: s.rowfilter,
                         keyword_aux: [...s.keywords_aux, ...maybeHide1800],
                         filters: filters,
                         // filter_or,
@@ -749,24 +760,22 @@ littb.controller(
             ) {
                 delete filters["sort_date_imprint.date:range"]
             }
-            let {
-                filter_or,
-                filter_and,
-                keyword_aux: languageAux
-            } = util.getKeywordTextfilter(filters)
-
             let size = { from: (s.parts_page.current - 1) * 100, to: s.parts_page.current * 100 }
             if (countOnly) {
                 size = { from: 0, to: 0 }
             }
             let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
+            const filterQuery = buildFilterQuery(filters)
+            const keywordAux = [...s.keywords_aux, ...maybeHide1800]
+            const q = composeQuery({
+                filterQuery,
+                filterString: s.rowfilter,
+                keywordAux
+            })
             let def = backend
                 .getTitles("etext-part,faksimil-part", {
                     sort_field: s.sort.parts,
-                    filter_string: s.rowfilter,
-                    keyword_aux: [...s.keywords_aux, ...languageAux, ...maybeHide1800],
-                    filter_or,
-                    filter_and,
+                    q,
                     author_aggs: true,
                     partial_string: true,
                     suggest: true,
@@ -848,36 +857,27 @@ littb.controller(
             ) {
                 delete filters["sort_date_imprint.date:range"]
             }
-            let {
-                filter_or,
-                filter_and,
-                keyword_aux: languageAux
-            } = util.getKeywordTextfilter(filters)
-
-            console.log("filter_and", filter_and, "keyword_aux", languageAux)
-            // if (!_.toPairs(text_filter).length) {
-            //     text_filter = null
-            // }
-            // const about_authors = $location.search().about_authors_filter
-            let filter_string = s.rowfilter
+            let filterString = s.rowfilter
             if (s.dl_mode) {
-                filter_and["export>type"] = ["xml", "txt", "workdb"]
+                filters["export>type"] = ["xml", "txt", "workdb"]
             }
             if (epubOnly) {
-                filter_and.has_epub = true
+                filters.has_epub = true
             } else if (pdfOnly) {
-                filter_string += " (export>type:pdf AND license:pd) OR mediatype:pdf"
+                filterString +=
+                    (filterString ? " AND" : "") +
+                    " (export>type:pdf AND license:pd) OR mediatype:pdf"
             }
             let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
+            const filterQuery = buildFilterQuery(filters)
+            const keywordAux = [...s.keywords_aux, ...maybeHide1800]
+            const q = composeQuery({ filterQuery, filterString, keywordAux })
             const def = backend.getTitles("etext,faksimil,pdf", {
                 sort_field: s.sort[listID],
-                filter_string,
-                keyword_aux: [...s.keywords_aux, ...languageAux, ...maybeHide1800],
+                q,
                 include:
                     "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
-                filter_or,
-                filter_and,
                 partial_string: true,
                 author_aggs: true,
                 imported_aggregation: listID == "latest",
