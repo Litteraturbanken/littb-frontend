@@ -114,7 +114,7 @@ const dateRangeClause = (range?: number[]): string | undefined => {
 const translationGroup = groupOr([
     "keyword:language-source",
     "keyword:translated",
-    "authors>(type:translator)"
+    "(authors>(type:translator))"
 ])
 
 const languagesClause = (values?: string[]): string | undefined => {
@@ -147,11 +147,13 @@ const languagesClause = (values?: string[]): string | undefined => {
         clauses.push(translationGroup)
     }
     if (includeOriginal && translationGroup) {
-        clauses.push(`(NOT ${translationGroup})`)
+        const result = groupAnd([`(NOT ${translationGroup})`, "NOT language_source:unknown"])
+        if (result) clauses.push(result)
     }
     if (includeForeign) {
         const foreignClause = groupAnd(["_exists_:language", "NOT language:swe"])
         if (foreignClause) clauses.push(foreignClause)
+        clauses.push("language_source:unknown")
     }
 
     return groupOr(clauses)

@@ -374,7 +374,7 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
             }
 
             params.q =
-                "@default_field=title " +
+                "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian " +
                 composeQuery({
                     filterQuery,
                     filterString: filter_string

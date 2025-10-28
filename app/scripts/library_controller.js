@@ -426,7 +426,7 @@ littb.controller(
             pdf: "popularity|desc",
             authors: "popularity|desc",
             parts: "sortkey|asc",
-            latest: "imported|desc,sortfield|asc,sort_date_imprint.date|asc"
+            latest: "imported|desc,main_author.name_for_index|asc,sortkey|asc,sort_date_imprint.date|asc"
         }
 
         s.sortItems = {
@@ -490,7 +490,7 @@ littb.controller(
                 {
                     label: "Nytt",
                     val: "imported",
-                    suffix: ",sortfield|asc,sort_date_imprint.date|asc",
+                    suffix: ",main_author.name_for_index|asc,sortkey|asc,sort_date_imprint.date|asc",
                     dir: "desc",
                     search: "nytillkommet",
                     active: true
@@ -521,6 +521,7 @@ littb.controller(
                 {
                     label: "Författare",
                     val: "main_author.name_for_index",
+                    suffix: ",sortkey|asc",
                     dir: "asc"
                 },
                 {
@@ -709,13 +710,12 @@ littb.controller(
             if (countOnly) {
                 size = { from: 0, to: 0 }
             }
-            let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
             try {
                 let { titles, hits, suggest } = await backend.relevanceSearch(
                     "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress",
                     {
                         q: s.rowfilter,
-                        keyword_aux: [...s.keywords_aux, ...maybeHide1800],
+                        keyword_aux: [...s.keywords_aux],
                         filters: filters,
                         // filter_or,
                         // filter_and,
@@ -764,9 +764,8 @@ littb.controller(
             if (countOnly) {
                 size = { from: 0, to: 0 }
             }
-            let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
             const filterQuery = buildFilterQuery(filters)
-            const keywordAux = [...s.keywords_aux, ...maybeHide1800]
+            const keywordAux = [...s.keywords_aux]
             const q = composeQuery({
                 filterQuery,
                 filterString: s.rowfilter,
@@ -848,8 +847,6 @@ littb.controller(
             s.titleSearching = true
             s.titleModel[listID + "_searching"] = true
 
-            // let isSearchRecent = $location.search().sort == "nytillkommet"
-            // TODO: {"_exists": "export>"} if dl_mode
             let filters = { ...s.filters }
             if (
                 filters["sort_date_imprint.date:range"][0] == s.chronology_floor &&
@@ -866,17 +863,22 @@ littb.controller(
             } else if (pdfOnly) {
                 filterString +=
                     (filterString ? " AND" : "") +
-                    " (export>type:pdf AND license:pd) OR mediatype:pdf"
+                    " ((export>type:pdf AND license:pd) OR mediatype:pdf)"
             }
-            let maybeHide1800 = $location.search().hide1800 ? ["-keyword:1800"] : []
+            let maybeHide1800 =
+                isSearchRecent && $location.search().hide1800 ? ["NOT keyword:1800"] : []
+            if (maybeHide1800.length) {
+                filterString += (filterString ? " AND " : "") + maybeHide1800.join(" AND ")
+            }
+
             const filterQuery = buildFilterQuery(filters)
-            const keywordAux = [...s.keywords_aux, ...maybeHide1800]
+            const keywordAux = [...s.keywords_aux]
             const q = composeQuery({ filterQuery, filterString, keywordAux })
             const def = backend.getTitles("etext,faksimil,pdf", {
                 sort_field: s.sort[listID],
                 q: q || "*",
                 include:
-                    "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sortfield,sort_date_imprint.plain," +
+                    "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sort_date_imprint.plain," +
                     "main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword",
                 partial_string: true,
                 author_aggs: true,
