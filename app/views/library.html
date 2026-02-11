@@ -795,7 +795,9 @@
                                 >
                             </td>
                             <td class="text-right uppercase text-sm w-40">
-                                <a ng-href="/författare/{{getPartAuthor(row).authorid}}"
+                                <a
+                                    ng-href="/författare/{{getPartAuthor(row).authorid}}"
+                                    uib-tooltip="{{::getPartAuthor(row).full_name}} {{  getPartAuthor(row) | authorYear:true  }}"
                                     >{{getPartAuthor(row).surname}}</a
                                 >
                                 <span

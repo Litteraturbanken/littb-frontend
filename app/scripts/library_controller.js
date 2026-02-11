@@ -1,3 +1,4 @@
+import { filter } from "lodash"
 import { buildFilterQuery, composeQuery } from "./query.ts"
 
 const littb = window.littb
@@ -856,7 +857,8 @@ littb.controller(
             }
             let filterString = s.rowfilter
             if (s.dl_mode) {
-                filters["export>type"] = ["xml", "txt", "workdb"]
+                // filters["export>type"] = ["xml", "txt", "workdb"]
+                filterString += (filterString ? " AND" : "") + " export>type:(xml OR txt OR workdb)"
             }
             if (epubOnly) {
                 filters.has_epub = true
@@ -873,6 +875,12 @@ littb.controller(
 
             const filterQuery = buildFilterQuery(filters)
             const keywordAux = [...s.keywords_aux]
+            console.log(
+                "🚀 ~ filterQuery, filterString, keywordAux:",
+                filterQuery,
+                filterString,
+                keywordAux
+            )
             const q = composeQuery({ filterQuery, filterString, keywordAux })
             const def = backend.getTitles("etext,faksimil,pdf", {
                 sort_field: s.sort[listID],

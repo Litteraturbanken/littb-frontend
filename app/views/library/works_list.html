@@ -49,7 +49,7 @@
                     <input class="" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
                 </td> -->
                 <td class="w-[400px]" ng-if="!row.isHeader">
-                    <div class="">
+                    <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                         <input
                             ng-if="dl_mode"
                             class=""
@@ -61,11 +61,9 @@
                         <div
                             top="$parent.title_off"
                             id="{{getUniqId(row)}}"
-                            class="header_container"
+                            class="header_container inline"
                         >
-                            <div
-                                class="header text-lg leading-tight text-ellipsis whitespace-nowrap overflow-hidden"
-                            >
+                            <div class="header text-lg leading-tight">
                                 <span
                                     class="title_inner"
                                     uib-tooltip="{{row.title != row.shorttitle ? row.title : ''}}"

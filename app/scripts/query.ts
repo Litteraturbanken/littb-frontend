@@ -442,7 +442,11 @@ export const expandQuery = (query: string, keywordAux: string[] = []): string =>
         auxClauses.push(`${key}:(${vals.join(" OR ")})`)
     }
     if (!auxClauses.length) return query
-    return `(${auxClauses.join(" AND ")}) ${query}`
+    const trimmedQuery = query.trim()
+    const aux =
+        auxClauses.length === 1 ? `(${auxClauses[0]})` : `(${auxClauses.join(" AND ")})`
+    if (!trimmedQuery) return aux
+    return `${aux} AND ${trimmedQuery}`
 }
 
 const wrapForAnd = (clause: string): string => {

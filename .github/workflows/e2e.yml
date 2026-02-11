@@ -35,11 +35,11 @@ jobs:
     - name: Install dependencies
       run: |
         yarn --frozen-lockfile
-        npx webdriver-manager update --standalone chrome --gecko false
+        node_modules/.bin/playwright install chromium
     - name: Run tests
       run: |
         yarn serve-dist &
         npx wait-on http://localhost:9000
         sleep 5
-        testcafe 'testcafe-browser-provider-puppeteer:emulation:device=Pixel 2' test/e2e/testcafe_e2e.js
+        node_modules/.bin/playwright test
         echo "exited tests with code $?"

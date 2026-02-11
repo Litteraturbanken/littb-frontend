@@ -476,7 +476,7 @@ littb.controller(
                 args.include_modernized = false
             }
 
-            args.sort_field = "sortfield"
+            args.sort_field = "main_author.name_for_index.lowercase"
             // args.sort_field = null
 
             return args
