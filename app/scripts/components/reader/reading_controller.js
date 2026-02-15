@@ -1,5 +1,3 @@
-// littb.controller(
-//     "readingCtrl",
 import nyaVagarUrl from "@/img/lb_logga_nyavagar_2.2021.svg?url"
 import dwUrl from "@/img/dramawebben_svart.svg?url"
 
@@ -21,6 +19,7 @@ export default [
     "$uibModal",
     "$q",
     "$filter",
+    "ReaderStateService",
     function (
         $scope,
         backend,
@@ -38,103 +37,125 @@ export default [
         authors,
         $uibModal,
         $q,
-        $filter
+        $filter,
+        ReaderStateService
     ) {
-        let args, key, searchData, val
-        const s = $scope
-        s.$routeParams = $routeParams
-        s.isEditor = false
-        s._ = { humanize: _.humanize }
+        const ctrl = this
+
+        // Bridge properties managed by setupHashComplex (which reads/writes $scope)
+        // so that ctrl.prop and $scope.prop stay in sync
+        const hashProps = [
+            "markee_from", "markee_to", "x", "y", "width", "height",
+            "isParallel", "isFocus", "border", "show_search_work",
+            "show_about", "show_chapters", "size"
+        ]
+        for (const prop of hashProps) {
+            Object.defineProperty(ctrl, prop, {
+                get() { return $scope[prop] },
+                set(val) { $scope[prop] = val },
+                enumerable: true,
+                configurable: true
+            })
+        }
+
+        ctrl.$routeParams = $routeParams
+        ctrl.isEditor = false
+        ctrl._ = { humanize: _.humanize }
 
         $window.scrollTo(0, 0)
 
         let applyRouteParams = params => {
-            _.extend(s, _.pick($routeParams, "title", "author", "mediatype"))
+            _.extend(ctrl, _.pick($routeParams, "title", "author", "mediatype"))
 
             if ("ix" in $routeParams) {
-                s.isEditor = true
-                s.pageix = Number($routeParams.ix)
-                s.pageToLoad = s.pageix
-                s.editorLbWorkId = $routeParams.lbid
-                s.mediatype = { f: "faksimil", e: "etext" }[s.mediatype]
+                ctrl.isEditor = true
+                ctrl.pageix = Number($routeParams.ix)
+                ctrl.pageToLoad = ctrl.pageix
+                ctrl.editorLbWorkId = $routeParams.lbid
+                ctrl.mediatype = { f: "faksimil", e: "etext" }[ctrl.mediatype]
             } else {
-                s.pagename = $routeParams.pagename
+                ctrl.pagename = $routeParams.pagename
             }
         }
         applyRouteParams($routeParams)
-        s.suggestEtext = () => window.location.href.replace("/epub", "/etext")
+        ctrl.suggestEtext = () => window.location.href.replace("/epub", "/etext")
 
-        // s.pageToLoad = pagename
-
-        s.searchData = searchData = null
-        s.loading = true
-        s.first_load = false
+        let searchData
+        ctrl.searchData = searchData = null
+        ctrl.loading = true
+        ctrl.first_load = false
         const onFirstLoad = _.once(() => {
             // only if screen is small
-            if ($(window).width() > 768) {
-                $timeout(() => $("html, body").animate({ scrollLeft: "1000px" }, 1000), 0)
+            if (window.innerWidth > 768) {
+                $timeout(() => window.scrollTo({ left: 1000, behavior: "smooth" }), 0)
             } else {
                 $timeout(
-                    () =>
-                        $("html, body").animate(
-                            { scrollTop: $(".reader_main").offset().top.toString() + "px" },
-                            1000
-                        ),
+                    () => {
+                        const el = document.querySelector(".reader_main")
+                        if (el) {
+                            window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: "smooth" })
+                        }
+                    },
                     0
                 )
             }
         })
-        s.showPopup = false
-        s.error = false
-        s.show_chapters = false // index modal
+        ctrl.showPopup = false
+        ctrl.error = false
+        ctrl.show_chapters = false // index modal
 
-        s.normalizeAuthor = $filter("normalizeAuthor")
+        ctrl.normalizeAuthor = $filter("normalizeAuthor")
 
-        const h = $(window).height()
-        let w = $(window).width()
+        const h = window.innerHeight
 
-        s.fontSizeFactor = h / 900
-        $rootScope._night_mode = false
-        s.isFocus = false
-        s.showFocusBar = true
-        s.isOcr = () => $location.search().ocr != null
+        ctrl.fontSizeFactor = h / 900
+        ReaderStateService.setNightMode(false)
+        Object.defineProperty(ctrl, "nightMode", {
+            get() { return ReaderStateService.getState().nightMode },
+            set(val) { ReaderStateService.setNightMode(val) },
+            enumerable: true,
+            configurable: true
+        })
+        ctrl.isFocus = false
+        ctrl.showFocusBar = true
+        ctrl.isOcr = () => $location.search().ocr != null
 
-        s.activateFocus = function () {
-            s.isFocus = true
-            s.showFocusBar = true
+        ctrl.activateFocus = function () {
+            ctrl.isFocus = true
+            ctrl.showFocusBar = true
         }
 
-        s.hasSearchable = function (authorid) {
-            if (!authorid || !s.authorById) {
+        ctrl.hasSearchable = function (authorid) {
+            if (!authorid || !ctrl.authorById) {
                 return
             }
-            return s.authorById[authorid].searchable
+            return ctrl.authorById[authorid].searchable
         }
 
-        s.closeFocus = event => (s.isFocus = false)
+        ctrl.closeFocus = event => (ctrl.isFocus = false)
 
-        s.incrFontSize = function (event, fac) {
+        ctrl.incrFontSize = function (event, fac) {
             event.stopPropagation()
-            s.fontSizeFactor += fac
+            ctrl.fontSizeFactor += fac
         }
 
-        s.getFontSizeFactor = function () {
-            if (s.isFocus) {
-                return s.fontSizeFactor
+        ctrl.getFontSizeFactor = function () {
+            if (ctrl.isFocus) {
+                return ctrl.fontSizeFactor
             } else {
                 return 1
             }
         }
 
-        s.nyaVagarUrl = nyaVagarUrl
-        s.dwUrl = dwUrl
+        ctrl.nyaVagarUrl = nyaVagarUrl
+        ctrl.dwUrl = dwUrl
 
-        s.getTransform = function () {
-            if (!s.isFocus) {
+        ctrl.getTransform = function () {
+            if (!ctrl.isFocus) {
                 return {}
             }
             const prefixes = ["", "-webkit-", "-o-", "-moz-", "-ms-"]
-            const val = `scaleX(${s.fontSizeFactor}) scaleY(${s.fontSizeFactor})`
+            const val = `scaleX(${ctrl.fontSizeFactor}) scaleY(${ctrl.fontSizeFactor})`
             const addPrefixes = rule => _.map(prefixes, p => p + rule)
 
             const out = {}
@@ -146,149 +167,150 @@ export default [
             return out
         }
 
-        s.openModal = () => (s.show_about = true)
+        ctrl.openModal = () => (ctrl.show_about = true)
 
-        s.onPartClick = function (startpage) {
-            s.gotopage(startpage)
-            s.showPopup = false
-            s.show_chapters = false
+        ctrl.onPartClick = function (startpage) {
+            ctrl.gotopage(startpage)
+            ctrl.showPopup = false
+            ctrl.show_chapters = false
         }
 
-        s.resetHitMarkings = () =>
-            ["markee_from", "markee_to", "x", "y", "height", "width"].map(key => (s[key] = null))
+        ctrl.resetHitMarkings = () =>
+            ["markee_from", "markee_to", "x", "y", "height", "width"].map(key => (ctrl[key] = null))
 
         const changeHit = function (newHit) {
             c.log("newHit", newHit)
             const from_id = newHit.highlights[0].wid
             const to_id = _.last(newHit.highlights).wid
-            s.gotopage(newHit.highlights[0].n)
-            s.markee_from = from_id
-            s.markee_to = to_id
+            ctrl.gotopage(newHit.highlights[0].n)
+            ctrl.markee_from = from_id
+            ctrl.markee_to = to_id
             return $location.search("hit_index", newHit.order)
         }
 
-        s.nextHit = () => searchData.next().then(changeHit)
+        ctrl.nextHit = () => searchData.next().then(changeHit)
 
-        s.prevHit = () => searchData.prev().then(changeHit)
+        ctrl.prevHit = () => searchData.prev().then(changeHit)
 
-        s.isLastHit = () => searchData.current + 1 == searchData.total_hits
+        ctrl.isLastHit = () => searchData.current + 1 == searchData.total_hits
 
-        s.close_hits = function () {
-            s.search_query = ""
+        ctrl.close_hits = function () {
+            ctrl.search_query = ""
             searchData.reset()
-            s.resetHitMarkings()
-            s.show_search_work = false
+            ctrl.resetHitMarkings()
+            ctrl.show_search_work = false
         }
 
-        s.rotateAmount = 0
-        s.getRotate = () => `rotate(${s.rotateAmount}deg)`
-        s.rotate_left = () => {
-            s.rotateAmount -= 90
+        ctrl.rotateAmount = 0
+        ctrl.getRotate = () => `rotate(${ctrl.rotateAmount}deg)`
+        ctrl.rotate_left = () => {
+            ctrl.rotateAmount -= 90
         }
-        s.rotate_right = () => {
-            s.rotateAmount += 90
+        ctrl.rotate_right = () => {
+            ctrl.rotateAmount += 90
         }
 
         const onKeyDown = function (event) {
+            const activeTag = document.activeElement?.tagName
             let abort =
                 event.metaKey ||
                 event.ctrlKey ||
-                $("input:focus").length ||
-                $("textarea:focus").length
+                activeTag === "INPUT" ||
+                activeTag === "TEXTAREA"
 
             let isToggleOpen = [79, 129].includes(event.which)
             if (!isToggleOpen) {
                 if (event.key != "i") {
-                    abort = abort || $("body.modal-open").length
+                    abort = abort || document.body.classList.contains("modal-open")
                 }
             }
             if (abort) {
                 return
             }
-            s.$apply(function () {
+            $scope.$apply(function () {
                 switch (event.key) {
                     case "n":
-                        s.nextPage()
+                        ctrl.nextPage()
                         break
                     case "ArrowRight":
                         if (event.altKey && event.shiftKey) {
-                            s.setPage(s.pageix + 10)
+                            ctrl.setPage(ctrl.pageix + 10)
                         } else if (event.altKey) {
-                            $location.path(s.getNextPartUrl())
+                            $location.path(ctrl.getNextPartUrl())
                         } else if (event.shiftKey) {
-                            s.nextPage()
+                            ctrl.nextPage()
                         } else {
                             if (
                                 $rootElement.prop("scrollWidth") - $window.scrollX ===
-                                $($window).width()
+                                $window.innerWidth
                             ) {
-                                s.nextPage()
+                                ctrl.nextPage()
                             }
                         }
                         break
                     case "f":
-                        s.prevPage()
+                        ctrl.prevPage()
                         break
                     case "ArrowLeft":
                         if (event.altKey && event.shiftKey) {
-                            s.setPage(s.pageix - 10)
+                            ctrl.setPage(ctrl.pageix - 10)
                         } else if (event.altKey) {
-                            $location.path(s.getPrevPartUrl())
+                            $location.path(ctrl.getPrevPartUrl())
                         } else if (event.shiftKey) {
-                            s.prevPage()
+                            ctrl.prevPage()
                         } else {
                             if ($window.scrollX < 10) {
-                                s.prevPage()
+                                ctrl.prevPage()
                             }
                         }
                         break
                     case "F15":
                     case "d":
-                        if (s.isEditor) {
-                            s.pageix = s.pageix - 10
-                            s.pageToLoad = s.pageix
+                        if (ctrl.isEditor) {
+                            ctrl.pageix = ctrl.pageix - 10
+                            ctrl.pageToLoad = ctrl.pageix
                             break
                         } else {
-                            $location.path(s.getPrevPartUrl())
+                            $location.path(ctrl.getPrevPartUrl())
                         }
                     case "F16":
                     case "m":
-                        if (s.isEditor) {
-                            s.pageix = s.pageix + 10
-                            s.pageToLoad = s.pageix
+                        if (ctrl.isEditor) {
+                            ctrl.pageix = ctrl.pageix + 10
+                            ctrl.pageToLoad = ctrl.pageix
                             break
                         } else {
-                            $location.path(s.getNextPartUrl())
+                            $location.path(ctrl.getNextPartUrl())
                         }
                         break
                     case "F17":
                     case "i":
-                        navigator.clipboard.writeText(s.editorLbWorkId || s.workinfo.lbworkid)
-                        s.$emit("notify", "Kopierade lbworkid")
+                        navigator.clipboard.writeText(ctrl.editorLbWorkId || ctrl.workinfo.lbworkid)
+                        $scope.$emit("notify", "Kopierade lbworkid")
                         break
                     case "F21":
                     case "u":
-                        if (s.workinfo.urn) {
+                        if (ctrl.workinfo.urn) {
                             navigator.clipboard.writeText(
-                                "https://urn.kb.se/resolve?urn=" + s.workinfo.urn
+                                "https://urn.kb.se/resolve?urn=" + ctrl.workinfo.urn
                             )
-                            s.$emit("notify", "Kopierade urn")
+                            $scope.$emit("notify", "Kopierade urn")
                         } else {
-                            s.$emit("notify", "Ingen urn hittades")
+                            $scope.$emit("notify", "Ingen urn hittades")
                         }
                         break
                     case "F18":
                     case "o":
-                        s.show_about = !s.show_about
+                        ctrl.show_about = !ctrl.show_about
                         break
                     case "Escape":
-                        s.isFocus = false
+                        ctrl.isFocus = false
                         break
                     case "å":
                     case "[":
                         window.location.pathname =
                             window.location.pathname.split("/").slice(0, -1).join("/") +
-                            (s.mediatype == "etext" ? "/faksimil" : "/etext")
+                            (ctrl.mediatype == "etext" ? "/faksimil" : "/etext")
                         break
                 }
             })
@@ -296,139 +318,130 @@ export default [
 
         $document.on("keydown", onKeyDown)
 
-        s.getPage = function () {
-            if (s.isEditor) {
-                return s.pageix
+        ctrl.getPage = function () {
+            if (ctrl.isEditor) {
+                return ctrl.pageix
             } else {
-                return s.pagename || s.startpage
+                return ctrl.pagename || ctrl.startpage
             }
         }
 
-        s.setPage = function (ix) {
-            if (s.isEditor) {
-                s.pageix = ix
-                s.pageToLoad = s.pageix
+        ctrl.setPage = function (ix) {
+            if (ctrl.isEditor) {
+                ctrl.pageix = ix
+                ctrl.pageToLoad = ctrl.pageix
             } else {
-                s.pageix = ix
-                s.pageToLoad = s.pagemap[`ix_${s.pageix}`]
+                ctrl.pageix = ix
+                ctrl.pageToLoad = ctrl.pagemap[`ix_${ctrl.pageix}`]
             }
         }
 
-        s.getStep = () => {
-            if (!s.workinfo?.stepmap) return
-            return s.workinfo.stepmap[s.pageix] || s.workinfo.pagestep || 1
+        ctrl.getStep = () => {
+            if (!ctrl.workinfo?.stepmap) return
+            return ctrl.workinfo.stepmap[ctrl.pageix] || ctrl.workinfo.pagestep || 1
         }
 
-        s.nextPage = function (event) {
+        ctrl.nextPage = function (event) {
             if (event != null) {
                 event.preventDefault()
             }
-            if (s.isEditor) {
-                s.pageix = s.pageix + (s.getStep() || 1)
-                // s.pageix = s.pageix + 1
-                s.pageToLoad = s.pageix
+            if (ctrl.isEditor) {
+                ctrl.pageix = ctrl.pageix + (ctrl.getStep() || 1)
+                ctrl.pageToLoad = ctrl.pageix
                 return
             }
-            if (!s.endpage) {
+            if (!ctrl.endpage) {
                 return
             }
-            const newix = s.pageix + s.getStep()
-            // newix = s.pageix + 1
-            if (`ix_${newix}` in s.pagemap) {
-                return s.setPage(newix)
+            const newix = ctrl.pageix + ctrl.getStep()
+            if (`ix_${newix}` in ctrl.pagemap) {
+                return ctrl.setPage(newix)
             }
         }
-        // else
-        //     s.setPage(0)
 
-        s.prevPage = function (event) {
+        ctrl.prevPage = function (event) {
             if (event != null) {
                 event.preventDefault()
             }
-            // unless s.pagemap then return
-            if (s.isEditor) {
-                s.pageix = s.pageix - (s.getStep() || 1)
-                // s.pageix = s.pageix - 1
-                s.pageToLoad = s.pageix
+            if (ctrl.isEditor) {
+                ctrl.pageix = ctrl.pageix - (ctrl.getStep() || 1)
+                ctrl.pageToLoad = ctrl.pageix
                 return
             }
-            const newix = s.pageix - s.getStep()
-            // newix = s.pageix - 1
-            if (`ix_${newix}` in s.pagemap) {
-                return s.setPage(newix)
+            const newix = ctrl.pageix - ctrl.getStep()
+            if (`ix_${newix}` in ctrl.pagemap) {
+                return ctrl.setPage(newix)
             } else {
-                return s.setPage(0)
+                return ctrl.setPage(0)
             }
         }
 
-        s.isBeforeStartpage = function (pageix) {
-            if (s.isEditor) {
+        ctrl.isBeforeStartpage = function (pageix) {
+            if (ctrl.isEditor) {
                 return false
             }
-            if (!s.pagemap) {
+            if (!ctrl.pagemap) {
                 return
             }
-            const startix = s.pagemap[`page_${s.startpage}`]
+            const startix = ctrl.pagemap[`page_${ctrl.startpage}`]
             return pageix <= startix
         }
 
-        s.getFirstPageUrl = function () {
+        ctrl.getFirstPageUrl = function () {
             const { search } = window.location
-            if (s.isEditor) {
-                let startpageix = s.startpage ? s.pagemap[`page_${s.startpage}`] : 0
+            if (ctrl.isEditor) {
+                let startpageix = ctrl.startpage ? ctrl.pagemap[`page_${ctrl.startpage}`] : 0
                 return (
                     `/editor/${$routeParams.lbid}/ix/${startpageix}/${$routeParams.mediatype}` +
                     search
                 )
             } else {
-                return s.getPageUrl(s.startpage)
+                return ctrl.getPageUrl(ctrl.startpage)
             }
         }
 
-        s.getPrevPageUrl = function () {
-            if (!s.pagemap) {
+        ctrl.getPrevPageUrl = function () {
+            if (!ctrl.pagemap) {
                 return
             }
-            const newix = s.pageix - s.getStep()
-            // newix = s.pageix - 1
-            if (`ix_${newix}` in s.pagemap) {
-                const page = s.pagemap[`ix_${newix}`]
-                return `/författare/${s.author}/titlar/${s.title}/sida/${page}/${s.mediatype}`
+            const newix = ctrl.pageix - ctrl.getStep()
+            if (`ix_${newix}` in ctrl.pagemap) {
+                const page = ctrl.pagemap[`ix_${newix}`]
+                return `/författare/${ctrl.author}/titlar/${ctrl.title}/sida/${page}/${ctrl.mediatype}`
             } else {
                 return ""
             }
         }
 
-        s.getNextPageUrl = function () {
-            if (!s.endpage) {
+        ctrl.getNextPageUrl = function () {
+            if (!ctrl.endpage) {
                 return
             }
-            if (s.pageix === s.pagemap[`page_${s.endpage}`]) {
+            if (ctrl.pageix === ctrl.pagemap[`page_${ctrl.endpage}`]) {
                 return
             }
-            const newix = s.pageix + s.getStep()
-            // newix = s.pageix + 1
-            if (`ix_${newix}` in s.pagemap) {
-                const page = s.pagemap[`ix_${newix}`]
-                return `/författare/${s.author}/titlar/${s.title}/sida/${page}/${s.mediatype}`
+            const newix = ctrl.pageix + ctrl.getStep()
+            if (`ix_${newix}` in ctrl.pagemap) {
+                const page = ctrl.pagemap[`ix_${newix}`]
+                return `/författare/${ctrl.author}/titlar/${ctrl.title}/sida/${page}/${ctrl.mediatype}`
             } else {
                 return ""
             }
         }
 
-        s.getLastPageUrl = function () {
-            if (s.isEditor && !s.workinfo) {
+        ctrl.getLastPageUrl = function () {
+            if (ctrl.isEditor && !ctrl.workinfo) {
                 return ""
-            } else if (s.isEditor) {
-                return `/editor/${s.workinfo.lbworkid}/ix/${s.workinfo.page_count - 1}/${
-                    s.mediatype[0]
+            } else if (ctrl.isEditor) {
+                return `/editor/${ctrl.workinfo.lbworkid}/ix/${ctrl.workinfo.page_count - 1}/${
+                    ctrl.mediatype[0]
                 }`
             } else {
-                return s.getPageUrl(s.endpage)
+                return ctrl.getPageUrl(ctrl.endpage)
             }
         }
 
-        s.getPageUrl = function (page) {
+        ctrl.getPageUrl = function (page) {
             if (!page) {
                 return ""
             }
@@ -438,81 +451,81 @@ export default [
                 suffix = `?${search[1]}`
             }
 
-            return `/författare/${s.author}/titlar/${s.title}/sida/${page}/${s.mediatype}` + suffix
+            return `/författare/${ctrl.author}/titlar/${ctrl.title}/sida/${page}/${ctrl.mediatype}` + suffix
         }
 
-        s.gotopage = function (page, event) {
-            s.showGotoInput = false
+        ctrl.gotopage = function (page, event) {
+            ctrl.showGotoInput = false
             c.log("preventDefault", page)
             if (event != null) {
                 event.preventDefault()
             }
-            const ix = s.pagemap[`page_${page}`]
-            s.setPage(ix)
+            const ix = ctrl.pagemap[`page_${page}`]
+            ctrl.setPage(ix)
         }
 
-        s.onGotoClick = function () {
-            if (s.showGotoInput) {
-                s.showGotoInput = false
+        ctrl.onGotoClick = function () {
+            if (ctrl.showGotoInput) {
+                ctrl.showGotoInput = false
                 return
             }
-            s.showGotoInput = true
-            $timeout(() => s.$broadcast("focus"), 0)
+            ctrl.showGotoInput = true
+            $timeout(() => $scope.$broadcast("focus"), 0)
         }
 
-        s.toStartPage = function (event) {
+        ctrl.toStartPage = function (event) {
             if (event != null) {
                 event.preventDefault()
             }
-            if (s.isEditor) {
-                s.pageix = 0
-                s.pageToLoad = 0
+            if (ctrl.isEditor) {
+                ctrl.pageix = 0
+                ctrl.pageToLoad = 0
             } else {
-                s.gotopage(s.startpage)
+                ctrl.gotopage(ctrl.startpage)
             }
         }
 
-        s.mouseover = function (event) {
+        ctrl.mouseover = function (event) {
             c.log("mouseover")
-            s.showPopup = true
+            ctrl.showPopup = true
         }
 
-        s.getTooltip = function (part) {
+        ctrl.getTooltip = function (part) {
             if (part.navtitle !== part.showtitle) {
                 return part.showtitle
             }
         }
 
-        const partStartsOnPage = part => s.pagemap[`page_${part.startpagename}`] === s.pageix
+        const partStartsOnPage = part => ctrl.pagemap[`page_${part.startpagename}`] === ctrl.pageix
 
         const getAllCurrentParts = function () {
-            if (!s.workinfo) {
+            if (!ctrl.workinfo) {
                 return
             }
-            return _.filter(s.workinfo.parts, function (part) {
-                const startix = s.pagemap[`page_${part.startpagename}`]
-                const endix = s.pagemap[`page_${part.endpagename}`]
+            return _.filter(ctrl.workinfo.parts, function (part) {
+                const startix = ctrl.pagemap[`page_${part.startpagename}`]
+                const endix = ctrl.pagemap[`page_${part.endpagename}`]
                 if (_.isUndefined(startix) || _.isUndefined(endix)) {
                     c.warn("Incorrect value, startix", startix, "endix", endix)
                 }
-                return s.pageix <= endix && s.pageix >= startix
+                return ctrl.pageix <= endix && ctrl.pageix >= startix
             })
         }
 
         const findShortest = parts =>
             _.min(parts, function (part) {
-                const startix = s.pagemap[`page_${part.startpagename}`]
-                const endix = s.pagemap[`page_${part.endpagename}`]
+                const startix = ctrl.pagemap[`page_${part.startpagename}`]
+                const endix = ctrl.pagemap[`page_${part.endpagename}`]
                 return endix - startix
             })
 
         const getLastSeenPart = function (findIndex, filterEnded, ignoreCurrent) {
             const maybePart = _.last(
-                _.dropRightWhile(s.workinfo.partStartArray, function ([startix, part]) {
+                _.dropRightWhile(ctrl.workinfo.partStartArray, function ([startix, part]) {
                     if (part === ignoreCurrent) {
                         return true
                     } // always go back a part
-                    const endix = s.pagemap[`page_${part.endpagename}`]
+                    const endix = ctrl.pagemap[`page_${part.endpagename}`]
                     if (findIndex === endix) {
                         return false
                     } // shortcut
@@ -529,8 +542,8 @@ export default [
 
             // we could be on a page between two parts
             // so find the last part that ended
-            const decorated = _.map(s.workinfo.partStartArray, function ([i, part]) {
-                return [findIndex - s.pagemap[`page_${part.endpagename}`], part]
+            const decorated = _.map(ctrl.workinfo.partStartArray, function ([i, part]) {
+                return [findIndex - ctrl.pagemap[`page_${part.endpagename}`], part]
             })
 
             const [diff, part] = _.min(decorated, function ([num, part]) {
@@ -543,8 +556,8 @@ export default [
             return part
         }
 
-        s.getCurrentPart = function () {
-            if (!s.workinfo) {
+        ctrl.getCurrentPart = function () {
+            if (!ctrl.workinfo) {
                 return
             }
 
@@ -553,23 +566,23 @@ export default [
                 return
             }
 
-            const partStartingHere = _.find(s.workinfo.partStartArray, function ([i, part]) {
-                return i === s.pageix
+            const partStartingHere = _.find(ctrl.workinfo.partStartArray, function ([i, part]) {
+                return i === ctrl.pageix
             })
 
             if (partStartingHere) return partStartingHere[1]
-            return getLastSeenPart(s.pageix, true)
+            return getLastSeenPart(ctrl.pageix, true)
         }
 
-        s.getNextPartUrl = function () {
-            if (!s.workinfo?.partStartArray?.length) {
+        ctrl.getNextPartUrl = function () {
+            if (!ctrl.workinfo?.partStartArray?.length) {
                 return
             }
 
-            const findIndex = s.pageix + 1 // should always go one page fwd
+            const findIndex = ctrl.pageix + 1 // should always go one page fwd
 
             const next = _.first(
-                _.dropWhile(s.workinfo.partStartArray, function ([i, part]) {
+                _.dropWhile(ctrl.workinfo.partStartArray, function ([i, part]) {
                     return i < findIndex
                 })
             )
@@ -579,86 +592,73 @@ export default [
             }
             const [i, newPart] = next
 
-            if (s.isEditor) {
-                return `/editor/${s.workinfo.lbworkid}/ix/${i}/${s.mediatype[0]}`
+            if (ctrl.isEditor) {
+                return `/editor/${ctrl.workinfo.lbworkid}/ix/${i}/${ctrl.mediatype[0]}`
             }
 
-            return s.getPageUrl(newPart.startpagename)
+            return ctrl.getPageUrl(newPart.startpagename)
         }
 
-        s.getPrevPartUrl = function () {
-            if (!s.workinfo?.partStartArray?.length) {
+        ctrl.getPrevPartUrl = function () {
+            if (!ctrl.workinfo?.partStartArray?.length) {
                 return
             }
 
-            const [i, firstpart] = s.workinfo.partStartArray[0]
-            if (s.pageix <= i) {
+            const [i, firstpart] = ctrl.workinfo.partStartArray[0]
+            if (ctrl.pageix <= i) {
                 // disable prev if we're before first part
                 return
             }
 
-            /*
-        firstParts = _.filter s.workinfo.partStartArray, ([startix]) ->
-            * all parts that start at the same page as the first part
-            s.workinfo.partStartArray[0][0] == startix
-
-        shortestFirstpart = findShortest(_.map(firstParts, _.last))
-
-        * are we at the first part?
-        * i.e are we before the end of the first part?
-        if (s.pageix <= s.pagemap["page_" + shortestFirstpart.endpagename])
-            return null
-        current = s.getCurrentPart()
-        */
-            const prev = getLastSeenPart(s.pageix - 1, false)
+            const prev = getLastSeenPart(ctrl.pageix - 1, false)
 
             if (!prev) {
                 return ""
             }
 
-            if (s.isEditor) {
-                return `/editor/${s.workinfo.lbworkid}/ix/${i}/${s.mediatype[0]}`
+            if (ctrl.isEditor) {
+                return `/editor/${ctrl.workinfo.lbworkid}/ix/${i}/${ctrl.mediatype[0]}`
             }
 
-            return s.getPageUrl(prev.startpagename)
+            return ctrl.getPageUrl(prev.startpagename)
         }
 
-        s.toggleParallel = () => (s.isParallel = !s.isParallel)
+        ctrl.toggleParallel = () => (ctrl.isParallel = !ctrl.isParallel)
 
-        s.supportsParallel = function () {
-            if (!s.workinfo) {
+        ctrl.supportsParallel = function () {
+            if (!ctrl.workinfo) {
                 return
             }
             return (
-                s.workinfo.mediatypes.includes("etext") &&
-                s.workinfo.mediatypes.includes("faksimil")
+                ctrl.workinfo.mediatypes.includes("etext") &&
+                ctrl.workinfo.mediatypes.includes("faksimil")
             )
         }
 
-        s.getValidAuthors = function () {
-            if (!s.authorById || !s.workinfo) {
+        ctrl.getValidAuthors = function () {
+            if (!ctrl.authorById || !ctrl.workinfo) {
                 return
             }
-            return s.workinfo.authors
+            return ctrl.workinfo.authors
         }
 
         authors.then(function ([authorData, authorById]) {
-            s.authorById = authorById
+            ctrl.authorById = authorById
         })
 
         const recalcCoors = function (val) {
-            if (!s.x) {
+            if (!ctrl.x) {
                 return
             }
-            s.coors = []
-            const iterable = s.x.split("|")
+            ctrl.coors = []
+            const iterable = ctrl.x.split("|")
             for (var i = 0; i < iterable.length; i++) {
                 const item = iterable[i]
-                const pairs = _.toPairs(_.pick(s, "x", "y", "height", "width"))
-                s.coors.push(
+                const pairs = _.toPairs(_.pick(ctrl, "x", "y", "height", "width"))
+                ctrl.coors.push(
                     _.fromPairs(
                         _.map(pairs, function ([key, val]) {
-                            return [key, val.split("|")[i].split(",")[s.size - 1]]
+                            return [key, val.split("|")[i].split(",")[ctrl.size - 1]]
                         })
                     )
                 )
@@ -666,7 +666,8 @@ export default [
         }
         let chapter_modal = null
         let about_modal = null
-        util.setupHashComplex(s, [
+        // setupHashComplex needs $scope for $watch/$watch functionality
+        util.setupHashComplex($scope, [
             {
                 scope_name: "markee_from",
                 key: "traff",
@@ -706,7 +707,7 @@ export default [
                 key: "fokus",
                 scope_name: "isFocus",
                 post_change(val) {
-                    $rootScope._focus_mode = val
+                    ReaderStateService.setFocusMode(val)
                 }
             },
             { key: "border" },
@@ -719,13 +720,13 @@ export default [
                     if (val) {
                         about_modal = $uibModal.open({
                             templateUrl: "sourceInfoModal.html",
-                            scope: s,
+                            scope: $scope,
                             windowClass: "about"
                         })
 
                         about_modal.result.then(
-                            () => (s.show_about = false),
-                            () => (s.show_about = false)
+                            () => (ctrl.show_about = false),
+                            () => (ctrl.show_about = false)
                         )
                     } else {
                         if (about_modal != null) {
@@ -742,13 +743,13 @@ export default [
                     if (val) {
                         chapter_modal = $uibModal.open({
                             templateUrl: "chapters.html",
-                            scope: s,
+                            scope: $scope,
                             windowClass: "chapters"
                         })
 
                         chapter_modal.result.then(
-                            () => (s.show_chapters = false),
-                            () => (s.show_chapters = false)
+                            () => (ctrl.show_chapters = false),
+                            () => (ctrl.show_chapters = false)
                         )
                     } else {
                         if (chapter_modal != null) {
@@ -760,15 +761,13 @@ export default [
             }
         ])
 
-        // s.showFocusBar = s.isFocus
-        if (s.mediatype === "faksimil") {
-            util.setupHashComplex(s, [
+        // ctrl.showFocusBar = ctrl.isFocus
+        if (ctrl.mediatype === "faksimil") {
+            util.setupHashComplex($scope, [
                 {
                     key: "storlek",
                     scope_name: "size",
                     val_in: Number,
-                    // val_out : (val) ->
-                    //     val + 1
                     default: 3,
                     post_change: recalcCoors
                 }
@@ -777,47 +776,47 @@ export default [
 
         const watches = []
         watches.push(
-            s.$watch("pageToLoad", function (val) {
+            $scope.$watch("$ctrl.pageToLoad", function (val) {
                 let url
                 if (val == null) {
                     return
                 }
-                s.displaynum = val
-                if (s.isEditor) {
+                ctrl.displaynum = val
+                if (ctrl.isEditor) {
                     url = `/editor/${$routeParams.lbid}/ix/${val}/${$routeParams.mediatype}`
                 } else {
-                    url = `/författare/${s.author}/titlar/${s.title}/sida/${val}/${s.mediatype}`
+                    url = `/författare/${ctrl.author}/titlar/${ctrl.title}/sida/${val}/${ctrl.mediatype}`
                 }
 
                 const prevpath = $location.path()
 
                 const loc = $location.path(url)
-                if (!s.isEditor && !_.str.contains(prevpath, "/sida/")) {
+                if (!ctrl.isEditor && !_.str.contains(prevpath, "/sida/")) {
                     c.log("replace", prevpath)
                     loc.replace()
                 }
             })
         )
 
-        s.isDefined = angular.isDefined
+        ctrl.isDefined = angular.isDefined
 
         const initSourceInfo = function () {
             let params
-            if (s.isEditor) {
+            if (ctrl.isEditor) {
                 params = {
                     lbworkid: $routeParams.lbid
                 }
             } else {
                 params = {
-                    titlepath: s.title,
-                    authorid: s.author
+                    titlepath: ctrl.title,
+                    authorid: ctrl.author
                 }
             }
 
-            const def = backend.getSourceInfo({ exclude: "content_vector", ...params }, s.mediatype)
-            s.workinfoPromise = def
+            const def = backend.getSourceInfo({ exclude: "content_vector", ...params }, ctrl.mediatype)
+            ctrl.workinfoPromise = def
             def.then(function (workinfo) {
-                s.workinfo = workinfo
+                ctrl.workinfo = workinfo
                 let metaElement = document.querySelector('meta[name="lbworkid"]')
                 if (!metaElement) {
                     metaElement = document.createElement("meta")
@@ -826,49 +825,47 @@ export default [
                 }
                 metaElement.content = workinfo.lbworkid
                 document.head.appendChild(metaElement)
-                s.pagemap = workinfo.pagemap
+                ctrl.pagemap = workinfo.pagemap
 
-                if (s.isEditor) {
-                    s.author = workinfo.authors[0].authorid
-                    s.title = workinfo.titlepath
+                if (ctrl.isEditor) {
+                    ctrl.author = workinfo.authors[0].authorid
+                    ctrl.title = workinfo.titlepath
                 }
 
-                if (s.etextPageMapping == null) {
-                    s.etextPageMapping = {}
+                if (ctrl.etextPageMapping == null) {
+                    ctrl.etextPageMapping = {}
                 }
 
-                if (s.mediatype === "faksimil") {
-                    s.sizes = new Array(5)
-                    for (let i of s.workinfo.faksimil_sizes) {
-                        s.sizes[i] = true
+                if (ctrl.mediatype === "faksimil") {
+                    ctrl.sizes = new Array(5)
+                    for (let i of ctrl.workinfo.faksimil_sizes) {
+                        ctrl.sizes[i] = true
                     }
                 }
 
-                s.startpage = workinfo.startpagename
-                s.endpage = workinfo.endpagename
-                if (s.pagename == null) {
-                    s.pagename = s.startpage
+                ctrl.startpage = workinfo.startpagename
+                ctrl.endpage = workinfo.endpagename
+                if (ctrl.pagename == null) {
+                    ctrl.pagename = ctrl.startpage
                 }
 
-                s.isDramaweb = !!workinfo.dramawebben
+                ctrl.isDramaweb = !!workinfo.dramawebben
 
                 $timeout(() => {
-                    s.sliderConf = {
+                    ctrl.sliderConf = {
                         floor: 0,
-                        ceil: s.workinfo.page_count - 1,
+                        ceil: ctrl.workinfo.page_count - 1,
                         showSelectionBar: true,
-                        translate: val => s.pagemap["ix_" + val],
+                        translate: val => ctrl.pagemap["ix_" + val],
                         onStart: (sliderId, modelValue, highValue, pointerType) => {
-                            s.sliderActive = pointerType
+                            ctrl.sliderActive = pointerType
                         },
                         onEnd: () => {
-                            s.sliderActive = null
-                            // $location.search("intervall", s.filters["sort_date_imprint.date:range"].join(","))
-                            // s.change()
-                            if (s.isEditor) {
-                                s.pageToLoad = s.pageix
+                            ctrl.sliderActive = null
+                            if (ctrl.isEditor) {
+                                ctrl.pageToLoad = ctrl.pageix
                             } else {
-                                s.setPage(s.pageix)
+                                ctrl.setPage(ctrl.pageix)
                             }
                         }
                     }
@@ -879,15 +876,15 @@ export default [
         }
 
         const getDownloadPageUrl = function (pageix, size) {
-            const id = $routeParams.lbid || s.workinfo.lbworkid
-            if (s.mediatype === "etext") {
+            const id = $routeParams.lbid || ctrl.workinfo.lbworkid
+            if (ctrl.mediatype === "etext") {
                 const filename = _.str.lpad(pageix, 5, "0")
                 return `/txt/${id}/res_${filename}.html`
             } else {
-                if (s.isEditor) {
+                if (ctrl.isEditor) {
                     var basename = pageix + 1
                 } else {
-                    basename = s.workinfo.filenameMap[pageix]
+                    basename = ctrl.workinfo.filenameMap[pageix]
                 }
                 const filename = _.str.lpad(basename, 4, "0")
                 return `/txt/${id}/${id}_${size}/${id}_${size}_${filename}.jpeg`
@@ -896,7 +893,7 @@ export default [
 
         const downloadPage = function (pageix) {
             let url = getDownloadPageUrl(pageix)
-            $("#prefetch").attr("href", getDownloadPageUrl(pageix + 1))
+            document.getElementById("prefetch").href = getDownloadPageUrl(pageix + 1)
             const def = backend.getHtmlFile(url, false)
             def.then(function (html) {
                 // since we use hard line breaks, soft hyphen needs to be replaced by actual hyphen
@@ -905,58 +902,50 @@ export default [
                 for (let child of html.data.firstChild.childNodes) {
                     childNodes.push(xmlSerializer.serializeToString(child))
                 }
-                s.etext_html = childNodes.join("").replace(/­/g, "-") // there's a soft hyphen in there, trust me
-                return s.etext_html
+                ctrl.etext_html = childNodes.join("").replace(/­/g, "-") // there's a soft hyphen in there, trust me
+                return ctrl.etext_html
             }).catch(function (err) {
-                s.loading = false
-                s.error = true
+                ctrl.loading = false
+                ctrl.error = true
             })
 
             return def
         }
 
         const getSrcsetSize = () => {
-            if (s.size < 4 && s.sizes && s.sizes[s.size + 2 - 1]) {
-                return s.size + 2
+            if (ctrl.size < 4 && ctrl.sizes && ctrl.sizes[ctrl.size + 2 - 1]) {
+                return ctrl.size + 2
             }
         }
 
-        s.getHeightConstraint = () => {
-            return [625, 750, 1100, 1500, 3050][s.size - 1]
+        ctrl.getHeightConstraint = () => {
+            return [625, 750, 1100, 1500, 3050][ctrl.size - 1]
         }
 
-        s.getWidthConstraint = () => {
-            if (!s.workinfo?.width) return
-            // console.log("getSrcsetSize()", getSrcsetSize(), s.size)
-            // let maybeSize = getSrcsetSize()
-            // if (typeof maybeSize != "undefined") {
-            //     let width = Number(s.workinfo.width["size_" + maybeSize])
-            //     return width / 2 // not all size 5 are twice as large as size 2
-            // }
-            return Number(s.workinfo.width["size_" + s.size])
+        ctrl.getWidthConstraint = () => {
+            if (!ctrl.workinfo?.width) return
+            return Number(ctrl.workinfo.width["size_" + ctrl.size])
         }
 
         const infoDef = initSourceInfo()
         const fetchPage = function (ix) {
-            if (s.mediatype === "etext") {
+            if (ctrl.mediatype === "etext") {
                 return downloadPage(ix)
             } else {
-                s.url = getDownloadPageUrl(ix, s.size)
-                if (s.sizes) {
+                ctrl.url = getDownloadPageUrl(ix, ctrl.size)
+                if (ctrl.sizes) {
                     let maybeSize = getSrcsetSize()
-                    // if (s.size < 4 && s.sizes[s.size + 2 - 1]) {
                     if (typeof maybeSize != "undefined") {
-                        $("#prefetch").attr("href", getDownloadPageUrl(ix + 1, maybeSize))
-                        s.srcset = `${getDownloadPageUrl(ix, s.size)} 1x, ${getDownloadPageUrl(
+                        document.getElementById("prefetch").href = getDownloadPageUrl(ix + 1, maybeSize)
+                        ctrl.srcset = `${getDownloadPageUrl(ix, ctrl.size)} 1x, ${getDownloadPageUrl(
                             ix,
                             maybeSize
                         )} 2x`
-                        // } else if (s.size == 4 && s.sizes[3] && s.sizes[4]) {
-                        //     s.srcset = `${urlFromSize(s.size)} 1x, ${urlFromSize(5)} 2x`
                     } else {
-                        $("#prefetch").attr("href", getDownloadPageUrl(ix + 1, s.size))
-                        $(".img_area .faksimil").attr("srcset", null)
-                        s.srcset = null
+                        document.getElementById("prefetch").href = getDownloadPageUrl(ix + 1, ctrl.size)
+                        const faksimilImg = document.querySelector(".img_area .faksimil")
+                        if (faksimilImg) faksimilImg.removeAttribute("srcset")
+                        ctrl.srcset = null
                     }
                 }
                 const def = $q.defer()
@@ -965,27 +954,26 @@ export default [
             }
         }
 
-        s.min = Math.min
-        s.onImageLoad = () => {
-            console.log("img load", $("img.faksimil").prop("width"))
-            s.imageWidth = $("img.faksimil").prop("width")
+        ctrl.min = Math.min
+        ctrl.onImageLoad = () => {
+            const img = document.querySelector("img.faksimil")
+            const w = img ? img.width : 0
+            console.log("img load", w)
+            ctrl.imageWidth = w
         }
-        // $("body").on("load", "img.faksimil", function() {
-        //     window.safeApply(s, () => (s.imageWidth = $("img.faksimil").prop("naturalWidth")))
-        // })
-        s.$on("$routeUpdate", (event, route) => {
+        $scope.$on("$routeUpdate", (event, route) => {
             console.log("update", route)
             let params = route.params
             let nextPath = `/författare/${params.author}/titlar/${params.title}/sida/${params.pagename}/:mediatype`
-            if (params.title != s.title || params.mediatype != s.mediatype) {
+            if (params.title != ctrl.title || params.mediatype != ctrl.mediatype) {
                 $route.reload()
             } else {
-                if (s.isEditor) {
-                    s.pageix = Number(params.ix)
+                if (ctrl.isEditor) {
+                    ctrl.pageix = Number(params.ix)
                 } else {
-                    s.pagename = params.pagename
-                    s.pageix = s.pagemap[`page_${s.pagename}`]
-                    s.gotopage(params.pagename)
+                    ctrl.pagename = params.pagename
+                    ctrl.pageix = ctrl.pagemap[`page_${ctrl.pagename}`]
+                    ctrl.gotopage(params.pagename)
 
                     window.gtag("config", window.gtagID, {
                         page_path: nextPath,
@@ -1000,7 +988,6 @@ export default [
                     window._paq.push(["trackPageView"])
                 }
             }
-            // applyRouteParams(params)
         })
         const loadPage = val => {
             c.log("loadPage", val)
@@ -1011,43 +998,43 @@ export default [
                         return
                     }
 
-                    s.error = false
+                    ctrl.error = false
 
                     if ($location.search().sok) {
-                        s.$broadcast("popper.open.searchPopup")
+                        $scope.$broadcast("popper.open.searchPopup")
                     }
 
                     let promise = null
-                    if (s.isEditor) {
-                        s.pageix = Number(val)
-                        promise = fetchPage(s.pageix)
+                    if (ctrl.isEditor) {
+                        ctrl.pageix = Number(val)
+                        promise = fetchPage(ctrl.pageix)
                     } else {
-                        s.pagename = val
-                        s.pageix = s.pagemap[`page_${s.pagename}`]
-                        if (typeof s.pageix == "undefined") {
+                        ctrl.pagename = val
+                        ctrl.pageix = ctrl.pagemap[`page_${ctrl.pagename}`]
+                        if (typeof ctrl.pageix == "undefined") {
                             return
                         }
-                        promise = fetchPage(s.pageix)
+                        promise = fetchPage(ctrl.pageix)
                     }
 
-                    if (!s.isEditor && !isDev) {
-                        backend.logPage(s.pageix, s.workinfo.lbworkid, s.mediatype)
+                    if (!ctrl.isEditor && !isDev) {
+                        backend.logPage(ctrl.pageix, ctrl.workinfo.lbworkid, ctrl.mediatype)
                     }
 
-                    const id = $routeParams.lbid || s.workinfo.lbworkid
+                    const id = $routeParams.lbid || ctrl.workinfo.lbworkid
                     const pageView = {
-                        pageix: s.pageix,
-                        pagename: s.pagename,
+                        pageix: ctrl.pageix,
+                        pagename: ctrl.pagename,
                         timestamp: new Date().toISOString(),
-                        mediatype: s.mediatype,
+                        mediatype: ctrl.mediatype,
                         lbworkid: id,
-                        author: s.author,
-                        label: s.workinfo.shorttitle || s.workinfo.title,
+                        author: ctrl.author,
+                        label: ctrl.workinfo.shorttitle || ctrl.workinfo.title,
                         url: $location.url()
                     }
                     const lastPageViews = JSON.parse(localStorage.getItem("lastPageViews")) || []
                     const existingIndex = lastPageViews.findIndex(
-                        view => view.lbworkid === id && view.mediatype === s.mediatype
+                        view => view.lbworkid === id && view.mediatype === ctrl.mediatype
                     )
 
                     if (existingIndex !== -1) {
@@ -1063,18 +1050,18 @@ export default [
                     localStorage.setItem("lastPageViews", JSON.stringify(lastPageViews))
                     console.log("🚀 ~ lastPageViews:", lastPageViews)
                     promise.then(function (html) {
-                        s.first_load = true
-                        s.loading = false
+                        ctrl.first_load = true
+                        ctrl.loading = false
                         return onFirstLoad()
                     })
 
-                    if (s.mediatype === "faksimil" && s.workinfo.searchable) {
+                    if (ctrl.mediatype === "faksimil" && ctrl.workinfo.searchable) {
                         return backend
-                            .fetchOverlayData(s.workinfo.lbworkid, s.pageix)
+                            .fetchOverlayData(ctrl.workinfo.lbworkid, ctrl.pageix)
                             .then(function ([overlayHtml, overlayWidth, overlayHeight]) {
-                                s.overlayWidth = overlayWidth
-                                s.overlayHeight = overlayHeight
-                                s.overlayHtml = overlayHtml
+                                ctrl.overlayWidth = overlayWidth
+                                ctrl.overlayHeight = overlayHeight
+                                ctrl.overlayHtml = overlayHtml
                             })
                     }
                 },
@@ -1082,15 +1069,15 @@ export default [
                 function (err) {
                     c.log("page load error", err, $location.path(), val)
 
-                    if (s.isEditor) {
+                    if (ctrl.isEditor) {
                         fetchPage(Number(val)).then(function () {})
-                        s.loading = false
-                        s.first_load = true
-                        backend.getPageCount($routeParams.lbid, s.mediatype).then(function (count) {
-                            s.workinfo = { page_count: count }
+                        ctrl.loading = false
+                        ctrl.first_load = true
+                        backend.getPageCount($routeParams.lbid, ctrl.mediatype).then(function (count) {
+                            ctrl.workinfo = { page_count: count }
                         })
                     } else {
-                        s.error = true
+                        ctrl.error = true
                         if (!isDev) {
                             return backend.logError("reader", {
                                 path: $location.path()
@@ -1100,39 +1087,38 @@ export default [
                 }
             )
         }
-        if (s.mediatype === "faksimil" && s.isEditor) {
+        if (ctrl.mediatype === "faksimil" && ctrl.isEditor) {
             backend
-                .fetchOverlayData(s.editorLbWorkId, s.pageix)
+                .fetchOverlayData(ctrl.editorLbWorkId, ctrl.pageix)
                 .then(function ([overlayHtml, overlayWidth, overlayHeight]) {
-                    // s.overlayFactors = overlayFactors
-                    s.overlayWidth = overlayWidth
-                    s.overlayHeight = overlayHeight
-                    s.overlayHtml = overlayHtml
+                    ctrl.overlayWidth = overlayWidth
+                    ctrl.overlayHeight = overlayHeight
+                    ctrl.overlayHtml = overlayHtml
                 })
         }
 
-        s.setSize = function (index) {
+        ctrl.setSize = function (index) {
             c.log("setsize", index)
-            s.size = index
-            return loadPage(s.getPage())
+            ctrl.size = index
+            return loadPage(ctrl.getPage())
         }
 
-        s.isSizeDisabled = function (isIncrement) {
-            if (s.isEditor || !s.sizes) {
+        ctrl.isSizeDisabled = function (isIncrement) {
+            if (ctrl.isEditor || !ctrl.sizes) {
                 return false
             }
             if (isIncrement) {
-                return !s.sizes[(s.size - 1 || 0) + 1]
+                return !ctrl.sizes[(ctrl.size - 1 || 0) + 1]
             } else {
-                return !s.sizes[(s.size - 1 || 0) - 1]
+                return !ctrl.sizes[(ctrl.size - 1 || 0) - 1]
             }
         }
 
-        watches.push(s.$watch("getPage()", debounce(loadPage, 200, { leading: false })))
+        watches.push($scope.$watch("$ctrl.getPage()", debounce(loadPage, 200, { leading: false })))
 
-        s.$on("$destroy", function () {
+        $scope.$on("$destroy", function () {
             $document.off("keydown", onKeyDown)
-            for (w of watches) {
+            for (const w of watches) {
                 w()
             }
         })
@@ -1141,42 +1127,28 @@ export default [
             // # ORD OCH SAK
             backend.ordOchSak(author, title).then(
                 function (ordOchSak) {
-                    s.ordOchSakAll = ordOchSak
-                    s.$watch("pagename", updateOrdOchSak)
+                    ctrl.ordOchSakAll = ordOchSak
+                    $scope.$watch("$ctrl.pagename", updateOrdOchSak)
                     return updateOrdOchSak()
                 },
                 function (error) {}
             )
         } catch (e) {}
-        // c.log 'failed to get ord och sak', error
 
         var updateOrdOchSak = function () {
-            if (!s.ordOchSakAll || !s.pagename) {
+            if (!ctrl.ordOchSakAll || !ctrl.pagename) {
                 return
             }
-            s.ordOchSakPage = s.ordOchSakAll.filter(
-                entry => entry.forklaring && entry.pages.includes(s.pagename)
+            ctrl.ordOchSakPage = ctrl.ordOchSakAll.filter(
+                entry => entry.forklaring && entry.pages.includes(ctrl.pagename)
             )
         }
 
-        // # TODO
-        // s.markOosEntry = (entry) ->
-        //    for id in entry.ids
-        //        fromSpan = $(".etext #"+id.from)
-        //        toSpan = $(".etext #"+id.to)
-        //        all = fromSpan.nextUntil(toSpan).add(fromSpan).add(toSpan)
-        //        all.addClass("markee")
-        //
-        // s.unmarkOosEntries = () ->
-        //    $(".etext .markee").removeClass("markee")
-
-        // # END ORD OCH SAK
-
-        s.$on("img_expand", function (evt, src) {
-            s.activeSrc = src
+        $scope.$on("img_expand", function (evt, src) {
+            ctrl.activeSrc = src
             $uibModal.open({
                 templateUrl: "img_full.html",
-                scope: s,
+                scope: $scope,
                 windowClass: "img_full",
                 size: "lg"
             })
@@ -1184,22 +1156,23 @@ export default [
 
         // # START SEARCH
 
-        s.getCleanUrl = () => $location.url().split("?")[0]
+        ctrl.getCleanUrl = () => $location.url().split("?")[0]
 
-        s.hasActiveSearch = () => {
+        ctrl.hasActiveSearch = () => {
             if (!searchData) return false
             return $location.search().s_query && !searchData.searching
         }
 
-        s.searchData = searchData = new SearchWorkData(s)
+        ctrl.searchData = searchData = new SearchWorkData($scope)
 
+        let args, key, val
         c.log("outside params", $location.search())
         const query = $location.search().s_query
         if (query) {
             args = {
-                mediatype: s.mediatype
+                mediatype: ctrl.mediatype
             }
-            s.search_query = query
+            ctrl.search_query = query
             const getScopeVars = function (args) {
                 const output = {}
                 if (args.word_form_only) {
@@ -1226,53 +1199,49 @@ export default [
                 }
             }
 
-            // _.extend s, getScopeVars(args)
-
             searchData.newSearch(args)
             searchData.current = Number($location.search().hit_index || 0)
             searchData.get(searchData.current).then(changeHit)
         }
 
-        s.onGotoHitInput = function () {
-            if (s.showGotoHitInput) {
-                s.showGotoHitInput = false
+        ctrl.onGotoHitInput = function () {
+            if (ctrl.showGotoHitInput) {
+                ctrl.showGotoHitInput = false
                 return
             }
-            s.showGotoHitInput = true
-            return $timeout(() => s.$broadcast("focus"), 0)
+            ctrl.showGotoHitInput = true
+            return $timeout(() => $scope.$broadcast("focus"), 0)
         }
 
-        s.onGotoHit = function (hit) {
+        ctrl.onGotoHit = function (hit) {
             if (hit > searchData.total_hits) {
                 return
             }
-            s.showGotoHitInput = false
+            ctrl.showGotoHitInput = false
             hit = Number(hit - 1)
             c.log("hit", hit)
             searchData.current = hit
             return searchData.get(hit).then(changeHit)
         }
 
-        s.openSearchWorks = function () {
-            s.show_search_work = !s.show_search_work
-            return $timeout(() => s.$broadcast("focus.search_work"), 0)
+        ctrl.openSearchWorks = function () {
+            ctrl.show_search_work = !ctrl.show_search_work
+            return $timeout(() => $scope.$broadcast("focus.search_work"), 0)
         }
 
-        s.sliderActive = null
+        ctrl.sliderActive = null
 
-        s.searchWork = function (query) {
+        ctrl.searchWork = function (query) {
             c.log("searchWork", query)
 
-            s.$root.prevSearchState = null
-            // size = $location.search().storlek
+            $rootScope.prevSearchState = null
 
             args = {
                 query,
-                lbworkid: s.workinfo.lbworkid,
+                lbworkid: ctrl.workinfo.lbworkid,
                 prefix: $location.search().prefix,
                 suffix: $location.search().suffix,
-                // infix: $location.search().infix
-                mediatype: s.mediatype
+                mediatype: ctrl.mediatype
             }
             if (!$location.search().lemma) {
                 args.word_form_only = true
@@ -1307,4 +1276,3 @@ export default [
         }
     }
 ]
-// )

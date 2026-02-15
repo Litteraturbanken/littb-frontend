@@ -1,0 +1,38 @@
+<div class="text-sm italic">
+{{$ctrl.exportsFromMediatypes('etext', ['workdb']).length}} etext<span ng-if="$ctrl.exportsFromMediatypes('etext', ['workdb']).length != 1">er</span> vald<span ng-if="$ctrl.exportsFromMediatypes('etext', ['workdb']).length != 1">a</span>,
+
+{{$ctrl.exportsFromMediatypes('faksimil', ['workdb']).length}} faksimil<span ng-if="$ctrl.exportsFromMediatypes('faksimil', ['workdb']).length != 1">er</span> vald<span ng-if="$ctrl.exportsFromMediatypes('faksimil', ['workdb']).length != 1">a</span>
+
+</div>
+<div class="flex justify-between w-64">
+    <div class="mr-4">
+        <h3 class="uppercase text-base">Etext</h3>
+        <ul class="checks">
+            <!-- <li ng-repeat="exp in $ctrl.getExports('etext')"> -->
+            <li ng-repeat="type in $ctrl.typesConf.etext" class="whitespace-nowrap">
+                <input type="checkbox" id="etext_{{$index}}" ng-model="type.selected" class="mb-1 mr-1"
+                       ng-disabled="!$ctrl.exportsFromMediatypes('etext', [type.id]).length">
+
+                <label class="capitalize" for="etext_{{$index}}" ng-class="{active : type.selected, 'text-gray-500' : !$ctrl.exportsFromMediatypes('etext', [type.id]).length}">{{$ctrl.capitalizeLabel(type.label || type.id)}}</label>
+            </li>
+        </ul>
+    </div>
+
+    <div class="mx-2">
+        <h3 class="uppercase text-base">Faksimil</h3>
+        <ul class="checks">
+            <li ng-repeat="type in $ctrl.typesConf.faksimil" class="whitespace-nowrap">
+                <input type="checkbox" id="faksimil_{{$index}}" ng-model="type.selected" class="mb-1 mr-1"
+                       ng-disabled="type.disabled || !$ctrl.exportsFromMediatypes('faksimil', [type.id]).length">
+
+                <label class="capitalize" for="faksimil_{{$index}}" ng-class="{active : type.selected, 'text-gray-500' : type.disabled || !$ctrl.exportsFromMediatypes('faksimil', [type.id]).length}">{{$ctrl.capitalizeLabel(type.label || type.id)}}</label>
+
+                <!-- <div class="text-sm italic text-gray-600" ng-if="type.disabled">Kommer snart</div> -->
+            </li>
+        </ul>
+    </div>
+</div>
+<div class="mt-8 mb-4 flex justify-between">
+    <span class="text-sm self-center">{{$ctrl.getSize()}} </span>
+    <a class="btn text-xs pull-right" ng-class="{disabled : !$ctrl.getSize()}" ng-click="$ctrl.onDownload()">Hämta <i class="fa fa-download ml-2"></i></a>
+</div>

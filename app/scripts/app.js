@@ -14,7 +14,6 @@ import aboutUrl from "../views/about.html?url"
 import authorInfoUrl from "../views/authorInfo.html?url"
 import dramawebUrl from "../views/dramaweb.html?url"
 import idUrl from "../views/id.html?url"
-import libraryUrl from "../views/library.html?url"
 import presentationsUrl from "../views/presentations.html?url"
 import searchUrl from "../views/search.html?url"
 import saLogoUrl from "../img/SA_logo_type.svg?url"
@@ -660,7 +659,18 @@ littb.config(function ($httpProvider, $locationProvider, $uibTooltipProvider) {
     })
 })
 
-littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) {
+littb.run(function (
+    $rootScope,
+    $location,
+    $rootElement,
+    $q,
+    $timeout,
+    bkgConf,
+    SearchStateService,
+    LibraryStateService,
+    ReaderStateService,
+    UIStateService
+) {
     if (window.location.pathname == "/" && $location.hash()) {
         window.location.hash = ""
     }
@@ -691,6 +701,47 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
     $rootScope._stripClass = stripClass
 
     $rootScope.goto = path => $location.url(path)
+
+    if (window.isDev) {
+        const ng = window.angular
+        const resolveEl = selOrEl => {
+            if (!selOrEl) {
+                return document.querySelector("#mainview")?.firstElementChild || document.body
+            }
+            if (typeof selOrEl === "string") {
+                return document.querySelector(selOrEl)
+            }
+            return selOrEl
+        }
+        const ae = selOrEl => ng.element(resolveEl(selOrEl))
+
+        // Console helpers (replacement for Batarang-style scope inspection).
+        // Usage in devtools:
+        // - Select an element in Elements tab, then run: $s($0), $iso($0), $ctrl($0)
+        window.lbDebug = {
+            el: resolveEl,
+            ae,
+            scope: selOrEl => ae(selOrEl).scope(),
+            isolate: selOrEl => ae(selOrEl).isolateScope?.(),
+            ctrl: (selOrEl, name) => {
+                const el = ae(selOrEl)
+                const iso = el.isolateScope?.()
+                if (iso?.$ctrl) return iso.$ctrl
+                if (name) return el.controller?.(name)
+                return el.controller?.()
+            },
+            injector: selOrEl => ae(selOrEl).injector(),
+            get: name => ae(document.body).injector().get(name),
+            rootScope: () => $rootScope
+        }
+
+        // Short aliases.
+        window.$s = window.lbDebug.scope
+        window.$iso = window.lbDebug.isolate
+        window.$ctrl = window.lbDebug.ctrl
+        window.$inj = window.lbDebug.injector
+        window.$get = window.lbDebug.get
+    }
 
     $rootScope.gotoExternal = function (path, event) {
         event.preventDefault()
@@ -791,10 +842,54 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
         }
     })
 
+    // Initialize state services (modern pattern)
+    // Services are now available for injection in controllers
+
+    // Backward compatibility layer: Keep $rootScope working during transition
+    // TODO: Remove this after all components migrate to state services
     $rootScope._focus_mode = true
     $rootScope.searchState = {}
     $rootScope.libraryState = {}
     $rootScope.lastPageViews = []
+
+    // Initialize service state from $rootScope
+    ReaderStateService.setState({
+        focusMode: $rootScope._focus_mode
+    })
+
+    SearchStateService.setState({
+        queryparams: $rootScope.searchState.queryparams || null
+    })
+
+    LibraryStateService.setState({
+        queryparams: $rootScope.libraryState.queryparams || null
+    })
+
+    UIStateService.setState({
+        lastPageViews: $rootScope.lastPageViews
+    })
+
+    // Set up two-way sync for backward compatibility during migration
+    // Watch service changes and update $rootScope (for legacy code)
+    SearchStateService.on("stateChange", state => {
+        $rootScope.searchState = { ...state }
+    })
+
+    LibraryStateService.on("stateChange", state => {
+        $rootScope.libraryState = { ...state }
+    })
+
+    ReaderStateService.on("focusModeChange", enabled => {
+        $rootScope._focus_mode = enabled
+    })
+
+    ReaderStateService.on("nightModeChange", enabled => {
+        $rootScope._night_mode = enabled
+    })
+
+    UIStateService.on("pageViewAdded", path => {
+        $rootScope.lastPageViews = [...UIStateService.getState().lastPageViews]
+    })
 })
 
 littb.filter(

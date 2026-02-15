@@ -1,25 +1,25 @@
 <meta-desc>Litteraturbankens kontaktforumlär och utskicksanmälan.</meta-desc>
 <div class="page-contactForm">
-    
-    <div ng-hide="showContact || showNewsletter || showError">
+
+    <div ng-hide="$ctrl.showContact || $ctrl.showNewsletter || $ctrl.showError">
         <div class="header">Vill du skicka ett meddelande till oss? Då kan du använda formuläret här nedan.</div>
-        <form ng-submit="submitContactForm()" name="form" class="contactform" novalidate>
+        <form ng-submit="$ctrl.submitContactForm()" name="form" class="contactform" novalidate>
             <div class="form_head">
                 <div>
                     <label for="nameInput">Namn</label>
-                    <input id="nameInput" type="text" ng-model="name" autofocus>
+                    <input id="nameInput" type="text" ng-model="$ctrl.name" autofocus>
                 </div>
                 <div>
                     <label for="emailInput">Epost</label>
-                    <input name="uEmail" id="emailInput" type="email" ng-model="email" required>
+                    <input name="uEmail" id="emailInput" type="email" ng-model="$ctrl.email" required>
                     <span class="error_msg">Skriv din epostadress</span>
                 </div>
             </div>
             <div class="msg_box">
-                <textarea ng-model="message" required></textarea>
+                <textarea ng-model="$ctrl.message" required></textarea>
                 <div class="error_msg">Meddelandet är tomt.</div>
                 <div class="submit_container flex justify-end">
-                    <div class="pt-1 pr-2 ng-fade" ng-show="isLoading"><i class="spinner fa fa-spinner fa-pulse"></i></div>
+                    <div class="pt-1 pr-2 ng-fade" ng-show="$ctrl.isLoading"><i class="spinner fa fa-spinner fa-pulse"></i></div>
                     <button class="btn submit" ng-disabled="form.$pristine || (form.$dirty && form.$invalid)">Skicka</button>
                     <div style="clear:both;"></div>
                 </div>
@@ -29,15 +29,15 @@
             <p>
                 Vill du få Litteraturbankens utskick? Skriv in din epostadress här.
             </p>
-            <form name="subscribeform" class="subscribeform flex pr-2" ng-submit="subscribe()" novalidate>
-                <label class="pt-1" for="newsletterEmail">Epost</label> 
-                <input class="mr-4 flex-grow" id="newsletterEmail" ng-model="newsletterEmail" required type="email"> 
+            <form name="subscribeform" class="subscribeform flex pr-2" ng-submit="$ctrl.subscribe()" novalidate>
+                <label class="pt-1" for="newsletterEmail">Epost</label>
+                <input class="mr-4 flex-grow" id="newsletterEmail" ng-model="$ctrl.newsletterEmail" required type="email">
                 <button class="btn submit" ng-disabled="subscribeform.$pristine || (subscribeform.$dirty && subscribeform.$invalid)">Skicka</button>
 
             </form>
         </div>
     </div>
-    <div ng-show="showContact">Tack för ditt meddelande, vi svarar så fort vi kan.</div>
-    <div ng-show="showNewsletter">Tack för din anmälan.</div>
-    <div ng-show="showError">Ett fel uppstod. Vänligen försök igen senare.</div>
+    <div ng-show="$ctrl.showContact">Tack för ditt meddelande, vi svarar så fort vi kan.</div>
+    <div ng-show="$ctrl.showNewsletter">Tack för din anmälan.</div>
+    <div ng-show="$ctrl.showError">Ett fel uppstod. Vänligen försök igen senare.</div>
 </div>

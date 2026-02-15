@@ -263,53 +263,92 @@ littb.directive("hvord", (backend, $location) => ({
 
 littb.directive("selectionSniffer", $window => ({
     link(scope, elem, attr) {
-        // box = $("<div><i class='icon-search'></i></div>").addClass("search_dict")
-        //     .appendTo("body").hide()
-        let box = $()
+        let box = null
+        const element = elem[0] // Get native DOM element from jqLite wrapper
 
-        $("html").on("click", () => box.remove())
-        $("body").on("mousedown", ".search_dict", function () {
-            c.log("search click!", $window.getSelection().toString())
-            scope.$emit("search_dict", _.str.trim($window.getSelection().toString()))
-            return false
-        })
+        // Remove box on any click
+        const removeBoxOnClick = () => {
+            if (box && box.parentNode) {
+                box.parentNode.removeChild(box)
+                box = null
+            }
+        }
+        document.documentElement.addEventListener("click", removeBoxOnClick)
 
+        // Handle search dict click
+        const handleSearchClick = (event) => {
+            if (event.target.closest(".search_dict")) {
+                c.log("search click!", $window.getSelection().toString())
+                scope.$emit("search_dict", _.str.trim($window.getSelection().toString()))
+                event.preventDefault()
+                return false
+            }
+        }
+        document.body.addEventListener("mousedown", handleSearchClick)
+
+        // Cleanup on destroy
         scope.$on("$destroy", function () {
-            $("body").off("mousedown", ".search_dict")
-            return $("body > .search_dict").remove()
+            document.documentElement.removeEventListener("click", removeBoxOnClick)
+            document.body.removeEventListener("mousedown", handleSearchClick)
+            if (box && box.parentNode) {
+                box.parentNode.removeChild(box)
+            }
         })
 
         const showIndicator = function (target) {
-            // return false # CURRENTLY S.O. IS DISABLED
             c.log("showIndicator", target)
-            box.remove()
 
-            box = $(`<div><i class='fa fa-search glass'></i> 
-                        <i class='fa fa-search shadow'></i> 
-                        <span class='circle'></span></div>`)
-                .addClass("search_dict")
-                .appendTo("body")
-                .position({
-                    my: "left bottom",
-                    at: "right top",
-                    of: target
-                })
+            // Remove existing box
+            if (box && box.parentNode) {
+                box.parentNode.removeChild(box)
+            }
+
+            // Validate target element
+            if (!target) {
+                c.warn("Invalid target for showIndicator")
+                return
+            }
+
+            // Create box element
+            box = document.createElement("div")
+            box.className = "search_dict"
+            box.innerHTML = `<i class='fa fa-search glass'></i>
+                            <i class='fa fa-search shadow'></i>
+                            <span class='circle'></span>`
+            document.body.appendChild(box)
+
+            // Position box: left-bottom of box at right-top of target
+            const targetRect = target.getBoundingClientRect()
+            const boxRect = box.getBoundingClientRect()
+
+            box.style.position = "absolute"
+            box.style.left = `${targetRect.right + window.scrollX}px`
+            box.style.top = `${targetRect.top + window.scrollY - boxRect.height}px`
         }
 
         // we use debounce to account for doubleclick
-        elem.on(
-            "mouseup",
-            _.debounce(function (event) {
-                if (!$window.getSelection) return
-                const sel = $window.getSelection().toString()
-                const isOneWord = sel && !Array.from(_.str.trim(sel)).includes(" ")
-                c.log("isOneWord", sel, isOneWord, event.target)
+        const mouseupHandler = _.debounce(function (event) {
+            if (!$window.getSelection) return
+            const sel = $window.getSelection().toString()
+            const isOneWord = sel && !Array.from(_.str.trim(sel)).includes(" ")
+            c.log("isOneWord", sel, isOneWord, event.target)
 
-                if (isOneWord && ($(event.target).is(".w") || $(event.target).parent().is(".w"))) {
-                    showIndicator(event.target)
-                }
-            }, 500)
-        )
+            // Check if target or parent has class 'w'
+            const target = event.target
+            const hasWClass = target.classList.contains("w") ||
+                             (target.parentElement && target.parentElement.classList.contains("w"))
+
+            if (isOneWord && hasWClass) {
+                showIndicator(event.target)
+            }
+        }, 500)
+
+        element.addEventListener("mouseup", mouseupHandler)
+
+        // Clean up mouseup listener on destroy
+        scope.$on("$destroy", function () {
+            element.removeEventListener("mouseup", mouseupHandler)
+        })
     }
 }))
 

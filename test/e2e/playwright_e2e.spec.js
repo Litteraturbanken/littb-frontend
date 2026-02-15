@@ -82,7 +82,7 @@ test.describe("Library Authors", () => {
     })
 
     test("should filter using the input", async ({ page }) => {
-        const filter = page.locator('[ng-model="filter"]')
+        const filter = page.locator('[ng-model="$ctrl.filter"]')
         await filter.fill("adelb")
         await page.keyboard.press("Tab")
         await expect(page.locator(".author_row")).toHaveCount(1)
@@ -96,7 +96,7 @@ test.describe("Library Works", () => {
     })
 
     test("should filter works using the input", async ({ page }) => {
-        const filter = page.locator('[ng-model="filter"]')
+        const filter = page.locator('[ng-model="$ctrl.filter"]')
         await filter.fill("constru")
         await page.keyboard.press("Tab")
         await expect(page.locator(".work_link")).toHaveCount(1)
@@ -111,7 +111,7 @@ test.describe("Library Works", () => {
     })
 
     test("should link correctly to reading mode from filtered", async ({ page }) => {
-        const filter = page.locator('[ng-model="filter"]')
+        const filter = page.locator('[ng-model="$ctrl.filter"]')
         await filter.fill("aniara")
         await page.keyboard.press("Enter")
         const aniaraRow = page.locator("tr.work_link", { hasText: "Aniara" }).first()
@@ -141,7 +141,7 @@ test.describe("Library Relevance", () => {
     })
 
     test("should give more popular first", async ({ page }) => {
-        const filter = page.locator('[ng-model="filter"]')
+        const filter = page.locator('[ng-model="$ctrl.filter"]')
         await filter.fill("glas")
         const workResults = page.locator('.result.relevance tr[ng-repeat] a[href*="/titlar/"]')
         await expect(workResults.first()).toBeVisible()
@@ -149,7 +149,7 @@ test.describe("Library Relevance", () => {
     })
 
     test("should score surname hits above popularity", async ({ page }) => {
-        const filter = page.locator('[ng-model="filter"]')
+        const filter = page.locator('[ng-model="$ctrl.filter"]')
         await filter.fill("öman poetisk")
         const firstResult = page.locator(".result.relevance tr[ng-repeat] a").nth(0)
         await expect(firstResult).toHaveText("Poetisk läsebok för folkskolan")
@@ -163,7 +163,7 @@ test.describe("Titles", () => {
     })
 
     test("should filter titles using the input", async ({ page }) => {
-        const filter = page.locator('[ng-model="filter"]')
+        const filter = page.locator('[ng-model="$ctrl.filter"]')
         await filter.fill("psalm")
         await page.keyboard.press("Enter")
         const numHits = page.locator(".parts.num_hits")
@@ -275,10 +275,16 @@ test.describe("Search Links", () => {
 
     test("should preselect author and title", async ({ page }) => {
         const selectedTitles = await page.evaluate(() => {
-            return window.angular.element("#mainview").scope().selectedTitles
+            const el = window.angular.element(document.querySelector("search-page"))
+            const scope = el.isolateScope() || el.scope()
+            const ctrl = scope.$ctrl || scope
+            return ctrl.selectedTitles
         })
         const filters = await page.evaluate(() => {
-            return window.angular.element("#mainview").scope().filters
+            const el = window.angular.element(document.querySelector("search-page"))
+            const scope = el.isolateScope() || el.scope()
+            const ctrl = scope.$ctrl || scope
+            return ctrl.filters
         })
 
         expect(selectedTitles.length).toBe(1)
@@ -294,7 +300,7 @@ test.describe("Search", () => {
     })
 
     test("should give search results", async ({ page }) => {
-        const input = page.locator('[ng-model="query"]')
+        const input = page.locator('[ng-model="$ctrl.query"]')
         await input.fill("kriget är förklarat!")
         await page.keyboard.press("Enter")
         await expect

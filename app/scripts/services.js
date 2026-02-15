@@ -613,3 +613,207 @@ littb.factory("SearchWorkData", function (SearchData, $q, $http) {
         }
     })
 })
+
+// State Management Services (replaces $rootScope state)
+
+littb.factory("SearchStateService", function () {
+    const state = {
+        queryparams: null,
+        filters: {},
+        results: [],
+        current: null
+    }
+
+    const listeners = {}
+
+    return {
+        getState() {
+            return state
+        },
+
+        setState(newState) {
+            Object.assign(state, newState)
+            this.emit("stateChange", state)
+        },
+
+        updateFilters(filters) {
+            Object.assign(state.filters, filters)
+            this.emit("filtersChange", state.filters)
+        },
+
+        // Event bus for cross-component communication
+        on(event, handler) {
+            if (!listeners[event]) {
+                listeners[event] = []
+            }
+            listeners[event].push(handler)
+
+            // Return unsubscribe function
+            return () => {
+                const index = listeners[event].indexOf(handler)
+                if (index > -1) {
+                    listeners[event].splice(index, 1)
+                }
+            }
+        },
+
+        emit(event, data) {
+            if (listeners[event]) {
+                listeners[event].forEach(handler => handler(data))
+            }
+        }
+    }
+})
+
+littb.factory("LibraryStateService", function () {
+    const state = {
+        queryparams: null,
+        filters: {},
+        titleModel: null,
+        listType: "all",
+        selectedTitle: {},
+        downloads: [],
+        dl_mode: false
+    }
+
+    const listeners = {}
+
+    return {
+        getState() {
+            return state
+        },
+
+        setState(newState) {
+            Object.assign(state, newState)
+            this.emit("stateChange", state)
+        },
+
+        updateFilters(filters) {
+            Object.assign(state.filters, filters)
+            this.emit("filtersChange", state.filters)
+        },
+
+        on(event, handler) {
+            if (!listeners[event]) {
+                listeners[event] = []
+            }
+            listeners[event].push(handler)
+
+            return () => {
+                const index = listeners[event].indexOf(handler)
+                if (index > -1) {
+                    listeners[event].splice(index, 1)
+                }
+            }
+        },
+
+        emit(event, data) {
+            if (listeners[event]) {
+                listeners[event].forEach(handler => handler(data))
+            }
+        }
+    }
+})
+
+littb.factory("ReaderStateService", function () {
+    const state = {
+        focusMode: true,
+        nightMode: false,
+        fontSizeFactor: 1.0,
+        currentPage: null,
+        workInfo: null
+    }
+
+    const listeners = {}
+
+    return {
+        getState() {
+            return state
+        },
+
+        setState(newState) {
+            Object.assign(state, newState)
+            this.emit("stateChange", state)
+        },
+
+        setFocusMode(enabled) {
+            state.focusMode = enabled
+            this.emit("focusModeChange", enabled)
+        },
+
+        setNightMode(enabled) {
+            state.nightMode = enabled
+            this.emit("nightModeChange", enabled)
+        },
+
+        on(event, handler) {
+            if (!listeners[event]) {
+                listeners[event] = []
+            }
+            listeners[event].push(handler)
+
+            return () => {
+                const index = listeners[event].indexOf(handler)
+                if (index > -1) {
+                    listeners[event].splice(index, 1)
+                }
+            }
+        },
+
+        emit(event, data) {
+            if (listeners[event]) {
+                listeners[event].forEach(handler => handler(data))
+            }
+        }
+    }
+})
+
+littb.factory("UIStateService", function () {
+    const state = {
+        isSla: false,
+        dramasubpage: false,
+        lastPageViews: [],
+        currentRoute: null
+    }
+
+    const listeners = {}
+
+    return {
+        getState() {
+            return state
+        },
+
+        setState(newState) {
+            Object.assign(state, newState)
+            this.emit("stateChange", state)
+        },
+
+        addPageView(path) {
+            state.lastPageViews.push(path)
+            if (state.lastPageViews.length > 10) {
+                state.lastPageViews.shift()
+            }
+            this.emit("pageViewAdded", path)
+        },
+
+        on(event, handler) {
+            if (!listeners[event]) {
+                listeners[event] = []
+            }
+            listeners[event].push(handler)
+
+            return () => {
+                const index = listeners[event].indexOf(handler)
+                if (index > -1) {
+                    listeners[event].splice(index, 1)
+                }
+            }
+        },
+
+        emit(event, data) {
+            if (listeners[event]) {
+                listeners[event].forEach(handler => handler(data))
+            }
+        }
+    }
+})

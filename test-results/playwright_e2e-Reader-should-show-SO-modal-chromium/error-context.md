@@ -1,0 +1,151 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link [ref=e3] [cursor=pointer]:
+      - /url: /
+      - img [ref=e4]
+    - navigation [ref=e9]:
+      - listitem [ref=e10]:
+        - link "Biblioteket" [ref=e11] [cursor=pointer]:
+          - /url: /bibliotek
+      - listitem [ref=e12]: Snabbsökning
+      - listitem [ref=e13]:
+        - link "Sök i texterna" [ref=e14] [cursor=pointer]:
+          - /url: /sök
+      - listitem [ref=e15]:
+        - link "Hämta e-böcker" [ref=e16] [cursor=pointer]:
+          - /url: /epub?visa=epub&sort=popularitet
+      - listitem [ref=e17]:
+        - link "Presentationer" [ref=e18] [cursor=pointer]:
+          - /url: /presentationer
+      - listitem [ref=e19]:
+        - link "Diktens museum" [ref=e20] [cursor=pointer]:
+          - /url: https://litteraturbanken.se/diktensmuseum/
+      - listitem [ref=e21]:
+        - link "Litteraturkartan" [ref=e22] [cursor=pointer]:
+          - /url: /litteraturkartan/
+      - listitem [ref=e23]:
+        - link "Översättarlexikon" [ref=e24] [cursor=pointer]:
+          - /url: /översättarlexikon/
+      - listitem [ref=e25]:
+        - link "Shared reading" [ref=e26] [cursor=pointer]:
+          - /url: /bibliotekariesidor/shared-reading/
+      - listitem [ref=e27]:
+        - link "Dramawebben" [ref=e28] [cursor=pointer]:
+          - /url: /dramawebben
+      - listitem [ref=e29]:
+        - link "Ljud & bild" [ref=e30] [cursor=pointer]:
+          - /url: /ljudochbild/
+          - text: Ljud
+          - emphasis [ref=e31]: "&"
+          - text: bild
+      - listitem [ref=e32]:
+        - link "Skolan" [ref=e33] [cursor=pointer]:
+          - /url: /skolan/
+      - listitem [ref=e34]:
+        - link "Om LB" [ref=e35] [cursor=pointer]:
+          - /url: /om/ide
+    - generic:
+      - generic:
+        - generic [ref=e36]: 
+        - text:   
+  - main [ref=e37]:
+    - button "12 juni. Jag har aldrig sett en sådan sommar. Röt- månadshetta sedan midten af maj. Hela dagen står ett tjockt töcken af damm alldeles stilla öfver gatorna och torgen. Först på kvällen lefver man upp en smula. Jag tog en aftonpromenad nyss, som jag gör nästan hvar dag efter mina sjukbesök, och de äro icke många nu på sommaren. Det kommer en sval, jämn luftström från öster, töcknet lyfter, seglar långsamt bort och blir till en lång slöja af rödt stoft bort i väster. Intet skrammel af arbets- åkdon mera, bara en droska då och då, och spårvagnen som ringer. Jag går gatan ner i sakta mak, träffar emellanåt en bekant och står och pratar en stund i ett gathörn. Men hvarför skall jag jämt möta pastor Gregorius? Jag kan inte" [ref=e40]:
+      - generic [ref=e45]:
+        - generic [ref=e46]: 12 juni.
+        - generic [ref=e47]:
+          - text: Jag har aldrig sett en sådan sommar. Röt-
+          - text: månadshetta sedan midten af maj. Hela dagen
+          - text: står ett tjockt töcken af damm alldeles stilla öfver
+          - text: gatorna och torgen.
+        - generic [ref=e48]:
+          - text: Först på kvällen lefver man upp en smula.
+          - text: Jag tog en aftonpromenad nyss, som jag gör
+          - text: nästan hvar dag efter mina sjukbesök, och de
+          - text: äro icke många nu på sommaren. Det kommer
+          - text: en sval, jämn luftström från öster, töcknet lyfter,
+          - text: seglar långsamt bort och blir till en lång slöja
+          - text: af rödt stoft bort i väster. Intet skrammel af arbets-
+          - text: åkdon mera, bara en droska då och då, och
+          - text: spårvagnen som ringer. Jag går gatan ner i sakta
+          - text: mak, träffar emellanåt en bekant och står och
+          - text: pratar en stund i ett gathörn. Men hvarför skall
+          - text: jag jämt möta pastor Gregorius? Jag kan inte
+  - generic [ref=e51]:
+    - generic [ref=e52]:
+      - link "Hjalmar Söderberg" [ref=e54] [cursor=pointer]:
+        - /url: /författare/SöderbergH
+      - text: Doktor Glas (1905)
+    - separator [ref=e55]
+    - paragraph [ref=e58]: JUNI
+    - separator [ref=e59]
+    - button "Gå bakåt en del Gå till nästa del Gå till första sidan Gå till sista sidan Gå till sida . . . 1 av 256   Du kan också bläddra med tangentbordets piltangenter." [ref=e60]:
+      - text: Gå bakåt en del
+      - link "Gå till nästa del" [ref=e61] [cursor=pointer]:
+        - /url: /författare/SöderbergH/titlar/DoktorGlas/sida/8/etext?so=damm
+      - link "Gå till första sidan" [ref=e62] [cursor=pointer]:
+        - /url: /författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext?so=damm
+      - link "Gå till sista sidan" [ref=e63] [cursor=pointer]:
+        - /url: /författare/SöderbergH/titlar/DoktorGlas/sida/256/etext?so=damm
+      - generic [ref=e64]:
+        - generic [ref=e65] [cursor=pointer]: Gå till sida . . . 1 av 256
+        - text: 
+      - link "" [ref=e66] [cursor=pointer]:
+        - /url: /författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext
+        - button "" [ref=e67]:
+          - generic [ref=e68]: 
+      - link "" [ref=e69] [cursor=pointer]:
+        - /url: /författare/SöderbergH/titlar/DoktorGlas/sida/2/etext
+        - button "" [ref=e70]:
+          - generic [ref=e71]: 
+      - generic [ref=e72]: Du kan också bläddra med tangentbordets piltangenter.
+    - generic [ref=e74]:
+      - slider [ref=e79] [cursor=pointer]
+      - generic [ref=e80]: "256"
+      - generic [ref=e81]: "1"
+    - list [ref=e83]:
+      - listitem [ref=e84]: Innehållsförteckning
+      - listitem [ref=e85]: Mer om boken
+      - listitem [ref=e86]: Läsfokus
+      - listitem [ref=e87]:
+        - text: Sök i verket
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - text: Sök i
+              - link "Hjalmar Söderberg" [ref=e93] [cursor=pointer]:
+                - /url: /författare/SöderbergH
+            - generic [ref=e94]: Doktor Glas
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - searchbox [ref=e97]
+              - text: 
+              - button "Sök" [ref=e98] [cursor=pointer]
+            - list [ref=e100]:
+              - listitem [ref=e101]:
+                - checkbox "✓" [checked] [ref=e102]
+                - button "SÖK EFTER ORD ELLER FRAS" [ref=e103]
+              - listitem [ref=e104]:
+                - button "INKLUDERA BÖJNINGSFORMER" [ref=e105]
+              - listitem [ref=e106]:
+                - checkbox "✓" [checked] [ref=e107]
+                - button "INKLUDERA ÄLDRE STAVNINGSFORMER" [ref=e108]
+              - listitem [ref=e109]:
+                - button "SÖK EFTER ORDBÖRJAN" [ref=e110]
+              - listitem [ref=e111]:
+                - button "SÖK EFTER ORDSLUT" [ref=e112]
+              - listitem [ref=e113]:
+                - button "SÖK EFTER DEL AV ORD" [ref=e114]
+      - listitem [ref=e115]:
+        - link "Sök i författarens texter" [ref=e116] [cursor=pointer]:
+          - /url: /sök?avancerad&forfattare=SöderbergH
+      - listitem:
+        - link:
+          - /url: /dramawebben
+      - listitem:
+        - link:
+          - /url: https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/
+  - text:    
+```

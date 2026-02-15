@@ -1,63 +1,63 @@
 <div>
 
-<div ng-class="{searching:searching}">
+<div ng-class="{searching:$ctrl.searching}">
     <h1>
         Bibliografisk databas
     </h1>
     <div class="preloader">Söker <span class="dots_blink"></span></div>
-    <form class="search" ng-submit="submit()">
-        <input ng-model="wf" placeholder="Fritextsökning i hela databasen"/><button type="submit">Sök</button>
+    <form class="search" ng-submit="$ctrl.submit()">
+        <input ng-model="$ctrl.wf" placeholder="Fritextsökning i hela databasen"/><button type="submit">Sök</button>
         <select>
             <option value="">Alla verk</option>
         </select>
     </form>
-    
+
     <ul>
         <li>
-            <input type="checkbox" ng-model="manus" value="manus" id="manuscriptChk"/> <label for="manuscriptChk">Visa information om alla manuskript</label>
+            <input type="checkbox" ng-model="$ctrl.manus" value="manus" id="manuscriptChk"/> <label for="manuscriptChk">Visa information om alla manuskript</label>
         </li>
         <li>
-            <input type="checkbox" ng-model="tryckt_material" value="tryckt_material" id="printedChk"/> <label for="printedChk">Visa information om alla tryckta upplagor</label>
+            <input type="checkbox" ng-model="$ctrl.tryckt_material" value="tryckt_material" id="printedChk"/> <label for="printedChk">Visa information om alla tryckta upplagor</label>
         </li>
         <li>
-            <input type="checkbox" ng-model="annat_tryckt" value="annat_tryckt" id="publicationChk"/> <label for="publicationChk">Visa information om andra publikationsformer</label>
+            <input type="checkbox" ng-model="$ctrl.annat_tryckt" value="annat_tryckt" id="publicationChk"/> <label for="publicationChk">Visa information om andra publikationsformer</label>
         </li>
         <li>
-            <input type="checkbox" ng-model="forskning" value="forskning" id="researchChk"/> <label for="researchChk">Visa information om forskning</label>
+            <input type="checkbox" ng-model="$ctrl.forskning" value="forskning" id="researchChk"/> <label for="researchChk">Visa information om forskning</label>
         </li>
     </ul>
-    
-    <!-- <button ng-click="submit()">Gör ny sökning</button> -->
-    
+
+    <!-- <button ng-click="$ctrl.submit()">Gör ny sökning</button> -->
+
     <div class="results">
-        <div ng-repeat="entry in getEntries()" ng-class-even="'even'">
+        <div ng-repeat="entry in $ctrl.getEntries()" ng-class-even="'even'">
             <div class="col">
-                <div ng-repeat="(k, v) in getColumn1(entry) track by $id($index)" >
-                    <h4>{{k}}</h4> 
+                <div ng-repeat="(k, v) in $ctrl.getColumn1(entry) track by $id($index)" >
+                    <h4>{{k}}</h4>
                     <span ng-if="v">{{v}}</span><span ng-if="!v">[tom]</span>
                 </div>
             </div>
             <div class="col">
-                <div ng-repeat="(k, v) in getColumn2(entry) track by $id($index)" >
-                    <h4>{{k}}</h4> 
+                <div ng-repeat="(k, v) in $ctrl.getColumn2(entry) track by $id($index)" >
+                    <h4>{{k}}</h4>
                     <span ng-if="v">{{v}}</span><span ng-if="!v">[tom]</span>
                 </div>
             </div>
-            
+
         </div>
     </div>
-    
-    
+
+
     <div id='toolkit-biblinfo' toolkit toolkit-id="toolkit"> <!--toolkit-replace='yes'-->
         <hr>
 <!--        <div style="margin-bottom: 1em;">Bibliografisk databas</div> -->
 <!--        <div ng-if='num_hits != null'> -->
-            <div class="num_hits" ng-show="num_hits">{{num_hits}} träffar</div>
-            <div class="num_hits" ng-hide="num_hits">Inga träffar</div>
+            <div class="num_hits" ng-show="$ctrl.num_hits">{{$ctrl.num_hits}} träffar</div>
+            <div class="num_hits" ng-hide="$ctrl.num_hits">Inga träffar</div>
             <ul>
-                <li><a href="javascript:" ng-click="increment()">Visa nästa sökträff</a></li>
-                <li><a href="javascript:" ng-click="decrement()">Visa föregående sökträff</a></li>
-                <li><a href="javascript:" ng-click="showAll()">Visa alla sökträffar</a></li>
+                <li><a href="javascript:" ng-click="$ctrl.increment()">Visa nästa sökträff</a></li>
+                <li><a href="javascript:" ng-click="$ctrl.decrement()">Visa föregående sökträff</a></li>
+                <li><a href="javascript:" ng-click="$ctrl.showAll()">Visa alla sökträffar</a></li>
             </ul>
     </div>
 </div>

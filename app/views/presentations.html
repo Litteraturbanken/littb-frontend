@@ -1,5 +1,5 @@
 <meta-desc>Litteraturbankens presentationer.</meta-desc>
-<div class="doc" ng-class="{main : isMain, content: !isMain}" ng-bind-html="doc | trust"></div>
+<div class="doc" ng-class="{main : $ctrl.isMain, content: !$ctrl.isMain}" ng-bind-html="$ctrl.doc | trust"></div>
 <img bkg-img class="" src="../img/presentations.jpg"></img>
 <!-- <div toolkit> -->
 <!-- </div>  -->
