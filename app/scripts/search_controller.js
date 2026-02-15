@@ -1,4 +1,5 @@
 import { buildFilterQuery, buildSearchFilterPayload, composeQuery } from "./query.ts"
+import searchUrl from "../views/search.html?url"
 
 const _ = window._
 const $ = window.$
@@ -36,25 +37,23 @@ const getAuthorSelectSetup = (s, $filter) => ({
     // item.text
 })
 
-littb.controller(
-    "searchCtrl",
-    function (
-        $scope,
-        backend,
-        $location,
-        $document,
-        $window,
-        $rootElement,
-        $rootScope,
-        $q,
-        $timeout,
-        util,
-        SearchData,
-        authors,
-        debounce,
-        $filter,
-        $anchorScroll
-    ) {
+function SearchPageCtrl(
+    $scope,
+    backend,
+    $location,
+    $document,
+    $window,
+    $rootElement,
+    $rootScope,
+    $q,
+    $timeout,
+    util,
+    SearchData,
+    authors,
+    debounce,
+    $filter,
+    $anchorScroll
+) {
         let searchData
         const s = $scope
         s.open = true
@@ -662,5 +661,27 @@ littb.controller(
                 default: false
             }
         ])
-    }
-)
+}
+
+SearchPageCtrl.$inject = [
+    "$scope",
+    "backend",
+    "$location",
+    "$document",
+    "$window",
+    "$rootElement",
+    "$rootScope",
+    "$q",
+    "$timeout",
+    "util",
+    "SearchData",
+    "authors",
+    "debounce",
+    "$filter",
+    "$anchorScroll"
+]
+
+littb.component("searchPage", {
+    templateUrl: searchUrl,
+    controller: SearchPageCtrl
+})

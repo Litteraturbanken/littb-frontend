@@ -2,6 +2,7 @@ import { filter } from "lodash"
 import { buildFilterQuery, composeQuery } from "./query.ts"
 import worksListUrl from "../views/library/works_list.html?url"
 import downloadPopoverUrl from "../views/library/downloadPopover.html?url"
+import libraryUrl from "../views/library.html?url"
 
 const littb = window.littb
 const _ = window._
@@ -145,21 +146,19 @@ littb.component("highlights", {
     }
 })
 
-littb.controller(
-    "libraryCtrl",
-    function (
-        $scope,
-        backend,
-        util,
-        $timeout,
-        $location,
-        authors,
-        $rootElement,
-        $anchorScroll,
-        $q,
-        $filter,
-        $rootScope
-    ) {
+function LibraryPageCtrl(
+    $scope,
+    backend,
+    util,
+    $timeout,
+    $location,
+    authors,
+    $rootElement,
+    $anchorScroll,
+    $q,
+    $filter,
+    $rootScope
+) {
         const s = $scope
 
         s.filter = $location.search().filter || ""
@@ -1411,5 +1410,23 @@ littb.controller(
         //         return s.titleArray
         //     }
         // }
-    }
-)
+}
+
+LibraryPageCtrl.$inject = [
+    "$scope",
+    "backend",
+    "util",
+    "$timeout",
+    "$location",
+    "authors",
+    "$rootElement",
+    "$anchorScroll",
+    "$q",
+    "$filter",
+    "$rootScope"
+]
+
+littb.component("libraryPage", {
+    templateUrl: libraryUrl,
+    controller: LibraryPageCtrl
+})

@@ -17,7 +17,6 @@ import idUrl from "../views/id.html?url"
 import libraryUrl from "../views/library.html?url"
 import presentationsUrl from "../views/presentations.html?url"
 import searchUrl from "../views/search.html?url"
-import sourceInfoUrl from "../views/sourceInfo.html?url"
 import saLogoUrl from "../img/SA_logo_type.svg?url"
 
 _.templateSettings = { interpolate: /\{\{(.+?)\}\}/g }
@@ -71,8 +70,8 @@ const authorResolve = [
         if (
             routeStartCurrent != null &&
             routeStartCurrent.$$route != null &&
-            routeStartCurrent.$$route.controller === "authorInfoCtrl" &&
-            $route.current.controller === "authorInfoCtrl" &&
+            routeStartCurrent.$$route.pageId === "authorInfo" &&
+            $route.current.$$route.pageId === "authorInfo" &&
             $route.current.params.author === $routeParams.author
         ) {
             def.reject()
@@ -159,14 +158,14 @@ window.littb = angular
             // .when("", { redirectTo: "/start" })
             // .when("/", { redirectTo: "/start" })
             .when("/", {
-                template: `<div>${startHtml}</div>`,
-                controller: "startCtrl",
+                pageId: "start",
+                template: "<page-start></page-start>",
                 title: "Svenska klassiker som e-bok och epub"
             })
             .when("/presentationer", {
                 title: "Presentationer",
-                templateUrl: presentationsUrl,
-                controller: "presentationCtrl"
+                pageId: "presentation",
+                template: "<presentations-page></presentations-page>"
             })
             .when("/p/:folder/:doc", {
                 redirectTo(routeParams, path, searchVars) {
@@ -243,8 +242,8 @@ window.littb = angular
                 }
             })
             .when("/om/:page", {
-                templateUrl: aboutUrl,
-                controller: "aboutCtrl",
+                pageId: "about",
+                template: "<about-page></about-page>",
                 title: "Om LB",
                 reloadOnSearch: false,
 
@@ -259,9 +258,9 @@ window.littb = angular
 
                             if (
                                 (routeStartCurrent != null
-                                    ? routeStartCurrent.$$route.controller
-                                    : undefined) === "aboutCtrl" &&
-                                $route.current.controller === "aboutCtrl"
+                                    ? routeStartCurrent.$$route.pageId
+                                    : undefined) === "about" &&
+                                $route.current.$$route.pageId === "about"
                             ) {
                                 c.log("reject about route")
                                 def.reject()
@@ -326,8 +325,8 @@ window.littb = angular
                     "/dramawebben/kringtexter"
                 ],
                 {
-                    templateUrl: dramawebUrl,
-                    controller: "dramawebCtrl",
+                    pageId: "dramaweb",
+                    template: "<dramaweb-page></dramaweb-page>",
                     reloadOnSearch: false,
                     resolve: {
                         r: [
@@ -338,8 +337,8 @@ window.littb = angular
                                 const def = $q.defer()
                                 if (
                                     routeStartCurrent != null &&
-                                    routeStartCurrent.$$route.controller === "dramawebCtrl" &&
-                                    $route.current.controller === "dramawebCtrl"
+                                    routeStartCurrent.$$route.pageId === "dramaweb" &&
+                                    $route.current.$$route.pageId === "dramaweb"
                                 ) {
                                     def.reject()
                                     onRouteReject()
@@ -355,20 +354,20 @@ window.littb = angular
             .when("/statistik", { redirectTo: "/om/statistik" })
             .when("/sok", { redirectTo: "/sök" })
             .when("/sök", {
-                templateUrl: searchUrl,
-                controller: "searchCtrl",
+                pageId: "search",
+                template: "<search-page></search-page>",
                 reloadOnSearch: false
             })
             .when("/bibliotek", {
-                templateUrl: libraryUrl,
-                controller: "libraryCtrl",
+                pageId: "library",
+                template: "<library-page></library-page>",
                 reloadOnSearch: false,
                 title: "Biblioteket – Titlar och författare"
             })
             .when("/titlar", { redirectTo: "/bibliotek" })
             .when("/epub", {
-                templateUrl: libraryUrl,
-                controller: "libraryCtrl",
+                pageId: "library",
+                template: "<library-page></library-page>",
                 reloadOnSearch: false,
                 title: "E-böcker för nedladdning",
                 isEpub: true
@@ -433,8 +432,8 @@ window.littb = angular
                     "/författare/LagerlöfS/omtexterna/:omtexternaDoc"
                 ],
                 {
-                    templateUrl: authorInfoUrl,
-                    controller: "authorInfoCtrl",
+                    pageId: "authorInfo",
+                    template: "<author-info-page></author-info-page>",
                     isSla: true,
                     reloadOnSearch: false,
                     resolve: {
@@ -456,8 +455,8 @@ window.littb = angular
                     "/författare/:author/omtexterna/:omtexternaDoc?"
                 ],
                 {
-                    templateUrl: authorInfoUrl,
-                    controller: "authorInfoCtrl",
+                    pageId: "authorInfo",
+                    template: "<author-info-page></author-info-page>",
                     resolve: {
                         r: authorResolve
                     }
@@ -587,24 +586,12 @@ window.littb = angular
 
             .when("/kontakt", { redirectTo: "/om/kontakt" })
             .when(["/id/:id", "/id"], {
-                templateURL: idUrl,
-                controller: "idCtrl"
+                pageId: "id",
+                template: "<id-page></id-page>"
             })
             .when("/historik", {
-                template: `
-                    <div>
-                        <h1>Senast lästa verk</h1>
-                        <ul ng-if="authorsById">
-                            <li ng-repeat="pageview in lastPageViews">
-                                <a ng-href="{{pageview.url}}">
-                                    <span>{{authorsById[pageview.author].full_name}}</span> – 
-                                    <span class="">{{pageview.label}}</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                `,
-                controller: "historyCtrl",
+                pageId: "history",
+                template: "<history-page></history-page>",
                 title: "History"
             })
             .otherwise({
@@ -685,7 +672,6 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
 
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL
-    $rootScope.sourceInfo = sourceInfoUrl
     $rootScope.searchTemplateUrl = searchUrl
     $rootScope.isDev = window.isDev
     const firstRoute = $q.defer()
@@ -736,7 +722,7 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
         }
 
         let className
-        if (newRoute.controller === "startCtrl") {
+        if (newRoute.$$route?.pageId === "start") {
             $("title:first").text(`Litteraturbanken | ${newRoute.title}`)
         } else {
             $rootScope.setTitle(newRoute.title)
@@ -754,8 +740,8 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
             $rootElement.addClass(`page-reading`)
         } else if (newRoute.isEpub) {
             $rootElement.addClass("page-epub")
-        } else if (newRoute.controller != null ? newRoute.controller.replace : undefined) {
-            $rootElement.addClass(`page-${newRoute.controller.replace("Ctrl", "")}`)
+        } else if (newRoute.$$route?.pageId) {
+            $rootElement.addClass(`page-${newRoute.$$route.pageId}`)
         }
 
         if ($rootScope.dramasubpage) {
@@ -896,7 +882,3 @@ function normalizeAuthorFilter() {
 }
 
 littb.filter("normalizeAuthor", normalizeAuthorFilter)
-
-littb.controller("historyCtrl", function ($scope, $rootScope) {
-    $scope.lastPageViews = $rootScope.lastPageViews
-})

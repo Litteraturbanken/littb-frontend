@@ -301,14 +301,17 @@
             </div>
 
             <div ng-switch-when="sok">
-                <div ng-controller="searchCtrl" ng-include="$root.searchTemplateUrl"></div>
+                <search-page></search-page>
             </div>
         </div>
 
         <script type="text/ng-template" id="sourceInfoModal.html">
             <div class="about-modal modal-body">
                 <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
-                <ng-include src="sourceInfo"></ng-include>
+                <source-info-panel
+                    workinfo="workinfo"
+                    workinfo-promise="workinfoPromise"
+                ></source-info-panel>
             </div>
         </script>
     </div>

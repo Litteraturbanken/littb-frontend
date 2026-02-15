@@ -251,9 +251,9 @@
            <ng-include src="'listing.html'"></ng-include>
         </div>
     
-        <div ng-switch-when="biblinfo"><div ng-include="biblInfoLocation"></div></div>
+        <div ng-switch-when="biblinfo"><sla-biblinfo></sla-biblinfo></div>
     
-        <div ng-switch-when="jamfor"><div ng-include="compareLocation"></div></div>
+        <div ng-switch-when="jamfor"><sla-text-compare></sla-text-compare></div>
     
         <!-- <div ng-switch-default id="author-info-external"></div> -->
         <div ng-switch-default>
@@ -263,4 +263,3 @@
 
     
 </div>
-

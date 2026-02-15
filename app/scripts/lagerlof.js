@@ -8,7 +8,11 @@
  * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
-littb.controller("textjamforelseCtrl", function (
+import slaCompareUrl from "../views/sla/textjamforelse.html?url"
+
+const littb = window.littb
+
+function SlaTextCompareCtrl(
     $scope,
     $animate,
     $rootScope,
@@ -969,4 +973,20 @@ CollateX för kollationeringssteget.</p>
     return $("#context-versions-div")
         .on("mouseover", ".koll-changed", s.highlightVersionsDivChanges)
         .on("mouseout", ".koll-changed", s.unhighlightVersionsDivChanges)
+}
+
+SlaTextCompareCtrl.$inject = [
+    "$scope",
+    "$animate",
+    "$rootScope",
+    "$location",
+    "$uibModal",
+    "backend",
+    "$window",
+    "$timeout"
+]
+
+littb.component("slaTextCompare", {
+    templateUrl: slaCompareUrl,
+    controller: SlaTextCompareCtrl
 })

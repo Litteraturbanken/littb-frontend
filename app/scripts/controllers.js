@@ -3,6 +3,12 @@ import contactUrl from "../views/contactForm.html?url"
 import statsUrl from "../views/stats.html?url"
 import slaBiblinfoUrl from "../views/sla/biblinfo.html?url"
 import slaCompareUrl from "../views/sla/textjamforelse.html?url"
+import startHtml from "../views/start.html?raw"
+import aboutUrl from "../views/about.html?url"
+import authorInfoUrl from "../views/authorInfo.html?url"
+import presentationsUrl from "../views/presentations.html?url"
+import idUrl from "../views/id.html?url"
+import sourceInfoUrl from "../views/sourceInfo.html?url"
 
 const angular = window.angular
 const _ = window._
@@ -190,7 +196,7 @@ littb.filter(
 )
 
 // Must be a constructible function (Angular instantiates controllers with `new`).
-littb.controller("startCtrl", function startCtrl($scope, $location, $rootScope, $http, $compile) {
+function PageStartCtrl($scope, $location, $rootScope, $http, $compile) {
     $scope.gotoTitle = function (query) {
         let url
         if (!query) {
@@ -213,9 +219,14 @@ littb.controller("startCtrl", function startCtrl($scope, $location, $rootScope, 
     //     }
     //     $scope.startpage = html
     // })
+}
+PageStartCtrl.$inject = ["$scope", "$location", "$rootScope", "$http", "$compile"]
+littb.component("pageStart", {
+    template: `<div>${startHtml}</div>`,
+    controller: PageStartCtrl
 })
 
-littb.controller("contactFormCtrl", function ($scope, backend, $timeout, $location) {
+function ContactFormCtrl($scope, backend, $timeout, $location) {
     const s = $scope
 
     const fromSchool = $location.search().skola != null
@@ -270,9 +281,14 @@ littb.controller("contactFormCtrl", function ($scope, backend, $timeout, $locati
             done()
         }, err)
     }
+}
+ContactFormCtrl.$inject = ["$scope", "backend", "$timeout", "$location"]
+littb.component("contactForm", {
+    templateUrl: contactUrl,
+    controller: ContactFormCtrl
 })
 
-littb.controller("statsCtrl", function ($scope, backend) {
+function StatsPageCtrl($scope, backend) {
     const s = $scope
 
     backend.getStats().then(data => (s.statsData = data))
@@ -284,9 +300,14 @@ littb.controller("statsCtrl", function ($scope, backend) {
         })
 
     return backend.getEpub(30).then(({ data, hits }) => (s.epubList = data))
+}
+StatsPageCtrl.$inject = ["$scope", "backend"]
+littb.component("statsPage", {
+    templateUrl: statsUrl,
+    controller: StatsPageCtrl
 })
 
-littb.controller("biblinfoCtrl", function ($scope, backend) {
+function SlaBiblinfoCtrl($scope, backend) {
     const s = $scope
     let limit = true
     s.showHit = 0
@@ -341,42 +362,44 @@ littb.controller("biblinfoCtrl", function ($scope, backend) {
     }
 
     return s.submit()
+}
+SlaBiblinfoCtrl.$inject = ["$scope", "backend"]
+littb.component("slaBiblinfo", {
+    templateUrl: slaBiblinfoUrl,
+    controller: SlaBiblinfoCtrl
 })
 
-littb.controller(
-    "authorInfoCtrl",
-    function authorInfoCtrl(
-        $scope,
-        $location,
-        $rootScope,
-        backend,
-        $routeParams,
-        $http,
-        $document,
-        util,
-        $route,
-        authors,
-        $q,
-        $filter
-    ) {
-        const s = $scope
-        _.extend(s, $routeParams)
+function AuthorInfoPageCtrl(
+    $scope,
+    $location,
+    $rootScope,
+    backend,
+    $routeParams,
+    $http,
+    $document,
+    util,
+    $route,
+    authors,
+    $q,
+    $filter
+) {
+    const s = $scope
+    _.extend(s, $routeParams)
 
-        if ($route.current.$$route.isSla) {
-            s.slaMode = true
-            s.author = "LagerlöfS"
-            s.biblInfoLocation = slaBiblinfoUrl
-            s.compareLocation = slaCompareUrl
-        }
+    if ($route.current.$$route.isSla) {
+        s.slaMode = true
+        s.author = "LagerlöfS"
+        // Kept for backwards compatibility; templates now render components directly.
+        s.biblInfoLocation = slaBiblinfoUrl
+        s.compareLocation = slaCompareUrl
+    }
 
-        s.showpage = null
-        s.show_large = false
-        s.show_more = true
-        s.authorError = false
+    s.showpage = null
+    s.show_large = false
+    s.show_more = true
+    s.authorError = false
 
-        backend
-            .authorHasMapArticle(s.author)
-            .then(hasMapArticle => (s.hasMapArticle = hasMapArticle))
+    backend.authorHasMapArticle(s.author).then(hasMapArticle => (s.hasMapArticle = hasMapArticle))
 
         // Add keydown listener for "i" to copy author ID
         const keydownHandler = function (event) {
@@ -807,10 +830,27 @@ littb.controller(
                 s.authorError = true
             }
         )
-    }
-)
+}
+AuthorInfoPageCtrl.$inject = [
+    "$scope",
+    "$location",
+    "$rootScope",
+    "backend",
+    "$routeParams",
+    "$http",
+    "$document",
+    "util",
+    "$route",
+    "authors",
+    "$q",
+    "$filter"
+]
+littb.component("authorInfoPage", {
+    templateUrl: authorInfoUrl,
+    controller: AuthorInfoPageCtrl
+})
 
-littb.controller("helpCtrl", function ($scope, $http, util, $location) {
+function HelpPageCtrl($scope, $http, util, $location) {
     const s = $scope
     const url = "/red/om/hjalp/hjalp.html"
     s.onNavClick = id => {
@@ -833,9 +873,14 @@ littb.controller("helpCtrl", function ($scope, $http, util, $location) {
             })
         }
     })
+}
+HelpPageCtrl.$inject = ["$scope", "$http", "util", "$location"]
+littb.component("helpPage", {
+    templateUrl: helpUrl,
+    controller: HelpPageCtrl
 })
 
-littb.controller("aboutCtrl", function ($scope, $http, util, $location, $routeParams) {
+function AboutPageCtrl($scope, $http, util, $location, $routeParams) {
     const s = $scope
     _.extend(s, $routeParams)
     s.$on("$routeChangeError", function (event, current, prev, rejection) {
@@ -859,9 +904,14 @@ littb.controller("aboutCtrl", function ($scope, $http, util, $location, $routePa
             "deutsch.html": "/red/om/ide/deutsch.html",
             "francais.html": "/red/om/ide/francais.html"
         }[page])
+}
+AboutPageCtrl.$inject = ["$scope", "$http", "util", "$location", "$routeParams"]
+littb.component("aboutPage", {
+    templateUrl: aboutUrl,
+    controller: AboutPageCtrl
 })
 
-littb.controller("presentationCtrl", function ($scope, $http, $routeParams, $location, util) {
+function PresentationsPageCtrl($scope, $http, $routeParams, $location, util) {
     const s = $scope
     const url = "/red/presentationer/presentationerForfattare.html"
     s.isMain = true
@@ -877,11 +927,21 @@ littb.controller("presentationCtrl", function ($scope, $http, $routeParams, $loc
             }
         })
     })
+}
+PresentationsPageCtrl.$inject = ["$scope", "$http", "$routeParams", "$location", "util"]
+littb.component("presentationsPage", {
+    templateUrl: presentationsUrl,
+    controller: PresentationsPageCtrl
 })
 
-littb.controller("omtexternaCtrl", function ($scope, $routeParams) {
+function SlaOmtexternaCtrl($scope, $routeParams) {
     const docPath = "/red/sla/omtexterna/"
     $scope.doc = docPath + ($routeParams["doc"] || "omtexterna.html")
+}
+SlaOmtexternaCtrl.$inject = ["$scope", "$routeParams"]
+littb.component("slaOmtexterna", {
+    template: `<div ng-include="doc"></div>`,
+    controller: SlaOmtexternaCtrl
 })
 
 littb.filter(
@@ -897,281 +957,299 @@ littb.filter(
         }
 )
 
-littb.controller(
-    "autocompleteCtrl",
-    function ($scope, backend, $route, $location, $window, $timeout, $uibModal, $http) {
-        const s = $scope
-        const modal = null
-        let prevFilter = null
-        s.close = function () {
-            s.lbworkid = null
-            s.$broadcast("blur")
-            // s.show_autocomplete = false
-            s.completeObj = null
-            c.log("close modal", s.modal, s)
-            if (s.modal != null) {
-                s.modal.close()
-            }
-            s.modal = null
-        }
-
-        s.onSelect = function (val) {
-            c.log("scope", s)
-            if (!isDev) {
-                backend.logQuicksearch(prevFilter, val.label)
-            }
-
-            if (val.action && val.action(s) === false) {
-                return
-            }
-            s.close()
-            if (val.url) {
-                $location.url(val.url)
-            }
-        }
-
-        const getInfo = () =>
-            $route.current.$$route.isReader
-                ? $(".reader_main").scope().workinfo
-                : $("#mainview").scope().authorInfo
-
-        function infoAction() {
-            if ($("#mainview").scope) {
-                let obj = getInfo()
-                if (!obj) return
-                delete obj["filenameMap"]
-                delete obj["content_vector"]
-                s.info = JSON.stringify(sortObjectKeys(getInfo()), null, 2)
-            }
-        }
-
-        s.autocomplete = function (val) {
-            if (val) {
-                prevFilter = val
-                return backend.autocomplete(val).then(function (data) {
-                    console.log("data", data, val, s)
-                    let menu = [
-                        {
-                            label: "Start",
-                            url: "/",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Bibliotek",
-                            url: "/bibliotek",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Epub",
-                            url: "/epub",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Ljud och bild",
-                            url: "/ljudochbild",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Sök",
-                            url: "/sok",
-                            alt: ["Sok"],
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Presentationer",
-                            url: "/presentationer",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Dramawebben",
-                            url: "/dramawebben",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Nytillkommet",
-                            url: "/bibliotek?sort=nytillkommet",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Skolan",
-                            url: "/skolan",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Skolan/lyrik",
-                            url: "/skolan/lyrik",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Om",
-                            url: "/om/ide",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Hjälp",
-                            url: "/om/hjalp",
-                            alt: ["hjalp"],
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Kontakt",
-                            url: "/om/kontakt",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Statistik",
-                            url: "/om/statistik",
-                            typeLabel: "Gå till sidan"
-                        },
-                        {
-                            label: "Läshistorik",
-                            url: "/historik",
-                            typeLabel: "Gå till sidan"
-                        }
-                    ]
-
-                    if ($route.current.$$route.isReader) {
-                        pushIfRed({
-                            label: "/id",
-                            alt: ["id", "red"],
-                            typeLabel: "[Red.]",
-                            action() {
-                                if ($(".reader_main").scope) {
-                                    s.lbworkid = $(".reader_main").scope().workinfo.lbworkid
-                                    navigator.clipboard.writeText(s.lbworkid)
-                                }
-                                return false
-                            }
-                        })
-
-                        pushIfRed({
-                            label: "/editor",
-                            alt: ["editor", "red"],
-                            typeLabel: "[Red.]",
-                            action() {
-                                let lbworkid = $(".reader_main").scope().workinfo.lbworkid
-                                let ix = $(".reader_main").scope().pageix
-                                let mediatype = $(".reader_main").scope().workinfo.mediatype[0]
-                                window.location.pathname = `/editor/${lbworkid}/ix/${ix}/${mediatype}`
-                                return false
-                            }
-                        })
-                    }
-
-                    function pushIfRed(obj) {
-                        if (isDev) {
-                            menu.push(obj)
-                        }
-                    }
-                    if (
-                        $route.current.$$route.isReader ||
-                        $route.current.$$route.controller == "authorInfoCtrl"
-                    ) {
-                        pushIfRed({
-                            label: "/info",
-                            alt: ["info", "db", "red"],
-                            typeLabel: "[Red.]",
-                            action() {
-                                infoAction()
-                                return false
-                            }
-                        })
-                    }
-                    if (val.match(/^lb.*/)) {
-                        menu.push({
-                            label: val,
-                            url: `/editor/${val}/ix/0/f`,
-                            typeLabel: "[Red.] Gå till faksimileditorn"
-                        })
-                        menu.push({
-                            label: val,
-                            typeLabel: "[Red.] Sök i ftp",
-                            action() {
-                                $http({
-                                    url: `https://red.litteraturbanken.se/hitta?q=${val}`
-                                }).then(
-                                    response => {
-                                        console.log("response", response.data)
-
-                                        s.htmlInfo = response.data.split("\n").map(url => {
-                                            url = url.replace(/\/mnt/, "//mnt")
-                                            let breadcrumbs = url
-                                                .split("/")
-                                                .slice(5)
-                                                .map((part, index) => ({
-                                                    label: part,
-                                                    url: url
-                                                        .split("/")
-                                                        .slice(0, index + 6)
-                                                        .join("/")
-                                                }))
-                                                .slice(0, -1)
-                                            return { url, breadcrumbs }
-                                        })
-                                    },
-                                    response => {
-                                        console.log("response", response)
-                                        s.$emit("notify", "Hittade inte red-tjänsten.")
-                                    }
-                                )
-                                return false
-                            }
-                        })
-                    }
-                    menu = _.filter(menu, function (item) {
-                        // if !isDev and item.typeLabel == "[Red.]" then return false
-                        const exp = new RegExp(`^${val}`, "gi")
-                        // alt = new RegExp(val, "gi")
-                        return (
-                            item.label.match(exp) ||
-                            (item.alt && _.some(item.alt.map(item => item.match(exp))))
-                        )
-                    })
-                    return data.concat(menu)
-                })
-            }
-        }
-
-        const show = function () {
-            // s.show_autocomplete = true
-
-            s.modal = $uibModal.open({
-                templateUrl: "autocomplete.html",
-                scope: s,
-                windowClass: "autocomplete",
-                size: "sm"
-            })
-
-            return $timeout(() => s.$broadcast("focus"), 0)
-        }
+function AutocompleteGlobalCtrl($scope, backend, $route, $location, $window, $timeout, $uibModal, $http) {
+    const s = $scope
+    const modal = null
+    let prevFilter = null
+    s.close = function () {
+        s.lbworkid = null
+        s.$broadcast("blur")
         // s.show_autocomplete = false
-        s.$on("show_autocomplete", () => show())
-        return $($window).on("keydown", function (event) {
-            switch (event.key) {
-                case "Escape":
-                    s.$apply(() => s.close())
-                    break
-                case "s":
-                    if (!$("input:focus,textarea:focus,select:focus").length) {
-                        s.$apply(() => show())
-                    }
-                    break
-                case "F20":
-                case "ı":
-                case "ī":
-                    if (!$("input:focus,textarea:focus,select:focus").length) {
-                        s.$apply(() => {
-                            show()
-                            infoAction()
-                        })
-                    }
-                    break
-            }
-        })
+        s.completeObj = null
+        c.log("close modal", s.modal, s)
+        if (s.modal != null) {
+            s.modal.close()
+        }
+        s.modal = null
     }
-)
 
-littb.controller("idCtrl", function ($scope, backend, $routeParams, $location) {
+    s.onSelect = function (val) {
+        c.log("scope", s)
+        if (!isDev) {
+            backend.logQuicksearch(prevFilter, val.label)
+        }
+
+        if (val.action && val.action(s) === false) {
+            return
+        }
+        s.close()
+        if (val.url) {
+            $location.url(val.url)
+        }
+    }
+
+    const getInfo = () =>
+        $route.current.$$route.isReader
+            ? $(".reader_main").scope().workinfo
+            : $("#mainview").scope().authorInfo
+
+    function infoAction() {
+        if ($("#mainview").scope) {
+            let obj = getInfo()
+            if (!obj) return
+            delete obj["filenameMap"]
+            delete obj["content_vector"]
+            s.info = JSON.stringify(sortObjectKeys(getInfo()), null, 2)
+        }
+    }
+
+    s.autocomplete = function (val) {
+        if (val) {
+            prevFilter = val
+            return backend.autocomplete(val).then(function (data) {
+                console.log("data", data, val, s)
+                let menu = [
+                    {
+                        label: "Start",
+                        url: "/",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Bibliotek",
+                        url: "/bibliotek",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Epub",
+                        url: "/epub",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Ljud och bild",
+                        url: "/ljudochbild",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Sök",
+                        url: "/sok",
+                        alt: ["Sok"],
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Presentationer",
+                        url: "/presentationer",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Dramawebben",
+                        url: "/dramawebben",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Nytillkommet",
+                        url: "/bibliotek?sort=nytillkommet",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Skolan",
+                        url: "/skolan",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Skolan/lyrik",
+                        url: "/skolan/lyrik",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Om",
+                        url: "/om/ide",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Hjälp",
+                        url: "/om/hjalp",
+                        alt: ["hjalp"],
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Kontakt",
+                        url: "/om/kontakt",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Statistik",
+                        url: "/om/statistik",
+                        typeLabel: "Gå till sidan"
+                    },
+                    {
+                        label: "Läshistorik",
+                        url: "/historik",
+                        typeLabel: "Gå till sidan"
+                    }
+                ]
+
+                if ($route.current.$$route.isReader) {
+                    pushIfRed({
+                        label: "/id",
+                        alt: ["id", "red"],
+                        typeLabel: "[Red.]",
+                        action() {
+                            if ($(".reader_main").scope) {
+                                s.lbworkid = $(".reader_main").scope().workinfo.lbworkid
+                                navigator.clipboard.writeText(s.lbworkid)
+                            }
+                            return false
+                        }
+                    })
+
+                    pushIfRed({
+                        label: "/editor",
+                        alt: ["editor", "red"],
+                        typeLabel: "[Red.]",
+                        action() {
+                            let lbworkid = $(".reader_main").scope().workinfo.lbworkid
+                            let ix = $(".reader_main").scope().pageix
+                            let mediatype = $(".reader_main").scope().workinfo.mediatype[0]
+                            window.location.pathname = `/editor/${lbworkid}/ix/${ix}/${mediatype}`
+                            return false
+                        }
+                    })
+                }
+
+                function pushIfRed(obj) {
+                    if (isDev) {
+                        menu.push(obj)
+                    }
+                }
+                if (
+                    $route.current.$$route.isReader ||
+                    $route.current.$$route.pageId === "authorInfo" ||
+                    $route.current.$$route.controller == "authorInfoCtrl"
+                ) {
+                    pushIfRed({
+                        label: "/info",
+                        alt: ["info", "db", "red"],
+                        typeLabel: "[Red.]",
+                        action() {
+                            infoAction()
+                            return false
+                        }
+                    })
+                }
+                if (val.match(/^lb.*/)) {
+                    menu.push({
+                        label: val,
+                        url: `/editor/${val}/ix/0/f`,
+                        typeLabel: "[Red.] Gå till faksimileditorn"
+                    })
+                    menu.push({
+                        label: val,
+                        typeLabel: "[Red.] Sök i ftp",
+                        action() {
+                            $http({
+                                url: `https://red.litteraturbanken.se/hitta?q=${val}`
+                            }).then(
+                                response => {
+                                    console.log("response", response.data)
+
+                                    s.htmlInfo = response.data.split("\n").map(url => {
+                                        url = url.replace(/\/mnt/, "//mnt")
+                                        let breadcrumbs = url
+                                            .split("/")
+                                            .slice(5)
+                                            .map((part, index) => ({
+                                                label: part,
+                                                url: url
+                                                    .split("/")
+                                                    .slice(0, index + 6)
+                                                    .join("/")
+                                            }))
+                                            .slice(0, -1)
+                                        return { url, breadcrumbs }
+                                    })
+                                },
+                                response => {
+                                    console.log("response", response)
+                                    s.$emit("notify", "Hittade inte red-tjänsten.")
+                                }
+                            )
+                            return false
+                        }
+                    })
+                }
+                menu = _.filter(menu, function (item) {
+                    // if !isDev and item.typeLabel == "[Red.]" then return false
+                    const exp = new RegExp(`^${val}`, "gi")
+                    // alt = new RegExp(val, "gi")
+                    return (
+                        item.label.match(exp) ||
+                        (item.alt && _.some(item.alt.map(item => item.match(exp))))
+                    )
+                })
+                return data.concat(menu)
+            })
+        }
+    }
+
+    const show = function () {
+        // s.show_autocomplete = true
+
+        s.modal = $uibModal.open({
+            templateUrl: "autocomplete.html",
+            scope: s,
+            windowClass: "autocomplete",
+            size: "sm"
+        })
+
+        return $timeout(() => s.$broadcast("focus"), 0)
+    }
+    // s.show_autocomplete = false
+    s.$on("show_autocomplete", () => show())
+
+    const onKeydown = function (event) {
+        switch (event.key) {
+            case "Escape":
+                s.$apply(() => s.close())
+                break
+            case "s":
+                if (!$("input:focus,textarea:focus,select:focus").length) {
+                    s.$apply(() => show())
+                }
+                break
+            case "F20":
+            case "ı":
+            case "ī":
+                if (!$("input:focus,textarea:focus,select:focus").length) {
+                    s.$apply(() => {
+                        show()
+                        infoAction()
+                    })
+                }
+                break
+        }
+    }
+
+    $($window).on("keydown.autocomplete", onKeydown)
+    s.$on("$destroy", () => $($window).off("keydown.autocomplete", onKeydown))
+}
+
+AutocompleteGlobalCtrl.$inject = [
+    "$scope",
+    "backend",
+    "$route",
+    "$location",
+    "$window",
+    "$timeout",
+    "$uibModal",
+    "$http"
+]
+
+littb.component("autocompleteGlobal", {
+    template: "",
+    controller: AutocompleteGlobalCtrl
+})
+
+function IdPageCtrl($scope, backend, $routeParams, $location) {
     const s = $scope
     _.extend(s, $routeParams)
     if (s.id) {
@@ -1213,6 +1291,11 @@ littb.controller("idCtrl", function ($scope, backend, $routeParams, $location) {
         s.id = ""
         s.titles = _.map(titles.split("\n"), row => _.str.strip(row.split("–")[1] || row))
     }
+}
+IdPageCtrl.$inject = ["$scope", "backend", "$routeParams", "$location"]
+littb.component("idPage", {
+    templateUrl: idUrl,
+    controller: IdPageCtrl
 })
 
 class Dramaweb {
@@ -1260,57 +1343,67 @@ class Dramaweb {
     }
 }
 
-littb.controller(
-    "sourceInfoCtrl",
-    function sourceInfoCtrl(
-        $scope,
-        backend,
-        $routeParams,
-        $q,
-        authors,
-        $document,
-        $location,
-        $http
-    ) {
-        const s = $scope
-        // _.extend s, $routeParams
-        s.title = $routeParams.title
-        s.author = $routeParams.author
+function SourceInfoPanelCtrl($scope, backend, $routeParams, $q, authors, $document, $location, $http) {
+    const s = $scope
+    const ctrl = this
+
+    function syncBindings() {
+        if (ctrl.workinfo !== undefined) s.workinfo = ctrl.workinfo
+        if (ctrl.workinfoPromise !== undefined) s.workinfoPromise = ctrl.workinfoPromise
+        if (ctrl.author !== undefined) s.author = ctrl.author
+        if (ctrl.title !== undefined) s.title = ctrl.title
+        if (ctrl.mediatype !== undefined) s.mediatype = ctrl.mediatype
+    }
+
+    ctrl.$onInit = function () {
+        syncBindings()
+
+        // Fallbacks for legacy contexts.
+        if (!s.title) s.title = $routeParams.title
+        if (!s.author) s.author = $routeParams.author
 
         s.defaultErrataLimit = 8
         s.errataLimit = s.defaultErrataLimit
         s.isOpen = false
         s.show_large = false
 
-        s.workinfoPromise.then(function () {
-            c.log("workinfo", s.workinfo)
-            const prov = backend.getProvenance(s.workinfo)
-            const lic = backend.getLicense(s.workinfo)
+        if (s.workinfoPromise && typeof s.workinfoPromise.then === "function") {
+            s.workinfoPromise.then(function () {
+                c.log("workinfo", s.workinfo)
 
-            $q.all([prov, lic]).then(function ([provData, licenseData]) {
-                let provtmpl = ""
-                s.provenanceData = provData
-                provtmpl = _.map(
-                    provData,
-                    prov => `<a href='${prov.link}'>${prov.fullname}</a>`
-                ).join(" – ")
-                s.licenseData = _.template(licenseData)({
-                    provenance: provtmpl
-                })
-            })
+                // Some contexts (Dramaweb modal) only provide workinfo; derive routing bits from it.
+                if (!s.author) s.author = s.workinfo?.authors?.[0]?.authorid
+                if (!s.title) s.title = s.workinfo?.titlepath
 
-            if (s.workinfo.dramawebben) {
-                s.dramaweb = new Dramaweb(s.workinfo.dramawebben)
-            }
-            if (s.workinfo.content_vector) {
-                $http
-                    .get(`/api/get_similar/${s.workinfo.lbworkid}/${s.workinfo.mediatype}`)
-                    .then(function (data) {
-                        console.log("🚀 ~ file: controllers.js:1314 ~ data.data:", data.data)
-                        s.similar = data.data.data
+                const prov = backend.getProvenance(s.workinfo)
+                const lic = backend.getLicense(s.workinfo)
+
+                $q.all([prov, lic]).then(function ([provData, licenseData]) {
+                    let provtmpl = ""
+                    s.provenanceData = provData
+                    provtmpl = _.map(
+                        provData,
+                        prov => `<a href='${prov.link}'>${prov.fullname}</a>`
+                    ).join(" – ")
+                    s.licenseData = _.template(licenseData)({
+                        provenance: provtmpl
                     })
-            }
-        })
+                })
+
+                if (s.workinfo.dramawebben) {
+                    s.dramaweb = new Dramaweb(s.workinfo.dramawebben)
+                }
+                if (s.workinfo.content_vector) {
+                    $http
+                        .get(`/api/get_similar/${s.workinfo.lbworkid}/${s.workinfo.mediatype}`)
+                        .then(function (data) {
+                            console.log("🚀 ~ file: controllers.js:1314 ~ data.data:", data.data)
+                            s.similar = data.data.data
+                        })
+                }
+            })
+        }
+
         s.log = (workinfo, mediatype) => {
             backend.logDownload(
                 workinfo.authors[0].surname,
@@ -1366,158 +1459,235 @@ littb.controller(
             })
         }
 
-        // s.getFileSize = function(mediatype) {
-        //     if (!(s.workinfo && mediatype)) {
-        //         return
-        //     }
-        //     const size = s.workinfo[mediatype].file_size
-        //     const kb = size / 1024
-        //     return Math.round(kb) + " KB"
-        // }
-
-        if (!s.mediatype) {
+        if (!s.mediatype && s.workinfo?.mediatypes?.length) {
             s.mediatype = s.workinfo.mediatypes[0]
         }
         authors.then(function ([authorList, authorsById]) {
             s.authorsById = authorsById
         })
     }
-)
 
-littb.controller(
-    "lexiconCtrl",
-    function ($scope, backend, $location, $rootScope, $q, $timeout, $uibModal, util, $window) {
-        const s = $scope
-        s.dict_not_found = null
-        s.dict_searching = false
+    ctrl.$onChanges = function () {
+        syncBindings()
+    }
+}
 
-        let modal = null
+SourceInfoPanelCtrl.$inject = [
+    "$scope",
+    "backend",
+    "$routeParams",
+    "$q",
+    "authors",
+    "$document",
+    "$location",
+    "$http"
+]
 
-        s.keydown = function (event) {
-            if (event.keyCode === 40) {
-                // down arrow
-                // TODO: this is pretty bad but couldn't be done using the typeahead directive
-                if ($(".input_container .dropdown-menu").is(":hidden")) {
-                    // typeaheadTrigger directive
-                    s.$broadcast("open", s.lex_article)
-                }
-            } else if (event.keyCode === 27) {
-                // escape
-                s.lex_article = null
+littb.component("sourceInfoPanel", {
+    templateUrl: sourceInfoUrl,
+    controller: SourceInfoPanelCtrl,
+    bindings: {
+        workinfo: "<?",
+        workinfoPromise: "<?",
+        author: "<?",
+        title: "<?",
+        mediatype: "<?"
+    }
+})
+
+function LexiconGlobalCtrl(
+    $scope,
+    backend,
+    $location,
+    $rootScope,
+    $q,
+    $timeout,
+    $uibModal,
+    util,
+    $window
+) {
+    const s = $scope
+    s.dict_not_found = null
+    s.dict_searching = false
+
+    let modal = null
+
+    s.keydown = function (event) {
+        if (event.keyCode === 40) {
+            // down arrow
+            // TODO This shouldn't happen using the typeahead directive, but does.
+            if ($(".input_container .dropdown-menu").is(":hidden")) {
+                // typeaheadTrigger directive
+                s.$broadcast("open", s.lex_article)
             }
-        }
-
-        s.showModal = function () {
-            c.log("showModal", modal)
-            s.lexemes = s.lex_article.lexemes
-            if (!modal) {
-                s.$broadcast("blur")
-
-                modal = $uibModal.open({
-                    templateUrl: "so_modal_template.html",
-                    scope: s
-                })
-
-                modal.result.then(
-                    () => s.closeModal(),
-                    () => s.closeModal()
-                )
-            }
-        }
-
-        s.clickX = () => modal.close()
-
-        s.closeModal = function () {
+        } else if (event.keyCode === 27) {
+            // escape
             s.lex_article = null
-            s.lexid = null
-            modal = null
         }
+    }
 
-        const reportDictError = function () {
-            s.$emit("notify", "Hittade inget uppslag")
-            s.dict_searching = false
+    s.showModal = function () {
+        c.log("showModal", modal)
+        s.lexemes = s.lex_article.lexemes
+        if (!modal) {
+            s.$broadcast("blur")
+
+            modal = $uibModal.open({
+                templateUrl: "so_modal_template.html",
+                scope: s
+            })
+
+            modal.result.then(
+                () => s.closeModal(),
+                () => s.closeModal()
+            )
         }
+    }
 
+    s.clickX = () => modal.close()
+
+    s.closeModal = function () {
+        s.lex_article = null
         s.lexid = null
+        modal = null
+    }
 
-        $rootScope.$on("search_dict", function (event, lemma, id, doSearchId) {
-            c.log("search_dict event", lemma, id, doSearchId)
-            if (doSearchId) {
-                s.lexid = false
-            }
+    const reportDictError = function () {
+        s.$emit("notify", "Hittade inget uppslag")
+        s.dict_searching = false
+    }
 
-            s.dict_searching = true
+    s.lexid = null
 
-            const def = backend.searchLexicon(lemma, id, false, doSearchId, true)
-            def.catch(function () {
-                c.log("searchLexicon catch")
-                reportDictError()
-            })
+    $rootScope.$on("search_dict", function (event, lemma, id, doSearchId) {
+        c.log("search_dict event", lemma, id, doSearchId)
+        if (doSearchId) {
+            s.lexid = false
+        }
 
-            def.then(function (data) {
-                c.log("searchLexicon then", data)
-                s.dict_searching = false
+        s.dict_searching = true
 
-                let result = data[0]
-                for (let obj of data) {
-                    if (obj.baseform === lemma) {
-                        result = obj
-                        continue
-                    }
-                }
-
-                // c.log "searchId", id
-                // s.lexid = if searchId then searchId else null
-                s.lex_article = result
-                if (id) {
-                    s.lexid = id
-                }
-                s.showModal()
-            })
+        const def = backend.searchLexicon(lemma, id, false, doSearchId, true)
+        def.catch(function () {
+            c.log("searchLexicon catch")
+            reportDictError()
         })
 
-        s.getWords = function (val) {
-            c.log("getWords", val)
-            if (!val) {
-                return
+        def.then(function (data) {
+            c.log("searchLexicon then", data)
+            s.dict_searching = false
+
+            let result = data[0]
+            for (let obj of data) {
+                if (obj.baseform === lemma) {
+                    result = obj
+                    continue
+                }
             }
-            s.dict_searching = true
-            const def = backend.searchLexicon(val, null, true)
-            const timeout = $timeout(angular.noop, 800)
-            def.catch(function () {
-                s.dict_searching = false
-                reportDictError()
-            })
 
-            $q.all([def, timeout]).then(() => (s.dict_searching = false))
+            s.lex_article = result
+            if (id) {
+                s.lexid = id
+            }
+            s.showModal()
+        })
+    })
 
-            return def
+    s.getWords = function (val) {
+        c.log("getWords", val)
+        if (!val) {
+            return
         }
+        s.dict_searching = true
+        const def = backend.searchLexicon(val, null, true)
+        const timeout = $timeout(angular.noop, 800)
+        def.catch(function () {
+            s.dict_searching = false
+            reportDictError()
+        })
 
-        return util.setupHashComplex(s, [
-            {
-                key: "so",
-                expr: "lex_article.baseform",
-                val_in(val) {
-                    const id = $location.search().lex
-                    // event = if id then "search_id" else "search_dict"
-                    c.log("val_in", val, id)
-                    return s.$emit("search_dict", val, id, false)
-                },
-                replace: false
-            },
-            {
-                key: "lex",
-                scope_name: "lexid",
-                replace: false
-            }
-        ])
+        $q.all([def, timeout]).then(() => (s.dict_searching = false))
+
+        return def
     }
-)
 
-littb.controller("historyCtrl", function ($scope, $rootScope, authors) {
+    return util.setupHashComplex(s, [
+        {
+            key: "so",
+            expr: "lex_article.baseform",
+            val_in(val) {
+                const id = $location.search().lex
+                c.log("val_in", val, id)
+                return s.$emit("search_dict", val, id, false)
+            },
+            replace: false
+        },
+        {
+            key: "lex",
+            scope_name: "lexid",
+            replace: false
+        }
+    ])
+}
+
+LexiconGlobalCtrl.$inject = [
+    "$scope",
+    "backend",
+    "$location",
+    "$rootScope",
+    "$q",
+    "$timeout",
+    "$uibModal",
+    "util",
+    "$window"
+]
+
+littb.component("lexiconGlobal", {
+    template: `
+        <div style="display: none" class="word_search" ng-class="{searching : dict_searching}">
+            <div class="input_container">
+                <input
+                    type="text"
+                    ng-model="lex_article"
+                    focusable
+                    placeholder="Slå i Svensk ordbok"
+                    typeahead-on-select="showModal(lex_article)"
+                    typeahead-wait-ms="300"
+                    typeahead="article as article.baseform for article in getWords($viewValue)"
+                    ng-keydown="keydown($event)"
+                    typeahead-trigger
+                />
+
+                <span
+                    class="so_spinner"
+                    us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"
+                ></span>
+            </div>
+        </div>
+    `,
+    controller: LexiconGlobalCtrl
+})
+
+function HistoryPageCtrl($scope, $rootScope, authors) {
     $scope.lastPageViews = JSON.parse(localStorage.getItem("lastPageViews")) || []
     authors.then(function ([authorList, authorsById]) {
         $scope.authorsById = authorsById
     })
+}
+HistoryPageCtrl.$inject = ["$scope", "$rootScope", "authors"]
+littb.component("historyPage", {
+    template: `
+        <div>
+            <h1>Senast lästa verk</h1>
+            <ul ng-if="authorsById">
+                <li ng-repeat="pageview in lastPageViews">
+                    <a ng-href="{{pageview.url}}">
+                        <span>{{authorsById[pageview.author].full_name}}</span> – 
+                        <span class="">{{pageview.label}}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    `,
+    controller: HistoryPageCtrl
 })

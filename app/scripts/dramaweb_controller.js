@@ -1,3 +1,5 @@
+import dramawebUrl from "../views/dramaweb.html?url"
+
 const _ = window._
 const littb = window.littb
 const c = window.console
@@ -11,7 +13,7 @@ const rangeKeys = [
     "number_of_roles"
 ]
 
-littb.controller("dramawebCtrl", function dramawebCtrl(
+function DramawebPageCtrl(
     $scope,
     $location,
     $rootScope,
@@ -374,4 +376,27 @@ littb.controller("dramawebCtrl", function dramawebCtrl(
             }
         }
     })
+}
+
+DramawebPageCtrl.$inject = [
+    "$scope",
+    "$location",
+    "$rootScope",
+    "backend",
+    "$routeParams",
+    "$http",
+    "$document",
+    "util",
+    "$route",
+    "authors",
+    "$q",
+    "$filter",
+    "$rootElement",
+    "$uibModal",
+    "$timeout"
+]
+
+littb.component("dramawebPage", {
+    templateUrl: dramawebUrl,
+    controller: DramawebPageCtrl
 })

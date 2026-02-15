@@ -312,7 +312,13 @@
     <script type="text/ng-template" id="sourceInfoModal.html">
         <div class="about-modal modal-body">
             <button class="close_btn submit btn pull-right" ng-click="$close()">Stäng</button>
-            <ng-include src="$root.sourceInfo"></ng-include>
+            <source-info-panel
+                workinfo="workinfo"
+                workinfo-promise="workinfoPromise"
+                author="author"
+                title="title"
+                mediatype="mediatype"
+            ></source-info-panel>
         </div>
     </script>
     <script type="text/ng-template" id="chapters.html">

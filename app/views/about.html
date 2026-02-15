@@ -11,4 +11,9 @@
     <li><a ng-class="{active : page == 'statistik'}" href="/om/statistik">Statistik</a></li>
     <li><a ng-class="{active : page == 'kontakt'}" href="/om/kontakt">Kontakt</a></li>
 </ul>
-<ng-include src="getPage(page)"></ng-include>
+<div ng-switch="page">
+    <help-page ng-switch-when="hjalp"></help-page>
+    <stats-page ng-switch-when="statistik"></stats-page>
+    <contact-form ng-switch-when="kontakt"></contact-form>
+    <ng-include ng-switch-default src="getPage(page)"></ng-include>
+</div>

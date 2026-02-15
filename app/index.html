@@ -317,8 +317,7 @@
         </script>
 
         <script type="text/ng-template" id="autocomplete.html">
-            <div class="modal-body" ng-class="{info:info || htmlInfo}" ng-controller="autocompleteCtrl"
-            >
+            <div class="modal-body" ng-class="{info:info || htmlInfo}">
 
                 <input type="text" id="autocomplete"
                     class="text-gray-900"
@@ -356,32 +355,8 @@
             </div>
         </script>
 
-        <div ng-controller="autocompleteCtrl"></div>
-        <div
-            style="display: none"
-            class="word_search"
-            ng-controller="lexiconCtrl"
-            ng-class="{searching : dict_searching}"
-        >
-            <div class="input_container">
-                <input
-                    type="text"
-                    ng-model="lex_article"
-                    focusable
-                    placeholder="Slå i Svensk ordbok"
-                    typeahead-on-select="showModal(lex_article)"
-                    typeahead-wait-ms="300"
-                    typeahead="article as article.baseform for article in getWords($viewValue)"
-                    ng-keydown="keydown($event)"
-                    typeahead-trigger
-                />
-
-                <span
-                    class="so_spinner"
-                    us-spinner="{lines : 8 ,radius:4, width:1.5, length: 2.5}"
-                ></span>
-            </div>
-        </div>
+        <autocomplete-global></autocomplete-global>
+        <lexicon-global></lexicon-global>
         <div to-body alert-popup="dict_not_found"></div>
 
         <!-- Vite entrypoint -->
