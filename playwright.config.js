@@ -23,7 +23,7 @@ module.exports = defineConfig({
     ],
 
     webServer: {
-        command: "npm run dev",
+        command: "yarn dev",
         url: `http://${process.env.LITTB_DOCKER_HOST || "localhost"}:9000`,
         reuseExistingServer: !process.env.CI
     }

@@ -9,11 +9,22 @@ let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
 // let STRIX_URL = "/api"
 
+// Vite supports compile-time env vars prefixed with VITE_.
+// This makes it easy to point the frontend at a local backend when needed.
+if (import.meta.env.VITE_STRIX_URL) {
+    STRIX_URL = import.meta.env.VITE_STRIX_URL
+}
+
+// For local dev/test, prefer the dev-server proxy so the app works without a local backend.
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+    STRIX_URL = "/api"
+}
+
 if (
     _.str.startsWith(location.host, "red.l") ||
     _.str.startsWith(location.host, "dev.l") ||
     _.str.startsWith(location.host, "litteraturbanken") ||
-    process.env.NODE_ENV === "production"
+    import.meta.env.PROD
 ) {
     STRIX_URL = "/api"
 }

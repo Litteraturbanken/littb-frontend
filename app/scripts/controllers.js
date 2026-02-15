@@ -1,3 +1,9 @@
+import helpUrl from "../views/help.html?url"
+import contactUrl from "../views/contactForm.html?url"
+import statsUrl from "../views/stats.html?url"
+import slaBiblinfoUrl from "../views/sla/biblinfo.html?url"
+import slaCompareUrl from "../views/sla/textjamforelse.html?url"
+
 const angular = window.angular
 const _ = window._
 const $ = window.$
@@ -183,7 +189,8 @@ littb.filter(
         }
 )
 
-littb.controller("startCtrl", ($scope, $location, $rootScope, $http, $compile) => {
+// Must be a constructible function (Angular instantiates controllers with `new`).
+littb.controller("startCtrl", function startCtrl($scope, $location, $rootScope, $http, $compile) {
     $scope.gotoTitle = function (query) {
         let url
         if (!query) {
@@ -358,8 +365,8 @@ littb.controller(
         if ($route.current.$$route.isSla) {
             s.slaMode = true
             s.author = "LagerlöfS"
-            s.biblInfoLocation = require("../views/sla/biblinfo.html")
-            s.compareLocation = require("../views/sla/textjamforelse.html")
+            s.biblInfoLocation = slaBiblinfoUrl
+            s.compareLocation = slaCompareUrl
         }
 
         s.showpage = null
@@ -840,10 +847,10 @@ littb.controller("aboutCtrl", function ($scope, $http, util, $location, $routePa
     s.getPage = page =>
         ({
             ide: "/red/om/ide/omlitteraturbanken.html",
-            hjalp: require("../views/help.html"),
+            hjalp: helpUrl,
             mål: "/red/om/visioner/visioner.html",
-            kontakt: require("../views/contactForm.html"),
-            statistik: require("../views/stats.html"),
+            kontakt: contactUrl,
+            statistik: statsUrl,
             rattigheter: "/red/om/rattigheter/rattigheter.html",
             tack: "/red/om/tack.html",
             organisation: "/red/om/ide/organisation.html",

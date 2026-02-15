@@ -1,5 +1,7 @@
 import { filter } from "lodash"
 import { buildFilterQuery, composeQuery } from "./query.ts"
+import worksListUrl from "../views/library/works_list.html?url"
+import downloadPopoverUrl from "../views/library/downloadPopover.html?url"
 
 const littb = window.littb
 const _ = window._
@@ -161,7 +163,7 @@ littb.controller(
         const s = $scope
 
         s.filter = $location.search().filter || ""
-        s.worksListURL = require("../views/library/works_list.html")
+        s.worksListURL = worksListUrl
         s.titleSearching = false
         s.authorSearching = true
 
@@ -1098,7 +1100,7 @@ littb.controller(
 
         s.getPartAuthor = part => part.authors?.[0] || part.work_authors?.[0]
 
-        s.downloadPopoverURL = require("../views/library/downloadPopover.html")
+        s.downloadPopoverURL = downloadPopoverUrl
         s.dl_mode = $location.search().nedladdning
         s.setDownloadMode = () => {
             if (!s.dl_mode) {

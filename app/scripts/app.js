@@ -9,6 +9,17 @@ import buttons from "angular-ui-bootstrap/src/buttons"
 import dropdown from "angular-ui-bootstrap/src/dropdown"
 import pagination from "angular-ui-bootstrap/src/pagination"
 
+import startHtml from "../views/start.html?raw"
+import aboutUrl from "../views/about.html?url"
+import authorInfoUrl from "../views/authorInfo.html?url"
+import dramawebUrl from "../views/dramaweb.html?url"
+import idUrl from "../views/id.html?url"
+import libraryUrl from "../views/library.html?url"
+import presentationsUrl from "../views/presentations.html?url"
+import searchUrl from "../views/search.html?url"
+import sourceInfoUrl from "../views/sourceInfo.html?url"
+import saLogoUrl from "../img/SA_logo_type.svg?url"
+
 _.templateSettings = { interpolate: /\{\{(.+?)\}\}/g }
 
 window.isDev = location.hostname !== "litteraturbanken.se"
@@ -148,13 +159,13 @@ window.littb = angular
             // .when("", { redirectTo: "/start" })
             // .when("/", { redirectTo: "/start" })
             .when("/", {
-                template: `<div>${require("!raw-loader!../views/start.html").default}</div>`,
+                template: `<div>${startHtml}</div>`,
                 controller: "startCtrl",
                 title: "Svenska klassiker som e-bok och epub"
             })
             .when("/presentationer", {
                 title: "Presentationer",
-                templateUrl: require("../views/presentations.html"),
+                templateUrl: presentationsUrl,
                 controller: "presentationCtrl"
             })
             .when("/p/:folder/:doc", {
@@ -232,7 +243,7 @@ window.littb = angular
                 }
             })
             .when("/om/:page", {
-                templateUrl: require("../views/about.html"),
+                templateUrl: aboutUrl,
                 controller: "aboutCtrl",
                 title: "Om LB",
                 reloadOnSearch: false,
@@ -315,7 +326,7 @@ window.littb = angular
                     "/dramawebben/kringtexter"
                 ],
                 {
-                    templateUrl: require("../views/dramaweb.html"),
+                    templateUrl: dramawebUrl,
                     controller: "dramawebCtrl",
                     reloadOnSearch: false,
                     resolve: {
@@ -344,19 +355,19 @@ window.littb = angular
             .when("/statistik", { redirectTo: "/om/statistik" })
             .when("/sok", { redirectTo: "/sök" })
             .when("/sök", {
-                templateUrl: require("../views/search.html"),
+                templateUrl: searchUrl,
                 controller: "searchCtrl",
                 reloadOnSearch: false
             })
             .when("/bibliotek", {
-                templateUrl: require("../views/library.html"),
+                templateUrl: libraryUrl,
                 controller: "libraryCtrl",
                 reloadOnSearch: false,
                 title: "Biblioteket – Titlar och författare"
             })
             .when("/titlar", { redirectTo: "/bibliotek" })
             .when("/epub", {
-                templateUrl: require("../views/library.html"),
+                templateUrl: libraryUrl,
                 controller: "libraryCtrl",
                 reloadOnSearch: false,
                 title: "E-böcker för nedladdning",
@@ -422,7 +433,7 @@ window.littb = angular
                     "/författare/LagerlöfS/omtexterna/:omtexternaDoc"
                 ],
                 {
-                    templateUrl: require("../views/authorInfo.html"),
+                    templateUrl: authorInfoUrl,
                     controller: "authorInfoCtrl",
                     isSla: true,
                     reloadOnSearch: false,
@@ -445,7 +456,7 @@ window.littb = angular
                     "/författare/:author/omtexterna/:omtexternaDoc?"
                 ],
                 {
-                    templateUrl: require("../views/authorInfo.html"),
+                    templateUrl: authorInfoUrl,
                     controller: "authorInfoCtrl",
                     resolve: {
                         r: authorResolve
@@ -576,7 +587,7 @@ window.littb = angular
 
             .when("/kontakt", { redirectTo: "/om/kontakt" })
             .when(["/id/:id", "/id"], {
-                templateURL: require("../views/id.html"),
+                templateURL: idUrl,
                 controller: "idCtrl"
             })
             .when("/historik", {
@@ -670,11 +681,12 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
     // $rootScope.libraryBkg = import(
     //     /* webpackChunkName: "library_bkg", webpackPrefetch: true */ "!!url-loader?limit=100000000!../img/biblioteket_bakgrund.jpg"
     // )
-    $rootScope.SA_logo = require("../img/SA_logo_type.svg")
+    $rootScope.SA_logo = saLogoUrl
 
     const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
     $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL
-    $rootScope.sourceInfo = require("../views/sourceInfo.html")
+    $rootScope.sourceInfo = sourceInfoUrl
+    $rootScope.searchTemplateUrl = searchUrl
     $rootScope.isDev = window.isDev
     const firstRoute = $q.defer()
     firstRoute.promise.then(() => $rootElement.addClass("ready").removeClass("not_ready"))

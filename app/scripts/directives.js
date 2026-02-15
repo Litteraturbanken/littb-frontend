@@ -871,7 +871,7 @@ littb.directive("imageonload", function () {
 const overflowLoad = function (s, element) {
     let btn = null
 
-    element.load(function () {
+    const onLoad = function () {
         const maxWidth = $(this).css("max-width")
         $(this).css("max-width", "initial")
         const actualWidth = $(this).width()
@@ -891,7 +891,17 @@ const overflowLoad = function (s, element) {
             }
             element.parent().removeClass("img-overflow")
         }
-    })
+    }
+
+    // jQuery 3 removed the event shorthand `load(fn)`; bind explicitly.
+    element.on("load", onLoad)
+
+    // If the image is already loaded (from cache), the load event may not fire.
+    const domEl = element && element[0]
+    if (domEl && domEl.complete) {
+        // Defer so layout is settled and widths are measurable.
+        setTimeout(() => onLoad.call(domEl), 0)
+    }
 }
 
 // littb.directive "imgdiv", imgDef
@@ -900,11 +910,23 @@ littb.directive("graphicimg", () => ({
     restrict: "C",
     compile(elm, attrs) {
         if (_.str.endsWith(elm.attr("src"), ".svg")) {
-            elm.load(elm.attr("src"), function (data) {
-                let [, , width, height] = data.match(/viewBox="(.+?)"/)[1].split(" ")
-                elm.width(width)
-                return elm.height(height)
-            })
+            const src = elm.attr("src")
+            fetch(src)
+                .then(r => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+                .then(data => {
+                    const m = data.match(/viewBox=\"(.+?)\"/)
+                    if (!m) {
+                        return
+                    }
+                    const parts = m[1].split(" ")
+                    const width = parts[2]
+                    const height = parts[3]
+                    if (width && height) {
+                        elm.width(width)
+                        elm.height(height)
+                    }
+                })
+                .catch(() => {})
         }
         return function ($scope, element, attr) {
             const s = $scope

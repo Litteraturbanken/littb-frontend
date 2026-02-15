@@ -1,5 +1,8 @@
 // littb.controller(
 //     "readingCtrl",
+import nyaVagarUrl from "@/img/lb_logga_nyavagar_2.2021.svg?url"
+import dwUrl from "@/img/dramawebben_svart.svg?url"
+
 export default [
     "$scope",
     "backend",
@@ -123,8 +126,8 @@ export default [
             }
         }
 
-        s.nyaVagarUrl = require("@/img/lb_logga_nyavägar_2.2021.svg")
-        s.dwUrl = require("@/img/dramawebben_svart.svg")
+        s.nyaVagarUrl = nyaVagarUrl
+        s.dwUrl = dwUrl
 
         s.getTransform = function () {
             if (!s.isFocus) {

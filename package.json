@@ -7,9 +7,12 @@
         "test": "node_modules/.bin/playwright test",
         "test:ui": "node_modules/.bin/playwright test --ui",
         "test:debug": "node_modules/.bin/playwright test --debug",
-        "build": "NODE_OPTIONS='--openssl-legacy-provider' NODE_ENV=production webpack --config webpack.prod.js",
-        "dev": "NODE_OPTIONS='--openssl-legacy-provider' webpack-dev-server --config webpack.dev.js --host 0.0.0.0",
-        "serve-dist": "NODE_ENV=production webpack-dev-server  --config webpack.prod.js --env prod --compress  --host 0.0.0.0"
+        "dev": "vite --host 0.0.0.0 --port 9000",
+        "build": "vite build",
+        "preview": "vite preview --host 0.0.0.0 --port 9000 --strictPort",
+        "dev:webpack": "NODE_OPTIONS='--openssl-legacy-provider' webpack-dev-server --config webpack.dev.js --host 0.0.0.0",
+        "build:webpack": "NODE_OPTIONS='--openssl-legacy-provider' NODE_ENV=production webpack --config webpack.prod.js",
+        "serve-dist:webpack": "NODE_ENV=production webpack-dev-server  --config webpack.prod.js --env prod --compress  --host 0.0.0.0"
     },
     "dependencies": {
         "@tailwindcss/line-clamp": "^0.4.4",
@@ -18,17 +21,16 @@
         "angular-aria": "~1.7.9",
         "angular-route": "1.7.9",
         "angular-spinner": "^1.0.1",
-        "angular-touch": "1.5.9",
+        "angular-touch": "1.7.9",
         "angular-ui-bootstrap": "^2.5.6",
         "angular-ui-select2": "^0.0.5",
         "angularjs-slider": "^6.6.1",
         "bodybuilder": "^2.2.21",
-        "bootstrap-sass": "~3.4.1",
         "font-awesome": "~4.4.0",
-        "jquery": "1.11.1",
+        "jquery": "^3.7.1",
         "lodash": "^4.17.19",
         "nprogress": "~0.1.2",
-        "select2": "^4.0.6-rc.1",
+        "select2": "^4.0.13",
         "ui-select": "^0.19.8",
         "underscore.string": "^2.3.3"
     },
@@ -81,7 +83,8 @@
         "webpack-bundle-analyzer": "^3.8.0",
         "webpack-cli": "4.10.0",
         "webpack-dev-server": "4.15.2",
-        "webpack-merge": "^4.2.1"
+        "webpack-merge": "^4.2.1",
+        "vite": "^6.0.0"
     },
     "engines": {
         "node": ">=0.10.0"

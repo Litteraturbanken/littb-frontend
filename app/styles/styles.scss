@@ -241,7 +241,8 @@ blockquote {
     .rz-bar {
         height : 8px;
         &:not(.rz-selection) {
-            background-color: white;
+            // Don't make the track disappear on white pages (e.g. bibliotek filters).
+            background-color: rgba($primarycolor, 0.15);
         }
     }
     .rz-pointer {
