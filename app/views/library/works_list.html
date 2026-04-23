@@ -48,11 +48,11 @@
                 <!-- <td class="w-6" ng-if="dl_mode && !row.isHeader">
                     <input class="" type="checkbox" ng-model="row._download" ng-change="toggleDownload(row, false)" ng-click="$event.stopPropagation()">
                 </td> -->
-                <td class="w-[400px]" ng-if="!row.isHeader">
-                    <div class="">
+                <td class="" ng-if="!row.isHeader">
+                    <div class="min-w-0 items-center gap-2" ng-class="{'flex': dl_mode}">
                         <input
                             ng-if="dl_mode"
-                            class=""
+                            class="align-middle shrink-0"
                             type="checkbox"
                             ng-model="row._download"
                             ng-change="toggleDownload(row, false)"
@@ -61,10 +61,10 @@
                         <div
                             top="$parent.title_off"
                             id="{{getUniqId(row)}}"
-                            class="header_container"
+                            class="header_container min-w-0 flex-1 align-middle"
                         >
                             <div
-                                class="header text-lg leading-tight text-ellipsis whitespace-nowrap overflow-hidden"
+                                class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight"
                             >
                                 <span
                                     class="title_inner"

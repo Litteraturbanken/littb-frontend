@@ -16,6 +16,26 @@ window.isDev = location.hostname !== "litteraturbanken.se"
 let c = window.console
 
 let routeStartCurrent = null
+const encodedAngularUrlStatePattern = /%7B%7B(?:libraryState|searchState)\[[^\]]+\]%7D%7D/i
+const decodedAngularUrlStatePattern = /\{\{(?:libraryState|searchState)\[[^\]]+\]\}\}/
+
+let decodedPathname = null
+try {
+    decodedPathname = decodeURIComponent(location.pathname)
+} catch (error) {
+    decodedPathname = null
+}
+
+if (
+    encodedAngularUrlStatePattern.test(location.pathname) ||
+    (decodedPathname && decodedAngularUrlStatePattern.test(decodedPathname))
+) {
+    const normalizedPathname = (decodedPathname || location.pathname).replace(
+        decodedAngularUrlStatePattern,
+        ""
+    )
+    location.replace(`${location.origin}${normalizedPathname}${location.search}${location.hash}`)
+}
 
 if (location.hash.length && _.startsWith(location.hash, "#!%2F")) {
     //rewrite for incoming #! with encoded url
@@ -672,8 +692,14 @@ littb.run(function ($rootScope, $location, $rootElement, $q, $timeout, bkgConf) 
     // )
     $rootScope.SA_logo = require("../img/SA_logo_type.svg")
 
-    const CACHE_KILL = 12345 // change this value manually to kill all caches for files like /red/css/startsida.css
-    $rootScope.cacheKiller = () => Math.round(new Date().getDate() / 5) + CACHE_KILL
+    // In dev, bust cache every page load. Otherwise, use a YYMM stamp that rolls over each month
+    // (e.g. 2604 for April 2026) so files like /red/css/startsida.css refresh monthly.
+    // Compute once: must return a stable value on every call to avoid infinite digest loops
+    // in templates that use it (e.g. `ng-include="'...' + cacheKiller()"`).
+    const _cacheKillerValue = window.isDev
+        ? Math.random().toString(36).slice(2)
+        : (new Date().getFullYear() % 100) * 100 + (new Date().getMonth() + 1)
+    $rootScope.cacheKiller = () => _cacheKillerValue
     $rootScope.sourceInfo = require("../views/sourceInfo.html")
     $rootScope.isDev = window.isDev
     const firstRoute = $q.defer()

@@ -128,7 +128,8 @@
                     >
                         <option value=""></option>
                         <option value="{{author.authorid}}" ng-repeat="author in authors">
-                            {{author.name_for_index}} ({{author | authorYear}})
+                            {{author.name_for_index}}{{(author | authorYear) ? ' (' + (author |
+                            authorYear) + ')' : ''}}
                         </option>
                     </select>
                     <div class="w-4 inline-block">
@@ -219,8 +220,8 @@
                     >
                         <option value=""></option>
                         <option value="{{authorid}}" ng-repeat="authorid in aboutAuthors">
-                            {{authorsById[authorid].name_for_index}} ({{authorsById[authorid] |
-                            authorYear}})
+                            {{authorsById[authorid].name_for_index}}{{(authorsById[authorid] |
+                            authorYear) ? ' (' + (authorsById[authorid] | authorYear) + ')' : ''}}
                         </option>
                     </select>
                 </div>

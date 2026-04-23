@@ -787,6 +787,9 @@ export default [
                 }
 
                 const prevpath = $location.path()
+                if (url === prevpath) {
+                    return
+                }
 
                 const loc = $location.path(url)
                 if (!s.isEditor && !_.str.contains(prevpath, "/sida/")) {
@@ -843,8 +846,12 @@ export default [
 
                 s.startpage = workinfo.startpagename
                 s.endpage = workinfo.endpagename
-                if (s.pagename == null) {
+                if (s.pagename == null && !s.isEditor) {
                     s.pagename = s.startpage
+                    s.pageix = s.pagemap[`page_${s.startpage}`]
+                    // Normalize mediatype-only reader routes to a concrete page immediately.
+                    s.pageToLoad = s.startpage
+                    $location.path(s.getPageUrl(s.startpage)).replace()
                 }
 
                 s.isDramaweb = !!workinfo.dramawebben
@@ -974,28 +981,34 @@ export default [
             console.log("update", route)
             let params = route.params
             let nextPath = `/författare/${params.author}/titlar/${params.title}/sida/${params.pagename}/:mediatype`
+            if (s.isEditor) {
+                const routeMediatype = { f: "faksimil", e: "etext" }[params.mediatype]
+                if (params.lbid != s.editorLbWorkId || routeMediatype != s.mediatype) {
+                    $route.reload()
+                    return
+                }
+                s.pageix = Number(params.ix)
+                return
+            }
+
             if (params.title != s.title || params.mediatype != s.mediatype) {
                 $route.reload()
             } else {
-                if (s.isEditor) {
-                    s.pageix = Number(params.ix)
-                } else {
-                    s.pagename = params.pagename
-                    s.pageix = s.pagemap[`page_${s.pagename}`]
-                    s.gotopage(params.pagename)
+                s.pagename = params.pagename
+                s.pageix = s.pagemap[`page_${s.pagename}`]
+                s.gotopage(params.pagename)
 
-                    window.gtag("config", window.gtagID, {
-                        page_path: nextPath,
-                        anonymize_ip: true
-                    })
+                window.gtag("config", window.gtagID, {
+                    page_path: nextPath,
+                    anonymize_ip: true
+                })
 
-                    _paq.push(["setCustomUrl", decodeURI(window.location.pathname)])
-                    _paq.push([
-                        "setDocumentTitle",
-                        params.author + " – " + params.title + " s. " + params.pagename
-                    ])
-                    window._paq.push(["trackPageView"])
-                }
+                _paq.push(["setCustomUrl", decodeURI(window.location.pathname)])
+                _paq.push([
+                    "setDocumentTitle",
+                    params.author + " – " + params.title + " s. " + params.pagename
+                ])
+                window._paq.push(["trackPageView"])
             }
             // applyRouteParams(params)
         })
