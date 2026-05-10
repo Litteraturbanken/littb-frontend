@@ -13,6 +13,12 @@ const rangeKeys = [
     "number_of_roles"
 ]
 
+const normalizeSearchTokens = filterTxt =>
+    filterTxt
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean)
+
 function DramawebPageCtrl(
     $scope,
     $location,
@@ -250,8 +256,8 @@ function DramawebPageCtrl(
             const searchstr = [author.full_name, author.birth.plain, author.death.plain]
                 .join(" ")
                 .toLowerCase()
-            for (let str of s.filters.filterTxt.toLowerCase().split(" ")) {
-                if (!searchstr.match(str)) {
+            for (let str of normalizeSearchTokens(s.filters.filterTxt)) {
+                if (!searchstr.includes(str)) {
                     return false
                 }
             }
@@ -292,8 +298,8 @@ function DramawebPageCtrl(
                 let searchstr = fullnames.join(" ") + item.title
                 searchstr = searchstr.toLowerCase()
 
-                for (let str of s.filters.filterTxt.split(" ")) {
-                    if (!searchstr.match(str)) {
+                for (let str of normalizeSearchTokens(s.filters.filterTxt)) {
+                    if (!searchstr.includes(str)) {
                         return false
                     }
                 }

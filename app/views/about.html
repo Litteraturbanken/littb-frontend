@@ -15,5 +15,7 @@
     <help-page ng-switch-when="hjalp"></help-page>
     <stats-page ng-switch-when="statistik"></stats-page>
     <contact-form ng-switch-when="kontakt"></contact-form>
-    <ng-include ng-switch-default src="$ctrl.getPage($ctrl.page)"></ng-include>
+    <div ng-switch-default>
+        <ng-include src="$ctrl.getPage($ctrl.page)"></ng-include>
+    </div>
 </div>

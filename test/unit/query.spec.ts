@@ -84,6 +84,14 @@ assert.strictEqual(
     "(gender:female OR authors>(gender:female AND NOT _exists_:type)) AND (keyword:Barnlitteratur) AND (main_author.gender:female)"
 )
 
+const nestedFieldFilterQuery = buildFilterQuery({
+    "export>type": ["xml", "txt", "workdb"]
+})
+assert.strictEqual(
+    nestedFieldFilterQuery,
+    "(export>type:xml OR export>type:txt OR export>type:workdb)"
+)
+
 const composedQuery = composeQuery({
     filterQuery: complexFilterQuery,
     filterString: "Strindberg",

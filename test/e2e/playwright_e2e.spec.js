@@ -75,6 +75,248 @@ const waitForAngular = async (page, maxWaitMs = 3000) => {
     }
 }
 
+const mockReaderBackend = async page => {
+    await page.route("http://localhost:5001/get_authors*", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                data: [
+                    {
+                        authorid: "LagerlöfS",
+                        full_name: "Selma Lagerlöf",
+                        surname: "Lagerlöf",
+                        searchable: true
+                    }
+                ]
+            })
+        })
+    })
+
+    await page.route("http://localhost:5001/get_work_info*", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                hits: 1,
+                data: [
+                    {
+                        lbworkid: "lbtestreader",
+                        title: "Dunungen",
+                        shorttitle: "Dunungen",
+                        titleid: "Dunungen",
+                        work_titleid: "Dunungen",
+                        titlepath: "Dunungen",
+                        mediatype: "etext",
+                        startpagename: "1",
+                        endpagename: "2",
+                        pagestep: 1,
+                        pages: [
+                            { pagename: "1", pageindex: 0, imagenumber: 1 },
+                            { pagename: "2", pageindex: 1, imagenumber: 2 }
+                        ],
+                        parts: [
+                            {
+                                startpagename: "1",
+                                endpagename: "2",
+                                title: "Dunungen",
+                                navtitle: "Dunungen",
+                                shorttitle: "Dunungen",
+                                authors: [{ authorid: "LagerlöfS" }]
+                            }
+                        ],
+                        authors: [{ authorid: "LagerlöfS", full_name: "Selma Lagerlöf" }],
+                        main_author: { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+                        work_authors: [{ authorid: "LagerlöfS", full_name: "Selma Lagerlöf" }],
+                        export: [],
+                        errata: "<table></table>",
+                        sourcedesc: "",
+                        mediatypes: ["etext"]
+                    }
+                ]
+            })
+        })
+    })
+
+    await page.route("http://localhost:5001/log_page/**", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: "{}"
+        })
+    })
+
+    await page.route("http://localhost:9000/txt/lbtestreader/res_*.html", async route => {
+        const isSecondPage = route.request().url().includes("res_00001.html")
+        await route.fulfill({
+            status: 200,
+            contentType: "text/html",
+            body: `<html><body><p>${isSecondPage ? "Page 2" : "Page 1"}</p></body></html>`
+        })
+    })
+}
+
+const mockEditorBackend = async page => {
+    let workInfoRequests = 0
+
+    await page.route("**/get_work_info*", async route => {
+        workInfoRequests += 1
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                hits: 1,
+                data: [
+                    {
+                        lbworkid: "lbtesteditor",
+                        title: "Editor Test",
+                        shorttitle: "Editor Test",
+                        titleid: "EditorTest",
+                        work_titleid: "EditorTest",
+                        titlepath: "EditorTest",
+                        mediatype: "faksimil",
+                        startpagename: "1",
+                        endpagename: "3",
+                        page_count: 3,
+                        pagestep: 1,
+                        faksimil_sizes: [3],
+                        width: { size_3: 625 },
+                        searchable: true,
+                        pages: [
+                            { pagename: "1", pageindex: 0, imagenumber: 1 },
+                            { pagename: "2", pageindex: 1, imagenumber: 2 },
+                            { pagename: "3", pageindex: 2, imagenumber: 3 }
+                        ],
+                        parts: [],
+                        authors: [{ authorid: "LagerlöfS", full_name: "Selma Lagerlöf" }],
+                        main_author: { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+                        work_authors: [{ authorid: "LagerlöfS", full_name: "Selma Lagerlöf" }],
+                        export: [],
+                        errata: "<table></table>",
+                        sourcedesc: ""
+                    }
+                ]
+            })
+        })
+    })
+
+    await page.route("**/txt/lbtesteditor/ocr_*.html", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "text/html",
+            body: '<html><body><div data-size="625x900"></div></body></html>'
+        })
+    })
+
+    return () => workInfoRequests
+}
+
+const makeStatsWork = (index, overrides = {}) => ({
+    lbworkid: `lbpopular${index}`,
+    titlepath: `PopularWork${index}`,
+    title: `Popular Work ${index}`,
+    shorttitle: `Popular Work ${index}`,
+    titleid: `PopularWork${index}`,
+    work_titleid: `PopularWork${index}`,
+    mediatype: "etext",
+    startpagename: "1",
+    popularity: 1000 - index,
+    authors: [
+        {
+            authorid: `Author${index}`,
+            surname: `Author ${index}`,
+            full_name: `Author ${index}`
+        }
+    ],
+    main_author: {
+        authorid: `Author${index}`,
+        surname: `Author ${index}`,
+        full_name: `Author ${index}`
+    },
+    work_authors: [
+        {
+            authorid: `Author${index}`,
+            surname: `Author ${index}`,
+            full_name: `Author ${index}`
+        }
+    ],
+    export: [],
+    ...overrides
+})
+
+const mockStatsBackend = async page => {
+    let popularWorksRequestUrl
+
+    await page.route("**/get_stats", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                works: 1,
+                authors: 1,
+                pages: { etext: 1, faksimil: 1 },
+                words: { etext: 1, faksimil: 1 },
+                epubs: 1
+            })
+        })
+    })
+
+    await page.route("**/query/etext*", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ data: [], hits: 0 })
+        })
+    })
+
+    await page.route("**/query_string/**", async route => {
+        const requestUrl = new URL(route.request().url())
+        popularWorksRequestUrl = requestUrl
+        const requestedSize = Number(requestUrl.searchParams.get("to"))
+        const data = Array.from({ length: Math.min(requestedSize, 30) }, (_, i) =>
+            makeStatsWork(1, { mediatype: i % 2 ? "faksimil" : "etext" })
+        )
+
+        if (requestedSize > 30) {
+            data.push(...Array.from({ length: 35 }, (_, i) => makeStatsWork(i + 2)))
+        }
+
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                hits: data.length,
+                distinct_hits: data.length,
+                data
+            })
+        })
+    })
+
+    return () => popularWorksRequestUrl
+}
+
+test.describe("Stats", () => {
+    test("shows the same first 30 popular works as the library works ranking", async ({
+        page
+    }) => {
+        const getPopularWorksRequestUrl = await mockStatsBackend(page)
+
+        await page.goto("/om/statistik", { waitUntil: "networkidle" })
+        await waitForAngular(page)
+
+        const popularWorks = page
+            .locator("h3", { hasText: "De mest lästa verken" })
+            .locator("xpath=following-sibling::ul[1]/li")
+
+        await expect(popularWorks).toHaveCount(30)
+        await expect(popularWorks.nth(29)).toContainText("Popular Work 30")
+
+        const requestUrl = getPopularWorksRequestUrl()
+        expect(requestUrl.pathname).toContain("/query_string/etext,faksimil,pdf")
+        expect(Number(requestUrl.searchParams.get("to"))).toBeGreaterThanOrEqual(100)
+    })
+})
+
 test.describe("Library Authors", () => {
     test.beforeEach(async ({ page }) => {
         await page.goto("/bibliotek?sort=popularitet&visa=authors", { waitUntil: "networkidle" })
@@ -216,6 +458,25 @@ test.describe("Reader", () => {
         )
     })
 
+    test("should normalize short reader URL and allow forward navigation", async ({ page }) => {
+        await mockReaderBackend(page)
+        await page.goto("/författare/LagerlöfS/titlar/Dunungen/etext", {
+            waitUntil: "networkidle"
+        })
+        await waitForAngular(page)
+
+        await expect(page).toHaveURL("/författare/LagerlöfS/titlar/Dunungen/sida/1/etext")
+
+        const nextLink = page.locator(".pager_ctrls a[rel=next]")
+        await expect(nextLink).toHaveAttribute(
+            "href",
+            "/författare/LagerlöfS/titlar/Dunungen/sida/2/etext"
+        )
+
+        await nextLink.evaluate(node => node.click())
+        await expect(page).toHaveURL("/författare/LagerlöfS/titlar/Dunungen/sida/2/etext")
+    })
+
     test("should show SO modal", async ({ page }) => {
         await page.goto("/författare/SöderbergH/titlar/DoktorGlas/sida/1/etext?so=damm", {
             waitUntil: "networkidle"
@@ -262,6 +523,16 @@ test.describe("Editor", () => {
         await page.click(".pager_ctrls a[rel=next]", { force: true })
         const img = page.locator("img.faksimil")
         await expect(img).toHaveAttribute("src", "/txt/lb238704/lb238704_3/lb238704_3_0005.jpeg")
+    })
+
+    test("should not refetch source info in a loop", async ({ page }) => {
+        const getWorkInfoRequests = await mockEditorBackend(page)
+
+        await page.goto("/editor/lbtesteditor/ix/1/f", { waitUntil: "domcontentloaded" })
+        await waitForAngular(page, 1500)
+        await page.waitForTimeout(1000)
+
+        expect(getWorkInfoRequests()).toBe(1)
     })
 })
 

@@ -15,10 +15,12 @@
     <h3>De mest lästa verken</h3>
     <ul>
         <li ng-repeat="title in $ctrl.titleList">
-            <span class="num">{{$index + 1}}. </span> <a ng-href="/författare/{{title.authors[0].authorid}}/titlar/{{title.titleid}}/sida/{{title.startpagename}}/{{title.mediatype}}">{{title.shorttitle || title.title}}</a>
+            <span class="num">{{$index + 1}}. </span>
+            <a ng-href="{{$ctrl.getPopularWorkUrl(title)}}">{{title.shorttitle || title.title}}</a>
 
-
-            <a class="author pull-right" ng-href="/författare/{{title.authors[0].authorid}}">{{title.authors[0].surname || title.authors[0].full_name}}</a>
+            <a class="author pull-right" ng-href="/författare/{{$ctrl.getPopularWorkAuthor(title).authorid}}">
+                {{$ctrl.getPopularWorkAuthor(title).surname || $ctrl.getPopularWorkAuthor(title).full_name}}
+            </a>
         </li>
     </ul>
     <h3>De mest nedladdade epubarna</h3>

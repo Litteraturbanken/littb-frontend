@@ -34,7 +34,7 @@ export const buildFilterMap = (list: string[] = []): FilterList => {
     return output
 }
 
-const normalizeField = (field: string): string => field.replace(/>/g, ".")
+const normalizeField = (field: string): string => field
 
 export const escapeQueryValue = (input: unknown): string => {
     if (input === null || input === undefined) {

@@ -571,11 +571,21 @@ export function createBackendService({
                     workinfo = works[0]
                 }
 
+                // Etext works may lack pages; inherit from a sibling with the same lbworkid.
+                if (!workinfo.pages) {
+                    const sibling = response.data.data.find(
+                        work => work.pages && work.lbworkid === workinfo.lbworkid
+                    )
+                    if (sibling) {
+                        workinfo.pages = sibling.pages
+                    }
+                }
+
                 workinfo.pagemap = {}
                 workinfo.stepmap = {}
                 workinfo.pagestep = Number(workinfo.pagestep)
                 workinfo.filenameMap = []
-                for (let pg of workinfo.pages) {
+                for (let pg of workinfo.pages || []) {
                     workinfo.pagemap[`page_${pg.pagename}`] = pg.pageindex
                     workinfo.pagemap[`ix_${pg.pageindex}`] = pg.pagename
                     workinfo.filenameMap[pg.pageindex] = pg.imagenumber

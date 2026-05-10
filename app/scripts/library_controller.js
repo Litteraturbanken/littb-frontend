@@ -379,6 +379,15 @@ function LibraryPageCtrl(
             }
             return title.lbworkid + (title.titlepath.split("/")[1] || "")
         }
+        ctrl.getTitleRowTrackId = function (row) {
+            if (!row) {
+                return
+            }
+            if (row.isHeader) {
+                return `header:${row.label}`
+            }
+            return `title:${ctrl.getUniqId(row)}`
+        }
 
         ctrl.titleRender = function () {
             console.log("titleRender")
@@ -686,9 +695,11 @@ function LibraryPageCtrl(
                 }[item._index]
             }
         }
+        let relevanceRequestSeq = 0
         ctrl.fetchByRelevance = async countOnly => {
             ctrl.relevanceSearching = true
             ctrl.relevanceError = false
+            const requestSeq = ++relevanceRequestSeq
 
             let filters = { ...ctrl.filters }
             if (
@@ -721,6 +732,9 @@ function LibraryPageCtrl(
                     true
                 )
 
+                if (requestSeq !== relevanceRequestSeq) {
+                    return
+                }
                 ctrl.relevanceData = titles
                 ctrl.relevanceSuggest = suggest
                 ctrl.relevanceSearching = false
@@ -728,6 +742,9 @@ function LibraryPageCtrl(
                 $scope.$apply()
                 return { titles, hits }
             } catch (e) {
+                if (requestSeq !== relevanceRequestSeq) {
+                    return
+                }
                 if (!e.xhrStatus == "abort") {
                     console.error("relevance error", e)
                     ctrl.relevanceSearching = false
@@ -737,9 +754,11 @@ function LibraryPageCtrl(
             }
         }
 
+        let partRequestSeq = 0
         ctrl.fetchParts = countOnly => {
             // unless ctrl.filter then return
             ctrl.partSearching = true
+            const requestSeq = ++partRequestSeq
             let filters = { ...ctrl.filters }
             if (
                 filters["sort_date_imprint.date:range"][0] == ctrl.chronology_floor &&
@@ -772,13 +791,20 @@ function LibraryPageCtrl(
                     ...size
                 })
                 .then(({ titles, suggest, hits, author_aggs }) => {
+                    if (requestSeq !== partRequestSeq) {
+                        return { stale: true }
+                    }
                     ctrl.all_titles = titles
                     ctrl.partSearching = false
                     ctrl.parts_hits = hits
                     ctrl.partSuggest = suggest
                     return { titles, hits, author_aggs }
                 })
-            $q.all([def, authors]).then(([{ author_aggs }]) => {
+            $q.all([def, authors]).then(([partResult]) => {
+                if (requestSeq !== partRequestSeq || partResult.stale) {
+                    return
+                }
+                const { author_aggs } = partResult
                 ctrl.currentPartAuthors = author_aggs.map(({ authorid }) => ctrl.authorsById[authorid])
                 console.log("currentpartauthors part results obtained")
                 ctrl.setAuthorData()
@@ -810,6 +836,7 @@ function LibraryPageCtrl(
             ctrl.fetchWorks(countOnly, false, true)
         }
 
+        const titleRequestSeq = {}
         ctrl.fetchWorks = (countOnly, epubOnly, isSearchRecent, pdfOnly) => {
             let listID = "works"
             let maybeParams = {}
@@ -830,6 +857,8 @@ function LibraryPageCtrl(
             }
             ctrl.titleSearching = true
             ctrl.titleModel[listID + "_searching"] = true
+            const requestSeq = (titleRequestSeq[listID] || 0) + 1
+            titleRequestSeq[listID] = requestSeq
 
             let filters = { ...ctrl.filters }
             if (
@@ -880,6 +909,9 @@ function LibraryPageCtrl(
             return $q
                 .all([def, authors])
                 .then(([{ titles, author_aggs, suggest, hits, distinct_hits, imported_aggs }]) => {
+                    if (requestSeq !== titleRequestSeq[listID]) {
+                        return
+                    }
                     console.log(
                         "🚀 ~ file: library_controller.js:862 ~ hits, distinct_hits:",
                         listID,
@@ -917,6 +949,9 @@ function LibraryPageCtrl(
                     ctrl.titleSearching = false
                 })
                 .catch(err => {
+                    if (requestSeq !== titleRequestSeq[listID]) {
+                        return
+                    }
                     console.error("fetchWorks error", err)
                     ctrl.titleSearching = false
                     ctrl.titleModel[listID + "_searching"] = false

@@ -107,6 +107,17 @@ class AuthorInfoPageCtrl {
 
         s.normalizeAuthor = this.$filter("normalizeAuthor")
         s.titleSort = this.util.titleSort
+        s.authorPath = (authorid, ...segments) => {
+            if (!authorid) {
+                return
+            }
+
+            const encodedSegments = [authorid, ...segments]
+                .filter(segment => segment !== undefined && segment !== null && segment !== "")
+                .map(segment => encodeURIComponent(segment))
+
+            return `/f%C3%B6rfattare/${encodedSegments.join("/")}`
+        }
 
         this.authors.then(([authorList, authorsById]) => {
             s.authorsById = authorsById
