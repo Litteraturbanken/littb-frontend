@@ -84,6 +84,12 @@ Tasks:
 - Extract a first pure module with focused unit coverage.
 - Keep AngularJS registration in a thin adapter file.
 
+Reference example:
+
+- Stats popular works uses `app/scripts/features/stats/popularWorks.mjs` for query options, list trimming, author fallback, and URL construction.
+- `app/scripts/components/stats-page/index.js` remains the AngularJS adapter that calls `backend` and binds data to the template.
+- `test/unit/stats-popular-works.spec.mjs` verifies the pure module without booting AngularJS.
+
 Exit criteria:
 
 - Future work has a concrete local example to copy.
