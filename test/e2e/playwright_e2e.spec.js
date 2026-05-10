@@ -458,6 +458,19 @@ test.describe("Reader", () => {
         )
     })
 
+    test("should keep search within work collapsed until opened", async ({ page }) => {
+        await page.goto("/författare/SöderbergH/titlar/DoktorGlas/sida/3/etext", {
+            waitUntil: "networkidle"
+        })
+        await waitForAngular(page)
+
+        const searchPanel = page.locator(".searchbox .collapse-content")
+        await expect(searchPanel).toBeHidden()
+
+        await page.locator('.subnav a[ng-click="$ctrl.openSearchWorks()"]').click()
+        await expect(searchPanel).toBeVisible()
+    })
+
     test("should normalize short reader URL and allow forward navigation", async ({ page }) => {
         await mockReaderBackend(page)
         await page.goto("/författare/LagerlöfS/titlar/Dunungen/etext", {

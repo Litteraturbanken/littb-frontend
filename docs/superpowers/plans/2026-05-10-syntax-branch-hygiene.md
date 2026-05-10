@@ -193,7 +193,7 @@ Modify the `scripts` section in `package.json` so it contains both `test` and `t
 Set the current test-count bullet to the verified merged baseline:
 
 ```markdown
-- **Total Tests**: 27 tests across 10 describe blocks
+- **Total Tests**: 28 tests across 10 describe blocks
 ```
 
 - [ ] **Step 3: Document the Vite server requirement**
@@ -215,7 +215,7 @@ with:
 After the "Run all E2E tests" command block in `TESTING.md`, add:
 
 ```markdown
-Current `Syntax` baseline: 26 of 27 tests pass. The known failing test is `Reader > should show SO modal`, which depends on the SO modal flow and should be fixed or quarantined separately.
+Current `Syntax` baseline: 27 of 28 tests pass. The known failing test is `Reader > should show SO modal`, which depends on the SO modal flow and should be fixed or quarantined separately.
 ```
 
 - [ ] **Step 5: Verify script availability**
@@ -343,7 +343,7 @@ Run:
 npm test -- --reporter=list
 ```
 
-Expected before fixing the SO modal issue: `26 passed` and one failure for `Reader > should show SO modal`.
+Expected before fixing the SO modal issue: `27 passed` and one failure for `Reader > should show SO modal`.
 
 - [ ] **Step 6: Confirm working tree only contains intentional local noise**
 
@@ -361,7 +361,7 @@ In the implementation summary, report:
 
 ```text
 Build: npm run build passed.
-E2E: npm test -- --reporter=list produced 26 passed, 1 known SO modal failure.
+E2E: npm test -- --reporter=list produced 27 passed, 1 known SO modal failure.
 Branch hygiene: generated artifacts ignored/removed, unused SLA collation XML removed, master reconciled.
 ```
 

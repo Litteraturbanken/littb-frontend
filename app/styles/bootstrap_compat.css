@@ -74,6 +74,29 @@ a.disabled {
     opacity: 0.6;
 }
 
+.collapse {
+    display: none;
+}
+
+.collapse.in {
+    display: block;
+}
+
+tr.collapse.in {
+    display: table-row;
+}
+
+tbody.collapse.in {
+    display: table-row-group;
+}
+
+.collapsing {
+    position: relative;
+    height: 0;
+    overflow: hidden;
+    transition: height 0.35s ease;
+}
+
 .btn-group {
     display: inline-flex;
     align-items: stretch;
