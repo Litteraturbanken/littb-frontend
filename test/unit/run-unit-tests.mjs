@@ -3,6 +3,13 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { spawnSync } from "node:child_process"
 
+class CommandFailure extends Error {
+    constructor(status) {
+        super("Unit test command failed")
+        this.status = status
+    }
+}
+
 function run(command, args) {
     const result = spawnSync(command, args, {
         stdio: "inherit",
@@ -12,16 +19,18 @@ function run(command, args) {
         throw result.error
     }
     if (result.status !== 0) {
-        process.exit(result.status || 1)
+        throw new CommandFailure(result.status || 1)
     }
 }
 
-run(process.execPath, ["test/unit/stats-popular-works.spec.mjs"])
-
-const outDir = mkdtempSync(join(tmpdir(), "littb-unit-"))
+let outDir
 
 try {
-    run("node_modules/.bin/tsc", [
+    run(process.execPath, ["test/unit/stats-popular-works.spec.mjs"])
+
+    outDir = mkdtempSync(join(tmpdir(), "littb-unit-"))
+    run(process.execPath, [
+        join("node_modules", "typescript", "bin", "tsc"),
         "test/unit/query.spec.ts",
         "app/scripts/query.ts",
         "--outDir",
@@ -39,6 +48,15 @@ try {
         "false"
     ])
     run(process.execPath, [join(outDir, "test/unit/query.spec.js")])
+} catch (error) {
+    if (error instanceof CommandFailure) {
+        process.exitCode = error.status
+    } else {
+        console.error(error)
+        process.exitCode = 1
+    }
 } finally {
-    rmSync(outDir, { recursive: true, force: true })
+    if (outDir) {
+        rmSync(outDir, { recursive: true, force: true })
+    }
 }
