@@ -88,7 +88,7 @@ Reference example:
 
 - Stats popular works uses `app/scripts/features/stats/popularWorks.mjs` for query options, list trimming, author fallback, and URL construction.
 - `app/scripts/components/stats-page/index.js` remains the AngularJS adapter that calls `backend` and binds data to the template.
-- `test/unit/stats-popular-works.spec.mjs` verifies the pure module without booting AngularJS.
+- `test/unit/run-unit-tests.mjs` runs the stats module spec and the existing query module spec without booting AngularJS.
 
 Exit criteria:
 

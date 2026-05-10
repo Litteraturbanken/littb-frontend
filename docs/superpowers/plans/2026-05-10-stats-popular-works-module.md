@@ -16,10 +16,12 @@
   - Owns the stats popular-work constants and pure helpers.
 - Create: `test/unit/stats-popular-works.spec.mjs`
   - Runs in Node without AngularJS and imports only the pure module.
+- Create: `test/unit/run-unit-tests.mjs`
+  - Runs the stats module spec and compiles/runs the existing TypeScript query module spec from a temporary directory.
 - Modify: `app/scripts/components/stats-page/index.js`
   - Imports the pure helpers and delegates model decisions to them.
 - Modify: `package.json`
-  - Adds a `test:unit` script for the new unit spec.
+  - Adds a `test:unit` script for the unit runner.
 - Modify: `docs/superpowers/specs/2026-05-10-syntax-modernization-design.md`
   - Records the stats popular works module as the first reference example for the module-plus-adapter pattern.
 
@@ -34,7 +36,7 @@
 Add `test:unit` after `test:e2e` in `package.json`:
 
 ```json
-"test:unit": "node test/unit/stats-popular-works.spec.mjs",
+"test:unit": "node test/unit/run-unit-tests.mjs",
 ```
 
 - [ ] **Step 2: Write the failing unit spec**
@@ -279,7 +281,7 @@ Reference example:
 
 - Stats popular works uses `app/scripts/features/stats/popularWorks.mjs` for query options, list trimming, author fallback, and URL construction.
 - `app/scripts/components/stats-page/index.js` remains the AngularJS adapter that calls `backend` and binds data to the template.
-- `test/unit/stats-popular-works.spec.mjs` verifies the pure module without booting AngularJS.
+- `test/unit/run-unit-tests.mjs` runs the stats module spec and the existing query module spec without booting AngularJS.
 ```
 
 - [ ] **Step 2: Run the stale-baseline scan**
@@ -332,7 +334,7 @@ npm test -- --reporter=list
 ```
 
 Expected:
-- Unit script exits 0.
+- Unit script exits 0 and prints both `stats popular works tests: ok` and `extended query utilities tests: ok`.
 - Build exits 0; existing Sass/Browserslist/runtime asset warnings are acceptable.
 - E2E reports 26 passed and one known `Reader > should show SO modal` failure.
 
