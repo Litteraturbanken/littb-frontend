@@ -7,7 +7,7 @@ This document describes the E2E testing setup for validating the AngularJS moder
 - **Framework**: Playwright
 - **Config**: `playwright.config.js`
 - **Test File**: `test/e2e/playwright_e2e.spec.js`
-- **Total Tests**: 24 tests across 9 describe blocks
+- **Total Tests**: 27 tests across 10 describe blocks
 - **Server**: Tests run against the Vite dev server on `localhost:9000`. If an old webpack dev server is already listening on port 9000, stop it before running Playwright.
 - **Playwright Server Setup**: `playwright.config.js` starts the server via `webServer.command: "yarn dev"` and waits for `localhost:9000`.
 
@@ -18,7 +18,7 @@ This document describes the E2E testing setup for validating the AngularJS moder
 npm run test:e2e
 ```
 
-Current `Syntax` baseline: 23 of 24 tests pass. The known failing test is `Reader > should show SO modal`, which depends on the SO modal flow and should be fixed or quarantined separately.
+Current `Syntax` baseline: 26 of 27 tests pass. The known failing test is `Reader > should show SO modal`, which depends on the SO modal flow and should be fixed or quarantined separately.
 
 ```bash
 # Run specific test file
@@ -33,7 +33,7 @@ npx playwright test -g "Search"
 
 ## Domain-Specific Test Subsets
 
-### Search Domain (3 tests)
+### Search Domain (2 tests)
 ```bash
 npx playwright test -g "Search"
 ```
@@ -48,9 +48,9 @@ npx playwright test -g "Search"
 - Search results display
 - Navigation to reader from search results
 
-### Library Domain (9 tests)
+### Library/Titles Domain (8 tests)
 ```bash
-npx playwright test -g "Library"
+npx playwright test -g "Library|Titles"
 ```
 
 **Test Blocks:**
@@ -66,7 +66,7 @@ npx playwright test -g "Library"
 - Pagination
 - Download functionality
 
-### Reader/Parts/Editor Domain (14 tests)
+### Reader/Parts/Editor Domain (16 tests)
 ```bash
 npx playwright test -g "Reader|Parts|Editor"
 ```
@@ -91,22 +91,23 @@ npx playwright test
 ```
 
 **All Test Blocks:**
-1. Search
-2. Search Links
-3. Library Authors
-4. Library Works
-5. Library Relevance
-6. Titles
-7. Reader
-8. Parts Navigation
-9. Editor
+1. Stats
+2. Library Authors
+3. Library Works
+4. Library Relevance
+5. Titles
+6. Reader
+7. Editor
+8. Search Links
+9. Search
+10. Parts Navigation
 
 ## Testing Protocol for Modernization
 
 ### Phase 1 (Foundation)
 **When**: After creating state services, before Phase 2 begins
 **Command**: `npx playwright test`
-**Required**: Current `Syntax` baseline is 24 total tests, with 23 passing and known failing test `Reader > should show SO modal` unless it has been fixed or quarantined.
+**Required**: Current `Syntax` baseline is 27 total tests, with 26 passing and known failing test `Reader > should show SO modal` unless it has been fixed or quarantined.
 **Purpose**: Establish baseline - ensure state services don't break existing functionality
 
 ### Phase 2 (Domain Modernization)
@@ -118,7 +119,7 @@ npx playwright test
 npx playwright test -g "Search"
 
 # Library specialist before commit
-npx playwright test -g "Library"
+npx playwright test -g "Library|Titles"
 
 # Reader specialist before commit
 npx playwright test -g "Reader|Parts|Editor"
@@ -129,15 +130,15 @@ npx playwright test -g "Reader|Parts|Editor"
 ### Phase 3 (Integration)
 **When**: After merging all domain branches (Day 1)
 **Command**: `npx playwright test`
-**Required**: Current `Syntax` baseline applies: 23 of 24 tests pass, with known failing test `Reader > should show SO modal` unless fixed or quarantined.
+**Required**: Current `Syntax` baseline applies: 26 of 27 tests pass, with known failing test `Reader > should show SO modal` unless fixed or quarantined.
 
 **When**: After each TypeScript conversion (Days 2-3)
 **Command**: `npx playwright test`
-**Required**: Current `Syntax` baseline applies: 23 of 24 tests pass, with known failing test `Reader > should show SO modal` unless fixed or quarantined.
+**Required**: Current `Syntax` baseline applies: 26 of 27 tests pass, with known failing test `Reader > should show SO modal` unless fixed or quarantined.
 
 **When**: Before final PR merge (Day 4)
 **Command**: `npx playwright test`
-**Required**: Current `Syntax` baseline applies: 23 of 24 tests pass, with known failing test `Reader > should show SO modal` unless fixed or quarantined; include performance validation.
+**Required**: Current `Syntax` baseline applies: 26 of 27 tests pass, with known failing test `Reader > should show SO modal` unless fixed or quarantined; include performance validation.
 
 ## waitForAngular Helper
 
@@ -186,7 +187,7 @@ The test suite uses a custom `waitForAngular` helper that:
 1. STOP - do not proceed to Phase 2 if failures exceed the current `Syntax` baseline.
 2. Debug any failure other than the documented `Reader > should show SO modal` failure.
 3. Fix and re-run full suite.
-4. Only proceed when the suite is back to the current baseline: 24 total tests, 23 passing, with only `Reader > should show SO modal` failing unless it has been fixed or quarantined.
+4. Only proceed when the suite is back to the current baseline: 27 total tests, 26 passing, with only `Reader > should show SO modal` failing unless it has been fixed or quarantined.
 
 ### If tests fail during Phase 2:
 1. Domain specialist: debug within your domain
