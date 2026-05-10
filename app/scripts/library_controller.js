@@ -376,6 +376,15 @@ littb.controller(
             }
             return title.lbworkid + (title.titlepath.split("/")[1] || "")
         }
+        s.getTitleRowTrackId = function (row) {
+            if (!row) {
+                return
+            }
+            if (row.isHeader) {
+                return `header:${row.label}`
+            }
+            return `title:${s.getUniqId(row)}`
+        }
 
         s.titleRender = function () {
             console.log("titleRender")
@@ -690,9 +699,11 @@ littb.controller(
                 }[item._index]
             }
         }
+        let relevanceRequestSeq = 0
         s.fetchByRelevance = async countOnly => {
             s.relevanceSearching = true
             s.relevanceError = false
+            const requestSeq = ++relevanceRequestSeq
 
             let filters = { ...s.filters }
             if (
@@ -734,6 +745,9 @@ littb.controller(
                     true
                 )
 
+                if (requestSeq !== relevanceRequestSeq) {
+                    return
+                }
                 s.relevanceData = titles
                 s.relevanceSuggest = suggest
                 s.relevanceSearching = false
@@ -741,6 +755,9 @@ littb.controller(
                 s.$apply()
                 return { titles, hits }
             } catch (e) {
+                if (requestSeq !== relevanceRequestSeq) {
+                    return
+                }
                 if (!e.xhrStatus == "abort") {
                     console.error("relevance error", e)
                     s.relevanceSearching = false
@@ -750,9 +767,11 @@ littb.controller(
             }
         }
 
+        let partRequestSeq = 0
         s.fetchParts = countOnly => {
             // unless s.filter then return
             s.partSearching = true
+            const requestSeq = ++partRequestSeq
             let filters = { ...s.filters }
             if (
                 filters["sort_date_imprint.date:range"][0] == s.chronology_floor &&
@@ -785,13 +804,20 @@ littb.controller(
                     ...size
                 })
                 .then(({ titles, suggest, hits, author_aggs }) => {
+                    if (requestSeq !== partRequestSeq) {
+                        return { stale: true }
+                    }
                     s.all_titles = titles
                     s.partSearching = false
                     s.parts_hits = hits
                     s.partSuggest = suggest
                     return { titles, hits, author_aggs }
                 })
-            $q.all([def, authors]).then(([{ author_aggs }]) => {
+            $q.all([def, authors]).then(([partResult]) => {
+                if (requestSeq !== partRequestSeq || partResult.stale) {
+                    return
+                }
+                const { author_aggs } = partResult
                 s.currentPartAuthors = author_aggs.map(({ authorid }) => s.authorsById[authorid])
                 console.log("currentpartauthors part results obtained")
                 s.setAuthorData()
@@ -823,6 +849,7 @@ littb.controller(
             s.fetchWorks(countOnly, false, true)
         }
 
+        const titleRequestSeq = {}
         s.fetchWorks = (countOnly, epubOnly, isSearchRecent, pdfOnly) => {
             let listID = "works"
             let maybeParams = {}
@@ -846,6 +873,8 @@ littb.controller(
             }
             s.titleSearching = true
             s.titleModel[listID + "_searching"] = true
+            const requestSeq = (titleRequestSeq[listID] || 0) + 1
+            titleRequestSeq[listID] = requestSeq
 
             let filters = { ...s.filters }
             if (
@@ -890,6 +919,9 @@ littb.controller(
             return $q
                 .all([def, authors])
                 .then(([{ titles, author_aggs, suggest, hits, distinct_hits, imported_aggs }]) => {
+                    if (requestSeq !== titleRequestSeq[listID]) {
+                        return
+                    }
                     console.log(
                         "🚀 ~ file: library_controller.js:862 ~ hits, distinct_hits:",
                         listID,
@@ -935,6 +967,9 @@ littb.controller(
                     s.titleSearching = false
                 })
                 .catch(err => {
+                    if (requestSeq !== titleRequestSeq[listID]) {
+                        return
+                    }
                     console.error("fetchWorks error", err)
                     s.titleSearching = false
                     s.titleModel[listID + "_searching"] = false

@@ -11,3 +11,5 @@ stage.sh
 Caddyfile
 misc
 tmp
+.playwright-cli
+.playwright-mcp

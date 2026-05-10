@@ -8,9 +8,9 @@ import { buildFilterQuery, composeQuery } from "./query.ts"
 const littb = angular.module("littbApp")
 let SIZE_VALS = [625, 750, 1100, 1500, 2050]
 
-// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-let STRIX_URL = "/api"
+// let STRIX_URL = "/api"
 
 if (
     _.str.startsWith(location.host, "red.l") ||
@@ -596,7 +596,9 @@ littb.factory("backend", function ($http, $q, util, $timeout, $sce, $location, $
 
                 // etext works may lack pages; inherit from a sibling (e.g. faksimil) with the same lbworkid
                 if (!workinfo.pages) {
-                    const sibling = response.data.data.find(w => w.pages && w.lbworkid === workinfo.lbworkid)
+                    const sibling = response.data.data.find(
+                        w => w.pages && w.lbworkid === workinfo.lbworkid
+                    )
                     if (sibling) {
                         workinfo.pages = sibling.pages
                     }

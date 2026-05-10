@@ -37,7 +37,7 @@
             </tr>
             <tr
                 class="work_link transition-colors duration-150"
-                ng-repeat="row in titleModel[listType]"
+                ng-repeat="row in titleModel[listType] track by getTitleRowTrackId(row)"
                 on-finish-render="titleRender()"
                 ng-class="{'first' : $first, header: row.isHeader, 'hover:bg-gray-300 hover:bg-opacity-50': !row.isHeader}"
                 ng-click="toggleDownload(row, true)"

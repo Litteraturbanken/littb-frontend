@@ -2618,6 +2618,12 @@ body > .header {
         
         
         .result {
+            tr.ng-enter,
+            tr.ng-leave,
+            tr.ng-move {
+                transition: none !important;
+                animation: none !important;
+            }
             table {
                 @media (min-width: $screen-lg) {
                     margin-left: -1.5rem;

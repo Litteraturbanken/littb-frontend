@@ -267,16 +267,51 @@ littb.controller("contactFormCtrl", function ($scope, backend, $timeout, $locati
 
 littb.controller("statsCtrl", function ($scope, backend) {
     const s = $scope
+    const popularWorksLimit = 30
+    const popularWorksFetchSize = 100
+    const popularWorksInclude =
+        "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sort_date_imprint.plain," +
+        "main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type," +
+        "work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword,authors.authorid,authors.surname,authors.full_name"
+
+    s.getPopularWorkAuthor = title =>
+        title.main_author ||
+        (title.authors && title.authors[0]) ||
+        (title.work_authors && title.work_authors[0]) ||
+        {}
+
+    s.getPopularWorkUrl = title => {
+        const mediatypes = title.mediatypes || []
+        const mediatype =
+            mediatypes.find(item => ["etext", "faksimil", "infopost"].includes(item.label)) ||
+            mediatypes[0]
+
+        if (mediatype && mediatype.url) {
+            return mediatype.url.startsWith("/") ? mediatype.url : `/${mediatype.url}`
+        }
+
+        const author = s.getPopularWorkAuthor(title)
+        return `/författare/${author.authorid}/titlar/${title.work_titleid || title.titleid}/sida/${
+            title.startpagename
+        }/${title.mediatype}`
+    }
 
     backend.getStats().then(data => (s.statsData = data))
 
     backend
-        .getTitles("etext,faksimil", { sort_field: "popularity|desc", to: 30 })
+        .getTitles("etext,faksimil,pdf", {
+            sort_field: "popularity|desc",
+            q: "*",
+            include: popularWorksInclude,
+            partial_string: true,
+            author_aggs: true,
+            to: popularWorksFetchSize
+        })
         .then(({ titles }) => {
-            s.titleList = titles
+            s.titleList = titles.slice(0, popularWorksLimit)
         })
 
-    return backend.getEpub(30).then(({ data, hits }) => (s.epubList = data))
+    return backend.getEpub(popularWorksLimit).then(({ data, hits }) => (s.epubList = data))
 })
 
 littb.controller("biblinfoCtrl", function ($scope, backend) {
@@ -445,6 +480,18 @@ littb.controller(
         s.normalizeAuthor = $filter("normalizeAuthor")
 
         s.titleSort = util.titleSort
+
+        s.authorPath = function (authorid, ...segments) {
+            if (!authorid) {
+                return
+            }
+
+            const encodedSegments = [authorid, ...segments]
+                .filter(segment => segment !== undefined && segment !== null && segment !== "")
+                .map(segment => encodeURIComponent(segment))
+
+            return `/f%C3%B6rfattare/${encodedSegments.join("/")}`
+        }
 
         authors.then(function ([authorList, authorsById]) {
             s.authorsById = authorsById
