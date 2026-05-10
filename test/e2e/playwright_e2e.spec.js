@@ -471,6 +471,28 @@ test.describe("Reader", () => {
         await expect(searchPanel).toBeVisible()
     })
 
+    test("should keep Bootstrap-compatible button spacing", async ({ page }) => {
+        await page.goto("/författare/SöderbergH/titlar/DoktorGlas/sida/3/etext", {
+            waitUntil: "networkidle"
+        })
+        await waitForAngular(page)
+
+        await page.locator('.subnav a[ng-click="$ctrl.openSearchWorks()"]').click()
+
+        const searchButton = page.locator(".searchbox button.submit.btn")
+        await expect(searchButton).toBeVisible()
+        const padding = await searchButton.evaluate(button => {
+            const style = getComputedStyle(button)
+            return {
+                left: parseFloat(style.paddingLeft),
+                right: parseFloat(style.paddingRight)
+            }
+        })
+
+        expect(padding.left).toBeGreaterThanOrEqual(10)
+        expect(padding.right).toBeGreaterThanOrEqual(10)
+    })
+
     test("should normalize short reader URL and allow forward navigation", async ({ page }) => {
         await mockReaderBackend(page)
         await page.goto("/författare/LagerlöfS/titlar/Dunungen/etext", {
