@@ -2,9 +2,6 @@
 <page-title>{{authorInfo.full_name}}, {{getPageTitle(showpage)}}</page-title>
 <img ng-if="showpage != 'dramawebben'" bkg-img class="no-gradient" src="../img/forf2_bkg.jpg"></img>
 <img class="dw_bkg" ng-if="showpage == 'dramawebben'" bkg-img class="no-gradient" src="../img/dramawebben_fade_more.jpg"></img>
-<!-- <img ng-if="slaMode && showpage == 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg_gradient.jpg"></img> -->
-
-<!-- <img ng-if="slaMode && showpage != 'jamfor'" bkg-img class="no-gradient" src="img/sla_bkg.jpg"></img> -->
 <div ng-class="{searching:!authorInfo && !authorError, show_large : show_large}">
     <div class="preloader"> 
         <i class="spinner fa fa-spinner fa-pulse"></i>
@@ -252,8 +249,6 @@
         </div>
     
         <div ng-switch-when="biblinfo"><sla-biblinfo></sla-biblinfo></div>
-    
-        <div ng-switch-when="jamfor"><sla-text-compare></sla-text-compare></div>
     
         <!-- <div ng-switch-default id="author-info-external"></div> -->
         <div ng-switch-default>

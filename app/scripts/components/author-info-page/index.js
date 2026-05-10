@@ -1,6 +1,5 @@
 import authorInfoUrl from "../../../views/authorInfo.html?url"
 import slaBiblinfoUrl from "../../../views/sla/biblinfo.html?url"
-import slaCompareUrl from "../../../views/sla/textjamforelse.html?url"
 
 const angular = window.angular
 const _ = window._
@@ -47,7 +46,6 @@ class AuthorInfoPageCtrl {
             s.slaMode = true
             s.author = "LagerlöfS"
             s.biblInfoLocation = slaBiblinfoUrl
-            s.compareLocation = slaCompareUrl
         }
 
         s.showpage = null
@@ -143,7 +141,6 @@ class AuthorInfoPageCtrl {
                 dramawebben: "Introduktion av Dramawebben",
                 semer: "Mera om",
                 biblinfo: "Bibliografisk databas",
-                jamfor: "Textkritisk verkstad",
                 omtexterna: "Om texterna"
             }[page] || _.str.capitalize(page))
 
@@ -180,7 +177,6 @@ class AuthorInfoPageCtrl {
             let url
             c.log("refreshExternalDoc", page, routeParams.omtexternaDoc)
             if (s.slaMode) {
-                if (s.showpage == "jamfor") return
                 let doc
                 if (page === "omtexterna" && !routeParams.omtexternaDoc) {
                     doc = "omtexterna.html"

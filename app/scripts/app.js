@@ -426,7 +426,6 @@ window.littb = angular
 
             .when(
                 [
-                    "/författare/LagerlöfS/jamfor",
                     "/författare/LagerlöfS/omtexterna",
                     "/författare/LagerlöfS/omtexterna/:omtexternaDoc"
                 ],
@@ -450,7 +449,6 @@ window.littb = angular
                     "/författare/:author/mer",
                     "/författare/:author/semer",
                     "/författare/:author/biblinfo",
-                    "/författare/:author/jamfor",
                     "/författare/:author/omtexterna/:omtexternaDoc?"
                 ],
                 {

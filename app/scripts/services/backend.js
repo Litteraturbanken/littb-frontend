@@ -963,17 +963,6 @@ export function createBackendService({
             })
         },
 
-        getDiff(workgroup, myWits, ...ids) {
-            const url = `/assets/views/sla/kollationering-${workgroup.toLowerCase()}.xml`
-
-            return http({
-                url,
-                transformResponse: null
-            }).then(function (response) {
-                return response.data
-            })
-        },
-
         submitContactForm(name, email, message, isSOL) {
             let canceller = $q.defer()
             const timeoutDef = $timeout(() => canceller.resolve("timeout"), 30000)

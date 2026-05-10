@@ -58,7 +58,6 @@ async function boot() {
     await import("./scripts/library_controller.js")
     await import("./scripts/dramaweb_controller.js")
     await import("./scripts/controllers.js")
-    await import("./scripts/lagerlof.js")
     // await import("./scripts/school.js")
 
     angular.resumeBootstrap()
