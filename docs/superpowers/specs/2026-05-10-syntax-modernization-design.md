@@ -19,7 +19,7 @@ The branch already contains major modernization work:
 The current verified baseline is:
 
 - `npm run build` passes after dependencies are installed with `yarn install --frozen-lockfile`.
-- `npm test -- --reporter=list` passes 23 of 24 tests when Playwright starts the Vite dev server.
+- `npm test -- --reporter=list` runs 27 tests and reports 26 passing tests when Playwright starts the Vite dev server.
 - The known failing test is `Reader > should show SO modal`.
 
 There are also branch-quality issues that should be handled before further refactoring:
@@ -71,7 +71,7 @@ Exit criteria:
 - `git status` contains no generated or local Playwright noise.
 - The removed SLA collation XML filenames have no remaining code or content references.
 - `npm run build` passes.
-- `npm test -- --reporter=list` reports the expected baseline of 23 passing tests and the SO modal failure, unless that failure is explicitly fixed or quarantined.
+- `npm test -- --reporter=list` reports the expected baseline of 26 passing tests and the SO modal failure, unless that failure is explicitly fixed or quarantined.
 
 ### Milestone 1: Module Boundary Conventions
 
@@ -219,7 +219,7 @@ npm test -- --reporter=list
 Expected baseline before fixing the SO modal test:
 
 - Build passes.
-- Playwright reports 23 passing tests and one failing SO modal test.
+- Playwright reports 26 passing tests and one failing SO modal test.
 
 After any behavior-affecting milestone, run the full Playwright suite. For small pure-module extractions, run the relevant unit tests first, then run the E2E suite when the adapter behavior is touched.
 
