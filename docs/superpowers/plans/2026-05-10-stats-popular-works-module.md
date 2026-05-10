@@ -336,7 +336,7 @@ npm test -- --reporter=list
 Expected:
 - Unit script exits 0 and prints both `stats popular works tests: ok` and `extended query utilities tests: ok`.
 - Build exits 0; existing Sass/Browserslist/runtime asset warnings are acceptable.
-- E2E reports 28 passed and one known `Reader > should show SO modal` failure.
+- E2E reports 29 passed and one known `Reader > should show SO modal` failure.
 
 - [ ] **Step 3: Confirm generated output remains ignored**
 

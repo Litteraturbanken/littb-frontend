@@ -605,6 +605,45 @@ test.describe("Search", () => {
         await waitForAngular(page)
     })
 
+    test("should keep Bootstrap-compatible autocomplete dropdown items", async ({ page }) => {
+        await page.route("**/autocomplete/*", async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    data: [],
+                    suggest: [{ text: "Doktor Glas", score: 1 }]
+                })
+            })
+        })
+
+        await page.getByTitle("Snabbkommando: 's'").click()
+        const autocompleteInput = page.locator("#autocomplete")
+        await expect(autocompleteInput).toBeVisible()
+        await autocompleteInput.fill("dok")
+
+        const autocompleteItems = page.locator(".autocomplete .dropdown-menu > li > a")
+        await expect
+            .poll(async () => autocompleteItems.count(), { timeout: 5000 })
+            .toBeGreaterThan(0)
+        const autocompleteItem = autocompleteItems.first()
+        await expect(autocompleteItem).toBeVisible()
+        const itemStyle = await autocompleteItem.evaluate(item => {
+            const style = getComputedStyle(item)
+            return {
+                display: style.display,
+                left: parseFloat(style.paddingLeft),
+                right: parseFloat(style.paddingRight),
+                whiteSpace: style.whiteSpace
+            }
+        })
+
+        expect(itemStyle.display).toBe("block")
+        expect(itemStyle.left).toBeGreaterThanOrEqual(20)
+        expect(itemStyle.right).toBeGreaterThanOrEqual(20)
+        expect(itemStyle.whiteSpace).toBe("nowrap")
+    })
+
     test("should give search results", async ({ page }) => {
         const input = page.locator('[ng-model="$ctrl.query"]')
         await input.fill("kriget är förklarat!")
