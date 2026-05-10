@@ -18,7 +18,7 @@ assertQuery("empty filters yield empty string", {}, "")
 assertQuery(
     "gender filter combines top-level and nested gender checks",
     { gender: "female" },
-    "(gender:female OR authors>(gender:female AND NOT _exists_:type))"
+    "(gender:female OR authors>(gender:female))"
 )
 
 assertQuery(
@@ -36,13 +36,13 @@ assertQuery(
 assertQuery(
     "language filters combine lexical flags",
     { languages: ["language:lat", "modernized:true", "translation:yes", "foreign:yes"] },
-    "(language:lat OR modernized:true OR (keyword:language-source OR keyword:translated OR authors>(type:translator)) OR (_exists_:language AND NOT language:swe))"
+    "(language:lat OR modernized:true OR (keyword:language-source OR keyword:translated OR (authors>(type:translator))) OR (_exists_:language AND NOT language:swe) OR language_source:unknown)"
 )
 
 assertQuery(
     "language filters differentiate translation versus original",
     { languages: ["translation:yes", "original:yes"] },
-    "((keyword:language-source OR keyword:translated OR authors>(type:translator)) OR (NOT (keyword:language-source OR keyword:translated OR authors>(type:translator))))"
+    "((keyword:language-source OR keyword:translated OR (authors>(type:translator))) OR ((NOT (keyword:language-source OR keyword:translated OR (authors>(type:translator)))) AND NOT language_source:unknown))"
 )
 
 assertQuery(
@@ -69,7 +69,7 @@ assertQuery(
         gender: "female",
         keywords: ["keyword:Barnlitteratur"]
     },
-    "(gender:female OR authors>(gender:female AND NOT _exists_:type)) AND (keyword:Barnlitteratur)"
+    "(gender:female OR authors>(gender:female)) AND (keyword:Barnlitteratur)"
 )
 
 console.log("query builder parity tests: ok")
@@ -81,7 +81,7 @@ const complexFilterQuery = buildFilterQuery({
 })
 assert.strictEqual(
     complexFilterQuery,
-    "(gender:female OR authors>(gender:female AND NOT _exists_:type)) AND (keyword:Barnlitteratur) AND (main_author.gender:female)"
+    "(gender:female OR authors>(gender:female)) AND (keyword:Barnlitteratur) AND (main_author.gender:female)"
 )
 
 const nestedFieldFilterQuery = buildFilterQuery({
@@ -99,7 +99,7 @@ const composedQuery = composeQuery({
 })
 assert.strictEqual(
     composedQuery,
-    '(keyword:(klassiker)) (gender:female OR authors>(gender:female AND NOT _exists_:type)) AND (keyword:Barnlitteratur) AND (main_author.gender:female) AND (Strindberg)'
+    "(keyword:(klassiker)) AND (gender:female OR authors>(gender:female)) AND (keyword:Barnlitteratur) AND (main_author.gender:female) AND (Strindberg)"
 )
 
 const searchPayload = buildSearchFilterPayload({

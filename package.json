@@ -6,7 +6,7 @@
     "scripts": {
         "test": "node_modules/.bin/playwright test",
         "test:e2e": "node_modules/.bin/playwright test",
-        "test:unit": "node test/unit/stats-popular-works.spec.mjs",
+        "test:unit": "node test/unit/run-unit-tests.mjs",
         "test:ui": "node_modules/.bin/playwright test --ui",
         "test:debug": "node_modules/.bin/playwright test --debug",
         "dev": "vite --host 0.0.0.0 --port 9000",
