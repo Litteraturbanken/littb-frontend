@@ -493,6 +493,33 @@ test.describe("Reader", () => {
         expect(padding.right).toBeGreaterThanOrEqual(10)
     })
 
+    test("should keep Bootstrap-compatible about modal chrome", async ({ page }) => {
+        await page.goto("/författare/ReenstiernaMH/titlar/Årstadagboken1/sida/5/faksimil?om-boken", {
+            waitUntil: "networkidle"
+        })
+        await waitForAngular(page)
+
+        const dialog = page.locator(".about .modal-dialog")
+        const content = page.locator(".about .modal-content")
+        await expect(dialog).toBeVisible()
+
+        const modalChrome = await dialog.evaluate(dialogElement => {
+            const contentElement = dialogElement.querySelector(".modal-content")
+            const contentStyle = getComputedStyle(contentElement)
+            const rect = dialogElement.getBoundingClientRect()
+
+            return {
+                width: rect.width,
+                shadow: contentStyle.boxShadow
+            }
+        })
+
+        await expect(content).toBeVisible()
+        expect(modalChrome.width).toBeGreaterThanOrEqual(590)
+        expect(modalChrome.width).toBeLessThanOrEqual(610)
+        expect(modalChrome.shadow).not.toBe("none")
+    })
+
     test("should normalize short reader URL and allow forward navigation", async ({ page }) => {
         await mockReaderBackend(page)
         await page.goto("/författare/LagerlöfS/titlar/Dunungen/etext", {
