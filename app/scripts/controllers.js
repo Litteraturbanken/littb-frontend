@@ -252,7 +252,14 @@ function SourceInfoPanelCtrl($scope, backend, $routeParams, $q, authors, $docume
         s.show_large = false
 
         if (s.workinfoPromise && typeof s.workinfoPromise.then === "function") {
-            s.workinfoPromise.then(function () {
+            s.workinfoPromise.then(function (workinfo) {
+                if (workinfo) {
+                    s.workinfo = workinfo
+                }
+                if (!s.workinfo) {
+                    return
+                }
+
                 c.log("workinfo", s.workinfo)
 
                 // Some contexts (Dramaweb modal) only provide workinfo; derive routing bits from it.

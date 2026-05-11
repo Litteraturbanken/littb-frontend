@@ -518,6 +518,16 @@ test.describe("Reader", () => {
     })
 
     test("should keep Bootstrap-compatible about modal chrome", async ({ page }) => {
+        const sourceInfoErrors = []
+        page.on("console", msg => {
+            if (
+                msg.type() === "error" &&
+                msg.text().includes("Cannot read properties of undefined")
+            ) {
+                sourceInfoErrors.push(msg.text())
+            }
+        })
+
         await page.goto("/författare/ReenstiernaMH/titlar/Årstadagboken1/sida/5/faksimil?om-boken", {
             waitUntil: "networkidle"
         })
@@ -542,6 +552,7 @@ test.describe("Reader", () => {
         expect(modalChrome.width).toBeGreaterThanOrEqual(590)
         expect(modalChrome.width).toBeLessThanOrEqual(610)
         expect(modalChrome.shadow).not.toBe("none")
+        expect(sourceInfoErrors).toEqual([])
     })
 
     test("should normalize short reader URL and allow forward navigation", async ({ page }) => {
@@ -652,8 +663,9 @@ test.describe("Search Links", () => {
 
 test.describe("Search", () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto("/sök", { waitUntil: "networkidle" })
+        await page.goto("/sök", { waitUntil: "domcontentloaded" })
         await waitForAngular(page)
+        await expect(page.locator('[ng-model="$ctrl.query"]')).toBeVisible()
     })
 
     test("should keep Bootstrap-compatible autocomplete dropdown items", async ({ page }) => {
