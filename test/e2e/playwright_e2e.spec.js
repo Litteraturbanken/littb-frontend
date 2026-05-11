@@ -493,6 +493,30 @@ test.describe("Reader", () => {
         expect(padding.right).toBeGreaterThanOrEqual(10)
     })
 
+    test("should keep Bootstrap-compatible sidebar size picker button spacing", async ({
+        page
+    }) => {
+        await page.goto("/författare/ReenstiernaMH/titlar/Årstadagboken1/sida/5/faksimil", {
+            waitUntil: "networkidle"
+        })
+        await waitForAngular(page)
+
+        const sizeButton = page.locator("#leftCorridor .size_picker button").first()
+        await expect(sizeButton).toBeVisible()
+        const padding = await sizeButton.evaluate(button => {
+            const style = getComputedStyle(button)
+            return {
+                top: parseFloat(style.paddingTop),
+                left: parseFloat(style.paddingLeft),
+                right: parseFloat(style.paddingRight)
+            }
+        })
+
+        expect(padding.top).toBeGreaterThanOrEqual(5)
+        expect(padding.left).toBeGreaterThanOrEqual(10)
+        expect(padding.right).toBeGreaterThanOrEqual(10)
+    })
+
     test("should keep Bootstrap-compatible about modal chrome", async ({ page }) => {
         await page.goto("/författare/ReenstiernaMH/titlar/Årstadagboken1/sida/5/faksimil?om-boken", {
             waitUntil: "networkidle"
