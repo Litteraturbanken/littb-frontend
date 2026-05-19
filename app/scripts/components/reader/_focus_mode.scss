@@ -1,3 +1,7 @@
+@use "sass:color";
+@use "../../../styles/mixins" as *;
+
+@mixin styles {
 &.focus-add, &.focus-remove {
   transition: opacity 300ms;
 }
@@ -44,7 +48,7 @@
         //     background-color : #333;
         // }
         #mainview .etext {
-            color : darken(white, 5%);
+            color : color.adjust(white, $lightness: -5%);
         }
 
         .bottomBar {
@@ -292,4 +296,5 @@
     &.hidden {
         visibility: hidden;
     }
+}
 }

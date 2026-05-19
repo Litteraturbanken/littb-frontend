@@ -7,11 +7,11 @@ window.$ = window.jQuery = $
 window._ = _
 window._.str = underscoreString
 
-import "select2/dist/css/select2.css"
 import "angularjs-slider/dist/rzslider.css"
+import "select2/dist/css/select2.css"
 
+import "./styles/bootstrap.scss"
 import "./styles/tailwind.css"
-import "./styles/bootstrap_compat.css"
 import "font-awesome/scss/font-awesome.scss"
 import "./styles/styles.scss"
 

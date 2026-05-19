@@ -344,6 +344,18 @@ test.describe("Library Works", () => {
         await expect(page.locator(".work_link")).toHaveCount(1)
     })
 
+    test("should preserve the filter string in the URL when sorting", async ({ page }) => {
+        const filter = page.locator('[ng-model="$ctrl.filter"]')
+        await filter.fill("sagabiblioteket")
+        await page.keyboard.press("Tab")
+
+        await page.getByRole("link", { name: "Tryckår" }).first().click()
+
+        const url = new URL(page.url())
+        expect(url.searchParams.get("filter")).toBe("sagabiblioteket")
+        expect(url.searchParams.get("sort")).toBe("kronologi")
+    })
+
     test("should link correctly to reading mode from popular", async ({ page }) => {
         const link = page.locator("tr.work_link.first li:first-of-type a")
         await expect(link).toHaveAttribute(

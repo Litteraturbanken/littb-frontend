@@ -1,6 +1,7 @@
 @charset "UTF-8";
-@import "triangle"; 
-@import "mixins";
+@use "sass:color";
+@use "sass:meta";
+@use "mixins" as *;
 
 
 $screen-sm: 640px;
@@ -153,7 +154,7 @@ img {
 
 
 
-@import "so";
+@include meta.load-css("so");
 
 
 $textcolor : #333;
@@ -522,7 +523,7 @@ ul.litt-list {
 
 }
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
-    background-color: lighten(lightgrey, 10%);
+    background-color: color.adjust(lightgrey, $lightness: 10%);
     color : black;
 
 }
@@ -2997,7 +2998,7 @@ grundform-clean {
 .dropdown-menu .active {
     & > a, & > a:hover {
         // @include primarygradient;
-        background-image: linear-gradient(darkgrey, darken(darkgrey, 7%));
+        background-image: linear-gradient(darkgrey, color.adjust(darkgrey, $lightness: -7%));
     }
 }
 
@@ -4000,5 +4001,5 @@ grundform-clean {
         }
 }
 
-@import "modals";
-@import "mobile";
+@include meta.load-css("modals");
+@include meta.load-css("mobile");

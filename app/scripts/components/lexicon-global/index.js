@@ -118,7 +118,7 @@ class LexiconGlobalCtrl {
             {
                 key: "so",
                 expr: "lex_article.baseform",
-                val_in(val) {
+                val_in: val => {
                     const id = this.$location.search().lex
                     c.log("val_in", val, id)
                     return s.$emit("search_dict", val, id, false)

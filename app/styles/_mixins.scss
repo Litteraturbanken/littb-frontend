@@ -1,3 +1,5 @@
+@use "sass:color";
+
 $primarycolor : #7A1400;
 $inline-block-alignment : top;
 $sans : "Verlag A", "Verlag B", sans-serif;
@@ -63,7 +65,7 @@ $content-top-margin : 1em;
 }
 
 @mixin primarygradient {
-    background-image: linear-gradient($primarycolor, darken($primarycolor, 7%));
+    background-image: linear-gradient($primarycolor, color.adjust($primarycolor, $lightness: -7%));
 }
 
 @mixin container {

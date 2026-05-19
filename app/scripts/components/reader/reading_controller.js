@@ -180,6 +180,13 @@ export default [
 
         const changeHit = function (newHit) {
             c.log("newHit", newHit)
+            if (!newHit || !newHit.highlights || !newHit.highlights.length) {
+                ctrl.resetHitMarkings()
+                $location.search("hit_index", null)
+                $location.search("traff", null)
+                $location.search("traffslut", null)
+                return
+            }
             const from_id = newHit.highlights[0].wid
             const to_id = _.last(newHit.highlights).wid
             ctrl.gotopage(newHit.highlights[0].n)

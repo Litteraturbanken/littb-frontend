@@ -1268,31 +1268,28 @@ function LibraryPageCtrl(
         }
         let isInitListType = false
 
-        // Bridge for setupHashComplex: it needs scope.$watch and scope[key] access,
-        // but we want properties on ctrl (this). Create a proxy that delegates
-        // property access to ctrl while keeping $scope's $watch/$on/etc.
-        const scopeBridge = new Proxy(ctrl, {
-            get(target, prop) {
-                // Delegate AngularJS digest methods to $scope
-                if (prop === "$watch" || prop === "$on" || prop === "$broadcast" ||
-                    prop === "$emit" || prop === "$apply" || prop === "$eval" ||
-                    prop === "$root" || prop === "$$phase" || prop === "loc") {
-                    return $scope[prop]
-                }
-                return target[prop]
-            },
-            set(target, prop, value) {
-                // "loc" is set by setupHashComplex for watching $location
-                if (prop === "loc") {
-                    $scope[prop] = value
-                    return true
-                }
-                target[prop] = value
-                return true
-            }
-        })
+        // setupHashComplex registers Angular watchers on $scope. Bridge selected
+        // properties so those watchers read/write the component controller state.
+        const bridgedProps = [
+            "filter",
+            "filters",
+            "keywords_aux",
+            "show_more",
+            "showAllParts",
+            "listType",
+            "dl_mode",
+            "parts_page"
+        ]
+        for (const prop of bridgedProps) {
+            Object.defineProperty($scope, prop, {
+                get() { return ctrl[prop] },
+                set(v) { ctrl[prop] = v },
+                configurable: true,
+                enumerable: true
+            })
+        }
 
-        util.setupHashComplex(scopeBridge, [
+        util.setupHashComplex($scope, [
             {
                 key: "filter",
                 // scope_name : "rowfilter"
@@ -1300,50 +1297,50 @@ function LibraryPageCtrl(
             },
             {
                 key: "kön",
-                expr: "$ctrl.filters.gender",
+                expr: "filters.gender",
                 default: "all"
             },
             {
                 key: "languages",
-                expr: "$ctrl.filters.languages",
+                expr: "filters.languages",
                 val_in: listValIn,
                 val_out: listValOut
             },
             {
                 key: "keywords",
-                expr: "$ctrl.filters.keywords",
+                expr: "filters.keywords",
                 val_in: listValIn,
                 val_out: listValOut
             },
             {
                 key: "keywords_aux",
-                expr: "$ctrl.keywords_aux",
+                expr: "keywords_aux",
                 val_in: listValIn,
                 val_out: listValOut
             },
             {
                 key: "mediatypes",
-                expr: "$ctrl.filters.mediatypes",
+                expr: "filters.mediatypes",
                 val_in: listValIn,
                 val_out: listValOut
             },
             {
                 key: "about_authors",
-                expr: "$ctrl.filters['authorkeyword>authorid']",
+                expr: "filters['authorkeyword>authorid']",
                 val_in: listValIn,
                 val_out: listValOut
             },
             {
                 key: "avancerat",
-                expr: "$ctrl.show_more"
+                expr: "show_more"
             },
             {
                 key: "alla_titlar",
-                expr: "$ctrl.showAllParts"
+                expr: "showAllParts"
             },
             {
                 key: "visa",
-                expr: "$ctrl.listType",
+                expr: "listType",
                 default: "all",
                 replace: false,
                 post_change: function (listType) {
@@ -1364,11 +1361,11 @@ function LibraryPageCtrl(
             },
             {
                 key: "nedladdning",
-                expr: "$ctrl.dl_mode"
+                expr: "dl_mode"
             },
             {
                 key: "sida",
-                expr: "$ctrl.parts_page.current",
+                expr: "parts_page.current",
                 val_in: Number,
                 default: 1
             }

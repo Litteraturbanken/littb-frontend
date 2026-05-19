@@ -1,4 +1,6 @@
-@import "../../../styles/mixins";
+@use "sass:color";
+@use "./focus_mode" as focus;
+@use "../../../styles/mixins" as *;
 .page-reading {
     .mainnav {
         margin-bottom: 3em;
@@ -30,7 +32,7 @@
 
 
     }
-    @import "./focus_mode";
+    @include focus.styles;
     #rightCorridor {
         display : inline-block;
 
@@ -601,8 +603,8 @@
                 margin-left : 4px;
             }
 
-            $hover : desaturate($primarycolor, 50%);
-            $activate : lighten($primarycolor, 10%);
+            $hover : color.adjust($primarycolor, $saturation: -50%);
+            $activate : color.adjust($primarycolor, $lightness: 10%);
             $disabled : grey;
             @mixin disabled {
                 cursor : default;
