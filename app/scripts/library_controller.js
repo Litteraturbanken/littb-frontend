@@ -373,11 +373,22 @@ function LibraryPageCtrl(
 
         ctrl.getTitleId = row => row.work_titleid
 
+        const toSafeTitleIdPart = value =>
+            String(value || "")
+                .split("")
+                .map(char =>
+                    /^[A-Za-z0-9_-]$/.test(char)
+                        ? char
+                        : `_${char.charCodeAt(0).toString(16)}_`
+                )
+                .join("")
+
         ctrl.getUniqId = function (title) {
             if (!title) {
                 return
             }
-            return title.lbworkid + (title.titlepath.split("/")[1] || "")
+            const titleKey = title.titlepath || title.titleid || title.work_titleid
+            return `${toSafeTitleIdPart(title.lbworkid)}-${toSafeTitleIdPart(titleKey)}`
         }
         ctrl.getTitleRowTrackId = function (row) {
             if (!row) {
