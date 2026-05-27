@@ -76,7 +76,7 @@ const waitForAngular = async (page, maxWaitMs = 3000) => {
 }
 
 const mockReaderBackend = async page => {
-    await page.route("http://localhost:5001/get_authors*", async route => {
+    await page.route("**/get_authors*", async route => {
         await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -93,7 +93,7 @@ const mockReaderBackend = async page => {
         })
     })
 
-    await page.route("http://localhost:5001/get_work_info*", async route => {
+    await page.route("**/get_work_info*", async route => {
         await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -138,7 +138,7 @@ const mockReaderBackend = async page => {
         })
     })
 
-    await page.route("http://localhost:5001/log_page/**", async route => {
+    await page.route("**/log_page/**", async route => {
         await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -146,7 +146,7 @@ const mockReaderBackend = async page => {
         })
     })
 
-    await page.route("http://localhost:9000/txt/lbtestreader/res_*.html", async route => {
+    await page.route("**/txt/lbtestreader/res_*.html", async route => {
         const isSecondPage = route.request().url().includes("res_00001.html")
         await route.fulfill({
             status: 200,
@@ -209,6 +209,108 @@ const mockEditorBackend = async page => {
     })
 
     return () => workInfoRequests
+}
+
+const mockAutocompleteWithSearchHit = async page => {
+    let autocompleteRequests = 0
+
+    await page.route("**/autocomplete/**", async route => {
+        autocompleteRequests += 1
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                data: [
+                    {
+                        startpagename: "1",
+                        shorttitle: "Search Hit",
+                        titleid: "SearchHit",
+                        doc_type: "faksimil",
+                        title: "Search Hit",
+                        authors: [{ surname: "Search", authorid: "SearchA" }]
+                    }
+                ],
+                suggest: []
+            })
+        })
+    })
+
+    return () => autocompleteRequests
+}
+
+const mockAuthorBackend = async page => {
+    await page.route("**/get_authors*", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                data: [
+                    {
+                        authorid: "LagerlöfS",
+                        authorid_norm: "LagerlöfS",
+                        full_name: "Selma Lagerlöf",
+                        surname: "Lagerlöf",
+                        searchable: true
+                    }
+                ]
+            })
+        })
+    })
+
+    await page.route("**/get_author/**", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                data: {
+                    authorid: "LagerlöfS",
+                    authorid_norm: "LagerlofS",
+                    full_name: "Selma Lagerlöf",
+                    surname: "Lagerlöf",
+                    intro: "<p>Author intro.</p>",
+                    pseudonym: [],
+                    other_name: [],
+                    sources: [],
+                    external_ref: [],
+                    wikidata: {},
+                    dramawebben: {},
+                    searchable: true
+                }
+            })
+        })
+    })
+
+    await page.route("**/query/litteraturkartan*", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ hits: 0 })
+        })
+    })
+
+    await page.route("**/list_all/**", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ data: [] })
+        })
+    })
+
+    await page.route("**/list_parts_in_others_works/**", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ data: [] })
+        })
+    })
+
+    await page.route("**/ljudochbild/wp-json/wp/v2/pages*", async route => {
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: "[]"
+        })
+    })
 }
 
 const makeStatsWork = (index, overrides = {}) => ({
@@ -584,6 +686,71 @@ test.describe("Reader", () => {
 
         await nextLink.evaluate(node => node.click())
         await expect(page).toHaveURL("/författare/LagerlöfS/titlar/Dunungen/sida/2/etext")
+    })
+
+    test("should run slash quicksearch commands without API autocomplete hits", async ({
+        page
+    }) => {
+        await mockReaderBackend(page)
+        const getAutocompleteRequests = await mockAutocompleteWithSearchHit(page)
+
+        await page.goto("/författare/LagerlöfS/titlar/Dunungen/etext", {
+            waitUntil: "networkidle"
+        })
+        await waitForAngular(page)
+
+        await page.getByTitle("Snabbkommando: 's'").click()
+        const autocompleteInput = page.locator("#autocomplete")
+        await expect(autocompleteInput).toBeVisible()
+        await autocompleteInput.fill("/info")
+
+        const autocompleteOptions = page.locator(".autocomplete .dropdown-menu > li")
+        await expect(autocompleteOptions).toHaveCount(1)
+        await expect(autocompleteOptions.first()).toContainText("/info")
+        await page.keyboard.press("Enter")
+
+        const infoOutput = page.locator('.autocomplete pre[ng-show="info"]')
+        await expect(infoOutput).toContainText('"lbworkid": "lbtestreader"')
+
+        await page.keyboard.press("Escape")
+        await page.getByTitle("Snabbkommando: 's'").click()
+        await expect(autocompleteInput).toBeVisible()
+        await expect(infoOutput).toBeHidden()
+
+        await autocompleteInput.fill("/id")
+        await expect(autocompleteOptions).toHaveCount(1)
+        await expect(autocompleteOptions.first()).toContainText("/id")
+        await page.keyboard.press("Enter")
+
+        const idOutput = page.locator('.autocomplete pre[ng-show="lbworkid"]')
+        await expect(idOutput).toContainText("lbtestreader")
+        expect(getAutocompleteRequests()).toBe(0)
+    })
+
+    test("should show slash quicksearch info on author pages", async ({ page }) => {
+        await mockAuthorBackend(page)
+        const getAutocompleteRequests = await mockAutocompleteWithSearchHit(page)
+
+        await page.goto("/författare/LagerlöfS", {
+            waitUntil: "networkidle"
+        })
+        await waitForAngular(page)
+
+        await expect(page.locator("author-info-page h1")).toContainText("Selma Lagerlöf")
+
+        await page.getByTitle("Snabbkommando: 's'").click()
+        const autocompleteInput = page.locator("#autocomplete")
+        await expect(autocompleteInput).toBeVisible()
+        await autocompleteInput.fill("/info")
+
+        const autocompleteOptions = page.locator(".autocomplete .dropdown-menu > li")
+        await expect(autocompleteOptions).toHaveCount(1)
+        await expect(autocompleteOptions.first()).toContainText("/info")
+        await page.keyboard.press("Enter")
+
+        const infoOutput = page.locator('.autocomplete pre[ng-show="info"]')
+        await expect(infoOutput).toContainText('"authorid": "LagerlöfS"')
+        expect(getAutocompleteRequests()).toBe(0)
     })
 
     test("should show SO modal", async ({ page }) => {
