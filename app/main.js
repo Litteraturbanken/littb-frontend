@@ -37,8 +37,8 @@ async function boot() {
     await import("./lib/angular-ellipsis.js")
     await import("angularjs-slider")
 
-    // select2's CommonJS build exports an initializer: (root, jQuery) => jQuery
-    const select2Mod = await import("select2")
+    // The vendored Select2 runtime matches production behavior; npm still supplies the CSS.
+    const select2Mod = await import("./lib/select2.js")
     const initSelect2 = select2Mod.default || select2Mod
     if (typeof initSelect2 === "function") {
         initSelect2(window, window.jQuery)

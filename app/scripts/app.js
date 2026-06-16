@@ -936,7 +936,7 @@ littb.filter(
             } else {
                 $(`#${fromid}`, input)
                     .nextUntil(`#${toid}`, "span")
-                    .andSelf()
+                    .addBack()
                     .add(`#${toid}`, input)
                     .addClass("markee")
                     .filter(":odd")

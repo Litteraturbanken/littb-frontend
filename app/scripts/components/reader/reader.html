@@ -71,7 +71,11 @@
             class="faksimil transform transition duration-200"
             imageonload="$ctrl.onImageLoad()"
             ng-height="$ctrl.getWidthConstraint()"
-            ng-style="{'max-width' : $ctrl.getWidthConstraint() + 'px', 'transform': $ctrl.getRotate()}"
+            ng-style="{
+                'width' : $ctrl.getWidthConstraint() + 'px',
+                'max-width' : $ctrl.getWidthConstraint() + 'px',
+                'transform': $ctrl.getRotate()
+            }"
             ng-src="{{$ctrl.url}}"
             ng-srcset="{{$ctrl.srcset}}"
         />

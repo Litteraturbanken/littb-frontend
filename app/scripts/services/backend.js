@@ -11,102 +11,103 @@ let getFileSize = size => {
     }
 }
 
-const createExpandMediatypes = _ => function (works, mainMediatype) {
-    const order = ["etext", "faksimil", "epub", "pdf", "infopost"]
-    const groups = _.groupBy(works, item => item.titlepath + item.lbworkid)
-    const output = []
-    const getMainAuthor = metadata =>
-        (metadata.work_authors || metadata.authors || [metadata.main_author])[0]
+const createExpandMediatypes = _ =>
+    function (works, mainMediatype) {
+        const order = ["etext", "faksimil", "epub", "pdf", "infopost"]
+        const groups = _.groupBy(works, item => item.titlepath + item.lbworkid)
+        const output = []
+        const getMainAuthor = metadata =>
+            (metadata.work_authors || metadata.authors || [metadata.main_author])[0]
 
-    const makeObj = function (metadata) {
-        if (metadata.mediatype === "pdf") {
-            return {
-                label: metadata.mediatype,
-                filename: `${getMainAuthor(metadata).authorid}_${
-                    metadata.work_titleid || metadata.titleid
-                }`,
-                url: `txt/${metadata.lbworkid}/${metadata.lbworkid}.pdf`,
-                downloadable: true,
-                imported: metadata.imported
-            }
-        } else if (metadata.mediatype === "infopost") {
-            return {
-                label: metadata.mediatype,
-                url: `/dramawebben/pjäser?om-boken&authorid=${metadata.authors[0].authorid}&titlepath=${metadata.titlepath}`,
-                imported: metadata.imported
-            }
-        } else {
-            return {
-                label: metadata.mediatype,
-                url: `/författare/${getMainAuthor(metadata).authorid}/titlar/${
-                    metadata.work_titleid || metadata.titleid
-                }/sida/${metadata.startpagename}/${metadata.mediatype}`,
-                imported: metadata.imported,
-                export: _.map(metadata.export, exp => {
-                    exp.lbworkid = metadata.lbworkid
-                    exp.mediatype = metadata.mediatype
-                    return exp
-                })
-            }
-        }
-    }
-
-    for (let key in groups) {
-        let group = groups[key]
-        const sortWorks = function (work) {
-            if (mainMediatype && work.mediatype === mainMediatype) {
-                return -10
-            } else {
-                return _.indexOf(order, work.mediatype)
-            }
-        }
-        group = _.sortBy(group, sortWorks)
-        const [main, ...rest] = group
-
-        main.work_titleid = main.work_titleid || main.titleid
-
-        let mediatypes = [makeObj(main)]
-        mediatypes = mediatypes.concat(_.map(rest, makeObj))
-
-        let hasRealPDF = group.find(item => item.mediatype == "pdf")
-        for (let work of group) {
-            let epubExport = _.find(work.export, { type: "epub" })
-            if (epubExport) {
-                mediatypes.push({
-                    label: "epub",
-                    url: `txt/epub/${getMainAuthor(work).authorid}_${
-                        work.work_titleid || work.titleid
-                    }.epub`,
-                    filename: `${getMainAuthor(work).authorid}_${
-                        work.work_titleid || work.titleid
+        const makeObj = function (metadata) {
+            if (metadata.mediatype === "pdf") {
+                return {
+                    label: metadata.mediatype,
+                    filename: `${getMainAuthor(metadata).authorid}_${
+                        metadata.work_titleid || metadata.titleid
                     }`,
-                    filesize: getFileSize(epubExport.size),
-                    downloadable: true
-                })
+                    url: `txt/${metadata.lbworkid}/${metadata.lbworkid}.pdf`,
+                    downloadable: true,
+                    imported: metadata.imported
+                }
+            } else if (metadata.mediatype === "infopost") {
+                return {
+                    label: metadata.mediatype,
+                    url: `/dramawebben/pjäser?om-boken&authorid=${metadata.authors[0].authorid}&titlepath=${metadata.titlepath}`,
+                    imported: metadata.imported
+                }
             } else {
-                let pdfExport = _.find(work.export, { type: "pdf" })
-
-                if (!hasRealPDF && pdfExport) {
-                    mediatypes.push({
-                        label: "pdf",
-                        url: `export/faksimil/${main.lbworkid}.pdf`,
-                        filename: `${getMainAuthor(main).authorid}_${
-                            main.work_titleid || main.titleid
-                        }`,
-                        filesize: getFileSize(pdfExport.size),
-                        downloadable: true
+                return {
+                    label: metadata.mediatype,
+                    url: `/författare/${getMainAuthor(metadata).authorid}/titlar/${
+                        metadata.work_titleid || metadata.titleid
+                    }/sida/${metadata.startpagename}/${metadata.mediatype}`,
+                    imported: metadata.imported,
+                    export: _.map(metadata.export, exp => {
+                        exp.lbworkid = metadata.lbworkid
+                        exp.mediatype = metadata.mediatype
+                        return exp
                     })
                 }
             }
         }
-        const sortMedia = item => _.indexOf(order, item.label)
 
-        main.mediatypes = _.sortBy(mediatypes, sortMedia)
-        output.push(main)
+        for (let key in groups) {
+            let group = groups[key]
+            const sortWorks = function (work) {
+                if (mainMediatype && work.mediatype === mainMediatype) {
+                    return -10
+                } else {
+                    return _.indexOf(order, work.mediatype)
+                }
+            }
+            group = _.sortBy(group, sortWorks)
+            const [main, ...rest] = group
+
+            main.work_titleid = main.work_titleid || main.titleid
+
+            let mediatypes = [makeObj(main)]
+            mediatypes = mediatypes.concat(_.map(rest, makeObj))
+
+            let hasRealPDF = group.find(item => item.mediatype == "pdf")
+            for (let work of group) {
+                let epubExport = _.find(work.export, { type: "epub" })
+                if (epubExport) {
+                    mediatypes.push({
+                        label: "epub",
+                        url: `txt/epub/${getMainAuthor(work).authorid}_${
+                            work.work_titleid || work.titleid
+                        }.epub`,
+                        filename: `${getMainAuthor(work).authorid}_${
+                            work.work_titleid || work.titleid
+                        }`,
+                        filesize: getFileSize(epubExport.size),
+                        downloadable: true
+                    })
+                } else {
+                    let pdfExport = _.find(work.export, { type: "pdf" })
+
+                    if (!hasRealPDF && pdfExport) {
+                        mediatypes.push({
+                            label: "pdf",
+                            url: `export/faksimil/${main.lbworkid}.pdf`,
+                            filename: `${getMainAuthor(main).authorid}_${
+                                main.work_titleid || main.titleid
+                            }`,
+                            filesize: getFileSize(pdfExport.size),
+                            downloadable: true
+                        })
+                    }
+                }
+            }
+            const sortMedia = item => _.indexOf(order, item.label)
+
+            main.mediatypes = _.sortBy(mediatypes, sortMedia)
+            output.push(main)
+        }
+
+        return output
     }
-
-    return output
-}
 
 export function createBackendService({
     $http,
@@ -413,7 +414,8 @@ export function createBackendService({
                         "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types,wikidata.wikipedia_text,content_vector",
                     // author_aggregation: author_aggs,
                     ...options,
-                    vectorize: true
+                    vectorize: true,
+                    sid: true
                 },
                 val => _.isNil(val) || (_.isPlainObject(val) && _.isEmpty(val))
             )

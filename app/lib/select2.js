@@ -5108,15 +5108,33 @@
 
                 var dataset = {}
 
+                function upperCaseLetter(_, letter) {
+                    return letter.toUpperCase()
+                }
+
+                // Pre-load all of the attributes which are prefixed with `data-`.
+                // jQuery 3 no longer exposes data attributes that have not been read yet,
+                // but this legacy Select2 build relies on them when creating options.
+                for (var attr = 0; attr < $e[0].attributes.length; attr++) {
+                    var attributeName = $e[0].attributes[attr].name
+                    var prefix = "data-"
+
+                    if (attributeName.substr(0, prefix.length) == prefix) {
+                        var dataName = attributeName.substring(prefix.length)
+                        var dataValue = Utils.GetData($e[0], dataName)
+                        var camelDataName = dataName.replace(/-([a-z])/g, upperCaseLetter)
+
+                        dataset[camelDataName] = dataValue
+                    }
+                }
+
                 // Prefer the element's `dataset` attribute if it exists
                 // jQuery 1.x does not correctly handle data attributes with multiple dashes
                 if ($.fn.jquery && $.fn.jquery.substr(0, 2) == "1." && $e[0].dataset) {
-                    dataset = $.extend(true, {}, $e[0].dataset, Utils.GetData($e[0]))
-                } else {
-                    dataset = Utils.GetData($e[0])
+                    dataset = $.extend(true, {}, $e[0].dataset, dataset)
                 }
 
-                var data = $.extend(true, {}, dataset)
+                var data = $.extend(true, {}, Utils.GetData($e[0]), dataset)
 
                 data = Utils._convertData(data)
 

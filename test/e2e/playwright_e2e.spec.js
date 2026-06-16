@@ -476,6 +476,18 @@ test.describe("Library Works", () => {
         await expect(link).toHaveAttribute("href", "/författare/MartinsonH/titlar/Aniara/sida/5/etext")
     })
 
+    test("should keep advanced search collapsed when pressing Enter in the filter input", async ({
+        page
+    }) => {
+        const filter = page.locator('[ng-model="$ctrl.filter"]')
+        await filter.fill("aniara")
+        await page.keyboard.press("Enter")
+
+        const url = new URL(page.url())
+        expect(url.searchParams.get("filter")).toBe("aniara")
+        await expect(page.locator('.more_container[ng-show="$ctrl.show_more"]').first()).toBeHidden()
+    })
+
     test("should show more than 13800 hits for downloadable works sorted by popularity", async ({
         page
     }) => {
@@ -487,6 +499,38 @@ test.describe("Library Works", () => {
         const hitsText = await numHits.textContent()
         const hitCount = parseInt(hitsText.replace(/[^\d]/g, ""), 10)
         expect(hitCount).toBeGreaterThan(13800)
+    })
+
+    test("should keep advanced filter labels visible when selections are active", async ({
+        page
+    }) => {
+        await page.goto(
+            "/bibliotek?avancerat&keywords=texttype%3Abrev%3Bbrevsamling&keywords_aux=source%3Abibliotekariesidor&mediatypes=mediatype%3Afaksimil&languages=language%3Adeu",
+            { waitUntil: "networkidle" }
+        )
+        await waitForAngular(page)
+
+        const labels = [
+            "Filtrera: Kategorier / Utgivare",
+            "Avgränsa sökningen",
+            "Utgivningsformat",
+            "Språk …"
+        ]
+        await expect.poll(async () => {
+            const placeholders = await page.evaluate(expectedLabels => {
+                return expectedLabels.map(label => {
+                    const select = Array.from(
+                        document.querySelectorAll(".more_container select[data-placeholder]")
+                    ).find(node => node.getAttribute("data-placeholder") === label)
+                    const search = select?.nextElementSibling?.querySelector(".select2-search__field")
+                    return [label, search?.getAttribute("placeholder")]
+                })
+            }, labels)
+
+            return Object.fromEntries(placeholders)
+        }).toEqual(
+            Object.fromEntries(labels.map(label => [label, label]))
+        )
     })
 })
 
@@ -772,6 +816,37 @@ test.describe("Reader", () => {
             "srcset",
             "/txt/lb2514233/lb2514233_3/lb2514233_3_0001.jpeg 1x,/txt/lb2514233/lb2514233_5/lb2514233_5_0001.jpeg 2x"
         )
+    })
+
+    test("should enlarge the facsimile image when using the larger size button", async ({
+        browser
+    }) => {
+        const context = await browser.newContext({
+            baseURL: `http://${process.env.LITTB_DOCKER_HOST || "localhost"}:9000`,
+            deviceScaleFactor: 2,
+            viewport: { width: 1280, height: 720 }
+        })
+        const page = await context.newPage()
+        try {
+            await page.goto("/författare/BrennerSE/titlar/SamladeDikter/sida/III/faksimil", {
+                waitUntil: "networkidle"
+            })
+            await waitForAngular(page)
+
+            const img = page.locator("img.faksimil")
+            await expect(img).toBeVisible()
+            const widthBefore = await img.evaluate(node => node.getBoundingClientRect().width)
+
+            await page
+                .locator('#leftCorridor .size_picker button[ng-click="$ctrl.setSize($ctrl.size + 1)"]')
+                .click()
+
+            await expect
+                .poll(async () => img.evaluate(node => node.getBoundingClientRect().width))
+                .toBeGreaterThan(widthBefore)
+        } finally {
+            await context.close()
+        }
     })
 
     // test("should not show srcset", async ({ page }) => {

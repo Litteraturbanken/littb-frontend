@@ -138,10 +138,10 @@
                         ng-change="$ctrl.onTitleChange()"
                     >
                         <option
-                            ng-if="$ctrl.titles_hits > 30 && !$ctrl.filters['authors>author_id'].length"
+                            ng-if="$ctrl.titles_hits > 30"
                             disabled
                         >
-                            Visar de första 30 titlarna
+                            {{$ctrl.titleFilterstr ? 'Visar de första 30 matchande titlarna' : 'Visar de första 30 titlarna'}}
                         </option>
                         <option value="{{title.lbworkid}}" ng-repeat="title in $ctrl.titles">
                             {{title.shorttitle || title.title}}

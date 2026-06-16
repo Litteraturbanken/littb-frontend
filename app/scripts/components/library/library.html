@@ -1,5 +1,7 @@
 <meta-desc>Blädda bland Litteraturbankens författare och titlar.</meta-desc>
-<h1 class="text-6xl lg:ml-12">{{:: $ctrl.isLibrary ? 'Botanisera i biblioteket' : 'Hämta e-böcker'}}</h1>
+<h1 class="text-6xl lg:ml-12">
+    {{:: $ctrl.isLibrary ? 'Botanisera i biblioteket' : 'Hämta e-böcker'}}
+</h1>
 <!-- samlingarna -->
 <!--  <span class="star">*</span> <span class="smaller">ENKEL SÖKNING</span> -->
 <img ng-if="$ctrl.isLibrary" bkg-img src="/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg" />
@@ -69,6 +71,7 @@
                         autocapitalize="none"
                         spellcheck="false"
                     />
+                    <button type="submit" class="sr-only" tabindex="-1">Sök</button>
                     <!-- <svg class="text-primary w-6 h-6 relative -left-20 top-9" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" > <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /> </svg> -->
                     <svg
                         class="reset text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 -mr-8 cursor-pointer"
@@ -87,6 +90,7 @@
                         />
                     </svg>
                     <button
+                        type="button"
                         class="bg-white border border-gray-500 self-stretch px-4 focus:ring-1 focus:ring-inset focus:ring-primary"
                         ng-click="$ctrl.show_more = !$ctrl.show_more"
                         uib-tooltip="{{$ctrl.show_more ? 'Enkel sökning':'Utökad sökning' }}"
@@ -328,6 +332,7 @@
             </chronology>
             <div class="btn-group p-0 mt-4 lg:mt-6">
                 <button
+                    type="button"
                     ng-show="$ctrl.isLibrary"
                     class="sc btn btn-small text-base"
                     ng-class=""
@@ -338,6 +343,7 @@
                     Alla träffar
                 </button>
                 <button
+                    type="button"
                     ng-show="$ctrl.isLibrary"
                     class="sc btn btn-small text-base"
                     ng-model="$ctrl.listType"
@@ -348,6 +354,7 @@
                     <!-- <span class="num_hits" ng-show="$ctrl.titleModel.latest_hits">: {{$ctrl.titleModel.latest_hits}}</span> -->
                 </button>
                 <button
+                    type="button"
                     ng-show="$ctrl.isLibrary"
                     class="sc btn btn-small text-base"
                     ng-class="{disabled: $ctrl.dl_mode || !$ctrl.authorData.length}"
@@ -355,10 +362,12 @@
                     uib-btn-radio="'authors'"
                     ng-click="$ctrl.setAuthorData()"
                 >
-                    <span ng-if="!$ctrl.dl_mode">Författare</span><span ng-if="$ctrl.dl_mode">Författare</span
+                    <span ng-if="!$ctrl.dl_mode">Författare</span
+                    ><span ng-if="$ctrl.dl_mode">Författare</span
                     ><span class="num_hits">: {{$ctrl.authorData.length}}</span>
                 </button>
                 <button
+                    type="button"
                     ng-show="$ctrl.isLibrary"
                     class="sc btn btn-small text-base"
                     ng-model="$ctrl.listType"
@@ -370,6 +379,7 @@
                     >
                 </button>
                 <button
+                    type="button"
                     ng-show="$ctrl.isLibrary && !$ctrl.dl_mode"
                     class="sc btn btn-small text-base"
                     ng-class="{disabled: !$ctrl.parts_hits}"
@@ -382,6 +392,7 @@
                     >
                 </button>
                 <button
+                    type="button"
                     ng-show="!$ctrl.dl_mode"
                     class="sc btn btn-small text-base"
                     ng-class="{disabled: !$ctrl.titleModel.epub_hits}"
@@ -394,6 +405,7 @@
                     >
                 </button>
                 <button
+                    type="button"
                     ng-show="!$ctrl.dl_mode"
                     class="sc btn btn-small text-base"
                     ng-class="{disabled: !$ctrl.titleModel.pdf_hits}"
@@ -427,7 +439,10 @@
         <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
             <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
                 <ng-include src="$ctrl.worksListURL" ng-if="$ctrl.listType == 'works'"></ng-include>
-                <ng-include src="$ctrl.worksListURL" ng-if="$ctrl.listType == 'latest'"></ng-include>
+                <ng-include
+                    src="$ctrl.worksListURL"
+                    ng-if="$ctrl.listType == 'latest'"
+                ></ng-include>
 
                 <div
                     class="result relevance pl-0 lg:ml-3 lg:ml-0 w-full lg:w-auto"
@@ -443,12 +458,17 @@
                         </div>
                         <div class="" ng-if="!$ctrl.relevanceSearching">
                             <div ng-if="$ctrl.relevanceError">Ett fel uppstod.</div>
-                            <div class="pb-4" ng-if="!$ctrl.relevanceError && !$ctrl.relevanceData.length">
+                            <div
+                                class="pb-4"
+                                ng-if="!$ctrl.relevanceError && !$ctrl.relevanceData.length"
+                            >
                                 <span>Inga träffar.</span>
                                 <span
                                     ng-show="$ctrl.relevanceSuggest.length && $ctrl.relevanceSuggest[0].freq > ($ctrl.relevanceData.length * 5)"
                                     >Menade du
-                                    <a class="link" ng-click="$ctrl.setFilter($ctrl.relevanceSuggest[0].text)"
+                                    <a
+                                        class="link"
+                                        ng-click="$ctrl.setFilter($ctrl.relevanceSuggest[0].text)"
                                         >{{$ctrl.relevanceSuggest[0].text}}</a
                                     >?</span
                                 >
@@ -686,14 +706,17 @@
                     </div>
                 </div>
                 <div class="result author pl-0" ng-if="$ctrl.listType == 'authors'">
-                    <sort-list></sort-list>
+                    <sort-list class="text-base"></sort-list>
                     <div class="">
                         <table class="">
                             <tbody>
                                 <tr class="spinner_row" ng-show="$ctrl.authorSearching">
                                     <td><i class="spinner fa fa-spinner fa-pulse"></i></td>
                                 </tr>
-                                <tr class="" ng-show="!$ctrl.authorSearching && !$ctrl.authorData.length">
+                                <tr
+                                    class=""
+                                    ng-show="!$ctrl.authorSearching && !$ctrl.authorData.length"
+                                >
                                     <td>
                                         Inga träffar.
                                         <span ng-show="$ctrl.authorSuggest[0]"
@@ -730,9 +753,12 @@
                                     </td>
                                     <td>{{author | authorYear}}</td>
                                 </tr>
-                                <tr ng-show="$ctrl.authLimit && $ctrl.authorData.length > $ctrl.authLimit">
+                                <tr
+                                    ng-show="$ctrl.authLimit && $ctrl.authorData.length > $ctrl.authLimit"
+                                >
                                     <td>
                                         <button
+                                            type="button"
                                             class="btn btn-sm show_all"
                                             ng-click="($ctrl.authLimit = 0) || $ctrl.setAuthorData()"
                                         >
@@ -750,21 +776,26 @@
                 <ng-include src="$ctrl.worksListURL" ng-if="$ctrl.listType == 'epub'"></ng-include>
                 <ng-include src="$ctrl.worksListURL" ng-if="$ctrl.listType == 'pdf'"></ng-include>
 
-                <div class="result title flex-column min-h-500 pl-0" ng-show="$ctrl.listType == 'parts'">
+                <div
+                    class="result title flex-column min-h-500 pl-0"
+                    ng-show="$ctrl.listType == 'parts'"
+                >
                     <div
                         class="spinner_row ng-fade transition duration-200 h-0"
                         ng-show="$ctrl.partSearching"
                     >
                         <i class="spinner fa fa-spinner fa-pulse"></i>
                     </div>
-                    <sort-list></sort-list>
+                    <sort-list class="text-base"></sort-list>
                     <table class="table flex-grow w-full">
                         <tr class="" ng-show="!$ctrl.partSearching && !$ctrl.all_titles.length">
                             <td>
                                 Inga träffar.
                                 <span ng-show="$ctrl.partSuggest[0]"
                                     >Menade du
-                                    <a class="link" ng-click="$ctrl.setFilter($ctrl.partSuggest[0].text)"
+                                    <a
+                                        class="link"
+                                        ng-click="$ctrl.setFilter($ctrl.partSuggest[0].text)"
                                         >{{$ctrl.partSuggest[0].text}}</a
                                     >?</span
                                 >
@@ -844,6 +875,7 @@
 
                     <div class="footer">
                         <button
+                            type="button"
                             class="btn text-sm mb-4"
                             ng-click="$ctrl.clearDownloads()"
                             ng-class="{disabled : !$ctrl.downloads.length}"
@@ -852,6 +884,7 @@
                         </button>
 
                         <button
+                            type="button"
                             class="btn text-sm mb-4"
                             ng-click="$event.stopPropagation()"
                             ng-class="{disabled : !$ctrl.downloads.length}"

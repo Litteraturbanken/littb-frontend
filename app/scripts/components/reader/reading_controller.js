@@ -563,6 +563,27 @@ export default [
             return part
         }
 
+        const updateMetaTag = function (name, content) {
+            let metaElement = document.querySelector(`meta[name="${name}"]`)
+            if (!content) {
+                if (metaElement) {
+                    metaElement.remove()
+                }
+                return
+            }
+            if (!metaElement) {
+                metaElement = document.createElement("meta")
+                metaElement.name = name
+                document.head.appendChild(metaElement)
+            }
+            metaElement.content = content
+        }
+
+        const updatePartMetaTag = function () {
+            const part = ctrl.getCurrentPart()
+            updateMetaTag("part", part?.titleid)
+        }
+
         ctrl.getCurrentPart = function () {
             if (!ctrl.workinfo) {
                 return
@@ -827,14 +848,7 @@ export default [
             ctrl.workinfoPromise = def
             def.then(function (workinfo) {
                 ctrl.workinfo = workinfo
-                let metaElement = document.querySelector('meta[name="lbworkid"]')
-                if (!metaElement) {
-                    metaElement = document.createElement("meta")
-                    metaElement.name = "lbworkid"
-                    document.head.appendChild(metaElement)
-                }
-                metaElement.content = workinfo.lbworkid
-                document.head.appendChild(metaElement)
+                updateMetaTag("lbworkid", workinfo.lbworkid)
                 ctrl.pagemap = workinfo.pagemap
 
                 if (ctrl.isEditor) {
@@ -1034,6 +1048,7 @@ export default [
                         if (typeof ctrl.pageix == "undefined") {
                             return
                         }
+                        updatePartMetaTag()
                         promise = fetchPage(ctrl.pageix)
                     }
 
