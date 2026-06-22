@@ -313,7 +313,7 @@ export function createBackendService({
                 to: 100,
                 sort_field: "sortkey|asc"
             }
-            let { author, author_aggs, ...opts } = Object.assign({}, defaults, options)
+            let { author, author_aggs, timeout, ...opts } = Object.assign({}, defaults, options)
             const {
                 filters: filtersMap,
                 q: initialQuery,
@@ -356,12 +356,17 @@ export function createBackendService({
                 params.q = "*"
             }
 
-            return $http({
+            const requestConfig = {
                 // NOTE: this enpoint uses Nest for expanding the query in the backend
                 // https://github.com/jroxendal/nest
                 url: `${STRIX_URL}/query_string/${types}` + (author || ""),
                 params
-            })
+            }
+            if (timeout) {
+                requestConfig.timeout = timeout
+            }
+
+            return $http(requestConfig)
                 .then(function (response) {
                     const {
                         data,
@@ -382,6 +387,9 @@ export function createBackendService({
                     }
                 })
                 .catch(function (error) {
+                    if (error && error.xhrStatus === "abort") {
+                        throw error
+                    }
                     c.error("getTitles error", error)
                     throw error
                 })

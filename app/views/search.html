@@ -177,7 +177,6 @@
                         <option value="proofread:false">Ej korrekturläst</option>
                     </select>
                 </div>
-
             </div>
 
             <div class="right">
@@ -193,8 +192,8 @@
                         <option value=""></option>
                         <option value="{{authorid}}" ng-repeat="authorid in $ctrl.aboutAuthors">
                             {{$ctrl.authorsById[authorid].name_for_index}}{{($ctrl.authorsById[authorid]
-                            | authorYear) ? ' (' + ($ctrl.authorsById[authorid] | authorYear) + ')' :
-                            ''}}
+                            | authorYear) ? ' (' + ($ctrl.authorsById[authorid] | authorYear) + ')'
+                            : ''}}
                         </option>
                     </select>
                 </div>
@@ -226,6 +225,7 @@
                             <option value="keyword:Barnlitteratur">
                                 Barn- och ungdomslitteratur
                             </option>
+                            <option value="keyword:Biografika">Biografisk litteratur</option>
                             <option value="keyword:Finlandssvenskt">
                                 Finlandssvensk litteratur
                             </option>
@@ -332,7 +332,10 @@
                                     >{{$ctrl.authorsById[sent.metadata.authors[0].authorid].name_for_index}}</span
                                 >
                                 <span class="title">
-                                    <a ng-href="{{::sent.href}}" ng-click="$ctrl.save_search($index)">
+                                    <a
+                                        ng-href="{{::sent.href}}"
+                                        ng-click="$ctrl.save_search($index)"
+                                    >
                                         {{sent.metadata.title}}
                                     </a></span
                                 >
@@ -388,8 +391,8 @@
                     </div>
                 </div>
 
-                Visar verk {{$ctrl.current_page * $ctrl.num_hits + 1}}-{{$ctrl.getMaxHit()}} av {{$ctrl.doc_hits}}, sida
-                {{$ctrl.current_page + 1}} av {{$ctrl.total_pages}}.
+                Visar verk {{$ctrl.current_page * $ctrl.num_hits + 1}}-{{$ctrl.getMaxHit()}} av
+                {{$ctrl.doc_hits}}, sida {{$ctrl.current_page + 1}} av {{$ctrl.total_pages}}.
 
                 <ul class="ctrl" ng-show="$ctrl.doc_hits > 1">
                     <li class="arrows">
@@ -417,17 +420,25 @@
                     <li>
                         <a ng-click="$ctrl.lastPage()">Gå till sista träffen</a>
                     </li>
-                    <li ng-disabled="$ctrl.total_pages == 1" ng-class="{open : $ctrl.showGotoHitInput}">
+                    <li
+                        ng-disabled="$ctrl.total_pages == 1"
+                        ng-class="{open : $ctrl.showGotoHitInput}"
+                    >
                         <a ng-disabled="$ctrl.total_pages == 1" ng-click="$ctrl.onGotoHitInput()"
                             >Gå till träffsida . . .</a
                         >
-                        <form ng-submit="$ctrl.gotoPage($ctrl.gotoHitInput - 1)" ng-show="$ctrl.showGotoHitInput">
+                        <form
+                            ng-submit="$ctrl.gotoPage($ctrl.gotoHitInput - 1)"
+                            ng-show="$ctrl.showGotoHitInput"
+                        >
                             <input focusable type="text" ng-model="$ctrl.gotoHitInput" />
-                            <i ng-show="$ctrl.showGotoHitInput" class="fa fa-angle-double-right"></i>
+                            <i
+                                ng-show="$ctrl.showGotoHitInput"
+                                class="fa fa-angle-double-right"
+                            ></i>
                         </form>
                     </li>
                 </ul>
-
             </div>
         </div>
         <ul
@@ -436,7 +447,9 @@
             ng-style="{'max-height': $ctrl.container_height}"
         >
             <li>
-                <a ng-click="$ctrl.resetAuthorFilter()" ng-class="{selected : !$ctrl.nav_filter}">Visa alla</a>
+                <a ng-click="$ctrl.resetAuthorFilter()" ng-class="{selected : !$ctrl.nav_filter}"
+                    >Visa alla</a
+                >
             </li>
 
             <li ng-repeat="obj in $ctrl.authorStatsData">

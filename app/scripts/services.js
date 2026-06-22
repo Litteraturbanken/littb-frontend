@@ -5,9 +5,9 @@ import { createBackendService } from "./services/backend"
 
 const littb = angular.module("littbApp")
 
-let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
+// let STRIX_URL = "http://" + location.host.split(":")[0] + ":5001"
 // let STRIX_URL = "https://litteraturbanken.se/api"
-// let STRIX_URL = "/api"
+let STRIX_URL = "/api"
 
 // Vite supports compile-time env vars prefixed with VITE_.
 // This makes it easy to point the frontend at a local backend when needed.

@@ -46,6 +46,7 @@ littb.component("keywordSelect", {
         <option value="texttype:sakprosa;kringtexter;avhandling;referensverk">Sakprosa</option>
         
         <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
+        <option value='keyword:Biografika'>Biografisk litteratur</option>
         <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
         <option value='keyword:Flickböcker'>Flickböcker</option>
         <option value="texttype:herdaminne">Herdaminnen</option>
@@ -393,9 +394,7 @@ function LibraryPageCtrl(
         String(value || "")
             .split("")
             .map(char =>
-                /^[A-Za-z0-9_-]$/.test(char)
-                    ? char
-                    : `_${char.charCodeAt(0).toString(16)}_`
+                /^[A-Za-z0-9_-]$/.test(char) ? char : `_${char.charCodeAt(0).toString(16)}_`
             )
             .join("")
 

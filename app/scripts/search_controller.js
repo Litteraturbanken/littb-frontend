@@ -148,8 +148,11 @@ function SearchPageCtrl(
         if ($location.search().authorkeyword) {
             ctrl.filters["authorkeyword>authorid"] = $location.search().authorkeyword.split(",")
         }
-        if ($location.search().titlar) {
-            ctrl.selectedTitles = $location.search().titlar.split(",")
+        const initialSelectedTitles = $location.search().titlar
+            ? $location.search().titlar.split(",")
+            : []
+        if (initialSelectedTitles.length) {
+            ctrl.selectedTitles = initialSelectedTitles
             refreshTitles()
         }
 
@@ -169,8 +172,8 @@ function SearchPageCtrl(
 
         ctrl.onTitleChange = _.once(function () {
             console.log("onTitleChange", $location.search().titlar)
-            if ($location.search().titlar) {
-                let oldVal = $location.search().titlar.split(",")
+            if (initialSelectedTitles.length) {
+                let oldVal = initialSelectedTitles
                 authors.then(() => {
                     $timeout(function () {
                         ctrl.selectedTitles = oldVal
@@ -227,6 +230,72 @@ function SearchPageCtrl(
         const titleSelect = $element.find("select.title_select")
         const TITLE_LIMIT_NOTICE_ID = "_limited_title_results"
         const SHOW_ALL_TITLES_ID = "_show_all_title_results"
+        const toTitleIdList = value =>
+            _.compact(_.isArray(value) ? value : value ? [value] : []).filter(
+                id => id !== TITLE_LIMIT_NOTICE_ID && id !== SHOW_ALL_TITLES_ID
+            )
+        let selectedTitleIds = toTitleIdList(ctrl.selectedTitles)
+        const setCurrentTitleSelection = value => {
+            selectedTitleIds = _.uniq(toTitleIdList(value))
+            ctrl.selectedTitles = selectedTitleIds
+            $location.search("titlar", selectedTitleIds.length ? selectedTitleIds.join(",") : null)
+            return selectedTitleIds
+        }
+        const getCurrentTitleSelection = () => {
+            const selectValue = toTitleIdList(titleSelect.val())
+            return _.uniq([
+                ...selectedTitleIds,
+                ...toTitleIdList(ctrl.selectedTitles),
+                ...selectValue
+            ])
+        }
+        ctrl.isTitleSelected = titleId => getCurrentTitleSelection().includes(titleId)
+        const syncCurrentTitleSelection = () => setCurrentTitleSelection(getCurrentTitleSelection())
+        const applyCurrentTitleSelectionToSelect = () => {
+            const selectedIds = getCurrentTitleSelection()
+            titleSelect.val(selectedIds).trigger("change")
+            setCurrentTitleSelection(selectedIds)
+        }
+        const scheduleTitleSelectionApply = () => {
+            $timeout(() => {
+                applyCurrentTitleSelectionToSelect()
+                $timeout(applyCurrentTitleSelectionToSelect, 0)
+            }, 0)
+        }
+        let latestTitleRequestId = 0
+        let latestTitleFilterInput = ""
+        let titleSelectOpen = false
+        let activeTitleRequest = null
+        const titleSearchFieldSelector = ".select2-container--open .select2-search__field"
+        const abortActiveTitleRequest = () => {
+            if (activeTitleRequest) {
+                activeTitleRequest.abort()
+                activeTitleRequest = null
+            }
+        }
+        const syncTitleFilterInput = value => {
+            latestTitleFilterInput = value || ""
+            if (
+                activeTitleRequest &&
+                activeTitleRequest.filterstr !== latestTitleFilterInput
+            ) {
+                abortActiveTitleRequest()
+            }
+        }
+        $(document).on("input.littbTitleSelect", titleSearchFieldSelector, event => {
+            if (titleSelectOpen) {
+                syncTitleFilterInput($(event.target).val())
+            }
+        })
+        titleSelect.on("select2:open", () => {
+            titleSelectOpen = true
+            syncTitleFilterInput($(titleSearchFieldSelector).val())
+        })
+        titleSelect.on("select2:close", () => {
+            titleSelectOpen = false
+            latestTitleFilterInput = ""
+            abortActiveTitleRequest()
+        })
         const showAllMatchingTitles = data => {
             const filterstr =
                 data.filterstr !== undefined ? data.filterstr : ctrl.titleFilterstr || ""
@@ -269,40 +338,84 @@ function SearchPageCtrl(
             }
             return results
         }
+        const titleOptionsById = {}
+        const getTitleOptionId = title => title && title.lbworkid
+        const rememberTitleOptions = titles => {
+            for (let title of titles || []) {
+                const id = getTitleOptionId(title)
+                if (id) {
+                    titleOptionsById[id] = title
+                }
+            }
+        }
+        const keepSelectedTitleOptions = titles => {
+            const selectedIds = getCurrentTitleSelection()
+            if (!selectedIds.length) {
+                return titles || []
+            }
+
+            const seenIds = new Set((titles || []).map(getTitleOptionId).filter(Boolean))
+            const selectedTitles = selectedIds
+                .map(id => titleOptionsById[id])
+                .filter(title => {
+                    const id = getTitleOptionId(title)
+                    if (!id || seenIds.has(id)) {
+                        return false
+                    }
+                    seenIds.add(id)
+                    return true
+                })
+            return [...selectedTitles, ...(titles || [])]
+        }
         ctrl.titleSelectSetup = {
             ajax: {
                 delay: 250,
                 transport(params, success, failure) {
                     let aborted = false
+                    const requestId = ++latestTitleRequestId
+                    const canceller = $q.defer()
                     const filterstr = (params.data && params.data.q) || ""
                     const showAll = Boolean(
                         ctrl.showAllTitleFilterstr !== undefined &&
                         filterstr === ctrl.showAllTitleFilterstr
                     )
-                    safeApply($scope, () => {
-                        ctrl.loadingTitles = true
-                    })
-                    refreshTitles(false, filterstr, showAll).then(
-                        () => {
-                            if (aborted) return
-                            safeApply($scope, () => {
-                                ctrl.loadingTitles = false
-                            })
+                    const isCurrentRequest = () => {
+                        if (aborted || requestId !== latestTitleRequestId) {
+                            return false
+                        }
+                        return !titleSelectOpen || latestTitleFilterInput === filterstr
+                    }
+                    const abortRequest = () => {
+                        if (aborted) return
+                        aborted = true
+                        canceller.resolve("abort")
+                    }
+                    activeTitleRequest = {
+                        requestId,
+                        filterstr,
+                        abort: abortRequest
+                    }
+                    refreshTitles(false, filterstr, showAll, {
+                        isCurrentRequest,
+                        timeout: canceller.promise,
+                        updateAuthorAggregation: false
+                    }).then(
+                        ({ stale } = {}) => {
+                            if (stale || !isCurrentRequest()) return
                             success({ results: getTitleSelectResults(filterstr, showAll) })
                         },
                         error => {
-                            if (aborted) return
-                            safeApply($scope, () => {
-                                ctrl.loadingTitles = false
-                            })
+                            if (aborted || !isCurrentRequest()) return
                             failure(error)
                         }
-                    )
+                    ).finally(() => {
+                        if (activeTitleRequest && activeTitleRequest.requestId === requestId) {
+                            activeTitleRequest = null
+                        }
+                    })
 
                     return {
-                        abort() {
-                            aborted = true
-                        }
+                        abort: abortRequest
                     }
                 }
             },
@@ -319,11 +432,18 @@ function SearchPageCtrl(
                     })
             },
             language: {
-                noResults: () => "Inga resultat"
+                errorLoading: () => "Resultaten kunde inte laddas",
+                loadingMore: () => "Laddar fler resultat...",
+                noResults: () => "Inga resultat",
+                searching: () => "Söker..."
             }
         }
         const getSelectData = event =>
             event.params && (event.params.data || (event.params.args && event.params.args.data))
+        const getSelectOriginalEvent = event =>
+            event.params &&
+            (event.params.originalEvent ||
+                (event.params.args && event.params.args.originalEvent))
         const onTitleShowAllMouseDown = event => {
             const option = event.target.closest && event.target.closest(".select2-results__option")
             const expectedText = getShowAllTitleText(ctrl.titleFilterstr || "")
@@ -338,6 +458,7 @@ function SearchPageCtrl(
         document.addEventListener("mousedown", onTitleShowAllMouseDown, true)
         $scope.$on("$destroy", () => {
             document.removeEventListener("mousedown", onTitleShowAllMouseDown, true)
+            $(document).off("input.littbTitleSelect", titleSearchFieldSelector)
         })
         titleSelect.on("select2:selecting", event => {
             const data = getSelectData(event)
@@ -349,7 +470,15 @@ function SearchPageCtrl(
         })
         titleSelect.on("select2:select", event => {
             const data = getSelectData(event)
-            if (!data || data.id !== SHOW_ALL_TITLES_ID) {
+            if (!data) {
+                return
+            }
+            if (data.id !== SHOW_ALL_TITLES_ID) {
+                const title = (ctrl.titles || []).find(title => title.lbworkid === data.id)
+                rememberTitleOptions([
+                    title || { lbworkid: data.id, shorttitle: data.text, title: data.text }
+                ])
+                setCurrentTitleSelection([...getCurrentTitleSelection(), data.id])
                 return
             }
             ctrl.selectedTitles = (ctrl.selectedTitles || []).filter(
@@ -357,6 +486,16 @@ function SearchPageCtrl(
             )
             titleSelect.val(ctrl.selectedTitles).trigger("change")
             showAllMatchingTitles(data)
+        })
+        titleSelect.on("select2:unselect", event => {
+            const data = getSelectData(event)
+            if (!data) {
+                return
+            }
+            if (!getSelectOriginalEvent(event)) {
+                return
+            }
+            setCurrentTitleSelection(getCurrentTitleSelection().filter(id => id !== data.id))
         })
 
         ctrl.titleChange = () => {
@@ -422,8 +561,9 @@ function SearchPageCtrl(
         })
         ctrl.getTitlesHits = () => ctrl.titles_hits
 
-        function refreshTitles(countOnly, filterstr, showAll) {
+        function refreshTitles(countOnly, filterstr, showAll, requestOptions = {}) {
             let include = "shorttitle,title,lbworkid,authors.authorid,mediatype,searchable"
+            const updateAuthorAggregation = requestOptions.updateAuthorAggregation !== false
             if (!countOnly) {
                 ctrl.titleFilterstr = filterstr || ""
                 if (ctrl.titleFilterstr && ctrl.titleFilterstr !== ctrl.showAllTitleFilterstr) {
@@ -450,11 +590,24 @@ function SearchPageCtrl(
                     include,
                     q,
                     to: countOnly ? 0 : resultlimit,
-                    author_aggs: true
+                    author_aggs: updateAuthorAggregation ? true : null,
+                    timeout: requestOptions.timeout
                 })
                 .then(({ titles, author_aggs, hits }) => {
-                    ctrl.titles = titles
+                    if (
+                        requestOptions.isCurrentRequest &&
+                        !requestOptions.isCurrentRequest()
+                    ) {
+                        return { stale: true }
+                    }
+                    syncCurrentTitleSelection()
+                    rememberTitleOptions(titles)
+                    ctrl.titles = keepSelectedTitleOptions(titles)
                     ctrl.titles_hits = hits
+                    scheduleTitleSelectionApply()
+                    if (!updateAuthorAggregation) {
+                        return
+                    }
                     authors.then(() => {
                         if (!ctrl.filters["authors>authorid"].length) {
                             ctrl.authors = util.sortAuthors(
@@ -609,7 +762,10 @@ function SearchPageCtrl(
                 args.keyword_aux = keywordAux
             }
 
-            if ($location.search().titlar) {
+            const selectedTitleIds = getCurrentTitleSelection()
+            if (selectedTitleIds.length) {
+                args.work_ids = selectedTitleIds.join(",")
+            } else if ($location.search().titlar) {
                 args.work_ids = $location.search().titlar
             }
 
@@ -716,6 +872,7 @@ function SearchPageCtrl(
 
         ctrl.onSearchSubmit = function (query) {
             ctrl.nav_filter = null
+            syncCurrentTitleSelection()
             ctrl.newSearch(query)
         }
 
