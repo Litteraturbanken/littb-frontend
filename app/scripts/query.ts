@@ -18,17 +18,22 @@ interface FilterList {
 export const buildFilterMap = (list: string[] = []): FilterList => {
     const output: FilterList = {}
     for (const kw of list || []) {
-        const [key, val] = kw.split(":")
-        if (!key || val === undefined) continue
-        const values = val
-            .split(";")
-            .map(item => item && item.trim())
-            .filter((item): item is string => Boolean(item))
-        if (!values.length) continue
-        if (output[key]) {
-            output[key] = output[key]!.concat(values)
-        } else {
-            output[key] = values
+        for (const expr of kw.split("|")) {
+            const colonIndex = expr.indexOf(":")
+            if (colonIndex === -1) continue
+            const key = expr.slice(0, colonIndex).trim()
+            const val = expr.slice(colonIndex + 1)
+            if (!key) continue
+            const values = val
+                .split(";")
+                .map(item => item && item.trim())
+                .filter((item): item is string => Boolean(item))
+            if (!values.length) continue
+            if (output[key]) {
+                output[key] = output[key]!.concat(values)
+            } else {
+                output[key] = values
+            }
         }
     }
     return output

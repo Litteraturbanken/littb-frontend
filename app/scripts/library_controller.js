@@ -46,7 +46,7 @@ littb.component("keywordSelect", {
         <option value="texttype:sakprosa;kringtexter;avhandling;referensverk">Sakprosa</option>
         
         <option value='keyword:Barnlitteratur'>Barn- och ungdomslitteratur</option>
-        <option value='keyword:Biografika'>Biografisk litteratur</option>
+        <option value='keyword:Biografika|texttype:brev;brevsamling'>Biografisk litteratur</option>
         <option value='keyword:Finlandssvenskt'>Finlandssvensk litteratur</option>
         <option value='keyword:Flickböcker'>Flickböcker</option>
         <option value="texttype:herdaminne">Herdaminnen</option>

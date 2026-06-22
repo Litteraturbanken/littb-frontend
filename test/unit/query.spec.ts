@@ -34,6 +34,12 @@ assertQuery(
 )
 
 assertQuery(
+    "grouped keyword expressions aggregate with logical OR",
+    { keywords: ["keyword:Biografika|texttype:brev;brevsamling"] },
+    "(keyword:Biografika OR texttype:(brev OR brevsamling))"
+)
+
+assertQuery(
     "language filters combine lexical flags",
     { languages: ["language:lat", "modernized:true", "translation:yes", "foreign:yes"] },
     "(language:lat OR modernized:true OR (keyword:language-source OR keyword:translated OR (authors>(type:translator))) OR (_exists_:language AND NOT language:swe) OR language_source:unknown)"
@@ -123,5 +129,16 @@ assert.deepStrictEqual(searchPayload.keywordAux, [
     'RAW:(keyword:"language-source" OR keyword:"translated" OR authors>type:translator)',
     "RAW:-language:swe"
 ])
+
+const groupedKeywordPayload = buildSearchFilterPayload({
+    keywords: ["keyword:Biografika|texttype:brev;brevsamling"]
+})
+
+assert.deepStrictEqual(groupedKeywordPayload.textFilter, {
+    keyword: ["Biografika"],
+    texttype: ["brev", "brevsamling"]
+})
+
+assert.deepStrictEqual(groupedKeywordPayload.keywordAux, [])
 
 console.log("extended query utilities tests: ok")
