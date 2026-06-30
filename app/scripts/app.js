@@ -934,10 +934,18 @@ littb.filter(
                     $(`#${fromid}`, input).next().next("br").next().addClass("markee")
                 }
             } else {
-                $(`#${fromid}`, input)
-                    .nextUntil(`#${toid}`, "span")
-                    .addBack()
-                    .add(`#${toid}`, input)
+                const wordSpans = $("span[id]", input)
+                const fromIndex = wordSpans.index($(`#${fromid}`, input))
+                const toIndex = wordSpans.index($(`#${toid}`, input))
+                const markees =
+                    fromIndex > -1 && toIndex >= fromIndex
+                        ? wordSpans.slice(fromIndex, toIndex + 1)
+                        : $(`#${fromid}`, input)
+                              .nextUntil(`#${toid}`, "span")
+                              .addBack()
+                              .add(`#${toid}`, input)
+
+                markees
                     .addClass("markee")
                     .filter(":odd")
                     .addClass("flip")
