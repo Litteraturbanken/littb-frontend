@@ -1,0 +1,52 @@
+@font-face {
+    font-family: "Requiem Text A";
+    src: url("/assets/fonts/requiem/RequiemText-HTF-Roman.otf") format("opentype");
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+}
+
+@font-face {
+    font-family: "Requiem Text A";
+    src: url("/assets/fonts/requiem/RequiemText-HTF-Italic.otf") format("opentype");
+    font-style: italic;
+    font-weight: 400;
+    font-display: block;
+}
+
+@font-face {
+    font-family: "Requiem Text SC A";
+    src: url("/assets/fonts/requiem/RequiemText-HTF-SmallCaps.otf") format("opentype");
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+}
+
+@font-face {
+    font-family: "Requiem Display A";
+    src: url("/assets/fonts/requiem/RequiemDisplay-HTF-Roman.otf") format("opentype");
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+}
+
+@font-face {
+    font-family: "Requiem Display A";
+    src: url("/assets/fonts/requiem/RequiemDisplay-HTF-Italic.otf") format("opentype");
+    font-style: italic;
+    font-weight: 400;
+    font-display: block;
+}
+
+#__nuxt,
+.site-shell {
+    display: contents;
+}
+
+.site-shell {
+    white-space: nowrap;
+}
+
+.site-shell > * {
+    white-space: normal;
+}

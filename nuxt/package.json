@@ -1,0 +1,43 @@
+{
+  "name": "litteraturbanken-nuxt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "yarn@1.22.17",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "postinstall": "nuxt prepare",
+    "dev": "nuxt dev --host 127.0.0.1 --port 3000",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:ssr": "playwright test --project=ssr",
+    "test:e2e": "playwright test --project=desktop-chromium --project=mobile-chromium",
+    "test:visual:capture": "playwright test --config=playwright.angular.config.ts",
+    "api:generate": "openapi-typescript \"${LBAPI_OPENAPI_SCHEMA:-http://127.0.0.1:8000/v2/openapi.json}\" --alphabetize --output app/lib/api/generated/lbapi.ts",
+    "api:check": "openapi-typescript \"${LBAPI_OPENAPI_SCHEMA:-http://127.0.0.1:8000/v2/openapi.json}\" --alphabetize --check --output app/lib/api/generated/lbapi.ts"
+  },
+  "dependencies": {
+    "nuxt": "4.4.8",
+    "openapi-fetch": "0.17.0",
+    "vue": "3.5.39",
+    "vue-router": "5.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "22.20.1",
+    "autoprefixer": "10.4.21",
+    "bootstrap-sass": "3.4.3",
+    "openapi-typescript": "7.13.0",
+    "postcss": "8.5.6",
+    "sass": "1.93.2",
+    "tailwindcss": "3.4.18",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10",
+    "vue-tsc": "3.3.7"
+  }
+}
