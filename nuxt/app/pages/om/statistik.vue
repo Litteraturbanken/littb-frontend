@@ -106,12 +106,12 @@ function epubHref(item: PopularEpub): string {
 <template>
   <h1>Om Litteraturbanken</h1>
   <ul class="links">
-    <li><a href="/om/ide">Intro</a></li>
-    <li><a href="/om/organisation">Organisation</a></li>
-    <li><a href="/om/hjalp">Hjälp</a></li>
-    <li><a href="/om/rattigheter">Rättigheter</a></li>
-    <li><a href="/om/tack">Tack</a></li>
-    <li><a class="active" href="/om/statistik">Statistik</a></li>
+    <li><a href="/om/ide">Intro</a></li>{{ " " }}
+    <li><a href="/om/organisation">Organisation</a></li>{{ " " }}
+    <li><a href="/om/hjalp">Hjälp</a></li>{{ " " }}
+    <li><a href="/om/rattigheter">Rättigheter</a></li>{{ " " }}
+    <li><a href="/om/tack">Tack</a></li>{{ " " }}
+    <li><a class="active" href="/om/statistik">Statistik</a></li>{{ " " }}
     <li><a href="/om/kontakt">Kontakt</a></li>
   </ul>
 
