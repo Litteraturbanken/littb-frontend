@@ -2,6 +2,7 @@ const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
 const contentProxyTarget = process.env.LITTB_CONTENT_PROXY_TARGET || "https://red.litteraturbanken.se"
 const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
 const readerSourceProxyTarget = process.env.READER_SOURCE_PROXY_TARGET || "https://litteraturbanken.se"
+const legacyApiProxyTarget = process.env.LBAPI_LEGACY_PROXY_TARGET || "https://red.litteraturbanken.se"
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -36,10 +37,12 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     apiBase: "http://127.0.0.1:8000/v2",
+    libraryApiBase: "https://red.litteraturbanken.se/api",
     contentBase: "https://red.litteraturbanken.se",
     readerSourceBase: "https://litteraturbanken.se",
     public: {
       apiBase: "/api/v2",
+      libraryApiBase: "/api",
       contentBase: ""
     }
   },
@@ -54,11 +57,18 @@ export default defineNuxtConfig({
   },
   vite: {
     server: {
+      ...(process.env.LITTB_VITE_FS_ALLOW
+        ? { fs: { allow: [process.cwd(), process.env.LITTB_VITE_FS_ALLOW] } }
+        : {}),
       proxy: {
         "^/api/v2(?:/|$)": {
           target: apiProxyTarget,
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api\/v2(?=\/|$)/, "/v2")
+        },
+        "^/api/(?!v2(?:/|$))": {
+          target: legacyApiProxyTarget,
+          changeOrigin: true
         },
         "^/red(?:/|$)": {
           target: contentProxyTarget,

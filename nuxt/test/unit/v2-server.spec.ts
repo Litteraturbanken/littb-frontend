@@ -110,6 +110,12 @@ async function litteraturkartanRequests() {
   }
 }
 
+async function libraryRelevanceRequests() {
+  return await (await fetch(`${origin}/_library_relevance_requests`)).json() as {
+    requests: Array<{ path: string, query: Record<string, string> }>
+  }
+}
+
 describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -150,7 +156,10 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_home_failure`, { method: "DELETE" }),
       fetch(`${origin}/_presentation_requests`, { method: "DELETE" }),
       fetch(`${origin}/_presentation_failures`, { method: "DELETE" }),
-      fetch(`${origin}/_litteraturkartan_requests`, { method: "DELETE" })
+      fetch(`${origin}/_litteraturkartan_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_library_relevance_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_library_relevance_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_library_relevance_delays`, { method: "DELETE" })
     ])
   })
 
@@ -1002,5 +1011,69 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_requests`)).json()).toEqual(genericLedger)
     expect(await quickSearchRequests()).toEqual(quickSearchLedger)
     expect(await homeRequests()).toEqual(homeLedger)
+  })
+
+  test("serves public and private legacy Library relevance responses with isolated accounting", async () => {
+    const types = "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress"
+    const query = "q=%28R%C3%B6da+rummet%29&from=0&to=100&sort_field=_score%7Cdesc"
+    const publicResponse = await fetch(`${origin}/api/relevance/${types}?${query}`)
+    const privateResponse = await fetch(`${origin}/legacy-api/relevance/${types}?q=%28Selma%29`)
+    const background = await fetch(
+      `${origin}/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg`
+    )
+
+    expect(publicResponse.status).toBe(200)
+    expect(privateResponse.status).toBe(200)
+    expect(background.status).toBe(200)
+    expect(background.headers.get("content-type")).toBe("image/jpeg")
+    const publicBody = await publicResponse.json() as { data: unknown[], hits: number }
+    const privateBody = await privateResponse.json() as { data: unknown[], hits: number }
+    expect(publicBody.hits).toBe(publicBody.data.length)
+    expect(privateBody.hits).toBe(privateBody.data.length)
+    expect(publicBody.data).not.toEqual(privateBody.data)
+    expect(await libraryRelevanceRequests()).toEqual({
+      requests: [
+        {
+          path: `/api/relevance/${types}`,
+          query: {
+            q: "(Röda rummet)",
+            from: "0",
+            to: "100",
+            sort_field: "_score|desc"
+          }
+        },
+        {
+          path: `/legacy-api/relevance/${types}`,
+          query: { q: "(Selma)" }
+        }
+      ]
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({ requests: [] })
+  })
+
+  test("Library relevance failure, delay, and reset controls are isolated", async () => {
+    await fetch(`${origin}/_library_relevance_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ "(slow)": 30 })
+    })
+    const started = Date.now()
+    expect((await fetch(`${origin}/api/relevance/test?q=%28slow%29`)).status).toBe(200)
+    expect(Date.now() - started).toBeGreaterThanOrEqual(20)
+
+    await fetch(`${origin}/_library_relevance_failure`, { method: "PUT" })
+    expect((await fetch(`${origin}/legacy-api/relevance/test?q=%28failed%29`)).status).toBe(503)
+    expect(await (await fetch(`${origin}/_library_relevance_failure`)).json())
+      .toEqual({ failure: true })
+
+    await fetch(`${origin}/_library_relevance_requests`, { method: "DELETE" })
+    await fetch(`${origin}/_library_relevance_failure`, { method: "DELETE" })
+    await fetch(`${origin}/_library_relevance_delays`, { method: "DELETE" })
+    expect(await libraryRelevanceRequests()).toEqual({ requests: [] })
+    expect(await (await fetch(`${origin}/_library_relevance_failure`)).json())
+      .toEqual({ failure: false })
+    expect(await (await fetch(`${origin}/_library_relevance_delays`)).json())
+      .toEqual({ delays: {} })
+    expect((await fetch(`${origin}/v2/stats`)).status).toBe(200)
   })
 })

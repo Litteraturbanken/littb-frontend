@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import { createServer } from "node:http"
 
 import { historyAuthorSummaries } from "./history-data.mjs"
+import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import {
   readerPageHtml,
@@ -30,6 +31,10 @@ const homeContent = new Map([
   ["/red/om/start/startsida-ny.html", ["text/html; charset=utf-8", readFileSync(new URL("./home-content/startsida-ny.html", import.meta.url))]],
   ["/red/css/startsida.css", ["text/css; charset=utf-8", readFileSync(new URL("./home-content/startsida.css", import.meta.url))]],
   ["/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg", ["image/jpeg", readFileSync(new URL("./home-content/start_bkg_172_2026.jpg", import.meta.url))]]
+])
+
+const sharedContent = new Map([
+  ["/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", ["image/jpeg", readFileSync(new URL("./home-content/start_bkg_172_2026.jpg", import.meta.url))]]
 ])
 
 const presentationContent = new Map([
@@ -72,6 +77,9 @@ let presentationRequests = []
 let presentationFailures = new Set()
 let litteraturkartanRequests = []
 let readerRequests = []
+let libraryRelevanceRequests = []
+let libraryRelevanceFailure = false
+let libraryRelevanceDelays = {}
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -127,6 +135,11 @@ function waitForWorkLookupDelay(body) {
 
 function waitForAuthorResolveDelay(body) {
   const delay = authorResolveDelays[JSON.stringify(body)] || 0
+  return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+function waitForLibraryRelevanceDelay(query) {
+  const delay = libraryRelevanceDelays[query] || 0
   return new Promise(resolve => setTimeout(resolve, delay))
 }
 
@@ -354,6 +367,38 @@ const server = createServer(async (request, response) => {
     readerRequests = []
     return sendJson(response, 200, { requests: readerRequests })
   }
+  if (url.pathname === "/_library_relevance_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: libraryRelevanceRequests })
+  }
+  if (url.pathname === "/_library_relevance_requests" && request.method === "DELETE") {
+    libraryRelevanceRequests = []
+    return sendJson(response, 200, { requests: libraryRelevanceRequests })
+  }
+  if (url.pathname === "/_library_relevance_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: libraryRelevanceFailure })
+  }
+  if (url.pathname === "/_library_relevance_failure" && request.method === "PUT") {
+    libraryRelevanceFailure = true
+    return sendJson(response, 200, { failure: libraryRelevanceFailure })
+  }
+  if (url.pathname === "/_library_relevance_failure" && request.method === "DELETE") {
+    libraryRelevanceFailure = false
+    return sendJson(response, 200, { failure: libraryRelevanceFailure })
+  }
+  if (url.pathname === "/_library_relevance_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: libraryRelevanceDelays })
+  }
+  if (url.pathname === "/_library_relevance_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    libraryRelevanceDelays = Object.fromEntries(
+      Object.entries(body).map(([query, delay]) => [query, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: libraryRelevanceDelays })
+  }
+  if (url.pathname === "/_library_relevance_delays" && request.method === "DELETE") {
+    libraryRelevanceDelays = {}
+    return sendJson(response, 200, { delays: libraryRelevanceDelays })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -362,6 +407,11 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_failure" && request.method === "DELETE") {
     failure = null
     return sendJson(response, 200, { failure })
+  }
+
+  const shared = sharedContent.get(url.pathname)
+  if (request.method === "GET" && shared) {
+    return sendBody(response, 200, shared[0], shared[1])
   }
 
   const home = homeContent.get(url.pathname)
@@ -436,6 +486,19 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 503, "text/plain; charset=utf-8", `${resource} unavailable`)
     }
     return sendBody(response, 200, contentType, body)
+  }
+
+  const libraryRelevancePath = url.pathname.replace(/^\/(?:legacy-api|api)(?=\/)/, "")
+  if (request.method === "GET" && libraryRelevancePath.startsWith("/relevance/")) {
+    const query = Object.fromEntries(url.searchParams)
+    libraryRelevanceRequests.push({ path: url.pathname, query })
+    await waitForLibraryRelevanceDelay(query.q || "")
+    if (libraryRelevanceFailure) {
+      return sendJson(response, 503, {
+        error: { code: "library_relevance_unavailable", message: "Unable to search Library" }
+      })
+    }
+    return sendJson(response, 200, libraryRelevanceResponse(query.q || ""))
   }
 
   const content = aboutContent.get(url.pathname)

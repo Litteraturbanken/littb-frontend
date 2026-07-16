@@ -1,7 +1,11 @@
+import { realpathSync } from "node:fs"
 import { resolve } from "node:path"
 import { defineConfig, devices } from "@playwright/test"
 
 const fixtureOrigin = "http://127.0.0.1:4100"
+const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
+const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
+const dependencyRoot = realpathSync(resolve(import.meta.dirname, "node_modules"))
 
 export default defineConfig({
   testDir: "./test",
@@ -17,7 +21,7 @@ export default defineConfig({
     "test/visual/baselines/{arg}{ext}"
   ),
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: nuxtOrigin,
     trace: "on-first-retry",
     navigationTimeout: 30_000
   },
@@ -52,13 +56,17 @@ export default defineConfig({
       command:
         `NUXT_API_BASE=${fixtureOrigin}/private-v2 ` +
         `NUXT_PUBLIC_API_BASE=/api/v2 ` +
+        `NUXT_LIBRARY_API_BASE=${fixtureOrigin}/legacy-api ` +
+        `NUXT_PUBLIC_LIBRARY_API_BASE=/api ` +
         `LBAPI_PROXY_TARGET=${fixtureOrigin} ` +
+        `LBAPI_LEGACY_PROXY_TARGET=${fixtureOrigin} ` +
+        `LITTB_VITE_FS_ALLOW=${dependencyRoot} ` +
         `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
         `NUXT_READER_SOURCE_BASE=${fixtureOrigin} ` +
         `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} ` +
-        `LITTB_CONTENT_PROXY_TARGET=${fixtureOrigin} yarn dev`,
-      url: "http://127.0.0.1:3000/_nuxt/@vite/client",
+        `LITTB_CONTENT_PROXY_TARGET=${fixtureOrigin} yarn dev --port ${nuxtPort}`,
+      url: `${nuxtOrigin}/_nuxt/@vite/client`,
       reuseExistingServer: false,
       timeout: 120_000
     }
