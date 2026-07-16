@@ -85,32 +85,25 @@ function extractBody(html: string): string {
   return body?.[1] ?? html
 }
 
-function decodeHelpLabel(value: string): string {
-  return value
-    .replace(/&amp;/gi, "&")
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
-    .replace(/&#([0-9]+);/g, (_, decimal: string) => String.fromCodePoint(Number.parseInt(decimal, 10)))
-}
-
 function humanizeHelpLabel(value: string): string {
-  const words = decodeHelpLabel(value)
+  const words = value
     .replace(/([A-Z])/g, " $1")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
     .trim()
-    .toLocaleLowerCase("sv")
-  return words ? `${words.charAt(0).toLocaleUpperCase("sv")}${words.slice(1)}` : ""
+    .replace(/([a-z\d])([A-Z]+)/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase()
+    .replace(/_id$/, "")
+    .replace(/_/g, " ")
+  return `${words.charAt(0).toUpperCase()}${words.slice(1)}`
 }
 
 function extractHelpSubmenu(html: string): Array<{ id: string; label: string }> {
-  const withoutComments = html.replace(/<!--[\s\S]*?-->/g, "")
-  const items: Array<{ id: string; label: string }> = []
-  for (const tag of withoutComments.match(/<[a-z][^>]*>/gi) ?? []) {
-    const id = tag.match(/\bid\s*=\s*(["'])(.*?)\1/i)?.[2]
-    const name = tag.match(/\bname\s*=\s*(["'])(.*?)\1/i)?.[2]
-    if (id && name) items.push({ id: decodeHelpLabel(id), label: humanizeHelpLabel(name) })
-  }
-  return items
+  if (!import.meta.client) return []
+  const document = new DOMParser().parseFromString(html, "text/html")
+  return Array.from(document.querySelectorAll<HTMLElement>("[id][name]"), element => ({
+    id: element.id,
+    label: humanizeHelpLabel(element.getAttribute("name") ?? "")
+  }))
 }
 
 const { data: content } = await useAsyncData(asyncKey, async () => {

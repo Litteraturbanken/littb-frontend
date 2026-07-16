@@ -65,12 +65,54 @@ test("Help renders the exact active state and authority submenu in the toolkit w
   await expect(toolkitMenu).toHaveCount(1)
   await expect(page.locator(".help_content .help_submenu")).toHaveCount(0)
   await expect(toolkitMenu.locator("li > a")).toHaveText(submenu.map(([, label]) => label))
-  for (const [, label] of submenu) {
-    await expect(toolkitMenu.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", /ankare=/)
+  for (const [id, label] of submenu) {
+    await expect(toolkitMenu.getByRole("link", { name: label, exact: true })).toHaveAttribute(
+      "href",
+      `/om/hjalp?ankare=${encodeURIComponent(id)}`
+    )
   }
 
   expect(await loggedContentRequests(request)).toEqual([contentPath])
   expect(problems).toEqual([])
+})
+
+test("Help browser alias preserves query and fragment through the permanent redirect", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  const response = await page.goto("/hjalp?ankare=Epub#legacy", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+  await expect(page).toHaveURL("/om/hjalp?ankare=Epub#legacy")
+  await expect(page.getByRole("heading", { name: "Hjälp", exact: true })).toBeVisible()
+  await expectAnchorOffset(page, "Epub")
+  expect(await loggedContentRequests(request)).toEqual([contentPath])
+  expect(problems).toEqual([])
+})
+
+test("Help uses browser-decoded named entities and underscore.string _id stripping", async ({ page }) => {
+  await page.addInitScript(() => {
+    const BrowserDOMParser = window.DOMParser
+    class FixtureDOMParser {
+      parseFromString(markup: string, type: DOMParserSupportedType) {
+        const document = new BrowserDOMParser().parseFromString(markup, type)
+        if (markup.includes('id="SökaEfterVerk"')) {
+          const fixture = new BrowserDOMParser().parseFromString(
+            '<a id="EntityLabel" name="Cr&egrave;me&nbsp;Br&ucirc;l&eacute;e_id"></a>',
+            "text/html"
+          )
+          document.body.append(fixture.body.firstElementChild!)
+        }
+        return document
+      }
+    }
+    Object.defineProperty(window, "DOMParser", {
+      configurable: true,
+      value: FixtureDOMParser,
+      writable: true
+    })
+  })
+
+  await page.goto("/om/hjalp", { waitUntil: "networkidle" })
+  const injected = page.locator("#toolkit").getByRole("link", { name: "Crème brûlée", exact: true })
+  await expect(injected).toHaveAttribute("href", "/om/hjalp?ankare=EntityLabel")
 })
 
 test("Help submenu click updates ankare and scrolls to the legacy 40px offset without refetch", async ({ page, request }) => {
