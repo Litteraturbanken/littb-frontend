@@ -1,0 +1,110 @@
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+
+const fixture = "http://127.0.0.1:4100"
+
+async function resetHome(request: APIRequestContext) {
+  await Promise.all([
+    request.delete(`${fixture}/_home_requests`),
+    request.delete(`${fixture}/_home_failure`)
+  ])
+}
+
+async function homeRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_home_requests`)).json()).requests
+}
+
+function captureBrowserProblems(page: Page) {
+  const problems: string[] = []
+  page.on("console", message => {
+    if (message.type() === "error" || /hydration/i.test(message.text())) {
+      problems.push(`console: ${message.text()}`)
+    }
+  })
+  page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
+  return problems
+}
+
+async function navigateClient(page: Page, path: string) {
+  await page.evaluate(async value => {
+    type Router = { push: (path: string) => Promise<unknown> }
+    type VueRoot = HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router?: Router } } }
+    }
+    const router = (document.querySelector("#__nuxt") as VueRoot | null)
+      ?.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt router is unavailable")
+    await router.push(value)
+  }, path)
+}
+
+test.beforeEach(async ({ request }) => resetHome(request))
+
+test("hydrates the SSR Home payload without refetching its editorial fragment", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  const response = await page.goto("/", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+
+  await expect(page).toHaveTitle("Litteraturbanken | Svenska klassiker som e-bok och epub")
+  await expect(page.locator("body")).toHaveClass("focus page-start ready")
+  await expect(page.getByText("Lärdomsstaden Uppsala", { exact: true })).toBeVisible()
+  const requests = await homeRequests(request)
+  expect(requests.filter(path => path.startsWith("/red/om/start/startsida-ny.html?"))).toHaveLength(1)
+  expect(requests.filter(path => path.startsWith("/red/css/startsida.css?"))).toHaveLength(1)
+  expect(requests.filter(path => path.endsWith("/start_bkg_172_2026.jpg"))).toHaveLength(1)
+  expect(problems).toEqual([])
+})
+
+test("a public /red failure during client navigation leaves the normal empty Home shell", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  const missing = await page.goto("/definitely-not-a-route", { waitUntil: "networkidle" })
+  expect(missing?.status()).toBe(404)
+  await request.put(`${fixture}/_home_failure`)
+
+  await navigateClient(page, "/")
+  await expect(page).toHaveURL("/")
+  await expect(page.getByRole("heading", { name: "Litteraturbanken", exact: true })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Nytt & anmärkningsvärt", exact: true })).toBeVisible()
+  await expect(page.getByText("Månadens tema", { exact: true })).toHaveCount(0)
+  await expect(page.locator('link[rel="stylesheet"][href^="/red/css/startsida.css?"]')).toHaveCount(0)
+  await expect(page.locator("html")).not.toHaveAttribute("style", /start_bkg_172_2026/)
+  expect((await homeRequests(request)).filter(path => path.startsWith(
+    "/red/om/start/startsida-ny.html?"
+  ))).toHaveLength(1)
+  expect(problems.filter(problem => /hydration|pageerror/.test(problem))).toEqual([])
+})
+
+test("Home to 404 to Home cleans and restores stylesheet, background, and body state", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto("/", { waitUntil: "networkidle" })
+  const stylesheet = page.locator('link[rel="stylesheet"][href^="/red/css/startsida.css?"]')
+  await expect(stylesheet).toHaveCount(1)
+  const stylesheetHref = await stylesheet.getAttribute("href")
+  await expect(page.locator("body")).toHaveClass(/\bfocus\b/)
+  await expect(page.locator("body")).toHaveClass(/\bpage-start\b/)
+  await expect(page.locator("body")).toHaveClass(/\bready\b/)
+  expect(await page.locator("html").evaluate(element => getComputedStyle(element).backgroundRepeat))
+    .toBe("no-repeat")
+
+  await navigateClient(page, "/definitely-not-a-route")
+  await expect(page).toHaveTitle("Sidan kan inte hittas | Litteraturbanken")
+  await expect(page.locator("body")).not.toHaveClass(/\bpage-start\b/)
+  await expect(stylesheet).toHaveCount(0)
+  await expect(page.locator("html")).not.toHaveAttribute("style", /start_bkg_172_2026/)
+
+  await navigateClient(page, "/")
+  await expect(page).toHaveTitle("Litteraturbanken | Svenska klassiker som e-bok och epub")
+  await expect(page.locator("body")).toHaveClass(/\bfocus\b/)
+  await expect(page.locator("body")).toHaveClass(/\bpage-start\b/)
+  await expect(page.locator("body")).toHaveClass(/\bready\b/)
+  await expect(stylesheet).toHaveCount(1)
+  await expect(stylesheet).toHaveAttribute("href", stylesheetHref ?? "")
+  await expect(page.locator("html")).toHaveAttribute("style", /start_bkg_172_2026\.jpg/)
+  expect(await page.locator("html").evaluate(element => getComputedStyle(element).backgroundRepeat))
+    .toBe("no-repeat")
+  const fragmentRequests = (await homeRequests(request)).filter(path => path.startsWith(
+    "/red/om/start/startsida-ny.html?"
+  ))
+  expect(fragmentRequests).toHaveLength(2)
+  expect(new Set(fragmentRequests)).toEqual(new Set([fragmentRequests[0]]))
+  expect(problems).toEqual([])
+})
