@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderPage } from "#shared/types/reader"
+import { readerAuthorHref, readerPageHref } from "~/lib/reader-routes"
 
 definePageMeta({
   validate: route => {
@@ -49,6 +50,7 @@ if (!data.value) {
 }
 
 const reader = computed(() => data.value!)
+const authorHref = readerAuthorHref(authorParam)
 const pageTitle = computed(
   () => `${reader.value.title} sida ${reader.value.pageName} etext | Litteraturbanken`
 )
@@ -67,7 +69,12 @@ useHead(() => ({
 }))
 
 function pageHref(pageName: string): string {
-  return `/författare/${authorParam}/titlar/${titleParam}/sida/${pageName}/${mediaTypeParam}`
+  return readerPageHref({
+    author: authorParam,
+    title: titleParam,
+    page: pageName,
+    mediaType: mediaTypeParam
+  })
 }
 </script>
 
@@ -79,7 +86,7 @@ function pageHref(pageName: string): string {
 
     <aside class="reader-context" aria-label="Läsinformation och sidnavigering">
       <div class="reader-work">
-        <a class="author" :href="`/författare/${authorParam}`">{{ reader.author.name }}</a>
+        <a class="author" :href="authorHref">{{ reader.author.name }}</a>
         <div>
           <span class="title">{{ reader.title }}</span>
           <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>

@@ -26,8 +26,9 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(html).toContain("DOKTOR GLAS")
   expect(html).toContain("HJALMAR SÖDERBERG")
   expect(html).toContain("-2 av 3")
-  expect(html).toContain('href="/författare/SöderbergH/titlar/DoktorGlas/sida/-3/etext"')
-  expect(html).toContain('href="/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext"')
+  expect(html).toContain('href="/författare/S%C3%B6derbergH"')
+  expect(html).toContain('href="/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext"')
+  expect(html).toContain('href="/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"')
   expect(html).not.toContain("Hämtar sida")
 
   const recorded = await readerRequests(request)
