@@ -2,7 +2,15 @@ import type { ChildProcess } from "node:child_process"
 import { spawn } from "node:child_process"
 import { once } from "node:events"
 import { fileURLToPath } from "node:url"
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest"
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test
+} from "vitest"
 
 const nuxtRoot = fileURLToPath(new URL("../..", import.meta.url))
 const port = 42_000 + process.pid % 10_000
@@ -22,6 +30,21 @@ async function waitUntilReady() {
   throw new Error("v2 fixture server did not become ready")
 }
 
+async function contactSubmissions() {
+  return await (await fetch(`${origin}/_contact_submissions`)).json() as {
+    contactSubmissions: unknown[]
+  }
+}
+
+async function waitForContactSubmission() {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    const ledger = await contactSubmissions()
+    if (ledger.contactSubmissions.length > 0) return ledger
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+  throw new Error("Contact submission was not recorded")
+}
+
 describe("v2 fixture server Contact operation", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -33,9 +56,13 @@ describe("v2 fixture server Contact operation", () => {
   })
 
   afterAll(async () => {
+    await fetch(`${origin}/_contact_defer`, { method: "DELETE" }).catch(() => {})
     if (!fixture.killed && fixture.exitCode === null) {
+      const exited = once(fixture, "exit")
       fixture.kill("SIGTERM")
-      await once(fixture, "exit")
+      const forceKill = setTimeout(() => fixture.kill("SIGKILL"), 1_000)
+      await exited
+      clearTimeout(forceKill)
     }
   })
 
@@ -43,8 +70,13 @@ describe("v2 fixture server Contact operation", () => {
     await Promise.all([
       fetch(`${origin}/_requests`, { method: "DELETE" }),
       fetch(`${origin}/_contact_submissions`, { method: "DELETE" }),
-      fetch(`${origin}/_failure`, { method: "DELETE" })
+      fetch(`${origin}/_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_contact_defer`, { method: "DELETE" })
     ])
+  })
+
+  afterEach(async () => {
+    await fetch(`${origin}/_contact_defer`, { method: "DELETE" })
   })
 
   test("accepts and separately records the exact submitted body", async () => {
@@ -102,5 +134,39 @@ describe("v2 fixture server Contact operation", () => {
     expect(await (await fetch(`${origin}/_contact_submissions`)).json()).toEqual({
       contactSubmissions: []
     })
+  })
+
+  test("records a deferred submission before releasing its response", async () => {
+    const body = {
+      sender_name: null,
+      sender_address: "a@b",
+      message: "Vänta",
+      audience: "litteraturbanken"
+    }
+    await fetch(`${origin}/_contact_defer`, { method: "PUT" })
+
+    let settled = false
+    const pendingResponse = fetch(`${origin}/v2/contact`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(response => {
+      settled = true
+      return response
+    })
+
+    expect(await waitForContactSubmission()).toEqual({
+      contactSubmissions: [body]
+    })
+    expect(settled).toBe(false)
+    expect(await (await fetch(`${origin}/_contact_defer`)).json()).toEqual({
+      deferred: true,
+      pending: 1
+    })
+
+    await fetch(`${origin}/_contact_defer`, { method: "DELETE" })
+    const response = await pendingResponse
+    expect(response.status).toBe(202)
+    expect(await response.json()).toEqual({ status: "accepted" })
   })
 })

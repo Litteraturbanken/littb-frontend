@@ -20,6 +20,8 @@ const aboutContent = new Map([
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 let requests = []
 let contactSubmissions = []
+let deferContactSubmissions = false
+let pendingContactReleases = []
 let failure = null
 
 const errorByResource = {
@@ -52,6 +54,18 @@ async function readJson(request) {
   return chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {}
 }
 
+function waitForContactRelease() {
+  if (!deferContactSubmissions) return Promise.resolve()
+  return new Promise(resolve => pendingContactReleases.push(resolve))
+}
+
+function releaseContactSubmissions() {
+  deferContactSubmissions = false
+  const releases = pendingContactReleases
+  pendingContactReleases = []
+  for (const release of releases) release()
+}
+
 function resourceFor(pathname) {
   if (pathname === "/v2/stats") return "stats"
   if (pathname === "/v2/works/popular") return "works"
@@ -77,8 +91,29 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, { contactSubmissions })
   }
   if (url.pathname === "/_contact_submissions" && request.method === "DELETE") {
+    releaseContactSubmissions()
     contactSubmissions = []
     return sendJson(response, 200, { contactSubmissions })
+  }
+  if (url.pathname === "/_contact_defer" && request.method === "GET") {
+    return sendJson(response, 200, {
+      deferred: deferContactSubmissions,
+      pending: pendingContactReleases.length
+    })
+  }
+  if (url.pathname === "/_contact_defer" && request.method === "PUT") {
+    deferContactSubmissions = true
+    return sendJson(response, 200, {
+      deferred: deferContactSubmissions,
+      pending: pendingContactReleases.length
+    })
+  }
+  if (url.pathname === "/_contact_defer" && request.method === "DELETE") {
+    releaseContactSubmissions()
+    return sendJson(response, 200, {
+      deferred: deferContactSubmissions,
+      pending: pendingContactReleases.length
+    })
   }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
@@ -102,6 +137,7 @@ const server = createServer(async (request, response) => {
   if (request.method === "POST" && url.pathname === "/v2/contact") {
     requests.push(`${url.pathname}${url.search}`)
     contactSubmissions.push(await readJson(request))
+    await waitForContactRelease()
     if (failure === "contact") {
       return sendJson(response, 502, {
         error: {
@@ -142,5 +178,8 @@ server.listen(port, "127.0.0.1", () => {
 })
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
-  process.on(signal, () => server.close(() => process.exit(0)))
+  process.on(signal, () => {
+    releaseContactSubmissions()
+    server.close(() => process.exit(0))
+  })
 }
