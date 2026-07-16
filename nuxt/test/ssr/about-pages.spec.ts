@@ -9,6 +9,33 @@ const pages = [
   ["tack", "/red/om/tack.html", ["Litteraturbanken tackar", "Kungl. biblioteket", "Uppsala universitetsbibliotek"]]
 ] as const
 
+const unlistedPages = [
+  [
+    "mål",
+    "/red/om/visioner/visioner.html",
+    ["Mål", "Digitaliseringen är också en fråga om demokrati", "Litteraturbanken, 2023"],
+    "<title>Mål</title>"
+  ],
+  [
+    "english.html",
+    "/red/om/ide/english.html",
+    ["The Swedish Literature Bank", "Board", "Technical developers"],
+    "<title>ENGLISH</title>"
+  ],
+  [
+    "deutsch.html",
+    "/red/om/ide/deutsch.html",
+    ["Die Schwedische Literaturbank", "Vorstand", "Technische Entwickler"],
+    "<title>DEUTSCH</title>"
+  ],
+  [
+    "francais.html",
+    "/red/om/ide/francais.html",
+    ["La Banque de littérature suédoise", "Comité directeur", "Développement technique"],
+    "<title>FRANÇAIS</title>"
+  ]
+] as const
+
 async function reset(request: APIRequestContext) {
   await request.delete(`${fixture}/_requests`)
   await request.delete(`${fixture}/_failure`)
@@ -25,6 +52,21 @@ for (const [slug, contentPath, markers] of pages) {
     for (const marker of markers) expect(html).toContain(marker)
     expect(html).not.toContain("XHTML 1.0 Transitional")
     expect(html).not.toMatch(/<title>(?:OM_LITTERATURBANKEN|ORGANISATION|RÄTTIGHETER)<\/title>/)
+    const log = await (await request.get(`${fixture}/_requests`)).json()
+    expect(log.requests).toEqual([contentPath])
+  })
+}
+
+for (const [slug, contentPath, markers, upstreamTitle] of unlistedPages) {
+  test(`${slug} fetches its allowlisted content without activating an About link during SSR`, async ({ request }) => {
+    await reset(request)
+    const response = await request.get(`/om/${slug}`)
+    expect(response.status()).toBe(200)
+    const html = await response.text()
+    for (const marker of markers) expect(html).toContain(marker)
+    expect(html).not.toContain("XHTML 1.0")
+    expect(html).not.toContain(upstreamTitle)
+    expect(html.match(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/)[^>]*>/g) ?? []).toHaveLength(0)
     const log = await (await request.get(`${fixture}/_requests`)).json()
     expect(log.requests).toEqual([contentPath])
   })

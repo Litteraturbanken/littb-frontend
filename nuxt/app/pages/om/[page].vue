@@ -17,6 +17,22 @@ const pages = {
   tack: {
     activePage: "tack",
     contentPath: "/red/om/tack.html"
+  },
+  "mål": {
+    activePage: null,
+    contentPath: "/red/om/visioner/visioner.html"
+  },
+  "english.html": {
+    activePage: null,
+    contentPath: "/red/om/ide/english.html"
+  },
+  "deutsch.html": {
+    activePage: null,
+    contentPath: "/red/om/ide/deutsch.html"
+  },
+  "francais.html": {
+    activePage: null,
+    contentPath: "/red/om/ide/francais.html"
   }
 } as const
 
@@ -25,7 +41,16 @@ type PageKey = keyof typeof pages
 definePageMeta({
   validate: route => {
     const page = Array.isArray(route.params.page) ? route.params.page[0] : route.params.page
-    return typeof page === "string" && ["ide", "organisation", "rattigheter", "tack"].includes(page)
+    return typeof page === "string" && [
+      "ide",
+      "organisation",
+      "rattigheter",
+      "tack",
+      "mål",
+      "english.html",
+      "deutsch.html",
+      "francais.html"
+    ].includes(page)
   }
 })
 
