@@ -1,28 +1,8 @@
 import { expect, test } from "@playwright/test"
 
+import { waitForVisualAssets } from "../helpers/visual"
+
 const fixture = "http://127.0.0.1:4100"
-
-async function waitForVisualAssets(page) {
-  await page.evaluate(async () => {
-    await document.fonts.ready
-    await Promise.all(
-      [...document.images]
-        .filter(image => !image.complete)
-        .map(image => new Promise(resolve => {
-          image.addEventListener("load", resolve, { once: true })
-          image.addEventListener("error", resolve, { once: true })
-        }))
-    )
-
-    const background = getComputedStyle(document.documentElement).backgroundImage
-    const match = background.match(/url\(["']?(.+?)["']?\)/)
-    if (match) {
-      const image = new Image()
-      image.src = match[1]
-      await image.decode()
-    }
-  })
-}
 
 test.beforeEach(async ({ request }) => {
   await request.delete(`${fixture}/_requests`)

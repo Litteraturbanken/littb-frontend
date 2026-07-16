@@ -70,6 +70,6 @@ const { data: content } = await useAsyncData(asyncKey, async () => {
 
 <template>
   <AboutPageShell :active-page="selectedPage.activePage">
-    <div v-html="content || ''" />
+    <section v-html="content || ''" />
   </AboutPageShell>
 </template>

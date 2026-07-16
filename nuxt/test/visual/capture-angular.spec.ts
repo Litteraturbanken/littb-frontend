@@ -2,31 +2,11 @@ import { mkdir } from "node:fs/promises"
 import { resolve } from "node:path"
 import { expect, test } from "@playwright/test"
 
+import { waitForVisualAssets } from "../helpers/visual"
+
 // This JavaScript fixture is deliberately shared with the Node HTTP fixture.
 // @ts-ignore -- Playwright transpiles the adjacent ESM module directly.
 import { legacyEpubs, legacyWorks, stats } from "../fixtures/statistics-data.mjs"
-
-async function waitForVisualAssets(page) {
-  await page.evaluate(async () => {
-    await document.fonts.ready
-    await Promise.all(
-      [...document.images]
-        .filter(image => !image.complete)
-        .map(image => new Promise(resolve => {
-          image.addEventListener("load", resolve, { once: true })
-          image.addEventListener("error", resolve, { once: true })
-        }))
-    )
-
-    const background = getComputedStyle(document.documentElement).backgroundImage
-    const match = background.match(/url\(["']?(.+?)["']?\)/)
-    if (match) {
-      const image = new Image()
-      image.src = match[1]
-      await image.decode()
-    }
-  })
-}
 
 test.beforeEach(async ({ page }) => {
   await page.route(/\/get_stats(?:\?|$)/, route =>
