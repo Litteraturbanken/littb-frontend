@@ -50,7 +50,7 @@ export default defineConfig({
     },
     {
       command:
-        `NUXT_API_BASE=${fixtureOrigin}/v2 ` +
+        `NUXT_API_BASE=${fixtureOrigin}/private-v2 ` +
         `NUXT_PUBLIC_API_BASE=/api/v2 ` +
         `LBAPI_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
