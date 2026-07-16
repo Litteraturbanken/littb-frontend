@@ -153,14 +153,16 @@ watch(
     <section v-else v-html="content || ''" />
     <ClientOnly>
       <Teleport v-if="pageKey === 'hjalp'" to="#toolkit">
-        <ul class="help_submenu sticky">
-          <li v-for="item in helpSubmenu" :key="item.id">
-            <a
-              :href="`/om/hjalp?ankare=${encodeURIComponent(item.id)}`"
-              @click.prevent="selectHelpAnchor(item.id)"
-            >{{ item.label }}</a>
-          </li>
-        </ul>
+        <div toolkit>
+          <ul class="help_submenu sticky">
+            <li v-for="item in helpSubmenu" :key="item.id">
+              <a
+                :href="`/om/hjalp?ankare=${encodeURIComponent(item.id)}`"
+                @click.prevent="selectHelpAnchor(item.id)"
+              >{{ item.label }}</a>
+            </li>
+          </ul>
+        </div>
       </Teleport>
     </ClientOnly>
   </AboutPageShell>

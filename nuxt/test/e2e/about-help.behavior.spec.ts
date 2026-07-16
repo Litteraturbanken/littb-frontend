@@ -61,7 +61,7 @@ test("Help renders the exact active state and authority submenu in the toolkit w
   await expect(activeLinks).toHaveCount(1)
   await expect(page.getByRole("link", { name: "Hjälp", exact: true })).toHaveClass(/\bactive\b/)
 
-  const toolkitMenu = page.locator("#toolkit > ul.help_submenu.sticky")
+  const toolkitMenu = page.locator("#toolkit > [toolkit] > ul.help_submenu.sticky")
   await expect(toolkitMenu).toHaveCount(1)
   await expect(page.locator(".help_content .help_submenu")).toHaveCount(0)
   await expect(toolkitMenu.locator("li > a")).toHaveText(submenu.map(([, label]) => label))
