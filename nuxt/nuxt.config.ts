@@ -24,6 +24,12 @@ export default defineNuxtConfig({
     },
     "/kontakt": {
       redirect: { to: "/om/kontakt", statusCode: 308 }
+    },
+    "/titlar": {
+      redirect: { to: "/bibliotek", statusCode: 308 }
+    },
+    "/forfattare": {
+      redirect: { to: "/bibliotek", statusCode: 308 }
     }
   },
   runtimeConfig: {
