@@ -71,4 +71,3 @@ SSR tests prove exact path selection, representative beginning/middle/end conten
 Desktop behavior tests prove exact active states, the full submenu order/copy, click/deep-link/back scrolling, URL state, no refetch, and no console/hydration/page errors.
 
 Angular authority capture and Nuxt comparison cover all five routes at desktop and mobile widths. The shared visual readiness helper remains authoritative. Full Nuxt regression gates plus unchanged Angular unit/build gates close the slice.
-
