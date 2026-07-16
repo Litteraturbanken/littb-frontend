@@ -103,6 +103,29 @@ const metadata = computed(() => isIndex.value
     }
 )
 
+async function scrollToIndexAnchor(value: unknown) {
+  if (!import.meta.client || !isIndex.value) return
+  await nextTick()
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+  if (typeof value !== "string" || !value) {
+    window.scrollTo({ top: 0 })
+    return
+  }
+  const anchor = document.getElementById(value)
+  if (!anchor) return
+  window.scrollTo({ top: window.scrollY + anchor.getBoundingClientRect().top })
+}
+
+watch(
+  [
+    () => route.query.ankare,
+    () => pageData.value.document.bodyHtml,
+    isIndex
+  ],
+  ([value]) => { void scrollToIndexAnchor(value) },
+  { immediate: true, flush: "post" }
+)
+
 useSeoMeta({
   title: () => metadata.value.title,
   description: () => metadata.value.description
