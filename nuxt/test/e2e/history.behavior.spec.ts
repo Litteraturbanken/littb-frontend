@@ -1,0 +1,350 @@
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+
+const fixture = "http://127.0.0.1:4100"
+
+type StoredHistory = { author: string, label: string, url: string }
+type AuthorRequest = {
+  path: string
+  body: { author_ids: string[] }
+}
+type PendingAuthorRequest = { authorIds: string[], aborted: boolean }
+
+async function reset(request: APIRequestContext) {
+  await Promise.all([
+    request.delete(`${fixture}/_author_resolve_requests`),
+    request.delete(`${fixture}/_author_resolve_failure`),
+    request.delete(`${fixture}/_author_resolve_delays`)
+  ])
+}
+
+async function authorRequests(request: APIRequestContext): Promise<AuthorRequest[]> {
+  const response = await request.get(`${fixture}/_author_resolve_requests`)
+  return (await response.json()).requests
+}
+
+function captureBrowserProblems(page: Page) {
+  const problems: string[] = []
+  page.on("console", message => {
+    if (
+      message.type() === "error"
+      && !message.text().startsWith("Failed to load resource:")
+    ) problems.push(`console: ${message.text()}`)
+  })
+  page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
+  return problems
+}
+
+async function expectBodyClasses(page: Page, expected: string[]) {
+  const classes = (await page.locator("body").getAttribute("class"))
+    ?.split(/\s+/)
+    .filter(Boolean)
+    .sort()
+  expect(classes).toEqual([...expected].sort())
+}
+
+async function seedRawHistory(page: Page, raw: string | null) {
+  await page.addInitScript(value => {
+    if (value === null) localStorage.removeItem("lastPageViews")
+    else localStorage.setItem("lastPageViews", value)
+  }, raw)
+}
+
+async function openHistory(page: Page) {
+  const response = await page.goto("/historik", { waitUntil: "networkidle" })
+  expect(response?.status()).toBe(200)
+}
+
+async function expectHeadingOnly(page: Page) {
+  await expect(page.locator("#mainview > div > h1")).toHaveText("Senast lästa verk")
+  await expect(page.locator("#mainview > div > ul")).toHaveCount(0)
+}
+
+async function pushRoute(page: Page, path: string) {
+  await page.evaluate(async target => {
+    type VueRoot = HTMLElement & {
+      __vue_app__: {
+        config: {
+          globalProperties: {
+            $router: { push: (value: string) => Promise<void> }
+          }
+        }
+      }
+    }
+    const root = document.querySelector("#__nuxt") as VueRoot
+    await root.__vue_app__.config.globalProperties.$router.push(target)
+  }, path)
+}
+
+async function installIgnoringAbortTransport(page: Page) {
+  await page.addInitScript(() => {
+    type PendingTransportRequest = {
+      authorIds: string[]
+      signal: AbortSignal
+      resolve: (response: Response) => void
+    }
+    type HistoryTransport = {
+      pending: PendingTransportRequest[]
+      resolve: (index: number) => void
+    }
+    const nativeFetch = window.fetch.bind(window)
+    const pending: PendingTransportRequest[] = []
+    const transport: HistoryTransport = {
+      pending,
+      resolve(index) {
+        pending[index]?.resolve(new Response(JSON.stringify({
+          items: [{
+            author_id: "StrindbergA",
+            full_name: "Late Author",
+            surname: "Author"
+          }]
+        }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        }))
+      }
+    }
+
+    Object.defineProperty(window, "__historyTransport", { value: transport })
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      if (new URL(request.url).pathname !== "/api/v2/authors/resolve") {
+        return nativeFetch(input, init)
+      }
+      const body = await request.clone().json() as { author_ids: string[] }
+      return new Promise<Response>(resolve => {
+        // Deliberately ignore abort so resolution after unmount exercises the
+        // component's explicit late-commit guard.
+        pending.push({
+          authorIds: body.author_ids,
+          signal: request.signal,
+          resolve
+        })
+      })
+    }
+  })
+}
+
+async function pendingTransportRequests(page: Page): Promise<PendingAuthorRequest[]> {
+  return page.evaluate(() => {
+    type HistoryWindow = Window & {
+      __historyTransport: {
+        pending: Array<{ authorIds: string[], signal: AbortSignal }>
+      }
+    }
+    return (window as unknown as HistoryWindow).__historyTransport.pending.map(
+      entry => ({ authorIds: entry.authorIds, aborted: entry.signal.aborted })
+    )
+  })
+}
+
+async function settleTransportRequest(page: Page, index: number) {
+  await page.evaluate(requestIndex => {
+    type HistoryWindow = Window & {
+      __historyTransport: { resolve: (index: number) => void }
+    }
+    ;(window as unknown as HistoryWindow).__historyTransport.resolve(requestIndex)
+  }, index)
+}
+
+test.beforeEach(async ({ request }) => reset(request))
+
+test("valid history is filtered before the 50-row limit and resolved once in stored order", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const special: StoredHistory[] = [
+    {
+      author: "  StrindbergA  ",
+      label: "Röda rummet – original",
+      url: "/författare/StrindbergA/titlar/Roda%20Rummet/etext?mode=orig%2Fscan#sida-1"
+    },
+    {
+      author: "UnknownAuthor",
+      label: "Okänd författare",
+      url: "/verk/unknown?view=full#top"
+    },
+    {
+      author: "LagerlofS",
+      label: "  Bevarad etikett  ",
+      url: "/författare/LagerlofS/titlar/Gosta/etext"
+    },
+    {
+      author: "StrindbergA",
+      label: "Dubblettförfattare",
+      url: "/verk/duplicate-author"
+    }
+  ]
+  const fillers: StoredHistory[] = Array.from({ length: 47 }, (_, index) => ({
+    author: index % 2 === 0 ? "StrindbergA" : "LagerlofS",
+    label: `Historikrad ${index + 1}`,
+    url: `/verk/history-${index + 1}`
+  }))
+  const valid = [...special, ...fillers]
+  const unsafe: unknown[] = [
+    null,
+    "not-an-object",
+    { author: "StrindbergA", label: "", url: "/empty-label" },
+    { author: " ", label: "Blank author", url: "/blank-author" },
+    { author: "x".repeat(101), label: "Long author", url: "/long-author" },
+    { author: "StrindbergA", label: "Absolute", url: "https://evil.invalid/work" },
+    { author: "StrindbergA", label: "Protocol relative", url: "//evil.invalid/work" },
+    { author: "StrindbergA", label: "Backslash", url: "/bad\\path" },
+    { author: "StrindbergA", label: "Control", url: "/bad\u0001path" },
+    { author: "StrindbergA", label: "Malformed percent", url: "/bad%ZZpath" }
+  ]
+  const stored = [unsafe[0], valid[0], ...unsafe.slice(1), ...valid.slice(1)]
+  const raw = JSON.stringify(stored)
+  await seedRawHistory(page, raw)
+
+  await openHistory(page)
+
+  const rows = page.locator("#mainview > div > ul > li")
+  await expect(rows).toHaveCount(50)
+  await expect(rows.locator("a > span:last-child")).toHaveText(
+    valid.slice(0, 50).map(entry => entry.label.trim())
+  )
+  await expect(rows.nth(0).locator("a")).toHaveAttribute("href", special[0].url)
+  await expect(rows.nth(0).locator("span").first()).toHaveText("August Strindberg")
+  await expect(rows.nth(1).locator("span").first()).toHaveText("")
+  await expect(rows.nth(2).locator("a")).toHaveAttribute("href", special[2].url)
+  expect(await rows.nth(2).locator("span").last().textContent()).toBe(special[2].label)
+  await expect(rows.nth(49).locator("a")).toHaveAttribute("href", valid[49].url)
+  await expect(page.locator(`a[href="${valid[50].url}"]`)).toHaveCount(0)
+  expect(await rows.locator("a").evaluateAll(anchors => anchors.every(
+    anchor => anchor.tagName === "A"
+  ))).toBe(true)
+
+  expect(await authorRequests(request)).toEqual([{
+    path: "/v2/authors/resolve",
+    body: { author_ids: ["StrindbergA", "UnknownAuthor", "LagerlofS"] }
+  }])
+  expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
+  expect(problems).toEqual([])
+})
+
+for (const [name, raw] of [
+  ["missing storage", null],
+  ["JSON null", "null"],
+  ["empty array", "[]"],
+  ["invalid JSON", "{not json"]
+] as const) {
+  test(`${name} keeps the heading-only page without requesting authors`, async ({
+    page,
+    request
+  }) => {
+    const problems = captureBrowserProblems(page)
+    await seedRawHistory(page, raw)
+    await openHistory(page)
+
+    await expectHeadingOnly(page)
+    expect(await authorRequests(request)).toEqual([])
+    expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
+    expect(problems).toEqual([])
+  })
+}
+
+test("storage access failure keeps the heading-only page without requesting authors", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.addInitScript(() => {
+    const nativeGetItem = Storage.prototype.getItem
+    Object.defineProperty(Storage.prototype, "getItem", {
+      configurable: true,
+      value(key: string) {
+        if (key === "lastPageViews") throw new DOMException("denied", "SecurityError")
+        return nativeGetItem.call(this, key)
+      }
+    })
+  })
+
+  await openHistory(page)
+
+  await expectHeadingOnly(page)
+  expect(await authorRequests(request)).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("typed API failure leaves valid stored history hidden and unchanged", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const raw = JSON.stringify([{
+    author: "StrindbergA",
+    label: "Röda rummet",
+    url: "/verk/roda-rummet"
+  }])
+  await seedRawHistory(page, raw)
+  await request.put(`${fixture}/_author_resolve_failure`)
+
+  await openHistory(page)
+
+  await expectHeadingOnly(page)
+  expect(await authorRequests(request)).toEqual([{
+    path: "/v2/authors/resolve",
+    body: { author_ids: ["StrindbergA"] }
+  }])
+  expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
+  expect(problems).toEqual([])
+})
+
+test("thrown fetch failure leaves valid stored history hidden and unchanged", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const raw = JSON.stringify([{
+    author: "StrindbergA",
+    label: "Röda rummet",
+    url: "/verk/roda-rummet"
+  }])
+  await seedRawHistory(page, raw)
+  await page.route("**/api/v2/authors/resolve", route => route.abort("failed"))
+
+  await openHistory(page)
+
+  await expectHeadingOnly(page)
+  expect(await authorRequests(request)).toEqual([])
+  expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
+  expect(problems).toEqual([])
+})
+
+test("leaving during an abort-ignoring request aborts it and blocks late page state", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const raw = JSON.stringify([{
+    author: "StrindbergA",
+    label: "Röda rummet",
+    url: "/verk/roda-rummet"
+  }])
+  await seedRawHistory(page, raw)
+  await installIgnoringAbortTransport(page)
+  const response = await page.goto("/historik")
+  expect(response?.status()).toBe(200)
+  await expect.poll(() => pendingTransportRequests(page)).toEqual([{
+    authorIds: ["StrindbergA"],
+    aborted: false
+  }])
+
+  await pushRoute(page, "/id")
+  await expect(page).toHaveURL(/\/id$/)
+  await expect.poll(() => pendingTransportRequests(page)).toEqual([{
+    authorIds: ["StrindbergA"],
+    aborted: true
+  }])
+  await settleTransportRequest(page, 0)
+  await page.waitForTimeout(50)
+
+  await expect(page).toHaveTitle("Litteraturbanken")
+  await expectBodyClasses(page, ["focus", "page-id", "ready"])
+  await expect(page.getByText("Late Author", { exact: true })).toHaveCount(0)
+  await expect(page.getByText("Senast lästa verk", { exact: true })).toHaveCount(0)
+  expect(await authorRequests(request)).toEqual([])
+  expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
+  expect(problems).toEqual([])
+})
