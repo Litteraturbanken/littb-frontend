@@ -74,8 +74,10 @@ test("renders exact copy, pristine controls, Angular email grammar, and dirty-bl
   await expect(page.locator(".contactform .error_msg").nth(1)).toBeHidden()
 
   await page.locator("#emailInput").fill("not-an-email")
+  await expect(page.locator("#emailInput + .error_msg")).toBeHidden()
   await page.locator(".contactform textarea").fill("x")
   await page.locator(".contactform textarea").fill("   ")
+  await expect(page.locator(".msg_box > .error_msg")).toBeHidden()
   await page.locator(".header").click()
   await expect(page.locator(".contactform textarea")).toHaveValue("")
   await expect(page.locator("#emailInput + .error_msg")).toBeVisible()
@@ -145,6 +147,30 @@ test("submits trimmed Contact data, exposes only its spinner, and clears fields 
   await expect(page.locator(".contactform textarea")).toHaveValue("")
 })
 
+test("keeps Contact submission available while pending and sends each duplicate attempt", async ({ page, request }) => {
+  await openContact(page)
+  await request.put(`${fixture}/_contact_defer`)
+  await fillContact(page)
+
+  const submit = page.locator("form.contactform button.submit")
+  await submit.click()
+  await expect(submit).toBeEnabled()
+  await submit.click()
+
+  const payload = {
+    sender_name: "Anna Andersson",
+    sender_address: "anna@example.test",
+    message: "Hej!",
+    audience: "litteraturbanken"
+  }
+  expect(await waitForSubmissions(request, 2)).toEqual([payload, payload])
+  await expect(submit).toBeEnabled()
+  await expect(page.locator(".page-contactForm > div").first()).toBeVisible()
+
+  await request.delete(`${fixture}/_contact_defer`)
+  await expect(page.getByText("Tack för ditt meddelande, vi svarar så fort vi kan.", { exact: true })).toBeVisible()
+})
+
 test("a failed Contact submission restores the mounted form after four seconds and retains values", async ({ page, request }) => {
   await request.put(`${fixture}/_failure`, { data: { resource: "contact" } })
   await openContact(page)
@@ -206,6 +232,31 @@ test("newsletter always targets Litteraturbanken, has no spinner, retains its ad
   await expect(page.locator("#emailInput")).toHaveValue("")
   await expect(page.locator(".contactform textarea")).toHaveValue("")
   await expect(page.locator("#newsletterEmail")).toHaveValue("utskick@example.test")
+})
+
+test("keeps newsletter submission available while pending and sends each duplicate attempt", async ({ page, request }) => {
+  await openContact(page)
+  await request.put(`${fixture}/_contact_defer`)
+  await page.locator("#newsletterEmail").fill("utskick@example.test")
+
+  const submit = page.locator("form.subscribeform button.submit")
+  await submit.click()
+  await expect(submit).toBeEnabled()
+  await submit.click()
+
+  const payload = {
+    sender_name: "Utskickslista",
+    sender_address: "utskick@example.test",
+    message: "utskick@example.test vill bli tillagd på utskickslistan.",
+    audience: "litteraturbanken"
+  }
+  expect(await waitForSubmissions(request, 2)).toEqual([payload, payload])
+  await expect(submit).toBeEnabled()
+  await expect(page.locator(".page-contactForm > div").first()).toBeVisible()
+  await expect(page.locator(".page-contactForm .spinner")).toBeHidden()
+
+  await request.delete(`${fixture}/_contact_defer`)
+  await expect(page.getByText("Tack för din anmälan.", { exact: true })).toBeVisible()
 })
 
 test("legacy Contact alias preserves query and fragment in the browser", async ({ page }) => {
