@@ -19,7 +19,7 @@
 - Preserve exact legacy routes `/id` and `/id/:id`, control order/copy, four-cell table, `:::` separators, links, loading hooks, body classes `focus page-id ready`, and responsive visuals.
 - Correct the current Angular `{ titles, author_aggs, imported_aggs, hits, distinct_hits, suggest }` envelope mismatch to its intended populated-table behavior; do not preserve the accidental empty table.
 - Keep raw work documents behind the strict FastAPI transformer and expose only generated display-ready types to Nuxt.
-- Fully validate and normalize/group the complete 10,000-document catalog before request filtering; cache only successful immutable catalogs with a process-local 60-second monotonic TTL and single-flight refresh.
+- Fully validate and normalize/group the complete 10,000-document catalog before request filtering; cache only successful deeply immutable frozen-dataclass/tuple/scalar catalogs with a process-local 60-second monotonic TTL and single-flight refresh, never cached Pydantic response objects.
 - Accept exactly one strict request mode: ID `{ work_id: <lb value>, titles: [] }` or titles `{ work_id: null, titles: [1..100 values] }`.
 - Work IDs trim/lowercase, begin `lb`, and contain 2–100 characters; titles trim to 1–200 characters each.
 - Keep the legacy Angular route/service/template and `/query_string/etext,faksimil` operation unchanged.
@@ -27,6 +27,7 @@
 - `/id` performs no SSR or hydration lookup; a valid route parameter performs exactly one SSR lookup with no hydration duplicate.
 - Select the client base with the exact expression `import.meta.server ? config.apiBase : config.public.apiBase` and prove route-param SSR uses the private base.
 - Preserve Angular's coupled controls: ID clears `titles` but not textarea text; title changes only `titles[0]`; textarea replaces `titles` and therefore mirrors its first normalized row into the title input.
+- Preserve manually typed `lbid` text byte-for-byte in the visible input; trim/lowercase only the outgoing request value. Route-param initialization still lower-cases before display, matching Angular `$onInit`.
 - Set exact page title `Litteraturbanken`, default description `På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis.`, and body classes `focus page-id ready`.
 - Typed 422/500/503 responses never leak provider details; OpenSearch uses `work_lookup_unavailable` and `Unable to load ID lookup results`.
 - Follow TDD, commit each task separately with the exact listed message, and run an independent spec/quality review after each task.
@@ -44,7 +45,7 @@
 
 **Interfaces:**
 - Consumes: irregular legacy envelope `dict[str, Any]` with a `data` list in `sortkey|asc` order.
-- Produces: `WorkLookupRequest`, `WorkLookupResponse`, patchable `query_work_lookup_documents() -> dict[str, Any]`, `build_work_lookup_catalog(raw) -> tuple[WorkLookupCatalogItem, ...]`, `filter_work_lookup_catalog(catalog, request) -> WorkLookupResponse`, pure `transform_work_lookup(raw, request)`, and process-local `get_work_lookup_catalog()`.
+- Produces: `WorkLookupRequest`, `WorkLookupResponse`, patchable `query_work_lookup_documents() -> dict[str, Any]`, internal `build_work_lookup_catalog(raw) -> tuple[_WorkLookupCatalogItem, ...]`, `filter_work_lookup_catalog(catalog, request) -> WorkLookupResponse`, pure `transform_work_lookup(raw, request)`, and process-local `get_work_lookup_catalog()`.
 
 - [ ] **Step 1: Add failing strict-model tests**
 
@@ -169,6 +170,41 @@ def test_concurrent_lookups_single_flight(monkeypatch):
 
 Also patch the monotonic seam to prove reuse at 59.999 seconds and one refresh at 60 seconds after successful completion. Prove a provider exception and a malformed catalog are fanned out to waiters but not cached, the in-flight marker clears, and the next request retries successfully. Reset cache state in an autouse fixture so tests are isolated.
 
+Add mutation isolation after a single cached build:
+
+```python
+def test_returned_response_mutation_cannot_change_cached_catalog(monkeypatch):
+    raw = {"data": [work_document(lbworkid="lb1", mediatype="etext")]}
+    calls = []
+    monkeypatch.setattr(
+        work_lookup,
+        "query_work_lookup_documents",
+        lambda: calls.append(1) or raw,
+    )
+    request = WorkLookupByIdRequest(work_id="lb1", titles=[])
+
+    catalog = work_lookup.get_work_lookup_catalog()
+    first = work_lookup.filter_work_lookup_catalog(catalog, request)
+    expected_media_url = first.items[0].media[0].url
+    expected_author = first.items[0].author.model_copy(deep=True)
+    expected_title = first.items[0].title.model_copy(deep=True)
+    first.items[0].media[0].url = "/mutated"
+    first.items[0].author.url = "/mutated-author"
+    first.items[0].title.url = "/mutated-title"
+
+    second_catalog = work_lookup.get_work_lookup_catalog()
+    second = work_lookup.filter_work_lookup_catalog(second_catalog, request)
+
+    assert second_catalog is catalog
+    assert second.items[0].media[0].url == expected_media_url
+    assert second.items[0].author == expected_author
+    assert second.items[0].title == expected_title
+    assert second.items[0].media is not first.items[0].media
+    assert calls == [1]
+```
+
+Also mutate the first response's nested author/title link models and assert the second response retains exact labels/URLs. This proves no Pydantic response model or mutable collection is stored in or returned from the cache.
+
 - [ ] **Step 5: Run transformer tests and verify RED**
 
 Run:
@@ -188,26 +224,36 @@ from concurrent.futures import Future
 from dataclasses import dataclass
 from threading import Lock
 from time import monotonic
+from typing import Literal
 
 _MALFORMED_RESPONSE = "Malformed work-lookup response"
 _MEDIA_ORDER = {"etext": 0, "faksimil": 1}
 _CATALOG_TTL_SECONDS = 60.0
 
 @dataclass(frozen=True)
-class WorkLookupCatalogItem:
-    item: WorkLookupItem
+class _WorkLookupCatalogMedia:
+    label: Literal["etext", "faksimil"]
+    url: str
+
+@dataclass(frozen=True)
+class _WorkLookupCatalogItem:
     work_id: str
+    author_label: str
+    author_url: str
+    title_label: str
+    title_url: str
+    media: tuple[_WorkLookupCatalogMedia, ...]
     search_title_path: str
     search_title: str
 
 @dataclass(frozen=True)
 class _CatalogEntry:
     expires_at: float
-    items: tuple[WorkLookupCatalogItem, ...]
+    items: tuple[_WorkLookupCatalogItem, ...]
 
 _catalog_lock = Lock()
 _catalog_entry: _CatalogEntry | None = None
-_catalog_build: Future[tuple[WorkLookupCatalogItem, ...]] | None = None
+_catalog_build: Future[tuple[_WorkLookupCatalogItem, ...]] | None = None
 
 def _legacy_api():
     from lbapi import elasticapi
@@ -230,7 +276,7 @@ def query_work_lookup_documents() -> dict[str, Any]:
 
 def build_work_lookup_catalog(
     raw: dict[str, Any],
-) -> tuple[WorkLookupCatalogItem, ...]:
+) -> tuple[_WorkLookupCatalogItem, ...]:
     try:
         documents = raw["data"]
         if not isinstance(documents, list):
@@ -246,32 +292,43 @@ def build_work_lookup_catalog(
             )
             groups.setdefault(key, []).append(document)
 
-        items: list[WorkLookupCatalogItem] = []
+        items: list[_WorkLookupCatalogItem] = []
         for group in groups.values():
             ordered = sorted(
                 group,
                 key=lambda item: _MEDIA_ORDER[_required_string(item, "mediatype")],
             )
-            main = ordered[0]
-            items.append(WorkLookupCatalogItem(
-                item=_to_item(ordered),
-                work_id=_required_string(main, "lbworkid"),
-                search_title_path=_required_string(main, "titlepath").lower(),
-                search_title=_required_string(main, "title").lower(),
-            ))
+            items.append(_to_catalog_item(ordered))
         return tuple(items)
     except (KeyError, TypeError, IndexError, ValidationError, ValueError) as exc:
         raise ValueError(_MALFORMED_RESPONSE) from exc
 
 def filter_work_lookup_catalog(
-    catalog: tuple[WorkLookupCatalogItem, ...],
+    catalog: tuple[_WorkLookupCatalogItem, ...],
     request: WorkLookupRequest,
 ) -> WorkLookupResponse:
-    matches = [entry.item for entry in catalog if _matches_request(entry, request)]
-    return WorkLookupResponse(items=matches)
+    return WorkLookupResponse(items=[
+        WorkLookupItem(
+            work_id=entry.work_id,
+            author=WorkLookupLink(
+                label=entry.author_label,
+                url=entry.author_url,
+            ),
+            title=WorkLookupLink(
+                label=entry.title_label,
+                url=entry.title_url,
+            ),
+            media=[
+                WorkLookupMedia(label=medium.label, url=medium.url)
+                for medium in entry.media
+            ],
+        )
+        for entry in catalog
+        if _matches_request(entry, request)
+    ])
 
 def _matches_request(
-    entry: WorkLookupCatalogItem, request: WorkLookupRequest
+    entry: _WorkLookupCatalogItem, request: WorkLookupRequest
 ) -> bool:
     if request.work_id is not None:
         return entry.work_id == request.work_id
@@ -287,7 +344,7 @@ def transform_work_lookup(
     return filter_work_lookup_catalog(build_work_lookup_catalog(raw), request)
 ```
 
-Implement transformation with small `_required_string`, `_first_author`, `_matches_request`, and `_to_item` helpers. The builder must finish every group's validation before `filter_work_lookup_catalog` sees the request. Catch only shape/index/Pydantic failures at the builder boundary and re-raise the single generic `ValueError`; do not catch `OpenSearchException` there.
+Implement transformation with small `_required_string`, `_first_author`, `_matches_request`, and `_to_catalog_item` helpers. `_to_catalog_item` constructs only frozen internal dataclasses, scalar strings, and a non-empty media tuple; it must never retain a raw dictionary/list or construct/store a Pydantic response model. The builder must finish every group's validation before `filter_work_lookup_catalog` sees the request. The filter constructs a completely fresh response object graph on every call. Catch only shape/index/Pydantic failures at the builder boundary and re-raise the single generic `ValueError`; do not catch `OpenSearchException` there.
 
 Add a patchable monotonic seam and the cache algorithm:
 
@@ -295,7 +352,7 @@ Add a patchable monotonic seam and the cache algorithm:
 def _monotonic() -> float:
     return monotonic()
 
-def get_work_lookup_catalog() -> tuple[WorkLookupCatalogItem, ...]:
+def get_work_lookup_catalog() -> tuple[_WorkLookupCatalogItem, ...]:
     global _catalog_entry, _catalog_build
     with _catalog_lock:
         if _catalog_entry is not None and _monotonic() < _catalog_entry.expires_at:
@@ -353,7 +410,7 @@ git commit -m "feat(api): type ID lookup results"
 
 - [ ] **Step 9: Run the Task 1 review gate**
 
-Review `git show --check --stat HEAD` and the full patch against the strict request alternatives, complete-catalog validation, exact grouping/media/link rules, 60-second TTL, single-flight/failure behavior, and multi-worker scope. Run the focused tests again. Resolve every Critical/Important finding in a separate `fix(api): harden ID lookup transform` commit before Task 2.
+Review `git show --check --stat HEAD` and the full patch against the strict request alternatives, complete-catalog validation, scalar-only frozen catalog/media tuples, fresh response construction, nested mutation isolation, exact grouping/media/link rules, 60-second TTL, single-flight/failure behavior, and multi-worker scope. Run the focused tests again. Resolve every Critical/Important finding in a separate `fix(api): harden ID lookup transform` commit before Task 2.
 
 ---
 
@@ -586,7 +643,7 @@ Review that the generated file matches only the canonical schema, fixture data i
 
 - [ ] **Step 1: Add failing SSR route tests**
 
-Configure the Playwright Nuxt server with `NUXT_API_BASE=http://127.0.0.1:4100/private-v2` while retaining `NUXT_PUBLIC_API_BASE=/api/v2`. Assert `/id` has exact `<title>Litteraturbanken</title>`, the full default description meta, body classes `focus page-id ready`, placeholders/control order, `autofocus`, `Hämtar`, `dots_blink`, `table-striped`, and zero lookup requests. Assert `/id/LB238704` posts `{ work_id: "lb238704", titles: [] }`; `/id/RödaRummet` posts `{ work_id: null, titles: ["rödarummet"] }`; each ledger entry has path `/private-v2/works/lookup`, renders exact four-cell rows/links, and makes one SSR request with no hydration duplicate. Assert no SSR entry uses `/v2/works/lookup`, proving the public base was not selected. Assert invalid over-limit route values render the shell and make no request.
+Configure the Playwright Nuxt server with `NUXT_API_BASE=http://127.0.0.1:4100/private-v2` while retaining `NUXT_PUBLIC_API_BASE=/api/v2`. Assert `/id` has exact `<title>Litteraturbanken</title>`, the full default description meta, body classes `focus page-id ready`, placeholders/control order, `autofocus`, `Hämtar`, `dots_blink`, `table-striped`, and zero lookup requests. Assert `/id/LB238704` renders the `lbid` value as `lb238704` and posts `{ work_id: "lb238704", titles: [] }`; `/id/RödaRummet` posts `{ work_id: null, titles: ["rödarummet"] }`; each ledger entry has path `/private-v2/works/lookup`, renders exact four-cell rows/links, and makes one SSR request with no hydration duplicate. Assert no SSR entry uses `/v2/works/lookup`, proving the public base was not selected. Assert invalid over-limit route values render the shell and make no request.
 
 - [ ] **Step 2: Run SSR tests and verify RED**
 
@@ -603,6 +660,7 @@ Use fake timers or fixture ledgers to prove:
 
 ```ts
 await idInput.fill("LB238704")
+await expect(idInput).toHaveValue("LB238704")
 await expect.poll(workLookupBodies).toEqual([
   { work_id: "lb238704", titles: [] }
 ])
@@ -633,7 +691,7 @@ expect(lastLookupBody()).toEqual({
 })
 ```
 
-Also prove exact 500 ms title/textarea debounce; textarea replacement of the whole title array; `A – B – C` normalization to `B`; `A – ` fallback to `A –`; preserved empty rows/duplicates in control state but blank removal and first-100 limiting only in the outgoing body; ID clearing titles but retaining textarea; title retaining `titles[1:]`; empty/invalid no-request; loading class/preloader; abort plus version-guard latest wins; typed 503 and a route-aborted/fetch-thrown network failure both yielding a blank table, cleared `searching`, and no `pageerror`/`unhandledrejection`; no-hit; route changes; unmount cleanup; exact title/description/body restoration on hydrated navigation; exact four cells; ordinary anchors; and `:::` only between media links.
+Also prove exact 500 ms title/textarea debounce; textarea replacement of the whole title array; `A – B – C` normalization to `B`; `A – ` fallback to `A –`; preserved empty rows/duplicates in control state but blank removal and first-100 limiting only in the outgoing body; ID clearing titles but retaining textarea; title retaining `titles[1:]`; raw manual ID case/whitespace remaining visible while only the request candidate is trimmed/lower-cased; route-param ID initialization appearing lower-case; empty/invalid no-request; loading class/preloader; abort plus version-guard latest wins; typed 503 and a route-aborted/fetch-thrown network failure both yielding a blank table, cleared `searching`, and no `pageerror`/`unhandledrejection`; no-hit; route changes; unmount cleanup; exact title/description/body restoration on hydrated navigation; exact four cells; ordinary anchors; and `:::` only between media links.
 
 - [ ] **Step 4: Run behavior tests and verify RED**
 
@@ -661,6 +719,8 @@ const requestTitles = (values: string[]) => values
   .map(value => value.trim())
   .filter(Boolean)
   .slice(0, 100)
+
+const requestWorkId = (rawValue: string) => rawValue.trim().toLowerCase()
 
 const isAbortError = (error: unknown) =>
   error instanceof DOMException && error.name === "AbortError"
@@ -690,7 +750,7 @@ const api = createLbApiClient(
 )
 ```
 
-Decode, trim, and lower-case a route param before seeding either mode, then classify it by `startsWith("lb")`. Use page-local `useAsyncData` only for a valid route-param body; do not call it for `/id`. Serialize the SSR response for hydration. Interactive handlers use `workId`, `titles`, and `textarea` as the authority state: ID input assigns `titles = []` without touching `textarea`; title input clears `workId` and replaces only a copied `titles[0]`; textarea clears `workId` and assigns `titles = normalizeTextarea(textarea)`, which automatically mirrors `titles[0]` in the title input. Only `requestTitles(titles)` constructs an API body. Use one 500 ms timer for title/textarea, immediate valid-ID requests, a fresh `AbortController`, and a monotonically increasing version. Clearing/switching/navigating/unmounting must increment the version, abort, cancel timers, stop loading, and clear rows.
+Decode, trim, and lower-case a route param before seeding either mode, then classify it by `startsWith("lb")`; route-param state therefore displays lower-case exactly like Angular `$onInit`. Use page-local `useAsyncData` only for a valid route-param body; do not call it for `/id`. Serialize the SSR response for hydration. Interactive handlers use `workId`, `titles`, and `textarea` as the authority state: ID input assigns the event target's raw value directly to `workId`, assigns `titles = []` without touching `textarea`, and passes only `requestWorkId(workId)` to validation/body construction; title input clears `workId` and replaces only a copied `titles[0]`; textarea clears `workId` and assigns `titles = normalizeTextarea(textarea)`, which automatically mirrors `titles[0]` in the title input. Only `requestWorkId(workId)` and `requestTitles(titles)` construct normalized API fields. Use one 500 ms timer for title/textarea, immediate valid-ID requests, a fresh `AbortController`, and a monotonically increasing version. Clearing/switching/navigating/unmounting must increment the version, abort, cancel timers, stop loading, and clear rows.
 
 - [ ] **Step 6: Implement authority markup without style redesign**
 
@@ -789,7 +849,16 @@ Inspect form geometry, first-input focus, table width/striping, row typography, 
 
 - [ ] **Step 3: Add failing Nuxt visual comparisons**
 
-Use the fixture server only. Populate with the same textarea sequence, assert the raw textarea and mirrored first title before readiness, assert exact request bodies, then compare empty/populated desktop/mobile screenshots with the repository's existing near-pixel threshold (`maxDiffPixelRatio: 0.1`, `maxDiffPixels: 100`). Explicitly assert `/id` made no request and populated cases made only the expected public `/v2/works/lookup` POST.
+Use the fixture server only. Populate with the same textarea sequence, assert the raw textarea and mirrored first title before readiness, assert exact request bodies, then compare empty/populated desktop/mobile screenshots with the repository's exact matcher options:
+
+```ts
+await expect(page).toHaveScreenshot(baseline, {
+  threshold: 0.1,
+  maxDiffPixels: 100
+})
+```
+
+Explicitly assert `/id` made no request and populated cases made only the expected public `/v2/works/lookup` POST.
 
 - [ ] **Step 4: Run visual tests and verify RED or exact parity**
 
@@ -853,4 +922,4 @@ git commit -m "test(nuxt): lock ID lookup parity"
 
 - [ ] **Step 8: Run the Task 5 and final whole-slice review gates**
 
-Review the exact backend range from `e8bc986` and frontend ID-only commits from `5cbd8ca`. Re-scan the OpenAPI `anyOf`, forbidden extras, limits, full-catalog-before-filter validation, process-local TTL/single-flight behavior, exact group/media/link contracts, sole envelope intent correction, coupled controls, private-base SSR zero-query behavior, metadata/body contract, interactive `try/catch/finally` latest-wins cleanup, production-escape ledgers, four inspected authority images, and unchanged legacy scope. Fix every Critical/Important finding in a separate commit and rerun every affected complete gate. The slice is ready only with final `Spec PASS`, `Quality PASS`, and `Ready YES`.
+Review the exact backend range from `e8bc986` and frontend ID-only commits from `5cbd8ca`. Re-scan the OpenAPI `anyOf`, forbidden extras, limits, full-catalog-before-filter validation, deep frozen catalog/no cached Pydantic references, mutation isolation, process-local TTL/single-flight behavior, exact group/media/link contracts, sole envelope intent correction, raw manual ID display versus normalized request, coupled controls, private-base SSR zero-query behavior, metadata/body contract, interactive `try/catch/finally` latest-wins cleanup, exact `threshold: 0.1` plus `maxDiffPixels: 100` visual options, production-escape ledgers, four inspected authority images, and unchanged legacy scope. Fix every Critical/Important finding in a separate commit and rerun every affected complete gate. The slice is ready only with final `Spec PASS`, `Quality PASS`, and `Ready YES`.

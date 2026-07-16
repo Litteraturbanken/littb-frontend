@@ -132,7 +132,7 @@ The synchronous route keeps the blocking OpenSearch call in FastAPI's thread poo
 
 The 10,000-document ceiling is an intentional parity limit, not pagination. Pushing user strings into a different provider query is deferred because it could change the current case-insensitive substring semantics and result ordering.
 
-The provider result is fully validated and normalized into an immutable grouped catalog before the current request is considered. A malformed document that cannot match the requested ID or titles still fails the entire build generically; filtering first would hide provider corruption and make cache contents request-dependent. The catalog builder characterizes the Angular `createExpandMediatypes` behavior:
+The provider result is fully validated and normalized into a deeply immutable grouped catalog before the current request is considered. Internal catalog records are frozen dataclasses containing only string scalars and tuples; media is a tuple of frozen scalar-only media records. Cached records never contain Pydantic response models, mutable lists, dictionaries, or raw provider documents. A malformed document that cannot match the requested ID or titles still fails the entire build generically; filtering first would hide provider corruption and make cache contents request-dependent. The catalog builder characterizes the Angular `createExpandMediatypes` behavior:
 
 1. Preserve the first-seen group order from the `sortkey|asc` source.
 2. Group by the exact legacy key `titlepath + lbworkid`.
@@ -148,6 +148,8 @@ Only after the entire catalog passes validation does a pure filter apply the `Id
 - in ID mode, retain rows whose `lbworkid` exactly equals the normalized work ID;
 - in title mode, retain a row when any query is a case-insensitive substring of either `titlepath` or the full `title`; `shorttitle` is display-only and is not searched;
 - preserve grouped catalog order and return `items: []` for no match.
+
+Every filter call constructs a fresh `WorkLookupResponse`, fresh `WorkLookupItem`/link/media Pydantic models, and a fresh media list from the frozen catalog scalars. No caller receives a cached response object by reference. Mutating a returned nested media model therefore cannot change the catalog or any later response.
 
 The display-ready URLs reproduce the Angular template exactly:
 
@@ -203,10 +205,13 @@ The rendered controls retain their exact order, placeholders, and first-input `a
 
 Typing a non-empty ID:
 
+- preserves the raw interactive text exactly in the visible `lbid` input, including case and surrounding whitespace;
 - replaces the active `titles` array with `[]`, which clears the visible title input, but deliberately leaves the textarea text unchanged;
-- trims and lower-cases the value;
-- sends immediately when it is a valid `lb`-prefixed value;
+- trims and lower-cases a separate request candidate without changing the displayed value;
+- sends that normalized candidate immediately when it is a valid `lb`-prefixed value;
 - clears results without a request when empty or not yet valid.
+
+Route-parameter initialization remains different because Angular `$onInit` lower-cases the route value before assigning the control. Thus `/id/LB238704` initially displays `lb238704`, while manually typing `LB238704` continues to display `LB238704` even though its outgoing body contains `lb238704`.
 
 Typing the single title:
 
@@ -246,11 +251,12 @@ The byte-locked migrated `nuxt/app/assets/styles/styles.scss` remains unchanged.
 ## Fixtures and verification
 
 - Backend characterization fixtures include irregular raw documents, duplicate media groups, reversed representation order, `work_titleid` fallback, short/full titles, mixed-case title/path matching, ID matching, multiple title OR matching, no hit, malformed envelopes/documents, a malformed nonmatching document, and private provider details.
-- Cache tests prove one provider call across sequential and concurrent lookups, reuse before 60 seconds, rebuild at expiry, failure fan-out without caching, retry after failure, and process-local reset isolation.
+- Cache tests prove one provider call across sequential and concurrent lookups, reuse before 60 seconds, rebuild at expiry, failure fan-out without caching, retry after failure, process-local reset isolation, and returned-response mutation isolation down to nested media.
 - Model/API tests cover both exact request alternatives, every limit boundary, forbidden extras, synchronous POST behavior, typed success, 422, generic 500, endpoint-specific nonleaking 503, strict OpenAPI schemas, mounted isolation, and snapshot freshness.
 - The generated Nuxt client is regenerated only from the committed backend OpenAPI snapshot and is tested for the exact POST body and typed 503.
 - The fixture server exposes deterministic lookup rows, request-body/reset ledgers, delay controls, and failure controls without contacting production.
 - SSR tests prove `/id` makes zero requests, route-param SSR makes exactly one correctly classified private-base request, hydration makes no duplicate, and exact title/description/body/markup/links are serialized.
-- Browser tests cover immediate ID lookup; exact coupled ID/title/textarea state; 500 ms title/textarea debounce; split-index-1 multi-dash and empty-segment semantics; abort/latest-wins; typed and thrown-network failures without unhandled rejection; loading cleanup; no-hit; route changes; hydrated title/description/body cleanup; and exact four-cell links/media separators.
+- Browser tests cover immediate ID lookup with raw uppercase display and lower-case request; exact coupled ID/title/textarea state; 500 ms title/textarea debounce; split-index-1 multi-dash and empty-segment semantics; abort/latest-wins; typed and thrown-network failures without unhandled rejection; loading cleanup; no-hit; route changes; hydrated title/description/body cleanup; and exact four-cell links/media separators.
 - Angular empty and test-unwrapped populated captures plus Nuxt comparisons cover desktop and mobile coupled control values, preloader, empty table, populated striped rows, shell corridors, typography, spacing, and `page-id` body state.
+- Visual comparisons use exactly `threshold: 0.1` and `maxDiffPixels: 100`.
 - Capture intercepts every legacy query and v2 lookup request, records the ledger, and fails on production escape. Full backend, OpenAPI, generated-client, Nuxt unit/SSR/browser/visual/typecheck/build, unchanged Angular, scope, and diff gates close the slice.
