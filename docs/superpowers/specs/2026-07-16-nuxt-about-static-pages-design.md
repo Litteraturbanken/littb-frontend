@@ -148,6 +148,8 @@ The runtime preserves the existing publishing and embedded-asset behavior:
 5. No response is written into the frontend source tree or bundled into the production build.
 6. A frontend deployment therefore never becomes the publication mechanism for these pages.
 
+Three authority responses are complete XHTML documents rather than body fragments. The page extracts the contents of `<body>` when those tags are present and otherwise uses the response unchanged. This reproduces Angular `ng-include` without nesting a second document inside Nuxt's SSR output. The extractor is page-local and does not rewrite the editorial markup.
+
 Test fixtures are captured copies used only for deterministic automated checks. They do not supply runtime content and do not change content ownership. No generic content composable, repository, sanitizer, or HTML-fetch abstraction is introduced in this slice.
 
 ## Rendering and Data Flow
@@ -158,9 +160,10 @@ Direct requests to all four routes use Nitro SSR. Rendering has no FastAPI or ge
 2. `<script setup>` validates it against the local allowlist.
 3. The page chooses the fixed content path and route metadata.
 4. Page-owned `useAsyncData`, keyed by the selected page, fetches the fragment from the server or browser content base.
-5. `AboutPageShell` renders the existing heading/navigation.
-6. The page inserts the trusted fragment in the same wrapper shape as Angular's default include.
-7. SSR serializes the result so hydration does not refetch; later client route navigation fetches the newly selected fragment.
+5. The page extracts XHTML body content when necessary.
+6. `AboutPageShell` renders the existing heading/navigation.
+7. The page inserts the trusted fragment in the same wrapper shape as Angular's default include.
+8. SSR serializes the result so hydration does not refetch; later client route navigation fetches the newly selected fragment.
 
 Internal and external links behave as ordinary anchors, matching Angular. Destination routes can remain unimplemented until their own migration slices.
 
@@ -202,6 +205,7 @@ Desktop capture uses the existing 1440×1000 authority viewport. Mobile capture 
 
 - The content allowlist contains exactly the four approved route keys and exact `/red` paths.
 - Each test fixture contains representative beginning, middle, and ending landmarks so accidental truncation fails clearly.
+- Full XHTML responses render only their body contents, while the already-fragmentary Tack response renders unchanged.
 - Requests cannot escape the configured content base or use a route-derived remote path.
 - Nuxt imports no AngularJS source, runtime dependency, iframe, or mixed-framework handoff.
 - The statistics page uses the shared About shell without moving its page-owned API logic.
