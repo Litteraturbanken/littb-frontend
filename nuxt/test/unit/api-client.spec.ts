@@ -114,4 +114,82 @@ describe("generated LB API client", () => {
     expect(data).toBeUndefined()
     expect(error?.error.code).toBe("contact_delivery_failed")
   })
+
+  test("encodes the typed Quick Search query", async () => {
+    const fetchMock = vi.fn(async () => json({ items: [], correction: null }))
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+
+    await client.GET("/quick-search", {
+      params: { query: { query: "Söderberg & Strindberg" } }
+    })
+
+    expect(fetchMock.mock.calls[0][0].url).toBe(
+      "http://example.test/v2/quick-search?query=S%C3%B6derberg%20%26%20Strindberg"
+    )
+  })
+
+  test("returns typed Quick Search author, work, and part items", async () => {
+    const fetchMock = vi.fn(async () =>
+      json({
+        items: [
+          {
+            kind: "author",
+            label: "Strindberg, August (1849-1912)",
+            url: "/författare/StrindbergA",
+            type_label: "Författare",
+            media_type_label: null
+          },
+          {
+            kind: "work",
+            label: "Strindberg – Röda rummet",
+            url: "/författare/StrindbergA/titlar/RodaRummet/sida/1/etext",
+            type_label: "Verk",
+            media_type_label: "etext"
+          },
+          {
+            kind: "part",
+            label: "Lagerlöf – Landskapet",
+            url: "/författare/LagerlofS/titlar/GostaBerlingsSaga/sida/3/faksimil",
+            type_label: "Del",
+            media_type_label: "faksimil"
+          }
+        ],
+        correction: null
+      })
+    )
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+
+    const { data, error } = await client.GET("/quick-search", {
+      params: { query: { query: "strindberg" } }
+    })
+
+    expect(error).toBeUndefined()
+    expect(data?.items.map(item => item.kind)).toEqual(["author", "work", "part"])
+    expect(data?.items[0].media_type_label).toBeNull()
+    expect(data?.items[2].media_type_label).toBe("faksimil")
+  })
+
+  test("returns the typed Quick Search 503 body", async () => {
+    const fetchMock = vi.fn(async () =>
+      json(
+        {
+          error: {
+            code: "quick_search_unavailable",
+            message: "Unable to load quick-search results",
+            details: null
+          }
+        },
+        503
+      )
+    )
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+
+    const { data, error, response } = await client.GET("/quick-search", {
+      params: { query: { query: "strindberg" } }
+    })
+
+    expect(response.status).toBe(503)
+    expect(data).toBeUndefined()
+    expect(error?.error.code).toBe("quick_search_unavailable")
+  })
 })

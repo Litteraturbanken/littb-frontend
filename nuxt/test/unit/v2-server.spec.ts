@@ -57,7 +57,13 @@ async function waitForContactSubmissionAt(targetOrigin: string) {
   throw new Error("Contact submission was not recorded")
 }
 
-describe("v2 fixture server Contact operation", () => {
+async function quickSearchRequests() {
+  return await (await fetch(`${origin}/_quick_search_requests`)).json() as {
+    queries: string[]
+  }
+}
+
+describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
       cwd: nuxtRoot,
@@ -83,7 +89,10 @@ describe("v2 fixture server Contact operation", () => {
       fetch(`${origin}/_requests`, { method: "DELETE" }),
       fetch(`${origin}/_contact_submissions`, { method: "DELETE" }),
       fetch(`${origin}/_failure`, { method: "DELETE" }),
-      fetch(`${origin}/_contact_defer`, { method: "DELETE" })
+      fetch(`${origin}/_contact_defer`, { method: "DELETE" }),
+      fetch(`${origin}/_quick_search_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_quick_search_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_quick_search_delays`, { method: "DELETE" })
     ])
   })
 
@@ -228,5 +237,113 @@ describe("v2 fixture server Contact operation", () => {
     }
 
     expect(forced).toBe(false)
+  })
+
+  test("returns deterministic typed Quick Search rows, correction, and no-hit envelopes", async () => {
+    const populated = await (await fetch(
+      `${origin}/v2/quick-search?query=strindberg`
+    )).json()
+    const correction = await (await fetch(
+      `${origin}/v2/quick-search?query=strindbrg`
+    )).json()
+    const noHit = await (await fetch(
+      `${origin}/v2/quick-search?query=inga`
+    )).json()
+
+    expect(populated).toEqual({
+      items: [
+        {
+          kind: "author",
+          label: "Strindberg, August (1849-1912)",
+          url: "/författare/StrindbergA",
+          type_label: "Författare",
+          media_type_label: null
+        },
+        {
+          kind: "work",
+          label: "Strindberg – Röda rummet",
+          url: "/författare/StrindbergA/titlar/RodaRummet/sida/1/etext",
+          type_label: "Verk",
+          media_type_label: "etext"
+        },
+        {
+          kind: "part",
+          label: "Lagerlöf – Landskapet",
+          url: "/författare/LagerlofS/titlar/GostaBerlingsSaga/sida/3/faksimil",
+          type_label: "Del",
+          media_type_label: "faksimil"
+        }
+      ],
+      correction: null
+    })
+    expect(correction).toEqual({ items: [], correction: "strindberg" })
+    expect(noHit).toEqual({ items: [], correction: null })
+  })
+
+  test("records and resets Quick Search queries without changing the general request ledger", async () => {
+    await fetch(`${origin}/v2/stats`)
+    await fetch(`${origin}/v2/quick-search?query=strindberg%20r%C3%B6da`)
+
+    expect(await quickSearchRequests()).toEqual({
+      queries: ["strindberg röda"]
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+
+    await fetch(`${origin}/_quick_search_requests`, { method: "DELETE" })
+    expect(await quickSearchRequests()).toEqual({ queries: [] })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+  })
+
+  test("returns a typed Quick Search 503 until its independent failure control is reset", async () => {
+    await fetch(`${origin}/_quick_search_failure`, { method: "PUT" })
+
+    const failed = await fetch(`${origin}/v2/quick-search?query=strindberg`)
+    expect(failed.status).toBe(503)
+    expect(await failed.json()).toEqual({
+      error: {
+        code: "quick_search_unavailable",
+        message: "Unable to load quick-search results",
+        details: null
+      }
+    })
+
+    await fetch(`${origin}/_quick_search_failure`, { method: "DELETE" })
+    const restored = await fetch(`${origin}/v2/quick-search?query=strindberg`)
+    expect(restored.status).toBe(200)
+    expect((await restored.json()).items).toHaveLength(3)
+  })
+
+  test("applies per-query delays so a later Quick Search response can finish first", async () => {
+    await fetch(`${origin}/_quick_search_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ strindberg: 80, inga: 0 })
+    })
+
+    const completionOrder: string[] = []
+    const slow = fetch(`${origin}/v2/quick-search?query=strindberg`).then(() => {
+      completionOrder.push("strindberg")
+    })
+    const fast = fetch(`${origin}/v2/quick-search?query=inga`).then(() => {
+      completionOrder.push("inga")
+    })
+    await Promise.all([slow, fast])
+
+    expect(completionOrder).toEqual(["inga", "strindberg"])
+    expect(await quickSearchRequests()).toEqual({
+      queries: ["strindberg", "inga"]
+    })
+    expect(await (await fetch(`${origin}/_quick_search_delays`)).json()).toEqual({
+      delays: { strindberg: 80, inga: 0 }
+    })
+
+    await fetch(`${origin}/_quick_search_delays`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_quick_search_delays`)).json()).toEqual({
+      delays: {}
+    })
   })
 })

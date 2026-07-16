@@ -19,13 +19,13 @@ async function sourceFiles(directory: string): Promise<string[]> {
 }
 
 describe("standalone Nuxt foundation", () => {
-  test("pins the parity stack without Angular or unused Headless UI", async () => {
+  test("pins the parity stack without Angular", async () => {
     const manifest = JSON.parse(await readFile(resolve(nuxtRoot, "package.json"), "utf8"))
     expect(manifest.dependencies.nuxt).toBe("4.4.8")
     expect(manifest.dependencies["openapi-fetch"]).toBe("0.17.0")
     expect(manifest.devDependencies.tailwindcss).toBe("3.4.18")
     expect(manifest.dependencies.angular).toBeUndefined()
-    expect(manifest.dependencies["@headlessui/vue"]).toBeUndefined()
+    expect(manifest.dependencies["@headlessui/vue"]).toBe("1.7.23")
   })
 
   test("copies legacy parity CSS into Nuxt ownership", async () => {

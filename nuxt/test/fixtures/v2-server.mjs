@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs"
 import { createServer } from "node:http"
 
+import { quickSearchResponse } from "./quick-search-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
 
 const aboutContent = new Map([
@@ -23,6 +24,9 @@ let contactSubmissions = []
 let deferContactSubmissions = false
 let pendingContactReleases = []
 let failure = null
+let quickSearchQueries = []
+let quickSearchFailure = false
+let quickSearchDelays = {}
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -64,6 +68,11 @@ function releaseContactSubmissions() {
   const releases = pendingContactReleases
   pendingContactReleases = []
   for (const release of releases) release()
+}
+
+function waitForQuickSearchDelay(query) {
+  const delay = quickSearchDelays[query] || 0
+  return new Promise(resolve => setTimeout(resolve, delay))
 }
 
 function resourceFor(pathname) {
@@ -115,6 +124,38 @@ const server = createServer(async (request, response) => {
       pending: pendingContactReleases.length
     })
   }
+  if (url.pathname === "/_quick_search_requests" && request.method === "GET") {
+    return sendJson(response, 200, { queries: quickSearchQueries })
+  }
+  if (url.pathname === "/_quick_search_requests" && request.method === "DELETE") {
+    quickSearchQueries = []
+    return sendJson(response, 200, { queries: quickSearchQueries })
+  }
+  if (url.pathname === "/_quick_search_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: quickSearchFailure })
+  }
+  if (url.pathname === "/_quick_search_failure" && request.method === "PUT") {
+    quickSearchFailure = true
+    return sendJson(response, 200, { failure: quickSearchFailure })
+  }
+  if (url.pathname === "/_quick_search_failure" && request.method === "DELETE") {
+    quickSearchFailure = false
+    return sendJson(response, 200, { failure: quickSearchFailure })
+  }
+  if (url.pathname === "/_quick_search_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: quickSearchDelays })
+  }
+  if (url.pathname === "/_quick_search_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    quickSearchDelays = Object.fromEntries(
+      Object.entries(body).map(([query, delay]) => [query, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: quickSearchDelays })
+  }
+  if (url.pathname === "/_quick_search_delays" && request.method === "DELETE") {
+    quickSearchDelays = {}
+    return sendJson(response, 200, { delays: quickSearchDelays })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -148,6 +189,22 @@ const server = createServer(async (request, response) => {
       })
     }
     return sendJson(response, 202, { status: "accepted" })
+  }
+
+  if (request.method === "GET" && url.pathname === "/v2/quick-search") {
+    const query = url.searchParams.get("query") || ""
+    quickSearchQueries.push(query)
+    await waitForQuickSearchDelay(query)
+    if (quickSearchFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "quick_search_unavailable",
+          message: "Unable to load quick-search results",
+          details: null
+        }
+      })
+    }
+    return sendJson(response, 200, quickSearchResponse(query))
   }
 
   const resource = resourceFor(url.pathname)

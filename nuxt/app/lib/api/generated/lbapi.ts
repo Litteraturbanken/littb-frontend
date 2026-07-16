@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/quick-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Quick Search */
+        get: operations["v2_get_quick_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/stats": {
         parameters: {
             query?: never;
@@ -170,6 +187,32 @@ export interface components {
             /** Items */
             items: components["schemas"]["PopularWork"][];
         };
+        /** QuickSearchItem */
+        QuickSearchItem: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "author" | "work" | "part";
+            /** Label */
+            label: string;
+            /** Media Type Label */
+            media_type_label: ("etext" | "faksimil") | null;
+            /**
+             * Type Label
+             * @enum {string}
+             */
+            type_label: "Författare" | "Verk" | "Del";
+            /** Url */
+            url: string;
+        };
+        /** QuickSearchResponse */
+        QuickSearchResponse: {
+            /** Correction */
+            correction: string | null;
+            /** Items */
+            items: components["schemas"]["QuickSearchItem"][];
+        };
         /** StatsResponse */
         StatsResponse: {
             /** Authors */
@@ -271,6 +314,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PopularEpubsResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_quick_search: {
+        parameters: {
+            query: {
+                query: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuickSearchResponse"];
                 };
             };
             /** @description Invalid request */
