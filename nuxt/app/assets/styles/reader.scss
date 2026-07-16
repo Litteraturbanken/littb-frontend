@@ -1,0 +1,119 @@
+@use "./mixins" as *;
+
+.page-reading {
+    --logo-l-color: var(--primary-color);
+    --logo-b-color: black;
+
+    .mainnav {
+        margin-bottom: 3em;
+    }
+
+    #leftCorridor {
+        margin-right: 80px;
+    }
+
+    #mainview {
+        font-size: 1em;
+        line-height: 1.3;
+        position: relative;
+    }
+
+    .reader-page {
+        align-items: flex-start;
+        display: flex;
+        gap: 4.25rem;
+        min-height: 100vh;
+    }
+
+    .reader_main {
+        flex: 0 0 477px;
+        width: 477px;
+    }
+
+    .etext {
+        background: white;
+        box-sizing: border-box;
+        color: #111;
+        margin-bottom: 3em;
+        min-height: 36rem;
+        overflow-x: auto;
+        padding: 20px;
+        white-space: nowrap;
+        width: 477px;
+
+        div.pname {
+            left: 0;
+            position: static;
+            width: auto;
+        }
+
+        img {
+            max-width: inherit;
+        }
+    }
+
+    .reader-context {
+        flex: 0 0 250px;
+        padding-top: 1.25rem;
+        position: sticky;
+        top: 1rem;
+
+        .author {
+            @include small-caps();
+            display: block;
+            margin-bottom: 0.3em;
+        }
+
+        .title {
+            color: var(--primary-color);
+        }
+
+        hr {
+            border-color: #aaa;
+            margin: 1.25rem 0;
+        }
+    }
+
+    .reader-navigation {
+        display: flex;
+        justify-content: space-between;
+        white-space: nowrap;
+    }
+
+    .reader-page-position {
+        font-variant-numeric: tabular-nums;
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+}
+
+@media (max-width: 767px) {
+    .page-reading {
+        #leftCorridor {
+            margin-right: 0;
+        }
+
+        .reader-page {
+            display: block;
+        }
+
+        .reader_main {
+            min-width: 0;
+            width: auto;
+        }
+
+        .etext {
+            min-height: 0;
+            overflow-x: auto;
+            padding-left: 10px;
+            padding-right: 10px;
+            width: auto;
+        }
+
+        .reader-context {
+            padding: 0 1rem 3rem;
+            position: static;
+            width: auto;
+        }
+    }
+}

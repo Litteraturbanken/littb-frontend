@@ -55,6 +55,8 @@ export default defineConfig({
         `LBAPI_PROXY_TARGET=${fixtureOrigin} ` +
         `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
+        `NUXT_READER_SOURCE_BASE=${fixtureOrigin} ` +
+        `READER_SOURCE_PROXY_TARGET=${fixtureOrigin} ` +
         `LITTB_CONTENT_PROXY_TARGET=${fixtureOrigin} yarn dev`,
       url: "http://127.0.0.1:3000/_nuxt/@vite/client",
       reuseExistingServer: false,

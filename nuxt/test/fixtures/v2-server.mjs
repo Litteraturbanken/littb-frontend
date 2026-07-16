@@ -3,6 +3,12 @@ import { createServer } from "node:http"
 
 import { historyAuthorSummaries } from "./history-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
+import {
+  readerPageHtml,
+  readerWorkInfoResponse,
+  sharedReaderCss,
+  workReaderCss
+} from "./reader-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
 import { workLookupResponse } from "./work-lookup-data.mjs"
 
@@ -65,6 +71,7 @@ let homeFailure = false
 let presentationRequests = []
 let presentationFailures = new Set()
 let litteraturkartanRequests = []
+let readerRequests = []
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -340,6 +347,13 @@ const server = createServer(async (request, response) => {
     litteraturkartanRequests = []
     return sendJson(response, 200, { requests: litteraturkartanRequests })
   }
+  if (url.pathname === "/_reader_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: readerRequests })
+  }
+  if (url.pathname === "/_reader_requests" && request.method === "DELETE") {
+    readerRequests = []
+    return sendJson(response, 200, { requests: readerRequests })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -357,6 +371,43 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
     }
     return sendBody(response, 200, home[0], home[1])
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/get_work_info") {
+    readerRequests.push(`${url.pathname}${url.search}`)
+    return sendJson(response, 200, readerWorkInfoResponse)
+  }
+
+  if (
+    request.method === "GET" &&
+    url.pathname === "/txt/lb-reader-doktor-glas/res_00002.html"
+  ) {
+    readerRequests.push(`${url.pathname}${url.search}`)
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    return sendBody(response, 200, "text/html; charset=utf-8", readerPageHtml)
+  }
+
+  if (request.method === "GET" && url.pathname === "/red/css/etext.css") {
+    readerRequests.push(`${url.pathname}${url.search}`)
+    return sendBody(response, 200, "text/css; charset=utf-8", sharedReaderCss)
+  }
+
+  if (
+    request.method === "GET" &&
+    url.pathname === "/txt/css/lb-reader-doktor-glas-etext.css"
+  ) {
+    readerRequests.push(`${url.pathname}${url.search}`)
+    return sendBody(response, 200, "text/css; charset=utf-8", workReaderCss)
+  }
+
+  if (request.method === "GET" && url.pathname === "/bilder/ornament/reader-fixture.png") {
+    readerRequests.push(`${url.pathname}${url.search}`)
+    return sendBody(response, 200, "image/png", Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64"
+    ))
   }
 
   if (

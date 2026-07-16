@@ -1,6 +1,7 @@
 const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
 const contentProxyTarget = process.env.LITTB_CONTENT_PROXY_TARGET || "https://red.litteraturbanken.se"
 const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
+const readerSourceProxyTarget = process.env.READER_SOURCE_PROXY_TARGET || "https://litteraturbanken.se"
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -11,7 +12,8 @@ export default defineNuxtConfig({
     "~/assets/styles/tailwind.css",
     "font-awesome/css/font-awesome.css",
     "~/assets/styles/styles.scss",
-    "~/assets/styles/nuxt.scss"
+    "~/assets/styles/nuxt.scss",
+    "~/assets/styles/reader.scss"
   ],
   routeRules: {
     "/om/statistik": { ssr: true },
@@ -35,6 +37,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     apiBase: "http://127.0.0.1:8000/v2",
     contentBase: "https://red.litteraturbanken.se",
+    readerSourceBase: "https://litteraturbanken.se",
     public: {
       apiBase: "/api/v2",
       contentBase: ""
@@ -59,6 +62,10 @@ export default defineNuxtConfig({
         },
         "^/red(?:/|$)": {
           target: contentProxyTarget,
+          changeOrigin: true
+        },
+        "^/(?:txt|bilder)(?:/|$)": {
+          target: readerSourceProxyTarget,
           changeOrigin: true
         },
         "^/litteraturkartan(?:[/?]|$)": {
