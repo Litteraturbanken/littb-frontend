@@ -16,6 +16,9 @@ export default defineNuxtConfig({
     "/om/**": { ssr: true },
     "/statistik": {
       redirect: { to: "/om/statistik", statusCode: 308 }
+    },
+    "/hjalp": {
+      redirect: { to: "/om/hjalp", statusCode: 308 }
     }
   },
   runtimeConfig: {

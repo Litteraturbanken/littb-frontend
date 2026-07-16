@@ -18,6 +18,10 @@ const pages = {
     activePage: "tack",
     contentPath: "/red/om/tack.html"
   },
+  hjalp: {
+    activePage: "hjalp",
+    contentPath: "/red/om/hjalp/hjalp.html"
+  },
   "mål": {
     activePage: null,
     contentPath: "/red/om/visioner/visioner.html"
@@ -46,6 +50,7 @@ definePageMeta({
       "organisation",
       "rattigheter",
       "tack",
+      "hjalp",
       "mål",
       "english.html",
       "deutsch.html",
@@ -80,6 +85,34 @@ function extractBody(html: string): string {
   return body?.[1] ?? html
 }
 
+function decodeHelpLabel(value: string): string {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, decimal: string) => String.fromCodePoint(Number.parseInt(decimal, 10)))
+}
+
+function humanizeHelpLabel(value: string): string {
+  const words = decodeHelpLabel(value)
+    .replace(/([A-Z])/g, " $1")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleLowerCase("sv")
+  return words ? `${words.charAt(0).toLocaleUpperCase("sv")}${words.slice(1)}` : ""
+}
+
+function extractHelpSubmenu(html: string): Array<{ id: string; label: string }> {
+  const withoutComments = html.replace(/<!--[\s\S]*?-->/g, "")
+  const items: Array<{ id: string; label: string }> = []
+  for (const tag of withoutComments.match(/<[a-z][^>]*>/gi) ?? []) {
+    const id = tag.match(/\bid\s*=\s*(["'])(.*?)\1/i)?.[2]
+    const name = tag.match(/\bname\s*=\s*(["'])(.*?)\1/i)?.[2]
+    if (id && name) items.push({ id: decodeHelpLabel(id), label: humanizeHelpLabel(name) })
+  }
+  return items
+}
+
 const { data: content } = await useAsyncData(asyncKey, async () => {
   const base = import.meta.server ? config.contentBase : config.public.contentBase
   const url = `${base.replace(/\/$/, "")}${selectedPage.value.contentPath}`
@@ -91,10 +124,51 @@ const { data: content } = await useAsyncData(asyncKey, async () => {
     return ""
   }
 })
+
+const helpSubmenu = computed(() => pageKey.value === "hjalp" ? extractHelpSubmenu(content.value ?? "") : [])
+
+async function scrollToHelpAnchor(value: unknown) {
+  if (!import.meta.client || typeof value !== "string" || !value) return
+  await nextTick()
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+  const anchor = document.getElementById(value)
+  if (!anchor) return
+  window.scrollTo({ top: window.scrollY + anchor.getBoundingClientRect().top - 40 })
+}
+
+async function selectHelpAnchor(id: string) {
+  await navigateTo({
+    path: route.path,
+    query: { ...route.query, ankare: id }
+  })
+}
+
+watch(
+  () => route.query.ankare,
+  value => { void scrollToHelpAnchor(value) },
+  { immediate: true, flush: "post" }
+)
 </script>
 
 <template>
   <AboutPageShell :active-page="selectedPage.activePage">
-    <section v-html="content || ''" />
+    <div
+      v-if="pageKey === 'hjalp'"
+      class="help_content content unbox page-help"
+      v-html="content || ''"
+    />
+    <section v-else v-html="content || ''" />
+    <ClientOnly>
+      <Teleport v-if="pageKey === 'hjalp'" to="#toolkit">
+        <ul class="help_submenu sticky">
+          <li v-for="item in helpSubmenu" :key="item.id">
+            <a
+              :href="`/om/hjalp?ankare=${encodeURIComponent(item.id)}`"
+              @click.prevent="selectHelpAnchor(item.id)"
+            >{{ item.label }}</a>
+          </li>
+        </ul>
+      </Teleport>
+    </ClientOnly>
   </AboutPageShell>
 </template>
