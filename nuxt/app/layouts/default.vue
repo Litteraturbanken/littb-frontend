@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import QuickSearch from "../components/global/QuickSearch.vue"
+import saLogoUrl from "~/assets/img/SA_logo_type.svg"
 </script>
 
 <template>
@@ -42,6 +43,21 @@ import QuickSearch from "../components/global/QuickSearch.vue"
         <li><a href="/skolan/">Skolan</a></li>
         <li><a href="/om/ide">Om LB</a></li>
       </ul>
+      <ul class="start-only uppercase text-sm align-right antialiased mt-2 text-right mr-32 font-display">
+        <li><a href="/skolan/lararsida/">Lärare</a></li>
+        <li><a href="/bibliotekariesidor/">Bibliotekarier</a></li>
+      </ul>
+      <ul class="start-only flex space-x-2 uppercase text-sm align-right antialiased justify-end mr-32 font-display">
+        <li><a href="/om/english.html">English</a></li>
+        <li><a href="/om/deutsch.html">Deutsch</a></li>
+        <li><a href="/om/francais.html">Français</a></li>
+      </ul>
+      <a
+        class="sa-logo start-only block text-right mr-32 mt-6 relative left-1"
+        href="https://www.svenskaakademien.se"
+      >
+        <img :src="saLogoUrl" width="90" height="90" alt="Logotyp för Svenska Akademien">
+      </a>
       <div id="toolkit" />
     </div>{{ " " }}
     <main id="mainview" role="main"><slot /></main>
