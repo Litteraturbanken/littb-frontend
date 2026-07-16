@@ -19,6 +19,7 @@ const aboutContent = new Map([
 
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 let requests = []
+let contactSubmissions = []
 let failure = null
 
 const errorByResource = {
@@ -31,7 +32,7 @@ function sendJson(response, status, body) {
   response.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET, PUT, DELETE, OPTIONS",
+    "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
     "access-control-allow-headers": "content-type"
   })
   response.end(JSON.stringify(body))
@@ -72,6 +73,13 @@ const server = createServer(async (request, response) => {
     requests = []
     return sendJson(response, 200, { requests })
   }
+  if (url.pathname === "/_contact_submissions" && request.method === "GET") {
+    return sendJson(response, 200, { contactSubmissions })
+  }
+  if (url.pathname === "/_contact_submissions" && request.method === "DELETE") {
+    contactSubmissions = []
+    return sendJson(response, 200, { contactSubmissions })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -89,6 +97,21 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
     }
     return sendBody(response, 200, content[0], content[1])
+  }
+
+  if (request.method === "POST" && url.pathname === "/v2/contact") {
+    requests.push(`${url.pathname}${url.search}`)
+    contactSubmissions.push(await readJson(request))
+    if (failure === "contact") {
+      return sendJson(response, 502, {
+        error: {
+          code: "contact_delivery_failed",
+          message: "Unable to send contact message",
+          details: null
+        }
+      })
+    }
+    return sendJson(response, 202, { status: "accepted" })
   }
 
   const resource = resourceFor(url.pathname)

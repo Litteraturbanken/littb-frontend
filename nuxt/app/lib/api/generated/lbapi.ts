@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Contact */
+        post: operations["v2_post_contact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/epubs/popular": {
         parameters: {
             query?: never;
@@ -80,6 +97,31 @@ export interface components {
             full_name: string;
             /** Surname */
             surname: string | null;
+        };
+        /** ContactAcceptedResponse */
+        ContactAcceptedResponse: {
+            /**
+             * Status
+             * @constant
+             */
+            status: "accepted";
+        };
+        /** ContactRequest */
+        ContactRequest: {
+            /**
+             * Audience
+             * @enum {string}
+             */
+            audience: "litteraturbanken" | "oversattarlexikon";
+            /** Message */
+            message: string;
+            /**
+             * Sender Address
+             * Format: email
+             */
+            sender_address: string;
+            /** Sender Name */
+            sender_name?: string | null;
         };
         /** ErrorDetail */
         ErrorDetail: {
@@ -160,6 +202,57 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    v2_post_contact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactAcceptedResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Contact delivery failed */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     v2_get_popular_epubs: {
         parameters: {
             query?: {

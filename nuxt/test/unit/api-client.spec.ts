@@ -63,4 +63,55 @@ describe("generated LB API client", () => {
     expect(data).toBeUndefined()
     expect(error?.error.code).toBe("popular_epubs_unavailable")
   })
+
+  test("posts the exact typed Contact payload and accepts a 202 response", async () => {
+    const fetchMock = vi.fn(async () => json({ status: "accepted" }, 202))
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+    const body = {
+      sender_name: "Anna Andersson",
+      sender_address: "anna@example.test",
+      message: "Hej!",
+      audience: "litteraturbanken" as const
+    }
+
+    const { data, error, response } = await client.POST("/contact", { body })
+
+    expect(response.status).toBe(202)
+    expect(error).toBeUndefined()
+    expect(data).toEqual({ status: "accepted" })
+    expect(fetchMock).toHaveBeenCalledOnce()
+    const request = fetchMock.mock.calls[0][0]
+    expect(request.url).toBe("http://example.test/v2/contact")
+    expect(request.method).toBe("POST")
+    expect(await request.json()).toEqual(body)
+  })
+
+  test("returns the typed Contact delivery failure", async () => {
+    const fetchMock = vi.fn(async () =>
+      json(
+        {
+          error: {
+            code: "contact_delivery_failed",
+            message: "Unable to send contact message",
+            details: null
+          }
+        },
+        502
+      )
+    )
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+
+    const { data, error, response } = await client.POST("/contact", {
+      body: {
+        sender_name: null,
+        sender_address: "a@b",
+        message: "Hej!",
+        audience: "oversattarlexikon"
+      }
+    })
+
+    expect(response.status).toBe(502)
+    expect(data).toBeUndefined()
+    expect(error?.error.code).toBe("contact_delivery_failed")
+  })
 })
