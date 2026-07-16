@@ -59,6 +59,52 @@ describe("Home editorial content parser", () => {
     })
   })
 
+  test("byte-preserves control-like markup in comments, raw text, and editorial text", async () => {
+    const parseHomeContent = await loadParser()
+    const source = [
+      '<!-- <link data-ng-href="{{\'/red/css/comment.css?\' + cacheKiller()}}"> -->',
+      '<script>const example = `<img bkg-img color="#111" src="/red/comment.jpg"></img>`</script>',
+      '<textarea><link data-ng-href="{{\'/red/css/textarea.css?\' + cacheKiller()}}"></textarea>',
+      '<p>&lt;img bkg-img color="#222" src="/red/editorial.jpg"&gt;</p>'
+    ].join("\n")
+
+    expect(parseHomeContent(source)).toEqual({
+      bodyHtml: source,
+      stylesheetPath: null,
+      backgroundImagePath: null,
+      backgroundColor: null
+    })
+  })
+
+  test("does not treat similarly named attributes as control attributes", async () => {
+    const parseHomeContent = await loadParser()
+    const source = [
+      '<link editorial-data-ng-href="{{\'/red/css/editorial.css?\' + cacheKiller()}}">',
+      '<img editorial-bkg-img color="#333" src="/red/editorial.jpg"></img>'
+    ].join("\n")
+
+    expect(parseHomeContent(source)).toEqual({
+      bodyHtml: source,
+      stylesheetPath: null,
+      backgroundImagePath: null,
+      backgroundColor: null
+    })
+  })
+
+  test("removes only real control elements while preserving every surrounding byte", async () => {
+    const parseHomeContent = await loadParser()
+    const link = '<link editorial-data-ng-href="ignored" data-ng-href="{{\'/red/css/real.css?\' + cacheKiller()}}">'
+    const image = '<img editorial-bkg-img bkg-img color="#123456" src="/red/real.jpg"></img>'
+    const source = `before\n${link}\nmiddle\n${image}\nafter`
+
+    expect(parseHomeContent(source)).toEqual({
+      bodyHtml: "before\n\nmiddle\n\nafter",
+      stylesheetPath: "/red/css/real.css",
+      backgroundImagePath: "/red/real.jpg",
+      backgroundColor: "#123456"
+    })
+  })
+
   test("removes recognized but malformed controls without applying their effects", async () => {
     const parseHomeContent = await loadParser()
     const source = [
@@ -94,6 +140,47 @@ describe("Home editorial content parser", () => {
 
     expect(parseHomeContent(source)).toEqual({
       bodyHtml: "\n\n<p>Innehåll</p>",
+      stylesheetPath: null,
+      backgroundImagePath: null,
+      backgroundColor: null
+    })
+  })
+
+  test.each([5, 8])("rejects traversal hidden behind %i encoding layers", async layers => {
+    const parseHomeContent = await loadParser()
+    let traversal = "%2e%2e"
+    for (let layer = 1; layer < layers; layer += 1) traversal = encodeURIComponent(traversal)
+    const unsafePath = `/red/${traversal}/asset.css`
+    const source = `<link data-ng-href="{{'${unsafePath}?' + cacheKiller()}}">`
+
+    expect(parseHomeContent(source)).toEqual({
+      bodyHtml: "",
+      stylesheetPath: null,
+      backgroundImagePath: null,
+      backgroundColor: null
+    })
+  })
+
+  test("rejects paths whose decoding does not reach a fixed point within the bound", async () => {
+    const parseHomeContent = await loadParser()
+    let encodedPercent = "%25"
+    for (let layer = 0; layer < 24; layer += 1) encodedPercent = encodeURIComponent(encodedPercent)
+    const source = `<img bkg-img color="#333" src="/red/css/${encodedPercent}asset.jpg"></img>`
+
+    expect(parseHomeContent(source)).toEqual({
+      bodyHtml: "",
+      stylesheetPath: null,
+      backgroundImagePath: null,
+      backgroundColor: null
+    })
+  })
+
+  test("rejects control paths outside the bounded input length", async () => {
+    const parseHomeContent = await loadParser()
+    const source = `<link data-ng-href="{{'/red/css/${"a".repeat(5000)}.css?' + cacheKiller()}}">`
+
+    expect(parseHomeContent(source)).toEqual({
+      bodyHtml: "",
       stylesheetPath: null,
       backgroundImagePath: null,
       backgroundColor: null
