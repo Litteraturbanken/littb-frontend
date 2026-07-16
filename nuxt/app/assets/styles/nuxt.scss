@@ -49,3 +49,21 @@
         z-index: 1050;
     }
 }
+
+.page-id {
+    td:last-of-type > span::before,
+    td:last-of-type > span::after {
+        content: " ";
+        white-space: pre;
+    }
+
+    @media (min-width: 761px) {
+        #mainview input + input {
+            margin-left: 4px;
+        }
+
+        #mainview input + textarea {
+            margin-left: 5px;
+        }
+    }
+}

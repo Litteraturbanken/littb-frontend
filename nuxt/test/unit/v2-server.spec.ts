@@ -444,6 +444,18 @@ describe("v2 fixture server operations", () => {
     ))).toEqual(["lb238704"])
   })
 
+  test("work lookup matches the visual authority title aliases", async () => {
+    const response = await postWorkLookup("/v2/works/lookup", {
+      work_id: null,
+      titles: ["Titel", "Titel två"]
+    })
+
+    expect(response.status).toBe(200)
+    expect((await response.json()).items.map((item: { work_id: string }) => (
+      item.work_id
+    ))).toEqual(["lb238704", "lb278171"])
+  })
+
   test("work lookup records path and body then resets without touching other ledgers", async () => {
     const body = { work_id: null, titles: ["Röda rummet"] }
     await fetch(`${origin}/v2/stats`)

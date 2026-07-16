@@ -63,11 +63,11 @@ const duplicateRepresentation = {
 const entries = [
   {
     item: rodaRummet,
-    searchTitles: ["Röda rummet", "RödaRummet", "RodaRummet"]
+    searchTitles: ["Röda rummet", "RödaRummet", "RodaRummet", "Titel"]
   },
   {
     item: gostaBerlingsSaga,
-    searchTitles: ["Gösta Berlings saga", "GostaBerlingsSaga"]
+    searchTitles: ["Gösta Berlings saga", "GostaBerlingsSaga", "Titel två"]
   },
   {
     item: duplicateRepresentation,
