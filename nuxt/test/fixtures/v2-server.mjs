@@ -18,6 +18,12 @@ const aboutContent = new Map([
   ["/red/om/rattigheter/cc_publicdomain.png", ["image/png", readFileSync(new URL("./about-content/cc_publicdomain.png", import.meta.url))]]
 ])
 
+const homeContent = new Map([
+  ["/red/om/start/startsida-ny.html", ["text/html; charset=utf-8", readFileSync(new URL("./home-content/startsida-ny.html", import.meta.url))]],
+  ["/red/css/startsida.css", ["text/css; charset=utf-8", readFileSync(new URL("./home-content/startsida.css", import.meta.url))]],
+  ["/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg", ["image/jpeg", readFileSync(new URL("./home-content/start_bkg_172_2026.jpg", import.meta.url))]]
+])
+
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 let requests = []
 let contactSubmissions = []
@@ -27,6 +33,8 @@ let failure = null
 let quickSearchQueries = []
 let quickSearchFailure = false
 let quickSearchDelays = {}
+let homeRequests = []
+let homeFailure = false
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -156,6 +164,24 @@ const server = createServer(async (request, response) => {
     quickSearchDelays = {}
     return sendJson(response, 200, { delays: quickSearchDelays })
   }
+  if (url.pathname === "/_home_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: homeRequests })
+  }
+  if (url.pathname === "/_home_requests" && request.method === "DELETE") {
+    homeRequests = []
+    return sendJson(response, 200, { requests: homeRequests })
+  }
+  if (url.pathname === "/_home_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: homeFailure })
+  }
+  if (url.pathname === "/_home_failure" && request.method === "PUT") {
+    homeFailure = true
+    return sendJson(response, 200, { failure: homeFailure })
+  }
+  if (url.pathname === "/_home_failure" && request.method === "DELETE") {
+    homeFailure = false
+    return sendJson(response, 200, { failure: homeFailure })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -164,6 +190,15 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_failure" && request.method === "DELETE") {
     failure = null
     return sendJson(response, 200, { failure })
+  }
+
+  const home = homeContent.get(url.pathname)
+  if (request.method === "GET" && home) {
+    homeRequests.push(`${url.pathname}${url.search}`)
+    if (homeFailure && url.pathname === "/red/om/start/startsida-ny.html") {
+      return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
+    }
+    return sendBody(response, 200, home[0], home[1])
   }
 
   const content = aboutContent.get(url.pathname)

@@ -1,5 +1,6 @@
 import type { ChildProcess } from "node:child_process"
 import { spawn } from "node:child_process"
+import { createHash } from "node:crypto"
 import { once } from "node:events"
 import { fileURLToPath } from "node:url"
 import {
@@ -63,6 +64,12 @@ async function quickSearchRequests() {
   }
 }
 
+async function homeRequests() {
+  return await (await fetch(`${origin}/_home_requests`)).json() as {
+    requests: string[]
+  }
+}
+
 describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -92,7 +99,9 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_contact_defer`, { method: "DELETE" }),
       fetch(`${origin}/_quick_search_requests`, { method: "DELETE" }),
       fetch(`${origin}/_quick_search_failure`, { method: "DELETE" }),
-      fetch(`${origin}/_quick_search_delays`, { method: "DELETE" })
+      fetch(`${origin}/_quick_search_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_home_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_home_failure`, { method: "DELETE" })
     ])
   })
 
@@ -345,5 +354,82 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_quick_search_delays`)).json()).toEqual({
       delays: {}
     })
+  })
+
+  test("serves and separately records the exact Home fragment and rendered assets", async () => {
+    await fetch(`${origin}/v2/stats`)
+
+    const fragment = await fetch(
+      `${origin}/red/om/start/startsida-ny.html?fixture-cache`
+    )
+    const stylesheet = await fetch(
+      `${origin}/red/css/startsida.css?fixture-cache`
+    )
+    const background = await fetch(
+      `${origin}/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg`
+    )
+
+    expect(fragment.status).toBe(200)
+    expect(fragment.headers.get("content-type")).toBe("text/html; charset=utf-8")
+    expect(createHash("sha256").update(await fragment.text()).digest("hex")).toBe(
+      "d6b6c2c33c1043d6df34ee2d8dae9d5f612754546f51a7f78b5f9b7ef39d6688"
+    )
+    expect(stylesheet.status).toBe(200)
+    expect(stylesheet.headers.get("content-type")).toBe("text/css; charset=utf-8")
+    expect(createHash("sha256").update(await stylesheet.text()).digest("hex")).toBe(
+      "80e9c19f1fcfa3c2364edcdad9755192e358000bab3449e78867fa9daccdb2ea"
+    )
+    expect(background.status).toBe(200)
+    expect(background.headers.get("content-type")).toBe("image/jpeg")
+    expect(createHash("sha256").update(Buffer.from(await background.arrayBuffer())).digest("hex"))
+      .toBe("e3a36d33654320df4bbb81fb7c70b3cc716c8d9ed425d06547a4f52951e52922")
+
+    expect(await homeRequests()).toEqual({
+      requests: [
+        "/red/om/start/startsida-ny.html?fixture-cache",
+        "/red/css/startsida.css?fixture-cache",
+        "/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg"
+      ]
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect(await quickSearchRequests()).toEqual({ queries: [] })
+    expect(await contactSubmissions()).toEqual({ contactSubmissions: [] })
+
+    await fetch(`${origin}/_home_requests`, { method: "DELETE" })
+    expect(await homeRequests()).toEqual({ requests: [] })
+  })
+
+  test("Home content failure is independent and resettable without failing its assets", async () => {
+    await fetch(`${origin}/_home_failure`, { method: "PUT" })
+
+    const failed = await fetch(
+      `${origin}/red/om/start/startsida-ny.html?failed-cache`
+    )
+    expect(failed.status).toBe(503)
+    expect(failed.headers.get("content-type")).toBe("text/plain; charset=utf-8")
+    expect(await failed.text()).toBe("content unavailable")
+    expect((await fetch(`${origin}/red/css/startsida.css?failed-cache`)).status).toBe(200)
+    expect((await fetch(
+      `${origin}/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg`
+    )).status).toBe(200)
+    expect((await fetch(`${origin}/v2/quick-search?query=strindberg`)).status).toBe(200)
+    expect((await fetch(`${origin}/v2/stats`)).status).toBe(200)
+
+    await fetch(`${origin}/_home_failure`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_home_failure`)).json()).toEqual({ failure: false })
+    expect((await fetch(
+      `${origin}/red/om/start/startsida-ny.html?restored-cache`
+    )).status).toBe(200)
+  })
+
+  test("does not serve a near-match for the fixed Home content path", async () => {
+    const response = await fetch(
+      `${origin}/red/om/start/startsida-ny-copy.html?fixture-cache`
+    )
+
+    expect(response.status).toBe(404)
+    expect(await homeRequests()).toEqual({ requests: [] })
   })
 })
