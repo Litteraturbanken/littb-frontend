@@ -116,7 +116,7 @@ async function subscribe() {
         <form name="form" class="contactform" novalidate @submit.prevent="submitContactForm">
           <div class="form_head">
             <div>
-              <label for="nameInput">Namn</label>
+              <label for="nameInput">Namn</label>{{ " " }}
               <input
                 id="nameInput"
                 v-model.trim="name"
@@ -127,7 +127,7 @@ async function subscribe() {
               >
             </div>
             <div>
-              <label for="emailInput">Epost</label>
+              <label for="emailInput">Epost</label>{{ " " }}
               <input
                 id="emailInput"
                 v-model.trim="email"
@@ -160,7 +160,7 @@ async function subscribe() {
             Vill du få Litteraturbankens utskick? Skriv in din epostadress här.
           </p>
           <form name="subscribeform" class="subscribeform flex pr-2" novalidate @submit.prevent="subscribe">
-            <label class="pt-1" for="newsletterEmail">Epost</label>
+            <label class="pt-1" for="newsletterEmail">Epost</label>{{ " " }}
             <input
               id="newsletterEmail"
               v-model.trim="newsletterEmail"
