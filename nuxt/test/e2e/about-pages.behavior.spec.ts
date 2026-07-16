@@ -11,12 +11,51 @@ const expectedLinks = [
   ["Kontakt", "/om/kontakt"]
 ] as const
 
+const staticPages = [
+  {
+    slug: "ide",
+    navName: "Intro",
+    activeName: "Intro",
+    heading: "Introduktion",
+    contentPath: "/red/om/ide/omlitteraturbanken.html",
+    redRequests: ["/red/om/ide/omlitteraturbanken.html"]
+  },
+  {
+    slug: "organisation",
+    navName: "Organisation",
+    activeName: null,
+    heading: "Organisation",
+    contentPath: "/red/om/ide/organisation.html",
+    redRequests: ["/red/om/ide/organisation.html"]
+  },
+  {
+    slug: "rattigheter",
+    navName: "Rättigheter",
+    activeName: "Rättigheter",
+    heading: "Rättigheter och material",
+    contentPath: "/red/om/rattigheter/rattigheter.html",
+    redRequests: [
+      "/red/om/rattigheter/rattigheter.html",
+      "/red/om/rattigheter/cc_by.png",
+      "/red/om/rattigheter/cc_publicdomain.png"
+    ]
+  },
+  {
+    slug: "tack",
+    navName: "Tack",
+    activeName: "Tack",
+    heading: "Litteraturbanken tackar",
+    contentPath: "/red/om/tack.html",
+    redRequests: ["/red/om/tack.html"]
+  }
+] as const
+
 async function reset(request: APIRequestContext) {
   await request.delete(`${fixture}/_requests`)
   await request.delete(`${fixture}/_failure`)
 }
 
-async function openWithoutBrowserErrors(page: Page, path: string) {
+function captureBrowserProblems(page: Page) {
   const problems: string[] = []
   page.on("console", message => {
     if (message.type() === "error" || /hydration/i.test(message.text())) {
@@ -24,61 +63,87 @@ async function openWithoutBrowserErrors(page: Page, path: string) {
     }
   })
   page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
+  return problems
+}
+
+async function openSuccessfulPage(page: Page, path: string) {
   const response = await page.goto(path, { waitUntil: "networkidle" })
   expect(response?.status()).toBe(200)
+}
+
+async function openWithoutBrowserErrors(page: Page, path: string) {
+  const problems = captureBrowserProblems(page)
+  await openSuccessfulPage(page, path)
   return problems
+}
+
+async function loggedRedRequests(request: APIRequestContext) {
+  const log = await (await request.get(`${fixture}/_requests`)).json()
+  return (log.requests as string[]).filter(path => path.startsWith("/red/"))
 }
 
 test.beforeEach(async ({ request }) => reset(request))
 
-test("Intro renders live content, exact navigation, and no hydration errors", async ({ page }) => {
-  const problems = await openWithoutBrowserErrors(page, "/om/ide")
-  await expect(page).toHaveTitle("Om LB | Litteraturbanken")
-  await expect(page.locator("body")).toHaveClass(/\bpage-about\b/)
-  for (const [name, href] of expectedLinks) {
-    await expect(page.getByRole("link", { name, exact: true })).toHaveAttribute("href", href)
-  }
-  await expect(page.getByRole("link", { name: "Intro", exact: true })).toHaveClass(/\bactive\b/)
-  await expect(page.getByRole("heading", { name: "Introduktion" })).toBeVisible()
-  expect(problems).toEqual([])
-})
+for (const staticPage of staticPages) {
+  test(`${staticPage.navName} renders managed content, exact active state, and no browser errors`, async ({ page }) => {
+    const problems = await openWithoutBrowserErrors(page, `/om/${staticPage.slug}`)
+    await expect(page).toHaveTitle("Om LB | Litteraturbanken")
+    await expect(page.locator("body")).toHaveClass(/\bpage-about\b/)
+    for (const [name, href] of expectedLinks) {
+      await expect(page.getByRole("link", { name, exact: true })).toHaveAttribute("href", href)
+    }
 
-test("Organisation intentionally has no active About tab", async ({ page }) => {
-  await openWithoutBrowserErrors(page, "/om/organisation")
-  await expect(page.locator("ul.links a.active")).toHaveCount(0)
-  await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toBeVisible()
-})
+    const activeLinks = page.locator("ul.links a.active")
+    if (staticPage.activeName === null) {
+      await expect(activeLinks).toHaveCount(0)
+    } else {
+      await expect(activeLinks).toHaveCount(1)
+      await expect(page.getByRole("link", { name: staticPage.activeName, exact: true })).toHaveClass(/\bactive\b/)
+    }
+    await expect(page.getByRole("heading", { name: staticPage.heading, exact: true })).toBeVisible()
 
-test("Rights retains existing /red images and license links", async ({ page }) => {
-  await openWithoutBrowserErrors(page, "/om/rattigheter")
-  await expect(page.locator('img[src="/red/om/rattigheter/cc_by.png"]').first()).toBeVisible()
-  await expect(page.locator('img[src="/red/om/rattigheter/cc_publicdomain.png"]')).toBeVisible()
-  await expect(page.getByRole("link", { name: "https://creativecommons.org/licenses/by/4.0/" })).toHaveAttribute(
-    "href",
-    "https://creativecommons.org/licenses/by/4.0/"
-  )
-})
+    if (staticPage.slug === "ide") {
+      await expect(page.getByRole("link", { name: "webbplatsen", exact: true })).toHaveAttribute("href", "/epub")
+    }
+    if (staticPage.slug === "rattigheter") {
+      await expect(page.locator('img[src="/red/om/rattigheter/cc_by.png"]').first()).toBeVisible()
+      await expect(page.locator('img[src="/red/om/rattigheter/cc_publicdomain.png"]')).toBeVisible()
+      await expect(page.getByRole("link", { name: "https://creativecommons.org/licenses/by/4.0/" })).toHaveAttribute(
+        "href",
+        "https://creativecommons.org/licenses/by/4.0/"
+      )
+    }
+    if (staticPage.slug === "tack") {
+      await expect(page.locator("#mainview")).toContainText("Uppsala universitetsbibliotek")
+      await expect(page.getByRole("link", { name: "GÖTEBORGS UNIVERSITETSBIBLIOTEK", exact: true })).toHaveAttribute(
+        "href",
+        "http://www.ub.gu.se/"
+      )
+    }
+    expect(problems).toEqual([])
+  })
+}
 
-test("Thanks renders the beginning and end of the managed response", async ({ page }) => {
-  await openWithoutBrowserErrors(page, "/om/tack")
-  await expect(page.getByRole("heading", { name: "Litteraturbanken tackar" })).toBeVisible()
-  await expect(page.locator("#mainview")).toContainText("Uppsala universitetsbibliotek")
-})
+for (const staticPage of staticPages) {
+  test(`Statistics transitions to ${staticPage.navName} and back without duplicate content requests`, async ({ page, request }) => {
+    const problems = captureBrowserProblems(page)
+    await openSuccessfulPage(page, "/om/statistik")
+    await expect(page.getByRole("heading", { name: "Litteraturbanken innehåller just nu" })).toBeVisible()
+    expect(await loggedRedRequests(request)).toEqual([])
 
-test("navigation fetches each selected fragment once and never refetches during hydration", async ({ page, request }) => {
-  await openWithoutBrowserErrors(page, "/om/ide")
-  let log = await (await request.get(`${fixture}/_requests`)).json()
-  expect(log.requests).toEqual(["/red/om/ide/omlitteraturbanken.html"])
+    await page.getByRole("link", { name: staticPage.navName, exact: true }).click()
+    await expect(page).toHaveURL(`/om/${staticPage.slug}`)
+    await expect(page.getByRole("heading", { name: staticPage.heading, exact: true })).toBeVisible()
+    expect(await loggedRedRequests(request)).toEqual(staticPage.redRequests)
+    expect((await loggedRedRequests(request)).filter(path => path === staticPage.contentPath)).toHaveLength(1)
 
-  await page.getByRole("link", { name: "Organisation", exact: true }).click()
-  await expect(page).toHaveURL("/om/organisation")
-  await expect(page.getByRole("heading", { name: "Organisation", exact: true })).toBeVisible()
-  log = await (await request.get(`${fixture}/_requests`)).json()
-  expect(log.requests).toEqual([
-    "/red/om/ide/omlitteraturbanken.html",
-    "/red/om/ide/organisation.html"
-  ])
-})
+    await page.goBack({ waitUntil: "networkidle" })
+    await expect(page).toHaveURL("/om/statistik")
+    await expect(page.getByRole("heading", { name: "Litteraturbanken innehåller just nu" })).toBeVisible()
+    expect(await loggedRedRequests(request)).toEqual(staticPage.redRequests)
+    expect(problems).toEqual([])
+  })
+}
 
 test("the browser /red proxy reaches the configured content origin", async ({ page, request }) => {
   await openWithoutBrowserErrors(page, "/om/ide")
@@ -98,7 +163,11 @@ test("legacy statistics alias preserves browser query and fragment", async ({ pa
   await expect(page).toHaveURL("/om/statistik?source=legacy#ranking")
 })
 
-test("missing route uses generic body state without stale About background", async ({ page }) => {
+test("missing route clears a previously active About body and background state", async ({ page }) => {
+  await openSuccessfulPage(page, "/om/ide")
+  await expect(page.locator("body")).toHaveClass(/\bpage-about\b/)
+  await expect(page.locator("html")).toHaveAttribute("style", /about_bkg\.jpg/)
+
   const response = await page.goto("/definitely-not-a-route")
   expect(response?.status()).toBe(404)
   await expect(page.locator("body")).toHaveClass(/\bfocus\b/)
