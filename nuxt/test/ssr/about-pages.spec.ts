@@ -123,3 +123,24 @@ test("unknown About page is a real 404 and cannot select a remote path", async (
   const log = await (await request.get(`${fixture}/_requests`)).json()
   expect(log.requests).toEqual([])
 })
+
+test("Contact renders exact metadata, copy, and active state without submitting during SSR", async ({ request }) => {
+  await reset(request)
+  await request.delete(`${fixture}/_contact_submissions`)
+
+  const response = await request.get("/om/kontakt")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("<title>Om LB | Litteraturbanken</title>")
+  expect(html).toContain('name="description" content="Litteraturbankens kontaktforumlär och utskicksanmälan."')
+  expect(html).toContain("Vill du skicka ett meddelande till oss? Då kan du använda formuläret här nedan.")
+  expect(html).toContain("Vill du få Litteraturbankens utskick? Skriv in din epostadress här.")
+  expect(html).toContain("Tack för ditt meddelande, vi svarar så fort vi kan.")
+  expect(html).toContain("Tack för din anmälan.")
+  expect(html).toContain("Ett fel uppstod. Vänligen försök igen senare.")
+  expect(html.match(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/)[^>]*>/g) ?? []).toHaveLength(1)
+  expect(html).toMatch(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/kontakt")[^>]*>/)
+
+  const submissions = await (await request.get(`${fixture}/_contact_submissions`)).json()
+  expect(submissions.contactSubmissions).toEqual([])
+})

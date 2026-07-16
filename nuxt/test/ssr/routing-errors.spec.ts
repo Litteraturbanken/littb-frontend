@@ -12,6 +12,12 @@ test("legacy Help alias redirects permanently and preserves query", async ({ req
   expect(response.headers().location).toBe("/om/hjalp?ankare=Epub")
 })
 
+test("legacy Contact alias redirects permanently and preserves query", async ({ request }) => {
+  const response = await request.get("/kontakt?sol=1&skola=1", { maxRedirects: 0 })
+  expect(response.status()).toBe(308)
+  expect(response.headers().location).toBe("/om/kontakt?sol=1&skola=1")
+})
+
 test("missing route returns the legacy Swedish 404 inside the site shell", async ({ request }) => {
   const response = await request.get("/definitely-not-a-route")
   expect(response.status()).toBe(404)

@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   css: [
     "~/assets/styles/bootstrap.scss",
     "~/assets/styles/tailwind.css",
+    "font-awesome/css/font-awesome.css",
     "~/assets/styles/styles.scss",
     "~/assets/styles/nuxt.scss"
   ],
@@ -19,6 +20,9 @@ export default defineNuxtConfig({
     },
     "/hjalp": {
       redirect: { to: "/om/hjalp", statusCode: 308 }
+    },
+    "/kontakt": {
+      redirect: { to: "/om/kontakt", statusCode: 308 }
     }
   },
   runtimeConfig: {
