@@ -181,5 +181,7 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
     releaseContactSubmissions()
     server.close(() => process.exit(0))
+    server.closeAllConnections()
+    setTimeout(() => process.exit(0), 250).unref()
   })
 }

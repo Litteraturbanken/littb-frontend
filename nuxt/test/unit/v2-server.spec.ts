@@ -18,9 +18,13 @@ const origin = `http://127.0.0.1:${port}`
 let fixture: ChildProcess
 
 async function waitUntilReady() {
+  await waitUntilReadyAt(origin)
+}
+
+async function waitUntilReadyAt(targetOrigin: string) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     try {
-      const response = await fetch(`${origin}/health`)
+      const response = await fetch(`${targetOrigin}/health`)
       if (response.ok) return
     } catch {
       // The fixture process has not bound its port yet.
@@ -31,14 +35,22 @@ async function waitUntilReady() {
 }
 
 async function contactSubmissions() {
-  return await (await fetch(`${origin}/_contact_submissions`)).json() as {
+  return await contactSubmissionsAt(origin)
+}
+
+async function contactSubmissionsAt(targetOrigin: string) {
+  return await (await fetch(`${targetOrigin}/_contact_submissions`)).json() as {
     contactSubmissions: unknown[]
   }
 }
 
 async function waitForContactSubmission() {
+  return await waitForContactSubmissionAt(origin)
+}
+
+async function waitForContactSubmissionAt(targetOrigin: string) {
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    const ledger = await contactSubmissions()
+    const ledger = await contactSubmissionsAt(targetOrigin)
     if (ledger.contactSubmissions.length > 0) return ledger
     await new Promise(resolve => setTimeout(resolve, 10))
   }
@@ -168,5 +180,53 @@ describe("v2 fixture server Contact operation", () => {
     const response = await pendingResponse
     expect(response.status).toBe(202)
     expect(await response.json()).toEqual({ status: "accepted" })
+  })
+
+  test("SIGTERM exits with an outstanding deferred Contact request", async () => {
+    const shutdownPort = port + 1
+    const shutdownOrigin = `http://127.0.0.1:${shutdownPort}`
+    const shutdownFixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
+      cwd: nuxtRoot,
+      env: { ...process.env, LBAPI_FIXTURE_PORT: String(shutdownPort) },
+      stdio: "ignore"
+    })
+    const exited = once(shutdownFixture, "exit")
+    let forced = false
+
+    try {
+      await waitUntilReadyAt(shutdownOrigin)
+      await fetch(`${shutdownOrigin}/_contact_defer`, { method: "PUT" })
+      void fetch(`${shutdownOrigin}/v2/contact`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sender_name: null,
+          sender_address: "a@b",
+          message: "Vänta",
+          audience: "litteraturbanken"
+        })
+      }).catch(() => {})
+      await waitForContactSubmissionAt(shutdownOrigin)
+
+      shutdownFixture.kill("SIGTERM")
+      let timeout: ReturnType<typeof setTimeout> | undefined
+      await Promise.race([
+        exited,
+        new Promise<never>((_, reject) => {
+          timeout = setTimeout(
+            () => reject(new Error("fixture did not exit after SIGTERM")),
+            500
+          )
+        })
+      ]).finally(() => clearTimeout(timeout))
+    } finally {
+      if (shutdownFixture.exitCode === null) {
+        forced = true
+        shutdownFixture.kill("SIGKILL")
+        await exited
+      }
+    }
+
+    expect(forced).toBe(false)
   })
 })
