@@ -450,15 +450,17 @@ describe("v2 fixture server operations", () => {
       ["/red/presentationer/presentationerForfattare.html?fixture-cache", "text/html; charset=utf-8"],
       ["/red/presentationer/specialomraden/Censur.html", "text/html; charset=utf-8"],
       ["/red/presentationer/specialomraden/Rostratt.html", "text/html; charset=utf-8"],
-      ["/red/presentationer/specialomraden/Phosphoros.html", "text/html; charset=utf-8"],
+      ["/red/presentationer/specialomraden/FigurdiktenSomBarockBlandkonst.html", "text/html; charset=utf-8"],
       ["/red/presentationer/vandringar/VandringElam.html", "text/html; charset=utf-8"],
       ["/red/bilder/bakgrundsbilder/backgrounds.xml", "application/xml; charset=utf-8"],
       ["/red/presentationer/specialomraden/Rostratt.css", "text/css; charset=utf-8"],
       ["/app/style/litteraturbanken.css", "text/css; charset=utf-8"],
       ["/app/style/date.css", "text/css; charset=utf-8"],
-      ["/red/presentationer/specialomraden/Phosphorosbilder/1.jpeg", "image/jpeg"],
-      ["/red/presentationer/specialomraden/Phosphorosbilder/2.jpeg", "image/jpeg"],
-      ["/red/presentationer/specialomraden/AttLasaEnHandskrivenTillfallesdikt.pdf", "application/pdf"],
+      ...Array.from({ length: 10 }, (_, index) => [
+        `/red/presentationer/specialomraden/Burmanbilder/${index + 1}.jpg`,
+        "image/jpeg"
+      ] as const),
+      ["/red/presentationer/specialomraden/Figurdiktensombarockblandkonst.pdf", "application/pdf"],
       ["/red/bilder/bakgrundsbilder/rostratt_a.jpg", "image/jpeg"],
       ["/red/bilder/bakgrundsbilder/rostratt_b.jpg", "image/jpeg"]
     ] as const

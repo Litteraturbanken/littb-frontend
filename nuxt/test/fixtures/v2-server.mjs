@@ -28,15 +28,17 @@ const presentationContent = new Map([
   ["/red/presentationer/presentationerForfattare.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/presentationerForfattare.html", import.meta.url))]],
   ["/red/presentationer/specialomraden/Censur.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/Censur.html", import.meta.url))]],
   ["/red/presentationer/specialomraden/Rostratt.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/Rostratt.html", import.meta.url))]],
-  ["/red/presentationer/specialomraden/Phosphoros.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/Phosphoros.html", import.meta.url))]],
+  ["/red/presentationer/specialomraden/FigurdiktenSomBarockBlandkonst.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/FigurdiktenSomBarockBlandkonst.html", import.meta.url))]],
   ["/red/presentationer/vandringar/VandringElam.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/VandringElam.html", import.meta.url))]],
   ["/red/bilder/bakgrundsbilder/backgrounds.xml", ["xml", "application/xml; charset=utf-8", readFileSync(new URL("./presentation-content/backgrounds.xml", import.meta.url))]],
   ["/red/presentationer/specialomraden/Rostratt.css", ["asset", "text/css; charset=utf-8", readFileSync(new URL("./presentation-content/Rostratt.css", import.meta.url))]],
   ["/app/style/litteraturbanken.css", ["asset", "text/css; charset=utf-8", readFileSync(new URL("./presentation-content/app-style-litteraturbanken.css", import.meta.url))]],
   ["/app/style/date.css", ["asset", "text/css; charset=utf-8", readFileSync(new URL("./presentation-content/app-style-date.css", import.meta.url))]],
-  ["/red/presentationer/specialomraden/Phosphorosbilder/1.jpeg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/phosphoros-1.jpeg", import.meta.url))]],
-  ["/red/presentationer/specialomraden/Phosphorosbilder/2.jpeg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/phosphoros-2.jpeg", import.meta.url))]],
-  ["/red/presentationer/specialomraden/AttLasaEnHandskrivenTillfallesdikt.pdf", ["asset", "application/pdf", readFileSync(new URL("./presentation-content/AttLasaEnHandskrivenTillfallesdikt.pdf", import.meta.url))]],
+  ...Array.from({ length: 10 }, (_, index) => [
+    `/red/presentationer/specialomraden/Burmanbilder/${index + 1}.jpg`,
+    ["asset", "image/jpeg", readFileSync(new URL(`./presentation-content/burman-${index + 1}.jpg`, import.meta.url))]
+  ]),
+  ["/red/presentationer/specialomraden/Figurdiktensombarockblandkonst.pdf", ["asset", "application/pdf", readFileSync(new URL("./presentation-content/Figurdiktensombarockblandkonst.pdf", import.meta.url))]],
   ["/red/bilder/bakgrundsbilder/rostratt_a.jpg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/rostratt-a.jpg", import.meta.url))]],
   ["/red/bilder/bakgrundsbilder/rostratt_b.jpg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/rostratt-b.jpg", import.meta.url))]]
 ])
