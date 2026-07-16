@@ -78,6 +78,20 @@ async function postWorkLookup(path: string, body: unknown) {
   })
 }
 
+async function authorResolveRequests() {
+  return await (await fetch(`${origin}/_author_resolve_requests`)).json() as {
+    requests: Array<{ path: string, body: unknown }>
+  }
+}
+
+async function postAuthorResolve(path: string, body: unknown) {
+  return await fetch(`${origin}${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  })
+}
+
 async function homeRequests() {
   return await (await fetch(`${origin}/_home_requests`)).json() as {
     requests: string[]
@@ -129,6 +143,9 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_work_lookup_requests`, { method: "DELETE" }),
       fetch(`${origin}/_work_lookup_failure`, { method: "DELETE" }),
       fetch(`${origin}/_work_lookup_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_author_resolve_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_author_resolve_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_author_resolve_delays`, { method: "DELETE" }),
       fetch(`${origin}/_home_requests`, { method: "DELETE" }),
       fetch(`${origin}/_home_failure`, { method: "DELETE" }),
       fetch(`${origin}/_presentation_requests`, { method: "DELETE" }),
@@ -578,6 +595,157 @@ describe("v2 fixture server operations", () => {
         url: "/författare/TestAuthor/titlar/Duplicate/etext"
       }
     ])
+  })
+
+  test("author resolve accepts public and private requests with normalized request ordering", async () => {
+    const body = {
+      author_ids: [" StrindbergA ", "UnknownAuthor", "LongNameAuthor", "LagerlofS"]
+    }
+    const expected = {
+      items: [
+        {
+          author_id: "StrindbergA",
+          full_name: "August Strindberg",
+          surname: "Strindberg"
+        },
+        {
+          author_id: "LongNameAuthor",
+          full_name: "Anna Maria Lovisa Charlotta von Långnamn",
+          surname: null
+        },
+        {
+          author_id: "LagerlofS",
+          full_name: "Selma Lagerlöf",
+          surname: "Lagerlöf"
+        }
+      ]
+    }
+
+    const publicResponse = await postAuthorResolve("/v2/authors/resolve", body)
+    const privateResponse = await postAuthorResolve("/private-v2/authors/resolve", body)
+
+    expect(publicResponse.status).toBe(200)
+    expect(await publicResponse.json()).toEqual(expected)
+    expect(privateResponse.status).toBe(200)
+    expect(await privateResponse.json()).toEqual(expected)
+    expect(await authorResolveRequests()).toEqual({
+      requests: [
+        { path: "/v2/authors/resolve", body },
+        { path: "/private-v2/authors/resolve", body }
+      ]
+    })
+  })
+
+  test("author resolve failure and ledger resets remain isolated from other fixture state", async () => {
+    const lookupBody = { work_id: "lb238704", titles: [] }
+    await fetch(`${origin}/v2/stats`)
+    await postWorkLookup("/v2/works/lookup", lookupBody)
+    await postAuthorResolve("/v2/authors/resolve", { author_ids: ["StrindbergA"] })
+
+    await fetch(`${origin}/_author_resolve_requests`, { method: "DELETE" })
+    expect(await authorResolveRequests()).toEqual({ requests: [] })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect(await workLookupRequests()).toEqual({
+      requests: [{ path: "/v2/works/lookup", body: lookupBody }]
+    })
+
+    await fetch(`${origin}/_author_resolve_failure`, { method: "PUT" })
+    expect(await (await fetch(`${origin}/_author_resolve_failure`)).json()).toEqual({
+      failure: true
+    })
+    const failedBody = { author_ids: ["LagerlofS"] }
+    const failed = await postAuthorResolve("/private-v2/authors/resolve", failedBody)
+    expect(failed.status).toBe(503)
+    expect(await failed.json()).toEqual({
+      error: {
+        code: "author_resolve_unavailable",
+        message: "Unable to resolve authors",
+        details: null
+      }
+    })
+    expect(await authorResolveRequests()).toEqual({
+      requests: [{ path: "/private-v2/authors/resolve", body: failedBody }]
+    })
+
+    await fetch(`${origin}/_author_resolve_failure`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_author_resolve_failure`)).json()).toEqual({
+      failure: false
+    })
+    expect((await postAuthorResolve(
+      "/v2/authors/resolve",
+      { author_ids: ["LagerlofS"] }
+    )).status).toBe(200)
+  })
+
+  test("author resolve uses serialized bodies for deterministic delayed responses", async () => {
+    const slowBody = { author_ids: ["StrindbergA"] }
+    const fastBody = { author_ids: ["LagerlofS"] }
+    const delays = {
+      [JSON.stringify(slowBody)]: 80,
+      [JSON.stringify(fastBody)]: 0
+    }
+    await fetch(`${origin}/_author_resolve_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(delays)
+    })
+
+    const completionOrder: string[] = []
+    const slow = postAuthorResolve("/v2/authors/resolve", slowBody).then(() => {
+      completionOrder.push("slow")
+    })
+    const fast = postAuthorResolve("/v2/authors/resolve", fastBody).then(() => {
+      completionOrder.push("fast")
+    })
+    await Promise.all([slow, fast])
+
+    expect(completionOrder).toEqual(["fast", "slow"])
+    expect(await authorResolveRequests()).toEqual({
+      requests: [
+        { path: "/v2/authors/resolve", body: slowBody },
+        { path: "/v2/authors/resolve", body: fastBody }
+      ]
+    })
+    expect(await (await fetch(`${origin}/_author_resolve_delays`)).json()).toEqual({
+      delays
+    })
+
+    await fetch(`${origin}/_author_resolve_delays`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_author_resolve_delays`)).json()).toEqual({
+      delays: {}
+    })
+  })
+
+  test("author resolve rejects every invalid strict request without recording it", async () => {
+    const invalidBodies: unknown[] = [
+      { author_ids: [] },
+      { author_ids: ["Duplicate", "Duplicate"] },
+      { author_ids: ["Duplicate", " Duplicate "] },
+      { author_ids: Array.from({ length: 51 }, (_, index) => `Author${index}`) },
+      { author_ids: [" "] },
+      { author_ids: ["x".repeat(101)] },
+      {},
+      { author_ids: "StrindbergA" },
+      { author_ids: ["StrindbergA", 42] },
+      { author_ids: ["StrindbergA"], unexpected: true },
+      null,
+      ["StrindbergA"]
+    ]
+
+    for (const body of invalidBodies) {
+      const response = await postAuthorResolve("/v2/authors/resolve", body)
+      expect(response.status).toBe(422)
+      expect(await response.json()).toEqual({
+        error: {
+          code: "validation_error",
+          message: "Request validation failed",
+          details: null
+        }
+      })
+    }
+    expect(await authorResolveRequests()).toEqual({ requests: [] })
   })
 
   test("work lookup private-v2 dispatch preserves original paths for every v2 fixture", async () => {

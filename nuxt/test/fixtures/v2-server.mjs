@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs"
 import { createServer } from "node:http"
 
+import { historyAuthorSummaries } from "./history-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
 import { workLookupResponse } from "./work-lookup-data.mjs"
@@ -56,6 +57,9 @@ let quickSearchDelays = {}
 let workLookupRequests = []
 let workLookupFailure = false
 let workLookupDelays = {}
+let authorResolveRequests = []
+let authorResolveFailure = false
+let authorResolveDelays = {}
 let homeRequests = []
 let homeFailure = false
 let presentationRequests = []
@@ -112,6 +116,29 @@ function waitForQuickSearchDelay(query) {
 function waitForWorkLookupDelay(body) {
   const delay = workLookupDelays[JSON.stringify(body)] || 0
   return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+function waitForAuthorResolveDelay(body) {
+  const delay = authorResolveDelays[JSON.stringify(body)] || 0
+  return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+function normalizedAuthorIds(body) {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) return null
+  if (Object.keys(body).length !== 1 || !Object.hasOwn(body, "author_ids")) return null
+  if (!Array.isArray(body.author_ids)) return null
+  if (body.author_ids.length < 1 || body.author_ids.length > 50) return null
+
+  const authorIds = []
+  const seen = new Set()
+  for (const authorId of body.author_ids) {
+    if (typeof authorId !== "string") return null
+    const normalized = authorId.trim()
+    if (normalized.length < 1 || normalized.length > 100 || seen.has(normalized)) return null
+    authorIds.push(normalized)
+    seen.add(normalized)
+  }
+  return authorIds
 }
 
 function resourceFor(pathname) {
@@ -236,6 +263,38 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_work_lookup_delays" && request.method === "DELETE") {
     workLookupDelays = {}
     return sendJson(response, 200, { delays: workLookupDelays })
+  }
+  if (url.pathname === "/_author_resolve_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: authorResolveRequests })
+  }
+  if (url.pathname === "/_author_resolve_requests" && request.method === "DELETE") {
+    authorResolveRequests = []
+    return sendJson(response, 200, { requests: authorResolveRequests })
+  }
+  if (url.pathname === "/_author_resolve_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: authorResolveFailure })
+  }
+  if (url.pathname === "/_author_resolve_failure" && request.method === "PUT") {
+    authorResolveFailure = true
+    return sendJson(response, 200, { failure: authorResolveFailure })
+  }
+  if (url.pathname === "/_author_resolve_failure" && request.method === "DELETE") {
+    authorResolveFailure = false
+    return sendJson(response, 200, { failure: authorResolveFailure })
+  }
+  if (url.pathname === "/_author_resolve_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: authorResolveDelays })
+  }
+  if (url.pathname === "/_author_resolve_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    authorResolveDelays = Object.fromEntries(
+      Object.entries(body).map(([key, delay]) => [key, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: authorResolveDelays })
+  }
+  if (url.pathname === "/_author_resolve_delays" && request.method === "DELETE") {
+    authorResolveDelays = {}
+    return sendJson(response, 200, { delays: authorResolveDelays })
   }
   if (url.pathname === "/_home_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: homeRequests })
@@ -383,6 +442,42 @@ const server = createServer(async (request, response) => {
       })
     }
     return sendJson(response, 200, workLookupResponse(body))
+  }
+
+  if (request.method === "POST" && apiPathname === "/v2/authors/resolve") {
+    const body = await readJson(request)
+    const authorIds = normalizedAuthorIds(body)
+    if (authorIds === null) {
+      return sendJson(response, 422, {
+        error: {
+          code: "validation_error",
+          message: "Request validation failed",
+          details: null
+        }
+      })
+    }
+
+    authorResolveRequests.push({ path: url.pathname, body })
+    await waitForAuthorResolveDelay(body)
+    if (authorResolveFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "author_resolve_unavailable",
+          message: "Unable to resolve authors",
+          details: null
+        }
+      })
+    }
+
+    const authorsById = new Map(
+      historyAuthorSummaries.map(author => [author.author_id, author])
+    )
+    return sendJson(response, 200, {
+      items: authorIds.flatMap(authorId => {
+        const author = authorsById.get(authorId)
+        return author ? [author] : []
+      })
+    })
   }
 
   const resource = resourceFor(apiPathname)

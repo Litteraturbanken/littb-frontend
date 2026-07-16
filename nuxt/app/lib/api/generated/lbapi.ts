@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/authors/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Authors */
+        post: operations["v2_post_author_resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/contact": {
         parameters: {
             query?: never;
@@ -122,6 +139,16 @@ export interface components {
         /** ApiErrorResponse */
         ApiErrorResponse: {
             error: components["schemas"]["ApiError"];
+        };
+        /** AuthorResolveRequest */
+        AuthorResolveRequest: {
+            /** Author Ids */
+            author_ids: string[];
+        };
+        /** AuthorSummariesResponse */
+        AuthorSummariesResponse: {
+            /** Items */
+            items: components["schemas"]["AuthorSummary"][];
         };
         /** AuthorSummary */
         AuthorSummary: {
@@ -307,6 +334,57 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    v2_post_author_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthorResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorSummariesResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     v2_post_contact: {
         parameters: {
             query?: never;
