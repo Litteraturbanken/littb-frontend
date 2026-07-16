@@ -9,9 +9,9 @@ This slice ports the AngularJS ID lookup routes:
 
 It adds one typed FastAPI adapter, `POST /v2/works/lookup`, and one page-local Nuxt implementation. It does not migrate author, title, reader, download, editor, or FTP destinations reached from the result table. It does not add a composable, Nuxt server proxy, Angular bridge, or frontend shared state.
 
-The migration is intentionally narrow. The legacy form, copy, table, links, loading state, body classes, and desktop/mobile layout remain visual and behavioral authority.
+The migration is intentionally narrow. The legacy form, copy, table, links, loading state, body classes, and desktop/mobile layout remain visual and behavioral authority, subject only to the explicitly documented input hardening required by the bounded typed network boundary.
 
-## Audited legacy behavior and intent correction
+## Audited legacy behavior and approved differences
 
 The Angular route owns both paths with `pageId: "id"` and renders `<id-page>`. Its exact visible source contract is:
 
@@ -79,6 +79,15 @@ The OpenAPI request body is an `anyOf` between two `extra="forbid"` models rathe
 - unknown fields, both modes at once, neither mode, blank values, more than 100 titles, and over-limit values are 422 validation errors.
 
 The `lb` prefix deliberately keeps the legacy route discriminator without imposing a new character whitelist. Existing IDs can contain digits, letters, underscores, or other historical characters after the prefix.
+
+Moving filtering behind a strict typed network boundary intentionally hardens a few input edges beyond Angular's unbounded in-memory filters:
+
+- route values are trimmed before classification/display and lower-cased, while Angular only lower-cased them;
+- manually typed IDs remain byte-for-byte unchanged in the visible control, but the outgoing candidate is trimmed and lower-cased instead of being compared as raw text;
+- outgoing single-title terms are trimmed before matching;
+- work IDs are bounded to 100 characters, individual titles to 200 characters, and title requests to the first 100 non-empty terms; invalid or over-limit candidates produce no client request where client validation can decide that safely, or the typed 422 response at the API boundary.
+
+These are narrow, approved input-hardening consequences of the typed adapter. They do not authorize changes to coupled control state, matching fields, result ordering, display copy, links, or layout.
 
 Success is a strict response:
 
@@ -183,7 +192,7 @@ On direct SSR:
 - `/id/RödaRummet` lower-cases the route value and performs one title-mode lookup for `rödarummet`;
 - hydration reuses the serialized result and makes no duplicate request.
 
-The route value is decoded by Vue Router, trimmed, and lower-cased before either mode is seeded, matching Angular `$onInit`. It is limited by the same client-visible request rules. An over-limit or otherwise invalid route value renders the valid empty shell without making an API request. Route changes between `/id`, ID values, and title values cancel prior work and apply the same route classification without leaking stale rows.
+The route value is decoded by Vue Router, trimmed, and lower-cased before either mode is seeded. Lower-casing matches Angular `$onInit`; trimming is the approved typed-boundary hardening documented above. It is limited by the same client-visible request rules. An over-limit or otherwise invalid route value renders the valid empty shell without making an API request. Route changes between `/id`, ID values, and title values cancel prior work and apply the same route classification without leaking stale rows.
 
 The generated client base is selected exactly with `import.meta.server ? config.apiBase : config.public.apiBase`. SSR therefore uses the private runtime base and interactive browser calls use the public proxy base. A route-param SSR test configures distinguishable private/public bases and proves the server lookup uses only the private base.
 
@@ -231,9 +240,9 @@ Typing the textarea:
 - filters blank terms only when constructing the request and sends the first 100 non-empty titles in order;
 - if request construction yields no non-empty titles, clears results without a request.
 
-These coupled state transitions are direct Angular authority, not a second intent correction. The only intent correction in this slice is unwrapping the changed `getTitles()` envelope so intended rows can render.
+These coupled state transitions remain direct Angular authority. The populated-table envelope correction and the explicitly enumerated bounded-input hardening above are explicit approved deviations from legacy filtering semantics, not reasons to alter any other coupled control transition.
 
-Every new lookup aborts the previous request and increments a request version. Only the latest version may replace rows or loading state, including when a provider ignores abort. Interactive lookup wraps the generated-client call in `try/catch/finally`: typed error responses and thrown network failures clear the latest table; expected abort errors are suppressed; and the `finally` block clears `searching` only when its version is still latest. No rejected request becomes an unhandled promise, and a stale completion, abort, catch, or finally block cannot clear newer rows/loading. Switching modes, clearing controls, navigating routes, or unmounting cancels timers and requests. The exact `Hämtar` preloader appears through existing styles. A 422/500/503 or thrown network failure leaves the table empty without exposing a new error message, matching the sparse legacy page.
+Every new lookup aborts the previous request and increments a request version. Every valid lookup clears the existing items immediately after becoming the latest version, before awaiting the network, so delayed same-mode requests never leave obsolete clickable rows visible beneath the loading state. Only the latest version may replace rows or loading state, including when a provider ignores abort. Interactive lookup wraps the generated-client call in `try/catch/finally`: typed error responses and thrown network failures clear the latest table; expected abort errors are suppressed; and the `finally` block clears `searching` only when its version is still latest. No rejected request becomes an unhandled promise, and a stale completion, abort, catch, or finally block cannot clear newer rows/loading. Switching modes, clearing controls, navigating routes, or unmounting cancels timers and requests. The exact `Hämtar` preloader appears through existing styles. A 422/500/503 or thrown network failure leaves the table empty without exposing a new error message, matching the sparse legacy page.
 
 ## Markup, table, and destinations
 
@@ -246,6 +255,8 @@ The Nuxt page keeps the legacy root, controls, preloader, and direct table struc
 
 Links remain ordinary `<a href>` elements. The author/title/reader destinations are deferred: this slice neither fetches them nor asserts that Nuxt owns them. No client-side route rewriting, destination validation, download behavior, analytics, or editor action is added.
 
+Rows and media links use index-qualified Vue keys. This preserves stable rendering when distinct rows share the same display URL or when legacy source duplication produces two media entries with the same label and URL; the adapter deliberately preserves one media item per source representation, matching Angular's `track by $index` behavior.
+
 The byte-locked migrated `nuxt/app/assets/styles/styles.scss` remains unchanged. Minimal `nuxt.scss` glue is allowed only if visual comparison proves a Nuxt-specific discrepancy that cannot be fixed with authority markup.
 
 ## Fixtures and verification
@@ -256,7 +267,7 @@ The byte-locked migrated `nuxt/app/assets/styles/styles.scss` remains unchanged.
 - The generated Nuxt client is regenerated only from the committed backend OpenAPI snapshot and is tested for the exact POST body and typed 503.
 - The fixture server exposes deterministic lookup rows, request-body/reset ledgers, delay controls, and failure controls without contacting production.
 - SSR tests prove `/id` makes zero requests, route-param SSR makes exactly one correctly classified private-base request, hydration makes no duplicate, and exact title/description/body/markup/links are serialized.
-- Browser tests cover immediate ID lookup with raw uppercase display and lower-case request; exact coupled ID/title/textarea state; 500 ms title/textarea debounce; split-index-1 multi-dash and empty-segment semantics; abort/latest-wins; typed and thrown-network failures without unhandled rejection; loading cleanup; no-hit; route changes; hydrated title/description/body cleanup; and exact four-cell links/media separators.
+- Browser tests cover immediate ID lookup with raw uppercase display and lower-case request; exact coupled ID/title/textarea state; 500 ms title/textarea debounce; split-index-1 multi-dash and empty-segment semantics; abort/latest-wins; immediate stale-row clearing during a delayed same-mode lookup; typed and thrown-network failures without unhandled rejection; loading cleanup; no-hit; route changes; hydrated title/description/body cleanup; exact four-cell links/media separators; and duplicate media representations rendered with index-qualified keys and no duplicate-key warning.
 - Angular empty and test-unwrapped populated captures plus Nuxt comparisons cover desktop and mobile coupled control values, preloader, empty table, populated striped rows, shell corridors, typography, spacing, and `page-id` body state.
 - Visual comparisons use exactly `threshold: 0.1` and `maxDiffPixels: 100`.
 - Capture intercepts every legacy query and v2 lookup request, records the ledger, and fails on production escape. Full backend, OpenAPI, generated-client, Nuxt unit/SSR/browser/visual/typecheck/build, unchanged Angular, scope, and diff gates close the slice.

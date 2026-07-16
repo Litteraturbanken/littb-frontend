@@ -22,12 +22,13 @@
 - Fully validate and normalize/group the complete 10,000-document catalog before request filtering; cache only successful deeply immutable frozen-dataclass/tuple/scalar catalogs with a process-local 60-second monotonic TTL and single-flight refresh, never cached Pydantic response objects.
 - Accept exactly one strict request mode: ID `{ work_id: <lb value>, titles: [] }` or titles `{ work_id: null, titles: [1..100 values] }`.
 - Work IDs trim/lowercase, begin `lb`, and contain 2–100 characters; titles trim to 1–200 characters each.
+- Treat route trimming, normalized outgoing manual IDs, trimmed outgoing single-title terms, the 100-character work-ID bound, the 200-character per-title bound, and first-100 non-empty title limiting as approved input hardening required by the typed network boundary. These are intentional differences from Angular's unbounded raw in-memory filters; do not weaken the backend models or expand the difference beyond these enumerated edges.
 - Keep the legacy Angular route/service/template and `/query_string/etext,faksimil` operation unchanged.
 - Keep page state in `nuxt/app/pages/id/[[id]].vue`; add no composable, Nuxt server API, middleware, Angular bridge, shared store, or destination migration.
 - `/id` performs no SSR or hydration lookup; a valid route parameter performs exactly one SSR lookup with no hydration duplicate.
 - Select the client base with the exact expression `import.meta.server ? config.apiBase : config.public.apiBase` and prove route-param SSR uses the private base.
 - Preserve Angular's coupled controls: ID clears `titles` but not textarea text; title changes only `titles[0]`; textarea replaces `titles` and therefore mirrors its first normalized row into the title input.
-- Preserve manually typed `lbid` text byte-for-byte in the visible input; trim/lowercase only the outgoing request value. Route-param initialization still lower-cases before display, matching Angular `$onInit`.
+- Preserve manually typed `lbid` text byte-for-byte in the visible input; trim/lowercase only the outgoing request value. Route-param initialization lower-cases before display as Angular `$onInit` does, while route trimming remains the approved typed-boundary hardening.
 - Set exact page title `Litteraturbanken`, default description `På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis.`, and body classes `focus page-id ready`.
 - Typed 422/500/503 responses never leak provider details; OpenSearch uses `work_lookup_unavailable` and `Unable to load ID lookup results`.
 - Follow TDD, commit each task separately with the exact listed message, and run an independent spec/quality review after each task.
@@ -139,7 +140,7 @@ raw = {
 }
 ```
 
-Assert first-seen group order, the exact concatenated `titlepath + lbworkid` key, `etext` before `faksimil` inside a group, `work_titleid || titleid`, `authors[0]`, `shorttitle || title`, non-empty media, exact author/title/media URLs, exact-ID matching, Unicode-lowercase substring matching against `titlepath` or full `title`, OR matching across titles, preserved duplicate queries, and empty no-hit output. Use a fixture where `titlepath != work_titleid` so the title and media URL contracts cannot accidentally pass with the same segment. Add malformed-envelope/document/media/author/required-string cases that all raise `ValueError("Malformed work-lookup response")` without private data in the message. Put a malformed row after a valid row that matches neither the ID nor titles and assert the whole transform still fails, proving validation completes before filtering.
+Assert first-seen group order, the exact concatenated `titlepath + lbworkid` key, `etext` before `faksimil` inside a group, `work_titleid || titleid`, `authors[0]`, `shorttitle || title`, non-empty media, exact author/title/media URLs, exact-ID matching, Unicode-lowercase substring matching against `titlepath` or full `title`, OR matching across titles, preserved duplicate queries, and empty no-hit output. Add two same-group source representations with the same media label and assert both media entries survive in source-relative stable order; this locks the one-entry-per-representation contract needed by the frontend's index-qualified keys. Use a fixture where `titlepath != work_titleid` so the title and media URL contracts cannot accidentally pass with the same segment. Add malformed-envelope/document/media/author/required-string cases that all raise `ValueError("Malformed work-lookup response")` without private data in the message. Put a malformed row after a valid row that matches neither the ID nor titles and assert the whole transform still fails, proving validation completes before filtering.
 
 Add deterministic cache tests:
 
@@ -484,7 +485,7 @@ Include `router` in `lbapi/v2/app.py`. Keep the route a plain `def` so FastAPI r
 
 - [ ] **Step 4: Add failing OpenAPI contract assertions**
 
-Assert `/works/lookup` is POST-only, has operation ID `v2_post_work_lookup`, request `anyOf` references exactly the two strict alternatives, all schemas set `additionalProperties: false`, both request fields are required in each alternative, ID/title bounds are exact, `media.minItems` is 1, the media enum is exactly `etext | faksimil`, response 200 references `WorkLookupResponse`, and 422/500/503 reference `ApiErrorResponse`. Add `/works/lookup` to exact v2 path-set and mounted-isolation assertions; prove it does not appear in legacy OpenAPI.
+Assert `/works/lookup` is POST-only, has operation ID `v2_post_work_lookup`, request `anyOf` references exactly the two strict alternatives, all schemas set `additionalProperties: false`, both request fields are required in each alternative, ID/title bounds are exact, `media.minItems` is 1, the media enum is exactly `etext | faksimil`, response 200 references `WorkLookupResponse`, and 422/500/503 reference `ApiErrorResponse`. Assert the exact response-schema required arrays: `WorkLookupResponse` requires `items`; `WorkLookupItem` requires `work_id`, `author`, `title`, and `media`; and both `WorkLookupLink` and `WorkLookupMedia` require `label` and `url`. Add `/works/lookup` to exact v2 path-set and mounted-isolation assertions; prove it does not appear in legacy OpenAPI.
 
 - [ ] **Step 5: Run OpenAPI tests and verify RED**
 
@@ -564,7 +565,7 @@ Expected: generation succeeds and freshness check exits 0. Do not hand-edit `lba
 
 - [ ] **Step 4: Add failing fixture-server tests**
 
-Define fixed rows with exact author/title/media links in `work-lookup-data.mjs`. Add tests for ID and title bodies, request path/body ledger/reset, independent 503 control, per-body delay/latest ordering, CORS, and no effect on existing generic/Quick Search ledgers. Use the serialized request body as the delay key so both modes are deterministic. Normalize a test-only `/private-v2/*` alias to the same `/v2/*` fixture handlers while retaining the original path in the ledger; this lets SSR tests distinguish the private base from the public proxy without changing response data.
+Define fixed rows with exact author/title/media links in `work-lookup-data.mjs`, including a separately addressable deterministic response containing two media entries with the same label and URL for the duplicate-representation browser test. Add tests for ID and title bodies, request path/body ledger/reset, independent 503 control, per-body delay/latest ordering, the duplicate-representation response, CORS, and no effect on existing generic/Quick Search ledgers. Use the serialized request body as the delay key so both modes are deterministic. Normalize a test-only `/private-v2/*` alias to the same `/v2/*` fixture handlers while retaining the original path in the ledger; this lets SSR tests distinguish the private base from the public proxy without changing response data.
 
 - [ ] **Step 5: Run fixture tests and verify RED**
 
@@ -693,6 +694,8 @@ expect(lastLookupBody()).toEqual({
 
 Also prove exact 500 ms title/textarea debounce; textarea replacement of the whole title array; `A – B – C` normalization to `B`; `A – ` fallback to `A –`; preserved empty rows/duplicates in control state but blank removal and first-100 limiting only in the outgoing body; ID clearing titles but retaining textarea; title retaining `titles[1:]`; raw manual ID case/whitespace remaining visible while only the request candidate is trimmed/lower-cased; route-param ID initialization appearing lower-case; empty/invalid no-request; loading class/preloader; abort plus version-guard latest wins; typed 503 and a route-aborted/fetch-thrown network failure both yielding a blank table, cleared `searching`, and no `pageerror`/`unhandledrejection`; no-hit; route changes; unmount cleanup; exact title/description/body restoration on hydrated navigation; exact four cells; ordinary anchors; and `:::` only between media links.
 
+After first rendering a successful title result, configure a delayed second title body in the same mode, advance the 500 ms debounce, and assert the old rows disappear immediately while `.searching` and the preloader are active; release or expire the delay and assert only the second response renders. Also request the deterministic duplicate-representation response and assert both identical media links render in order with no Vue duplicate-key console warning.
+
 - [ ] **Step 4: Run behavior tests and verify RED**
 
 ```bash
@@ -728,6 +731,7 @@ const isAbortError = (error: unknown) =>
 async function runLookup(body: LookupBody, signal?: AbortSignal) {
   const version = ++requestVersion
   loading.value = true
+  items.value = []
   try {
     const { data, error } = await api.POST("/works/lookup", { body, signal })
     if (version !== requestVersion) return
@@ -750,7 +754,7 @@ const api = createLbApiClient(
 )
 ```
 
-Decode, trim, and lower-case a route param before seeding either mode, then classify it by `startsWith("lb")`; route-param state therefore displays lower-case exactly like Angular `$onInit`. Use page-local `useAsyncData` only for a valid route-param body; do not call it for `/id`. Serialize the SSR response for hydration. Interactive handlers use `workId`, `titles`, and `textarea` as the authority state: ID input assigns the event target's raw value directly to `workId`, assigns `titles = []` without touching `textarea`, and passes only `requestWorkId(workId)` to validation/body construction; title input clears `workId` and replaces only a copied `titles[0]`; textarea clears `workId` and assigns `titles = normalizeTextarea(textarea)`, which automatically mirrors `titles[0]` in the title input. Only `requestWorkId(workId)` and `requestTitles(titles)` construct normalized API fields. Use one 500 ms timer for title/textarea, immediate valid-ID requests, a fresh `AbortController`, and a monotonically increasing version. Clearing/switching/navigating/unmounting must increment the version, abort, cancel timers, stop loading, and clear rows.
+Decode, trim, and lower-case a route param before seeding either mode, then classify it by `startsWith("lb")`; route-param state therefore displays lower-case with the approved trimming hardening beyond Angular `$onInit`. Use page-local `useAsyncData` only for a valid route-param body; do not call it for `/id`. Serialize the SSR response for hydration. Interactive handlers use `workId`, `titles`, and `textarea` as the authority state: ID input assigns the event target's raw value directly to `workId`, assigns `titles = []` without touching `textarea`, and passes only `requestWorkId(workId)` to validation/body construction; title input clears `workId` and replaces only a copied `titles[0]`; textarea clears `workId` and assigns `titles = normalizeTextarea(textarea)`, which automatically mirrors `titles[0]` in the title input. Only `requestWorkId(workId)` and `requestTitles(titles)` construct normalized API fields. Use one 500 ms timer for title/textarea, immediate valid-ID requests, a fresh `AbortController`, and a monotonically increasing version. Every valid lookup must clear `items` immediately after incrementing its version and before awaiting the generated client, including same-mode replacements. Clearing/switching/navigating/unmounting must increment the version, abort, cancel timers, stop loading, and clear rows.
 
 - [ ] **Step 6: Implement authority markup without style redesign**
 
@@ -763,12 +767,12 @@ Render this structure with Vue bindings and exact text:
   <textarea :value="textarea" placeholder="flera titlar separarade med nyrad" @input="onTextareaInput" />
   <div class="preloader">Hämtar <span class="dots_blink" /></div>
   <table class="table-striped">
-    <tr v-for="item in items" :key="`${item.work_id}:${item.title.url}`">
+    <tr v-for="(item, rowIndex) in items" :key="`${item.work_id}:${item.title.url}:${rowIndex}`">
       <td>{{ item.work_id }}</td>
       <td><a :href="item.author.url">{{ item.author.label }}</a></td>
       <td><a :href="item.title.url">{{ item.title.label }}</a></td>
       <td>
-        <template v-for="(media, index) in item.media" :key="media.url">
+        <template v-for="(media, index) in item.media" :key="`${media.url}:${index}`">
           <span v-if="index">:::</span><a :href="media.url">{{ media.label }}</a>
         </template>
       </td>
@@ -776,6 +780,8 @@ Render this structure with Vue bindings and exact text:
   </table>
 </div>
 ```
+
+Keep both keys index-qualified as shown. The backend preserves one media entry per source representation, so duplicate representations can legitimately have identical labels and URLs; URL-only keys are not unique enough.
 
 Set exact metadata/body state:
 
@@ -922,4 +928,4 @@ git commit -m "test(nuxt): lock ID lookup parity"
 
 - [ ] **Step 8: Run the Task 5 and final whole-slice review gates**
 
-Review the exact backend range from `e8bc986` and frontend ID-only commits from `5cbd8ca`. Re-scan the OpenAPI `anyOf`, forbidden extras, limits, full-catalog-before-filter validation, deep frozen catalog/no cached Pydantic references, mutation isolation, process-local TTL/single-flight behavior, exact group/media/link contracts, sole envelope intent correction, raw manual ID display versus normalized request, coupled controls, private-base SSR zero-query behavior, metadata/body contract, interactive `try/catch/finally` latest-wins cleanup, exact `threshold: 0.1` plus `maxDiffPixels: 100` visual options, production-escape ledgers, four inspected authority images, and unchanged legacy scope. Fix every Critical/Important finding in a separate commit and rerun every affected complete gate. The slice is ready only with final `Spec PASS`, `Quality PASS`, and `Ready YES`.
+Review the exact backend range from `e8bc986` and frontend ID-only commits from `5cbd8ca`. Re-scan the OpenAPI `anyOf`, forbidden extras, limits, exact response required arrays, full-catalog-before-filter validation, deep frozen catalog/no cached Pydantic references, mutation isolation, process-local TTL/single-flight behavior, exact group/media/link contracts, populated-table envelope correction, explicitly bounded input-hardening differences, raw manual ID display versus normalized request, coupled controls, private-base SSR zero-query behavior, metadata/body contract, index-qualified duplicate-representation keys, immediate stale-row clearing on delayed same-mode requests, interactive `try/catch/finally` latest-wins cleanup, exact `threshold: 0.1` plus `maxDiffPixels: 100` visual options, production-escape ledgers, four inspected authority images, and unchanged legacy scope. Fix every Critical/Important finding in a separate commit and rerun every affected complete gate. The slice is ready only with final `Spec PASS`, `Quality PASS`, and `Ready YES`.
