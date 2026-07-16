@@ -40,6 +40,12 @@
 
 .autocomplete .quick-search-options {
     display: block;
+    top: 44px;
+    left: 15px;
+
+    .type_label {
+        margin-right: calc(0.5em + 3.625px);
+    }
 }
 
 .modal.autocomplete {
