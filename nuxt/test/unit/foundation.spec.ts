@@ -64,4 +64,29 @@ describe("standalone Nuxt foundation", () => {
       expect(source).not.toContain("window.angular")
     }
   })
+
+  test("statistics consumes the shared About shell", async () => {
+    const shell = await readFile(
+      resolve(nuxtRoot, "app/components/about/AboutPageShell.vue"),
+      "utf8"
+    )
+    const statistics = await readFile(
+      resolve(nuxtRoot, "app/pages/om/statistik.vue"),
+      "utf8"
+    )
+
+    for (const href of [
+      "/om/ide",
+      "/om/organisation",
+      "/om/hjalp",
+      "/om/rattigheter",
+      "/om/tack",
+      "/om/statistik",
+      "/om/kontakt"
+    ]) expect(shell).toContain(`href="${href}"`)
+
+    expect(statistics).toContain('import AboutPageShell from "../../components/about/AboutPageShell.vue"')
+    expect(statistics).toContain('<AboutPageShell active-page="statistik">')
+    expect(statistics).not.toContain('<ul class="links">')
+  })
 })

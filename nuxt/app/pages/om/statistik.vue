@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AboutPageShell from "../../components/about/AboutPageShell.vue"
 import { createLbApiClient } from "../../lib/api/client"
 import type { components } from "../../lib/api/generated/lbapi"
 
@@ -104,17 +105,7 @@ function epubHref(item: PopularEpub): string {
 </script>
 
 <template>
-  <h1>Om Litteraturbanken</h1>
-  <ul class="links">
-    <li><a href="/om/ide">Intro</a></li>{{ " " }}
-    <li><a href="/om/organisation">Organisation</a></li>{{ " " }}
-    <li><a href="/om/hjalp">Hjälp</a></li>{{ " " }}
-    <li><a href="/om/rattigheter">Rättigheter</a></li>{{ " " }}
-    <li><a href="/om/tack">Tack</a></li>{{ " " }}
-    <li><a class="active" href="/om/statistik">Statistik</a></li>{{ " " }}
-    <li><a href="/om/kontakt">Kontakt</a></li>
-  </ul>
-
+  <AboutPageShell active-page="statistik">
   <div v-if="statsData" class="content stats unbox">
     <h3>Litteraturbanken innehåller just nu</h3>
     <ul>
@@ -150,4 +141,5 @@ function epubHref(item: PopularEpub): string {
       </li>
     </ul>
   </div>
+  </AboutPageShell>
 </template>
