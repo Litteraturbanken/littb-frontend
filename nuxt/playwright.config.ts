@@ -53,6 +53,7 @@ export default defineConfig({
         `NUXT_API_BASE=${fixtureOrigin}/private-v2 ` +
         `NUXT_PUBLIC_API_BASE=/api/v2 ` +
         `LBAPI_PROXY_TARGET=${fixtureOrigin} ` +
+        `LITTERATURKARTAN_PROXY_TARGET=${fixtureOrigin} ` +
         `NUXT_CONTENT_BASE=${fixtureOrigin} ` +
         `LITTB_CONTENT_PROXY_TARGET=${fixtureOrigin} yarn dev`,
       url: "http://127.0.0.1:3000/_nuxt/@vite/client",

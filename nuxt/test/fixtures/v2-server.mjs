@@ -60,6 +60,7 @@ let homeRequests = []
 let homeFailure = false
 let presentationRequests = []
 let presentationFailures = new Set()
+let litteraturkartanRequests = []
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -273,6 +274,13 @@ const server = createServer(async (request, response) => {
     presentationFailures = new Set()
     return sendJson(response, 200, { failures: [] })
   }
+  if (url.pathname === "/_litteraturkartan_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: litteraturkartanRequests })
+  }
+  if (url.pathname === "/_litteraturkartan_requests" && request.method === "DELETE") {
+    litteraturkartanRequests = []
+    return sendJson(response, 200, { requests: litteraturkartanRequests })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -290,6 +298,19 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
     }
     return sendBody(response, 200, home[0], home[1])
+  }
+
+  if (
+    request.method === "GET" &&
+    (url.pathname === "/litteraturkartan" || url.pathname.startsWith("/litteraturkartan/"))
+  ) {
+    litteraturkartanRequests.push(`${url.pathname}${url.search}`)
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<!doctype html><html><body><main id="litteraturkartan-upstream-fixture">Litteraturkartan upstream fixture</main></body></html>'
+    )
   }
 
   if (request.method === "GET" && isPresentationRequest(url.pathname)) {

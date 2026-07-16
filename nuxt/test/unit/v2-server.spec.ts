@@ -90,6 +90,12 @@ async function presentationRequests() {
   }
 }
 
+async function litteraturkartanRequests() {
+  return await (await fetch(`${origin}/_litteraturkartan_requests`)).json() as {
+    requests: string[]
+  }
+}
+
 describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -126,7 +132,8 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_home_requests`, { method: "DELETE" }),
       fetch(`${origin}/_home_failure`, { method: "DELETE" }),
       fetch(`${origin}/_presentation_requests`, { method: "DELETE" }),
-      fetch(`${origin}/_presentation_failures`, { method: "DELETE" })
+      fetch(`${origin}/_presentation_failures`, { method: "DELETE" }),
+      fetch(`${origin}/_litteraturkartan_requests`, { method: "DELETE" })
     ])
   })
 
@@ -784,5 +791,36 @@ describe("v2 fixture server operations", () => {
     expect(await homeRequests()).toEqual({ requests: [] })
     expect(await quickSearchRequests()).toEqual({ queries: [] })
     expect(await contactSubmissions()).toEqual({ contactSubmissions: [] })
+  })
+
+  test("serves Litteraturkartan paths and resets only its exact request ledger", async () => {
+    await fetch(`${origin}/v2/stats`)
+    await fetch(`${origin}/v2/quick-search?query=strindberg`)
+    await fetch(`${origin}/red/om/ide/omlitteraturbanken.html?content=1`)
+    await fetch(`${origin}/red/om/start/startsida-ny.html?home=1`)
+
+    const root = await fetch(`${origin}/litteraturkartan`)
+    const nestedPath = "/litteraturkartan/region/%C3%96land/%E2%80%93?view=text%2Fbild&empty="
+    const nested = await fetch(`${origin}${nestedPath}`)
+
+    expect(root.status).toBe(200)
+    expect(root.headers.get("content-type")).toBe("text/html; charset=utf-8")
+    expect(await root.text()).toContain("litteraturkartan-upstream-fixture")
+    expect(nested.status).toBe(200)
+    expect(await nested.text()).toContain("litteraturkartan-upstream-fixture")
+    expect(await litteraturkartanRequests()).toEqual({
+      requests: ["/litteraturkartan", nestedPath]
+    })
+
+    const genericLedger = await (await fetch(`${origin}/_requests`)).json()
+    const quickSearchLedger = await quickSearchRequests()
+    const homeLedger = await homeRequests()
+
+    await fetch(`${origin}/_litteraturkartan_requests`, { method: "DELETE" })
+
+    expect(await litteraturkartanRequests()).toEqual({ requests: [] })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual(genericLedger)
+    expect(await quickSearchRequests()).toEqual(quickSearchLedger)
+    expect(await homeRequests()).toEqual(homeLedger)
   })
 })

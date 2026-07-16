@@ -1,5 +1,6 @@
 const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
 const contentProxyTarget = process.env.LITTB_CONTENT_PROXY_TARGET || "https://red.litteraturbanken.se"
+const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -52,6 +53,10 @@ export default defineNuxtConfig({
         },
         "^/red(?:/|$)": {
           target: contentProxyTarget,
+          changeOrigin: true
+        },
+        "^/litteraturkartan(?:/|$)": {
+          target: litteraturkartanProxyTarget,
           changeOrigin: true
         }
       }
