@@ -3,6 +3,7 @@ import { createServer } from "node:http"
 
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
+import { workLookupResponse } from "./work-lookup-data.mjs"
 
 const aboutContent = new Map([
   ["/red/om/ide/omlitteraturbanken.html", ["text/html; charset=utf-8", readFileSync(new URL("./about-content/ide.html", import.meta.url))]],
@@ -52,6 +53,9 @@ let failure = null
 let quickSearchQueries = []
 let quickSearchFailure = false
 let quickSearchDelays = {}
+let workLookupRequests = []
+let workLookupFailure = false
+let workLookupDelays = {}
 let homeRequests = []
 let homeFailure = false
 let presentationRequests = []
@@ -104,6 +108,11 @@ function waitForQuickSearchDelay(query) {
   return new Promise(resolve => setTimeout(resolve, delay))
 }
 
+function waitForWorkLookupDelay(body) {
+  const delay = workLookupDelays[JSON.stringify(body)] || 0
+  return new Promise(resolve => setTimeout(resolve, delay))
+}
+
 function resourceFor(pathname) {
   if (pathname === "/v2/stats") return "stats"
   if (pathname === "/v2/works/popular") return "works"
@@ -122,6 +131,7 @@ function isPresentationRequest(pathname) {
 
 const server = createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host}`)
+  const apiPathname = url.pathname.replace(/^\/private-v2(?=\/|$)/, "/v2")
 
   if (request.method === "OPTIONS") return sendJson(response, 204, null)
   if (request.method === "GET" && url.pathname === "/health") {
@@ -193,6 +203,38 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_quick_search_delays" && request.method === "DELETE") {
     quickSearchDelays = {}
     return sendJson(response, 200, { delays: quickSearchDelays })
+  }
+  if (url.pathname === "/_work_lookup_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: workLookupRequests })
+  }
+  if (url.pathname === "/_work_lookup_requests" && request.method === "DELETE") {
+    workLookupRequests = []
+    return sendJson(response, 200, { requests: workLookupRequests })
+  }
+  if (url.pathname === "/_work_lookup_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: workLookupFailure })
+  }
+  if (url.pathname === "/_work_lookup_failure" && request.method === "PUT") {
+    workLookupFailure = true
+    return sendJson(response, 200, { failure: workLookupFailure })
+  }
+  if (url.pathname === "/_work_lookup_failure" && request.method === "DELETE") {
+    workLookupFailure = false
+    return sendJson(response, 200, { failure: workLookupFailure })
+  }
+  if (url.pathname === "/_work_lookup_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: workLookupDelays })
+  }
+  if (url.pathname === "/_work_lookup_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    workLookupDelays = Object.fromEntries(
+      Object.entries(body).map(([key, delay]) => [key, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: workLookupDelays })
+  }
+  if (url.pathname === "/_work_lookup_delays" && request.method === "DELETE") {
+    workLookupDelays = {}
+    return sendJson(response, 200, { delays: workLookupDelays })
   }
   if (url.pathname === "/_home_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: homeRequests })
@@ -274,7 +316,7 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, content[0], content[1])
   }
 
-  if (request.method === "POST" && url.pathname === "/v2/contact") {
+  if (request.method === "POST" && apiPathname === "/v2/contact") {
     requests.push(`${url.pathname}${url.search}`)
     contactSubmissions.push(await readJson(request))
     await waitForContactRelease()
@@ -290,7 +332,7 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 202, { status: "accepted" })
   }
 
-  if (request.method === "GET" && url.pathname === "/v2/quick-search") {
+  if (request.method === "GET" && apiPathname === "/v2/quick-search") {
     const query = url.searchParams.get("query") || ""
     quickSearchQueries.push(query)
     await waitForQuickSearchDelay(query)
@@ -306,7 +348,23 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, quickSearchResponse(query))
   }
 
-  const resource = resourceFor(url.pathname)
+  if (request.method === "POST" && apiPathname === "/v2/works/lookup") {
+    const body = await readJson(request)
+    workLookupRequests.push({ path: url.pathname, body })
+    await waitForWorkLookupDelay(body)
+    if (workLookupFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "work_lookup_unavailable",
+          message: "Unable to load ID lookup results",
+          details: null
+        }
+      })
+    }
+    return sendJson(response, 200, workLookupResponse(body))
+  }
+
+  const resource = resourceFor(apiPathname)
   if (request.method === "GET" && resource) {
     requests.push(`${url.pathname}${url.search}`)
     if (failure === resource) {

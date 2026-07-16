@@ -64,6 +64,20 @@ async function quickSearchRequests() {
   }
 }
 
+async function workLookupRequests() {
+  return await (await fetch(`${origin}/_work_lookup_requests`)).json() as {
+    requests: Array<{ path: string, body: unknown }>
+  }
+}
+
+async function postWorkLookup(path: string, body: unknown) {
+  return await fetch(`${origin}${path}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  })
+}
+
 async function homeRequests() {
   return await (await fetch(`${origin}/_home_requests`)).json() as {
     requests: string[]
@@ -106,6 +120,9 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_quick_search_requests`, { method: "DELETE" }),
       fetch(`${origin}/_quick_search_failure`, { method: "DELETE" }),
       fetch(`${origin}/_quick_search_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_work_lookup_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_work_lookup_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_work_lookup_delays`, { method: "DELETE" }),
       fetch(`${origin}/_home_requests`, { method: "DELETE" }),
       fetch(`${origin}/_home_failure`, { method: "DELETE" }),
       fetch(`${origin}/_presentation_requests`, { method: "DELETE" }),
@@ -361,6 +378,215 @@ describe("v2 fixture server operations", () => {
     await fetch(`${origin}/_quick_search_delays`, { method: "DELETE" })
     expect(await (await fetch(`${origin}/_quick_search_delays`)).json()).toEqual({
       delays: {}
+    })
+  })
+
+  test("work lookup serves deterministic rows for exact ID and title bodies with CORS", async () => {
+    const byId = await postWorkLookup("/v2/works/lookup", {
+      work_id: "lb238704",
+      titles: []
+    })
+    const byTitles = await postWorkLookup("/v2/works/lookup", {
+      work_id: null,
+      titles: ["Röda rummet", "Gösta Berlings saga"]
+    })
+
+    expect(byId.status).toBe(200)
+    expect(byId.headers.get("access-control-allow-origin")).toBe("*")
+    expect(byId.headers.get("access-control-allow-methods")).toContain("POST")
+    expect(await byId.json()).toEqual({
+      items: [
+        {
+          work_id: "lb238704",
+          author: {
+            label: "Strindberg",
+            url: "/författare/StrindbergA"
+          },
+          title: {
+            label: "Röda rummet",
+            url: "/författare/StrindbergA/titlar/RodaRummet/etext"
+          },
+          media: [
+            {
+              label: "etext",
+              url: "/författare/StrindbergA/titlar/RodaRummet/etext"
+            },
+            {
+              label: "faksimil",
+              url: "/författare/StrindbergA/titlar/RodaRummet/faksimil"
+            }
+          ]
+        }
+      ]
+    })
+    expect(byTitles.status).toBe(200)
+    expect((await byTitles.json()).items.map((item: { work_id: string }) => (
+      item.work_id
+    ))).toEqual(["lb238704", "lb278171"])
+  })
+
+  test("work lookup records path and body then resets without touching other ledgers", async () => {
+    const body = { work_id: null, titles: ["Röda rummet"] }
+    await fetch(`${origin}/v2/stats`)
+    await fetch(`${origin}/v2/quick-search?query=strindberg`)
+    await postWorkLookup("/v2/works/lookup", body)
+
+    expect(await workLookupRequests()).toEqual({
+      requests: [{ path: "/v2/works/lookup", body }]
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect(await quickSearchRequests()).toEqual({ queries: ["strindberg"] })
+
+    await fetch(`${origin}/_work_lookup_requests`, { method: "DELETE" })
+    expect(await workLookupRequests()).toEqual({ requests: [] })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect(await quickSearchRequests()).toEqual({ queries: ["strindberg"] })
+  })
+
+  test("work lookup has an independent exact 503 control", async () => {
+    await fetch(`${origin}/_work_lookup_failure`, { method: "PUT" })
+
+    const failed = await postWorkLookup("/v2/works/lookup", {
+      work_id: "lb238704",
+      titles: []
+    })
+
+    expect(failed.status).toBe(503)
+    expect(await failed.json()).toEqual({
+      error: {
+        code: "work_lookup_unavailable",
+        message: "Unable to load ID lookup results",
+        details: null
+      }
+    })
+    expect((await fetch(`${origin}/v2/stats`)).status).toBe(200)
+    expect((await fetch(
+      `${origin}/v2/quick-search?query=strindberg`
+    )).status).toBe(200)
+
+    await fetch(`${origin}/_work_lookup_failure`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_work_lookup_failure`)).json()).toEqual({
+      failure: false
+    })
+    expect((await postWorkLookup("/v2/works/lookup", {
+      work_id: "lb238704",
+      titles: []
+    })).status).toBe(200)
+
+    await fetch(`${origin}/_failure`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ resource: "works" })
+    })
+    expect((await fetch(`${origin}/v2/works/popular`)).status).toBe(503)
+    expect((await postWorkLookup("/v2/works/lookup", {
+      work_id: "lb238704",
+      titles: []
+    })).status).toBe(200)
+  })
+
+  test("work lookup uses serialized bodies for deterministic latest-response ordering", async () => {
+    const slowBody = { work_id: null, titles: ["Röda rummet"] }
+    const fastBody = { work_id: "lb278171", titles: [] }
+    const delays = {
+      [JSON.stringify(slowBody)]: 80,
+      [JSON.stringify(fastBody)]: 0
+    }
+    await fetch(`${origin}/_work_lookup_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(delays)
+    })
+
+    const completionOrder: string[] = []
+    const slow = postWorkLookup("/v2/works/lookup", slowBody).then(() => {
+      completionOrder.push("slow")
+    })
+    const fast = postWorkLookup("/v2/works/lookup", fastBody).then(() => {
+      completionOrder.push("fast")
+    })
+    await Promise.all([slow, fast])
+
+    expect(completionOrder).toEqual(["fast", "slow"])
+    expect(await workLookupRequests()).toEqual({
+      requests: [
+        { path: "/v2/works/lookup", body: slowBody },
+        { path: "/v2/works/lookup", body: fastBody }
+      ]
+    })
+    expect(await (await fetch(`${origin}/_work_lookup_delays`)).json()).toEqual({
+      delays
+    })
+
+    await fetch(`${origin}/_work_lookup_delays`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_work_lookup_delays`)).json()).toEqual({
+      delays: {}
+    })
+  })
+
+  test("work lookup exposes a separately addressable duplicate representation", async () => {
+    const response = await postWorkLookup("/v2/works/lookup", {
+      work_id: "lb-duplicate",
+      titles: []
+    })
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.items).toHaveLength(1)
+    expect(body.items[0].media).toEqual([
+      {
+        label: "etext",
+        url: "/författare/TestAuthor/titlar/Duplicate/etext"
+      },
+      {
+        label: "etext",
+        url: "/författare/TestAuthor/titlar/Duplicate/etext"
+      }
+    ])
+  })
+
+  test("work lookup private-v2 dispatch preserves original paths for every v2 fixture", async () => {
+    const contactBody = {
+      sender_name: null,
+      sender_address: "a@b",
+      message: "Hej!",
+      audience: "litteraturbanken"
+    }
+    const lookupBody = { work_id: "lb238704", titles: [] }
+    const responses = [
+      await fetch(`${origin}/private-v2/stats`),
+      await fetch(`${origin}/private-v2/works/popular?limit=1`),
+      await fetch(`${origin}/private-v2/epubs/popular?limit=1`),
+      await fetch(`${origin}/private-v2/quick-search?query=strindberg`),
+      await fetch(`${origin}/private-v2/contact`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(contactBody)
+      }),
+      await postWorkLookup("/private-v2/works/lookup", lookupBody)
+    ]
+
+    expect(responses.map(response => response.status)).toEqual([
+      200, 200, 200, 200, 202, 200
+    ])
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: [
+        "/private-v2/stats",
+        "/private-v2/works/popular?limit=1",
+        "/private-v2/epubs/popular?limit=1",
+        "/private-v2/contact"
+      ]
+    })
+    expect(await quickSearchRequests()).toEqual({ queries: ["strindberg"] })
+    expect(await contactSubmissions()).toEqual({
+      contactSubmissions: [contactBody]
+    })
+    expect(await workLookupRequests()).toEqual({
+      requests: [{ path: "/private-v2/works/lookup", body: lookupBody }]
     })
   })
 

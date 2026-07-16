@@ -72,6 +72,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/works/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Work Lookup */
+        post: operations["v2_post_work_lookup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/works/popular": {
         parameters: {
             query?: never;
@@ -223,6 +240,51 @@ export interface components {
             words: components["schemas"]["MediaCounts"];
             /** Works */
             works: number;
+        };
+        /** WorkLookupByIdRequest */
+        WorkLookupByIdRequest: {
+            /** Titles */
+            titles: string[];
+            /** Work Id */
+            work_id: string;
+        };
+        /** WorkLookupByTitlesRequest */
+        WorkLookupByTitlesRequest: {
+            /** Titles */
+            titles: string[];
+            /** Work Id */
+            work_id: null;
+        };
+        /** WorkLookupItem */
+        WorkLookupItem: {
+            author: components["schemas"]["WorkLookupLink"];
+            /** Media */
+            media: components["schemas"]["WorkLookupMedia"][];
+            title: components["schemas"]["WorkLookupLink"];
+            /** Work Id */
+            work_id: string;
+        };
+        /** WorkLookupLink */
+        WorkLookupLink: {
+            /** Label */
+            label: string;
+            /** Url */
+            url: string;
+        };
+        /** WorkLookupMedia */
+        WorkLookupMedia: {
+            /**
+             * Label
+             * @enum {string}
+             */
+            label: "etext" | "faksimil";
+            /** Url */
+            url: string;
+        };
+        /** WorkLookupResponse */
+        WorkLookupResponse: {
+            /** Items */
+            items: components["schemas"]["WorkLookupItem"][];
         };
         /** WorkRepresentation */
         WorkRepresentation: {
@@ -410,6 +472,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatsResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_work_lookup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkLookupByIdRequest"] | components["schemas"]["WorkLookupByTitlesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkLookupResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Unexpected server error */

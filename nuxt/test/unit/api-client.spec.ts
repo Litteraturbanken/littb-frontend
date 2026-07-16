@@ -192,4 +192,80 @@ describe("generated LB API client", () => {
     expect(data).toBeUndefined()
     expect(error?.error.code).toBe("quick_search_unavailable")
   })
+
+  test("posts the exact typed Unicode work lookup body and returns display rows", async () => {
+    const fetchMock = vi.fn(async () =>
+      json({
+        items: [
+          {
+            work_id: "lb238704",
+            author: {
+              label: "Strindberg",
+              url: "/författare/StrindbergA"
+            },
+            title: {
+              label: "Röda rummet",
+              url: "/författare/StrindbergA/titlar/RodaRummet/etext"
+            },
+            media: [
+              {
+                label: "etext",
+                url: "/författare/StrindbergA/titlar/RodaRummet/etext"
+              },
+              {
+                label: "faksimil",
+                url: "/författare/StrindbergA/titlar/RodaRummet/faksimil"
+              }
+            ]
+          }
+        ]
+      })
+    )
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+    const body = {
+      work_id: null,
+      titles: ["Röda rummet", "Gösta Berlings saga"]
+    }
+    const abortController = new AbortController()
+    const signal = abortController.signal
+
+    const { data, error } = await client.POST("/works/lookup", { body, signal })
+
+    expect(error).toBeUndefined()
+    expect(data?.items[0].media.map(item => item.label)).toEqual([
+      "etext",
+      "faksimil"
+    ])
+    expect(fetchMock).toHaveBeenCalledOnce()
+    const request = fetchMock.mock.calls[0][0]
+    expect(request.url).toBe("http://example.test/v2/works/lookup")
+    expect(request.method).toBe("POST")
+    expect(await request.json()).toEqual(body)
+    abortController.abort()
+    expect(request.signal.aborted).toBe(true)
+  })
+
+  test("returns the typed work lookup 503 body", async () => {
+    const fetchMock = vi.fn(async () =>
+      json(
+        {
+          error: {
+            code: "work_lookup_unavailable",
+            message: "Unable to load ID lookup results",
+            details: null
+          }
+        },
+        503
+      )
+    )
+    const client = createLbApiClient("http://example.test/v2", fetchMock)
+
+    const { data, error, response } = await client.POST("/works/lookup", {
+      body: { work_id: "lb238704", titles: [] }
+    })
+
+    expect(response.status).toBe(503)
+    expect(data).toBeUndefined()
+    expect(error?.error.code).toBe("work_lookup_unavailable")
+  })
 })
