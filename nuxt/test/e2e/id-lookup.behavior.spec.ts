@@ -4,6 +4,7 @@ const fixture = "http://127.0.0.1:4100"
 const description = "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 
 type LookupBody = { work_id: string | null, titles: string[] }
+type PendingLookup = { body: LookupBody, aborted: boolean }
 
 async function reset(request: APIRequestContext) {
   await Promise.all([
@@ -60,6 +61,90 @@ async function pushRoute(page: Page, path: string) {
     const root = document.querySelector("#__nuxt") as VueRoot
     await root.__vue_app__.config.globalProperties.$router.push(target)
   }, path)
+}
+
+async function installIgnoringAbortTransport(page: Page) {
+  await page.addInitScript(() => {
+    type PendingTransportLookup = {
+      body: { work_id: string | null, titles: string[] }
+      signal: AbortSignal
+      resolve: (response: Response) => void
+      reject: (error: Error) => void
+    }
+    type LookupTransport = {
+      pending: PendingTransportLookup[]
+      resolve: (index: number, workId: string) => void
+      reject: (index: number) => void
+    }
+    const nativeFetch = window.fetch.bind(window)
+    const pending: PendingTransportLookup[] = []
+    const transport: LookupTransport = {
+      pending,
+      resolve(index, workId) {
+        pending[index]?.resolve(new Response(JSON.stringify({
+          items: [{
+            work_id: workId,
+            author: { label: "Testförfattare", url: "/författare/Test" },
+            title: { label: workId, url: `/verk/${workId}` },
+            media: []
+          }]
+        }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        }))
+      },
+      reject(index) {
+        pending[index]?.reject(new TypeError("deliberate transport failure"))
+      }
+    }
+
+    Object.defineProperty(window, "__idLookupTransport", { value: transport })
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init)
+      if (new URL(request.url).pathname !== "/api/v2/works/lookup") {
+        return nativeFetch(input, init)
+      }
+      const body = await request.clone().json()
+      return new Promise<Response>((resolve, reject) => {
+        // Deliberately do not subscribe to request.signal: this transport settles
+        // even after the page aborts it, exercising request-version protection.
+        pending.push({ body, signal: request.signal, resolve, reject })
+      })
+    }
+
+  })
+}
+
+async function pendingTransportLookups(page: Page): Promise<PendingLookup[]> {
+  return page.evaluate(() => {
+    type LookupWindow = Window & {
+      __idLookupTransport: {
+        pending: Array<{ body: LookupBody, signal: AbortSignal }>
+      }
+    }
+    return (window as unknown as LookupWindow).__idLookupTransport.pending.map(
+      lookup => ({ body: lookup.body, aborted: lookup.signal.aborted })
+    )
+  })
+}
+
+async function settleTransportLookup(
+  page: Page,
+  action: "resolve" | "reject",
+  index: number,
+  workId = ""
+) {
+  await page.evaluate(({ action, index, workId }) => {
+    type LookupWindow = Window & {
+      __idLookupTransport: {
+        resolve: (index: number, workId: string) => void
+        reject: (index: number) => void
+      }
+    }
+    const transport = (window as unknown as LookupWindow).__idLookupTransport
+    if (action === "resolve") transport.resolve(index, workId)
+    else transport.reject(index)
+  }, { action, index, workId })
 }
 
 test.beforeEach(async ({ request }) => reset(request))
@@ -189,6 +274,41 @@ test("same-mode replacements clear old rows while loading and latest response wi
   expect(problems).toEqual([])
 })
 
+test("request versions win when an aborted transport still resolves or rejects", async ({
+  page
+}) => {
+  await installIgnoringAbortTransport(page)
+  const problems = await openIdPage(page)
+  const idInput = page.getByPlaceholder("lbid")
+  const rows = page.locator(".table-striped tr")
+  const mainview = page.locator("#mainview > div")
+
+  await idInput.fill("lb-older-data")
+  await expect.poll(() => pendingTransportLookups(page)).toHaveLength(1)
+  await idInput.fill("lb-newer-data")
+  await expect.poll(() => pendingTransportLookups(page)).toHaveLength(2)
+  expect((await pendingTransportLookups(page))[0]?.aborted).toBe(true)
+
+  await settleTransportLookup(page, "resolve", 1, "lb-newer-data")
+  await expect(rows.locator("td").first()).toHaveText("lb-newer-data")
+  await settleTransportLookup(page, "resolve", 0, "lb-older-data")
+  await expect(rows.locator("td").first()).toHaveText("lb-newer-data")
+
+  await idInput.fill("lb-older-error")
+  await expect.poll(() => pendingTransportLookups(page)).toHaveLength(3)
+  await idInput.fill("lb-newest-data")
+  await expect.poll(() => pendingTransportLookups(page)).toHaveLength(4)
+  expect((await pendingTransportLookups(page))[2]?.aborted).toBe(true)
+
+  await settleTransportLookup(page, "reject", 2)
+  await expect(rows).toHaveCount(0)
+  await expect(mainview).toHaveClass(/\bsearching\b/)
+  await settleTransportLookup(page, "resolve", 3, "lb-newest-data")
+  await expect(rows.locator("td").first()).toHaveText("lb-newest-data")
+  await expect(mainview).not.toHaveClass(/\bsearching\b/)
+  expect(problems).toEqual([])
+})
+
 test("duplicate representations render twice in order without duplicate-key warnings", async ({
   page
 }) => {
@@ -270,6 +390,22 @@ test("hydrated route values preserve an already-decoded literal percent sequence
   await expect.poll(() => lookupBodies(request)).toEqual([
     { work_id: null, titles: ["title%20percent"] }
   ])
+})
+
+test("unmount during the final debounce millisecond prevents the lookup", async ({
+  page,
+  request
+}) => {
+  await openIdPage(page)
+  await page.clock.install({ time: 0 })
+  await page.getByPlaceholder("titel").fill("Röda rummet")
+  await page.clock.pauseAt(499)
+  expect(await lookupBodies(request)).toEqual([])
+
+  await page.goto("/om/ide", { waitUntil: "networkidle" })
+  await expect(page).toHaveTitle("Om LB | Litteraturbanken")
+  await page.clock.runFor(1)
+  expect(await lookupBodies(request)).toEqual([])
 })
 
 test("route changes seed lower-case state, clean up pending work, and restore metadata", async ({
