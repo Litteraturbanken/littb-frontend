@@ -16,3 +16,36 @@
 .pull-right {
     float: right !important;
 }
+
+.mainnav .quick-search-trigger {
+    appearance: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+
+    &:hover,
+    &:active {
+        color: #7a1400;
+    }
+}
+
+.quick-search-options [role="option"][aria-disabled="true"] > a {
+    cursor: default;
+}
+
+.autocomplete .quick-search-options {
+    display: block;
+}
+
+.modal.autocomplete {
+    display: block;
+
+    > .modal-dialog {
+        z-index: 1050;
+    }
+}

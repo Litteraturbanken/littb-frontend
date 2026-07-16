@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import QuickSearch from "../components/global/QuickSearch.vue"
+</script>
+
 <template>
   <div class="site-shell">
     <div id="leftCorridor">
@@ -25,7 +29,7 @@
       </a>
       <ul role="navigation" class="mainnav">
         <li><a href="/bibliotek">Biblioteket</a></li>
-        <li><a title="Snabbkommando: 's'">Snabbsökning</a></li>
+        <QuickSearch />
         <li><a href="/sök">Sök i texterna</a></li>
         <li><a href="/epub?visa=epub&amp;sort=popularitet">Hämta e-böcker</a></li>
         <li><a href="/presentationer">Presentationer</a></li>
