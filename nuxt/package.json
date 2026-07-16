@@ -24,6 +24,7 @@
   "dependencies": {
     "@headlessui/vue": "1.7.23",
     "font-awesome": "4.4.0",
+    "linkedom": "0.18.13",
     "nuxt": "4.4.8",
     "openapi-fetch": "0.17.0",
     "vue": "3.5.39",
