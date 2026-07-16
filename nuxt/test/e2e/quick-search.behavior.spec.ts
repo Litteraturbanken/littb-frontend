@@ -56,6 +56,7 @@ test("opens from the trigger with exact empty chrome, closes by backdrop, restor
   await expect(trigger).toHaveAttribute("title", "Snabbkommando: 's'")
 
   await openQuickSearch(page)
+  await expect(page.getByRole("dialog", { name: "Snabbsökning", exact: true })).toBeVisible()
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/)
   const input = page.locator("#autocomplete")
   await expect(input).toHaveAttribute(
@@ -217,14 +218,19 @@ test("mouse and wrapped keyboard selection navigate exact URLs and skip the disa
   await search(page, "strindberg")
 
   const rows = selectableRows(page)
+  const input = page.locator("#autocomplete")
   await expect(rows).toHaveCount(3)
   await expect(rows.nth(0)).toHaveClass(/\bactive\b/)
+  await expect(input).toHaveAttribute("aria-activedescendant", await rows.nth(0).getAttribute("id") ?? "")
   await page.keyboard.press("ArrowUp")
   await expect(rows.nth(2)).toHaveClass(/\bactive\b/)
+  await expect(input).toHaveAttribute("aria-activedescendant", await rows.nth(2).getAttribute("id") ?? "")
   await page.keyboard.press("ArrowDown")
   await expect(rows.nth(0)).toHaveClass(/\bactive\b/)
+  await expect(input).toHaveAttribute("aria-activedescendant", await rows.nth(0).getAttribute("id") ?? "")
   await rows.nth(1).hover()
   await expect(rows.nth(1)).toHaveClass(/\bactive\b/)
+  await expect(input).toHaveAttribute("aria-activedescendant", await rows.nth(1).getAttribute("id") ?? "")
   await rows.nth(1).click()
   await expect(page).toHaveURL("/författare/StrindbergA/titlar/RodaRummet/sida/1/etext")
 
@@ -244,6 +250,13 @@ test("Enter selects the active row and Escape first dismisses options then close
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toBeVisible()
   await expect(page.locator(".quick-search-options")).toHaveCount(0)
+  const url = page.url()
+  await page.locator("#autocomplete").press("Enter")
+  await expect(page).toHaveURL(url)
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await page.locator("#autocomplete").press("Tab")
+  await expect(page).toHaveURL(url)
+  await expect(page.getByRole("dialog")).toBeVisible()
   await page.keyboard.press("Escape")
   await expect(page.getByRole("dialog")).toHaveCount(0)
 

@@ -5,7 +5,8 @@ import {
   ComboboxOption,
   ComboboxOptions,
   Dialog,
-  DialogPanel
+  DialogPanel,
+  DialogTitle
 } from "@headlessui/vue"
 
 import { createLbApiClient } from "../../lib/api/client"
@@ -53,7 +54,6 @@ const query = ref("")
 const remoteItems = ref<QuickSearchItem[]>([])
 const correction = ref<string | null>(null)
 const requestState = ref<"idle" | "loading" | "success" | "failure">("idle")
-const activeIndex = ref(-1)
 
 const config = useRuntimeConfig()
 const client = createLbApiClient(config.public.apiBase)
@@ -133,14 +133,6 @@ const rows = computed<SearchRow[]>(() => {
   return output
 })
 
-function firstSelectableIndex(values = rows.value): number {
-  return values.findIndex(row => !row.disabled)
-}
-
-watch(rows, values => {
-  activeIndex.value = firstSelectableIndex(values)
-})
-
 function cancelPendingSearch() {
   if (debounceTimer !== null) {
     clearTimeout(debounceTimer)
@@ -155,7 +147,6 @@ function resetResults() {
   remoteItems.value = []
   correction.value = null
   requestState.value = "idle"
-  activeIndex.value = -1
 }
 
 async function runSearch(value: string, version: number) {
@@ -225,39 +216,31 @@ function onQueryChange(event: Event) {
   query.value = (event.target as HTMLInputElement).value
 }
 
-function selectableIndexes(): number[] {
-  return rows.value.flatMap((row, index) => row.disabled ? [] : [index])
+function dispatchComboboxKey(key: "Home" | "End") {
+  inputElement()?.dispatchEvent(new KeyboardEvent("keydown", {
+    key,
+    bubbles: true,
+    cancelable: true
+  }))
 }
 
-function moveActive(direction: 1 | -1) {
-  const indexes = selectableIndexes()
-  if (!indexes.length) return
-  const current = indexes.indexOf(activeIndex.value)
-  const next = current === -1
-    ? (direction === 1 ? 0 : indexes.length - 1)
-    : (current + direction + indexes.length) % indexes.length
-  activeIndex.value = indexes[next] ?? -1
+function onInputKeydown(event: KeyboardEvent, activeIndex: number | null) {
+  const selectable = rows.value.flatMap((row, index) => row.disabled ? [] : [index])
+  const first = selectable[0]
+  const last = selectable.at(-1)
+  const wrapKey = event.key === "ArrowUp" && activeIndex === first
+    ? "End"
+    : event.key === "ArrowDown" && activeIndex === last
+      ? "Home"
+      : null
+  if (wrapKey) window.setTimeout(() => dispatchComboboxKey(wrapKey))
 }
 
-function stopHeadlessUiKey(event: KeyboardEvent) {
-  event.preventDefault()
-  event.stopPropagation()
-  event.stopImmediatePropagation()
-}
-
-function onInputKeydown(event: KeyboardEvent) {
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-    if (!rows.value.length) return
-    stopHeadlessUiKey(event)
-    moveActive(event.key === "ArrowDown" ? 1 : -1)
-    return
-  }
-  if (event.key !== "Enter" && event.key !== "Tab") return
-  const row = rows.value[activeIndex.value]
-  if (!row || row.disabled) return
-  stopHeadlessUiKey(event)
-  void selectRow(row)
-}
+watch(rows, async values => {
+  if (!values.length || !isOpen.value) return
+  await nextTick()
+  window.requestAnimationFrame(() => dispatchComboboxKey("Home"))
+})
 
 async function selectRow(row: SearchRow | null) {
   if (!row || row.disabled) return
@@ -310,8 +293,9 @@ onBeforeUnmount(() => {
       <div class="modal-backdrop fade in" aria-hidden="true" @click="close" />
       <div class="modal-dialog modal-sm">
         <DialogPanel class="modal-content">
+          <DialogTitle class="sr-only">Snabbsökning</DialogTitle>
           <div class="modal-body">
-            <Combobox :model-value="null" nullable @update:model-value="selectRow">
+            <Combobox v-slot="{ activeIndex }" :model-value="null" nullable @update:model-value="selectRow">
               <ComboboxInput
                 id="autocomplete"
                 class="text-gray-900"
@@ -322,26 +306,28 @@ onBeforeUnmount(() => {
                 spellcheck="false"
                 placeholder="Gå till ett verk, en dikt, en novell eller en författare"
                 @change="onQueryChange"
-                @keydown.capture="onInputKeydown"
+                @keydown.capture="onInputKeydown($event, activeIndex)"
               />
               <ComboboxOptions v-if="rows.length" class="dropdown-menu quick-search-options">
                 <ComboboxOption
-                  v-for="(row, index) in rows"
+                  v-for="row in rows"
+                  v-slot="{ active: optionActive }"
                   :key="row.id"
+                  as="template"
                   :value="row"
                   :disabled="row.disabled"
-                  :class="{
-                    active: index === activeIndex,
-                    'quick-search-correction': row.correction
-                  }"
-                  @mouseenter="activeIndex = row.disabled ? activeIndex : index"
                 >
-                  <a>
-                    <span v-if="row.typeLabel" class="type_label">
-                      {{ row.typeLabel }}<template v-if="row.mediaTypeLabel">, {{ row.mediaTypeLabel }}</template>
-                    </span>
-                    <span class="quick-search-label">{{ row.label }}</span>
-                  </a>
+                  <li :class="{
+                    active: optionActive,
+                    'quick-search-correction': row.correction
+                  }">
+                    <a>
+                      <span v-if="row.typeLabel" class="type_label">
+                        {{ row.typeLabel }}<template v-if="row.mediaTypeLabel">, {{ row.mediaTypeLabel }}</template>
+                      </span>
+                      <span class="quick-search-label">{{ row.label }}</span>
+                    </a>
+                  </li>
                 </ComboboxOption>
               </ComboboxOptions>
             </Combobox>
