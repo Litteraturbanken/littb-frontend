@@ -33,7 +33,7 @@ type HomeContent = {
 }
 ```
 
-Only paths rooted at `/red/` are accepted for the stylesheet and image. The two control elements are removed before the remaining trusted body is rendered with `v-html`. Everything else remains byte-for-byte editorial markup; this parser is deliberately narrow and is not a general sanitizer or content rewrite.
+Only canonical absolute paths rooted at `/red/` are accepted for the stylesheet and image. External, protocol-relative, encoded traversal, backslash, and dot-segment paths are rejected. The parser removes the two control elements by source ranges rather than DOM reserialization, so every remaining byte of the intentionally irregular trusted editorial markup is preserved before `v-html`. Missing or malformed declarations simply omit their corresponding head/background effect; they do not cause a broader content rewrite.
 
 An unavailable or malformed upstream fragment leaves the normal Home shell in place with an empty editorial body and no upstream error status exposed to the browser.
 
@@ -51,10 +51,10 @@ The page sets:
 - title `Litteraturbanken | Svenska klassiker som e-bok och epub`;
 - the exact legacy description;
 - body classes `focus page-start ready`;
-- the extracted background color/image on the `html` element;
+- the extracted background color/image with the legacy explicit `no-repeat` on the `html` element;
 - the extracted runtime stylesheet in the document head.
 
-The stylesheet query keeps the legacy cache-buster semantics: a random stable value per development page load and a `YYMM` value in production. A page-local `useState` value is serialized from SSR and reused during hydration so the stylesheet URL cannot mismatch.
+The editorial-fragment request and extracted stylesheet URL share the legacy cache-buster value: a random stable value per development page load and a `YYMM` value in production. A page-local `useState` value is serialized from SSR and reused during hydration so neither request nor head markup can mismatch.
 
 Route transitions must cleanly remove the Home-only body class, background, and stylesheet, and restore them when returning to `/`.
 
@@ -64,10 +64,10 @@ The copied parity styles already own the Home shell and mobile behavior. The edi
 
 ## Verification
 
-- Frozen test-only raw Home HTML, CSS, and image fixtures make SSR and visual tests deterministic.
+- A frozen full raw Home fragment with checksum and representative markers, plus CSS and image fixtures, makes SSR and visual tests deterministic.
 - Fixture-server tests cover one request, failure, request logging, and reset without contacting production.
-- SSR tests prove exact metadata, body class, headings, editorial markers/hrefs, stylesheet/background, removed Angular control tags, one upstream request, and no client refetch.
-- Browser tests cover failure fallback and Home-to-404-to-Home cleanup/restoration without hydration errors.
+- Parser tests prove exact remaining-body bytes and cover missing/malformed declarations plus external, protocol-relative, traversal, encoded-traversal, and backslash paths.
+- SSR tests prove exact metadata, body class, headings, editorial markers/hrefs, shared cache-buster on the fragment and stylesheet, stylesheet/background with `no-repeat`, removed Angular control tags, one upstream request, and no client refetch.
+- Browser tests cover public-path failure fallback and Home-to-404-to-Home stylesheet/background/body cleanup and restoration without hydration errors.
 - Desktop and mobile full-page captures compare the Angular authority with Nuxt after fonts and the background image are ready.
 - Complete Nuxt unit, SSR, e2e, visual, API freshness, typecheck, build, and unchanged Angular gates close the slice.
-
