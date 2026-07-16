@@ -55,7 +55,7 @@ export default defineNuxtConfig({
           target: contentProxyTarget,
           changeOrigin: true
         },
-        "^/litteraturkartan(?:/|$)": {
+        "^/litteraturkartan(?:[/?]|$)": {
           target: litteraturkartanProxyTarget,
           changeOrigin: true
         }

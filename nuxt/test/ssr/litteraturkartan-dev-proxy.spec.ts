@@ -32,6 +32,17 @@ test("proxies the Litteraturkartan root without rendering the Nuxt shell", async
   expect(await mapRequests(request)).toEqual(["/litteraturkartan"])
 })
 
+test("proxies the exact Litteraturkartan root with its query intact", async ({
+  request
+}) => {
+  const path = "/litteraturkartan?view=map"
+  const response = await request.get(path)
+
+  expect(response.status()).toBe(200)
+  expectUpstreamBody(await response.text())
+  expect(await mapRequests(request)).toEqual([path])
+})
+
 test("preserves an encoded nested Litteraturkartan path and query exactly", async ({
   request
 }) => {
