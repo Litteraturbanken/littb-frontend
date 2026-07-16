@@ -7,7 +7,7 @@ This slice ports the AngularJS ID lookup routes:
 - `/id`;
 - `/id/:id`, where the route value is an ID when its lower-cased value starts with `lb`, and otherwise is a title query.
 
-It adds one typed FastAPI adapter, `POST /v2/works/lookup`, and one page-local Nuxt implementation. It does not migrate author, title, reader, download, editor, or FTP destinations reached from the result table. It does not add a composable, Nuxt server proxy, Angular bridge, or new shared state.
+It adds one typed FastAPI adapter, `POST /v2/works/lookup`, and one page-local Nuxt implementation. It does not migrate author, title, reader, download, editor, or FTP destinations reached from the result table. It does not add a composable, Nuxt server proxy, Angular bridge, or frontend shared state.
 
 The migration is intentionally narrow. The legacy form, copy, table, links, loading state, body classes, and desktop/mobile layout remain visual and behavioral authority.
 
@@ -49,8 +49,9 @@ The chosen approach is a strict FastAPI adapter over the existing legacy search 
 Nuxt /id page
   -> generated POST /v2/works/lookup client
   -> strict request union
-  -> bounded legacy etext/faksimil query
-  -> pure group/filter/display transformer
+  -> process-local 60-second single-flight catalog cache
+  -> bounded legacy etext/faksimil query on cache miss
+  -> full validation/grouping, then request filtering
   -> strict display-ready response
 ```
 
@@ -131,7 +132,7 @@ The synchronous route keeps the blocking OpenSearch call in FastAPI's thread poo
 
 The 10,000-document ceiling is an intentional parity limit, not pagination. Pushing user strings into a different provider query is deferred because it could change the current case-insensitive substring semantics and result ordering.
 
-The pure transformer first validates the raw envelope and then characterizes the Angular `createExpandMediatypes` plus `IdPageCtrl` behavior:
+The provider result is fully validated and normalized into an immutable grouped catalog before the current request is considered. A malformed document that cannot match the requested ID or titles still fails the entire build generically; filtering first would hide provider corruption and make cache contents request-dependent. The catalog builder characterizes the Angular `createExpandMediatypes` behavior:
 
 1. Preserve the first-seen group order from the `sortkey|asc` source.
 2. Group by the exact legacy key `titlepath + lbworkid`.
@@ -140,9 +141,13 @@ The pure transformer first validates the raw envelope and then characterizes the
 5. Use `authors[0].authorid` and `authors[0].surname` for the displayed author and all three route families.
 6. Use `shorttitle || title` as the displayed title.
 7. Preserve one media entry per source representation in media order.
-8. In ID mode, retain rows whose `lbworkid` exactly equals the normalized work ID.
-9. In title mode, retain a row when any query is a case-insensitive substring of either `titlepath` or the full `title`; `shorttitle` is display-only and is not searched.
-10. Preserve grouped source order after filtering and return `items: []` for no match.
+8. Store normalized lower-case `titlepath` and full `title` search values beside each display-ready row.
+
+Only after the entire catalog passes validation does a pure filter apply the `IdPageCtrl` rules:
+
+- in ID mode, retain rows whose `lbworkid` exactly equals the normalized work ID;
+- in title mode, retain a row when any query is a case-insensitive substring of either `titlepath` or the full `title`; `shorttitle` is display-only and is not searched;
+- preserve grouped catalog order and return `items: []` for no match.
 
 The display-ready URLs reproduce the Angular template exactly:
 
@@ -151,6 +156,19 @@ The display-ready URLs reproduce the Angular template exactly:
 - each media link: `/författare/<authors[0].authorid>/titlar/<titlepath>/<media label>`.
 
 Missing envelopes, non-list data, non-object documents, unsupported media types, missing/blank required strings, invalid authors, and invalid group members are malformed provider data and fail generically rather than producing partial or fabricated rows.
+
+## Catalog cache and concurrency
+
+The bounded 10,000-document query is protected by an explicit process-local cache:
+
+- a successful, fully validated normalized/grouped catalog has a 60-second TTL measured with a monotonic clock from successful build completion;
+- requests within the TTL filter the immutable cached catalog without another provider call;
+- the first request after expiry becomes the builder, and concurrent requests coalesce on the same in-flight result;
+- a provider, transformation, or validation failure is delivered to all waiters, clears the in-flight marker, and is never cached;
+- the next request after a failed build retries the provider;
+- the patchable `query_work_lookup_documents()` function remains the only provider boundary.
+
+The cache is deliberately per Python process. Deployments with multiple FastAPI worker processes can perform at most one catalog build per 60 seconds per worker; there is no cross-worker coordination or external cache in this slice. This contains repeated interactive cost without adding infrastructure or changing legacy matching semantics.
 
 ## Nuxt routes and SSR
 
@@ -165,7 +183,15 @@ On direct SSR:
 
 The route value is decoded by Vue Router, trimmed, and lower-cased before either mode is seeded, matching Angular `$onInit`. It is limited by the same client-visible request rules. An over-limit or otherwise invalid route value renders the valid empty shell without making an API request. Route changes between `/id`, ID values, and title values cancel prior work and apply the same route classification without leaking stale rows.
 
-The page uses `useHead` for exact `focus page-id ready` body classes. No route middleware, server API, or composable is added.
+The generated client base is selected exactly with `import.meta.server ? config.apiBase : config.public.apiBase`. SSR therefore uses the private runtime base and interactive browser calls use the public proxy base. A route-param SSR test configures distinguishable private/public bases and proves the server lookup uses only the private base.
+
+The page metadata/body contract is exact on both SSR and hydrated navigation:
+
+- title: `Litteraturbanken`;
+- description: `På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis.`;
+- body classes: `focus page-id ready`.
+
+The page sets that contract with `useSeoMeta`/`useHead`. No route middleware, server API, or composable is added.
 
 ## Form behavior and latest-wins requests
 
@@ -177,27 +203,32 @@ The rendered controls retain their exact order, placeholders, and first-input `a
 
 Typing a non-empty ID:
 
-- clears the single-title and textarea modes;
+- replaces the active `titles` array with `[]`, which clears the visible title input, but deliberately leaves the textarea text unchanged;
 - trims and lower-cases the value;
 - sends immediately when it is a valid `lb`-prefixed value;
 - clears results without a request when empty or not yet valid.
 
 Typing the single title:
 
-- clears the ID and textarea modes;
+- clears the ID;
+- mutates only `titles[0]`, retaining any additional terms in `titles[1:]` and leaving textarea text unchanged;
 - waits exactly 500 ms after the latest input;
-- sends title mode with one trimmed non-empty title.
+- sends title mode with every retained non-empty trimmed title, in array order.
 
 Typing the textarea:
 
-- clears the ID and single-title modes;
+- clears the ID;
 - waits exactly 500 ms after the latest input;
 - splits on newline;
-- for each row, if an en dash (`\u2013`) exists, keeps the text after the first en dash, matching `row.split("–")[1] || row`;
-- trims rows, removes blank rows, preserves order and duplicates, and sends the first 100 normalized titles;
-- if normalization yields no titles, clears results without a request.
+- maps each row with the exact expression `(row.split("–")[1] || row).trim()`: only split index 1 is considered, so `A – B – C` becomes `B`, while an empty index 1 such as `A – ` falls back to the whole trimmed row `A –`;
+- replaces the complete `titles` array with those normalized rows, preserving empty rows and duplicates as control state;
+- mirrors the first normalized row in the visible title input because that input is bound to `titles[0]`;
+- filters blank terms only when constructing the request and sends the first 100 non-empty titles in order;
+- if request construction yields no non-empty titles, clears results without a request.
 
-Every new lookup aborts the previous request and increments a request version. Only the latest version may replace rows or loading state, including when a provider ignores abort. Switching modes, clearing controls, navigating routes, or unmounting cancels timers and requests. The root gets `searching` only while the current request is pending; the exact `Hämtar` preloader appears through existing styles. A 422/500/503 response stops loading and leaves the table empty without exposing a new error message, matching the sparse legacy page.
+These coupled state transitions are direct Angular authority, not a second intent correction. The only intent correction in this slice is unwrapping the changed `getTitles()` envelope so intended rows can render.
+
+Every new lookup aborts the previous request and increments a request version. Only the latest version may replace rows or loading state, including when a provider ignores abort. Interactive lookup wraps the generated-client call in `try/catch/finally`: typed error responses and thrown network failures clear the latest table; expected abort errors are suppressed; and the `finally` block clears `searching` only when its version is still latest. No rejected request becomes an unhandled promise, and a stale completion, abort, catch, or finally block cannot clear newer rows/loading. Switching modes, clearing controls, navigating routes, or unmounting cancels timers and requests. The exact `Hämtar` preloader appears through existing styles. A 422/500/503 or thrown network failure leaves the table empty without exposing a new error message, matching the sparse legacy page.
 
 ## Markup, table, and destinations
 
@@ -214,11 +245,12 @@ The byte-locked migrated `nuxt/app/assets/styles/styles.scss` remains unchanged.
 
 ## Fixtures and verification
 
-- Backend characterization fixtures include irregular raw documents, duplicate media groups, reversed representation order, `work_titleid` fallback, short/full titles, mixed-case title/path matching, ID matching, multiple title OR matching, no hit, malformed envelopes/documents, and private provider details.
+- Backend characterization fixtures include irregular raw documents, duplicate media groups, reversed representation order, `work_titleid` fallback, short/full titles, mixed-case title/path matching, ID matching, multiple title OR matching, no hit, malformed envelopes/documents, a malformed nonmatching document, and private provider details.
+- Cache tests prove one provider call across sequential and concurrent lookups, reuse before 60 seconds, rebuild at expiry, failure fan-out without caching, retry after failure, and process-local reset isolation.
 - Model/API tests cover both exact request alternatives, every limit boundary, forbidden extras, synchronous POST behavior, typed success, 422, generic 500, endpoint-specific nonleaking 503, strict OpenAPI schemas, mounted isolation, and snapshot freshness.
 - The generated Nuxt client is regenerated only from the committed backend OpenAPI snapshot and is tested for the exact POST body and typed 503.
 - The fixture server exposes deterministic lookup rows, request-body/reset ledgers, delay controls, and failure controls without contacting production.
-- SSR tests prove `/id` makes zero requests, route-param SSR makes exactly one correctly classified request, hydration makes no duplicate, and body/markup/links are exact.
-- Browser tests cover immediate ID lookup; 500 ms single-title and textarea debounce; exact newline/en-dash normalization; mode clearing; empty-input no-request; abort/latest-wins; loading cleanup; failure/no-hit; route changes; and exact four-cell links/media separators.
-- Angular empty and test-unwrapped populated captures plus Nuxt comparisons cover desktop and mobile form, preloader, empty table, populated striped rows, shell corridors, typography, spacing, and `page-id` body state.
+- SSR tests prove `/id` makes zero requests, route-param SSR makes exactly one correctly classified private-base request, hydration makes no duplicate, and exact title/description/body/markup/links are serialized.
+- Browser tests cover immediate ID lookup; exact coupled ID/title/textarea state; 500 ms title/textarea debounce; split-index-1 multi-dash and empty-segment semantics; abort/latest-wins; typed and thrown-network failures without unhandled rejection; loading cleanup; no-hit; route changes; hydrated title/description/body cleanup; and exact four-cell links/media separators.
+- Angular empty and test-unwrapped populated captures plus Nuxt comparisons cover desktop and mobile coupled control values, preloader, empty table, populated striped rows, shell corridors, typography, spacing, and `page-id` body state.
 - Capture intercepts every legacy query and v2 lookup request, records the ledger, and fails on production escape. Full backend, OpenAPI, generated-client, Nuxt unit/SSR/browser/visual/typecheck/build, unchanged Angular, scope, and diff gates close the slice.

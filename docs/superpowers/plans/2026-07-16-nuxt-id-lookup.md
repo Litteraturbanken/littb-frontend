@@ -19,18 +19,22 @@
 - Preserve exact legacy routes `/id` and `/id/:id`, control order/copy, four-cell table, `:::` separators, links, loading hooks, body classes `focus page-id ready`, and responsive visuals.
 - Correct the current Angular `{ titles, author_aggs, imported_aggs, hits, distinct_hits, suggest }` envelope mismatch to its intended populated-table behavior; do not preserve the accidental empty table.
 - Keep raw work documents behind the strict FastAPI transformer and expose only generated display-ready types to Nuxt.
+- Fully validate and normalize/group the complete 10,000-document catalog before request filtering; cache only successful immutable catalogs with a process-local 60-second monotonic TTL and single-flight refresh.
 - Accept exactly one strict request mode: ID `{ work_id: <lb value>, titles: [] }` or titles `{ work_id: null, titles: [1..100 values] }`.
 - Work IDs trim/lowercase, begin `lb`, and contain 2–100 characters; titles trim to 1–200 characters each.
 - Keep the legacy Angular route/service/template and `/query_string/etext,faksimil` operation unchanged.
 - Keep page state in `nuxt/app/pages/id/[[id]].vue`; add no composable, Nuxt server API, middleware, Angular bridge, shared store, or destination migration.
 - `/id` performs no SSR or hydration lookup; a valid route parameter performs exactly one SSR lookup with no hydration duplicate.
+- Select the client base with the exact expression `import.meta.server ? config.apiBase : config.public.apiBase` and prove route-param SSR uses the private base.
+- Preserve Angular's coupled controls: ID clears `titles` but not textarea text; title changes only `titles[0]`; textarea replaces `titles` and therefore mirrors its first normalized row into the title input.
+- Set exact page title `Litteraturbanken`, default description `På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis.`, and body classes `focus page-id ready`.
 - Typed 422/500/503 responses never leak provider details; OpenSearch uses `work_lookup_unavailable` and `Unable to load ID lookup results`.
 - Follow TDD, commit each task separately with the exact listed message, and run an independent spec/quality review after each task.
 - Do not include concurrent Home, Presentation, `.superpowers`, or unrelated work in any commit.
 
 ---
 
-### Task 1: Characterize, type, and transform ID lookup results
+### Task 1: Characterize, type, normalize, and cache ID lookup results
 
 **Files:**
 - Modify: `lbapi/v2/models.py`
@@ -40,7 +44,7 @@
 
 **Interfaces:**
 - Consumes: irregular legacy envelope `dict[str, Any]` with a `data` list in `sortkey|asc` order.
-- Produces: `WorkLookupRequest`, `WorkLookupResponse`, `query_work_lookup_documents() -> dict[str, Any]`, and `transform_work_lookup(raw: dict[str, Any], request: WorkLookupRequest) -> WorkLookupResponse`.
+- Produces: `WorkLookupRequest`, `WorkLookupResponse`, patchable `query_work_lookup_documents() -> dict[str, Any]`, `build_work_lookup_catalog(raw) -> tuple[WorkLookupCatalogItem, ...]`, `filter_work_lookup_catalog(catalog, request) -> WorkLookupResponse`, pure `transform_work_lookup(raw, request)`, and process-local `get_work_lookup_catalog()`.
 
 - [ ] **Step 1: Add failing strict-model tests**
 
@@ -112,7 +116,7 @@ class WorkLookupItem(V2Model):
     work_id: str
     author: WorkLookupLink
     title: WorkLookupLink
-    media: list[WorkLookupMedia]
+    media: list[WorkLookupMedia] = Field(min_length=1)
 
 class WorkLookupResponse(V2Model):
     items: list[WorkLookupItem]
@@ -134,7 +138,36 @@ raw = {
 }
 ```
 
-Assert first-seen group order, the exact concatenated `titlepath + lbworkid` key, `etext` before `faksimil` inside a group, `work_titleid || titleid`, `authors[0]`, `shorttitle || title`, exact author/title/media URLs, exact-ID matching, Unicode-lowercase substring matching against `titlepath` or full `title`, OR matching across titles, preserved duplicate queries, and empty no-hit output. Add malformed-envelope/document/media/author/required-string cases that all raise `ValueError("Malformed work-lookup response")` without private data in the message.
+Assert first-seen group order, the exact concatenated `titlepath + lbworkid` key, `etext` before `faksimil` inside a group, `work_titleid || titleid`, `authors[0]`, `shorttitle || title`, non-empty media, exact author/title/media URLs, exact-ID matching, Unicode-lowercase substring matching against `titlepath` or full `title`, OR matching across titles, preserved duplicate queries, and empty no-hit output. Use a fixture where `titlepath != work_titleid` so the title and media URL contracts cannot accidentally pass with the same segment. Add malformed-envelope/document/media/author/required-string cases that all raise `ValueError("Malformed work-lookup response")` without private data in the message. Put a malformed row after a valid row that matches neither the ID nor titles and assert the whole transform still fails, proving validation completes before filtering.
+
+Add deterministic cache tests:
+
+```python
+def test_sequential_lookups_share_one_successful_catalog(monkeypatch):
+    calls = []
+    monkeypatch.setattr(work_lookup, "query_work_lookup_documents", lambda: calls.append(1) or raw)
+    work_lookup.get_work_lookup_catalog()
+    work_lookup.get_work_lookup_catalog()
+    assert calls == [1]
+
+def test_concurrent_lookups_single_flight(monkeypatch):
+    entered, release = Event(), Event()
+    calls = []
+    def query():
+        calls.append(1)
+        entered.set()
+        assert release.wait(timeout=1)
+        return raw
+    monkeypatch.setattr(work_lookup, "query_work_lookup_documents", query)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(work_lookup.get_work_lookup_catalog) for _ in range(2)]
+        assert entered.wait(timeout=1)
+        release.set()
+        assert futures[0].result() == futures[1].result()
+    assert calls == [1]
+```
+
+Also patch the monotonic seam to prove reuse at 59.999 seconds and one refresh at 60 seconds after successful completion. Prove a provider exception and a malformed catalog are fanned out to waiters but not cached, the in-flight marker clears, and the next request retries successfully. Reset cache state in an autouse fixture so tests are isolated.
 
 - [ ] **Step 5: Run transformer tests and verify RED**
 
@@ -144,15 +177,37 @@ Run:
 /Users/johan/dev/lb-backend/virtual_env/bin/pytest -q test_lbapi/v2/test_work_lookup.py
 ```
 
-Expected: FAIL because `transform_work_lookup` and the patchable query seam do not exist.
+Expected: FAIL because the catalog builder/filter, single-flight cache, and patchable query seam do not exist.
 
-- [ ] **Step 6: Implement the minimal pure transformer and query seam**
+- [ ] **Step 6: Implement the pure catalog boundary and single-flight cache**
 
 Create these exact boundaries in `work_lookup.py`:
 
 ```python
+from concurrent.futures import Future
+from dataclasses import dataclass
+from threading import Lock
+from time import monotonic
+
 _MALFORMED_RESPONSE = "Malformed work-lookup response"
 _MEDIA_ORDER = {"etext": 0, "faksimil": 1}
+_CATALOG_TTL_SECONDS = 60.0
+
+@dataclass(frozen=True)
+class WorkLookupCatalogItem:
+    item: WorkLookupItem
+    work_id: str
+    search_title_path: str
+    search_title: str
+
+@dataclass(frozen=True)
+class _CatalogEntry:
+    expires_at: float
+    items: tuple[WorkLookupCatalogItem, ...]
+
+_catalog_lock = Lock()
+_catalog_entry: _CatalogEntry | None = None
+_catalog_build: Future[tuple[WorkLookupCatalogItem, ...]] | None = None
 
 def _legacy_api():
     from lbapi import elasticapi
@@ -173,9 +228,9 @@ def query_work_lookup_documents() -> dict[str, Any]:
     )
     return {"data": [hit.to_dict() for hit in response]}
 
-def transform_work_lookup(
-    raw: dict[str, Any], request: WorkLookupRequest
-) -> WorkLookupResponse:
+def build_work_lookup_catalog(
+    raw: dict[str, Any],
+) -> tuple[WorkLookupCatalogItem, ...]:
     try:
         documents = raw["data"]
         if not isinstance(documents, list):
@@ -191,21 +246,92 @@ def transform_work_lookup(
             )
             groups.setdefault(key, []).append(document)
 
-        items: list[WorkLookupItem] = []
+        items: list[WorkLookupCatalogItem] = []
         for group in groups.values():
             ordered = sorted(
                 group,
                 key=lambda item: _MEDIA_ORDER[_required_string(item, "mediatype")],
             )
             main = ordered[0]
-            if _matches_request(main, request):
-                items.append(_to_item(ordered))
-        return WorkLookupResponse(items=items)
+            items.append(WorkLookupCatalogItem(
+                item=_to_item(ordered),
+                work_id=_required_string(main, "lbworkid"),
+                search_title_path=_required_string(main, "titlepath").lower(),
+                search_title=_required_string(main, "title").lower(),
+            ))
+        return tuple(items)
     except (KeyError, TypeError, IndexError, ValidationError, ValueError) as exc:
         raise ValueError(_MALFORMED_RESPONSE) from exc
+
+def filter_work_lookup_catalog(
+    catalog: tuple[WorkLookupCatalogItem, ...],
+    request: WorkLookupRequest,
+) -> WorkLookupResponse:
+    matches = [entry.item for entry in catalog if _matches_request(entry, request)]
+    return WorkLookupResponse(items=matches)
+
+def _matches_request(
+    entry: WorkLookupCatalogItem, request: WorkLookupRequest
+) -> bool:
+    if request.work_id is not None:
+        return entry.work_id == request.work_id
+    queries = [title.lower() for title in request.titles]
+    return any(
+        query in entry.search_title_path or query in entry.search_title
+        for query in queries
+    )
+
+def transform_work_lookup(
+    raw: dict[str, Any], request: WorkLookupRequest
+) -> WorkLookupResponse:
+    return filter_work_lookup_catalog(build_work_lookup_catalog(raw), request)
 ```
 
-Implement transformation with small `_required_string`, `_first_author`, `_group_documents`, `_matches_request`, and `_to_item` helpers. Catch only shape/index/Pydantic failures at the transformer boundary and re-raise the single generic `ValueError`; do not catch `OpenSearchException` here.
+Implement transformation with small `_required_string`, `_first_author`, `_matches_request`, and `_to_item` helpers. The builder must finish every group's validation before `filter_work_lookup_catalog` sees the request. Catch only shape/index/Pydantic failures at the builder boundary and re-raise the single generic `ValueError`; do not catch `OpenSearchException` there.
+
+Add a patchable monotonic seam and the cache algorithm:
+
+```python
+def _monotonic() -> float:
+    return monotonic()
+
+def get_work_lookup_catalog() -> tuple[WorkLookupCatalogItem, ...]:
+    global _catalog_entry, _catalog_build
+    with _catalog_lock:
+        if _catalog_entry is not None and _monotonic() < _catalog_entry.expires_at:
+            return _catalog_entry.items
+        if _catalog_build is None:
+            build = Future()
+            _catalog_build = build
+            is_builder = True
+        else:
+            build = _catalog_build
+            is_builder = False
+
+    if not is_builder:
+        return build.result()
+
+    try:
+        catalog = build_work_lookup_catalog(query_work_lookup_documents())
+    except Exception as exc:
+        with _catalog_lock:
+            if _catalog_build is build:
+                _catalog_build = None
+        build.set_exception(exc)
+        raise
+
+    with _catalog_lock:
+        _catalog_entry = _CatalogEntry(
+            expires_at=_monotonic() + _CATALOG_TTL_SECONDS,
+            items=catalog,
+        )
+        if _catalog_build is build:
+            _catalog_build = None
+    build.set_result(catalog)
+    return catalog
+```
+
+Provide a private cache-reset helper for the autouse test fixture only. Document beside the globals that this state is process-local: each multi-worker process can build once per TTL and no cross-worker sharing is promised.
 
 - [ ] **Step 7: Run focused and complete backend model/transform tests**
 
@@ -227,7 +353,7 @@ git commit -m "feat(api): type ID lookup results"
 
 - [ ] **Step 9: Run the Task 1 review gate**
 
-Review `git show --check --stat HEAD` and the full patch against the strict request alternatives and all ten transformer rules. Run the focused tests again. Resolve every Critical/Important finding in a separate `fix(api): harden ID lookup transform` commit before Task 2.
+Review `git show --check --stat HEAD` and the full patch against the strict request alternatives, complete-catalog validation, exact grouping/media/link rules, 60-second TTL, single-flight/failure behavior, and multi-worker scope. Run the focused tests again. Resolve every Critical/Important finding in a separate `fix(api): harden ID lookup transform` commit before Task 2.
 
 ---
 
@@ -241,12 +367,12 @@ Review `git show --check --stat HEAD` and the full patch against the strict requ
 - Modify: `openapi/v2.json`
 
 **Interfaces:**
-- Consumes: Task 1 `WorkLookupRequest`, `query_work_lookup_documents`, and `transform_work_lookup`.
+- Consumes: Task 1 `WorkLookupRequest`, `get_work_lookup_catalog`, and `filter_work_lookup_catalog`.
 - Produces: synchronous `POST /works/lookup` under the `/v2` mount with operation ID `v2_post_work_lookup`.
 
 - [ ] **Step 1: Add failing endpoint tests**
 
-Add TestClient cases for exact ID/title bodies, normalized IDs, empty results, every boundary, forbidden extras, synchronous `POST`, malformed raw generic 500, unexpected generic 500, and nonleaking OpenSearch 503. The 503 assertion is exact:
+Add TestClient cases for exact ID/title bodies, normalized IDs, empty results, every boundary, forbidden extras, synchronous `POST`, cached sequential requests, malformed raw generic 500 even when the malformed row would not match, unexpected generic 500, and nonleaking OpenSearch 503. Clear the process-local cache around endpoint tests. The 503 assertion is exact:
 
 ```python
 assert response.json() == {
@@ -286,7 +412,7 @@ WORK_LOOKUP_RESPONSES = {
 )
 def post_work_lookup(request: WorkLookupRequest) -> WorkLookupResponse:
     try:
-        raw = query_work_lookup_documents()
+        catalog = get_work_lookup_catalog()
     except OpenSearchException as exc:
         error = ApiError(
             code="work_lookup_unavailable",
@@ -294,14 +420,14 @@ def post_work_lookup(request: WorkLookupRequest) -> WorkLookupResponse:
             details=None,
         )
         raise HTTPException(status_code=503, detail=error.model_dump(mode="json")) from exc
-    return transform_work_lookup(raw, request)
+    return filter_work_lookup_catalog(catalog, request)
 ```
 
 Include `router` in `lbapi/v2/app.py`. Keep the route a plain `def` so FastAPI runs the blocking query in its thread pool.
 
 - [ ] **Step 4: Add failing OpenAPI contract assertions**
 
-Assert `/works/lookup` is POST-only, has operation ID `v2_post_work_lookup`, request `anyOf` references the two strict alternatives, all schemas set `additionalProperties: false`, both fields are required in each alternative, bounds/literals are exact, response 200 references `WorkLookupResponse`, and 422/500/503 reference `ApiErrorResponse`. Add `/works/lookup` to exact v2 path-set and mounted-isolation assertions; prove it does not appear in legacy OpenAPI.
+Assert `/works/lookup` is POST-only, has operation ID `v2_post_work_lookup`, request `anyOf` references exactly the two strict alternatives, all schemas set `additionalProperties: false`, both request fields are required in each alternative, ID/title bounds are exact, `media.minItems` is 1, the media enum is exactly `etext | faksimil`, response 200 references `WorkLookupResponse`, and 422/500/503 reference `ApiErrorResponse`. Add `/works/lookup` to exact v2 path-set and mounted-isolation assertions; prove it does not appear in legacy OpenAPI.
 
 - [ ] **Step 5: Run OpenAPI tests and verify RED**
 
@@ -346,7 +472,7 @@ Review the complete Task 1–2 backend range for raw-field containment, exact er
 
 **Interfaces:**
 - Consumes: backend `openapi/v2.json` from Task 2.
-- Produces: generated `client.POST("/works/lookup", { body, signal })` types and deterministic fixture controls `_work_lookup_requests`, `_work_lookup_failure`, and `_work_lookup_delays`.
+- Produces: generated `client.POST("/works/lookup", { body, signal })` types; deterministic fixture controls `_work_lookup_requests`, `_work_lookup_failure`, and `_work_lookup_delays`; and distinguishable `/private-v2` test aliases for SSR-base proof.
 
 - [ ] **Step 1: Add failing generated-client tests**
 
@@ -381,7 +507,7 @@ Expected: generation succeeds and freshness check exits 0. Do not hand-edit `lba
 
 - [ ] **Step 4: Add failing fixture-server tests**
 
-Define fixed rows with exact author/title/media links in `work-lookup-data.mjs`. Add tests for ID and title bodies, request ledger/reset, independent 503 control, per-body delay/latest ordering, CORS, and no effect on existing generic/Quick Search ledgers. Use the serialized request body as the delay key so both modes are deterministic.
+Define fixed rows with exact author/title/media links in `work-lookup-data.mjs`. Add tests for ID and title bodies, request path/body ledger/reset, independent 503 control, per-body delay/latest ordering, CORS, and no effect on existing generic/Quick Search ledgers. Use the serialized request body as the delay key so both modes are deterministic. Normalize a test-only `/private-v2/*` alias to the same `/v2/*` fixture handlers while retaining the original path in the ledger; this lets SSR tests distinguish the private base from the public proxy without changing response data.
 
 - [ ] **Step 5: Run fixture tests and verify RED**
 
@@ -401,9 +527,11 @@ let workLookupRequests = []
 let workLookupFailure = false
 let workLookupDelays = {}
 
-if (request.method === "POST" && url.pathname === "/v2/works/lookup") {
+const apiPathname = url.pathname.replace(/^\/private-v2(?=\/|$)/, "/v2")
+
+if (request.method === "POST" && apiPathname === "/v2/works/lookup") {
   const body = await readJson(request)
-  workLookupRequests.push(body)
+  workLookupRequests.push({ path: url.pathname, body })
   await waitForWorkLookupDelay(JSON.stringify(body))
   if (workLookupFailure) return sendJson(response, 503, {
     error: {
@@ -417,6 +545,7 @@ if (request.method === "POST" && url.pathname === "/v2/works/lookup") {
 ```
 
 Controls must return/reset bodies, failure, and delays without making external requests.
+Compute `apiPathname` before `resourceFor()` and every v2 route conditional, and use it for dispatch while ledgers retain `url.pathname`; all existing stats/contact/Quick Search SSR fixtures must continue to work through the private alias.
 
 - [ ] **Step 7: Run frontend generation/unit/type gates**
 
@@ -449,14 +578,15 @@ Review that the generated file matches only the canonical schema, fixture data i
 - Create: `nuxt/app/pages/id/[[id]].vue`
 - Create: `nuxt/test/ssr/id-lookup.spec.ts`
 - Create: `nuxt/test/e2e/id-lookup.behavior.spec.ts`
+- Modify: `nuxt/playwright.config.ts`
 
 **Interfaces:**
 - Consumes: generated `POST /works/lookup`, its `WorkLookupResponse`, and fixture controls from Task 3.
-- Produces: both ID routes, exact authority markup/body classes, route-param SSR, and page-local interactive lookup state.
+- Produces: both ID routes, exact metadata/authority markup/body classes, private-base route-param SSR, and page-local coupled interactive lookup state.
 
 - [ ] **Step 1: Add failing SSR route tests**
 
-Assert `/id` has exact body classes, placeholders/control order, `autofocus`, `Hämtar`, `dots_blink`, `table-striped`, and zero lookup requests. Assert `/id/LB238704` posts `{ work_id: "lb238704", titles: [] }`; `/id/RödaRummet` posts `{ work_id: null, titles: ["rödarummet"] }`; each renders exact four-cell rows/links and makes one SSR request with no hydration duplicate. Assert invalid over-limit route values render the shell and make no request.
+Configure the Playwright Nuxt server with `NUXT_API_BASE=http://127.0.0.1:4100/private-v2` while retaining `NUXT_PUBLIC_API_BASE=/api/v2`. Assert `/id` has exact `<title>Litteraturbanken</title>`, the full default description meta, body classes `focus page-id ready`, placeholders/control order, `autofocus`, `Hämtar`, `dots_blink`, `table-striped`, and zero lookup requests. Assert `/id/LB238704` posts `{ work_id: "lb238704", titles: [] }`; `/id/RödaRummet` posts `{ work_id: null, titles: ["rödarummet"] }`; each ledger entry has path `/private-v2/works/lookup`, renders exact four-cell rows/links, and makes one SSR request with no hydration duplicate. Assert no SSR entry uses `/v2/works/lookup`, proving the public base was not selected. Assert invalid over-limit route values render the shell and make no request.
 
 - [ ] **Step 2: Run SSR tests and verify RED**
 
@@ -486,7 +616,24 @@ expect(await workLookupBodies()).toEqual([
 ])
 ```
 
-Cover immediate ID, exact 500 ms title/textarea debounce, `Författare – Titel\nTitel två` normalization to `['Titel', 'Titel två']`, blank removal, first-100 truncation, mode clearing, empty/invalid no-request, loading class/preloader, abort plus version-guard latest wins, no-hit/failure blank table, route changes, unmount cleanup, exact four cells, ordinary anchors, and `:::` only between media links.
+Cover immediate ID and these exact coupled-state sequences:
+
+```ts
+await textarea.fill("Författare – Titel\nTitel två")
+await expect(titleInput).toHaveValue("Titel")
+await idInput.fill("lb238704")
+await expect(titleInput).toHaveValue("")
+await expect(textarea).toHaveValue("Författare – Titel\nTitel två")
+
+await textarea.fill("A – First\nSecond\nThird")
+await titleInput.fill("Replacement")
+expect(lastLookupBody()).toEqual({
+  work_id: null,
+  titles: ["Replacement", "Second", "Third"]
+})
+```
+
+Also prove exact 500 ms title/textarea debounce; textarea replacement of the whole title array; `A – B – C` normalization to `B`; `A – ` fallback to `A –`; preserved empty rows/duplicates in control state but blank removal and first-100 limiting only in the outgoing body; ID clearing titles but retaining textarea; title retaining `titles[1:]`; empty/invalid no-request; loading class/preloader; abort plus version-guard latest wins; typed 503 and a route-aborted/fetch-thrown network failure both yielding a blank table, cleared `searching`, and no `pageerror`/`unhandledrejection`; no-hit; route changes; unmount cleanup; exact title/description/body restoration on hydrated navigation; exact four cells; ordinary anchors; and `:::` only between media links.
 
 - [ ] **Step 4: Run behavior tests and verify RED**
 
@@ -509,20 +656,41 @@ type LookupBody =
 const normalizeTextarea = (value: string) => value
   .split("\n")
   .map(row => (row.split("–")[1] || row).trim())
+
+const requestTitles = (values: string[]) => values
+  .map(value => value.trim())
   .filter(Boolean)
   .slice(0, 100)
+
+const isAbortError = (error: unknown) =>
+  error instanceof DOMException && error.name === "AbortError"
 
 async function runLookup(body: LookupBody, signal?: AbortSignal) {
   const version = ++requestVersion
   loading.value = true
-  const { data, error } = await api.POST("/works/lookup", { body, signal })
-  if (version !== requestVersion) return
-  items.value = error ? [] : (data?.items ?? [])
-  loading.value = false
+  try {
+    const { data, error } = await api.POST("/works/lookup", { body, signal })
+    if (version !== requestVersion) return
+    items.value = error ? [] : (data?.items ?? [])
+  } catch (error) {
+    if (version !== requestVersion) return
+    if (!isAbortError(error)) items.value = []
+  } finally {
+    if (version === requestVersion) loading.value = false
+  }
 }
 ```
 
-Decode, trim, and lower-case a route param before seeding either mode, then classify it by `startsWith("lb")`. Use page-local `useAsyncData` only for a valid route-param body; do not call it for `/id`. Serialize the SSR response for hydration. Interactive watchers must use one 500 ms timer for title/textarea, immediate valid-ID requests, a fresh `AbortController`, and a monotonically increasing version. Clearing/switching/navigating/unmounting must increment the version, abort, cancel timers, stop loading, and clear rows.
+Instantiate the client exactly as:
+
+```ts
+const config = useRuntimeConfig()
+const api = createLbApiClient(
+  import.meta.server ? config.apiBase : config.public.apiBase
+)
+```
+
+Decode, trim, and lower-case a route param before seeding either mode, then classify it by `startsWith("lb")`. Use page-local `useAsyncData` only for a valid route-param body; do not call it for `/id`. Serialize the SSR response for hydration. Interactive handlers use `workId`, `titles`, and `textarea` as the authority state: ID input assigns `titles = []` without touching `textarea`; title input clears `workId` and replaces only a copied `titles[0]`; textarea clears `workId` and assigns `titles = normalizeTextarea(textarea)`, which automatically mirrors `titles[0]` in the title input. Only `requestTitles(titles)` constructs an API body. Use one 500 ms timer for title/textarea, immediate valid-ID requests, a fresh `AbortController`, and a monotonically increasing version. Clearing/switching/navigating/unmounting must increment the version, abort, cancel timers, stop loading, and clear rows.
 
 - [ ] **Step 6: Implement authority markup without style redesign**
 
@@ -530,9 +698,9 @@ Render this structure with Vue bindings and exact text:
 
 ```vue
 <div :class="{ searching: loading }">
-  <input v-model="workId" placeholder="lbid" autofocus>
-  <input v-model="singleTitle" placeholder="titel">
-  <textarea v-model="textarea" placeholder="flera titlar separarade med nyrad" />
+  <input :value="workId" placeholder="lbid" autofocus @input="onWorkIdInput">
+  <input :value="titles[0] ?? ''" placeholder="titel" @input="onTitleInput">
+  <textarea :value="textarea" placeholder="flera titlar separarade med nyrad" @input="onTextareaInput" />
   <div class="preloader">Hämtar <span class="dots_blink" /></div>
   <table class="table-striped">
     <tr v-for="item in items" :key="`${item.work_id}:${item.title.url}`">
@@ -549,7 +717,17 @@ Render this structure with Vue bindings and exact text:
 </div>
 ```
 
-Use `useHead({ bodyAttrs: { class: "focus page-id ready" } })`. Do not add CSS unless a later visual test demonstrates a migration-specific need.
+Set exact metadata/body state:
+
+```ts
+useSeoMeta({
+  title: "Litteraturbanken",
+  description: "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
+})
+useHead({ bodyAttrs: { class: "focus page-id ready" } })
+```
+
+Do not add CSS unless a later visual test demonstrates a migration-specific need.
 
 - [ ] **Step 7: Run focused and full frontend gates**
 
@@ -568,14 +746,14 @@ Expected: all pass; `/id` request ledger remains empty.
 - [ ] **Step 8: Commit the page deliverable**
 
 ```bash
-git add 'nuxt/app/pages/id/[[id]].vue' nuxt/test/ssr/id-lookup.spec.ts nuxt/test/e2e/id-lookup.behavior.spec.ts
+git add 'nuxt/app/pages/id/[[id]].vue' nuxt/test/ssr/id-lookup.spec.ts nuxt/test/e2e/id-lookup.behavior.spec.ts nuxt/playwright.config.ts
 git diff --cached --check
 git commit -m "feat(nuxt): port ID lookup"
 ```
 
 - [ ] **Step 9: Run the Task 4 review gate**
 
-Review SSR zero-request semantics, route classification, debounce timing, abort/version cleanup, exact copy/markup/links, response error handling, local-only state, and deferred destinations. Rerun focused SSR/browser tests, typecheck, and build; fix all Critical/Important findings separately.
+Review SSR zero-request/private-base semantics, route classification, coupled control state, split-index-1 normalization, debounce timing, `try/catch/finally` abort/version cleanup, thrown-network coverage, exact metadata/copy/markup/links, local-only state, and deferred destinations. Rerun focused SSR/browser tests, typecheck, and build; fix all Critical/Important findings separately.
 
 ---
 
@@ -596,9 +774,9 @@ Review SSR zero-request semantics, route classification, debounce timing, abort/
 
 - [ ] **Step 1: Add the failing Angular authority capture**
 
-Intercept only the exact legacy `query_string/etext,faksimil` request and abort unexpected search/API requests. For the populated case, use a test-only browser seam that changes the `getTitles()` resolution from `{ titles, author_aggs, imported_aggs, hits, distinct_hits, suggest }` to its `titles` member before `IdPageCtrl` assigns `data`. Assert production Angular source is untouched and the corrected rows exactly match the backend characterization fixture.
+Intercept only the exact legacy `query_string/etext,faksimil` request and abort unexpected search/API requests. For the populated case, use a test-only browser seam that changes the `getTitles()` resolution from `{ titles, author_aggs, imported_aggs, hits, distinct_hits, suggest }` to its `titles` member before `IdPageCtrl` assigns `data`. Populate through the textarea with `Författare – Titel\nTitel två`; assert Angular mirrors `Titel` into the title input while keeping the raw textarea, and assert production Angular source is untouched and the corrected rows exactly match the backend characterization fixture.
 
-Capture empty and populated states at desktop and mobile only after fonts, `focus page-id ready`, all three controls, loading completion, exact four-cell row count, and links are ready. Assert an interception ledger contains no production escape.
+Capture empty and populated states at desktop and mobile only after fonts, `focus page-id ready`, exact title/default description, all three coupled control values, loading completion, exact four-cell row count, and links are ready. Assert an interception ledger contains no production escape.
 
 - [ ] **Step 2: Run capture and inspect all four images**
 
@@ -611,7 +789,7 @@ Inspect form geometry, first-input focus, table width/striping, row typography, 
 
 - [ ] **Step 3: Add failing Nuxt visual comparisons**
 
-Use the fixture server only. Assert exact request bodies and readiness, then compare empty/populated desktop/mobile screenshots with the repository's existing near-pixel threshold (`maxDiffPixelRatio: 0.1`, `maxDiffPixels: 100`). Explicitly assert `/id` made no request and populated cases made only the expected v2 POST.
+Use the fixture server only. Populate with the same textarea sequence, assert the raw textarea and mirrored first title before readiness, assert exact request bodies, then compare empty/populated desktop/mobile screenshots with the repository's existing near-pixel threshold (`maxDiffPixelRatio: 0.1`, `maxDiffPixels: 100`). Explicitly assert `/id` made no request and populated cases made only the expected public `/v2/works/lookup` POST.
 
 - [ ] **Step 4: Run visual tests and verify RED or exact parity**
 
@@ -675,4 +853,4 @@ git commit -m "test(nuxt): lock ID lookup parity"
 
 - [ ] **Step 8: Run the Task 5 and final whole-slice review gates**
 
-Review the exact backend range from `e8bc986` and frontend ID-only commits from `5cbd8ca`. Verify strict raw containment, corrected-envelope intent, exact modes/limits/errors, SSR zero-query behavior, latest-wins cleanup, all links/copy/classes, production-escape ledgers, four inspected authority images, and unchanged legacy scope. Fix every Critical/Important finding in a separate commit and rerun every affected complete gate. The slice is ready only with final `Spec PASS`, `Quality PASS`, and `Ready YES`.
+Review the exact backend range from `e8bc986` and frontend ID-only commits from `5cbd8ca`. Re-scan the OpenAPI `anyOf`, forbidden extras, limits, full-catalog-before-filter validation, process-local TTL/single-flight behavior, exact group/media/link contracts, sole envelope intent correction, coupled controls, private-base SSR zero-query behavior, metadata/body contract, interactive `try/catch/finally` latest-wins cleanup, production-escape ledgers, four inspected authority images, and unchanged legacy scope. Fix every Critical/Important finding in a separate commit and rerun every affected complete gate. The slice is ready only with final `Spec PASS`, `Quality PASS`, and `Ready YES`.
