@@ -81,7 +81,7 @@ test("themed article owns its stylesheet, exact background, style, and classes",
   expect(html).toContain("html { background-color: #382a32; }")
   expect(html).toMatch(/<html[^>]*style="[^"]*rostratt_a\.jpg/)
   expect(html).toMatch(
-    /<body[^>]*class="focus page-presentation ready subpage bkg-add-border bkg-paper"/
+    /<body[^>]*class="focus page-presentation ready subpage bkg-add-border bkg-paper presentation-style-rostratt"/
   )
   expect(await presentationRequests(request)).toEqual([contentPath, backgroundsPath])
 })
@@ -150,7 +150,9 @@ test("background XML failure keeps article and extracted head assets", async ({ 
 
   expect(html).toContain("Rösträtt 1919")
   expect(html).toContain("/red/presentationer/specialomraden/Rostratt.css")
-  expect(html).toMatch(/<body[^>]*class="focus page-presentation ready subpage"/)
+  expect(html).toMatch(
+    /<body[^>]*class="focus page-presentation ready subpage presentation-style-rostratt"/
+  )
   expect(html).not.toContain("bkg-add-border")
   expect(html).not.toContain("bkg-paper")
   expect(html).not.toContain("rostratt_a.jpg")

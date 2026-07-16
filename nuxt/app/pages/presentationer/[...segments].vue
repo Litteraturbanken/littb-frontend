@@ -138,6 +138,9 @@ useHead(() => {
     ?.split(/\s+/)
     .filter(Boolean)
     .map(className => `bkg-${className}`) ?? []
+  const documentClasses = document.stylesheets.includes(
+    "/red/presentationer/specialomraden/Rostratt.css"
+  ) ? ["presentation-style-rostratt"] : []
   const htmlBackground = isIndex.value
     ? `background: url('${presentationBackground}') no-repeat;`
     : background?.imagePath
@@ -152,13 +155,15 @@ useHead(() => {
         "page-presentation",
         "ready",
         ...(!isIndex.value ? ["subpage"] : []),
-        ...backgroundClasses
+        ...backgroundClasses,
+        ...documentClasses
       ].join(" ")
     },
     link: document.stylesheets.map((href, index) => ({
       key: `presentation-stylesheet-${index}`,
       rel: "stylesheet",
-      href
+      href,
+      tagPriority: 1_000
     })),
     style: [
       ...document.inlineStyles.map((textContent, index) => ({

@@ -207,6 +207,7 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator("html")).toHaveAttribute("style", /rostratt_a\.jpg/)
   await expect(page.locator("body")).toHaveClass(/\bbkg-add-border\b/)
   await expect(page.locator("body")).toHaveClass(/\bbkg-paper\b/)
+  await expect(page.locator("body")).toHaveClass(/\bpresentation-style-rostratt\b/)
 
   await navigateClient(
     page,
@@ -234,6 +235,7 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator("body")).toHaveClass(/\bbkg-folder-fallback\b/)
   await expect(page.locator("body")).not.toHaveClass(/\bbkg-add-border\b/)
   await expect(page.locator("body")).not.toHaveClass(/\bbkg-paper\b/)
+  await expect(page.locator("body")).not.toHaveClass(/\bpresentation-style-rostratt\b/)
 
   await navigateClient(page, "/presentationer")
   await expect(page.getByRole("heading", { name: "Presentationer och introduktioner" })).toBeVisible()
@@ -251,6 +253,7 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator("html")).toHaveAttribute("style", /presentations[^\"]*\.jpg/)
   await expect(page.locator("html")).not.toHaveAttribute("style", /rostratt_[ab]\.jpg/)
   await expect(page.locator("body")).toHaveClass("focus page-presentation ready")
+  await expect(page.locator("body")).not.toHaveClass(/\bpresentation-style-rostratt\b/)
 
   await navigateClient(page, "/definitely-not-a-route")
   await expect(page).toHaveTitle("Sidan kan inte hittas | Litteraturbanken")
@@ -259,6 +262,7 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator("body")).not.toHaveClass(/\bpage-presentation\b/)
   await expect(page.locator("body")).not.toHaveClass(/\bsubpage\b/)
   await expect(page.locator("body")).not.toHaveClass(/\bbkg-/)
+  await expect(page.locator("body")).not.toHaveClass(/\bpresentation-style-rostratt\b/)
   await expect(page.locator("html")).not.toHaveAttribute("style", /presentations|rostratt/)
   await expect(rostrattStylesheet).toHaveCount(0)
   expect(await headStyleText(page)).not.toContain("\np.image {text-align:center}\n")

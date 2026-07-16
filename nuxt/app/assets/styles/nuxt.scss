@@ -34,6 +34,26 @@
     }
 }
 
+.page-presentation:not(.subpage) .mainnav .quick-search-trigger,
+.presentation-style-rostratt .mainnav .quick-search-trigger {
+    color: white;
+}
+
+.page-presentation.subpage.presentation-style-rostratt {
+    .lb-logo {
+        --logo-l-color: white;
+        --logo-b-color: white;
+    }
+
+    .mainnav a {
+        color: white;
+    }
+
+    p {
+        max-width: 570px;
+    }
+}
+
 .quick-search-options [role="option"][aria-disabled="true"] > a {
     cursor: default;
 }
