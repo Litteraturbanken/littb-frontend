@@ -47,7 +47,7 @@ type BackgroundRule = {
 }
 ```
 
-The narrow source parser:
+The page uses the pinned SSR-safe `linkedom` 0.18.13 `DOMParser` for both XHTML and backgrounds XML; browser-only `DOMParser`, regex-only document parsing, and an unpinned transitive parser are not acceptable. The narrow parser:
 
 - extracts the body without rendering the upstream doctype, html, head, title, meta, or script elements;
 - extracts stylesheet links and inline head styles;
@@ -65,13 +65,15 @@ Unavailable content leaves the Presentation shell with an empty body and no leak
 
 The index uses the already-copied bundled `presentations.jpg` background and does not fetch background configuration.
 
-Documents also fetch `/red/bilder/bakgrundsbilder/backgrounds.xml`. A local parser keeps the ordered rules for `/presentationer/*`; exact target matches win, followed by the first XML-order wildcard match, reproducing the legacy service. The chosen rule can contribute:
+Documents also fetch `/red/bilder/bakgrundsbilder/backgrounds.xml`. A local parser keeps the ordered rules for `/presentationer/*`; exact target matches win, followed by the first XML-order wildcard match, reproducing the legacy service. Repeated exact targets use the last declaration, matching the legacy object assignment. Whitespace-separated `class` values become multiple `bkg-<token>` body classes. The chosen rule can contribute:
 
 - an editor-owned background image;
 - a `bkg-<class>` body class;
 - trusted inline background style text.
 
-All dynamic stylesheet links, inline styles, background styles, `subpage`, and `bkg-*` classes are computed page head/body state and must be removed when navigating between documents, back to the index, or to a 404. SSR serializes both requests so hydration makes no duplicate fetch.
+All dynamic stylesheet links, inline styles, background styles, `subpage`, and `bkg-*` classes are computed page head/body state and must be removed when navigating between documents, back to the index, or to a 404. SSR serializes both requests so hydration makes no duplicate fetch. A direct hydrated index makes exactly one XHTML request and no XML request; a direct hydrated document makes exactly one XHTML and one XML request. Anchor/query/history changes make neither request again.
+
+The two document requests fail independently. XHTML failure yields the valid shell, empty body, and no document-owned head assets while still applying an independently resolved background rule. Background XML failure keeps the valid article and its extracted head assets but applies no dynamic background image, style, or `bkg-*` class. Neither error leaks upstream details or suppresses the independently successful resource.
 
 ## Markup and interaction
 
@@ -88,9 +90,8 @@ The copied parity stylesheet already owns `.page-presentation`, `.doc.main`, `.c
 ## Verification
 
 - Frozen full fixtures cover the index, ordinary article, themed article, inline-style/image article, a vandring, runtime CSS/images/downloads, and ordered backgrounds XML.
-- Parser tests cover wrapper/script removal, exact metadata, URL normalization, unsafe schemes, malformed input, and background exact/wildcard order.
-- SSR tests cover every valid/invalid/legacy route, exact requests/head/body/classes, upstream failure, and zero hydration refetch.
-- Browser tests cover `ankare`, history changes, root-normalized assets/downloads, and complete cleanup across document/index/404 transitions.
-- Desktop/mobile Angular authority and Nuxt comparisons cover the index, an ordinary article, and a themed article after fonts, images, dynamic stylesheets, and backgrounds are ready.
+- Parser tests cover wrapper/script removal, exact metadata, URL normalization, unsafe schemes, malformed input, duplicate-target last-wins, whitespace-split classes, and background exact/wildcard order.
+- SSR tests cover every valid/invalid/legacy route, exact requests/head/body/classes, independent XHTML/XML failure, and a syntactically safe unknown document that requests upstream and returns the 200 empty shell rather than route 404.
+- Browser ledger tests prove exact hydrated request counts and zero query/history refetch; behavior tests cover `ankare`, root-normalized assets/downloads, and complete cleanup across document/index/404 transitions.
+- Desktop/mobile Angular authority and Nuxt comparisons cover the index, ordinary article, themed article, inline-style/image article, and a vandring after fonts, images, dynamic stylesheets, and backgrounds are ready.
 - Complete Nuxt, unchanged Angular, API freshness, typecheck/build, scope, and diff gates close the slice.
-
