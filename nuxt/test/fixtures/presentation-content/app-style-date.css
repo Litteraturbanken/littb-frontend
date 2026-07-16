@@ -1,0 +1,5 @@
+/* PRESENTATION-FIXTURE: deterministic authority for the Vandring heading line. */
+.page-presentation .content > h1 + .author {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}

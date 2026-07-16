@@ -24,6 +24,23 @@ const homeContent = new Map([
   ["/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg", ["image/jpeg", readFileSync(new URL("./home-content/start_bkg_172_2026.jpg", import.meta.url))]]
 ])
 
+const presentationContent = new Map([
+  ["/red/presentationer/presentationerForfattare.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/presentationerForfattare.html", import.meta.url))]],
+  ["/red/presentationer/specialomraden/Censur.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/Censur.html", import.meta.url))]],
+  ["/red/presentationer/specialomraden/Rostratt.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/Rostratt.html", import.meta.url))]],
+  ["/red/presentationer/specialomraden/Phosphoros.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/Phosphoros.html", import.meta.url))]],
+  ["/red/presentationer/vandringar/VandringElam.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/VandringElam.html", import.meta.url))]],
+  ["/red/bilder/bakgrundsbilder/backgrounds.xml", ["xml", "application/xml; charset=utf-8", readFileSync(new URL("./presentation-content/backgrounds.xml", import.meta.url))]],
+  ["/red/presentationer/specialomraden/Rostratt.css", ["asset", "text/css; charset=utf-8", readFileSync(new URL("./presentation-content/Rostratt.css", import.meta.url))]],
+  ["/app/style/litteraturbanken.css", ["asset", "text/css; charset=utf-8", readFileSync(new URL("./presentation-content/app-style-litteraturbanken.css", import.meta.url))]],
+  ["/app/style/date.css", ["asset", "text/css; charset=utf-8", readFileSync(new URL("./presentation-content/app-style-date.css", import.meta.url))]],
+  ["/red/presentationer/specialomraden/Phosphorosbilder/1.jpeg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/phosphoros-1.jpeg", import.meta.url))]],
+  ["/red/presentationer/specialomraden/Phosphorosbilder/2.jpeg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/phosphoros-2.jpeg", import.meta.url))]],
+  ["/red/presentationer/specialomraden/AttLasaEnHandskrivenTillfallesdikt.pdf", ["asset", "application/pdf", readFileSync(new URL("./presentation-content/AttLasaEnHandskrivenTillfallesdikt.pdf", import.meta.url))]],
+  ["/red/bilder/bakgrundsbilder/rostratt_a.jpg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/rostratt-a.jpg", import.meta.url))]],
+  ["/red/bilder/bakgrundsbilder/rostratt_b.jpg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/rostratt-b.jpg", import.meta.url))]]
+])
+
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 let requests = []
 let contactSubmissions = []
@@ -35,6 +52,8 @@ let quickSearchFailure = false
 let quickSearchDelays = {}
 let homeRequests = []
 let homeFailure = false
+let presentationRequests = []
+let presentationFailures = new Set()
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -88,6 +107,15 @@ function resourceFor(pathname) {
   if (pathname === "/v2/works/popular") return "works"
   if (pathname === "/v2/epubs/popular") return "epubs"
   return null
+}
+
+function isPresentationRequest(pathname) {
+  return pathname.startsWith("/red/presentationer/") ||
+    pathname === "/red/bilder/bakgrundsbilder/backgrounds.xml" ||
+    pathname === "/red/bilder/bakgrundsbilder/rostratt_a.jpg" ||
+    pathname === "/red/bilder/bakgrundsbilder/rostratt_b.jpg" ||
+    pathname === "/app/style/litteraturbanken.css" ||
+    pathname === "/app/style/date.css"
 }
 
 const server = createServer(async (request, response) => {
@@ -182,6 +210,25 @@ const server = createServer(async (request, response) => {
     homeFailure = false
     return sendJson(response, 200, { failure: homeFailure })
   }
+  if (url.pathname === "/_presentation_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: presentationRequests })
+  }
+  if (url.pathname === "/_presentation_requests" && request.method === "DELETE") {
+    presentationRequests = []
+    return sendJson(response, 200, { requests: presentationRequests })
+  }
+  if (url.pathname === "/_presentation_failures" && request.method === "GET") {
+    return sendJson(response, 200, { failures: [...presentationFailures] })
+  }
+  if (url.pathname === "/_presentation_failures" && request.method === "PUT") {
+    const { resource } = await readJson(request)
+    if (["xhtml", "xml", "asset"].includes(resource)) presentationFailures.add(resource)
+    return sendJson(response, 200, { failures: [...presentationFailures] })
+  }
+  if (url.pathname === "/_presentation_failures" && request.method === "DELETE") {
+    presentationFailures = new Set()
+    return sendJson(response, 200, { failures: [] })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -199,6 +246,21 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
     }
     return sendBody(response, 200, home[0], home[1])
+  }
+
+  if (request.method === "GET" && isPresentationRequest(url.pathname)) {
+    presentationRequests.push(`${url.pathname}${url.search}`)
+    const content = presentationContent.get(url.pathname)
+    if (!content) {
+      return sendJson(response, 404, {
+        error: { code: "not_found", message: "Resource not found", details: null }
+      })
+    }
+    const [resource, contentType, body] = content
+    if (presentationFailures.has(resource)) {
+      return sendBody(response, 503, "text/plain; charset=utf-8", `${resource} unavailable`)
+    }
+    return sendBody(response, 200, contentType, body)
   }
 
   const content = aboutContent.get(url.pathname)

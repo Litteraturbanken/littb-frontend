@@ -1,0 +1,5 @@
+*.html whitespace=-trailing-space,-space-before-tab
+Rostratt.css whitespace=-trailing-space,-space-before-tab
+*.jpeg binary
+*.jpg binary
+*.pdf binary

@@ -70,6 +70,12 @@ async function homeRequests() {
   }
 }
 
+async function presentationRequests() {
+  return await (await fetch(`${origin}/_presentation_requests`)).json() as {
+    requests: string[]
+  }
+}
+
 describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -101,7 +107,9 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_quick_search_failure`, { method: "DELETE" }),
       fetch(`${origin}/_quick_search_delays`, { method: "DELETE" }),
       fetch(`${origin}/_home_requests`, { method: "DELETE" }),
-      fetch(`${origin}/_home_failure`, { method: "DELETE" })
+      fetch(`${origin}/_home_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_presentation_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_presentation_failures`, { method: "DELETE" })
     ])
   })
 
@@ -431,5 +439,110 @@ describe("v2 fixture server operations", () => {
 
     expect(response.status).toBe(404)
     expect(await homeRequests()).toEqual({ requests: [] })
+  })
+
+  test("serves exact Presentation XHTML, XML, and rendered assets with isolated accounting", async () => {
+    await fetch(`${origin}/v2/stats`)
+    await fetch(`${origin}/v2/quick-search?query=strindberg`)
+    await fetch(`${origin}/red/om/start/startsida-ny.html`)
+
+    const expected = [
+      ["/red/presentationer/presentationerForfattare.html?fixture-cache", "text/html; charset=utf-8"],
+      ["/red/presentationer/specialomraden/Censur.html", "text/html; charset=utf-8"],
+      ["/red/presentationer/specialomraden/Rostratt.html", "text/html; charset=utf-8"],
+      ["/red/presentationer/specialomraden/Phosphoros.html", "text/html; charset=utf-8"],
+      ["/red/presentationer/vandringar/VandringElam.html", "text/html; charset=utf-8"],
+      ["/red/bilder/bakgrundsbilder/backgrounds.xml", "application/xml; charset=utf-8"],
+      ["/red/presentationer/specialomraden/Rostratt.css", "text/css; charset=utf-8"],
+      ["/app/style/litteraturbanken.css", "text/css; charset=utf-8"],
+      ["/app/style/date.css", "text/css; charset=utf-8"],
+      ["/red/presentationer/specialomraden/Phosphorosbilder/1.jpeg", "image/jpeg"],
+      ["/red/presentationer/specialomraden/Phosphorosbilder/2.jpeg", "image/jpeg"],
+      ["/red/presentationer/specialomraden/AttLasaEnHandskrivenTillfallesdikt.pdf", "application/pdf"],
+      ["/red/bilder/bakgrundsbilder/rostratt_a.jpg", "image/jpeg"],
+      ["/red/bilder/bakgrundsbilder/rostratt_b.jpg", "image/jpeg"]
+    ] as const
+
+    for (const [path, contentType] of expected) {
+      const response = await fetch(`${origin}${path}`)
+      expect(response.status, path).toBe(200)
+      expect(response.headers.get("content-type"), path).toBe(contentType)
+      expect((await response.arrayBuffer()).byteLength, path).toBeGreaterThan(0)
+    }
+
+    expect(await presentationRequests()).toEqual({
+      requests: expected.map(([path]) => path)
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect(await quickSearchRequests()).toEqual({ queries: ["strindberg"] })
+    expect(await homeRequests()).toEqual({
+      requests: ["/red/om/start/startsida-ny.html"]
+    })
+
+    await fetch(`${origin}/_presentation_requests`, { method: "DELETE" })
+    expect(await presentationRequests()).toEqual({ requests: [] })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect(await quickSearchRequests()).toEqual({ queries: ["strindberg"] })
+    expect(await homeRequests()).toEqual({
+      requests: ["/red/om/start/startsida-ny.html"]
+    })
+  })
+
+  test("Presentation XHTML, XML, and asset failures are independent and resettable", async () => {
+    const fail = async (resource: "xhtml" | "xml" | "asset") => {
+      await fetch(`${origin}/_presentation_failures`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ resource })
+      })
+    }
+
+    await fail("xhtml")
+    await fail("asset")
+    expect(await (await fetch(`${origin}/_presentation_failures`)).json()).toEqual({
+      failures: ["xhtml", "asset"]
+    })
+    expect((await fetch(`${origin}/red/presentationer/specialomraden/Censur.html`)).status)
+      .toBe(503)
+    expect((await fetch(`${origin}/red/presentationer/specialomraden/Rostratt.css`)).status)
+      .toBe(503)
+    expect((await fetch(`${origin}/red/bilder/bakgrundsbilder/backgrounds.xml`)).status)
+      .toBe(200)
+
+    await fetch(`${origin}/_presentation_failures`, { method: "DELETE" })
+    await fail("xml")
+    expect((await fetch(`${origin}/red/presentationer/specialomraden/Censur.html`)).status)
+      .toBe(200)
+    expect((await fetch(`${origin}/red/presentationer/specialomraden/Rostratt.css`)).status)
+      .toBe(200)
+    const xml = await fetch(`${origin}/red/bilder/bakgrundsbilder/backgrounds.xml`)
+    expect(xml.status).toBe(503)
+    expect(xml.headers.get("content-type")).toBe("text/plain; charset=utf-8")
+
+    await fetch(`${origin}/_presentation_failures`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_presentation_failures`)).json()).toEqual({
+      failures: []
+    })
+    expect((await fetch(`${origin}/red/bilder/bakgrundsbilder/backgrounds.xml`)).status)
+      .toBe(200)
+  })
+
+  test("records but never serves non-allowlisted Presentation paths", async () => {
+    const unknownDocument = "/red/presentationer/specialomraden/FutureEditorialAddition.html"
+    const unknownAsset = "/red/presentationer/specialomraden/Rostratt-copy.css"
+
+    expect((await fetch(`${origin}${unknownDocument}?probe=1`)).status).toBe(404)
+    expect((await fetch(`${origin}${unknownAsset}`)).status).toBe(404)
+    expect(await presentationRequests()).toEqual({
+      requests: [`${unknownDocument}?probe=1`, unknownAsset]
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({ requests: [] })
+    expect(await homeRequests()).toEqual({ requests: [] })
+    expect(await quickSearchRequests()).toEqual({ queries: [] })
+    expect(await contactSubmissions()).toEqual({ contactSubmissions: [] })
   })
 })

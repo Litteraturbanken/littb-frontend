@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<backgrounds>
+  <background target="/presentationer/specialomraden/Rostratt.html" url="/red/bilder/bakgrundsbilder/rostratt_b.jpg" class="superseded"></background>
+  <background target="/presentationer/specialomraden/*" url="/red/bilder/bakgrundsbilder/rostratt_b.jpg" class="folder-fallback"></background>
+  <background target="/presentationer/specialomraden/Rostratt.html" url="/red/bilder/bakgrundsbilder/rostratt_a.jpg" class="add-border paper">
+    <style>html { background-color: #382a32; }</style>
+  </background>
+  <background target="/presentationer/vandringar/*" url="" class="vandring plain"></background>
+  <background target="/presentationer/*" url=""></background>
+</backgrounds>

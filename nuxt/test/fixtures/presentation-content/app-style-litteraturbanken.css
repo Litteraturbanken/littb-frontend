@@ -1,0 +1,13 @@
+/* PRESENTATION-FIXTURE: deterministic authority for root-normalized Vandring CSS. */
+.page-presentation .content .author {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.page-presentation .content .quote {
+  margin-inline: 2rem;
+}
+
+.page-presentation .content .avdelare {
+  text-align: center;
+}

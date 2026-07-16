@@ -1,0 +1,92 @@
+@charset "utf-8";
+.page-presentation.subpage .lb-logo {
+    --logo-l-color: white;
+    --logo-b-color: white;
+}
+
+body p {
+    max-width: 570px;
+}
+
+
+#mainview h1 {
+    color: white;
+    font-size: 5em;
+    margin-bottom: 0em;
+}
+
+#mainview h2 {
+    color: white;
+    font-size: 2.025em;
+    margin-top: 0em;
+    margin-bottom: 1.8em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#mainview h3 {
+    color: white;
+    font-size: 1.2em;
+    text-transform: uppercase;
+    margin-top: 0.3em;
+}
+
+#mainview li {
+    color: white;
+    font-size: 0.8em;
+    padding-left: 2em;
+}
+#mainview li:before {
+    content : "❧";
+    margin-right: 1em;
+}
+#mainview sidfotstext {
+    color: white;
+    font-size: 0.8em;
+}
+
+#mainview p {
+    color: white;
+}
+#mainview hr {
+    height: 1.3px;
+    width: 57%;
+    border-bottom: 1px solid;
+    margin-bottom: 0.8em;
+    color: white;
+}
+
+
+.page-presentation li {
+max-width: 535px;
+}
+
+.page-presentation.subpage .mainnav a {
+    color: white;
+}
+
+.page-presentation.subpage .mainnav a:hover {
+    color: white;
+    opacity: 0.5;
+}
+
+/* unvisited link */
+a:link {
+    color: white;
+    background: none;
+}
+
+a {
+    transition: opacity 200ms;
+}
+/* visited link */
+a:visited {
+    color: white;
+    background: none;
+}
+
+/* mouse over link LB-färg color: #7a1400; */
+a:not(.logo_link_monogram):hover {
+    opacity: 0.5;
+    background: none;
+}
