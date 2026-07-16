@@ -11,6 +11,48 @@ import { waitForVisualAssets } from "../helpers/visual"
 
 test.use({ serviceWorkers: "block" })
 
+const authorityOrigin = "http://127.0.0.1:9000"
+const legacyAuthorExclude = "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
+const expectedAuthorRequest = {
+  method: "GET",
+  origin: authorityOrigin,
+  path: "/api/get_authors",
+  query: [["exclude", legacyAuthorExclude]]
+}
+const fontRequest = {
+  origin: "https://cloud.typography.com",
+  path: "/7426274/770508/css/fonts.css"
+}
+const gtmRequest = {
+  origin: "https://www.googletagmanager.com",
+  path: "/gtag/js",
+  query: [["id", "UA-132486790-1"]]
+}
+const productionProxyPrefixes = [
+  "/api",
+  "/red",
+  "/txt",
+  "/export",
+  "/query",
+  "/bilder",
+  "/css",
+  "/sla-bibliografi",
+  "/authordb",
+  "/xhr",
+  "/ws",
+  "/so",
+  "/litteraturkartan/",
+  "/skolan",
+  "/cdn-cgi/image/"
+]
+
+type ObservedRequest = {
+  method: string
+  origin: string
+  path: string
+  query: string[][]
+}
+
 const legacyAuthors = historyAuthorSummaries.map(author => ({
   authorid: author.author_id,
   full_name: author.full_name,
@@ -58,7 +100,7 @@ test("captures the populated Angular History authority", async ({ page }, testIn
   const authorityFonts = await readFile(
     resolve(import.meta.dirname, "../../../app/styles/fonts/601526/32FBEBA806C948833.css")
   )
-  const authorRequests: string[] = []
+  const authorRequests: ObservedRequest[] = []
   const bootstrapRequests: string[] = []
   const unexpectedApplicationRequests: string[] = []
   const productionEscapes: string[] = []
@@ -68,28 +110,22 @@ test("captures the populated Angular History authority", async ({ page }, testIn
     const request = route.request()
     const url = new URL(request.url())
     const requestLabel = `${request.method()} ${request.url()}`
+    const observedRequest = {
+      method: request.method(),
+      origin: url.origin,
+      path: url.pathname,
+      query: [...url.searchParams.entries()]
+    }
+    const expectedFontRequest = request.method() === "GET"
+      && url.origin === fontRequest.origin
+      && url.pathname === fontRequest.path
+      && url.search === ""
+    const expectedGtmRequest = request.method() === "GET"
+      && url.origin === gtmRequest.origin
+      && url.pathname === gtmRequest.path
+      && JSON.stringify(observedRequest.query) === JSON.stringify(gtmRequest.query)
 
-    if (url.pathname === "/api/get_authors") {
-      authorRequests.push(`${request.method()} ${url.pathname}${url.search}`)
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json; charset=utf-8",
-        body: JSON.stringify({ data: legacyAuthors })
-      })
-    }
-    if (url.pathname === "/red/css/etext.css") {
-      bootstrapRequests.push(url.pathname)
-      return route.fulfill({ status: 200, contentType: "text/css; charset=utf-8", body: "" })
-    }
-    if (url.pathname === "/red/bilder/bakgrundsbilder/backgrounds.xml") {
-      bootstrapRequests.push(url.pathname)
-      return route.fulfill({
-        status: 200,
-        contentType: "application/xml; charset=utf-8",
-        body: "<backgrounds />"
-      })
-    }
-    if (url.hostname === "cloud.typography.com") {
+    if (expectedFontRequest) {
       bootstrapRequests.push("authority-fonts")
       return route.fulfill({
         status: 200,
@@ -97,7 +133,7 @@ test("captures the populated Angular History authority", async ({ page }, testIn
         body: authorityFonts
       })
     }
-    if (url.hostname === "www.googletagmanager.com") {
+    if (expectedGtmRequest) {
       bootstrapRequests.push("empty-gtm")
       return route.fulfill({
         status: 200,
@@ -105,11 +141,34 @@ test("captures the populated Angular History authority", async ({ page }, testIn
         body: ""
       })
     }
-    if (url.pathname.startsWith("/api/")) {
-      unexpectedApplicationRequests.push(requestLabel)
+    if (url.origin !== authorityOrigin) {
+      productionEscapes.push(requestLabel)
       return route.abort("blockedbyclient")
     }
-    if (!["127.0.0.1", "localhost"].includes(url.hostname)) {
+    if (JSON.stringify(observedRequest) === JSON.stringify(expectedAuthorRequest)) {
+      authorRequests.push(observedRequest)
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json; charset=utf-8",
+        body: JSON.stringify({ data: legacyAuthors })
+      })
+    }
+    if (request.method() === "GET" && url.pathname === "/red/css/etext.css" && !url.search) {
+      bootstrapRequests.push(url.pathname)
+      return route.fulfill({ status: 200, contentType: "text/css; charset=utf-8", body: "" })
+    }
+    if (request.method() === "GET"
+      && url.pathname === "/red/bilder/bakgrundsbilder/backgrounds.xml"
+      && JSON.stringify(observedRequest.query) === JSON.stringify([["username", "app"]])) {
+      bootstrapRequests.push(url.pathname)
+      return route.fulfill({
+        status: 200,
+        contentType: "application/xml; charset=utf-8",
+        body: "<backgrounds />"
+      })
+    }
+    if (productionProxyPrefixes.some(prefix => url.pathname.startsWith(prefix))) {
+      if (url.pathname.startsWith("/api")) unexpectedApplicationRequests.push(requestLabel)
       productionEscapes.push(requestLabel)
       return route.abort("blockedbyclient")
     }
@@ -121,8 +180,7 @@ test("captures the populated Angular History authority", async ({ page }, testIn
   await expectHistoryReady(page)
   await waitForVisualAssets(page)
   expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
-  expect(authorRequests).toHaveLength(1)
-  expect(authorRequests[0]).toMatch(/^GET \/api\/get_authors\?exclude=/)
+  expect(authorRequests).toEqual([expectedAuthorRequest])
   expect(bootstrapRequests.sort()).toEqual([
     "/red/bilder/bakgrundsbilder/backgrounds.xml",
     "/red/css/etext.css",
@@ -143,7 +201,7 @@ test("captures the populated Angular History authority", async ({ page }, testIn
     scale: "css"
   })
 
-  expect(authorRequests).toHaveLength(1)
+  expect(authorRequests).toEqual([expectedAuthorRequest])
   expect(unexpectedApplicationRequests).toEqual([])
   expect(productionEscapes).toEqual([])
 })

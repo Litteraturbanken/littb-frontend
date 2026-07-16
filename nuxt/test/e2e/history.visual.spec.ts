@@ -8,6 +8,7 @@ import {
 import { waitForVisualAssets } from "../helpers/visual"
 
 const fixture = "http://127.0.0.1:4100"
+const nuxtOrigin = "http://127.0.0.1:3000"
 
 type AuthorRequest = {
   path: string
@@ -53,6 +54,7 @@ test.beforeEach(async ({ request }) => reset(request))
 test("matches the populated Angular History authority", async ({ page, request }, testInfo) => {
   const browserResolverRequests: Array<{
     method: string
+    origin: string
     path: string
     body: { author_ids: string[] }
   }> = []
@@ -63,11 +65,17 @@ test("matches the populated Angular History authority", async ({ page, request }
   await page.route("**/*", route => {
     const browserRequest = route.request()
     const url = new URL(browserRequest.url())
-    const expectedResolver = url.pathname === "/api/v2/authors/resolve"
+    if (url.origin !== nuxtOrigin) {
+      productionEscapes.push(`${browserRequest.method()} ${browserRequest.url()}`)
+      return route.abort("blockedbyclient")
+    }
+    const expectedResolver = url.origin === nuxtOrigin
+      && url.pathname === "/api/v2/authors/resolve"
       && browserRequest.method() === "POST"
     if (expectedResolver) {
       browserResolverRequests.push({
         method: browserRequest.method(),
+        origin: url.origin,
         path: url.pathname,
         body: browserRequest.postDataJSON() as { author_ids: string[] }
       })
@@ -75,10 +83,6 @@ test("matches the populated Angular History authority", async ({ page, request }
     }
     if (url.pathname.startsWith("/api/")) {
       unexpectedApiRequests.push(`${browserRequest.method()} ${browserRequest.url()}`)
-      return route.abort("blockedbyclient")
-    }
-    if (!["127.0.0.1", "localhost"].includes(url.hostname)) {
-      productionEscapes.push(`${browserRequest.method()} ${browserRequest.url()}`)
       return route.abort("blockedbyclient")
     }
     return route.continue()
@@ -97,6 +101,7 @@ test("matches the populated Angular History authority", async ({ page, request }
   expect(await authorRequests(request)).toEqual([expectedRequest])
   expect(browserResolverRequests).toEqual([{
     method: "POST",
+    origin: nuxtOrigin,
     path: "/api/v2/authors/resolve",
     body: expectedRequest.body
   }])
