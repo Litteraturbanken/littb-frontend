@@ -22,6 +22,26 @@ const htmlFixtures = {
   "tack.html": {
     sha256: "916a89214e8fb09c4ef5572608ca0550e2cbfffac35b6edf46004a52b700d317",
     markers: ["Litteraturbanken tackar", "Kungl. biblioteket", "Uppsala universitetsbibliotek"]
+  },
+  "hjalp.html": {
+    sha256: "4a22a93f3df4eb9d484e40737d8c53a18d71026d0c5de19475f31e09cdf9ff54",
+    markers: ["Söka efter en text eller en författare", "Ljud &amp; bild", "Frågor och synpunkter"]
+  },
+  "mal.html": {
+    sha256: "a6435d16dd1873085153de303c8f91f7d4da81ec5a6e34c745bb5fe151f650c2",
+    markers: ["Mål", "Digitaliseringen är också en fråga om demokrati", "Litteraturbanken, 2023"]
+  },
+  "english.html": {
+    sha256: "83da377e4b1d28c4bd0a84c732762f30cbb8021ce650de7f09f0cc71f46f6755",
+    markers: ["The Swedish Literature Bank", "Board", "Technical developers"]
+  },
+  "deutsch.html": {
+    sha256: "d1ad91210b1d95000908e2b68648e30004c226fe1d6ae6406e2292df02a2c182",
+    markers: ["Die Schwedische Literaturbank", "Vorstand", "Technische Entwickler"]
+  },
+  "francais.html": {
+    sha256: "ce8f869ab7b0a22bf38863c29db98456637014a8b9a6f62af2d8df733e08c962",
+    markers: ["La Banque de littérature suédoise", "Comité directeur", "Développement technique"]
   }
 } as const
 
