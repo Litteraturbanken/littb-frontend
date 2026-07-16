@@ -1,6 +1,16 @@
+import { readFileSync } from "node:fs"
 import { createServer } from "node:http"
 
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
+
+const aboutContent = new Map([
+  ["/red/om/ide/omlitteraturbanken.html", ["text/html; charset=utf-8", readFileSync(new URL("./about-content/ide.html", import.meta.url))]],
+  ["/red/om/ide/organisation.html", ["text/html; charset=utf-8", readFileSync(new URL("./about-content/organisation.html", import.meta.url))]],
+  ["/red/om/rattigheter/rattigheter.html", ["text/html; charset=utf-8", readFileSync(new URL("./about-content/rattigheter.html", import.meta.url))]],
+  ["/red/om/tack.html", ["text/html; charset=utf-8", readFileSync(new URL("./about-content/tack.html", import.meta.url))]],
+  ["/red/om/rattigheter/cc_by.png", ["image/png", readFileSync(new URL("./about-content/cc_by.png", import.meta.url))]],
+  ["/red/om/rattigheter/cc_publicdomain.png", ["image/png", readFileSync(new URL("./about-content/cc_publicdomain.png", import.meta.url))]]
+])
 
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 let requests = []
@@ -20,6 +30,14 @@ function sendJson(response, status, body) {
     "access-control-allow-headers": "content-type"
   })
   response.end(JSON.stringify(body))
+}
+
+function sendBody(response, status, contentType, body) {
+  response.writeHead(status, {
+    "content-type": contentType,
+    "access-control-allow-origin": "*"
+  })
+  response.end(body)
 }
 
 async function readJson(request) {
@@ -57,6 +75,15 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_failure" && request.method === "DELETE") {
     failure = null
     return sendJson(response, 200, { failure })
+  }
+
+  const content = aboutContent.get(url.pathname)
+  if (request.method === "GET" && content) {
+    requests.push(`${url.pathname}${url.search}`)
+    if (failure === "content" && content[0].startsWith("text/html")) {
+      return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
+    }
+    return sendBody(response, 200, content[0], content[1])
   }
 
   const resource = resourceFor(url.pathname)
