@@ -1,6 +1,7 @@
 import { DOMParser } from "linkedom"
 
 type ParsedElement = {
+  localName: string
   textContent: string | null
   innerHTML: string
   querySelector: (selectors: string) => ParsedElement | null
@@ -18,12 +19,15 @@ type ParsedDocument = {
   querySelectorAll: (selectors: string) => ArrayLike<ParsedElement>
 }
 
+export type PresentationStyleNode =
+  | { kind: "stylesheet"; href: string }
+  | { kind: "inline"; textContent: string }
+
 export type PresentationDocument = {
   bodyHtml: string
   title: string
   description: string
-  stylesheets: string[]
-  inlineStyles: string[]
+  styleNodes: PresentationStyleNode[]
 }
 
 export type BackgroundRule = {
@@ -71,8 +75,7 @@ export function emptyPresentationDocument(): PresentationDocument {
     bodyHtml: "",
     title: "",
     description: "",
-    stylesheets: [],
-    inlineStyles: []
+    styleNodes: []
   }
 }
 
@@ -123,20 +126,20 @@ export function parsePresentationDocument(source: string): PresentationDocument 
     })
 
     const head = document.querySelector("head")
-    const stylesheets = head
-      ? Array.from(head.querySelectorAll('link[rel~="stylesheet"]'), link =>
-          normalizedUrl(link.getAttribute("href") ?? "")
-        ).filter((href): href is string => href !== null && href !== "")
-      : []
-    const inlineStyles = head
-      ? Array.from(head.querySelectorAll("style"), style => style.textContent ?? "")
+    const styleNodes: PresentationStyleNode[] = head
+      ? Array.from(head.querySelectorAll('link[rel~="stylesheet"], style')).flatMap<PresentationStyleNode>(node => {
+          if (node.localName === "style") {
+            return [{ kind: "inline", textContent: node.textContent ?? "" }]
+          }
+          const href = normalizedUrl(node.getAttribute("href") ?? "")
+          return href ? [{ kind: "stylesheet", href }] : []
+        })
       : []
 
     return {
       bodyHtml: body.innerHTML,
       ...firstHeadingMetadata(body),
-      stylesheets,
-      inlineStyles
+      styleNodes
     }
   } catch {
     return emptyPresentationDocument()

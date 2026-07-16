@@ -107,7 +107,7 @@ test("vandring article serializes root-normalized stylesheets and multi-class wi
   expect(await presentationRequests(request)).toEqual([contentPath, backgroundsPath])
 })
 
-test("active inline article serializes trusted head style and normalized rendered URLs", async ({ request }) => {
+test("active inline article serializes trusted style order and normalized rendered URLs", async ({ request }) => {
   const contentPath =
     "/red/presentationer/specialomraden/FigurdiktenSomBarockBlandkonst.html"
   const response = await request.get(
@@ -117,6 +117,14 @@ test("active inline article serializes trusted head style and normalized rendere
   const html = await response.text()
 
   expect(html).toContain("p.image {text-align:center}")
+  const firstStylesheetIndex = html.indexOf('href="/app/style/litteraturbanken.css"')
+  const secondStylesheetIndex = html.indexOf('href="/app/style/date.css"')
+  const inlineStyleIndex = html.search(
+    /<style[^>]*>[^<]*p\.image \{text-align:center\}[^<]*<\/style>/
+  )
+  expect(firstStylesheetIndex).toBeGreaterThan(-1)
+  expect(secondStylesheetIndex).toBeGreaterThan(firstStylesheetIndex)
+  expect(inlineStyleIndex).toBeGreaterThan(secondStylesheetIndex)
   expect(html).toContain(
     'href="/red/presentationer/specialomraden/Figurdiktensombarockblandkonst.pdf" download=""'
   )

@@ -23,6 +23,8 @@ describe("Presentation XHTML parser", () => {
         <meta name="description" content="Upstream description">
         <link rel="stylesheet" href="app/style/article.css">
         <style>.article { color: maroon; }</style>
+        <link rel="stylesheet" href="app/style/theme.css">
+        <style>.article { background: linen; }</style>
         <script>window.headLeak = true</script>
       </head><body>
         <h1>En rubrik med sex ord faktiskt</h1>
@@ -34,8 +36,12 @@ describe("Presentation XHTML parser", () => {
       bodyHtml: "\n        <h1>En rubrik med sex ord faktiskt</h1>\n        <p class=\"article\">Bevara <em>denna</em> text.</p>\n        \n      ",
       title: "En rubrik med sex ord | Litteraturbanken",
       description: "En rubrik med sex ord",
-      stylesheets: ["/app/style/article.css"],
-      inlineStyles: [".article { color: maroon; }"]
+      styleNodes: [
+        { kind: "stylesheet", href: "/app/style/article.css" },
+        { kind: "inline", textContent: ".article { color: maroon; }" },
+        { kind: "stylesheet", href: "/app/style/theme.css" },
+        { kind: "inline", textContent: ".article { background: linen; }" }
+      ]
     })
   })
 
@@ -96,15 +102,13 @@ describe("Presentation XHTML parser", () => {
       bodyHtml: "",
       title: "",
       description: "",
-      stylesheets: [],
-      inlineStyles: []
+      styleNodes: []
     })
     expect(parsePresentationDocument("<html><head><style>.leak { color:red }")).toEqual({
       bodyHtml: "",
       title: "",
       description: "",
-      stylesheets: [],
-      inlineStyles: []
+      styleNodes: []
     })
   })
 
@@ -117,11 +121,11 @@ describe("Presentation XHTML parser", () => {
 
     expect(parsed.title).toBe("Figurdikten som barock blandkonst | Litteraturbanken")
     expect(parsed.description).toBe("Figurdikten som barock blandkonst")
-    expect(parsed.stylesheets).toEqual([
-      "/app/style/litteraturbanken.css",
-      "/app/style/date.css"
+    expect(parsed.styleNodes).toEqual([
+      { kind: "stylesheet", href: "/app/style/litteraturbanken.css" },
+      { kind: "stylesheet", href: "/app/style/date.css" },
+      { kind: "inline", textContent: "\np.image {text-align:center}\n" }
     ])
-    expect(parsed.inlineStyles).toEqual(["\np.image {text-align:center}\n"])
     expect(parsed.bodyHtml).toContain(
       'href="/red/presentationer/specialomraden/Figurdiktensombarockblandkonst.pdf" download="" target="_self"'
     )

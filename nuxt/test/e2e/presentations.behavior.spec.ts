@@ -67,8 +67,8 @@ async function expectScrollTop(page: Page) {
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
 }
 
-async function headStyleText(page: Page) {
-  return page.locator("head style").allTextContents()
+async function documentStyleText(page: Page) {
+  return page.locator("style").allTextContents()
 }
 
 function descriptionMeta(page: Page) {
@@ -201,7 +201,7 @@ test("Presentation route transitions replace all document head and body state be
   await expect(rostrattStylesheet).toHaveCount(1)
   await expect(page).toHaveTitle("Rösträtt 1919 | Litteraturbanken")
   await expect(descriptionMeta(page)).toHaveAttribute("content", "Rösträtt 1919")
-  expect(await headStyleText(page)).toContain(
+  expect(await documentStyleText(page)).toContain(
     "html { background-color: #382a32; }"
   )
   await expect(page.locator("html")).toHaveAttribute("style", /rostratt_a\.jpg/)
@@ -223,8 +223,8 @@ test("Presentation route transitions replace all document head and body state be
     "Figurdikten som barock blandkonst"
   )
   await expect(rostrattStylesheet).toHaveCount(0)
-  expect(await headStyleText(page)).not.toContain("html { background-color: #382a32; }")
-  expect(await headStyleText(page)).toContain(
+  expect(await documentStyleText(page)).not.toContain("html { background-color: #382a32; }")
+  expect(await documentStyleText(page)).toContain(
     "\np.image {text-align:center}\n"
   )
   await expect(page.locator('link[href="/app/style/litteraturbanken.css"]')).toHaveCount(1)
@@ -248,8 +248,8 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator("#mainview > .content")).toHaveCount(0)
   await expect(page.locator('link[href="/app/style/litteraturbanken.css"]')).toHaveCount(0)
   await expect(page.locator('link[href="/app/style/date.css"]')).toHaveCount(0)
-  expect(await headStyleText(page)).not.toContain("\np.image {text-align:center}\n")
-  expect(await headStyleText(page)).not.toContain("html { background-color: #382a32; }")
+  expect(await documentStyleText(page)).not.toContain("\np.image {text-align:center}\n")
+  expect(await documentStyleText(page)).not.toContain("html { background-color: #382a32; }")
   await expect(page.locator("html")).toHaveAttribute("style", /presentations[^\"]*\.jpg/)
   await expect(page.locator("html")).not.toHaveAttribute("style", /rostratt_[ab]\.jpg/)
   await expect(page.locator("body")).toHaveClass("focus page-presentation ready")
@@ -265,8 +265,8 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator("body")).not.toHaveClass(/\bpresentation-style-rostratt\b/)
   await expect(page.locator("html")).not.toHaveAttribute("style", /presentations|rostratt/)
   await expect(rostrattStylesheet).toHaveCount(0)
-  expect(await headStyleText(page)).not.toContain("\np.image {text-align:center}\n")
-  expect(await headStyleText(page)).not.toContain("html { background-color: #382a32; }")
+  expect(await documentStyleText(page)).not.toContain("\np.image {text-align:center}\n")
+  expect(await documentStyleText(page)).not.toContain("html { background-color: #382a32; }")
 
   const requests = await presentationRequests(request)
   expect(contentRequests(requests)).toEqual([rostrattPath, figurdiktPath, indexContentPath])

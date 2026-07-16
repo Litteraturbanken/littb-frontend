@@ -143,6 +143,27 @@ useHead(() => {
     : background?.imagePath
       ? `background: url('${background.imagePath}') no-repeat;`
       : ""
+  const stylesheetLinks = document.styleNodes.flatMap((node, index) =>
+    node.kind === "stylesheet"
+      ? [{
+          key: `presentation-style-node-${index}`,
+          rel: "stylesheet",
+          href: node.href,
+          tagPosition: "bodyClose" as const,
+          tagPriority: 1_000 + index
+        }]
+      : []
+  )
+  const inlineStyles = document.styleNodes.flatMap((node, index) =>
+    node.kind === "inline"
+      ? [{
+          key: `presentation-style-node-${index}`,
+          textContent: node.textContent,
+          tagPosition: "bodyClose" as const,
+          tagPriority: 1_000 + index
+        }]
+      : []
+  )
 
   return {
     htmlAttrs: { style: htmlBackground },
@@ -155,18 +176,9 @@ useHead(() => {
         ...backgroundClasses
       ].join(" ")
     },
-    link: document.stylesheets.map((href, index) => ({
-      key: `presentation-stylesheet-${index}`,
-      rel: "stylesheet",
-      href,
-      tagPosition: "bodyClose",
-      tagPriority: 1_000
-    })),
+    link: stylesheetLinks,
     style: [
-      ...document.inlineStyles.map((textContent, index) => ({
-        key: `presentation-inline-style-${index}`,
-        textContent
-      })),
+      ...inlineStyles,
       ...(background?.styleText
         ? [{ key: "presentation-background-style", textContent: background.styleText }]
         : [])

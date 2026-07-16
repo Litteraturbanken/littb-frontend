@@ -151,7 +151,7 @@ async function expectPresentationReady(page: Page, visualCase: VisualCase) {
       .toBeGreaterThan(0)
   }
   if (visualCase.inlineStyle) {
-    await expect.poll(async () => (await page.locator("head style").allTextContents()).join("\n"))
+    await expect.poll(async () => (await page.locator("style").allTextContents()).join("\n"))
       .toContain(visualCase.inlineStyle)
   }
   if (visualCase.name === "rostratt") {
@@ -207,6 +207,38 @@ function expectedLedger(visualCase: VisualCase) {
 
 test.beforeEach(async ({ request }) => resetPresentation(request))
 test.afterEach(async ({ request }) => resetPresentation(request))
+
+test("preserves a source-later inline override after an equal-specificity linked rule", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  const forbidden = await blockProductionAndRouteAppStyles(page)
+  await page.route("**/app/style/date.css", route => route.fulfill({
+    status: 200,
+    contentType: "text/css; charset=utf-8",
+    body: "p.image { text-align: left; }"
+  }))
+
+  const response = await page.goto(
+    "/presentationer/specialomraden/FigurdiktenSomBarockBlandkonst.html",
+    { waitUntil: "domcontentloaded" }
+  )
+  expect(response?.status()).toBe(200)
+  await expectStylesheetLoaded(page, "/app/style/date.css")
+  await expect.poll(async () => (await page.locator("style").allTextContents()).join("\n"))
+    .toContain("p.image {text-align:center}")
+
+  expect(await page.locator(".content").evaluate(content => {
+    const probe = document.createElement("p")
+    probe.className = "image"
+    content.append(probe)
+    const textAlign = getComputedStyle(probe).textAlign
+    probe.remove()
+    return textAlign
+  })).toBe("center")
+  expect(forbidden).toEqual([])
+  expect(problems).toEqual([])
+})
 
 for (const visualCase of cases) {
   test(`matches the approved Angular Presentation ${visualCase.name} page`, async ({
