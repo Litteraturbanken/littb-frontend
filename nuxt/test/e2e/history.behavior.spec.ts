@@ -8,6 +8,10 @@ type AuthorRequest = {
   body: { author_ids: string[] }
 }
 type PendingAuthorRequest = { authorIds: string[], aborted: boolean }
+type ResolverTransport = {
+  responses: Array<{ url: string, status: number }>
+  failures: Array<{ url: string, error: string | null }>
+}
 
 async function reset(request: APIRequestContext) {
   await Promise.all([
@@ -22,16 +26,47 @@ async function authorRequests(request: APIRequestContext): Promise<AuthorRequest
   return (await response.json()).requests
 }
 
-function captureBrowserProblems(page: Page) {
+function isResolverUrl(value: string) {
+  try {
+    return new URL(value).pathname === "/api/v2/authors/resolve"
+  } catch {
+    return false
+  }
+}
+
+function captureBrowserProblems(page: Page, expectedResolverError?: RegExp) {
   const problems: string[] = []
+  const expectedResolverErrors: Array<{ text: string, url: string }> = []
   page.on("console", message => {
-    if (
-      message.type() === "error"
-      && !message.text().startsWith("Failed to load resource:")
-    ) problems.push(`console: ${message.text()}`)
+    if (message.type() !== "error") return
+    const text = message.text()
+    const url = message.location().url
+    if (expectedResolverError?.test(text) && isResolverUrl(url)) {
+      expectedResolverErrors.push({ text, url })
+      return
+    }
+    problems.push(`console: ${text}`)
   })
   page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
-  return problems
+  return { problems, expectedResolverErrors }
+}
+
+function captureResolverTransport(page: Page): ResolverTransport {
+  const transport: ResolverTransport = { responses: [], failures: [] }
+  page.on("response", response => {
+    if (isResolverUrl(response.url())) {
+      transport.responses.push({ url: response.url(), status: response.status() })
+    }
+  })
+  page.on("requestfailed", request => {
+    if (isResolverUrl(request.url())) {
+      transport.failures.push({
+        url: request.url(),
+        error: request.failure()?.errorText ?? null
+      })
+    }
+  })
+  return transport
 }
 
 async function expectBodyClasses(page: Page, expected: string[]) {
@@ -152,7 +187,7 @@ test("valid history is filtered before the 50-row limit and resolved once in sto
   page,
   request
 }) => {
-  const problems = captureBrowserProblems(page)
+  const { problems } = captureBrowserProblems(page)
   const special: StoredHistory[] = [
     {
       author: "  StrindbergA  ",
@@ -223,6 +258,36 @@ test("valid history is filtered before the 50-row limit and resolved once in sto
   expect(problems).toEqual([])
 })
 
+test("a successful empty resolver response renders an unchanged blank-author row", async ({
+  page,
+  request
+}) => {
+  const { problems } = captureBrowserProblems(page)
+  const stored: StoredHistory = {
+    author: "OnlyUnknownAuthor",
+    label: "  Oförtecknad titel  ",
+    url: "/verk/ofortecknad%20titel?mode=original#sida-2"
+  }
+  const raw = JSON.stringify([stored])
+  await seedRawHistory(page, raw)
+
+  await openHistory(page)
+
+  const list = page.locator("#mainview > div > ul")
+  const row = list.locator("li")
+  await expect(list).toHaveCount(1)
+  await expect(row).toHaveCount(1)
+  await expect(row.locator("span").first()).toHaveText("")
+  expect(await row.locator("span").last().textContent()).toBe(stored.label)
+  await expect(row.locator("a")).toHaveAttribute("href", stored.url)
+  expect(await authorRequests(request)).toEqual([{
+    path: "/v2/authors/resolve",
+    body: { author_ids: ["OnlyUnknownAuthor"] }
+  }])
+  expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
+  expect(problems).toEqual([])
+})
+
 for (const [name, raw] of [
   ["missing storage", null],
   ["JSON null", "null"],
@@ -233,7 +298,7 @@ for (const [name, raw] of [
     page,
     request
   }) => {
-    const problems = captureBrowserProblems(page)
+    const { problems } = captureBrowserProblems(page)
     await seedRawHistory(page, raw)
     await openHistory(page)
 
@@ -248,7 +313,7 @@ test("storage access failure keeps the heading-only page without requesting auth
   page,
   request
 }) => {
-  const problems = captureBrowserProblems(page)
+  const { problems } = captureBrowserProblems(page)
   await page.addInitScript(() => {
     const nativeGetItem = Storage.prototype.getItem
     Object.defineProperty(Storage.prototype, "getItem", {
@@ -271,7 +336,11 @@ test("typed API failure leaves valid stored history hidden and unchanged", async
   page,
   request
 }) => {
-  const problems = captureBrowserProblems(page)
+  const browser = captureBrowserProblems(
+    page,
+    /^Failed to load resource: the server responded with a status of 503 \(Service Unavailable\)$/
+  )
+  const transport = captureResolverTransport(page)
   const raw = JSON.stringify([{
     author: "StrindbergA",
     label: "Röda rummet",
@@ -288,14 +357,27 @@ test("typed API failure leaves valid stored history hidden and unchanged", async
     body: { author_ids: ["StrindbergA"] }
   }])
   expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
-  expect(problems).toEqual([])
+  expect(transport.responses).toEqual([{
+    url: "http://127.0.0.1:3000/api/v2/authors/resolve",
+    status: 503
+  }])
+  expect(transport.failures).toEqual([])
+  expect(browser.expectedResolverErrors).toEqual([{
+    text: "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    url: "http://127.0.0.1:3000/api/v2/authors/resolve"
+  }])
+  expect(browser.problems).toEqual([])
 })
 
 test("thrown fetch failure leaves valid stored history hidden and unchanged", async ({
   page,
   request
 }) => {
-  const problems = captureBrowserProblems(page)
+  const browser = captureBrowserProblems(
+    page,
+    /^Failed to load resource: net::ERR_FAILED$/
+  )
+  const transport = captureResolverTransport(page)
   const raw = JSON.stringify([{
     author: "StrindbergA",
     label: "Röda rummet",
@@ -309,14 +391,23 @@ test("thrown fetch failure leaves valid stored history hidden and unchanged", as
   await expectHeadingOnly(page)
   expect(await authorRequests(request)).toEqual([])
   expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
-  expect(problems).toEqual([])
+  expect(transport.responses).toEqual([])
+  expect(transport.failures).toEqual([{
+    url: "http://127.0.0.1:3000/api/v2/authors/resolve",
+    error: "net::ERR_FAILED"
+  }])
+  expect(browser.expectedResolverErrors).toEqual([{
+    text: "Failed to load resource: net::ERR_FAILED",
+    url: "http://127.0.0.1:3000/api/v2/authors/resolve"
+  }])
+  expect(browser.problems).toEqual([])
 })
 
 test("leaving during an abort-ignoring request aborts it and blocks late page state", async ({
   page,
   request
 }) => {
-  const problems = captureBrowserProblems(page)
+  const { problems } = captureBrowserProblems(page)
   const raw = JSON.stringify([{
     author: "StrindbergA",
     label: "Röda rummet",
