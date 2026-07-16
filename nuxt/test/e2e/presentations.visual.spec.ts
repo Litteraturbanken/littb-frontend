@@ -155,9 +155,31 @@ async function expectPresentationReady(page: Page, visualCase: VisualCase) {
       .toContain(visualCase.inlineStyle)
   }
   if (visualCase.name === "rostratt") {
+    const stylesheetOrder = await page.evaluate(() => [...document.styleSheets].map((sheet, index) => ({
+      href: sheet.href ? new URL(sheet.href).pathname : null,
+      index,
+      selectors: (() => {
+        try {
+          return [...sheet.cssRules]
+            .map(rule => "selectorText" in rule ? String(rule.selectorText) : "")
+            .filter(Boolean)
+        } catch {
+          return []
+        }
+      })()
+    })))
+    const runtimeIndex = stylesheetOrder.find(entry =>
+      entry.href === "/red/presentationer/specialomraden/Rostratt.css"
+    )?.index ?? -1
+    const nuxtOverrideIndex = stylesheetOrder.findLast(entry =>
+      entry.href !== "/red/presentationer/specialomraden/Rostratt.css" &&
+      entry.selectors.some(selector => selector.includes(".page-presentation.subpage .lb-logo"))
+    )?.index ?? -1
+    expect(runtimeIndex).toBeGreaterThan(nuxtOverrideIndex)
     await expect(page.locator(".lb-logo")).toHaveCSS("--logo-l-color", "white")
     await expect(page.locator(".lb-logo")).toHaveCSS("--logo-b-color", "white")
     await expect(page.locator(".mainnav a").first()).toHaveCSS("color", "rgb(255, 255, 255)")
+    await expect(page.locator(".quick-search-trigger")).toHaveCSS("color", "rgb(255, 255, 255)")
     await expect(page.locator("#mainview p").first()).toHaveCSS("max-width", "570px")
   }
   if (visualCase.backgroundPath) {

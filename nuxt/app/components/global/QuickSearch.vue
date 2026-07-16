@@ -48,7 +48,7 @@ const commands: Command[] = [
   { label: "Läshistorik", url: "/historik" }
 ]
 
-const trigger = ref<HTMLButtonElement | null>(null)
+const trigger = ref<HTMLAnchorElement | null>(null)
 const isOpen = ref(false)
 const query = ref("")
 const remoteItems = ref<QuickSearchItem[]>([])
@@ -275,13 +275,16 @@ onBeforeUnmount(() => {
 
 <template>
   <li>
-    <button
+    <a
       ref="trigger"
-      type="button"
+      role="button"
+      tabindex="0"
       class="quick-search-trigger"
       title="Snabbkommando: 's'"
       @click="open"
-    >Snabbsökning</button>
+      @keydown.enter.prevent="open"
+      @keydown.space.prevent="open"
+    >Snabbsökning</a>
     <ClientOnly>
       <Dialog
       v-if="isOpen"

@@ -207,7 +207,7 @@ test("Presentation route transitions replace all document head and body state be
   await expect(page.locator("html")).toHaveAttribute("style", /rostratt_a\.jpg/)
   await expect(page.locator("body")).toHaveClass(/\bbkg-add-border\b/)
   await expect(page.locator("body")).toHaveClass(/\bbkg-paper\b/)
-  await expect(page.locator("body")).toHaveClass(/\bpresentation-style-rostratt\b/)
+  await expect(page.locator("body")).not.toHaveClass(/\bpresentation-style-rostratt\b/)
 
   await navigateClient(
     page,

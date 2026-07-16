@@ -83,6 +83,23 @@ test("opens from the trigger with exact empty chrome, closes by backdrop, restor
   expect(problems).toEqual([])
 })
 
+test("trigger opens with Enter and Space and regains focus after each close", async ({ page }) => {
+  const problems = await openShell(page)
+  const trigger = page.getByRole("button", { name: "Snabbsökning", exact: true })
+
+  await trigger.focus()
+  await page.keyboard.press("Enter")
+  await expect(page.getByRole("dialog", { name: "Snabbsökning", exact: true })).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(trigger).toBeFocused()
+
+  await page.keyboard.press("Space")
+  await expect(page.getByRole("dialog", { name: "Snabbsökning", exact: true })).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(trigger).toBeFocused()
+  expect(problems).toEqual([])
+})
+
 test("lowercase s opens globally while uppercase and focused controls are suppressed", async ({ page }) => {
   const problems = await openShell(page)
   await page.keyboard.press("S")

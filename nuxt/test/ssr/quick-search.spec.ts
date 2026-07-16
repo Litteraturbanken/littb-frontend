@@ -14,7 +14,7 @@ test("shell renders the semantic Quick Search trigger without querying during SS
   const html = await response.text()
 
   expect(html).toMatch(
-    /<button\b(?=[^>]*\btype="button")(?=[^>]*\btitle="Snabbkommando: (?:'|&#39;)s(?:'|&#39;)")(?=[^>]*\bclass="[^"]*quick-search-trigger)[^>]*>Snabbsökning<\/button>/
+    /<a\b(?=[^>]*\brole="button")(?=[^>]*\btabindex="0")(?=[^>]*\btitle="Snabbkommando: (?:'|&#39;)s(?:'|&#39;)")(?=[^>]*\bclass="[^"]*quick-search-trigger)[^>]*>Snabbsökning<\/a>/
   )
   expect(html).not.toContain('role="dialog"')
   expect(html).not.toContain('id="autocomplete"')
