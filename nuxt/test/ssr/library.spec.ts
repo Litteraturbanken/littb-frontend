@@ -44,7 +44,8 @@ test("SSR renders the populated default Library relevance slice from the private
   const ledger = await requests(request)
   expect(ledger).toHaveLength(1)
   expect(ledger[0]?.path).toBe(relevancePath)
-  expect(ledger[0]?.query).toMatchObject({
+  expect(ledger[0]?.query).toEqual({
+    exclude: "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types,wikidata.wikipedia_text,content_vector",
     q: "(Röda rummet)",
     from: "0",
     to: "100",
@@ -64,4 +65,79 @@ test("SSR preserves the legacy empty and failed result messages", async ({ reque
   const failed = parseHTML(await (await request.get("/bibliotek?filter=failed")).text()).document
   expect(failed.querySelector("[data-library-error]")?.textContent?.trim()).toBe("Ett fel uppstod.")
   expect(failed.querySelectorAll("[data-library-result]")).toHaveLength(0)
+})
+
+test("SSR renders every safe mixed family and rejects malformed rows and destinations", async ({
+  request
+}) => {
+  const response = await request.get("/bibliotek?filter=blandat&sort=titlar")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const rows = [...document.querySelectorAll("[data-library-result]")]
+  const destinations = rows.map(row => row.querySelector("a")?.getAttribute("href"))
+
+  expect(rows).toHaveLength(10)
+  expect(destinations).toEqual([
+    "/författare/StrindbergA/titlar/RodaRummet/sida/1/etext",
+    "/författare/LagerlofS/titlar/GostaBerlingsSaga/sida/3/faksimil",
+    "/txt/lb-pdf/lb-pdf.pdf",
+    "/författare/NovellA/titlar/Novellsamling/sida/7/etext",
+    "/författare/DiktA/titlar/Diktsamling/sida/9/faksimil",
+    "/författare/StrindbergA/",
+    "/presentationer/forfattare/StrindbergA.html",
+    "https://litteraturbanken.se/översättarlexikon/artiklar/Ada_Nilsson",
+    "https://litteraturbanken.se/litteraturkartan/?id=G%C3%B6teborg&article=artikel%2F1",
+    "https://litteraturbanken.se/skolan/litteratur/"
+  ])
+  expect(document.querySelectorAll('a[href^="javascript:"], a[href^="data:"], a[href^="//"]'))
+    .toHaveLength(0)
+  expect(document.querySelector("[data-library-author-name] .surname")?.textContent)
+    .toBe("Strindberg")
+  expect(document.querySelector("[data-library-author-mobile-years]")?.textContent?.trim())
+    .toBe("(1849–1912)")
+  expect(document.querySelector("[data-library-filter-icon] path")?.getAttribute("d"))
+    .toBe("M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25")
+  expect(document.querySelector<HTMLButtonElement>("[data-library-advanced]")?.disabled)
+    .toBe(true)
+  expect([...document.querySelectorAll<HTMLButtonElement>("[data-library-tab][data-deferred]")]
+    .every(button => button.disabled)).toBe(true)
+  expect([...document.querySelectorAll<HTMLButtonElement>("[data-library-tab][data-deferred]")])
+    .toHaveLength(6)
+
+  const ledger = await requests(request)
+  expect(ledger).toHaveLength(1)
+  expect(ledger[0]?.query.sort_field).toBe("sortkey|asc")
+})
+
+for (const [sort, expression] of [
+  ["relevans", "_score|desc"],
+  ["forfattare", "main_author.name_for_index|asc,sortkey|asc"],
+  ["titlar", "sortkey|asc"],
+  ["kronologi", "sort_date_imprint.date|desc"]
+ ] as const) {
+  test(`SSR sends the exact ${sort} sort expression`, async ({ request }) => {
+    const response = await request.get(`/bibliotek?filter=inga&sort=${sort}`)
+    expect(response.status()).toBe(200)
+    const ledger = await requests(request)
+    expect(ledger).toHaveLength(1)
+    expect(ledger[0]?.query).toEqual({
+      exclude: "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types,wikidata.wikipedia_text,content_vector",
+      show_all: "false",
+      sort_field: expression,
+      from: "0",
+      to: "100",
+      vectorize: "true",
+      sid: "true",
+      q: "(inga)"
+    })
+  })
+}
+
+test("SSR treats malformed top-level Library payloads as a generic failure", async ({ request }) => {
+  const response = await request.get("/bibliotek?filter=malformed-top")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("[data-library-error]")?.textContent?.trim())
+    .toBe("Ett fel uppstod.")
+  expect(document.querySelectorAll("[data-library-result]")).toHaveLength(0)
 })

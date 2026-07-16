@@ -1021,11 +1021,19 @@ describe("v2 fixture server operations", () => {
     const background = await fetch(
       `${origin}/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg`
     )
+    const mixedResponse = await fetch(`${origin}/api/relevance/${types}?q=%28blandat%29`)
+    const malformedResponse = await fetch(
+      `${origin}/api/relevance/${types}?q=%28malformed-top%29`
+    )
 
     expect(publicResponse.status).toBe(200)
     expect(privateResponse.status).toBe(200)
     expect(background.status).toBe(200)
     expect(background.headers.get("content-type")).toBe("image/jpeg")
+    expect(createHash("sha256").update(Buffer.from(await background.arrayBuffer())).digest("hex"))
+      .toBe("4191d7e2db8638781fa15ae06e12d8f05eff57caeb3c3f37661cbe8846465c1c")
+    expect((await mixedResponse.json() as { data: unknown[] }).data).toHaveLength(16)
+    expect(await malformedResponse.json()).toEqual({ data: "invalid", hits: 0, suggest: [] })
     const publicBody = await publicResponse.json() as { data: unknown[], hits: number }
     const privateBody = await privateResponse.json() as { data: unknown[], hits: number }
     expect(publicBody.hits).toBe(publicBody.data.length)
@@ -1045,6 +1053,14 @@ describe("v2 fixture server operations", () => {
         {
           path: `/legacy-api/relevance/${types}`,
           query: { q: "(Selma)" }
+        },
+        {
+          path: `/api/relevance/${types}`,
+          query: { q: "(blandat)" }
+        },
+        {
+          path: `/api/relevance/${types}`,
+          query: { q: "(malformed-top)" }
         }
       ]
     })
@@ -1055,10 +1071,12 @@ describe("v2 fixture server operations", () => {
     await fetch(`${origin}/_library_relevance_delays`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ "(slow)": 30 })
+      body: JSON.stringify({ "(slow)|sortkey|asc": 30 })
     })
     const started = Date.now()
-    expect((await fetch(`${origin}/api/relevance/test?q=%28slow%29`)).status).toBe(200)
+    expect((await fetch(
+      `${origin}/api/relevance/test?q=%28slow%29&sort_field=sortkey%7Casc`
+    )).status).toBe(200)
     expect(Date.now() - started).toBeGreaterThanOrEqual(20)
 
     await fetch(`${origin}/_library_relevance_failure`, { method: "PUT" })

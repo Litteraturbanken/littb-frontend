@@ -1,11 +1,9 @@
 <script setup lang="ts">
-type UnknownRecord = Record<string, unknown>
-type LibraryResponse = {
-  data: UnknownRecord[]
-  hits: number
-  suggest: unknown[]
-  failed: boolean
-}
+import {
+  emptyLibraryResponse,
+  parseLibraryResponse,
+  type LibraryResponse
+} from "~/lib/library-result"
 
 type SortKey = "relevans" | "forfattare" | "titlar" | "kronologi"
 
@@ -40,46 +38,6 @@ function sanitizeFilter(value: string): string {
     .trim()
 }
 
-function asRecord(value: unknown): UnknownRecord | null {
-  return value !== null && typeof value === "object" && !Array.isArray(value)
-    ? value as UnknownRecord
-    : null
-}
-
-function stringAt(record: UnknownRecord | null, key: string): string {
-  const value = record?.[key]
-  return typeof value === "string" ? value : typeof value === "number" ? String(value) : ""
-}
-
-function recordAt(record: UnknownRecord | null, key: string): UnknownRecord | null {
-  return asRecord(record?.[key])
-}
-
-function recordsAt(record: UnknownRecord | null, key: string): UnknownRecord[] {
-  const value = record?.[key]
-  return Array.isArray(value)
-    ? value.map(asRecord).filter((item): item is UnknownRecord => item !== null)
-    : []
-}
-
-function parseResponse(value: unknown): LibraryResponse {
-  const record = asRecord(value)
-  if (!record || !Array.isArray(record.data) || typeof record.hits !== "number"
-    || !Array.isArray(record.suggest)) {
-    throw new Error("Invalid Library relevance response")
-  }
-  return {
-    data: record.data.map(asRecord).filter((item): item is UnknownRecord => item !== null),
-    hits: record.hits,
-    suggest: record.suggest,
-    failed: false
-  }
-}
-
-function emptyResponse(failed = false): LibraryResponse {
-  return { data: [], hits: 0, suggest: [], failed }
-}
-
 function requestUrl(base: string, filter: string, selectedSort: SortKey): string {
   const params = new URLSearchParams({
     exclude: excludedFields,
@@ -106,10 +64,10 @@ async function fetchResults(
       signal,
       retry: 0
     })
-    return parseResponse(response)
+    return parseLibraryResponse(response)
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error
-    return emptyResponse(true)
+    return emptyLibraryResponse(true)
   }
 }
 
@@ -118,16 +76,23 @@ const initialSort = sortKey(route.query.sort)
 const { data: initialData } = await useAsyncData(
   `library:${route.fullPath}`,
   () => fetchResults(config.libraryApiBase, initialFilter, initialSort),
-  { default: () => emptyResponse() }
+  { default: () => emptyLibraryResponse() }
 )
 
 const filter = ref(initialFilter)
 const selectedSort = ref(initialSort)
-const results = ref(initialData.value ?? emptyResponse())
+const results = ref(initialData.value ?? emptyLibraryResponse())
 const loading = ref(false)
 let timer: ReturnType<typeof setTimeout> | null = null
 let controller: AbortController | null = null
 let requestVersion = 0
+let ownedNavigation: { key: string, version: number } | null = null
+
+type QueryState = { filter: string, sort: SortKey }
+
+function stateKey(state: QueryState): string {
+  return JSON.stringify([state.filter, state.sort])
+}
 
 function cancelPending() {
   if (timer !== null) clearTimeout(timer)
@@ -136,24 +101,29 @@ function cancelPending() {
   controller = null
 }
 
-async function replaceQuery(nextFilter: string, nextSort: SortKey) {
-  const query = { ...route.query }
-  if (nextFilter) query.filter = nextFilter
-  else delete query.filter
-  if (nextSort === "relevans") delete query.sort
-  else query.sort = nextSort
-  await router.replace({ query })
+function invalidateIntent(): number {
+  cancelPending()
+  loading.value = false
+  return ++requestVersion
 }
 
-async function runBrowserRequest(nextFilter: string, nextSort: SortKey) {
-  cancelPending()
-  const version = ++requestVersion
+function queryFor(state: QueryState) {
+  const query = { ...route.query }
+  if (state.filter) query.filter = state.filter
+  else delete query.filter
+  if (state.sort === "relevans") delete query.sort
+  else query.sort = state.sort
+  return query
+}
+
+async function runBrowserRequest(state: QueryState, version: number) {
+  if (version !== requestVersion) return
   controller = new AbortController()
   loading.value = true
   const response = await fetchResults(
     config.public.libraryApiBase,
-    nextFilter,
-    nextSort,
+    state.filter,
+    state.sort,
     controller.signal
   ).catch(() => null)
   if (version !== requestVersion || response === null) return
@@ -162,123 +132,65 @@ async function runBrowserRequest(nextFilter: string, nextSort: SortKey) {
   controller = null
 }
 
+async function persistAndRequest(state: QueryState, version: number) {
+  if (version !== requestVersion) return
+  const navigation = { key: stateKey(state), version }
+  ownedNavigation = navigation
+  try {
+    await router.replace({ query: queryFor(state) })
+  } finally {
+    if (ownedNavigation === navigation) ownedNavigation = null
+  }
+  if (version === requestVersion) await runBrowserRequest(state, version)
+}
+
+function beginIntent(state: QueryState, delay = 0) {
+  const captured = Object.freeze({ ...state })
+  const version = invalidateIntent()
+  filter.value = captured.filter
+  selectedSort.value = captured.sort
+  if (delay > 0) {
+    timer = setTimeout(() => {
+      timer = null
+      void persistAndRequest(captured, version)
+    }, delay)
+    return
+  }
+  void persistAndRequest(captured, version)
+}
+
 function scheduleSearch() {
-  cancelPending()
+  beginIntent({ filter: filter.value, sort: selectedSort.value }, 300)
+}
+
+function submitSearch() {
+  beginIntent({ filter: filter.value, sort: selectedSort.value })
+}
+
+function resetSearch() {
+  beginIntent({ filter: "", sort: selectedSort.value })
+}
+
+function selectSort(key: SortKey) {
+  beginIntent({ filter: filter.value, sort: key })
+}
+
+watch(
+  () => [queryValue(route.query.filter), sortKey(route.query.sort)] as const,
+  ([nextFilter, nextSort]) => {
+    const state = { filter: nextFilter, sort: nextSort }
+    filter.value = state.filter
+    selectedSort.value = state.sort
+    if (ownedNavigation?.key === stateKey(state)) return
+    const version = invalidateIntent()
+    void runBrowserRequest(state, version)
+  },
+  { flush: "sync" }
+)
+
+function disposeLibraryRequest() {
   requestVersion += 1
-  const nextFilter = filter.value
-  timer = setTimeout(async () => {
-    timer = null
-    await replaceQuery(nextFilter, selectedSort.value)
-    await runBrowserRequest(nextFilter, selectedSort.value)
-  }, 300)
-}
-
-async function resetSearch() {
-  filter.value = ""
-  await replaceQuery("", selectedSort.value)
-  await runBrowserRequest("", selectedSort.value)
-}
-
-async function selectSort(key: SortKey) {
-  selectedSort.value = key
-  await replaceQuery(filter.value, key)
-  await runBrowserRequest(filter.value, key)
-}
-
-function itemIndex(item: UnknownRecord): string {
-  return stringAt(item, "_index")
-}
-
-function sourceLabel(item: UnknownRecord): string {
-  const texttype = stringAt(item, "texttype")
-  if (texttype) return texttype
-  if (itemIndex(item) === "wordpress") {
-    return ({
-      ljudochbild: "Ljud och bild",
-      diktensmuseum: "Diktens museum",
-      skolan: "Skolan",
-      bibliotekariesidor: "Bibliotekariesidor"
-    } as Record<string, string>)[stringAt(item, "source")] ?? ""
-  }
-  return ({
-    presentations: "Kringtexter",
-    litteraturkartan: "Litteraturkartan",
-    sol: "Översättarlexikon",
-    author: "Författare"
-  } as Record<string, string>)[itemIndex(item)] ?? ""
-}
-
-function authorName(item: UnknownRecord): string {
-  return stringAt(recordAt(item, "main_author"), "full_name")
-}
-
-function authorHref(item: UnknownRecord): string {
-  const id = stringAt(recordAt(item, "main_author"), "authorid")
-  return id ? `/författare/${id}` : ""
-}
-
-function primaryLabel(item: UnknownRecord): string {
-  const index = itemIndex(item)
-  if (index === "author") return stringAt(item, "name_for_index")
-  if (index === "sol") return stringAt(recordAt(item, "article"), "ArticleName")
-  if (index === "litteraturkartan") return stringAt(item, "header")
-  return stringAt(item, "shorttitle") || stringAt(item, "title")
-}
-
-function primaryHref(item: UnknownRecord): string {
-  const index = itemIndex(item)
-  if (index === "author") {
-    const id = stringAt(item, "authorid")
-    return id ? `/författare/${id}/` : ""
-  }
-  if (index === "presentations") return stringAt(item, "url")
-  if (index === "wordpress") return stringAt(item, "link")
-  if (index === "sol") {
-    const name = stringAt(recordAt(item, "article"), "URLName")
-    return name ? `https://litteraturbanken.se/översättarlexikon/artiklar/${name}` : ""
-  }
-  if (index === "litteraturkartan") {
-    const place = stringAt(item, "placeid")
-    const id = stringAt(item, "id")
-    return place && id
-      ? `https://litteraturbanken.se/litteraturkartan/?id=${encodeURIComponent(place)}&article=${encodeURIComponent(id)}`
-      : ""
-  }
-  if (index === "pdf") {
-    const id = stringAt(item, "lbworkid")
-    return id ? `/txt/${id}/${id}.pdf` : ""
-  }
-  if (["etext", "faksimil", "etext-part", "faksimil-part"].includes(index)) {
-    const workAuthors = recordsAt(item, "work_authors")
-    const author = stringAt(workAuthors[0] ?? recordAt(item, "main_author"), "authorid")
-    const title = stringAt(item, "work_titleid") || stringAt(item, "titleid")
-    const page = stringAt(item, "startpagename")
-    const media = stringAt(item, "mediatype")
-    return author && title && page && media
-      ? `/författare/${author}/titlar/${title}/sida/${page}/${media}`
-      : ""
-  }
-  return ""
-}
-
-function yearLabel(item: UnknownRecord): string {
-  if (itemIndex(item) === "author") {
-    const birth = stringAt(recordAt(item, "birth"), "plain")
-    const death = stringAt(recordAt(item, "death"), "plain")
-    return birth || death ? `${birth}–${death}` : ""
-  }
-  return stringAt(recordAt(item, "sort_date_imprint"), "plain")
-}
-
-function secondaryAuthor(item: UnknownRecord): string {
-  if (itemIndex(item) === "presentations" || itemIndex(item) === "litteraturkartan") {
-    return stringAt(item, "article_author")
-  }
-  if (itemIndex(item) === "sol") {
-    const contributor = recordAt(item, "contributors")
-    return `${stringAt(contributor, "FirstName")} ${stringAt(contributor, "LastName")}`.trim()
-  }
-  return authorName(item)
+  cancelPending()
 }
 
 useSeoMeta({
@@ -290,7 +202,7 @@ useHead({
   bodyAttrs: { class: "focus page-library ready" }
 })
 
-onUnmounted(cancelPending)
+onUnmounted(disposeLibraryRequest)
 </script>
 
 <template>
@@ -300,7 +212,7 @@ onUnmounted(cancelPending)
       <div id="controls">
         <form
           class="lg:p-5 p-2 lg:border border-gray-900 w-full lg:max-w-5xl"
-          @submit.prevent="runBrowserRequest(filter, selectedSort)"
+          @submit.prevent="submitSearch"
         >
           <div class="main_input flex flex-wrap -ml-6 relative mb-8 items-center">
             <svg class="w-6 h-6 relative left-10 top-0 -mt-px" viewBox="0 0 24 24" fill="none" stroke="#7A1400" stroke-width="1.5" aria-hidden="true">
@@ -331,8 +243,25 @@ onUnmounted(cancelPending)
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
               </svg>
             </button>
-            <button type="button" aria-disabled="true" class="bg-white border border-gray-500 self-stretch px-4 focus:ring-1 focus:ring-inset focus:ring-primary">
+            <button
+              type="button"
+              data-library-advanced
+              disabled
+              title="Utökad sökning är inte tillgänglig ännu"
+              class="bg-white border border-gray-500 self-stretch px-4 focus:ring-1 focus:ring-inset focus:ring-primary"
+            >
               <span class="uppercase text-xs">Visa utökad sökning</span>
+              <svg
+                data-library-filter-icon
+                class="filter w-6 h-6 relative top-1 inline-block text-gray-700"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke-width="1.5"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25" />
+              </svg>
             </button>
           </div>
           <div class="chronology primarycolor ml-px pl-px">
@@ -341,7 +270,16 @@ onUnmounted(cancelPending)
           </div>
           <div class="btn-group p-0 mt-4 lg:mt-6">
             <button data-library-tab type="button" class="sc btn btn-small text-base active">Alla träffar</button>
-            <button v-for="tab in ['Nytt', 'Författare', 'Verk', 'Dikt, novell, etc.', 'Epub', 'PDF']" :key="tab" data-library-tab type="button" aria-disabled="true" class="sc btn btn-small text-base">{{ tab }}</button>
+            <button
+              v-for="tab in ['Nytt', 'Författare', 'Verk', 'Dikt, novell, etc.', 'Epub', 'PDF']"
+              :key="tab"
+              data-library-tab
+              data-deferred
+              type="button"
+              disabled
+              title="Inte tillgänglig i denna version"
+              class="sc btn btn-small text-base disabled"
+            >{{ tab }}</button>
           </div>
         </form>
       </div>
@@ -373,20 +311,35 @@ onUnmounted(cancelPending)
                 <tbody>
                   <tr
                     v-for="(item, index) in results.data"
-                    :key="`${itemIndex(item)}:${primaryHref(item)}:${index}`"
+                    :key="`${item.index}:${item.primaryHref}:${index}`"
                     data-library-result
                     class="lg:table-row flex flex-col justify-between pb-2 lg:pb-0 -ml-2 hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
                   >
                     <td class="lg:text-right lg:table-cell w-44">
-                      <span class="sc primarycolor whitespace-nowrap text-base">{{ sourceLabel(item) }}</span>
+                      <span class="sc primarycolor whitespace-nowrap text-base">{{ item.sourceLabel }}</span>
                     </td>
                     <td class="order-2">
-                      <a v-if="primaryHref(item)" :href="primaryHref(item)" :download="itemIndex(item) === 'pdf' || undefined">{{ primaryLabel(item) }}</a>
+                      <a
+                        :href="item.primaryHref"
+                        :download="item.download || undefined"
+                        :data-library-author-name="item.index === 'author' || undefined"
+                      >
+                        <template v-if="item.index === 'author'">
+                          <span class="surname">{{ item.authorSurname }}</span><span v-if="item.authorGivenNames">,</span>
+                          {{ item.authorGivenNames }}
+                          <span
+                            v-if="item.mobileYearLabel"
+                            data-library-author-mobile-years
+                            class="lg:hidden"
+                          >{{ item.mobileYearLabel }}</span>
+                        </template>
+                        <template v-else>{{ item.primaryLabel }}</template>
+                      </a>
                     </td>
-                    <td class="lg:text-right hidden lg:table-cell text-base w-28 whitespace-nowrap">{{ yearLabel(item) }}</td>
+                    <td class="lg:text-right hidden lg:table-cell text-base w-28 whitespace-nowrap">{{ item.yearLabel }}</td>
                     <td class="lg:text-right lg:uppercase lg:text-sm lg:pl-4 order-1 lg:max-w-40">
-                      <a v-if="authorHref(item)" :href="authorHref(item)">{{ secondaryAuthor(item) }}</a>
-                      <span v-else class="text-gray-800">{{ secondaryAuthor(item) }}</span>
+                      <a v-if="item.authorHref" :href="item.authorHref">{{ item.secondaryAuthor }}</a>
+                      <span v-else class="text-gray-800">{{ item.secondaryAuthor }}</span>
                     </td>
                   </tr>
                 </tbody>

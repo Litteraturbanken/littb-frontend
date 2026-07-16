@@ -34,7 +34,7 @@ const homeContent = new Map([
 ])
 
 const sharedContent = new Map([
-  ["/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", ["image/jpeg", readFileSync(new URL("./home-content/start_bkg_172_2026.jpg", import.meta.url))]]
+  ["/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", ["image/jpeg", readFileSync(new URL("./library-content/biblioteket_bakgrund.jpg", import.meta.url))]]
 ])
 
 const presentationContent = new Map([
@@ -139,7 +139,8 @@ function waitForAuthorResolveDelay(body) {
 }
 
 function waitForLibraryRelevanceDelay(query) {
-  const delay = libraryRelevanceDelays[query] || 0
+  const exactKey = `${query.q || ""}|${query.sort_field || ""}`
+  const delay = libraryRelevanceDelays[exactKey] || libraryRelevanceDelays[query.q || ""] || 0
   return new Promise(resolve => setTimeout(resolve, delay))
 }
 
@@ -492,7 +493,7 @@ const server = createServer(async (request, response) => {
   if (request.method === "GET" && libraryRelevancePath.startsWith("/relevance/")) {
     const query = Object.fromEntries(url.searchParams)
     libraryRelevanceRequests.push({ path: url.pathname, query })
-    await waitForLibraryRelevanceDelay(query.q || "")
+    await waitForLibraryRelevanceDelay(query)
     if (libraryRelevanceFailure) {
       return sendJson(response, 503, {
         error: { code: "library_relevance_unavailable", message: "Unable to search Library" }

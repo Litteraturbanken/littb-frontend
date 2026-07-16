@@ -34,6 +34,72 @@ const presentation = {
   highlight: {}
 }
 
+const faksimil = {
+  _index: "faksimil",
+  title: "Gösta Berlings saga",
+  texttype: "roman",
+  mediatype: "faksimil",
+  startpagename: "3",
+  work_titleid: "GostaBerlingsSaga",
+  sort_date_imprint: { plain: 1891 },
+  main_author: { authorid: "LagerlofS", full_name: "Selma Lagerlöf", type: "author" },
+  work_authors: [{ authorid: "LagerlofS" }]
+}
+
+const pdf = {
+  _index: "pdf",
+  title: "En PDF-bok",
+  texttype: "roman",
+  lbworkid: "lb-pdf",
+  sort_date_imprint: { plain: 1902 },
+  main_author: { authorid: "PdfA", full_name: "Pia Författare", type: "author" }
+}
+
+const etextPart = {
+  _index: "etext-part",
+  title: "En novell",
+  texttype: "novell",
+  mediatype: "etext",
+  startpagename: "7",
+  work_titleid: "Novellsamling",
+  sort_date_imprint: { plain: 1903 },
+  main_author: { authorid: "NovellA", full_name: "Nils Novellist", type: "author" },
+  work_authors: [{ authorid: "NovellA" }]
+}
+
+const faksimilPart = {
+  _index: "faksimil-part",
+  title: "En dikt",
+  texttype: "dikt",
+  mediatype: "faksimil",
+  startpagename: "9",
+  work_titleid: "Diktsamling",
+  sort_date_imprint: { plain: 1904 },
+  main_author: { authorid: "DiktA", full_name: "Disa Diktare", type: "author" },
+  work_authors: [{ authorid: "DiktA" }]
+}
+
+const sol = {
+  _index: "sol",
+  article: { ArticleName: "Ada Nilsson", URLName: "Ada_Nilsson" },
+  contributors: { FirstName: "Sven", LastName: "Skribent" }
+}
+
+const literatureMap = {
+  _index: "litteraturkartan",
+  header: "Göteborg i litteraturen",
+  placeid: "Göteborg",
+  id: "artikel/1",
+  article_author: "Karin Kartograf"
+}
+
+const wordpress = {
+  _index: "wordpress",
+  title: "Litteratur i skolan",
+  link: "https://litteraturbanken.se/skolan/litteratur/",
+  source: "skolan"
+}
+
 const selma = {
   _index: "author",
   authorid: "LagerlofS",
@@ -64,10 +130,33 @@ const latest = {
 
 export const libraryDefaultResults = [rodaRummet, strindberg, presentation]
 
+export const libraryMixedResults = [
+  rodaRummet,
+  faksimil,
+  pdf,
+  etextPart,
+  faksimilPart,
+  strindberg,
+  presentation,
+  sol,
+  literatureMap,
+  wordpress,
+  null,
+  { _index: "unsupported", title: "Okänd" },
+  { _index: "etext", title: "Ofullständig" },
+  { _index: "presentations", title: "Osäker presentation", url: "javascript:alert(1)", article_author: "Angripare" },
+  { _index: "wordpress", title: "Osäker artikel", link: "data:text/html,boom", source: "skolan" },
+  { _index: "wordpress", title: "Oväntad värd", link: "https://evil.example/p", source: "skolan" }
+]
+
 export function libraryRelevanceResponse(query = "") {
   const normalized = query.toLocaleLowerCase("sv-SE")
+  if (normalized.includes("malformed-top") || normalized.includes("malformed top")) {
+    return { data: "invalid", hits: 0, suggest: [] }
+  }
   let data = libraryDefaultResults
-  if (normalized.includes("selma")) data = [selma]
+  if (normalized.includes("blandat")) data = libraryMixedResults
+  else if (normalized.includes("selma")) data = [selma]
   else if (normalized.includes("senaste")) data = [latest]
   else if (normalized.includes("röda")) data = [rodaRummet]
   else if (normalized.includes("inga")) data = []
