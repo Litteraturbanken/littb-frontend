@@ -13,6 +13,11 @@ const expectedContentPaths = new Set([
   "/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg"
 ])
 
+function querySuffix(requestPath: string, pathname: string) {
+  expect(requestPath.startsWith(pathname)).toBe(true)
+  return requestPath.slice(pathname.length)
+}
+
 test("captures the current Angular Home authority", async ({ page }, testInfo) => {
   const [editorialHtml, runtimeCss, backgroundImage, authorityFonts] = await Promise.all([
     readFile(resolve(fixtureRoot, "startsida-ny.html")),
@@ -95,8 +100,17 @@ test("captures the current Angular Home authority", async ({ page }, testInfo) =
 
   await waitForVisualAssets(page)
   expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
-  expect(seenContentRequests.filter(path => path.startsWith("/red/om/start/startsida-ny.html"))).toHaveLength(1)
-  expect(seenContentRequests.filter(path => path.startsWith("/red/css/startsida.css"))).toHaveLength(1)
+  const fragmentRequests = seenContentRequests.filter(path => path.startsWith(
+    "/red/om/start/startsida-ny.html"
+  ))
+  const stylesheetRequests = seenContentRequests.filter(path => path.startsWith(
+    "/red/css/startsida.css"
+  ))
+  expect(fragmentRequests).toHaveLength(1)
+  expect(stylesheetRequests).toHaveLength(1)
+  expect(querySuffix(fragmentRequests[0] ?? "", "/red/om/start/startsida-ny.html")).toBe(
+    querySuffix(stylesheetRequests[0] ?? "", "/red/css/startsida.css")
+  )
   expect(seenContentRequests.filter(path => path === "/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg")).toHaveLength(2)
   expect(seenContentRequests).toHaveLength(4)
   expect(forbiddenProductionRequests).toEqual([])

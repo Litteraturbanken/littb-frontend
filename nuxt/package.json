@@ -18,6 +18,7 @@
     "test:ssr": "playwright test --project=ssr",
     "test:e2e": "playwright test --project=desktop-chromium --project=mobile-chromium",
     "test:visual:capture": "playwright test --config=playwright.angular.config.ts",
+    "test:visual:home:capture": "playwright test --config=playwright.home-angular.config.ts",
     "api:generate": "openapi-typescript \"${LBAPI_OPENAPI_SCHEMA:-http://127.0.0.1:8000/v2/openapi.json}\" --alphabetize --output app/lib/api/generated/lbapi.ts",
     "api:check": "openapi-typescript \"${LBAPI_OPENAPI_SCHEMA:-http://127.0.0.1:8000/v2/openapi.json}\" --alphabetize --check --output app/lib/api/generated/lbapi.ts"
   },

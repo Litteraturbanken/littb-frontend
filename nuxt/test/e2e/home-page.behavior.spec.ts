@@ -37,6 +37,24 @@ async function navigateClient(page: Page, path: string) {
   }, path)
 }
 
+const homeOnlyLinks = [
+  ["Lärare", "/skolan/lararsida/"],
+  ["Bibliotekarier", "/bibliotekariesidor/"],
+  ["English", "/om/english.html"],
+  ["Deutsch", "/om/deutsch.html"],
+  ["Français", "/om/francais.html"],
+  ["Logotyp för Svenska Akademien", "https://www.svenskaakademien.se"]
+] as const
+
+async function assertHomeOnlyLinks(page: Page, visible: boolean) {
+  for (const [name, href] of homeOnlyLinks) {
+    const link = page.getByRole("link", { name, exact: true, includeHidden: true })
+    await expect(link).toHaveAttribute("href", href)
+    if (visible) await expect(link).toBeVisible()
+    else await expect(link).toBeHidden()
+  }
+}
+
 test.beforeEach(async ({ request }) => resetHome(request))
 
 test("hydrates the SSR Home payload without refetching its editorial fragment", async ({ page, request }) => {
@@ -82,6 +100,7 @@ test("Home to 404 to Home cleans and restores stylesheet, background, and body s
   await expect(page.locator("body")).toHaveClass(/\bfocus\b/)
   await expect(page.locator("body")).toHaveClass(/\bpage-start\b/)
   await expect(page.locator("body")).toHaveClass(/\bready\b/)
+  await assertHomeOnlyLinks(page, true)
   expect(await page.locator("html").evaluate(element => getComputedStyle(element).backgroundRepeat))
     .toBe("no-repeat")
 
@@ -90,6 +109,7 @@ test("Home to 404 to Home cleans and restores stylesheet, background, and body s
   await expect(page.locator("body")).not.toHaveClass(/\bpage-start\b/)
   await expect(stylesheet).toHaveCount(0)
   await expect(page.locator("html")).not.toHaveAttribute("style", /start_bkg_172_2026/)
+  await assertHomeOnlyLinks(page, false)
 
   await navigateClient(page, "/")
   await expect(page).toHaveTitle("Litteraturbanken | Svenska klassiker som e-bok och epub")
@@ -99,6 +119,7 @@ test("Home to 404 to Home cleans and restores stylesheet, background, and body s
   await expect(stylesheet).toHaveCount(1)
   await expect(stylesheet).toHaveAttribute("href", stylesheetHref ?? "")
   await expect(page.locator("html")).toHaveAttribute("style", /start_bkg_172_2026\.jpg/)
+  await assertHomeOnlyLinks(page, true)
   expect(await page.locator("html").evaluate(element => getComputedStyle(element).backgroundRepeat))
     .toBe("no-repeat")
   const fragmentRequests = (await homeRequests(request)).filter(path => path.startsWith(

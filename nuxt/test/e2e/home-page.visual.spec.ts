@@ -21,6 +21,11 @@ async function homeRequests(request: APIRequestContext): Promise<string[]> {
   return (await response.json()).requests
 }
 
+function querySuffix(requestPath: string, pathname: string) {
+  expect(requestPath.startsWith(pathname)).toBe(true)
+  return requestPath.slice(pathname.length)
+}
+
 test.beforeEach(async ({ request }) => resetHomeRequests(request))
 test.afterEach(async ({ request }) => resetHomeRequests(request))
 
@@ -79,8 +84,13 @@ test("matches the approved Angular Home page", async ({ page, request }, testInf
   expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
 
   const requests = await homeRequests(request)
-  expect(requests.filter(path => path.startsWith("/red/om/start/startsida-ny.html?"))).toHaveLength(1)
-  expect(requests.filter(path => path.startsWith("/red/css/startsida.css?"))).toHaveLength(1)
+  const fragmentRequests = requests.filter(path => path.startsWith("/red/om/start/startsida-ny.html?"))
+  const stylesheetRequests = requests.filter(path => path.startsWith("/red/css/startsida.css?"))
+  expect(fragmentRequests).toHaveLength(1)
+  expect(stylesheetRequests).toHaveLength(1)
+  expect(querySuffix(fragmentRequests[0] ?? "", "/red/om/start/startsida-ny.html")).toBe(
+    querySuffix(stylesheetRequests[0] ?? "", "/red/css/startsida.css")
+  )
   // The browser paints the background once and waitForVisualAssets decodes it once.
   expect(requests.filter(path => path === "/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg")).toHaveLength(2)
   expect(requests).toHaveLength(4)
