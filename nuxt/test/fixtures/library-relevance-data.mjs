@@ -145,6 +145,7 @@ export const libraryMixedResults = [
   { _index: "unsupported", title: "Okänd" },
   { _index: "etext", title: "Ofullständig" },
   { _index: "presentations", title: "Osäker presentation", url: "javascript:alert(1)", article_author: "Angripare" },
+  { _index: "presentations", title: "Protokollrelativ", url: "//evil.example/p", article_author: "Angripare" },
   { _index: "wordpress", title: "Osäker artikel", link: "data:text/html,boom", source: "skolan" },
   { _index: "wordpress", title: "Oväntad värd", link: "https://evil.example/p", source: "skolan" }
 ]

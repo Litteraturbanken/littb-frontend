@@ -1032,7 +1032,7 @@ describe("v2 fixture server operations", () => {
     expect(background.headers.get("content-type")).toBe("image/jpeg")
     expect(createHash("sha256").update(Buffer.from(await background.arrayBuffer())).digest("hex"))
       .toBe("4191d7e2db8638781fa15ae06e12d8f05eff57caeb3c3f37661cbe8846465c1c")
-    expect((await mixedResponse.json() as { data: unknown[] }).data).toHaveLength(16)
+    expect((await mixedResponse.json() as { data: unknown[] }).data).toHaveLength(17)
     expect(await malformedResponse.json()).toEqual({ data: "invalid", hits: 0, suggest: [] })
     const publicBody = await publicResponse.json() as { data: unknown[], hits: number }
     const privateBody = await privateResponse.json() as { data: unknown[], hits: number }
