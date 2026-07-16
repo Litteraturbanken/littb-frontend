@@ -42,6 +42,7 @@
 - `nuxt/test/ssr/routing-errors.spec.ts` — redirect and 404 HTTP contracts.
 - `nuxt/test/e2e/about-pages.behavior.spec.ts` — navigation, content, proxy, and hydration behavior.
 - `nuxt/test/e2e/about-pages.visual.spec.ts` — Nuxt desktop/mobile parity comparisons.
+- `nuxt/test/helpers/visual.ts` — shared browser-asset readiness helper used by authority and Nuxt visual tests.
 - `nuxt/test/visual/capture-about-angular.spec.ts` — matching Angular authority captures.
 - `nuxt/test/visual/baselines/about-*-desktop.png` — four desktop authority baselines.
 - `nuxt/test/visual/baselines/about-*-mobile.png` — four mobile authority baselines.
@@ -52,7 +53,9 @@
 - `nuxt/nuxt.config.ts` — content runtime bases, `/red` development proxy, SSR rule, and `/statistik` redirect.
 - `nuxt/playwright.config.ts` — point private/public content retrieval at the deterministic fixture during tests.
 - `nuxt/playwright.angular.config.ts` — discover both statistics and About authority capture specs.
+- `nuxt/test/e2e/statistics.visual.spec.ts` — consume the shared visual readiness helper without changing assertions.
 - `nuxt/test/fixtures/v2-server.mjs` — serve and record deterministic `/red` HTML/assets and simulate content failure.
+- `nuxt/test/visual/capture-angular.spec.ts` — consume the shared visual readiness helper without changing authority behavior.
 - `nuxt/test/unit/foundation.spec.ts` — require real shared-shell ownership and retain the no-Angular boundary.
 
 ---
@@ -707,6 +710,7 @@ git commit -m "feat(nuxt): restore legacy redirect and 404"
 **Files:**
 - Create: `nuxt/test/e2e/about-pages.behavior.spec.ts`
 - Create: `nuxt/test/e2e/about-pages.visual.spec.ts`
+- Create: `nuxt/test/helpers/visual.ts`
 - Create: `nuxt/test/visual/capture-about-angular.spec.ts`
 - Create: `nuxt/test/visual/baselines/about-ide-desktop.png`
 - Create: `nuxt/test/visual/baselines/about-ide-mobile.png`
@@ -717,6 +721,8 @@ git commit -m "feat(nuxt): restore legacy redirect and 404"
 - Create: `nuxt/test/visual/baselines/about-tack-desktop.png`
 - Create: `nuxt/test/visual/baselines/about-tack-mobile.png`
 - Modify: `nuxt/playwright.angular.config.ts`
+- Modify: `nuxt/test/e2e/statistics.visual.spec.ts`
+- Modify: `nuxt/test/visual/capture-angular.spec.ts`
 
 **Interfaces:**
 - Consumes: Task 1 fixtures and fixture server; deployed Angular authority for screenshot capture.
@@ -855,30 +861,12 @@ Change `testMatch` in `nuxt/playwright.angular.config.ts` to:
   testMatch: /capture-.*angular\.spec\.ts/,
 ```
 
-Create `nuxt/test/visual/capture-about-angular.spec.ts`:
+First create the shared visual helper `nuxt/test/helpers/visual.ts`:
 
 ```ts
-import { mkdir, readFile } from "node:fs/promises"
-import { resolve } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
+import type { Page } from "@playwright/test"
 
-const fixtures = [
-  ["/red/om/ide/omlitteraturbanken.html", "ide.html", "text/html; charset=utf-8"],
-  ["/red/om/ide/organisation.html", "organisation.html", "text/html; charset=utf-8"],
-  ["/red/om/rattigheter/rattigheter.html", "rattigheter.html", "text/html; charset=utf-8"],
-  ["/red/om/tack.html", "tack.html", "text/html; charset=utf-8"],
-  ["/red/om/rattigheter/cc_by.png", "cc_by.png", "image/png"],
-  ["/red/om/rattigheter/cc_publicdomain.png", "cc_publicdomain.png", "image/png"]
-] as const
-
-const pages = [
-  ["ide", "Introduktion"],
-  ["organisation", "Organisation"],
-  ["rattigheter", "Rättigheter och material"],
-  ["tack", "Litteraturbanken tackar"]
-] as const
-
-async function waitForVisualAssets(page: Page) {
+export async function waitForVisualAssets(page: Page) {
   await page.evaluate(async () => {
     await document.fonts.ready
     await Promise.all(
@@ -898,6 +886,42 @@ async function waitForVisualAssets(page: Page) {
     }
   })
 }
+```
+
+Delete the local `waitForVisualAssets` functions from `nuxt/test/visual/capture-angular.spec.ts` and `nuxt/test/e2e/statistics.visual.spec.ts`, and add these imports respectively:
+
+```ts
+import { waitForVisualAssets } from "../helpers/visual"
+```
+
+```ts
+import { waitForVisualAssets } from "../helpers/visual"
+```
+
+Then create `nuxt/test/visual/capture-about-angular.spec.ts`:
+
+```ts
+import { mkdir, readFile } from "node:fs/promises"
+import { resolve } from "node:path"
+import { expect, test } from "@playwright/test"
+
+import { waitForVisualAssets } from "../helpers/visual"
+
+const fixtures = [
+  ["/red/om/ide/omlitteraturbanken.html", "ide.html", "text/html; charset=utf-8"],
+  ["/red/om/ide/organisation.html", "organisation.html", "text/html; charset=utf-8"],
+  ["/red/om/rattigheter/rattigheter.html", "rattigheter.html", "text/html; charset=utf-8"],
+  ["/red/om/tack.html", "tack.html", "text/html; charset=utf-8"],
+  ["/red/om/rattigheter/cc_by.png", "cc_by.png", "image/png"],
+  ["/red/om/rattigheter/cc_publicdomain.png", "cc_publicdomain.png", "image/png"]
+] as const
+
+const pages = [
+  ["ide", "Introduktion"],
+  ["organisation", "Organisation"],
+  ["rattigheter", "Rättigheter och material"],
+  ["tack", "Litteraturbanken tackar"]
+] as const
 
 test.beforeEach(async ({ page }) => {
   const responses = new Map(
@@ -954,7 +978,9 @@ Expected: the four routes each produce a desktop and mobile PNG under `nuxt/test
 Create `nuxt/test/e2e/about-pages.visual.spec.ts`:
 
 ```ts
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test } from "@playwright/test"
+
+import { waitForVisualAssets } from "../helpers/visual"
 
 const pages = [
   ["ide", "Introduktion"],
@@ -962,27 +988,6 @@ const pages = [
   ["rattigheter", "Rättigheter och material"],
   ["tack", "Litteraturbanken tackar"]
 ] as const
-
-async function waitForVisualAssets(page: Page) {
-  await page.evaluate(async () => {
-    await document.fonts.ready
-    await Promise.all(
-      [...document.images]
-        .filter(image => !image.complete)
-        .map(image => new Promise(resolve => {
-          image.addEventListener("load", resolve, { once: true })
-          image.addEventListener("error", resolve, { once: true })
-        }))
-    )
-    const background = getComputedStyle(document.documentElement).backgroundImage
-    const match = background.match(/url\(["']?(.+?)["']?\)/)
-    if (match) {
-      const image = new Image()
-      image.src = match[1]
-      await image.decode()
-    }
-  })
-}
 
 for (const [slug, heading] of pages) {
   test(`matches the approved Angular ${slug} page`, async ({ page }, testInfo) => {
@@ -1038,6 +1043,9 @@ git add \
   nuxt/playwright.angular.config.ts \
   nuxt/test/e2e/about-pages.behavior.spec.ts \
   nuxt/test/e2e/about-pages.visual.spec.ts \
+  nuxt/test/e2e/statistics.visual.spec.ts \
+  nuxt/test/helpers/visual.ts \
+  nuxt/test/visual/capture-angular.spec.ts \
   nuxt/test/visual/capture-about-angular.spec.ts \
   nuxt/test/visual/baselines/about-*-desktop.png \
   nuxt/test/visual/baselines/about-*-mobile.png
