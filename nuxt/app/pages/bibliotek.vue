@@ -347,9 +347,12 @@ async function fetchResults(
 
 const initialFilter = queryValue(route.query.filter)
 const initialSort = sortKey(route.query.sort)
+const initialApiBase = import.meta.server
+  ? config.libraryApiBase
+  : config.public.libraryApiBase
 const { data: initialData } = await useAsyncData(
   `library:${route.fullPath}`,
-  () => fetchResults(config.libraryApiBase, initialFilter, initialSort),
+  () => fetchResults(initialApiBase, initialFilter, initialSort),
   { default: () => emptyLibraryResponse() }
 )
 

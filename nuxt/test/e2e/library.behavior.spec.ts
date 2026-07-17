@@ -17,6 +17,34 @@ async function requests(request: APIRequestContext) {
 
 test.beforeEach(async ({ request }) => reset(request))
 
+test("client-side Library entry uses public runtime config without private-key warnings", async ({
+  page,
+  request
+}) => {
+  const warnings: string[] = []
+  page.on("console", message => {
+    if (message.text().includes("Could not access `libraryApiBase`")) {
+      warnings.push(message.text())
+    }
+  })
+
+  await page.goto("/", { waitUntil: "networkidle" })
+  await reset(request)
+  await page.evaluate(async () => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: { push: (path: string) => Promise<void> } } } }
+    }
+    await root.__vue_app__?.config.globalProperties.$router.push("/bibliotek")
+  })
+  await page.locator("[data-library-result], [data-library-error]").first().waitFor()
+
+  expect(warnings).toEqual([])
+  await expect(page.locator("[data-library-result]")).toHaveCount(3)
+  const ledger = await requests(request)
+  expect(ledger).toHaveLength(1)
+  expect(ledger[0]?.path.startsWith("/api/relevance/")).toBe(true)
+})
+
 test("debounces Library input, preserves the URL, and uses the public proxy once", async ({
   page,
   request
