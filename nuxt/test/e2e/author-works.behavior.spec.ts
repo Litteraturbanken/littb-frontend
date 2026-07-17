@@ -520,6 +520,14 @@ test("empty, 404, 503, and malformed transitions clear rich content and metadata
       finalHeading: "Författarens verk kan inte visas just nu",
       error: true,
       failure: false
+    },
+    {
+      authorId: "WrongIdentityA",
+      path: "/f%C3%B6rfattare/WrongIdentityA/titlar",
+      finalTitle: "Författarverk | Litteraturbanken",
+      finalHeading: "Författarens verk kan inte visas just nu",
+      error: true,
+      failure: false
     }
   ] as const
 
@@ -555,6 +563,7 @@ test("empty, 404, 503, and malformed transitions clear rich content and metadata
     if (scenario.error) {
       await expect(page.locator(".error")).toContainText(scenario.finalHeading)
       await expect(page.locator("body")).not.toContainText("42")
+      await expect(page.locator("body")).not.toContainText("August Strindberg")
     } else {
       await expect(page.locator("h1")).toContainText(scenario.finalHeading)
       await expect(page.locator(".error")).toHaveCount(0)

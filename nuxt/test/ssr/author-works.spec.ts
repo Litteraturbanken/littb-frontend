@@ -332,3 +332,19 @@ test("SSR rejects malformed Author Works before serializing provider data", asyn
   expect(html).not.toContain("/semer")
   await expectOnlyWorksRequest(request, "/private-v2/authors/MalformedA/works")
 })
+
+test("SSR rejects a structurally valid response for the wrong author identity", async ({
+  request
+}) => {
+  const response = await request.get("/författare/WrongIdentityA/titlar")
+  expect(response.status()).toBe(503)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+
+  expect(document.querySelector(".error")).not.toBeNull()
+  expect(document.querySelector("h1, nav, .page_content")).toBeNull()
+  expect(html).not.toContain("August Strindberg")
+  expect(html).not.toContain("Röda rummet")
+  expect(html).not.toContain('\\"author_id\\":\\"StrindbergA\\"')
+  await expectOnlyWorksRequest(request, "/private-v2/authors/WrongIdentityA/works")
+})

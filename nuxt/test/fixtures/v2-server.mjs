@@ -1017,6 +1017,9 @@ const server = createServer(async (request, response) => {
     if (authorWorksAuthorId.authorId === "MalformedA") {
       return sendJson(response, 200, malformedAuthorWorksResponse)
     }
+    if (authorWorksAuthorId.authorId === "WrongIdentityA") {
+      return sendJson(response, 200, authorWorksById.get("StrindbergA"))
+    }
 
     const works = authorWorksById.get(authorWorksAuthorId.authorId)
     if (works) return sendJson(response, 200, works)

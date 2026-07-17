@@ -42,7 +42,11 @@ const { data } = await useAsyncData<WorksPageResponse>(
       const { data: body, response } = await client.GET("/authors/{author_id}/works", {
         params: { path: { author_id: requestedAuthorId } }
       })
-      if (response.status === 200 && isAuthorWorksResponse(body)) {
+      if (
+        response.status === 200
+        && isAuthorWorksResponse(body)
+        && body.author.author_id === requestedAuthorId
+      ) {
         return { identity, status: 200, works: body }
       }
       return {
