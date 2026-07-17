@@ -63,7 +63,7 @@ test("successful Reader hydration writes the complete legacy history record", as
     lbworkid: "lb-reader-doktor-glas",
     author: "SöderbergH",
     label: "Doktor Glas",
-    url: readerPath
+    url: "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
   })
   expect(new Date(record.timestamp).toISOString()).toBe(record.timestamp)
 })
@@ -125,7 +125,14 @@ function writeLastPageView(): void {
   }
   try {
     const raw = localStorage.getItem("lastPageViews")
-    const parsed: unknown = raw === null ? [] : JSON.parse(raw)
+    let parsed: unknown = []
+    if (raw !== null) {
+      try {
+        parsed = JSON.parse(raw)
+      } catch {
+        // Malformed legacy data is treated as an empty history.
+      }
+    }
     const previous = Array.isArray(parsed) ? parsed : []
     const next = [
       current,

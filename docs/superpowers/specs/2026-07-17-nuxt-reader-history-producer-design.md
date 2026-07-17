@@ -75,7 +75,8 @@ record format, ordering, and deduplication semantics.
 Browser tests cover:
 
 1. A fresh successful Reader visit writes all eight fields, an ISO timestamp,
-   the decoded route author, and the exact Unicode resume URL.
+   the decoded route author, and the exact percent-encoded `route.fullPath`
+   resume URL produced by Nuxt at runtime.
 2. Existing e-text and facsimile records for the same work remain independent;
    only the matching e-text record is replaced and moved to the front.
 3. An existing oversized array is normalized to a strict 50-entry cap.
