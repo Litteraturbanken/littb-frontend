@@ -15,6 +15,7 @@ import { waitForVisualAssets } from "../helpers/visual"
 test.use({ serviceWorkers: "block" })
 
 const authorityOrigin = "http://127.0.0.1:9000"
+const audioOrigin = "https://litteraturbanken.se"
 const authorExclude = "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
 const restrictedPrefixes = [
   "/api/",
@@ -309,6 +310,9 @@ for (const visualCase of visualCases) {
   test(`captures the Angular Author Works ${visualCase.name} authority`, async ({ page }, testInfo) => {
     const profile = legacyProfile(visualCase.profile, visualCase.works)
     const expectedResponses = workResponses(visualCase.works)
+    const expectedAudioSignature = `${audioOrigin}${requestSignature(new URL(
+      `${audioOrigin}/ljudochbild/wp-json/wp/v2/pages?slug=${encodeURIComponent(profile.authorid_norm.toLowerCase())}&_fields=slug`
+    ))}`
     const workRequests: string[] = []
     const authorRequests: string[] = []
     const authorsRequests: string[] = []
@@ -335,8 +339,15 @@ for (const visualCase of visualCases) {
       `${authorityOrigin}/api/list_all/etext/${encodeURIComponent(profile.authorid)}?negative=work`,
       `${authorityOrigin}/api/query/litteraturkartan?negative=auxiliary`,
       "https://litteraturbanken.se/ljudochbild/wp-json/wp/v2/pages?slug=negative&_fields=slug",
+      `http://litteraturbanken.se/ljudochbild/wp-json/wp/v2/pages?slug=${encodeURIComponent(profile.authorid_norm.toLowerCase())}&_fields=slug`,
+      `https://litteraturbanken.se:444/ljudochbild/wp-json/wp/v2/pages?slug=${encodeURIComponent(profile.authorid_norm.toLowerCase())}&_fields=slug`,
       `${authorityOrigin}/red/forfattare/${encodeURIComponent(profile.authorid_norm)}/semer/negative.html`,
       `${authorityOrigin}/red/css/negative.css`,
+      `${authorityOrigin}/img/forf2_bkg.jpg?variant=negative`,
+      `${authorityOrigin}/img/dramawebben_fade_more.jpg?variant=negative`,
+      ...(visualCase.works.author.portrait
+        ? [`${authorityOrigin}${visualCase.works.author.portrait.url}?variant=negative`]
+        : []),
       `http://127.0.0.1:3000/api/v2/authors/${encodeURIComponent(profile.authorid)}/works`
     ]
     const probeSet = new Set(probeUrls)
@@ -348,10 +359,6 @@ for (const visualCase of visualCases) {
       const signature = requestSignature(url)
       const label = `${request.method()} ${request.url()}`
 
-      if (request.method() === "GET" && probeSet.has(request.url())) {
-        rejectedNegativeProbes.push(request.url())
-        return route.abort("blockedbyclient")
-      }
       if (request.method() === "GET" && url.origin === authorityOrigin
         && decodedPathname === `/api/get_author/${profile.authorid}` && url.search === "") {
         authorRequests.push(signature)
@@ -402,21 +409,16 @@ for (const visualCase of visualCases) {
           })
         }
       }
-      if (request.method() === "GET" && url.hostname === "litteraturbanken.se"
-        && url.pathname === "/ljudochbild/wp-json/wp/v2/pages") {
-        const expected = requestSignature(new URL(
-          `https://litteraturbanken.se/ljudochbild/wp-json/wp/v2/pages?slug=${encodeURIComponent(profile.authorid_norm.toLowerCase())}&_fields=slug`
-        ))
-        if (signature === expected) {
-          audioRequests.push(signature)
-          return route.fulfill({
-            status: 200,
-            contentType: "application/json; charset=utf-8",
-            body: JSON.stringify(visualCase.works.author.audio_url
-              ? [{ slug: profile.authorid_norm.toLowerCase() }]
-              : [])
-          })
-        }
+      if (request.method() === "GET" && url.origin === audioOrigin
+        && `${url.origin}${signature}` === expectedAudioSignature) {
+        audioRequests.push(`${url.origin}${signature}`)
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json; charset=utf-8",
+          body: JSON.stringify(visualCase.works.author.audio_url
+            ? [{ slug: profile.authorid_norm.toLowerCase() }]
+            : [])
+        })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
         && url.pathname === `/red/forfattare/${profile.authorid_norm}/semer/index.html`
@@ -439,7 +441,8 @@ for (const visualCase of visualCases) {
         })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
-        && ["forf2_bkg.jpg", "dramawebben_fade_more.jpg"].some(name => url.pathname.endsWith(name))) {
+        && ["/img/forf2_bkg.jpg", "/img/dramawebben_fade_more.jpg"].includes(url.pathname)
+        && url.search === "") {
         backgroundRequests.push(url.pathname)
         return route.fulfill({
           status: 200,
@@ -450,7 +453,8 @@ for (const visualCase of visualCases) {
         })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
-        && visualCase.works.author.portrait && url.pathname === visualCase.works.author.portrait.url) {
+        && visualCase.works.author.portrait && url.pathname === visualCase.works.author.portrait.url
+        && url.search === "") {
         portraitRequests.push(url.pathname)
         return route.fulfill({ status: 200, contentType: "image/jpeg", body: portrait })
       }
@@ -477,6 +481,10 @@ for (const visualCase of visualCases) {
           contentType: "application/javascript; charset=utf-8",
           body: ""
         })
+      }
+      if (probeSet.has(request.url())) {
+        rejectedNegativeProbes.push(request.url())
+        return route.abort("blockedbyclient")
       }
       if (url.origin !== authorityOrigin) {
         forbiddenProductionRequests.push(label)
@@ -513,7 +521,7 @@ for (const visualCase of visualCases) {
     expect(authorsRequests).toEqual([expectedAuthorsSignature])
     expect(workRequests.sort()).toEqual([...expectedResponses.keys()].sort())
     expect(mapRequests).toHaveLength(1)
-    expect(audioRequests).toHaveLength(1)
+    expect(audioRequests).toEqual([expectedAudioSignature])
     expect(managedDocumentRequests).toEqual(expectedManaged)
     expect(portraitRequests).toEqual(expectedPortrait)
     expect(bootstrapRequests.sort()).toEqual([
