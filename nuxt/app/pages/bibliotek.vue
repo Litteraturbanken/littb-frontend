@@ -261,14 +261,16 @@ function parseResult(value: unknown): LibraryResult | null {
 
 function parseLibraryResponse(value: unknown): LibraryResponse {
   const record = asRecord(value)
+  const suggest = record?.suggest
   if (!record || !Array.isArray(record.data) || typeof record.hits !== "number"
-    || !Number.isFinite(record.hits) || !Array.isArray(record.suggest)) {
+    || !Number.isFinite(record.hits)
+    || (suggest !== null && suggest !== undefined && !Array.isArray(suggest))) {
     throw new Error("Invalid Library relevance response")
   }
   return {
     data: record.data.map(parseResult).filter((item): item is LibraryResult => item !== null),
     hits: record.hits,
-    suggest: record.suggest,
+    suggest: Array.isArray(suggest) ? suggest : [],
     failed: false
   }
 }

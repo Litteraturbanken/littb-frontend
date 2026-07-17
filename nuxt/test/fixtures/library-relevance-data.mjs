@@ -162,9 +162,17 @@ export function libraryRelevanceResponse(query = "") {
   else if (normalized.includes("röda")) data = [rodaRummet]
   else if (normalized.includes("inga")) data = []
 
-  return {
+  const response = {
     data: structuredClone(data),
     hits: data.length,
     suggest: []
   }
+  if (normalized.includes("null-suggest") || normalized.includes("null suggest")) {
+    response.suggest = null
+  } else if (normalized.includes("malformed-suggest") || normalized.includes("malformed suggest")) {
+    response.suggest = "invalid"
+  } else if (normalized.includes("missing-suggest") || normalized.includes("missing suggest")) {
+    delete response.suggest
+  }
+  return response
 }

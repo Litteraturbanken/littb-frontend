@@ -67,6 +67,27 @@ test("SSR preserves the legacy empty and failed result messages", async ({ reque
   expect(failed.querySelectorAll("[data-library-result]")).toHaveLength(0)
 })
 
+for (const filter of ["null-suggest", "missing-suggest"]) {
+  test(`SSR renders Library results when suggest is ${filter.split("-")[0]}`, async ({ request }) => {
+    const response = await request.get(`/bibliotek?filter=${filter}`)
+    expect(response.status()).toBe(200)
+    const { document } = parseHTML(await response.text())
+
+    expect(document.querySelectorAll("[data-library-result]")).toHaveLength(3)
+    expect(document.querySelector("[data-library-error]")).toBeNull()
+  })
+}
+
+test("SSR rejects a present non-array suggest value", async ({ request }) => {
+  const response = await request.get("/bibliotek?filter=malformed-suggest")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(document.querySelector("[data-library-error]")?.textContent?.trim())
+    .toBe("Ett fel uppstod.")
+  expect(document.querySelectorAll("[data-library-result]")).toHaveLength(0)
+})
+
 test("SSR renders every safe mixed family and rejects malformed rows and destinations", async ({
   request
 }) => {
