@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/authors/{author_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Author */
+        get: operations["v2_get_author"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/authors/resolve": {
         parameters: {
             query?: never;
@@ -140,6 +157,45 @@ export interface components {
         ApiErrorResponse: {
             error: components["schemas"]["ApiError"];
         };
+        /** AuthorPortrait */
+        AuthorPortrait: {
+            /** Caption Html */
+            caption_html: string | null;
+            /** Url */
+            url: string;
+        };
+        /** AuthorProfile */
+        AuthorProfile: {
+            /** Author Id */
+            author_id: string;
+            /** Birth Year */
+            birth_year: string | null;
+            /** Canonical Path */
+            canonical_path: string;
+            /** Death Year */
+            death_year: string | null;
+            dramawebben: components["schemas"]["DramawebbenProfile"] | null;
+            /** Encyclopedia Links */
+            encyclopedia_links: components["schemas"]["ProfileLink"][];
+            /** Full Name */
+            full_name: string;
+            introduction_by: components["schemas"]["AuthorSummary"] | null;
+            /** Introduction Html */
+            introduction_html: string | null;
+            /** Other Names */
+            other_names: string[];
+            portrait: components["schemas"]["AuthorPortrait"] | null;
+            /** Pseudonyms */
+            pseudonyms: components["schemas"]["AuthorSummary"][];
+            /** Related Links */
+            related_links: components["schemas"]["ProfileLink"][];
+            /** Search Url */
+            search_url: string | null;
+            /** Source Html */
+            source_html: string[];
+            /** Surname */
+            surname: string | null;
+        };
         /** AuthorResolveRequest */
         AuthorResolveRequest: {
             /** Author Ids */
@@ -183,6 +239,15 @@ export interface components {
             sender_address: string;
             /** Sender Name */
             sender_name?: string | null;
+        };
+        /** DramawebbenProfile */
+        DramawebbenProfile: {
+            introduction_by: components["schemas"]["AuthorSummary"] | null;
+            /** Introduction Html */
+            introduction_html: string | null;
+            portrait: components["schemas"]["AuthorPortrait"] | null;
+            /** Source Html */
+            source_html: string[];
         };
         /** ErrorDetail */
         ErrorDetail: {
@@ -230,6 +295,13 @@ export interface components {
         PopularWorksResponse: {
             /** Items */
             items: components["schemas"]["PopularWork"][];
+        };
+        /** ProfileLink */
+        ProfileLink: {
+            /** Label */
+            label: string;
+            /** Url */
+            url: string;
         };
         /** QuickSearchItem */
         QuickSearchItem: {
@@ -334,6 +406,64 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    v2_get_author: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                author_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorProfile"];
+                };
+            };
+            /** @description Author not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     v2_post_author_resolve: {
         parameters: {
             query?: never;

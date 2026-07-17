@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs"
 import { createServer } from "node:http"
 
+import { authorProfiles } from "./author-profile-data.mjs"
 import { historyAuthorSummaries } from "./history-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
@@ -71,6 +72,8 @@ let workLookupDelays = {}
 let authorResolveRequests = []
 let authorResolveFailure = false
 let authorResolveDelays = {}
+let authorProfileRequests = []
+let authorProfileFailure = false
 let homeRequests = []
 let homeFailure = false
 let presentationRequests = []
@@ -160,6 +163,29 @@ function normalizedAuthorIds(body) {
     seen.add(normalized)
   }
   return authorIds
+}
+
+function decodedProfileAuthorId(pathname) {
+  const match = /^\/v2\/authors\/([^/]+)$/.exec(pathname)
+  if (!match) return null
+
+  let authorId
+  try {
+    authorId = decodeURIComponent(match[1])
+  } catch {
+    return { valid: false, authorId: null }
+  }
+
+  const valid = authorId.length >= 1 &&
+    authorId.length <= 100 &&
+    authorId.trim() === authorId &&
+    !authorId.includes("%") &&
+    !authorId.includes("/") &&
+    !authorId.includes("\\") &&
+    !/\p{Cc}/u.test(authorId) &&
+    authorId !== "." &&
+    authorId !== ".."
+  return { valid, authorId }
 }
 
 function resourceFor(pathname) {
@@ -316,6 +342,24 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_author_resolve_delays" && request.method === "DELETE") {
     authorResolveDelays = {}
     return sendJson(response, 200, { delays: authorResolveDelays })
+  }
+  if (url.pathname === "/_author_profile_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: authorProfileRequests })
+  }
+  if (url.pathname === "/_author_profile_requests" && request.method === "DELETE") {
+    authorProfileRequests = []
+    return sendJson(response, 200, { requests: authorProfileRequests })
+  }
+  if (url.pathname === "/_author_profile_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: authorProfileFailure })
+  }
+  if (url.pathname === "/_author_profile_failure" && request.method === "PUT") {
+    authorProfileFailure = true
+    return sendJson(response, 200, { failure: authorProfileFailure })
+  }
+  if (url.pathname === "/_author_profile_failure" && request.method === "DELETE") {
+    authorProfileFailure = false
+    return sendJson(response, 200, { failure: authorProfileFailure })
   }
   if (url.pathname === "/_home_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: homeRequests })
@@ -592,6 +636,37 @@ const server = createServer(async (request, response) => {
         const author = authorsById.get(authorId)
         return author ? [author] : []
       })
+    })
+  }
+
+  const profileAuthorId = request.method === "GET"
+    ? decodedProfileAuthorId(apiPathname)
+    : null
+  if (profileAuthorId !== null) {
+    authorProfileRequests.push(url.pathname)
+    if (!profileAuthorId.valid) {
+      return sendJson(response, 422, {
+        error: {
+          code: "validation_error",
+          message: "Request validation failed",
+          details: null
+        }
+      })
+    }
+    if (authorProfileFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "author_profile_unavailable",
+          message: "Unable to load author profile",
+          details: null
+        }
+      })
+    }
+
+    const profile = authorProfiles.get(profileAuthorId.authorId)
+    if (profile) return sendJson(response, 200, profile)
+    return sendJson(response, 404, {
+      error: { code: "not_found", message: "Resource not found", details: null }
     })
   }
 

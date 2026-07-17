@@ -13,6 +13,14 @@ import {
   test
 } from "vitest"
 
+import {
+  authorProfiles,
+  dramaOnlyAuthorProfile,
+  lagerlofAuthorProfile,
+  noIntroAuthorProfile,
+  strindbergAuthorProfile
+} from "../fixtures/author-profile-data.mjs"
+
 const nuxtRoot = fileURLToPath(new URL("../..", import.meta.url))
 const port = 42_000 + process.pid % 10_000
 const origin = `http://127.0.0.1:${port}`
@@ -84,6 +92,12 @@ async function authorResolveRequests() {
   }
 }
 
+async function authorProfileRequests() {
+  return await (await fetch(`${origin}/_author_profile_requests`)).json() as {
+    requests: string[]
+  }
+}
+
 async function postAuthorResolve(path: string, body: unknown) {
   return await fetch(`${origin}${path}`, {
     method: "POST",
@@ -152,6 +166,8 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_author_resolve_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_resolve_failure`, { method: "DELETE" }),
       fetch(`${origin}/_author_resolve_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_author_profile_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_author_profile_failure`, { method: "DELETE" }),
       fetch(`${origin}/_home_requests`, { method: "DELETE" }),
       fetch(`${origin}/_home_failure`, { method: "DELETE" }),
       fetch(`${origin}/_presentation_requests`, { method: "DELETE" }),
@@ -165,6 +181,116 @@ describe("v2 fixture server operations", () => {
 
   afterEach(async () => {
     await fetch(`${origin}/_contact_defer`, { method: "DELETE" })
+  })
+
+  test("serves complete deterministic author profiles on public and private paths", async () => {
+    expect([...authorProfiles.values()]).toEqual([
+      strindbergAuthorProfile,
+      lagerlofAuthorProfile,
+      dramaOnlyAuthorProfile,
+      noIntroAuthorProfile
+    ])
+
+    const expectedRequests: string[] = []
+    for (const profile of authorProfiles.values()) {
+      const encodedId = encodeURIComponent(profile.author_id)
+      for (const prefix of ["/v2", "/private-v2"]) {
+        const path = `${prefix}/authors/${encodedId}`
+        const response = await fetch(`${origin}${path}`)
+
+        expect(response.status, path).toBe(200)
+        expect(await response.json(), path).toEqual(profile)
+        expectedRequests.push(path)
+      }
+    }
+
+    expect(await authorProfileRequests()).toEqual({ requests: expectedRequests })
+  })
+
+  test("author profiles return standard 404s and record the original encoded path", async () => {
+    const paths = [
+      "/v2/authors/Missing%20Author",
+      "/private-v2/authors/Ok%C3%A4nd"
+    ]
+
+    for (const path of paths) {
+      const response = await fetch(`${origin}${path}`)
+      expect(response.status).toBe(404)
+      expect(await response.json()).toEqual({
+        error: {
+          code: "not_found",
+          message: "Resource not found",
+          details: null
+        }
+      })
+    }
+
+    expect(await authorProfileRequests()).toEqual({ requests: paths })
+  })
+
+  test("author profiles reject malformed encoded IDs with typed validation errors", async () => {
+    const paths = [
+      "/v2/authors/%25",
+      "/private-v2/authors/%20StrindbergA",
+      "/v2/authors/StrindbergA%2Fextra",
+      "/private-v2/authors/bad%5Csegment",
+      "/v2/authors/bad%C2%85segment",
+      "/v2/authors/bad%ZZsegment"
+    ]
+
+    for (const path of paths) {
+      const response = await fetch(`${origin}${path}`)
+      expect(response.status, path).toBe(422)
+      expect(await response.json(), path).toEqual({
+        error: {
+          code: "validation_error",
+          message: "Request validation failed",
+          details: null
+        }
+      })
+    }
+
+    expect(await authorProfileRequests()).toEqual({ requests: paths })
+  })
+
+  test("author profile failures are typed, resettable, and isolated", async () => {
+    await fetch(`${origin}/v2/stats`)
+    await fetch(`${origin}/v2/quick-search?query=strindberg`)
+
+    expect(await (await fetch(`${origin}/_author_profile_failure`)).json()).toEqual({
+      failure: false
+    })
+    await fetch(`${origin}/_author_profile_failure`, { method: "PUT" })
+    expect(await (await fetch(`${origin}/_author_profile_failure`)).json()).toEqual({
+      failure: true
+    })
+
+    const response = await fetch(`${origin}/private-v2/authors/StrindbergA`)
+    expect(response.status).toBe(503)
+    expect(await response.json()).toEqual({
+      error: {
+        code: "author_profile_unavailable",
+        message: "Unable to load author profile",
+        details: null
+      }
+    })
+    expect(await authorProfileRequests()).toEqual({
+      requests: ["/private-v2/authors/StrindbergA"]
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect(await quickSearchRequests()).toEqual({ queries: ["strindberg"] })
+
+    await fetch(`${origin}/_author_profile_failure`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_author_profile_failure`)).json()).toEqual({
+      failure: false
+    })
+    expect((await fetch(`${origin}/v2/authors/StrindbergA`)).status).toBe(200)
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect(await quickSearchRequests()).toEqual({ queries: ["strindberg"] })
   })
 
   test("accepts and separately records the exact submitted body", async () => {
