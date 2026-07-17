@@ -572,6 +572,7 @@ let requestVersion = 0
 let ownedNavigation: { key: string, version: number } | null = null
 
 type QueryState = {
+  standalone: boolean
   mode: LibraryMode
   filter: string
   sort: RelevanceSortKey | EpubSortKey
@@ -579,11 +580,12 @@ type QueryState = {
 }
 
 function stateKey(state: QueryState): string {
-  return JSON.stringify([state.mode, state.filter, state.sort, state.page])
+  return JSON.stringify([state.standalone, state.mode, state.filter, state.sort, state.page])
 }
 
 function requestState(state: LibraryRouteState): QueryState {
   return {
+    standalone: state.standalone,
     mode: state.mode,
     filter: state.filter,
     sort: state.sort,
@@ -593,6 +595,7 @@ function requestState(state: LibraryRouteState): QueryState {
 
 function currentState(): QueryState {
   return {
+    standalone: route.path === "/epub",
     mode: currentMode.value,
     filter: filter.value,
     sort: currentMode.value === "epub" ? selectedEpubSort.value : selectedSort.value,
@@ -619,7 +622,7 @@ function queryFor(state: QueryState): LocationQuery {
   delete query.filter
   delete query.sort
   delete query.sida
-  if (state.mode === "epub" && route.path !== "/epub") query.visa = "epub"
+  if (state.mode === "epub" && !state.standalone) query.visa = "epub"
   if (state.filter) query.filter = state.filter
   if (state.mode === "epub" || state.sort !== "relevans") query.sort = state.sort
   if (state.mode === "epub" && state.page > 1) query.sida = String(state.page)
@@ -656,7 +659,10 @@ async function persistAndRequest(state: QueryState, version: number) {
   const navigation = { key: stateKey(state), version }
   ownedNavigation = navigation
   try {
-    await router.replace({ query: queryFor(state) })
+    await router.replace({
+      path: state.standalone ? "/epub" : "/bibliotek",
+      query: queryFor(state)
+    })
   } finally {
     if (ownedNavigation === navigation) ownedNavigation = null
   }
@@ -695,6 +701,7 @@ function resetSearch() {
 
 function selectMode(nextMode: LibraryMode) {
   beginIntent({
+    standalone: route.path === "/epub",
     mode: nextMode,
     filter: filter.value,
     sort: nextMode === "epub" ? "popularitet" : "relevans",
@@ -1041,6 +1048,13 @@ onUnmounted(disposeLibraryRequest)
                   </li>
                 </ul>
               </div>
+            </div>
+            <div
+              v-if="loading"
+              data-library-loading
+              class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0"
+            >
+              <i class="spinner fa fa-spinner fa-pulse" />
             </div>
             <div v-if="epubResults.failed" data-library-error>Ett fel uppstod.</div>
             <div v-else-if="!epubResults.data.length" data-library-empty class="pb-4">Inga träffar.</div>

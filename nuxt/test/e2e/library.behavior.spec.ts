@@ -277,6 +277,36 @@ test("bare EPUB hydrates in place and SPA entry uses one public request", async 
   expect(problems).toEqual([])
 })
 
+test("standalone EPUB interactions retain the standalone path", async ({ page, request }) => {
+  await page.goto("/epub", { waitUntil: "networkidle" })
+  await reset(request)
+
+  await page.locator("[data-library-filter]").fill("Selma")
+  await expect.poll(async () => publicEpubRequests(await epubRequests(request)).length).toBe(1)
+
+  const url = new URL(page.url())
+  expect(url.pathname).toBe("/epub")
+  expect(url.searchParams.get("filter")).toBe("Selma")
+  expect(url.searchParams.get("sort")).toBe("popularitet")
+  expect(url.searchParams.has("visa")).toBe(false)
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga" })).toBeVisible()
+})
+
+test("EPUB keeps committed rows visible under its loading indicator", async ({ page, request }) => {
+  await request.put(`${fixture}/_library_query_delays`, {
+    data: { [`${epubQuery("Selma")}|popularity|desc|0|100`]: 900 }
+  })
+  await page.goto("/bibliotek?visa=epub&sort=popularitet", { waitUntil: "networkidle" })
+
+  await page.locator("[data-library-filter]").fill("Selma")
+  await expect.poll(async () => publicEpubRequests(await epubRequests(request)).length).toBe(1)
+  await expect(page.locator("[data-library-loading] .spinner")).toBeVisible()
+  await expect(page.getByRole("link", { name: "Doktor Glas" })).toBeVisible()
+
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga" })).toBeVisible()
+  await expect(page.locator("[data-library-loading]")).toHaveCount(0)
+})
+
 test("EPUB input debounces, resets page, and sends the sanitized query", async ({
   page,
   request
