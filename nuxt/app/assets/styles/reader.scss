@@ -16,6 +16,100 @@
         font-size: 1em;
         line-height: 1.3;
         position: relative;
+
+        .markee {
+            overflow: hidden;
+            position: relative;
+
+            &::before {
+                background-color: var(--primary-color);
+                border-radius: 4px;
+                bottom: -2px;
+                box-shadow: 0 0 9px 1px var(--primary-color);
+                content: "";
+                left: -2px;
+                opacity: 0.4;
+                position: absolute;
+                right: -2px;
+                top: -2px;
+                transform: rotate(-2deg);
+                z-index: -1;
+            }
+
+            & + .markee::before {
+                left: 0;
+            }
+
+            &.flip::before {
+                transform: rotate(2deg);
+            }
+        }
+    }
+
+    #leftCorridor {
+        #toolkit {
+            position: relative;
+        }
+
+        .spinner_search {
+            color: var(--primary-color);
+            margin-top: -2em;
+            opacity: 0;
+            position: absolute;
+            right: 0;
+            transition: opacity 200ms;
+
+            &.searching {
+                opacity: 1;
+                transition: opacity 200ms;
+            }
+        }
+
+        #search_nav {
+            display: none;
+            font-size: 0.8em;
+            line-height: 1;
+            margin-bottom: 2em;
+            text-align: right;
+            @include small-caps();
+
+            &.active {
+                display: block;
+            }
+
+            .num {
+                font-size: 1.7em;
+            }
+
+            .arrows {
+                margin-bottom: 0.5em;
+                margin-top: 1.2em;
+
+                .navicon.left {
+                    margin-right: 4px;
+                }
+            }
+
+            .ctrls {
+                margin-top: 1em;
+
+                .arrows {
+                    margin-top: 1em;
+                    position: relative;
+                }
+            }
+
+            .navicon {
+                border-radius: 100px;
+                line-height: 1;
+                margin-top: -11px;
+                padding: 4px 9px;
+
+                &.left {
+                    padding: 4px 10px;
+                }
+            }
+        }
     }
 
     .reader-page {

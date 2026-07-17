@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { parseHTML } from "linkedom"
+import type { LocationQueryRaw, RouteLocationRaw } from "vue-router"
 
 import type { ReaderPage } from "#shared/types/reader"
 import { createLbApiClient } from "~/lib/api/client"
@@ -184,12 +185,15 @@ function markReaderHtml(
   return root.innerHTML
 }
 
-const searchState = parseCanonicalSearchState()
-const pageQuery = preservedQuery()
-if (searchState) {
-  pageQuery.q = searchState.query
-  pageQuery.hit = String(searchState.hit)
-}
+const searchState = computed(parseCanonicalSearchState)
+const pageQuery = computed(() => {
+  const query = preservedQuery()
+  if (searchState.value) {
+    query.q = searchState.value.query
+    query.hit = String(searchState.value.hit)
+  }
+  return query
+})
 
 function routeParam(name: "author" | "title" | "page" | "mediatype"): string {
   const value = route.params[name]
@@ -199,18 +203,28 @@ function routeParam(name: "author" | "title" | "page" | "mediatype"): string {
   return value
 }
 
-const authorParam = routeParam("author")
-const titleParam = routeParam("title")
-const pageParam = routeParam("page")
-const mediaTypeParam = routeParam("mediatype")
-const readerApiUrl = [authorParam, titleParam, pageParam, mediaTypeParam]
-  .map(encodeURIComponent)
-  .join("/")
+const authorParam = computed(() => routeParam("author"))
+const titleParam = computed(() => routeParam("title"))
+const pageParam = computed(() => routeParam("page"))
+const mediaTypeParam = computed(() => routeParam("mediatype"))
 const requestFetch = useRequestFetch()
 
-const { data, error } = await useAsyncData<ReaderPage>(
-  `reader:${authorParam}:${titleParam}:${pageParam}:${mediaTypeParam}`,
-  () => requestFetch(`/api/reader/${readerApiUrl}`)
+type CurrentReaderPage = { identity: string, reader: ReaderPage }
+
+const { data, error } = await useAsyncData<CurrentReaderPage>(
+  computed(() => `reader:${route.fullPath}`),
+  async () => {
+    const identity = route.fullPath
+    const readerApiUrl = [
+      authorParam.value,
+      titleParam.value,
+      pageParam.value,
+      mediaTypeParam.value
+    ].map(encodeURIComponent).join("/")
+    const currentReader = await requestFetch<ReaderPage>(`/api/reader/${readerApiUrl}`)
+    return { identity, reader: currentReader }
+  },
+  { watch: [() => route.fullPath] }
 )
 
 if (error.value) {
@@ -223,77 +237,83 @@ if (!data.value) {
   throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
 }
 
-const reader = computed(() => data.value!)
-const authorHref = readerAuthorHref(authorParam)
+const reader = computed(() => data.value!.reader)
+const authorHref = computed(() => readerAuthorHref(authorParam.value))
 const pageTitle = computed(
   () => `${reader.value.title} sida ${reader.value.pageName} etext | Litteraturbanken`
 )
 
-const hitFetch = searchState
-  ? await useAsyncData(
-      [
+const hitFetch = await useAsyncData(
+  computed(() => [
         "reader-hit",
-        reader.value.workId,
-        searchState.query,
-        searchState.hit,
-        Number(searchState.wordForms),
-        Number(searchState.includeOlderSpellings),
-        Number(searchState.prefix),
-        Number(searchState.suffix)
-      ].join(":"),
+        route.fullPath,
+        data.value?.identity ?? "pending",
+        data.value?.reader.workId ?? "pending"
+      ].join(":")),
       async () => {
-        const offset = Math.max(searchState.hit - 1, 0)
+        const identity = route.fullPath
+        const state = searchState.value
+        const currentReader = data.value
+        if (!state || !currentReader || currentReader.identity !== identity) {
+          return { status: "inactive" as const, identity }
+        }
+        const offset = Math.max(state.hit - 1, 0)
         try {
           const client = createLbApiClient(
             import.meta.server ? config.apiBase : config.public.apiBase
           )
           const result = await client.GET("/works/{work_id}/search-hits", {
             params: {
-              path: { work_id: reader.value.workId },
+              path: { work_id: currentReader.reader.workId },
               query: {
                 media_type: "etext",
-                query: searchState.query,
+                query: state.query,
                 offset,
                 limit: 3,
-                word_forms: searchState.wordForms,
-                include_older_spellings: searchState.includeOlderSpellings,
-                prefix: searchState.prefix,
-                suffix: searchState.suffix
+                word_forms: state.wordForms,
+                include_older_spellings: state.includeOlderSpellings,
+                prefix: state.prefix,
+                suffix: state.suffix
               }
             }
           })
-          if (result.error || !isExpectedHitResponse(result.data, searchState, offset)) {
-            return { status: "error" as const }
+          if (result.error || !isExpectedHitResponse(result.data, state, offset)) {
+            return { status: "error" as const, identity }
           }
-          return { status: "success" as const, response: result.data }
+          return { status: "success" as const, identity, response: result.data }
         } catch {
-          return { status: "error" as const }
+          return { status: "error" as const, identity }
         }
-      }
+      },
+      { watch: [() => route.fullPath, () => data.value?.identity] }
     )
-  : null
 
 const hitResponse = computed(() => {
-  const value = hitFetch?.data.value
-  return value?.status === "success" ? value.response : null
+  const value = hitFetch.data.value
+  return value?.status === "success" &&
+    value.identity === route.fullPath &&
+    data.value?.identity === route.fullPath
+    ? value.response
+    : null
 })
 const hitRequestFailed = computed(
-  () => hitFetch !== null && hitFetch.data.value?.status === "error"
+  () => hitFetch.data.value?.status === "error" &&
+    hitFetch.data.value.identity === route.fullPath
 )
 const activeHit = computed(() => {
-  if (!searchState || !hitResponse.value) return null
-  return hitResponse.value.items.find(item => item.index === searchState.hit) ?? null
+  if (!searchState.value || !hitResponse.value) return null
+  return hitResponse.value.items.find(item => item.index === searchState.value!.hit) ?? null
 })
 const previousHit = computed(() => {
-  if (!searchState || !hitResponse.value) return null
+  if (!searchState.value || !hitResponse.value) return null
   return hitResponse.value.items.find(
-    item => item.index === searchState.hit - 1 && item.index <= maximumNavigableHit
+    item => item.index === searchState.value!.hit - 1 && item.index <= maximumNavigableHit
   ) ?? null
 })
 const nextHit = computed(() => {
-  if (!searchState || !hitResponse.value) return null
+  if (!searchState.value || !hitResponse.value) return null
   return hitResponse.value.items.find(
-    item => item.index === searchState.hit + 1 && item.index <= maximumNavigableHit
+    item => item.index === searchState.value!.hit + 1 && item.index <= maximumNavigableHit
   ) ?? null
 })
 const markedReaderHtml = computed(() => {
@@ -306,11 +326,11 @@ const markedReaderHtml = computed(() => {
   )
 })
 const hitPosition = computed(() => {
-  if (!searchState || !activeHit.value || !hitResponse.value) return null
-  return `Sökträff ${searchState.hit + 1} av ${hitResponse.value.total_hits}`
+  if (!searchState.value || !activeHit.value || !hitResponse.value) return null
+  return `Sökträff ${searchState.value.hit + 1} av ${hitResponse.value.total_hits}`
 })
 const hitMessage = computed(() => {
-  if (!searchState) return null
+  if (!searchState.value) return null
   if (hitRequestFailed.value) return "Sökträffen kunde inte hämtas."
   if (hitResponse.value && !activeHit.value) return "Ingen sådan sökträff."
   return null
@@ -334,7 +354,7 @@ function writeLastPageView(): void {
     timestamp: new Date().toISOString(),
     mediatype: reader.value.mediaType,
     lbworkid: reader.value.workId,
-    author: authorParam,
+    author: authorParam.value,
     label: reader.value.title,
     url: route.fullPath
   }
@@ -364,6 +384,13 @@ function writeLastPageView(): void {
 }
 
 onMounted(writeLastPageView)
+watch(
+  [() => route.fullPath, () => data.value?.identity],
+  ([fullPath, identity]) => {
+    if (identity === fullPath) writeLastPageView()
+  },
+  { flush: "post" }
+)
 
 useSeoMeta({
   title: pageTitle,
@@ -378,23 +405,43 @@ useHead(() => ({
   ]
 }))
 
+function readerTarget(pageName: string, hit?: number): RouteLocationRaw {
+  const query = Object.fromEntries(
+    Object.entries(pageQuery.value).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? [...value] : value
+    ])
+  ) as LocationQueryRaw
+  if (hit !== undefined) query.hit = String(hit)
+  return {
+    name: route.name as string,
+    params: {
+      author: authorParam.value,
+      title: titleParam.value,
+      page: pageName,
+      mediatype: mediaTypeParam.value
+    },
+    query
+  }
+}
+
 function pageHref(pageName: string): string {
   return readerPageHref({
-    author: authorParam,
-    title: titleParam,
+    author: authorParam.value,
+    title: titleParam.value,
     page: pageName,
-    mediaType: mediaTypeParam,
-    query: pageQuery
+    mediaType: mediaTypeParam.value,
+    query: pageQuery.value
   })
 }
 
 function hitHref(hit: WorkSearchHit): string {
   return readerHitHref({
-    author: authorParam,
-    title: titleParam,
+    author: authorParam.value,
+    title: titleParam.value,
     page: hit.page_name,
-    mediaType: mediaTypeParam,
-    query: pageQuery,
+    mediaType: mediaTypeParam.value,
+    query: pageQuery.value,
     hit: hit.index
   })
 }
@@ -425,29 +472,91 @@ function hitHref(hit: WorkSearchHit): string {
           class="reader-hit-navigation"
           aria-label="Sökträffsnavigering"
         >
-          <a v-if="previousHit" rel="prev" :href="hitHref(previousHit)">Föregående sökträff</a>
+          <NuxtLink
+            v-if="previousHit"
+            v-slot="{ navigate }"
+            custom
+            :to="readerTarget(previousHit.page_name, previousHit.index)"
+          ><a rel="prev" :href="hitHref(previousHit)" @click="navigate">Föregående sökträff</a></NuxtLink>
           <span v-else />
-          <a v-if="nextHit" rel="next" :href="hitHref(nextHit)">Nästa sökträff</a>
+          <NuxtLink
+            v-if="nextHit"
+            v-slot="{ navigate }"
+            custom
+            :to="readerTarget(nextHit.page_name, nextHit.index)"
+          ><a rel="next" :href="hitHref(nextHit)" @click="navigate">Nästa sökträff</a></NuxtLink>
         </nav>
       </div>
 
       <hr v-if="searchState">
 
       <nav class="reader-navigation" aria-label="Sidnavigering">
-        <a
+        <NuxtLink
           v-if="reader.previousPageName"
-          rel="prev"
-          :href="pageHref(reader.previousPageName)"
-        >Föregående sida</a>
+          v-slot="{ navigate }"
+          custom
+          :to="readerTarget(reader.previousPageName)"
+        ><a rel="prev" :href="pageHref(reader.previousPageName)" @click="navigate">Föregående sida</a></NuxtLink>
         <span v-else />
-        <a
+        <NuxtLink
           v-if="reader.nextPageName"
-          rel="next"
-          :href="pageHref(reader.nextPageName)"
-        >Nästa sida</a>
+          v-slot="{ navigate }"
+          custom
+          :to="readerTarget(reader.nextPageName)"
+        ><a rel="next" :href="pageHref(reader.nextPageName)" @click="navigate">Nästa sida</a></NuxtLink>
       </nav>
 
       <p class="reader-page-position">{{ reader.pageName }} av {{ reader.pageCount }}</p>
     </aside>
+
+    <ClientOnly>
+      <Teleport v-if="searchState" to="#toolkit">
+        <i
+          class="spinner_search fa fa-spinner fa-pulse"
+          :class="{ searching: hitFetch?.status.value === 'pending' }"
+          aria-hidden="true"
+        />
+        <nav id="search_nav" class="active" aria-label="Sökträffsnavigering">
+          <div v-if="hitResponse" class="text" aria-live="polite">
+            <div>
+              <span class="num">{{ hitResponse.total_hits }}</span>
+              {{ hitResponse.total_hits === 1 ? "sökträff" : "sökträffar" }}
+            </div>
+            <div v-if="activeHit">
+              Träff <span>{{ activeHit.index + 1 }}</span>, sida {{ reader.pageName }}
+            </div>
+          </div>
+          <p v-else-if="hitMessage" class="text" aria-live="polite">{{ hitMessage }}</p>
+          <div v-if="previousHit || nextHit" class="ctrls">
+            <div class="arrows">
+              <NuxtLink
+                v-if="previousHit"
+                v-slot="{ navigate }"
+                custom
+                :to="readerTarget(previousHit.page_name, previousHit.index)"
+              ><a
+                rel="prev"
+                class="submit btn navicon left"
+                :href="hitHref(previousHit)"
+                aria-label="Föregående sökträff"
+                @click="navigate"
+              ><i class="fa fa-angle-left" aria-hidden="true" /></a></NuxtLink>
+              <NuxtLink
+                v-if="nextHit"
+                v-slot="{ navigate }"
+                custom
+                :to="readerTarget(nextHit.page_name, nextHit.index)"
+              ><a
+                rel="next"
+                class="submit btn navicon"
+                :href="hitHref(nextHit)"
+                aria-label="Nästa sökträff"
+                @click="navigate"
+              ><i class="fa fa-angle-right" aria-hidden="true" /></a></NuxtLink>
+            </div>
+          </div>
+        </nav>
+      </Teleport>
+    </ClientOnly>
   </div>
 </template>

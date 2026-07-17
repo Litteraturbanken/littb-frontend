@@ -678,7 +678,7 @@ const server = createServer(async (request, response) => {
 
   if (
     request.method === "GET" &&
-    /^\/txt\/lb-reader-doktor-glas\/res_0000[23]\.html$/.test(url.pathname)
+    /^\/txt\/lb-reader-doktor-glas\/res_0000[123]\.html$/.test(url.pathname)
   ) {
     readerRequests.push(`${url.pathname}${url.search}`)
     if (url.searchParams.get("username") !== "app") {

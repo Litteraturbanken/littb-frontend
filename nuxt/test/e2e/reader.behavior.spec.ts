@@ -17,11 +17,22 @@ type StoredPageView = {
 }
 
 async function resetReader(request: APIRequestContext) {
-  await request.delete(`${fixture}/_reader_requests`)
+  await Promise.all([
+    request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_hit_requests`),
+    request.delete(`${fixture}/_reader_hit_failure`),
+    request.delete(`${fixture}/_reader_hit_delays`)
+  ])
 }
 
 async function readerRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_requests`)).json()).requests
+}
+
+type ReaderHitRequest = { path: string, query: string }
+
+async function readerHitRequests(request: APIRequestContext): Promise<ReaderHitRequest[]> {
+  return (await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests
 }
 
 function captureBrowserProblems(page: Page) {
@@ -123,6 +134,198 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
   expect(pages).toHaveLength(1)
   expect(new URL(pages[0]!, fixture).searchParams.get("username")).toBe("app")
   expect(clientReaderRequests).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("hydrates the SSR phrase marker and active toolkit without a duplicate public hit request", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const publicHitRequests: string[] = []
+  page.on("request", browserRequest => {
+    if (new URL(browserRequest.url()).pathname.includes("/works/lb-reader-doktor-glas/search-hits")) {
+      publicHitRequests.push(browserRequest.url())
+    }
+  })
+
+  const response = await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, {
+    waitUntil: "networkidle"
+  })
+
+  expect(response?.status()).toBe(200)
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+  await expect(page.locator("#w2_2.markee.flip")).toHaveCount(1)
+  await expect(page.locator(".reader_main .markee")).toHaveCount(2)
+  const toolkit = page.locator("#toolkit > #search_nav")
+  await expect(toolkit).toBeVisible()
+  await expect(toolkit).toHaveCount(1)
+  await expect(page.locator("#toolkit > .spinner_search")).toHaveCount(1)
+  await expect(toolkit).toContainText("5 sökträffar")
+  await expect(toolkit).toContainText("Träff 2, sida -2")
+  await expect(toolkit.getByRole("link", { name: "Föregående sökträff" }))
+    .toHaveAttribute("href", /\/sida\/-3\/etext\?q=doktor\+glas&hit=0$/)
+  await expect(toolkit.getByRole("link", { name: "Nästa sökträff" }))
+    .toHaveAttribute("href", /\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
+  expect(await readerHitRequests(request)).toHaveLength(1)
+  expect((await readerHitRequests(request))[0]?.path).toContain("/private-v2/")
+  expect(publicHitRequests).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("a single first and last hit mark one word and omit unavailable toolkit links", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+
+  await page.goto(`${readerPath}?q=glas&hit=0`, { waitUntil: "networkidle" })
+
+  await expect(page.locator(".reader_main .markee")).toHaveCount(1)
+  await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+  await expect(page.locator("#w2_2.flip")).toHaveCount(0)
+  const toolkit = page.locator("#toolkit > #search_nav")
+  await expect(toolkit).toContainText("1 sökträff")
+  await expect(toolkit.getByRole("link", { name: "Föregående sökträff" })).toHaveCount(0)
+  await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
+test("next-hit client navigation updates marker, exact history, and Back restores the phrase", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+
+  await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
+  await expect(page.locator(".reader_main .markee")).toHaveCount(1)
+  await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+  await expect(page.locator("#search_nav")).toContainText("Träff 3, sida -2")
+  await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
+    `${storedReaderPath}?q=doktor+glas&hit=2`
+  )
+  expect(await readerHitRequests(request)).toEqual([
+    expect.objectContaining({ path: "/v2/works/lb-reader-doktor-glas/search-hits" })
+  ])
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=1$/)
+  await expect(page.locator(".reader_main .markee")).toHaveCount(2)
+  await expect(page.locator("#w2_2.markee.flip")).toHaveCount(1)
+  await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -2")
+  await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
+    `${storedReaderPath}?q=doktor+glas&hit=1`
+  )
+  expect(problems).toEqual([])
+})
+
+test("previous-hit and ordinary-page links use distinct target pages and preserve the cursor", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
+
+  await page.locator("#search_nav").getByRole("link", { name: "Föregående sökträff" }).click()
+  await expect(page).toHaveURL(/\/sida\/-3\/etext\?q=doktor\+glas&hit=0$/)
+  await expect(page.locator(".reader-page-position")).toHaveText("-3 av 3")
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
+  await expect(page.locator("#search_nav").getByRole("link", {
+    name: "Föregående sökträff"
+  })).toHaveCount(0)
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }).click()
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+  await expect(page.locator(".reader_main .markee")).toHaveCount(0)
+  await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -1")
+
+  await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
+  await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+  expect(problems).toEqual([])
+})
+
+test("a public hit failure stays local to the hydrated Reader", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await request.put(`${fixture}/_reader_hit_failure`)
+
+  await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
+  await expect(page.locator(".reader-search-message")).toHaveText(
+    "Sökträffen kunde inte hämtas."
+  )
+  await expect(page.locator(".reader_main .markee")).toHaveCount(0)
+  await expect(page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }))
+    .toBeVisible()
+  expect(await readerHitRequests(request)).toEqual([
+    expect.objectContaining({ path: "/v2/works/lb-reader-doktor-glas/search-hits" })
+  ])
+  expect(problems).toEqual([])
+})
+
+test("a delayed obsolete public hit response cannot overwrite a later client route", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const slowKey = [
+    "lb-reader-doktor-glas",
+    "doktor glas",
+    "1",
+    "3",
+    "false",
+    "true",
+    "false",
+    "false"
+  ].join("|")
+  await request.put(`${fixture}/_reader_hit_delays`, {
+    data: { [slowKey]: 350 }
+  })
+
+  await page.evaluate(() => {
+    const nuxt = (window as typeof window & {
+      useNuxtApp?: () => { $router: {
+        currentRoute: { value: { name: unknown, params: Record<string, unknown> } }
+        push: (target: unknown) => Promise<unknown>
+      } }
+    }).useNuxtApp?.()
+    if (!nuxt) return
+    void nuxt.$router.push({
+      name: nuxt.$router.currentRoute.value.name,
+      params: nuxt.$router.currentRoute.value.params,
+      query: { q: "doktor glas", hit: "2" }
+    })
+  })
+  await expect.poll(async () => (await readerHitRequests(request)).length).toBe(1)
+  await page.evaluate(async () => {
+    const nuxt = (window as typeof window & {
+      useNuxtApp?: () => { $router: {
+        currentRoute: { value: { name: unknown, params: Record<string, unknown> } }
+        push: (target: unknown) => Promise<unknown>
+      } }
+    }).useNuxtApp?.()
+    if (!nuxt) return
+    await nuxt.$router.push({
+      name: nuxt.$router.currentRoute.value.name,
+      params: nuxt.$router.currentRoute.value.params,
+      query: { q: "glas", hit: "0" }
+    })
+  })
+
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=glas&hit=0$/)
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -2")
+  await expect(page.locator(".reader_main .markee")).toHaveCount(1)
+  await page.waitForTimeout(450)
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=glas&hit=0$/)
+  await expect(page.locator("#search_nav")).toContainText("1 sökträff")
+  await expect(page.locator(".reader_main .markee")).toHaveCount(1)
   expect(problems).toEqual([])
 })
 
