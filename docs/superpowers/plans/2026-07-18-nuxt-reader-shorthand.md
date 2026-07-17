@@ -14,7 +14,7 @@
 - Successful shorthand requests must canonicalize to `/författare/{author}/titlar/{title}/sida/{startPage}/etext`.
 - Support only `etext` until the canonical Nuxt faksimil Reader exists.
 - Keep one-use fetch/model logic inside the page `<script setup>`; do not add a composable.
-- Preserve the raw query suffix exactly, including bare keys, ordering, repetition, and encoding.
+- Preserve the raw query suffix exposed by `route.fullPath` without reconstructing it, including bare/empty keys, ordering, repetition, plus/space spellings, and retained percent escapes.
 - Use strict response and identity validation; return `404` for absent identities and `502` for unavailable or malformed source data.
 - Do not add Angular/Vue compatibility code or a temporary static payload.
 - Do not implement the source-information modal or any other deferred Reader feature in this slice.
@@ -29,6 +29,7 @@
 - Create `nuxt/server/api/reader/resolve/[author]/[title]/[mediatype].get.ts`: return a typed canonical start-page resolution and no HTML.
 - Modify `nuxt/shared/types/reader.ts`: define `ReaderRouteResolution` alongside `ReaderPage`.
 - Create `nuxt/app/pages/författare/[author]/titlar/[title]/[mediatype].vue`: page-local resolver fetch and canonical SSR/client redirect.
+- Modify `nuxt/app/pages/bibliotek.vue`: render the existing EPUB title href through `NuxtLink` with unchanged anchor DOM/visuals so it is a real SPA caller.
 - Modify `nuxt/test/fixtures/v2-server.mjs`: deterministic malformed/unavailable Reader metadata cases and exact request ledger support.
 - Create `nuxt/test/ssr/reader-shorthand.spec.ts`: resolver and direct-SSR redirect contract.
 - Modify `nuxt/test/e2e/reader.behavior.spec.ts`: client navigation and no-error regression.
@@ -49,7 +50,28 @@
 
 - [ ] **Step 1: Add failing resolver contract tests and deterministic fixture cases**
 
-Extend the fixture's `/api/get_work_info` branch so `titlepath=MalformedReader` returns `{ hits: 1, data: "malformed" }`, `titlepath=UnavailableReader` returns `503`, and every request still records exact path plus query before responding. Keep `DoktorGlas` returning `readerWorkInfoResponse`; other title paths may return the same payload so the resolver's exact title identity check drives `404`.
+Extend the fixture's `/api/get_work_info` branch with these exact deterministic
+title identities, always ledgering `${url.pathname}${url.search}` before the
+response:
+
+| `titlepath` | Fixture response | Expected resolver status |
+| --- | --- | --- |
+| `DoktorGlas` | current exact etext | `200` |
+| `SiblingPagesReader` | exact etext without `pages`, plus same-`lbworkid` faksimil with valid pages | `200` |
+| `MissingReader` | normal Doktor Glas identity | `404` title mismatch |
+| `NoRequestedMediaReader` | exact title with only faksimil | `404` |
+| `WrongAuthorReader` | exact title/etext with first author `OtherAuthor` | `404` |
+| `MissingStartReader` | exact title/etext with no `startpagename` | `404` |
+| `MalformedStartReader` | exact title/etext with numeric `startpagename` | `502` |
+| `OutOfListStartReader` | exact title/etext with start `99`, absent from valid pages | `404` |
+| `MalformedPagesReader` | exact title/etext with non-array pages and no valid sibling | `502` |
+| `MediaMismatchReader` | exact title whose representation says faksimil | `404` |
+| `MalformedReader` | `{ hits: 1, data: "malformed" }` | `502` |
+| `UnavailableReader` | upstream `503` | `502` |
+
+Add mutable `readerMetadataDelays` plus exact `GET`/`PUT`/`DELETE`
+`/_reader_metadata_delays` controls, keyed by `titlepath`, for Task 2's race
+tests.
 
 Create `reader-shorthand.spec.ts` with exact cases:
 
@@ -79,13 +101,20 @@ test("resolves exact Reader metadata without fetching page HTML", async ({ reque
     startPageName: "-2",
     canonicalPath: "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
   })
-  const requests = await readerRequests(request)
-  expect(requests.filter(path => path.startsWith("/api/get_work_info?"))).toHaveLength(1)
-  expect(requests.some(path => path.includes("/res_"))).toBe(false)
+  expect(await readerRequests(request)).toEqual([
+    "/api/get_work_info?authorid=S%C3%B6derbergH" +
+    "&exclude=content_vector&titlepath=DoktorGlas"
+  ])
 })
 ```
 
-Add table-driven assertions for unsupported `faksimil` (`404`), missing title (`404`), malformed source (`502`), unavailable source (`502`), missing/malformed/out-of-list `startpagename` (`404` or `502` according to the design), and a query-bearing resolver request that still sends an exact queryless upstream lookup.
+Add one table-driven assertion for every named identity/status above. Assert
+unsupported `faksimil` returns `404` with an empty upstream ledger. For a
+query-bearing resolver URL, assert the upstream ledger is still exactly the
+three-parameter string above: public `om-boken`, repeated keys, and unknown
+keys must not be forwarded. Assert `SiblingPagesReader` returns its etext
+canonical path using the inherited start page and still never fetches
+`/txt/**/res_*.html`.
 
 - [ ] **Step 2: Run the focused tests to verify RED**
 
@@ -142,11 +171,15 @@ export async function loadReaderMetadata(
 ): Promise<ReaderWorkMetadata>
 ```
 
-Move the current `isRecord`, required-string, page parsing, exact
-representation selection, author/title/work validation, imprint derivation,
-and metadata fetch into this utility. Keep `startpagename` nullable so an
-otherwise valid canonical page remains valid; reject a non-string present
-value as malformed `502`. Enforce `mediaType === "etext"` before upstream IO.
+Move the current `isRecord`, required-string, page parsing, author/title/work
+validation, imprint derivation, and metadata fetch into this utility. Select
+only an exact `titlepath`/`etext` representation; intentionally do not retain
+Angular's requested-media fallback. If that etext has no pages, inherit a
+strictly valid page array only from a sibling with the same `lbworkid`. Keep a
+missing `startpagename` nullable so an otherwise valid canonical page remains
+valid; reject a present non-string value as malformed `502`. Require the first
+returned author ID to equal the requested author or return `404`. Enforce
+`mediaType === "etext"` before upstream IO.
 Export the existing HTML fetch as:
 
 ```ts
@@ -198,7 +231,9 @@ yarn typecheck
 ```
 
 Expected: all new shorthand tests and all existing Reader SSR tests pass;
-typecheck exits `0`.
+typecheck exits `0`. Add canonical regression cases proving wrong returned
+author is `404`, missing start metadata does not break an explicitly requested
+valid page, and present malformed start metadata is the chosen strict `502`.
 
 - [ ] **Step 6: Commit Task 1**
 
@@ -217,6 +252,7 @@ git commit -m "feat(nuxt): resolve reader start pages"
 
 **Files:**
 - Create: `nuxt/app/pages/författare/[author]/titlar/[title]/[mediatype].vue`
+- Modify: `nuxt/app/pages/bibliotek.vue`
 - Modify: `nuxt/test/ssr/reader-shorthand.spec.ts`
 - Modify: `nuxt/test/e2e/reader.behavior.spec.ts`
 
@@ -232,24 +268,33 @@ In `reader-shorthand.spec.ts`, add:
 test("SSR preserves the raw shorthand query in a canonical redirect", async ({ request }) => {
   const response = await request.get(
     "/författare/SöderbergH/titlar/DoktorGlas/etext" +
-    "?om-boken&return=first%20value&return=second%2Fvalue",
+    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F",
     { maxRedirects: 0 }
   )
   expect(response.status()).toBe(307)
   expect(response.headers().location).toBe(
     "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
-    "?om-boken&return=first%20value&return=second%2Fvalue"
+    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
   )
 })
 ```
 
-Add SSR status tests for unsupported media, missing title, malformed source,
-and unavailable source. Extend `reader.behavior.spec.ts` with a browser test
-that starts on `/bibliotek`, clicks the unique `Doktor Glas` shorthand title
-link (or uses a controlled same-app link fixture if Library's current row is
-canonical), waits for the canonical URL, proves the existing Reader content
-and styles render, asserts the raw query survives, and asserts the existing
-console/page-error ledger remains empty.
+Add direct-page SSR status tests using every exact fixture identity from Task
+1. In `reader.behavior.spec.ts`, configure a 300 ms `DoktorGlas` metadata delay,
+start on `/bibliotek?visa=epub&sort=popularitet`, and click the unique
+`[data-library-epub-title]` Doktor Glas link after proving it is rendered by a
+`NuxtLink` client navigation (no document request for the shorthand page).
+Assert the shorthand URL and only `.searching .preloader` own the page during
+the delay, then assert the canonical Reader and `?om-boken`. Going Back must
+return directly to the EPUB Library state rather than the shorthand URL.
+
+Add a separate `navigateClient(page, rawPath)` test helper that obtains the
+mounted Vue app from `#__nuxt`, calls its installed `$router.push(rawPath)`,
+and exercises the exact literal query from the SSR test. Assert the canonical
+client URL retains the same `route.fullPath` suffix. Add a delayed navigation
+away case: start a shorthand client navigation, navigate to `/bibliotek`
+before release, wait past the delay, and assert the late resolver never leaves
+Library. Keep the console/page-error ledger empty in all cases.
 
 - [ ] **Step 2: Run the focused tests to verify RED**
 
@@ -268,12 +313,12 @@ Expected: FAIL because Nuxt has no shorthand page route.
 
 - [ ] **Step 3: Implement the page-local resolver fetch and strict validation**
 
-Create the page with route validation for non-empty scalar author/title and
-exact `mediatype === "etext"`. In `<script setup>`, import only the shared type,
-derive scalar params, and call `useRequestFetch` directly. Validate all five
-response fields against the requested identity and an independently built
-expected canonical path. Convert fetch `404` to page `404` and upstream or
-malformed failures to `502`.
+Create the page with `key: route => route.fullPath`, validation for non-empty
+scalar author/title, and exact `mediatype === "etext"`. In `<script setup>`,
+import only the shared type, capture `requestedFullPath`, derive scalar params,
+and call `useRequestFetch` directly. Validate all five response fields against
+the requested identity and an independently built expected canonical path.
+Convert fetch `404` to page `404` and upstream or malformed failures to `502`.
 
 Preserve the raw suffix:
 
@@ -285,9 +330,17 @@ const target = `${resolution.canonicalPath}${rawQuerySuffix}`
 await navigateTo(target, { redirectCode: 307, replace: true })
 ```
 
-Do not create a composable. The template may contain only the existing
-legacy-style `.searching > .preloader` spinner for a bounded client transition;
-successful SSR must redirect without a durable visual page.
+Wrap that logic in one local async function. On the server, `await` it. On the
+client, call it without awaiting from otherwise synchronous setup, so the new
+page commits immediately and renders the existing legacy-style
+`.searching > .preloader` instead of remaining behind page suspense. Capture
+an active identity token, invalidate it in `onBeforeRouteLeave`, and check both
+the token and `route.fullPath === requestedFullPath` before redirecting or
+showing an error. Do not create a composable.
+
+Change only the EPUB title element in `bibliotek.vue` from `<a :href>` to
+`<NuxtLink :to>` while retaining the same data attribute, text, surrounding
+markup, and rendered anchor DOM. Do not change styles or other Library links.
 
 - [ ] **Step 4: Run focused SSR/client tests GREEN**
 
@@ -312,6 +365,9 @@ Run sequentially:
 ```bash
 cd nuxt
 yarn test:unit
+NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3136 yarn playwright test \
+  --project=desktop-chromium --project=mobile-chromium \
+  test/e2e/reader-hit.visual.spec.ts
 NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3134 yarn playwright test \
   --project=desktop-chromium \
   test/e2e/library.behavior.spec.ts \
@@ -334,6 +390,7 @@ Expected: every suite and command exits `0`; no visual baseline changes.
 ```bash
 git add -- \
   nuxt/app/pages/författare/'[author]'/titlar/'[title]'/'[mediatype]'.vue \
+  nuxt/app/pages/bibliotek.vue \
   nuxt/test/ssr/reader-shorthand.spec.ts \
   nuxt/test/e2e/reader.behavior.spec.ts
 git commit -m "feat(nuxt): canonicalize reader shorthand routes"
