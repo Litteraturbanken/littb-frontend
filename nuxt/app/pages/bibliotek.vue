@@ -556,23 +556,48 @@ const { data: initialData } = await useAsyncData<LibraryPageData>(
 
 const filter = ref(initialFilter)
 const selectedSort = ref(initialSort)
-const selectedEpubSort = initialEpubSort
+const selectedEpubSort = ref(initialEpubSort)
+const currentMode = ref(initialState.mode)
+const currentPage = ref(initialState.page)
 const results = ref(
   initialData.value?.mode === "all" ? initialData.value.response : emptyLibraryResponse()
 )
-const epubResults = initialData.value?.mode === "epub"
+const epubResults = ref(initialData.value?.mode === "epub"
   ? initialData.value.response
-  : emptyEpubResponse()
+  : emptyEpubResponse())
 const loading = ref(false)
 let timer: ReturnType<typeof setTimeout> | null = null
 let controller: AbortController | null = null
 let requestVersion = 0
 let ownedNavigation: { key: string, version: number } | null = null
 
-type QueryState = { filter: string, sort: RelevanceSortKey }
+type QueryState = {
+  mode: LibraryMode
+  filter: string
+  sort: RelevanceSortKey | EpubSortKey
+  page: number
+}
 
 function stateKey(state: QueryState): string {
-  return JSON.stringify([state.filter, state.sort])
+  return JSON.stringify([state.mode, state.filter, state.sort, state.page])
+}
+
+function requestState(state: LibraryRouteState): QueryState {
+  return {
+    mode: state.mode,
+    filter: state.filter,
+    sort: state.sort,
+    page: state.mode === "epub" ? state.page : 1
+  }
+}
+
+function currentState(): QueryState {
+  return {
+    mode: currentMode.value,
+    filter: filter.value,
+    sort: currentMode.value === "epub" ? selectedEpubSort.value : selectedSort.value,
+    page: currentMode.value === "epub" ? currentPage.value : 1
+  }
 }
 
 function cancelPending() {
@@ -588,12 +613,16 @@ function invalidateIntent(): number {
   return ++requestVersion
 }
 
-function queryFor(state: QueryState) {
-  const query = { ...route.query }
+function queryFor(state: QueryState): LocationQuery {
+  const query: LocationQuery = { ...route.query }
+  delete query.visa
+  delete query.filter
+  delete query.sort
+  delete query.sida
+  if (state.mode === "epub" && route.path !== "/epub") query.visa = "epub"
   if (state.filter) query.filter = state.filter
-  else delete query.filter
-  if (state.sort === "relevans") delete query.sort
-  else query.sort = state.sort
+  if (state.mode === "epub" || state.sort !== "relevans") query.sort = state.sort
+  if (state.mode === "epub" && state.page > 1) query.sida = String(state.page)
   return query
 }
 
@@ -601,14 +630,23 @@ async function runBrowserRequest(state: QueryState, version: number) {
   if (version !== requestVersion) return
   controller = new AbortController()
   loading.value = true
-  const response = await fetchResults(
-    config.public.libraryApiBase,
-    state.filter,
-    state.sort,
-    controller.signal
-  ).catch(() => null)
+  const response = state.mode === "epub"
+    ? await fetchEpubResults(
+        config.public.libraryApiBase,
+        state.filter,
+        state.sort as EpubSortKey,
+        state.page,
+        controller.signal
+      ).catch(() => null)
+    : await fetchResults(
+        config.public.libraryApiBase,
+        state.filter,
+        state.sort as RelevanceSortKey,
+        controller.signal
+      ).catch(() => null)
   if (version !== requestVersion || response === null) return
-  results.value = response
+  if (state.mode === "epub") epubResults.value = response as EpubResponse
+  else results.value = response as LibraryResponse
   loading.value = false
   controller = null
 }
@@ -628,8 +666,11 @@ async function persistAndRequest(state: QueryState, version: number) {
 function beginIntent(state: QueryState, delay = 0) {
   const captured = Object.freeze({ ...state })
   const version = invalidateIntent()
+  currentMode.value = captured.mode
   filter.value = captured.filter
-  selectedSort.value = captured.sort
+  currentPage.value = captured.page
+  if (captured.mode === "epub") selectedEpubSort.value = captured.sort as EpubSortKey
+  else selectedSort.value = captured.sort as RelevanceSortKey
   if (delay > 0) {
     timer = setTimeout(() => {
       timer = null
@@ -641,27 +682,44 @@ function beginIntent(state: QueryState, delay = 0) {
 }
 
 function scheduleSearch() {
-  beginIntent({ filter: filter.value, sort: selectedSort.value }, 300)
+  beginIntent({ ...currentState(), filter: filter.value, page: 1 }, 300)
 }
 
 function submitSearch() {
-  beginIntent({ filter: filter.value, sort: selectedSort.value })
+  beginIntent({ ...currentState(), filter: filter.value, page: 1 })
 }
 
 function resetSearch() {
-  beginIntent({ filter: "", sort: selectedSort.value })
+  beginIntent({ ...currentState(), filter: "", page: 1 })
 }
 
-function selectSort(key: RelevanceSortKey) {
-  beginIntent({ filter: filter.value, sort: key })
+function selectMode(nextMode: LibraryMode) {
+  beginIntent({
+    mode: nextMode,
+    filter: filter.value,
+    sort: nextMode === "epub" ? "popularitet" : "relevans",
+    page: 1
+  })
+}
+
+function selectSort(key: RelevanceSortKey | EpubSortKey) {
+  beginIntent({ ...currentState(), sort: key, page: 1 })
+}
+
+function selectPage(page: number) {
+  const boundedPage = Math.max(1, Math.min(page, Math.max(1, epubPageCount.value)))
+  beginIntent({ ...currentState(), page: boundedPage })
 }
 
 watch(
-  () => [queryValue(route.query.filter), relevanceSortKey(route.query.sort)] as const,
-  ([nextFilter, nextSort]) => {
-    const state = { filter: nextFilter, sort: nextSort }
+  () => stateKey(requestState(routeState(route.path, route.query))),
+  () => {
+    const state = requestState(routeState(route.path, route.query))
+    currentMode.value = state.mode
     filter.value = state.filter
-    selectedSort.value = state.sort
+    currentPage.value = state.page
+    if (state.mode === "epub") selectedEpubSort.value = state.sort as EpubSortKey
+    else selectedSort.value = state.sort as RelevanceSortKey
     if (ownedNavigation?.key === stateKey(state)) return
     const version = invalidateIntent()
     void runBrowserRequest(state, version)
@@ -696,7 +754,7 @@ function stateHref(state: {
   page?: number
 }): string {
   const params = preservedQuery()
-  if (state.mode === "epub") params.set("visa", "epub")
+  if (state.mode === "epub" && route.path !== "/epub") params.set("visa", "epub")
   if (state.filter) params.set("filter", state.filter)
   if (state.mode === "epub") {
     params.set("sort", state.sort as EpubSortKey)
@@ -708,22 +766,22 @@ function stateHref(state: {
   return `${route.path}${query ? `?${query}` : ""}`
 }
 
-const allTabHref = stateHref({
+const allTabHref = computed(() => stateHref({
   mode: "all",
-  filter: initialFilter,
+  filter: filter.value,
   sort: "relevans"
-})
-const epubTabHref = stateHref({
+}))
+const epubTabHref = computed(() => stateHref({
   mode: "epub",
-  filter: initialFilter,
-  sort: selectedEpubSort
-})
+  filter: filter.value,
+  sort: "popularitet"
+}))
 
 function epubSortHref(sort: EpubSortKey): string {
-  return stateHref({ mode: "epub", filter: initialFilter, sort, page: 1 })
+  return stateHref({ mode: "epub", filter: filter.value, sort, page: 1 })
 }
 
-const epubPageCount = Math.ceil(epubResults.distinctHits / 100)
+const epubPageCount = computed(() => Math.ceil(epubResults.value.distinctHits / 100))
 type PaginationItem = { key: string, page: number | null }
 
 function paginationItems(total: number, current: number): PaginationItem[] {
@@ -746,13 +804,13 @@ function paginationItems(total: number, current: number): PaginationItem[] {
   return items
 }
 
-const epubPages = paginationItems(epubPageCount, initialState.page)
+const epubPages = computed(() => paginationItems(epubPageCount.value, currentPage.value))
 
 function epubPageHref(page: number): string {
   return stateHref({
     mode: "epub",
-    filter: initialFilter,
-    sort: selectedEpubSort,
+    filter: filter.value,
+    sort: selectedEpubSort.value,
     page
   })
 }
@@ -785,7 +843,7 @@ onUnmounted(disposeLibraryRequest)
       <div id="controls">
         <form
           class="lg:p-5 p-2 lg:border border-gray-900 w-full lg:max-w-5xl"
-          @submit.prevent="mode === 'all' && submitSearch()"
+          @submit.prevent="submitSearch"
         >
           <div class="main_input flex flex-wrap -ml-6 relative mb-8 items-center">
             <svg class="w-6 h-6 relative left-10 top-0 -mt-px" viewBox="0 0 24 24" fill="none" stroke="#7A1400" stroke-width="1.5" aria-hidden="true">
@@ -801,7 +859,7 @@ onUnmounted(disposeLibraryRequest)
               autocorrect="off"
               autocapitalize="none"
               spellcheck="false"
-              @input="mode === 'all' && scheduleSearch()"
+              @input="scheduleSearch"
             >
             <button type="submit" class="sr-only" tabindex="-1">Sök</button>
             <button
@@ -810,7 +868,7 @@ onUnmounted(disposeLibraryRequest)
               data-library-reset
               class="reset text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 -mr-8 cursor-pointer bg-transparent border-0 p-0"
               aria-label="Rensa sökning"
-              @click="mode === 'all' && resetSearch()"
+              @click="resetSearch"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -848,6 +906,7 @@ onUnmounted(disposeLibraryRequest)
                 :href="epubTabHref"
                 aria-current="page"
                 class="sc btn btn-small text-base active"
+                @click.prevent="selectMode('epub')"
               >Epub</a>
               <button
                 data-library-tab="pdf"
@@ -862,9 +921,10 @@ onUnmounted(disposeLibraryRequest)
               <a
                 data-library-tab="all"
                 :href="allTabHref"
-                :aria-current="mode === 'all' ? 'page' : undefined"
+                :aria-current="currentMode === 'all' ? 'page' : undefined"
                 class="sc btn btn-small text-base"
-                :class="{ active: mode === 'all' }"
+                :class="{ active: currentMode === 'all' }"
+                @click.prevent="selectMode('all')"
               >Alla träffar</a>
               <button
                 v-for="tab in [
@@ -884,9 +944,10 @@ onUnmounted(disposeLibraryRequest)
               <a
                 data-library-tab="epub"
                 :href="epubTabHref"
-                :aria-current="mode === 'epub' ? 'page' : undefined"
+                :aria-current="currentMode === 'epub' ? 'page' : undefined"
                 class="sc btn btn-small text-base"
-                :class="{ active: mode === 'epub' }"
+                :class="{ active: currentMode === 'epub' }"
+                @click.prevent="selectMode('epub')"
               >Epub</a>
               <button
                 data-library-tab="pdf"
@@ -902,7 +963,7 @@ onUnmounted(disposeLibraryRequest)
       </div>
       <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
         <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
-          <div v-if="mode === 'all'" class="result relevance pl-0 lg:ml-3 lg:ml-0 w-full lg:w-auto">
+          <div v-if="currentMode === 'all'" class="result relevance pl-0 lg:ml-3 lg:ml-0 w-full lg:w-auto">
             <div class="text-base">
               <div class="inline-block sc mr-2">Sortera: </div>
               <ul class="part_header top_header mb-4 inline-block">
@@ -974,6 +1035,7 @@ onUnmounted(disposeLibraryRequest)
                       class="sort_item"
                       :class="{ active: selectedEpubSort === item.key }"
                       :data-library-sort="item.key"
+                      @click.prevent="selectSort(item.key)"
                     >{{ item.label }}</a>
                     <i v-if="selectedEpubSort === item.key" class="fa fa-caret-down" />
                   </li>
@@ -1027,14 +1089,15 @@ onUnmounted(disposeLibraryRequest)
               <ul class="pagination-sm sc">
                 <li>
                   <span
-                    v-if="initialState.page <= 1"
+                    v-if="currentPage <= 1"
                     data-library-pagination-previous
                     aria-disabled="true"
                   >Föregående</span>
                   <a
                     v-else
                     data-library-pagination-previous
-                    :href="epubPageHref(initialState.page - 1)"
+                    :href="epubPageHref(currentPage - 1)"
+                    @click.prevent="selectPage(currentPage - 1)"
                   >Föregående</a>
                 </li>
                 <li v-for="item in epubPages" :key="item.key">
@@ -1043,19 +1106,21 @@ onUnmounted(disposeLibraryRequest)
                     v-else
                     :data-library-page="item.page"
                     :href="epubPageHref(item.page)"
-                    :aria-current="item.page === initialState.page ? 'page' : undefined"
+                    :aria-current="item.page === currentPage ? 'page' : undefined"
+                    @click.prevent="selectPage(item.page)"
                   >{{ item.page }}</a>
                 </li>
                 <li>
                   <span
-                    v-if="initialState.page >= epubPageCount"
+                    v-if="currentPage >= epubPageCount"
                     data-library-pagination-next
                     aria-disabled="true"
                   >Nästa</span>
                   <a
                     v-else
                     data-library-pagination-next
-                    :href="epubPageHref(initialState.page + 1)"
+                    :href="epubPageHref(currentPage + 1)"
+                    @click.prevent="selectPage(currentPage + 1)"
                   >Nästa</a>
                 </li>
               </ul>
