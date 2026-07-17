@@ -3,6 +3,7 @@ import { createServer } from "node:http"
 
 import { authorProfiles } from "./author-profile-data.mjs"
 import { historyAuthorSummaries } from "./history-data.mjs"
+import { libraryQueryStringResponse } from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import {
@@ -35,7 +36,8 @@ const homeContent = new Map([
 ])
 
 const sharedContent = new Map([
-  ["/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", ["image/jpeg", readFileSync(new URL("./library-content/biblioteket_bakgrund.jpg", import.meta.url))]]
+  ["/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", ["image/jpeg", readFileSync(new URL("./library-content/biblioteket_bakgrund.jpg", import.meta.url))]],
+  ["/red/bilder/bakgrundsbilder/ljudlandskap.jpg", ["image/jpeg", readFileSync(new URL("./library-content/ljudlandskap.jpg", import.meta.url))]]
 ])
 
 const presentationContent = new Map([
@@ -83,12 +85,20 @@ let readerRequests = []
 let libraryRelevanceRequests = []
 let libraryRelevanceFailure = false
 let libraryRelevanceDelays = {}
+let libraryQueryRequests = []
+let libraryQueryFailure = false
+let libraryQueryDelays = {}
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
   works: ["popular_works_unavailable", "Unable to load popular works"],
   epubs: ["popular_epubs_unavailable", "Unable to load popular EPUBs"]
 }
+
+const libraryQueryPaths = new Set([
+  "/api/query_string/etext,faksimil,pdf",
+  "/legacy-api/query_string/etext,faksimil,pdf"
+])
 
 function sendJson(response, status, body) {
   response.writeHead(status, {
@@ -145,6 +155,11 @@ function waitForLibraryRelevanceDelay(query) {
   const exactKey = `${query.q || ""}|${query.sort_field || ""}`
   const delay = libraryRelevanceDelays[exactKey] || libraryRelevanceDelays[query.q || ""] || 0
   return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+function waitForLibraryQueryDelay(query) {
+  const key = [query.q || "", query.sort_field || "", query.from || "", query.to || ""].join("|")
+  return new Promise(resolve => setTimeout(resolve, libraryQueryDelays[key] || 0))
 }
 
 function normalizedAuthorIds(body) {
@@ -446,6 +461,38 @@ const server = createServer(async (request, response) => {
     libraryRelevanceDelays = {}
     return sendJson(response, 200, { delays: libraryRelevanceDelays })
   }
+  if (url.pathname === "/_library_query_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: libraryQueryRequests })
+  }
+  if (url.pathname === "/_library_query_requests" && request.method === "DELETE") {
+    libraryQueryRequests = []
+    return sendJson(response, 200, { requests: libraryQueryRequests })
+  }
+  if (url.pathname === "/_library_query_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: libraryQueryFailure })
+  }
+  if (url.pathname === "/_library_query_failure" && request.method === "PUT") {
+    libraryQueryFailure = true
+    return sendJson(response, 200, { failure: libraryQueryFailure })
+  }
+  if (url.pathname === "/_library_query_failure" && request.method === "DELETE") {
+    libraryQueryFailure = false
+    return sendJson(response, 200, { failure: libraryQueryFailure })
+  }
+  if (url.pathname === "/_library_query_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: libraryQueryDelays })
+  }
+  if (url.pathname === "/_library_query_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    libraryQueryDelays = Object.fromEntries(
+      Object.entries(body).map(([key, delay]) => [key, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: libraryQueryDelays })
+  }
+  if (url.pathname === "/_library_query_delays" && request.method === "DELETE") {
+    libraryQueryDelays = {}
+    return sendJson(response, 200, { delays: libraryQueryDelays })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -533,6 +580,21 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 503, "text/plain; charset=utf-8", `${resource} unavailable`)
     }
     return sendBody(response, 200, contentType, body)
+  }
+
+  if (request.method === "GET" && libraryQueryPaths.has(url.pathname)) {
+    const query = Object.fromEntries(url.searchParams)
+    libraryQueryRequests.push({ path: url.pathname, query })
+    await waitForLibraryQueryDelay(query)
+    if (libraryQueryFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "library_query_unavailable",
+          message: "Unable to load Library EPUBs"
+        }
+      })
+    }
+    return sendJson(response, 200, libraryQueryStringResponse(query))
   }
 
   const libraryRelevancePath = url.pathname.replace(/^\/(?:legacy-api|api)(?=\/)/, "")

@@ -159,6 +159,12 @@ async function libraryRelevanceRequests() {
   }
 }
 
+async function libraryQueryRequests() {
+  return await (await fetch(`${origin}/_library_query_requests`)).json() as {
+    requests: Array<{ path: string, query: Record<string, string> }>
+  }
+}
+
 describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -204,7 +210,10 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_litteraturkartan_requests`, { method: "DELETE" }),
       fetch(`${origin}/_library_relevance_requests`, { method: "DELETE" }),
       fetch(`${origin}/_library_relevance_failure`, { method: "DELETE" }),
-      fetch(`${origin}/_library_relevance_delays`, { method: "DELETE" })
+      fetch(`${origin}/_library_relevance_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_library_query_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_library_query_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_library_query_delays`, { method: "DELETE" })
     ])
   })
 
@@ -1195,6 +1204,237 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_requests`)).json()).toEqual(genericLedger)
     expect(await quickSearchRequests()).toEqual(quickSearchLedger)
     expect(await homeRequests()).toEqual(homeLedger)
+  })
+
+  test("serves exact public and private Library EPUB query-string pages and background", async () => {
+    const types = "etext,faksimil,pdf"
+    const publicPath = `/api/query_string/${types}`
+    const privatePath = `/legacy-api/query_string/${types}`
+    const q = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian (has_epub:true)"
+    const publicParams = new URLSearchParams({
+      q,
+      sort_field: "popularity|desc",
+      from: "0",
+      to: "100"
+    })
+    const privateParams = new URLSearchParams({
+      q,
+      sort_field: "sort_date_imprint.plain|asc",
+      from: "100",
+      to: "200"
+    })
+
+    const publicResponse = await fetch(`${origin}${publicPath}?${publicParams}`)
+    const privateResponse = await fetch(`${origin}${privatePath}?${privateParams}`)
+    const background = await fetch(
+      `${origin}/red/bilder/bakgrundsbilder/ljudlandskap.jpg`
+    )
+
+    expect(publicResponse.status).toBe(200)
+    expect(privateResponse.status).toBe(200)
+    const publicBody = await publicResponse.json() as { data: unknown[] }
+    expect(publicBody).toMatchObject({
+      hits: 201,
+      distinct_hits: 201,
+      suggest: [],
+      data: expect.any(Array)
+    })
+    expect(publicBody.data[0]).toEqual({
+      _index: "etext",
+      lbworkid: "lb-DoktorGlas",
+      titlepath: "DoktorGlas",
+      titleid: "DoktorGlas",
+      work_titleid: "DoktorGlas",
+      shorttitle: "Doktor Glas",
+      title: "Doktor Glas. Roman",
+      texttype: "roman",
+      mediatype: "etext",
+      startpagename: "-2",
+      has_epub: true,
+      sort_date_imprint: { plain: "1905" },
+      main_author: {
+        authorid: "SöderbergH",
+        full_name: "Hjalmar Söderberg",
+        surname: "Söderberg"
+      },
+      work_authors: [{ authorid: "SöderbergH", surname: "Söderberg" }],
+      export: [{ type: "epub", size: 530557 }]
+    })
+    expect(await privateResponse.json()).toMatchObject({
+      hits: 201,
+      distinct_hits: 201,
+      suggest: [],
+      data: [{
+        titleid: "GostaBerlingsSaga",
+        shorttitle: "Gösta Berlings saga",
+        main_author: { authorid: "LagerlofS", surname: "Lagerlöf" }
+      }]
+    })
+    expect(background.status).toBe(200)
+    expect(background.headers.get("content-type")).toBe("image/jpeg")
+    expect(createHash("sha256").update(Buffer.from(await background.arrayBuffer())).digest("hex"))
+      .toBe("f5d78b0ff6d97dc197aaf9c62f504af684a778f7dd0bdeac8057e21c13b83d04")
+
+    expect(await libraryQueryRequests()).toEqual({
+      requests: [
+        {
+          path: publicPath,
+          query: {
+            q,
+            sort_field: "popularity|desc",
+            from: "0",
+            to: "100"
+          }
+        },
+        {
+          path: privatePath,
+          query: {
+            q,
+            sort_field: "sort_date_imprint.plain|asc",
+            from: "100",
+            to: "200"
+          }
+        }
+      ]
+    })
+
+    expect((await fetch(`${origin}/api/query_string/etext,faksimil?${publicParams}`)).status)
+      .toBe(404)
+    expect((await libraryQueryRequests()).requests).toHaveLength(2)
+    expect(await libraryRelevanceRequests()).toEqual({ requests: [] })
+  })
+
+  test("selects deterministic Library EPUB filter and malformed response variants", async () => {
+    const path = "/api/query_string/etext,faksimil,pdf"
+    const prefixed = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const responseFor = async (marker: string) => {
+      const q = `${prefixed} (has_epub:true AND (${marker}))`
+      const params = new URLSearchParams({
+        q,
+        sort_field: "popularity|desc",
+        from: "0",
+        to: "100"
+      })
+      return await (await fetch(`${origin}${path}?${params}`)).json() as Record<string, unknown>
+    }
+
+    const filtered = await responseFor("Selma")
+    expect(filtered).toMatchObject({
+      hits: 1,
+      distinct_hits: 1,
+      suggest: [],
+      data: [{
+        titleid: "GostaBerlingsSaga",
+        main_author: { authorid: "LagerlofS", full_name: "Selma Lagerlöf" }
+      }]
+    })
+
+    const absentSuggest = await responseFor("missing-suggest")
+    expect(Object.hasOwn(absentSuggest, "suggest")).toBe(false)
+    expect(absentSuggest).toMatchObject({ hits: 201, distinct_hits: 201 })
+
+    const nullSuggest = await responseFor("null-suggest")
+    expect(nullSuggest).toMatchObject({
+      hits: 201,
+      distinct_hits: 201,
+      suggest: null
+    })
+
+    expect(await responseFor("malformed-top")).toEqual({
+      data: "invalid",
+      hits: 0,
+      distinct_hits: 0,
+      suggest: []
+    })
+
+    const malformedRows = await responseFor("malformed-row") as { data: unknown[] }
+    expect(malformedRows.data).toHaveLength(4)
+    expect(malformedRows.data[0]).toMatchObject({ titleid: "DoktorGlas" })
+    expect(malformedRows.data[1]).toBeNull()
+    expect(malformedRows.data[2]).toEqual({ _index: "etext", title: "Ofullständig" })
+    expect(malformedRows.data[3]).toMatchObject({
+      titleid: "UnsafeWork",
+      main_author: { authorid: "../unsafe" }
+    })
+
+    expect(await responseFor("inga")).toEqual({
+      data: [],
+      hits: 0,
+      distinct_hits: 0,
+      suggest: []
+    })
+  })
+
+  test("Library EPUB failure, exact-state delay, and reset controls stay isolated", async () => {
+    const queryPath = "/api/query_string/etext,faksimil,pdf"
+    const q = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian (has_epub:true)"
+    const params = (to: string) => new URLSearchParams({
+      q,
+      sort_field: "popularity|desc",
+      from: "0",
+      to
+    })
+    const delayKey = `${q}|popularity|desc|0|100`
+
+    await fetch(`${origin}/api/relevance/test?q=%28preserved%29`)
+    await fetch(`${origin}/api/get_work_info?titleid=DoktorGlas`)
+    await fetch(`${origin}/_library_query_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ [delayKey]: 150 })
+    })
+    expect(await (await fetch(`${origin}/_library_query_delays`)).json()).toEqual({
+      delays: { [delayKey]: 150 }
+    })
+
+    const exactStarted = Date.now()
+    let exactSettled = false
+    const exactRequest = fetch(`${origin}${queryPath}?${params("100")}`).then((response) => {
+      exactSettled = true
+      return response
+    })
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect((await fetch(`${origin}${queryPath}?${params("99")}`)).status).toBe(200)
+    expect(exactSettled).toBe(false)
+    expect((await exactRequest).status).toBe(200)
+    expect(Date.now() - exactStarted).toBeGreaterThanOrEqual(140)
+
+    await fetch(`${origin}/_library_query_failure`, { method: "PUT" })
+    expect(await (await fetch(`${origin}/_library_query_failure`)).json())
+      .toEqual({ failure: true })
+    const failed = await fetch(`${origin}${queryPath}?${params("101")}`)
+    expect(failed.status).toBe(503)
+    expect(await failed.json()).toEqual({
+      error: {
+        code: "library_query_unavailable",
+        message: "Unable to load Library EPUBs"
+      }
+    })
+    expect((await fetch(`${origin}/api/relevance/test?q=%28still-available%29`)).status)
+      .toBe(200)
+    expect((await fetch(`${origin}/api/get_work_info?titleid=DoktorGlas`)).status)
+      .toBe(200)
+
+    await fetch(`${origin}/_library_query_failure`, { method: "DELETE" })
+    await fetch(`${origin}/_library_relevance_failure`, { method: "PUT" })
+    expect((await fetch(`${origin}${queryPath}?${params("102")}`)).status).toBe(200)
+    expect((await fetch(`${origin}/api/relevance/test?q=%28failed%29`)).status).toBe(503)
+
+    const relevanceLedger = await libraryRelevanceRequests()
+    const readerLedger = await (await fetch(`${origin}/_reader_requests`)).json()
+    await fetch(`${origin}/_library_query_requests`, { method: "DELETE" })
+    await fetch(`${origin}/_library_query_failure`, { method: "DELETE" })
+    await fetch(`${origin}/_library_query_delays`, { method: "DELETE" })
+
+    expect(await libraryQueryRequests()).toEqual({ requests: [] })
+    expect(await (await fetch(`${origin}/_library_query_failure`)).json())
+      .toEqual({ failure: false })
+    expect(await (await fetch(`${origin}/_library_query_delays`)).json())
+      .toEqual({ delays: {} })
+    expect(await libraryRelevanceRequests()).toEqual(relevanceLedger)
+    expect(await (await fetch(`${origin}/_reader_requests`)).json()).toEqual(readerLedger)
+    expect(await (await fetch(`${origin}/_library_relevance_failure`)).json())
+      .toEqual({ failure: true })
   })
 
   test("serves public and private legacy Library relevance responses with isolated accounting", async () => {
