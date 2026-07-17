@@ -90,6 +90,7 @@ let presentationRequests = []
 let presentationFailures = new Set()
 let litteraturkartanRequests = []
 let readerRequests = []
+let readerMetadataDelays = {}
 let readerHitRequests = []
 let readerHitFailure = false
 let readerHitDelays = {}
@@ -196,6 +197,77 @@ function waitForReaderHitDelay(input) {
     resolve,
     readerHitDelays[readerHitDelayKey(input)] || 0
   ))
+}
+
+function waitForReaderMetadataDelay(titlePath) {
+  return new Promise(resolve => setTimeout(resolve, readerMetadataDelays[titlePath] || 0))
+}
+
+function readerRepresentation(titlePath, overrides = {}) {
+  const representation = structuredClone(readerWorkInfoResponse.data[0])
+  return {
+    ...representation,
+    shorttitle: titlePath,
+    title: `${titlePath}. Roman`,
+    titlepath: titlePath,
+    ...overrides
+  }
+}
+
+function readerMetadataResponse(titlePath) {
+  switch (titlePath) {
+    case "SiblingPagesReader": {
+      const sharedWorkId = "lb-reader-doktor-glas"
+      const etext = readerRepresentation(titlePath, {
+        lbworkid: sharedWorkId,
+        pages: undefined
+      })
+      const faksimil = readerRepresentation(titlePath, {
+        lbworkid: sharedWorkId,
+        mediatype: "faksimil"
+      })
+      return { hits: 2, data: [etext, faksimil] }
+    }
+    case "MissingReader":
+      return readerWorkInfoResponse
+    case "NoRequestedMediaReader":
+    case "MediaMismatchReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, { mediatype: "faksimil" })]
+      }
+    case "WrongAuthorReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          authors: [{ authorid: "OtherAuthor", full_name: "Other Author" }]
+        })]
+      }
+    case "MissingStartReader": {
+      const representation = readerRepresentation(titlePath)
+      delete representation.startpagename
+      return { hits: 1, data: [representation] }
+    }
+    case "MalformedStartReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, { startpagename: 2 })]
+      }
+    case "OutOfListStartReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, { startpagename: "99" })]
+      }
+    case "MalformedPagesReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, { pages: "malformed" })]
+      }
+    case "MalformedReader":
+      return { hits: 1, data: "malformed" }
+    default:
+      return readerWorkInfoResponse
+  }
 }
 
 function validationError(response) {
@@ -623,6 +695,20 @@ const server = createServer(async (request, response) => {
     readerRequests = []
     return sendJson(response, 200, { requests: readerRequests })
   }
+  if (url.pathname === "/_reader_metadata_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: readerMetadataDelays })
+  }
+  if (url.pathname === "/_reader_metadata_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    readerMetadataDelays = Object.fromEntries(
+      Object.entries(body).map(([titlePath, delay]) => [titlePath, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: readerMetadataDelays })
+  }
+  if (url.pathname === "/_reader_metadata_delays" && request.method === "DELETE") {
+    readerMetadataDelays = {}
+    return sendJson(response, 200, { delays: readerMetadataDelays })
+  }
   if (url.pathname === "/_reader_hit_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: readerHitRequests })
   }
@@ -752,7 +838,12 @@ const server = createServer(async (request, response) => {
 
   if (request.method === "GET" && url.pathname === "/api/get_work_info") {
     readerRequests.push(`${url.pathname}${url.search}`)
-    return sendJson(response, 200, readerWorkInfoResponse)
+    const titlePath = url.searchParams.get("titlepath") || ""
+    await waitForReaderMetadataDelay(titlePath)
+    if (titlePath === "UnavailableReader") {
+      return sendBody(response, 503, "text/plain; charset=utf-8", "reader unavailable")
+    }
+    return sendJson(response, 200, readerMetadataResponse(titlePath))
   }
 
   const readerPageMatch = request.method === "GET"

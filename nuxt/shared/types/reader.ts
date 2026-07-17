@@ -18,3 +18,11 @@ export interface ReaderPage {
   workId: string
   workStylesheetUrl: string
 }
+
+export interface ReaderRouteResolution {
+  authorId: string
+  canonicalPath: string
+  mediaType: "etext"
+  startPageName: string
+  titlePath: string
+}
