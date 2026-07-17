@@ -205,8 +205,10 @@ function isPresentationRequest(pathname) {
 }
 
 const server = createServer(async (request, response) => {
+  const rawPathname = request.url.split("?", 1)[0]
   const url = new URL(request.url, `http://${request.headers.host}`)
   const apiPathname = url.pathname.replace(/^\/private-v2(?=\/|$)/, "/v2")
+  const rawApiPathname = rawPathname.replace(/^\/private-v2(?=\/|$)/, "/v2")
 
   if (request.method === "OPTIONS") return sendJson(response, 204, null)
   if (request.method === "GET" && url.pathname === "/health") {
@@ -640,10 +642,10 @@ const server = createServer(async (request, response) => {
   }
 
   const profileAuthorId = request.method === "GET"
-    ? decodedProfileAuthorId(apiPathname)
+    ? decodedProfileAuthorId(rawApiPathname)
     : null
   if (profileAuthorId !== null) {
-    authorProfileRequests.push(url.pathname)
+    authorProfileRequests.push(rawPathname)
     if (!profileAuthorId.valid) {
       return sendJson(response, 422, {
         error: {

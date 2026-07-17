@@ -2,6 +2,7 @@ import type { ChildProcess } from "node:child_process"
 import { spawn } from "node:child_process"
 import { createHash } from "node:crypto"
 import { once } from "node:events"
+import { request as httpRequest } from "node:http"
 import { fileURLToPath } from "node:url"
 import {
   afterAll,
@@ -96,6 +97,32 @@ async function authorProfileRequests() {
   return await (await fetch(`${origin}/_author_profile_requests`)).json() as {
     requests: string[]
   }
+}
+
+async function rawGet(path: string) {
+  return await new Promise<{ status: number, body: unknown }>((resolve, reject) => {
+    const request = httpRequest({
+      hostname: "127.0.0.1",
+      port,
+      method: "GET",
+      path
+    }, response => {
+      const chunks: Buffer[] = []
+      response.on("data", chunk => chunks.push(Buffer.from(chunk)))
+      response.on("end", () => {
+        try {
+          resolve({
+            status: response.statusCode || 0,
+            body: JSON.parse(Buffer.concat(chunks).toString("utf8"))
+          })
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
+    request.on("error", reject)
+    request.end()
+  })
 }
 
 async function postAuthorResolve(path: string, body: unknown) {
@@ -246,6 +273,30 @@ describe("v2 fixture server operations", () => {
           code: "validation_error",
           message: "Request validation failed",
           details: null
+        }
+      })
+    }
+
+    expect(await authorProfileRequests()).toEqual({ requests: paths })
+  })
+
+  test("author profiles reject and record literal and encoded dot segments", async () => {
+    const paths = [
+      "/v2/authors/.",
+      "/private-v2/authors/..",
+      "/v2/authors/%2E",
+      "/private-v2/authors/%2e%2e"
+    ]
+
+    for (const path of paths) {
+      expect(await rawGet(path)).toEqual({
+        status: 422,
+        body: {
+          error: {
+            code: "validation_error",
+            message: "Request validation failed",
+            details: null
+          }
         }
       })
     }
