@@ -1,6 +1,6 @@
 import { mkdir, readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { expect, test, type Route } from "@playwright/test"
+import { expect, test, type Request, type Route } from "@playwright/test"
 
 import { libraryQueryPageOneResponse } from "../fixtures/library-query-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
@@ -9,8 +9,13 @@ test.use({ serviceWorkers: "block" })
 
 const authorityOrigin = "http://127.0.0.1:9000"
 const queryPath = "/api/query_string/etext,faksimil,pdf"
+const allowedShellDocuments = new Set([
+  `${authorityOrigin}/bibliotek?visa=epub&sort=popularitet`,
+  `${authorityOrigin}/epub?visa=epub&sort=popularitet`
+])
 const authorExclude = "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
 const epubInclude = "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sort_date_imprint.plain,main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword"
+const partsInclude = "lbworkid,titlepath,title,titleid,work_titleid,shorttitle,mediatype,searchable,sort_date_imprint.plain,main_author.authorid,main_author.surname,main_author.type,startpagename,sort_date.plain,export,authors,work_authors"
 const expectedActiveQuery = {
   author_aggregation: "true",
   exclude: "text,parts,sourcedesc,pages,errata",
@@ -23,9 +28,48 @@ const expectedActiveQuery = {
   suggest: "true",
   to: "100"
 }
+const expectedInactiveMainQueries = [
+  {
+    author_aggregation: "true",
+    exclude: "text,parts,sourcedesc,pages,errata",
+    from: "0",
+    imported_aggregation: "false",
+    include: epubInclude,
+    partial_string: "true",
+    q: "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian *",
+    sort_field: "popularity|desc",
+    suggest: "true",
+    to: "0"
+  },
+  {
+    author_aggregation: "true",
+    exclude: "text,parts,sourcedesc,pages,errata",
+    from: "0",
+    imported_aggregation: "false",
+    include: epubInclude,
+    partial_string: "true",
+    pdfOnly: "true",
+    q: "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian (((export>type:pdf AND license:pd) OR mediatype:pdf))",
+    sort_field: "popularity|desc",
+    suggest: "true",
+    to: "0"
+  }
+]
+const expectedInactivePartsQuery = {
+  author_aggregation: "true",
+  exclude: "text,parts,sourcedesc,pages,errata",
+  from: "0",
+  include: partsInclude,
+  partial_string: "true",
+  q: "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian *",
+  sort_field: "sortkey|asc",
+  suggest: "true",
+  to: "0"
+}
 
 type Ledger = {
   activeQueries: string[]
+  allowedShellRequests: string[]
   backgroundRequests: string[]
   bootstrapRequests: string[]
   countQueries: string[]
@@ -47,11 +91,27 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
-function isApplicationBoundary(url: URL) {
-  return url.pathname.startsWith("/api/")
-    || url.pathname.startsWith("/red/")
-    || url.pathname.startsWith("/txt/")
-    || url.pathname.startsWith("/export/")
+function isAllowedShellRequest(request: Request, url: URL) {
+  if (request.method() !== "GET" || url.origin !== authorityOrigin) {
+    return false
+  }
+  if (allowedShellDocuments.has(url.toString())) {
+    return true
+  }
+  if (["/@vite/client", "/main.js"].includes(url.pathname)) {
+    return true
+  }
+  return [
+    "/@fs/",
+    "/@id/",
+    "/node_modules/.vite/",
+    "/lib/",
+    "/scripts/",
+    "/styles/",
+    "/views/",
+    "/img/",
+    "/assets/"
+  ].some(prefix => url.pathname.startsWith(prefix))
 }
 
 async function routeAuthorityRequest(
@@ -77,7 +137,9 @@ async function routeAuthorityRequest(
         body: JSON.stringify(libraryQueryPageOneResponse)
       })
     }
-    if (query.to === "0" && query.from === "0") {
+    if (expectedInactiveMainQueries.some(expected =>
+      JSON.stringify(query) === JSON.stringify(expected)
+    )) {
       ledger.countQueries.push(requestLabel)
       return route.fulfill({
         status: 200,
@@ -90,7 +152,7 @@ async function routeAuthorityRequest(
   }
   if (request.method() === "GET" && url.origin === authorityOrigin
     && url.pathname === "/api/query_string/etext-part,faksimil-part"
-    && url.searchParams.get("from") === "0" && url.searchParams.get("to") === "0") {
+    && JSON.stringify(sortedQuery(url)) === JSON.stringify(expectedInactivePartsQuery)) {
     ledger.countQueries.push(requestLabel)
     return route.fulfill({
       status: 200,
@@ -187,11 +249,12 @@ async function routeAuthorityRequest(
     ledger.bootstrapRequests.push(requestLabel)
     return route.fulfill({ status: 200, contentType: "application/javascript; charset=utf-8", body: "" })
   }
-  if (url.origin !== authorityOrigin || isApplicationBoundary(url)) {
-    ledger.unexpected.push(requestLabel)
-    return route.abort("blockedbyclient")
+  if (isAllowedShellRequest(request, url)) {
+    ledger.allowedShellRequests.push(requestLabel)
+    return route.continue()
   }
-  return route.continue()
+  ledger.unexpected.push(requestLabel)
+  return route.abort("blockedbyclient")
 }
 
 for (const visualCase of [
@@ -212,7 +275,7 @@ for (const visualCase of [
     background: "none"
   }
 ] as const) {
-  test(`captures the canonical Angular ${visualCase.name} authority`, async ({ page }, testInfo) => {
+  test(`captures the canonical Angular ${visualCase.name} authority`, async ({ browser, page }, testInfo) => {
     const [authorityFonts, libraryBackground, standaloneBackground] = await Promise.all([
       readFile(resolve(import.meta.dirname, "../../../app/styles/fonts/601526/32FBEBA806C948833.css")),
       readFile(resolve(import.meta.dirname, "../fixtures/library-content/biblioteket_bakgrund.jpg")),
@@ -220,12 +283,36 @@ for (const visualCase of [
     ])
     const ledger: Ledger = {
       activeQueries: [],
+      allowedShellRequests: [],
       backgroundRequests: [],
       bootstrapRequests: [],
       countQueries: [],
       problems: [],
       unexpected: []
     }
+
+    const probeLedger: Ledger = {
+      activeQueries: [],
+      allowedShellRequests: [],
+      backgroundRequests: [],
+      bootstrapRequests: [],
+      countQueries: [],
+      problems: [],
+      unexpected: []
+    }
+    const probePage = await browser.newPage()
+    await probePage.route("**/*", route => routeAuthorityRequest(route, probeLedger, {
+      authorityFonts,
+      libraryBackground,
+      standaloneBackground
+    }))
+    const mutatedCountUrl = new URL(queryPath, authorityOrigin)
+    mutatedCountUrl.searchParams.set("from", "0")
+    mutatedCountUrl.searchParams.set("to", "0")
+    mutatedCountUrl.searchParams.set("q", "mutated-authority-probe")
+    await probePage.goto(`${authorityOrigin}/data.json`).catch(() => null)
+    await probePage.goto(mutatedCountUrl.toString()).catch(() => null)
+    await probePage.close()
 
     page.on("pageerror", error => ledger.problems.push(`pageerror: ${error.message}`))
     page.on("console", message => {
@@ -241,7 +328,10 @@ for (const visualCase of [
 
     const response = await page.goto(visualCase.route, { waitUntil: "domcontentloaded" })
     expect(response?.status()).toBe(200)
-    await expect(page.locator(`body.focus.${visualCase.bodyClass}.ready`)).toHaveCount(1)
+    await expect.poll(async () => ({
+      readyBodies: await page.locator(`body.focus.${visualCase.bodyClass}.ready`).count(),
+      unexpected: ledger.unexpected
+    })).toEqual({ readyBodies: 1, unexpected: [] })
     await expect(page.getByRole("heading", { name: visualCase.heading, exact: true })).toBeVisible()
     const visibleTabs = page.locator("#controls .btn-group > button:visible")
     await expect(visibleTabs).toHaveCount(visualCase.tabs.length)
@@ -262,9 +352,17 @@ for (const visualCase of [
     await expect(page.locator("html")).toHaveCSS("background-image", visualCase.background)
     expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
     expect(ledger.activeQueries).toHaveLength(1)
+    expect(ledger.allowedShellRequests.some(request => request.includes(visualCase.route.split("?")[0])))
+      .toBe(true)
+    expect(ledger.allowedShellRequests.some(request => request.includes("/main.js"))).toBe(true)
     expect(ledger.countQueries.length).toBe(visualCase.name === "library-epub" ? 3 : 1)
     expect(ledger.unexpected).toEqual([])
     expect(ledger.problems).toEqual([])
+    expect(probeLedger.unexpected).toEqual([
+      `GET ${authorityOrigin}/data.json`,
+      `GET ${mutatedCountUrl.toString()}`
+    ])
+    expect(probeLedger.countQueries).toEqual([])
 
     const directory = resolve(import.meta.dirname, "baselines")
     await mkdir(directory, { recursive: true })
