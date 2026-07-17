@@ -362,6 +362,13 @@ describe("v2 fixture server operations", () => {
     ])
   })
 
+  test("Author Works request ledger preserves the exact query string", async () => {
+    const path = "/private-v2/authors/StrindbergA/works?probe=fixture&repeat=one&repeat=two"
+
+    expect((await fetch(`${origin}${path}`)).status).toBe(200)
+    expect(await authorWorksRequests()).toEqual({ requests: [path] })
+  })
+
   test("Author Works returns typed missing, invalid, failed, and malformed states", async () => {
     const missing = await fetch(`${origin}/v2/authors/MissingA/works`)
     expect(missing.status).toBe(404)

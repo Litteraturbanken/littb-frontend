@@ -113,7 +113,7 @@ for (const visualCase of visualCases) {
         semerRequests.push(label)
         return route.abort("blockedbyclient")
       }
-      if (url.pathname.startsWith("/red/forfattare/") && url.pathname.endsWith(".jpeg")) {
+      if (url.pathname.startsWith("/red/forfattare/")) {
         if (
           browserRequest.method() !== "GET"
           || url.origin !== nuxtOrigin
@@ -130,7 +130,7 @@ for (const visualCase of visualCases) {
           body: portraitBytes
         })
       }
-      if (!["127.0.0.1", "localhost"].includes(url.hostname)) {
+      if (url.origin !== nuxtOrigin) {
         productionEscapes.push(label)
         return route.abort("blockedbyclient")
       }
@@ -140,6 +140,43 @@ for (const visualCase of visualCases) {
       }
       return route.continue()
     })
+
+    if (visualCase.name === "rich-titlar" && testInfo.project.name === "desktop-chromium") {
+      const fixtureProbe = `${fixtureOrigin}/private-v2/authors/StrindbergA/works?probe=fixture`
+      const localOriginProbe = "http://127.0.0.1:65534/probe-local-origin"
+      const nonJpegPortraitProbe = `${nuxtOrigin}/red/forfattare/StrindbergA/probe.png`
+      const queryPortraitProbe = `${nuxtOrigin}${visualCase.portraitPath}?probe=portrait`
+
+      for (const url of [
+        fixtureProbe,
+        localOriginProbe,
+        nonJpegPortraitProbe,
+        queryPortraitProbe
+      ]) {
+        await page.evaluate(async target => {
+          await fetch(target).catch(() => undefined)
+        }, url)
+      }
+
+      expect({
+        productionEscapes,
+        unexpectedPortraitRequests,
+        worksRequests: await worksRequests(request)
+      }).toEqual({
+        productionEscapes: [
+          `GET ${fixtureProbe}`,
+          `GET ${localOriginProbe}`
+        ],
+        unexpectedPortraitRequests: [
+          `GET ${nonJpegPortraitProbe}`,
+          `GET ${queryPortraitProbe}`
+        ],
+        worksRequests: []
+      })
+      productionEscapes.length = 0
+      unexpectedPortraitRequests.length = 0
+      problems.length = 0
+    }
 
     const response = await page.goto(visualCase.route, { waitUntil: "domcontentloaded" })
     expect(response?.status()).toBe(200)
@@ -167,6 +204,10 @@ for (const visualCase of visualCases) {
         .toHaveText(["etext", "faksimil", "infopost", "epub", "pdf"])
     } else {
       await expect(page.locator(".portrait_container .author_img")).toHaveCount(0)
+      if (visualCase.name === "sparse-titlar") {
+        await expect(page.locator(".contenttable").first().locator(".mediatypes a"))
+          .toHaveText(["faksimil"])
+      }
     }
 
     await waitForVisualAssets(page)

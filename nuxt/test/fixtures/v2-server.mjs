@@ -1001,7 +1001,7 @@ const server = createServer(async (request, response) => {
     ? decodedAuthorWorksAuthorId(rawApiPathname)
     : null
   if (authorWorksAuthorId !== null) {
-    authorWorksRequests.push(rawPathname)
+    authorWorksRequests.push(`${rawPathname}${url.search}`)
     if (!authorWorksAuthorId.valid) return validationError(response)
 
     await waitForAuthorWorksDelay(authorWorksAuthorId.authorId)
