@@ -99,6 +99,25 @@ test("canonical flags map exactly to the generated hit request", async ({ reques
   }])
 })
 
+test("repeated unknown query values survive page and hit links only", async ({ request }) => {
+  const response = await request.get(
+    `${readerPath}?q=doktor%20glas&hit=1&return=first&return=second`
+  )
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(await readerHitRequests(request)).toHaveLength(1)
+  expect((await readerHitRequests(request))[0]?.query).not.toContain("return")
+  for (const target of [
+    "/sida/-3/etext?q=doktor+glas&amp;hit=1&amp;return=first&amp;return=second",
+    "/sida/-1/etext?q=doktor+glas&amp;hit=1&amp;return=first&amp;return=second",
+    "/sida/-3/etext?q=doktor+glas&amp;hit=0&amp;return=first&amp;return=second",
+    "/sida/-2/etext?q=doktor+glas&amp;hit=2&amp;return=first&amp;return=second"
+  ]) {
+    expect(html).toContain(target)
+  }
+})
+
 for (const invalidQuery of [
   "?q=doktor",
   "?hit=1",
@@ -173,6 +192,36 @@ test("an unsafe missing range is rejected as malformed enhancement data", async 
   expect(html).toContain("DOKTOR")
   expect(html).toContain("Sökträffen kunde inte hämtas.")
   expect(html).not.toContain("markee")
+})
+
+for (const query of ["safe-missing-range", "duplicate-range"]) {
+  test(`${query} keeps valid search state and original unmarked HTML`, async ({ request }) => {
+    const response = await request.get(`${readerPath}?q=${query}&hit=0`)
+    expect(response.status()).toBe(200)
+    const html = await response.text()
+    expect(html).toContain("DOKTOR")
+    expect(html).toContain("GLAS")
+    expect(html).toContain("Sökträff 1 av 1")
+    expect(html).not.toContain("Sökträffen kunde inte hämtas.")
+    expect(html).not.toContain("markee")
+  })
+}
+
+test("the maximum valid cursor never links to an unrequestable next hit", async ({ request }) => {
+  const response = await request.get(`${readerPath}?q=max-edge&hit=1000001`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect((await readerHitRequests(request))[0]?.query).toContain(
+    "query=max-edge&offset=1000000&limit=3"
+  )
+  expect(html).toContain("Sökträff 1000002 av 1000003")
+  expect(html).toContain(
+    "/sida/-2/etext?q=max-edge&amp;hit=1000000"
+  )
+  expect(html).not.toContain(
+    "/sida/-2/etext?q=max-edge&amp;hit=1000002"
+  )
 })
 
 test("an unknown page is a real 404", async ({ request }) => {

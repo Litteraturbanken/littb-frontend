@@ -59,4 +59,38 @@ describe("reader route links", () => {
       "?q=doktor+glas&hit=4&lemma=1&unknown=bevara+%26+koda"
     )
   })
+
+  test("preserves repeated unknown values deterministically in page and hit links", () => {
+    const query = {
+      q: "doktor glas",
+      hit: "1",
+      return: ["första & värdet", "andra/värdet"],
+      tom: ["", "sist"]
+    }
+    const serialized =
+      "?q=doktor+glas&hit=1" +
+      "&return=f%C3%B6rsta+%26+v%C3%A4rdet&return=andra%2Fv%C3%A4rdet" +
+      "&tom=&tom=sist"
+
+    expect(readerPageHref({
+      author: "SöderbergH",
+      title: "DoktorGlas",
+      page: "-1",
+      mediaType: "etext",
+      query
+    })).toBe(
+      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" + serialized
+    )
+    expect(readerHitHref({
+      author: "SöderbergH",
+      title: "DoktorGlas",
+      page: "-3",
+      mediaType: "etext",
+      hit: 0,
+      query
+    })).toBe(
+      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
+      serialized.replace("hit=1", "hit=0")
+    )
+  })
 })

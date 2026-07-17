@@ -4,7 +4,12 @@ import { parseHTML } from "linkedom"
 import type { ReaderPage } from "#shared/types/reader"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
-import { readerAuthorHref, readerHitHref, readerPageHref } from "~/lib/reader-routes"
+import {
+  readerAuthorHref,
+  readerHitHref,
+  readerPageHref,
+  type ReaderRouteQuery
+} from "~/lib/reader-routes"
 
 definePageMeta({
   validate: route => {
@@ -43,6 +48,8 @@ const canonicalSearchKeys = [
   "suffix"
 ] as const
 const wordIdPattern = /^w(?<page>\d+)_(?<ordinal>\d+)$/
+const maximumHitOffset = 1_000_000
+const maximumNavigableHit = maximumHitOffset + 1
 
 function parseCanonicalSearchState(): CanonicalSearchState | null {
   for (const key of canonicalSearchKeys) {
@@ -61,7 +68,7 @@ function parseCanonicalSearchState(): CanonicalSearchState | null {
   if (!/^(?:0|[1-9]\d*)$/.test(rawHit)) return null
 
   const hit = Number(rawHit)
-  if (!Number.isSafeInteger(hit) || hit < 0 || Math.max(hit - 1, 0) > 1_000_000) {
+  if (!Number.isSafeInteger(hit) || hit < 0 || Math.max(hit - 1, 0) > maximumHitOffset) {
     return null
   }
 
@@ -80,13 +87,14 @@ function parseCanonicalSearchState(): CanonicalSearchState | null {
   })
 }
 
-function preservedQuery(): Record<string, string> {
+function preservedQuery(): ReaderRouteQuery {
   return Object.fromEntries(
-    Object.entries(route.query).flatMap(([key, value]) => {
-      if (typeof value === "string") return [[key, value]]
-      if (value === null) return [[key, ""]]
-      return []
-    })
+    Object.entries(route.query).map(([key, value]) => [
+      key,
+      Array.isArray(value)
+        ? value.map(item => item ?? "")
+        : value ?? ""
+    ])
   )
 }
 
@@ -278,11 +286,15 @@ const activeHit = computed(() => {
 })
 const previousHit = computed(() => {
   if (!searchState || !hitResponse.value) return null
-  return hitResponse.value.items.find(item => item.index === searchState.hit - 1) ?? null
+  return hitResponse.value.items.find(
+    item => item.index === searchState.hit - 1 && item.index <= maximumNavigableHit
+  ) ?? null
 })
 const nextHit = computed(() => {
   if (!searchState || !hitResponse.value) return null
-  return hitResponse.value.items.find(item => item.index === searchState.hit + 1) ?? null
+  return hitResponse.value.items.find(
+    item => item.index === searchState.hit + 1 && item.index <= maximumNavigableHit
+  ) ?? null
 })
 const markedReaderHtml = computed(() => {
   if (!activeHit.value) return reader.value.html

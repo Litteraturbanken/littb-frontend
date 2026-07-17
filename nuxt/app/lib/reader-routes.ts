@@ -3,8 +3,10 @@ interface ReaderRouteSegments {
   title: string
   page: string
   mediaType: string
-  query?: Record<string, string>
+  query?: ReaderRouteQuery
 }
+
+export type ReaderRouteQuery = Record<string, string | readonly string[]>
 
 interface ReaderHitRouteSegments extends ReaderRouteSegments {
   hit: number
@@ -32,7 +34,15 @@ export function readerPageHref({
   ].join("/")
   if (!query) return path
 
-  const search = new URLSearchParams(query).toString()
+  const searchParams = new URLSearchParams()
+  for (const [key, value] of Object.entries(query)) {
+    if (typeof value === "string") {
+      searchParams.append(key, value)
+    } else {
+      for (const item of value) searchParams.append(key, item)
+    }
+  }
+  const search = searchParams.toString()
   return search ? `${path}?${search}` : path
 }
 
