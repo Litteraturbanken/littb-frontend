@@ -14,7 +14,7 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
 <template>
   <div>
     <h1 class="text-balance max-w-5xl">
-      {{ profile.fullName }}<span v-if="profile.lifespan" class="author_year"> ({{ profile.lifespan }})</span>
+      {{ profile.fullName }}{{ " " }}<span v-if="profile.lifespan" class="author_year">({{ profile.lifespan }})</span>
     </h1>
 
     <nav aria-label="Författarsidor">
@@ -24,16 +24,16 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
             :href="rootHref"
             :aria-current="variant === 'ordinary' ? 'page' : undefined"
           >Introduktion</a>
-        </li>
+        </li>{{ " " }}
         <li>
           <a :href="titlesHref">Verk</a>
-        </li>
+        </li>{{ " " }}
         <li v-if="profile.hasDramawebben" :class="{ active: variant === 'dramawebben' }">
           <a
             :href="dramawebbenHref"
             :aria-current="variant === 'dramawebben' ? 'page' : undefined"
           >Dramawebben</a>
-        </li>
+        </li>{{ " " }}
         <li v-if="profile.searchUrl">
           <a :href="profile.searchUrl">Sök i texterna</a>
         </li>
@@ -41,7 +41,15 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
     </nav>
 
     <div class="page_content">
-      <div v-if="variant === 'ordinary'" class="lg:flex">
+      <div
+        v-if="variant === 'ordinary'"
+        class="lg:flex"
+        :class="{
+          'author-profile-sections--empty': !profile.portrait
+            && !profile.relatedLinks.length
+            && !profile.encyclopediaLinks.length
+        }"
+      >
         <div class="introtext content unbox show_more">
           <div v-html="profile.introductionHtml" />
           <div v-if="profile.introductionBy" class="introauthor">
@@ -126,8 +134,8 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
             <div class="drama_subtitle sc"><a href="/dramawebben">Dramawebben</a></div>
           </div>
           <div v-if="profile.sourceHtml.length" class="source">
-            <span class="source_header sc">
-              {{ profile.sourceHtml.length === 1 ? "Källa" : "Källor" }}
+            <span class="source_header sc drama-source-header" aria-label="Källa">
+              Källa
             </span>
             <ul>
               <li v-for="(source, index) in profile.sourceHtml" :key="index">
@@ -147,7 +155,7 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
               <em>{{ name }}</em><span v-if="index < profile.otherNames.length - 1">, </span>
             </template>
           </div>
-        </div>
+        </div>{{ " " }}
         <div v-if="profile.portrait" class="portrait_container sm:inline-block sm:ml-8">
           <img class="author_img" :src="profile.portrait.url">
           <figcaption v-if="profile.portrait.captionHtml" v-html="profile.portrait.captionHtml" />
