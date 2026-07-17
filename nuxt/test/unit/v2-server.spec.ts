@@ -349,6 +349,16 @@ describe("v2 fixture server operations", () => {
     }
 
     expect(await authorWorksRequests()).toEqual({ requests: expectedRequests })
+    expect(sparseAuthorWorks.author.related_links).toEqual([
+      {
+        label: "Presentation",
+        url: "/författare/Lagerl%C3%B6fS/titlar/PresentationOmLagerlof/sida/-1/etext"
+      },
+      {
+        label: "Bibliografi",
+        url: "/författare/Lagerl%C3%B6fS/bibliografi"
+      }
+    ])
   })
 
   test("Author Works returns typed missing, invalid, failed, and malformed states", async () => {

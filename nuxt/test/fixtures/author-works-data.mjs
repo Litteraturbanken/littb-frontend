@@ -412,7 +412,16 @@ export const sparseAuthorWorks = {
     audio_url: null,
     map_url: null,
     portrait: null,
-    related_links: [],
+    related_links: [
+      {
+        label: "Presentation",
+        url: "/författare/Lagerl%C3%B6fS/titlar/PresentationOmLagerlof/sida/-1/etext"
+      },
+      {
+        label: "Bibliografi",
+        url: "/författare/Lagerl%C3%B6fS/bibliografi"
+      }
+    ],
     encyclopedia_links: []
   },
   authored_sections: [
