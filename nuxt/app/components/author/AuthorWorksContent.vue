@@ -86,7 +86,7 @@ function isDownloadTitle(work: AuthorWork): boolean {
                   <tr v-for="work in section.items" :key="`${work.work_id}:${work.title_id}`">
                     <td class="mediatypes">
                       <span
-                        v-for="action in orderedAuthorWorkActions(work.actions)"
+                        v-for="(action, actionIndex) in orderedAuthorWorkActions(work.actions)"
                         :key="`${action.kind}:${action.media_type}:${action.url}`"
                       >
                         <a
@@ -96,7 +96,10 @@ function isDownloadTitle(work: AuthorWork): boolean {
                           :download="action.download_filename"
                         >{{ action.media_type }}</a>
                         <a v-else :href="action.url">{{ action.media_type }}</a>
-                        <span>&nbsp; </span>
+                        <span
+                          v-if="actionIndex < work.actions.length - 1"
+                        ><span>&nbsp;</span><span>&nbsp;</span><span>&nbsp;</span></span>
+                        <span v-else>&nbsp;&nbsp;</span>
                       </span>
                     </td>
                     <td v-if="section.show_author">
