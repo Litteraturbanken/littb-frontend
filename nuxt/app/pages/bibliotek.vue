@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import type { LocationQuery } from "vue-router"
+
+definePageMeta({ alias: ["/epub"] })
+
 type LibraryIndex =
   | "etext"
   | "faksimil"
@@ -31,6 +35,40 @@ type LibraryResponse = {
   suggest: unknown[]
   failed: boolean
 }
+
+type LibraryMode = "all" | "epub"
+type RelevanceSortKey = "relevans" | "forfattare" | "titlar" | "kronologi"
+type EpubSortKey = "forfattare" | "titlar" | "popularitet" | "kronologi"
+
+type LibraryRouteState = {
+  standalone: boolean
+  mode: LibraryMode
+  filter: string
+  sort: RelevanceSortKey | EpubSortKey
+  page: number
+}
+
+type EpubResult = {
+  title: string
+  year: string
+  surname: string
+  roleSuffix: string
+  titleHref: string
+  authorHref: string
+  downloadHref: string
+}
+
+type EpubResponse = {
+  data: EpubResult[]
+  hits: number
+  distinctHits: number
+  suggest: unknown[]
+  failed: boolean
+}
+
+type LibraryPageData =
+  | { mode: "all", response: LibraryResponse }
+  | { mode: "epub", response: EpubResponse }
 
 type UnknownRecord = Record<string, unknown>
 
@@ -279,17 +317,95 @@ function emptyLibraryResponse(failed = false): LibraryResponse {
   return { data: [], hits: 0, suggest: [], failed }
 }
 
-type SortKey = "relevans" | "forfattare" | "titlar" | "kronologi"
+function safePathSegment(value: string): string {
+  if (!value || value === "." || value === ".."
+    || /[\/\\\u0000-\u001F\u007F]/.test(value)) return ""
+  try {
+    return encodeURIComponent(value)
+  } catch {
+    return ""
+  }
+}
+
+function epubStringAt(record: UnknownRecord | null, key: string): string {
+  const value = record?.[key]
+  return typeof value === "string" ? value.trim() : ""
+}
+
+function parseEpubResult(value: unknown): EpubResult | null {
+  const record = asRecord(value)
+  if (!record || record.has_epub !== true) return null
+  const title = epubStringAt(record, "shorttitle") || epubStringAt(record, "title")
+  const titleId = epubStringAt(record, "work_titleid") || epubStringAt(record, "titleid")
+  const mediaType = epubStringAt(record, "mediatype")
+  const mainAuthor = recordAt(record, "main_author")
+  const authorId = epubStringAt(mainAuthor, "authorid")
+  const fullName = epubStringAt(mainAuthor, "full_name")
+  const surname = epubStringAt(mainAuthor, "surname")
+  const year = imprintYear(record)
+  const hasEpubExport = recordsAt(record, "export")
+    .some(item => epubStringAt(item, "type") === "epub")
+  const encodedAuthor = safePathSegment(authorId)
+  const encodedTitle = safePathSegment(titleId)
+  const encodedMedia = safePathSegment(mediaType)
+  if (!title || !encodedTitle || !encodedMedia || !encodedAuthor || !fullName || !surname
+    || !year || !hasEpubExport) return null
+  const role = epubStringAt(mainAuthor, "type")
+  const roleSuffix = role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : ""
+  return {
+    title,
+    year,
+    surname,
+    roleSuffix,
+    titleHref: `/författare/${encodedAuthor}/titlar/${encodedTitle}/${encodedMedia}?om-boken`,
+    authorHref: `/författare/${encodedAuthor}`,
+    downloadHref: `/txt/epub/${encodedAuthor}_${encodedTitle}.epub`
+  }
+}
+
+function parseEpubResponse(value: unknown): EpubResponse {
+  const record = asRecord(value)
+  const suggest = record?.suggest
+  if (!record || !Array.isArray(record.data) || typeof record.hits !== "number"
+    || !Number.isFinite(record.hits) || typeof record.distinct_hits !== "number"
+    || !Number.isFinite(record.distinct_hits)
+    || (suggest !== null && suggest !== undefined && !Array.isArray(suggest))) {
+    throw new Error("Invalid Library EPUB response")
+  }
+  return {
+    data: record.data.map(parseEpubResult).filter((item): item is EpubResult => item !== null),
+    hits: record.hits,
+    distinctHits: record.distinct_hits,
+    suggest: Array.isArray(suggest) ? suggest : [],
+    failed: false
+  }
+}
+
+function emptyEpubResponse(failed = false): EpubResponse {
+  return { data: [], hits: 0, distinctHits: 0, suggest: [], failed }
+}
 
 const resultTypes = "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress"
 const excludedFields = "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types,wikidata.wikipedia_text,content_vector"
 const backgroundPath = "/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg"
+const standaloneBackgroundPath = "/red/bilder/bakgrundsbilder/ljudlandskap.jpg"
 const description = "Blädda bland Litteraturbankens författare och titlar."
 
-const sorts: Array<{ key: SortKey, label: string, expression: string }> = [
+const sorts: Array<{ key: RelevanceSortKey, label: string, expression: string }> = [
   { key: "relevans", label: "Relevans", expression: "_score|desc" },
   { key: "forfattare", label: "Författare", expression: "main_author.name_for_index|asc,sortkey|asc" },
   { key: "titlar", label: "Titel", expression: "sortkey|asc" },
+  { key: "kronologi", label: "Tryckår", expression: "sort_date_imprint.date|desc" }
+]
+
+const epubResultTypes = "etext,faksimil,pdf"
+const epubExcludedFields = "text,parts,sourcedesc,pages,errata"
+const epubIncludedFields = "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sort_date_imprint.plain,main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword"
+const epubQueryPrefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+const epubSorts: Array<{ key: EpubSortKey, label: string, expression: string }> = [
+  { key: "forfattare", label: "Författare", expression: "main_author.name_for_index|asc,sortkey|asc" },
+  { key: "titlar", label: "Titel", expression: "sortkey|asc" },
+  { key: "popularitet", label: "Populärt", expression: "popularity|desc" },
   { key: "kronologi", label: "Tryckår", expression: "sort_date_imprint.date|desc" }
 ]
 
@@ -301,8 +417,25 @@ function queryValue(value: unknown): string {
   return typeof value === "string" ? value : ""
 }
 
-function sortKey(value: unknown): SortKey {
-  return sorts.some(item => item.key === value) ? value as SortKey : "relevans"
+function relevanceSortKey(value: unknown): RelevanceSortKey {
+  return sorts.some(item => item.key === value) ? value as RelevanceSortKey : "relevans"
+}
+
+function epubSortKey(value: unknown): EpubSortKey {
+  return epubSorts.some(item => item.key === value) ? value as EpubSortKey : "popularitet"
+}
+
+function routeState(path: string, query: LocationQuery): LibraryRouteState {
+  const standalone = path === "/epub"
+  const mode: LibraryMode = standalone || queryValue(query.visa) === "epub" ? "epub" : "all"
+  const parsed = Number(queryValue(query.sida))
+  return {
+    standalone,
+    mode,
+    filter: queryValue(query.filter),
+    sort: mode === "epub" ? epubSortKey(query.sort) : relevanceSortKey(query.sort),
+    page: Number.isInteger(parsed) && parsed >= 1 ? parsed : 1
+  }
 }
 
 function sanitizeFilter(value: string): string {
@@ -312,7 +445,7 @@ function sanitizeFilter(value: string): string {
     .trim()
 }
 
-function requestUrl(base: string, filter: string, selectedSort: SortKey): string {
+function requestUrl(base: string, filter: string, selectedSort: RelevanceSortKey): string {
   const params = new URLSearchParams({
     exclude: excludedFields,
     show_all: "false",
@@ -330,7 +463,7 @@ function requestUrl(base: string, filter: string, selectedSort: SortKey): string
 async function fetchResults(
   base: string,
   filter: string,
-  selectedSort: SortKey,
+  selectedSort: RelevanceSortKey,
   signal?: AbortSignal
 ): Promise<LibraryResponse> {
   try {
@@ -345,27 +478,98 @@ async function fetchResults(
   }
 }
 
-const initialFilter = queryValue(route.query.filter)
-const initialSort = sortKey(route.query.sort)
+function epubRequestUrl(
+  base: string,
+  filter: string,
+  selectedSort: EpubSortKey,
+  page: number
+): string {
+  const sanitized = sanitizeFilter(filter)
+  const predicate = sanitized ? `has_epub:true AND (${sanitized})` : "has_epub:true"
+  const params = new URLSearchParams({
+    exclude: epubExcludedFields,
+    include: epubIncludedFields,
+    partial_string: "true",
+    q: `${epubQueryPrefix} (${predicate})`,
+    sort_field: epubSorts.find(item => item.key === selectedSort)?.expression ?? "popularity|desc",
+    from: String((page - 1) * 100),
+    to: String(page * 100),
+    suggest: "true"
+  })
+  return `${base.replace(/\/$/, "")}/query_string/${epubResultTypes}?${params}`
+}
+
+async function fetchEpubResults(
+  base: string,
+  filter: string,
+  selectedSort: EpubSortKey,
+  page: number,
+  signal?: AbortSignal
+): Promise<EpubResponse> {
+  try {
+    const response = await $fetch<unknown>(epubRequestUrl(base, filter, selectedSort, page), {
+      signal,
+      retry: 0
+    })
+    return parseEpubResponse(response)
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return emptyEpubResponse(true)
+  }
+}
+
+const initialState = Object.freeze(routeState(route.path, route.query))
+const standalone = initialState.standalone
+const mode = initialState.mode
+const initialFilter = initialState.filter
+const initialSort = initialState.mode === "all"
+  ? initialState.sort as RelevanceSortKey
+  : "relevans"
+const initialEpubSort = initialState.mode === "epub"
+  ? initialState.sort as EpubSortKey
+  : "popularitet"
 const initialApiBase = import.meta.server
   ? config.libraryApiBase
   : config.public.libraryApiBase
-const { data: initialData } = await useAsyncData(
-  `library:${route.fullPath}`,
-  () => fetchResults(initialApiBase, initialFilter, initialSort),
-  { default: () => emptyLibraryResponse() }
+const { data: initialData } = await useAsyncData<LibraryPageData>(
+  `library:${route.path}:${mode}:${initialFilter}:${initialState.sort}:${initialState.page}`,
+  async (): Promise<LibraryPageData> => initialState.mode === "epub"
+    ? {
+        mode: "epub",
+        response: await fetchEpubResults(
+          initialApiBase,
+          initialFilter,
+          initialEpubSort,
+          initialState.page
+        )
+      }
+    : {
+        mode: "all",
+        response: await fetchResults(initialApiBase, initialFilter, initialSort)
+      },
+  {
+    default: (): LibraryPageData => initialState.mode === "epub"
+      ? { mode: "epub", response: emptyEpubResponse() }
+      : { mode: "all", response: emptyLibraryResponse() }
+  }
 )
 
 const filter = ref(initialFilter)
 const selectedSort = ref(initialSort)
-const results = ref(initialData.value ?? emptyLibraryResponse())
+const selectedEpubSort = initialEpubSort
+const results = ref(
+  initialData.value?.mode === "all" ? initialData.value.response : emptyLibraryResponse()
+)
+const epubResults = initialData.value?.mode === "epub"
+  ? initialData.value.response
+  : emptyEpubResponse()
 const loading = ref(false)
 let timer: ReturnType<typeof setTimeout> | null = null
 let controller: AbortController | null = null
 let requestVersion = 0
 let ownedNavigation: { key: string, version: number } | null = null
 
-type QueryState = { filter: string, sort: SortKey }
+type QueryState = { filter: string, sort: RelevanceSortKey }
 
 function stateKey(state: QueryState): string {
   return JSON.stringify([state.filter, state.sort])
@@ -448,12 +652,12 @@ function resetSearch() {
   beginIntent({ filter: "", sort: selectedSort.value })
 }
 
-function selectSort(key: SortKey) {
+function selectSort(key: RelevanceSortKey) {
   beginIntent({ filter: filter.value, sort: key })
 }
 
 watch(
-  () => [queryValue(route.query.filter), sortKey(route.query.sort)] as const,
+  () => [queryValue(route.query.filter), relevanceSortKey(route.query.sort)] as const,
   ([nextFilter, nextSort]) => {
     const state = { filter: nextFilter, sort: nextSort }
     filter.value = state.filter
@@ -465,18 +669,105 @@ watch(
   { flush: "sync" }
 )
 
+const ownedQueryKeys = new Set(["visa", "filter", "sort", "sida"])
+
+function preservedQuery(): URLSearchParams {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(route.query)) {
+    if (ownedQueryKeys.has(key)) continue
+    if (Array.isArray(value)) {
+      for (const item of value) if (typeof item === "string") params.append(key, item)
+    } else if (typeof value === "string") {
+      params.append(key, value)
+    }
+  }
+  return params
+}
+
+function stateHref(state: {
+  mode: LibraryMode
+  filter: string
+  sort: RelevanceSortKey | EpubSortKey
+  page?: number
+}): string {
+  const params = preservedQuery()
+  if (state.mode === "epub") params.set("visa", "epub")
+  if (state.filter) params.set("filter", state.filter)
+  if (state.mode === "epub") {
+    params.set("sort", state.sort as EpubSortKey)
+  } else if (state.sort !== "relevans") {
+    params.set("sort", state.sort)
+  }
+  if (state.page !== undefined) params.set("sida", String(state.page))
+  const query = params.toString()
+  return `${route.path}${query ? `?${query}` : ""}`
+}
+
+const allTabHref = stateHref({
+  mode: "all",
+  filter: initialFilter,
+  sort: "relevans"
+})
+const epubTabHref = stateHref({
+  mode: "epub",
+  filter: initialFilter,
+  sort: selectedEpubSort
+})
+
+function epubSortHref(sort: EpubSortKey): string {
+  return stateHref({ mode: "epub", filter: initialFilter, sort, page: 1 })
+}
+
+const epubPageCount = Math.ceil(epubResults.distinctHits / 100)
+type PaginationItem = { key: string, page: number | null }
+
+function paginationItems(total: number, current: number): PaginationItem[] {
+  if (total <= 10) {
+    return Array.from({ length: total }, (_, index) => ({
+      key: `page-${index + 1}`,
+      page: index + 1
+    }))
+  }
+  let start = Math.max(2, Math.min(current - 3, total - 8))
+  let end = Math.min(total - 1, start + 7)
+  start = Math.max(2, end - 7)
+  const items: PaginationItem[] = [{ key: "page-1", page: 1 }]
+  if (start > 2) items.push({ key: "ellipsis-start", page: null })
+  for (let page = start; page <= end; page += 1) {
+    items.push({ key: `page-${page}`, page })
+  }
+  if (end < total - 1) items.push({ key: "ellipsis-end", page: null })
+  items.push({ key: `page-${total}`, page: total })
+  return items
+}
+
+const epubPages = paginationItems(epubPageCount, initialState.page)
+
+function epubPageHref(page: number): string {
+  return stateHref({
+    mode: "epub",
+    filter: initialFilter,
+    sort: selectedEpubSort,
+    page
+  })
+}
+
 function disposeLibraryRequest() {
   requestVersion += 1
   cancelPending()
 }
 
 useSeoMeta({
-  title: "Biblioteket – Titlar och författare | Litteraturbanken",
+  title: standalone
+    ? "E-böcker för nedladdning | Litteraturbanken"
+    : "Biblioteket – Titlar och författare | Litteraturbanken",
   description
 })
 useHead({
-  htmlAttrs: { style: `background: url('${backgroundPath}') no-repeat;` },
-  bodyAttrs: { class: "focus page-library ready" }
+  htmlAttrs: {
+    style: `background: url('${standalone ? standaloneBackgroundPath : backgroundPath}') no-repeat;`
+  },
+  bodyAttrs: { class: standalone ? "focus page-epub ready" : "focus page-library ready" }
 })
 
 onUnmounted(disposeLibraryRequest)
@@ -484,12 +775,12 @@ onUnmounted(disposeLibraryRequest)
 
 <template>
   <div>
-    <h1 class="text-6xl lg:ml-12">Botanisera i biblioteket</h1>
+    <h1 class="text-6xl lg:ml-12">{{ standalone ? "Hämta e-böcker" : "Botanisera i biblioteket" }}</h1>
     <div class="lg:ml-12" :class="{ searching: loading }">
       <div id="controls">
         <form
           class="lg:p-5 p-2 lg:border border-gray-900 w-full lg:max-w-5xl"
-          @submit.prevent="submitSearch"
+          @submit.prevent="mode === 'all' && submitSearch()"
         >
           <div class="main_input flex flex-wrap -ml-6 relative mb-8 items-center">
             <svg class="w-6 h-6 relative left-10 top-0 -mt-px" viewBox="0 0 24 24" fill="none" stroke="#7A1400" stroke-width="1.5" aria-hidden="true">
@@ -505,7 +796,7 @@ onUnmounted(disposeLibraryRequest)
               autocorrect="off"
               autocapitalize="none"
               spellcheck="false"
-              @input="scheduleSearch"
+              @input="mode === 'all' && scheduleSearch()"
             >
             <button type="submit" class="sr-only" tabindex="-1">Sök</button>
             <button
@@ -514,7 +805,7 @@ onUnmounted(disposeLibraryRequest)
               data-library-reset
               class="reset text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 -mr-8 cursor-pointer bg-transparent border-0 p-0"
               aria-label="Rensa sökning"
-              @click="resetSearch"
+              @click="mode === 'all' && resetSearch()"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -546,23 +837,67 @@ onUnmounted(disposeLibraryRequest)
             <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
           </div>
           <div class="btn-group p-0 mt-4 lg:mt-6">
-            <button data-library-tab type="button" class="sc btn btn-small text-base active">Alla träffar</button>
-            <button
-              v-for="tab in ['Nytt', 'Författare', 'Verk', 'Dikt, novell, etc.', 'Epub', 'PDF']"
-              :key="tab"
-              data-library-tab
-              data-deferred
-              type="button"
-              disabled
-              title="Inte tillgänglig i denna version"
-              class="sc btn btn-small text-base disabled"
-            >{{ tab }}</button>
+            <template v-if="standalone">
+              <a
+                data-library-tab="epub"
+                :href="epubTabHref"
+                aria-current="page"
+                class="sc btn btn-small text-base active"
+              >Epub</a>
+              <button
+                data-library-tab="pdf"
+                data-deferred
+                type="button"
+                disabled
+                title="Inte tillgänglig i denna version"
+                class="sc btn btn-small text-base disabled"
+              >PDF</button>
+            </template>
+            <template v-else>
+              <a
+                data-library-tab="all"
+                :href="allTabHref"
+                :aria-current="mode === 'all' ? 'page' : undefined"
+                class="sc btn btn-small text-base"
+                :class="{ active: mode === 'all' }"
+              >Alla träffar</a>
+              <button
+                v-for="tab in [
+                  { key: 'latest', label: 'Nytt' },
+                  { key: 'authors', label: 'Författare' },
+                  { key: 'works', label: 'Verk' },
+                  { key: 'parts', label: 'Dikt, novell, etc.' }
+                ]"
+                :key="tab.key"
+                :data-library-tab="tab.key"
+                data-deferred
+                type="button"
+                disabled
+                title="Inte tillgänglig i denna version"
+                class="sc btn btn-small text-base disabled"
+              >{{ tab.label }}</button>
+              <a
+                data-library-tab="epub"
+                :href="epubTabHref"
+                :aria-current="mode === 'epub' ? 'page' : undefined"
+                class="sc btn btn-small text-base"
+                :class="{ active: mode === 'epub' }"
+              >Epub</a>
+              <button
+                data-library-tab="pdf"
+                data-deferred
+                type="button"
+                disabled
+                title="Inte tillgänglig i denna version"
+                class="sc btn btn-small text-base disabled"
+              >PDF</button>
+            </template>
           </div>
         </form>
       </div>
       <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
         <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
-          <div class="result relevance pl-0 lg:ml-3 lg:ml-0 w-full lg:w-auto">
+          <div v-if="mode === 'all'" class="result relevance pl-0 lg:ml-3 lg:ml-0 w-full lg:w-auto">
             <div class="text-base">
               <div class="inline-block sc mr-2">Sortera: </div>
               <ul class="part_header top_header mb-4 inline-block">
@@ -622,6 +957,104 @@ onUnmounted(disposeLibraryRequest)
                 </tbody>
               </table>
             </div>
+          </div>
+          <div v-else class="result title pl-0 flex-column min-h-500">
+            <div class="flex items-baseline">
+              <div class="text-base">
+                <div class="inline-block sc mr-2">Sortera: </div>
+                <ul class="part_header top_header mb-4 inline-block">
+                  <li v-for="item in epubSorts" :key="item.key" class="inline-block sc">
+                    <a
+                      :href="epubSortHref(item.key)"
+                      class="sort_item"
+                      :class="{ active: selectedEpubSort === item.key }"
+                      :data-library-sort="item.key"
+                    >{{ item.label }}</a>
+                    <i v-if="selectedEpubSort === item.key" class="fa fa-caret-down" />
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div v-if="epubResults.failed" data-library-error>Ett fel uppstod.</div>
+            <div v-else-if="!epubResults.data.length" data-library-empty class="pb-4">Inga träffar.</div>
+            <table v-else id="table" class="table block w-full flex-grow -ml-2">
+              <tbody class="block">
+                <tr
+                  v-for="item in epubResults.data"
+                  :key="item.downloadHref"
+                  data-library-epub-row
+                  class="work_link grid w-full items-baseline transition-colors duration-150 hover:bg-gray-300 hover:bg-opacity-50 grid-cols-[minmax(0,1fr)_11rem_5rem] sm:grid-cols-[minmax(0,1fr)_7rem_11rem_5rem]"
+                >
+                  <td class="block min-w-0">
+                    <div class="text-ellipsis whitespace-nowrap overflow-hidden min-w-0 items-center gap-2">
+                      <div class="header_container min-w-0 flex-1 align-middle">
+                        <div class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight">
+                          <span class="title_inner">
+                            <a data-library-epub-title :href="item.titleHref">{{ item.title }}</a>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="text-left hidden sm:block w-28 text-base">
+                    <span data-library-epub-year>{{ item.year }}</span>
+                  </td>
+                  <td class="block w-44 text-left">
+                    <div class="text-ellipsis whitespace-nowrap overflow-hidden">
+                      <span class="author uppercase text-sm">
+                        <a data-library-epub-author :href="item.authorHref">{{ item.surname }}{{ item.roleSuffix }}</a>
+                      </span>
+                    </div>
+                  </td>
+                  <td class="block whitespace-nowrap w-20 text-right">
+                    <a
+                      data-library-epub-download
+                      class="sc block"
+                      :href="item.downloadHref"
+                      download
+                      target="_self"
+                    >Hämta</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <nav v-if="epubPageCount > 1" aria-label="Sidnavigation">
+              <ul class="pagination-sm sc">
+                <li>
+                  <span
+                    v-if="initialState.page <= 1"
+                    data-library-pagination-previous
+                    aria-disabled="true"
+                  >Föregående</span>
+                  <a
+                    v-else
+                    data-library-pagination-previous
+                    :href="epubPageHref(initialState.page - 1)"
+                  >Föregående</a>
+                </li>
+                <li v-for="item in epubPages" :key="item.key">
+                  <span v-if="item.page === null" aria-hidden="true">…</span>
+                  <a
+                    v-else
+                    :data-library-page="item.page"
+                    :href="epubPageHref(item.page)"
+                    :aria-current="item.page === initialState.page ? 'page' : undefined"
+                  >{{ item.page }}</a>
+                </li>
+                <li>
+                  <span
+                    v-if="initialState.page >= epubPageCount"
+                    data-library-pagination-next
+                    aria-disabled="true"
+                  >Nästa</span>
+                  <a
+                    v-else
+                    data-library-pagination-next
+                    :href="epubPageHref(initialState.page + 1)"
+                  >Nästa</a>
+                </li>
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
