@@ -93,6 +93,7 @@ let readerRequests = []
 let readerHitRequests = []
 let readerHitFailure = false
 let readerHitDelays = {}
+let exportFaksimilRequests = []
 let libraryRelevanceRequests = []
 let libraryRelevanceFailure = false
 let libraryRelevanceDelays = {}
@@ -654,6 +655,13 @@ const server = createServer(async (request, response) => {
     readerHitDelays = {}
     return sendJson(response, 200, { delays: readerHitDelays })
   }
+  if (url.pathname === "/_export_faksimil_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: exportFaksimilRequests })
+  }
+  if (url.pathname === "/_export_faksimil_requests" && request.method === "DELETE") {
+    exportFaksimilRequests = []
+    return sendJson(response, 200, { requests: exportFaksimilRequests })
+  }
   if (url.pathname === "/_library_relevance_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: libraryRelevanceRequests })
   }
@@ -778,6 +786,19 @@ const server = createServer(async (request, response) => {
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
       "base64"
     ))
+  }
+
+  if (
+    request.method === "GET"
+    && /^\/export\/faksimil(?:\/|$)/.test(url.pathname)
+  ) {
+    exportFaksimilRequests.push(`${url.pathname}${url.search}`)
+    return sendBody(
+      response,
+      200,
+      "application/pdf",
+      Buffer.from("author-works-generated-pdf-fixture")
+    )
   }
 
   if (

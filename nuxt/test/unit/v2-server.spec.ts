@@ -287,7 +287,8 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_library_query_delays`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_failure`, { method: "DELETE" }),
-      fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" })
+      fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_export_faksimil_requests`, { method: "DELETE" })
     ])
   })
 

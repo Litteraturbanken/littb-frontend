@@ -78,6 +78,10 @@ export default defineNuxtConfig({
           target: readerSourceProxyTarget,
           changeOrigin: true
         },
+        "^/export/faksimil(?:/|$)": {
+          target: readerSourceProxyTarget,
+          changeOrigin: true
+        },
         "^/litteraturkartan(?:[/?]|$)": {
           target: litteraturkartanProxyTarget,
           changeOrigin: true
