@@ -26,7 +26,15 @@ export const readerWorkInfoResponse = {
   ]
 }
 
-export const readerPageHtml = `
+export const readerPageHtmlByIndex = Object.freeze({
+  1: `
+<div class="pname" pname="-3">
+  <div class="titelsida center">
+    <div class="_p title"><span class="w" id="w1_1">FÖREGÅENDE</span> <span class="w" id="w1_2">SIDA</span></div>
+  </div>
+</div>
+`,
+  2: `
 <div class="pname" pname="-2">
   <div class="titelsida center">
     <div class="_p title"><span class="w" id="w2_1">DOKTOR</span> <span class="w" id="w2_2">GLAS</span></div>
@@ -38,7 +46,15 @@ export const readerPageHtml = `
     <div class="_p publisher"><span class="w">TESTFÖRLAGET</span></div>
   </div>
 </div>
+`,
+  3: `
+<div class="pname" pname="-1">
+  <div class="titelsida center">
+    <div class="_p title"><span class="w" id="w3_1">NÄSTA</span> <span class="w" id="w3_2">SIDA</span></div>
+  </div>
+</div>
 `
+})
 
 const phraseHits = [
   {

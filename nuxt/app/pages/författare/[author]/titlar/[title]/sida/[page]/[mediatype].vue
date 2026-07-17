@@ -209,7 +209,9 @@ const pageParam = computed(() => routeParam("page"))
 const mediaTypeParam = computed(() => routeParam("mediatype"))
 const requestFetch = useRequestFetch()
 
-type CurrentReaderPage = { identity: string, reader: ReaderPage }
+type CurrentReaderPage =
+  | { status: "success", identity: string, reader: ReaderPage }
+  | { status: "error", identity: string }
 
 const { data, error } = await useAsyncData<CurrentReaderPage>(
   computed(() => `reader:${route.fullPath}`),
@@ -221,26 +223,46 @@ const { data, error } = await useAsyncData<CurrentReaderPage>(
       pageParam.value,
       mediaTypeParam.value
     ].map(encodeURIComponent).join("/")
-    const currentReader = await requestFetch<ReaderPage>(`/api/reader/${readerApiUrl}`)
-    return { identity, reader: currentReader }
+    try {
+      const currentReader = await requestFetch<ReaderPage>(`/api/reader/${readerApiUrl}`)
+      return { status: "success" as const, identity, reader: currentReader }
+    } catch (requestError) {
+      if (import.meta.server) throw requestError
+      return { status: "error" as const, identity }
+    }
   },
-  { watch: [() => route.fullPath] }
+  { lazy: true, watch: [() => route.fullPath] }
 )
 
-if (error.value) {
-  throw createError({
-    statusCode: error.value.statusCode ?? 500,
-    statusMessage: error.value.statusMessage ?? "Reader page unavailable"
-  })
-}
-if (!data.value) {
-  throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
+if (import.meta.server) {
+  if (error.value) {
+    throw createError({
+      statusCode: error.value.statusCode ?? 500,
+      statusMessage: error.value.statusMessage ?? "Reader page unavailable"
+    })
+  }
+  if (!data.value || data.value.status !== "success") {
+    throw createError({ statusCode: 502, statusMessage: "Reader page unavailable" })
+  }
 }
 
-const reader = computed(() => data.value!.reader)
-const authorHref = computed(() => readerAuthorHref(authorParam.value))
+const reader = computed(() => {
+  const current = data.value
+  return current?.status === "success" && current.identity === route.fullPath
+    ? current.reader
+    : null
+})
+const primaryReaderFailed = computed(
+  () => data.value?.status === "error" && data.value.identity === route.fullPath
+)
+const authorHref = computed(() => reader.value
+  ? readerAuthorHref(authorParam.value)
+  : ""
+)
 const pageTitle = computed(
-  () => `${reader.value.title} sida ${reader.value.pageName} etext | Litteraturbanken`
+  () => reader.value
+    ? `${reader.value.title} sida ${reader.value.pageName} etext | Litteraturbanken`
+    : "Litteraturbanken"
 )
 
 const hitFetch = await useAsyncData(
@@ -248,13 +270,17 @@ const hitFetch = await useAsyncData(
         "reader-hit",
         route.fullPath,
         data.value?.identity ?? "pending",
-        data.value?.reader.workId ?? "pending"
+        data.value?.status === "success" ? data.value.reader.workId : "pending"
       ].join(":")),
       async () => {
         const identity = route.fullPath
         const state = searchState.value
         const currentReader = data.value
-        if (!state || !currentReader || currentReader.identity !== identity) {
+        if (
+          !state ||
+          currentReader?.status !== "success" ||
+          currentReader.identity !== identity
+        ) {
           return { status: "inactive" as const, identity }
         }
         const offset = Math.max(state.hit - 1, 0)
@@ -292,7 +318,8 @@ const hitResponse = computed(() => {
   const value = hitFetch.data.value
   return value?.status === "success" &&
     value.identity === route.fullPath &&
-    data.value?.identity === route.fullPath
+    data.value?.status === "success" &&
+    data.value.identity === route.fullPath
     ? value.response
     : null
 })
@@ -317,6 +344,7 @@ const nextHit = computed(() => {
   ) ?? null
 })
 const markedReaderHtml = computed(() => {
+  if (!reader.value) return ""
   if (!activeHit.value) return reader.value.html
   return markReaderHtml(
     reader.value.html,
@@ -348,14 +376,16 @@ type LastPageView = {
 }
 
 function writeLastPageView(): void {
+  const currentReader = reader.value
+  if (!currentReader) return
   const current: LastPageView = {
-    pageix: reader.value.pageIndex,
-    pagename: reader.value.pageName,
+    pageix: currentReader.pageIndex,
+    pagename: currentReader.pageName,
     timestamp: new Date().toISOString(),
-    mediatype: reader.value.mediaType,
-    lbworkid: reader.value.workId,
+    mediatype: currentReader.mediaType,
+    lbworkid: currentReader.workId,
     author: authorParam.value,
-    label: reader.value.title,
+    label: currentReader.title,
     url: route.fullPath
   }
   try {
@@ -385,24 +415,26 @@ function writeLastPageView(): void {
 
 onMounted(writeLastPageView)
 watch(
-  [() => route.fullPath, () => data.value?.identity],
-  ([fullPath, identity]) => {
-    if (identity === fullPath) writeLastPageView()
+  [() => route.fullPath, () => data.value?.identity, () => data.value?.status],
+  ([fullPath, identity, status]) => {
+    if (status === "success" && identity === fullPath) writeLastPageView()
   },
   { flush: "post" }
 )
 
 useSeoMeta({
   title: pageTitle,
-  description: () => reader.value.description
+  description: () => reader.value?.description
 })
 
 useHead(() => ({
   bodyAttrs: { class: "focus page-reading ready" },
-  link: [
-    { rel: "stylesheet", href: reader.value.sharedStylesheetUrl },
-    { rel: "stylesheet", href: reader.value.workStylesheetUrl }
-  ]
+  link: reader.value
+    ? [
+        { rel: "stylesheet", href: reader.value.sharedStylesheetUrl },
+        { rel: "stylesheet", href: reader.value.workStylesheetUrl }
+      ]
+    : []
 }))
 
 function readerTarget(pageName: string, hit?: number): RouteLocationRaw {
@@ -449,68 +481,69 @@ function hitHref(hit: WorkSearchHit): string {
 
 <template>
   <div class="reader-page">
-    <section class="reader_main state-not-parallel" :aria-label="`${reader.title}, sida ${reader.pageName}`">
-      <div class="etext txt" v-html="markedReaderHtml" />
-    </section>
+    <template v-if="reader">
+      <section class="reader_main state-not-parallel" :aria-label="`${reader.title}, sida ${reader.pageName}`">
+        <div class="etext txt" v-html="markedReaderHtml" />
+      </section>
 
-    <aside class="reader-context" aria-label="Läsinformation och sidnavigering">
-      <div class="reader-work">
-        <a class="author" :href="authorHref">{{ reader.author.name }}</a>
-        <div>
-          <span class="title">{{ reader.title }}</span>
-          <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>
+      <aside class="reader-context" aria-label="Läsinformation och sidnavigering">
+        <div class="reader-work">
+          <a class="author" :href="authorHref">{{ reader.author.name }}</a>
+          <div>
+            <span class="title">{{ reader.title }}</span>
+            <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>
+          </div>
         </div>
-      </div>
 
-      <hr>
+        <hr>
 
-      <div v-if="searchState" class="reader-search-state" aria-live="polite">
-        <p v-if="hitPosition" class="reader-search-position">{{ hitPosition }}</p>
-        <p v-if="hitMessage" class="reader-search-message">{{ hitMessage }}</p>
-        <nav
-          v-if="previousHit || nextHit"
-          class="reader-hit-navigation"
-          aria-label="Sökträffsnavigering"
-        >
+        <div v-if="searchState" class="reader-search-state" aria-live="polite">
+          <p v-if="hitPosition" class="reader-search-position">{{ hitPosition }}</p>
+          <p v-if="hitMessage" class="reader-search-message">{{ hitMessage }}</p>
+          <nav
+            v-if="previousHit || nextHit"
+            class="reader-hit-navigation"
+            aria-label="Sökträffsnavigering"
+          >
+            <NuxtLink
+              v-if="previousHit"
+              v-slot="{ navigate }"
+              custom
+              :to="readerTarget(previousHit.page_name, previousHit.index)"
+            ><a rel="prev" :href="hitHref(previousHit)" @click="navigate">Föregående sökträff</a></NuxtLink>
+            <span v-else />
+            <NuxtLink
+              v-if="nextHit"
+              v-slot="{ navigate }"
+              custom
+              :to="readerTarget(nextHit.page_name, nextHit.index)"
+            ><a rel="next" :href="hitHref(nextHit)" @click="navigate">Nästa sökträff</a></NuxtLink>
+          </nav>
+        </div>
+
+        <hr v-if="searchState">
+
+        <nav class="reader-navigation" aria-label="Sidnavigering">
           <NuxtLink
-            v-if="previousHit"
+            v-if="reader.previousPageName"
             v-slot="{ navigate }"
             custom
-            :to="readerTarget(previousHit.page_name, previousHit.index)"
-          ><a rel="prev" :href="hitHref(previousHit)" @click="navigate">Föregående sökträff</a></NuxtLink>
+            :to="readerTarget(reader.previousPageName)"
+          ><a rel="prev" :href="pageHref(reader.previousPageName)" @click="navigate">Föregående sida</a></NuxtLink>
           <span v-else />
           <NuxtLink
-            v-if="nextHit"
+            v-if="reader.nextPageName"
             v-slot="{ navigate }"
             custom
-            :to="readerTarget(nextHit.page_name, nextHit.index)"
-          ><a rel="next" :href="hitHref(nextHit)" @click="navigate">Nästa sökträff</a></NuxtLink>
+            :to="readerTarget(reader.nextPageName)"
+          ><a rel="next" :href="pageHref(reader.nextPageName)" @click="navigate">Nästa sida</a></NuxtLink>
         </nav>
-      </div>
 
-      <hr v-if="searchState">
+        <p class="reader-page-position">{{ reader.pageName }} av {{ reader.pageCount }}</p>
+      </aside>
 
-      <nav class="reader-navigation" aria-label="Sidnavigering">
-        <NuxtLink
-          v-if="reader.previousPageName"
-          v-slot="{ navigate }"
-          custom
-          :to="readerTarget(reader.previousPageName)"
-        ><a rel="prev" :href="pageHref(reader.previousPageName)" @click="navigate">Föregående sida</a></NuxtLink>
-        <span v-else />
-        <NuxtLink
-          v-if="reader.nextPageName"
-          v-slot="{ navigate }"
-          custom
-          :to="readerTarget(reader.nextPageName)"
-        ><a rel="next" :href="pageHref(reader.nextPageName)" @click="navigate">Nästa sida</a></NuxtLink>
-      </nav>
-
-      <p class="reader-page-position">{{ reader.pageName }} av {{ reader.pageCount }}</p>
-    </aside>
-
-    <ClientOnly>
-      <Teleport v-if="searchState" to="#toolkit">
+      <ClientOnly>
+        <Teleport v-if="searchState" to="#toolkit">
         <i
           class="spinner_search fa fa-spinner fa-pulse"
           :class="{ searching: hitFetch?.status.value === 'pending' }"
@@ -556,7 +589,19 @@ function hitHref(hit: WorkSearchHit): string {
             </div>
           </div>
         </nav>
-      </Teleport>
-    </ClientOnly>
+        </Teleport>
+      </ClientOnly>
+    </template>
+    <p
+      v-else-if="primaryReaderFailed"
+      class="reader-primary-error"
+      role="alert"
+    >Läsarsidan kunde inte hämtas.</p>
+    <p
+      v-else
+      class="reader-primary-loading"
+      role="status"
+      aria-live="polite"
+    >Hämtar läsarsidan …</p>
   </div>
 </template>

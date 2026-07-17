@@ -29,7 +29,7 @@ import {
   strindbergAuthorProfile
 } from "../fixtures/author-profile-data.mjs"
 import {
-  readerPageHtml,
+  readerPageHtmlByIndex,
   readerSearchHitResponse
 } from "../fixtures/reader-data.mjs"
 
@@ -1528,14 +1528,39 @@ describe("v2 fixture server operations", () => {
     expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({ requests: [] })
   })
 
-  test("exposes the generated Reader hit contract and separate source word spans", () => {
+  test("exposes the generated Reader hit contract and page-specific source word spans", () => {
     expect(generatedReaderHitContract).toBeNull()
     expect(generatedReaderHitResponse.items[0]?.highlight).toEqual({
       from_word_id: "w2_1",
       to_word_id: "w2_2"
     })
-    expect(readerPageHtml).toContain('<span class="w" id="w2_1">DOKTOR</span>')
-    expect(readerPageHtml).toContain('<span class="w" id="w2_2">GLAS</span>')
+    expect(readerPageHtmlByIndex[1]).toContain('pname="-3"')
+    expect(readerPageHtmlByIndex[1]).toContain('<span class="w" id="w1_1">')
+    expect(readerPageHtmlByIndex[1]).not.toContain('id="w2_1"')
+    expect(readerPageHtmlByIndex[2]).toContain('pname="-2"')
+    expect(readerPageHtmlByIndex[2]).toContain('<span class="w" id="w2_1">DOKTOR</span>')
+    expect(readerPageHtmlByIndex[2]).toContain('<span class="w" id="w2_2">GLAS</span>')
+    expect(readerPageHtmlByIndex[3]).toContain('pname="-1"')
+    expect(readerPageHtmlByIndex[3]).toContain('<span class="w" id="w3_1">')
+    expect(readerPageHtmlByIndex[3]).toContain('<span class="w" id="w3_2">')
+    expect(readerPageHtmlByIndex[3]).not.toContain('id="w2_2"')
+  })
+
+  test("serves the matching Reader HTML body for every declared source page", async () => {
+    for (const [pageIndex, pageName, wordId] of [
+      [1, "-3", "w1_1"],
+      [2, "-2", "w2_1"],
+      [3, "-1", "w3_1"]
+    ] as const) {
+      const response = await fetch(
+        `${origin}/txt/lb-reader-doktor-glas/res_${String(pageIndex).padStart(5, "0")}.html` +
+        "?username=app"
+      )
+      expect(response.status).toBe(200)
+      const html = await response.text()
+      expect(html).toContain(`pname="${pageName}"`)
+      expect(html).toContain(`id="${wordId}"`)
+    }
   })
 
   test("serves exact public and private Reader hit windows with absolute indices", async () => {

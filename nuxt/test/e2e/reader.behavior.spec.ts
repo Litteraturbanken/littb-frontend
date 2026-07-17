@@ -173,7 +173,7 @@ test("hydrates the SSR phrase marker and active toolkit without a duplicate publ
   expect(problems).toEqual([])
 })
 
-test("a single first and last hit mark one word and omit unavailable toolkit links", async ({
+test("a singleton hit marks one word and omits both toolkit links", async ({
   page
 }) => {
   const problems = captureBrowserProblems(page)
@@ -186,6 +186,46 @@ test("a single first and last hit mark one word and omit unavailable toolkit lin
   const toolkit = page.locator("#toolkit > #search_nav")
   await expect(toolkit).toContainText("1 sökträff")
   await expect(toolkit.getByRole("link", { name: "Föregående sökträff" })).toHaveCount(0)
+  await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
+test("the first of several hits omits previous and keeps the exact next target", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(
+    "/författare/SöderbergH/titlar/DoktorGlas/sida/-3/etext?q=doktor%20glas&hit=0",
+    { waitUntil: "networkidle" }
+  )
+
+  await expect(page.locator("#w1_1.markee")).toHaveCount(1)
+  const toolkit = page.locator("#toolkit > #search_nav")
+  await expect(toolkit).toContainText("Träff 1, sida -3")
+  await expect(toolkit.getByRole("link", { name: "Föregående sökträff" })).toHaveCount(0)
+  await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toHaveAttribute(
+    "href",
+    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?q=doktor+glas&hit=1"
+  )
+  expect(problems).toEqual([])
+})
+
+test("the last of several hits keeps the exact previous target and omits next", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(
+    "/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor%20glas&hit=4",
+    { waitUntil: "networkidle" }
+  )
+
+  await expect(page.locator("#w3_2.markee")).toHaveCount(1)
+  const toolkit = page.locator("#toolkit > #search_nav")
+  await expect(toolkit).toContainText("Träff 5, sida -1")
+  await expect(toolkit.getByRole("link", { name: "Föregående sökträff" })).toHaveAttribute(
+    "href",
+    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=3"
+  )
   await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
   expect(problems).toEqual([])
 })
@@ -230,6 +270,7 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
   await page.locator("#search_nav").getByRole("link", { name: "Föregående sökträff" }).click()
   await expect(page).toHaveURL(/\/sida\/-3\/etext\?q=doktor\+glas&hit=0$/)
   await expect(page.locator(".reader-page-position")).toHaveText("-3 av 3")
+  await expect(page.locator("#w1_1.markee")).toHaveCount(1)
   await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -3")
   await expect(page.locator("#search_nav").getByRole("link", {
     name: "Föregående sökträff"
@@ -245,6 +286,82 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
   await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
   await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
   await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+
+  await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=3$/)
+  await expect(page.locator("#w3_1.markee")).toHaveCount(1)
+  expect(problems).toEqual([])
+})
+
+test("a delayed primary Reader request never renders the prior page under the new URL", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
+  const historyBefore = await rawStoredPageViews(page)
+  let releaseRequest!: () => void
+  const release = new Promise<void>(resolve => { releaseRequest = resolve })
+  let markRequestStarted!: () => void
+  const requestStarted = new Promise<void>(resolve => { markRequestStarted = resolve })
+  await page.route("**/api/reader/**/-1/etext", async route => {
+    markRequestStarted()
+    await release
+    await route.continue()
+  })
+
+  await page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }).click()
+  await requestStarted
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
+  await expect(page.locator(".reader-primary-loading")).toHaveText("Hämtar läsarsidan …")
+  await expect(page.locator(".reader_main")).toHaveCount(0)
+  await expect(page.locator(".reader-page-position")).toHaveCount(0)
+  await expect(page.locator("#toolkit > #search_nav")).toHaveCount(0)
+  await expect(page).toHaveTitle("Litteraturbanken")
+  await expect(page.locator('meta[name="description"]')).toHaveCount(0)
+  await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(0)
+  await expect(page.locator('link[href="/txt/css/lb-reader-doktor-glas-etext.css"]'))
+    .toHaveCount(0)
+  expect(await rawStoredPageViews(page)).toBe(historyBefore)
+
+  releaseRequest()
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("NÄSTA SIDA")
+  await expect(page).toHaveTitle("Doktor Glas sida -1 etext | Litteraturbanken")
+  await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(1)
+  await expect(page.locator('link[href="/txt/css/lb-reader-doktor-glas-etext.css"]'))
+    .toHaveCount(1)
+  await expect.poll(async () => (await storedPageViews(page))[0]?.pagename).toBe("-1")
+  expect(problems).toEqual([])
+})
+
+test("a failed primary Reader client request shows a bounded state without stale content or History", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
+  const historyBefore = await rawStoredPageViews(page)
+  await page.route("**/api/reader/**/-1/etext", async route => {
+    await route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Reader unavailable" })
+    })
+  })
+
+  await page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }).click()
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
+  await expect(page.locator(".reader-primary-error")).toHaveText(
+    "Läsarsidan kunde inte hämtas."
+  )
+  await expect(page.locator(".reader_main")).toHaveCount(0)
+  await expect(page.locator(".reader-page-position")).toHaveCount(0)
+  await expect(page.locator("#toolkit > #search_nav")).toHaveCount(0)
+  await expect(page).toHaveTitle("Litteraturbanken")
+  await expect(page.locator('meta[name="description"]')).toHaveCount(0)
+  await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(0)
+  await expect(page.locator('link[href="/txt/css/lb-reader-doktor-glas-etext.css"]'))
+    .toHaveCount(0)
+  expect(await rawStoredPageViews(page)).toBe(historyBefore)
   expect(problems).toEqual([])
 })
 

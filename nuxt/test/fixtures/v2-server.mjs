@@ -7,7 +7,7 @@ import { libraryQueryStringResponse } from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import {
-  readerPageHtml,
+  readerPageHtmlByIndex,
   readerSearchHitResponse,
   readerWorkInfoResponse,
   sharedReaderCss,
@@ -676,15 +676,16 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, readerWorkInfoResponse)
   }
 
-  if (
-    request.method === "GET" &&
-    /^\/txt\/lb-reader-doktor-glas\/res_0000[123]\.html$/.test(url.pathname)
-  ) {
+  const readerPageMatch = request.method === "GET"
+    ? /^\/txt\/lb-reader-doktor-glas\/res_0000([123])\.html$/.exec(url.pathname)
+    : null
+  if (readerPageMatch) {
     readerRequests.push(`${url.pathname}${url.search}`)
     if (url.searchParams.get("username") !== "app") {
       return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
     }
-    return sendBody(response, 200, "text/html; charset=utf-8", readerPageHtml)
+    const pageHtml = readerPageHtmlByIndex[Number(readerPageMatch[1])]
+    return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
   }
 
   if (request.method === "GET" && url.pathname === "/red/css/etext.css") {
