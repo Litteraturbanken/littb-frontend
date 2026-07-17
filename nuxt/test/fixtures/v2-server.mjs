@@ -8,6 +8,7 @@ import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import {
   readerPageHtml,
+  readerSearchHitResponse,
   readerWorkInfoResponse,
   sharedReaderCss,
   workReaderCss
@@ -82,6 +83,9 @@ let presentationRequests = []
 let presentationFailures = new Set()
 let litteraturkartanRequests = []
 let readerRequests = []
+let readerHitRequests = []
+let readerHitFailure = false
+let readerHitDelays = {}
 let libraryRelevanceRequests = []
 let libraryRelevanceFailure = false
 let libraryRelevanceDelays = {}
@@ -160,6 +164,124 @@ function waitForLibraryRelevanceDelay(query) {
 function waitForLibraryQueryDelay(query) {
   const key = [query.q || "", query.sort_field || "", query.from || "", query.to || ""].join("|")
   return new Promise(resolve => setTimeout(resolve, libraryQueryDelays[key] || 0))
+}
+
+function readerHitDelayKey(input) {
+  return [
+    input.workId,
+    input.query,
+    input.offset,
+    input.limit,
+    input.wordForms,
+    input.includeOlderSpellings,
+    input.prefix,
+    input.suffix
+  ].join("|")
+}
+
+function waitForReaderHitDelay(input) {
+  return new Promise(resolve => setTimeout(
+    resolve,
+    readerHitDelays[readerHitDelayKey(input)] || 0
+  ))
+}
+
+function validationError(response) {
+  return sendJson(response, 422, {
+    error: {
+      code: "validation_error",
+      message: "Request validation failed",
+      details: null
+    }
+  })
+}
+
+function decodedReaderHitWorkId(pathname) {
+  const match = /^\/v2\/works\/([^/]+)\/search-hits$/.exec(pathname)
+  if (!match) return null
+
+  let workId
+  try {
+    workId = decodeURIComponent(match[1])
+  } catch {
+    return { valid: false }
+  }
+
+  const valid = workId.length >= 2 &&
+    workId.length <= 100 &&
+    workId.trim() === workId &&
+    workId.toLowerCase().startsWith("lb") &&
+    !workId.includes("%") &&
+    !workId.includes("/") &&
+    !workId.includes("\\") &&
+    !/\p{Cc}/u.test(workId) &&
+    workId !== "." &&
+    workId !== ".."
+  return { valid, workId: workId.toLowerCase() }
+}
+
+function parseReaderHitQuery(searchParams) {
+  const allowed = new Set([
+    "media_type",
+    "query",
+    "offset",
+    "limit",
+    "word_forms",
+    "include_older_spellings",
+    "prefix",
+    "suffix"
+  ])
+  for (const key of searchParams.keys()) {
+    if (!allowed.has(key) || searchParams.getAll(key).length !== 1) return null
+  }
+
+  const mediaType = searchParams.get("media_type")
+  const rawQuery = searchParams.get("query")
+  if (mediaType !== "etext" || rawQuery === null) return null
+  const query = rawQuery.trim()
+  if (query.length < 1 || query.length > 200) return null
+
+  const integer = (name, fallback, minimum, maximum) => {
+    const raw = searchParams.get(name)
+    if (raw === null) return fallback
+    if (!/^\d+$/.test(raw)) return null
+    const value = Number(raw)
+    return Number.isSafeInteger(value) && value >= minimum && value <= maximum
+      ? value
+      : null
+  }
+  const boolean = (name, fallback) => {
+    const raw = searchParams.get(name)
+    if (raw === null) return fallback
+    if (raw === "true") return true
+    if (raw === "false") return false
+    return null
+  }
+
+  const offset = integer("offset", 0, 0, 1_000_000)
+  const limit = integer("limit", 3, 1, 20)
+  const wordForms = boolean("word_forms", false)
+  const includeOlderSpellings = boolean("include_older_spellings", true)
+  const prefix = boolean("prefix", false)
+  const suffix = boolean("suffix", false)
+  if (
+    offset === null ||
+    limit === null ||
+    wordForms === null ||
+    includeOlderSpellings === null ||
+    prefix === null ||
+    suffix === null
+  ) return null
+
+  return {
+    query,
+    offset,
+    limit,
+    wordForms,
+    includeOlderSpellings,
+    prefix,
+    suffix
+  }
 }
 
 function normalizedAuthorIds(body) {
@@ -428,6 +550,38 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_reader_requests" && request.method === "DELETE") {
     readerRequests = []
     return sendJson(response, 200, { requests: readerRequests })
+  }
+  if (url.pathname === "/_reader_hit_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: readerHitRequests })
+  }
+  if (url.pathname === "/_reader_hit_requests" && request.method === "DELETE") {
+    readerHitRequests = []
+    return sendJson(response, 200, { requests: readerHitRequests })
+  }
+  if (url.pathname === "/_reader_hit_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: readerHitFailure })
+  }
+  if (url.pathname === "/_reader_hit_failure" && request.method === "PUT") {
+    readerHitFailure = true
+    return sendJson(response, 200, { failure: readerHitFailure })
+  }
+  if (url.pathname === "/_reader_hit_failure" && request.method === "DELETE") {
+    readerHitFailure = false
+    return sendJson(response, 200, { failure: readerHitFailure })
+  }
+  if (url.pathname === "/_reader_hit_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: readerHitDelays })
+  }
+  if (url.pathname === "/_reader_hit_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    readerHitDelays = Object.fromEntries(
+      Object.entries(body).map(([key, delay]) => [key, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: readerHitDelays })
+  }
+  if (url.pathname === "/_reader_hit_delays" && request.method === "DELETE") {
+    readerHitDelays = {}
+    return sendJson(response, 200, { delays: readerHitDelays })
   }
   if (url.pathname === "/_library_relevance_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: libraryRelevanceRequests })
@@ -708,6 +862,46 @@ const server = createServer(async (request, response) => {
         return author ? [author] : []
       })
     })
+  }
+
+  const readerHitWork = request.method === "GET"
+    ? decodedReaderHitWorkId(rawApiPathname)
+    : null
+  if (readerHitWork !== null) {
+    const query = parseReaderHitQuery(url.searchParams)
+    if (!readerHitWork.valid || query === null) return validationError(response)
+
+    const rawQuery = request.url.includes("?")
+      ? request.url.slice(request.url.indexOf("?") + 1)
+      : ""
+    readerHitRequests.push({ path: rawPathname, query: rawQuery })
+    const input = { workId: readerHitWork.workId, ...query }
+    await waitForReaderHitDelay(input)
+    if (readerHitFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "backend_unavailable",
+          message: "Search backend unavailable",
+          details: null
+        }
+      })
+    }
+    if (query.query === "malformed-response") {
+      return sendJson(response, 200, {
+        query: query.query,
+        media_type: "etext",
+        offset: query.offset,
+        limit: query.limit,
+        total_hits: "invalid",
+        items: []
+      })
+    }
+    return sendJson(response, 200, readerSearchHitResponse(
+      readerHitWork.workId,
+      query.query,
+      query.offset,
+      query.limit
+    ))
   }
 
   const profileAuthorId = request.method === "GET"

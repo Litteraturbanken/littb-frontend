@@ -29,7 +29,7 @@ export const readerWorkInfoResponse = {
 export const readerPageHtml = `
 <div class="pname" pname="-2">
   <div class="titelsida center">
-    <div class="_p title"><span class="w">DOKTOR GLAS</span></div>
+    <div class="_p title"><span class="w" id="w2_1">DOKTOR</span> <span class="w" id="w2_2">GLAS</span></div>
     <div class="_p between1"><span class="w">ROMAN</span></div>
     <div class="_p author"><span class="w">HJALMAR SÖDERBERG</span></div>
     <img class="graphicimg" src="/bilder/ornament/reader-fixture.png" alt="">
@@ -37,6 +37,91 @@ export const readerPageHtml = `
   </div>
 </div>
 `
+
+const phraseHits = [
+  {
+    index: 0,
+    page_name: "-3",
+    page_index: 1,
+    highlight: { from_word_id: "w1_1", to_word_id: "w1_1" }
+  },
+  {
+    index: 1,
+    page_name: "-2",
+    page_index: 2,
+    highlight: { from_word_id: "w2_1", to_word_id: "w2_2" }
+  },
+  {
+    index: 2,
+    page_name: "-2",
+    page_index: 2,
+    highlight: { from_word_id: "w2_2", to_word_id: "w2_2" }
+  },
+  {
+    index: 3,
+    page_name: "-1",
+    page_index: 3,
+    highlight: { from_word_id: "w3_1", to_word_id: "w3_1" }
+  },
+  {
+    index: 4,
+    page_name: "-1",
+    page_index: 3,
+    highlight: { from_word_id: "w3_2", to_word_id: "w3_2" }
+  }
+]
+
+function hitsForQuery(query) {
+  if (query === "inga") return []
+  if (query === "glas") {
+    return [{
+      index: 0,
+      page_name: "-2",
+      page_index: 2,
+      highlight: { from_word_id: "w2_2", to_word_id: "w2_2" }
+    }]
+  }
+  if (query === "page-mismatch") {
+    return [{
+      index: 0,
+      page_name: "-1",
+      page_index: 3,
+      highlight: { from_word_id: "w3_1", to_word_id: "w3_1" }
+    }]
+  }
+  if (query === "missing-range") {
+    return [{
+      index: 0,
+      page_name: "-2",
+      page_index: 2,
+      highlight: { from_word_id: "missing", to_word_id: "w2_2" }
+    }]
+  }
+  if (query === "reversed-range") {
+    return [{
+      index: 0,
+      page_name: "-2",
+      page_index: 2,
+      highlight: { from_word_id: "w2_2", to_word_id: "w2_1" }
+    }]
+  }
+  return phraseHits.map(hit => ({
+    ...hit,
+    highlight: { ...hit.highlight }
+  }))
+}
+
+export function readerSearchHitResponse(workId, query, offset = 0, limit = 3) {
+  const items = hitsForQuery(query)
+  return {
+    query,
+    media_type: "etext",
+    offset,
+    limit,
+    total_hits: items.length,
+    items: items.slice(offset, offset + limit)
+  }
+}
 
 export const sharedReaderCss = `
 .txt .center { text-align: center; }

@@ -14,6 +14,11 @@ import {
   test
 } from "vitest"
 
+import type {
+  components,
+  operations,
+  paths
+} from "../../app/lib/api/generated/lbapi"
 import {
   authorProfiles,
   dramaOnlyAuthorProfile,
@@ -23,6 +28,29 @@ import {
   rfc3986AuthorProfile,
   strindbergAuthorProfile
 } from "../fixtures/author-profile-data.mjs"
+import {
+  readerPageHtml,
+  readerSearchHitResponse
+} from "../fixtures/reader-data.mjs"
+
+type ReaderHitOperation = paths["/works/{work_id}/search-hits"]["get"]
+type ReaderHitResponse = components["schemas"]["WorkSearchHitsResponse"]
+
+const generatedReaderHitContract: ReaderHitOperation = null as unknown as
+  operations["v2_get_work_search_hits"]
+const generatedReaderHitResponse: ReaderHitResponse = {
+  query: "doktor glas",
+  media_type: "etext",
+  offset: 0,
+  limit: 3,
+  total_hits: 1,
+  items: [{
+    index: 0,
+    page_name: "-2",
+    page_index: 2,
+    highlight: { from_word_id: "w2_1", to_word_id: "w2_2" }
+  }]
+}
 
 const nuxtRoot = fileURLToPath(new URL("../..", import.meta.url))
 const port = 42_000 + process.pid % 10_000
@@ -165,6 +193,12 @@ async function libraryQueryRequests() {
   }
 }
 
+async function readerHitRequests() {
+  return await (await fetch(`${origin}/_reader_hit_requests`)).json() as {
+    requests: Array<{ path: string, query: string }>
+  }
+}
+
 describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -213,7 +247,10 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_library_relevance_delays`, { method: "DELETE" }),
       fetch(`${origin}/_library_query_requests`, { method: "DELETE" }),
       fetch(`${origin}/_library_query_failure`, { method: "DELETE" }),
-      fetch(`${origin}/_library_query_delays`, { method: "DELETE" })
+      fetch(`${origin}/_library_query_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_hit_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_hit_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" })
     ])
   })
 
@@ -1489,6 +1526,237 @@ describe("v2 fixture server operations", () => {
       ]
     })
     expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({ requests: [] })
+  })
+
+  test("exposes the generated Reader hit contract and separate source word spans", () => {
+    expect(generatedReaderHitContract).toBeNull()
+    expect(generatedReaderHitResponse.items[0]?.highlight).toEqual({
+      from_word_id: "w2_1",
+      to_word_id: "w2_2"
+    })
+    expect(readerPageHtml).toContain('<span class="w" id="w2_1">DOKTOR</span>')
+    expect(readerPageHtml).toContain('<span class="w" id="w2_2">GLAS</span>')
+  })
+
+  test("serves exact public and private Reader hit windows with absolute indices", async () => {
+    const publicQuery = "media_type=etext&query=doktor%20glas"
+    const privateQuery = [
+      "media_type=etext",
+      "query=doktor%20glas",
+      "offset=1",
+      "limit=3",
+      "word_forms=true",
+      "include_older_spellings=false",
+      "prefix=true",
+      "suffix=true"
+    ].join("&")
+    const publicPath = `/v2/works/lb-reader-doktor-glas/search-hits?${publicQuery}`
+    const privatePath = `/private-v2/works/lb-reader-doktor-glas/search-hits?${privateQuery}`
+
+    const publicResponse = await fetch(`${origin}${publicPath}`)
+    const privateResponse = await fetch(`${origin}${privatePath}`)
+
+    expect(publicResponse.status).toBe(200)
+    expect(await publicResponse.json()).toEqual(readerSearchHitResponse(
+      "lb-reader-doktor-glas",
+      "doktor glas"
+    ))
+    expect(privateResponse.status).toBe(200)
+    expect(await privateResponse.json()).toEqual(readerSearchHitResponse(
+      "lb-reader-doktor-glas",
+      "doktor glas",
+      1,
+      3
+    ))
+    expect(await readerHitRequests()).toEqual({
+      requests: [
+        { path: "/v2/works/lb-reader-doktor-glas/search-hits", query: publicQuery },
+        { path: "/private-v2/works/lb-reader-doktor-glas/search-hits", query: privateQuery }
+      ]
+    })
+  })
+
+  test("models phrase, single, empty, out-of-range, and malformed hit variants", async () => {
+    const request = async (query: string, offset = "0", limit = "20") => {
+      const params = new URLSearchParams({ media_type: "etext", query, offset, limit })
+      return await fetch(
+        `${origin}/v2/works/lb-reader-doktor-glas/search-hits?${params}`
+      )
+    }
+
+    const phrase = await (await request("doktor glas")).json() as ReaderHitResponse
+    expect(phrase.total_hits).toBe(5)
+    expect(phrase.items.map(item => [item.index, item.page_name])).toEqual([
+      [0, "-3"], [1, "-2"], [2, "-2"], [3, "-1"], [4, "-1"]
+    ])
+    expect(phrase.items[1]?.highlight).toEqual({
+      from_word_id: "w2_1",
+      to_word_id: "w2_2"
+    })
+
+    const single = await (await request("glas")).json() as ReaderHitResponse
+    expect(single.items).toEqual([
+      {
+        index: 0,
+        page_name: "-2",
+        page_index: 2,
+        highlight: { from_word_id: "w2_2", to_word_id: "w2_2" }
+      }
+    ])
+    expect(await (await request("inga")).json()).toMatchObject({ total_hits: 0, items: [] })
+    expect(await (await request("doktor glas", "99", "3")).json()).toMatchObject({
+      offset: 99,
+      limit: 3,
+      total_hits: 5,
+      items: []
+    })
+    expect(await (await request("malformed-response")).json()).toEqual({
+      query: "malformed-response",
+      media_type: "etext",
+      offset: 0,
+      limit: 20,
+      total_hits: "invalid",
+      items: []
+    })
+    expect(await (await request("missing-range")).json()).toMatchObject({
+      items: [{
+        page_name: "-2",
+        highlight: { from_word_id: "missing", to_word_id: "w2_2" }
+      }]
+    })
+    expect(await (await request("reversed-range")).json()).toMatchObject({
+      items: [{
+        page_name: "-2",
+        highlight: { from_word_id: "w2_2", to_word_id: "w2_1" }
+      }]
+    })
+    expect(await (await request("page-mismatch")).json()).toMatchObject({
+      items: [{ page_name: "-1", page_index: 3 }]
+    })
+  })
+
+  test("rejects malformed or extra Reader hit input without recording it", async () => {
+    const invalidQueries = [
+      "query=doktor",
+      "media_type=faksimil&query=doktor",
+      "media_type=etext&query=",
+      `media_type=etext&query=${"a".repeat(201)}`,
+      "media_type=etext&query=doktor&offset=-1",
+      "media_type=etext&query=doktor&offset=1.5",
+      "media_type=etext&query=doktor&limit=0",
+      "media_type=etext&query=doktor&limit=21",
+      "media_type=etext&query=doktor&word_forms=1",
+      "media_type=etext&query=doktor&include_older_spellings=yes",
+      "media_type=etext&query=doktor&extra=1"
+    ]
+    const invalidPaths = [
+      "/v2/works/not-a-work/search-hits?media_type=etext&query=doktor",
+      "/private-v2/works/lb%25unsafe/search-hits?media_type=etext&query=doktor"
+    ]
+
+    for (const query of invalidQueries) {
+      const response = await fetch(
+        `${origin}/v2/works/lb-reader-doktor-glas/search-hits?${query}`
+      )
+      expect(response.status, query).toBe(422)
+      expect(await response.json(), query).toEqual({
+        error: {
+          code: "validation_error",
+          message: "Request validation failed",
+          details: null
+        }
+      })
+    }
+    for (const path of invalidPaths) {
+      expect((await fetch(`${origin}${path}`)).status, path).toBe(422)
+    }
+    expect(await readerHitRequests()).toEqual({ requests: [] })
+  })
+
+  test("keeps Reader hit failure, stable delay identity, and reset state isolated", async () => {
+    const delayKey = [
+      "lb-reader-doktor-glas",
+      "doktor glas",
+      "1",
+      "2",
+      "true",
+      "false",
+      "true",
+      "true"
+    ].join("|")
+    await fetch(`${origin}/_reader_hit_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ [delayKey]: 120 })
+    })
+    expect(await (await fetch(`${origin}/_reader_hit_delays`)).json()).toEqual({
+      delays: { [delayKey]: 120 }
+    })
+
+    const delayedParams = [
+      "media_type=etext",
+      "query=doktor%20glas",
+      "offset=1",
+      "limit=2",
+      "word_forms=true",
+      "include_older_spellings=false",
+      "prefix=true",
+      "suffix=true"
+    ].join("&")
+    let delayedSettled = false
+    const delayed = fetch(
+      `${origin}/private-v2/works/lb-reader-doktor-glas/search-hits?${delayedParams}`
+    ).then((response) => {
+      delayedSettled = true
+      return response
+    })
+    await new Promise(resolve => setTimeout(resolve, 10))
+    const distinctKeys = [
+      `/v2/works/lb-reader-other/search-hits?${delayedParams}`,
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("doktor%20glas", "glas")}`,
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("offset=1", "offset=0")}`,
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("limit=2", "limit=3")}`,
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("word_forms=true", "word_forms=false")}`,
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("include_older_spellings=false", "include_older_spellings=true")}`,
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("prefix=true", "prefix=false")}`,
+      `/v2/works/lb-reader-doktor-glas/search-hits?${delayedParams.replace("suffix=true", "suffix=false")}`
+    ]
+    expect(await Promise.all(distinctKeys.map(async path => (await fetch(`${origin}${path}`)).status)))
+      .toEqual(Array(distinctKeys.length).fill(200))
+    expect(delayedSettled).toBe(false)
+    expect((await delayed).status).toBe(200)
+
+    await fetch(`${origin}/api/get_work_info?titleid=DoktorGlas`)
+    await fetch(`${origin}/v2/quick-search?query=doktor`)
+    const readerLedger = await (await fetch(`${origin}/_reader_requests`)).json()
+    const quickLedger = await quickSearchRequests()
+
+    await fetch(`${origin}/_reader_hit_failure`, { method: "PUT" })
+    expect(await (await fetch(`${origin}/_reader_hit_failure`)).json()).toEqual({
+      failure: true
+    })
+    const failed = await fetch(
+      `${origin}/v2/works/lb-reader-doktor-glas/search-hits?media_type=etext&query=glas`
+    )
+    expect(failed.status).toBe(503)
+    expect(await failed.json()).toEqual({
+      error: {
+        code: "backend_unavailable",
+        message: "Search backend unavailable",
+        details: null
+      }
+    })
+
+    await fetch(`${origin}/_reader_hit_requests`, { method: "DELETE" })
+    await fetch(`${origin}/_reader_hit_failure`, { method: "DELETE" })
+    await fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" })
+    expect(await readerHitRequests()).toEqual({ requests: [] })
+    expect(await (await fetch(`${origin}/_reader_hit_failure`)).json()).toEqual({
+      failure: false
+    })
+    expect(await (await fetch(`${origin}/_reader_hit_delays`)).json()).toEqual({ delays: {} })
+    expect(await (await fetch(`${origin}/_reader_requests`)).json()).toEqual(readerLedger)
+    expect(await quickSearchRequests()).toEqual(quickLedger)
   })
 
   test("Library relevance failure, delay, and reset controls are isolated", async () => {

@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/works/{work_id}/search-hits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Work Search Hits */
+        get: operations["v2_get_work_search_hits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/works/lookup": {
         parameters: {
             query?: never;
@@ -329,6 +346,13 @@ export interface components {
             /** Items */
             items: components["schemas"]["QuickSearchItem"][];
         };
+        /** SearchHitHighlight */
+        SearchHitHighlight: {
+            /** From Word Id */
+            from_word_id: string;
+            /** To Word Id */
+            to_word_id: string;
+        };
         /** StatsResponse */
         StatsResponse: {
             /** Authors */
@@ -396,6 +420,34 @@ export interface components {
             start_page_name: string | null;
             /** Work Id */
             work_id: string;
+        };
+        /** WorkSearchHit */
+        WorkSearchHit: {
+            highlight: components["schemas"]["SearchHitHighlight"];
+            /** Index */
+            index: number;
+            /** Page Index */
+            page_index: number;
+            /** Page Name */
+            page_name: string;
+        };
+        /** WorkSearchHitsResponse */
+        WorkSearchHitsResponse: {
+            /** Items */
+            items: components["schemas"]["WorkSearchHit"][];
+            /** Limit */
+            limit: number;
+            /**
+             * Media Type
+             * @constant
+             */
+            media_type: "etext";
+            /** Offset */
+            offset: number;
+            /** Query */
+            query: string;
+            /** Total Hits */
+            total_hits: number;
         };
     };
     responses: never;
@@ -680,6 +732,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatsResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_work_search_hits: {
+        parameters: {
+            query: {
+                include_older_spellings?: boolean;
+                limit?: number;
+                media_type: "etext";
+                offset?: number;
+                prefix?: boolean;
+                query: string;
+                suffix?: boolean;
+                word_forms?: boolean;
+            };
+            header?: never;
+            path: {
+                work_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkSearchHitsResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Unexpected server error */
