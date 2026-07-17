@@ -203,7 +203,9 @@ test("SSR renders Library EPUB mode with its Library shell and exact private req
   expect(library.querySelector('[data-library-tab="epub"]')?.getAttribute("aria-current"))
     .toBe("page")
   expect([...library.querySelectorAll("[data-library-tab]")].map(node => node.textContent?.trim()))
-    .toEqual(["Alla träffar", "Nytt", "Författare", "Verk", "Dikt, novell, etc.", "Epub", "PDF"])
+    .toEqual([
+      "Alla träffar", "Nytt", "Författare: 0", "Verk", "Dikt, novell, etc.", "Epub: 1", "PDF"
+    ])
   expect(epubRows(library)).toEqual([{
     title: "Gösta Berlings saga",
     titleHref: "/författare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken",
@@ -245,17 +247,19 @@ test("SSR aliases bare and canonical EPUB routes to one row model with the stand
   for (const standalone of [bare, canonical]) {
     expect(standalone.title).toBe("E-böcker för nedladdning | Litteraturbanken")
     expect(standalone.body.className).toBe("focus page-epub ready")
-    expect(standalone.documentElement.getAttribute("style")).toContain("ljudlandskap.jpg")
+    expect(standalone.documentElement.getAttribute("style")).toContain("background-image:none")
     expect(standalone.querySelector("h1")?.textContent?.trim()).toBe("Hämta e-böcker")
     expect([...standalone.querySelectorAll("[data-library-tab]")]
-      .map(node => node.textContent?.trim())).toEqual(["Epub", "PDF"])
+      .map(node => node.textContent?.trim())).toEqual(["Epub: 201", "PDF"])
     expect(standalone.querySelector('[data-library-tab="epub"]')?.getAttribute("aria-current"))
       .toBe("page")
   }
   expect(epubRows(library)).toEqual(epubRows(bare))
   expect([...library.querySelectorAll("[data-library-tab]")]
     .map(node => node.textContent?.trim()))
-    .toEqual(["Alla träffar", "Nytt", "Författare", "Verk", "Dikt, novell, etc.", "Epub", "PDF"])
+    .toEqual([
+      "Alla träffar", "Nytt", "Författare: 0", "Verk", "Dikt, novell, etc.", "Epub: 201", "PDF"
+    ])
   expect(epubRows(bare)).toEqual(epubRows(canonical))
   expect(epubRows(bare)).toHaveLength(3)
 
@@ -269,9 +273,9 @@ test("SSR aliases bare and canonical EPUB routes to one row model with the stand
     .toBe("/txt/epub/S%C3%B6derbergH_DoktorGlas.epub")
   expect(download?.getAttribute("download")).not.toBeNull()
   expect(download?.getAttribute("target")).toBe("_self")
-  expect(bare.querySelector('[data-library-epub-row]:nth-child(2) [data-library-epub-author]')
+  expect(bare.querySelector('[data-library-epub-row]:nth-child(2) .author')
     ?.textContent?.trim()).toBe("Geijer (red.)")
-  expect(bare.querySelector('[data-library-epub-row]:nth-child(3) [data-library-epub-author]')
+  expect(bare.querySelector('[data-library-epub-row]:nth-child(3) .author')
     ?.textContent?.trim()).toBe("Bauer (ill.)")
 })
 

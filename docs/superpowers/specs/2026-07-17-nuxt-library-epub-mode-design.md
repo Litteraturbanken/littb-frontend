@@ -21,9 +21,13 @@ separate work.
 
 The AngularJS `library-page` component owns both `/bibliotek` and `/epub`.
 Library EPUB mode retains the `page-library` shell, background, full tab row,
-and heading `Botanisera i biblioteket`. Standalone EPUB uses `page-epub`, the
-`ljudlandskap.jpg` background, heading `Hämta e-böcker`, EPUB/PDF tabs only, and
-title `E-böcker för nedladdning | Litteraturbanken`.
+and heading `Botanisera i biblioteket`. Standalone EPUB uses `page-epub`, no
+background image, heading `Hämta e-böcker`, EPUB/PDF tabs only, and title
+`E-böcker för nedladdning | Litteraturbanken`. Deterministic fresh Angular
+capture confirms that the old standalone `ljudlandskap.jpg` markup is commented
+out. It also shows the active EPUB distinct-hit count and the Library author
+zero-count label; these visible labels are preserved even though new count
+fan-out remains deferred.
 
 Two legacy state bugs are repaired deliberately:
 
@@ -55,7 +59,7 @@ The current path determines only shell metadata:
 | --- | --- | --- |
 | Body class | `focus page-library ready` | `focus page-epub ready` |
 | Heading | `Botanisera i biblioteket` | `Hämta e-böcker` |
-| Background | `biblioteket_bakgrund.jpg` | `ljudlandskap.jpg` |
+| Background | `biblioteket_bakgrund.jpg` | none |
 | Tabs | all legacy tabs | EPUB and PDF only |
 | Default mode | mixed relevance | EPUB |
 
@@ -170,8 +174,9 @@ make a test pass. The implementation preserves:
 - white headings, primary-red active tab, small-caps tabs and sort row;
 - legacy four-column work grid and mobile year visibility;
 - Library background and responsive block switch;
-- standalone EPUB background, left-corridor colors, and existing mobile
-  horizontal overflow.
+- standalone EPUB's background-free shell, left-corridor colors, and existing
+  mobile horizontal overflow;
+- authority-rendered `Författare: 0` and active EPUB distinct-hit count labels.
 
 No modal, dropdown, disclosure, or listbox is part of this slice, so Headless UI
 would add no useful semantic behavior.

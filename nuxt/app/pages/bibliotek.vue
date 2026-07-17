@@ -388,7 +388,6 @@ function emptyEpubResponse(failed = false): EpubResponse {
 const resultTypes = "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress"
 const excludedFields = "text,parts,sourcedesc,pages,errata,intro,workintro,content,article.ArticleText,works,intro_text,bibliography_types,wikidata.wikipedia_text,content_vector"
 const backgroundPath = "/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg"
-const standaloneBackgroundPath = "/red/bilder/bakgrundsbilder/ljudlandskap.jpg"
 const description = "Blädda bland Litteraturbankens författare och titlar."
 
 const sorts: Array<{ key: RelevanceSortKey, label: string, expression: string }> = [
@@ -835,7 +834,9 @@ useSeoMeta({
 })
 useHead({
   htmlAttrs: {
-    style: `background: url('${standalone ? standaloneBackgroundPath : backgroundPath}') no-repeat;`
+    style: standalone
+      ? "background-image: none; background-color: unset;"
+      : `background: url('${backgroundPath}') no-repeat;`
   },
   bodyAttrs: { class: standalone ? "focus page-epub ready" : "focus page-library ready" }
 })
@@ -888,7 +889,7 @@ onUnmounted(disposeLibraryRequest)
               title="Utökad sökning är inte tillgänglig ännu"
               class="bg-white border border-gray-500 self-stretch px-4 focus:ring-1 focus:ring-inset focus:ring-primary"
             >
-              <span class="uppercase text-xs">Visa utökad sökning</span>
+              <span class="uppercase text-xs">Visa utökad sökning</span><template v-if="currentMode === 'epub'">{{ " " }}</template>
               <svg
                 data-library-filter-icon
                 class="filter w-6 h-6 relative top-1 inline-block text-gray-700"
@@ -903,8 +904,22 @@ onUnmounted(disposeLibraryRequest)
             </button>
           </div>
           <div class="chronology primarycolor ml-px pl-px">
-            <i class="fa fa-clock-o mr-1 ml-px" />
+            <i class="fa fa-clock-o mr-1 ml-px" /><template v-if="currentMode === 'epub'">{{ " " }}</template>
             <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
+          </div>
+          <div v-if="currentMode === 'epub'" data-library-chronology-range class="flex">
+            <div class="rzslider mt-3 slider-large" aria-hidden="true">
+              <span class="rz-bar-wrapper"><span class="rz-bar" /></span>
+              <span class="rz-bar-wrapper"><span class="rz-bar rz-selection" /></span>
+              <span class="rz-pointer rz-pointer-min" />
+              <span class="rz-pointer rz-pointer-max" />
+            </div>
+            <div class="whitespace-nowrap self-center chronology_inputs">
+              <span class="text-sm sc">Tryckår: </span>
+              <input class="text-sm text-center py-1" type="text" value="1800" readonly aria-label="Från tryckår">{{ " " }}
+              <span class="text-sm sc">till </span>
+              <input class="text-sm text-center py-1" type="text" value="2026" readonly aria-label="Till tryckår">
+            </div>
           </div>
           <div class="btn-group p-0 mt-4 lg:mt-6">
             <template v-if="standalone">
@@ -914,7 +929,8 @@ onUnmounted(disposeLibraryRequest)
                 aria-current="page"
                 class="sc btn btn-small text-base active"
                 @click.prevent="selectMode('epub')"
-              >Epub</a>
+              >Epub<span v-if="epubResults.distinctHits" class="num_hits">: {{ epubResults.distinctHits }}</span></a>
+              {{ " " }}
               <button
                 data-library-tab="pdf"
                 data-deferred
@@ -933,7 +949,7 @@ onUnmounted(disposeLibraryRequest)
                 :class="{ active: currentMode === 'all' }"
                 @click.prevent="selectMode('all')"
               >Alla träffar</a>
-              <button
+              <template
                 v-for="tab in [
                   { key: 'latest', label: 'Nytt' },
                   { key: 'authors', label: 'Författare' },
@@ -941,21 +957,31 @@ onUnmounted(disposeLibraryRequest)
                   { key: 'parts', label: 'Dikt, novell, etc.' }
                 ]"
                 :key="tab.key"
-                :data-library-tab="tab.key"
-                data-deferred
-                type="button"
-                disabled
-                title="Inte tillgänglig i denna version"
-                class="sc btn btn-small text-base disabled"
-              >{{ tab.label }}</button>
+              >
+                <template v-if="currentMode === 'epub'">{{ " " }}</template>
+                <button
+                  :data-library-tab="tab.key"
+                  data-deferred
+                  type="button"
+                  disabled
+                  title="Inte tillgänglig i denna version"
+                  class="sc btn btn-small text-base disabled"
+                  :class="{ 'authority-available': currentMode === 'epub' && ['latest', 'works'].includes(tab.key) }"
+                >{{ tab.label }}<span v-if="tab.key === 'authors' && currentMode === 'epub'" class="num_hits">: 0</span></button>
+              </template>
+              <template v-if="currentMode === 'epub'">{{ " " }}</template>
               <a
                 data-library-tab="epub"
                 :href="epubTabHref"
                 :aria-current="currentMode === 'epub' ? 'page' : undefined"
                 class="sc btn btn-small text-base"
-                :class="{ active: currentMode === 'epub' }"
+                :class="{
+                  active: currentMode === 'epub',
+                  'relevance-unavailable': currentMode === 'all' && !epubResults.distinctHits
+                }"
                 @click.prevent="selectMode('epub')"
-              >Epub</a>
+              >Epub<span v-if="epubResults.distinctHits" class="num_hits">: {{ epubResults.distinctHits }}</span></a>
+              <template v-if="currentMode === 'epub'">{{ " " }}</template>
               <button
                 data-library-tab="pdf"
                 data-deferred
@@ -1034,7 +1060,7 @@ onUnmounted(disposeLibraryRequest)
           <div v-else class="result title pl-0 flex-column min-h-500">
             <div class="flex items-baseline">
               <div class="text-base">
-                <div class="inline-block sc mr-2">Sortera: </div>
+                <div class="inline-block sc mr-2">Sortera: </div>{{ " " }}
                 <ul class="part_header top_header mb-4 inline-block">
                   <li v-for="item in epubSorts" :key="item.key" class="inline-block sc">
                     <a
@@ -1043,8 +1069,7 @@ onUnmounted(disposeLibraryRequest)
                       :class="{ active: selectedEpubSort === item.key }"
                       :data-library-sort="item.key"
                       @click.prevent="selectSort(item.key)"
-                    >{{ item.label }}</a>
-                    <i v-if="selectedEpubSort === item.key" class="fa fa-caret-down" />
+                  >{{ item.label }}</a><template v-if="selectedEpubSort === item.key">{{ " " }}<i class="fa fa-caret-down" /></template>
                   </li>
                 </ul>
               </div>
@@ -1083,7 +1108,7 @@ onUnmounted(disposeLibraryRequest)
                   <td class="block w-44 text-left">
                     <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                       <span class="author uppercase text-sm">
-                        <a data-library-epub-author :href="item.authorHref">{{ item.surname }}{{ item.roleSuffix }}</a>
+                        <a data-library-epub-author :href="item.authorHref">{{ item.surname }}</a><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
                       </span>
                     </div>
                   </td>
@@ -1100,8 +1125,8 @@ onUnmounted(disposeLibraryRequest)
               </tbody>
             </table>
             <nav v-if="epubPageCount > 1" aria-label="Sidnavigation">
-              <ul class="pagination-sm sc">
-                <li>
+              <ul class="pagination pagination-sm sc">
+                <li :class="{ disabled: currentPage <= 1 }">
                   <span
                     v-if="currentPage <= 1"
                     data-library-pagination-previous
@@ -1114,7 +1139,11 @@ onUnmounted(disposeLibraryRequest)
                     @click.prevent="selectPage(currentPage - 1)"
                   >Föregående</a>
                 </li>
-                <li v-for="item in epubPages" :key="item.key">
+                <li
+                  v-for="item in epubPages"
+                  :key="item.key"
+                  :class="{ active: item.page === currentPage }"
+                >
                   <span v-if="item.page === null" aria-hidden="true">…</span>
                   <a
                     v-else
@@ -1124,7 +1153,7 @@ onUnmounted(disposeLibraryRequest)
                     @click.prevent="selectPage(item.page)"
                   >{{ item.page }}</a>
                 </li>
-                <li>
+                <li :class="{ disabled: currentPage >= epubPageCount }">
                   <span
                     v-if="currentPage >= epubPageCount"
                     data-library-pagination-next
@@ -1145,3 +1174,68 @@ onUnmounted(disposeLibraryRequest)
     </div>
   </div>
 </template>
+
+<style scoped>
+.authority-available {
+  opacity: 1;
+}
+
+.relevance-unavailable {
+  color: #333;
+  opacity: 0.65;
+}
+
+[data-library-chronology-range] .rzslider {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  height: 4px;
+  margin: 12px 1.85rem 15px 0;
+  vertical-align: middle;
+  user-select: none;
+}
+
+[data-library-chronology-range] .rzslider span {
+  position: absolute;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+[data-library-chronology-range] .rz-bar-wrapper {
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: 32px;
+  padding-top: 16px;
+  margin-top: -16px;
+  box-sizing: border-box;
+}
+
+[data-library-chronology-range] .rz-bar {
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  border-radius: 2px;
+}
+
+[data-library-chronology-range] .rz-selection {
+  z-index: 2;
+  left: 10px;
+  width: calc(100% - 20px);
+}
+
+[data-library-chronology-range] .rz-pointer {
+  z-index: 3;
+  cursor: default;
+  border-radius: 16px;
+}
+
+[data-library-chronology-range] .rz-pointer-min {
+  left: 0;
+}
+
+[data-library-chronology-range] .rz-pointer-max {
+  right: 0;
+}
+
+</style>
