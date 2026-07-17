@@ -3,6 +3,11 @@ interface ReaderRouteSegments {
   title: string
   page: string
   mediaType: string
+  query?: Record<string, string>
+}
+
+interface ReaderHitRouteSegments extends ReaderRouteSegments {
+  hit: number
 }
 
 export function readerAuthorHref(author: string): string {
@@ -13,9 +18,10 @@ export function readerPageHref({
   author,
   title,
   page,
-  mediaType
+  mediaType,
+  query
 }: ReaderRouteSegments): string {
-  return [
+  const path = [
     "/författare",
     encodeURIComponent(author),
     "titlar",
@@ -24,4 +30,19 @@ export function readerPageHref({
     encodeURIComponent(page),
     encodeURIComponent(mediaType)
   ].join("/")
+  if (!query) return path
+
+  const search = new URLSearchParams(query).toString()
+  return search ? `${path}?${search}` : path
+}
+
+export function readerHitHref({
+  hit,
+  query,
+  ...segments
+}: ReaderHitRouteSegments): string {
+  return readerPageHref({
+    ...segments,
+    query: { ...query, hit: String(hit) }
+  })
 }
