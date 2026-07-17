@@ -8,6 +8,13 @@ function requiredParam(event: Parameters<typeof getRouterParam>[0], name: string
   return value
 }
 
+function encodeRfc3986Segment(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+  )
+}
+
 export default defineEventHandler(async event => {
   setHeader(event, "cache-control", "no-store")
   const author = requiredParam(event, "author")
@@ -21,11 +28,11 @@ export default defineEventHandler(async event => {
 
   const canonicalPath = [
     "/författare",
-    encodeURIComponent(metadata.author.id),
+    encodeRfc3986Segment(metadata.author.id),
     "titlar",
-    encodeURIComponent(metadata.titlePath),
+    encodeRfc3986Segment(metadata.titlePath),
     "sida",
-    encodeURIComponent(startPageName),
+    encodeRfc3986Segment(startPageName),
     metadata.mediaType
   ].join("/")
 

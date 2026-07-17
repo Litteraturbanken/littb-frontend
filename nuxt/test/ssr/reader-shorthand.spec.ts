@@ -47,6 +47,11 @@ for (const [titlePath, status] of [
   ["MalformedStartReader", 502],
   ["OutOfListStartReader", 404],
   ["MalformedPagesReader", 502],
+  ["NullPageIndexReader", 502],
+  ["FalsePageIndexReader", 502],
+  ["EmptyPageIndexReader", 502],
+  ["StringPageIndexReader", 502],
+  ["UnsafePageIndexReader", 502],
   ["MediaMismatchReader", 404],
   ["MalformedReader", 502],
   ["UnavailableReader", 502]
@@ -57,8 +62,31 @@ for (const [titlePath, status] of [
     expect(await readerRequests(request)).toEqual([
       expectedMetadataRequest(titlePath)
     ])
+    if (titlePath.endsWith("PageIndexReader")) {
+      expect((await readerRequests(request)).some(path => path.includes("/txt/"))).toBe(false)
+    }
   })
 }
+
+test("uses uppercase RFC3986 escapes for every canonical Reader identity", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/api/reader/resolve/O%27Neil%21%28%29%2AA/" +
+    "Rfc%21Reader%27%28%29%2A/etext"
+  )
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toEqual({
+    authorId: "O'Neil!()*A",
+    titlePath: "Rfc!Reader'()*",
+    mediaType: "etext",
+    startPageName: "-2!'()*",
+    canonicalPath:
+      "/författare/O%27Neil%21%28%29%2AA/titlar/" +
+      "Rfc%21Reader%27%28%29%2A/sida/-2%21%27%28%29%2A/etext"
+  })
+  expect((await readerRequests(request)).some(path => path.includes("/txt/"))).toBe(false)
+})
 
 test("rejects unsupported faksimil without upstream IO", async ({ request }) => {
   const response = await request.get(`${resolveBase}/DoktorGlas/faksimil`)

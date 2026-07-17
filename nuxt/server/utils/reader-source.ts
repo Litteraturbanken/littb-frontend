@@ -36,8 +36,13 @@ function readerPages(value: unknown): ReaderSourcePage[] | null {
   for (const page of value) {
     if (!isRecord(page)) return null
     const pageName = requiredString(page, "pagename")
-    const pageIndex = Number(page.pageindex)
-    if (!pageName || !Number.isInteger(pageIndex) || pageIndex < 0) return null
+    const pageIndex = page.pageindex
+    if (
+      !pageName ||
+      typeof pageIndex !== "number" ||
+      !Number.isSafeInteger(pageIndex) ||
+      pageIndex < 0
+    ) return null
     pages.push({ pageName, pageIndex })
   }
   return pages.sort((left, right) => left.pageIndex - right.pageIndex)

@@ -216,6 +216,15 @@ function readerRepresentation(titlePath, overrides = {}) {
 
 function readerMetadataResponse(titlePath) {
   switch (titlePath) {
+    case "Rfc!Reader'()*":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          authors: [{ authorid: "O'Neil!()*A", full_name: "RFC Reader" }],
+          pages: [{ pagename: "-2!'()*", pageindex: 2 }],
+          startpagename: "-2!'()*"
+        })]
+      }
     case "SiblingPagesReader": {
       const sharedWorkId = "lb-reader-doktor-glas"
       const etext = readerRepresentation(titlePath, {
@@ -262,6 +271,41 @@ function readerMetadataResponse(titlePath) {
       return {
         hits: 1,
         data: [readerRepresentation(titlePath, { pages: "malformed" })]
+      }
+    case "NullPageIndexReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          pages: [{ pagename: "-2", pageindex: null }]
+        })]
+      }
+    case "FalsePageIndexReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          pages: [{ pagename: "-2", pageindex: false }]
+        })]
+      }
+    case "EmptyPageIndexReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          pages: [{ pagename: "-2", pageindex: "" }]
+        })]
+      }
+    case "StringPageIndexReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          pages: [{ pagename: "-2", pageindex: "2" }]
+        })]
+      }
+    case "UnsafePageIndexReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          pages: [{ pagename: "-2", pageindex: Number.MAX_SAFE_INTEGER + 1 }]
+        })]
       }
     case "MalformedReader":
       return { hits: 1, data: "malformed" }
