@@ -486,63 +486,94 @@ function hitHref(hit: WorkSearchHit): string {
         <div class="etext txt" v-html="markedReaderHtml" />
       </section>
 
-      <aside class="reader-context" aria-label="Läsinformation och sidnavigering">
-        <div class="reader-work">
-          <a class="author" :href="authorHref">{{ reader.author.name }}</a>
-          <div>
-            <span class="title">{{ reader.title }}</span>
-            <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>
-          </div>
-        </div>
-
-        <hr>
-
-        <div v-if="searchState" class="reader-search-state" aria-live="polite">
-          <p v-if="hitPosition" class="reader-search-position">{{ hitPosition }}</p>
-          <p v-if="hitMessage" class="reader-search-message">{{ hitMessage }}</p>
-          <nav
-            v-if="previousHit || nextHit"
-            class="reader-hit-navigation"
-            aria-label="Sökträffsnavigering"
-          >
-            <NuxtLink
-              v-if="previousHit"
-              v-slot="{ navigate }"
-              custom
-              :to="readerTarget(previousHit.page_name, previousHit.index)"
-            ><a rel="prev" :href="hitHref(previousHit)" @click="navigate">Föregående sökträff</a></NuxtLink>
-            <span v-else />
-            <NuxtLink
-              v-if="nextHit"
-              v-slot="{ navigate }"
-              custom
-              :to="readerTarget(nextHit.page_name, nextHit.index)"
-            ><a rel="next" :href="hitHref(nextHit)" @click="navigate">Nästa sökträff</a></NuxtLink>
-          </nav>
-        </div>
-
-        <hr v-if="searchState">
-
-        <nav class="reader-navigation" aria-label="Sidnavigering">
-          <NuxtLink
-            v-if="reader.previousPageName"
-            v-slot="{ navigate }"
-            custom
-            :to="readerTarget(reader.previousPageName)"
-          ><a rel="prev" :href="pageHref(reader.previousPageName)" @click="navigate">Föregående sida</a></NuxtLink>
-          <span v-else />
-          <NuxtLink
-            v-if="reader.nextPageName"
-            v-slot="{ navigate }"
-            custom
-            :to="readerTarget(reader.nextPageName)"
-          ><a rel="next" :href="pageHref(reader.nextPageName)" @click="navigate">Nästa sida</a></NuxtLink>
-        </nav>
-
-        <p class="reader-page-position">{{ reader.pageName }} av {{ reader.pageCount }}</p>
-      </aside>
+      <div v-if="searchState" class="reader-search-state sr-only" aria-live="polite">
+        <p v-if="hitPosition" class="reader-search-position">{{ hitPosition }}</p>
+        <p v-if="hitMessage" class="reader-search-message">{{ hitMessage }}</p>
+      </div>
 
       <ClientOnly>
+        <Teleport to="#toolkit-right">
+          <aside
+            class="reader-context"
+            :class="{ 'has-search-hit': searchState }"
+            aria-label="Läsinformation och sidnavigering"
+          >
+            <div>
+              <div class="author"><a :href="authorHref">{{ reader.author.name }}</a></div>
+              <a class="title" aria-hidden="true">{{ reader.title }}</a>
+              <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>
+            </div>
+            <span class="reader-page-position sr-only">{{ reader.pageName }} av {{ reader.pageCount }}</span>
+
+            <hr>
+
+            <div class="current_part">
+              <div class="header"><a aria-hidden="true">{{ reader.author.name }}</a></div>
+              <div><p class="navtitle line-clamp-4">{{ reader.title }}</p></div>
+            </div>
+
+            <hr class="lower">
+
+            <nav class="pager_ctrls reader-navigation" aria-label="Sidnavigering">
+              <a class="prev_part" aria-hidden="true">Gå bakåt en del</a>
+              <br>
+              <a class="next_part disabled" aria-hidden="true">Gå till nästa del</a>
+              <br>
+              <a class="disabled" aria-hidden="true">Gå till första sidan</a>
+              <br>
+              <a aria-hidden="true">Gå till sista sidan</a>
+              <br>
+              <form class="goto" aria-hidden="true"><a>Gå till sida . . .
+                <span class="pages">{{ reader.pageName }} av {{ reader.nextPageName || reader.pageCount }}</span></a>
+              </form>
+
+              <NuxtLink
+                v-if="reader.previousPageName"
+                v-slot="{ navigate }"
+                custom
+                :to="readerTarget(reader.previousPageName)"
+              ><a
+                rel="prev"
+                :href="pageHref(reader.previousPageName)"
+                aria-label="Föregående sida"
+                @click="navigate"
+              ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}</a></NuxtLink>
+              <NuxtLink
+                v-if="reader.nextPageName"
+                v-slot="{ navigate }"
+                custom
+                :to="readerTarget(reader.nextPageName)"
+              ><a
+                rel="next"
+                :href="pageHref(reader.nextPageName)"
+                aria-label="Nästa sida"
+                @click="navigate"
+              ><span class="submit btn navicon navicon-visual right" aria-hidden="true"><i class="fa fa-angle-right right" /></span>{{ " " }}</a></NuxtLink>
+
+              <span class="expl small">Du kan också bläddra med tangentbordets piltangenter.</span>
+            </nav>
+
+            <div class="w-11/12" aria-hidden="true">
+              <span class="rzslider mt-3 slider-large">
+                <span class="rz-base">
+                  <span class="rz-bar-wrapper"><span class="rz-bar" /></span>
+                  <span class="rz-bar-wrapper"><span class="rz-bar rz-selection" /></span>
+                </span>
+                <span class="rz-pointer rz-pointer-min" />
+              </span>
+            </div>
+
+            <div class="subnav mt-10" aria-hidden="true">
+              <ul>
+                <li>Innehållsförteckning</li>
+                <li>Mer om boken</li>
+                <li>Läsfokus</li>
+                <li>Sök i verket</li>
+                <li>Sök i författarens texter</li>
+              </ul>
+            </div>
+          </aside>
+        </Teleport>
         <Teleport v-if="searchState" to="#toolkit">
         <i
           class="spinner_search fa fa-spinner fa-pulse"
@@ -560,8 +591,8 @@ function hitHref(hit: WorkSearchHit): string {
             </div>
           </div>
           <p v-else-if="hitMessage" class="text" aria-live="polite">{{ hitMessage }}</p>
-          <div v-if="previousHit || nextHit" class="ctrls">
-            <div class="arrows">
+          <ul class="ctrls">
+            <li class="arrows">
               <NuxtLink
                 v-if="previousHit"
                 v-slot="{ navigate }"
@@ -569,11 +600,11 @@ function hitHref(hit: WorkSearchHit): string {
                 :to="readerTarget(previousHit.page_name, previousHit.index)"
               ><a
                 rel="prev"
-                class="submit btn navicon left"
                 :href="hitHref(previousHit)"
                 aria-label="Föregående sökträff"
                 @click="navigate"
-              ><i class="fa fa-angle-left" aria-hidden="true" /></a></NuxtLink>
+              ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span></a></NuxtLink>
+              <button v-else rel="prev" class="submit btn navicon left" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-left" /></button>
               <NuxtLink
                 v-if="nextHit"
                 v-slot="{ navigate }"
@@ -581,15 +612,52 @@ function hitHref(hit: WorkSearchHit): string {
                 :to="readerTarget(nextHit.page_name, nextHit.index)"
               ><a
                 rel="next"
-                class="submit btn navicon"
                 :href="hitHref(nextHit)"
                 aria-label="Nästa sökträff"
                 @click="navigate"
-              ><i class="fa fa-angle-right" aria-hidden="true" /></a></NuxtLink>
-            </div>
-          </div>
+              ><span class="submit btn navicon navicon-visual" aria-hidden="true"><i class="fa fa-angle-right" /></span></a></NuxtLink>
+              <button v-else rel="next" class="submit btn navicon" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-right" /></button>
+            </li>
+            <li><a aria-hidden="true">Gå till första träffen</a></li>
+            <li><a aria-hidden="true">Gå till sista träffen</a></li>
+            <li><a aria-hidden="true">Gå direkt till träff . . .</a></li>
+            <li><a aria-hidden="true">Stäng träffvisningen</a></li>
+          </ul>
         </nav>
         </Teleport>
+        <template #fallback>
+          <aside class="reader-context-ssr sr-only" aria-label="Läsinformation och sidnavigering">
+            <a :href="authorHref">{{ reader.author.name }}</a>
+            <span>{{ reader.title }}<template v-if="reader.imprintYear"> ({{ reader.imprintYear }})</template></span>
+            <nav aria-label="Sidnavigering">
+              <a
+                v-if="reader.previousPageName"
+                :href="pageHref(reader.previousPageName)"
+              >Föregående sida</a>
+              <a
+                v-if="reader.nextPageName"
+                :href="pageHref(reader.nextPageName)"
+              >Nästa sida</a>
+            </nav>
+            <span class="reader-page-position">{{ reader.pageName }} av {{ reader.pageCount }}</span>
+            <nav
+              v-if="previousHit || nextHit"
+              class="reader-hit-navigation"
+              aria-label="Sökträffsnavigering"
+            >
+              <a
+                v-if="previousHit"
+                rel="prev"
+                :href="hitHref(previousHit)"
+              >Föregående sökträff</a>
+              <a
+                v-if="nextHit"
+                rel="next"
+                :href="hitHref(nextHit)"
+              >Nästa sökträff</a>
+            </nav>
+          </aside>
+        </template>
       </ClientOnly>
     </template>
     <p
