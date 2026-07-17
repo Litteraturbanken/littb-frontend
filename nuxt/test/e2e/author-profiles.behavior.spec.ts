@@ -114,6 +114,19 @@ test("ordinary and Dramawebben navigation cleans metadata, background, and activ
   expect(problems).toEqual([])
 })
 
+test("Dramawebben source heading exposes only its singular semantic label", async ({ page }) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/StrindbergA/dramawebben", { waitUntil: "networkidle" })
+
+  const sourceBlock = page.locator(".drama-source")
+  await expect(sourceBlock).toMatchAriaSnapshot(`
+    - text: Källa
+    - list:
+      - listitem: "* Dramawebben"
+  `)
+  expect(problems).toEqual([])
+})
+
 test("direct Dramawebben client navigation without a block replace-redirects to root", async ({
   page,
   request

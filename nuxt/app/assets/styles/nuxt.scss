@@ -75,15 +75,17 @@
     }
 }
 
-.page-authorInfo .drama-source-header {
+.page-authorInfo .drama-source {
     position: relative;
-    color: transparent;
 
-    &::after {
+    .drama-source-header {
+        color: transparent;
+    }
+
+    .drama-source-header__visual {
         position: absolute;
-        top: 0;
+        top: 1.5em;
         left: 0;
         color: #333;
-        content: "Källor";
     }
 }

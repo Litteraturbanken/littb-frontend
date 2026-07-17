@@ -207,6 +207,24 @@ for (const visualCase of visualCases) {
     const bootstrapRequests: string[] = []
     const forbiddenProductionRequests: string[] = []
     const unexpectedApplicationRequests: string[] = []
+    const problems: string[] = []
+    const allowedProblems: string[] = []
+    const sparseMissingBylineWarning = "console warning: ID missing in author database: null"
+    const expectedAllowedProblems = visualCase.name === "sparse"
+      ? Array(7).fill(sparseMissingBylineWarning)
+      : []
+
+    page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
+    page.on("console", message => {
+      if (["error", "warning"].includes(message.type())) {
+        const problem = `console ${message.type()}: ${message.text()}`
+        if (visualCase.name === "sparse" && problem === sparseMissingBylineWarning) {
+          allowedProblems.push(problem)
+        } else {
+          problems.push(problem)
+        }
+      }
+    })
 
     await page.route("**/*", route => {
       const request = route.request()
@@ -382,6 +400,8 @@ for (const visualCase of visualCases) {
     expect(portraitRequests).toHaveLength(profile.picture ? 1 : 0)
     expect(forbiddenProductionRequests).toEqual([])
     expect(unexpectedApplicationRequests).toEqual([])
+    expect(allowedProblems).toEqual(expectedAllowedProblems)
+    expect(problems).toEqual([])
 
     const directory = resolve(import.meta.dirname, "baselines")
     await mkdir(directory, { recursive: true })
@@ -396,5 +416,7 @@ for (const visualCase of visualCases) {
 
     expect(forbiddenProductionRequests).toEqual([])
     expect(unexpectedApplicationRequests).toEqual([])
+    expect(allowedProblems).toEqual(expectedAllowedProblems)
+    expect(problems).toEqual([])
   })
 }

@@ -133,10 +133,9 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
           <div v-else class="introauthor">
             <div class="drama_subtitle sc"><a href="/dramawebben">Dramawebben</a></div>
           </div>
-          <div v-if="profile.sourceHtml.length" class="source">
-            <span class="source_header sc drama-source-header" aria-label="Källa">
-              Källa
-            </span>
+          <div v-if="profile.sourceHtml.length" class="source drama-source">
+            <span class="source_header sc drama-source-header">Källa</span>
+            <span class="sc drama-source-header__visual" aria-hidden="true">Källor</span>
             <ul>
               <li v-for="(source, index) in profile.sourceHtml" :key="index">
                 <div class="source_content" v-html="source" />
