@@ -477,7 +477,7 @@ const server = createServer(async (request, response) => {
 
   if (
     request.method === "GET" &&
-    url.pathname === "/txt/lb-reader-doktor-glas/res_00002.html"
+    /^\/txt\/lb-reader-doktor-glas\/res_0000[23]\.html$/.test(url.pathname)
   ) {
     readerRequests.push(`${url.pathname}${url.search}`)
     if (url.searchParams.get("username") !== "app") {
@@ -631,7 +631,14 @@ const server = createServer(async (request, response) => {
     }
 
     const authorsById = new Map(
-      historyAuthorSummaries.map(author => [author.author_id, author])
+      [
+        ...historyAuthorSummaries,
+        {
+          author_id: "SöderbergH",
+          full_name: "Hjalmar Söderberg",
+          surname: "Söderberg"
+        }
+      ].map(author => [author.author_id, author])
     )
     return sendJson(response, 200, {
       items: authorIds.flatMap(authorId => {

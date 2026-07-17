@@ -55,6 +55,55 @@ const pageTitle = computed(
   () => `${reader.value.title} sida ${reader.value.pageName} etext | Litteraturbanken`
 )
 
+type LastPageView = {
+  pageix: number
+  pagename: string | undefined
+  timestamp: string
+  mediatype: "etext" | "faksimil"
+  lbworkid: string
+  author: string
+  label: string
+  url: string
+}
+
+function writeLastPageView(): void {
+  const current: LastPageView = {
+    pageix: reader.value.pageIndex,
+    pagename: reader.value.pageName,
+    timestamp: new Date().toISOString(),
+    mediatype: reader.value.mediaType,
+    lbworkid: reader.value.workId,
+    author: authorParam,
+    label: reader.value.title,
+    url: route.fullPath
+  }
+  try {
+    const raw = localStorage.getItem("lastPageViews")
+    let parsed: unknown = []
+    if (raw !== null) {
+      try {
+        parsed = JSON.parse(raw)
+      } catch {
+        // Malformed legacy data is treated as an empty history.
+      }
+    }
+    const previous = Array.isArray(parsed) ? parsed : []
+    const next = [
+      current,
+      ...previous.filter(value => {
+        if (value === null || typeof value !== "object" || Array.isArray(value)) return true
+        const record = value as Record<string, unknown>
+        return record.lbworkid !== current.lbworkid || record.mediatype !== current.mediatype
+      })
+    ].slice(0, 50)
+    localStorage.setItem("lastPageViews", JSON.stringify(next))
+  } catch {
+    // A storage failure must not break reading.
+  }
+}
+
+onMounted(writeLastPageView)
+
 useSeoMeta({
   title: pageTitle,
   description: () => reader.value.description
