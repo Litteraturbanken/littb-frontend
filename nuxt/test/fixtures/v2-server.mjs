@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs"
 import { createServer } from "node:http"
 
 import { authorProfiles } from "./author-profile-data.mjs"
+import {
+  authorWorksById,
+  malformedAuthorWorksResponse
+} from "./author-works-data.mjs"
 import { historyAuthorSummaries } from "./history-data.mjs"
 import { libraryQueryStringResponse } from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
@@ -77,6 +81,9 @@ let authorResolveFailure = false
 let authorResolveDelays = {}
 let authorProfileRequests = []
 let authorProfileFailure = false
+let authorWorksRequests = []
+let authorWorksFailures = new Set()
+let authorWorksDelays = {}
 let homeRequests = []
 let homeFailure = false
 let presentationRequests = []
@@ -153,6 +160,10 @@ function waitForWorkLookupDelay(body) {
 function waitForAuthorResolveDelay(body) {
   const delay = authorResolveDelays[JSON.stringify(body)] || 0
   return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+function waitForAuthorWorksDelay(authorId) {
+  return new Promise(resolve => setTimeout(resolve, authorWorksDelays[authorId] || 0))
 }
 
 function waitForLibraryRelevanceDelay(query) {
@@ -304,6 +315,29 @@ function normalizedAuthorIds(body) {
 
 function decodedProfileAuthorId(pathname) {
   const match = /^\/v2\/authors\/([^/]+)$/.exec(pathname)
+  if (!match) return null
+
+  let authorId
+  try {
+    authorId = decodeURIComponent(match[1])
+  } catch {
+    return { valid: false, authorId: null }
+  }
+
+  const valid = authorId.length >= 1 &&
+    authorId.length <= 100 &&
+    authorId.trim() === authorId &&
+    !authorId.includes("%") &&
+    !authorId.includes("/") &&
+    !authorId.includes("\\") &&
+    !/\p{Cc}/u.test(authorId) &&
+    authorId !== "." &&
+    authorId !== ".."
+  return { valid, authorId }
+}
+
+function decodedAuthorWorksAuthorId(pathname) {
+  const match = /^\/v2\/authors\/([^/]+)\/works$/.exec(pathname)
   if (!match) return null
 
   let authorId
@@ -499,6 +533,43 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_author_profile_failure" && request.method === "DELETE") {
     authorProfileFailure = false
     return sendJson(response, 200, { failure: authorProfileFailure })
+  }
+  if (url.pathname === "/_author_works_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: authorWorksRequests })
+  }
+  if (url.pathname === "/_author_works_requests" && request.method === "DELETE") {
+    authorWorksRequests = []
+    return sendJson(response, 200, { requests: authorWorksRequests })
+  }
+  if (url.pathname === "/_author_works_failures" && request.method === "GET") {
+    return sendJson(response, 200, { failures: [...authorWorksFailures] })
+  }
+  if (url.pathname === "/_author_works_failures" && request.method === "PUT") {
+    const body = await readJson(request)
+    authorWorksFailures = new Set(
+      Object.entries(body)
+        .filter(([, failed]) => Boolean(failed))
+        .map(([authorId]) => authorId)
+    )
+    return sendJson(response, 200, { failures: [...authorWorksFailures] })
+  }
+  if (url.pathname === "/_author_works_failures" && request.method === "DELETE") {
+    authorWorksFailures = new Set()
+    return sendJson(response, 200, { failures: [] })
+  }
+  if (url.pathname === "/_author_works_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: authorWorksDelays })
+  }
+  if (url.pathname === "/_author_works_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    authorWorksDelays = Object.fromEntries(
+      Object.entries(body).map(([authorId, delay]) => [authorId, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: authorWorksDelays })
+  }
+  if (url.pathname === "/_author_works_delays" && request.method === "DELETE") {
+    authorWorksDelays = {}
+    return sendJson(response, 200, { delays: authorWorksDelays })
   }
   if (url.pathname === "/_home_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: homeRequests })
@@ -903,6 +974,34 @@ const server = createServer(async (request, response) => {
       query.offset,
       query.limit
     ))
+  }
+
+  const authorWorksAuthorId = request.method === "GET"
+    ? decodedAuthorWorksAuthorId(rawApiPathname)
+    : null
+  if (authorWorksAuthorId !== null) {
+    authorWorksRequests.push(rawPathname)
+    if (!authorWorksAuthorId.valid) return validationError(response)
+
+    await waitForAuthorWorksDelay(authorWorksAuthorId.authorId)
+    if (authorWorksFailures.has(authorWorksAuthorId.authorId)) {
+      return sendJson(response, 503, {
+        error: {
+          code: "backend_unavailable",
+          message: "Search backend unavailable",
+          details: null
+        }
+      })
+    }
+    if (authorWorksAuthorId.authorId === "MalformedA") {
+      return sendJson(response, 200, malformedAuthorWorksResponse)
+    }
+
+    const works = authorWorksById.get(authorWorksAuthorId.authorId)
+    if (works) return sendJson(response, 200, works)
+    return sendJson(response, 404, {
+      error: { code: "not_found", message: "Resource not found", details: null }
+    })
   }
 
   const profileAuthorId = request.method === "GET"

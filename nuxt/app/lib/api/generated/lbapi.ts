@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/authors/{author_id}/works": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Author Works */
+        get: operations["v2_get_author_works"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/authors/resolve": {
         parameters: {
             query?: never;
@@ -174,6 +191,12 @@ export interface components {
         ApiErrorResponse: {
             error: components["schemas"]["ApiError"];
         };
+        /** AuthorContainingWork */
+        AuthorContainingWork: {
+            author: components["schemas"]["AuthorWorksPerson"];
+            /** Title */
+            title: string;
+        };
         /** AuthorPortrait */
         AuthorPortrait: {
             /** Caption Html */
@@ -231,6 +254,122 @@ export interface components {
             full_name: string;
             /** Surname */
             surname: string | null;
+        };
+        /** AuthorWork */
+        AuthorWork: {
+            /** Actions */
+            actions: (components["schemas"]["AuthorWorkReadAction"] | components["schemas"]["AuthorWorkDownloadAction"])[];
+            containing_work: components["schemas"]["AuthorContainingWork"] | null;
+            display_author: components["schemas"]["AuthorWorksPerson"] | null;
+            /** Imprint Year */
+            imprint_year: string | null;
+            /** Short Title */
+            short_title: string | null;
+            /** Title */
+            title: string;
+            /** Title Id */
+            title_id: string;
+            /** Title Path */
+            title_path: string;
+            /** Title Tooltip */
+            title_tooltip: string | null;
+            /** Title Url */
+            title_url: string;
+            /** Work Id */
+            work_id: string;
+        };
+        /** AuthorWorkDownloadAction */
+        AuthorWorkDownloadAction: {
+            /** Download Filename */
+            download_filename: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "download";
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "epub" | "pdf";
+            /** Url */
+            url: string;
+        };
+        /** AuthorWorkReadAction */
+        AuthorWorkReadAction: {
+            /** Download Filename */
+            download_filename: null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "read";
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil" | "infopost";
+            /** Url */
+            url: string;
+        };
+        /** AuthorWorkSection */
+        AuthorWorkSection: {
+            /** Items */
+            items: components["schemas"]["AuthorWork"][];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "main" | "part" | "photographer" | "illustrator" | "editor" | "translator" | "about" | "about_part" | "about_editor" | "about_translator";
+            /** Label */
+            label: string;
+            /** Show Author */
+            show_author: boolean;
+        };
+        /** AuthorWorksPerson */
+        AuthorWorksPerson: {
+            /** Author Id */
+            author_id: string;
+            /** Name For Index */
+            name_for_index: string;
+            /** Surname */
+            surname: string | null;
+            /** Url */
+            url: string;
+        };
+        /** AuthorWorksResponse */
+        AuthorWorksResponse: {
+            /** About Sections */
+            about_sections: components["schemas"]["AuthorWorkSection"][];
+            author: components["schemas"]["AuthorWorksShell"];
+            /** Authored Sections */
+            authored_sections: components["schemas"]["AuthorWorkSection"][];
+        };
+        /** AuthorWorksShell */
+        AuthorWorksShell: {
+            /** Audio Url */
+            audio_url: string | null;
+            /** Author Id */
+            author_id: string;
+            /** Birth Year */
+            birth_year: string | null;
+            /** Death Year */
+            death_year: string | null;
+            /** Encyclopedia Links */
+            encyclopedia_links: components["schemas"]["ProfileLink"][];
+            /** Full Name */
+            full_name: string;
+            /** Has Dramawebben */
+            has_dramawebben: boolean;
+            /** Has Introduction */
+            has_introduction: boolean;
+            /** Map Url */
+            map_url: string | null;
+            portrait: components["schemas"]["AuthorPortrait"] | null;
+            /** Related Links */
+            related_links: components["schemas"]["ProfileLink"][];
+            /** Search Url */
+            search_url: string | null;
         };
         /** ContactAcceptedResponse */
         ContactAcceptedResponse: {
@@ -476,6 +615,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthorProfile"];
+                };
+            };
+            /** @description Author not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_author_works: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                author_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorWorksResponse"];
                 };
             };
             /** @description Author not found */

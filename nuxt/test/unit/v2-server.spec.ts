@@ -29,15 +29,43 @@ import {
   strindbergAuthorProfile
 } from "../fixtures/author-profile-data.mjs"
 import {
+  authorWorksById,
+  emptyAuthorWorks,
+  malformedAuthorWorksResponse,
+  rfc3986AuthorWorks,
+  richAuthorWorks,
+  sparseAuthorWorks
+} from "../fixtures/author-works-data.mjs"
+import {
   readerPageHtmlByIndex,
   readerSearchHitResponse
 } from "../fixtures/reader-data.mjs"
 
 type ReaderHitOperation = paths["/works/{work_id}/search-hits"]["get"]
 type ReaderHitResponse = components["schemas"]["WorkSearchHitsResponse"]
+type AuthorWorksOperation = paths["/authors/{author_id}/works"]["get"]
+type AuthorWorksResponse = components["schemas"]["AuthorWorksResponse"]
+type AuthorWorkReadAction = components["schemas"]["AuthorWorkReadAction"]
+type AuthorWorkDownloadAction = components["schemas"]["AuthorWorkDownloadAction"]
 
 const generatedReaderHitContract: ReaderHitOperation = null as unknown as
   operations["v2_get_work_search_hits"]
+const generatedAuthorWorksContract: AuthorWorksOperation = null as unknown as
+  operations["v2_get_author_works"]
+const generatedAuthorWorksResponse: AuthorWorksResponse = null as unknown as
+  operations["v2_get_author_works"]["responses"][200]["content"]["application/json"]
+const validAuthorWorkReadAction: AuthorWorkReadAction = {
+  media_type: "etext",
+  kind: "read",
+  url: "/reader",
+  download_filename: null
+}
+const validAuthorWorkDownloadAction: AuthorWorkDownloadAction = {
+  media_type: "epub",
+  kind: "download",
+  url: "/book.epub",
+  download_filename: "book.epub"
+}
 const generatedReaderHitResponse: ReaderHitResponse = {
   query: "doktor glas",
   media_type: "etext",
@@ -125,6 +153,12 @@ async function authorResolveRequests() {
 
 async function authorProfileRequests() {
   return await (await fetch(`${origin}/_author_profile_requests`)).json() as {
+    requests: string[]
+  }
+}
+
+async function authorWorksRequests() {
+  return await (await fetch(`${origin}/_author_works_requests`)).json() as {
     requests: string[]
   }
 }
@@ -237,6 +271,9 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_author_resolve_delays`, { method: "DELETE" }),
       fetch(`${origin}/_author_profile_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_profile_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_author_works_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_author_works_failures`, { method: "DELETE" }),
+      fetch(`${origin}/_author_works_delays`, { method: "DELETE" }),
       fetch(`${origin}/_home_requests`, { method: "DELETE" }),
       fetch(`${origin}/_home_failure`, { method: "DELETE" }),
       fetch(`${origin}/_presentation_requests`, { method: "DELETE" }),
@@ -285,6 +322,149 @@ describe("v2 fixture server operations", () => {
     }
 
     expect(await authorProfileRequests()).toEqual({ requests: expectedRequests })
+  })
+
+  test("serves complete deterministic Author Works on public and private paths", async () => {
+    expect([...authorWorksById.values()]).toEqual([
+      richAuthorWorks,
+      sparseAuthorWorks,
+      emptyAuthorWorks,
+      rfc3986AuthorWorks
+    ])
+
+    const expectedRequests: string[] = []
+    for (const works of authorWorksById.values()) {
+      const encodedId = encodeURIComponent(works.author.author_id).replace(
+        /[!'()*]/g,
+        character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+      )
+      for (const prefix of ["/v2", "/private-v2"]) {
+        const path = `${prefix}/authors/${encodedId}/works`
+        const response = await fetch(`${origin}${path}`)
+
+        expect(response.status, path).toBe(200)
+        expect(await response.json(), path).toEqual(works)
+        expectedRequests.push(path)
+      }
+    }
+
+    expect(await authorWorksRequests()).toEqual({ requests: expectedRequests })
+  })
+
+  test("Author Works returns typed missing, invalid, failed, and malformed states", async () => {
+    const missing = await fetch(`${origin}/v2/authors/MissingA/works`)
+    expect(missing.status).toBe(404)
+    expect(await missing.json()).toEqual({
+      error: { code: "not_found", message: "Resource not found", details: null }
+    })
+
+    for (const path of [
+      "/v2/authors/%25/works",
+      "/private-v2/authors/%20StrindbergA/works",
+      `/v2/authors/${"x".repeat(101)}/works`
+    ]) {
+      const response = await fetch(`${origin}${path}`)
+      expect(response.status, path).toBe(422)
+      expect((await response.json()).error.code).toBe("validation_error")
+    }
+
+    await fetch(`${origin}/_author_works_failures`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ StrindbergA: true })
+    })
+    const failed = await fetch(`${origin}/private-v2/authors/StrindbergA/works`)
+    expect(failed.status).toBe(503)
+    expect(await failed.json()).toEqual({
+      error: {
+        code: "backend_unavailable",
+        message: "Search backend unavailable",
+        details: null
+      }
+    })
+    expect((await fetch(`${origin}/v2/authors/Lagerl%C3%B6fS/works`)).status).toBe(200)
+
+    const malformed = await fetch(`${origin}/v2/authors/MalformedA/works`)
+    expect(malformed.status).toBe(200)
+    expect(await malformed.json()).toEqual(malformedAuthorWorksResponse)
+
+    await fetch(`${origin}/_author_works_failures`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_author_works_failures`)).json()).toEqual({
+      failures: []
+    })
+    expect((await fetch(`${origin}/v2/authors/StrindbergA/works`)).status).toBe(200)
+  })
+
+  test("Author Works keyed delays are observable and latest request can finish first", async () => {
+    await fetch(`${origin}/_author_works_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ StrindbergA: 80, "LagerlöfS": 0 })
+    })
+
+    const completion: string[] = []
+    const slow = fetch(`${origin}/v2/authors/StrindbergA/works`).then(response => {
+      completion.push("slow")
+      return response
+    })
+    const fast = fetch(`${origin}/v2/authors/Lagerl%C3%B6fS/works`).then(response => {
+      completion.push("fast")
+      return response
+    })
+
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      if ((await authorWorksRequests()).requests.length === 2) break
+      await new Promise(resolve => setTimeout(resolve, 2))
+    }
+    expect(await authorWorksRequests()).toEqual({
+      requests: [
+        "/v2/authors/StrindbergA/works",
+        "/v2/authors/Lagerl%C3%B6fS/works"
+      ]
+    })
+    expect((await fast).status).toBe(200)
+    expect(completion).toEqual(["fast"])
+    expect((await slow).status).toBe(200)
+    expect(completion).toEqual(["fast", "slow"])
+
+    await fetch(`${origin}/_author_works_delays`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_author_works_delays`)).json()).toEqual({
+      delays: {}
+    })
+  })
+
+  test("Author Works ledgers and controls reset independently", async () => {
+    await fetch(`${origin}/v2/authors/StrindbergA/works`)
+    await fetch(`${origin}/v2/authors/StrindbergA`)
+    await fetch(`${origin}/v2/stats`)
+    await fetch(
+      `${origin}/api/query_string/etext,faksimil,pdf?q=authorid%3AStrindbergA&sort_field=sortkey%7Casc&from=0&to=19`
+    )
+    await fetch(
+      `${origin}/v2/works/lb-reader-doktor-glas/search-hits?media_type=etext&query=doktor`
+    )
+
+    await fetch(`${origin}/_author_works_requests`, { method: "DELETE" })
+    expect(await authorWorksRequests()).toEqual({ requests: [] })
+    expect(await authorProfileRequests()).toEqual({
+      requests: ["/v2/authors/StrindbergA"]
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
+    expect((await libraryQueryRequests()).requests).toHaveLength(1)
+    expect((await readerHitRequests()).requests).toHaveLength(1)
+
+    await fetch(`${origin}/v2/authors/StrindbergA/works`)
+    await fetch(`${origin}/_author_profile_requests`, { method: "DELETE" })
+    await fetch(`${origin}/_library_query_requests`, { method: "DELETE" })
+    await fetch(`${origin}/_reader_hit_requests`, { method: "DELETE" })
+    expect(await authorWorksRequests()).toEqual({
+      requests: ["/v2/authors/StrindbergA/works"]
+    })
+    expect(await (await fetch(`${origin}/_requests`)).json()).toEqual({
+      requests: ["/v2/stats"]
+    })
   })
 
   test("author profiles return standard 404s and record the original encoded path", async () => {
