@@ -148,10 +148,36 @@ export const noIntroAuthorProfile = {
   dramawebben: null
 }
 
+/** @satisfies {AuthorProfile} */
+export const rfc3986AuthorProfile = {
+  author_id: "O'Neil(A",
+  full_name: "Pat O'Neil (A)",
+  surname: "O'Neil",
+  birth_year: null,
+  death_year: null,
+  canonical_path: "/författare/O%27Neil%28A",
+  introduction_html: "<p>En profil med RFC3986-kodad författaridentitet.</p>",
+  introduction_by: null,
+  source_html: [],
+  pseudonyms: [],
+  other_names: [],
+  portrait: null,
+  search_url: null,
+  related_links: [],
+  encyclopedia_links: [],
+  dramawebben: {
+    introduction_html: "<p>Dramawebbens RFC3986-profil.</p>",
+    introduction_by: null,
+    source_html: [],
+    portrait: null
+  }
+}
+
 /** @type {ReadonlyMap<string, AuthorProfile>} */
 export const authorProfiles = new Map([
   [strindbergAuthorProfile.author_id, strindbergAuthorProfile],
   [lagerlofAuthorProfile.author_id, lagerlofAuthorProfile],
   [dramaOnlyAuthorProfile.author_id, dramaOnlyAuthorProfile],
-  [noIntroAuthorProfile.author_id, noIntroAuthorProfile]
+  [noIntroAuthorProfile.author_id, noIntroAuthorProfile],
+  [rfc3986AuthorProfile.author_id, rfc3986AuthorProfile]
 ])

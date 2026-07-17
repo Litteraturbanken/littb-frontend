@@ -87,6 +87,17 @@ const allowedUrlProtocols = new Set(["http:", "https:", "mailto:", "tel:"])
 const unsafeCharacters = /[\\\u0000-\u001f\u007f-\u009f]/u
 const absoluteScheme = /^[a-z][a-z\d+.-]*:/iu
 
+function encodeRfc3986Segment(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+  )
+}
+
+export function authorProfilePath(authorId: string, ...segments: string[]): string {
+  return `/f%C3%B6rfattare/${[authorId, ...segments].map(encodeRfc3986Segment).join("/")}`
+}
+
 function repeatedlyDecode(value: string, maximumLength?: number): string | null {
   let decoded = value
   try {

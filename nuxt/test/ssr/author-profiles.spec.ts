@@ -85,6 +85,25 @@ test("SSR renders the complete ordinary author profile from one private request"
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/StrindbergA"])
 })
 
+test("SSR renders RFC3986 author IDs once with canonical profile links", async ({ request }) => {
+  const response = await request.get("/f%C3%B6rfattare/O%27Neil%28A", {
+    maxRedirects: 0
+  })
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(document.querySelector("h1")?.textContent?.trim()).toBe("Pat O'Neil (A)")
+  expect([...document.querySelectorAll("ul.links a")].map(link => [
+    link.textContent?.trim(),
+    link.getAttribute("href")
+  ])).toEqual([
+    ["Introduktion", "/f%C3%B6rfattare/O%27Neil%28A"],
+    ["Verk", "/f%C3%B6rfattare/O%27Neil%28A/titlar"],
+    ["Dramawebben", "/f%C3%B6rfattare/O%27Neil%28A/dramawebben"]
+  ])
+  expect(await profileRequests(request)).toEqual(["/private-v2/authors/O'Neil(A"])
+})
+
 test("SSR omits absent sparse-profile sections without inventing fallbacks", async ({ request }) => {
   const response = await request.get("/författare/Lagerl%C3%B6fS")
   expect(response.status()).toBe(200)

@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 
 import type { components } from "../../app/lib/api/generated/lbapi"
 import {
+  authorProfilePath,
   createAuthorProfileView,
   formatAuthorYears,
   sanitizeAuthorHtml,
@@ -46,6 +47,18 @@ describe("author route validation", () => {
     "%252e%252e"
   ])("rejects an unsafe or non-scalar identifier %#", value => {
     expect(validateAuthorRouteParam(value)).toBe(false)
+  })
+})
+
+describe("author profile paths", () => {
+  test("uses uppercase RFC3986 escapes for every encodeURIComponent exception", () => {
+    expect(authorProfilePath("O'Neil!()*A"))
+      .toBe("/f%C3%B6rfattare/O%27Neil%21%28%29%2AA")
+  })
+
+  test("encodes author and child segments into one canonical client path", () => {
+    expect(authorProfilePath("O'Neil(A", "titlar", "Del!Ett"))
+      .toBe("/f%C3%B6rfattare/O%27Neil%28A/titlar/Del%21Ett")
   })
 })
 

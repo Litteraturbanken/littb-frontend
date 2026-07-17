@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import type { AuthorProfileView } from "~/lib/author-profile"
+import { authorProfilePath, type AuthorProfileView } from "~/lib/author-profile"
 
 const props = defineProps<{
   profile: AuthorProfileView
   variant: "ordinary" | "dramawebben"
 }>()
 
-const encodedAuthorId = computed(() => encodeURIComponent(props.profile.authorId))
-const rootHref = computed(() => `/f%C3%B6rfattare/${encodedAuthorId.value}`)
-const titlesHref = computed(() => `${rootHref.value}/titlar`)
-const dramawebbenHref = computed(() => `${rootHref.value}/dramawebben`)
+const rootHref = computed(() => authorProfilePath(props.profile.authorId))
+const titlesHref = computed(() => authorProfilePath(props.profile.authorId, "titlar"))
+const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId, "dramawebben"))
 </script>
 
 <template>

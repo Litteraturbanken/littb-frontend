@@ -3,6 +3,7 @@ import AuthorProfileContent from "~/components/author/AuthorProfileContent.vue"
 import type { components } from "~/lib/api/generated/lbapi"
 import { createLbApiClient } from "~/lib/api/client"
 import {
+  authorProfilePath,
   createAuthorProfileView,
   validateAuthorRouteParam
 } from "~/lib/author-profile"
@@ -58,7 +59,7 @@ if (import.meta.server && response.value.status !== 200) {
 
 if (profile.value && !profile.value.dramawebben) {
   await navigateTo(
-    { path: `/f%C3%B6rfattare/${encodeURIComponent(authorId.value)}`, query: route.query },
+    { path: authorProfilePath(authorId.value), query: route.query },
     { redirectCode: 307, replace: true }
   )
 }

@@ -19,6 +19,7 @@ import {
   dramaOnlyAuthorProfile,
   lagerlofAuthorProfile,
   noIntroAuthorProfile,
+  rfc3986AuthorProfile,
   strindbergAuthorProfile
 } from "../fixtures/author-profile-data.mjs"
 
@@ -215,12 +216,16 @@ describe("v2 fixture server operations", () => {
       strindbergAuthorProfile,
       lagerlofAuthorProfile,
       dramaOnlyAuthorProfile,
-      noIntroAuthorProfile
+      noIntroAuthorProfile,
+      rfc3986AuthorProfile
     ])
 
     const expectedRequests: string[] = []
     for (const profile of authorProfiles.values()) {
-      const encodedId = encodeURIComponent(profile.author_id)
+      const encodedId = encodeURIComponent(profile.author_id).replace(
+        /[!'()*]/g,
+        character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+      )
       for (const prefix of ["/v2", "/private-v2"]) {
         const path = `${prefix}/authors/${encodedId}`
         const response = await fetch(`${origin}${path}`)

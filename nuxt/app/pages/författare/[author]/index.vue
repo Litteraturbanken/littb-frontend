@@ -3,6 +3,7 @@ import AuthorProfileContent from "~/components/author/AuthorProfileContent.vue"
 import type { components } from "~/lib/api/generated/lbapi"
 import { createLbApiClient } from "~/lib/api/client"
 import {
+  authorProfilePath,
   createAuthorProfileView,
   validateAuthorRouteParam
 } from "~/lib/author-profile"
@@ -61,8 +62,8 @@ if (import.meta.server && response.value.status !== 200) {
 }
 
 if (profile.value) {
-  const rootPath = `/författare/${encodeURIComponent(authorId.value)}`
-  if (profile.value.canonical_path !== rootPath) {
+  const rootPath = authorProfilePath(authorId.value)
+  if (clientAuthorPath(profile.value.canonical_path) !== rootPath) {
     await navigateTo(
       { path: clientAuthorPath(profile.value.canonical_path), query: route.query },
       { redirectCode: 307, replace: true }
