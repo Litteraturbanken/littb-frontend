@@ -1,6 +1,8 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
+import { managedHtmlRawProbes } from "../fixtures/author-profile-data.mjs"
+
 const fixture = "http://127.0.0.1:4100"
 
 async function reset(request: APIRequestContext) {
@@ -67,6 +69,8 @@ test("SSR renders the complete ordinary author profile from one private request"
   const portrait = document.querySelector(".portrait_container")
   expect(portrait?.querySelector("img.author_img")?.getAttribute("src"))
     .toBe("/red/forfattare/StrindbergA/StrindbergA_large.jpeg")
+  expect(portrait?.querySelector("img.author_img")?.getAttribute("alt"))
+    .toBe("Porträtt av August Strindberg")
   expect(compactText(portrait?.querySelector("figcaption")?.textContent))
     .toBe("August Strindberg, fotograferad 1902.")
   const linkBoxes = [...portrait?.querySelectorAll(".ext_links") ?? []]
@@ -84,6 +88,32 @@ test("SSR renders the complete ordinary author profile from one private request"
   expect(document.documentElement.outerHTML).not.toContain("javascript:")
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/StrindbergA"])
 })
+
+for (const [variant, path, intended] of [
+  [
+    "ordinary",
+    "/författare/ManagedHtmlProbe",
+    ["Ordinary intended intro", "Ordinary intended source", "Ordinary intended caption"]
+  ],
+  [
+    "Dramawebben",
+    "/författare/ManagedHtmlProbe/dramawebben",
+    ["Drama intended intro", "Drama intended source", "Drama intended caption"]
+  ]
+] as const) {
+  test(`SSR ${variant} payload contains only sanitized managed HTML`, async ({ request }) => {
+    const response = await request.get(path)
+    expect(response.status()).toBe(200)
+    const html = await response.text()
+    const { document } = parseHTML(html)
+
+    expect(document.querySelector(".introtext")?.textContent).toContain(intended[0])
+    expect(document.querySelector(".source_content")?.textContent).toContain(intended[1])
+    expect(document.querySelector("figcaption")?.textContent).toContain(intended[2])
+    for (const probe of managedHtmlRawProbes) expect(html, probe).not.toContain(probe)
+    expect(await profileRequests(request)).toEqual(["/private-v2/authors/ManagedHtmlProbe"])
+  })
+}
 
 test("SSR renders RFC3986 author IDs once with canonical profile links", async ({ request }) => {
   const response = await request.get("/f%C3%B6rfattare/O%27Neil%28A", {
@@ -151,6 +181,8 @@ test("SSR renders the Dramawebben variant and keeps ordinary link boxes out", as
     .toBe("Pseudonymer Härved Ulf, Frater Sylvester")
   expect(document.querySelector(".portrait_container img")?.getAttribute("src"))
     .toBe("/red/forfattare/StrindbergA/StrindbergA_dw_large.jpeg")
+  expect(document.querySelector(".portrait_container img")?.getAttribute("alt"))
+    .toBe("Porträtt av August Strindberg")
   expect(document.querySelector(".portrait_container figcaption")?.textContent?.trim())
     .toBe("Porträtt ur Dramawebbens samling.")
   expect(document.querySelector(".page_content .ext_links")).toBeNull()
@@ -173,6 +205,8 @@ test("SSR renders a sparse Dramawebben-only profile without ordinary content", a
     .toBeNull()
   expect(document.querySelector(".portrait_container img")?.getAttribute("src"))
     .toBe("/red/forfattare/DramaOnly/DramaOnly_dw_large.jpeg")
+  expect(document.querySelector(".portrait_container img")?.getAttribute("alt"))
+    .toBe("Porträtt av Dramatikern")
   expect(document.querySelector(".portrait_container figcaption, .ext_links")).toBeNull()
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/DramaOnly"])
 })

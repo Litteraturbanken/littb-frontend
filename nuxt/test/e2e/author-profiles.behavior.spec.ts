@@ -1,6 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 import { readFileSync } from "node:fs"
 
+import { managedHtmlRawProbes } from "../fixtures/author-profile-data.mjs"
+
 const fixture = "http://127.0.0.1:4100"
 const portraitBytes = readFileSync(new URL("../../app/assets/img/lagerlof_portrait.jpg", import.meta.url))
 
@@ -61,6 +63,41 @@ test("hydrates the rich profile without warnings or duplicate browser requests",
   await expect(page.locator(".introtext")).toContainText("Han debuterade med Fritänkaren.")
   expect(await profileRequests(request)).toEqual(["/private-v2/authors/StrindbergA"])
   expect(problems).toEqual([])
+})
+
+test("managed HTML hydrates without retaining raw provider markers", async ({ page }) => {
+  const problems = collectProblems(page)
+  for (const [path, intended] of [
+    [
+      "/författare/ManagedHtmlProbe",
+      ["Ordinary intended intro", "Ordinary intended source", "Ordinary intended caption"]
+    ],
+    [
+      "/författare/ManagedHtmlProbe/dramawebben",
+      ["Drama intended intro", "Drama intended source", "Drama intended caption"]
+    ]
+  ] as const) {
+    await page.goto(path, { waitUntil: "networkidle" })
+    await expect(page.locator(".introtext")).toContainText(intended[0])
+    await expect(page.locator(".source_content")).toContainText(intended[1])
+    await expect(page.locator("figcaption")).toContainText(intended[2])
+    const html = await page.content()
+    for (const probe of managedHtmlRawProbes) expect(html, probe).not.toContain(probe)
+  }
+  expect(problems).toEqual([])
+})
+
+test("ordinary and Dramawebben portraits expose stable Swedish accessible names", async ({
+  page
+}) => {
+  await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
+  await expect(page.getByRole("img", { name: "Porträtt av August Strindberg" })).toBeVisible()
+
+  await routerPush(page, "/f%C3%B6rfattare/StrindbergA/dramawebben")
+  await expect(page.getByRole("img", { name: "Porträtt av August Strindberg" })).toBeVisible()
+
+  await page.goto("/författare/DramaOnly/dramawebben", { waitUntil: "networkidle" })
+  await expect(page.getByRole("img", { name: "Porträtt av Dramatikern" })).toBeVisible()
 })
 
 test("client author navigation uses one public request and replaces every profile field", async ({
@@ -139,6 +176,27 @@ test("direct Dramawebben client navigation without a block replace-redirects to 
   await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS\?fran=test$/)
   await expect(page.locator("h1")).toContainText("Selma Lagerlöf")
   expect(await profileRequests(request)).toEqual(["/v2/authors/Lagerl%C3%B6fS"])
+
+  await page.goBack()
+  await expect(page).toHaveURL(/\/$/)
+  expect(problems).toEqual([])
+})
+
+test("ordinary client navigation to a Dramawebben-only canonical profile uses one request", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/", { waitUntil: "networkidle" })
+  await reset(request)
+
+  await routerPush(page, "/f%C3%B6rfattare/DramaOnly?fran=test")
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/DramaOnly\/dramawebben\?fran=test$/)
+  await expect(page.locator("h1")).toContainText("Dramatikern")
+  await expect(page.locator(".introtext"))
+    .toContainText("Den här introduktionen finns bara på Dramawebben.")
+  await expect(page.getByRole("img", { name: "Porträtt av Dramatikern" })).toBeVisible()
+  expect(await profileRequests(request)).toEqual(["/v2/authors/DramaOnly"])
 
   await page.goBack()
   await expect(page).toHaveURL(/\/$/)

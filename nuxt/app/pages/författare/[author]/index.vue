@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import AuthorProfileContent from "~/components/author/AuthorProfileContent.vue"
-import type { components } from "~/lib/api/generated/lbapi"
 import { createLbApiClient } from "~/lib/api/client"
 import {
   authorProfilePath,
   createAuthorProfileView,
+  type AuthorProfileView,
   validateAuthorRouteParam
 } from "~/lib/author-profile"
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
 
-type AuthorProfile = components["schemas"]["AuthorProfile"]
-type ProfileResponse = { profile: AuthorProfile | null, status: number }
+type ProfileResponse = {
+  view: AuthorProfileView | null
+  status: number
+  canonicalPath: string
+  hasDramawebben: boolean
+}
 
 definePageMeta({
   validate: route => {
@@ -27,7 +31,7 @@ const authorId = computed(() => {
   const value = Array.isArray(route.params.author) ? route.params.author[0] : route.params.author
   return typeof value === "string" ? value : ""
 })
-const asyncKey = computed(() => `author-profile:${authorId.value}`)
+const asyncKey = computed(() => `author-profile:ordinary:${authorId.value}`)
 const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
 
 function clientAuthorPath(path: string): string {
@@ -41,12 +45,19 @@ const { data } = await useAsyncData<ProfileResponse>(
       const { data: profile, response } = await client.GET("/authors/{author_id}", {
         params: { path: { author_id: authorId.value } }
       })
+      const canonicalPath = profile?.canonical_path ?? ""
+      const isDramawebbenCanonical = Boolean(profile?.dramawebben)
+        && clientAuthorPath(canonicalPath) === authorProfilePath(authorId.value, "dramawebben")
       return {
-        profile: profile ?? null,
-        status: profile ? 200 : response.status === 404 ? 404 : 503
+        view: profile
+          ? createAuthorProfileView(profile, isDramawebbenCanonical ? "dramawebben" : "ordinary")
+          : null,
+        status: profile ? 200 : response.status === 404 ? 404 : 503,
+        canonicalPath,
+        hasDramawebben: Boolean(profile?.dramawebben)
       }
     } catch {
-      return { profile: null, status: 503 }
+      return { view: null, status: 503, canonicalPath: "", hasDramawebben: false }
     }
   },
   {
@@ -54,26 +65,37 @@ const { data } = await useAsyncData<ProfileResponse>(
   }
 )
 
-const response = computed(() => data.value ?? { profile: null, status: 503 })
-const profile = computed(() => response.value.profile)
+const response = computed(() => data.value ?? {
+  view: null,
+  status: 503,
+  canonicalPath: "",
+  hasDramawebben: false
+})
 
 if (import.meta.server && response.value.status !== 200) {
   setResponseStatus(response.value.status === 404 ? 404 : 503)
 }
 
-if (profile.value) {
+if (response.value.canonicalPath) {
   const rootPath = authorProfilePath(authorId.value)
-  if (clientAuthorPath(profile.value.canonical_path) !== rootPath) {
+  const canonicalPath = clientAuthorPath(response.value.canonicalPath)
+  if (canonicalPath !== rootPath) {
+    if (
+      import.meta.client
+      && response.value.hasDramawebben
+      && canonicalPath === authorProfilePath(authorId.value, "dramawebben")
+    ) {
+      const nuxtApp = useNuxtApp()
+      nuxtApp.payload.data[`author-profile:dramawebben:${authorId.value}`] = response.value
+    }
     await navigateTo(
-      { path: clientAuthorPath(profile.value.canonical_path), query: route.query },
+      { path: canonicalPath, query: route.query },
       { redirectCode: 307, replace: true }
     )
   }
 }
 
-const view = computed(() => profile.value
-  ? createAuthorProfileView(profile.value, "ordinary")
-  : null)
+const view = computed(() => response.value.view)
 const description = computed(() => view.value
   ? `${view.value.fullName}, Introduktion`
   : "Författarprofil")

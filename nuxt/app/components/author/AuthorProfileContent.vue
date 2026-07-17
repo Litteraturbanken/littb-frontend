@@ -87,6 +87,7 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
             <img
               class="author_img border border-gray-500 border-opacity-50"
               :src="profile.portrait.url"
+              :alt="`Porträtt av ${profile.fullName}`"
             >
             <figcaption
               v-if="profile.portrait.captionHtml"
@@ -156,7 +157,11 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
           </div>
         </div>{{ " " }}
         <div v-if="profile.portrait" class="portrait_container sm:inline-block sm:ml-8">
-          <img class="author_img" :src="profile.portrait.url">
+          <img
+            class="author_img"
+            :src="profile.portrait.url"
+            :alt="`Porträtt av ${profile.fullName}`"
+          >
           <figcaption v-if="profile.portrait.captionHtml" v-html="profile.portrait.captionHtml" />
         </div>
       </div>

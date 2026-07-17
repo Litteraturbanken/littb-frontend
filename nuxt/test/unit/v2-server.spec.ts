@@ -18,6 +18,7 @@ import {
   authorProfiles,
   dramaOnlyAuthorProfile,
   lagerlofAuthorProfile,
+  managedHtmlProbeAuthorProfile,
   noIntroAuthorProfile,
   rfc3986AuthorProfile,
   strindbergAuthorProfile
@@ -217,7 +218,8 @@ describe("v2 fixture server operations", () => {
       lagerlofAuthorProfile,
       dramaOnlyAuthorProfile,
       noIntroAuthorProfile,
-      rfc3986AuthorProfile
+      rfc3986AuthorProfile,
+      managedHtmlProbeAuthorProfile
     ])
 
     const expectedRequests: string[] = []

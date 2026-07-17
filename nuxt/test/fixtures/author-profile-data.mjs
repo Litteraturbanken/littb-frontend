@@ -173,11 +173,58 @@ export const rfc3986AuthorProfile = {
   }
 }
 
+export const managedHtmlRawProbes = [
+  "ordinary-intro-attribute",
+  "ordinary-intro-raw-marker",
+  "ordinary-source-attribute",
+  "ordinary-source-raw-marker",
+  "ordinary-caption-attribute",
+  "ordinary-caption-raw-marker",
+  "drama-intro-attribute",
+  "drama-intro-raw-marker",
+  "drama-source-attribute",
+  "drama-source-raw-marker",
+  "drama-caption-attribute",
+  "drama-caption-raw-marker"
+]
+
+/** @satisfies {AuthorProfile} */
+export const managedHtmlProbeAuthorProfile = {
+  author_id: "ManagedHtmlProbe",
+  full_name: "Säker Profil",
+  surname: "Profil",
+  birth_year: null,
+  death_year: null,
+  canonical_path: "/författare/ManagedHtmlProbe",
+  introduction_html: '<p onclick="ordinary-intro-attribute()">Ordinary intended intro</p><script>ordinary-intro-raw-marker</script>',
+  introduction_by: null,
+  source_html: ['<i style="ordinary-source-attribute">Ordinary intended source</i><svg>ordinary-source-raw-marker</svg>'],
+  pseudonyms: [],
+  other_names: [],
+  portrait: {
+    url: "/red/forfattare/ManagedHtmlProbe/ManagedHtmlProbe_large.jpeg",
+    caption_html: '<span onmouseover="ordinary-caption-attribute()">Ordinary intended caption</span><style>ordinary-caption-raw-marker</style>'
+  },
+  search_url: null,
+  related_links: [],
+  encyclopedia_links: [],
+  dramawebben: {
+    introduction_html: '<p v-html="drama-intro-attribute">Drama intended intro</p><form>drama-intro-raw-marker</form>',
+    introduction_by: null,
+    source_html: ['<cite onclick="drama-source-attribute()">Drama intended source</cite><object>drama-source-raw-marker</object>'],
+    portrait: {
+      url: "/red/forfattare/ManagedHtmlProbe/ManagedHtmlProbe_dw_large.jpeg",
+      caption_html: '<small style="drama-caption-attribute">Drama intended caption</small><math>drama-caption-raw-marker</math>'
+    }
+  }
+}
+
 /** @type {ReadonlyMap<string, AuthorProfile>} */
 export const authorProfiles = new Map([
   [strindbergAuthorProfile.author_id, strindbergAuthorProfile],
   [lagerlofAuthorProfile.author_id, lagerlofAuthorProfile],
   [dramaOnlyAuthorProfile.author_id, dramaOnlyAuthorProfile],
   [noIntroAuthorProfile.author_id, noIntroAuthorProfile],
-  [rfc3986AuthorProfile.author_id, rfc3986AuthorProfile]
+  [rfc3986AuthorProfile.author_id, rfc3986AuthorProfile],
+  [managedHtmlProbeAuthorProfile.author_id, managedHtmlProbeAuthorProfile]
 ])
