@@ -550,7 +550,7 @@ function hitHref(hit: WorkSearchHit): string {
                 @click="navigate"
               ><span class="submit btn navicon navicon-visual right" aria-hidden="true"><i class="fa fa-angle-right right" /></span>{{ " " }}</a></NuxtLink>
 
-              <span class="expl small">Du kan också bläddra med tangentbordets piltangenter.</span>
+              <span class="expl small" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
             </nav>
 
             <div class="w-11/12" aria-hidden="true">
@@ -581,7 +581,7 @@ function hitHref(hit: WorkSearchHit): string {
           aria-hidden="true"
         />
         <nav id="search_nav" class="active" aria-label="Sökträffsnavigering">
-          <div v-if="hitResponse" class="text" aria-live="polite">
+          <div v-if="hitResponse" class="text">
             <div>
               <span class="num">{{ hitResponse.total_hits }}</span>
               {{ hitResponse.total_hits === 1 ? "sökträff" : "sökträffar" }}
@@ -590,7 +590,7 @@ function hitHref(hit: WorkSearchHit): string {
               Träff <span>{{ activeHit.index + 1 }}</span>, sida {{ reader.pageName }}
             </div>
           </div>
-          <p v-else-if="hitMessage" class="text" aria-live="polite">{{ hitMessage }}</p>
+          <p v-else-if="hitMessage" class="text">{{ hitMessage }}</p>
           <ul class="ctrls">
             <li class="arrows">
               <NuxtLink

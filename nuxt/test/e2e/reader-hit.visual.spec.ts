@@ -104,6 +104,9 @@ for (const visualCase of visualCases) {
     await expect(page.getByRole("navigation", { name: "Sidnavigering", exact: true }))
       .toHaveCount(1)
     await expect(page.locator("a button")).toHaveCount(0)
+    await expect(page.locator(".reader-navigation .goto")).toHaveAttribute("aria-hidden", "true")
+    await expect(page.locator(".reader-navigation .expl")).toHaveAttribute("aria-hidden", "true")
+    await expect(page.locator("#toolkit-right .subnav")).toHaveAttribute("aria-hidden", "true")
 
     const toolkit = page.locator("#toolkit > #search_nav")
     if (visualCase.query === null) {
@@ -112,6 +115,8 @@ for (const visualCase of visualCases) {
       await expect(page.locator("#toolkit")).toBeEmpty()
       expect(await readerHitRequests(request)).toEqual([])
     } else {
+      await expect(page.locator(".reader-search-state[aria-live], #search_nav [aria-live]"))
+        .toHaveCount(1)
       await expect(toolkit).toHaveCount(1)
       await expect(toolkit).toBeVisible()
       await expect(page.locator("#toolkit > .spinner_search")).toHaveCount(1)

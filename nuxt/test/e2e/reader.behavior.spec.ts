@@ -377,6 +377,8 @@ test("a public hit failure stays local to the hydrated Reader", async ({ page, r
   await expect(page.locator(".reader-search-message")).toHaveText(
     "Sökträffen kunde inte hämtas."
   )
+  await expect(page.locator(".reader-search-state[aria-live], #search_nav [aria-live]"))
+    .toHaveCount(1)
   await expect(page.locator(".reader_main .markee")).toHaveCount(0)
   await expect(page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }))
     .toBeVisible()
