@@ -323,6 +323,17 @@ test("SSR disables EPUB pagination at the final boundary", async ({ request }) =
   expect((await epubRequests(request))[0]?.query).toMatchObject({ from: "200", to: "300" })
 })
 
+test("SSR preserves bare and repeated unrelated query keys in EPUB pagination hrefs", async ({
+  request
+}) => {
+  const document = parseHTML(await (await request.get(
+    "/bibliotek?keep&keep=ja&visa=epub&sort=popularitet&sida=2"
+  )).text()).document
+
+  expect(document.querySelector('[data-library-page="1"]')?.getAttribute("href"))
+    .toBe("/bibliotek?keep=&keep=ja&visa=epub&sort=popularitet&sida=1")
+})
+
 for (const invalid of ["saknas", "0", "-2", "1.5"]) {
   test(`SSR normalizes invalid EPUB page ${invalid} to one and preserves unrelated keys`, async ({
     request
@@ -373,6 +384,19 @@ test("SSR omits malformed EPUB rows and unsafe synthesized path identifiers", as
 
   expect(epubRows(document)).toHaveLength(1)
   expect(document.querySelector('[href*="UnsafeWork"], [href*="unsafe"]')).toBeNull()
+})
+
+test("SSR omits numeric and unencodable EPUB identifiers without rejecting the envelope", async ({
+  request
+}) => {
+  const document = parseHTML(await (await request.get(
+    "/bibliotek?visa=epub&filter=strict-row"
+  )).text()).document
+
+  expect(epubRows(document).map(row => row.title)).toEqual(["Doktor Glas"])
+  expect(document.querySelector("[data-library-error]")).toBeNull()
+  expect(document.querySelector('[href*="NumericIdentifier"], [href*="UnencodableIdentifier"]'))
+    .toBeNull()
 })
 
 test("SSR renders a generic EPUB error when the private transport fails", async ({ request }) => {

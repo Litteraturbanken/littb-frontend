@@ -676,7 +676,12 @@ function preservedQuery(): URLSearchParams {
   for (const [key, value] of Object.entries(route.query)) {
     if (ownedQueryKeys.has(key)) continue
     if (Array.isArray(value)) {
-      for (const item of value) if (typeof item === "string") params.append(key, item)
+      for (const item of value) {
+        if (item === null) params.append(key, "")
+        else if (typeof item === "string") params.append(key, item)
+      }
+    } else if (value === null) {
+      params.append(key, "")
     } else if (typeof value === "string") {
       params.append(key, value)
     }

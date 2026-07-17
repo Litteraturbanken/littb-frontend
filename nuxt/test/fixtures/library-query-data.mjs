@@ -102,6 +102,20 @@ export const libraryQueryMalformedRowResponse = {
   suggest: []
 }
 
+const numericIdentifierWork = epubWork({ id: "NumericIdentifier" })
+numericIdentifierWork.main_author.authorid = 123
+
+export const libraryQueryStrictRowResponse = {
+  data: [
+    doktorGlas,
+    numericIdentifierWork,
+    epubWork({ id: "UnencodableIdentifier", authorId: "\uD800" })
+  ],
+  hits: 3,
+  distinct_hits: 3,
+  suggest: []
+}
+
 export const libraryQueryEmptyResponse = {
   data: [],
   hits: 0,
@@ -130,6 +144,8 @@ export function libraryQueryStringResponse(query = {}) {
 
   if (normalized.includes("malformed-top") || normalized.includes("malformed top")) {
     response = libraryQueryMalformedEnvelopeResponse
+  } else if (normalized.includes("strict-row") || normalized.includes("strict row")) {
+    response = libraryQueryStrictRowResponse
   } else if (normalized.includes("malformed-row") || normalized.includes("malformed row")) {
     response = libraryQueryMalformedRowResponse
   } else if (normalized.includes("inga")) {
