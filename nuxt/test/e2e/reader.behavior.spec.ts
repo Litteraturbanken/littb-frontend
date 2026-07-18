@@ -104,7 +104,10 @@ test("Library EPUB shorthand navigation shows only its preloader and replaces Hi
   await page.goto("/bibliotek?visa=epub&sort=popularitet", { waitUntil: "networkidle" })
   page.on("request", browserRequest => {
     const url = new URL(browserRequest.url())
-    if (browserRequest.resourceType() === "document" && url.pathname === readerShorthandPath) {
+    if (
+      browserRequest.resourceType() === "document" &&
+      url.pathname === readerShorthandRouterPath
+    ) {
       shorthandDocumentRequests.push(browserRequest.url())
     }
   })
@@ -138,6 +141,7 @@ test("client shorthand navigation preserves the raw route fullPath query", async
 }) => {
   const problems = captureBrowserProblems(page)
   const rawQuery = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  const normalizedQuery = "?bare&empty=&plus=a+b&percent=a+b&repeat=/&repeat=/"
   await request.put(`${fixture}/_reader_metadata_delays`, {
     data: { DoktorGlas: 200 }
   })
@@ -152,6 +156,7 @@ test("client shorthand navigation preserves the raw route fullPath query", async
     const root = document.querySelector("#__nuxt") as HTMLElement & {
       __vue_app__?: { config: { globalProperties: { $router: {
         currentRoute: { value: {
+          fullPath: string
           name: unknown
           params: Record<string, unknown>
           path: string
@@ -163,6 +168,8 @@ test("client shorthand navigation preserves the raw route fullPath query", async
     const router = root.__vue_app__?.config.globalProperties.$router
     return router && {
       historyLocation: router.options.history.location,
+      historyStateCurrent: window.history.state.current,
+      fullPath: router.currentRoute.value.fullPath,
       name: router.currentRoute.value.name,
       params: router.currentRoute.value.params,
       path: router.currentRoute.value.path,
@@ -171,6 +178,8 @@ test("client shorthand navigation preserves the raw route fullPath query", async
     }
   })).toEqual({
     historyLocation: `${readerPublicCanonicalPath}${rawQuery}`,
+    historyStateCurrent: `${readerPublicCanonicalPath}${rawQuery}`,
+    fullPath: `${readerEncodedPath}${normalizedQuery}`,
     name: "författare-author-titlar-title-sida-page-mediatype",
     params: {
       author: "SöderbergH",
@@ -188,6 +197,12 @@ test("client shorthand navigation preserves the raw route fullPath query", async
     },
     search: rawQuery
   })
+
+  await navigateClient(page, "/bibliotek")
+  await expect(page).toHaveURL("/bibliotek")
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
   expect(problems).toEqual([])
 })
 
@@ -200,6 +215,11 @@ test("a late shorthand resolver cannot leave the route that replaced it", async 
     data: { DoktorGlas: 350 }
   })
   await page.goto("/", { waitUntil: "networkidle" })
+  const resolverResponse = page.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith(
+      "/api/reader/resolve/S%C3%B6derbergH/DoktorGlas/etext"
+    )
+  )
 
   await navigateClient(page, readerShorthandRouterPath)
   await expect(page).toHaveURL(readerShorthandPath)
@@ -209,9 +229,82 @@ test("a late shorthand resolver cannot leave the route that replaced it", async 
 
   await expect(page).toHaveURL("/bibliotek")
   await expect(page.locator("[data-library-result]")).toHaveCount(3)
-  await page.waitForTimeout(450)
+  expect((await resolverResponse).status()).toBe(200)
   await expect(page).toHaveURL("/bibliotek")
   await expect(page.locator("[data-library-result]")).toHaveCount(3)
+  expect(problems).toEqual([])
+})
+
+test("a superseded shorthand transition cannot rewrite a newer raw query", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  const oldQuery = "?owner=old&space=old%20value&slash=%2f"
+  const winningQuery = "?owner=new&space=new%20value&slash=%2F"
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  await page.evaluate(canonicalRouteName => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        beforeResolve: (guard: (to: { name: unknown }) => unknown) => void
+        afterEach: (guard: (
+          to: { fullPath: string },
+          from: unknown,
+          failure: unknown
+        ) => void) => void
+      } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    const state = {
+      completed: false,
+      heldFullPath: "",
+      started: false,
+      release: undefined as undefined | (() => void)
+    }
+    Object.assign(window, { __readerShorthandGate: state })
+    let held = false
+    router.beforeResolve(to => {
+      if (held || to.name !== canonicalRouteName) return
+      held = true
+      state.started = true
+      state.heldFullPath = (to as { fullPath: string }).fullPath
+      return new Promise<void>(resolve => {
+        state.release = resolve
+      })
+    })
+    router.afterEach((to, _from, failure) => {
+      if (failure && to.fullPath === state.heldFullPath) state.completed = true
+    })
+  }, "författare-author-titlar-title-sida-page-mediatype")
+
+  await navigateClient(page, `${readerShorthandRouterPath}${oldQuery}`)
+  await expect.poll(() => page.evaluate(() => Boolean((window as typeof window & {
+    __readerShorthandGate?: { started: boolean }
+  }).__readerShorthandGate?.started))).toBe(true)
+
+  await navigateClient(page, `${readerShorthandRouterPath}${winningQuery}`)
+  await expect(page).toHaveURL(`${readerPath}${winningQuery}`)
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
+  await page.evaluate(() => {
+    const gate = (window as typeof window & {
+      __readerShorthandGate?: { release?: () => void }
+    }).__readerShorthandGate
+    if (!gate?.release) throw new Error("Reader navigation gate was not installed")
+    gate.release()
+  })
+
+  await expect.poll(() => page.evaluate(() => Boolean((window as typeof window & {
+    __readerShorthandGate?: { completed: boolean }
+  }).__readerShorthandGate?.completed))).toBe(true)
+  await expect(page).toHaveURL(`${readerPath}${winningQuery}`)
+  expect(await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        options: { history: { location: string } }
+      } } } }
+    }
+    return root.__vue_app__?.config.globalProperties.$router.options.history.location
+  })).toBe(`${readerPublicCanonicalPath}${winningQuery}`)
   expect(problems).toEqual([])
 })
 

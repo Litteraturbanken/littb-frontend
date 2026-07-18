@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ReaderRouteResolution } from "#shared/types/reader"
+import { isNavigationFailure } from "vue-router"
 
 definePageMeta({
   key: route => route.fullPath,
@@ -93,15 +94,27 @@ async function resolveReaderShorthand(): Promise<void> {
     const navigationTarget = import.meta.client
       ? publicTarget.replace(/^\/författare(?=\/)/, "/f%C3%B6rfattare")
       : publicTarget
-    await nuxtApp.runWithContext(() => navigateTo(
+    const resolvedNavigation = import.meta.client
+      ? router.resolve(navigationTarget)
+      : null
+    const normalizedNavigationFullPath = resolvedNavigation
+      ? router.resolve({
+          path: resolvedNavigation.path,
+          query: resolvedNavigation.query,
+          hash: resolvedNavigation.hash
+        }).fullPath
+      : ""
+    const navigationResult = await nuxtApp.runWithContext(() => navigateTo(
       navigationTarget,
       { redirectCode: 307, replace: true }
     ))
-    if (import.meta.client) {
-      const canonicalPathname = new URL(navigationTarget, window.location.origin).pathname
-      if (window.location.pathname === canonicalPathname) {
-        router.options.history.replace(publicTarget, window.history.state)
-      }
+    if (
+      import.meta.client &&
+      !isNavigationFailure(navigationResult) &&
+      router.currentRoute.value.fullPath === normalizedNavigationFullPath &&
+      router.options.history.location === normalizedNavigationFullPath
+    ) {
+      router.options.history.replace(publicTarget)
     }
   } catch (error) {
     if (!isCurrentIdentity()) return
