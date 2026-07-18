@@ -16,34 +16,82 @@ type SearchLanguage = NonNullable<TextSearchResultsRequest["languages"]>[number]
 type SearchCategory = NonNullable<TextSearchResultsRequest["categories"]>[number]
 type SearchLegacyFilter = NonNullable<TextSearchResultsRequest["legacy_filters"]>[number]
 
-const languageValues = new Set<SearchLanguage>([
-  "modernized:true", "modernized:false", "translation:true", "original:true",
-  "language:swe", "foreign:true", "language:eng", "language:deu",
-  "language:fra", "language:lat", "language:smi", "proofread:true",
-  "proofread:false"
-])
-const categoryValues = new Set<SearchCategory>([
-  "texttype:brev;brevsamling", "texttype:drama;dramasamling",
-  "texttype:essä;essäsamling", "texttype:novellsamling;novell",
-  "texttype:diktsamling;dikt", "texttype:roman",
-  "texttype:sakprosa;kringtexter;avhandling;referensverk",
-  "keyword:Barnlitteratur", "keyword:Biografika|texttype:brev;brevsamling",
-  "keyword:Finlandssvenskt", "keyword:Flickböcker", "texttype:herdaminne",
-  "keyword:Humor", "texttype:kistebrev", "texttype:kringtext",
-  "texttype:kåseri;kåserisamling", "texttype:reseskildring",
-  "keyword:Rösträtt", "keyword:Sapmi", "keyword:Folktryck",
-  "keyword:sentpajorden", "keyword:OrdenPrövas", "keyword:LB-antologi",
-  "keyword:1800", "source:bibliotekariesidor", "source:diktensmuseum",
-  "keyword:Dramawebben", "source:skolan", "source:litteraturkartan",
-  "source:ljudochbild", "source:sol", "keyword:SLS-FI",
-  "provenance.library:SVELITT", "provenance.library:SA",
-  "provenance.library:SFS", "provenance.library:SVA",
-  "author_ids:KunglSamfundet", "provenance.library:SVS"
-])
-const legacyFilterFields = new Set<SearchLegacyFilter["field"]>([
-  "author_ids", "keyword", "language", "main_author.gender", "mediatype",
-  "modernized", "proofread", "provenance.library", "source", "texttype"
-])
+const languageValueMap = {
+  "modernized:true": true,
+  "modernized:false": true,
+  "translation:true": true,
+  "original:true": true,
+  "language:swe": true,
+  "foreign:true": true,
+  "language:eng": true,
+  "language:deu": true,
+  "language:fra": true,
+  "language:lat": true,
+  "language:smi": true,
+  "proofread:true": true,
+  "proofread:false": true
+} satisfies Record<SearchLanguage, true>
+const languageValues = new Set<SearchLanguage>(
+  Object.keys(languageValueMap) as SearchLanguage[]
+)
+const categoryValueMap = {
+  "texttype:brev;brevsamling": true,
+  "texttype:drama;dramasamling": true,
+  "texttype:essä;essäsamling": true,
+  "texttype:novellsamling;novell": true,
+  "texttype:diktsamling;dikt": true,
+  "texttype:roman": true,
+  "texttype:sakprosa;kringtexter;avhandling;referensverk": true,
+  "keyword:Barnlitteratur": true,
+  "keyword:Biografika|texttype:brev;brevsamling": true,
+  "keyword:Finlandssvenskt": true,
+  "keyword:Flickböcker": true,
+  "texttype:herdaminne": true,
+  "keyword:Humor": true,
+  "texttype:kistebrev": true,
+  "texttype:kringtext": true,
+  "texttype:kåseri;kåserisamling": true,
+  "texttype:reseskildring": true,
+  "keyword:Rösträtt": true,
+  "keyword:Sapmi": true,
+  "keyword:Folktryck": true,
+  "keyword:sentpajorden": true,
+  "keyword:OrdenPrövas": true,
+  "keyword:LB-antologi": true,
+  "keyword:1800": true,
+  "source:bibliotekariesidor": true,
+  "source:diktensmuseum": true,
+  "keyword:Dramawebben": true,
+  "source:skolan": true,
+  "source:litteraturkartan": true,
+  "source:ljudochbild": true,
+  "source:sol": true,
+  "keyword:SLS-FI": true,
+  "provenance.library:SVELITT": true,
+  "provenance.library:SA": true,
+  "provenance.library:SFS": true,
+  "provenance.library:SVA": true,
+  "author_ids:KunglSamfundet": true,
+  "provenance.library:SVS": true
+} satisfies Record<SearchCategory, true>
+const categoryValues = new Set<SearchCategory>(
+  Object.keys(categoryValueMap) as SearchCategory[]
+)
+const legacyFilterFieldMap = {
+  author_ids: true,
+  keyword: true,
+  language: true,
+  "main_author.gender": true,
+  mediatype: true,
+  modernized: true,
+  proofread: true,
+  "provenance.library": true,
+  source: true,
+  texttype: true
+} satisfies Record<SearchLegacyFilter["field"], true>
+const legacyFilterFields = new Set<SearchLegacyFilter["field"]>(
+  Object.keys(legacyFilterFieldMap) as SearchLegacyFilter["field"][]
+)
 export const textSearchRouteKeys = [
   "fras", "traffsida", "avancerad", "forfattare", "titlar", "kön",
   "languages", "keywords", "authorkeyword", "intervall", "sok_filter",
@@ -357,6 +405,10 @@ export function buildTextSearchOptionsRequest(
 ): TextSearchOptionsRequest {
   const titleFilter = (input.titleFilter ?? "").trim()
   if (titleFilter.length > 200) throw new RangeError("Title filter is too long")
+  const titleLimit = input.titleLimit ?? 30
+  if (titleLimit !== 0 && titleLimit !== 30 && titleLimit !== 500) {
+    throw new RangeError("Title limit must be 0, 30, or 500")
+  }
   const selectedWorkIds = distinctBounded(
     (input.selectedWorkIds ?? state.workIds).filter(isSafeIdentifier),
     50
@@ -364,7 +416,7 @@ export function buildTextSearchOptionsRequest(
   return {
     ...(state.phrase ? { query: state.phrase } : {}),
     title_filter: titleFilter,
-    title_limit: input.titleLimit ?? 30,
+    title_limit: titleLimit,
     include_static_options: input.includeStaticOptions ?? true,
     ...(selectedWorkIds.length ? { selected_work_ids: selectedWorkIds } : {}),
     ...commonRequest(state)
@@ -417,23 +469,28 @@ function isSafeInteger(value: unknown, minimum = 0, maximum = Number.MAX_SAFE_IN
     value >= minimum && value <= maximum
 }
 
-type WordPosition = readonly [page: number, ordinal: number] | readonly [ordinal: number]
+type WordPosition = readonly [page: string, ordinal: number]
 
 function wordPosition(value: string): WordPosition | null {
-  const match = /^w(?:(0|[1-9]\d{0,9})_)?(0|[1-9]\d{0,9})$/.exec(value)
+  const match = /^w(\d+)_(\d+)$/.exec(value)
   if (!match) return null
   const ordinal = Number(match[2])
-  if (!Number.isSafeInteger(ordinal)) return null
-  if (match[1] === undefined) return [ordinal]
   const page = Number(match[1])
-  return Number.isSafeInteger(page) ? [page, ordinal] : null
+  return Number.isSafeInteger(page) && Number.isSafeInteger(ordinal)
+    ? [match[1]!, ordinal]
+    : null
+}
+
+function isSafePageName(value: unknown): value is string {
+  return isBoundedString(value, 1, 100) && value === value.trim() &&
+    value !== "." && value !== ".." && !/[%/\\]/u.test(value) &&
+    ![...value].some(character => /[\p{Cc}\p{Cs}]/u.test(character))
 }
 
 function isTextSearchWord(value: unknown): value is TextSearchWord {
   return isRecord(value) && hasExactKeys(value, ["word", "page_name", "word_id"]) &&
     isBoundedString(value.word, 1, 10_000) &&
-    isBoundedString(value.page_name, 1, 100) &&
-    ![...value.page_name].some(character => /[\p{Cc}\p{Cs}]/u.test(character)) &&
+    isSafePageName(value.page_name) &&
     typeof value.word_id === "string" && value.word_id.length <= 100 &&
     wordPosition(value.word_id) !== null
 }
@@ -450,11 +507,9 @@ function isTextSearchHighlight(value: unknown): value is TextSearchHighlight {
   const words = [...value.left_context, ...value.match, ...value.right_context]
   if (new Set(words.map(word => word.page_name)).size !== 1) return false
   const positions = words.map(word => wordPosition(word.word_id)!)
-  const width = positions[0]!.length
-  if (!positions.every(position => position.length === width)) return false
   return positions.every((position, index) => index === 0 ||
-    position[position.length - 1]! > positions[index - 1]![positions[index - 1]!.length - 1]!) &&
-    (width === 1 || positions.every(position => position[0] === positions[0]![0]))
+    position[1] > positions[index - 1]![1]) &&
+    positions.every(position => position[0] === positions[0]![0])
 }
 
 function isTextSearchWork(value: unknown): value is TextSearchWork {
@@ -570,11 +625,18 @@ export function acceptTextSearchOptionsResponse(
   request: TextSearchOptionsRequest,
   responseRequestIdentity: string
 ): TextSearchOptionsResponse | null {
+  const selectedWorkIds = request.selected_work_ids ?? []
   if (responseRequestIdentity !== textSearchOptionsRequestIdentity(request) ||
-    !isTextSearchOptionsResponse(value) ||
-    value.title_options.length > request.title_limit + (request.selected_work_ids?.length ?? 0)) {
+    !isTextSearchOptionsResponse(value)) {
     return null
   }
+  const optionIds = value.title_options.map(option => option.work_id)
+  const ordinaryCount = optionIds.length - selectedWorkIds.length
+  if (!selectedWorkIds.every((workId, index) => optionIds[index] === workId) ||
+    ordinaryCount < 0 || ordinaryCount > request.title_limit ||
+    ordinaryCount > value.title_total ||
+    value.title_author_facets.some(facet =>
+      facet.count < 1 || facet.count > value.title_total)) return null
   return value
 }
 

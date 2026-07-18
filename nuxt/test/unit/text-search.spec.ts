@@ -9,8 +9,10 @@ import {
   buildTextSearchReaderHref,
   buildTextSearchResultsRequest,
   compactTextSearchLeftContext,
+  compactTextSearchRightContext,
   isTextSearchPunctuation,
   parseTextSearchRouteQuery,
+  prepareTextSearchHighlight,
   resetTextSearchQuery,
   serializeTextSearchRouteState,
   textSearchCountRequestIdentity,
@@ -21,6 +23,36 @@ import {
   textSearchRouteIdentity,
   textSearchSubmitQuery
 } from "../../app/lib/text-search"
+
+function resultsResponse() {
+  return {
+    query: "frihet", page: 1, page_size: 30, total_work_hits: 1,
+    author_facets: [{ author_id: "AuthorA", name_for_index: "A, Author", count: 1 }],
+    works: [{
+      lbworkid: "lb1", author_id: "AuthorA", author_name: "Author A",
+      title: "Work", title_id: "work", mediatype: "etext",
+      has_more_highlights: false,
+      highlights: [{
+        left_context: [{ word: "i", page_name: "12", word_id: "w12_3" }],
+        match: [{ word: "frihet", page_name: "12", word_id: "w12_4" }],
+        right_context: [{ word: ".", page_name: "12", word_id: "w12_5" }]
+      }]
+    }]
+  }
+}
+
+function optionsResponse() {
+  return {
+    title_options: [{ work_id: "lb1", title: "Work", author_name: "Author" }],
+    title_total: 1,
+    title_author_facets: [{ author_id: "AuthorA", name_for_index: "A, Author", count: 1 }],
+    authors: [{
+      author_id: "AuthorA", name_for_index: "A, Author",
+      birth_year: "1850", death_year: null
+    }],
+    about_authors: [], year_from: 1850, year_to: 1950
+  }
+}
 
 describe("text search route state", () => {
   test("parses, bounds, deduplicates, and independently resets malformed route fields", () => {
@@ -68,6 +100,143 @@ describe("text search route state", () => {
     })
   })
 
+  test("accepts phrase and page endpoints and resets only invalid scalars", () => {
+    expect(parseTextSearchRouteQuery({ fras: "x", traffsida: "1" }))
+      .toMatchObject({ phrase: "x", page: 1 })
+    expect(parseTextSearchRouteQuery({ fras: "x".repeat(200), traffsida: "10000" }))
+      .toMatchObject({ phrase: "x".repeat(200), page: 10000 })
+
+    for (const query of [
+      { fras: " ", traffsida: "2" },
+      { fras: "x".repeat(201), traffsida: "2" }
+    ]) {
+      expect(parseTextSearchRouteQuery(query)).toMatchObject({ phrase: null, page: 2 })
+    }
+    for (const traffsida of ["0", "10001", "1.5", "-1", " 2 "]) {
+      expect(parseTextSearchRouteQuery({ fras: "keep", traffsida }))
+        .toMatchObject({ phrase: "keep", page: 1 })
+    }
+  })
+
+  test("bounds identifier lists at 50 after stable filtering and deduplication", () => {
+    const identifiers = Array.from({ length: 51 }, (_, index) => `Author${index}`)
+    const state = parseTextSearchRouteQuery({
+      forfattare: [
+        `${identifiers.join(",")},Author0,.,..,bad/id,bad%2Fid,bad\\id`,
+        " bad,control\nvalue"
+      ],
+      titlar: `${identifiers.join(",")},lb-safe`,
+      authorkeyword: `${identifiers.join(",")},AboutSafe`
+    })
+
+    expect(state.authorIds).toEqual(identifiers.slice(0, 50))
+    expect(state.workIds).toEqual(identifiers.slice(0, 50))
+    expect(state.aboutAuthorIds).toEqual(identifiers.slice(0, 50))
+  })
+
+  test("accepts 100-character identifiers and discards unsafe or oversized items", () => {
+    const maximum = "x".repeat(100)
+    const state = parseTextSearchRouteQuery({
+      forfattare: [
+        maximum, "x".repeat(101), ".", "..", "has space", "bad/id",
+        "bad\\id", "bad%id", "control\nvalue"
+      ].join(","),
+      sok_filter: maximum
+    })
+    expect(state.authorIds).toEqual([maximum])
+    expect(state.facetAuthorId).toBe(maximum)
+    expect(parseTextSearchRouteQuery({ sok_filter: "x".repeat(101) }).facetAuthorId)
+      .toBeNull()
+  })
+
+  test("keeps prefix and suffix independent while preserving infix as its own flag", () => {
+    expect(parseTextSearchRouteQuery({ prefix: "1" })).toMatchObject({
+      prefix: true, suffix: false, infix: false
+    })
+    expect(parseTextSearchRouteQuery({ suffix: null })).toMatchObject({
+      prefix: false, suffix: true, infix: false
+    })
+    const infix = parseTextSearchRouteQuery({ infix: "yes", prefix: "false", suffix: "0" })
+    expect(infix).toMatchObject({ prefix: true, suffix: true, infix: true })
+    expect(serializeTextSearchRouteState(infix)).toEqual({ infix: "1" })
+    expect(parseTextSearchRouteQuery({ prefix: "false", suffix: "0", infix: "false" }))
+      .toMatchObject({ prefix: false, suffix: false, infix: false })
+  })
+
+  test("maps gender variants and all to the backend nullable gender", () => {
+    expect(parseTextSearchRouteQuery({ kön: "female" }).gender).toBe("female")
+    expect(parseTextSearchRouteQuery({ kön: "male" }).gender).toBe("male")
+    expect(parseTextSearchRouteQuery({ kön: "all" }).gender).toBeNull()
+    expect(parseTextSearchRouteQuery({ kön: "other" }).gender).toBeNull()
+  })
+
+  test("accepts inclusive year endpoints and resets malformed pairs atomically", () => {
+    expect(parseTextSearchRouteQuery({ intervall: "1000,2200" }).yearRange)
+      .toEqual([1000, 2200])
+    expect(parseTextSearchRouteQuery({ intervall: "1850,1850" }).yearRange)
+      .toEqual([1850, 1850])
+    for (const intervall of [
+      "999,2200", "1000,2201", "1900,1800", "1800", "1800,", "a,1900"
+    ]) {
+      expect(parseTextSearchRouteQuery({ fras: "keep", intervall }))
+        .toMatchObject({ phrase: "keep", yearRange: null })
+    }
+  })
+
+  test("bounds legacy filters at 20 and validates field, value, and author identifiers", () => {
+    const entries = Array.from({ length: 21 }, (_, index) => `keyword:value${index}`)
+    const state = parseTextSearchRouteQuery({
+      keyword: [
+        entries.join(","),
+        `source:${"x".repeat(100)}`,
+        `source:${"x".repeat(101)}`,
+        "provider:secret,author_ids:bad/id,source:first:colon"
+      ]
+    })
+    expect(state.legacyFilters).toHaveLength(20)
+    expect(state.legacyFilters[0]).toEqual({ field: "keyword", value: "value0" })
+    expect(state.legacyFilters.at(-1)).toEqual({ field: "keyword", value: "value19" })
+
+    const firstColon = parseTextSearchRouteQuery({ keyword: "source:first:colon" })
+    expect(firstColon.legacyFilters).toEqual([{ field: "source", value: "first:colon" }])
+    expect(parseTextSearchRouteQuery({ keyword: `source:${"x".repeat(100)}` }).legacyFilters)
+      .toHaveLength(1)
+    expect(parseTextSearchRouteQuery({ keyword: `source:${"x".repeat(101)}` }).legacyFilters)
+      .toEqual([])
+  })
+
+  test("accepts every generated language and category value in stable order", () => {
+    const languages = [
+      "modernized:true", "modernized:false", "translation:true", "original:true",
+      "language:swe", "foreign:true", "language:eng", "language:deu",
+      "language:fra", "language:lat", "language:smi", "proofread:true",
+      "proofread:false"
+    ]
+    const categories = [
+      "texttype:brev;brevsamling", "texttype:drama;dramasamling",
+      "texttype:essä;essäsamling", "texttype:novellsamling;novell",
+      "texttype:diktsamling;dikt", "texttype:roman",
+      "texttype:sakprosa;kringtexter;avhandling;referensverk",
+      "keyword:Barnlitteratur", "keyword:Biografika|texttype:brev;brevsamling",
+      "keyword:Finlandssvenskt", "keyword:Flickböcker", "texttype:herdaminne",
+      "keyword:Humor", "texttype:kistebrev", "texttype:kringtext",
+      "texttype:kåseri;kåserisamling", "texttype:reseskildring", "keyword:Rösträtt",
+      "keyword:Sapmi", "keyword:Folktryck", "keyword:sentpajorden",
+      "keyword:OrdenPrövas", "keyword:LB-antologi", "keyword:1800",
+      "source:bibliotekariesidor", "source:diktensmuseum", "keyword:Dramawebben",
+      "source:skolan", "source:litteraturkartan", "source:ljudochbild", "source:sol",
+      "keyword:SLS-FI", "provenance.library:SVELITT", "provenance.library:SA",
+      "provenance.library:SFS", "provenance.library:SVA", "author_ids:KunglSamfundet",
+      "provenance.library:SVS"
+    ]
+    const state = parseTextSearchRouteQuery({
+      languages: [...languages, languages[0]!, "language:unknown"].join(","),
+      keywords: [...categories, categories[0]!, "keyword:Unknown"].join(",")
+    })
+    expect(state.languages).toEqual(languages)
+    expect(state.categories).toEqual(categories)
+  })
+
   test("serializes canonical values and preserves unknown raw entries exactly", () => {
     const raw = {
       unknown: ["one", null, "two"] as const,
@@ -102,37 +271,57 @@ describe("text search route state", () => {
     })
   })
 
-  test("keeps transition ownership narrow", () => {
-    const raw = {
-      fras: "old",
-      traffsida: "7",
-      sok_filter: "AuthorA",
-      keywords: "texttype:roman",
-      unknown: ["keep", null] as const
-    }
+  const transitionQuery = {
+    fras: "old",
+    traffsida: "7",
+    sok_filter: "AuthorA",
+    keywords: "texttype:roman",
+    unknown: ["keep", null] as const
+  }
 
-    expect(textSearchSubmitQuery(raw, "  new phrase ")).toEqual({
+  test("submit changes the phrase and clears page and facet only", () => {
+    expect(textSearchSubmitQuery(transitionQuery, "  new phrase ")).toEqual({
       fras: "new phrase",
       keywords: "texttype:roman",
       unknown: ["keep", null]
     })
-    expect(textSearchFilterQuery(raw, { gender: "female" })).toEqual({
+    expect(textSearchSubmitQuery(transitionQuery, " ")).toEqual({
+      keywords: "texttype:roman",
+      unknown: ["keep", null]
+    })
+    expect(textSearchSubmitQuery(transitionQuery, "x".repeat(201))).toEqual({
+      keywords: "texttype:roman",
+      unknown: ["keep", null]
+    })
+  })
+
+  test("filter changes state and clears page only", () => {
+    expect(textSearchFilterQuery(transitionQuery, { gender: "female" })).toEqual({
       fras: "old",
       sok_filter: "AuthorA",
       keywords: "texttype:roman",
       unknown: ["keep", null],
       kön: "female"
     })
-    expect(textSearchPageQuery(raw, 4)).toEqual({ ...raw, traffsida: "4" })
-    expect(resetTextSearchQuery(raw)).toEqual({ unknown: ["keep", null] })
-    expect(textSearchSubmitQuery(raw, " ")).toEqual({
-      keywords: "texttype:roman",
+  })
+
+  test("pagination changes only the page and bounds it", () => {
+    expect(textSearchPageQuery(transitionQuery, 4)).toEqual({
+      ...transitionQuery,
+      traffsida: "4"
+    })
+    expect(textSearchPageQuery(transitionQuery, 1)).toEqual({
+      fras: "old", sok_filter: "AuthorA", keywords: "texttype:roman",
       unknown: ["keep", null]
     })
-    expect(textSearchSubmitQuery(raw, "x".repeat(201))).toEqual({
-      keywords: "texttype:roman",
+    expect(textSearchPageQuery(transitionQuery, 10001)).toEqual({
+      fras: "old", sok_filter: "AuthorA", keywords: "texttype:roman",
       unknown: ["keep", null]
     })
+  })
+
+  test("full reset removes every known key and preserves unknown entries", () => {
+    expect(resetTextSearchQuery(transitionQuery)).toEqual({ unknown: ["keep", null] })
   })
 
   test("builds exact generated requests without fuzzy or provider controls", () => {
@@ -185,6 +374,35 @@ describe("text search route state", () => {
     expect(JSON.stringify(buildTextSearchResultsRequest(state))).not.toContain("fuzzy")
   })
 
+  test("enforces result highlight and required phrase request bounds", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    expect(buildTextSearchResultsRequest(state, 5).highlight_limit).toBe(5)
+    expect(buildTextSearchResultsRequest(state, 500).highlight_limit).toBe(500)
+    for (const limit of [4, 501, 5.5]) {
+      expect(() => buildTextSearchResultsRequest(state, limit)).toThrow(RangeError)
+    }
+    expect(() => buildTextSearchResultsRequest(parseTextSearchRouteQuery({})))
+      .toThrow(TypeError)
+  })
+
+  test("enforces title filter, selected ID, and title-limit request bounds", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const selected = Array.from({ length: 51 }, (_, index) => `lb${index}`)
+    expect(buildTextSearchOptionsRequest(state, {
+      titleFilter: "x".repeat(200),
+      selectedWorkIds: [...selected, "bad/id"],
+      titleLimit: 500
+    })).toMatchObject({
+      title_filter: "x".repeat(200),
+      selected_work_ids: selected.slice(0, 50),
+      title_limit: 500
+    })
+    expect(() => buildTextSearchOptionsRequest(state, { titleFilter: "x".repeat(201) }))
+      .toThrow(RangeError)
+    expect(() => buildTextSearchOptionsRequest(state, { titleLimit: 31 as 30 }))
+      .toThrow(RangeError)
+  })
+
   test("creates order-stable identities for every relevant route and request input", () => {
     const state = parseTextSearchRouteQuery({ fras: "frihet", infix: "1" })
     const results = buildTextSearchResultsRequest(state)
@@ -212,78 +430,247 @@ describe("text search route state", () => {
       parseTextSearchRouteQuery({ fras: "frihet" })
     )
     const identity = textSearchResultsRequestIdentity(request)
-    const response = {
-      query: "frihet", page: 1, page_size: 30, total_work_hits: 1,
-      author_facets: [{ author_id: "AuthorA", name_for_index: "A, Author", count: 1 }],
-      works: [{
-        lbworkid: "lb1", author_id: "AuthorA", author_name: "Author A",
-        title: "Work", title_id: "work", mediatype: "etext",
-        has_more_highlights: false,
-        highlights: [{
-          left_context: [{ word: "i", page_name: "12", word_id: "w12_3" }],
-          match: [{ word: "frihet", page_name: "12", word_id: "w12_4" }],
-          right_context: [{ word: ".", page_name: "12", word_id: "w12_5" }]
-        }]
-      }]
-    }
+    const response = resultsResponse()
 
     expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
     expect(acceptTextSearchResultsResponse(response, request, "stale")).toBeNull()
 
-    for (const mutate of [
-      (copy: any) => { copy.raw = true },
-      (copy: any) => { copy.works[0].source = {} },
-      (copy: any) => { copy.works[0].highlights[0].match[0].lemma = "fri" },
-      (copy: any) => { copy.query = "other" },
-      (copy: any) => { copy.page = 2 },
-      (copy: any) => { copy.works[0].mediatype = "audio" },
-      (copy: any) => { copy.works[0].lbworkid = "bad/id" },
-      (copy: any) => { copy.works.push(structuredClone(copy.works[0])) },
-      (copy: any) => { copy.author_facets.push(structuredClone(copy.author_facets[0])) },
-      (copy: any) => { copy.works[0].highlights[0].match.push(
-        { word: "nu", page_name: "12", word_id: "w12_2" }
-      ) },
-      (copy: any) => { copy.works[0].highlights[0].right_context[0].page_name = "13" },
-      (copy: any) => {
-        for (const key of ["left_context", "match", "right_context"]) {
-          for (const word of copy.works[0].highlights[0][key]) word.page_name = "12\n13"
-        }
-      },
-      (copy: any) => { copy.total_work_hits = 0 }
-    ]) {
-      const malformed = structuredClone(response)
-      mutate(malformed)
-      expect(acceptTextSearchResultsResponse(malformed, request, identity)).toBeNull()
-    }
   })
 
-  test("strictly accepts count and options responses with bounded recursive rows", () => {
+  test.each([
+    { name: "extra root key", mutate: (copy: any) => { copy.raw = true } },
+    { name: "extra work key", mutate: (copy: any) => { copy.works[0].source = {} } },
+    {
+      name: "extra word key",
+      mutate: (copy: any) => { copy.works[0].highlights[0].match[0].lemma = "fri" }
+    },
+    { name: "wrong query", mutate: (copy: any) => { copy.query = "other" } },
+    { name: "wrong page", mutate: (copy: any) => { copy.page = 2 } },
+    { name: "unsupported media", mutate: (copy: any) => { copy.works[0].mediatype = "audio" } },
+    { name: "unsafe work ID", mutate: (copy: any) => { copy.works[0].lbworkid = "bad/id" } },
+    {
+      name: "duplicate work ID",
+      mutate: (copy: any) => { copy.works.push(structuredClone(copy.works[0])); copy.total_work_hits = 2 }
+    },
+    {
+      name: "duplicate facet ID",
+      mutate: (copy: any) => { copy.author_facets.push(structuredClone(copy.author_facets[0])) }
+    },
+    {
+      name: "descending token order",
+      mutate: (copy: any) => { copy.works[0].highlights[0].match.push(
+        { word: "nu", page_name: "12", word_id: "w12_2" }
+      ) }
+    },
+    {
+      name: "mixed page names",
+      mutate: (copy: any) => { copy.works[0].highlights[0].right_context[0].page_name = "13" }
+    },
+    { name: "incoherent total", mutate: (copy: any) => { copy.total_work_hits = 0 } }
+  ])("rejects result responses with $name", ({ mutate }) => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" })
+    )
+    const response = resultsResponse()
+    mutate(response)
+    expect(acceptTextSearchResultsResponse(
+      response,
+      request,
+      textSearchResultsRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test.each([
+    "w4", "", "w_4", "w4_", "w4_x", "w4_5/path", `w${"1".repeat(99)}_1`
+  ])("rejects malformed word ID %j", wordId => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" })
+    )
+    const identity = textSearchResultsRequestIdentity(request)
+    const response = resultsResponse()
+    response.works[0]!.highlights[0]!.match[0]!.word_id = wordId
+
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
+  })
+
+  test("rejects incoherent encoded word pages across the whole highlight", () => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" })
+    )
+    const response = resultsResponse()
+    response.works[0]!.highlights[0]!.right_context[0]!.word_id = "w13_5"
+    expect(acceptTextSearchResultsResponse(
+      response,
+      request,
+      textSearchResultsRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test("rejects differently encoded word-page identities", () => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" })
+    )
+    const response = resultsResponse()
+    response.works[0]!.highlights[0]!.left_context = []
+    response.works[0]!.highlights[0]!.match = [
+      { word: "frihet", page_name: "12", word_id: "w01_4" },
+      { word: "nu", page_name: "12", word_id: "w1_5" }
+    ]
+    response.works[0]!.highlights[0]!.right_context = []
+    expect(acceptTextSearchResultsResponse(
+      response,
+      request,
+      textSearchResultsRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test.each([".", "..", "12/13", "12\\13", "12%2F13", "12\n13", " 12"])(
+    "rejects unsafe page identity %j",
+    pageName => {
+      const request = buildTextSearchResultsRequest(
+        parseTextSearchRouteQuery({ fras: "frihet" })
+      )
+      const response = resultsResponse()
+      for (const key of ["left_context", "match", "right_context"] as const) {
+        for (const word of response.works[0]!.highlights[0]![key]) word.page_name = pageName
+      }
+      expect(acceptTextSearchResultsResponse(
+        response,
+        request,
+        textSearchResultsRequestIdentity(request)
+      )).toBeNull()
+    }
+  )
+
+  test("accepts 30 result works and rejects 31", () => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" })
+    )
+    const identity = textSearchResultsRequestIdentity(request)
+    const response = resultsResponse()
+    response.works = Array.from({ length: 30 }, (_, index) => ({
+      ...structuredClone(response.works[0]!),
+      lbworkid: `lb${index}`,
+      title_id: `work${index}`
+    }))
+    response.total_work_hits = 30
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
+
+    response.works.push({
+      ...structuredClone(response.works[0]!),
+      lbworkid: "lb30",
+      title_id: "work30"
+    })
+    response.total_work_hits = 31
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
+  })
+
+  test("enforces request highlight and context list caps", () => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" }),
+      5
+    )
+    const identity = textSearchResultsRequestIdentity(request)
+    const response = resultsResponse()
+    const highlight = response.works[0]!.highlights[0]!
+    highlight.left_context = Array.from({ length: 1000 }, (_, index) => ({
+      word: "context", page_name: "12", word_id: `w12_${index + 1}`
+    }))
+    highlight.match = [{ word: "frihet", page_name: "12", word_id: "w12_1001" }]
+    highlight.right_context = []
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
+
+    highlight.left_context.push({ word: "overflow", page_name: "12", word_id: "w12_1002" })
+    highlight.match[0]!.word_id = "w12_1003"
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
+
+    const highlights = resultsResponse()
+    highlights.works[0]!.highlights = Array.from(
+      { length: 6 },
+      () => structuredClone(highlights.works[0]!.highlights[0]!)
+    )
+    expect(acceptTextSearchResultsResponse(highlights, request, identity)).toBeNull()
+  })
+
+  test("accepts 500 highlights and rejects 501", () => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" }),
+      500
+    )
+    const identity = textSearchResultsRequestIdentity(request)
+    const response = resultsResponse()
+    response.works[0]!.highlights = Array.from(
+      { length: 500 },
+      () => structuredClone(response.works[0]!.highlights[0]!)
+    )
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
+    response.works[0]!.highlights.push(structuredClone(response.works[0]!.highlights[0]!))
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
+  })
+
+  test("accepts 10000 result facets and rejects 10001", () => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" })
+    )
+    const identity = textSearchResultsRequestIdentity(request)
+    const response = resultsResponse()
+    response.author_facets = Array.from({ length: 10_000 }, (_, index) => ({
+      author_id: `Author${index}`, name_for_index: `Author ${index}`, count: 1
+    }))
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toEqual(response)
+    response.author_facets.push({
+      author_id: "Author10000", name_for_index: "Author 10000", count: 1
+    })
+    expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
+  })
+
+  test("accepts count totals through the safe-integer cap", () => {
     const state = parseTextSearchRouteQuery({ fras: "frihet" })
     const countRequest = buildTextSearchCountRequest(state)
     const countIdentity = textSearchCountRequestIdentity(countRequest)
-    const count = { query: "frihet", total_documents: 2, total_highlights: 3 }
+    const count = {
+      query: "frihet",
+      total_documents: Number.MAX_SAFE_INTEGER,
+      total_highlights: Number.MAX_SAFE_INTEGER
+    }
     expect(acceptTextSearchCountResponse(count, countRequest, countIdentity)).toEqual(count)
-    expect(acceptTextSearchCountResponse({ ...count, extra: true }, countRequest, countIdentity))
-      .toBeNull()
-    expect(acceptTextSearchCountResponse({ ...count, query: "other" }, countRequest, countIdentity))
-      .toBeNull()
-    expect(acceptTextSearchCountResponse(count, countRequest, "stale")).toBeNull()
+  })
+
+  test.each([
+    { name: "extra key", value: { query: "frihet", total_documents: 2, total_highlights: 3, raw: true } },
+    { name: "wrong query", value: { query: "other", total_documents: 2, total_highlights: 3 } },
+    { name: "negative documents", value: { query: "frihet", total_documents: -1, total_highlights: 3 } },
+    { name: "boolean highlights", value: { query: "frihet", total_documents: 2, total_highlights: true } },
+    {
+      name: "unsafe integer",
+      value: { query: "frihet", total_documents: Number.MAX_SAFE_INTEGER + 1, total_highlights: 3 }
+    }
+  ])("rejects count responses with $name", ({ value }) => {
+    const request = buildTextSearchCountRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
+    expect(acceptTextSearchCountResponse(
+      value,
+      request,
+      textSearchCountRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test("rejects count responses from a stale request", () => {
+    const request = buildTextSearchCountRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
+    expect(acceptTextSearchCountResponse(
+      { query: "frihet", total_documents: 2, total_highlights: 3 },
+      request,
+      "stale"
+    )).toBeNull()
+  })
+
+  test("accepts strict options and the 50 selected plus 500 ordinary boundary", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
 
     const optionsRequest = buildTextSearchOptionsRequest(state)
     const optionsIdentity = textSearchOptionsRequestIdentity(optionsRequest)
-    const options = {
-      title_options: [{ work_id: "lb1", title: "Work", author_name: "Author" }],
-      title_total: 1,
-      title_author_facets: [{ author_id: "AuthorA", name_for_index: "A, Author", count: 1 }],
-      authors: [{
-        author_id: "AuthorA", name_for_index: "A, Author",
-        birth_year: "1850", death_year: null
-      }],
-      about_authors: [], year_from: 1850, year_to: 1950
-    }
+    const options = optionsResponse()
     expect(acceptTextSearchOptionsResponse(options, optionsRequest, optionsIdentity))
       .toEqual(options)
-    expect(acceptTextSearchOptionsResponse(options, optionsRequest, "stale")).toBeNull()
 
     const selectedWorkIds = Array.from({ length: 50 }, (_, index) => `lb${index}`)
     const boundaryRequest = buildTextSearchOptionsRequest(state, {
@@ -314,25 +701,171 @@ describe("text search route state", () => {
         { work_id: "lb550", title: "Overflow", author_name: "Author" }
       ]
     }, boundaryRequest, boundaryIdentity)).toBeNull()
+  })
 
-    for (const mutate of [
-      (copy: any) => { delete copy.year_to },
-      (copy: any) => { copy.title_options[0].raw = true },
-      (copy: any) => { copy.authors[0].author_id = "bad/id" },
-      (copy: any) => { copy.title_options.push(structuredClone(copy.title_options[0])) },
-      (copy: any) => { copy.title_author_facets.push(structuredClone(copy.title_author_facets[0])) },
-      (copy: any) => { copy.authors.push(structuredClone(copy.authors[0])) },
-      (copy: any) => { copy.year_from = 2200; copy.year_to = 1000 },
-      (copy: any) => { copy.title_total = -1 }
-    ]) {
-      const malformed = structuredClone(options)
-      mutate(malformed)
-      expect(acceptTextSearchOptionsResponse(malformed, optionsRequest, optionsIdentity))
-        .toBeNull()
+  test("accepts 10000 static author rows per list and rejects 10001", () => {
+    const request = buildTextSearchOptionsRequest(parseTextSearchRouteQuery({ fras: "frihet" }))
+    const identity = textSearchOptionsRequestIdentity(request)
+    const authorRows = Array.from({ length: 10_000 }, (_, index) => ({
+      author_id: `Author${index}`,
+      name_for_index: `Author ${index}`,
+      birth_year: null,
+      death_year: null
+    }))
+    const authors = {
+      title_options: [], title_total: 0, title_author_facets: [],
+      authors: authorRows, about_authors: [], year_from: null, year_to: null
+    }
+    expect(acceptTextSearchOptionsResponse(authors, request, identity)).toEqual(authors)
+    authors.authors.push({
+      author_id: "Author10000", name_for_index: "Author 10000",
+      birth_year: null, death_year: null
+    })
+    expect(acceptTextSearchOptionsResponse(authors, request, identity)).toBeNull()
+
+    const aboutAuthors = {
+      title_options: [], title_total: 0, title_author_facets: [], authors: [],
+      about_authors: authorRows.slice(0, 10_000), year_from: null, year_to: null
+    }
+    expect(acceptTextSearchOptionsResponse(aboutAuthors, request, identity))
+      .toEqual(aboutAuthors)
+    aboutAuthors.about_authors.push({
+      author_id: "Author10000", name_for_index: "Author 10000",
+      birth_year: null, death_year: null
+    })
+    expect(acceptTextSearchOptionsResponse(aboutAuthors, request, identity)).toBeNull()
+  })
+
+  test.each([
+    { name: "missing year key", mutate: (copy: any) => { delete copy.year_to } },
+    { name: "extra title key", mutate: (copy: any) => { copy.title_options[0].raw = true } },
+    { name: "unsafe author ID", mutate: (copy: any) => { copy.authors[0].author_id = "bad/id" } },
+    {
+      name: "duplicate title ID",
+      mutate: (copy: any) => { copy.title_options.push(structuredClone(copy.title_options[0])) }
+    },
+    {
+      name: "duplicate facet ID",
+      mutate: (copy: any) => { copy.title_author_facets.push(structuredClone(copy.title_author_facets[0])) }
+    },
+    {
+      name: "duplicate author ID",
+      mutate: (copy: any) => { copy.authors.push(structuredClone(copy.authors[0])) }
+    },
+    { name: "descending years", mutate: (copy: any) => { copy.year_from = 2200; copy.year_to = 1000 } },
+    { name: "negative total", mutate: (copy: any) => { copy.title_total = -1 } }
+  ])("rejects options responses with $name", ({ mutate }) => {
+    const request = buildTextSearchOptionsRequest(
+      parseTextSearchRouteQuery({ fras: "frihet" })
+    )
+    const response = optionsResponse()
+    mutate(response)
+    expect(acceptTextSearchOptionsResponse(
+      response,
+      request,
+      textSearchOptionsRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test.each([
+    { optionIds: ["lb-selected-2", "lb-selected-1"] },
+    { optionIds: ["lb-selected-1"] },
+    { optionIds: ["lb-ordinary", "lb-selected-1", "lb-selected-2"] }
+  ])("rejects selected title prefix $optionIds", ({ optionIds }) => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const request = buildTextSearchOptionsRequest(state, {
+      titleLimit: 30,
+      selectedWorkIds: ["lb-selected-1", "lb-selected-2"]
+    })
+    const identity = textSearchOptionsRequestIdentity(request)
+    const response = {
+      title_options: optionIds.map(workId => ({ work_id: workId, title: workId, author_name: "Author" })),
+      title_total: optionIds.includes("lb-ordinary") ? 1 : 0,
+      title_author_facets: [], authors: [], about_authors: [],
+      year_from: null, year_to: null
+    }
+
+    expect(acceptTextSearchOptionsResponse(response, request, identity)).toBeNull()
+  })
+
+  test("permits title_limit zero with only the requested selected prefix", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const request = buildTextSearchOptionsRequest(state, {
+      titleLimit: 0,
+      selectedWorkIds: ["lb-selected-1", "lb-selected-2"]
+    })
+    const response = {
+      title_options: [
+        { work_id: "lb-selected-1", title: "One", author_name: "Author" },
+        { work_id: "lb-selected-2", title: "Two", author_name: "Author" }
+      ],
+      title_total: 0,
+      title_author_facets: [], authors: [], about_authors: [],
+      year_from: null, year_to: null
+    }
+    expect(acceptTextSearchOptionsResponse(
+      response,
+      request,
+      textSearchOptionsRequestIdentity(request)
+    )).toEqual(response)
+  })
+
+  test("rejects ordinary options beyond the request limit or filtered total", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const zeroLimit = buildTextSearchOptionsRequest(state, { titleLimit: 0 })
+    expect(acceptTextSearchOptionsResponse(
+      optionsResponse(),
+      zeroLimit,
+      textSearchOptionsRequestIdentity(zeroLimit)
+    )).toBeNull()
+
+    const request = buildTextSearchOptionsRequest(state, { titleLimit: 30 })
+    const response = optionsResponse()
+    response.title_options.push({ work_id: "lb2", title: "Two", author_name: "Author" })
+    expect(acceptTextSearchOptionsResponse(
+      response,
+      request,
+      textSearchOptionsRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test("rejects ordinary options and facets when the filtered total is zero", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const request = buildTextSearchOptionsRequest(state)
+    const ordinary = optionsResponse()
+    ordinary.title_total = 0
+    ordinary.title_author_facets = []
+    expect(acceptTextSearchOptionsResponse(
+      ordinary,
+      request,
+      textSearchOptionsRequestIdentity(request)
+    )).toBeNull()
+
+    const facet = optionsResponse()
+    facet.title_options = []
+    facet.title_total = 0
+    expect(acceptTextSearchOptionsResponse(
+      facet,
+      request,
+      textSearchOptionsRequestIdentity(request)
+    )).toBeNull()
+  })
+
+  test("requires positive facet counts no greater than the filtered total", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const request = buildTextSearchOptionsRequest(state)
+    for (const count of [0, 2]) {
+      const response = optionsResponse()
+      response.title_author_facets[0]!.count = count
+      expect(acceptTextSearchOptionsResponse(
+        response,
+        request,
+        textSearchOptionsRequestIdentity(request)
+      )).toBeNull()
     }
   })
 
-  test("matches Angular context compaction, long-token removal, and punctuation", () => {
+  test("compacts Angular left context toward 40 summed word characters", () => {
     const word = (text: string, ordinal: number) => ({
       word: text, page_name: "1", word_id: `w1_${ordinal}`
     })
@@ -343,12 +876,40 @@ describe("text search route state", () => {
     expect(compactTextSearchLeftContext(context).map(item => item.word)).toEqual([
       "abcdefghij", "klmnopqrst", "uvwxyzABCD", "tail"
     ])
-    expect(compactTextSearchLeftContext([
-      word("x".repeat(30), 1), word("short", 2)
-    ])).toEqual([word("short", 2)])
     expect(context.map(item => item.word)).toEqual([
       "1234567890", "abcdefghij", "klmnopqrst", "uvwxyzABCD", "tail"
     ])
+  })
+
+  test("removes 30-character context words on both sides", () => {
+    const word = (text: string, ordinal: number) => ({
+      word: text, page_name: "1", word_id: `w1_${ordinal}`
+    })
+    expect(compactTextSearchLeftContext([
+      word("x".repeat(30), 1), word("short", 2)
+    ])).toEqual([word("short", 2)])
+    expect(compactTextSearchRightContext([
+      word("short", 3), word("x".repeat(30), 4), word("tail", 5)
+    ])).toEqual([word("short", 3), word("tail", 5)])
+  })
+
+  test("prepares contexts without removing or reordering match tokens", () => {
+    const match = [
+      { word: "first", page_name: "1", word_id: "w1_2" },
+      { word: "x".repeat(30), page_name: "1", word_id: "w1_3" }
+    ]
+    const prepared = prepareTextSearchHighlight({
+      left_context: [{ word: "x".repeat(30), page_name: "1", word_id: "w1_1" }],
+      match,
+      right_context: [{ word: "x".repeat(30), page_name: "1", word_id: "w1_4" }]
+    })
+    expect(prepared.left_context).toEqual([])
+    expect(prepared.match).toEqual(match)
+    expect(prepared.match).not.toBe(match)
+    expect(prepared.right_context).toEqual([])
+  })
+
+  test("marks only the Angular punctuation allowlist", () => {
     expect([",", ".", ";", ":", "!", "?", "..."].every(isTextSearchPunctuation))
       .toBe(true)
     expect(["…", "-", "..", "word"].some(isTextSearchPunctuation)).toBe(false)
@@ -370,6 +931,7 @@ describe("text search route state", () => {
       lemma: "1",
       ej_modern: "1",
       fuzzy: "1",
+      keyword: "source:sol,keyword:Drama:webben",
       unknown: "must-not-leak"
     })
     const work = {
@@ -400,11 +962,81 @@ describe("text search route state", () => {
       s_page: "2", s_page_size: "30", s_author_ids: "AuthorA",
       s_about_author_ids: "AuthorB", s_work_ids: "lb1", s_gender: "female",
       s_year_from: "1850", s_year_to: "1950", s_languages: "language:swe",
-      s_categories: "texttype:roman", s_facet_author_id: "AuthorC"
+      s_categories: "texttype:roman",
+      s_legacy_filters: JSON.stringify([
+        { field: "source", value: "sol" },
+        { field: "keyword", value: "Drama:webben" }
+      ]),
+      s_facet_author_id: "AuthorC"
     })
     expect(href).not.toContain("unknown")
     expect(href).not.toContain("fuzzy")
     expect(href).not.toContain("text_filter")
     expect(href).not.toContain("sort")
+  })
+
+  test("builds faksimil Reader links at both zero-based hit boundaries", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const work = {
+      lbworkid: "lb1", author_id: "AuthorA", author_name: "Author A",
+      title: "Work", title_id: "work", mediatype: "faksimil" as const,
+      has_more_highlights: false, highlights: []
+    }
+    const highlight = {
+      left_context: [],
+      match: [{ word: "frihet", page_name: "12", word_id: "w12_4" }],
+      right_context: []
+    }
+    const first = new URL(
+      buildTextSearchReaderHref(work, highlight, 0, state),
+      "https://example.test"
+    )
+    const last = new URL(
+      buildTextSearchReaderHref(work, highlight, 1_000_001, state),
+      "https://example.test"
+    )
+    expect(first.pathname.endsWith("/12/faksimil")).toBe(true)
+    expect(first.searchParams.get("hit")).toBe("0")
+    expect(first.searchParams.get("s_mediatype")).toBe("faksimil")
+    expect(last.searchParams.get("hit")).toBe("1000001")
+    expect(last.searchParams.get("hit_index")).toBe("1000001")
+
+    for (const hit of [-1, 1.5, 1_000_002]) {
+      expect(() => buildTextSearchReaderHref(work, highlight, hit, state))
+        .toThrow(RangeError)
+    }
+  })
+
+  test("rejects malformed match IDs before constructing Reader marker parameters", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const work = {
+      lbworkid: "lb1", author_id: "AuthorA", author_name: "Author A",
+      title: "Work", title_id: "work", mediatype: "etext" as const,
+      has_more_highlights: false, highlights: []
+    }
+    const highlight = {
+      left_context: [],
+      match: [{ word: "frihet", page_name: "12", word_id: "w4" }],
+      right_context: []
+    }
+    expect(() => buildTextSearchReaderHref(work, highlight, 0, state)).toThrow(TypeError)
+  })
+
+  test("refuses Reader links with dot-segment page names", () => {
+    const state = parseTextSearchRouteQuery({ fras: "frihet" })
+    const work = {
+      lbworkid: "lb1", author_id: "AuthorA", author_name: "Author A",
+      title: "Work", title_id: "work", mediatype: "etext" as const,
+      has_more_highlights: false, highlights: []
+    }
+
+    for (const pageName of [".", ".."]) {
+      const highlight = {
+        left_context: [],
+        match: [{ word: "frihet", page_name: pageName, word_id: "w12_4" }],
+        right_context: []
+      }
+      expect(() => buildTextSearchReaderHref(work, highlight, 0, state)).toThrow(TypeError)
+    }
   })
 })
