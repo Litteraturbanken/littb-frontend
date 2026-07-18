@@ -379,6 +379,130 @@ test("rapid primary navigation aborts the old request and rejects stale data", a
   await expect(page.locator("#results td.header")).toHaveCount(0)
 })
 
+test("rapid A to B to A navigation refetches an aborted primary identity", async ({
+  page,
+  request
+}) => {
+  await page.goto("/s%C3%B6k")
+  await waitForHydration(page)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 1800 }
+  })
+
+  await page.getByLabel("Sökfras").fill("frihet")
+  await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+
+  await page.getByLabel("Sökfras").fill("inga")
+  await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
+  await expect(page.getByText("Din sökning gav inga träffar", { exact: true })).toBeVisible()
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 0 }
+  })
+
+  await page.getByLabel("Sökfras").fill("frihet")
+  await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(3)
+  expect((await requests(request, "results")).map(entry => entry.body.query))
+    .toEqual(["frihet", "inga", "frihet"])
+})
+
+test("advanced no-query SSR requests and renders static options", async ({ page, request }) => {
+  await page.goto("/s%C3%B6k?avancerad")
+  await waitForHydration(page)
+
+  expect(await requests(request, "results")).toEqual([])
+  expect(await requests(request, "count")).toEqual([])
+  expect(await requests(request, "options")).toEqual([{
+    method: "POST",
+    path: "/private-v2/text-search/options",
+    body: {
+      title_filter: "",
+      title_limit: 30,
+      include_static_options: true,
+      prefix: false,
+      suffix: false,
+      word_form_only: true,
+      include_modernized: true
+    }
+  }])
+  await expect(page.locator(".chronology_ranges input").first()).toHaveAttribute("min", "1849")
+  await expect(page.locator(".chronology_ranges input").first()).toHaveAttribute("max", "1940")
+
+  await page.getByRole("button", { name: "Visa alternativ för Författarskap" })
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
+  await page.keyboard.press("Escape")
+  await page.getByRole("button", { name: "Visa alternativ för Om ett författarskap" })
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(page.getByRole("option", { name: /Strindberg, August/ })).toHaveCount(1)
+  await page.keyboard.press("Escape")
+  await page.getByRole("button", { name: "Visa alternativ för Titlar" })
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(1)
+})
+
+test("route navigation cancels a queued title query before it starts", async ({ page, request }) => {
+  await page.goto("/s%C3%B6k?fras=frihet&avancerad")
+  await waitForHydration(page)
+  await request.delete(`${fixture}/_text_search/requests/options`)
+
+  const titleInput = page.locator(".title_select input.select2-search__field")
+  await titleInput.fill("lager")
+  await titleInput.dispatchEvent("change")
+  await page.getByLabel("Sökfras").fill("inga")
+  await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
+  await expect(page).toHaveURL(/fras=inga/)
+  await page.waitForTimeout(500)
+
+  const optionRequests = await requests(request, "options")
+  expect(optionRequests).toHaveLength(1)
+  expect(optionRequests[0]?.body.title_filter).toBe("")
+  expect(optionRequests[0]?.body.query).toBe("inga")
+})
+
+test("route navigation aborts active title work and clears its spinner and stale choices", async ({
+  page,
+  request
+}) => {
+  await page.goto("/s%C3%B6k?fras=frihet&avancerad")
+  await waitForHydration(page)
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "lager", delay: 1500 }
+  })
+  const aborted = new Promise<string>(resolve => {
+    page.on("requestfailed", failedRequest => {
+      if (failedRequest.url().endsWith("/text-search/options")
+        && failedRequest.postData()?.includes('"title_filter":"lager"')) {
+        resolve(failedRequest.failure()?.errorText ?? "")
+      }
+    })
+  })
+
+  const titleInput = page.locator(".title_select input.select2-search__field")
+  await titleInput.fill("lager")
+  await titleInput.dispatchEvent("change")
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await expect(page.locator(".title_select .spinner")).toBeVisible()
+
+  await page.getByLabel("Sökfras").fill("inga")
+  await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
+  await expect(page).toHaveURL(/fras=inga/)
+  await expect(page.locator(".title_select .spinner")).toBeHidden()
+  expect(await Promise.race([
+    aborted,
+    new Promise(resolve => setTimeout(() => resolve("not-aborted"), 2000))
+  ])).not.toBe("not-aborted")
+
+  await page.waitForTimeout(1600)
+  await page.getByRole("button", { name: "Visa alternativ för Titlar" })
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(1)
+  await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toHaveCount(1)
+})
+
 test("pending primary navigation fades the committed table and current failure clears it", async ({
   page,
   request
@@ -540,7 +664,7 @@ test("pager page input opens and navigates only within inclusive bounds", async 
   await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
 })
 
-test("all gender is visibly selected and canonicalizes without a backend filter", async ({
+test("absent and explicit all gender stay visibly distinct without a backend filter", async ({
   page,
   request
 }) => {
@@ -551,11 +675,20 @@ test("all gender is visibly selected and canonicalizes without a backend filter"
   expect((await requests(request, "results"))[0]?.body).not.toHaveProperty("gender")
 
   await reset(request)
+  const absent = await request.get("/s%C3%B6k?fras=frihet&avancerad")
+  const absentDocument = parseHTML(await absent.text()).document
+  expect(absentDocument.querySelector('select.gender_select option[value=""]')
+    ?.hasAttribute("selected")).toBe(true)
+  expect(absentDocument.querySelector('select.gender_select option[value="all"]')
+    ?.hasAttribute("selected")).toBe(false)
+  expect((await requests(request, "results"))[0]?.body).not.toHaveProperty("gender")
+
+  await reset(request)
   await page.goto("/s%C3%B6k?fras=frihet&avancerad&k%C3%B6n=female")
   await waitForHydration(page)
   await page.locator("select.gender_select").selectOption("all")
   await expect.poll(() => new URL(page.url()).searchParams.has("kön")).toBe(false)
-  await expect(page.locator("select.gender_select")).toHaveValue("all")
+  await expect(page.locator("select.gender_select")).toHaveValue("")
 })
 
 test("result and overflow rows keep flattened Angular parity and media classes", async ({
@@ -579,6 +712,8 @@ test("zero count preserves hits_info but hides zero hit labels", async ({ page }
   await waitForHydration(page)
   await expect(page.locator(".hits_info")).toHaveCount(1)
   await page.waitForTimeout(100)
-  await expect(page.locator(".hits_info .hits")).toHaveCount(0)
-  await expect(page.locator(".hits_info .hits_sub")).toHaveCount(0)
+  await expect(page.locator(".hits_info .hits")).toHaveCount(1)
+  await expect(page.locator(".hits_info .hits_sub")).toHaveCount(1)
+  await expect(page.locator(".hits_info .hits")).toBeHidden()
+  await expect(page.locator(".hits_info .hits_sub")).toBeHidden()
 })

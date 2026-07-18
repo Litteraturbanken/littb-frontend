@@ -252,7 +252,9 @@ const { data: primaryData, pending: primaryPending } = await useAsyncData<Primar
         ? { identity, status: 200, results: resultsView(accepted, requestedState) }
         : { identity, status: 502, results: null }
     } catch {
-      if (requestSignal.aborted) return { identity, status: 204, results: null }
+      if (requestSignal.aborted) {
+        throw requestSignal.reason ?? new DOMException("Search request aborted", "AbortError")
+      }
       return { identity, status: 502, results: null }
     } finally {
       if (primaryController === controller) primaryController = null
@@ -363,7 +365,6 @@ let optionsController: AbortController | null = null
 
 async function loadOptions() {
   const requestedState = state.value
-  if (!requestedState.phrase) return
   const identity = textSearchRouteIdentity(requestedState)
   if (Object.hasOwn(optionsCache.value, identity) || optionsInFlight.has(identity)) return
   const version = ++optionsVersion
@@ -499,6 +500,15 @@ function showAllTitleOptions() {
   if (titleTimer) clearTimeout(titleTimer)
   titleTimer = null
   void loadTitleOptions(titleFilterText.value, 500)
+}
+
+function cancelTitleOptions() {
+  titleVersion += 1
+  if (titleTimer) clearTimeout(titleTimer)
+  titleTimer = null
+  titleController?.abort()
+  titleController = null
+  titleLoading.value = false
 }
 
 const authorChoices = computed<SearchMultiSelectOption[]>(() => {
@@ -642,6 +652,7 @@ function selectedMode(mode: string): boolean {
   return state.value.infix
 }
 
+watch(routeIdentity, cancelTitleOptions, { flush: "sync" })
 watch(routeIdentity, () => {
   countVersion += 1
   countController?.abort()
@@ -649,8 +660,6 @@ watch(routeIdentity, () => {
   optionsVersion += 1
   optionsController?.abort()
   optionsInFlight.clear()
-  titleVersion += 1
-  titleController?.abort()
   void loadCount()
   if (state.value.advanced) void loadOptions()
 }, { flush: "post" })
@@ -765,7 +774,11 @@ watch(routeIdentity, () => {
   gotoPageInput.value = ""
 }, { flush: "sync" })
 
-const genderSelection = computed(() => state.value.gender ?? "all")
+const genderSelection = computed(() => {
+  const rawGender = rawQuery.value["kön"]
+  const firstGender = typeof rawGender === "string" ? rawGender : rawGender?.[0]
+  return firstGender === "all" ? "all" : (state.value.gender ?? "")
+})
 function setGender(value: string) {
   patchFilters({ gender: value === "female" || value === "male" ? value : null })
 }
@@ -784,11 +797,9 @@ onBeforeUnmount(() => {
   optionsVersion += 1
   optionsController?.abort()
   optionsInFlight.clear()
-  titleVersion += 1
-  titleController?.abort()
+  cancelTitleOptions()
   moreVersion += 1
   moreController?.abort()
-  if (titleTimer) clearTimeout(titleTimer)
 })
 
 useSeoMeta({
@@ -1044,7 +1055,7 @@ useHead({
               aria-label="Filtrera: kvinnliga / manliga / alla"
               @change="setGender(($event.target as HTMLSelectElement).value)"
             >
-              <option value="" />
+              <option value="" :selected="genderSelection === ''" />
               <option value="all" :selected="genderSelection === 'all'">Alla författare</option>
               <option value="female" :selected="genderSelection === 'female'">Kvinnliga författare</option>
               <option value="male" :selected="genderSelection === 'male'">Manliga författare</option>
@@ -1141,9 +1152,9 @@ useHead({
         <div>
           <div class="hits_info">
             <div>
-              <div v-if="count && count.hits > 0" class="hits">{{ count.hits }}</div>
-              <div v-if="count && count.hits > 0" class="hits_sub">
-                <span v-if="count.hits !== 1">sökträffar</span>
+              <div v-show="(count?.hits ?? 0) > 0" class="hits">{{ count?.hits ?? 0 }}</div>
+              <div v-show="(count?.hits ?? 0) > 0" class="hits_sub">
+                <span v-if="count?.hits !== 1">sökträffar</span>
                 <span v-else>sökträff</span>
               </div>
             </div>
