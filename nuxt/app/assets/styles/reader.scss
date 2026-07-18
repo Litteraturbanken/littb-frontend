@@ -181,6 +181,21 @@
         }
     }
 
+    .reader-facsimile-size-controls button:first-of-type {
+        margin-right: 5px;
+        width: 65px;
+    }
+
+    .reader-facsimile-rotation-controls button:first-of-type {
+        margin-right: 4px;
+        text-indent: -0.5px;
+        width: 70px;
+    }
+
+    &:has(.reader_main.type-faksimil) #rightCorridor .subnav li:nth-child(4) {
+        color: lightgrey;
+    }
+
     .reader-facsimile-rotation-controls {
         margin-top: 1em;
     }
@@ -395,6 +410,12 @@
 
     #toolkit-right .navicon i {
         padding: 0 1px;
+    }
+}
+
+@media (min-width: 768px) {
+    .page-reading:has(.reader_main.type-faksimil) #rightCorridor {
+        margin-left: 68.53125px !important;
     }
 }
 
