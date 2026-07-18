@@ -787,7 +787,7 @@ describe("v2 fixture server operations", () => {
     expect(metadata.status).toBe(200)
     expect(await metadata.json()).toEqual(readerFacsimileWorkInfoResponse)
     expect(readerFacsimileWorkInfoResponse.data[0]).toMatchObject({
-      faksimil_sizes: [0, 2, 4],
+      faksimil_sizes: [1, 2, 3, 4],
       lbworkid: "lb-reader-gosta-berlings-saga",
       mediatype: "faksimil",
       pages: [
@@ -796,7 +796,7 @@ describe("v2 fixture server operations", () => {
         { pagename: "5", pageindex: 2, imagenumber: 12 }
       ],
       startpagename: "3",
-      width: { size_1: 320, size_3: 640, size_5: 1280 }
+      width: { size_2: 450, size_3: 625, size_4: 900, size_5: 1250 }
     })
 
     const searchHits = await fetch(

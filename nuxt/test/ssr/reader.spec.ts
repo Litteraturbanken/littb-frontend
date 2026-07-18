@@ -2,6 +2,16 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 
 const fixture = "http://127.0.0.1:4100"
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
+const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
+  "lb-reader-gosta-berlings-saga_3/" +
+  "lb-reader-gosta-berlings-saga_3_0009.jpeg"
+const facsimileRetinaPath = "/txt/lb-reader-gosta-berlings-saga/" +
+  "lb-reader-gosta-berlings-saga_5/" +
+  "lb-reader-gosta-berlings-saga_5_0009.jpeg"
+const facsimileLargePath = "/txt/lb-reader-gosta-berlings-saga/" +
+  "lb-reader-gosta-berlings-saga_4/" +
+  "lb-reader-gosta-berlings-saga_4_0009.jpeg"
 
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
@@ -95,25 +105,32 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     previousPageName: "1",
     sources: [
       {
-        size: 1,
+        size: 2,
         url: "/txt/lb-reader-gosta-berlings-saga/" +
-          "lb-reader-gosta-berlings-saga_1/" +
-          "lb-reader-gosta-berlings-saga_1_0009.jpeg",
-        width: 320
+          "lb-reader-gosta-berlings-saga_2/" +
+          "lb-reader-gosta-berlings-saga_2_0009.jpeg",
+        width: 450
       },
       {
         size: 3,
         url: "/txt/lb-reader-gosta-berlings-saga/" +
           "lb-reader-gosta-berlings-saga_3/" +
           "lb-reader-gosta-berlings-saga_3_0009.jpeg",
-        width: 640
+        width: 625
+      },
+      {
+        size: 4,
+        url: "/txt/lb-reader-gosta-berlings-saga/" +
+          "lb-reader-gosta-berlings-saga_4/" +
+          "lb-reader-gosta-berlings-saga_4_0009.jpeg",
+        width: 900
       },
       {
         size: 5,
         url: "/txt/lb-reader-gosta-berlings-saga/" +
           "lb-reader-gosta-berlings-saga_5/" +
           "lb-reader-gosta-berlings-saga_5_0009.jpeg",
-        width: 1280
+        width: 1250
       }
     ],
     title: "Gösta Berlings saga",
@@ -129,6 +146,80 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     jpeg: []
   })
   expect(await readerHitRequests(request)).toEqual([])
+})
+
+test("the exact faksimil page renders its fixed scan without e-text output", async ({
+  request
+}) => {
+  const response = await request.get(facsimilePath)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(html).toContain(
+    "<title>Gösta Berlings saga sida 3 faksimil | Litteraturbanken</title>"
+  )
+  expect(html).toContain(
+    "Gösta Berlings saga av Selma Lagerlöf, sida 3 som faksimil."
+  )
+  expect(html).toContain("type-faksimil")
+  expect(html).toMatch(/class="img_area"[^>]*style="[^"]*width:\s*625px/)
+  expect(html).toMatch(/<img[^>]*class="faksimil"/)
+  expect(html).toContain(`src="${facsimileImagePath}"`)
+  expect(html).toContain(
+    `srcset="${facsimileImagePath} 1x, ${facsimileRetinaPath} 2x"`
+  )
+  expect(html).toMatch(/<img[^>]*class="faksimil"[^>]*width="625"/)
+  expect(html).toContain(
+    'alt="Gösta Berlings saga av Selma Lagerlöf, sida 3"'
+  )
+  expect(html).toContain(
+    'href="/författare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/1/faksimil"'
+  )
+  expect(html).toContain(
+    'href="/författare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/5/faksimil"'
+  )
+  expect(html).not.toContain('class="etext')
+  expect(html).not.toContain('href="/red/css/etext.css"')
+  expect(html).not.toContain("-etext.css")
+  expect(await readerHitRequests(request)).toEqual([])
+})
+
+test("faksimil preserves search-shaped and invalid size queries without e-text hits", async ({
+  request
+}) => {
+  const response = await request.get(
+    `${facsimilePath}?q=doktor&hit=1&s_from=w1&s_to=w2&storlek=1` +
+    "&return=first&return=second&unknown=bevara%20mig"
+  )
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(html).toContain(`src="${facsimileImagePath}"`)
+  for (const pageName of ["1", "5"]) {
+    expect(html).toContain(
+      `/sida/${pageName}/faksimil?q=doktor&amp;hit=1&amp;s_from=w1&amp;s_to=w2` +
+      "&amp;storlek=1&amp;return=first&amp;return=second&amp;unknown=bevara+mig"
+    )
+  }
+  expect(html).not.toContain("reader-search-state")
+  expect(html).not.toContain("search_nav")
+  expect(html).not.toContain("markee")
+  expect(await readerHitRequests(request)).toEqual([])
+})
+
+test("an advertised direct faksimil size is server-rendered without a density pair", async ({
+  request
+}) => {
+  const response = await request.get(`${facsimilePath}?storlek=4`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(html).toMatch(/class="img_area"[^>]*style="[^"]*width:\s*900px/)
+  expect(html).toContain(`src="${facsimileLargePath}"`)
+  expect(html).toMatch(/<img[^>]*class="faksimil"[^>]*width="900"/)
+  expect(html).not.toMatch(/<img[^>]*class="faksimil"[^>]*srcset=/)
+  expect(html).toContain("/sida/1/faksimil?storlek=4")
+  expect(html).toContain("/sida/5/faksimil?storlek=4")
 })
 
 test("canonical faksimil requires an exact representation", async ({ request }) => {

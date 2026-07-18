@@ -332,7 +332,7 @@ function readerMetadataResponse(titlePath) {
       return {
         hits: 1,
         data: [readerFacsimileRepresentation(titlePath, {
-          width: { size_1: 320, size_3: 0, size_5: 1280 }
+          width: { size_2: 450, size_3: 0, size_4: 900, size_5: 1250 }
         })]
       }
     case "Förvillelser":

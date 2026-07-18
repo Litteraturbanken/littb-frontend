@@ -138,6 +138,51 @@
     .reader_main {
         flex: 0 0 477px;
         width: 477px;
+
+        &.type-faksimil {
+            flex-basis: auto;
+            width: auto;
+        }
+    }
+
+    .img_area {
+        position: relative;
+    }
+
+    .faksimil {
+        display: block;
+        max-width: inherit;
+        transition: transform 200ms;
+        user-select: none;
+    }
+
+    .reader-facsimile-error {
+        border: 1px solid #b91c1c;
+        box-sizing: border-box;
+        color: #7f1d1d;
+        margin: 0;
+        padding: 1em;
+        width: 100%;
+    }
+
+    .reader-facsimile-controls {
+        text-align: right;
+
+        h2 {
+            color: var(--primary-color);
+            font-size: 0.84em;
+            margin-bottom: 0.2em;
+            @include small-caps();
+        }
+
+        button {
+            font-size: 0.45em;
+            padding-bottom: 0.5em;
+        }
+    }
+
+    .reader-facsimile-rotation-controls {
+        margin-top: 1em;
     }
 
     .etext {
@@ -355,6 +400,10 @@
 
 @media (max-width: 767px) {
     .page-reading {
+        .reader-facsimile-rotation-controls {
+            display: none;
+        }
+
         #leftCorridor {
             margin-right: 0;
         }

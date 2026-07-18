@@ -2,7 +2,10 @@
 import { parseHTML } from "linkedom"
 import type { LocationQueryRaw, RouteLocationRaw } from "vue-router"
 
-import type { ReaderPage } from "#shared/types/reader"
+import type {
+  ReaderFacsimileSize,
+  ReaderPage
+} from "#shared/types/reader"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import {
@@ -21,11 +24,12 @@ definePageMeta({
       route.params.mediatype
     ]
     return values.every(value => typeof value === "string" && value.length > 0) &&
-      route.params.mediatype === "etext"
+      (route.params.mediatype === "etext" || route.params.mediatype === "faksimil")
   }
 })
 
 const route = useRoute()
+const router = useRouter()
 const config = useRuntimeConfig()
 
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
@@ -185,16 +189,6 @@ function markReaderHtml(
   return root.innerHTML
 }
 
-const searchState = computed(parseCanonicalSearchState)
-const pageQuery = computed(() => {
-  const query = preservedQuery()
-  if (searchState.value) {
-    query.q = searchState.value.query
-    query.hit = String(searchState.value.hit)
-  }
-  return query
-})
-
 function routeParam(name: "author" | "title" | "page" | "mediatype"): string {
   const value = route.params[name]
   if (typeof value !== "string" || !value) {
@@ -207,6 +201,12 @@ const authorParam = computed(() => routeParam("author"))
 const titleParam = computed(() => routeParam("title"))
 const pageParam = computed(() => routeParam("page"))
 const mediaTypeParam = computed(() => routeParam("mediatype"))
+const readerRequestIdentity = computed(() => JSON.stringify([
+  authorParam.value,
+  titleParam.value,
+  pageParam.value,
+  mediaTypeParam.value
+]))
 const requestFetch = useRequestFetch()
 
 type CurrentReaderPage =
@@ -214,9 +214,9 @@ type CurrentReaderPage =
   | { status: "error", identity: string }
 
 const { data, error } = await useAsyncData<CurrentReaderPage>(
-  computed(() => `reader:${route.fullPath}`),
+  computed(() => `reader:${readerRequestIdentity.value}`),
   async () => {
-    const identity = route.fullPath
+    const identity = readerRequestIdentity.value
     const readerApiUrl = [
       authorParam.value,
       titleParam.value,
@@ -231,7 +231,7 @@ const { data, error } = await useAsyncData<CurrentReaderPage>(
       return { status: "error" as const, identity }
     }
   },
-  { lazy: true, watch: [() => route.fullPath] }
+  { lazy: true, watch: [readerRequestIdentity] }
 )
 
 if (import.meta.server) {
@@ -248,20 +248,44 @@ if (import.meta.server) {
 
 const reader = computed(() => {
   const current = data.value
-  return current?.status === "success" && current.identity === route.fullPath
+  return current?.status === "success" && current.identity === readerRequestIdentity.value
     ? current.reader
     : null
 })
 const primaryReaderFailed = computed(
-  () => data.value?.status === "error" && data.value.identity === route.fullPath
+  () => data.value?.status === "error" &&
+    data.value.identity === readerRequestIdentity.value
 )
+const etextReader = computed(() => reader.value?.mediaType === "etext" ? reader.value : null)
+const facsimileReader = computed(
+  () => reader.value?.mediaType === "faksimil" ? reader.value : null
+)
+const searchState = computed(() => etextReader.value ? parseCanonicalSearchState() : null)
+const pageQuery = computed(() => {
+  const query = preservedQuery()
+  if (searchState.value) {
+    query.q = searchState.value.query
+    query.hit = String(searchState.value.hit)
+  }
+  return query
+})
+const selectedFacsimileSize = computed<ReaderFacsimileSize | null>(() => {
+  const currentReader = facsimileReader.value
+  if (!currentReader) return null
+  const raw = route.query.storlek
+  if (typeof raw === "string" && /^[1-5]$/.test(raw)) {
+    const size = Number(raw) as ReaderFacsimileSize
+    if (currentReader.sources.some(source => source.size === size)) return size
+  }
+  return currentReader.preferredSize
+})
 const authorHref = computed(() => reader.value
   ? readerAuthorHref(authorParam.value)
   : ""
 )
 const pageTitle = computed(
   () => reader.value
-    ? `${reader.value.title} sida ${reader.value.pageName} etext | Litteraturbanken`
+    ? `${reader.value.title} sida ${reader.value.pageName} ${reader.value.mediaType} | Litteraturbanken`
     : "Litteraturbanken"
 )
 
@@ -279,7 +303,8 @@ const hitFetch = await useAsyncData(
         if (
           !state ||
           currentReader?.status !== "success" ||
-          currentReader.identity !== identity
+          currentReader.identity !== readerRequestIdentity.value ||
+          currentReader.reader.mediaType !== "etext"
         ) {
           return { status: "inactive" as const, identity }
         }
@@ -319,7 +344,8 @@ const hitResponse = computed(() => {
   return value?.status === "success" &&
     value.identity === route.fullPath &&
     data.value?.status === "success" &&
-    data.value.identity === route.fullPath
+    data.value.identity === readerRequestIdentity.value &&
+    data.value.reader.mediaType === "etext"
     ? value.response
     : null
 })
@@ -344,13 +370,14 @@ const nextHit = computed(() => {
   ) ?? null
 })
 const markedReaderHtml = computed(() => {
-  if (!reader.value) return ""
-  if (!activeHit.value) return reader.value.html
+  const currentReader = etextReader.value
+  if (!currentReader) return ""
+  if (!activeHit.value) return currentReader.html
   return markReaderHtml(
-    reader.value.html,
+    currentReader.html,
     activeHit.value,
-    reader.value.pageName,
-    reader.value.pageIndex
+    currentReader.pageName,
+    currentReader.pageIndex
   )
 })
 const hitPosition = computed(() => {
@@ -416,8 +443,10 @@ function writeLastPageView(): void {
 onMounted(writeLastPageView)
 watch(
   [() => route.fullPath, () => data.value?.identity, () => data.value?.status],
-  ([fullPath, identity, status]) => {
-    if (status === "success" && identity === fullPath) writeLastPageView()
+  ([_fullPath, identity, status]) => {
+    if (status === "success" && identity === readerRequestIdentity.value) {
+      writeLastPageView()
+    }
   },
   { flush: "post" }
 )
@@ -429,10 +458,10 @@ useSeoMeta({
 
 useHead(() => ({
   bodyAttrs: { class: "focus page-reading ready" },
-  link: reader.value
+  link: etextReader.value
     ? [
-        { rel: "stylesheet", href: reader.value.sharedStylesheetUrl },
-        { rel: "stylesheet", href: reader.value.workStylesheetUrl }
+        { rel: "stylesheet", href: etextReader.value.sharedStylesheetUrl },
+        { rel: "stylesheet", href: etextReader.value.workStylesheetUrl }
       ]
     : []
 }))
@@ -477,13 +506,52 @@ function hitHref(hit: WorkSearchHit): string {
     hit: hit.index
   })
 }
+
+function selectFacsimileSize(size: ReaderFacsimileSize): void {
+  const currentReader = facsimileReader.value
+  const selectedSize = selectedFacsimileSize.value
+  if (
+    !currentReader ||
+    selectedSize === null ||
+    Math.abs(size - selectedSize) !== 1 ||
+    !currentReader.sources.some(source => source.size === size)
+  ) return
+
+  const query = Object.fromEntries(
+    Object.entries(preservedQuery()).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? [...value] : value
+    ])
+  ) as LocationQueryRaw
+  query.storlek = String(size)
+  void router.replace({
+    name: route.name as string,
+    params: {
+      author: authorParam.value,
+      title: titleParam.value,
+      page: pageParam.value,
+      mediatype: mediaTypeParam.value
+    },
+    query
+  })
+}
 </script>
 
 <template>
   <div class="reader-page">
     <template v-if="reader">
-      <section class="reader_main state-not-parallel" :aria-label="`${reader.title}, sida ${reader.pageName}`">
-        <div class="etext txt" v-html="markedReaderHtml" />
+      <section
+        class="reader_main state-not-parallel"
+        :class="{ 'type-faksimil': facsimileReader }"
+        :aria-label="`${reader.title}, sida ${reader.pageName}`"
+      >
+        <div v-if="etextReader" class="etext txt" v-html="markedReaderHtml" />
+        <ReaderFacsimileImage
+          v-else-if="facsimileReader && selectedFacsimileSize"
+          :page="facsimileReader"
+          :selected-size="selectedFacsimileSize"
+          @select-size="selectFacsimileSize"
+        />
       </section>
 
       <div v-if="searchState" class="reader-search-state sr-only" aria-live="polite">

@@ -37,7 +37,7 @@ export const readerFacsimileWorkInfoResponse = {
           surname: "Lagerlöf"
         }
       ],
-      faksimil_sizes: [0, 2, 4],
+      faksimil_sizes: [1, 2, 3, 4],
       imprintyear: "1891",
       lbworkid: "lb-reader-gosta-berlings-saga",
       mediatype: "faksimil",
@@ -52,9 +52,10 @@ export const readerFacsimileWorkInfoResponse = {
       title: "Gösta Berlings saga. Roman",
       titlepath: "GostaBerlingsSaga",
       width: {
-        size_1: 320,
-        size_3: 640,
-        size_5: 1280
+        size_2: 450,
+        size_3: 625,
+        size_4: 900,
+        size_5: 1250
       }
     }
   ]
