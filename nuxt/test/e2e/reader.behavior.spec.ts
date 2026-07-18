@@ -1,4 +1,10 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Locator,
+  type Page
+} from "@playwright/test"
 
 const fixture = "http://127.0.0.1:4100"
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
@@ -122,14 +128,18 @@ async function navigateClient(page: Page, rawPath: string) {
 async function activateReaderLink(
   page: Page,
   name: "Föregående sida" | "Nästa sida",
-  expectedHref: string
+  expectedHref: string,
+  scope: Page | Locator = page
 ) {
-  const link = page.getByRole("link", { name })
+  const link = scope.getByRole("link", { name })
   await expect(link).toHaveAttribute("href", expectedHref)
+  await expect(link).toBeVisible()
+  const visualButton = link.locator(".navicon-visual")
+  await expect(visualButton).toBeVisible()
   if ((page.viewportSize()?.width ?? Number.POSITIVE_INFINITY) < 768) {
     await link.dispatchEvent("click")
   } else {
-    await link.click()
+    await visualButton.click()
   }
 }
 
@@ -610,11 +620,18 @@ test("a failed faksimil scan stays bounded while context and navigation contract
   page
 }) => {
   const problems = captureBrowserProblems(page)
+  const documentRequests: string[] = []
+  page.on("request", browserRequest => {
+    if (browserRequest.resourceType() === "document") {
+      documentRequests.push(browserRequest.url())
+    }
+  })
   await page.route("**/*_0009.jpeg", async route => {
     await route.fulfill({ status: 404, contentType: "text/plain", body: "missing" })
   })
 
   const response = await page.goto(facsimilePath, { waitUntil: "networkidle" })
+  documentRequests.length = 0
 
   expect(response?.status()).toBe(200)
   const alert = page.locator(".reader-facsimile-error[role=alert]")
@@ -624,8 +641,16 @@ test("a failed faksimil scan stays bounded while context and navigation contract
   )
   await expect(page.locator(".reader-context")).toContainText("Selma Lagerlöf")
   await expect(page.locator(".reader-context")).toContainText("Gösta Berlings saga (1891)")
-  await expect(page.getByRole("link", { name: "Föregående sida" })).toBeVisible()
-  await expect(page.getByRole("link", { name: "Nästa sida" })).toBeVisible()
+  const corridor = page.locator("#rightCorridor")
+  const navigation = corridor.locator("#toolkit-right .reader-navigation")
+  const previousLink = navigation.getByRole("link", { name: "Föregående sida" })
+  const nextLink = navigation.getByRole("link", { name: "Nästa sida" })
+  await expect(previousLink).toHaveAttribute("href", facsimilePageHref("1"))
+  await expect(nextLink).toHaveAttribute("href", facsimilePageHref("5"))
+  await expect(corridor).toBeVisible()
+  await expect(navigation).toBeVisible()
+  await expect(previousLink).toBeVisible()
+  await expect(nextLink).toBeVisible()
   const [alertBox, wrapperBox] = await Promise.all([
     alert.boundingBox(),
     page.locator(".img_area").boundingBox()
@@ -637,11 +662,12 @@ test("a failed faksimil scan stays bounded while context and navigation contract
     wrapperBox!.x + wrapperBox!.width
   )
 
-  await activateReaderLink(page, "Nästa sida", facsimilePageHref("5"))
+  await activateReaderLink(page, "Nästa sida", facsimilePageHref("5"), navigation)
   await expect(page).toHaveURL(/\/sida\/5\/faksimil$/)
   await expect(page.locator("img.faksimil")).toHaveAttribute("src", facsimileSource(3, 12))
   await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(0)
   await expect(page.locator(".reader-context")).toContainText("Gösta Berlings saga (1891)")
+  expect(documentRequests).toEqual([])
   expect(problems).toEqual([])
 })
 
