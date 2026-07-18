@@ -445,6 +445,11 @@ GET|DELETE /_legacy_author_route_requests
 GET|DELETE /_author_document_pdf_requests
 ```
 
+Each `/api/v2/authors/.../documents/...` descriptor request and each `/red/...`
+content-origin request is recorded with an explicit `kind: "descriptor" |
+"content"` discriminator. Zero-content-fetch assertions must filter by this
+field rather than treating every author-document ledger entry alike.
+
 Failure values are `descriptor-404`, `descriptor-503`, `content-404`,
 `content-503`, `malformed-descriptor`, `unsafe-source-path`, and
 `malformed-content`; delay is integer 0–5000. Resolver maps the three exact
@@ -465,6 +470,9 @@ serving:
 ```
 
 Record each exact PDF request; every other author-document asset is rejected.
+Extend the fixture response helper with an optional headers object (or add a
+dedicated PDF responder) so both `content-type` and `content-disposition` are
+actually emitted and asserted without changing existing callers.
 
 - [ ] **Step 4: Run fixture tests RED, generate, implement, and finish GREEN**
 
@@ -954,6 +962,7 @@ git commit -m "feat(nuxt): proxy author documents"
 - Create: `nuxt/test/e2e/author-documents.behavior.spec.ts`
 - Create: `nuxt/test/e2e/author-documents.visual.spec.ts`
 - Create: `nuxt/test/visual/capture-author-documents-angular.spec.ts`
+- Create: `nuxt/playwright.author-documents-angular.config.ts`
 - Create: `nuxt/test/visual/baselines/author-document-presentation-desktop.png`
 - Create: `nuxt/test/visual/baselines/author-document-presentation-mobile.png`
 - Create: `nuxt/test/visual/baselines/author-document-bibliografi-desktop.png`
@@ -986,8 +995,13 @@ iPhone 13 baselines:
 
 ```bash
 yarn playwright test test/visual/capture-author-documents-angular.spec.ts \
-  --config=playwright.angular.config.ts
+  --config=playwright.author-documents-angular.config.ts
 ```
+
+The dedicated config starts the local Angular authority server on port 9000,
+mirroring `playwright.author-works-angular.config.ts`; it must never default to
+or silently fall back to the production site. The capture asserts the configured
+base URL is local before any request is made.
 
 - [ ] **Step 2: Write failing SSR/page-copy/navigation tests**
 
@@ -1170,6 +1184,7 @@ git add 'nuxt/app/pages/författare/[author]/[document].vue' \
   nuxt/test/e2e/author-documents.behavior.spec.ts \
   nuxt/test/e2e/author-documents.visual.spec.ts \
   nuxt/test/visual/capture-author-documents-angular.spec.ts \
+  nuxt/playwright.author-documents-angular.config.ts \
   nuxt/test/visual/baselines/author-document-*.png \
   nuxt/test/fixtures/v2-server.mjs nuxt/test/unit/v2-server.spec.ts
 git diff --cached --check
