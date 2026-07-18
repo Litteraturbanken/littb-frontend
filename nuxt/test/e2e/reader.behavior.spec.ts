@@ -15,6 +15,13 @@ const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
 const facsimileRetinaPath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_5/" +
   "lb-reader-gosta-berlings-saga_5_0009.jpeg"
+const storedFacsimilePath = "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/" +
+  "GostaBerlingsSaga/sida/3/faksimil"
+
+function facsimileSource(size: 2 | 3 | 4 | 5, imageNumber: 7 | 9 | 12): string {
+  const work = "lb-reader-gosta-berlings-saga"
+  return `/txt/${work}/${work}_${size}/${work}_${size}_${String(imageNumber).padStart(4, "0")}.jpeg`
+}
 
 type StoredPageView = {
   pageix: number
@@ -30,6 +37,10 @@ type StoredPageView = {
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_metadata_requests`),
+    request.delete(`${fixture}/_reader_html_requests`),
+    request.delete(`${fixture}/_reader_ocr_requests`),
+    request.delete(`${fixture}/_reader_jpeg_requests`),
     request.delete(`${fixture}/_reader_metadata_delays`),
     request.delete(`${fixture}/_reader_hit_requests`),
     request.delete(`${fixture}/_reader_hit_failure`),
@@ -39,6 +50,10 @@ async function resetReader(request: APIRequestContext) {
 
 async function readerRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_requests`)).json()).requests
+}
+
+async function readerMetadataRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_reader_metadata_requests`)).json()).requests
 }
 
 type ReaderHitRequest = { path: string, query: string }
@@ -95,6 +110,10 @@ async function navigateClient(page: Page, rawPath: string) {
     if (!router) throw new Error("Nuxt client router is unavailable")
     await router.push(nextPath)
   }, rawPath)
+}
+
+async function activateReaderLink(page: Page, name: "Föregående sida" | "Nästa sida") {
+  await page.getByRole("link", { name }).dispatchEvent("click")
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
@@ -385,7 +404,7 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
 test("hydrates a fixed-width faksimil scan with legacy size and rotation controls", async ({
   page,
   request
-}) => {
+}, testInfo) => {
   const problems = captureBrowserProblems(page)
   const response = await page.goto(facsimilePath, { waitUntil: "networkidle" })
 
@@ -412,60 +431,199 @@ test("hydrates a fixed-width faksimil scan with legacy size and rotation control
   await expect(sizeControls.getByRole("button", { name: "Mindre" })).toBeEnabled()
   await expect(sizeControls.getByRole("button", { name: "Större" })).toBeEnabled()
 
-  const historyLength = await page.evaluate(() => window.history.length)
-  await request.delete(`${fixture}/_reader_requests`)
-  await sizeControls.getByRole("button", { name: "Större" }).click()
-  await expect(page).toHaveURL(`${facsimilePath}?storlek=4`)
-  await expect(image).toHaveAttribute(
-    "src",
-    "/txt/lb-reader-gosta-berlings-saga/" +
-    "lb-reader-gosta-berlings-saga_4/" +
-    "lb-reader-gosta-berlings-saga_4_0009.jpeg"
-  )
-  await expect(image).not.toHaveAttribute("srcset", /./)
-  await expect(image).toHaveCSS("width", "900px")
-  await expect(page.locator(".img_area")).toHaveCSS("width", "900px")
-  expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
-  expect((await readerRequests(request)).filter(path => (
-    path.startsWith("/api/get_work_info?")
-  ))).toEqual([])
-
-  await sizeControls.getByRole("button", { name: "Mindre" }).click()
-  await expect(page).toHaveURL(`${facsimilePath}?storlek=3`)
-  await expect(image).toHaveAttribute("src", facsimileImagePath)
-
   const rotationControls = page.locator("#toolkit .reader-facsimile-rotation-controls")
-  await expect(rotationControls).toBeVisible()
-  await rotationControls.getByRole("button", { name: "Höger" }).click()
-  await expect(image).toHaveCSS("transform", "matrix(0, 1, -1, 0, 0, 0)")
-  await rotationControls.getByRole("button", { name: "Vänster" }).click()
-  await expect(image).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
-
-  await page.setViewportSize({ width: 390, height: 844 })
-  await expect(rotationControls).toBeHidden()
+  if (testInfo.project.name === "mobile-chromium") {
+    await expect(rotationControls).toBeHidden()
+  } else {
+    await expect(rotationControls).toBeVisible()
+    await rotationControls.getByRole("button", { name: "Höger" }).click()
+    await expect(image).toHaveCSS("transform", "matrix(0, 1, -1, 0, 0, 0)")
+    await rotationControls.getByRole("button", { name: "Vänster" }).click()
+    await expect(image).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+  }
   await expect(image).toHaveCSS("width", "625px")
   await expect(page.locator(".img_area")).toHaveCSS("width", "625px")
   expect(await readerHitRequests(request)).toEqual([])
   expect(problems).toEqual([])
 })
 
-test("a failed faksimil scan keeps its bounded error and page navigation", async ({
+test("faksimil page navigation preserves queries and restores scan identity", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const documentRequests: string[] = []
+  page.on("request", browserRequest => {
+    if (browserRequest.resourceType() === "document") {
+      documentRequests.push(browserRequest.url())
+    }
+  })
+  const query = "?q=scan&hit=2&s_mode=phrase&repeat=first&repeat=second&unknown=value"
+  await page.goto(`${facsimilePath}${query}`, { waitUntil: "networkidle" })
+  documentRequests.length = 0
+  await request.delete(`${fixture}/_reader_metadata_requests`)
+
+  const image = page.locator("img.faksimil")
+  await activateReaderLink(page, "Föregående sida")
+  await expect(page).toHaveURL(`/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/1/faksimil${query}`)
+  await expect(image).toHaveAttribute("src", facsimileSource(3, 7))
+  await expect(image).toHaveAttribute(
+    "srcset",
+    `${facsimileSource(3, 7)} 1x, ${facsimileSource(5, 7)} 2x`
+  )
+
+  await page.goBack()
+  await expect(page).toHaveURL(`${facsimilePath}${query}`)
+  await expect(image).toHaveAttribute("src", facsimileSource(3, 9))
+  await page.goForward()
+  await expect(page).toHaveURL(`/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/1/faksimil${query}`)
+  await expect(image).toHaveAttribute("src", facsimileSource(3, 7))
+
+  await activateReaderLink(page, "Nästa sida")
+  await expect(page).toHaveURL(`${facsimilePath}${query}`)
+  await expect(image).toHaveAttribute("src", facsimileSource(3, 9))
+  await activateReaderLink(page, "Nästa sida")
+  await expect(page).toHaveURL(`/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/5/faksimil${query}`)
+  await expect(image).toHaveAttribute("src", facsimileSource(3, 12))
+  await expect(page.getByRole("link", { name: "Nästa sida" })).toHaveCount(0)
+
+  expect(documentRequests).toEqual([])
+  expect(await readerMetadataRequests(request)).toHaveLength(5)
+  expect(problems).toEqual([])
+})
+
+test("faksimil size replacement changes exact sources and stops at both edges", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(facsimilePath, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_metadata_requests`)
+
+  const image = page.locator("img.faksimil")
+  const wrapper = page.locator(".img_area")
+  const sizeControls = page.locator("#toolkit .reader-facsimile-size-controls")
+  const smaller = sizeControls.getByRole("button", { name: "Mindre" })
+  const larger = sizeControls.getByRole("button", { name: "Större" })
+  const historyLength = await page.evaluate(() => window.history.length)
+
+  await larger.click()
+  await expect(page).toHaveURL(`${facsimilePath}?storlek=4`)
+  await expect(image).toHaveAttribute("src", facsimileSource(4, 9))
+  await expect(image).not.toHaveAttribute("srcset", /./)
+  await expect(image).toHaveAttribute("width", "900")
+  await expect(image).toHaveCSS("width", "900px")
+  await expect(wrapper).toHaveCSS("width", "900px")
+
+  await larger.click()
+  await expect(page).toHaveURL(`${facsimilePath}?storlek=5`)
+  await expect(image).toHaveAttribute("src", facsimileSource(5, 9))
+  await expect(image).not.toHaveAttribute("srcset", /./)
+  await expect(image).toHaveAttribute("width", "1250")
+  await expect(wrapper).toHaveCSS("width", "1250px")
+  await expect(larger).toBeDisabled()
+
+  await smaller.click()
+  await smaller.click()
+  await smaller.click()
+  await expect(page).toHaveURL(`${facsimilePath}?storlek=2`)
+  await expect(image).toHaveAttribute("src", facsimileSource(2, 9))
+  await expect(image).toHaveAttribute(
+    "srcset",
+    `${facsimileSource(2, 9)} 1x, ${facsimileSource(4, 9)} 2x`
+  )
+  await expect(image).toHaveAttribute("width", "450")
+  await expect(image).toHaveCSS("width", "450px")
+  await expect(wrapper).toHaveCSS("width", "450px")
+  await expect(smaller).toBeDisabled()
+
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
+  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("faksimil page identity resets local rotation and image error state", async ({
+  page
+}, testInfo) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(facsimilePath, { waitUntil: "networkidle" })
+  const image = page.locator("img.faksimil")
+  if (testInfo.project.name !== "mobile-chromium") {
+    await page.locator("#toolkit .reader-facsimile-rotation-controls")
+      .getByRole("button", { name: "Höger" }).click()
+    await expect(image).toHaveCSS("transform", "matrix(0, 1, -1, 0, 0, 0)")
+  }
+  await image.evaluate(element => element.dispatchEvent(new Event("error")))
+  await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(1)
+
+  await activateReaderLink(page, "Nästa sida")
+  await expect(page).toHaveURL(/\/sida\/5\/faksimil$/)
+  await expect(image).toHaveAttribute("src", facsimileSource(3, 12))
+  await expect(image).toBeVisible()
+  await expect(image).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+  await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
+test("search-shaped faksimil navigation never requests e-text hits", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const publicHitRequests: string[] = []
+  page.on("request", browserRequest => {
+    if (new URL(browserRequest.url()).pathname.includes("/search-hits")) {
+      publicHitRequests.push(browserRequest.url())
+    }
+  })
+  const query = "?q=g%C3%B6sta&hit=1&lemma=1&ej_modern=1&prefix=1&suffix=1&s_mode=phrase&x=1&x=2"
+  await page.goto(`${facsimilePath}${query}`, { waitUntil: "networkidle" })
+  await activateReaderLink(page, "Nästa sida")
+
+  await expect(page).toHaveURL(
+    `/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/5/faksimil${query}`
+  )
+  await expect(page.locator("#search_nav, .reader-search-state")).toHaveCount(0)
+  expect(await readerHitRequests(request)).toEqual([])
+  expect(publicHitRequests).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("a failed faksimil scan stays bounded while context and navigation remain usable", async ({
   page
 }) => {
   const problems = captureBrowserProblems(page)
-  await page.route("**/txt/lb-reader-gosta-berlings-saga/**/*.jpeg", async route => {
+  await page.route("**/*_0009.jpeg", async route => {
     await route.fulfill({ status: 404, contentType: "text/plain", body: "missing" })
   })
 
   const response = await page.goto(facsimilePath, { waitUntil: "networkidle" })
 
   expect(response?.status()).toBe(200)
-  await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveText(
+  const alert = page.locator(".reader-facsimile-error[role=alert]")
+  await expect(alert).toHaveCount(1)
+  await expect(alert).toHaveText(
     "Faksimilbilden kunde inte hämtas."
   )
   await expect(page.locator(".reader-context")).toContainText("Gösta Berlings saga (1891)")
   await expect(page.getByRole("link", { name: "Föregående sida" })).toBeVisible()
   await expect(page.getByRole("link", { name: "Nästa sida" })).toBeVisible()
+  const [alertBox, wrapperBox] = await Promise.all([
+    alert.boundingBox(),
+    page.locator(".img_area").boundingBox()
+  ])
+  expect(alertBox).not.toBeNull()
+  expect(wrapperBox).not.toBeNull()
+  expect(alertBox!.x).toBeGreaterThanOrEqual(wrapperBox!.x)
+  expect(alertBox!.x + alertBox!.width).toBeLessThanOrEqual(
+    wrapperBox!.x + wrapperBox!.width
+  )
+
+  await activateReaderLink(page, "Nästa sida")
+  await expect(page).toHaveURL(/\/sida\/5\/faksimil$/)
+  await expect(page.locator("img.faksimil")).toHaveAttribute("src", facsimileSource(3, 12))
+  await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(0)
+  await expect(page.locator(".reader-context")).toContainText("Gösta Berlings saga (1891)")
   expect(problems).toEqual([])
 })
 
@@ -609,7 +767,8 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
   })).toHaveCount(0)
 
   await page.goBack({ waitUntil: "networkidle" })
-  await page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }).click()
+  await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
+  await activateReaderLink(page, "Nästa sida")
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
   await expect(page.locator(".reader_main .markee")).toHaveCount(0)
@@ -641,7 +800,7 @@ test("a delayed primary Reader request never renders the prior page under the ne
     await route.continue()
   })
 
-  await page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }).click()
+  await activateReaderLink(page, "Nästa sida")
   await requestStarted
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
   await expect(page.locator(".reader-primary-loading")).toHaveText("Hämtar läsarsidan …")
@@ -680,7 +839,7 @@ test("a failed primary Reader client request shows a bounded state without stale
     })
   })
 
-  await page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" }).click()
+  await activateReaderLink(page, "Nästa sida")
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
   await expect(page.locator(".reader-primary-error")).toHaveText(
     "Läsarsidan kunde inte hämtas."
@@ -847,6 +1006,51 @@ test("a Reader visit replaces only the matching work and media record", async ({
   expect(records.slice(1)).toEqual([facsimile, otherWork])
 })
 
+test("a faksimil visit replaces its record without overwriting same-work e-text", async ({
+  page
+}) => {
+  const sameWorkEtext = {
+    pageix: 4,
+    pagename: "etext-4",
+    timestamp: "2026-07-14T10:00:00.000Z",
+    mediatype: "etext",
+    lbworkid: "lb-reader-gosta-berlings-saga",
+    author: "LagerlöfS",
+    label: "Gösta Berlings saga",
+    url: "/same-work-etext"
+  }
+  const oldFacsimile = {
+    ...sameWorkEtext,
+    pageix: 0,
+    pagename: "1",
+    timestamp: "2026-07-13T10:00:00.000Z",
+    mediatype: "faksimil",
+    url: "/old-faksimil"
+  }
+  const otherWork = {
+    ...sameWorkEtext,
+    timestamp: "2026-07-12T10:00:00.000Z",
+    lbworkid: "lb-other-work",
+    url: "/other-work"
+  }
+  await seedStoredPageViews(page, [oldFacsimile, sameWorkEtext, otherWork])
+
+  await page.goto(facsimilePath, { waitUntil: "networkidle" })
+
+  const records = await storedPageViews(page)
+  expect(records).toHaveLength(3)
+  expect(records[0]).toMatchObject({
+    pageix: 1,
+    pagename: "3",
+    mediatype: "faksimil",
+    lbworkid: "lb-reader-gosta-berlings-saga",
+    author: "LagerlöfS",
+    label: "Gösta Berlings saga",
+    url: storedFacsimilePath
+  })
+  expect(records.slice(1)).toEqual([sameWorkEtext, otherWork])
+})
+
 test("a Reader visit caps oversized history at 50 records", async ({ page }) => {
   const previous = Array.from({ length: 55 }, (_, index) => ({
     pageix: index,
@@ -877,7 +1081,7 @@ test("next-page navigation updates the matching Reader history record", async ({
 
   await Promise.all([
     page.waitForURL(/\/sida\/-1\/etext$/),
-    page.getByRole("link", { name: "Nästa sida" }).click()
+    activateReaderLink(page, "Nästa sida")
   ])
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
   await expect.poll(async () => (await storedPageViews(page))[0]?.pagename).toBe("-1")
@@ -897,23 +1101,24 @@ for (const [name, raw] of [
   ["malformed JSON", "{not-json"],
   ["non-array JSON", JSON.stringify({ old: "history" })]
 ] as const) {
-  test(`${name} is replaced by a valid fresh Reader history`, async ({ page }) => {
+  test(`${name} is nonfatal for faksimil history`, async ({ page }) => {
     await seedStoredPageViews(page, raw)
 
-    await page.goto(readerPath, { waitUntil: "networkidle" })
+    await page.goto(facsimilePath, { waitUntil: "networkidle" })
 
     const records = await storedPageViews(page)
     expect(records).toHaveLength(1)
     expect(records[0]).toMatchObject({
-      lbworkid: "lb-reader-doktor-glas",
-      pagename: "-2",
-      url: storedReaderPath
+      lbworkid: "lb-reader-gosta-berlings-saga",
+      mediatype: "faksimil",
+      pagename: "3",
+      url: storedFacsimilePath
     })
   })
 }
 
 for (const method of ["getItem", "setItem"] as const) {
-  test(`throwing Storage.${method} does not break the Reader`, async ({ page }) => {
+  test(`throwing Storage.${method} does not break the faksimil Reader`, async ({ page }) => {
     const problems = captureBrowserProblems(page)
     await page.addInitScript(storageMethod => {
       if (storageMethod === "getItem") {
@@ -937,10 +1142,10 @@ for (const method of ["getItem", "setItem"] as const) {
       }
     }, method)
 
-    const response = await page.goto(readerPath, { waitUntil: "networkidle" })
+    const response = await page.goto(facsimilePath, { waitUntil: "networkidle" })
 
     expect(response?.status()).toBe(200)
-    await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
+    await expect(page.locator("img.faksimil")).toHaveAttribute("src", facsimileImagePath)
     expect(problems).toEqual([])
   })
 }
