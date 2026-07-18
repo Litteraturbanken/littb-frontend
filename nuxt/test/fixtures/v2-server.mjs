@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs"
 import { createServer } from "node:http"
 
+import {
+  forvillelserReaderCss,
+  forvillelserReaderPageHtml,
+  forvillelserReaderWorkInfoResponse,
+  lagerlofBibliography,
+  soderbergPresentation,
+  sparseDocument
+} from "./author-document-data.mjs"
 import { authorProfiles } from "./author-profile-data.mjs"
 import {
   authorWorksById,
@@ -64,6 +72,40 @@ const presentationContent = new Map([
   ["/red/bilder/bakgrundsbilder/rostratt_b.jpg", ["asset", "image/jpeg", readFileSync(new URL("./presentation-content/rostratt-b.jpg", import.meta.url))]]
 ])
 
+const authorDocumentContent = new Map([
+  [
+    soderbergPresentation.source_path,
+    readFileSync(new URL("./author-document-content/SoderbergH-presentation.html", import.meta.url))
+  ],
+  [
+    lagerlofBibliography.source_path,
+    readFileSync(new URL("./author-document-content/LagerlofS-bibliografi.html", import.meta.url))
+  ],
+  [
+    sparseDocument.source_path,
+    readFileSync(new URL("./author-document-content/sparse.html", import.meta.url))
+  ]
+])
+const malformedAuthorDocumentContent = "<html><head><title>Malformed</title></head></html>"
+const authorDocumentPdf = readFileSync(
+  new URL("./presentation-content/Figurdiktensombarockblandkonst.pdf", import.meta.url)
+)
+const authorDocumentPdfs = new Map([
+  [
+    "/red/forfattare/SoderbergH/presentation/SoderbergH_presentation.pdf",
+    "attachment; filename=\"SoderbergH_presentation.pdf\""
+  ],
+  [
+    "/red/forfattare/LagerlofS/bibliografi/LagerlofS_bibliografi.pdf",
+    "inline; filename=\"LagerlofS_bibliografi.pdf\""
+  ]
+])
+const authorDocumentDescriptors = new Map([
+  [`${soderbergPresentation.author_id}|${soderbergPresentation.document_kind}`, soderbergPresentation],
+  [`${lagerlofBibliography.author_id}|${lagerlofBibliography.document_kind}`, lagerlofBibliography],
+  [`${sparseDocument.author_id}|${sparseDocument.document_kind}`, sparseDocument]
+])
+
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 let requests = []
 let contactSubmissions = []
@@ -101,6 +143,12 @@ let libraryRelevanceDelays = {}
 let libraryQueryRequests = []
 let libraryQueryFailure = false
 let libraryQueryDelays = {}
+let authorDocumentRequests = []
+let authorDocumentFailure = null
+let authorDocumentDelay = 0
+let legacyAuthorRouteRequests = []
+let legacyAuthorRouteFailure = null
+let authorDocumentPdfRequests = []
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -123,10 +171,11 @@ function sendJson(response, status, body) {
   response.end(JSON.stringify(body))
 }
 
-function sendBody(response, status, contentType, body) {
+function sendBody(response, status, contentType, body, headers = {}) {
   response.writeHead(status, {
     "content-type": contentType,
-    "access-control-allow-origin": "*"
+    "access-control-allow-origin": "*",
+    ...headers
   })
   response.end(body)
 }
@@ -203,6 +252,10 @@ function waitForReaderMetadataDelay(titlePath) {
   return new Promise(resolve => setTimeout(resolve, readerMetadataDelays[titlePath] || 0))
 }
 
+function waitForAuthorDocumentDelay() {
+  return new Promise(resolve => setTimeout(resolve, authorDocumentDelay))
+}
+
 function readerRepresentation(titlePath, overrides = {}) {
   const representation = structuredClone(readerWorkInfoResponse.data[0])
   return {
@@ -216,6 +269,8 @@ function readerRepresentation(titlePath, overrides = {}) {
 
 function readerMetadataResponse(titlePath) {
   switch (titlePath) {
+    case "Förvillelser":
+      return forvillelserReaderWorkInfoResponse
     case "Rfc!Reader'()*":
       return {
         hits: 1,
@@ -428,6 +483,32 @@ function normalizedAuthorIds(body) {
     seen.add(normalized)
   }
   return authorIds
+}
+
+function legacyAuthorRouteResolution(body) {
+  if (
+    body === null || typeof body !== "object" || Array.isArray(body)
+    || Object.keys(body).length !== 3
+    || !Object.hasOwn(body, "normalized_author_id")
+    || !Object.hasOwn(body, "normalized_title_id")
+    || !Object.hasOwn(body, "media_type")
+  ) return null
+  if (
+    body.normalized_author_id === "SoderbergH"
+    && body.normalized_title_id === null
+    && body.media_type === null
+  ) return { author_id: "SöderbergH", title_id: null }
+  if (
+    body.normalized_author_id === "LagerlofS"
+    && body.normalized_title_id === null
+    && body.media_type === null
+  ) return { author_id: "LagerlöfS", title_id: null }
+  if (
+    body.normalized_author_id === "SoderbergH"
+    && body.normalized_title_id === "Forvillelser"
+    && body.media_type === "etext"
+  ) return { author_id: "SöderbergH", title_id: "Förvillelser" }
+  return null
 }
 
 function decodedProfileAuthorId(pathname) {
@@ -856,6 +937,86 @@ const server = createServer(async (request, response) => {
     libraryQueryDelays = {}
     return sendJson(response, 200, { delays: libraryQueryDelays })
   }
+  if (url.pathname === "/_author_document_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: authorDocumentRequests })
+  }
+  if (url.pathname === "/_author_document_requests" && request.method === "DELETE") {
+    authorDocumentRequests = []
+    return sendJson(response, 200, { requests: authorDocumentRequests })
+  }
+  if (url.pathname === "/_author_document_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: authorDocumentFailure })
+  }
+  if (url.pathname === "/_author_document_failure" && request.method === "PUT") {
+    const body = await readJson(request)
+    const allowed = new Set([
+      "descriptor-404",
+      "descriptor-503",
+      "content-404",
+      "content-503",
+      "malformed-descriptor",
+      "unsafe-source-path",
+      "malformed-content"
+    ])
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1 || !allowed.has(body.failure)
+    ) return validationError(response)
+    authorDocumentFailure = body.failure
+    return sendJson(response, 200, { failure: authorDocumentFailure })
+  }
+  if (url.pathname === "/_author_document_failure" && request.method === "DELETE") {
+    authorDocumentFailure = null
+    return sendJson(response, 200, { failure: authorDocumentFailure })
+  }
+  if (url.pathname === "/_author_document_delay" && request.method === "GET") {
+    return sendJson(response, 200, { delay: authorDocumentDelay })
+  }
+  if (url.pathname === "/_author_document_delay" && request.method === "PUT") {
+    const body = await readJson(request)
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1 || !Number.isInteger(body.delay)
+      || body.delay < 0 || body.delay > 5000
+    ) return validationError(response)
+    authorDocumentDelay = body.delay
+    return sendJson(response, 200, { delay: authorDocumentDelay })
+  }
+  if (url.pathname === "/_author_document_delay" && request.method === "DELETE") {
+    authorDocumentDelay = 0
+    return sendJson(response, 200, { delay: authorDocumentDelay })
+  }
+  if (url.pathname === "/_legacy_author_route_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: legacyAuthorRouteRequests })
+  }
+  if (url.pathname === "/_legacy_author_route_requests" && request.method === "DELETE") {
+    legacyAuthorRouteRequests = []
+    return sendJson(response, 200, { requests: legacyAuthorRouteRequests })
+  }
+  if (url.pathname === "/_legacy_author_route_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: legacyAuthorRouteFailure })
+  }
+  if (url.pathname === "/_legacy_author_route_failure" && request.method === "PUT") {
+    const body = await readJson(request)
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1
+      || !["malformed-200", "resolver-503"].includes(body.failure)
+    ) return validationError(response)
+    legacyAuthorRouteFailure = body.failure
+    return sendJson(response, 200, { failure: legacyAuthorRouteFailure })
+  }
+  if (url.pathname === "/_legacy_author_route_failure" && request.method === "DELETE") {
+    legacyAuthorRouteFailure = null
+    return sendJson(response, 200, { failure: legacyAuthorRouteFailure })
+  }
+  if (url.pathname === "/_author_document_pdf_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: authorDocumentPdfRequests })
+  }
+  if (url.pathname === "/_author_document_pdf_requests" && request.method === "DELETE") {
+    authorDocumentPdfRequests = []
+    return sendJson(response, 200, { requests: authorDocumentPdfRequests })
+  }
   if (url.pathname === "/_failure" && request.method === "PUT") {
     const body = await readJson(request)
     failure = body.resource ?? null
@@ -880,6 +1041,37 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, home[0], home[1])
   }
 
+  const authorDocumentPdfDisposition = authorDocumentPdfs.get(url.pathname)
+  if (request.method === "GET" && authorDocumentPdfDisposition) {
+    authorDocumentPdfRequests.push(`${url.pathname}${url.search}`)
+    return sendBody(response, 200, "application/pdf", authorDocumentPdf, {
+      "content-disposition": authorDocumentPdfDisposition
+    })
+  }
+
+  const authorDocumentBody = authorDocumentContent.get(url.pathname)
+  if (request.method === "GET" && authorDocumentBody) {
+    authorDocumentRequests.push({
+      kind: "content",
+      path: `${url.pathname}${url.search}`
+    })
+    await waitForAuthorDocumentDelay()
+    if (authorDocumentFailure === "content-404") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "content not found")
+    }
+    if (authorDocumentFailure === "content-503") {
+      return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
+    }
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      authorDocumentFailure === "malformed-content"
+        ? malformedAuthorDocumentContent
+        : authorDocumentBody
+    )
+  }
+
   if (request.method === "GET" && url.pathname === "/api/get_work_info") {
     readerRequests.push(`${url.pathname}${url.search}`)
     const titlePath = url.searchParams.get("titlepath") || ""
@@ -902,6 +1094,22 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
   }
 
+  if (
+    request.method === "GET"
+    && url.pathname === "/txt/lb-reader-forvillelser/res_00003.html"
+  ) {
+    readerRequests.push(`${url.pathname}${url.search}`)
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      forvillelserReaderPageHtml
+    )
+  }
+
   if (request.method === "GET" && url.pathname === "/red/css/etext.css") {
     readerRequests.push(`${url.pathname}${url.search}`)
     return sendBody(response, 200, "text/css; charset=utf-8", sharedReaderCss)
@@ -913,6 +1121,14 @@ const server = createServer(async (request, response) => {
   ) {
     readerRequests.push(`${url.pathname}${url.search}`)
     return sendBody(response, 200, "text/css; charset=utf-8", workReaderCss)
+  }
+
+  if (
+    request.method === "GET"
+    && url.pathname === "/txt/css/lb-reader-forvillelser-etext.css"
+  ) {
+    readerRequests.push(`${url.pathname}${url.search}`)
+    return sendBody(response, 200, "text/css; charset=utf-8", forvillelserReaderCss)
   }
 
   if (request.method === "GET" && url.pathname === "/bilder/ornament/reader-fixture.png") {
@@ -1089,6 +1305,93 @@ const server = createServer(async (request, response) => {
         const author = authorsById.get(authorId)
         return author ? [author] : []
       })
+    })
+  }
+
+  const authorDocumentMatch = request.method === "GET"
+    ? /^\/v2\/authors\/([^/]+)\/documents\/(presentation|bibliografi)$/.exec(rawApiPathname)
+    : null
+  if (authorDocumentMatch) {
+    authorDocumentRequests.push({
+      kind: "descriptor",
+      path: `${rawPathname}${url.search}`
+    })
+    let authorId
+    try {
+      authorId = decodeURIComponent(authorDocumentMatch[1])
+    } catch {
+      return validationError(response)
+    }
+    const valid = authorId.length >= 1
+      && authorId.length <= 100
+      && authorId.trim() === authorId
+      && !authorId.includes("%")
+      && !authorId.includes("/")
+      && !authorId.includes("\\")
+      && !/\p{Cc}/u.test(authorId)
+      && authorId !== "."
+      && authorId !== ".."
+    if (!valid) return validationError(response)
+
+    await waitForAuthorDocumentDelay()
+    if (authorDocumentFailure === "descriptor-404") {
+      return sendJson(response, 404, {
+        error: { code: "not_found", message: "Resource not found", details: null }
+      })
+    }
+    if (authorDocumentFailure === "descriptor-503") {
+      return sendJson(response, 503, {
+        error: {
+          code: "author_document_unavailable",
+          message: "Unable to load author document",
+          details: null
+        }
+      })
+    }
+
+    const descriptor = authorDocumentDescriptors.get(
+      `${authorId}|${authorDocumentMatch[2]}`
+    )
+    if (!descriptor) {
+      return sendJson(response, 404, {
+        error: { code: "not_found", message: "Resource not found", details: null }
+      })
+    }
+    if (authorDocumentFailure === "malformed-descriptor") {
+      return sendJson(response, 200, { ...descriptor, full_name: null })
+    }
+    if (authorDocumentFailure === "unsafe-source-path") {
+      return sendJson(response, 200, {
+        ...descriptor,
+        source_path: "//evil.test/index.html"
+      })
+    }
+    return sendJson(response, 200, descriptor)
+  }
+
+  if (request.method === "POST" && apiPathname === "/v2/legacy-author-routes/resolve") {
+    const body = await readJson(request)
+    legacyAuthorRouteRequests.push({ path: rawPathname, body })
+    if (legacyAuthorRouteFailure === "malformed-200") {
+      return sendJson(response, 200, { author_id: 7, title_id: null })
+    }
+    if (legacyAuthorRouteFailure === "resolver-503") {
+      return sendJson(response, 503, {
+        error: {
+          code: "legacy_author_route_unavailable",
+          message: "Unable to resolve legacy author route",
+          details: null
+        }
+      })
+    }
+    const resolution = legacyAuthorRouteResolution(body)
+    if (resolution) return sendJson(response, 200, resolution)
+    return sendJson(response, 404, {
+      error: {
+        code: "legacy_author_route_not_found",
+        message: "Legacy route not found",
+        details: null
+      }
     })
   }
 

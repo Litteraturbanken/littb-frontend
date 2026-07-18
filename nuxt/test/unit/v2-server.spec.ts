@@ -37,6 +37,14 @@ import {
   sparseAuthorWorks
 } from "../fixtures/author-works-data.mjs"
 import {
+  authorDocumentProvenance,
+  forvillelserReaderPageHtml,
+  forvillelserReaderWorkInfoResponse,
+  lagerlofBibliography,
+  soderbergPresentation,
+  sparseDocument
+} from "../fixtures/author-document-data.mjs"
+import {
   readerPageHtmlByIndex,
   readerSearchHitResponse
 } from "../fixtures/reader-data.mjs"
@@ -47,11 +55,26 @@ type AuthorWorksOperation = paths["/authors/{author_id}/works"]["get"]
 type AuthorWorksResponse = components["schemas"]["AuthorWorksResponse"]
 type AuthorWorkReadAction = components["schemas"]["AuthorWorkReadAction"]
 type AuthorWorkDownloadAction = components["schemas"]["AuthorWorkDownloadAction"]
+type AuthorDocumentOperation = paths[
+  "/authors/{author_id}/documents/{document_kind}"
+]["get"]
+type LegacyAuthorRouteOperation = paths["/legacy-author-routes/resolve"]["post"]
+type AuthorDocumentDescriptor = components["schemas"]["AuthorDocumentDescriptor"]
+type LegacyAuthorRouteResolution = components["schemas"]["LegacyAuthorRouteResolution"]
 
 const generatedReaderHitContract: ReaderHitOperation = null as unknown as
   operations["v2_get_work_search_hits"]
 const generatedAuthorWorksContract: AuthorWorksOperation = null as unknown as
   operations["v2_get_author_works"]
+const generatedAuthorDocumentContract: AuthorDocumentOperation = null as unknown as
+  operations["v2_get_author_document"]
+const generatedLegacyAuthorRouteContract: LegacyAuthorRouteOperation = null as unknown as
+  operations["v2_post_legacy_author_route_resolve"]
+const generatedAuthorDocumentDescriptor: AuthorDocumentDescriptor = soderbergPresentation
+const generatedLegacyAuthorRouteResolution: LegacyAuthorRouteResolution = {
+  author_id: "SöderbergH",
+  title_id: "Förvillelser"
+}
 const generatedAuthorWorksResponse: AuthorWorksResponse = null as unknown as
   operations["v2_get_author_works"]["responses"][200]["content"]["application/json"]
 const validAuthorWorkReadAction: AuthorWorkReadAction = {
@@ -233,6 +256,24 @@ async function readerHitRequests() {
   }
 }
 
+async function authorDocumentRequests() {
+  return await (await fetch(`${origin}/_author_document_requests`)).json() as {
+    requests: Array<{ kind: "descriptor" | "content", path: string }>
+  }
+}
+
+async function legacyAuthorRouteRequests() {
+  return await (await fetch(`${origin}/_legacy_author_route_requests`)).json() as {
+    requests: Array<{ path: string, body: unknown }>
+  }
+}
+
+async function authorDocumentPdfRequests() {
+  return await (await fetch(`${origin}/_author_document_pdf_requests`)).json() as {
+    requests: string[]
+  }
+}
+
 describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -288,12 +329,393 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_reader_hit_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_failure`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" }),
-      fetch(`${origin}/_export_faksimil_requests`, { method: "DELETE" })
+      fetch(`${origin}/_export_faksimil_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_author_document_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_author_document_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_author_document_delay`, { method: "DELETE" }),
+      fetch(`${origin}/_legacy_author_route_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_legacy_author_route_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_author_document_pdf_requests`, { method: "DELETE" })
     ])
   })
 
   afterEach(async () => {
     await fetch(`${origin}/_contact_defer`, { method: "DELETE" })
+  })
+
+  test("serves exact author document descriptors and byte-frozen XHTML provenance", async () => {
+    expect(generatedAuthorDocumentContract).toBeNull()
+    expect(generatedLegacyAuthorRouteContract).toBeNull()
+    expect(generatedAuthorDocumentDescriptor).toEqual(soderbergPresentation)
+    expect(generatedLegacyAuthorRouteResolution).toEqual({
+      author_id: "SöderbergH",
+      title_id: "Förvillelser"
+    })
+    expect(soderbergPresentation).toEqual({
+      author_id: "SöderbergH",
+      normalized_author_id: "SoderbergH",
+      full_name: "Hjalmar Söderberg",
+      birth_year: "1869",
+      death_year: "1941",
+      has_introduction: true,
+      has_dramawebben: false,
+      search_url: "/sok?forfattare=S%C3%B6derbergH&avancerad",
+      audio_url: "https://litteraturbanken.se/ljudochbild/författare/soderbergh",
+      document_kind: "presentation",
+      source_path: "/red/forfattare/SoderbergH/presentation/index.html"
+    })
+    expect(lagerlofBibliography).toEqual({
+      author_id: "LagerlöfS",
+      normalized_author_id: "LagerlofS",
+      full_name: "Selma Lagerlöf",
+      birth_year: "1858",
+      death_year: "1940",
+      has_introduction: true,
+      has_dramawebben: true,
+      search_url: "/sok?forfattare=Lagerl%C3%B6fS&avancerad",
+      audio_url: "https://litteraturbanken.se/ljudochbild/författare/lagerlofs",
+      document_kind: "bibliografi",
+      source_path: "/red/forfattare/LagerlofS/bibliografi/index.html"
+    })
+    expect(sparseDocument).toEqual({
+      author_id: "SparseDocument",
+      normalized_author_id: "SparseDocument",
+      full_name: "Författare utan tilläggsnavigering",
+      birth_year: null,
+      death_year: null,
+      has_introduction: false,
+      has_dramawebben: false,
+      search_url: null,
+      audio_url: null,
+      document_kind: "presentation",
+      source_path: "/red/forfattare/SparseDocument/presentation/index.html"
+    })
+    expect(authorDocumentProvenance).toEqual([
+      {
+        path: "/red/forfattare/SoderbergH/presentation/index.html",
+        sourceUrl: "https://red.litteraturbanken.se/red/forfattare/SoderbergH/presentation/index.html",
+        sha256: "80bb28b296759b1bc38fc400c6e27ce0ca51bb59e261203e0f901cff00528980"
+      },
+      {
+        path: "/red/forfattare/LagerlofS/bibliografi/index.html",
+        sourceUrl: "https://red.litteraturbanken.se/red/forfattare/LagerlofS/bibliografi/index.html",
+        sha256: "54d289da89e61225fdfbfc68aed19762614529c06c6f2707ed50a493359d179b"
+      }
+    ])
+
+    for (const [path, descriptor] of [
+      ["/v2/authors/S%C3%B6derbergH/documents/presentation", soderbergPresentation],
+      ["/private-v2/authors/Lagerl%C3%B6fS/documents/bibliografi", lagerlofBibliography],
+      ["/v2/authors/SparseDocument/documents/presentation", sparseDocument]
+    ] as const) {
+      const response = await fetch(`${origin}${path}`)
+      expect(response.status, path).toBe(200)
+      expect(await response.json(), path).toEqual(descriptor)
+    }
+
+    for (const provenance of authorDocumentProvenance) {
+      const response = await fetch(`${origin}${provenance.path}?authority=exact`)
+      expect(response.status, provenance.path).toBe(200)
+      expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8")
+      expect(createHash("sha256").update(Buffer.from(await response.arrayBuffer())).digest("hex"))
+        .toBe(provenance.sha256)
+    }
+
+    expect(await authorDocumentRequests()).toEqual({
+      requests: [
+        { kind: "descriptor", path: "/v2/authors/S%C3%B6derbergH/documents/presentation" },
+        { kind: "descriptor", path: "/private-v2/authors/Lagerl%C3%B6fS/documents/bibliografi" },
+        { kind: "descriptor", path: "/v2/authors/SparseDocument/documents/presentation" },
+        ...authorDocumentProvenance.map(({ path }) => ({
+          kind: "content" as const,
+          path: `${path}?authority=exact`
+        }))
+      ]
+    })
+  })
+
+  test("author document failure and delay controls are exact, bounded, and independent", async () => {
+    expect(await (await fetch(`${origin}/_author_document_failure`)).json())
+      .toEqual({ failure: null })
+    expect(await (await fetch(`${origin}/_author_document_delay`)).json())
+      .toEqual({ delay: 0 })
+
+    const descriptorPath = "/private-v2/authors/S%C3%B6derbergH/documents/presentation"
+    const contentPath = soderbergPresentation.source_path
+    for (const [failure, path, status] of [
+      ["descriptor-404", descriptorPath, 404],
+      ["descriptor-503", descriptorPath, 503],
+      ["content-404", contentPath, 404],
+      ["content-503", contentPath, 503]
+    ] as const) {
+      await fetch(`${origin}/_author_document_failure`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ failure })
+      })
+      expect((await fetch(`${origin}${path}`)).status, failure).toBe(status)
+    }
+
+    for (const failure of [
+      "malformed-descriptor",
+      "unsafe-source-path",
+      "malformed-content"
+    ]) {
+      await fetch(`${origin}/_author_document_failure`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ failure })
+      })
+      const response = await fetch(`${origin}${failure === "malformed-content"
+        ? contentPath
+        : descriptorPath}`)
+      expect(response.status, failure).toBe(200)
+      if (failure === "malformed-descriptor") {
+        expect(await response.json()).not.toEqual(soderbergPresentation)
+      } else if (failure === "unsafe-source-path") {
+        expect((await response.json()).source_path).toBe("//evil.test/index.html")
+      } else {
+        expect(await response.text())
+          .toBe("<html><head><title>Malformed</title></head></html>")
+      }
+    }
+
+    const invalidFailure = await fetch(`${origin}/_author_document_failure`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ failure: "other" })
+    })
+    expect(invalidFailure.status).toBe(422)
+    for (const delay of [-1, 5001, 1.5, "10"]) {
+      const response = await fetch(`${origin}/_author_document_delay`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ delay })
+      })
+      expect(response.status, String(delay)).toBe(422)
+    }
+
+    await fetch(`${origin}/_author_document_failure`, { method: "DELETE" })
+    await fetch(`${origin}/_author_document_delay`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ delay: 60 })
+    })
+    const started = Date.now()
+    expect((await fetch(`${origin}${descriptorPath}`)).status).toBe(200)
+    expect(Date.now() - started).toBeGreaterThanOrEqual(50)
+    expect(await (await fetch(`${origin}/_author_document_delay`)).json())
+      .toEqual({ delay: 60 })
+    await fetch(`${origin}/_author_document_delay`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_author_document_delay`)).json())
+      .toEqual({ delay: 0 })
+  })
+
+  test("legacy author route resolver maps only the three exact authority cases", async () => {
+    const cases = [
+      [
+        { normalized_author_id: "SoderbergH", normalized_title_id: null, media_type: null },
+        { author_id: "SöderbergH", title_id: null }
+      ],
+      [
+        { normalized_author_id: "LagerlofS", normalized_title_id: null, media_type: null },
+        { author_id: "LagerlöfS", title_id: null }
+      ],
+      [
+        {
+          normalized_author_id: "SoderbergH",
+          normalized_title_id: "Forvillelser",
+          media_type: "etext"
+        },
+        { author_id: "SöderbergH", title_id: "Förvillelser" }
+      ]
+    ] as const
+
+    for (const [body, expected] of cases) {
+      const response = await fetch(`${origin}/private-v2/legacy-author-routes/resolve`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body)
+      })
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual(expected)
+    }
+
+    const missingBody = {
+      normalized_author_id: "Other",
+      normalized_title_id: null,
+      media_type: null
+    }
+    const missing = await fetch(`${origin}/v2/legacy-author-routes/resolve`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(missingBody)
+    })
+    expect(missing.status).toBe(404)
+    expect((await missing.json()).error.code).toBe("legacy_author_route_not_found")
+    expect(await legacyAuthorRouteRequests()).toEqual({
+      requests: [
+        ...cases.map(([body]) => ({
+          path: "/private-v2/legacy-author-routes/resolve",
+          body
+        })),
+        { path: "/v2/legacy-author-routes/resolve", body: missingBody }
+      ]
+    })
+  })
+
+  test("legacy author route failure control isolates malformed 200 and typed 503", async () => {
+    const path = "/private-v2/legacy-author-routes/resolve"
+    const body = {
+      normalized_author_id: "SoderbergH",
+      normalized_title_id: null,
+      media_type: null
+    }
+    const post = () => fetch(`${origin}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body)
+    })
+    expect(await (await fetch(`${origin}/_legacy_author_route_failure`)).json())
+      .toEqual({ failure: null })
+
+    await fetch(`${origin}/_legacy_author_route_failure`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ failure: "malformed-200" })
+    })
+    const malformed = await post()
+    expect(malformed.status).toBe(200)
+    expect(await malformed.json()).toEqual({ author_id: 7, title_id: null })
+
+    await fetch(`${origin}/_legacy_author_route_failure`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ failure: "resolver-503" })
+    })
+    const unavailable = await post()
+    expect(unavailable.status).toBe(503)
+    expect(await unavailable.json()).toEqual({
+      error: {
+        code: "legacy_author_route_unavailable",
+        message: "Unable to resolve legacy author route",
+        details: null
+      }
+    })
+    const invalid = await fetch(`${origin}/_legacy_author_route_failure`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ failure: "other" })
+    })
+    expect(invalid.status).toBe(422)
+
+    await fetch(`${origin}/_legacy_author_route_failure`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_legacy_author_route_failure`)).json())
+      .toEqual({ failure: null })
+    expect((await post()).status).toBe(200)
+  })
+
+  test("legacy author route matching is independent of JSON property order", async () => {
+    const response = await fetch(`${origin}/v2/legacy-author-routes/resolve`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        media_type: "etext",
+        normalized_title_id: "Forvillelser",
+        normalized_author_id: "SoderbergH"
+      })
+    })
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      author_id: "SöderbergH",
+      title_id: "Förvillelser"
+    })
+  })
+
+  test("serves distinct Förvillelser Reader metadata and canonical page 3", async () => {
+    const metadata = await fetch(
+      `${origin}/api/get_work_info?authorid=${encodeURIComponent("SöderbergH")}`
+      + `&titlepath=${encodeURIComponent("Förvillelser")}`
+    )
+    expect(metadata.status).toBe(200)
+    expect(await metadata.json()).toEqual(forvillelserReaderWorkInfoResponse)
+    expect(forvillelserReaderWorkInfoResponse.data[0]).toMatchObject({
+      lbworkid: "lb-reader-forvillelser",
+      startpagename: "3",
+      title: "Förvillelser. Roman",
+      titlepath: "Förvillelser",
+      pages: [{ pagename: "3", pageindex: 3 }]
+    })
+
+    const page = await fetch(
+      `${origin}/txt/lb-reader-forvillelser/res_00003.html?username=app`
+    )
+    expect(page.status).toBe(200)
+    expect(await page.text()).toBe(forvillelserReaderPageHtml)
+    expect(forvillelserReaderPageHtml).toContain("KANONISK SIDA TRE")
+    expect(forvillelserReaderPageHtml).not.toContain("DOKTOR GLAS")
+    const css = await fetch(`${origin}/txt/css/lb-reader-forvillelser-etext.css`)
+    expect(css.status).toBe(200)
+    expect(await css.text()).toContain("forvillelser-reader")
+  })
+
+  test("serves only the two author document PDFs with exact browser headers", async () => {
+    const pdfCases = [
+      [
+        "/red/forfattare/SoderbergH/presentation/SoderbergH_presentation.pdf",
+        "attachment; filename=\"SoderbergH_presentation.pdf\""
+      ],
+      [
+        "/red/forfattare/LagerlofS/bibliografi/LagerlofS_bibliografi.pdf",
+        "inline; filename=\"LagerlofS_bibliografi.pdf\""
+      ]
+    ] as const
+    let authorityHash: string | null = null
+    for (const [path, disposition] of pdfCases) {
+      const response = await fetch(`${origin}${path}`)
+      expect(response.status, path).toBe(200)
+      expect(response.headers.get("content-type")).toBe("application/pdf")
+      expect(response.headers.get("content-disposition")).toBe(disposition)
+      const hash = createHash("sha256")
+        .update(Buffer.from(await response.arrayBuffer()))
+        .digest("hex")
+      authorityHash ??= hash
+      expect(hash).toBe(authorityHash)
+    }
+    expect((await fetch(
+      `${origin}/red/forfattare/SoderbergH/presentation/unknown.pdf`
+    )).status).toBe(404)
+    expect(await authorDocumentPdfRequests()).toEqual({
+      requests: pdfCases.map(([path]) => path)
+    })
+  })
+
+  test("author document, resolver, and PDF ledgers reset independently", async () => {
+    await fetch(`${origin}/v2/authors/S%C3%B6derbergH/documents/presentation`)
+    await fetch(`${origin}${soderbergPresentation.source_path}`)
+    await fetch(`${origin}/v2/legacy-author-routes/resolve`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        normalized_author_id: "SoderbergH",
+        normalized_title_id: null,
+        media_type: null
+      })
+    })
+    await fetch(
+      `${origin}/red/forfattare/SoderbergH/presentation/SoderbergH_presentation.pdf`
+    )
+
+    await fetch(`${origin}/_author_document_requests`, { method: "DELETE" })
+    expect(await authorDocumentRequests()).toEqual({ requests: [] })
+    expect((await legacyAuthorRouteRequests()).requests).toHaveLength(1)
+    expect((await authorDocumentPdfRequests()).requests).toHaveLength(1)
+
+    await fetch(`${origin}/_legacy_author_route_requests`, { method: "DELETE" })
+    expect(await legacyAuthorRouteRequests()).toEqual({ requests: [] })
+    expect((await authorDocumentPdfRequests()).requests).toHaveLength(1)
+    await fetch(`${origin}/_author_document_pdf_requests`, { method: "DELETE" })
+    expect(await authorDocumentPdfRequests()).toEqual({ requests: [] })
   })
 
   test("serves complete deterministic author profiles on public and private paths", async () => {

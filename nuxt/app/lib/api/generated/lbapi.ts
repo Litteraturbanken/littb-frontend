@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/authors/{author_id}/documents/{document_kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Author Document */
+        get: operations["v2_get_author_document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/authors/{author_id}/works": {
         parameters: {
             query?: never;
@@ -83,6 +100,23 @@ export interface paths {
         get: operations["v2_get_popular_epubs"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/legacy-author-routes/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Legacy Author Route */
+        post: operations["v2_post_legacy_author_route_resolve"];
         delete?: never;
         options?: never;
         head?: never;
@@ -196,6 +230,34 @@ export interface components {
             author: components["schemas"]["AuthorWorksPerson"];
             /** Title */
             title: string;
+        };
+        /** AuthorDocumentDescriptor */
+        AuthorDocumentDescriptor: {
+            /** Audio Url */
+            audio_url: string | null;
+            /** Author Id */
+            author_id: string;
+            /** Birth Year */
+            birth_year: string | null;
+            /** Death Year */
+            death_year: string | null;
+            /**
+             * Document Kind
+             * @enum {string}
+             */
+            document_kind: "presentation" | "bibliografi";
+            /** Full Name */
+            full_name: string;
+            /** Has Dramawebben */
+            has_dramawebben: boolean;
+            /** Has Introduction */
+            has_introduction: boolean;
+            /** Normalized Author Id */
+            normalized_author_id: string;
+            /** Search Url */
+            search_url: string | null;
+            /** Source Path */
+            source_path: string;
         };
         /** AuthorPortrait */
         AuthorPortrait: {
@@ -411,6 +473,22 @@ export interface components {
             field: string | null;
             /** Message */
             message: string;
+        };
+        /** LegacyAuthorRouteRequest */
+        LegacyAuthorRouteRequest: {
+            /** Media Type */
+            media_type: ("etext" | "faksimil") | null;
+            /** Normalized Author Id */
+            normalized_author_id: string;
+            /** Normalized Title Id */
+            normalized_title_id: string | null;
+        };
+        /** LegacyAuthorRouteResolution */
+        LegacyAuthorRouteResolution: {
+            /** Author Id */
+            author_id: string;
+            /** Title Id */
+            title_id: string | null;
         };
         /** MediaCounts */
         MediaCounts: {
@@ -655,6 +733,65 @@ export interface operations {
             };
         };
     };
+    v2_get_author_document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                author_id: string;
+                document_kind: "presentation" | "bibliografi";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthorDocumentDescriptor"];
+                };
+            };
+            /** @description Author document not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     v2_get_author_works: {
         parameters: {
             query?: never;
@@ -833,6 +970,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PopularEpubsResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_legacy_author_route_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegacyAuthorRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyAuthorRouteResolution"];
+                };
+            };
+            /** @description Legacy route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */

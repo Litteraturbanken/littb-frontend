@@ -1,0 +1,3 @@
+# Immutable upstream XHTML authority bytes; preserve their source whitespace.
+nuxt/test/fixtures/author-document-content/SoderbergH-presentation.html whitespace=-trailing-space
+nuxt/test/fixtures/author-document-content/LagerlofS-bibliografi.html whitespace=-trailing-space
