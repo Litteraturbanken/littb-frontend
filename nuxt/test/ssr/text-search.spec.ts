@@ -166,8 +166,8 @@ test("advanced SSR resolves every selected label through its independent options
   expect(compactText(document.querySelector(
     ".right .title_select_container .select2-selection__choice"
   )?.textContent)).toContain("Romaner")
-  expect(document.querySelector('select.gender_select option[value="female"]')
-    ?.hasAttribute("selected")).toBe(true)
+  expect(document.querySelector(".gender_select")?.getAttribute("data-gender-value"))
+    .toBe("female")
   expect([...document.querySelectorAll<HTMLInputElement>(".chronology_inputs input")]
     .map(input => input.value)).toEqual(["1879", "1912"])
 
@@ -670,25 +670,25 @@ test("absent and explicit all gender stay visibly distinct without a backend fil
 }) => {
   const response = await request.get("/s%C3%B6k?fras=frihet&avancerad&k%C3%B6n=all")
   const { document } = parseHTML(await response.text())
-  expect(document.querySelector('select.gender_select option[value="all"]')
-    ?.hasAttribute("selected")).toBe(true)
+  expect(document.querySelector(".gender_select")?.getAttribute("data-gender-value"))
+    .toBe("all")
   expect((await requests(request, "results"))[0]?.body).not.toHaveProperty("gender")
 
   await reset(request)
   const absent = await request.get("/s%C3%B6k?fras=frihet&avancerad")
   const absentDocument = parseHTML(await absent.text()).document
-  expect(absentDocument.querySelector('select.gender_select option[value=""]')
-    ?.hasAttribute("selected")).toBe(true)
-  expect(absentDocument.querySelector('select.gender_select option[value="all"]')
-    ?.hasAttribute("selected")).toBe(false)
+  expect(absentDocument.querySelector(".gender_select")?.getAttribute("data-gender-value"))
+    .toBe("")
   expect((await requests(request, "results"))[0]?.body).not.toHaveProperty("gender")
 
   await reset(request)
   await page.goto("/s%C3%B6k?fras=frihet&avancerad&k%C3%B6n=female")
   await waitForHydration(page)
-  await page.locator("select.gender_select").selectOption("all")
+  const gender = page.locator(".gender_select")
+  await gender.getByRole("button").click()
+  await gender.getByRole("option", { name: "Alla författare" }).click()
   await expect.poll(() => new URL(page.url()).searchParams.has("kön")).toBe(false)
-  await expect(page.locator("select.gender_select")).toHaveValue("")
+  await expect(page.locator(".gender_select")).toHaveAttribute("data-gender-value", "")
 })
 
 test("result and overflow rows keep flattened Angular parity and media classes", async ({

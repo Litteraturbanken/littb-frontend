@@ -1,0 +1,522 @@
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
+
+const fixture = "http://127.0.0.1:4100"
+
+type Operation = "results" | "count" | "options"
+type RecordedRequest = {
+  method: string
+  path: string
+  body: Record<string, unknown>
+}
+
+async function reset(request: APIRequestContext) {
+  await Promise.all([
+    request.delete(`${fixture}/_text_search/requests`),
+    request.delete(`${fixture}/_text_search/failures`),
+    request.delete(`${fixture}/_text_search/delays`)
+  ])
+}
+
+async function requests(request: APIRequestContext, operation: Operation) {
+  const response = await request.get(`${fixture}/_text_search/requests/${operation}`)
+  return (await response.json() as { requests: RecordedRequest[] }).requests
+}
+
+function browserProblems(page: Page) {
+  const problems: string[] = []
+  page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
+  page.on("console", message => {
+    if (["error", "warning"].includes(message.type())
+      || /hydration|duplicate keys|unhandledrejection/i.test(message.text())) {
+      problems.push(`console ${message.type()}: ${message.text()}`)
+    }
+  })
+  return problems
+}
+
+async function openSearch(page: Page, route = "/s%C3%B6k") {
+  const response = await page.goto(route, { waitUntil: "domcontentloaded" })
+  expect(response?.status()).toBe(200)
+  await page.locator('[data-search-root][data-search-mounted="true"]').waitFor()
+}
+
+async function submitPhrase(page: Page, phrase: string) {
+  await page.getByLabel("Sökfras").fill(phrase)
+  await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
+}
+
+async function selectMulti(page: Page, placeholder: string, option: string | RegExp) {
+  const before = page.url()
+  const selection = page.getByRole("button", { name: `Visa alternativ för ${placeholder}` })
+    .locator("xpath=ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' select2-selection--multiple ')]")
+  await selection.click()
+  await page.getByRole("option", { name: option }).click()
+  await expect.poll(() => page.url()).not.toBe(before)
+  await page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  }))
+  await page.keyboard.press("Escape")
+}
+
+async function pushRoute(page: Page, route: string) {
+  await page.evaluate(async target => {
+    type VueRoot = HTMLElement & {
+      __vue_app__: { config: { globalProperties: {
+        $router: { push: (value: string) => Promise<void> }
+      } } }
+    }
+    const root = document.querySelector("#__nuxt") as VueRoot
+    await root.__vue_app__.config.globalProperties.$router.push(target)
+  }, route)
+}
+
+test.beforeEach(async ({ request }) => reset(request))
+test.afterEach(async ({ request }) => reset(request))
+
+test("submit, reset, and advanced toggle own search keys while preserving unrelated query", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?utm=keep&fras=old&traffsida=3&sok_filter=StrindbergA")
+  await submitPhrase(page, "  frihet  ")
+  await expect.poll(() => new URL(page.url()).searchParams.toString()).toBe("utm=keep&fras=frihet")
+
+  await page.locator("[data-search-advanced]").click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("avancerad")).toBe("1")
+  expect(new URL(page.url()).searchParams.get("utm")).toBe("keep")
+  await expect(page.locator("[data-search-advanced]")).toHaveAttribute("type", "button")
+
+  await page.getByRole("button", { name: "Rensa sökningen" }).click()
+  await expect.poll(() => new URL(page.url()).search).toBe("?utm=keep")
+  await expect(page.getByLabel("Sökfras")).toHaveValue("")
+  await expect(page.locator("#results table.results")).toHaveCount(0)
+})
+
+test("advanced mode does not refetch an unchanged primary search", async ({ page, request }) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  await expect.poll(async () => (await requests(request, "count")).length).toBeGreaterThan(0)
+  await page.waitForTimeout(100)
+  const initialCountRequests = (await requests(request, "count")).length
+
+  await page.locator("[data-search-advanced]").click()
+  await expect(page.locator(".bottom_row")).toBeVisible()
+  await page.locator("[data-search-advanced]").click()
+  await expect(page.locator(".bottom_row")).toHaveCount(0)
+  await page.waitForTimeout(100)
+
+  expect(await requests(request, "results")).toHaveLength(1)
+  expect(await requests(request, "count")).toHaveLength(initialCountRequests)
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+})
+
+test("every advanced filter family serializes exactly and reaches the semantic request", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?avancerad&utm=keep")
+  await selectMulti(page, "Författarskap", /Lagerlöf, Selma/)
+  await selectMulti(page, "Titlar", "Röda rummet")
+  await selectMulti(page, "Språk …", "Svenska")
+  await selectMulti(page, "Om ett författarskap", /Strindberg, August/)
+  await selectMulti(page, "Filtrera: Kategorier / Utgivare", "Romaner")
+  const gender = page.locator(".gender_select")
+  await gender.getByRole("button").click()
+  await gender.getByRole("option", { name: "Kvinnliga författare" }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("kön")).toBe("female")
+
+  const years = page.locator(".chronology_inputs input")
+  await years.nth(0).fill("1879")
+  await years.nth(0).dispatchEvent("change")
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1879,1940")
+  await years.nth(1).fill("1912")
+  await years.nth(1).dispatchEvent("change")
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1879,1912")
+  await submitPhrase(page, "frihet")
+  await expect.poll(() => new URL(page.url()).searchParams.get("fras")).toBe("frihet")
+
+  const query = new URL(page.url()).searchParams
+  expect(Object.fromEntries(query)).toEqual({
+    utm: "keep",
+    fras: "frihet",
+    avancerad: "1",
+    forfattare: "LagerlöfS",
+    titlar: "lb238704",
+    "kön": "female",
+    languages: "language:swe",
+    keywords: "texttype:roman",
+    authorkeyword: "StrindbergA",
+    intervall: "1879,1912"
+  })
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  expect((await requests(request, "results"))[0]?.body).toMatchObject({
+    query: "frihet",
+    author_ids: ["LagerlöfS"],
+    work_ids: ["lb238704"],
+    gender: "female",
+    languages: ["language:swe"],
+    categories: ["texttype:roman"],
+    about_author_ids: ["StrindbergA"],
+    year_from: 1879,
+    year_to: 1912
+  })
+})
+
+test("late option bounds do not overwrite a chronology edit in progress", async ({
+  page,
+  request
+}) => {
+  const problems = browserProblems(page)
+  await openSearch(page, "/s%C3%B6k?avancerad")
+  const years = page.locator(".chronology_inputs input")
+  await expect(years.nth(0)).toHaveValue("1849")
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "", delay: 600 }
+  })
+
+  const gender = page.locator(".gender_select")
+  await gender.getByRole("button").click()
+  await gender.getByRole("option", { name: "Kvinnliga författare" }).click()
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await years.nth(0).fill("1879")
+  await page.waitForTimeout(700)
+
+  await expect(years.nth(0)).toHaveValue("1879")
+  await years.nth(0).dispatchEvent("change")
+  await page.waitForTimeout(100)
+  expect(problems).toEqual([])
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1879,1940")
+})
+
+test("title-only recovery cannot suppress a later static-options retry", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "options" } })
+  await openSearch(page, "/s%C3%B6k?avancerad")
+  await expect.poll(async () => (await requests(request, "options")).length).toBeGreaterThan(0)
+  await page.waitForTimeout(100)
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.delete(`${fixture}/_text_search/failures/options`)
+
+  const title = page.locator(".title_select input.select2-search__field")
+  await title.fill("lager")
+  await title.dispatchEvent("change")
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+
+  await page.locator("[data-search-advanced]").click()
+  await page.locator("[data-search-advanced]").click()
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
+  await page.locator(".author_select .select2-selection--multiple").click()
+  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
+})
+
+test("word modes and allowlisted legacy filters preserve exact URL and request ownership", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&utm=keep&keyword=source:sol&fuzzy=1")
+  await page.getByRole("button", { name: "SÖK EFTER ORDBÖRJAN", exact: true }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("prefix")).toBe("1")
+  await page.getByRole("button", { name: "SÖK EFTER ORDSLUT", exact: true }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("suffix")).toBe("1")
+  const query = new URL(page.url()).searchParams
+  expect(query.get("prefix")).toBe("1")
+  expect(query.get("suffix")).toBe("1")
+  expect(query.get("ej_modern")).toBe("1")
+  expect(query.get("keyword")).toBe("source:sol")
+  expect(query.get("fuzzy")).toBe("1")
+  expect(query.get("utm")).toBe("keep")
+
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(3)
+  expect((await requests(request, "results")).at(-1)?.body).toMatchObject({
+    prefix: true,
+    suffix: true,
+    include_modernized: false,
+    legacy_filters: [{ field: "source", value: "sol" }]
+  })
+})
+
+test("Back and Forward atomically restore route-owned controls and results", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad")
+  await selectMulti(page, "Författarskap", /Lagerlöf, Selma/)
+  await selectMulti(page, "Språk …", "Svenska")
+  await expect(page.locator(".lang_select .select2-selection__choice")).toContainText("Svenska")
+
+  await page.goBack()
+  await expect.poll(() => new URL(page.url()).searchParams.has("languages")).toBe(false)
+  expect(new URL(page.url()).searchParams.get("forfattare")).toBe("LagerlöfS")
+  await expect(page.locator(".author_select .select2-selection__choice")).toContainText("Lagerlöf")
+  await expect(page.locator(".lang_select .select2-selection__choice")).toHaveCount(0)
+  await page.goForward()
+  await expect.poll(() => new URL(page.url()).searchParams.get("languages")).toBe("language:swe")
+  await expect(page.locator(".lang_select .select2-selection__choice")).toContainText("Svenska")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+})
+
+test("left and right keyboard pagination updates the canonical page and restores it", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow")
+  await expect(page.locator("#results")).not.toHaveClass(/searching/)
+  await page.locator("h1").click()
+  await page.keyboard.press("ArrowRight")
+  await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  await page.keyboard.press("ArrowLeft")
+  await expect.poll(() => new URL(page.url()).searchParams.has("traffsida")).toBe(false)
+})
+
+test("keyboard pagination does not intercept arrows inside form controls", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow&traffsida=2")
+  await expect(page.locator("#results")).not.toHaveClass(/searching/)
+  await page.evaluate(() => {
+    const editor = document.createElement("div")
+    editor.contentEditable = "true"
+    editor.setAttribute("role", "textbox")
+    editor.setAttribute("aria-label", "Testredigerare")
+    editor.textContent = "Text"
+    document.body.append(editor)
+    editor.focus()
+  })
+  await page.evaluate(() => document.activeElement?.dispatchEvent(new KeyboardEvent("keydown", {
+    key: "ArrowRight",
+    bubbles: true,
+    cancelable: true
+  })))
+  await page.waitForTimeout(50)
+  expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+})
+
+test("author facets and Visa alla own only sok_filter", async ({ page, request }) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&utm=keep")
+  await page.locator(".navigator").getByRole("button", { name: "Strindberg, August" }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("sok_filter")).toBe("StrindbergA")
+  expect(new URL(page.url()).searchParams.get("utm")).toBe("keep")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toHaveCount(0)
+  expect((await requests(request, "results")).at(-1)?.body.facet_author_id).toBe("StrindbergA")
+
+  await page.locator(".navigator").getByRole("button", { name: "Visa alla" }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.has("sok_filter")).toBe(false)
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+})
+
+test("Visa fler is scoped to its work and keeps original Reader route ownership", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow&prefix=1&traffsida=2")
+  const overflow = page.locator("#results .overflow .more").last()
+  await overflow.click()
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  const body = (await requests(request, "results"))[1]?.body
+  expect(body).toMatchObject({
+    query: "overflow",
+    page: 1,
+    highlight_limit: 100,
+    prefix: true,
+    work_ids: ["lb278171"]
+  })
+  const href = await page.locator("tr.is_faksimil.sentence .match a").last().getAttribute("href")
+  const reader = new URL(href!, "http://litteraturbanken.test")
+  expect(reader.searchParams.get("s_page")).toBe("2")
+  expect(reader.searchParams.get("s_prefix")).toBe("true")
+})
+
+test("Visa fler ignores duplicate activation while the same work is loading", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow")
+  await request.delete(`${fixture}/_text_search/requests/results`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "overflow", delay: 600 }
+  })
+
+  const more = page.locator("#results .overflow .more").last()
+  await more.dispatchEvent("click")
+  await expect(more).toHaveAttribute("aria-disabled", "true")
+  await more.dispatchEvent("click")
+
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  await expect(more).not.toHaveAttribute("aria-disabled", "true")
+})
+
+test("static options are lazy and cached while title search is exact 250 ms latest-wins", async ({
+  page,
+  request
+}) => {
+  await page.clock.install()
+  await openSearch(page)
+  expect(await requests(request, "options")).toEqual([])
+  await page.locator("[data-search-advanced]").click()
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  expect((await requests(request, "options"))[0]?.body).toMatchObject({
+    title_filter: "",
+    title_limit: 30,
+    include_static_options: true
+  })
+  await page.locator("[data-search-advanced]").click()
+  await page.locator("[data-search-advanced]").click()
+  expect(await requests(request, "options")).toHaveLength(1)
+
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "lag", delay: 600 }
+  })
+  const input = page.locator(".title_select input.select2-search__field")
+  await input.fill("lag")
+  await input.dispatchEvent("change")
+  await page.clock.runFor(249)
+  expect(await requests(request, "options")).toEqual([])
+  await page.clock.runFor(1)
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+
+  await input.fill("lager")
+  await input.dispatchEvent("change")
+  await page.clock.runFor(249)
+  expect(await requests(request, "options")).toHaveLength(1)
+  await page.clock.runFor(1)
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
+  await expect(page.locator(".title_select .spinner")).toBeHidden()
+  await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toHaveCount(1)
+  await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(0)
+  await page.clock.runFor(600)
+  await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(0)
+})
+
+test("primary and count owners cancel stale work and recover independently", async ({
+  page,
+  request
+}) => {
+  await openSearch(page)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 1200 }
+  })
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "count", selector: "frihet", delay: 1200 }
+  })
+  await submitPhrase(page, "frihet")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  await submitPhrase(page, "inga")
+  await expect(page.getByText("Din sökning gav inga träffar", { exact: true })).toBeVisible()
+  await page.waitForTimeout(1300)
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toHaveCount(0)
+  await expect(page.locator(".hits_info .hits")).toBeHidden()
+
+  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "count" } })
+  await submitPhrase(page, "count-failure")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await request.delete(`${fixture}/_text_search/failures/count`)
+  await submitPhrase(page, "overflow")
+  await expect(page.locator(".hits_info .hits")).toHaveText("512")
+})
+
+test("primary, options, and more errors remain local and recover on retry", async ({
+  page,
+  request
+}) => {
+  await openSearch(page)
+  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "results" } })
+  await submitPhrase(page, "primary-failure")
+  await expect(page.locator("[data-search-error]")).toHaveText(
+    "Sökresultatet kan inte visas just nu."
+  )
+  await request.delete(`${fixture}/_text_search/failures/results`)
+  await submitPhrase(page, "frihet")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+
+  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "options" } })
+  await page.locator("[data-search-advanced]").click()
+  await expect.poll(async () => (await requests(request, "options")).length).toBeGreaterThan(0)
+  await page.getByRole("button", { name: "Visa alternativ för Författarskap" })
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(page.locator(".author_select").getByRole("option", { name: /Södergran, Edith/ }))
+    .toHaveCount(0)
+  await page.keyboard.press("Escape")
+  await page.locator("[data-search-advanced]").click()
+  await request.delete(`${fixture}/_text_search/failures/options`)
+  await page.locator("[data-search-advanced]").click()
+  await page.getByRole("button", { name: "Visa alternativ för Författarskap" })
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
+  await page.keyboard.press("Escape")
+
+  await submitPhrase(page, "overflow")
+  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "results" } })
+  await page.locator("#results .overflow .more").last()
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(1)
+  await request.delete(`${fixture}/_text_search/failures/results`)
+  await page.locator("#results .overflow .more").last()
+    .evaluate((button: HTMLButtonElement) => button.click())
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(2)
+})
+
+test("options and more cancellation clear loading and reject stale identity data", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow&avancerad")
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "lager", delay: 1200 }
+  })
+  const input = page.locator(".title_select input.select2-search__field")
+  await input.fill("lager")
+  await input.dispatchEvent("change")
+  await expect(page.locator(".title_select .spinner")).toBeVisible()
+  await page.locator("[data-search-advanced]").click()
+  await expect(page.locator(".title_select .spinner")).toBeHidden()
+
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "overflow", delay: 1200 }
+  })
+  await page.locator("#results .overflow .more").last().click()
+  await page.locator(".littb_pager button[rel='prev']").click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("traffsida")).toBe("2")
+  await page.waitForTimeout(1300)
+  await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(1)
+  await expect(page.locator("#results .overflow .more").last()).toBeEnabled()
+})
+
+test("SSR hydration is single-fetch and Reader hit destination is navigable", async ({
+  page,
+  request
+}) => {
+  const problems = browserProblems(page)
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await page.waitForTimeout(400)
+  expect(await requests(request, "results")).toHaveLength(1)
+  const hit = page.locator("#results .match a").first()
+  const href = await hit.getAttribute("href")
+  const reader = new URL(href!, "http://litteraturbanken.test")
+  expect(reader.pathname).toBe("/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/etext")
+  expect(reader.searchParams.get("hit")).toBe("0")
+  expect(reader.searchParams.get("hit_index")).toBe("0")
+  expect(reader.searchParams.get("q")).toBe("frihet")
+  const response = await page.goto(href!, { waitUntil: "domcontentloaded" })
+  expect(response?.status()).toBe(200)
+  await expect(page.locator("body")).toHaveClass(/page-reading/)
+  expect(problems).toEqual([])
+})
+
+test("search head, body, background, and toolkit state clean up after client navigation", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  await expect(page).toHaveTitle('Sök: "frihet" | Litteraturbanken')
+  await expect(page.locator("body")).toHaveClass(/page-search/)
+  await expect(page.locator("html")).toHaveCSS("background-image", /sok_bkg\.jpg/)
+  await expect(page.locator("#toolkit .littb_pager")).toHaveCount(1)
+
+  await pushRoute(page, "/om/ide")
+  await expect(page).toHaveURL(/\/om\/ide$/)
+  await expect(page.locator("body")).toHaveClass(/page-about/)
+  await expect(page.locator("body")).not.toHaveClass(/page-search/)
+  await expect(page.locator("html")).toHaveCSS("background-image", /about_bkg\.jpg/)
+  await expect(page.locator("html")).not.toHaveCSS("background-image", /sok_bkg\.jpg/)
+  await expect(page.locator("#toolkit .littb_pager")).toHaveCount(0)
+  await expect(page).not.toHaveTitle(/Sök:/)
+})

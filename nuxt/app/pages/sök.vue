@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type { LocationQueryRaw } from "vue-router"
 
 import type { SearchMultiSelectOption } from "~/components/search/SearchMultiSelect.vue"
@@ -64,6 +65,7 @@ type OptionsView = Readonly<{
   titleTotal: number
   yearFrom: number | null
   yearTo: number | null
+  staticComplete: boolean
 }>
 
 const languageOptions = [
@@ -182,9 +184,12 @@ const client = createLbApiClient(
 const rawQuery = computed(() => route.query as unknown as TextSearchRouteQuery)
 const state = computed(() => parseTextSearchRouteQuery(rawQuery.value))
 const routeIdentity = computed(() => textSearchRouteIdentity(state.value))
-const primaryKey = computed(() => `text-search-primary:${routeIdentity.value}`)
+const primaryIdentity = computed(() => state.value.phrase
+  ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(state.value))
+  : "empty")
+const primaryKey = computed(() => `text-search-primary:${primaryIdentity.value}`)
 let primaryController: AbortController | null = null
-watch(routeIdentity, () => { primaryController?.abort() }, { flush: "sync" })
+watch(primaryIdentity, () => { primaryController?.abort() }, { flush: "sync" })
 const queryInput = ref(state.value.phrase ?? "")
 watch(() => state.value.phrase, phrase => { queryInput.value = phrase ?? "" })
 
@@ -235,7 +240,7 @@ const { data: primaryData, pending: primaryPending } = await useAsyncData<Primar
   primaryKey,
   async (_nuxtApp, { signal }) => {
     const requestedState = state.value
-    const identity = textSearchRouteIdentity(requestedState)
+    const identity = primaryIdentity.value
     if (!requestedState.phrase) return { identity, status: 204, results: null }
     const body = buildTextSearchResultsRequest(requestedState)
     const requestIdentity = textSearchResultsRequestIdentity(body)
@@ -263,15 +268,15 @@ const { data: primaryData, pending: primaryPending } = await useAsyncData<Primar
   {
     getCachedData: (key, nuxtApp) => {
       const cached = nuxtApp.payload.data[key] as PrimaryEnvelope | undefined
-      return cached?.identity === routeIdentity.value ? cached : undefined
+      return cached?.identity === primaryIdentity.value ? cached : undefined
     }
   }
 )
 
 const acceptedPrimary = shallowRef<PrimaryEnvelope | null>(null)
 const displayPrimary = shallowRef<PrimaryEnvelope | null>(null)
-watch(routeIdentity, () => { acceptedPrimary.value = null }, { flush: "sync" })
-watch([primaryData, routeIdentity], ([candidate, identity]) => {
+watch(primaryIdentity, () => { acceptedPrimary.value = null }, { flush: "sync" })
+watch([primaryData, primaryIdentity], ([candidate, identity]) => {
   if (candidate?.identity !== identity) return
   acceptedPrimary.value = candidate
   if (candidate.status === 200) displayPrimary.value = candidate
@@ -289,6 +294,9 @@ const countCache = useState<Record<string, CountView>>(
   "text-search-count-cache",
   () => ({})
 )
+const countIdentity = computed(() => state.value.phrase
+  ? textSearchCountRequestIdentity(buildTextSearchCountRequest(state.value))
+  : "empty")
 const countInFlight = new Map<string, AbortController>()
 let countVersion = 0
 let countController: AbortController | null = null
@@ -296,7 +304,7 @@ let countController: AbortController | null = null
 async function loadCount() {
   const requestedState = state.value
   if (!requestedState.phrase) return
-  const identity = textSearchRouteIdentity(requestedState)
+  const identity = countIdentity.value
   if (Object.hasOwn(countCache.value, identity) || countInFlight.has(identity)) return
   const version = ++countVersion
   countController?.abort()
@@ -310,7 +318,7 @@ async function loadCount() {
     const accepted = result.response.status === 200
       ? acceptTextSearchCountResponse(result.data, body, requestIdentity)
       : null
-    if (version === countVersion && identity === routeIdentity.value && accepted) {
+    if (version === countVersion && identity === countIdentity.value && accepted) {
       countCache.value[identity] = {
         documents: accepted.total_documents,
         hits: accepted.total_highlights
@@ -323,7 +331,7 @@ async function loadCount() {
   }
 }
 
-const count = computed(() => countCache.value[routeIdentity.value] ?? null)
+const count = computed(() => countCache.value[countIdentity.value] ?? null)
 void loadCount()
 
 function authorLabel(author: TextSearchOptionsResponse["authors"][number]): string {
@@ -333,7 +341,10 @@ function authorLabel(author: TextSearchOptionsResponse["authors"][number]): stri
   return `${author.name_for_index}${years}`
 }
 
-function optionsView(response: TextSearchOptionsResponse): OptionsView {
+function optionsView(
+  response: TextSearchOptionsResponse,
+  staticComplete = true
+): OptionsView {
   return {
     titles: response.title_options.map(option => ({
       value: option.work_id,
@@ -342,16 +353,17 @@ function optionsView(response: TextSearchOptionsResponse): OptionsView {
     authors: response.authors.map(author => ({
       value: author.author_id,
       label: authorLabel(author),
-      selectionLabel: author.name_for_index.split(",", 1)[0]!
+      selectionLabel: authorLabel(author)
     })),
     aboutAuthors: response.about_authors.map(author => ({
       value: author.author_id,
       label: authorLabel(author),
-      selectionLabel: author.name_for_index.split(",", 1)[0]!
+      selectionLabel: authorLabel(author)
     })),
     titleTotal: response.title_total,
     yearFrom: response.year_from ?? null,
-    yearTo: response.year_to ?? null
+    yearTo: response.year_to ?? null,
+    staticComplete
   }
 }
 
@@ -366,7 +378,7 @@ let optionsController: AbortController | null = null
 async function loadOptions() {
   const requestedState = state.value
   const identity = textSearchRouteIdentity(requestedState)
-  if (Object.hasOwn(optionsCache.value, identity) || optionsInFlight.has(identity)) return
+  if (optionsCache.value[identity]?.staticComplete || optionsInFlight.has(identity)) return
   const version = ++optionsVersion
   optionsController?.abort()
   const controller = new AbortController()
@@ -394,13 +406,40 @@ async function loadOptions() {
 
 const initialOptions = state.value.advanced ? loadOptions() : Promise.resolve()
 await initialOptions
-const options = computed(() => optionsCache.value[routeIdentity.value] ?? null)
+const lastAcceptedOptions = shallowRef<OptionsView | null>(null)
+watch(
+  () => optionsCache.value[routeIdentity.value] ?? null,
+  candidate => {
+    if (candidate) lastAcceptedOptions.value = candidate
+  },
+  { immediate: true, flush: "sync" }
+)
+const options = computed(() => (
+  optionsCache.value[routeIdentity.value] ?? lastAcceptedOptions.value
+))
 const chronologyFloor = computed(() => options.value?.yearFrom ?? 1800)
 const chronologyCeiling = computed(() => options.value?.yearTo ?? 1950)
 const chronologyFromDraft = ref("")
 const chronologyToDraft = ref("")
+const chronologyDraftDirty = ref(false)
+const chronologyRangeStyle = computed(() => {
+  const span = chronologyCeiling.value - chronologyFloor.value
+  const from = Number(chronologyFromDraft.value)
+  const to = Number(chronologyToDraft.value)
+  const fromPercent = span > 0 && Number.isFinite(from)
+    ? Math.max(0, Math.min(100, (from - chronologyFloor.value) / span * 100))
+    : 0
+  const toPercent = span > 0 && Number.isFinite(to)
+    ? Math.max(0, Math.min(100, (to - chronologyFloor.value) / span * 100))
+    : 100
+  return {
+    "--chronology-from": `${fromPercent}%`,
+    "--chronology-to": `${toPercent}%`
+  }
+})
 
 function syncChronologyDraft() {
+  if (chronologyDraftDirty.value) return
   const floor = chronologyFloor.value
   const ceiling = chronologyCeiling.value
   const selected = state.value.yearRange
@@ -420,11 +459,13 @@ watch([routeIdentity, chronologyFloor, chronologyCeiling], syncChronologyDraft, 
 })
 
 function setChronologyDraft(endpoint: "from" | "to", value: string) {
+  chronologyDraftDirty.value = true
   if (endpoint === "from") chronologyFromDraft.value = value
   else chronologyToDraft.value = value
 }
 
-function commitChronologyDraft() {
+async function commitChronologyDraft(endpoint: "from" | "to", value: string) {
+  setChronologyDraft(endpoint, value)
   const floor = chronologyFloor.value
   const ceiling = chronologyCeiling.value
   const from = /^\d{4}$/.test(chronologyFromDraft.value)
@@ -435,11 +476,17 @@ function commitChronologyDraft() {
     : Number.NaN
   if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to)
     || from < floor || to > ceiling || from > to) {
+    chronologyDraftDirty.value = false
     syncChronologyDraft()
     return
   }
-  if (state.value.yearRange?.[0] === from && state.value.yearRange[1] === to) return
-  patchFilters({ yearRange: [from, to] })
+  if (state.value.yearRange?.[0] === from && state.value.yearRange[1] === to) {
+    chronologyDraftDirty.value = false
+    return
+  }
+  await navigate(textSearchFilterQuery(rawQuery.value, { yearRange: [from, to] }))
+  chronologyDraftDirty.value = false
+  syncChronologyDraft()
 }
 
 let titleVersion = 0
@@ -473,7 +520,7 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
     if (version === titleVersion && identity === routeIdentity.value && accepted) {
       const current = optionsCache.value[identity]
       optionsCache.value[identity] = {
-        ...(current ?? optionsView(accepted)),
+        ...(current ?? optionsView(accepted, false)),
         titles: optionsView(accepted).titles,
         titleTotal: accepted.title_total
       }
@@ -653,14 +700,16 @@ function selectedMode(mode: string): boolean {
 }
 
 watch(routeIdentity, cancelTitleOptions, { flush: "sync" })
-watch(routeIdentity, () => {
+watch(countIdentity, () => {
   countVersion += 1
   countController?.abort()
   countInFlight.clear()
+  void loadCount()
+}, { flush: "post" })
+watch(routeIdentity, () => {
   optionsVersion += 1
   optionsController?.abort()
   optionsInFlight.clear()
-  void loadCount()
   if (state.value.advanced) void loadOptions()
 }, { flush: "post" })
 
@@ -676,6 +725,7 @@ watch(routeIdentity, () => {
   moreLoadingKey.value = null
 }, { flush: "sync" })
 async function showMore(workKey: string) {
+  if (moreLoadingKey.value === workKey) return
   const requestedState = state.value
   if (!requestedState.phrase) return
   const identity = textSearchRouteIdentity(requestedState)
@@ -737,16 +787,37 @@ const resultRows = computed<readonly ResultRowView[]>(() => {
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30)))
-const firstVisibleWork = computed(() => results.value?.totalWorks
-  ? (state.value.page - 1) * 30 + 1
-  : 0)
-const lastVisibleWork = computed(() => Math.min(
-  state.value.page * 30,
-  results.value?.totalWorks ?? 0
-))
+const displayedTotalPages = computed(() => Math.ceil((results.value?.totalWorks ?? 0) / 30))
+const firstVisibleWork = computed(() => (state.value.page - 1) * 30 + 1)
+const lastVisibleWork = computed(() => results.value?.totalWorks
+  ? Math.min(state.value.page * 30, results.value.totalWorks)
+  : "")
 
 function goToPage(page: number) {
   void navigate(textSearchPageQuery(rawQuery.value, page))
+}
+
+function handlePaginationKeydown(event: KeyboardEvent) {
+  if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+    return
+  }
+  const target = event.target instanceof HTMLElement
+    ? event.target
+    : document.activeElement as HTMLElement | null
+  if (target?.closest("input, select, textarea, [contenteditable]:not([contenteditable='false'])")) {
+    return
+  }
+  const root = document.documentElement
+  if (event.key === "ArrowLeft" && root.scrollLeft === 0 && state.value.page > 1) {
+    event.preventDefault()
+    goToPage(state.value.page - 1)
+  } else if (event.key === "ArrowRight"
+    && (navigator.userAgent.includes("Firefox")
+      || root.scrollWidth - root.scrollLeft <= window.innerWidth)
+    && state.value.page < totalPages.value) {
+    event.preventDefault()
+    goToPage(state.value.page + 1)
+  }
 }
 
 const showGotoPageInput = ref(false)
@@ -779,6 +850,15 @@ const genderSelection = computed(() => {
   const firstGender = typeof rawGender === "string" ? rawGender : rawGender?.[0]
   return firstGender === "all" ? "all" : (state.value.gender ?? "")
 })
+const genderChoices = [
+  { value: "", label: "Filtrera: kvinnliga / manliga / alla" },
+  { value: "all", label: "Alla författare" },
+  { value: "female", label: "Kvinnliga författare" },
+  { value: "male", label: "Manliga författare" }
+] as const
+const genderLabel = computed(() => genderChoices.find(
+  option => option.value === genderSelection.value
+)?.label ?? genderChoices[0].label)
 function setGender(value: string) {
   patchFilters({ gender: value === "female" || value === "male" ? value : null })
 }
@@ -788,8 +868,12 @@ function setFacet(authorId: string | null) {
 }
 
 const toolkitMounted = ref(false)
-onMounted(() => { toolkitMounted.value = true })
+onMounted(() => {
+  toolkitMounted.value = true
+  document.addEventListener("keydown", handlePaginationKeydown)
+})
 onBeforeUnmount(() => {
+  document.removeEventListener("keydown", handlePaginationKeydown)
   primaryController?.abort()
   countVersion += 1
   countController?.abort()
@@ -857,7 +941,6 @@ useHead({
             aria-label="Sökfras"
           >
           <button
-            v-if="state.phrase"
             type="button"
             class="reset self-center text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 cursor-pointer -mr-6"
             aria-label="Rensa sökningen"
@@ -868,7 +951,7 @@ useHead({
               fill="none"
               viewBox="0 0 24 24"
               stroke-width="1.5"
-              stroke="currentColor"
+              stroke="#616161"
               aria-hidden="true"
             >
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -917,7 +1000,7 @@ useHead({
           </button>
         </div>
         <div class="w-4">
-          <i v-if="primaryPending" class="spinner fa fa-spinner fa-pulse mt-2" />
+          <i class="spinner fa fa-spinner fa-pulse mt-2" />
         </div>
       </div>
 
@@ -930,19 +1013,34 @@ useHead({
           ['suffix', 'SÖK EFTER ORDSLUT'],
           ['infix', 'SÖK EFTER DEL AV ORD']
         ]" :key="item[0]" class="hover:text-primary">
-          <span v-if="selectedMode(item[0]!)" role="checkbox" aria-checked="true">✓</span>
-          <button type="button" role="button" @click="setSearchMode(item[0] as never)">
+          <span
+            v-if="selectedMode(item[0]!)"
+            role="checkbox"
+            aria-checked="true"
+            aria-hidden="true"
+          >✓</span>{{ " " }}
+          <span
+            role="button"
+            tabindex="0"
+            :aria-pressed="selectedMode(item[0]!)"
+            @click="setSearchMode(item[0] as never)"
+            @keydown.enter.prevent="setSearchMode(item[0] as never)"
+            @keydown.space.prevent="setSearchMode(item[0] as never)"
+          >
             {{ item[1] }}
-          </button>
+          </span>
         </li>
       </ul>
 
       <div class="chronology text-white ml-px pl-px">
-        <i class="fa fa-clock-o mr-1 ml-px" />
+        <i class="fa fa-clock-o mr-1 ml-px" />{{ " " }}
         <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
       </div>
       <div class="flex block max-w-3xl pr-2">
-        <div class="rzslider mt-3 slider-large chronology_ranges">
+        <div
+          class="rzslider mt-3 slider-large chronology_ranges"
+          :style="chronologyRangeStyle"
+        >
           <input
             type="range"
             :min="chronologyFloor"
@@ -951,7 +1049,7 @@ useHead({
             :value="chronologyFromDraft"
             aria-label="Från år reglage"
             @input="setChronologyDraft('from', ($event.target as HTMLInputElement).value)"
-            @change="commitChronologyDraft"
+            @change="commitChronologyDraft('from', ($event.target as HTMLInputElement).value)"
           >
           <input
             type="range"
@@ -961,7 +1059,7 @@ useHead({
             :value="chronologyToDraft"
             aria-label="Till år reglage"
             @input="setChronologyDraft('to', ($event.target as HTMLInputElement).value)"
-            @change="commitChronologyDraft"
+            @change="commitChronologyDraft('to', ($event.target as HTMLInputElement).value)"
           >
         </div>
         <div class="whitespace-nowrap self-center chronology_inputs">
@@ -972,8 +1070,8 @@ useHead({
             :value="chronologyFromDraft"
             aria-label="Från år"
             @input="setChronologyDraft('from', ($event.target as HTMLInputElement).value)"
-            @change="commitChronologyDraft"
-          >
+            @change="commitChronologyDraft('from', ($event.target as HTMLInputElement).value)"
+          >{{ " " }}
           <span class="text-sm sc">till </span>
           <input
             type="text"
@@ -981,7 +1079,7 @@ useHead({
             :value="chronologyToDraft"
             aria-label="Till år"
             @input="setChronologyDraft('to', ($event.target as HTMLInputElement).value)"
-            @change="commitChronologyDraft"
+            @change="commitChronologyDraft('to', ($event.target as HTMLInputElement).value)"
           >
         </div>
       </div>
@@ -1025,6 +1123,7 @@ useHead({
               :model-value="state.languages"
               :options="languageChoices"
               placeholder="Språk …"
+              :space-after-remove="false"
               @update:model-value="patchFilters({ languages: $event as TextSearchRouteState['languages'] })"
             />
           </div>
@@ -1046,20 +1145,44 @@ useHead({
               :model-value="state.categories"
               :options="categoryChoices"
               placeholder="Filtrera: Kategorier / Utgivare"
+              :space-after-remove="false"
               @update:model-value="patchFilters({ categories: $event as TextSearchRouteState['categories'] })"
             />
           </div>
           <div class="mb-1">
-            <select
-              class="gender_select"
-              aria-label="Filtrera: kvinnliga / manliga / alla"
-              @change="setGender(($event.target as HTMLSelectElement).value)"
-            >
-              <option value="" :selected="genderSelection === ''" />
-              <option value="all" :selected="genderSelection === 'all'">Alla författare</option>
-              <option value="female" :selected="genderSelection === 'female'">Kvinnliga författare</option>
-              <option value="male" :selected="genderSelection === 'male'">Manliga författare</option>
-            </select>
+            <Listbox :model-value="genderSelection" @update:model-value="setGender">
+              <div
+                class="gender_select select2 select2-container select2-container--default"
+                :data-gender-value="genderSelection"
+              >
+                <ListboxButton class="select2-selection select2-selection--single">
+                  <span class="select2-selection__rendered">
+                    <span
+                      class="gender_selection_label"
+                      :class="{ 'select2-selection__placeholder': !genderSelection }"
+                    >{{ genderLabel }}</span>
+                  </span>
+                  <span class="select2-selection__arrow" aria-hidden="true"><b /></span>
+                </ListboxButton>
+                <ListboxOptions class="gender_select_options select2-results__options">
+                  <ListboxOption
+                    v-for="option in genderChoices"
+                    :key="option.value"
+                    v-slot="{ active, selected }"
+                    as="template"
+                    :value="option.value"
+                  >
+                    <li
+                      class="select2-results__option"
+                      :class="{
+                        'select2-results__option--highlighted': active,
+                        'select2-results__option--selected': selected
+                      }"
+                    >{{ option.label }}</li>
+                  </ListboxOption>
+                </ListboxOptions>
+              </div>
+            </Listbox>
           </div>
         </div>
       </div>
@@ -1079,21 +1202,22 @@ useHead({
         <div class="table_container">
           <div v-if="results?.totalWorks === 0">Din sökning gav inga träffar</div>
           <table cellspacing="0" class="results">
-            <tr
-              v-for="(row, rowIndex) in resultRows"
-              :key="row.key"
-              :class="[
-                rowIndex % 2 ? 'odd' : 'even',
-                {
-                  sentence: row.kind !== 'header',
-                  is_faksimil: row.work.facsimile
-                }
-              ]"
-            >
+            <tbody>
+              <tr
+                v-for="(row, rowIndex) in resultRows"
+                :key="row.key"
+                :class="[
+                  rowIndex % 2 ? 'odd' : 'even',
+                  {
+                    sentence: row.kind !== 'header',
+                    is_faksimil: row.work.facsimile
+                  }
+                ]"
+              >
               <template v-if="row.kind === 'header'">
                 <td class="header" colspan="4">
                   <div class="header_content" :title="row.work.title">
-                    <span class="author">{{ row.work.authorName }}{{ " " }}</span>
+                    <span class="author">{{ row.work.authorName }}</span>{{ " " }}
                     <span class="title">
                       <a :href="visibleHits(row.work)[0]?.href">{{ row.work.title }}</a>
                     </span>
@@ -1107,7 +1231,7 @@ useHead({
                     :key="wordIndex"
                     class="word"
                     :class="{ punct: word.punct }"
-                  >{{ word.text }} </span>
+                  >{{ `${word.text} ` }}</span>
                 </td>
                 <td class="match w-px whitespace-nowrap">
                   <span v-for="(word, wordIndex) in row.hit.match" :key="wordIndex">
@@ -1120,25 +1244,29 @@ useHead({
                     :key="wordIndex"
                     class="word"
                     :class="{ punct: word.punct }"
-                  > {{ word.text }}</span>
+                  >{{ `${word.text} ` }}</span>
                 </td>
               </template>
               <template v-else>
                 <td />
                 <td>
                   <div class="overflow sc">
-                    <hr>
-                    <button
-                      type="button"
+                    <hr>{{ " " }}
+                    <a
+                      role="button"
+                      tabindex="0"
                       class="more"
-                      :disabled="moreLoadingKey === row.work.key"
+                      :aria-disabled="moreLoadingKey === row.work.key"
                       @click="showMore(row.work.key)"
-                    >Visa fler</button>
+                      @keydown.enter.prevent="showMore(row.work.key)"
+                      @keydown.space.prevent="showMore(row.work.key)"
+                    >Visa fler</a>{{ " " }}
                     <hr>
                   </div>
                 </td>
               </template>
-            </tr>
+              </tr>
+            </tbody>
           </table>
         </div>
       </div>
@@ -1148,20 +1276,24 @@ useHead({
     </div>
 
     <Teleport to="#toolkit" :disabled="!toolkitMounted">
-      <div v-if="displayPrimary?.status === 200" class="littb_pager">
+      <div
+        v-if="displayPrimary?.status === 200"
+        class="littb_pager"
+      >
         <div>
           <div class="hits_info">
             <div>
-              <div v-show="(count?.hits ?? 0) > 0" class="hits">{{ count?.hits ?? 0 }}</div>
-              <div v-show="(count?.hits ?? 0) > 0" class="hits_sub">
-                <span v-if="count?.hits !== 1">sökträffar</span>
-                <span v-else>sökträff</span>
+              <div v-show="(count?.hits ?? 0) > 0" class="hits">{{ count?.hits ?? 0 }}</div>{{ " " }}
+              <div class="hits_sub">
+                <span v-show="(count?.hits ?? 0) > 1">sökträffar</span>
+                <span v-show="count?.hits === 1">sökträff</span>
               </div>
             </div>
           </div>
 
           Visar verk {{ firstVisibleWork }}-{{ lastVisibleWork }} av
-          {{ count?.documents ?? results?.totalWorks ?? 0 }}, sida {{ state.page }} av {{ totalPages }}.
+          {{ count?.documents ?? results?.totalWorks ?? 0 }}, sida {{ state.page }} av
+          {{ displayedTotalPages }}.
 
           <ul v-if="(results?.totalWorks ?? 0) > 1" class="ctrl">
             <li class="arrows">
@@ -1169,32 +1301,41 @@ useHead({
                 type="button"
                 rel="next"
                 class="submit btn navicon left"
+                aria-label="Föregående träffsida"
                 :disabled="state.page === 1"
                 @click="goToPage(state.page - 1)"
               >
                 <i class="fa fa-angle-left" />
-              </button>
+              </button>{{ " " }}
               <button
                 type="button"
                 rel="prev"
                 class="submit btn navicon"
+                aria-label="Nästa träffsida"
                 :disabled="state.page === totalPages"
                 @click="goToPage(state.page + 1)"
               >
                 <i class="fa fa-angle-right" />
               </button>
             </li>
-            <li><button type="button" @click="goToPage(1)">Gå till första träffen</button></li>
-            <li><button type="button" @click="goToPage(totalPages)">Gå till sista träffen</button></li>
+            <li>
+              <a role="button" tabindex="0" @click="goToPage(1)" @keydown.enter.prevent="goToPage(1)" @keydown.space.prevent="goToPage(1)">Gå till första träffen</a>
+            </li>
+            <li>
+              <a role="button" tabindex="0" @click="goToPage(totalPages)" @keydown.enter.prevent="goToPage(totalPages)" @keydown.space.prevent="goToPage(totalPages)">Gå till sista träffen</a>
+            </li>
             <li
               :class="{ open: showGotoPageInput }"
               :aria-disabled="totalPages === 1"
             >
-              <button
-                type="button"
-                :disabled="totalPages === 1"
+              <a
+                role="button"
+                tabindex="0"
+                :aria-disabled="totalPages === 1"
                 @click="toggleGotoPageInput"
-              >Gå till träffsida . . .</button>
+                @keydown.enter.prevent="toggleGotoPageInput"
+                @keydown.space.prevent="toggleGotoPageInput"
+              >Gå till träffsida . . .</a>
               <form v-if="showGotoPageInput" @submit.prevent="submitGotoPage">
                 <input
                   ref="gotoPageElement"
@@ -1212,20 +1353,226 @@ useHead({
       </div>
       <ul v-if="results?.works.length" class="hidden md:block navigator">
         <li>
-          <button
-            type="button"
+          <a
+            role="button"
+            tabindex="0"
             :class="{ selected: !state.facetAuthorId }"
             @click="setFacet(null)"
-          >Visa alla</button>
+            @keydown.enter.prevent="setFacet(null)"
+            @keydown.space.prevent="setFacet(null)"
+          >Visa alla</a>
         </li>
         <li v-for="facet in results.facets" :key="facet.key">
-          <button
-            type="button"
+          <a
+            role="button"
+            tabindex="0"
             :class="{ selected: state.facetAuthorId === facet.key }"
             @click="setFacet(facet.key)"
-          >{{ facet.name }}</button>
+            @keydown.enter.prevent="setFacet(facet.key)"
+            @keydown.space.prevent="setFacet(facet.key)"
+          >{{ facet.name }}</a>
         </li>
       </ul>
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.chronology_ranges {
+  position: relative;
+  flex: 1 1 400px;
+  width: 400px;
+  min-width: 0;
+  height: 20px;
+  margin-top: 8px !important;
+  margin-right: 1.85rem;
+  margin-bottom: 3px;
+  background: linear-gradient(
+    to right,
+    rgba(122, 20, 0, 0.15) 0 var(--chronology-from),
+    #7a1400 var(--chronology-from) var(--chronology-to),
+    rgba(122, 20, 0, 0.15) var(--chronology-to) 100%
+  );
+  background-position: 10px calc(50% - 2px);
+  background-size: calc(100% - 20px) 8px;
+  background-repeat: no-repeat;
+}
+
+.chronology_ranges input[type="range"] {
+  appearance: none;
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: none;
+}
+
+.reset {
+  color: #616161;
+}
+
+.chronology_ranges input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+  background: transparent;
+}
+
+.chronology_ranges input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border: 1px solid darkgrey;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 1px 1px 3px grey;
+  pointer-events: auto;
+}
+
+.gender_select {
+  width: 350px;
+  height: 28px;
+  margin-bottom: 5px;
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.gender_select .select2-selection--single {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: 28px;
+  padding: 0 0 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: white;
+  color: #444;
+  font-family: "Requiem Text SC A", "Requiem Text SC B";
+  font-size: 0.8em;
+  text-align: left;
+  text-transform: lowercase;
+  user-select: none;
+}
+
+.gender_select .select2-selection__rendered {
+  display: block;
+  padding: 0;
+  padding-right: 20px;
+  overflow: hidden;
+  color: #444;
+  line-height: 28px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gender_select .select2-selection__placeholder {
+  color: #999;
+}
+
+.gender_select .select2-selection__arrow {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 20px;
+  height: 26px;
+}
+
+.gender_select .select2-selection__arrow b {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin-top: -2px;
+  margin-left: -4px;
+  border-color: #888 transparent transparent;
+  border-style: solid;
+  border-width: 5px 4px 0;
+}
+
+.gender_select_options {
+  position: absolute;
+  z-index: 1051;
+  top: 28px;
+  left: 0;
+  width: 350px;
+  max-height: 350px;
+  overflow-y: auto;
+  background: white;
+  color: #333;
+  font-size: 0.8em;
+}
+
+.bottom_row {
+  margin-top: 2em !important;
+  margin-bottom: calc(2em - 34px) !important;
+}
+
+.bottom_row > .left {
+  margin-right: 79.78125px !important;
+}
+
+.littb_pager .ctrl li:not(.arrows) > button {
+  display: inline !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  color: #7a1400;
+  white-space: nowrap;
+}
+
+.littb_pager .ctrl li:not(.arrows) > button:disabled {
+  color: #333;
+}
+
+.littb_pager .ctrl a[aria-disabled="true"] {
+  color: grey !important;
+  cursor: default;
+}
+
+.navigator button {
+  display: inline;
+  color: #333;
+  white-space: nowrap;
+}
+
+.navigator button.selected {
+  color: #7a1400;
+}
+
+@media (max-width: 767px) {
+  .chronology_ranges {
+    width: 396px;
+    max-width: 396px;
+    flex-basis: 396px;
+  }
+
+  .bottom_row {
+    margin-top: 2em !important;
+    margin-bottom: 2em !important;
+  }
+
+  .bottom_row > .left {
+    margin-right: 57px !important;
+  }
+
+  .bottom_row > .left > div:first-child {
+    margin-bottom: 20px;
+  }
+
+  .bottom_row > .left > div:nth-child(2) {
+    margin-bottom: 21px;
+  }
+
+  .bottom_row .right > .mb-1 {
+    height: 36.78125px;
+    margin-bottom: 0;
+  }
+}
+</style>

@@ -26,6 +26,7 @@ import {
   workReaderCss
 } from "./reader-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
+import { textSearchBackgroundBase64 } from "./text-search-data.mjs"
 import { workLookupResponse } from "./work-lookup-data.mjs"
 
 const aboutContent = new Map([
@@ -50,7 +51,8 @@ const homeContent = new Map([
 
 const sharedContent = new Map([
   ["/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", ["image/jpeg", readFileSync(new URL("./library-content/biblioteket_bakgrund.jpg", import.meta.url))]],
-  ["/red/bilder/bakgrundsbilder/ljudlandskap.jpg", ["image/jpeg", readFileSync(new URL("./library-content/ljudlandskap.jpg", import.meta.url))]]
+  ["/red/bilder/bakgrundsbilder/ljudlandskap.jpg", ["image/jpeg", readFileSync(new URL("./library-content/ljudlandskap.jpg", import.meta.url))]],
+  ["/red/bilder/bakgrundsbilder/sok_bkg.jpg", ["image/jpeg", Buffer.from(textSearchBackgroundBase64, "base64")]]
 ])
 
 const presentationContent = new Map([
@@ -155,6 +157,7 @@ let authorDocumentRedirectTargetRequests = []
 let textSearchRequests = { results: [], count: [], options: [] }
 let textSearchFailures = new Set()
 let textSearchDelays = { results: {}, count: {}, options: {} }
+let textSearchAuthorityMode = false
 
 const textSearchOperations = new Set(["results", "count", "options"])
 
@@ -295,6 +298,20 @@ function readerMetadataResponse(titlePath) {
           authors: [{ authorid: "O'Neil!()*A", full_name: "RFC Reader" }],
           pages: [{ pagename: "-2!'()*", pageindex: 2 }],
           startpagename: "-2!'()*"
+        })]
+      }
+    case "RodaRummet":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          authors: [{
+            authorid: "StrindbergA",
+            full_name: "August Strindberg",
+            surname: "Strindberg"
+          }],
+          pages: [{ pagename: "1", pageindex: 1 }],
+          shorttitle: "Röda rummet",
+          startpagename: "1"
         })]
       }
     case "SiblingPagesReader": {
@@ -787,6 +804,12 @@ function textSearchResultsResponse(body) {
       .map(facet => ({ ...facet, count: 1 }))
     rich.total_work_hits = rich.works.length
   }
+  if (body.facet_author_id) {
+    rich.works = rich.works.filter(work => work.author_id === body.facet_author_id)
+    rich.author_facets = rich.author_facets
+      .filter(facet => facet.author_id === body.facet_author_id)
+    rich.total_work_hits = rich.works.length
+  }
   if (body.highlight_limit === 100) {
     for (const work of rich.works) {
       work.has_more_highlights = false
@@ -810,6 +833,44 @@ function textSearchCountResponse(body) {
     return { query: body.query, total_documents: 64, total_highlights: 512 }
   }
   return { query: body.query, total_documents: 2, total_highlights: 3 }
+}
+
+function authorityWords(pageName, row, words, offset) {
+  return words.map((word, index) => ({
+    word,
+    word_id: `w${row}_${offset + index}`,
+    page_name: pageName
+  }))
+}
+
+function authorityHighlight(pageName, index, query, left, right) {
+  const matchOffset = left.length + 1
+  return {
+    left_context: authorityWords(pageName, index, left, 1),
+    match: authorityWords(pageName, index, [query], matchOffset),
+    right_context: authorityWords(pageName, index, right, matchOffset + 1)
+  }
+}
+
+function authorityTextSearchResultsResponse(body) {
+  if (body.query === "inga") return textSearchResultsResponse(body)
+  const response = richTextSearchResponse(body)
+  response.total_work_hits = 2
+  response.works[0].highlights = [
+    authorityHighlight("1", 1, body.query, ["det", "är", "icke", "blott"], ["för", "människan", "."]),
+    authorityHighlight("2", 2, body.query, ["han", "ropade", "högt", ","], ["för", "människan", "."]),
+    authorityHighlight("3", 3, body.query, ["och", "drömmen", "om"], ["för", "människan", "."]),
+    authorityHighlight("4", 4, body.query, ["den", "nya", "tiden", "gav"], ["för", "människan", "."]),
+    authorityHighlight("5", 5, body.query, ["att", "vinna", "sin"], ["för", "människan", "."])
+  ]
+  response.works[0].has_more_highlights = true
+  response.works[1].highlights = [authorityHighlight(
+    "3", 6, body.query, ["hon", "sökte", "sin"], ["bortom", "bergen", "."]
+  )]
+  response.works[1].has_more_highlights = false
+  response.author_facets[0].count = 1
+  response.author_facets[1].count = 1
+  return response
 }
 
 const textSearchTitleCatalog = [
@@ -894,6 +955,40 @@ function textSearchOptionsResponse(body) {
 }
 
 function textSearchResponse(operation, body) {
+  if (textSearchAuthorityMode) {
+    if (operation === "results") return authorityTextSearchResultsResponse(body)
+    if (operation === "count") {
+      return {
+        query: body.query,
+        total_documents: body.query === "inga" ? 0 : 2,
+        total_highlights: body.query === "inga" ? 0 : 8
+      }
+    }
+    const options = textSearchOptionsResponse(body)
+    return {
+      ...options,
+      authors: [
+        ...options.authors,
+        ...(options.authors.some(author => author.author_id === "StrindbergA") ? [] : [{
+          author_id: "StrindbergA",
+          name_for_index: "Strindberg, August",
+          birth_year: "1849",
+          death_year: "1912"
+        }])
+      ],
+      about_authors: [
+        ...options.about_authors,
+        ...(options.about_authors.some(author => author.author_id === "LagerlöfS") ? [] : [{
+          author_id: "LagerlöfS",
+          name_for_index: "Lagerlöf, Selma",
+          birth_year: "1858",
+          death_year: "1940"
+        }])
+      ],
+      year_from: 1800,
+      year_to: 1950
+    }
+  }
   if (operation === "results") return textSearchResultsResponse(body)
   if (operation === "count") return textSearchCountResponse(body)
   return textSearchOptionsResponse(body)
@@ -980,6 +1075,22 @@ const server = createServer(async (request, response) => {
         else textSearchDelays = { results: {}, count: {}, options: {} }
         return sendJson(response, 200, { delays: textSearchDelays })
       }
+    }
+    return sendJson(response, 405, {
+      error: { code: "method_not_allowed", message: "Method not allowed", details: null }
+    })
+  }
+  if (url.pathname === "/_text_search/authority") {
+    if (request.method === "GET") {
+      return sendJson(response, 200, { enabled: textSearchAuthorityMode })
+    }
+    if (request.method === "PUT") {
+      textSearchAuthorityMode = true
+      return sendJson(response, 200, { enabled: textSearchAuthorityMode })
+    }
+    if (request.method === "DELETE") {
+      textSearchAuthorityMode = false
+      return sendJson(response, 200, { enabled: textSearchAuthorityMode })
     }
     return sendJson(response, 405, {
       error: { code: "method_not_allowed", message: "Method not allowed", details: null }
