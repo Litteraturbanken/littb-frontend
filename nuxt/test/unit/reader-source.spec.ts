@@ -163,6 +163,10 @@ describe("faksimil page identities", () => {
     ["duplicate page index", [
       { imagenumber: 1, pageindex: 0, pagename: "1" },
       { imagenumber: 2, pageindex: 0, pagename: "2" }
+    ]],
+    ["duplicate image number", [
+      { imagenumber: 1, pageindex: 0, pagename: "1" },
+      { imagenumber: 1, pageindex: 1, pagename: "2" }
     ]]
   ])("rejects %s", (_label, pages) => {
     expectSourceError(() => normalize({ pages }), 502)
@@ -239,21 +243,21 @@ describe("faksimil logical sizes", () => {
 
 describe("faksimil JPEG sources", () => {
   test("RFC3986-encodes every work-id segment and pads only the image number", () => {
+    expect(facsimileImageUrl).toHaveLength(3)
     expect(facsimileImageUrl(
-      "https://example.test/base/",
       "lb 12/!*'()",
       3,
       27
     )).toBe(
-      "https://example.test/base/txt/lb%2012%2F%21%2A%27%28%29/" +
+      "/txt/lb%2012%2F%21%2A%27%28%29/" +
       "lb%2012%2F%21%2A%27%28%29_3/" +
       "lb%2012%2F%21%2A%27%28%29_3_0027.jpeg"
     )
   })
 
   test("builds numerically sorted sources and pairs N with N+2 at 1x/2x", () => {
+    expect(buildFacsimileSources).toHaveLength(3)
     const sources = buildFacsimileSources(
-      "https://example.test",
       "lb1",
       9,
       [

@@ -78,6 +78,7 @@ function facsimilePages(value: unknown): ReaderFacsimileSourcePage[] | null {
   const pages: ReaderFacsimileSourcePage[] = []
   const pageNames = new Set<string>()
   const pageIndexes = new Set<number>()
+  const imageNumbers = new Set<number>()
   for (const page of value) {
     if (!isRecord(page)) return null
     const pageName = requiredString(page, "pagename")
@@ -88,10 +89,12 @@ function facsimilePages(value: unknown): ReaderFacsimileSourcePage[] | null {
       !safeNonnegativeInteger(pageIndex) ||
       !safeNonnegativeInteger(imageNumber) ||
       pageNames.has(pageName) ||
-      pageIndexes.has(pageIndex)
+      pageIndexes.has(pageIndex) ||
+      imageNumbers.has(imageNumber)
     ) return null
     pageNames.add(pageName)
     pageIndexes.add(pageIndex)
+    imageNumbers.add(imageNumber)
     pages.push({ pageName, pageIndex, imageNumber })
   }
   return pages.sort((left, right) => left.pageIndex - right.pageIndex)
@@ -143,7 +146,6 @@ function encodeRfc3986Segment(value: string): string {
 }
 
 export function facsimileImageUrl(
-  base: string,
   workId: string,
   size: ReaderFacsimileSize,
   imageNumber: number
@@ -154,7 +156,7 @@ export function facsimileImageUrl(
   const encodedWorkId = encodeRfc3986Segment(workId)
   const encodedImageNumber = encodeRfc3986Segment(String(imageNumber).padStart(4, "0"))
   return [
-    base.replace(/\/$/, ""),
+    "",
     "txt",
     encodedWorkId,
     `${encodedWorkId}_${size}`,
@@ -163,7 +165,6 @@ export function facsimileImageUrl(
 }
 
 export function buildFacsimileSources(
-  base: string,
   workId: string,
   imageNumber: number,
   sizes: readonly ReaderFacsimileSizeSource[]
@@ -171,7 +172,7 @@ export function buildFacsimileSources(
   return sizes
     .map(({ size, width }) => ({
       size,
-      url: facsimileImageUrl(base, workId, size, imageNumber),
+      url: facsimileImageUrl(workId, size, imageNumber),
       width
     }))
     .sort((left, right) => left.size - right.size)
