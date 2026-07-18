@@ -61,6 +61,13 @@ type AuthorDocumentOperation = paths[
 type LegacyAuthorRouteOperation = paths["/legacy-author-routes/resolve"]["post"]
 type AuthorDocumentDescriptor = components["schemas"]["AuthorDocumentDescriptor"]
 type LegacyAuthorRouteResolution = components["schemas"]["LegacyAuthorRouteResolution"]
+type TextSearchResultsRequest = components["schemas"]["TextSearchResultsRequest"]
+type TextSearchCountRequest = components["schemas"]["TextSearchCountRequest"]
+type TextSearchOptionsRequest = components["schemas"]["TextSearchOptionsRequest"]
+type TextSearchOptionsResponse = components["schemas"]["TextSearchOptionsResponse"]
+type TextSearchResultsOperation = paths["/text-search/results"]["post"]
+type TextSearchCountOperation = paths["/text-search/count"]["post"]
+type TextSearchOptionsOperation = paths["/text-search/options"]["post"]
 
 const generatedReaderHitContract: ReaderHitOperation = null as unknown as
   operations["v2_get_work_search_hits"]
@@ -70,6 +77,12 @@ const generatedAuthorDocumentContract: AuthorDocumentOperation = null as unknown
   operations["v2_get_author_document"]
 const generatedLegacyAuthorRouteContract: LegacyAuthorRouteOperation = null as unknown as
   operations["v2_post_legacy_author_route_resolve"]
+const generatedTextSearchResultsContract: TextSearchResultsOperation = null as unknown as
+  operations["v2_post_text_search_results"]
+const generatedTextSearchCountContract: TextSearchCountOperation = null as unknown as
+  operations["v2_post_text_search_count"]
+const generatedTextSearchOptionsContract: TextSearchOptionsOperation = null as unknown as
+  operations["v2_post_text_search_options"]
 const generatedAuthorDocumentDescriptor: AuthorDocumentDescriptor = soderbergPresentation
 const generatedLegacyAuthorRouteResolution: LegacyAuthorRouteResolution = {
   author_id: "SöderbergH",
@@ -302,6 +315,76 @@ async function authorDocumentPdfRequests() {
   }
 }
 
+async function postTextSearchResults(body: TextSearchResultsRequest) {
+  return await postTextSearch("results", body)
+}
+
+async function postTextSearch(
+  operation: "results" | "count" | "options",
+  body: TextSearchResultsRequest | TextSearchCountRequest | TextSearchOptionsRequest
+) {
+  return await fetch(`${origin}/v2/text-search/${operation}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  })
+}
+
+function textSearchResultsRequest(
+  query: string,
+  overrides: Partial<TextSearchResultsRequest> = {}
+): TextSearchResultsRequest {
+  return {
+    query,
+    include_modernized: true,
+    prefix: false,
+    suffix: false,
+    word_form_only: true,
+    highlight_limit: 5,
+    page: 1,
+    page_size: 30,
+    ...overrides
+  }
+}
+
+function textSearchCountRequest(
+  query: string,
+  overrides: Partial<TextSearchCountRequest> = {}
+): TextSearchCountRequest {
+  return {
+    query,
+    include_modernized: true,
+    prefix: false,
+    suffix: false,
+    word_form_only: true,
+    ...overrides
+  }
+}
+
+function textSearchOptionsRequest(
+  titleFilter: string,
+  overrides: Partial<TextSearchOptionsRequest> = {}
+): TextSearchOptionsRequest {
+  return {
+    include_modernized: true,
+    include_static_options: true,
+    prefix: false,
+    suffix: false,
+    title_filter: titleFilter,
+    title_limit: 30,
+    word_form_only: true,
+    ...overrides
+  }
+}
+
+async function textSearchRequests() {
+  return await (await fetch(`${origin}/_text_search/requests`)).json() as {
+    results: Array<{ method: string, path: string, body: unknown }>
+    count: Array<{ method: string, path: string, body: unknown }>
+    options: Array<{ method: string, path: string, body: unknown }>
+  }
+}
+
 describe("v2 fixture server operations", () => {
   beforeAll(async () => {
     fixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
@@ -363,7 +446,10 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_author_document_delay`, { method: "DELETE" }),
       fetch(`${origin}/_legacy_author_route_requests`, { method: "DELETE" }),
       fetch(`${origin}/_legacy_author_route_failure`, { method: "DELETE" }),
-      fetch(`${origin}/_author_document_pdf_requests`, { method: "DELETE" })
+      fetch(`${origin}/_author_document_pdf_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_text_search/requests`, { method: "DELETE" }),
+      fetch(`${origin}/_text_search/failures`, { method: "DELETE" }),
+      fetch(`${origin}/_text_search/delays`, { method: "DELETE" })
     ])
   })
 
@@ -1295,6 +1381,303 @@ describe("v2 fixture server operations", () => {
     })
     expect(correction).toEqual({ items: [], correction: "strindberg" })
     expect(noHit).toEqual({ items: [], correction: null })
+  })
+
+  test("serves a deterministic rich text-search results response", async () => {
+    const response = await postTextSearchResults(textSearchResultsRequest("frihet"))
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      query: "frihet",
+      page: 1,
+      page_size: 30,
+      total_work_hits: 2,
+      author_facets: [
+        { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 1 },
+        { author_id: "LagerlöfS", name_for_index: "Lagerlöf, Selma", count: 1 }
+      ],
+      works: [
+        {
+          lbworkid: "lb238704",
+          author_id: "StrindbergA",
+          author_name: "August Strindberg",
+          title: "Röda rummet",
+          title_id: "RodaRummet",
+          mediatype: "etext",
+          has_more_highlights: false,
+          highlights: [{
+            left_context: [{ word: "ropade", word_id: "w10", page_name: "1" }],
+            match: [{ word: "frihet", word_id: "w11", page_name: "1" }],
+            right_context: [{ word: "och", word_id: "w12", page_name: "1" }]
+          }]
+        },
+        {
+          lbworkid: "lb278171",
+          author_id: "LagerlöfS",
+          author_name: "Selma Lagerlöf",
+          title: "Gösta Berlings saga",
+          title_id: "GostaBerlingsSaga",
+          mediatype: "faksimil",
+          has_more_highlights: true,
+          highlights: [{
+            left_context: [{ word: "sin", word_id: "w20", page_name: "3" }],
+            match: [{ word: "frihet", word_id: "w21", page_name: "3" }],
+            right_context: [{ word: "sökte", word_id: "w22", page_name: "3" }]
+          }]
+        }
+      ]
+    })
+  })
+
+  test("generates all text-search operations and title author facet schemas", () => {
+    expect(generatedTextSearchResultsContract).toBeNull()
+    expect(generatedTextSearchCountContract).toBeNull()
+    expect(generatedTextSearchOptionsContract).toBeNull()
+
+    const options: TextSearchOptionsResponse = {
+      authors: [],
+      about_authors: [],
+      title_options: [],
+      title_author_facets: [{
+        author_id: "StrindbergA",
+        name_for_index: "Strindberg, August",
+        count: 1
+      }],
+      title_total: 0,
+      year_from: null,
+      year_to: null
+    }
+    expect(options.title_author_facets[0]?.author_id).toBe("StrindbergA")
+  })
+
+  test("serves zero and overflow results plus deterministic counts", async () => {
+    const empty = await postTextSearchResults(textSearchResultsRequest("inga"))
+    const overflow = await postTextSearchResults(textSearchResultsRequest("overflow"))
+    const richCount = await postTextSearch("count", textSearchCountRequest("frihet"))
+    const emptyCount = await postTextSearch("count", textSearchCountRequest("inga"))
+    const overflowCount = await postTextSearch("count", textSearchCountRequest("overflow"))
+
+    expect(await empty.json()).toEqual({
+      query: "inga",
+      page: 1,
+      page_size: 30,
+      total_work_hits: 0,
+      author_facets: [],
+      works: []
+    })
+    const overflowBody = await overflow.json()
+    expect(overflowBody).toMatchObject({
+      query: "overflow",
+      total_work_hits: 64
+    })
+    expect(overflowBody.works[0]).toMatchObject({ has_more_highlights: true })
+    expect(await richCount.json()).toEqual({
+      query: "frihet",
+      total_documents: 2,
+      total_highlights: 3
+    })
+    expect(await emptyCount.json()).toEqual({
+      query: "inga",
+      total_documents: 0,
+      total_highlights: 0
+    })
+    expect(await overflowCount.json()).toEqual({
+      query: "overflow",
+      total_documents: 64,
+      total_highlights: 512
+    })
+  })
+
+  test("serves advanced options, overflow, and selected-title preservation", async () => {
+    const advanced = await postTextSearch("options", textSearchOptionsRequest("lager", {
+      query: "frihet",
+      categories: ["texttype:roman"],
+      languages: ["language:swe"],
+      gender: "female",
+      year_from: 1850,
+      year_to: 1950
+    }))
+    const overflow = await postTextSearch("options", textSearchOptionsRequest("overflow"))
+    const preserved = await postTextSearch("options", textSearchOptionsRequest("inga", {
+      selected_work_ids: ["lb238704"]
+    }))
+
+    expect(await advanced.json()).toEqual({
+      authors: [{
+        author_id: "LagerlöfS",
+        name_for_index: "Lagerlöf, Selma",
+        birth_year: "1858",
+        death_year: "1940"
+      }],
+      about_authors: [{
+        author_id: "StrindbergA",
+        name_for_index: "Strindberg, August",
+        birth_year: "1849",
+        death_year: "1912"
+      }],
+      title_options: [{
+        work_id: "lb278171",
+        title: "Gösta Berlings saga",
+        author_name: "Selma Lagerlöf"
+      }],
+      title_author_facets: [{
+        author_id: "LagerlöfS",
+        name_for_index: "Lagerlöf, Selma",
+        count: 1
+      }],
+      title_total: 1,
+      year_from: 1849,
+      year_to: 1940
+    })
+    const overflowBody = await overflow.json() as TextSearchOptionsResponse
+    expect(overflowBody.title_total).toBe(731)
+    expect(overflowBody.title_options).toHaveLength(30)
+    expect(overflowBody.title_author_facets).toEqual([{
+      author_id: "OverflowAuthor",
+      name_for_index: "Överflöd, Test",
+      count: 731
+    }])
+    expect(await preserved.json()).toMatchObject({
+      title_total: 0,
+      title_options: [{
+        work_id: "lb238704",
+        title: "Röda rummet",
+        author_name: "August Strindberg"
+      }],
+      title_author_facets: [{
+        author_id: "StrindbergA",
+        name_for_index: "Strindberg, August",
+        count: 1
+      }]
+    })
+  })
+
+  test("logs exact text-search method, path, body, and order with isolated resets", async () => {
+    const resultsBody = textSearchResultsRequest("frihet", { author_ids: ["StrindbergA"] })
+    const countBody = textSearchCountRequest("frihet")
+    const optionsBody = textSearchOptionsRequest("lager")
+    await postTextSearchResults(resultsBody)
+    await postTextSearch("results", textSearchResultsRequest("inga"))
+    await postTextSearch("count", countBody)
+    await postTextSearch("options", optionsBody)
+
+    expect(await textSearchRequests()).toEqual({
+      results: [
+        { method: "POST", path: "/v2/text-search/results", body: resultsBody },
+        {
+          method: "POST",
+          path: "/v2/text-search/results",
+          body: textSearchResultsRequest("inga")
+        }
+      ],
+      count: [{ method: "POST", path: "/v2/text-search/count", body: countBody }],
+      options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }]
+    })
+
+    await fetch(`${origin}/_text_search/requests/results`, { method: "DELETE" })
+    expect(await textSearchRequests()).toEqual({
+      results: [],
+      count: [{ method: "POST", path: "/v2/text-search/count", body: countBody }],
+      options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }]
+    })
+  })
+
+  test("requires POST and strict valid JSON without ledgering rejected requests", async () => {
+    const wrongMethod = await fetch(`${origin}/v2/text-search/results`)
+    const malformedJson = await fetch(`${origin}/v2/text-search/count`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{"
+    })
+    const unknownField = await fetch(`${origin}/v2/text-search/options`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...textSearchOptionsRequest(""), unknown: true })
+    })
+
+    expect(wrongMethod.status).toBe(405)
+    expect(malformedJson.status).toBe(400)
+    expect(unknownField.status).toBe(422)
+    expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+  })
+
+  test("fails text-search operations independently and rejects unknown controls", async () => {
+    const configured = await fetch(`${origin}/_text_search/failures`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ operation: "count" })
+    })
+    expect(configured.status).toBe(200)
+
+    const results = await postTextSearchResults(textSearchResultsRequest("frihet"))
+    const count = await postTextSearch("count", textSearchCountRequest("frihet"))
+    const options = await postTextSearch("options", textSearchOptionsRequest(""))
+    expect(results.status).toBe(200)
+    expect(count.status).toBe(503)
+    expect(await count.json()).toEqual({
+      error: {
+        code: "text_search_count_unavailable",
+        message: "Unable to count text-search results",
+        details: null
+      }
+    })
+    expect(options.status).toBe(200)
+
+    const unknown = await fetch(`${origin}/_text_search/failures`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ operation: "unknown" })
+    })
+    expect(unknown.status).toBe(422)
+    expect(await (await fetch(`${origin}/_text_search/failures`)).json()).toEqual({
+      failures: ["count"]
+    })
+  })
+
+  test("applies independent per-query and per-title-filter delays then resets them", async () => {
+    for (const control of [
+      { operation: "results", selector: "overflow", delay: 80 },
+      { operation: "results", selector: "inga", delay: 0 },
+      { operation: "options", selector: "lager", delay: 70 }
+    ]) {
+      const response = await fetch(`${origin}/_text_search/delays`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(control)
+      })
+      expect(response.status).toBe(200)
+    }
+
+    const completionOrder: string[] = []
+    await Promise.all([
+      postTextSearchResults(textSearchResultsRequest("overflow")).then(() => {
+        completionOrder.push("overflow")
+      }),
+      postTextSearchResults(textSearchResultsRequest("inga")).then(() => {
+        completionOrder.push("inga")
+      })
+    ])
+    expect(completionOrder).toEqual(["inga", "overflow"])
+
+    const optionCompletionOrder: string[] = []
+    await Promise.all([
+      postTextSearch("options", textSearchOptionsRequest("lager")).then(() => {
+        optionCompletionOrder.push("lager")
+      }),
+      postTextSearch("options", textSearchOptionsRequest("inga")).then(() => {
+        optionCompletionOrder.push("inga")
+      })
+    ])
+    expect(optionCompletionOrder).toEqual(["inga", "lager"])
+
+    await fetch(`${origin}/_text_search/delays/results`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_text_search/delays`)).json()).toEqual({
+      delays: {
+        results: {},
+        count: {},
+        options: { lager: 70 }
+      }
+    })
   })
 
   test("records and resets Quick Search queries without changing the general request ledger", async () => {

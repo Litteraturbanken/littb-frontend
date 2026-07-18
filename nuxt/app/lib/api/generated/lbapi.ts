@@ -157,6 +157,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/text-search/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Text Search Count */
+        post: operations["v2_post_text_search_count"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/text-search/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Text Search Options */
+        post: operations["v2_post_text_search_options"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/text-search/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Text Search Results */
+        post: operations["v2_post_text_search_results"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/works/{work_id}/search-hits": {
         parameters: {
             query?: never;
@@ -570,6 +621,16 @@ export interface components {
             /** To Word Id */
             to_word_id: string;
         };
+        /** SearchLegacyFilter */
+        SearchLegacyFilter: {
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "author_ids" | "keyword" | "language" | "main_author.gender" | "mediatype" | "modernized" | "proofread" | "provenance.library" | "source" | "texttype";
+            /** Value */
+            value: string;
+        };
         /** StatsResponse */
         StatsResponse: {
             /** Authors */
@@ -580,6 +641,288 @@ export interface components {
             words: components["schemas"]["MediaCounts"];
             /** Works */
             works: number;
+        };
+        /** TextSearchAuthorFacet */
+        TextSearchAuthorFacet: {
+            /** Author Id */
+            author_id: string;
+            /** Count */
+            count: number;
+            /** Name For Index */
+            name_for_index: string;
+        };
+        /** TextSearchAuthorOption */
+        TextSearchAuthorOption: {
+            /** Author Id */
+            author_id: string;
+            /** Birth Year */
+            birth_year: string | null;
+            /** Death Year */
+            death_year: string | null;
+            /** Name For Index */
+            name_for_index: string;
+        };
+        /** TextSearchCountRequest */
+        TextSearchCountRequest: {
+            /** About Author Ids */
+            about_author_ids?: string[];
+            /** Author Ids */
+            author_ids?: string[];
+            /** Categories */
+            categories?: ("texttype:brev;brevsamling" | "texttype:drama;dramasamling" | "texttype:essä;essäsamling" | "texttype:novellsamling;novell" | "texttype:diktsamling;dikt" | "texttype:roman" | "texttype:sakprosa;kringtexter;avhandling;referensverk" | "keyword:Barnlitteratur" | "keyword:Biografika|texttype:brev;brevsamling" | "keyword:Finlandssvenskt" | "keyword:Flickböcker" | "texttype:herdaminne" | "keyword:Humor" | "texttype:kistebrev" | "texttype:kringtext" | "texttype:kåseri;kåserisamling" | "texttype:reseskildring" | "keyword:Rösträtt" | "keyword:Sapmi" | "keyword:Folktryck" | "keyword:sentpajorden" | "keyword:OrdenPrövas" | "keyword:LB-antologi" | "keyword:1800" | "source:bibliotekariesidor" | "source:diktensmuseum" | "keyword:Dramawebben" | "source:skolan" | "source:litteraturkartan" | "source:ljudochbild" | "source:sol" | "keyword:SLS-FI" | "provenance.library:SVELITT" | "provenance.library:SA" | "provenance.library:SFS" | "provenance.library:SVA" | "author_ids:KunglSamfundet" | "provenance.library:SVS")[];
+            /** Facet Author Id */
+            facet_author_id?: string | null;
+            /** Gender */
+            gender?: ("female" | "male") | null;
+            /**
+             * Include Modernized
+             * @default true
+             */
+            include_modernized: boolean;
+            /** Languages */
+            languages?: ("modernized:true" | "modernized:false" | "translation:true" | "original:true" | "language:swe" | "foreign:true" | "language:eng" | "language:deu" | "language:fra" | "language:lat" | "language:smi" | "proofread:true" | "proofread:false")[];
+            /** Legacy Filters */
+            legacy_filters?: components["schemas"]["SearchLegacyFilter"][];
+            /**
+             * Prefix
+             * @default false
+             */
+            prefix: boolean;
+            /** Query */
+            query: string;
+            /**
+             * Suffix
+             * @default false
+             */
+            suffix: boolean;
+            /**
+             * Word Form Only
+             * @default true
+             */
+            word_form_only: boolean;
+            /** Work Ids */
+            work_ids?: string[];
+            /** Year From */
+            year_from?: number | null;
+            /** Year To */
+            year_to?: number | null;
+        };
+        /** TextSearchCountResponse */
+        TextSearchCountResponse: {
+            /** Query */
+            query: string;
+            /** Total Documents */
+            total_documents: number;
+            /** Total Highlights */
+            total_highlights: number;
+        };
+        /** TextSearchHighlight */
+        TextSearchHighlight: {
+            /** Left Context */
+            left_context: components["schemas"]["TextSearchWord"][];
+            /** Match */
+            match: components["schemas"]["TextSearchWord"][];
+            /** Right Context */
+            right_context: components["schemas"]["TextSearchWord"][];
+        };
+        /** TextSearchOptionsRequest */
+        TextSearchOptionsRequest: {
+            /** About Author Ids */
+            about_author_ids?: string[];
+            /** Author Ids */
+            author_ids?: string[];
+            /** Categories */
+            categories?: ("texttype:brev;brevsamling" | "texttype:drama;dramasamling" | "texttype:essä;essäsamling" | "texttype:novellsamling;novell" | "texttype:diktsamling;dikt" | "texttype:roman" | "texttype:sakprosa;kringtexter;avhandling;referensverk" | "keyword:Barnlitteratur" | "keyword:Biografika|texttype:brev;brevsamling" | "keyword:Finlandssvenskt" | "keyword:Flickböcker" | "texttype:herdaminne" | "keyword:Humor" | "texttype:kistebrev" | "texttype:kringtext" | "texttype:kåseri;kåserisamling" | "texttype:reseskildring" | "keyword:Rösträtt" | "keyword:Sapmi" | "keyword:Folktryck" | "keyword:sentpajorden" | "keyword:OrdenPrövas" | "keyword:LB-antologi" | "keyword:1800" | "source:bibliotekariesidor" | "source:diktensmuseum" | "keyword:Dramawebben" | "source:skolan" | "source:litteraturkartan" | "source:ljudochbild" | "source:sol" | "keyword:SLS-FI" | "provenance.library:SVELITT" | "provenance.library:SA" | "provenance.library:SFS" | "provenance.library:SVA" | "author_ids:KunglSamfundet" | "provenance.library:SVS")[];
+            /** Facet Author Id */
+            facet_author_id?: string | null;
+            /** Gender */
+            gender?: ("female" | "male") | null;
+            /**
+             * Include Modernized
+             * @default true
+             */
+            include_modernized: boolean;
+            /**
+             * Include Static Options
+             * @default true
+             */
+            include_static_options: boolean;
+            /** Languages */
+            languages?: ("modernized:true" | "modernized:false" | "translation:true" | "original:true" | "language:swe" | "foreign:true" | "language:eng" | "language:deu" | "language:fra" | "language:lat" | "language:smi" | "proofread:true" | "proofread:false")[];
+            /** Legacy Filters */
+            legacy_filters?: components["schemas"]["SearchLegacyFilter"][];
+            /**
+             * Prefix
+             * @default false
+             */
+            prefix: boolean;
+            /** Query */
+            query?: string | null;
+            /** Selected Work Ids */
+            selected_work_ids?: string[];
+            /**
+             * Suffix
+             * @default false
+             */
+            suffix: boolean;
+            /**
+             * Title Filter
+             * @default
+             */
+            title_filter: string;
+            /**
+             * Title Limit
+             * @default 30
+             * @enum {integer}
+             */
+            title_limit: 0 | 30 | 500;
+            /**
+             * Word Form Only
+             * @default true
+             */
+            word_form_only: boolean;
+            /** Work Ids */
+            work_ids?: string[];
+            /** Year From */
+            year_from?: number | null;
+            /** Year To */
+            year_to?: number | null;
+        };
+        /** TextSearchOptionsResponse */
+        TextSearchOptionsResponse: {
+            /** About Authors */
+            about_authors: components["schemas"]["TextSearchAuthorOption"][];
+            /** Authors */
+            authors: components["schemas"]["TextSearchAuthorOption"][];
+            /** Title Author Facets */
+            title_author_facets: components["schemas"]["TextSearchAuthorFacet"][];
+            /** Title Options */
+            title_options: components["schemas"]["TextSearchTitleOption"][];
+            /** Title Total */
+            title_total: number;
+            /** Year From */
+            year_from?: number | null;
+            /** Year To */
+            year_to?: number | null;
+        };
+        /** TextSearchResponse */
+        TextSearchResponse: {
+            /** Author Facets */
+            author_facets: components["schemas"]["TextSearchAuthorFacet"][];
+            /** Page */
+            page: number;
+            /**
+             * Page Size
+             * @constant
+             */
+            page_size: 30;
+            /** Query */
+            query: string;
+            /** Total Work Hits */
+            total_work_hits: number;
+            /** Works */
+            works: components["schemas"]["TextSearchWork"][];
+        };
+        /** TextSearchResultsRequest */
+        TextSearchResultsRequest: {
+            /** About Author Ids */
+            about_author_ids?: string[];
+            /** Author Ids */
+            author_ids?: string[];
+            /** Categories */
+            categories?: ("texttype:brev;brevsamling" | "texttype:drama;dramasamling" | "texttype:essä;essäsamling" | "texttype:novellsamling;novell" | "texttype:diktsamling;dikt" | "texttype:roman" | "texttype:sakprosa;kringtexter;avhandling;referensverk" | "keyword:Barnlitteratur" | "keyword:Biografika|texttype:brev;brevsamling" | "keyword:Finlandssvenskt" | "keyword:Flickböcker" | "texttype:herdaminne" | "keyword:Humor" | "texttype:kistebrev" | "texttype:kringtext" | "texttype:kåseri;kåserisamling" | "texttype:reseskildring" | "keyword:Rösträtt" | "keyword:Sapmi" | "keyword:Folktryck" | "keyword:sentpajorden" | "keyword:OrdenPrövas" | "keyword:LB-antologi" | "keyword:1800" | "source:bibliotekariesidor" | "source:diktensmuseum" | "keyword:Dramawebben" | "source:skolan" | "source:litteraturkartan" | "source:ljudochbild" | "source:sol" | "keyword:SLS-FI" | "provenance.library:SVELITT" | "provenance.library:SA" | "provenance.library:SFS" | "provenance.library:SVA" | "author_ids:KunglSamfundet" | "provenance.library:SVS")[];
+            /** Facet Author Id */
+            facet_author_id?: string | null;
+            /** Gender */
+            gender?: ("female" | "male") | null;
+            /**
+             * Highlight Limit
+             * @default 5
+             */
+            highlight_limit: number;
+            /**
+             * Include Modernized
+             * @default true
+             */
+            include_modernized: boolean;
+            /** Languages */
+            languages?: ("modernized:true" | "modernized:false" | "translation:true" | "original:true" | "language:swe" | "foreign:true" | "language:eng" | "language:deu" | "language:fra" | "language:lat" | "language:smi" | "proofread:true" | "proofread:false")[];
+            /** Legacy Filters */
+            legacy_filters?: components["schemas"]["SearchLegacyFilter"][];
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 30
+             * @constant
+             */
+            page_size: 30;
+            /**
+             * Prefix
+             * @default false
+             */
+            prefix: boolean;
+            /** Query */
+            query: string;
+            /**
+             * Suffix
+             * @default false
+             */
+            suffix: boolean;
+            /**
+             * Word Form Only
+             * @default true
+             */
+            word_form_only: boolean;
+            /** Work Ids */
+            work_ids?: string[];
+            /** Year From */
+            year_from?: number | null;
+            /** Year To */
+            year_to?: number | null;
+        };
+        /** TextSearchTitleOption */
+        TextSearchTitleOption: {
+            /** Author Name */
+            author_name: string;
+            /** Title */
+            title: string;
+            /** Work Id */
+            work_id: string;
+        };
+        /** TextSearchWord */
+        TextSearchWord: {
+            /** Page Name */
+            page_name: string;
+            /** Word */
+            word: string;
+            /** Word Id */
+            word_id: string;
+        };
+        /** TextSearchWork */
+        TextSearchWork: {
+            /** Author Id */
+            author_id: string;
+            /** Author Name */
+            author_name: string;
+            /** Has More Highlights */
+            has_more_highlights: boolean;
+            /** Highlights */
+            highlights: components["schemas"]["TextSearchHighlight"][];
+            /** Lbworkid */
+            lbworkid: string;
+            /**
+             * Mediatype
+             * @enum {string}
+             */
+            mediatype: "etext" | "faksimil";
+            /** Title */
+            title: string;
+            /** Title Id */
+            title_id: string;
         };
         /** WorkLookupByIdRequest */
         WorkLookupByIdRequest: {
@@ -1126,6 +1469,159 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatsResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_text_search_count: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextSearchCountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextSearchCountResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_text_search_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextSearchOptionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextSearchOptionsResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_text_search_results: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextSearchResultsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextSearchResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Unexpected server error */

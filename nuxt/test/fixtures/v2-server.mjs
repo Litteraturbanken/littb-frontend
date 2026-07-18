@@ -152,6 +152,11 @@ let legacyAuthorRouteRequests = []
 let legacyAuthorRouteFailure = null
 let authorDocumentPdfRequests = []
 let authorDocumentRedirectTargetRequests = []
+let textSearchRequests = { results: [], count: [], options: [] }
+let textSearchFailures = new Set()
+let textSearchDelays = { results: {}, count: {}, options: {} }
+
+const textSearchOperations = new Set(["results", "count", "options"])
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -257,6 +262,15 @@ function waitForReaderMetadataDelay(titlePath) {
 
 function waitForAuthorDocumentDelay() {
   return new Promise(resolve => setTimeout(resolve, authorDocumentDelay))
+}
+
+function textSearchSelector(operation, body) {
+  return operation === "options" ? body.title_filter : body.query
+}
+
+function waitForTextSearchDelay(operation, body) {
+  const delay = textSearchDelays[operation][textSearchSelector(operation, body)] || 0
+  return new Promise(resolve => setTimeout(resolve, delay))
 }
 
 function readerRepresentation(titlePath, overrides = {}) {
@@ -380,6 +394,133 @@ function validationError(response) {
       details: null
     }
   })
+}
+
+const textSearchCategories = new Set([
+  "texttype:brev;brevsamling", "texttype:drama;dramasamling",
+  "texttype:essä;essäsamling", "texttype:novellsamling;novell",
+  "texttype:diktsamling;dikt", "texttype:roman",
+  "texttype:sakprosa;kringtexter;avhandling;referensverk",
+  "keyword:Barnlitteratur", "keyword:Biografika|texttype:brev;brevsamling",
+  "keyword:Finlandssvenskt", "keyword:Flickböcker", "texttype:herdaminne",
+  "keyword:Humor", "texttype:kistebrev", "texttype:kringtext",
+  "texttype:kåseri;kåserisamling", "texttype:reseskildring",
+  "keyword:Rösträtt", "keyword:Sapmi", "keyword:Folktryck",
+  "keyword:sentpajorden", "keyword:OrdenPrövas", "keyword:LB-antologi",
+  "keyword:1800", "source:bibliotekariesidor", "source:diktensmuseum",
+  "keyword:Dramawebben", "source:skolan", "source:litteraturkartan",
+  "source:ljudochbild", "source:sol", "keyword:SLS-FI",
+  "provenance.library:SVELITT", "provenance.library:SA",
+  "provenance.library:SFS", "provenance.library:SVA",
+  "author_ids:KunglSamfundet", "provenance.library:SVS"
+])
+const textSearchLanguages = new Set([
+  "modernized:true", "modernized:false", "translation:true", "original:true",
+  "language:swe", "foreign:true", "language:eng", "language:deu",
+  "language:fra", "language:lat", "language:smi", "proofread:true",
+  "proofread:false"
+])
+const textSearchLegacyFields = new Set([
+  "author_ids", "keyword", "language", "main_author.gender", "mediatype",
+  "modernized", "proofread", "provenance.library", "source", "texttype"
+])
+const textSearchCommonFields = new Set([
+  "about_author_ids", "author_ids", "categories", "facet_author_id", "gender",
+  "include_modernized", "languages", "legacy_filters", "prefix", "query",
+  "suffix", "word_form_only", "work_ids", "year_from", "year_to"
+])
+
+function validBoundedString(value, maximum = 100, allowEmpty = false) {
+  return typeof value === "string" && value.length <= maximum &&
+    (allowEmpty || value.length >= 1)
+}
+
+function validStringArray(value, maximum, allowed = null) {
+  return Array.isArray(value) && value.length <= maximum && value.every(item => (
+    validBoundedString(item) && (allowed === null || allowed.has(item))
+  ))
+}
+
+function validTextSearchCommon(body) {
+  if (
+    typeof body.include_modernized !== "boolean" || typeof body.prefix !== "boolean"
+    || typeof body.suffix !== "boolean" || typeof body.word_form_only !== "boolean"
+  ) return false
+  for (const field of ["about_author_ids", "author_ids", "work_ids"]) {
+    if (Object.hasOwn(body, field) && !validStringArray(body[field], 50)) return false
+  }
+  if (
+    Object.hasOwn(body, "categories")
+    && !validStringArray(body.categories, 38, textSearchCategories)
+  ) return false
+  if (
+    Object.hasOwn(body, "languages")
+    && !validStringArray(body.languages, 13, textSearchLanguages)
+  ) return false
+  if (
+    Object.hasOwn(body, "facet_author_id") && body.facet_author_id !== null
+    && !validBoundedString(body.facet_author_id)
+  ) return false
+  if (
+    Object.hasOwn(body, "gender") && body.gender !== null
+    && body.gender !== "female" && body.gender !== "male"
+  ) return false
+  if (Object.hasOwn(body, "legacy_filters")) {
+    if (!Array.isArray(body.legacy_filters) || body.legacy_filters.length > 20) return false
+    for (const filter of body.legacy_filters) {
+      if (
+        filter === null || typeof filter !== "object" || Array.isArray(filter)
+        || Object.keys(filter).length !== 2 || !textSearchLegacyFields.has(filter.field)
+        || !validBoundedString(filter.value, 200)
+      ) return false
+    }
+  }
+  for (const field of ["year_from", "year_to"]) {
+    if (
+      Object.hasOwn(body, field) && body[field] !== null
+      && (!Number.isInteger(body[field]) || body[field] < 1000 || body[field] > 2200)
+    ) return false
+  }
+  return true
+}
+
+function validTextSearchBody(operation, body) {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) return false
+  const allowed = new Set(textSearchCommonFields)
+  if (operation === "results") {
+    allowed.add("highlight_limit")
+    allowed.add("page")
+    allowed.add("page_size")
+  }
+  if (operation === "options") {
+    allowed.add("include_static_options")
+    allowed.add("selected_work_ids")
+    allowed.add("title_filter")
+    allowed.add("title_limit")
+  }
+  if (Object.keys(body).some(field => !allowed.has(field))) return false
+  if (!validTextSearchCommon(body)) return false
+
+  if (operation === "results" || operation === "count") {
+    if (!validBoundedString(body.query, 200)) return false
+  } else if (
+    Object.hasOwn(body, "query") && body.query !== null
+    && !validBoundedString(body.query, 200)
+  ) return false
+
+  if (operation === "results") {
+    return Number.isInteger(body.highlight_limit) && body.highlight_limit >= 5
+      && body.highlight_limit <= 500 && Number.isInteger(body.page)
+      && body.page >= 1 && body.page <= 10_000 && body.page_size === 30
+  }
+  if (operation === "options") {
+    return typeof body.include_static_options === "boolean"
+      && validBoundedString(body.title_filter, 200, true)
+      && [0, 30, 500].includes(body.title_limit)
+      && (!Object.hasOwn(body, "selected_work_ids")
+        || validStringArray(body.selected_work_ids, 50))
+  }
+  return true
 }
 
 function decodedReaderHitWorkId(pathname) {
@@ -576,6 +717,160 @@ function isPresentationRequest(pathname) {
     pathname === "/app/style/date.css"
 }
 
+function richTextSearchResponse(body) {
+  return {
+    query: body.query,
+    page: body.page,
+    page_size: 30,
+    total_work_hits: 2,
+    author_facets: [
+      { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 1 },
+      { author_id: "LagerlöfS", name_for_index: "Lagerlöf, Selma", count: 1 }
+    ],
+    works: [
+      {
+        lbworkid: "lb238704",
+        author_id: "StrindbergA",
+        author_name: "August Strindberg",
+        title: "Röda rummet",
+        title_id: "RodaRummet",
+        mediatype: "etext",
+        has_more_highlights: false,
+        highlights: [{
+          left_context: [{ word: "ropade", word_id: "w10", page_name: "1" }],
+          match: [{ word: "frihet", word_id: "w11", page_name: "1" }],
+          right_context: [{ word: "och", word_id: "w12", page_name: "1" }]
+        }]
+      },
+      {
+        lbworkid: "lb278171",
+        author_id: "LagerlöfS",
+        author_name: "Selma Lagerlöf",
+        title: "Gösta Berlings saga",
+        title_id: "GostaBerlingsSaga",
+        mediatype: "faksimil",
+        has_more_highlights: true,
+        highlights: [{
+          left_context: [{ word: "sin", word_id: "w20", page_name: "3" }],
+          match: [{ word: "frihet", word_id: "w21", page_name: "3" }],
+          right_context: [{ word: "sökte", word_id: "w22", page_name: "3" }]
+        }]
+      }
+    ]
+  }
+}
+
+function textSearchResultsResponse(body) {
+  if (body.query === "inga") {
+    return {
+      query: body.query,
+      page: body.page,
+      page_size: 30,
+      total_work_hits: 0,
+      author_facets: [],
+      works: []
+    }
+  }
+  const rich = richTextSearchResponse(body)
+  if (body.query === "overflow") {
+    rich.total_work_hits = 64
+    rich.works[0].has_more_highlights = true
+    rich.author_facets[0].count = 41
+    rich.author_facets[1].count = 23
+  }
+  return rich
+}
+
+function textSearchCountResponse(body) {
+  if (body.query === "inga") {
+    return { query: body.query, total_documents: 0, total_highlights: 0 }
+  }
+  if (body.query === "overflow") {
+    return { query: body.query, total_documents: 64, total_highlights: 512 }
+  }
+  return { query: body.query, total_documents: 2, total_highlights: 3 }
+}
+
+const textSearchTitleCatalog = [
+  {
+    option: { work_id: "lb238704", title: "Röda rummet", author_name: "August Strindberg" },
+    facet: { author_id: "StrindbergA", name_for_index: "Strindberg, August", count: 1 }
+  },
+  {
+    option: { work_id: "lb278171", title: "Gösta Berlings saga", author_name: "Selma Lagerlöf" },
+    facet: { author_id: "LagerlöfS", name_for_index: "Lagerlöf, Selma", count: 1 }
+  }
+]
+
+function textSearchOptionsResponse(body) {
+  const titleFilter = body.title_filter.toLocaleLowerCase("sv")
+  if (titleFilter === "overflow") {
+    return {
+      authors: [],
+      about_authors: [],
+      title_options: Array.from({ length: 30 }, (_, index) => ({
+        work_id: `lb-overflow-${index + 1}`,
+        title: `Överflödestitel ${index + 1}`,
+        author_name: "Test Överflöd"
+      })),
+      title_author_facets: [{
+        author_id: "OverflowAuthor",
+        name_for_index: "Överflöd, Test",
+        count: 731
+      }],
+      title_total: 731,
+      year_from: null,
+      year_to: null
+    }
+  }
+
+  let matching = titleFilter === "inga"
+    ? []
+    : titleFilter.includes("lager")
+      ? [textSearchTitleCatalog[1]]
+      : [...textSearchTitleCatalog]
+  const titleTotal = matching.length
+  for (const selectedWorkId of body.selected_work_ids || []) {
+    const selected = textSearchTitleCatalog.find(item => item.option.work_id === selectedWorkId)
+    if (selected && !matching.some(item => item.option.work_id === selectedWorkId)) {
+      matching.push(selected)
+    }
+  }
+
+  const visible = body.title_limit === 0 ? [] : matching.slice(0, body.title_limit)
+  const authors = body.include_static_options
+    ? [{
+        author_id: "LagerlöfS",
+        name_for_index: "Lagerlöf, Selma",
+        birth_year: "1858",
+        death_year: "1940"
+      }]
+    : []
+  const aboutAuthors = body.include_static_options
+    ? [{
+        author_id: "StrindbergA",
+        name_for_index: "Strindberg, August",
+        birth_year: "1849",
+        death_year: "1912"
+      }]
+    : []
+  return {
+    authors,
+    about_authors: aboutAuthors,
+    title_options: visible.map(item => item.option),
+    title_author_facets: visible.map(item => item.facet),
+    title_total: titleTotal,
+    year_from: matching.length ? 1849 : null,
+    year_to: matching.length ? 1940 : null
+  }
+}
+
+function textSearchResponse(operation, body) {
+  if (operation === "results") return textSearchResultsResponse(body)
+  if (operation === "count") return textSearchCountResponse(body)
+  return textSearchOptionsResponse(body)
+}
+
 const server = createServer(async (request, response) => {
   const rawPathname = request.url.split("?", 1)[0]
   const url = new URL(request.url, `http://${request.headers.host}`)
@@ -585,6 +880,82 @@ const server = createServer(async (request, response) => {
   if (request.method === "OPTIONS") return sendJson(response, 204, null)
   if (request.method === "GET" && url.pathname === "/health") {
     return sendJson(response, 200, { ok: true })
+  }
+  const textSearchControlMatch = /^\/_text_search\/(requests|failures|delays)(?:\/([^/]+))?$/.exec(
+    url.pathname
+  )
+  if (textSearchControlMatch) {
+    const [, control, selectedOperation] = textSearchControlMatch
+    if (selectedOperation && !textSearchOperations.has(selectedOperation)) {
+      return validationError(response)
+    }
+    if (control === "requests") {
+      if (request.method === "GET") {
+        return selectedOperation
+          ? sendJson(response, 200, { requests: textSearchRequests[selectedOperation] })
+          : sendJson(response, 200, textSearchRequests)
+      }
+      if (request.method === "DELETE") {
+        if (selectedOperation) textSearchRequests[selectedOperation] = []
+        else textSearchRequests = { results: [], count: [], options: [] }
+        return selectedOperation
+          ? sendJson(response, 200, { requests: textSearchRequests[selectedOperation] })
+          : sendJson(response, 200, textSearchRequests)
+      }
+    }
+    if (control === "failures") {
+      if (request.method === "GET" && !selectedOperation) {
+        return sendJson(response, 200, { failures: [...textSearchFailures] })
+      }
+      if (request.method === "PUT" && !selectedOperation) {
+        let body
+        try {
+          body = await readJson(request)
+        } catch {
+          return validationError(response)
+        }
+        if (
+          body === null || typeof body !== "object" || Array.isArray(body)
+          || Object.keys(body).length !== 1 || !textSearchOperations.has(body.operation)
+        ) return validationError(response)
+        textSearchFailures.add(body.operation)
+        return sendJson(response, 200, { failures: [...textSearchFailures] })
+      }
+      if (request.method === "DELETE") {
+        if (selectedOperation) textSearchFailures.delete(selectedOperation)
+        else textSearchFailures = new Set()
+        return sendJson(response, 200, { failures: [...textSearchFailures] })
+      }
+    }
+    if (control === "delays") {
+      if (request.method === "GET" && !selectedOperation) {
+        return sendJson(response, 200, { delays: textSearchDelays })
+      }
+      if (request.method === "PUT" && !selectedOperation) {
+        let body
+        try {
+          body = await readJson(request)
+        } catch {
+          return validationError(response)
+        }
+        if (
+          body === null || typeof body !== "object" || Array.isArray(body)
+          || Object.keys(body).length !== 3 || !textSearchOperations.has(body.operation)
+          || !validBoundedString(body.selector, 200, true)
+          || !Number.isInteger(body.delay) || body.delay < 0 || body.delay > 5000
+        ) return validationError(response)
+        textSearchDelays[body.operation][body.selector] = body.delay
+        return sendJson(response, 200, { delays: textSearchDelays })
+      }
+      if (request.method === "DELETE") {
+        if (selectedOperation) textSearchDelays[selectedOperation] = {}
+        else textSearchDelays = { results: {}, count: {}, options: {} }
+        return sendJson(response, 200, { delays: textSearchDelays })
+      }
+    }
+    return sendJson(response, 405, {
+      error: { code: "method_not_allowed", message: "Method not allowed", details: null }
+    })
   }
   if (url.pathname === "/_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests })
@@ -1278,6 +1649,46 @@ const server = createServer(async (request, response) => {
       })
     }
     return sendJson(response, 200, quickSearchResponse(query))
+  }
+
+  const textSearchMatch = /^\/v2\/text-search\/(results|count|options)$/.exec(apiPathname)
+  if (textSearchMatch) {
+    const operation = textSearchMatch[1]
+    if (request.method !== "POST") {
+      return sendJson(response, 405, {
+        error: { code: "method_not_allowed", message: "Method not allowed", details: null }
+      })
+    }
+    if (!request.headers["content-type"]?.toLowerCase().startsWith("application/json")) {
+      return validationError(response)
+    }
+    let body
+    try {
+      body = await readJson(request)
+    } catch {
+      return sendJson(response, 400, {
+        error: { code: "invalid_json", message: "Malformed JSON body", details: null }
+      })
+    }
+    if (!validTextSearchBody(operation, body)) return validationError(response)
+
+    textSearchRequests[operation].push({ method: request.method, path: url.pathname, body })
+    await waitForTextSearchDelay(operation, body)
+    if (textSearchFailures.has(operation)) {
+      const messages = {
+        results: "Unable to load text-search results",
+        count: "Unable to count text-search results",
+        options: "Unable to load text-search options"
+      }
+      return sendJson(response, 503, {
+        error: {
+          code: `text_search_${operation}_unavailable`,
+          message: messages[operation],
+          details: null
+        }
+      })
+    }
+    return sendJson(response, 200, textSearchResponse(operation, body))
   }
 
   if (request.method === "POST" && apiPathname === "/v2/works/lookup") {
