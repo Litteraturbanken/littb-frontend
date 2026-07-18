@@ -4,48 +4,48 @@
 
 ## Goal and scope
 
-Port the two managed author-document routes to Nuxt without changing their
-editorial content, layout, or ordinary link behavior:
+Port these managed author-document routes to Nuxt without changing their
+editorial content, layout, navigation, or ordinary link/download behavior:
 
 - `/författare/:author/presentation`;
 - `/författare/:author/bibliografi`.
 
-Angular is the behavioral and visual authority. It loads the author record,
-uses `authorid_norm` to request
-`/red/forfattare/{authorid_norm}/{document}/index.html`, extracts the document
-body, and inserts it as `.page_content > .content.unbox` under the ordinary
-author heading and navigation. Nuxt will continue to fetch that managed XHTML
-from the same `/red` source. The XHTML is not copied into a Vue component and
-is not replaced with placeholder copy.
+Angular is the authority. It loads the author record, uses `authorid_norm` to
+request `/red/forfattare/{authorid_norm}/{document}/index.html`, extracts the
+body, and inserts it as `.page_content > .content.unbox` beneath the ordinary
+author heading and navigation. Nuxt continues to fetch that managed XHTML from
+the same `/red` source; it is not copied into Vue production code.
 
-This slice does not include `/semer`, `/omtexterna`, SLA documents, the legacy
-footnote popover, Ljud discovery, or any redesign. It adds no dropdown or modal,
-so no Headless UI component is needed. Tailwind is used only where the current
-author template already uses equivalent utility classes.
+The slice includes the permanent normalized-link boundary needed by this
+managed corpus. XHTML uses legacy URLs such as
+`/forfattare/SoderbergH/titlar/Forvillelser/sida/3/etext`; Angular resolves both
+normalized IDs before changing the prefix. Nuxt must do the same. This is not
+an Angular/Vue bridge: `/forfattare/**` remains a supported managed-content
+input and redirects to the canonical Nuxt `/författare/**` route.
 
-## Considered approaches
+Ljud discovery is included because both selected authority authors have a live
+audio page and Angular displays Ljud between Verk and Dramawebben. `/semer`,
+`/omtexterna`, SLA documents, and deployment caching remain separate work. The
+footnote popover remains deferred only because the two frozen authority XHTML
+documents contain no interactive footnote references and Angular builds no
+`noteMapping` for presentation/bibliography. A corpus audit and separate design
+are required before claiming every other author document behaviorally complete.
+There is no dropdown/modal in this slice, so Headless UI is not added.
 
-1. **Recommended: typed descriptor plus a Nitro content adapter.** FastAPI
-   returns a narrow, generated descriptor containing the author shell and the
-   validated `/red` source path. A same-origin Nitro endpoint fetches the XHTML,
-   extracts and sanitizes its body, and returns a strict page payload. This
-   keeps `authorid_norm` and the upstream origin server-side, gives SSR and SPA
-   navigation one boundary, and prevents raw active markup from entering the
-   Nuxt payload.
-2. Extend `AuthorProfile` and let the page fetch `/red` directly. This is fewer
-   files, but it over-fetches introductions and portraits, exposes the source
-   path to two request implementations, and makes status/sanitizer behavior
-   easier to diverge between server and browser.
-3. Make FastAPI fetch and return the XHTML. This produces one typed operation
-   but couples the search API to the static-content service and transfers an
-   editorial document through a service that otherwise owns metadata.
+## Selected architecture
 
-Approach 1 is selected. It is the smallest boundary that is strict, SSR-safe,
-testable, and faithful to the existing content source.
+Three approaches were considered: direct page fetches from `/red`, returning
+XHTML through FastAPI, and a typed descriptor plus a Nitro content adapter. The
+third remains selected. FastAPI owns public/normalized IDs, conditional author
+navigation, Ljud discovery, and legacy-route resolution. Nitro owns the private
+content origin, strict source-path equality, XHTML extraction/sanitization, and
+local 404/502 translation. The page owns its single page-local fetch and route
+identity. This keeps the slice narrow without duplicating model logic or
+allowing raw active markup into hydration state.
 
-## Typed backend descriptor
+## FastAPI contracts
 
-FastAPI adds:
+### Document descriptor
 
 ```text
 GET /v2/authors/{author_id}/documents/{document_kind}
@@ -55,169 +55,229 @@ AuthorDocumentKind = "presentation" | "bibliografi"
 
 AuthorDocumentDescriptor
   author_id: string
+  normalized_author_id: string
   full_name: string
   birth_year: string | null
   death_year: string | null
   has_introduction: boolean
   has_dramawebben: boolean
   search_url: string | null
+  audio_url: string | null
   document_kind: AuthorDocumentKind
   source_path: string
 ```
 
-The model forbids extra fields and requires every key. The provider performs
-one exact `authorid.raw` lookup with a limit of two and only the fields needed
-above: `authorid`, `authorid_norm`, `show`, `full_name`, `birth.plain`,
-`death.plain`, `intro`, the `dramawebben` object, and `searchable`. Hidden, absent,
-duplicate-exact, mismatched, or malformed records retain the established author
-API behavior: missing is 404, invalid path input is 422, malformed data is a
-non-leaking 500, and OpenSearch unavailability is typed 503.
+Every key is required and extras are forbidden. One exact `authorid.raw` query
+selects only `authorid`, `authorid_norm`, `show`, `full_name`, `birth.plain`,
+`death.plain`, `intro`, `dramawebben`, and `searchable`. The established
+fail-soft audio helper queries the normalized lowercase WordPress slug with a
+five-second timeout; any network/status/shape failure produces `audio_url:
+null`, never a document failure. The helper moves to a neutral module used by
+Author Works and this operation, avoiding circular imports without changing
+Author Works behavior.
 
-The descriptor does not gate direct access on the profile's `presentation` or
-`bibliography` flags. Angular attempts the managed-document request for any
-valid direct route; the static source's 404 remains authoritative. The source
-path is built only from independently validated `authorid_norm` and the literal
-document kind:
+The descriptor does not gate a direct route on `presentation` or
+`bibliography` flags. Angular attempts the file request for any valid direct
+route, so the static source's 404 remains authoritative. `normalized_author_id`
+is independently validated as a single raw segment. FastAPI constructs:
 
 ```text
-/red/forfattare/{RFC3986(authorid_norm)}/{document_kind}/index.html
+/red/forfattare/{RFC3986(normalized_author_id)}/{document_kind}/index.html
 ```
 
-This is also why reconstructing the source from the public route is forbidden:
-for example, public `SöderbergH` maps to normalized `SoderbergH` on `/red`.
+Hidden/missing authors return 404, invalid request values 422, OpenSearch
+failure typed 503, and malformed/ambiguous provider data a non-leaking 500.
 
-## Nuxt server boundary and data flow
+### Managed legacy-link resolver
 
-`GET /api/author-documents/{author}/{document}` is the only page data source.
-The handler validates the decoded author segment with the existing author-route
-validator and accepts only the two literal document kinds. It calls the
-generated FastAPI operation through the private `apiBase`, checks the complete
-descriptor at runtime, verifies that `author_id` and `document_kind` match the
-request, and verifies that `source_path` has the exact expected `/red` shape.
-It then fetches that path from the server-only `contentBase` with `retry: 0`.
-No public query string, cookies, authorization header, or caller-supplied origin
-is forwarded to either upstream.
+```text
+POST /v2/legacy-author-routes/resolve
+operationId: v2_post_legacy_author_route_resolve
 
-On success the handler returns:
+LegacyAuthorRouteRequest
+  normalized_author_id: string
+  normalized_title_id: string | null
+  media_type: "etext" | "faksimil" | null
+
+LegacyAuthorRouteResolution
+  author_id: string
+  title_id: string | null
+```
+
+The title/media fields must be both null or both non-null. The provider resolves
+the author with one exact `authorid_norm` keyword query selecting only
+`authorid`, and resolves a requested Reader title with one exact
+`titleid_norm` keyword query in the literal media index selecting only
+`titleid`. No analyzed query or caller-supplied index is accepted. Missing
+normalized IDs return 404; distinct duplicate canonical results and malformed
+data return non-leaking 500; OpenSearch failure returns typed 503.
+
+A Nitro server middleware handles only GET/HEAD paths beginning with the exact
+ASCII `/forfattare/` prefix. It accepts one safe author segment and optionally
+recognizes Angular's Reader shape
+`/forfattare/{author}/titlar/{title}/sida/{page}/{etext|faksimil}`. It calls the
+generated resolver privately, RFC3986-encodes returned canonical IDs, replaces
+only the identified segments, preserves remaining safe path segments and the
+raw query, and sends a 307 replace redirect. Resolver 404 becomes local 404;
+every other resolver/schema/identity failure becomes non-leaking 502. It never
+redirects `/författare/**`, so loops are impossible.
+
+The sanitizer preserves safe `/forfattare/**` hrefs byte-for-byte. It does not
+perform the route-breaking prefix-only rewrite. Tests prove:
+
+```text
+/forfattare/LagerlofS
+  -> /författare/LagerlöfS -> rendered Selma Lagerlöf profile
+
+/forfattare/SoderbergH/titlar/Forvillelser/sida/3/etext
+  -> /författare/SöderbergH/titlar/Förvillelser/sida/3/etext
+  -> rendered Förvillelser Reader content
+```
+
+## Strict Nitro document boundary
+
+`GET /api/author-documents/{author}/{document}` is the page's only data source.
+It validates the decoded author with the existing route validator and accepts
+only the two literal document kinds. It calls the generated descriptor through
+private `apiBase`; no request cookie, authorization header, public query, or
+caller-controlled origin is forwarded.
+
+The source contract is executable, not pattern-based. Nitro validates
+`normalized_author_id` as a raw 1–100-character segment: nonempty, unchanged by
+trim, not `.`/`..`, and containing no percent sign, slash, backslash, control,
+or DEL/C1 character. It computes:
+
+```text
+expected = "/red/forfattare/" + RFC3986(normalized_author_id)
+         + "/" + requested_document_kind + "/index.html"
+```
+
+`descriptor.author_id` and `descriptor.document_kind` must equal the decoded
+request, and `descriptor.source_path` must equal `expected` byte-for-byte.
+Only then may Nitro fetch `${serverOnlyContentBase}${expected}` with `retry: 0`.
+Thus absolute/protocol-relative paths, queries/fragments, wrong kind/identity,
+extra segments, controls, malformed `%`, encoded or repeatedly encoded dot/
+slash/backslash variants, and even safe-looking mismatches fail before any
+content-origin request.
+
+The successful shared payload is:
 
 ```text
 AuthorSupplementalPage
-  author: AuthorSupplementalAuthor
+  author
+    authorId: string
+    fullName: string
+    lifespan: string
+    hasIntroduction: boolean
+    hasDramawebben: boolean
+    searchUrl: string | null
+    audioUrl: string | null
   documentKind: "presentation" | "bibliografi"
   bodyHtml: string
-
-AuthorSupplementalAuthor
-  authorId: string
-  fullName: string
-  lifespan: string
-  hasIntroduction: boolean
-  hasDramawebben: boolean
-  searchUrl: string | null
 ```
 
-The response satisfies a shared TypeScript interface used by the handler and
-page. The handler sets `cache-control: no-store` for now; deployment caching is
-still deferred.
+The endpoint sets `cache-control: no-store`. Error codes and status are exact:
 
-Status mapping is deliberate:
+- descriptor backend 404 -> 404 `author_document_author_not_found`;
+- static content 404 -> 404 `author_document_not_found`;
+- backend 422/500/503, network failure, non-404 content failure, malformed
+  descriptor/identity/path, or missing/malformed body -> 502
+  `author_document_unavailable`.
 
-- backend author 404 -> HTTP 404, code `author_document_author_not_found`;
-- static document 404 -> HTTP 404, code `author_document_not_found`;
-- backend 422/500/503, network failure, wrong identity, malformed descriptor,
-  invalid source path, missing/malformed `<body>`, or non-404 content failure ->
-  HTTP 502, code `author_document_unavailable`.
-
-Error responses expose only these local codes and Swedish page copy; upstream
-URLs, bodies, and exception text are never serialized.
+Only those codes are serialized; upstream paths, bodies, and errors are not.
 
 ## Body extraction and sanitizer
 
-The Nitro adapter parses the complete XHTML with `linkedom`, requires one body,
-and returns only the body's children. It preserves the editorial structures
-used by the author corpus, including headings, paragraphs, inline emphasis,
-lists, definition lists, figures/images, tables, captions, separators, code,
-quotes, and existing CSS classes/IDs. The observed authority documents' nested
-heading and bibliography structure is not normalized or rewritten.
+`linkedom` must yield exactly one body. Nitro returns only its children and
+preserves the corpus's headings, paragraphs, inline emphasis, lists, definition
+lists, figures/images, tables/captions, separators, code/quotes, classes, IDs,
+and order. Unknown benign elements are unwrapped after their children are
+sanitized. Comments and active subtrees (`script`, `style`, forms, frames,
+embedded/object content, SVG/MathML, audio/video, templates, and controls) are
+removed entirely.
 
-Before serialization it:
+Allowed global attributes are `class`, `id`, `lang`, and `title`. Anchors may
+also retain `href`, `target`, `rel`, `name`, and `download`; images `src`, `alt`,
+`width`, and `height`; table cells `colspan`, `rowspan`, `headers`, and `scope`;
+`col`/`colgroup` `span`; ordered lists `start`, `reversed`, and `type`; list
+items `value`. Every event, `srcdoc`, framework directive, and inline style is
+removed.
 
-- removes comments and entire active subtrees such as `script`, `style`,
-  `iframe`, `object`, `embed`, `form`, controls, SVG/MathML, audio/video, and
-  templates;
-- removes event handlers, `srcdoc`, framework directives, inline styles, and
-  attributes outside an explicit per-element allowlist;
-- retains static global `class`, `id`, `lang`, and `title`; anchor
-  `href`, `target`, `rel`, `name`, and `download`; image `src`, `alt`, `width`,
-  and `height`; and structural table span/header attributes;
-- accepts fragments, safe relative/root-relative URLs, HTTP(S), `mailto:`, and
-  `tel:` for links, while image sources are limited to safe relative,
-  root-relative, or HTTPS URLs;
-- rejects controls, backslashes, repeated-decoding traversal,
-  protocol-relative URLs, malformed encodings, and active/custom schemes;
-- rewrites legacy `/forfattare/` links to `/författare/`; and
-- adds `noopener noreferrer` to retained `target="_blank"` anchors.
+URL validation repeatedly decodes at most 16 times and rejects failure,
+non-stabilization, controls, backslashes, traversal segments,
+protocol-relative values, and active/custom schemes. `href` accepts fragments,
+safe relative/root-relative paths, HTTP(S), `mailto:`, and `tel:`. `src` accepts
+only safe relative/root-relative and HTTPS URLs. Safe `/forfattare/**` values
+are preserved for the typed redirect boundary. Retained `_blank` anchors gain
+`noopener noreferrer`. Sanitization is deterministic and idempotent, and only
+sanitized `bodyHtml` reaches SSR or hydration.
 
-Sanitization is deterministic and idempotent. Only sanitized `bodyHtml` reaches
-SSR markup or the hydration payload.
+## Page, navigation, statuses, and copy
 
-## Page rendering and route changes
+One validated `pages/författare/[author]/[document].vue` owns both routes;
+static `mer`, `dramawebben`, and `titlar` remain more specific. It calls the
+same-origin endpoint directly in `<script setup>` through `useRequestFetch`—no
+one-use composable. A route-keyed lazy `useAsyncData` is awaited by SSR. The
+accepted payload includes `{author}:{documentKind}`, clears synchronously when
+either parameter changes, and ignores every late mismatched response.
 
-One validated dynamic page,
-`pages/författare/[author]/[document].vue`, owns both routes; Nuxt's static
-`mer`, `dramawebben`, and `titlar` pages remain more specific routes. The page
-fetches its model directly in `<script setup>` through `useRequestFetch`; there
-is no one-use composable. A route-keyed `useAsyncData` request is lazy for SPA
-transitions but awaited by SSR.
+Successful DOM follows Angular exactly: balanced heading/lifespan; Introduktion
+when present; Verk always; Ljud when `audioUrl` exists; Dramawebben when present;
+Sök i texterna when declared; no supplemental tab/current item; then
+`.page_content > .content.unbox` with the managed body. Ljud uses the returned
+absolute URL, `target="_blank"`, and Angular's position between Verk and
+Dramawebben. Body classes remain `focus page-authorInfo ready`, the `html`
+background remains bundled `forf2_bkg.jpg`, and metadata is `{full_name},
+Presentation|Bibliografi` with the site suffix only in the title.
 
-The request and accepted payload both carry the exact
-`{author}:{documentKind}` identity. The accepted value is cleared synchronously
-when either route parameter changes, and a late response is ignored unless its
-identity still matches. The old author's heading, metadata, navigation, or body
-must never appear under a new URL. During client transitions the existing
-`.searching > .preloader` is shown; SSR renders the final content or error and
-sets the real 404/502 response status.
+Page-local errors are fixed:
 
-The successful DOM follows Angular:
+```text
+author_document_author_not_found:
+  Ett fel har inträffat: författarid {author} kan inte hittas. Kontrollera adressen.
 
-- balanced author heading and lifespan;
-- ordinary author navigation: Introduktion when present, Verk always,
-  Dramawebben when present, and Sök i texterna when declared;
-- no supplemental tab and therefore no false `aria-current` item;
-- `.page_content > .content.unbox` containing the managed body; and
-- ordinary anchors with browser-native navigation/download behavior.
+author_document_not_found:
+  Ett fel har inträffat: dokumentet kan inte hittas. Kontrollera adressen.
 
-Body classes remain `focus page-authorInfo ready`; `forf2_bkg.jpg` remains the
-`html` background. Metadata is exactly
-`{full_name}, Presentation | Litteraturbanken` or
-`{full_name}, Bibliografi | Litteraturbanken`, with the same text without the
-site suffix as the description. Missing authors keep the established author-ID
-error. A missing document and a temporary 502 each receive concise page-local
-Swedish errors instead of an empty 200.
+author_document_unavailable:
+  Ett fel har inträffat. Författardokumentet kan inte visas just nu.
+```
 
-## Verification
+SSR sets the real 404/502. Client transitions show the existing
+`.searching > .preloader`, clean it up on every outcome, and never show old
+heading, navigation, metadata, or body under the new URL.
 
-Tests are observed failing before implementation.
+## Frozen authority and verification
 
-- Backend tests cover the exact selected query, normalized Unicode/public IDs,
-  both literal kinds, all strict transformations and errors, method/path
-  behavior, OpenAPI shape, and snapshot freshness.
-- Fixture and unit tests cover private/public isolation, exact request ledgers,
-  delayed/failing/missing content, source-path rejection, body extraction,
-  the full element/attribute policy, malicious URL probes, `/forfattare/`
-  rewriting, blank-target hardening, idempotence, and absence of raw probes in
-  returned JSON.
-- SSR tests cover both routes, exact headings/navigation/body/metadata, one
-  private descriptor call plus one exact content call, no hydration duplicate,
-  and the complete 404/502 matrix.
-- Browser tests cover hydration, native PDF/download links, direct and router
-  navigation between both document kinds and two authors, synchronous stale
-  clearing, delayed latest-wins behavior, history, loading/error cleanup, and
-  absence of console/page/hydration errors.
-- Frozen Angular authority and Nuxt comparisons cover Hjalmar Söderberg's
-  presentation and Selma Lagerlöf's bibliography at 1440x1000 and the iPhone 13
-  Chromium viewport. Both use the same frozen XHTML and block production
-  escapes.
+The frozen sources and SHA-256 values are:
 
-The slice closes only after the backend v2 suite, frontend unit/SSR/behavior/
-visual suites, typecheck, build, generated-client drift check, and diff checks
-all pass without changing Angular production sources or copied legacy SCSS.
+```text
+https://red.litteraturbanken.se/red/forfattare/SoderbergH/presentation/index.html
+80bb28b296759b1bc38fc400c6e27ce0ca51bb59e261203e0f901cff00528980
+
+https://red.litteraturbanken.se/red/forfattare/LagerlofS/bibliografi/index.html
+54d289da89e61225fdfbfc68aed19762614529c06c6f2707ed50a493359d179b
+```
+
+Both selected shells freeze live reality: Söderberg has introduction, search,
+and Ljud but no Dramawebben; Lagerlöf has introduction, Dramawebben, search, and
+Ljud. A third sparse fixture has none of those optional links and proves they
+do not render spuriously.
+
+The fixture server also serves the exact two PDF URLs with deterministic bytes,
+`application/pdf`, request ledgers, and explicit disposition. The Söderberg
+`download target="_self"` anchor must emit one Playwright download with suggested
+filename `SoderbergH_presentation.pdf`. The Lagerlöf `target="_blank"` inline
+anchor must open one new page whose URL is the exact bibliography PDF path and
+whose response is 200 `application/pdf`. No PDF request may escape the fixture.
+
+Backend tests cover both strict operations, audio present/absent/failure,
+provider exactness, errors, OpenAPI, and snapshot freshness. Nitro/unit tests
+cover the complete source-path rejection table, sanitizer policy, and zero
+content fetch on descriptor rejection. SSR/browser tests cover the exact shell,
+404/502/copy, route races, legacy canonical redirects into usable profile and
+Reader pages, PDF variants, and zero duplicate/escape/console errors. Angular
+authority and Nuxt comparisons cover Söderberg presentation and Lagerlöf
+bibliography at 1440x1000 and iPhone 13. Closure requires backend v2, frontend
+unit/SSR/behavior/visual, typecheck, build, generated-client drift, and diff
+checks without Angular production or copied legacy SCSS changes.

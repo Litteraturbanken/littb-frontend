@@ -2,34 +2,39 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Port `/författare/:author/presentation` and `/författare/:author/bibliografi` to visually faithful, SSR-complete Nuxt pages that continue to render their managed `/red` XHTML.
+**Goal:** Port `/författare/:author/presentation` and `/författare/:author/bibliografi` to visually faithful, SSR-complete Nuxt pages that continue to render their managed `/red` XHTML and whose normalized legacy links reach canonical Nuxt content.
 
-**Architecture:** FastAPI publishes one narrow generated descriptor that maps the public author ID and literal document kind to a validated normalized `/red` path. A same-origin Nitro handler fetches that path from the private content origin, extracts and sanitizes the body, and returns one strict page payload; the dynamic Nuxt page fetches that payload directly in `<script setup>` and isolates every route identity.
+**Architecture:** FastAPI publishes a narrow author-document descriptor and a typed normalized-route resolver. A same-origin Nitro handler validates the descriptor byte-for-byte, fetches and sanitizes XHTML, while a Nitro middleware permanently canonicalizes safe `/forfattare/**` links; one dynamic Nuxt page fetches its strict payload directly in `<script setup>` and isolates route identity.
 
-**Tech Stack:** FastAPI, Pydantic v2, OpenSearch DSL, Nuxt 4, Nitro/H3, Vue 3 `<script setup>`, openapi-fetch, linkedom, Vitest, Playwright, Tailwind plus copied legacy SCSS.
+**Tech Stack:** FastAPI, Pydantic v2, OpenSearch DSL, requests, Nuxt 4, Nitro/H3, Vue 3 `<script setup>`, openapi-fetch, linkedom, Vitest, Playwright, Tailwind plus copied legacy SCSS.
 
 ## Global Constraints
 
-- This is an architectural migration only: do not redesign, rewrite editorial copy, change Angular production sources, or change copied legacy SCSS.
-- Continue fetching `/red/forfattare/{authorid_norm}/{presentation|bibliografi}/index.html`; fixture copies are test inputs, never production page content.
-- Fetch page data directly in the page `<script setup>`; do not add a one-use composable.
-- Preserve exact Swedish routes, author heading/navigation, `.page_content > .content.unbox`, body/background hooks, ordinary anchor/download behavior, desktop/mobile appearance, and managed document order.
-- Only sanitized body children may enter SSR HTML or a hydration payload.
-- Direct document access is governed by the source's status, not the profile's link-visibility flags.
-- Map missing author/document to 404 and every non-404 upstream/schema/body failure to a non-leaking 502.
-- A route change must synchronously clear accepted content and ignore every late response whose author/document identity is stale.
-- `/semer`, `/omtexterna`, SLA documents, Ljud discovery, footnote popovers, deployment caching, and unrelated author-shell refactoring remain out of scope.
-- No dropdown or modal exists in this slice, so do not add a Headless UI component.
-- Follow strict red-green-refactor: observe focused tests failing before production changes, then keep each task independently reviewable and committed.
-- Generate the checked-in TypeScript client only from the canonical backend OpenAPI snapshot.
+- Architectural migration only: do not redesign, rewrite editorial copy, modify Angular production sources, or modify copied legacy SCSS.
+- Continue fetching `/red/forfattare/{authorid_norm}/{presentation|bibliografi}/index.html`; test fixtures are never production content.
+- Fetch the page model directly in page `<script setup>` through `useRequestFetch`; do not add a one-use composable.
+- Preserve exact heading/navigation order including conditional Ljud, DOM/CSS hooks, metadata, background, ordinary anchors/downloads, and desktop/mobile appearance.
+- Preserve safe `/forfattare/**` hrefs and implement Angular-equivalent typed author/title un-normalization; never perform a prefix-only rewrite.
+- Only sanitized body children may enter SSR HTML or hydration state.
+- Reconstruct the one allowed source path from separately validated normalized ID plus requested kind and require byte-for-byte descriptor equality before contacting content.
+- Missing author/document is 404; every non-404 backend/content/schema/body failure is a non-leaking 502 at the Nuxt boundary.
+- Route changes clear accepted content synchronously and ignore late responses with stale author/document identity.
+- `/semer`, `/omtexterna`, SLA, cross-corpus footnote popovers, caching, and unrelated author-shell refactors remain out of scope.
+- No dropdown/modal exists, so do not add Headless UI.
+- Observe focused RED before implementation and keep every task independently reviewable/committed.
+- Generate the TypeScript client only from the canonical backend OpenAPI snapshot.
 
 ---
 
-### Task 1: Publish the strict author-document descriptor
+### Task 1: Publish the strict document descriptor with Ljud parity
 
 **Files:**
+- Create: `/Users/johan/.codex/worktrees/8c5c/lb-backend/lbapi/v2/author_audio.py`
+- Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/lbapi/v2/author_works.py`
 - Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/lbapi/v2/models.py`
 - Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/lbapi/v2/authors.py`
+- Create: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_author_audio.py`
+- Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_author_work_providers.py`
 - Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_models.py`
 - Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_authors.py`
 - Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_api.py`
@@ -37,158 +42,133 @@
 - Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/openapi/v2.json`
 
 **Interfaces:**
-- Consumes: existing `ProfileAuthorId`, exact author provider helpers, `ApiErrorResponse`, author router, and global v2 error handlers.
-- Produces: `GET /authors/{author_id}/documents/{document_kind}`, operation `v2_get_author_document`, and `AuthorDocumentDescriptor`.
+- Consumes: exact author provider, existing Author Works fail-soft audio behavior, `ProfileAuthorId`, and v2 error handlers.
+- Produces: `query_optional_author_audio_url(normalized_author_id: str) -> str | None` in a neutral module and `GET /authors/{author_id}/documents/{document_kind}` (`v2_get_author_document`).
 
-- [ ] **Step 1: Add failing model and transformation tests**
+- [ ] **Step 1: Write failing audio extraction and regression tests**
 
-Add the exact contract below to the model tests, including recursive extra-field
-rejection and both literal values:
+Move, do not alter, the established contract:
+
+```python
+AUDIO_TIMEOUT_SECONDS = 5
+AUDIO_API_URL = "https://litteraturbanken.se/ljudochbild/wp-json/wp/v2/pages"
+
+def query_optional_author_audio_url(normalized_author_id: str) -> str | None:
+    slug = normalized_author_id.lower()
+    try:
+        response = requests.get(
+            AUDIO_API_URL,
+            params={"slug": slug, "_fields": "slug"},
+            timeout=AUDIO_TIMEOUT_SECONDS,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise TypeError("Malformed author audio response")
+        if not payload:
+            return None
+        if any(
+            not isinstance(item, Mapping) or item.get("slug") != slug
+            for item in payload
+        ):
+            raise TypeError("Malformed author audio response")
+        return (
+            "https://litteraturbanken.se/ljudochbild/författare/"
+            f"{quote(slug, safe='')}"
+        )
+    except (requests.RequestException, TypeError, ValueError):
+        return None
+```
+
+Test `SoderbergH -> .../soderbergh`, `LagerlofS -> .../lagerlofs`, empty,
+network/status/JSON/shape failure -> `None`, exact timeout/params, and unchanged
+Author Works output/import behavior after moving the helper.
+
+- [ ] **Step 2: Run audio tests RED**
+
+```bash
+cd /Users/johan/.codex/worktrees/8c5c/lb-backend
+pytest -q test_lbapi/v2/test_author_audio.py \
+  test_lbapi/v2/test_author_work_providers.py -k audio
+```
+
+Expected: new-module import failure.
+
+- [ ] **Step 3: Write failing descriptor model/provider tests**
+
+Add the exact strict model:
 
 ```python
 AuthorDocumentKind = Literal["presentation", "bibliografi"]
 
 class AuthorDocumentDescriptor(V2Model):
     author_id: str
+    normalized_author_id: str
     full_name: str
     birth_year: str | None
     death_year: str | None
     has_introduction: bool
     has_dramawebben: bool
     search_url: str | None
+    audio_url: str | None
     document_kind: AuthorDocumentKind
     source_path: str
 ```
 
-In `test_authors.py`, add rich fixtures proving these exact results:
+Assert `SöderbergH` returns normalized `SoderbergH`, presentation source,
+search, `audio_url`, no Dramawebben; and `LagerlöfS` returns normalized
+`LagerlofS`, bibliography source, search, `audio_url`, and Dramawebben true.
+Add sparse absent-audio/navigation, audio-failure-is-null, false document flags
+still addressable, `0000` years, hidden/missing 404, duplicate exact/mismatched/
+unsafe normalized/malformed records, and recursive extra rejection.
 
-```python
-assert transform_author_document(raw, "SöderbergH", "presentation") == (
-    AuthorDocumentDescriptor(
-        author_id="SöderbergH",
-        full_name="Hjalmar Söderberg",
-        birth_year="1869",
-        death_year="1941",
-        has_introduction=True,
-        has_dramawebben=False,
-        search_url="/sok?forfattare=S%C3%B6derbergH&avancerad",
-        document_kind="presentation",
-        source_path=(
-            "/red/forfattare/SoderbergH/presentation/index.html"
-        ),
-    )
-)
-```
-
-Repeat for `LagerlöfS` -> normalized `LagerlofS` -> `bibliografi`. Prove
-`has_dramawebben` follows a mapping-valued Dramawebben record, `0000` years are
-returned as `null`, and a false profile presentation/bibliography flag does not
-block descriptor creation. Reject hidden/missing, duplicate exact documents,
-wrong returned author ID, blank/malformed required fields, unsafe normalized
-IDs, non-mapping Dramawebben data, and unexpected envelopes.
-
-- [ ] **Step 2: Run the model/provider tests RED**
+- [ ] **Step 4: Run descriptor tests RED**
 
 ```bash
-cd /Users/johan/.codex/worktrees/8c5c/lb-backend
 pytest -q test_lbapi/v2/test_models.py -k author_document
 pytest -q test_lbapi/v2/test_authors.py -k author_document
 ```
 
-Expected: import/collection failures because the model and transformer do not
-exist.
+Expected: missing model/transformer failures.
 
-- [ ] **Step 3: Add failing exact-query and API/OpenAPI assertions**
+- [ ] **Step 5: Implement the neutral audio helper and descriptor**
 
-Assert one provider call with no auxiliary lookups:
+The descriptor query is exactly:
 
 ```python
-get_documents(
-    "author",
-    0,
-    2,
-    includes=(
-        "authorid",
-        "authorid_norm",
-        "show",
-        "full_name",
-        "birth.plain",
-        "death.plain",
-        "intro",
-        "dramawebben",
-        "searchable",
-    ),
-    show_only=False,
-    and_query=Q("term", **{"authorid.raw": author_id}),
+AUTHOR_DOCUMENT_FIELDS = (
+    "authorid", "authorid_norm", "show", "full_name", "birth.plain",
+    "death.plain", "intro", "dramawebben", "searchable",
 )
-```
 
-Add endpoint tests for both kinds, missing 404, invalid author/kind 422,
-OpenSearch 503 with code `author_document_unavailable`, malformed non-leaking
-500, GET-only behavior, exact operation ID, response refs, recursively forbidden
-extras, required nullable fields, and the canonical OpenAPI path.
-
-- [ ] **Step 4: Run endpoint tests RED**
-
-```bash
-pytest -q test_lbapi/v2/test_api.py -k author_document
-pytest -q test_lbapi/v2/test_openapi.py -k 'author_document or stable_path'
-```
-
-Expected: 404/schema assertion failures because the operation is absent.
-
-- [ ] **Step 5: Implement the minimal provider, transformer, and route**
-
-Add the model, `AUTHOR_DOCUMENT_FIELDS`, and these typed interfaces in
-`authors.py`:
-
-```python
 def query_author_document(author_id: str) -> dict[str, Any]:
     return _legacy_api().get_documents(
-        "author",
-        0,
-        2,
+        "author", 0, 2,
         includes=AUTHOR_DOCUMENT_FIELDS,
         show_only=False,
         and_query=Q("term", **{"authorid.raw": author_id}),
     )
-
-def transform_author_document(
-    raw: dict[str, Any],
-    requested_author_id: str,
-    document_kind: AuthorDocumentKind,
-) -> AuthorDocumentDescriptor:
-    document = _profile_document(raw, requested_author_id)
-    normalized_id = _profile_required_string(document.get("authorid_norm"))
-    encoded_normalized_id = _encoded_segment(normalized_id)
-    encoded_author_id = _encoded_segment(requested_author_id)
-    dramawebben = document.get("dramawebben")
-    if dramawebben is not None and not isinstance(dramawebben, dict):
-        raise ValueError("Malformed author document response")
-    return AuthorDocumentDescriptor(
-        author_id=requested_author_id,
-        full_name=_profile_required_string(document.get("full_name")),
-        birth_year=_profile_year(document, "birth"),
-        death_year=_profile_year(document, "death"),
-        has_introduction=bool(_profile_optional_string(document, "intro")),
-        has_dramawebben=dramawebben is not None,
-        search_url=(
-            f"/sok?forfattare={encoded_author_id}&avancerad"
-            if _profile_flag(document, "searchable") else None
-        ),
-        document_kind=document_kind,
-        source_path=(
-            f"/red/forfattare/{encoded_normalized_id}/"
-            f"{document_kind}/index.html"
-        ),
-    )
 ```
 
-Wrap malformed transformation errors consistently with the existing profile
-operation. Catch only `OpenSearchException` as a typed 503; let the global 500
-handler redact malformed provider details.
+`transform_author_document` validates `authorid_norm` as one raw segment using
+the same control/percent/slash/backslash/dot/length rules as profile IDs, calls
+the neutral audio helper after the exact author is validated, and constructs:
 
-- [ ] **Step 6: Export and verify the complete backend contract GREEN**
+```python
+source_path = (
+    f"/red/forfattare/{_encoded_segment(normalized_author_id)}/"
+    f"{document_kind}/index.html"
+)
+```
+
+The endpoint catches only OpenSearch as typed 503. Audio failure remains null;
+malformed provider data reaches the global redacted 500.
+
+- [ ] **Step 6: Add endpoint/OpenAPI tests and finish GREEN**
+
+Assert both 200 responses, missing 404, author/kind 422, OpenSearch 503 code
+`author_document_unavailable`, malformed 500, GET-only, exact operation ID,
+response refs, required nullable fields, and stable path. Then run:
 
 ```bash
 python scripts/export_v2_openapi.py
@@ -199,13 +179,13 @@ git diff --check
 git diff --quiet -- lbapi/elasticapi.py lbapi/web.py
 ```
 
-Expected: every v2 test passes, the snapshot is current, compilation succeeds,
-and legacy provider/web files are unchanged.
-
-- [ ] **Step 7: Commit the backend task**
+- [ ] **Step 7: Commit Task 1**
 
 ```bash
-git add lbapi/v2/models.py lbapi/v2/authors.py \
+git add lbapi/v2/author_audio.py lbapi/v2/author_works.py \
+  lbapi/v2/models.py lbapi/v2/authors.py \
+  test_lbapi/v2/test_author_audio.py \
+  test_lbapi/v2/test_author_work_providers.py \
   test_lbapi/v2/test_models.py test_lbapi/v2/test_authors.py \
   test_lbapi/v2/test_api.py test_lbapi/v2/test_openapi.py openapi/v2.json
 git diff --cached --check
@@ -214,96 +194,222 @@ git commit -m "feat(api): describe author documents"
 
 ---
 
-### Task 2: Generate the client and deterministic document fixtures
+### Task 2: Publish canonical resolution for managed `/forfattare` links
+
+**Files:**
+- Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/lbapi/v2/models.py`
+- Create: `/Users/johan/.codex/worktrees/8c5c/lb-backend/lbapi/v2/legacy_author_routes.py`
+- Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/lbapi/v2/app.py`
+- Create: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_legacy_author_routes.py`
+- Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_models.py`
+- Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_api.py`
+- Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/test_lbapi/v2/test_openapi.py`
+- Modify: `/Users/johan/.codex/worktrees/8c5c/lb-backend/openapi/v2.json`
+
+**Interfaces:**
+- Consumes: exact keyword fields `authorid_norm` and `titleid_norm`.
+- Produces: `POST /legacy-author-routes/resolve`, operation `v2_post_legacy_author_route_resolve`.
+
+- [ ] **Step 1: Write failing paired model and provider tests**
+
+```python
+LegacyMediaType = Literal["etext", "faksimil"]
+
+class LegacyAuthorRouteRequest(V2Model):
+    normalized_author_id: ProfileAuthorId
+    normalized_title_id: ProfileAuthorId | None
+    media_type: LegacyMediaType | None
+
+    @model_validator(mode="after")
+    def validate_title_pair(self):
+        if (self.normalized_title_id is None) != (self.media_type is None):
+            raise ValueError("title and media type must be supplied together")
+        return self
+
+class LegacyAuthorRouteResolution(V2Model):
+    author_id: str
+    title_id: str | None
+```
+
+Assert exact results `SoderbergH -> SöderbergH`, `LagerlofS -> LagerlöfS`, and
+`SoderbergH + Forvillelser + etext -> SöderbergH + Förvillelser`. Queries are:
+
+```python
+get_documents(
+    "author", 0, 2, includes=("authorid", "authorid_norm"),
+    show_only=False,
+    and_query=Q("term", authorid_norm=normalized_author_id),
+)
+get_documents(
+    media_type, 0, 2, includes=("titleid", "titleid_norm"),
+    show_only=False,
+    and_query=Q("term", titleid_norm=normalized_title_id),
+)
+```
+
+Cover no title query when null, missing 404, paired-input 422, unsupported media
+422, same canonical duplicate accepted once, distinct duplicate/mismatched/
+malformed 500, and either OpenSearch call -> typed 503.
+
+- [ ] **Step 2: Run resolver tests RED**
+
+```bash
+pytest -q test_lbapi/v2/test_models.py -k legacy_author_route
+pytest -q test_lbapi/v2/test_legacy_author_routes.py
+```
+
+Expected: missing models/module.
+
+- [ ] **Step 3: Implement and register the isolated router**
+
+Use `APIRouter(tags=["authors"])`, the two exact selected-field providers, and
+strict result validation. The POST handler returns 404 code
+`legacy_author_route_not_found`, 503 code `legacy_author_route_unavailable`, or
+the strict resolution. Register the router in `app.py`; do not add a GET path or
+raw path-string input.
+
+- [ ] **Step 4: Export, verify, and commit Task 2**
+
+```bash
+python scripts/export_v2_openapi.py
+python scripts/export_v2_openapi.py --check
+pytest -q test_lbapi/v2
+python -m compileall -q lbapi
+git diff --check
+git add lbapi/v2/models.py lbapi/v2/legacy_author_routes.py lbapi/v2/app.py \
+  test_lbapi/v2/test_models.py test_lbapi/v2/test_legacy_author_routes.py \
+  test_lbapi/v2/test_api.py test_lbapi/v2/test_openapi.py openapi/v2.json
+git diff --cached --check
+git commit -m "feat(api): resolve legacy author routes"
+```
+
+---
+
+### Task 3: Generate deterministic descriptor, XHTML, resolver, Reader, and PDF fixtures
 
 **Files:**
 - Modify: `nuxt/app/lib/api/generated/lbapi.ts`
 - Create: `nuxt/test/fixtures/author-document-data.mjs`
 - Create: `nuxt/test/fixtures/author-document-content/SoderbergH-presentation.html`
 - Create: `nuxt/test/fixtures/author-document-content/LagerlofS-bibliografi.html`
+- Create: `nuxt/test/fixtures/author-document-content/sparse.html`
 - Create: `nuxt/test/fixtures/author-document-content/malicious.html`
 - Modify: `nuxt/test/fixtures/v2-server.mjs`
 - Modify: `nuxt/test/unit/v2-server.spec.ts`
 
 **Interfaces:**
-- Consumes: Task 1's canonical OpenAPI snapshot and generated operation.
-- Produces: generated descriptor types and isolated descriptor/content fixtures
-  with exact request/failure/delay controls.
+- Consumes: Tasks 1–2 OpenAPI operations and existing deterministic Reader/PDF assets.
+- Produces: realistic optional navigation, exact content/resolver ledgers, usable canonical profile/Reader targets, and deterministic PDF responses.
 
-- [ ] **Step 1: Add failing fixture-server tests**
+- [ ] **Step 1: Add failing fixture contracts**
 
-Define two complete `AuthorDocumentDescriptor` fixtures with `@satisfies`:
+Freeze these exact shells:
 
 ```js
 export const soderbergPresentation = {
   author_id: "SöderbergH",
+  normalized_author_id: "SoderbergH",
   full_name: "Hjalmar Söderberg",
   birth_year: "1869",
   death_year: "1941",
   has_introduction: true,
   has_dramawebben: false,
   search_url: "/sok?forfattare=S%C3%B6derbergH&avancerad",
+  audio_url: "https://litteraturbanken.se/ljudochbild/författare/soderbergh",
   document_kind: "presentation",
   source_path: "/red/forfattare/SoderbergH/presentation/index.html"
 }
 
 export const lagerlofBibliography = {
   author_id: "LagerlöfS",
+  normalized_author_id: "LagerlofS",
   full_name: "Selma Lagerlöf",
   birth_year: "1858",
   death_year: "1940",
   has_introduction: true,
-  has_dramawebben: false,
-  search_url: null,
+  has_dramawebben: true,
+  search_url: "/sok?forfattare=Lagerl%C3%B6fS&avancerad",
+  audio_url: "https://litteraturbanken.se/ljudochbild/författare/lagerlofs",
   document_kind: "bibliografi",
   source_path: "/red/forfattare/LagerlofS/bibliografi/index.html"
 }
 ```
 
-Assert public/private descriptor paths, exact original encoded request ledgers,
-the two exact content paths, and these isolated controls:
+Add `SparseDocument` with every optional navigation value false/null and a
+small valid body. Keep the existing sparse Author Profile authority fixture
+unchanged; the document descriptor independently freezes Lagerlöf's real
+Dramawebben/search/Ljud values. Add a Söderberg/Förvillelser Reader fixture
+sufficient to render canonical page 3 after normalization.
+
+- [ ] **Step 2: Record reproducible XHTML provenance before adding fixtures**
+
+Verify current source bytes:
+
+```bash
+curl -fsSL \
+  https://red.litteraturbanken.se/red/forfattare/SoderbergH/presentation/index.html \
+  | shasum -a 256
+# 80bb28b296759b1bc38fc400c6e27ce0ca51bb59e261203e0f901cff00528980
+
+curl -fsSL \
+  https://red.litteraturbanken.se/red/forfattare/LagerlofS/bibliografi/index.html \
+  | shasum -a 256
+# 54d289da89e61225fdfbfc68aed19762614529c06c6f2707ed50a493359d179b
+```
+
+Add exactly those response bytes through `apply_patch`. Put both source URLs
+and hashes in `author-document-data.mjs` and assert them in fixture unit tests.
+
+- [ ] **Step 3: Add exact fixture controls and PDF boundaries**
+
+Implement/reset independently:
 
 ```text
 GET|DELETE /_author_document_requests
 GET|PUT|DELETE /_author_document_failure
 GET|PUT|DELETE /_author_document_delay
+GET|DELETE /_legacy_author_route_requests
+GET|DELETE /_author_document_pdf_requests
 ```
 
-`failure` accepts exactly `descriptor-404`, `descriptor-503`, `content-404`,
-`content-503`, `malformed-descriptor`, or `malformed-content`; `delay` accepts
-an integer `milliseconds` from 0 through 5000. Resets must not mutate profile,
-Reader, Library, or presentation fixture state.
+Failure values are `descriptor-404`, `descriptor-503`, `content-404`,
+`content-503`, `malformed-descriptor`, `unsafe-source-path`, and
+`malformed-content`; delay is integer 0–5000. Resolver maps the three exact
+normalization cases from Task 2 and returns typed 404 otherwise.
 
-- [ ] **Step 2: Run fixture tests RED**
+Reuse the checked-in deterministic PDF bytes from
+`test/fixtures/presentation-content/Figurdiktensombarockblandkonst.pdf` while
+serving:
+
+```text
+/red/forfattare/SoderbergH/presentation/SoderbergH_presentation.pdf
+  content-type: application/pdf
+  content-disposition: attachment; filename="SoderbergH_presentation.pdf"
+
+/red/forfattare/LagerlofS/bibliografi/LagerlofS_bibliografi.pdf
+  content-type: application/pdf
+  content-disposition: inline; filename="LagerlofS_bibliografi.pdf"
+```
+
+Record each exact PDF request; every other author-document asset is rejected.
+
+- [ ] **Step 4: Run fixture tests RED, generate, implement, and finish GREEN**
 
 ```bash
 cd /Users/johan/.codex/worktrees/8c5c/littb/nuxt
-yarn vitest run test/unit/v2-server.spec.ts -t 'author document'
-```
-
-Expected: missing control/path failures.
-
-- [ ] **Step 3: Generate the client and implement fixture routes**
-
-```bash
+yarn vitest run test/unit/v2-server.spec.ts -t 'author document|legacy author route'
 LBAPI_OPENAPI_SCHEMA=/Users/johan/.codex/worktrees/8c5c/lb-backend/openapi/v2.json \
   yarn api:generate
-```
-
-Copy the frozen authority XHTML byte-for-byte into the two named fixture files.
-The production implementation must never import these files. Serve descriptors
-under both `/v2` and `/private-v2`; serve XHTML only at its exact `/red` path;
-record each request before applying delay/failure state; and return standard
-JSON 404/503 envelopes for descriptor errors.
-
-- [ ] **Step 4: Verify and commit the generated fixture boundary**
-
-```bash
 yarn vitest run test/unit/v2-server.spec.ts
 LBAPI_OPENAPI_SCHEMA=/Users/johan/.codex/worktrees/8c5c/lb-backend/openapi/v2.json \
   yarn api:check
 yarn typecheck
 git diff --check
+```
+
+- [ ] **Step 5: Commit Task 3**
+
+```bash
 git add nuxt/app/lib/api/generated/lbapi.ts \
   nuxt/test/fixtures/author-document-data.mjs \
   nuxt/test/fixtures/author-document-content \
@@ -314,28 +420,31 @@ git commit -m "test(nuxt): fixture author documents"
 
 ---
 
-### Task 3: Build the strict Nitro XHTML boundary
+### Task 4: Build the Nitro sanitizer, strict loader, and canonical legacy redirect
 
 **Files:**
 - Create: `nuxt/shared/types/author-document.ts`
 - Create: `nuxt/server/utils/author-document.ts`
+- Create: `nuxt/server/utils/legacy-author-route.ts`
 - Create: `nuxt/server/api/author-documents/[author]/[document].get.ts`
+- Create: `nuxt/server/middleware/legacy-author-route.ts`
 - Create: `nuxt/test/unit/author-document.spec.ts`
+- Create: `nuxt/test/unit/legacy-author-route.spec.ts`
 - Create: `nuxt/test/ssr/author-documents-api.spec.ts`
+- Create: `nuxt/test/ssr/legacy-author-routes.spec.ts`
 
 **Interfaces:**
-- Consumes: generated `v2_get_author_document`, private `apiBase`, private
-  `contentBase`, existing `validateAuthorRouteParam`, and `linkedom`.
-- Produces: `AuthorSupplementalPage`, deterministic sanitizer/parser functions,
-  and the same-origin endpoint used by the page.
+- Consumes: generated descriptor/resolver, private `apiBase`, private `contentBase`, `linkedom`.
+- Produces: `AuthorSupplementalPage`, `/api/author-documents/**`, and exact 307 canonical redirects for `/forfattare/**`.
 
-- [ ] **Step 1: Write failing parser/sanitizer unit tests**
-
-Define the shared output exactly:
+- [ ] **Step 1: Write failing shared-type, sanitizer, and path-table tests**
 
 ```ts
 export type AuthorDocumentKind = "presentation" | "bibliografi"
-
+export type AuthorDocumentErrorCode =
+  | "author_document_author_not_found"
+  | "author_document_not_found"
+  | "author_document_unavailable"
 export interface AuthorSupplementalAuthor {
   authorId: string
   fullName: string
@@ -343,8 +452,8 @@ export interface AuthorSupplementalAuthor {
   hasIntroduction: boolean
   hasDramawebben: boolean
   searchUrl: string | null
+  audioUrl: string | null
 }
-
 export interface AuthorSupplementalPage {
   author: AuthorSupplementalAuthor
   documentKind: AuthorDocumentKind
@@ -352,27 +461,62 @@ export interface AuthorSupplementalPage {
 }
 ```
 
-Test `parseAuthorDocumentBody(source: string): string` with the complete frozen
-presentation/bibliography bodies and the malicious fixture. Assert preservation
-of text order, headings, lists, tables, classes/IDs, PDF `download`, safe images,
-and ordinary targets. Assert removal of comments, active subtrees, event/style/
-framework attributes, unsafe URLs and raw marker text; `/forfattare/` becomes
-`/författare/`; `_blank` gains both rel tokens; the output has no `<body>`;
-and parsing the sanitized output wrapped in a body returns the same string.
-Missing/duplicate body and parser failure must throw a local invalid-source
-error rather than returning the full input.
+Unit-test `expectedAuthorDocumentSource(descriptor, requestedAuthor, kind)`.
+Only this table's first row succeeds; every rejection throws before fetch:
 
-- [ ] **Step 2: Run parser tests RED**
-
-```bash
-yarn vitest run test/unit/author-document.spec.ts
+```text
+normalized=SoderbergH, kind=presentation,
+path=/red/forfattare/SoderbergH/presentation/index.html            ACCEPT
+path=//red/forfattare/SoderbergH/presentation/index.html           REJECT
+path=https://evil.test/red/...                                     REJECT
+path=/red/forfattare/../presentation/index.html                    REJECT
+path=/red/forfattare/%2e%2e/presentation/index.html                REJECT
+path=/red/forfattare/%252e%252e/presentation/index.html            REJECT
+path=/red/forfattare/SoderbergH%2fpresentation/index.html          REJECT
+path=/red/forfattare/SoderbergH%5cpresentation/index.html          REJECT
+path=/red/forfattare/SoderbergH/presentation/index.html?x=1        REJECT
+path=/red/forfattare/SoderbergH/presentation/index.html#x          REJECT
+path=/red/forfattare/SoderbergH/bibliografi/index.html             REJECT
+path=/red/forfattare/SoderbergH/presentation/extra/index.html      REJECT
+path containing control, DEL/C1, malformed %, or wrong author/kind REJECT
 ```
 
-Expected: import failure because the parser is absent.
+The pure validator is exactly:
 
-- [ ] **Step 3: Implement the explicit document sanitizer**
+```ts
+function validManagedSegment(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length >= 1 && value.length <= 100
+    && value === value.trim()
+    && value !== "." && value !== ".."
+    && !/[\\/%\u0000-\u001f\u007f-\u009f]/u.test(value)
+}
 
-Use `linkedom` and explicit sets. The element allowlist is:
+function expectedSourcePath(normalized: string, kind: AuthorDocumentKind) {
+  if (!validManagedSegment(normalized)) throw invalidDescriptor()
+  return `/red/forfattare/${encodeRfc3986Segment(normalized)}/${kind}/index.html`
+}
+
+function invalidDescriptor(): Error {
+  return new Error("Invalid author document descriptor")
+}
+
+function encodeRfc3986Segment(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/gu,
+    character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+  )
+}
+```
+
+Also reject normalized-segment inputs `../private`, `%2e%2e`,
+`SoderbergH/presentation`, `SoderbergH\\presentation`, leading/trailing
+whitespace, controls, and 101 characters, regardless of the supplied path.
+
+- [ ] **Step 2: Write failing complete sanitizer tests**
+
+Test both authority documents plus malicious XHTML. The implementation owns
+these exact sets:
 
 ```ts
 const allowedElements = new Set([
@@ -389,79 +533,229 @@ const removedSubtrees = new Set([
   "noscript", "object", "option", "picture", "script", "select", "source",
   "style", "svg", "template", "textarea", "video"
 ])
+const globalAttributes = new Set(["class", "id", "lang", "title"])
+const elementAttributes: Record<string, ReadonlySet<string>> = {
+  a: new Set(["href", "target", "rel", "name", "download"]),
+  img: new Set(["src", "alt", "width", "height"]),
+  td: new Set(["colspan", "rowspan", "headers"]),
+  th: new Set(["colspan", "rowspan", "headers", "scope"]),
+  col: new Set(["span"]), colgroup: new Set(["span"]),
+  ol: new Set(["start", "reversed", "type"]),
+  li: new Set(["value"])
+}
 ```
 
-Preserve only the attribute policy from the design. Reuse the repository's
-repeated-decode, traversal, RFC3986, and blank-target semantics; do not weaken
-the existing profile sanitizer. Keep this parser server-only.
-
-- [ ] **Step 4: Write failing endpoint/status tests**
-
-In `author-documents-api.spec.ts`, call the endpoint directly and assert:
-
-```text
-SöderbergH/presentation -> 200, exact author identity, sanitized body
-LagerlöfS/bibliografi -> 200, exact author identity, sanitized body
-unknown author -> 404 author_document_author_not_found
-missing source -> 404 author_document_not_found
-descriptor/content 503 -> 502 author_document_unavailable
-malformed descriptor/source/body -> 502 author_document_unavailable
-unsupported kind, invalid/double-encoded/traversal author -> 404
-```
-
-For every case assert `cache-control: no-store`, the exact private descriptor
-path, the exact content path when applicable, and no public API or production
-escape.
-
-- [ ] **Step 5: Run endpoint tests RED**
-
-```bash
-NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3141 \
-  yarn playwright test test/ssr/author-documents-api.spec.ts --project=ssr
-```
-
-Expected: endpoint 404s because the handler is absent.
-
-- [ ] **Step 6: Implement the strict loader and thin handler**
-
-The route handler must remain a one-purpose adapter:
+`fullyDecode` makes at most 16 passes and returns null on decode failure or
+non-stabilization. `safeUrl(value, "href" | "src")` rejects trim changes,
+controls, backslash, protocol-relative, decoded `.`/`..` path segments, and
+schemes outside `http/https/mailto/tel` for href or `https` for src. Fragments
+are href-only. Relative/root-relative values remain unchanged, including safe
+`/forfattare/**`; do not rewrite its prefix. `_blank` gets both rel tokens.
+Removed-subtree elements are deleted; unknown benign elements are replaced by
+their sanitized children. Comments are removed. Require exactly one parsed
+body and return `body.innerHTML`; missing/multiple/malformed bodies throw
+`InvalidAuthorDocumentSource`.
 
 ```ts
-export default defineEventHandler(async event => {
-  setHeader(event, "cache-control", "no-store")
-  const author = requiredAuthorParam(event)
-  const documentKind = requiredDocumentKind(event)
-  return await loadAuthorDocument(event, author, documentKind)
-})
+export function parseAuthorDocumentBody(source: string): string {
+  const { document } = parseHTML(source)
+  const bodies = [...document.querySelectorAll("body")]
+  if (bodies.length !== 1) throw new InvalidAuthorDocumentSource()
+  const body = bodies[0]!
+  for (const child of [...body.childNodes]) sanitizeNode(child)
+  return body.innerHTML
+}
 ```
 
-`loadAuthorDocument` uses `createLbApiClient(config.apiBase)` for the generated
-operation, validates every descriptor field at runtime, checks request identity
-and exact source-path shape, then fetches `${contentBase}${source_path}` as text
-with `retry: 0`. Translate only the three local error codes from the design.
-Return `formatAuthorYears(...)` output in the shell and `bodyHtml` only after
-sanitization.
+Assert idempotence, no raw malicious marker in output, PDF/download/target
+preservation, and `href="/forfattare/SoderbergH/.../Forvillelser/..."` remains
+byte-identical for the redirect boundary.
 
-- [ ] **Step 7: Verify and commit the server boundary**
+- [ ] **Step 3: Run sanitizer/path tests RED**
 
 ```bash
 yarn vitest run test/unit/author-document.spec.ts
+```
+
+Expected: module import failure.
+
+- [ ] **Step 4: Write failing endpoint tests and implement the complete loader**
+
+Use this local error constructor and translation:
+
+```ts
+type AuthorDocumentErrorCode =
+  | "author_document_author_not_found"
+  | "author_document_not_found"
+  | "author_document_unavailable"
+
+function documentError(statusCode: 404 | 502, code: AuthorDocumentErrorCode): never {
+  throw createError({
+    statusCode,
+    statusMessage: statusCode === 404 ? "Not Found" : "Bad Gateway",
+    data: { code }
+  })
+}
+
+function fetchStatus(error: unknown): number | null {
+  if (!isRecord(error)) return null
+  if (isRecord(error.response) && typeof error.response.status === "number") {
+    return error.response.status
+  }
+  if (typeof error.statusCode === "number") return error.statusCode
+  if (typeof error.status === "number") return error.status
+  return null
+}
+
+function formatYears(birth: string | null, death: string | null): string {
+  const left = birth && birth !== "0000" ? birth : ""
+  const right = death && death !== "0000" ? death : ""
+  if (left && right) return `${left}-${right}`
+  if (left) return `f. ${left}`
+  if (right) return `d. ${right}`
+  return ""
+}
+
+function isAuthorDocumentDescriptor(value: unknown): value is AuthorDocumentDescriptor {
+  if (!isRecord(value)) return false
+  return typeof value.author_id === "string"
+    && typeof value.normalized_author_id === "string"
+    && typeof value.full_name === "string" && value.full_name.length > 0
+    && (value.birth_year === null || typeof value.birth_year === "string")
+    && (value.death_year === null || typeof value.death_year === "string")
+    && typeof value.has_introduction === "boolean"
+    && typeof value.has_dramawebben === "boolean"
+    && (value.search_url === null || typeof value.search_url === "string")
+    && (value.audio_url === null || typeof value.audio_url === "string")
+    && (value.document_kind === "presentation" || value.document_kind === "bibliografi")
+    && typeof value.source_path === "string"
+}
+
+export async function loadAuthorDocument(
+  event: H3Event,
+  requestedAuthor: string,
+  requestedKind: AuthorDocumentKind
+): Promise<AuthorSupplementalPage> {
+  const config = useRuntimeConfig(event)
+  const client = createLbApiClient(config.apiBase)
+  let result
+  try {
+    result = await client.GET("/authors/{author_id}/documents/{document_kind}", {
+      params: { path: {
+        author_id: requestedAuthor,
+        document_kind: requestedKind
+      } }
+    })
+  } catch {
+    return documentError(502, "author_document_unavailable")
+  }
+  if (result.response.status === 404) {
+    return documentError(404, "author_document_author_not_found")
+  }
+  if (result.response.status !== 200 || !isAuthorDocumentDescriptor(result.data)) {
+    return documentError(502, "author_document_unavailable")
+  }
+  const descriptor = result.data
+  if (descriptor.author_id !== requestedAuthor
+      || descriptor.document_kind !== requestedKind) {
+    return documentError(502, "author_document_unavailable")
+  }
+  const expected = expectedSourcePath(descriptor.normalized_author_id, requestedKind)
+  if (descriptor.source_path !== expected) {
+    return documentError(502, "author_document_unavailable")
+  }
+  let source: string
+  try {
+    source = await $fetch<string>(
+      `${config.contentBase.replace(/\/$/u, "")}${expected}`,
+      { responseType: "text", retry: 0 }
+    )
+  } catch (error) {
+    if (fetchStatus(error) === 404) {
+      return documentError(404, "author_document_not_found")
+    }
+    return documentError(502, "author_document_unavailable")
+  }
+  let bodyHtml: string
+  try { bodyHtml = parseAuthorDocumentBody(source) }
+  catch { return documentError(502, "author_document_unavailable") }
+  return {
+    author: {
+      authorId: descriptor.author_id,
+      fullName: descriptor.full_name,
+      lifespan: formatYears(descriptor.birth_year, descriptor.death_year),
+      hasIntroduction: descriptor.has_introduction,
+      hasDramawebben: descriptor.has_dramawebben,
+      searchUrl: descriptor.search_url,
+      audioUrl: descriptor.audio_url
+    },
+    documentKind: descriptor.document_kind,
+    bodyHtml
+  }
+}
+```
+
+The thin handler validates params, sets `cache-control: no-store`, and calls the
+loader. Endpoint tests cover both 200s, all three local errors, every status
+translation, malformed bodies, identity mismatch, and the full source-path
+table. Before each unsafe-path assertion clear the content ledger; afterward
+assert it is still empty.
+
+- [ ] **Step 5: Write failing middleware tests and implement canonical redirect**
+
+Pure parsing accepts only safe decoded segments and recognizes title resolution
+only for the exact Reader shape. The middleware algorithm is:
+
+```ts
+if (!['GET', 'HEAD'].includes(event.method)) return
+const url = getRequestURL(event)
+if (!url.pathname.startsWith('/forfattare/')) return
+const segments = decodeAndValidatePathSegments(url.pathname)
+const reader = matchLegacyReaderSegments(segments)
+const request = {
+  normalized_author_id: segments[1],
+  normalized_title_id: reader?.title ?? null,
+  media_type: reader?.mediaType ?? null
+}
+const resolution = await resolveLegacyAuthorRoutePrivately(event, request)
+segments[0] = 'författare'
+segments[1] = resolution.author_id
+if (reader && resolution.title_id) segments[3] = resolution.title_id
+const canonical = '/' + segments.map(encodeRfc3986Segment).join('/') + url.search
+return sendRedirect(event, canonical, 307)
+```
+
+Assert exact Location/query for Lagerlof profile and Söderberg/Förvillelser
+Reader; 404 mapping, 502 provider/schema failure, unsafe/double-encoded/control
+input rejection, GET/HEAD only, no `/författare` loop, and one private resolver
+request. Then end-to-end follow redirects and assert rendered Selma profile and
+Förvillelser Reader text, not only URL changes.
+
+- [ ] **Step 6: Run GREEN and commit Task 4**
+
+```bash
+yarn vitest run test/unit/author-document.spec.ts \
+  test/unit/legacy-author-route.spec.ts
 NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3141 \
-  yarn playwright test test/ssr/author-documents-api.spec.ts --project=ssr
+  yarn playwright test test/ssr/author-documents-api.spec.ts \
+  test/ssr/legacy-author-routes.spec.ts --project=ssr
 yarn typecheck
 git diff --check
 git add nuxt/shared/types/author-document.ts \
-  nuxt/server/utils/author-document.ts \
+  nuxt/server/utils/author-document.ts nuxt/server/utils/legacy-author-route.ts \
   'nuxt/server/api/author-documents/[author]/[document].get.ts' \
+  nuxt/server/middleware/legacy-author-route.ts \
   nuxt/test/unit/author-document.spec.ts \
-  nuxt/test/ssr/author-documents-api.spec.ts
+  nuxt/test/unit/legacy-author-route.spec.ts \
+  nuxt/test/ssr/author-documents-api.spec.ts \
+  nuxt/test/ssr/legacy-author-routes.spec.ts
 git diff --cached --check
 git commit -m "feat(nuxt): proxy author documents"
 ```
 
 ---
 
-### Task 4: Render, compare, and close both Nuxt routes
+### Task 5: Render, compare, and close both pages
 
 **Files:**
 - Create: `nuxt/app/pages/författare/[author]/[document].vue`
@@ -477,88 +771,80 @@ git commit -m "feat(nuxt): proxy author documents"
 - Modify: `nuxt/test/unit/v2-server.spec.ts`
 
 **Interfaces:**
-- Consumes: Task 3's `/api/author-documents/{author}/{document}` and
-  `AuthorSupplementalPage`.
-- Produces: both public Nuxt routes with exact SSR, SPA, history, loading,
-  error, accessibility, and visual behavior.
+- Consumes: Task 4 page payload and canonical redirect.
+- Produces: both public routes with exact SSR/SPA/history/loading/error/PDF/visual behavior.
 
-- [ ] **Step 1: Capture frozen Angular authority RED/GOLD**
+- [ ] **Step 1: Capture deterministic Angular authority**
 
-Create two authority cases using the same descriptor and XHTML fixtures:
+Use the same frozen XHTML, exact author shells, Ljud-present WordPress responses,
+and PDF URLs for:
 
 ```ts
 const cases = [
-  {
-    name: "presentation",
-    route: "/författare/S%C3%B6derbergH/presentation",
-    sourcePath: "/red/forfattare/SoderbergH/presentation/index.html",
-    heading: "Hjalmar Söderberg"
-  },
-  {
-    name: "bibliografi",
-    route: "/författare/Lagerl%C3%B6fS/bibliografi",
-    sourcePath: "/red/forfattare/LagerlofS/bibliografi/index.html",
-    heading: "Selma Lagerlöf"
-  }
+  ["presentation", "/författare/S%C3%B6derbergH/presentation",
+   "/red/forfattare/SoderbergH/presentation/index.html"],
+  ["bibliografi", "/författare/Lagerl%C3%B6fS/bibliografi",
+   "/red/forfattare/LagerlofS/bibliografi/index.html"]
 ] as const
 ```
 
-Intercept and assert the exact Angular author request, author-list request, ten
-legacy work requests, audio/map/bootstrap requests, one exact managed XHTML
-request, background/fonts, and zero unknown API/content/production escapes.
-Wait for the body text, fonts, background, hidden preloader, and zero page/
-console errors before writing all four baseline files.
-
-Run:
+Assert author/list, ten work, audio, map, one XHTML, bootstrap/background/font,
+and zero unknown/production requests. Wait for exact body text, Ljud nav, fonts,
+background, hidden preloader, and zero console/page errors. Capture desktop and
+iPhone 13 baselines:
 
 ```bash
 yarn playwright test test/visual/capture-author-documents-angular.spec.ts \
   --config=playwright.angular.config.ts
 ```
 
-Expected: 4 authority captures pass and create only the four named baselines.
+- [ ] **Step 2: Write failing SSR/page-copy/navigation tests**
 
-- [ ] **Step 2: Add failing SSR page tests**
+For Söderberg assert links exactly `[Introduktion, Verk, Ljud, Sök i texterna]`.
+For Lagerlöf assert `[Introduktion, Verk, Ljud, Dramawebben, Sök i texterna]`.
+For SparseDocument assert only `Verk`. Assert Ljud's absolute href, `_blank`,
+position, exact title/description/background/body classes, heading/lifespan,
+no supplemental current tab, managed body structure, preserved `/forfattare`
+href, PDF attributes, one private descriptor/content request, sanitized payload,
+and no hydration duplicate.
 
-Assert for both routes: status 200; exact title/description; body classes and
-`forf2_bkg.jpg`; balanced heading/lifespan; Introduktion/Verk/Dramawebben/Search
-visibility; no active supplemental tab; `.page_content > .content.unbox` with
-the expected frozen text/structure; rewritten internal author links; native PDF
-`download`/target attributes; one private descriptor and one content request;
-sanitized hydration payload; and no duplicate public request.
+Error assertions use exactly:
 
-Add valid-route error cases for author 404, content 404, descriptor/content 503,
-malformed descriptor/body, plus invalid kind and malicious author params. Assert
-real 404/502 status and exact local Swedish copy, never an empty 200.
+```text
+author 404: Ett fel har inträffat: författarid {author} kan inte hittas. Kontrollera adressen.
+document 404: Ett fel har inträffat: dokumentet kan inte hittas. Kontrollera adressen.
+502: Ett fel har inträffat. Författardokumentet kan inte visas just nu.
+```
 
-- [ ] **Step 3: Add failing browser and visual tests**
+- [ ] **Step 3: Write failing browser, canonical-link, PDF, and visual tests**
 
-Behavior tests must cover:
+Cover direct hydration, presentation <-> bibliography router transitions,
+preloader/latest-wins/stale cleanup, history, 404/502 recovery, and zero console/
+escape errors. Click the actual normalized Förvillelser link, follow 307, and
+assert canonical Reader heading/body. Directly follow `/forfattare/LagerlofS`
+and assert the rendered Selma profile.
 
-1. direct hydration of both pages without duplicate work or warnings;
-2. native click of an internal author link and a PDF/download anchor;
-3. router navigation presentation -> bibliography -> presentation with one
-   public request per new identity and back/forward history preserved;
-4. delayed author/kind transitions showing `.searching > .preloader`, clearing
-   the old heading/body synchronously, and ignoring the late first response;
-5. client 404/502 cleanup followed by successful recovery; and
-6. no console, page, hydration, unexpected API, or production-escape problems.
-
-Visual tests use the exact authority viewports and names:
+For PDFs:
 
 ```ts
-await expect(page).toHaveScreenshot(
-  `author-document-${visualCase.name}-${device}.png`,
-  {
-    fullPage: true,
-    animations: "disabled",
-    caret: "hide",
-    scale: "css",
-    threshold: 0.1,
-    maxDiffPixels: 100
-  }
-)
+const downloadPromise = page.waitForEvent("download")
+await page.locator('a[href$="SoderbergH_presentation.pdf"]').click()
+const download = await downloadPromise
+expect(download.suggestedFilename()).toBe("SoderbergH_presentation.pdf")
+
+const popupPromise = page.context().waitForEvent("page")
+await page.locator('a[href$="LagerlofS_bibliografi.pdf"]').click()
+const popup = await popupPromise
+await popup.waitForLoadState("domcontentloaded")
+expect(new URL(popup.url()).pathname)
+  .toBe("/red/forfattare/LagerlofS/bibliografi/LagerlofS_bibliografi.pdf")
 ```
+
+Assert fixture-unit coverage proves both PDF responses are status 200 with
+`application/pdf` and the stated dispositions. Assert the browser PDF ledger
+contains each exact path once and no other asset. Visual
+comparisons use threshold `0.1`, `maxDiffPixels: 100`, full-page CSS scale, and
+the four named baselines.
 
 - [ ] **Step 4: Run page suites RED**
 
@@ -570,62 +856,88 @@ NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3145 \
   --project=desktop-chromium
 ```
 
-Expected: Nuxt route 404s and screenshot cases cannot find the author document.
+Expected: public routes 404 and no author-document shell.
 
-- [ ] **Step 5: Implement the route-keyed page in `<script setup>`**
-
-Validate the two parameters, call the same-origin endpoint with
-`useRequestFetch`, and use the established accepted-identity pattern:
+- [ ] **Step 5: Implement complete `loadPageResult` and route-keyed page**
 
 ```ts
 type PageResult = {
   identity: string
   status: 200 | 404 | 502
-  errorCode: string | null
+  errorCode: AuthorDocumentErrorCode | null
   page: AuthorSupplementalPage | null
 }
 
-const currentIdentity = computed(
-  () => `${authorId.value}:${documentKind.value}`
-)
-const requestFetch = useRequestFetch()
-const { data } = await useAsyncData<PageResult>(
-  computed(() => `author-document:${currentIdentity.value}`),
-  async () => loadPageResult(
-    requestFetch,
-    authorId.value,
-    documentKind.value,
-    currentIdentity.value
-  ),
-  {
-    lazy: true,
-    getCachedData: (key, nuxtApp) => {
-      const value = nuxtApp.payload.data[key] as PageResult | undefined
-      return value?.identity === currentIdentity.value ? value : undefined
-    }
-  }
-)
+function isAuthorSupplementalPage(value: unknown): value is AuthorSupplementalPage {
+  if (!isRecord(value) || !isRecord(value.author)) return false
+  const author = value.author
+  return typeof author.authorId === "string"
+    && typeof author.fullName === "string"
+    && typeof author.lifespan === "string"
+    && typeof author.hasIntroduction === "boolean"
+    && typeof author.hasDramawebben === "boolean"
+    && (author.searchUrl === null || typeof author.searchUrl === "string")
+    && (author.audioUrl === null || typeof author.audioUrl === "string")
+    && (value.documentKind === "presentation" || value.documentKind === "bibliografi")
+    && typeof value.bodyHtml === "string"
+}
 
-const accepted = shallowRef<PageResult | null>(null)
-watch(currentIdentity, () => { accepted.value = null }, { flush: "sync" })
-watch([data, currentIdentity], ([candidate, identity]) => {
-  if (candidate?.identity === identity) accepted.value = candidate
-}, { immediate: true, flush: "sync" })
+function localCode(error: unknown): AuthorDocumentErrorCode | null {
+  if (!isRecord(error) || !isRecord(error.data)) return null
+  const nested = error.data.data
+  if (!isRecord(nested) || typeof nested.code !== "string") return null
+  return [
+    "author_document_author_not_found",
+    "author_document_not_found",
+    "author_document_unavailable"
+  ].includes(nested.code) ? nested.code as AuthorDocumentErrorCode : null
+}
+
+async function loadPageResult(
+  fetcher: typeof $fetch,
+  author: string,
+  kind: AuthorDocumentKind,
+  identity: string
+): Promise<PageResult> {
+  try {
+    const page = await fetcher<AuthorSupplementalPage>(
+      `/api/author-documents/${encodeRfc3986Segment(author)}/${kind}`,
+      { retry: 0 }
+    )
+    if (!isAuthorSupplementalPage(page)
+        || page.author.authorId !== author
+        || page.documentKind !== kind) {
+      return { identity, status: 502,
+        errorCode: "author_document_unavailable", page: null }
+    }
+    return { identity, status: 200, errorCode: null, page }
+  } catch (error) {
+    const code = localCode(error)
+    if (code === "author_document_author_not_found"
+        || code === "author_document_not_found") {
+      return { identity, status: 404, errorCode: code, page: null }
+    }
+    return { identity, status: 502,
+      errorCode: "author_document_unavailable", page: null }
+  }
+}
 ```
 
-Render the Angular shell directly in this page; do not introduce a one-use
-component or composable. Use `authorProfilePath` and the descriptor booleans for
-the ordinary navigation. Set the exact metadata/background/body hooks from the
-design. SSR calls `setResponseStatus(404|502)` from the accepted result.
+Use `useRequestFetch`, route-keyed lazy `useAsyncData`, payload cache identity,
+and synchronous accepted clearing exactly like Author Works. SSR calls
+`setResponseStatus(accepted.status)`. Render heading/navigation in the Angular
+order, Ljud as `_blank`, and `.page_content > .content.unbox` with sanitized
+`v-html`; render the exact three error strings above.
 
-- [ ] **Step 6: Run focused GREEN and adjacent author regressions**
+- [ ] **Step 6: Run focused GREEN and adjacent regressions**
 
 ```bash
-yarn vitest run test/unit/author-document.spec.ts test/unit/author-profile.spec.ts
+yarn vitest run test/unit/author-document.spec.ts \
+  test/unit/legacy-author-route.spec.ts test/unit/author-profile.spec.ts
 NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3143 \
   yarn playwright test test/ssr/author-documents-api.spec.ts \
-  test/ssr/author-documents.spec.ts test/ssr/author-profiles.spec.ts \
-  test/ssr/author-works.spec.ts --project=ssr
+  test/ssr/legacy-author-routes.spec.ts test/ssr/author-documents.spec.ts \
+  test/ssr/author-profiles.spec.ts test/ssr/author-works.spec.ts --project=ssr
 NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3145 \
   yarn playwright test test/e2e/author-documents.behavior.spec.ts \
   test/e2e/author-profiles.behavior.spec.ts \
@@ -635,10 +947,7 @@ NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3147 \
   --project=desktop-chromium --project=mobile-chromium
 ```
 
-Expected: all focused and adjacent author tests pass; all four comparisons are
-within the authority threshold.
-
-- [ ] **Step 7: Run the complete closure gate**
+- [ ] **Step 7: Run complete closure and commit Task 5**
 
 ```bash
 cd /Users/johan/.codex/worktrees/8c5c/littb/nuxt
@@ -658,15 +967,7 @@ python scripts/export_v2_openapi.py --check
 python -m compileall -q lbapi
 git diff --check
 git diff --quiet -- lbapi/elasticapi.py lbapi/web.py
-```
 
-Expected: every command exits 0. While the development servers are live, also
-verify the two real URLs resolve with managed content and no browser console or
-hydration error; do not stop the user's existing frontend server.
-
-- [ ] **Step 8: Commit the completed frontend slice**
-
-```bash
 cd /Users/johan/.codex/worktrees/8c5c/littb
 git add 'nuxt/app/pages/författare/[author]/[document].vue' \
   nuxt/test/ssr/author-documents.spec.ts \
@@ -678,3 +979,8 @@ git add 'nuxt/app/pages/författare/[author]/[document].vue' \
 git diff --cached --check
 git commit -m "feat(nuxt): render author documents"
 ```
+
+Expected: every command exits 0, both real local routes render fetched managed
+content, normalized links reach canonical usable pages, both PDF variants stay
+inside the deterministic boundary, and the user's existing frontend dev server
+is not stopped.
