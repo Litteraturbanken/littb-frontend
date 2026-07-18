@@ -1,6 +1,6 @@
 import { mkdir, readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type Page, type Route } from "@playwright/test"
 
 import {
   textSearchAboutAuthors,
@@ -43,15 +43,44 @@ const expectedAdvancedTitleQuery = [
   ["to", "30"]
 ]
 const productionProxyPrefixes = [
-  "/api/",
-  "/red/",
-  "/txt/",
-  "/export/",
-  "/query/",
-  "/bilder/",
-  "/css/",
-  "/xhr/",
-  "/ws/"
+  "/api",
+  "/red",
+  "/txt",
+  "/export",
+  "/query",
+  "/bilder",
+  "/css",
+  "/sla-bibliografi",
+  "/authordb",
+  "/xhr",
+  "/ws",
+  "/so",
+  "/litteraturkartan/",
+  "/skolan",
+  "/cdn-cgi/image/"
+]
+const expectedViteProxyPrefixes = [
+  "/api",
+  "/red",
+  "/txt",
+  "/export",
+  "/query",
+  "/bilder",
+  "/css",
+  "/sla-bibliografi",
+  "/authordb",
+  "/xhr",
+  "/ws",
+  "/so",
+  "/litteraturkartan/",
+  "/skolan",
+  "/cdn-cgi/image/"
+]
+const expectedBootstrapRequestSignatures = [
+  "GET https://cloud.typography.com/7426274/770508/css/fonts.css",
+  "GET https://www.googletagmanager.com/gtag/js?id=UA-132486790-1",
+  `GET ${authorityOrigin}/red/bilder/bakgrundsbilder/backgrounds.xml?username=app`,
+  `GET ${authorityOrigin}/red/css/etext.css`
 ]
 
 type VisualCase = {
@@ -66,6 +95,24 @@ type RequestRecord = {
   method: string
   path: string
   query: string[][]
+}
+
+type AbortRoute = Pick<Route, "abort">
+
+function abortProductionProxyRequest(
+  route: AbortRoute,
+  record: RequestRecord,
+  label: string,
+  blockedRequests: string[]
+): Promise<void> | null {
+  if (!productionProxyPrefixes.some(prefix => record.path.startsWith(prefix))) return null
+
+  blockedRequests.push(label)
+  return route.abort("blockedbyclient")
+}
+
+function expectExactBootstrapRequests(actual: string[]) {
+  expect([...actual].sort()).toEqual([...expectedBootstrapRequestSignatures].sort())
 }
 
 const visualCases: VisualCase[] = [
@@ -227,7 +274,7 @@ for (const visualCase of visualCases) {
     const titleQueryRequests: RequestRecord[] = []
     const searchRequests: RequestRecord[] = []
     const searchCountRequests: RequestRecord[] = []
-    const bootstrapRequests: RequestRecord[] = []
+    const bootstrapRequests: string[] = []
     const backgroundRequests: RequestRecord[] = []
     const forbiddenProductionRequests: string[] = []
     const unexpectedApplicationRequests: string[] = []
@@ -251,7 +298,7 @@ for (const visualCase of visualCases) {
           && url.origin === "https://cloud.typography.com"
           && url.pathname === "/7426274/770508/css/fonts.css"
           && url.search === "") {
-          bootstrapRequests.push(record)
+          bootstrapRequests.push(label)
           return route.fulfill({
             status: 200,
             contentType: "text/css; charset=utf-8",
@@ -262,7 +309,7 @@ for (const visualCase of visualCases) {
           && url.origin === "https://www.googletagmanager.com"
           && url.pathname === "/gtag/js"
           && sameEntries(record.query, [["id", "UA-132486790-1"]])) {
-          bootstrapRequests.push(record)
+          bootstrapRequests.push(label)
           return route.fulfill({
             status: 200,
             contentType: "application/javascript; charset=utf-8",
@@ -343,7 +390,7 @@ for (const visualCase of visualCases) {
       if (request.method() === "GET"
         && record.path === "/red/bilder/bakgrundsbilder/backgrounds.xml"
         && sameEntries(record.query, [["username", "app"]])) {
-        bootstrapRequests.push(record)
+        bootstrapRequests.push(label)
         return route.fulfill({
           status: 200,
           contentType: "application/xml; charset=utf-8",
@@ -362,17 +409,20 @@ for (const visualCase of visualCases) {
       if (request.method() === "GET"
         && record.path === "/red/css/etext.css"
         && record.query.length === 0) {
-        bootstrapRequests.push(record)
+        bootstrapRequests.push(label)
         return route.fulfill({
           status: 200,
           contentType: "text/css; charset=utf-8",
           body: ""
         })
       }
-      if (productionProxyPrefixes.some(prefix => record.path.startsWith(prefix))) {
-        unexpectedApplicationRequests.push(label)
-        return route.abort("blockedbyclient")
-      }
+      const proxyAbort = abortProductionProxyRequest(
+        route,
+        record,
+        label,
+        unexpectedApplicationRequests
+      )
+      if (proxyAbort) return proxyAbort
       return route.continue()
     })
 
@@ -403,7 +453,7 @@ for (const visualCase of visualCases) {
       path: `/api/search_count/${visualCase.query}`,
       query: expectedSearchCountQuery(visualCase)
     }])
-    expect(bootstrapRequests).toHaveLength(4)
+    expectExactBootstrapRequests(bootstrapRequests)
     // The page loads the CSS background once; waitForVisualAssets decodes the same
     // exact mocked URL once more before capture.
     expect(backgroundRequests).toHaveLength(2)
@@ -447,4 +497,66 @@ test("records Angular Text Search authority defects without normalizing them", a
   expect(advancedButton).toBeDefined()
   expect(advancedButton).not.toMatch(/\btype=/)
   expect(advancedButton).toContain("ng-click=\"$ctrl.advanced = !$ctrl.advanced\"")
+})
+
+test("firewall mirrors every configured Vite proxy namespace", async () => {
+  const viteConfig = await readFile(resolve(import.meta.dirname, "../../../vite.config.mjs"), "utf8")
+  const proxyBlock = viteConfig.match(/const proxy = \{([\s\S]*?)\n\}/)?.[1]
+  expect(proxyBlock).toBeDefined()
+
+  const configuredPrefixes = [...proxyBlock!.matchAll(/^\s*"([^"]+)": proxyTo\(/gm)]
+    .map(match => match[1])
+
+  expect(configuredPrefixes).toEqual(expectedViteProxyPrefixes)
+  expect(productionProxyPrefixes).toEqual(configuredPrefixes)
+
+  const recorded: string[] = []
+  const abortReasons: string[] = []
+  const route: AbortRoute = {
+    abort: async reason => {
+      abortReasons.push(reason ?? "")
+    }
+  } as AbortRoute
+
+  const probes = configuredPrefixes.map(prefix => {
+    const label = `GET ${authorityOrigin}${prefix}`
+    return abortProductionProxyRequest(
+      route,
+      { method: "GET", path: prefix, query: [] },
+      label,
+      recorded
+    )
+  })
+
+  expect(probes.every(Boolean)).toBe(true)
+  await Promise.all(probes as Promise<void>[])
+  expect(recorded).toEqual(configuredPrefixes.map(prefix => `GET ${authorityOrigin}${prefix}`))
+  expect(abortReasons).toEqual(configuredPrefixes.map(() => "blockedbyclient"))
+
+  for (const localAsset of [
+    "/@vite/client",
+    "/assets/index.js",
+    "/src/main.js",
+    "/views/search/template.html"
+  ]) {
+    expect(abortProductionProxyRequest(
+      route,
+      { method: "GET", path: localAsset, query: [] },
+      `GET ${authorityOrigin}${localAsset}`,
+      recorded
+    )).toBeNull()
+  }
+  expect(recorded).toHaveLength(configuredPrefixes.length)
+})
+
+test("bootstrap ledger rejects a missing resource hidden by a duplicate", () => {
+  const missingGtmWithDuplicateFont = [
+    expectedBootstrapRequestSignatures[0],
+    expectedBootstrapRequestSignatures[0],
+    expectedBootstrapRequestSignatures[2],
+    expectedBootstrapRequestSignatures[3]
+  ]
+
+  expect(() => expectExactBootstrapRequests(missingGtmWithDuplicateFont)).toThrow()
+  expect(() => expectExactBootstrapRequests(expectedBootstrapRequestSignatures)).not.toThrow()
 })
