@@ -41,6 +41,8 @@ import {
   forvillelserReaderPageHtml,
   forvillelserReaderWorkInfoResponse,
   lagerlofBibliography,
+  semerAuthorDocumentAssets,
+  semerAuthorDocumentDescriptor,
   soderbergPresentation,
   sparseDocument
 } from "../fixtures/author-document-data.mjs"
@@ -274,6 +276,12 @@ async function presentationRequests() {
   }
 }
 
+async function authorDocumentAssetRequests() {
+  return await (await fetch(`${origin}/_author_document_asset_requests`)).json() as {
+    requests: string[]
+  }
+}
+
 async function litteraturkartanRequests() {
   return await (await fetch(`${origin}/_litteraturkartan_requests`)).json() as {
     requests: string[]
@@ -448,6 +456,7 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" }),
       fetch(`${origin}/_export_faksimil_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_document_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_author_document_asset_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_document_failure`, { method: "DELETE" }),
       fetch(`${origin}/_author_document_delay`, { method: "DELETE" }),
       fetch(`${origin}/_legacy_author_route_requests`, { method: "DELETE" }),
@@ -497,6 +506,19 @@ describe("v2 fixture server operations", () => {
       document_kind: "bibliografi",
       source_path: "/red/forfattare/LagerlofS/bibliografi/index.html"
     })
+    expect(semerAuthorDocumentDescriptor).toEqual({
+      author_id: "AlmqvistCJL",
+      normalized_author_id: "AlmqvistCJL",
+      full_name: "Carl Jonas Love Almqvist",
+      birth_year: "1793",
+      death_year: "1866",
+      has_introduction: true,
+      has_dramawebben: false,
+      search_url: "/sok?forfattare=AlmqvistCJL&avancerad",
+      audio_url: null,
+      document_kind: "semer",
+      source_path: "/red/forfattare/AlmqvistCJL/semer/index.html"
+    })
     expect(sparseDocument).toEqual({
       author_id: "SparseDocument",
       normalized_author_id: "SparseDocument",
@@ -520,12 +542,20 @@ describe("v2 fixture server operations", () => {
         path: "/red/forfattare/LagerlofS/bibliografi/index.html",
         sourceUrl: "https://red.litteraturbanken.se/red/forfattare/LagerlofS/bibliografi/index.html",
         sha256: "54d289da89e61225fdfbfc68aed19762614529c06c6f2707ed50a493359d179b"
+      },
+      {
+        path: "/red/forfattare/AlmqvistCJL/semer/index.html",
+        sourceUrl: "https://litteraturbanken.se/red/forfattare/AlmqvistCJL/semer/index.html",
+        retrievedFrom: "https://red.litteraturbanken.se/red/forfattare/AlmqvistCJL/semer/index.html",
+        sha256: "49c0eed3a775926c301ae011b79be8c6c557d9d9c7f868f390869bcdc510c824"
       }
     ])
+    expect(semerAuthorDocumentAssets).toHaveLength(13)
 
     for (const [path, descriptor] of [
       ["/v2/authors/S%C3%B6derbergH/documents/presentation", soderbergPresentation],
       ["/private-v2/authors/Lagerl%C3%B6fS/documents/bibliografi", lagerlofBibliography],
+      ["/v2/authors/AlmqvistCJL/documents/semer", semerAuthorDocumentDescriptor],
       ["/v2/authors/SparseDocument/documents/presentation", sparseDocument]
     ] as const) {
       const response = await fetch(`${origin}${path}`)
@@ -541,16 +571,28 @@ describe("v2 fixture server operations", () => {
         .toBe(provenance.sha256)
     }
 
+    for (const asset of semerAuthorDocumentAssets) {
+      const response = await fetch(`${origin}${asset.path}`)
+      expect(response.status, asset.path).toBe(200)
+      expect(response.headers.get("content-type")).toBe("image/jpeg")
+      expect(createHash("sha256").update(Buffer.from(await response.arrayBuffer())).digest("hex"))
+        .toBe(asset.sha256)
+    }
+
     expect(await authorDocumentRequests()).toEqual({
       requests: [
         { kind: "descriptor", path: "/v2/authors/S%C3%B6derbergH/documents/presentation" },
         { kind: "descriptor", path: "/private-v2/authors/Lagerl%C3%B6fS/documents/bibliografi" },
+        { kind: "descriptor", path: "/v2/authors/AlmqvistCJL/documents/semer" },
         { kind: "descriptor", path: "/v2/authors/SparseDocument/documents/presentation" },
         ...authorDocumentProvenance.map(({ path }) => ({
           kind: "content" as const,
           path: `${path}?authority=exact`
         }))
       ]
+    })
+    expect(await authorDocumentAssetRequests()).toEqual({
+      requests: semerAuthorDocumentAssets.map(({ path }) => path)
     })
   })
 

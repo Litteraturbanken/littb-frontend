@@ -137,7 +137,9 @@ function isAuthorDocumentDescriptor(value: unknown): value is AuthorDocumentDesc
     && typeof value.has_dramawebben === "boolean"
     && (value.search_url === null || typeof value.search_url === "string")
     && (value.audio_url === null || typeof value.audio_url === "string")
-    && (value.document_kind === "presentation" || value.document_kind === "bibliografi")
+    && (value.document_kind === "presentation"
+      || value.document_kind === "bibliografi"
+      || value.document_kind === "semer")
     && typeof value.source_path === "string"
 }
 

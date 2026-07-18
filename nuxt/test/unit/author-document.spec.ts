@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { parseHTML } from "linkedom"
 import { describe, expect, test } from "vitest"
 
@@ -6,6 +7,10 @@ import {
   expectedAuthorDocumentSource,
   parseAuthorDocumentBody
 } from "../../server/utils/author-document"
+import {
+  semerAuthorDocumentAssets,
+  semerAuthorDocumentDescriptor
+} from "../fixtures/author-document-data.mjs"
 
 type Descriptor = Parameters<typeof expectedAuthorDocumentSource>[0]
 
@@ -26,6 +31,35 @@ const descriptor = (overrides: Partial<Descriptor> = {}): Descriptor => ({
 })
 
 describe("strict author document descriptors", () => {
+  test("accepts the exact Almqvist semer descriptor and managed source path", () => {
+    expect(expectedAuthorDocumentSource(
+      semerAuthorDocumentDescriptor,
+      "AlmqvistCJL",
+      "semer"
+    )).toBe("/red/forfattare/AlmqvistCJL/semer/index.html")
+  })
+
+  test.each([
+    { author_id: "AtterbomPDA" },
+    { document_kind: "presentation" },
+    { source_path: "https://evil.test/red/forfattare/AlmqvistCJL/semer/index.html" },
+    { source_path: "//evil.test/red/forfattare/AlmqvistCJL/semer/index.html" },
+    { source_path: "/red/forfattare/../semer/index.html" },
+    { source_path: "/red/forfattare/%2e%2e/semer/index.html" },
+    { source_path: "/red/forfattare/%252e%252e/semer/index.html" },
+    { source_path: "/red/forfattare/AlmqvistCJL/semer/index.html?download=1" },
+    { source_path: "/red/forfattare/AlmqvistCJL/semer/index.html#main" },
+    { source_path: "/red/forfattare/AlmqvistCJL/semer/index.html\u0000" },
+    { source_path: "/red/forfattare/AlmqvistCJL/presentation/index.html" },
+    { source_path: "/red/forfattare/AlmqvistCJL/semer/other.html" }
+  ])("rejects a non-exact Almqvist semer descriptor %#", overrides => {
+    expect(() => expectedAuthorDocumentSource(
+      { ...semerAuthorDocumentDescriptor, ...overrides },
+      "AlmqvistCJL",
+      "semer"
+    )).toThrow("Invalid author document descriptor")
+  })
+
   test("reconstructs and accepts the one exact managed source path", () => {
     expect(expectedAuthorDocumentSource(
       descriptor(),
@@ -173,6 +207,41 @@ const maliciousBody = [
 ].join("")
 
 describe("managed author XHTML sanitization", () => {
+  test("preserves the real Almqvist semer body inside the sanitizer boundary", () => {
+    const source = readFileSync(
+      new URL("../fixtures/author-document-content/AlmqvistCJL-semer.html", import.meta.url),
+      "utf8"
+    )
+    const output = parseAuthorDocumentBody(source)
+    const { document } = parseHTML(`<body>${output}</body>`)
+    const headings = [...document.querySelectorAll("h1, h2")].map(node => node.textContent)
+    const images = [...document.querySelectorAll("img")]
+    const links = [...document.querySelectorAll("a")]
+
+    expect(headings).toEqual([
+      "Carl Jonas Love Almqvist",
+      "Mera om och av författaren"
+    ])
+    expect(images).toHaveLength(13)
+    expect(images.map(image => image.getAttribute("src")).sort())
+      .toEqual(semerAuthorDocumentAssets.map(asset => asset.path).sort())
+    const atterbomThumbnail = images.find(image => image.getAttribute("alt") === "4:e januari")
+    expect(atterbomThumbnail?.getAttribute("width")).toBe("76")
+    expect(atterbomThumbnail?.getAttribute("height")).toBe("100")
+    expect(links.map(link => link.getAttribute("href"))).toEqual(expect.arrayContaining([
+      "/forfattare/AlmqvistCJL/titlar/DetGarAn1838/sida/1/faksimil",
+      "/forfattare/AtterbomPDA",
+      "/red/forfattare/AlmqvistCJL/semer/pictures/Burman2003.pdf",
+      "/red/forfattare/AlmqvistCJL/semer/AlmqvistOrdlistaSlutgiltig.pdf"
+    ]))
+    for (const link of links.filter(link => link.getAttribute("target") === "_blank")) {
+      expect(link.getAttribute("rel")).toBe("noopener noreferrer")
+    }
+    expect(output).not.toMatch(/<(?:script|style|form|iframe|svg|math)\b/iu)
+    expect(output).not.toMatch(/\s(?:style|on\w+|srcdoc|ng-[\w-]+|v-[\w-]+)=/iu)
+    expect(output).not.toMatch(/(?:javascript:|data:|\/\/evil\.test)/iu)
+  })
+
   test("preserves the complete editorial element and attribute policy", () => {
     const output = parseAuthorDocumentBody(managedBody)
     const { document } = parseHTML(`<body>${output}</body>`)

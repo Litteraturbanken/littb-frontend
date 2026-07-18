@@ -296,7 +296,7 @@ export interface components {
              * Document Kind
              * @enum {string}
              */
-            document_kind: "presentation" | "bibliografi";
+            document_kind: "presentation" | "bibliografi" | "semer";
             /** Full Name */
             full_name: string;
             /** Has Dramawebben */
@@ -1082,7 +1082,7 @@ export interface operations {
             header?: never;
             path: {
                 author_id: string;
-                document_kind: "presentation" | "bibliografi";
+                document_kind: "presentation" | "bibliografi" | "semer";
             };
             cookie?: never;
         };

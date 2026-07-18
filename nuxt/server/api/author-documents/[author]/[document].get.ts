@@ -19,7 +19,9 @@ function requiredParam(
 }
 
 function documentKind(value: string): AuthorDocumentKind | null {
-  return value === "presentation" || value === "bibliografi" ? value : null
+  return value === "presentation" || value === "bibliografi" || value === "semer"
+    ? value
+    : null
 }
 
 export default defineEventHandler(async event => {

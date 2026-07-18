@@ -6,6 +6,8 @@ import {
   forvillelserReaderPageHtml,
   forvillelserReaderWorkInfoResponse,
   lagerlofBibliography,
+  semerAuthorDocumentAssets,
+  semerAuthorDocumentDescriptor,
   soderbergPresentation,
   sparseDocument
 } from "./author-document-data.mjs"
@@ -87,10 +89,18 @@ const authorDocumentContent = new Map([
     readFileSync(new URL("./author-document-content/LagerlofS-bibliografi.html", import.meta.url))
   ],
   [
+    semerAuthorDocumentDescriptor.source_path,
+    readFileSync(new URL("./author-document-content/AlmqvistCJL-semer.html", import.meta.url))
+  ],
+  [
     sparseDocument.source_path,
     readFileSync(new URL("./author-document-content/sparse.html", import.meta.url))
   ]
 ])
+const authorDocumentAssets = new Map(semerAuthorDocumentAssets.map(asset => [
+  asset.path,
+  readFileSync(new URL(`./author-document-content/${asset.file}`, import.meta.url))
+]))
 const malformedAuthorDocumentContent = "<html><head><title>Malformed</title></head></html>"
 const authorDocumentPdf = readFileSync(
   new URL("./presentation-content/Figurdiktensombarockblandkonst.pdf", import.meta.url)
@@ -108,6 +118,7 @@ const authorDocumentPdfs = new Map([
 const authorDocumentDescriptors = new Map([
   [`${soderbergPresentation.author_id}|${soderbergPresentation.document_kind}`, soderbergPresentation],
   [`${lagerlofBibliography.author_id}|${lagerlofBibliography.document_kind}`, lagerlofBibliography],
+  [`${semerAuthorDocumentDescriptor.author_id}|${semerAuthorDocumentDescriptor.document_kind}`, semerAuthorDocumentDescriptor],
   [`${sparseDocument.author_id}|${sparseDocument.document_kind}`, sparseDocument]
 ])
 
@@ -155,6 +166,7 @@ let libraryQueryRequests = []
 let libraryQueryFailure = false
 let libraryQueryDelays = {}
 let authorDocumentRequests = []
+let authorDocumentAssetRequests = []
 let authorDocumentFailure = null
 let authorDocumentDelay = 0
 let legacyAuthorRouteRequests = []
@@ -1517,6 +1529,13 @@ const server = createServer(async (request, response) => {
     authorDocumentRequests = []
     return sendJson(response, 200, { requests: authorDocumentRequests })
   }
+  if (url.pathname === "/_author_document_asset_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: authorDocumentAssetRequests })
+  }
+  if (url.pathname === "/_author_document_asset_requests" && request.method === "DELETE") {
+    authorDocumentAssetRequests = []
+    return sendJson(response, 200, { requests: authorDocumentAssetRequests })
+  }
   if (
     url.pathname === "/_author_document_redirect_target_requests"
     && request.method === "GET"
@@ -1642,6 +1661,12 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, "application/pdf", authorDocumentPdf, {
       "content-disposition": authorDocumentPdfDisposition
     })
+  }
+
+  const authorDocumentAsset = authorDocumentAssets.get(rawPathname)
+  if (request.method === "GET" && authorDocumentAsset && !url.search) {
+    authorDocumentAssetRequests.push(rawPathname)
+    return sendBody(response, 200, "image/jpeg", authorDocumentAsset)
   }
 
   const authorDocumentBody = authorDocumentContent.get(rawPathname)
@@ -1990,7 +2015,7 @@ const server = createServer(async (request, response) => {
   }
 
   const authorDocumentMatch = request.method === "GET"
-    ? /^\/v2\/authors\/([^/]+)\/documents\/(presentation|bibliografi)$/.exec(rawApiPathname)
+    ? /^\/v2\/authors\/([^/]+)\/documents\/(presentation|bibliografi|semer)$/.exec(rawApiPathname)
     : null
   if (authorDocumentMatch) {
     authorDocumentRequests.push({

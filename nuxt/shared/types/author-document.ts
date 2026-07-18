@@ -1,4 +1,4 @@
-export type AuthorDocumentKind = "presentation" | "bibliografi"
+export type AuthorDocumentKind = "presentation" | "bibliografi" | "semer"
 
 export type AuthorDocumentErrorCode =
   | "author_document_author_not_found"

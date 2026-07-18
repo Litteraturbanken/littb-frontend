@@ -3,6 +3,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 const fixture = "http://127.0.0.1:4100"
 const presentationApi = "/api/author-documents/S%C3%B6derbergH/presentation"
 const bibliographyApi = "/api/author-documents/Lagerl%C3%B6fS/bibliografi"
+const semerApi = "/api/author-documents/AlmqvistCJL/semer"
 
 type AuthorDocumentRequest = {
   kind: "descriptor" | "content"
@@ -108,6 +109,49 @@ test("loads the exact Lagerlöf bibliography and preserves inline PDF behavior",
   )
   expect(payload.bodyHtml).toContain('target="_blank"')
   expect(payload.bodyHtml).toMatch(/rel="[^"]*noopener[^"]*noreferrer[^"]*"/u)
+})
+
+test("loads and sanitizes the exact Almqvist semer document through private origins", async ({
+  request
+}) => {
+  const response = await request.get(semerApi)
+  expect(response.status()).toBe(200)
+  expect(response.headers()["cache-control"]).toBe("no-store")
+  const payload = await response.json()
+
+  expect(payload.author).toEqual({
+    authorId: "AlmqvistCJL",
+    fullName: "Carl Jonas Love Almqvist",
+    lifespan: "1793-1866",
+    hasIntroduction: true,
+    hasDramawebben: false,
+    searchUrl: "/sok?forfattare=AlmqvistCJL&avancerad",
+    audioUrl: null
+  })
+  expect(payload.documentKind).toBe("semer")
+  expect(payload.bodyHtml).toContain("Mera om och av författaren")
+  expect(payload.bodyHtml).toContain(
+    'src="/red/forfattare/AlmqvistCJL/semer/pictures/200_almqvist_cjl_fa1.jpeg"'
+  )
+  expect(payload.bodyHtml).toContain(
+    'href="/forfattare/AlmqvistCJL/titlar/DetGarAn1838/sida/1/faksimil"'
+  )
+  expect(payload.bodyHtml).toContain(
+    'href="/red/forfattare/AlmqvistCJL/semer/pictures/Burman2003.pdf"'
+  )
+  expect(payload.bodyHtml).toMatch(/rel="[^"]*noopener[^"]*noreferrer[^"]*"/u)
+  expect(payload.bodyHtml).not.toMatch(/<(?:script|style|form|iframe|svg|math)\b/iu)
+  expect(payload.bodyHtml).not.toMatch(/\son\w+=/iu)
+  expect(await authorDocumentRequests(request)).toEqual([
+    {
+      kind: "descriptor",
+      path: "/private-v2/authors/AlmqvistCJL/documents/semer"
+    },
+    {
+      kind: "content",
+      path: "/red/forfattare/AlmqvistCJL/semer/index.html"
+    }
+  ])
 })
 
 test("supports the sparse descriptor without inventing optional navigation", async ({
