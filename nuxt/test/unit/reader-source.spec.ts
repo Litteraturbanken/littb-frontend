@@ -149,6 +149,22 @@ describe("faksimil page identities", () => {
     ])
   })
 
+  test("allows distinct page identities to share one JPEG image number", () => {
+    const metadata = normalize({
+      pages: [
+        { imagenumber: 9, pageindex: 0, pagename: "1" },
+        { imagenumber: 9, pageindex: 1, pagename: "2" }
+      ]
+    })
+    expect(metadata.mediaType).toBe("faksimil")
+    if (metadata.mediaType !== "faksimil") throw new Error("wrong test media")
+
+    expect(metadata.pages).toEqual([
+      { imageNumber: 9, pageIndex: 0, pageName: "1" },
+      { imageNumber: 9, pageIndex: 1, pageName: "2" }
+    ])
+  })
+
   test.each([
     ["missing image number", [{ pageindex: 0, pagename: "1" }]],
     ["negative image number", [{ imagenumber: -1, pageindex: 0, pagename: "1" }]],
@@ -163,10 +179,6 @@ describe("faksimil page identities", () => {
     ["duplicate page index", [
       { imagenumber: 1, pageindex: 0, pagename: "1" },
       { imagenumber: 2, pageindex: 0, pagename: "2" }
-    ]],
-    ["duplicate image number", [
-      { imagenumber: 1, pageindex: 0, pagename: "1" },
-      { imagenumber: 1, pageindex: 1, pagename: "2" }
     ]]
   ])("rejects %s", (_label, pages) => {
     expectSourceError(() => normalize({ pages }), 502)

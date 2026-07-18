@@ -78,7 +78,6 @@ function facsimilePages(value: unknown): ReaderFacsimileSourcePage[] | null {
   const pages: ReaderFacsimileSourcePage[] = []
   const pageNames = new Set<string>()
   const pageIndexes = new Set<number>()
-  const imageNumbers = new Set<number>()
   for (const page of value) {
     if (!isRecord(page)) return null
     const pageName = requiredString(page, "pagename")
@@ -89,12 +88,10 @@ function facsimilePages(value: unknown): ReaderFacsimileSourcePage[] | null {
       !safeNonnegativeInteger(pageIndex) ||
       !safeNonnegativeInteger(imageNumber) ||
       pageNames.has(pageName) ||
-      pageIndexes.has(pageIndex) ||
-      imageNumbers.has(imageNumber)
+      pageIndexes.has(pageIndex)
     ) return null
     pageNames.add(pageName)
     pageIndexes.add(pageIndex)
-    imageNumbers.add(imageNumber)
     pages.push({ pageName, pageIndex, imageNumber })
   }
   return pages.sort((left, right) => left.pageIndex - right.pageIndex)

@@ -569,6 +569,30 @@ test("faksimil size replacement changes exact sources and stops at both edges", 
   expect(problems).toEqual([])
 })
 
+test("faksimil rotation persists while a size change clears only the image error", async ({
+  page
+}, testInfo) => {
+  test.skip(testInfo.project.name === "mobile-chromium", "Rotation controls are desktop-only")
+  const problems = captureBrowserProblems(page)
+  await page.goto(facsimilePath, { waitUntil: "networkidle" })
+
+  const image = page.locator("img.faksimil")
+  await page.locator("#toolkit .reader-facsimile-rotation-controls")
+    .getByRole("button", { name: "Höger" }).click()
+  await expect(image).toHaveCSS("transform", "matrix(0, 1, -1, 0, 0, 0)")
+  await image.evaluate(element => element.dispatchEvent(new Event("error")))
+  await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(1)
+
+  await page.locator("#toolkit .reader-facsimile-size-controls")
+    .getByRole("button", { name: "Större" }).click()
+  await expect(page).toHaveURL(`${facsimilePath}?storlek=4`)
+  await expect(image).toHaveAttribute("src", facsimileSource(4, 9))
+  await expect(image).toBeVisible()
+  await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(0)
+  await expect(image).toHaveCSS("transform", "matrix(0, 1, -1, 0, 0, 0)")
+  expect(problems).toEqual([])
+})
+
 test("faksimil page identity resets local rotation and image error state", async ({
   page
 }, testInfo) => {

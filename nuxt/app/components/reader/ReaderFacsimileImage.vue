@@ -35,15 +35,18 @@ const sourceSet = computed(() => retinaSource.value
   ? `${selectedSource.value.url} 1x, ${retinaSource.value.url} 2x`
   : undefined
 )
-const imageIdentity = computed(() => [
+const pageIdentity = computed(() => [
   props.page.workId,
   props.page.pageName,
-  props.page.imageNumber,
-  selectedSource.value.url
+  props.page.imageNumber
 ].join(":"))
+const selectedSourceIdentity = computed(() => selectedSource.value.url)
 
-watch(imageIdentity, () => {
+watch(pageIdentity, () => {
   rotation.value = 0
+  imageFailed.value = false
+})
+watch(selectedSourceIdentity, () => {
   imageFailed.value = false
 })
 </script>
@@ -51,7 +54,7 @@ watch(imageIdentity, () => {
 <template>
   <div class="img_area" :style="{ width: `${selectedSource.width}px` }">
     <img
-      :key="imageIdentity"
+      :key="selectedSourceIdentity"
       v-show="!imageFailed"
       class="faksimil"
       :src="selectedSource.url"
