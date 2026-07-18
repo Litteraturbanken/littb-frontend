@@ -8,7 +8,8 @@ import {
 import { waitForVisualAssets } from "../helpers/visual"
 
 const fixture = "http://127.0.0.1:4100"
-const nuxtOrigin = "http://127.0.0.1:3000"
+const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
+const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 
 type AuthorRequest = {
   path: string

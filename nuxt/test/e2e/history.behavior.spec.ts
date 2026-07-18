@@ -1,5 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
+const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
+const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
+
 const fixture = "http://127.0.0.1:4100"
 
 type StoredHistory = { author: string, label: string, url: string }
@@ -358,13 +361,13 @@ test("typed API failure leaves valid stored history hidden and unchanged", async
   }])
   expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
   expect(transport.responses).toEqual([{
-    url: "http://127.0.0.1:3000/api/v2/authors/resolve",
+    url: `${nuxtOrigin}/api/v2/authors/resolve`,
     status: 503
   }])
   expect(transport.failures).toEqual([])
   expect(browser.expectedResolverErrors).toEqual([{
     text: "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
-    url: "http://127.0.0.1:3000/api/v2/authors/resolve"
+    url: `${nuxtOrigin}/api/v2/authors/resolve`
   }])
   expect(browser.problems).toEqual([])
 })
@@ -393,12 +396,12 @@ test("thrown fetch failure leaves valid stored history hidden and unchanged", as
   expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
   expect(transport.responses).toEqual([])
   expect(transport.failures).toEqual([{
-    url: "http://127.0.0.1:3000/api/v2/authors/resolve",
+    url: `${nuxtOrigin}/api/v2/authors/resolve`,
     error: "net::ERR_FAILED"
   }])
   expect(browser.expectedResolverErrors).toEqual([{
     text: "Failed to load resource: net::ERR_FAILED",
-    url: "http://127.0.0.1:3000/api/v2/authors/resolve"
+    url: `${nuxtOrigin}/api/v2/authors/resolve`
   }])
   expect(browser.problems).toEqual([])
 })

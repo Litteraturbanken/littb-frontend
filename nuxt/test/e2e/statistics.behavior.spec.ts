@@ -2,9 +2,9 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 const fixture = "http://127.0.0.1:4100"
 const allRequests = [
-  "/v2/epubs/popular?limit=30",
-  "/v2/stats",
-  "/v2/works/popular?limit=30"
+  "/private-v2/epubs/popular?limit=30",
+  "/private-v2/stats",
+  "/private-v2/works/popular?limit=30"
 ]
 
 async function resetFixture(request: APIRequestContext) {
