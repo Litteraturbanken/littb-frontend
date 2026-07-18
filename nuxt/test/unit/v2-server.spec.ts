@@ -1406,9 +1406,9 @@ describe("v2 fixture server operations", () => {
           mediatype: "etext",
           has_more_highlights: false,
           highlights: [{
-            left_context: [{ word: "ropade", word_id: "w10", page_name: "1" }],
-            match: [{ word: "frihet", word_id: "w11", page_name: "1" }],
-            right_context: [{ word: "och", word_id: "w12", page_name: "1" }]
+            left_context: [{ word: "ropade", word_id: "w1_10", page_name: "1" }],
+            match: [{ word: "frihet", word_id: "w1_11", page_name: "1" }],
+            right_context: [{ word: "och", word_id: "w1_12", page_name: "1" }]
           }]
         },
         {
@@ -1420,9 +1420,9 @@ describe("v2 fixture server operations", () => {
           mediatype: "faksimil",
           has_more_highlights: true,
           highlights: [{
-            left_context: [{ word: "sin", word_id: "w20", page_name: "3" }],
-            match: [{ word: "frihet", word_id: "w21", page_name: "3" }],
-            right_context: [{ word: "sökte", word_id: "w22", page_name: "3" }]
+            left_context: [{ word: "sin", word_id: "w3_20", page_name: "3" }],
+            match: [{ word: "frihet", word_id: "w3_21", page_name: "3" }],
+            right_context: [{ word: "sökte", word_id: "w3_22", page_name: "3" }]
           }]
         }
       ]
