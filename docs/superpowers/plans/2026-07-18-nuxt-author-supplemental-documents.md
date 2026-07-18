@@ -271,7 +271,9 @@ Cover no title query when null, missing 404, paired-input 422, unsupported media
 422, same canonical duplicate accepted once, distinct duplicate/mismatched/
 malformed 500, and either OpenSearch call -> typed 503. Add author lengths
 100/101, title lengths 100/101/200/201, whitespace, percent, slash, backslash,
-dot, control, DEL/C1, and surrogate boundary cases.
+dot, control, DEL/C1, and surrogate boundary cases. Apply the same probes to
+provider-returned canonical `authorid`/`titleid`, proving FastAPI rejects them
+before publishing a typed response.
 
 - [ ] **Step 2: Run resolver tests RED**
 
@@ -288,7 +290,8 @@ Use `APIRouter(tags=["authors"])` and this concrete transform/status boundary:
 
 ```python
 def one_canonical_value(
-    raw: dict[str, Any], normalized_key: str, normalized: str, canonical_key: str
+    raw: dict[str, Any], normalized_key: str, normalized: str,
+    canonical_key: str, maximum: int,
 ) -> str:
     hits = raw.get("hits")
     rows = raw.get("data")
@@ -301,7 +304,18 @@ def one_canonical_value(
         if not isinstance(row, dict) or row.get(normalized_key) != normalized:
             raise ValueError("Malformed legacy route response")
         value = row.get(canonical_key)
-        if not isinstance(value, str) or not value:
+        if (
+            not isinstance(value, str)
+            or not value
+            or len(value) > maximum
+            or value != value.strip()
+            or value in {".", ".."}
+            or any(character in value for character in ("%", "/", "\\"))
+            or any(
+                unicodedata.category(character) in {"Cc", "Cs"}
+                for character in value
+            )
+        ):
             raise ValueError("Malformed legacy route response")
         values.add(value)
     if hits != len(rows) or len(values) != 1:
@@ -313,10 +327,10 @@ def transform_legacy_author_route(
     request: LegacyAuthorRouteRequest,
 ) -> LegacyAuthorRouteResolution:
     author_id = one_canonical_value(
-        author_raw, "authorid_norm", request.normalized_author_id, "authorid"
+        author_raw, "authorid_norm", request.normalized_author_id, "authorid", 100
     )
     title_id = None if title_raw is None else one_canonical_value(
-        title_raw, "titleid_norm", request.normalized_title_id, "titleid"
+        title_raw, "titleid_norm", request.normalized_title_id, "titleid", 200
     )
     return LegacyAuthorRouteResolution(author_id=author_id, title_id=title_id)
 ```
@@ -816,16 +830,20 @@ export function decodeAndValidatePathSegments(pathname: string): string[] {
   if (raw.length < 2 || raw.some(segment => segment.length === 0)) {
     throw legacyRouteError(404, "legacy_author_route_not_found")
   }
-  return raw.map((segment, index) => {
+  const decoded = raw.map(segment => decodeStable(segment, 512))
+  const readerShape = decoded.length === 7
+    && decoded[0] === "forfattare" && decoded[2] === "titlar"
+    && decoded[4] === "sida"
+    && ["etext", "faksimil"].includes(decoded[6] ?? "")
+  return decoded.map((segment, index) => {
     const maximum = index === 1 ? 100
-      : index === 3 && raw[2] === "titlar" ? 200 : 512
-    const decoded = decodeStable(segment, maximum)
-    if (decoded === "." || decoded === ".."
-        || decoded !== decoded.trim()
-        || /[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(decoded)) {
+      : readerShape && index === 3 ? 200 : 512
+    if (segment.length > maximum || segment === "." || segment === ".."
+        || segment !== segment.trim()
+        || /[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(segment)) {
       throw legacyRouteError(404, "legacy_author_route_not_found")
     }
-    return decoded
+    return segment
   })
 }
 
@@ -1095,6 +1113,11 @@ async function loadPageResult(
   }
 }
 ```
+
+Add a regression where the structural segment is encoded as `%74itlar` and a
+201-character title is rejected locally with 404 before any FastAPI call. This
+proves the 200-character title limit is selected from fully decoded structure,
+not from attacker-controlled raw spelling.
 
 Use `useRequestFetch`, route-keyed lazy `useAsyncData`, payload cache identity,
 and synchronous accepted clearing exactly like Author Works. SSR calls
