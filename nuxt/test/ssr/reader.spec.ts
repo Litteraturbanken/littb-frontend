@@ -6,10 +6,31 @@ const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_metadata_requests`),
+    request.delete(`${fixture}/_reader_html_requests`),
+    request.delete(`${fixture}/_reader_ocr_requests`),
+    request.delete(`${fixture}/_reader_jpeg_requests`),
     request.delete(`${fixture}/_reader_hit_requests`),
     request.delete(`${fixture}/_reader_hit_failure`),
     request.delete(`${fixture}/_reader_hit_delays`)
   ])
+}
+
+async function separateReaderRequests(request: APIRequestContext) {
+  const ledgers = await Promise.all([
+    "metadata",
+    "html",
+    "ocr",
+    "jpeg"
+  ].map(async kind => (
+    await (await request.get(`${fixture}/_reader_${kind}_requests`)).json()
+  ).requests as string[]))
+  return {
+    metadata: ledgers[0]!,
+    html: ledgers[1]!,
+    ocr: ledgers[2]!,
+    jpeg: ledgers[3]!
+  }
 }
 
 async function readerRequests(request: APIRequestContext): Promise<string[]> {
@@ -51,6 +72,120 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   ))).toHaveLength(1)
   expect(await readerHitRequests(request)).toEqual([])
 })
+
+test("canonical API returns the exact faksimil image arm without fetching assets", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/faksimil"
+  )
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toEqual({
+    author: { id: "LagerlöfS", name: "Selma Lagerlöf" },
+    description: "Gösta Berlings saga av Selma Lagerlöf, sida 3 som faksimil.",
+    fullTitle: "Gösta Berlings saga. Roman",
+    imageNumber: 9,
+    imprintYear: "1891",
+    mediaType: "faksimil",
+    nextPageName: "5",
+    pageCount: 3,
+    pageIndex: 1,
+    pageName: "3",
+    preferredSize: 3,
+    previousPageName: "1",
+    sources: [
+      {
+        size: 1,
+        url: "/txt/lb-reader-gosta-berlings-saga/" +
+          "lb-reader-gosta-berlings-saga_1/" +
+          "lb-reader-gosta-berlings-saga_1_0009.jpeg",
+        width: 320
+      },
+      {
+        size: 3,
+        url: "/txt/lb-reader-gosta-berlings-saga/" +
+          "lb-reader-gosta-berlings-saga_3/" +
+          "lb-reader-gosta-berlings-saga_3_0009.jpeg",
+        width: 640
+      },
+      {
+        size: 5,
+        url: "/txt/lb-reader-gosta-berlings-saga/" +
+          "lb-reader-gosta-berlings-saga_5/" +
+          "lb-reader-gosta-berlings-saga_5_0009.jpeg",
+        width: 1280
+      }
+    ],
+    title: "Gösta Berlings saga",
+    workId: "lb-reader-gosta-berlings-saga"
+  })
+  expect(await separateReaderRequests(request)).toEqual({
+    metadata: [
+      "/api/get_work_info?authorid=Lagerl%C3%B6fS" +
+        "&exclude=content_vector&titlepath=GostaBerlingsSaga"
+    ],
+    html: [],
+    ocr: [],
+    jpeg: []
+  })
+  expect(await readerHitRequests(request)).toEqual([])
+})
+
+test("canonical faksimil requires an exact representation", async ({ request }) => {
+  const response = await request.get(
+    "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/faksimil"
+  )
+  expect(response.status()).toBe(404)
+  expect(await separateReaderRequests(request)).toEqual({
+    metadata: [
+      "/api/get_work_info?authorid=S%C3%B6derbergH" +
+        "&exclude=content_vector&titlepath=DoktorGlas"
+    ],
+    html: [],
+    ocr: [],
+    jpeg: []
+  })
+})
+
+test("canonical unknown media fails before reader IO", async ({ request }) => {
+  const response = await request.get(
+    "/api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/3/pdf"
+  )
+  expect(response.status()).toBe(404)
+  expect(await separateReaderRequests(request)).toEqual({
+    metadata: [], html: [], ocr: [], jpeg: []
+  })
+})
+
+test("canonical missing faksimil page fails before asset IO", async ({ request }) => {
+  const response = await request.get(
+    "/api/reader/Lagerl%C3%B6fS/GostaBerlingsSaga/missing/faksimil"
+  )
+  expect(response.status()).toBe(404)
+  const recorded = await separateReaderRequests(request)
+  expect(recorded.metadata).toHaveLength(1)
+  expect({ html: recorded.html, ocr: recorded.ocr, jpeg: recorded.jpeg }).toEqual({
+    html: [], ocr: [], jpeg: []
+  })
+})
+
+for (const titlePath of [
+  "MalformedFacsimileImageReader",
+  "MalformedFacsimileSizesReader",
+  "MalformedFacsimileWidthReader"
+]) {
+  test(`${titlePath} is a 502 without asset IO`, async ({ request }) => {
+    const response = await request.get(
+      `/api/reader/Lagerl%C3%B6fS/${titlePath}/3/faksimil`
+    )
+    expect(response.status()).toBe(502)
+    const recorded = await separateReaderRequests(request)
+    expect(recorded.metadata).toHaveLength(1)
+    expect({ html: recorded.html, ocr: recorded.ocr, jpeg: recorded.jpeg }).toEqual({
+      html: [], ocr: [], jpeg: []
+    })
+  })
+}
 
 test("canonical search state fetches one private hit window and marks its exact range", async ({
   request

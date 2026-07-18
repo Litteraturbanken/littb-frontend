@@ -19,6 +19,7 @@ import { libraryQueryStringResponse } from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import {
+  readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
   readerSearchHitResponse,
   readerWorkInfoResponse,
@@ -136,6 +137,10 @@ let presentationRequests = []
 let presentationFailures = new Set()
 let litteraturkartanRequests = []
 let readerRequests = []
+let readerMetadataRequests = []
+let readerHtmlRequests = []
+let readerOcrRequests = []
+let readerJpegRequests = []
 let readerMetadataDelays = {}
 let readerHitRequests = []
 let readerHitFailure = false
@@ -287,8 +292,46 @@ function readerRepresentation(titlePath, overrides = {}) {
   }
 }
 
+function readerFacsimileRepresentation(titlePath, overrides = {}) {
+  const representation = structuredClone(readerFacsimileWorkInfoResponse.data[0])
+  return {
+    ...representation,
+    shorttitle: titlePath,
+    title: `${titlePath}. Roman`,
+    titlepath: titlePath,
+    ...overrides
+  }
+}
+
 function readerMetadataResponse(titlePath) {
   switch (titlePath) {
+    case "GostaBerlingsSaga":
+      return readerFacsimileWorkInfoResponse
+    case "MalformedFacsimileImageReader":
+      return {
+        hits: 1,
+        data: [readerFacsimileRepresentation(titlePath, {
+          pages: [
+            { pagename: "1", pageindex: 0, imagenumber: 7 },
+            { pagename: "3", pageindex: 1, imagenumber: "9" },
+            { pagename: "5", pageindex: 2, imagenumber: 12 }
+          ]
+        })]
+      }
+    case "MalformedFacsimileSizesReader":
+      return {
+        hits: 1,
+        data: [readerFacsimileRepresentation(titlePath, {
+          faksimil_sizes: [0, 2, 2]
+        })]
+      }
+    case "MalformedFacsimileWidthReader":
+      return {
+        hits: 1,
+        data: [readerFacsimileRepresentation(titlePath, {
+          width: { size_1: 320, size_3: 0, size_5: 1280 }
+        })]
+      }
     case "Förvillelser":
       return forvillelserReaderWorkInfoResponse
     case "Rfc!Reader'()*":
@@ -1333,6 +1376,20 @@ const server = createServer(async (request, response) => {
     readerRequests = []
     return sendJson(response, 200, { requests: readerRequests })
   }
+  for (const [controlPath, ledger] of [
+    ["/_reader_metadata_requests", readerMetadataRequests],
+    ["/_reader_html_requests", readerHtmlRequests],
+    ["/_reader_ocr_requests", readerOcrRequests],
+    ["/_reader_jpeg_requests", readerJpegRequests]
+  ]) {
+    if (url.pathname === controlPath && request.method === "GET") {
+      return sendJson(response, 200, { requests: ledger })
+    }
+    if (url.pathname === controlPath && request.method === "DELETE") {
+      ledger.length = 0
+      return sendJson(response, 200, { requests: ledger })
+    }
+  }
   if (url.pathname === "/_reader_metadata_delays" && request.method === "GET") {
     return sendJson(response, 200, { delays: readerMetadataDelays })
   }
@@ -1614,7 +1671,9 @@ const server = createServer(async (request, response) => {
   }
 
   if (request.method === "GET" && url.pathname === "/api/get_work_info") {
-    readerRequests.push(`${url.pathname}${url.search}`)
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerMetadataRequests.push(recordedRequest)
     const titlePath = url.searchParams.get("titlepath") || ""
     await waitForReaderMetadataDelay(titlePath)
     if (titlePath === "UnavailableReader") {
@@ -1627,7 +1686,9 @@ const server = createServer(async (request, response) => {
     ? /^\/txt\/lb-reader-doktor-glas\/res_0000([123])\.html$/.exec(url.pathname)
     : null
   if (readerPageMatch) {
-    readerRequests.push(`${url.pathname}${url.search}`)
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
     if (url.searchParams.get("username") !== "app") {
       return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
     }
@@ -1639,7 +1700,9 @@ const server = createServer(async (request, response) => {
     request.method === "GET"
     && url.pathname === "/txt/lb-reader-forvillelser/res_00003.html"
   ) {
-    readerRequests.push(`${url.pathname}${url.search}`)
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
     if (url.searchParams.get("username") !== "app") {
       return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
     }
@@ -1649,6 +1712,36 @@ const server = createServer(async (request, response) => {
       "text/html; charset=utf-8",
       forvillelserReaderPageHtml
     )
+  }
+
+  if (
+    request.method === "GET"
+    && url.pathname === "/txt/lb-reader-gosta-berlings-saga/res_00001.html"
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
+    return sendBody(response, 200, "text/html; charset=utf-8", "<div>HTML fixture</div>")
+  }
+
+  if (
+    request.method === "GET"
+    && /^\/txt\/lb-reader-gosta-berlings-saga\/ocr_\d{5}\.html$/.test(url.pathname)
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerOcrRequests.push(recordedRequest)
+    return sendBody(response, 200, "text/html; charset=utf-8", "<div>OCR fixture</div>")
+  }
+
+  if (
+    request.method === "GET"
+    && /^\/txt\/lb-reader-gosta-berlings-saga\/lb-reader-gosta-berlings-saga_[1-5]\/lb-reader-gosta-berlings-saga_[1-5]_\d{4}\.jpeg$/.test(url.pathname)
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerJpegRequests.push(recordedRequest)
+    return sendBody(response, 200, "image/jpeg", Buffer.from("reader-jpeg-fixture"))
   }
 
   if (request.method === "GET" && url.pathname === "/red/css/etext.css") {

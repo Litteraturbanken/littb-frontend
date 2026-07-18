@@ -22,6 +22,36 @@ export default defineEventHandler(async event => {
   }
 
   const currentPage = metadata.pages[currentPosition]!
+  const commonPage = {
+    author: metadata.author,
+    description:
+      `${metadata.displayTitle} av ${metadata.author.name}, sida ${pageName} som ${metadata.mediaType}.`,
+    fullTitle: metadata.fullTitle,
+    imprintYear: metadata.imprintYear,
+    nextPageName: metadata.pages[currentPosition + 1]?.pageName ?? null,
+    pageCount: metadata.pages.length,
+    pageIndex: currentPage.pageIndex,
+    pageName,
+    previousPageName: metadata.pages[currentPosition - 1]?.pageName ?? null,
+    title: metadata.displayTitle,
+    workId: metadata.workId
+  }
+
+  if (metadata.mediaType === "faksimil") {
+    const facsimilePage = metadata.pages[currentPosition]!
+    return {
+      ...commonPage,
+      imageNumber: facsimilePage.imageNumber,
+      mediaType: metadata.mediaType,
+      preferredSize: metadata.preferredSize,
+      sources: buildFacsimileSources(
+        metadata.workId,
+        facsimilePage.imageNumber,
+        metadata.sizes
+      )
+    } satisfies ReaderPage
+  }
+
   const html = (await fetchReaderPageHtml(
     metadata.base,
     metadata.workId,
@@ -29,21 +59,10 @@ export default defineEventHandler(async event => {
   )).replaceAll("\u00ad", "-")
 
   return {
-    author: metadata.author,
-    description:
-      `${metadata.displayTitle} av ${metadata.author.name}, sida ${pageName} som etext.`,
-    fullTitle: metadata.fullTitle,
+    ...commonPage,
     html,
-    imprintYear: metadata.imprintYear,
     mediaType: metadata.mediaType,
-    nextPageName: metadata.pages[currentPosition + 1]?.pageName ?? null,
-    pageCount: metadata.pages.length,
-    pageIndex: currentPage.pageIndex,
-    pageName,
-    previousPageName: metadata.pages[currentPosition - 1]?.pageName ?? null,
     sharedStylesheetUrl: "/red/css/etext.css",
-    title: metadata.displayTitle,
-    workId: metadata.workId,
     workStylesheetUrl: `/txt/css/${encodeURIComponent(metadata.workId)}-etext.css`
   } satisfies ReaderPage
 })

@@ -45,6 +45,7 @@ import {
   sparseDocument
 } from "../fixtures/author-document-data.mjs"
 import {
+  readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
   readerSearchHitResponse
 } from "../fixtures/reader-data.mjs"
@@ -437,6 +438,11 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_library_query_requests`, { method: "DELETE" }),
       fetch(`${origin}/_library_query_failure`, { method: "DELETE" }),
       fetch(`${origin}/_library_query_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_metadata_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_html_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_ocr_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_reader_jpeg_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_failure`, { method: "DELETE" }),
       fetch(`${origin}/_reader_hit_delays`, { method: "DELETE" }),
@@ -771,6 +777,69 @@ describe("v2 fixture server operations", () => {
     const css = await fetch(`${origin}/txt/css/lb-reader-forvillelser-etext.css`)
     expect(css.status).toBe(200)
     expect(await css.text()).toContain("forvillelser-reader")
+  })
+
+  test("serves faksimil Reader metadata while search-hits remains e-text only", async () => {
+    const metadataPath =
+      `/api/get_work_info?authorid=${encodeURIComponent("LagerlöfS")}` +
+      "&exclude=content_vector&titlepath=GostaBerlingsSaga"
+    const metadata = await fetch(`${origin}${metadataPath}`)
+    expect(metadata.status).toBe(200)
+    expect(await metadata.json()).toEqual(readerFacsimileWorkInfoResponse)
+    expect(readerFacsimileWorkInfoResponse.data[0]).toMatchObject({
+      faksimil_sizes: [0, 2, 4],
+      lbworkid: "lb-reader-gosta-berlings-saga",
+      mediatype: "faksimil",
+      pages: [
+        { pagename: "1", pageindex: 0, imagenumber: 7 },
+        { pagename: "3", pageindex: 1, imagenumber: 9 },
+        { pagename: "5", pageindex: 2, imagenumber: 12 }
+      ],
+      startpagename: "3",
+      width: { size_1: 320, size_3: 640, size_5: 1280 }
+    })
+
+    const searchHits = await fetch(
+      `${origin}/v2/works/lb-reader-gosta-berlings-saga/search-hits` +
+        "?media_type=faksimil&query=g%C3%B6sta"
+    )
+    expect(searchHits.status).toBe(422)
+    expect(await (await fetch(`${origin}/_reader_metadata_requests`)).json()).toEqual({
+      requests: [metadataPath]
+    })
+    expect(await readerHitRequests()).toEqual({ requests: [] })
+  })
+
+  test("records Reader metadata, HTML, OCR, JPEG, and search hits separately", async () => {
+    const metadataPath = "/api/get_work_info?titlepath=GostaBerlingsSaga"
+    const htmlPath = "/txt/lb-reader-gosta-berlings-saga/res_00001.html?username=app"
+    const ocrPath = "/txt/lb-reader-gosta-berlings-saga/ocr_00009.html"
+    const jpegPath = "/txt/lb-reader-gosta-berlings-saga/" +
+      "lb-reader-gosta-berlings-saga_3/" +
+      "lb-reader-gosta-berlings-saga_3_0009.jpeg"
+    const hitPath = "/v2/works/lb-reader-doktor-glas/search-hits" +
+      "?media_type=etext&query=doktor"
+
+    expect((await fetch(`${origin}${metadataPath}`)).status).toBe(200)
+    expect((await fetch(`${origin}${htmlPath}`)).status).toBe(200)
+    expect((await fetch(`${origin}${ocrPath}`)).status).toBe(200)
+    expect((await fetch(`${origin}${jpegPath}`)).status).toBe(200)
+    expect((await fetch(`${origin}${hitPath}`)).status).toBe(200)
+
+    expect(await (await fetch(`${origin}/_reader_metadata_requests`)).json())
+      .toEqual({ requests: [metadataPath] })
+    expect(await (await fetch(`${origin}/_reader_html_requests`)).json())
+      .toEqual({ requests: [htmlPath] })
+    expect(await (await fetch(`${origin}/_reader_ocr_requests`)).json())
+      .toEqual({ requests: [ocrPath] })
+    expect(await (await fetch(`${origin}/_reader_jpeg_requests`)).json())
+      .toEqual({ requests: [jpegPath] })
+    expect(await readerHitRequests()).toEqual({
+      requests: [{
+        path: "/v2/works/lb-reader-doktor-glas/search-hits",
+        query: "media_type=etext&query=doktor"
+      }]
+    })
   })
 
   test("serves only the two author document PDFs with exact browser headers", async () => {

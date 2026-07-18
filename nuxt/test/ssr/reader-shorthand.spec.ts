@@ -4,6 +4,8 @@ const fixture = "http://127.0.0.1:4100"
 const resolveBase = "/api/reader/resolve/S%C3%B6derbergH"
 const resolvePath = `${resolveBase}/DoktorGlas/etext`
 const shorthandBase = "/författare/SöderbergH/titlar"
+const facsimileResolveBase = "/api/reader/resolve/Lagerl%C3%B6fS"
+const facsimileShorthandBase = "/författare/Lagerl%C3%B6fS/titlar"
 
 const readerStatuses = [
   ["DoktorGlas", 200],
@@ -91,8 +93,27 @@ test("uses uppercase RFC3986 escapes for every canonical Reader identity", async
   expect((await readerRequests(request)).some(path => path.includes("/txt/"))).toBe(false)
 })
 
-test("rejects unsupported faksimil without upstream IO", async ({ request }) => {
-  const response = await request.get(`${resolveBase}/DoktorGlas/faksimil`)
+test("resolves the exact faksimil representation without asset IO", async ({ request }) => {
+  const response = await request.get(
+    `${facsimileResolveBase}/GostaBerlingsSaga/faksimil`
+  )
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toEqual({
+    authorId: "LagerlöfS",
+    canonicalPath:
+      "/författare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/3/faksimil",
+    mediaType: "faksimil",
+    startPageName: "3",
+    titlePath: "GostaBerlingsSaga"
+  })
+  expect(await readerRequests(request)).toEqual([
+    "/api/get_work_info?authorid=Lagerl%C3%B6fS" +
+      "&exclude=content_vector&titlepath=GostaBerlingsSaga"
+  ])
+})
+
+test("resolver rejects unknown media before upstream IO", async ({ request }) => {
+  const response = await request.get(`${resolveBase}/DoktorGlas/pdf`)
   expect(response.status()).toBe(404)
   expect(await readerRequests(request)).toEqual([])
 })
@@ -171,8 +192,27 @@ for (const [titlePath, resolverStatus] of readerStatuses) {
   })
 }
 
-test("shorthand rejects unsupported faksimil before upstream IO", async ({ request }) => {
-  const response = await request.get(`${shorthandBase}/DoktorGlas/faksimil`, {
+test("faksimil shorthand preserves raw duplicate and unknown query values", async ({
+  request
+}) => {
+  const response = await request.get(
+    `${facsimileShorthandBase}/GostaBerlingsSaga/faksimil` +
+      "?unknown=bevara%20mig&repeat=%2f&repeat=%2F&bare",
+    { maxRedirects: 0 }
+  )
+  expect(response.status()).toBe(307)
+  expect(response.headers().location).toBe(
+    "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/3/faksimil" +
+      "?unknown=bevara%20mig&repeat=%2f&repeat=%2F&bare"
+  )
+  expect(await readerRequests(request)).toEqual([
+    "/api/get_work_info?authorid=Lagerl%C3%B6fS" +
+      "&exclude=content_vector&titlepath=GostaBerlingsSaga"
+  ])
+})
+
+test("shorthand rejects unknown media before upstream IO", async ({ request }) => {
+  const response = await request.get(`${shorthandBase}/DoktorGlas/pdf`, {
     maxRedirects: 0
   })
   expect(response.status()).toBe(404)

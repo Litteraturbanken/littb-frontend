@@ -26,6 +26,40 @@ export const readerWorkInfoResponse = {
   ]
 }
 
+export const readerFacsimileWorkInfoResponse = {
+  hits: 1,
+  data: [
+    {
+      authors: [
+        {
+          authorid: "LagerlöfS",
+          full_name: "Selma Lagerlöf",
+          surname: "Lagerlöf"
+        }
+      ],
+      faksimil_sizes: [0, 2, 4],
+      imprintyear: "1891",
+      lbworkid: "lb-reader-gosta-berlings-saga",
+      mediatype: "faksimil",
+      pages: [
+        { pagename: "1", pageindex: 0, imagenumber: 7 },
+        { pagename: "3", pageindex: 1, imagenumber: 9 },
+        { pagename: "5", pageindex: 2, imagenumber: 12 }
+      ],
+      shorttitle: "Gösta Berlings saga",
+      sort_date_imprint: { plain: "1891" },
+      startpagename: "3",
+      title: "Gösta Berlings saga. Roman",
+      titlepath: "GostaBerlingsSaga",
+      width: {
+        size_1: 320,
+        size_3: 640,
+        size_5: 1280
+      }
+    }
+  ]
+}
+
 export const readerPageHtmlByIndex = Object.freeze({
   1: `
 <div class="pname" pname="-3">

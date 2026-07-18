@@ -9,7 +9,7 @@ definePageMeta({
     const title = route.params.title
     return typeof author === "string" && author.length > 0 &&
       typeof title === "string" && title.length > 0 &&
-      route.params.mediatype === "etext"
+      (route.params.mediatype === "etext" || route.params.mediatype === "faksimil")
   }
 })
 
@@ -61,7 +61,9 @@ function isExpectedResolution(value: unknown): value is ReaderRouteResolution {
   if (!isRecord(value)) return false
   const startPageName = value.startPageName
   if (typeof startPageName !== "string" || startPageName.length === 0) return false
-  const canonicalPath = `${expectedCanonicalPath}/${encodeRfc3986Segment(startPageName)}/etext`
+  const canonicalPath =
+    `${expectedCanonicalPath}/${encodeRfc3986Segment(startPageName)}/` +
+    encodeRfc3986Segment(requestedMediaType)
   return value.authorId === requestedAuthor &&
     value.titlePath === requestedTitle &&
     value.mediaType === requestedMediaType &&
