@@ -823,7 +823,12 @@ describe("v2 fixture server operations", () => {
     expect((await fetch(`${origin}${metadataPath}`)).status).toBe(200)
     expect((await fetch(`${origin}${htmlPath}`)).status).toBe(200)
     expect((await fetch(`${origin}${ocrPath}`)).status).toBe(200)
-    expect((await fetch(`${origin}${jpegPath}`)).status).toBe(200)
+    const jpeg = await fetch(`${origin}${jpegPath}`)
+    expect(jpeg.status).toBe(200)
+    expect(jpeg.headers.get("content-type")).toBe("image/jpeg")
+    const jpegBytes = new Uint8Array(await jpeg.arrayBuffer())
+    expect(Array.from(jpegBytes.slice(0, 2))).toEqual([0xff, 0xd8])
+    expect(Array.from(jpegBytes.slice(-2))).toEqual([0xff, 0xd9])
     expect((await fetch(`${origin}${hitPath}`)).status).toBe(200)
 
     expect(await (await fetch(`${origin}/_reader_metadata_requests`)).json())

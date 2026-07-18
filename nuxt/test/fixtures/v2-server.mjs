@@ -55,6 +55,9 @@ const sharedContent = new Map([
   ["/red/bilder/bakgrundsbilder/ljudlandskap.jpg", ["image/jpeg", readFileSync(new URL("./library-content/ljudlandskap.jpg", import.meta.url))]],
   ["/red/bilder/bakgrundsbilder/sok_bkg.jpg", ["image/jpeg", Buffer.from(textSearchBackgroundBase64, "base64")]]
 ])
+const readerFacsimileJpeg = readFileSync(
+  new URL("./library-content/ljudlandskap.jpg", import.meta.url)
+)
 
 const presentationContent = new Map([
   ["/red/presentationer/presentationerForfattare.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/presentationerForfattare.html", import.meta.url))]],
@@ -1741,7 +1744,7 @@ const server = createServer(async (request, response) => {
     const recordedRequest = `${url.pathname}${url.search}`
     readerRequests.push(recordedRequest)
     readerJpegRequests.push(recordedRequest)
-    return sendBody(response, 200, "image/jpeg", Buffer.from("reader-jpeg-fixture"))
+    return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }
 
   if (request.method === "GET" && url.pathname === "/red/css/etext.css") {
