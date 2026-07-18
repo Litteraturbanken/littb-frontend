@@ -1,0 +1,695 @@
+import type { components } from "./api/generated/lbapi"
+
+export type TextSearchResultsRequest = components["schemas"]["TextSearchResultsRequest"]
+export type TextSearchCountRequest = components["schemas"]["TextSearchCountRequest"]
+export type TextSearchOptionsRequest = components["schemas"]["TextSearchOptionsRequest"]
+export type TextSearchResultsResponse = components["schemas"]["TextSearchResponse"]
+export type TextSearchCountResponse = components["schemas"]["TextSearchCountResponse"]
+export type TextSearchOptionsResponse = components["schemas"]["TextSearchOptionsResponse"]
+type TextSearchWord = components["schemas"]["TextSearchWord"]
+type TextSearchHighlight = components["schemas"]["TextSearchHighlight"]
+type TextSearchWork = components["schemas"]["TextSearchWork"]
+type TextSearchAuthorFacet = components["schemas"]["TextSearchAuthorFacet"]
+type TextSearchTitleOption = components["schemas"]["TextSearchTitleOption"]
+type TextSearchAuthorOption = components["schemas"]["TextSearchAuthorOption"]
+type SearchLanguage = NonNullable<TextSearchResultsRequest["languages"]>[number]
+type SearchCategory = NonNullable<TextSearchResultsRequest["categories"]>[number]
+type SearchLegacyFilter = NonNullable<TextSearchResultsRequest["legacy_filters"]>[number]
+
+const languageValues = new Set<SearchLanguage>([
+  "modernized:true", "modernized:false", "translation:true", "original:true",
+  "language:swe", "foreign:true", "language:eng", "language:deu",
+  "language:fra", "language:lat", "language:smi", "proofread:true",
+  "proofread:false"
+])
+const categoryValues = new Set<SearchCategory>([
+  "texttype:brev;brevsamling", "texttype:drama;dramasamling",
+  "texttype:essä;essäsamling", "texttype:novellsamling;novell",
+  "texttype:diktsamling;dikt", "texttype:roman",
+  "texttype:sakprosa;kringtexter;avhandling;referensverk",
+  "keyword:Barnlitteratur", "keyword:Biografika|texttype:brev;brevsamling",
+  "keyword:Finlandssvenskt", "keyword:Flickböcker", "texttype:herdaminne",
+  "keyword:Humor", "texttype:kistebrev", "texttype:kringtext",
+  "texttype:kåseri;kåserisamling", "texttype:reseskildring",
+  "keyword:Rösträtt", "keyword:Sapmi", "keyword:Folktryck",
+  "keyword:sentpajorden", "keyword:OrdenPrövas", "keyword:LB-antologi",
+  "keyword:1800", "source:bibliotekariesidor", "source:diktensmuseum",
+  "keyword:Dramawebben", "source:skolan", "source:litteraturkartan",
+  "source:ljudochbild", "source:sol", "keyword:SLS-FI",
+  "provenance.library:SVELITT", "provenance.library:SA",
+  "provenance.library:SFS", "provenance.library:SVA",
+  "author_ids:KunglSamfundet", "provenance.library:SVS"
+])
+const legacyFilterFields = new Set<SearchLegacyFilter["field"]>([
+  "author_ids", "keyword", "language", "main_author.gender", "mediatype",
+  "modernized", "proofread", "provenance.library", "source", "texttype"
+])
+export const textSearchRouteKeys = [
+  "fras", "traffsida", "avancerad", "forfattare", "titlar", "kön",
+  "languages", "keywords", "authorkeyword", "intervall", "sok_filter",
+  "prefix", "suffix", "infix", "lemma", "ej_modern", "fuzzy", "keyword"
+] as const
+const textSearchRouteKeySet = new Set<string>(textSearchRouteKeys)
+
+export type TextSearchRouteState = Readonly<{
+  phrase: string | null
+  page: number
+  advanced: boolean
+  authorIds: readonly string[]
+  workIds: readonly string[]
+  gender: TextSearchResultsRequest["gender"]
+  languages: readonly SearchLanguage[]
+  categories: readonly SearchCategory[]
+  aboutAuthorIds: readonly string[]
+  yearRange: readonly [number, number] | null
+  facetAuthorId: string | null
+  prefix: boolean
+  suffix: boolean
+  infix: boolean
+  wordFormOnly: boolean
+  includeModernized: boolean
+  fuzzy: boolean
+  legacyFilters: readonly SearchLegacyFilter[]
+}>
+
+export type TextSearchRouteQuery = Readonly<Record<
+  string,
+  string | readonly string[] | null | undefined
+>>
+
+function values(query: TextSearchRouteQuery, key: string): readonly (string | null)[] {
+  const value = query[key]
+  if (value === undefined) return []
+  return typeof value === "string" || value === null ? [value] : value
+}
+
+function first(query: TextSearchRouteQuery, key: string): string | null | undefined {
+  return values(query, key)[0]
+}
+
+function present(query: TextSearchRouteQuery, key: string): boolean {
+  if (!(key in query) || query[key] === undefined) return false
+  const raw = values(query, key)
+  return raw.length === 0 || raw.some(value => {
+    const normalized = value?.trim().toLowerCase()
+    return normalized !== "0" && normalized !== "false"
+  })
+}
+
+function commaValues(query: TextSearchRouteQuery, key: string): string[] {
+  return values(query, key)
+    .flatMap(value => (value ?? "").split(","))
+    .map(value => value.trim())
+    .filter(Boolean)
+}
+
+function distinctBounded<T>(items: readonly T[], maximum: number): T[] {
+  return [...new Set(items)].slice(0, maximum)
+}
+
+function isSafeIdentifier(value: string): boolean {
+  return value.length >= 1 && value.length <= 100 && value !== "." && value !== ".." &&
+    value === value.trim() && !/[\s%/\\,]/u.test(value) &&
+    ![...value].some(character => /[\p{Cc}\p{Cs}]/u.test(character))
+}
+
+function identifierList(query: TextSearchRouteQuery, key: string): string[] {
+  return distinctBounded(commaValues(query, key).filter(isSafeIdentifier), 50)
+}
+
+function enumList<T extends string>(
+  query: TextSearchRouteQuery,
+  key: string,
+  allowed: ReadonlySet<T>,
+  maximum: number
+): T[] {
+  return distinctBounded(
+    commaValues(query, key).filter((value): value is T => allowed.has(value as T)),
+    maximum
+  )
+}
+
+function parseLegacyFilters(query: TextSearchRouteQuery): SearchLegacyFilter[] {
+  const filters: SearchLegacyFilter[] = []
+  const seen = new Set<string>()
+  for (const entry of commaValues(query, "keyword")) {
+    const colon = entry.indexOf(":")
+    if (colon < 1) continue
+    const field = entry.slice(0, colon).trim() as SearchLegacyFilter["field"]
+    const value = entry.slice(colon + 1).trim()
+    if (!legacyFilterFields.has(field) || value.length < 1 || value.length > 100) continue
+    if (field === "author_ids" && !isSafeIdentifier(value)) continue
+    const marker = `${field}\0${value}`
+    if (!seen.has(marker)) {
+      seen.add(marker)
+      filters.push({ field, value })
+    }
+    if (filters.length === 20) break
+  }
+  return filters
+}
+
+export function parseTextSearchRouteQuery(
+  query: TextSearchRouteQuery
+): TextSearchRouteState {
+  const rawPhrase = first(query, "fras")
+  const phrase = typeof rawPhrase === "string" ? rawPhrase.trim() : ""
+  const rawPage = first(query, "traffsida")
+  const page = typeof rawPage === "string" && /^(?:[1-9]\d{0,3}|10000)$/.test(rawPage)
+    ? Number(rawPage)
+    : 1
+  const rawGender = first(query, "kön")
+  const gender = rawGender === "female" || rawGender === "male" ? rawGender : null
+  const range = commaValues(query, "intervall")
+  const yearFrom = range.length === 2 && /^\d{4}$/.test(range[0]!) ? Number(range[0]) : null
+  const yearTo = range.length === 2 && /^\d{4}$/.test(range[1]!) ? Number(range[1]) : null
+  const yearRange = yearFrom !== null && yearTo !== null &&
+    yearFrom >= 1000 && yearTo <= 2200 && yearFrom <= yearTo
+    ? [yearFrom, yearTo] as const
+    : null
+  const rawFacet = first(query, "sok_filter")
+  const facetAuthorId = typeof rawFacet === "string" && isSafeIdentifier(rawFacet)
+    ? rawFacet
+    : null
+  const infix = present(query, "infix")
+
+  return Object.freeze({
+    phrase: phrase.length >= 1 && phrase.length <= 200 ? phrase : null,
+    page,
+    advanced: present(query, "avancerad"),
+    authorIds: identifierList(query, "forfattare"),
+    workIds: identifierList(query, "titlar"),
+    gender,
+    languages: enumList(query, "languages", languageValues, 13),
+    categories: enumList(query, "keywords", categoryValues, 38),
+    aboutAuthorIds: identifierList(query, "authorkeyword"),
+    yearRange,
+    facetAuthorId,
+    prefix: infix || present(query, "prefix"),
+    suffix: infix || present(query, "suffix"),
+    infix,
+    wordFormOnly: !present(query, "lemma"),
+    includeModernized: !present(query, "ej_modern"),
+    fuzzy: present(query, "fuzzy"),
+    legacyFilters: parseLegacyFilters(query)
+  })
+}
+
+function legacyFilterValue(filter: SearchLegacyFilter): string {
+  return `${filter.field}:${filter.value}`
+}
+
+export function serializeTextSearchRouteState(
+  state: TextSearchRouteState,
+  raw: TextSearchRouteQuery = {}
+): Record<string, string | readonly string[] | null | undefined> {
+  const serialized = Object.fromEntries(
+    Object.entries(raw).filter(([key]) => !textSearchRouteKeySet.has(key))
+  ) as Record<string, string | readonly string[] | null | undefined>
+  const set = (key: string, value: string | null): void => {
+    if (value !== null) serialized[key] = value
+  }
+  set("fras", state.phrase)
+  if (state.page !== 1) set("traffsida", String(state.page))
+  if (state.advanced) set("avancerad", "1")
+  if (state.authorIds.length) set("forfattare", state.authorIds.join(","))
+  if (state.workIds.length) set("titlar", state.workIds.join(","))
+  set("kön", state.gender ?? null)
+  if (state.languages.length) set("languages", state.languages.join(","))
+  if (state.categories.length) set("keywords", state.categories.join(","))
+  if (state.aboutAuthorIds.length) set("authorkeyword", state.aboutAuthorIds.join(","))
+  if (state.yearRange) set("intervall", state.yearRange.join(","))
+  set("sok_filter", state.facetAuthorId)
+  if (state.infix) {
+    set("infix", "1")
+  } else {
+    if (state.prefix) set("prefix", "1")
+    if (state.suffix) set("suffix", "1")
+  }
+  if (!state.wordFormOnly) set("lemma", "1")
+  if (!state.includeModernized) set("ej_modern", "1")
+  if (state.fuzzy) set("fuzzy", "1")
+  if (state.legacyFilters.length) {
+    set("keyword", state.legacyFilters.map(legacyFilterValue).join(","))
+  }
+  return serialized
+}
+
+export function textSearchSubmitQuery(
+  raw: TextSearchRouteQuery,
+  phrase: string
+): Record<string, string | readonly string[] | null | undefined> {
+  const normalizedPhrase = phrase.trim()
+  const next: Record<string, string | readonly string[] | null | undefined> = {
+    ...raw
+  }
+  if (normalizedPhrase.length >= 1 && normalizedPhrase.length <= 200) {
+    next.fras = normalizedPhrase
+  } else {
+    delete next.fras
+  }
+  delete next.traffsida
+  delete next.sok_filter
+  return next
+}
+
+export type TextSearchFilterPatch = Readonly<Partial<Pick<
+  TextSearchRouteState,
+  "advanced" | "authorIds" | "workIds" | "gender" | "languages" |
+  "categories" | "aboutAuthorIds" | "yearRange" | "facetAuthorId" |
+  "prefix" | "suffix" | "infix" | "wordFormOnly" | "includeModernized" |
+  "fuzzy" | "legacyFilters"
+>>>
+
+export function textSearchFilterQuery(
+  raw: TextSearchRouteQuery,
+  patch: TextSearchFilterPatch
+): Record<string, string | readonly string[] | null | undefined> {
+  const current = parseTextSearchRouteQuery(raw)
+  return serializeTextSearchRouteState({ ...current, ...patch, page: 1 }, raw)
+}
+
+export function textSearchPageQuery(
+  raw: TextSearchRouteQuery,
+  page: number
+): Record<string, string | readonly string[] | null | undefined> {
+  const next = { ...raw }
+  if (Number.isSafeInteger(page) && page >= 2 && page <= 10_000) {
+    next.traffsida = String(page)
+  } else {
+    delete next.traffsida
+  }
+  return next
+}
+
+export function resetTextSearchQuery(
+  raw: TextSearchRouteQuery
+): Record<string, string | readonly string[] | null | undefined> {
+  return Object.fromEntries(
+    Object.entries(raw).filter(([key]) => !textSearchRouteKeySet.has(key))
+  )
+}
+
+function commonRequest(state: TextSearchRouteState): Omit<
+  TextSearchCountRequest,
+  "query"
+> {
+  const request: Omit<TextSearchCountRequest, "query"> = {
+    prefix: state.prefix,
+    suffix: state.suffix,
+    word_form_only: state.wordFormOnly,
+    include_modernized: state.includeModernized
+  }
+  if (state.authorIds.length) request.author_ids = [...state.authorIds]
+  if (state.aboutAuthorIds.length) request.about_author_ids = [...state.aboutAuthorIds]
+  if (state.workIds.length) request.work_ids = [...state.workIds]
+  if (state.gender) request.gender = state.gender
+  if (state.yearRange) {
+    request.year_from = state.yearRange[0]
+    request.year_to = state.yearRange[1]
+  }
+  if (state.languages.length) request.languages = [...state.languages]
+  if (state.categories.length) request.categories = [...state.categories]
+  if (state.legacyFilters.length) {
+    request.legacy_filters = state.legacyFilters.map(filter => ({ ...filter }))
+  }
+  if (state.facetAuthorId) request.facet_author_id = state.facetAuthorId
+  return request
+}
+
+function requiredPhrase(state: TextSearchRouteState): string {
+  if (!state.phrase) throw new TypeError("Text search requires a valid phrase")
+  return state.phrase
+}
+
+export function buildTextSearchResultsRequest(
+  state: TextSearchRouteState,
+  highlightLimit = 5
+): TextSearchResultsRequest {
+  if (!Number.isSafeInteger(highlightLimit) || highlightLimit < 5 || highlightLimit > 500) {
+    throw new RangeError("Highlight limit must be between 5 and 500")
+  }
+  return {
+    query: requiredPhrase(state),
+    page: state.page,
+    page_size: 30,
+    highlight_limit: highlightLimit,
+    ...commonRequest(state)
+  }
+}
+
+export function buildTextSearchCountRequest(
+  state: TextSearchRouteState
+): TextSearchCountRequest {
+  return { query: requiredPhrase(state), ...commonRequest(state) }
+}
+
+export type TextSearchOptionsInput = Readonly<{
+  titleFilter?: string
+  selectedWorkIds?: readonly string[]
+  titleLimit?: 0 | 30 | 500
+  includeStaticOptions?: boolean
+}>
+
+export function buildTextSearchOptionsRequest(
+  state: TextSearchRouteState,
+  input: TextSearchOptionsInput = {}
+): TextSearchOptionsRequest {
+  const titleFilter = (input.titleFilter ?? "").trim()
+  if (titleFilter.length > 200) throw new RangeError("Title filter is too long")
+  const selectedWorkIds = distinctBounded(
+    (input.selectedWorkIds ?? state.workIds).filter(isSafeIdentifier),
+    50
+  )
+  return {
+    ...(state.phrase ? { query: state.phrase } : {}),
+    title_filter: titleFilter,
+    title_limit: input.titleLimit ?? 30,
+    include_static_options: input.includeStaticOptions ?? true,
+    ...(selectedWorkIds.length ? { selected_work_ids: selectedWorkIds } : {}),
+    ...commonRequest(state)
+  }
+}
+
+function stableValue(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableValue).join(",")}]`
+  if (value !== null && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableValue(item)}`).join(",")}}`
+  }
+  return JSON.stringify(value)
+}
+
+export function textSearchRouteIdentity(state: TextSearchRouteState): string {
+  return `route:${stableValue(state)}`
+}
+
+export function textSearchResultsRequestIdentity(request: TextSearchResultsRequest): string {
+  return `results:${stableValue(request)}`
+}
+
+export function textSearchCountRequestIdentity(request: TextSearchCountRequest): string {
+  return `count:${stableValue(request)}`
+}
+
+export function textSearchOptionsRequestIdentity(request: TextSearchOptionsRequest): string {
+  return `options:${stableValue(request)}`
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+}
+
+function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(value).sort()
+  const expected = [...keys].sort()
+  return actual.length === expected.length && actual.every((key, index) => key === expected[index])
+}
+
+function isBoundedString(value: unknown, minimum: number, maximum: number): value is string {
+  return typeof value === "string" && value.length >= minimum && value.length <= maximum &&
+    (minimum === 0 || value.trim().length > 0)
+}
+
+function isSafeInteger(value: unknown, minimum = 0, maximum = Number.MAX_SAFE_INTEGER): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) &&
+    value >= minimum && value <= maximum
+}
+
+type WordPosition = readonly [page: number, ordinal: number] | readonly [ordinal: number]
+
+function wordPosition(value: string): WordPosition | null {
+  const match = /^w(?:(0|[1-9]\d{0,9})_)?(0|[1-9]\d{0,9})$/.exec(value)
+  if (!match) return null
+  const ordinal = Number(match[2])
+  if (!Number.isSafeInteger(ordinal)) return null
+  if (match[1] === undefined) return [ordinal]
+  const page = Number(match[1])
+  return Number.isSafeInteger(page) ? [page, ordinal] : null
+}
+
+function isTextSearchWord(value: unknown): value is TextSearchWord {
+  return isRecord(value) && hasExactKeys(value, ["word", "page_name", "word_id"]) &&
+    isBoundedString(value.word, 1, 10_000) &&
+    isBoundedString(value.page_name, 1, 100) &&
+    ![...value.page_name].some(character => /[\p{Cc}\p{Cs}]/u.test(character)) &&
+    typeof value.word_id === "string" && value.word_id.length <= 100 &&
+    wordPosition(value.word_id) !== null
+}
+
+function isWordList(value: unknown): value is TextSearchWord[] {
+  return Array.isArray(value) && value.length <= 1_000 && value.every(isTextSearchWord)
+}
+
+function isTextSearchHighlight(value: unknown): value is TextSearchHighlight {
+  if (!isRecord(value) ||
+    !hasExactKeys(value, ["left_context", "match", "right_context"]) ||
+    !isWordList(value.left_context) || !isWordList(value.match) ||
+    !isWordList(value.right_context) || value.match.length === 0) return false
+  const words = [...value.left_context, ...value.match, ...value.right_context]
+  if (new Set(words.map(word => word.page_name)).size !== 1) return false
+  const positions = words.map(word => wordPosition(word.word_id)!)
+  const width = positions[0]!.length
+  if (!positions.every(position => position.length === width)) return false
+  return positions.every((position, index) => index === 0 ||
+    position[position.length - 1]! > positions[index - 1]![positions[index - 1]!.length - 1]!) &&
+    (width === 1 || positions.every(position => position[0] === positions[0]![0]))
+}
+
+function isTextSearchWork(value: unknown): value is TextSearchWork {
+  return isRecord(value) && hasExactKeys(value, [
+    "lbworkid", "author_id", "author_name", "title", "title_id", "mediatype",
+    "highlights", "has_more_highlights"
+  ]) && typeof value.lbworkid === "string" && isSafeIdentifier(value.lbworkid) &&
+    typeof value.author_id === "string" && isSafeIdentifier(value.author_id) &&
+    isBoundedString(value.author_name, 1, 1_000) &&
+    isBoundedString(value.title, 1, 10_000) &&
+    typeof value.title_id === "string" && isSafeIdentifier(value.title_id) &&
+    (value.mediatype === "etext" || value.mediatype === "faksimil") &&
+    Array.isArray(value.highlights) && value.highlights.length <= 500 &&
+    value.highlights.every(isTextSearchHighlight) &&
+    typeof value.has_more_highlights === "boolean"
+}
+
+function isAuthorFacet(value: unknown): value is TextSearchAuthorFacet {
+  return isRecord(value) && hasExactKeys(value, ["author_id", "name_for_index", "count"]) &&
+    typeof value.author_id === "string" && isSafeIdentifier(value.author_id) &&
+    isBoundedString(value.name_for_index, 1, 1_000) && isSafeInteger(value.count)
+}
+
+function hasDistinctIds<T>(items: readonly T[], identifier: (item: T) => string): boolean {
+  return new Set(items.map(identifier)).size === items.length
+}
+
+export function isTextSearchResultsResponse(value: unknown): value is TextSearchResultsResponse {
+  if (!isRecord(value) || !hasExactKeys(value, [
+    "query", "page", "page_size", "total_work_hits", "works", "author_facets"
+  ]) || !isBoundedString(value.query, 1, 200) ||
+    !isSafeInteger(value.page, 1, 10_000) || value.page_size !== 30 ||
+    !isSafeInteger(value.total_work_hits) || !Array.isArray(value.works) ||
+    value.works.length > 30 || !value.works.every(isTextSearchWork) ||
+    !Array.isArray(value.author_facets) || value.author_facets.length > 10_000 ||
+    !value.author_facets.every(isAuthorFacet)) return false
+  const totalWorkHits = value.total_work_hits
+  return totalWorkHits >= value.works.length &&
+    hasDistinctIds(value.works, work => work.lbworkid) &&
+    hasDistinctIds(value.author_facets, facet => facet.author_id) &&
+    value.author_facets.every(facet => facet.count <= totalWorkHits)
+}
+
+export function acceptTextSearchResultsResponse(
+  value: unknown,
+  request: TextSearchResultsRequest,
+  responseRequestIdentity: string
+): TextSearchResultsResponse | null {
+  if (responseRequestIdentity !== textSearchResultsRequestIdentity(request) ||
+    !isTextSearchResultsResponse(value) || value.query !== request.query ||
+    value.page !== request.page ||
+    value.works.some(work => work.highlights.length > request.highlight_limit)) return null
+  return value
+}
+
+export function isTextSearchCountResponse(value: unknown): value is TextSearchCountResponse {
+  return isRecord(value) && hasExactKeys(value, [
+    "query", "total_documents", "total_highlights"
+  ]) && isBoundedString(value.query, 1, 200) &&
+    isSafeInteger(value.total_documents) && isSafeInteger(value.total_highlights)
+}
+
+export function acceptTextSearchCountResponse(
+  value: unknown,
+  request: TextSearchCountRequest,
+  responseRequestIdentity: string
+): TextSearchCountResponse | null {
+  if (responseRequestIdentity !== textSearchCountRequestIdentity(request) ||
+    !isTextSearchCountResponse(value) || value.query !== request.query) return null
+  return value
+}
+
+function isTitleOption(value: unknown): value is TextSearchTitleOption {
+  return isRecord(value) && hasExactKeys(value, ["work_id", "title", "author_name"]) &&
+    typeof value.work_id === "string" && isSafeIdentifier(value.work_id) &&
+    isBoundedString(value.title, 1, 10_000) && isBoundedString(value.author_name, 1, 1_000)
+}
+
+function isAuthorOption(value: unknown): value is TextSearchAuthorOption {
+  return isRecord(value) && hasExactKeys(value, [
+    "author_id", "name_for_index", "birth_year", "death_year"
+  ]) && typeof value.author_id === "string" && isSafeIdentifier(value.author_id) &&
+    isBoundedString(value.name_for_index, 1, 1_000) &&
+    (value.birth_year === null || isBoundedString(value.birth_year, 1, 100)) &&
+    (value.death_year === null || isBoundedString(value.death_year, 1, 100))
+}
+
+function isYearPair(from: unknown, to: unknown): boolean {
+  if (from === null && to === null) return true
+  return isSafeInteger(from, 1000, 2200) && isSafeInteger(to, 1000, 2200) && from <= to
+}
+
+export function isTextSearchOptionsResponse(value: unknown): value is TextSearchOptionsResponse {
+  if (!isRecord(value) || !hasExactKeys(value, [
+    "title_options", "title_total", "title_author_facets", "authors",
+    "about_authors", "year_from", "year_to"
+  ]) || !Array.isArray(value.title_options) || value.title_options.length > 550 ||
+    !value.title_options.every(isTitleOption) || !isSafeInteger(value.title_total) ||
+    !Array.isArray(value.title_author_facets) || value.title_author_facets.length > 10_000 ||
+    !value.title_author_facets.every(isAuthorFacet) ||
+    !Array.isArray(value.authors) || value.authors.length > 10_000 ||
+    !value.authors.every(isAuthorOption) || !Array.isArray(value.about_authors) ||
+    value.about_authors.length > 10_000 || !value.about_authors.every(isAuthorOption) ||
+    !isYearPair(value.year_from, value.year_to)) return false
+  return hasDistinctIds(value.title_options, option => option.work_id) &&
+    hasDistinctIds(value.title_author_facets, facet => facet.author_id) &&
+    hasDistinctIds(value.authors, author => author.author_id) &&
+    hasDistinctIds(value.about_authors, author => author.author_id)
+}
+
+export function acceptTextSearchOptionsResponse(
+  value: unknown,
+  request: TextSearchOptionsRequest,
+  responseRequestIdentity: string
+): TextSearchOptionsResponse | null {
+  if (responseRequestIdentity !== textSearchOptionsRequestIdentity(request) ||
+    !isTextSearchOptionsResponse(value) ||
+    value.title_options.length > request.title_limit + (request.selected_work_ids?.length ?? 0)) {
+    return null
+  }
+  return value
+}
+
+const punctuation = new Set([",", ".", ";", ":", "!", "?", "..."])
+
+export function isTextSearchPunctuation(word: string): boolean {
+  return punctuation.has(word)
+}
+
+export function compactTextSearchLeftContext(
+  context: readonly TextSearchWord[]
+): TextSearchWord[] {
+  let start = 0
+  const characters = context.reduce((total, token) => total + token.word.length, 0)
+  if (characters > 40) {
+    const difference = characters - 40
+    let dropped = 0
+    for (let index = 0; index < context.length; index += 1) {
+      if (dropped >= difference) {
+        start = index
+        break
+      }
+      dropped += context[index]!.word.length
+    }
+  }
+  return context.slice(start).filter(token => token.word.length < 30)
+}
+
+export function compactTextSearchRightContext(
+  context: readonly TextSearchWord[]
+): TextSearchWord[] {
+  return context.filter(token => token.word.length < 30)
+}
+
+export function prepareTextSearchHighlight(
+  highlight: TextSearchHighlight
+): TextSearchHighlight {
+  return {
+    left_context: compactTextSearchLeftContext(highlight.left_context),
+    match: [...highlight.match],
+    right_context: compactTextSearchRightContext(highlight.right_context)
+  }
+}
+
+function rfc3986Segment(value: string): string {
+  return encodeURIComponent(value).replace(/[!'()*]/g, character =>
+    `%${character.charCodeAt(0).toString(16).toUpperCase()}`)
+}
+
+function appendSearchParam(params: URLSearchParams, key: string, value: unknown): void {
+  if (value !== null && value !== undefined && value !== "") {
+    params.append(key, String(value))
+  }
+}
+
+export function buildTextSearchReaderHref(
+  work: TextSearchWork,
+  highlight: TextSearchHighlight,
+  hitIndex: number,
+  state: TextSearchRouteState
+): string {
+  if (!state.phrase) throw new TypeError("Reader search links require a phrase")
+  if (!Number.isSafeInteger(hitIndex) || hitIndex < 0 || hitIndex > 1_000_001) {
+    throw new RangeError("Reader hit index is out of range")
+  }
+  if (!isSafeIdentifier(work.author_id) || !isSafeIdentifier(work.title_id) ||
+    !isSafeIdentifier(work.lbworkid) ||
+    (work.mediatype !== "etext" && work.mediatype !== "faksimil") ||
+    !isTextSearchHighlight(highlight)) {
+    throw new TypeError("Cannot build a Reader link from malformed search data")
+  }
+  const firstMatch = highlight.match[0]!
+  const lastMatch = highlight.match.at(-1)!
+  const path = [
+    "", "författare", work.author_id, "titlar", work.title_id, "sida",
+    firstMatch.page_name, work.mediatype
+  ].map(rfc3986Segment).join("/")
+  const params = new URLSearchParams()
+  appendSearchParam(params, "q", state.phrase)
+  appendSearchParam(params, "hit", hitIndex)
+  if (!state.wordFormOnly) appendSearchParam(params, "lemma", 1)
+  if (!state.includeModernized) appendSearchParam(params, "ej_modern", 1)
+  if (state.prefix) appendSearchParam(params, "prefix", 1)
+  if (state.suffix) appendSearchParam(params, "suffix", 1)
+  appendSearchParam(params, "traff", firstMatch.word_id)
+  appendSearchParam(params, "traffslut", lastMatch.word_id)
+  appendSearchParam(params, "s_query", state.phrase)
+  appendSearchParam(params, "s_lbworkid", work.lbworkid)
+  appendSearchParam(params, "s_mediatype", work.mediatype)
+  appendSearchParam(params, "s_word_form_only", state.wordFormOnly)
+  appendSearchParam(params, "s_include_modernized", state.includeModernized)
+  appendSearchParam(params, "hit_index", hitIndex)
+  appendSearchParam(params, "s_from", (state.page - 1) * 30)
+  appendSearchParam(params, "s_to", state.page * 30 - 1)
+  if (state.prefix) appendSearchParam(params, "s_prefix", true)
+  if (state.suffix) appendSearchParam(params, "s_suffix", true)
+  appendSearchParam(params, "s_page", state.page)
+  appendSearchParam(params, "s_page_size", 30)
+  appendSearchParam(params, "s_author_ids", state.authorIds.join(","))
+  appendSearchParam(params, "s_about_author_ids", state.aboutAuthorIds.join(","))
+  appendSearchParam(params, "s_work_ids", state.workIds.join(","))
+  appendSearchParam(params, "s_gender", state.gender)
+  if (state.yearRange) {
+    appendSearchParam(params, "s_year_from", state.yearRange[0])
+    appendSearchParam(params, "s_year_to", state.yearRange[1])
+  }
+  appendSearchParam(params, "s_languages", state.languages.join(","))
+  appendSearchParam(params, "s_categories", state.categories.join(","))
+  if (state.legacyFilters.length) {
+    appendSearchParam(
+      params,
+      "s_legacy_filters",
+      JSON.stringify(state.legacyFilters.map(filter => ({ ...filter })))
+    )
+  }
+  appendSearchParam(params, "s_facet_author_id", state.facetAuthorId)
+  return `${path}?${params.toString()}`
+}
