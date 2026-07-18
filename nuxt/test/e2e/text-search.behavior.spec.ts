@@ -288,6 +288,50 @@ test("keyboard pagination does not intercept arrows inside form controls", async
   expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
 })
 
+test("Headless UI filters traverse, select, and remove by keyboard", async ({ page, request }) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+  await request.delete(`${fixture}/_text_search/requests/results`)
+
+  const authorInput = page.locator(".author_select input.select2-search__field")
+  await authorInput.focus()
+  await authorInput.press("Enter")
+  const strindberg = page.getByRole("option", { name: /Strindberg, August/ })
+  await expect(strindberg).toBeVisible()
+  await authorInput.press("ArrowDown")
+  await expect(strindberg).toHaveClass(/select2-results__option--highlighted/)
+  await authorInput.press("Enter")
+  await expect.poll(() => new URL(page.url()).searchParams.get("forfattare"))
+    .toBe("StrindbergA")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  expect((await requests(request, "results"))[0]?.body).toMatchObject({
+    query: "frihet",
+    author_ids: ["StrindbergA"]
+  })
+
+  await authorInput.press("Escape")
+  const removeAuthor = page.getByRole("button", { name: "Ta bort Strindberg" })
+  await removeAuthor.focus()
+  await removeAuthor.press("Enter")
+  await expect.poll(() => new URL(page.url()).searchParams.has("forfattare")).toBe(false)
+  expect(await requests(request, "results")).toHaveLength(1)
+
+  const gender = page.locator(".gender_select")
+  await gender.getByRole("button").focus()
+  await page.keyboard.press("Space")
+  await page.keyboard.press("ArrowDown")
+  await page.keyboard.press("ArrowDown")
+  const female = gender.getByRole("option", { name: "Kvinnliga författare" })
+  await expect(female).toHaveClass(/select2-results__option--highlighted/)
+  await page.keyboard.press("Enter")
+  await expect.poll(() => new URL(page.url()).searchParams.get("kön")).toBe("female")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  expect((await requests(request, "results"))[1]?.body).toMatchObject({
+    query: "frihet",
+    gender: "female"
+  })
+  expect((await requests(request, "results"))[1]?.body).not.toHaveProperty("author_ids")
+})
+
 test("author facets and Visa alla own only sok_filter", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&utm=keep")
   await page.locator(".navigator").getByRole("button", { name: "Strindberg, August" }).click()
@@ -478,6 +522,42 @@ test("options and more cancellation clear loading and reject stale identity data
   await page.waitForTimeout(1300)
   await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(1)
   await expect(page.locator("#results .overflow .more").last()).toBeEnabled()
+})
+
+test("delayed route options expose only current selected fallbacks", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=route-a-options&avancerad=1")
+  const authorOptions = page.getByRole("button", {
+    name: "Visa alternativ för Författarskap"
+  })
+  await authorOptions.click()
+  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
+  await page.keyboard.press("Escape")
+
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "", delay: 5000 }
+  })
+  await pushRoute(
+    page,
+    "/s%C3%B6k?fras=inga&avancerad=1&forfattare=StrindbergA"
+  )
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  expect((await requests(request, "options"))[0]?.body).toMatchObject({
+    query: "inga",
+    author_ids: ["StrindbergA"],
+    include_static_options: true
+  })
+
+  await authorOptions.click()
+  await expect(page.getByRole("option", { name: "StrindbergA" })).toHaveCount(1, {
+    timeout: 1000
+  })
+  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(0, {
+    timeout: 1000
+  })
 })
 
 test("SSR hydration is single-fetch and Reader hit destination is navigable", async ({

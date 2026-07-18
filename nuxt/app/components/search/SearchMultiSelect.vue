@@ -60,8 +60,12 @@ function openOptions(event: Event) {
   button?.click()
 }
 
-function openReadonlyOptions(event: Event) {
-  if (!props.searchable) openOptions(event)
+function openReadonlyOptions(event: KeyboardEvent) {
+  if (props.searchable) return
+  const target = event.target
+  if (target instanceof HTMLElement && target.closest("button")) return
+  event.preventDefault()
+  openOptions(event)
 }
 </script>
 
@@ -80,8 +84,8 @@ function openReadonlyOptions(event: Event) {
         <span
           class="select2-selection select2-selection--multiple"
           @click="openOptions"
-          @keydown.enter.prevent="openReadonlyOptions"
-          @keydown.space.prevent="openReadonlyOptions"
+          @keydown.enter="openReadonlyOptions"
+          @keydown.space="openReadonlyOptions"
         >
           <ul class="select2-selection__rendered">
             <li

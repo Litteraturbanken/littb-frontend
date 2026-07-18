@@ -406,19 +406,24 @@ async function loadOptions() {
 
 const initialOptions = state.value.advanced ? loadOptions() : Promise.resolve()
 await initialOptions
-const lastAcceptedOptions = shallowRef<OptionsView | null>(null)
-watch(
-  () => optionsCache.value[routeIdentity.value] ?? null,
-  candidate => {
-    if (candidate) lastAcceptedOptions.value = candidate
-  },
-  { immediate: true, flush: "sync" }
-)
-const options = computed(() => (
-  optionsCache.value[routeIdentity.value] ?? lastAcceptedOptions.value
+const options = computed(() => optionsCache.value[routeIdentity.value] ?? null)
+const lastAcceptedChronologyBounds = shallowRef({
+  yearFrom: options.value?.yearFrom ?? 1800,
+  yearTo: options.value?.yearTo ?? 1950
+})
+watch(options, candidate => {
+  if (candidate?.yearFrom == null || candidate.yearTo == null) return
+  lastAcceptedChronologyBounds.value = {
+    yearFrom: candidate.yearFrom,
+    yearTo: candidate.yearTo
+  }
+}, { flush: "sync" })
+const chronologyFloor = computed(() => (
+  options.value?.yearFrom ?? lastAcceptedChronologyBounds.value.yearFrom
 ))
-const chronologyFloor = computed(() => options.value?.yearFrom ?? 1800)
-const chronologyCeiling = computed(() => options.value?.yearTo ?? 1950)
+const chronologyCeiling = computed(() => (
+  options.value?.yearTo ?? lastAcceptedChronologyBounds.value.yearTo
+))
 const chronologyFromDraft = ref("")
 const chronologyToDraft = ref("")
 const chronologyDraftDirty = ref(false)

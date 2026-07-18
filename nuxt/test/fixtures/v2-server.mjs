@@ -951,7 +951,8 @@ function textSearchOptionsResponse(body) {
     }
   }
 
-  let matching = titleFilter === "inga"
+  const routeHasNoOptions = body.query === "inga" && body.author_ids?.includes("StrindbergA")
+  let matching = routeHasNoOptions || titleFilter === "inga"
     ? []
     : titleFilter.includes("lager")
       ? [textSearchTitleCatalog[1]]
@@ -965,7 +966,7 @@ function textSearchOptionsResponse(body) {
   }
 
   const visible = body.title_limit === 0 ? [] : matching.slice(0, body.title_limit)
-  const authors = body.include_static_options
+  const authors = body.include_static_options && !routeHasNoOptions
     ? [{
         author_id: "LagerlöfS",
         name_for_index: "Lagerlöf, Selma",
@@ -973,7 +974,7 @@ function textSearchOptionsResponse(body) {
         death_year: "1940"
       }]
     : []
-  const aboutAuthors = body.include_static_options
+  const aboutAuthors = body.include_static_options && !routeHasNoOptions
     ? [{
         author_id: "StrindbergA",
         name_for_index: "Strindberg, August",
