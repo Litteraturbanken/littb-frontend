@@ -778,6 +778,27 @@ function textSearchResultsResponse(body) {
     rich.author_facets[0].count = 41
     rich.author_facets[1].count = 23
   }
+  if (body.work_ids?.length) {
+    const workIds = new Set(body.work_ids)
+    rich.works = rich.works.filter(work => workIds.has(work.lbworkid))
+    const authorIds = new Set(rich.works.map(work => work.author_id))
+    rich.author_facets = rich.author_facets
+      .filter(facet => authorIds.has(facet.author_id))
+      .map(facet => ({ ...facet, count: 1 }))
+    rich.total_work_hits = rich.works.length
+  }
+  if (body.highlight_limit === 100) {
+    for (const work of rich.works) {
+      work.has_more_highlights = false
+      if (work.lbworkid === "lb278171") {
+        work.highlights.push({
+          left_context: [{ word: "drömde", word_id: "w4_30", page_name: "4" }],
+          match: [{ word: body.query, word_id: "w4_31", page_name: "4" }],
+          right_context: [{ word: "vidare", word_id: "w4_32", page_name: "4" }]
+        })
+      }
+    }
+  }
   return rich
 }
 
@@ -852,7 +873,14 @@ function textSearchOptionsResponse(body) {
         name_for_index: "Strindberg, August",
         birth_year: "1849",
         death_year: "1912"
-      }]
+      }, ...(body.about_author_ids?.includes("LagerlöfS")
+        ? [{
+            author_id: "LagerlöfS",
+            name_for_index: "Lagerlöf, Selma",
+            birth_year: "1858",
+            death_year: "1940"
+          }]
+        : [])]
     : []
   return {
     authors,

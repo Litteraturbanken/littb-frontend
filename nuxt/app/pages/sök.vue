@@ -183,6 +183,8 @@ const rawQuery = computed(() => route.query as unknown as TextSearchRouteQuery)
 const state = computed(() => parseTextSearchRouteQuery(rawQuery.value))
 const routeIdentity = computed(() => textSearchRouteIdentity(state.value))
 const primaryKey = computed(() => `text-search-primary:${routeIdentity.value}`)
+let primaryController: AbortController | null = null
+watch(routeIdentity, () => { primaryController?.abort() }, { flush: "sync" })
 const queryInput = ref(state.value.phrase ?? "")
 watch(() => state.value.phrase, phrase => { queryInput.value = phrase ?? "" })
 
@@ -194,7 +196,6 @@ function resultsView(
   response: TextSearchResultsResponse,
   requestedState: TextSearchRouteState
 ): SearchResultsView {
-  let hitIndex = (requestedState.page - 1) * 30
   const facetNames = new Map(response.author_facets.map(facet => [
     facet.author_id,
     facet.name_for_index
@@ -206,37 +207,44 @@ function resultsView(
       name: facet.name_for_index,
       count: facet.count
     })),
-    works: response.works.map(work => ({
-      key: work.lbworkid,
-      authorName: facetNames.get(work.author_id) ?? work.author_name,
-      title: work.title,
-      facsimile: work.mediatype === "faksimil",
-      hasMore: work.has_more_highlights,
-      hits: work.highlights.map(rawHighlight => {
-        const highlight = prepareTextSearchHighlight(rawHighlight)
-        const href = buildTextSearchReaderHref(work, highlight, hitIndex, requestedState)
-        hitIndex += 1
-        return {
-          href,
-          left: highlight.left_context.map(wordView),
-          match: highlight.match.map(wordView),
-          right: highlight.right_context.map(wordView)
-        }
-      })
-    }))
+    works: response.works.map(work => {
+      let hitIndex = 0
+      return {
+        key: work.lbworkid,
+        authorName: facetNames.get(work.author_id) ?? work.author_name,
+        title: work.title,
+        facsimile: work.mediatype === "faksimil",
+        hasMore: work.has_more_highlights,
+        hits: work.highlights.map(rawHighlight => {
+          const highlight = prepareTextSearchHighlight(rawHighlight)
+          const href = buildTextSearchReaderHref(work, highlight, hitIndex, requestedState)
+          hitIndex += 1
+          return {
+            href,
+            left: highlight.left_context.map(wordView),
+            match: highlight.match.map(wordView),
+            right: highlight.right_context.map(wordView)
+          }
+        })
+      }
+    })
   }
 }
 
 const { data: primaryData, pending: primaryPending } = await useAsyncData<PrimaryEnvelope>(
   primaryKey,
-  async () => {
+  async (_nuxtApp, { signal }) => {
     const requestedState = state.value
     const identity = textSearchRouteIdentity(requestedState)
     if (!requestedState.phrase) return { identity, status: 204, results: null }
     const body = buildTextSearchResultsRequest(requestedState)
     const requestIdentity = textSearchResultsRequestIdentity(body)
+    primaryController?.abort()
+    const controller = new AbortController()
+    primaryController = controller
+    const requestSignal = AbortSignal.any([signal, controller.signal])
     try {
-      const result = await client.POST("/text-search/results", { body })
+      const result = await client.POST("/text-search/results", { body, signal: requestSignal })
       const accepted = result.response.status === 200
         ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
         : null
@@ -244,7 +252,10 @@ const { data: primaryData, pending: primaryPending } = await useAsyncData<Primar
         ? { identity, status: 200, results: resultsView(accepted, requestedState) }
         : { identity, status: 502, results: null }
     } catch {
+      if (requestSignal.aborted) return { identity, status: 204, results: null }
       return { identity, status: 502, results: null }
+    } finally {
+      if (primaryController === controller) primaryController = null
     }
   },
   {
@@ -256,26 +267,27 @@ const { data: primaryData, pending: primaryPending } = await useAsyncData<Primar
 )
 
 const acceptedPrimary = shallowRef<PrimaryEnvelope | null>(null)
+const displayPrimary = shallowRef<PrimaryEnvelope | null>(null)
 watch(routeIdentity, () => { acceptedPrimary.value = null }, { flush: "sync" })
 watch([primaryData, routeIdentity], ([candidate, identity]) => {
-  if (candidate?.identity === identity) acceptedPrimary.value = candidate
+  if (candidate?.identity !== identity) return
+  acceptedPrimary.value = candidate
+  if (candidate.status === 200) displayPrimary.value = candidate
+  else displayPrimary.value = null
 }, { immediate: true, flush: "sync" })
 
 if (import.meta.server && acceptedPrimary.value?.status === 502) setResponseStatus(502)
 
-const results = computed(() => acceptedPrimary.value?.status === 200
-  ? acceptedPrimary.value.results
+const results = computed(() => displayPrimary.value?.status === 200
+  ? displayPrimary.value.results
   : null)
 const primaryFailed = computed(() => acceptedPrimary.value?.status === 502)
 
-const countCache = useState<Record<string, CountView | null>>(
+const countCache = useState<Record<string, CountView>>(
   "text-search-count-cache",
   () => ({})
 )
-const countStarted = useState<Record<string, boolean>>(
-  "text-search-count-started",
-  () => ({})
-)
+const countInFlight = new Map<string, AbortController>()
 let countVersion = 0
 let countController: AbortController | null = null
 
@@ -283,12 +295,12 @@ async function loadCount() {
   const requestedState = state.value
   if (!requestedState.phrase) return
   const identity = textSearchRouteIdentity(requestedState)
-  if (countStarted.value[identity]) return
-  countStarted.value[identity] = true
+  if (Object.hasOwn(countCache.value, identity) || countInFlight.has(identity)) return
   const version = ++countVersion
   countController?.abort()
   const controller = new AbortController()
   countController = controller
+  countInFlight.set(identity, controller)
   const body = buildTextSearchCountRequest(requestedState)
   const requestIdentity = textSearchCountRequestIdentity(body)
   try {
@@ -302,10 +314,10 @@ async function loadCount() {
         hits: accepted.total_highlights
       }
     }
-  } catch (error) {
-    if (!(error instanceof DOMException && error.name === "AbortError")) {
-      countCache.value[identity] = null
-    }
+  } catch {
+    // Failed and aborted requests remain retryable on identity re-entry.
+  } finally {
+    if (countInFlight.get(identity) === controller) countInFlight.delete(identity)
   }
 }
 
@@ -341,26 +353,24 @@ function optionsView(response: TextSearchOptionsResponse): OptionsView {
   }
 }
 
-const optionsCache = useState<Record<string, OptionsView | null>>(
+const optionsCache = useState<Record<string, OptionsView>>(
   "text-search-options-cache",
   () => ({})
 )
-const optionsStarted = useState<Record<string, boolean>>(
-  "text-search-options-started",
-  () => ({})
-)
+const optionsInFlight = new Map<string, AbortController>()
 let optionsVersion = 0
 let optionsController: AbortController | null = null
 
 async function loadOptions() {
   const requestedState = state.value
+  if (!requestedState.phrase) return
   const identity = textSearchRouteIdentity(requestedState)
-  if (optionsStarted.value[identity]) return
-  optionsStarted.value[identity] = true
+  if (Object.hasOwn(optionsCache.value, identity) || optionsInFlight.has(identity)) return
   const version = ++optionsVersion
   optionsController?.abort()
   const controller = new AbortController()
   optionsController = controller
+  optionsInFlight.set(identity, controller)
   const body = buildTextSearchOptionsRequest(requestedState)
   const requestIdentity = textSearchOptionsRequestIdentity(body)
   try {
@@ -374,16 +384,62 @@ async function loadOptions() {
     if (version === optionsVersion && identity === routeIdentity.value && accepted) {
       optionsCache.value[identity] = optionsView(accepted)
     }
-  } catch (error) {
-    if (!(error instanceof DOMException && error.name === "AbortError")) {
-      optionsCache.value[identity] = null
-    }
+  } catch {
+    // Failed and aborted requests remain retryable on identity re-entry.
+  } finally {
+    if (optionsInFlight.get(identity) === controller) optionsInFlight.delete(identity)
   }
 }
 
 const initialOptions = state.value.advanced ? loadOptions() : Promise.resolve()
 await initialOptions
 const options = computed(() => optionsCache.value[routeIdentity.value] ?? null)
+const chronologyFloor = computed(() => options.value?.yearFrom ?? 1800)
+const chronologyCeiling = computed(() => options.value?.yearTo ?? 1950)
+const chronologyFromDraft = ref("")
+const chronologyToDraft = ref("")
+
+function syncChronologyDraft() {
+  const floor = chronologyFloor.value
+  const ceiling = chronologyCeiling.value
+  const selected = state.value.yearRange
+  const from = selected && selected[0] >= floor && selected[1] <= ceiling
+    ? selected[0]
+    : floor
+  const to = selected && selected[0] >= floor && selected[1] <= ceiling
+    ? selected[1]
+    : ceiling
+  chronologyFromDraft.value = String(from)
+  chronologyToDraft.value = String(to)
+}
+
+watch([routeIdentity, chronologyFloor, chronologyCeiling], syncChronologyDraft, {
+  immediate: true,
+  flush: "sync"
+})
+
+function setChronologyDraft(endpoint: "from" | "to", value: string) {
+  if (endpoint === "from") chronologyFromDraft.value = value
+  else chronologyToDraft.value = value
+}
+
+function commitChronologyDraft() {
+  const floor = chronologyFloor.value
+  const ceiling = chronologyCeiling.value
+  const from = /^\d{4}$/.test(chronologyFromDraft.value)
+    ? Number(chronologyFromDraft.value)
+    : Number.NaN
+  const to = /^\d{4}$/.test(chronologyToDraft.value)
+    ? Number(chronologyToDraft.value)
+    : Number.NaN
+  if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to)
+    || from < floor || to > ceiling || from > to) {
+    syncChronologyDraft()
+    return
+  }
+  if (state.value.yearRange?.[0] === from && state.value.yearRange[1] === to) return
+  patchFilters({ yearRange: [from, to] })
+}
 
 let titleVersion = 0
 let titleController: AbortController | null = null
@@ -445,9 +501,9 @@ function showAllTitleOptions() {
   void loadTitleOptions(titleFilterText.value, 500)
 }
 
-const allAuthorChoices = computed<SearchMultiSelectOption[]>(() => {
+const authorChoices = computed<SearchMultiSelectOption[]>(() => {
   const choices = new Map<string, SearchMultiSelectOption>()
-  for (const choice of [...options.value?.authors ?? [], ...options.value?.aboutAuthors ?? []]) {
+  for (const choice of options.value?.authors ?? []) {
     choices.set(choice.value, choice)
   }
   for (const facet of results.value?.facets ?? []) {
@@ -459,8 +515,24 @@ const allAuthorChoices = computed<SearchMultiSelectOption[]>(() => {
       })
     }
   }
-  for (const value of [...state.value.authorIds, ...state.value.aboutAuthorIds]) {
+  for (const value of state.value.authorIds) {
     if (!choices.has(value)) choices.set(value, { value, label: value })
+  }
+  return [...choices.values()]
+})
+const aboutAuthorChoices = computed<SearchMultiSelectOption[]>(() => {
+  const choices = new Map<string, SearchMultiSelectOption>()
+  for (const choice of options.value?.aboutAuthors ?? []) choices.set(choice.value, choice)
+  for (const value of state.value.aboutAuthorIds) {
+    if (choices.has(value)) continue
+    const facet = results.value?.facets.find(candidate => candidate.key === value)
+    choices.set(value, facet
+      ? {
+          value,
+          label: facet.name,
+          selectionLabel: facet.name.split(",", 1)[0]!
+        }
+      : { value, label: value })
   }
   return [...choices.values()]
 })
@@ -484,7 +556,7 @@ function navigate(query: Record<string, string | readonly string[] | null | unde
   for (const [key, value] of Object.entries(query)) {
     mutableQuery[key] = typeof value === "string" || value == null ? value : [...value]
   }
-  return router.push({ path: "/sök", query: mutableQuery })
+  return router.push({ name: route.name as string, query: mutableQuery })
 }
 
 function submitSearch() {
@@ -505,17 +577,57 @@ function toggleAdvanced() {
 
 function setSearchMode(mode: "default" | "lemma" | "modernize" | "prefix" | "suffix" | "infix") {
   if (mode === "default") {
-    patchFilters({ prefix: false, suffix: false, infix: false, wordFormOnly: true })
+    patchFilters({
+      prefix: false,
+      suffix: false,
+      infix: false,
+      wordFormOnly: true,
+      includeModernized: false
+    })
   } else if (mode === "lemma") {
-    patchFilters({ prefix: false, suffix: false, infix: false, wordFormOnly: false })
+    patchFilters({
+      prefix: false,
+      suffix: false,
+      infix: false,
+      wordFormOnly: false,
+      includeModernized: false
+    })
   } else if (mode === "modernize") {
-    patchFilters({ includeModernized: !state.value.includeModernized })
+    patchFilters(state.value.includeModernized
+      ? { includeModernized: false }
+      : {
+          prefix: false,
+          suffix: false,
+          infix: false,
+          wordFormOnly: true,
+          includeModernized: true
+        })
   } else if (mode === "infix") {
-    patchFilters({ prefix: true, suffix: true, infix: !state.value.infix })
+    patchFilters(state.value.infix
+      ? { prefix: false, suffix: false, infix: false, wordFormOnly: true }
+      : {
+          prefix: true,
+          suffix: true,
+          infix: true,
+          wordFormOnly: true,
+          includeModernized: false
+        })
   } else if (mode === "prefix") {
-    patchFilters({ prefix: !state.value.prefix, infix: false })
+    patchFilters({
+      prefix: state.value.infix ? false : !state.value.prefix,
+      suffix: state.value.suffix,
+      infix: false,
+      wordFormOnly: true,
+      includeModernized: false
+    })
   } else {
-    patchFilters({ suffix: !state.value.suffix, infix: false })
+    patchFilters({
+      prefix: state.value.prefix,
+      suffix: state.value.infix ? false : !state.value.suffix,
+      infix: false,
+      wordFormOnly: true,
+      includeModernized: false
+    })
   }
 }
 
@@ -531,8 +643,13 @@ function selectedMode(mode: string): boolean {
 }
 
 watch(routeIdentity, () => {
+  countVersion += 1
   countController?.abort()
+  countInFlight.clear()
+  optionsVersion += 1
   optionsController?.abort()
+  optionsInFlight.clear()
+  titleVersion += 1
   titleController?.abort()
   void loadCount()
   if (state.value.advanced) void loadOptions()
@@ -542,6 +659,13 @@ const moreHits = shallowRef<Record<string, readonly SearchHitView[]>>({})
 let moreVersion = 0
 let moreController: AbortController | null = null
 const moreLoadingKey = ref<string | null>(null)
+watch(routeIdentity, () => {
+  moreVersion += 1
+  moreController?.abort()
+  moreController = null
+  moreHits.value = {}
+  moreLoadingKey.value = null
+}, { flush: "sync" })
 async function showMore(workKey: string) {
   const requestedState = state.value
   if (!requestedState.phrase) return
@@ -551,7 +675,12 @@ async function showMore(workKey: string) {
   const controller = new AbortController()
   moreController = controller
   moreLoadingKey.value = workKey
-  const body = buildTextSearchResultsRequest(requestedState, 100)
+  const requestState: TextSearchRouteState = {
+    ...requestedState,
+    page: 1,
+    workIds: [workKey]
+  }
+  const body = buildTextSearchResultsRequest(requestState, 100)
   const requestIdentity = textSearchResultsRequestIdentity(body)
   try {
     const result = await client.POST("/text-search/results", {
@@ -561,7 +690,8 @@ async function showMore(workKey: string) {
     const accepted = result.response.status === 200
       ? acceptTextSearchResultsResponse(result.data, body, requestIdentity)
       : null
-    if (version === moreVersion && identity === routeIdentity.value && accepted) {
+    if (version === moreVersion && identity === routeIdentity.value && accepted
+      && accepted.works.length === 1 && accepted.works[0]?.lbworkid === workKey) {
       const expanded = resultsView(accepted, requestedState).works.find(work => work.key === workKey)
       if (expanded) moreHits.value = { ...moreHits.value, [workKey]: expanded.hits }
     }
@@ -578,6 +708,25 @@ function visibleHits(work: SearchWorkView): readonly SearchHitView[] {
   return moreHits.value[work.key] ?? work.hits
 }
 
+type ResultRowView = Readonly<
+  | { key: string, kind: "header", work: SearchWorkView }
+  | { key: string, kind: "hit", work: SearchWorkView, hit: SearchHitView }
+  | { key: string, kind: "overflow", work: SearchWorkView }
+>
+const resultRows = computed<readonly ResultRowView[]>(() => {
+  const rows: ResultRowView[] = []
+  for (const work of results.value?.works ?? []) {
+    rows.push({ key: `${work.key}:header`, kind: "header", work })
+    visibleHits(work).forEach((hit, index) => {
+      rows.push({ key: `${work.key}:hit:${index}`, kind: "hit", work, hit })
+    })
+    if (work.hasMore && !moreHits.value[work.key]) {
+      rows.push({ key: `${work.key}:overflow`, kind: "overflow", work })
+    }
+  }
+  return rows
+})
+
 const totalPages = computed(() => Math.max(1, Math.ceil((results.value?.totalWorks ?? 0) / 30)))
 const firstVisibleWork = computed(() => results.value?.totalWorks
   ? (state.value.page - 1) * 30 + 1
@@ -591,6 +740,36 @@ function goToPage(page: number) {
   void navigate(textSearchPageQuery(rawQuery.value, page))
 }
 
+const showGotoPageInput = ref(false)
+const gotoPageInput = ref("")
+const gotoPageElement = ref<HTMLInputElement | null>(null)
+function toggleGotoPageInput() {
+  if (totalPages.value <= 1) return
+  showGotoPageInput.value = !showGotoPageInput.value
+  if (!showGotoPageInput.value) return
+  gotoPageInput.value = String(state.value.page)
+  void nextTick(() => gotoPageElement.value?.focus())
+}
+
+function submitGotoPage() {
+  const value = gotoPageInput.value.trim()
+  if (!/^[1-9]\d*$/.test(value)) return
+  const page = Number(value)
+  if (!Number.isSafeInteger(page) || page < 1 || page > totalPages.value) return
+  showGotoPageInput.value = false
+  goToPage(page)
+}
+
+watch(routeIdentity, () => {
+  showGotoPageInput.value = false
+  gotoPageInput.value = ""
+}, { flush: "sync" })
+
+const genderSelection = computed(() => state.value.gender ?? "all")
+function setGender(value: string) {
+  patchFilters({ gender: value === "female" || value === "male" ? value : null })
+}
+
 function setFacet(authorId: string | null) {
   patchFilters({ facetAuthorId: authorId })
 }
@@ -598,9 +777,16 @@ function setFacet(authorId: string | null) {
 const toolkitMounted = ref(false)
 onMounted(() => { toolkitMounted.value = true })
 onBeforeUnmount(() => {
+  primaryController?.abort()
+  countVersion += 1
   countController?.abort()
+  countInFlight.clear()
+  optionsVersion += 1
   optionsController?.abort()
+  optionsInFlight.clear()
+  titleVersion += 1
   titleController?.abort()
+  moreVersion += 1
   moreController?.abort()
   if (titleTimer) clearTimeout(titleTimer)
 })
@@ -622,6 +808,7 @@ useHead({
 <template>
   <div
     data-search-root
+    :data-search-mounted="toolkitMounted"
     :class="{
       searching: primaryPending,
       advanced: state.advanced,
@@ -744,23 +931,46 @@ useHead({
         <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
       </div>
       <div class="flex block max-w-3xl pr-2">
-        <div class="rzslider mt-3 slider-large" aria-hidden="true" />
+        <div class="rzslider mt-3 slider-large chronology_ranges">
+          <input
+            type="range"
+            :min="chronologyFloor"
+            :max="chronologyCeiling"
+            step="1"
+            :value="chronologyFromDraft"
+            aria-label="Från år reglage"
+            @input="setChronologyDraft('from', ($event.target as HTMLInputElement).value)"
+            @change="commitChronologyDraft"
+          >
+          <input
+            type="range"
+            :min="chronologyFloor"
+            :max="chronologyCeiling"
+            step="1"
+            :value="chronologyToDraft"
+            aria-label="Till år reglage"
+            @input="setChronologyDraft('to', ($event.target as HTMLInputElement).value)"
+            @change="commitChronologyDraft"
+          >
+        </div>
         <div class="whitespace-nowrap self-center chronology_inputs">
           <span class="text-sm sc">Tryckår: </span>
           <input
             type="text"
             class="text-sm text-center py-1"
-            :value="state.yearRange?.[0] ?? 1800"
+            :value="chronologyFromDraft"
             aria-label="Från år"
-            @change="patchFilters({ yearRange: [Number(($event.target as HTMLInputElement).value), state.yearRange?.[1] ?? 1950] })"
+            @input="setChronologyDraft('from', ($event.target as HTMLInputElement).value)"
+            @change="commitChronologyDraft"
           >
           <span class="text-sm sc">till </span>
           <input
             type="text"
             class="text-sm text-center py-1"
-            :value="state.yearRange?.[1] ?? 1950"
+            :value="chronologyToDraft"
             aria-label="Till år"
-            @change="patchFilters({ yearRange: [state.yearRange?.[0] ?? 1800, Number(($event.target as HTMLInputElement).value)] })"
+            @input="setChronologyDraft('to', ($event.target as HTMLInputElement).value)"
+            @change="commitChronologyDraft"
           >
         </div>
       </div>
@@ -771,7 +981,7 @@ useHead({
             <SearchMultiSelect
               class="author_select"
               :model-value="state.authorIds"
-              :options="allAuthorChoices"
+              :options="authorChoices"
               placeholder="Författarskap"
               @update:model-value="patchFilters({ authorIds: $event })"
             />
@@ -814,7 +1024,7 @@ useHead({
             <SearchMultiSelect
               class="about_select"
               :model-value="state.aboutAuthorIds"
-              :options="allAuthorChoices"
+              :options="aboutAuthorChoices"
               placeholder="Om ett författarskap"
               @update:model-value="patchFilters({ aboutAuthorIds: $event })"
             />
@@ -832,12 +1042,12 @@ useHead({
             <select
               class="gender_select"
               aria-label="Filtrera: kvinnliga / manliga / alla"
-              @change="patchFilters({ gender: (($event.target as HTMLSelectElement).value || null) as TextSearchRouteState['gender'] })"
+              @change="setGender(($event.target as HTMLSelectElement).value)"
             >
-              <option value="" :selected="state.gender === null" />
-              <option value="all">Alla författare</option>
-              <option value="female" :selected="state.gender === 'female'">Kvinnliga författare</option>
-              <option value="male" :selected="state.gender === 'male'">Manliga författare</option>
+              <option value="" />
+              <option value="all" :selected="genderSelection === 'all'">Alla författare</option>
+              <option value="female" :selected="genderSelection === 'female'">Kvinnliga författare</option>
+              <option value="male" :selected="genderSelection === 'male'">Manliga författare</option>
             </select>
           </div>
         </div>
@@ -854,53 +1064,55 @@ useHead({
       class="row results_container"
       :class="{ searching: primaryPending }"
     >
-      <div v-if="acceptedPrimary?.status === 200" class="table_viewport">
+      <div v-if="displayPrimary?.status === 200" class="table_viewport">
         <div class="table_container">
           <div v-if="results?.totalWorks === 0">Din sökning gav inga träffar</div>
           <table cellspacing="0" class="results">
-            <template v-for="work in results?.works ?? []" :key="work.key">
-              <tr>
+            <tr
+              v-for="(row, rowIndex) in resultRows"
+              :key="row.key"
+              :class="[
+                rowIndex % 2 ? 'odd' : 'even',
+                {
+                  sentence: row.kind !== 'header',
+                  is_faksimil: row.work.facsimile
+                }
+              ]"
+            >
+              <template v-if="row.kind === 'header'">
                 <td class="header" colspan="4">
-                  <div class="header_content" :title="work.title">
-                    <span class="author">{{ work.authorName }}{{ " " }}</span>
+                  <div class="header_content" :title="row.work.title">
+                    <span class="author">{{ row.work.authorName }}{{ " " }}</span>
                     <span class="title">
-                      <a :href="visibleHits(work)[0]?.href">{{ work.title }}</a>
+                      <a :href="visibleHits(row.work)[0]?.href">{{ row.work.title }}</a>
                     </span>
                   </div>
                 </td>
-              </tr>
-              <tr
-                v-for="(hit, index) in visibleHits(work)"
-                :key="`${work.key}:${index}`"
-                class="sentence"
-                :class="[
-                  index % 2 ? 'odd' : 'even',
-                  { is_faksimil: work.facsimile }
-                ]"
-              >
+              </template>
+              <template v-else-if="row.kind === 'hit'">
                 <td class="left_context">
                   <span
-                    v-for="(word, wordIndex) in hit.left"
+                    v-for="(word, wordIndex) in row.hit.left"
                     :key="wordIndex"
                     class="word"
                     :class="{ punct: word.punct }"
                   >{{ word.text }} </span>
                 </td>
                 <td class="match w-px whitespace-nowrap">
-                  <span v-for="(word, wordIndex) in hit.match" :key="wordIndex">
-                    <a :href="hit.href" class="word" :class="{ punct: word.punct }">{{ word.text }}</a>
+                  <span v-for="(word, wordIndex) in row.hit.match" :key="wordIndex">
+                    <a :href="row.hit.href" class="word" :class="{ punct: word.punct }">{{ word.text }}</a>
                   </span>
                 </td>
                 <td class="right_context">
                   <span
-                    v-for="(word, wordIndex) in hit.right"
+                    v-for="(word, wordIndex) in row.hit.right"
                     :key="wordIndex"
                     class="word"
                     :class="{ punct: word.punct }"
                   > {{ word.text }}</span>
                 </td>
-              </tr>
-              <tr v-if="work.hasMore && !moreHits[work.key]">
+              </template>
+              <template v-else>
                 <td />
                 <td>
                   <div class="overflow sc">
@@ -908,14 +1120,14 @@ useHead({
                     <button
                       type="button"
                       class="more"
-                      :disabled="moreLoadingKey === work.key"
-                      @click="showMore(work.key)"
+                      :disabled="moreLoadingKey === row.work.key"
+                      @click="showMore(row.work.key)"
                     >Visa fler</button>
                     <hr>
                   </div>
                 </td>
-              </tr>
-            </template>
+              </template>
+            </tr>
           </table>
         </div>
       </div>
@@ -925,12 +1137,12 @@ useHead({
     </div>
 
     <Teleport to="#toolkit" :disabled="!toolkitMounted">
-      <div v-if="acceptedPrimary?.status === 200" class="littb_pager">
+      <div v-if="displayPrimary?.status === 200" class="littb_pager">
         <div>
           <div class="hits_info">
             <div>
-              <div v-if="count" class="hits">{{ count.hits }}</div>
-              <div v-if="count" class="hits_sub">
+              <div v-if="count && count.hits > 0" class="hits">{{ count.hits }}</div>
+              <div v-if="count && count.hits > 0" class="hits_sub">
                 <span v-if="count.hits !== 1">sökträffar</span>
                 <span v-else>sökträff</span>
               </div>
@@ -963,7 +1175,27 @@ useHead({
             </li>
             <li><button type="button" @click="goToPage(1)">Gå till första träffen</button></li>
             <li><button type="button" @click="goToPage(totalPages)">Gå till sista träffen</button></li>
-            <li><span>Gå till träffsida . . .</span></li>
+            <li
+              :class="{ open: showGotoPageInput }"
+              :aria-disabled="totalPages === 1"
+            >
+              <button
+                type="button"
+                :disabled="totalPages === 1"
+                @click="toggleGotoPageInput"
+              >Gå till träffsida . . .</button>
+              <form v-if="showGotoPageInput" @submit.prevent="submitGotoPage">
+                <input
+                  ref="gotoPageElement"
+                  v-model="gotoPageInput"
+                  class="input_page"
+                  type="text"
+                  inputmode="numeric"
+                  aria-label="Träffsida"
+                >
+                <i class="fa fa-angle-double-right" aria-hidden="true" />
+              </form>
+            </li>
           </ul>
         </div>
       </div>
