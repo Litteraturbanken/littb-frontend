@@ -112,6 +112,12 @@ the author with one exact `authorid_norm` keyword query selecting only
 normalized IDs return 404; distinct duplicate canonical results and malformed
 data return non-leaking 500; OpenSearch failure returns typed 503.
 
+Normalized author and title inputs are separate strict segment types. Author
+length is 1–100; title length is 1–200, matching the established title-input
+contract. Neither type trims: leading/trailing whitespace is rejected. Both
+reject `%`, slash, backslash, dot segments, controls, DEL/C1, and unpaired UTF-16
+surrogates. Boundary tests cover author 100/101 and title 100/101/200/201.
+
 A Nitro server middleware handles only GET/HEAD paths beginning with the exact
 ASCII `/forfattare/` prefix. It accepts one safe author segment and optionally
 recognizes Angular's Reader shape
@@ -121,6 +127,15 @@ only the identified segments, preserves remaining safe path segments and the
 raw query, and sends a 307 replace redirect. Resolver 404 becomes local 404;
 every other resolver/schema/identity failure becomes non-leaking 502. It never
 redirects `/författare/**`, so loops are impossible.
+
+Path parsing fully decodes each raw segment to stability in at most 16 passes,
+then applies the author 100/title 200/other 512-character limits and the same
+percent/separator/dot/control/surrogate rejection. Only the exact seven-segment
+Reader shape triggers title resolution; all other safe suffixes resolve the
+author only and remain unchanged. The private resolver accepts only a strict
+response whose title nullability matches the request. The redirect takes its
+query suffix byte-for-byte from the original Node request URL, preserving
+ordering, duplicate keys, and encoding.
 
 The sanitizer preserves safe `/forfattare/**` hrefs byte-for-byte. It does not
 perform the route-breaking prefix-only rewrite. Tests prove:
@@ -159,6 +174,23 @@ Thus absolute/protocol-relative paths, queries/fragments, wrong kind/identity,
 extra segments, controls, malformed `%`, encoded or repeatedly encoded dot/
 slash/backslash variants, and even safe-looking mismatches fail before any
 content-origin request.
+
+The other link-bearing descriptor fields also have byte-for-byte contracts:
+
+```text
+search_url is null or
+  /sok?forfattare={RFC3986(author_id)}&avancerad
+
+audio_url is null or
+  https://litteraturbanken.se/ljudochbild/författare/
+  {RFC3986(lowercase(normalized_author_id))}
+```
+
+JavaScript/protocol-relative/wrong-host/wrong-path/wrong-ID values, controls,
+malformed percent encodings, and encoder failures are malformed descriptors and
+become local 502 before a page payload is returned. Raw segment validation also
+rejects lone surrogates, and the loader catches any RFC3986 encoder `URIError`
+inside the same 502 boundary.
 
 The successful shared payload is:
 

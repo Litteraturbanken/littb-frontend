@@ -215,9 +215,29 @@ git commit -m "feat(api): describe author documents"
 ```python
 LegacyMediaType = Literal["etext", "faksimil"]
 
+def validate_legacy_segment(value: str) -> str:
+    if (
+        value != value.strip() or value in {".", ".."}
+        or any(character in value for character in ("%", "/", "\\"))
+        or any(unicodedata.category(character) in {"Cc", "Cs"} for character in value)
+    ):
+        raise ValueError("invalid legacy route segment")
+    return value
+
+LegacyNormalizedAuthorId = Annotated[
+    str,
+    StringConstraints(min_length=1, max_length=100),
+    AfterValidator(validate_legacy_segment),
+]
+LegacyNormalizedTitleId = Annotated[
+    str,
+    StringConstraints(min_length=1, max_length=200),
+    AfterValidator(validate_legacy_segment),
+]
+
 class LegacyAuthorRouteRequest(V2Model):
-    normalized_author_id: ProfileAuthorId
-    normalized_title_id: ProfileAuthorId | None
+    normalized_author_id: LegacyNormalizedAuthorId
+    normalized_title_id: LegacyNormalizedTitleId | None
     media_type: LegacyMediaType | None
 
     @model_validator(mode="after")
@@ -249,7 +269,9 @@ get_documents(
 
 Cover no title query when null, missing 404, paired-input 422, unsupported media
 422, same canonical duplicate accepted once, distinct duplicate/mismatched/
-malformed 500, and either OpenSearch call -> typed 503.
+malformed 500, and either OpenSearch call -> typed 503. Add author lengths
+100/101, title lengths 100/101/200/201, whitespace, percent, slash, backslash,
+dot, control, DEL/C1, and surrogate boundary cases.
 
 - [ ] **Step 2: Run resolver tests RED**
 
@@ -262,11 +284,48 @@ Expected: missing models/module.
 
 - [ ] **Step 3: Implement and register the isolated router**
 
-Use `APIRouter(tags=["authors"])`, the two exact selected-field providers, and
-strict result validation. The POST handler returns 404 code
-`legacy_author_route_not_found`, 503 code `legacy_author_route_unavailable`, or
-the strict resolution. Register the router in `app.py`; do not add a GET path or
-raw path-string input.
+Use `APIRouter(tags=["authors"])` and this concrete transform/status boundary:
+
+```python
+def one_canonical_value(
+    raw: dict[str, Any], normalized_key: str, normalized: str, canonical_key: str
+) -> str:
+    hits = raw.get("hits")
+    rows = raw.get("data")
+    if hits == 0 and rows == []:
+        raise HTTPException(status_code=404, detail="Legacy route not found")
+    if not isinstance(hits, int) or isinstance(hits, bool) or not isinstance(rows, list):
+        raise ValueError("Malformed legacy route response")
+    values: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict) or row.get(normalized_key) != normalized:
+            raise ValueError("Malformed legacy route response")
+        value = row.get(canonical_key)
+        if not isinstance(value, str) or not value:
+            raise ValueError("Malformed legacy route response")
+        values.add(value)
+    if hits != len(rows) or len(values) != 1:
+        raise ValueError("Malformed legacy route response")
+    return values.pop()
+
+def transform_legacy_author_route(
+    author_raw: dict[str, Any], title_raw: dict[str, Any] | None,
+    request: LegacyAuthorRouteRequest,
+) -> LegacyAuthorRouteResolution:
+    author_id = one_canonical_value(
+        author_raw, "authorid_norm", request.normalized_author_id, "authorid"
+    )
+    title_id = None if title_raw is None else one_canonical_value(
+        title_raw, "titleid_norm", request.normalized_title_id, "titleid"
+    )
+    return LegacyAuthorRouteResolution(author_id=author_id, title_id=title_id)
+```
+
+The POST handler catches either provider's `OpenSearchException` and raises
+typed 503 code `legacy_author_route_unavailable`; transform 404 becomes the
+typed 404 code `legacy_author_route_not_found`; validation is 422; every
+`ValueError` reaches the global redacted 500. Register the router in `app.py`;
+do not add a GET path or raw path-string input.
 
 - [ ] **Step 4: Export, verify, and commit Task 2**
 
@@ -489,7 +548,7 @@ function validManagedSegment(value: unknown): value is string {
     && value.length >= 1 && value.length <= 100
     && value === value.trim()
     && value !== "." && value !== ".."
-    && !/[\\/%\u0000-\u001f\u007f-\u009f]/u.test(value)
+    && !/[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)
 }
 
 function expectedSourcePath(normalized: string, kind: AuthorDocumentKind) {
@@ -511,7 +570,8 @@ function encodeRfc3986Segment(value: string): string {
 
 Also reject normalized-segment inputs `../private`, `%2e%2e`,
 `SoderbergH/presentation`, `SoderbergH\\presentation`, leading/trailing
-whitespace, controls, and 101 characters, regardless of the supplied path.
+whitespace, controls, a lone surrogate, and 101 characters, regardless of the
+supplied path.
 
 - [ ] **Step 2: Write failing complete sanitizer tests**
 
@@ -631,6 +691,20 @@ function isAuthorDocumentDescriptor(value: unknown): value is AuthorDocumentDesc
     && typeof value.source_path === "string"
 }
 
+function descriptorLinksAreExact(value: AuthorDocumentDescriptor): boolean {
+  try {
+    const expectedSearch =
+      `/sok?forfattare=${encodeRfc3986Segment(value.author_id)}&avancerad`
+    const expectedAudio =
+      "https://litteraturbanken.se/ljudochbild/författare/"
+      + encodeRfc3986Segment(value.normalized_author_id.toLowerCase())
+    return (value.search_url === null || value.search_url === expectedSearch)
+      && (value.audio_url === null || value.audio_url === expectedAudio)
+  } catch {
+    return false
+  }
+}
+
 export async function loadAuthorDocument(
   event: H3Event,
   requestedAuthor: string,
@@ -652,7 +726,8 @@ export async function loadAuthorDocument(
   if (result.response.status === 404) {
     return documentError(404, "author_document_author_not_found")
   }
-  if (result.response.status !== 200 || !isAuthorDocumentDescriptor(result.data)) {
+  if (result.response.status !== 200 || !isAuthorDocumentDescriptor(result.data)
+      || !descriptorLinksAreExact(result.data)) {
     return documentError(502, "author_document_unavailable")
   }
   const descriptor = result.data
@@ -660,7 +735,12 @@ export async function loadAuthorDocument(
       || descriptor.document_kind !== requestedKind) {
     return documentError(502, "author_document_unavailable")
   }
-  const expected = expectedSourcePath(descriptor.normalized_author_id, requestedKind)
+  let expected: string
+  try {
+    expected = expectedSourcePath(descriptor.normalized_author_id, requestedKind)
+  } catch {
+    return documentError(502, "author_document_unavailable")
+  }
   if (descriptor.source_path !== expected) {
     return documentError(502, "author_document_unavailable")
   }
@@ -699,37 +779,130 @@ The thin handler validates params, sets `cache-control: no-store`, and calls the
 loader. Endpoint tests cover both 200s, all three local errors, every status
 translation, malformed bodies, identity mismatch, and the full source-path
 table. Before each unsafe-path assertion clear the content ledger; afterward
-assert it is still empty.
+assert it is still empty. Malformed descriptor cases include `javascript:`,
+`//evil.test`, wrong HTTPS host/path, wrong author/slug, controls, malformed
+percent encoding, and lone surrogates in each link-bearing/source identity;
+all return 502 with no link-bearing payload.
 
 - [ ] **Step 5: Write failing middleware tests and implement canonical redirect**
 
 Pure parsing accepts only safe decoded segments and recognizes title resolution
-only for the exact Reader shape. The middleware algorithm is:
+only for the exact Reader shape. Implement these helpers in full:
 
 ```ts
-if (!['GET', 'HEAD'].includes(event.method)) return
-const url = getRequestURL(event)
-if (!url.pathname.startsWith('/forfattare/')) return
-const segments = decodeAndValidatePathSegments(url.pathname)
+type LegacyReaderMatch = {
+  title: string
+  mediaType: "etext" | "faksimil"
+}
+
+function decodeStable(raw: string, maximum: number): string {
+  let value = raw
+  for (let pass = 0; pass < 16; pass += 1) {
+    let next: string
+    try { next = decodeURIComponent(value) }
+    catch { throw legacyRouteError(404, "legacy_author_route_not_found") }
+    if (next.length > maximum) {
+      throw legacyRouteError(404, "legacy_author_route_not_found")
+    }
+    if (next === value) return value
+    value = next
+  }
+  throw legacyRouteError(404, "legacy_author_route_not_found")
+}
+
+export function decodeAndValidatePathSegments(pathname: string): string[] {
+  if (!pathname.startsWith("/forfattare/")) return []
+  const raw = pathname.slice(1).split("/")
+  if (raw.length < 2 || raw.some(segment => segment.length === 0)) {
+    throw legacyRouteError(404, "legacy_author_route_not_found")
+  }
+  return raw.map((segment, index) => {
+    const maximum = index === 1 ? 100
+      : index === 3 && raw[2] === "titlar" ? 200 : 512
+    const decoded = decodeStable(segment, maximum)
+    if (decoded === "." || decoded === ".."
+        || decoded !== decoded.trim()
+        || /[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(decoded)) {
+      throw legacyRouteError(404, "legacy_author_route_not_found")
+    }
+    return decoded
+  })
+}
+
+export function matchLegacyReaderSegments(segments: string[]): LegacyReaderMatch | null {
+  if (segments.length !== 7 || segments[0] !== "forfattare"
+      || segments[2] !== "titlar" || segments[4] !== "sida"
+      || !["etext", "faksimil"].includes(segments[6] ?? "")) return null
+  return {
+    title: segments[3]!,
+    mediaType: segments[6] as "etext" | "faksimil"
+  }
+}
+
+export async function resolveLegacyAuthorRoutePrivately(
+  event: H3Event,
+  request: LegacyAuthorRouteRequest
+): Promise<LegacyAuthorRouteResolution> {
+  const client = createLbApiClient(useRuntimeConfig(event).apiBase)
+  let result
+  try {
+    result = await client.POST("/legacy-author-routes/resolve", { body: request })
+  } catch {
+    throw legacyRouteError(502, "legacy_author_route_unavailable")
+  }
+  if (result.response.status === 404) {
+    throw legacyRouteError(404, "legacy_author_route_not_found")
+  }
+  const value = result.data
+  if (result.response.status !== 200 || !isRecord(value)
+      || !validCanonicalSegment(value.author_id, 100)
+      || ((request.normalized_title_id === null) !== (value.title_id === null))
+      || (value.title_id !== null && !validCanonicalSegment(value.title_id, 200))) {
+    throw legacyRouteError(502, "legacy_author_route_unavailable")
+  }
+  return { author_id: value.author_id, title_id: value.title_id }
+}
+
+function rawRequestSearch(event: H3Event): string {
+  const raw = event.node.req.url ?? ""
+  const queryAt = raw.indexOf("?")
+  return queryAt < 0 ? "" : raw.slice(queryAt)
+}
+
+if (!["GET", "HEAD"].includes(event.method)) return
+const pathname = getRequestURL(event).pathname
+if (!pathname.startsWith("/forfattare/")) return
+const segments = decodeAndValidatePathSegments(pathname)
 const reader = matchLegacyReaderSegments(segments)
-const request = {
-  normalized_author_id: segments[1],
+const resolution = await resolveLegacyAuthorRoutePrivately(event, {
+  normalized_author_id: segments[1]!,
   normalized_title_id: reader?.title ?? null,
   media_type: reader?.mediaType ?? null
-}
-const resolution = await resolveLegacyAuthorRoutePrivately(event, request)
-segments[0] = 'författare'
+})
+segments[0] = "författare"
 segments[1] = resolution.author_id
 if (reader && resolution.title_id) segments[3] = resolution.title_id
-const canonical = '/' + segments.map(encodeRfc3986Segment).join('/') + url.search
+let canonical: string
+try {
+  canonical = `/${segments.map(encodeRfc3986Segment).join("/")}${rawRequestSearch(event)}`
+} catch {
+  throw legacyRouteError(502, "legacy_author_route_unavailable")
+}
 return sendRedirect(event, canonical, 307)
 ```
 
+`validCanonicalSegment(value, maximum)` applies the same no-trim, percent,
+separator, dot, control, DEL/C1, surrogate, and exact maximum rules.
+`legacyRouteError` emits only 404 `legacy_author_route_not_found` or 502
+`legacy_author_route_unavailable`.
+
 Assert exact Location/query for Lagerlof profile and Söderberg/Förvillelser
-Reader; 404 mapping, 502 provider/schema failure, unsafe/double-encoded/control
-input rejection, GET/HEAD only, no `/författare` loop, and one private resolver
-request. Then end-to-end follow redirects and assert rendered Selma profile and
-Förvillelser Reader text, not only URL changes.
+Reader; author 100/101 and title 100/101/200/201 limits; unsupported safe suffix
+author-only resolution; single/double-encoded slash, traversal, malformed
+percent, control, and surrogate rejection; 404, malformed 200, and 503 mapping;
+GET/HEAD only; no `/författare` loop; byte-exact duplicate/ordered raw query;
+and one private resolver request. Then follow redirects and assert rendered
+Selma profile and Förvillelser Reader text, not only URL changes.
 
 - [ ] **Step 6: Run GREEN and commit Task 4**
 
