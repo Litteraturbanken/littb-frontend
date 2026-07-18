@@ -3,6 +3,27 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 const fixture = "http://127.0.0.1:4100"
 const resolveBase = "/api/reader/resolve/S%C3%B6derbergH"
 const resolvePath = `${resolveBase}/DoktorGlas/etext`
+const shorthandBase = "/författare/SöderbergH/titlar"
+
+const readerStatuses = [
+  ["DoktorGlas", 200],
+  ["SiblingPagesReader", 200],
+  ["MissingReader", 404],
+  ["NoRequestedMediaReader", 404],
+  ["WrongAuthorReader", 404],
+  ["MissingStartReader", 404],
+  ["MalformedStartReader", 502],
+  ["OutOfListStartReader", 404],
+  ["MalformedPagesReader", 502],
+  ["NullPageIndexReader", 502],
+  ["FalsePageIndexReader", 502],
+  ["EmptyPageIndexReader", 502],
+  ["StringPageIndexReader", 502],
+  ["UnsafePageIndexReader", 502],
+  ["MediaMismatchReader", 404],
+  ["MalformedReader", 502],
+  ["UnavailableReader", 502]
+] as const
 
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
@@ -37,25 +58,7 @@ test("resolves exact Reader metadata without fetching page HTML", async ({ reque
   ])
 })
 
-for (const [titlePath, status] of [
-  ["DoktorGlas", 200],
-  ["SiblingPagesReader", 200],
-  ["MissingReader", 404],
-  ["NoRequestedMediaReader", 404],
-  ["WrongAuthorReader", 404],
-  ["MissingStartReader", 404],
-  ["MalformedStartReader", 502],
-  ["OutOfListStartReader", 404],
-  ["MalformedPagesReader", 502],
-  ["NullPageIndexReader", 502],
-  ["FalsePageIndexReader", 502],
-  ["EmptyPageIndexReader", 502],
-  ["StringPageIndexReader", 502],
-  ["UnsafePageIndexReader", 502],
-  ["MediaMismatchReader", 404],
-  ["MalformedReader", 502],
-  ["UnavailableReader", 502]
-] as const) {
+for (const [titlePath, status] of readerStatuses) {
   test(`${titlePath} resolves with ${status}`, async ({ request }) => {
     const response = await request.get(`${resolveBase}/${titlePath}/etext`)
     expect(response.status()).toBe(status)
@@ -143,4 +146,35 @@ test("canonical Reader rejects present malformed start metadata", async ({ reque
   )
   expect(response.status()).toBe(502)
   expect((await readerRequests(request)).some(path => path.includes("/res_"))).toBe(false)
+})
+
+test("SSR preserves the raw shorthand query in a canonical redirect", async ({ request }) => {
+  const response = await request.get(
+    `${shorthandBase}/DoktorGlas/etext` +
+    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F",
+    { maxRedirects: 0 }
+  )
+  expect(response.status()).toBe(307)
+  expect(response.headers().location).toBe(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
+    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  )
+})
+
+for (const [titlePath, resolverStatus] of readerStatuses) {
+  const expectedStatus = resolverStatus === 200 ? 307 : resolverStatus
+  test(`shorthand ${titlePath} responds with ${expectedStatus}`, async ({ request }) => {
+    const response = await request.get(`${shorthandBase}/${titlePath}/etext`, {
+      maxRedirects: 0
+    })
+    expect(response.status()).toBe(expectedStatus)
+  })
+}
+
+test("shorthand rejects unsupported faksimil before upstream IO", async ({ request }) => {
+  const response = await request.get(`${shorthandBase}/DoktorGlas/faksimil`, {
+    maxRedirects: 0
+  })
+  expect(response.status()).toBe(404)
+  expect(await readerRequests(request)).toEqual([])
 })

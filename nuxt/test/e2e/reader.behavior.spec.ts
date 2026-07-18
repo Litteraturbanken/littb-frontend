@@ -2,6 +2,10 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 const fixture = "http://127.0.0.1:4100"
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+const readerEncodedPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
+const readerPublicCanonicalPath = "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
+const readerShorthandPath = "/författare/SöderbergH/titlar/DoktorGlas/etext"
+const readerShorthandRouterPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext"
 const storedReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const storedNextReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
 
@@ -19,6 +23,7 @@ type StoredPageView = {
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_metadata_delays`),
     request.delete(`${fixture}/_reader_hit_requests`),
     request.delete(`${fixture}/_reader_hit_failure`),
     request.delete(`${fixture}/_reader_hit_delays`)
@@ -68,7 +73,147 @@ async function rawStoredPageViews(page: Page): Promise<string | null> {
   return page.evaluate(() => localStorage.getItem("lastPageViews"))
 }
 
+async function navigateClient(page: Page, rawPath: string) {
+  await page.evaluate(async nextPath => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: {
+          globalProperties: {
+            $router: { push: (path: string) => Promise<void> }
+          }
+        }
+      }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    await router.push(nextPath)
+  }, rawPath)
+}
+
 test.beforeEach(async ({ request }) => resetReader(request))
+
+test("Library EPUB shorthand navigation shows only its preloader and replaces History", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const shorthandDocumentRequests: string[] = []
+  await request.put(`${fixture}/_reader_metadata_delays`, {
+    data: { DoktorGlas: 300 }
+  })
+  await page.goto("/bibliotek?visa=epub&sort=popularitet", { waitUntil: "networkidle" })
+  page.on("request", browserRequest => {
+    const url = new URL(browserRequest.url())
+    if (browserRequest.resourceType() === "document" && url.pathname === readerShorthandPath) {
+      shorthandDocumentRequests.push(browserRequest.url())
+    }
+  })
+
+  const title = page.locator("[data-library-epub-title]").filter({ hasText: "Doktor Glas" })
+  await expect(title).toHaveCount(1)
+  await expect(title).toHaveAttribute(
+    "href",
+    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken"
+  )
+  await title.click()
+
+  await expect(page).toHaveURL(`${readerShorthandPath}?om-boken`)
+  await expect(page.locator(".searching > .preloader")).toBeVisible()
+  await expect(page.locator(".searching > :not(.preloader)")).toHaveCount(0)
+  await expect(page.locator("[data-library-epub-row], .reader_main")).toHaveCount(0)
+  expect(shorthandDocumentRequests).toEqual([])
+
+  await expect(page).toHaveURL(`${readerPath}?om-boken`)
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL("/bibliotek?visa=epub&sort=popularitet")
+  await expect(page.locator('[data-library-sort="popularitet"]')).toHaveClass(/active/)
+  await expect(page.getByRole("link", { name: "Doktor Glas" })).toBeVisible()
+  expect(problems).toEqual([])
+})
+
+test("client shorthand navigation preserves the raw route fullPath query", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawQuery = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  await request.put(`${fixture}/_reader_metadata_delays`, {
+    data: { DoktorGlas: 200 }
+  })
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+
+  await navigateClient(page, `${readerShorthandRouterPath}${rawQuery}`)
+  await expect(page).toHaveURL(`${readerShorthandPath}${rawQuery}`)
+  await expect(page.locator(".searching > .preloader")).toBeVisible()
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
+  expect(await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        currentRoute: { value: {
+          name: unknown
+          params: Record<string, unknown>
+          path: string
+          query: Record<string, unknown>
+        } }
+        options: { history: { location: string } }
+      } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    return router && {
+      historyLocation: router.options.history.location,
+      name: router.currentRoute.value.name,
+      params: router.currentRoute.value.params,
+      path: router.currentRoute.value.path,
+      query: router.currentRoute.value.query,
+      search: window.location.search
+    }
+  })).toEqual({
+    historyLocation: `${readerPublicCanonicalPath}${rawQuery}`,
+    name: "författare-author-titlar-title-sida-page-mediatype",
+    params: {
+      author: "SöderbergH",
+      title: "DoktorGlas",
+      page: "-2",
+      mediatype: "etext"
+    },
+    path: readerEncodedPath,
+    query: {
+      bare: null,
+      empty: "",
+      plus: "a b",
+      percent: "a b",
+      repeat: ["/", "/"]
+    },
+    search: rawQuery
+  })
+  expect(problems).toEqual([])
+})
+
+test("a late shorthand resolver cannot leave the route that replaced it", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await request.put(`${fixture}/_reader_metadata_delays`, {
+    data: { DoktorGlas: 350 }
+  })
+  await page.goto("/", { waitUntil: "networkidle" })
+
+  await navigateClient(page, readerShorthandRouterPath)
+  await expect(page).toHaveURL(readerShorthandPath)
+  await expect(page.locator(".searching > .preloader")).toBeVisible()
+  await expect.poll(async () => (await readerRequests(request)).length).toBe(1)
+  await navigateClient(page, "/bibliotek")
+
+  await expect(page).toHaveURL("/bibliotek")
+  await expect(page.locator("[data-library-result]")).toHaveCount(3)
+  await page.waitForTimeout(450)
+  await expect(page).toHaveURL("/bibliotek")
+  await expect(page.locator("[data-library-result]")).toHaveCount(3)
+  expect(problems).toEqual([])
+})
 
 test("hydrates one runtime e-text page with ordinary reader navigation", async ({
   page,

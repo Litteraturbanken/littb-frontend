@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LocationQuery } from "vue-router"
+import type { LocationQuery, RouteLocationRaw } from "vue-router"
 
 definePageMeta({ alias: ["/epub"] })
 
@@ -54,6 +54,7 @@ type EpubResult = {
   surname: string
   roleSuffix: string
   titleHref: string
+  titleTo: RouteLocationRaw
   authorHref: string
   downloadHref: string
 }
@@ -358,6 +359,11 @@ function parseEpubResult(value: unknown): EpubResult | null {
     surname,
     roleSuffix,
     titleHref: `/författare/${encodedAuthor}/titlar/${encodedTitle}/${encodedMedia}?om-boken`,
+    titleTo: {
+      name: "författare-author-titlar-title-mediatype",
+      params: { author: authorId, title: titleId, mediatype: mediaType },
+      query: { "om-boken": null }
+    },
     authorHref: `/författare/${encodedAuthor}`,
     downloadHref: `/txt/epub/${encodedAuthor}_${encodedTitle}.epub`
   }
@@ -1096,7 +1102,9 @@ onUnmounted(disposeLibraryRequest)
                       <div class="header_container min-w-0 flex-1 align-middle">
                         <div class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight">
                           <span class="title_inner">
-                            <a data-library-epub-title :href="item.titleHref">{{ item.title }}</a>
+                            <NuxtLink v-slot="{ navigate }" :to="item.titleTo" custom>
+                              <a data-library-epub-title :href="item.titleHref" @click="navigate">{{ item.title }}</a>
+                            </NuxtLink>
                           </span>
                         </div>
                       </div>
