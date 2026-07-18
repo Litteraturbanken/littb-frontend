@@ -17,10 +17,17 @@ const facsimileRetinaPath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_5_0009.jpeg"
 const storedFacsimilePath = "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/" +
   "GostaBerlingsSaga/sida/3/faksimil"
+const storedNextFacsimilePath = "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/" +
+  "GostaBerlingsSaga/sida/5/faksimil"
 
 function facsimileSource(size: 2 | 3 | 4 | 5, imageNumber: 7 | 9 | 12): string {
   const work = "lb-reader-gosta-berlings-saga"
   return `/txt/${work}/${work}_${size}/${work}_${size}_${String(imageNumber).padStart(4, "0")}.jpeg`
+}
+
+function facsimilePageHref(pageName: "1" | "3" | "5", query = ""): string {
+  return "/författare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/" +
+    `sida/${pageName}/faksimil${query}`
 }
 
 type StoredPageView = {
@@ -112,8 +119,18 @@ async function navigateClient(page: Page, rawPath: string) {
   }, rawPath)
 }
 
-async function activateReaderLink(page: Page, name: "Föregående sida" | "Nästa sida") {
-  await page.getByRole("link", { name }).dispatchEvent("click")
+async function activateReaderLink(
+  page: Page,
+  name: "Föregående sida" | "Nästa sida",
+  expectedHref: string
+) {
+  const link = page.getByRole("link", { name })
+  await expect(link).toHaveAttribute("href", expectedHref)
+  if ((page.viewportSize()?.width ?? Number.POSITIVE_INFINITY) < 768) {
+    await link.dispatchEvent("click")
+  } else {
+    await link.click()
+  }
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
@@ -464,7 +481,7 @@ test("faksimil page navigation preserves queries and restores scan identity", as
   await request.delete(`${fixture}/_reader_metadata_requests`)
 
   const image = page.locator("img.faksimil")
-  await activateReaderLink(page, "Föregående sida")
+  await activateReaderLink(page, "Föregående sida", facsimilePageHref("1", query))
   await expect(page).toHaveURL(`/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/1/faksimil${query}`)
   await expect(image).toHaveAttribute("src", facsimileSource(3, 7))
   await expect(image).toHaveAttribute(
@@ -479,10 +496,10 @@ test("faksimil page navigation preserves queries and restores scan identity", as
   await expect(page).toHaveURL(`/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/1/faksimil${query}`)
   await expect(image).toHaveAttribute("src", facsimileSource(3, 7))
 
-  await activateReaderLink(page, "Nästa sida")
+  await activateReaderLink(page, "Nästa sida", facsimilePageHref("3", query))
   await expect(page).toHaveURL(`${facsimilePath}${query}`)
   await expect(image).toHaveAttribute("src", facsimileSource(3, 9))
-  await activateReaderLink(page, "Nästa sida")
+  await activateReaderLink(page, "Nästa sida", facsimilePageHref("5", query))
   await expect(page).toHaveURL(`/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/5/faksimil${query}`)
   await expect(image).toHaveAttribute("src", facsimileSource(3, 12))
   await expect(page.getByRole("link", { name: "Nästa sida" })).toHaveCount(0)
@@ -556,7 +573,7 @@ test("faksimil page identity resets local rotation and image error state", async
   await image.evaluate(element => element.dispatchEvent(new Event("error")))
   await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(1)
 
-  await activateReaderLink(page, "Nästa sida")
+  await activateReaderLink(page, "Nästa sida", facsimilePageHref("5"))
   await expect(page).toHaveURL(/\/sida\/5\/faksimil$/)
   await expect(image).toHaveAttribute("src", facsimileSource(3, 12))
   await expect(image).toBeVisible()
@@ -578,7 +595,7 @@ test("search-shaped faksimil navigation never requests e-text hits", async ({
   })
   const query = "?q=g%C3%B6sta&hit=1&lemma=1&ej_modern=1&prefix=1&suffix=1&s_mode=phrase&x=1&x=2"
   await page.goto(`${facsimilePath}${query}`, { waitUntil: "networkidle" })
-  await activateReaderLink(page, "Nästa sida")
+  await activateReaderLink(page, "Nästa sida", facsimilePageHref("5", query))
 
   await expect(page).toHaveURL(
     `/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/5/faksimil${query}`
@@ -589,7 +606,7 @@ test("search-shaped faksimil navigation never requests e-text hits", async ({
   expect(problems).toEqual([])
 })
 
-test("a failed faksimil scan stays bounded while context and navigation remain usable", async ({
+test("a failed faksimil scan stays bounded while context and navigation contract remain intact", async ({
   page
 }) => {
   const problems = captureBrowserProblems(page)
@@ -605,6 +622,7 @@ test("a failed faksimil scan stays bounded while context and navigation remain u
   await expect(alert).toHaveText(
     "Faksimilbilden kunde inte hämtas."
   )
+  await expect(page.locator(".reader-context")).toContainText("Selma Lagerlöf")
   await expect(page.locator(".reader-context")).toContainText("Gösta Berlings saga (1891)")
   await expect(page.getByRole("link", { name: "Föregående sida" })).toBeVisible()
   await expect(page.getByRole("link", { name: "Nästa sida" })).toBeVisible()
@@ -619,7 +637,7 @@ test("a failed faksimil scan stays bounded while context and navigation remain u
     wrapperBox!.x + wrapperBox!.width
   )
 
-  await activateReaderLink(page, "Nästa sida")
+  await activateReaderLink(page, "Nästa sida", facsimilePageHref("5"))
   await expect(page).toHaveURL(/\/sida\/5\/faksimil$/)
   await expect(page.locator("img.faksimil")).toHaveAttribute("src", facsimileSource(3, 12))
   await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(0)
@@ -768,7 +786,11 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
 
   await page.goBack({ waitUntil: "networkidle" })
   await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
-  await activateReaderLink(page, "Nästa sida")
+  await activateReaderLink(
+    page,
+    "Nästa sida",
+    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1"
+  )
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
   await expect(page.locator(".reader_main .markee")).toHaveCount(0)
@@ -800,7 +822,11 @@ test("a delayed primary Reader request never renders the prior page under the ne
     await route.continue()
   })
 
-  await activateReaderLink(page, "Nästa sida")
+  await activateReaderLink(
+    page,
+    "Nästa sida",
+    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1"
+  )
   await requestStarted
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
   await expect(page.locator(".reader-primary-loading")).toHaveText("Hämtar läsarsidan …")
@@ -839,7 +865,11 @@ test("a failed primary Reader client request shows a bounded state without stale
     })
   })
 
-  await activateReaderLink(page, "Nästa sida")
+  await activateReaderLink(
+    page,
+    "Nästa sida",
+    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1"
+  )
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
   await expect(page.locator(".reader-primary-error")).toHaveText(
     "Läsarsidan kunde inte hämtas."
@@ -1049,6 +1079,18 @@ test("a faksimil visit replaces its record without overwriting same-work e-text"
     url: storedFacsimilePath
   })
   expect(records.slice(1)).toEqual([sameWorkEtext, otherWork])
+
+  await activateReaderLink(page, "Nästa sida", facsimilePageHref("5"))
+  await expect.poll(async () => (await storedPageViews(page))[0]).toMatchObject({
+    pageix: 2,
+    pagename: "5",
+    mediatype: "faksimil",
+    lbworkid: "lb-reader-gosta-berlings-saga",
+    url: storedNextFacsimilePath
+  })
+  const updatedRecords = await storedPageViews(page)
+  expect(updatedRecords).toHaveLength(3)
+  expect(updatedRecords.slice(1)).toEqual([sameWorkEtext, otherWork])
 })
 
 test("a Reader visit caps oversized history at 50 records", async ({ page }) => {
@@ -1081,7 +1123,11 @@ test("next-page navigation updates the matching Reader history record", async ({
 
   await Promise.all([
     page.waitForURL(/\/sida\/-1\/etext$/),
-    activateReaderLink(page, "Nästa sida")
+    activateReaderLink(
+      page,
+      "Nästa sida",
+      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
+    )
   ])
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
   await expect.poll(async () => (await storedPageViews(page))[0]?.pagename).toBe("-1")
