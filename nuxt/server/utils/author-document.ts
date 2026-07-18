@@ -296,6 +296,7 @@ export async function loadAuthorDocument(
   let result
   try {
     result = await client.GET("/authors/{author_id}/documents/{document_kind}", {
+      redirect: "manual",
       params: {
         path: {
           author_id: requestedAuthor,
@@ -326,7 +327,7 @@ export async function loadAuthorDocument(
   try {
     source = await $fetch<string>(
       `${config.contentBase.replace(/\/$/u, "")}${expected}`,
-      { responseType: "text", retry: 0 }
+      { redirect: "manual", responseType: "text", retry: 0 }
     )
   } catch (error) {
     if (fetchStatus(error) === 404) {

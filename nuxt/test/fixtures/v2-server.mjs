@@ -107,6 +107,8 @@ const authorDocumentDescriptors = new Map([
 ])
 
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
+const redirectTargetPort = port + 1
+const redirectTargetOrigin = `http://127.0.0.1:${redirectTargetPort}`
 let requests = []
 let contactSubmissions = []
 let deferContactSubmissions = false
@@ -149,6 +151,7 @@ let authorDocumentDelay = 0
 let legacyAuthorRouteRequests = []
 let legacyAuthorRouteFailure = null
 let authorDocumentPdfRequests = []
+let authorDocumentRedirectTargetRequests = []
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -944,6 +947,19 @@ const server = createServer(async (request, response) => {
     authorDocumentRequests = []
     return sendJson(response, 200, { requests: authorDocumentRequests })
   }
+  if (
+    url.pathname === "/_author_document_redirect_target_requests"
+    && request.method === "GET"
+  ) {
+    return sendJson(response, 200, { requests: authorDocumentRedirectTargetRequests })
+  }
+  if (
+    url.pathname === "/_author_document_redirect_target_requests"
+    && request.method === "DELETE"
+  ) {
+    authorDocumentRedirectTargetRequests = []
+    return sendJson(response, 200, { requests: authorDocumentRedirectTargetRequests })
+  }
   if (url.pathname === "/_author_document_failure" && request.method === "GET") {
     return sendJson(response, 200, { failure: authorDocumentFailure })
   }
@@ -952,8 +968,11 @@ const server = createServer(async (request, response) => {
     const allowed = new Set([
       "descriptor-404",
       "descriptor-503",
+      "descriptor-redirect-307",
+      "descriptor-redirect-308",
       "content-404",
       "content-503",
+      "content-redirect",
       "malformed-descriptor",
       "unsafe-source-path",
       "malformed-content"
@@ -1001,7 +1020,13 @@ const server = createServer(async (request, response) => {
     if (
       body === null || typeof body !== "object" || Array.isArray(body)
       || Object.keys(body).length !== 1
-      || !["malformed-200", "resolver-503"].includes(body.failure)
+      || ![
+        "malformed-200",
+        "extra-key-200",
+        "resolver-503",
+        "resolver-redirect-307",
+        "resolver-redirect-308"
+      ].includes(body.failure)
     ) return validationError(response)
     legacyAuthorRouteFailure = body.failure
     return sendJson(response, 200, { failure: legacyAuthorRouteFailure })
@@ -1061,6 +1086,12 @@ const server = createServer(async (request, response) => {
     }
     if (authorDocumentFailure === "content-503") {
       return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
+    }
+    if (authorDocumentFailure === "content-redirect") {
+      response.writeHead(302, {
+        location: `${redirectTargetOrigin}/author-document/content`
+      })
+      return response.end()
     }
     return sendBody(
       response,
@@ -1348,6 +1379,16 @@ const server = createServer(async (request, response) => {
         }
       })
     }
+    if (
+      authorDocumentFailure === "descriptor-redirect-307"
+      || authorDocumentFailure === "descriptor-redirect-308"
+    ) {
+      const status = Number(authorDocumentFailure.slice(-3))
+      response.writeHead(status, {
+        location: `${redirectTargetOrigin}/author-document/descriptor`
+      })
+      return response.end()
+    }
 
     const descriptor = authorDocumentDescriptors.get(
       `${authorId}|${authorDocumentMatch[2]}`
@@ -1375,6 +1416,13 @@ const server = createServer(async (request, response) => {
     if (legacyAuthorRouteFailure === "malformed-200") {
       return sendJson(response, 200, { author_id: 7, title_id: null })
     }
+    if (legacyAuthorRouteFailure === "extra-key-200") {
+      return sendJson(response, 200, {
+        author_id: "LagerlöfS",
+        title_id: null,
+        unexpected: "must not cross the private boundary"
+      })
+    }
     if (legacyAuthorRouteFailure === "resolver-503") {
       return sendJson(response, 503, {
         error: {
@@ -1383,6 +1431,16 @@ const server = createServer(async (request, response) => {
           details: null
         }
       })
+    }
+    if (
+      legacyAuthorRouteFailure === "resolver-redirect-307"
+      || legacyAuthorRouteFailure === "resolver-redirect-308"
+    ) {
+      const status = Number(legacyAuthorRouteFailure.slice(-3))
+      response.writeHead(status, {
+        location: `${redirectTargetOrigin}/author-route/resolution`
+      })
+      return response.end()
     }
     const resolution = legacyAuthorRouteResolution(body)
     if (resolution) return sendJson(response, 200, resolution)
@@ -1520,15 +1578,47 @@ const server = createServer(async (request, response) => {
   })
 })
 
+const redirectTargetServer = createServer(async (request, response) => {
+  let body = null
+  if (request.method === "POST") body = await readJson(request)
+  authorDocumentRedirectTargetRequests.push({
+    method: request.method,
+    path: request.url,
+    body
+  })
+
+  if (request.method === "GET" && request.url === "/author-document/descriptor") {
+    return sendJson(response, 200, soderbergPresentation)
+  }
+  if (request.method === "GET" && request.url === "/author-document/content") {
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      authorDocumentContent.get(soderbergPresentation.source_path)
+    )
+  }
+  if (request.method === "POST" && request.url === "/author-route/resolution") {
+    const resolution = legacyAuthorRouteResolution(body)
+    if (resolution) return sendJson(response, 200, resolution)
+  }
+  return sendJson(response, 404, {
+    error: { code: "not_found", message: "Resource not found", details: null }
+  })
+})
+
 server.listen(port, "127.0.0.1", () => {
   console.log(`LB API fixture listening on http://127.0.0.1:${port}`)
 })
+redirectTargetServer.listen(redirectTargetPort, "127.0.0.1")
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
     releaseContactSubmissions()
     server.close(() => process.exit(0))
     server.closeAllConnections()
+    redirectTargetServer.close()
+    redirectTargetServer.closeAllConnections()
     setTimeout(() => process.exit(0), 250).unref()
   })
 }

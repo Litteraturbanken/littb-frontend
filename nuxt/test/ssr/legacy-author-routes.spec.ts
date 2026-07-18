@@ -14,8 +14,15 @@ type ResolverRequest = {
 async function resetLegacyRoutes(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_legacy_author_route_requests`),
-    request.delete(`${fixture}/_legacy_author_route_failure`)
+    request.delete(`${fixture}/_legacy_author_route_failure`),
+    request.delete(`${fixture}/_author_document_redirect_target_requests`)
   ])
+}
+
+async function redirectTargetRequests(request: APIRequestContext): Promise<unknown[]> {
+  return (await (await request.get(
+    `${fixture}/_author_document_redirect_target_requests`
+  )).json()).requests
 }
 
 async function resolverRequests(request: APIRequestContext): Promise<ResolverRequest[]> {
@@ -174,6 +181,7 @@ test("maps an unresolved normalized identity to a non-leaking local 404", async 
 
 for (const [failure, status] of [
   ["malformed-200", 502],
+  ["extra-key-200", 502],
   ["resolver-503", 502]
 ] as const) {
   test(`maps resolver ${failure} to a non-leaking local ${status}`, async ({ request }) => {
@@ -190,6 +198,24 @@ for (const [failure, status] of [
     const payload = await response.json() as { data?: { code?: string } }
     expect(payload.data?.code).toBe("legacy_author_route_unavailable")
     expect(JSON.stringify(payload)).not.toMatch(/private-v2|127\.0\.0\.1:4100/iu)
+  })
+}
+
+for (const failure of ["resolver-redirect-307", "resolver-redirect-308"] as const) {
+  test(`blocks ${failure} without replaying the resolver POST`, async ({ request }) => {
+    const configured = await request.put(`${fixture}/_legacy_author_route_failure`, {
+      data: { failure }
+    })
+    expect(configured.status()).toBe(200)
+
+    const response = await request.get("/forfattare/LagerlofS", {
+      headers: { accept: "application/json" },
+      maxRedirects: 0
+    })
+    expect(response.status()).toBe(502)
+    const payload = await response.json() as { data?: { code?: string } }
+    expect(payload.data?.code).toBe("legacy_author_route_unavailable")
+    expect(await redirectTargetRequests(request)).toEqual([])
   })
 }
 

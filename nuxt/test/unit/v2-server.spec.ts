@@ -1209,7 +1209,7 @@ describe("v2 fixture server operations", () => {
   })
 
   test("SIGTERM exits with an outstanding deferred Contact request", async () => {
-    const shutdownPort = port + 1
+    const shutdownPort = port + 2
     const shutdownOrigin = `http://127.0.0.1:${shutdownPort}`
     const shutdownFixture = spawn(process.execPath, ["test/fixtures/v2-server.mjs"], {
       cwd: nuxtRoot,

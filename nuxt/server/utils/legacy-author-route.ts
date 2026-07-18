@@ -15,6 +15,7 @@ type LegacyReaderMatch = {
 }
 
 type UnknownRecord = Record<string, unknown>
+const resolutionKeys = new Set(["author_id", "title_id"])
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -106,7 +107,10 @@ export async function resolveLegacyAuthorRoutePrivately(
   const client = createLbApiClient(useRuntimeConfig(event).apiBase)
   let result
   try {
-    result = await client.POST("/legacy-author-routes/resolve", { body: request })
+    result = await client.POST("/legacy-author-routes/resolve", {
+      body: request,
+      redirect: "manual"
+    })
   } catch {
     return legacyRouteError(502, "legacy_author_route_unavailable")
   }
@@ -117,6 +121,8 @@ export async function resolveLegacyAuthorRoutePrivately(
   const value: unknown = result.data
   if (result.response.status !== 200
     || !isRecord(value)
+    || Object.keys(value).length !== resolutionKeys.size
+    || Object.keys(value).some(key => !resolutionKeys.has(key))
     || !validCanonicalSegment(value.author_id, 100)
     || ((request.normalized_title_id === null) !== (value.title_id === null))
     || (value.title_id !== null && !validCanonicalSegment(value.title_id, 200))) {

@@ -12,9 +12,16 @@ type AuthorDocumentRequest = {
 async function resetAuthorDocuments(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_author_document_requests`),
+    request.delete(`${fixture}/_author_document_redirect_target_requests`),
     request.delete(`${fixture}/_author_document_failure`),
     request.delete(`${fixture}/_author_document_delay`)
   ])
+}
+
+async function redirectTargetRequests(request: APIRequestContext): Promise<unknown[]> {
+  return (await (await request.get(
+    `${fixture}/_author_document_redirect_target_requests`
+  )).json()).requests
 }
 
 async function authorDocumentRequests(
@@ -143,6 +150,19 @@ for (const [failure, status, code] of [
     if (["malformed-descriptor", "unsafe-source-path"].includes(failure)) {
       expect(requests.filter(entry => entry.kind === "content")).toEqual([])
     }
+  })
+}
+
+for (const failure of [
+  "descriptor-redirect-307",
+  "descriptor-redirect-308",
+  "content-redirect"
+] as const) {
+  test(`blocks ${failure} without contacting its redirect target`, async ({ request }) => {
+    await setFailure(request, failure)
+    const response = await request.get(presentationApi)
+    await expectErrorCode(response, 502, "author_document_unavailable")
+    expect(await redirectTargetRequests(request)).toEqual([])
   })
 }
 
