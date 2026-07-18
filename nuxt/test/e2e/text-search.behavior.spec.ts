@@ -524,7 +524,7 @@ test("options and more cancellation clear loading and reject stale identity data
   await expect(page.locator("#results .overflow .more").last()).toBeEnabled()
 })
 
-test("delayed route options expose only current selected fallbacks", async ({
+test("delayed route owners expose only current selected fallbacks", async ({
   page,
   request
 }) => {
@@ -536,7 +536,13 @@ test("delayed route options expose only current selected fallbacks", async ({
   await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
   await page.keyboard.press("Escape")
 
-  await request.delete(`${fixture}/_text_search/requests/options`)
+  await Promise.all([
+    request.delete(`${fixture}/_text_search/requests/results`),
+    request.delete(`${fixture}/_text_search/requests/options`)
+  ])
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "inga", delay: 5000 }
+  })
   await request.put(`${fixture}/_text_search/delays`, {
     data: { operation: "options", selector: "", delay: 5000 }
   })
@@ -544,6 +550,11 @@ test("delayed route options expose only current selected fallbacks", async ({
     page,
     "/s%C3%B6k?fras=inga&avancerad=1&forfattare=StrindbergA"
   )
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  expect((await requests(request, "results"))[0]?.body).toMatchObject({
+    query: "inga",
+    author_ids: ["StrindbergA"]
+  })
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
   expect((await requests(request, "options"))[0]?.body).toMatchObject({
     query: "inga",
@@ -552,10 +563,10 @@ test("delayed route options expose only current selected fallbacks", async ({
   })
 
   await authorOptions.click()
-  await expect(page.getByRole("option", { name: "StrindbergA" })).toHaveCount(1, {
+  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(0, {
     timeout: 1000
   })
-  await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(0, {
+  await expect(page.getByRole("option", { name: "StrindbergA" })).toHaveCount(1, {
     timeout: 1000
   })
 })

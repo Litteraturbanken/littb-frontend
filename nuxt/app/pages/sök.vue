@@ -288,6 +288,11 @@ if (import.meta.server && acceptedPrimary.value?.status === 502) setResponseStat
 const results = computed(() => displayPrimary.value?.status === 200
   ? displayPrimary.value.results
   : null)
+const currentPrimaryFacets = computed(() => (
+  displayPrimary.value?.identity === primaryIdentity.value
+    ? displayPrimary.value.results?.facets ?? []
+    : []
+))
 const primaryFailed = computed(() => acceptedPrimary.value?.status === 502)
 
 const countCache = useState<Record<string, CountView>>(
@@ -568,7 +573,7 @@ const authorChoices = computed<SearchMultiSelectOption[]>(() => {
   for (const choice of options.value?.authors ?? []) {
     choices.set(choice.value, choice)
   }
-  for (const facet of results.value?.facets ?? []) {
+  for (const facet of currentPrimaryFacets.value) {
     if (!choices.has(facet.key)) {
       choices.set(facet.key, {
         value: facet.key,
