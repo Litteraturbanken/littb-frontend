@@ -212,6 +212,34 @@ async function rawGet(path: string) {
   })
 }
 
+async function rawStatus(
+  path: string,
+  method: "GET" | "POST" = "GET",
+  body: unknown = undefined
+) {
+  return await new Promise<number>((resolve, reject) => {
+    const encodedBody = body === undefined ? null : JSON.stringify(body)
+    const request = httpRequest({
+      hostname: "127.0.0.1",
+      port,
+      method,
+      path,
+      headers: encodedBody === null
+        ? undefined
+        : {
+            "content-type": "application/json",
+            "content-length": Buffer.byteLength(encodedBody)
+          }
+    }, response => {
+      response.resume()
+      response.on("end", () => resolve(response.statusCode || 0))
+    })
+    request.on("error", reject)
+    if (encodedBody !== null) request.write(encodedBody)
+    request.end()
+  })
+}
+
 async function postAuthorResolve(path: string, body: unknown) {
   return await fetch(`${origin}${path}`, {
     method: "POST",
@@ -687,6 +715,78 @@ describe("v2 fixture server operations", () => {
     )).status).toBe(404)
     expect(await authorDocumentPdfRequests()).toEqual({
       requests: pdfCases.map(([path]) => path)
+    })
+  })
+
+  test("author document XHTML and PDF dispatch reject every raw traversal alias", async () => {
+    const xhtmlAliases = [
+      "/red/forfattare/SoderbergH/presentation/../presentation/index.html",
+      "/red/forfattare/SoderbergH/presentation/%2e%2e/presentation/index.html",
+      "/red/forfattare/SoderbergH/presentation/%252e%252e/presentation/index.html",
+      "/red/forfattare/SoderbergH/presentation%2Findex.html",
+      "/red/forfattare/SoderbergH/presentation%5Cindex.html"
+    ]
+    const pdfAliases = [
+      "/red/forfattare/SoderbergH/presentation/../presentation/SoderbergH_presentation.pdf",
+      "/red/forfattare/SoderbergH/presentation/%2e%2e/presentation/SoderbergH_presentation.pdf",
+      "/red/forfattare/SoderbergH/presentation/%252e%252e/presentation/SoderbergH_presentation.pdf",
+      "/red/forfattare/SoderbergH/presentation%2FSoderbergH_presentation.pdf",
+      "/red/forfattare/SoderbergH/presentation%5CSoderbergH_presentation.pdf"
+    ]
+
+    for (const path of [...xhtmlAliases, ...pdfAliases]) {
+      expect(await rawStatus(path), path).toBe(404)
+    }
+    expect(await authorDocumentRequests()).toEqual({ requests: [] })
+    expect(await authorDocumentPdfRequests()).toEqual({ requests: [] })
+  })
+
+  test("legacy author route dispatch rejects raw normalized aliases without ledgering", async () => {
+    const body = {
+      normalized_author_id: "SoderbergH",
+      normalized_title_id: null,
+      media_type: null
+    }
+    const aliases = [
+      "/v2/unrelated/../legacy-author-routes/resolve",
+      "/v2/unrelated/%2e%2e/legacy-author-routes/resolve",
+      "/v2/unrelated/%252e%252e/legacy-author-routes/resolve",
+      "/v2/unrelated%2F..%2Flegacy-author-routes%2Fresolve",
+      "/v2/unrelated%5C..%5Clegacy-author-routes%5Cresolve"
+    ]
+
+    for (const path of aliases) {
+      expect(await rawStatus(path, "POST", body), path).toBe(404)
+    }
+    expect(await legacyAuthorRouteRequests()).toEqual({ requests: [] })
+  })
+
+  test("author document raw-path ledgers preserve accepted paths and query bytes", async () => {
+    const contentPath = `${soderbergPresentation.source_path}?probe=%2f&repeat=one&repeat=two`
+    const pdfPath = [
+      "/red/forfattare/SoderbergH/presentation/SoderbergH_presentation.pdf",
+      "?probe=%2f&repeat=one&repeat=two"
+    ].join("")
+
+    expect(await rawStatus(contentPath)).toBe(200)
+    expect(await rawStatus(pdfPath)).toBe(200)
+    expect(await authorDocumentRequests()).toEqual({
+      requests: [{ kind: "content", path: contentPath }]
+    })
+    expect(await authorDocumentPdfRequests()).toEqual({ requests: [pdfPath] })
+  })
+
+  test("legacy author route ledger preserves accepted raw path and query bytes", async () => {
+    const path = "/v2/legacy-author-routes/resolve?probe=%2f&repeat=one&repeat=two"
+    const body = {
+      normalized_author_id: "SoderbergH",
+      normalized_title_id: null,
+      media_type: null
+    }
+
+    expect(await rawStatus(path, "POST", body)).toBe(200)
+    expect(await legacyAuthorRouteRequests()).toEqual({
+      requests: [{ path, body }]
     })
   })
 

@@ -1041,19 +1041,19 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, home[0], home[1])
   }
 
-  const authorDocumentPdfDisposition = authorDocumentPdfs.get(url.pathname)
+  const authorDocumentPdfDisposition = authorDocumentPdfs.get(rawPathname)
   if (request.method === "GET" && authorDocumentPdfDisposition) {
-    authorDocumentPdfRequests.push(`${url.pathname}${url.search}`)
+    authorDocumentPdfRequests.push(request.url)
     return sendBody(response, 200, "application/pdf", authorDocumentPdf, {
       "content-disposition": authorDocumentPdfDisposition
     })
   }
 
-  const authorDocumentBody = authorDocumentContent.get(url.pathname)
+  const authorDocumentBody = authorDocumentContent.get(rawPathname)
   if (request.method === "GET" && authorDocumentBody) {
     authorDocumentRequests.push({
       kind: "content",
-      path: `${url.pathname}${url.search}`
+      path: request.url
     })
     await waitForAuthorDocumentDelay()
     if (authorDocumentFailure === "content-404") {
@@ -1314,7 +1314,7 @@ const server = createServer(async (request, response) => {
   if (authorDocumentMatch) {
     authorDocumentRequests.push({
       kind: "descriptor",
-      path: `${rawPathname}${url.search}`
+      path: request.url
     })
     let authorId
     try {
@@ -1369,9 +1369,9 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 200, descriptor)
   }
 
-  if (request.method === "POST" && apiPathname === "/v2/legacy-author-routes/resolve") {
+  if (request.method === "POST" && rawApiPathname === "/v2/legacy-author-routes/resolve") {
     const body = await readJson(request)
-    legacyAuthorRouteRequests.push({ path: rawPathname, body })
+    legacyAuthorRouteRequests.push({ path: request.url, body })
     if (legacyAuthorRouteFailure === "malformed-200") {
       return sendJson(response, 200, { author_id: 7, title_id: null })
     }
