@@ -19,6 +19,7 @@ import { libraryQueryStringResponse } from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import {
+  readerFacsimileJpegFile,
   readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
   readerSearchHitResponse,
@@ -55,9 +56,7 @@ const sharedContent = new Map([
   ["/red/bilder/bakgrundsbilder/ljudlandskap.jpg", ["image/jpeg", readFileSync(new URL("./library-content/ljudlandskap.jpg", import.meta.url))]],
   ["/red/bilder/bakgrundsbilder/sok_bkg.jpg", ["image/jpeg", Buffer.from(textSearchBackgroundBase64, "base64")]]
 ])
-const readerFacsimileJpeg = readFileSync(
-  new URL("./library-content/ljudlandskap.jpg", import.meta.url)
-)
+const readerFacsimileJpeg = readFileSync(readerFacsimileJpegFile)
 
 const presentationContent = new Map([
   ["/red/presentationer/presentationerForfattare.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/presentationerForfattare.html", import.meta.url))]],

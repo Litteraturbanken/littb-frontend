@@ -61,6 +61,11 @@ export const readerFacsimileWorkInfoResponse = {
   ]
 }
 
+export const readerFacsimileJpegFile = new URL(
+  "./library-content/ljudlandskap.jpg",
+  import.meta.url
+)
+
 export const readerPageHtmlByIndex = Object.freeze({
   1: `
 <div class="pname" pname="-3">
