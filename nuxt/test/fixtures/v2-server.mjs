@@ -471,7 +471,7 @@ function validTextSearchCommon(body) {
       if (
         filter === null || typeof filter !== "object" || Array.isArray(filter)
         || Object.keys(filter).length !== 2 || !textSearchLegacyFields.has(filter.field)
-        || !validBoundedString(filter.value, 200)
+        || !validBoundedString(filter.value, 100)
       ) return false
     }
   }
@@ -1659,7 +1659,11 @@ const server = createServer(async (request, response) => {
         error: { code: "method_not_allowed", message: "Method not allowed", details: null }
       })
     }
-    if (!request.headers["content-type"]?.toLowerCase().startsWith("application/json")) {
+    const rawContentType = request.headers["content-type"]
+    const contentType = typeof rawContentType === "string"
+      ? rawContentType.split(";", 1)[0].trim().toLowerCase()
+      : ""
+    if (contentType !== "application/json") {
       return validationError(response)
     }
     let body

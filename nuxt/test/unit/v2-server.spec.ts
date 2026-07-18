@@ -1582,8 +1582,17 @@ describe("v2 fixture server operations", () => {
     })
   })
 
-  test("requires POST and strict valid JSON without ledgering rejected requests", async () => {
-    const wrongMethod = await fetch(`${origin}/v2/text-search/results`)
+  test.each(["results", "count", "options"])(
+    "requires POST for the text-search %s operation",
+    async (operation) => {
+      const response = await fetch(`${origin}/v2/text-search/${operation}`)
+
+      expect(response.status).toBe(405)
+      expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+    }
+  )
+
+  test("rejects malformed or structurally invalid JSON without ledgering", async () => {
     const malformedJson = await fetch(`${origin}/v2/text-search/count`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -1595,10 +1604,42 @@ describe("v2 fixture server operations", () => {
       body: JSON.stringify({ ...textSearchOptionsRequest(""), unknown: true })
     })
 
-    expect(wrongMethod.status).toBe(405)
     expect(malformedJson.status).toBe(400)
     expect(unknownField.status).toBe(422)
     expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+  })
+
+  test("rejects legacy text-search filter values longer than 100 characters", async () => {
+    const response = await postTextSearchResults(textSearchResultsRequest("frihet", {
+      legacy_filters: [{ field: "keyword", value: "x".repeat(101) }]
+    }))
+
+    expect(response.status).toBe(422)
+    expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+  })
+
+  test.each(["application/jsonp", "application/json-patch+json"])(
+    "rejects non-JSON text-search content type %s",
+    async (contentType) => {
+      const response = await fetch(`${origin}/v2/text-search/results`, {
+        method: "POST",
+        headers: { "content-type": contentType },
+        body: JSON.stringify(textSearchResultsRequest("frihet"))
+      })
+
+      expect(response.status).toBe(422)
+      expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+    }
+  )
+
+  test("accepts application/json text-search bodies with a charset parameter", async () => {
+    const response = await fetch(`${origin}/v2/text-search/results`, {
+      method: "POST",
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body: JSON.stringify(textSearchResultsRequest("frihet"))
+    })
+
+    expect(response.status).toBe(200)
   })
 
   test("fails text-search operations independently and rejects unknown controls", async () => {
