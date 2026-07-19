@@ -396,7 +396,14 @@ async function readAuthorDocumentResponse(
   const chunks: Uint8Array[] = []
   let totalBytes = 0
   while (true) {
-    const { done, value } = await reader.read()
+    let result: ReadableStreamReadResult<Uint8Array>
+    try {
+      result = await reader.read()
+    } catch (error) {
+      await reader.cancel().catch(() => undefined)
+      throw error
+    }
+    const { done, value } = result
     if (done) break
     if (value === undefined) continue
     totalBytes += value.byteLength

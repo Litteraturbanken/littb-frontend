@@ -340,21 +340,20 @@ describe("managed author XHTML sanitization", () => {
   })
 
   test.each([
-    ["h1", "clear: both; color: red"],
-    ["h1", "clear: both; clear: both"],
-    ["h1", "clear: both;;"],
-    ["h1", "cl\\65 ar: both"],
-    ["h1", "clear/**/: both"],
-    ["h1", "clear: var(--probe)"],
-    ["h1", "clear: url(https://evil.test)"],
-    ["h1", "--probe: both"],
-    ["h1", "clear: both !important"],
-    ["ul", "list-style-type: disc; color: red"],
-    ["ul", "list-style-type: disc!important"],
-    ["p", "clear: both"]
-  ])("drops the full unsafe SLA style %#", (element, style) => {
+    ["h1", "title", "clear: both; color: red"],
+    ["h2", "title", "clear: both; clear: both"],
+    ["h1", "title", "clear: both;;"],
+    ["h2", "title", "cl\\65 ar: both"],
+    ["h1", "title", "clear/**/: both"],
+    ["h2", "title", "clear: var(--probe)"],
+    ["h1", "title", "clear: url(https://evil.test)"],
+    ["h2", "title", "--probe: both"],
+    ["h1", "title", "clear: both !important"],
+    ["ul", "itemizedlist", "list-style-type: disc; color: red"],
+    ["ul", "itemizedlist", "list-style-type: disc!important"]
+  ])("drops the full unsafe SLA style %#", (element, className, style) => {
     const output = parseAuthorDocumentBody(
-      `<!doctype html><html><body><${element} style="${style}">Safe</${element}></body></html>`,
+      `<!doctype html><html><body><${element} class="${className}" style="${style}">Safe</${element}></body></html>`,
       "omtexterna"
     )
     expect(parseHTML(`<body>${output}</body>`).document.querySelector(element)
@@ -747,6 +746,38 @@ describe("SLA author document transport boundary", () => {
       "author_document_unavailable"
     )
     expect(cancelled).toBe(true)
+  })
+
+  test("cancels once when an SLA stream rejects after yielding a chunk", async () => {
+    stubAuthorRuntimeConfig()
+    const cancel = vi.fn(async () => {
+      throw new Error("cancel-rejection-upstream-probe")
+    })
+    const reader = {
+      read: vi.fn()
+        .mockResolvedValueOnce({ done: false, value: new Uint8Array([60, 112, 62]) })
+        .mockRejectedValueOnce(new Error("mid-stream-read-upstream-probe")),
+      cancel
+    }
+    const bodyCancel = vi.fn(async () => undefined)
+    const source = {
+      status: 200,
+      headers: new Headers({ "content-type": "text/html; charset=utf-8" }),
+      body: {
+        cancel: bodyCancel,
+        getReader: vi.fn(() => reader)
+      }
+    } as unknown as Response
+    stubSlaResponses(source)
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "LagerlöfS", "omtexterna"),
+      502,
+      "author_document_unavailable"
+    )
+    expect(reader.read).toHaveBeenCalledTimes(2)
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(bodyCancel).not.toHaveBeenCalled()
   })
 
   test("accepts an SLA body at exactly 262144 streamed bytes", async () => {
