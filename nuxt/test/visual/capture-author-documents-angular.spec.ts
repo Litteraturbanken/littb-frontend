@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto"
 import { mkdir, readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 
 import {
   lagerlofBibliography,
+  lagerlofOmtexterna,
   semerAuthorDocumentAssets,
   semerAuthorDocumentDescriptor,
   soderbergPresentation
@@ -125,6 +127,26 @@ function shellStaticKey(url: URL) {
   return `${url.pathname}${url.search}`
 }
 
+async function decodedPageBackground(page: Page) {
+  return await page.locator("html").evaluate(async root => {
+    const backgroundImage = getComputedStyle(root).backgroundImage
+    const match = backgroundImage.match(/^url\(["']?(.+?)["']?\)$/u)
+    if (!match) {
+      return { backgroundImage, url: null, naturalWidth: 0, naturalHeight: 0 }
+    }
+
+    const image = new Image()
+    image.src = new URL(match[1]!, document.baseURI).href
+    await image.decode()
+    return {
+      backgroundImage,
+      url: image.src,
+      naturalWidth: image.naturalWidth,
+      naturalHeight: image.naturalHeight
+    }
+  })
+}
+
 function expectedWorkRequests(authorId: string) {
   const shared = "exclude=text,parts,sourcedesc,pages,errata&sort_field=sortkey|desc&to=10000"
   const allTypes = "etext,faksimil,pdf,etext-part,faksimil-part"
@@ -157,12 +179,45 @@ const cases = [
     expectedBody: "Selma Lagerlöf. Bibliografi"
   },
   {
+    name: "omtexterna",
+    route: "/författare/Lagerl%C3%B6fS/omtexterna",
+    descriptor: lagerlofOmtexterna,
+    bodyFile: "LagerlofS-omtexterna.html",
+    expectedBody: "Utgåvor och andra vetenskapliga texter i Selma Lagerlöf-arkivet",
+    sourceBytes: 7_225,
+    sourceHash: "ca4812e8f5a88342f1699b3a41471da556ba27760bcd51bb635c0c0e20485928"
+  },
+  {
     name: "semer",
     route: "/författare/AlmqvistCJL/semer",
     descriptor: semerAuthorDocumentDescriptor,
     bodyFile: "AlmqvistCJL-semer.html",
     expectedBody: "Mera om och av författaren"
   }
+] as const
+
+const slaLinkTargets = [
+  ["/författare/LagerlöfS/omtexterna/TextkritiskaRiktlinjer.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/TextkritiskVerkstad.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/OmSelmaLagerlofArkivet.html", "_top"],
+  ["/författare/LagerlöfS/titlar/Körkarlen2012/sida/III/faksimil", "_top"],
+  ["/författare/LagerlöfS/titlar/GöstaBerlingsSaga1SLA/sida/I/etext", "_top"],
+  ["/författare/LagerlöfS/titlar/OsynligaLänkarSLA/sida/I/etext", "_top"],
+  ["/författare/LagerlöfS/omtexterna/Introduktion.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/Adaptioner.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/ForeGostaBerling.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/BrevOmGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/SprakandringarGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/AndringarGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/ForskningOchLitthist.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/TextkritiskGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/ManuskriptGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/Oversattningar.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/IllustrationerOchOmslag.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/Recensioner.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/OLintroduktion.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/TextkritiskOL1894.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/MsTillOL.html", "_top"]
 ] as const
 
 function legacyAuthor(documentCase: typeof cases[number]) {
@@ -218,6 +273,10 @@ for (const documentCase of cases) {
       import.meta.dirname,
       `../fixtures/author-document-content/${documentCase.bodyFile}`
     ))
+    if ("sourceHash" in documentCase) {
+      expect(body).toHaveLength(documentCase.sourceBytes)
+      expect(createHash("sha256").update(body).digest("hex")).toBe(documentCase.sourceHash)
+    }
     const expectedWorks = expectedWorkRequests(profile.authorid)
     const mapSearch = JSON.stringify({
       query: {
@@ -282,9 +341,27 @@ for (const documentCase of cases) {
           { method: "GET", url: `https://red.litteraturbanken.se${documentCase.descriptor.source_path}` },
           { method: "POST", url: `${authorityOrigin}${documentCase.descriptor.source_path}` }
         ]
-      : []
-    const negativeProbeLabels = negativeProbes.map(probe => `${probe.method} ${probe.url}`)
-    const closedFirewallProbes = documentCase.name === "semer"
+      : documentCase.name === "omtexterna"
+        ? [
+            { method: "GET", url: `${authorityOrigin}${documentCase.descriptor.source_path}?authority=exact` },
+            { method: "GET", url: `${authorityOrigin}/red/forfattare/LagerlofS/omtexterna/index.html` },
+            { method: "GET", url: `${authorityOrigin}/red/forfattare/SoderbergH/omtexterna/index.html` },
+            { method: "GET", url: `${authorityOrigin}/api/get_author/S%C3%B6derbergH` },
+            { method: "GET", url: `${authorityOrigin}/red/sla/TextkritiskaRiktlinjer.html` },
+            { method: "GET", url: `${authorityOrigin}/red/sla/omtexterna/TextkritiskaRiktlinjer.html` },
+            {
+              method: "GET",
+              url: `${authorityOrigin}/api/get_authors?exclude=${encodeURIComponent(authorExclude)}` +
+                `&exclude=${encodeURIComponent(authorExclude)}`
+            },
+            { method: "GET", url: `https://red.litteraturbanken.se${documentCase.descriptor.source_path}` },
+            { method: "POST", url: `${authorityOrigin}${documentCase.descriptor.source_path}` }
+          ]
+        : []
+    const negativeProbeLabels = negativeProbes.map(
+      probe => `${probe.method} ${new URL(probe.url).href}`
+    )
+    const closedFirewallProbes = ["semer", "omtexterna"].includes(documentCase.name)
       ? [
           `${authorityOrigin}/scripts/task-4-unlisted.js`,
           `${authorityOrigin}/views/task-4-unlisted.html?import&url`,
@@ -412,8 +489,39 @@ for (const documentCase of cases) {
     ])
     await expect(page.locator("ul.links li.active")).toHaveCount(0)
     await expect(page.locator(".preloader")).toBeHidden()
+    if (documentCase.name === "omtexterna") {
+      expect(await page.locator("body").evaluate(bodyElement => [...bodyElement.classList]
+        .filter(className => className !== "ng-scope")
+        .sort()
+      )).toEqual(["focus", "page-authorInfo", "ready", "site-sla"].sort())
+      expect(await page.title()).toBe("Selma Lagerlöf, Om texterna | Litteraturbanken")
+      await expect(page.locator('meta[name="description"]'))
+        .toHaveAttribute("content", "Selma Lagerlöf, Om texterna")
+      await expect(page.locator(".logo_link_monogram .lb-logo")).toBeVisible()
+      await expect(page.locator(".mainnav")).toBeVisible()
+      await expect(page.locator("#mainview > author-info-page > div > h1"))
+        .toHaveText("Selma Lagerlöf (1858-1940)")
+      await expect(page.locator("#mainview > author-info-page > div > h1")).toBeVisible()
+      await expect(page.locator("#mainview > author-info-page > div > ul.links")).toBeHidden()
+      await expect(page.locator(".portrait_container")).toHaveCount(0)
+      await expect(page.getByRole("heading", {
+        name: "Utgåvor och andra vetenskapliga texter i Selma Lagerlöf-arkivet",
+        exact: true
+      }).first()).toBeVisible()
+      expect(await page.locator(".page_content .content.unbox a.ulink").evaluateAll(links => links.map(
+        link => [link.getAttribute("href"), link.getAttribute("target")]
+      ))).toEqual(slaLinkTargets)
+    }
     await waitForVisualAssets(page)
     expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
+    if (documentCase.name === "omtexterna") {
+      const background = await decodedPageBackground(page)
+      expect(background.url).toBe(`${authorityOrigin}/img/forf2_bkg.jpg`)
+      expect({
+        naturalWidth: background.naturalWidth,
+        naturalHeight: background.naturalHeight
+      }).toEqual({ naturalWidth: 2_464, naturalHeight: 1_953 })
+    }
     if (selectedAssets.size) {
       await expect(page.locator(".page_content img")).toHaveCount(selectedAssets.size)
       expect(await page.locator(".page_content img").evaluateAll(images => images.every(image => {
@@ -441,7 +549,8 @@ for (const documentCase of cases) {
     expect(backgroundRequests.sort()).toEqual([
       "/img/dramawebben_fade_more.jpg",
       "/img/forf2_bkg.jpg",
-      "/img/forf2_bkg.jpg"
+      "/img/forf2_bkg.jpg",
+      ...(documentCase.name === "omtexterna" ? ["/img/forf2_bkg.jpg"] : [])
     ].sort())
     const shellUrls = shellRequests.map(label => new URL(label.replace(/^GET /, "")))
     expect(shellUrls.filter(url => url.href === expectedShellDocument.href)).toHaveLength(1)
