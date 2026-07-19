@@ -140,6 +140,11 @@ function requiredParam(event: Parameters<typeof getRouterParam>[0], name: string
   return value
 }
 
+function readerSliderPercent(pageIndex: number, explicitPageCount: number | null): number {
+  if (explicitPageCount === null || explicitPageCount <= 1) return 0
+  return Math.min(100, Math.max(0, pageIndex / (explicitPageCount - 1) * 100))
+}
+
 export default defineEventHandler(async event => {
   setHeader(event, "cache-control", "no-store")
   const author = requiredParam(event, "author")
@@ -162,6 +167,7 @@ export default defineEventHandler(async event => {
     description:
       `${metadata.displayTitle} av ${metadata.author.name}, sida ${pageName} som ${metadata.mediaType}.`,
     fullTitle: metadata.fullTitle,
+    hasDramawebben: metadata.hasDramawebben,
     imprintYear: metadata.imprintYear,
     isDrama: metadata.isDrama,
     currentPartIndex: partNavigation.currentPartIndex,
@@ -180,6 +186,7 @@ export default defineEventHandler(async event => {
     startPageName: metadata.startPageName && knownNames.has(metadata.startPageName)
       ? metadata.startPageName
       : null,
+    sliderPercent: readerSliderPercent(currentPage.pageIndex, metadata.explicitPageCount),
     title: metadata.displayTitle,
     workId: metadata.workId
   }

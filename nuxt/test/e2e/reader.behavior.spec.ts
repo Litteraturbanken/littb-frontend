@@ -581,6 +581,7 @@ test("source information is focus-trapped and backdrop-close restores its trigge
 
   const dialog = page.getByRole("dialog", { name: "Om boken" })
   await expect(dialog).toHaveCount(1)
+  await expect(dialog).toBeFocused()
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
   await expect.poll(() => page.evaluate(() => [
     getComputedStyle(document.documentElement).overflow,
@@ -824,12 +825,35 @@ test("drama source information renders drama facts, attributions, and exact targ
   await expect(page.locator(".reader-context .subnav a").filter({
     hasText: "Mer om pjäsen"
   })).toBeVisible()
+  const dramawebbenLogo = page.locator(".reader-context .subnav .dw_logo")
+  await expect(dramawebbenLogo).toHaveAttribute("alt", "Dramawebben logotyp")
+  await expect(dramawebbenLogo.locator("..")).toHaveAttribute("href", "/dramawebben")
+  await expect(dramawebbenLogo).toHaveCSS("margin-left", "-23px")
+  await expect(dramawebbenLogo).toHaveCSS("opacity", "0.8")
+  await expect(dramawebbenLogo).toHaveCSS("height", "70px")
+  await expect(dialog.locator(".dw_logo")).toHaveCount(0)
+
+  const slider = page.locator(".reader-context .rzslider")
+  const sliderGeometry = await slider.evaluate(element => {
+    const track = element.querySelector<HTMLElement>(".rz-bar:not(.rz-selection)")!
+    const selection = element.querySelector<HTMLElement>(".rz-selection")!
+    const pointer = element.querySelector<HTMLElement>(".rz-pointer-min")!
+    return {
+      selectionRight: selection.getBoundingClientRect().right,
+      pointerCenter: pointer.getBoundingClientRect().left +
+        pointer.getBoundingClientRect().width / 2,
+      pointerRight: pointer.getBoundingClientRect().right,
+      trackRight: track.getBoundingClientRect().right
+    }
+  })
+  expect(Math.abs(sliderGeometry.selectionRight - sliderGeometry.pointerCenter)).toBeLessThanOrEqual(1)
+  expect(Math.abs(sliderGeometry.pointerRight - sliderGeometry.trackRight)).toBeLessThanOrEqual(1)
   await expect(dialog.locator(".header .author a"))
     .toHaveAttribute("href", "/författare/Alml%C3%B6fN")
   await expect(dialog.locator(".sourcedesc")).toHaveText("Stockholm, 1871.")
   await expect(dialog).toContainText("Dramawebbens redaktion")
   await expect(dialog.locator(".workintro")).toContainText("En komedi i fem akter.")
-  await expect(dialog).toContainText("Ulla-Britta Lindgren")
+  await expect(dialog).toContainText("Ulrika Lindgren")
   await expect(dialog.locator(".mediatypes").getByRole("link", { name: "etext" }))
     .toHaveAttribute("href", "/författare/Alml%C3%B6fN/titlar/Affarer/sida/-2/etext")
   await expect(dialog.locator(".mediatypes").getByRole("link", { name: "faksimil" }))
@@ -847,6 +871,9 @@ test("drama source information renders drama facts, attributions, and exact targ
     .toHaveAttribute("href", "https://example.test/teater")
   const epub = dialog.locator(".mediatypes_also").getByRole("link", { name: /epub/ })
   const pdf = dialog.locator(".mediatypes_also").getByRole("link", { name: /pdf/ })
+  await expect(dialog.locator(".mediatypes_also")).toHaveText(
+    "Ladda ner epub (65536 MB) eller pdf (4096 MB)"
+  )
   await expect(epub).toHaveAttribute("href", "/txt/epub/Alml%C3%B6fN_Affarer.epub")
   await expect(epub).toHaveAttribute("download", "AlmlöfN_Affarer.epub")
   await expect(epub).toContainText("65536 MB")
@@ -892,6 +919,10 @@ test("long errata toggles between the first eight and all rows with exact role c
   const problems = captureBrowserProblems(page)
   await page.goto(`${longErrataReaderPath}?om-boken`, { waitUntil: "networkidle" })
   const dialog = page.getByRole("dialog", { name: "Om boken" })
+  const sidebarAuthorLink = page.locator(".reader-context .author > a")
+  expect(await sidebarAuthorLink.evaluate(element => element.innerHTML)).toBe(
+    'Rita Redaktör <span class="authortype">red.</span>'
+  )
   const authorLink = dialog.locator(".header .author > a")
   const role = authorLink.locator(":scope > .authortype")
   await expect(authorLink).toContainText("Rita Redaktör")

@@ -16,7 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const headlessReady = ref(false)
-const closeButton = ref<HTMLElement | null>(null)
+const modalRoot = ref<HTMLElement | null>(null)
 const errataOpen = ref(false)
 const defaultErrataLimit = 8
 
@@ -71,14 +71,16 @@ onMounted(() => {
 
 <template>
   <component
+    ref="modalRoot"
     :is="headlessReady ? Dialog : 'div'"
     v-if="open"
     :open="headlessReady ? open : undefined"
-    :initial-focus="headlessReady ? closeButton : undefined"
+    :initial-focus="headlessReady ? modalRoot : undefined"
     :role="headlessReady ? undefined : 'dialog'"
     :aria-modal="headlessReady ? undefined : 'true'"
     as="div"
     class="modal about fade in"
+    tabindex="-1"
     @close="emit('close')"
   >
     <div class="modal-backdrop fade in" aria-hidden="true" />
@@ -90,7 +92,6 @@ onMounted(() => {
       >
         <div class="about-modal modal-body">
           <button
-            ref="closeButton"
             class="close_btn submit btn pull-right"
             type="button"
             @click="emit('close')"
@@ -123,7 +124,7 @@ onMounted(() => {
 
             <div class="columns">
               <div class="col_left">
-                <p
+                <div
                   v-if="sourceInfo.sourceDescriptionHtml"
                   class="sourcedesc"
                   v-html="sourceInfo.sourceDescriptionHtml"
@@ -139,25 +140,32 @@ onMounted(() => {
                 >Läs som <template
                   v-for="(action, index) in sourceInfo.readActions"
                   :key="action.mediaType"
-                ><span v-if="index > 0"> eller </span><a
+                ><a
+                  v-if="index === 0"
                   class="sc hover:underline"
                   :href="action.url"
-                >{{ action.label }}</a></template></div>
+                >{{ action.label }}</a><span v-else>
+                  eller <a
+                    class="sc hover:underline"
+                    :href="action.url"
+                  >{{ action.label }}</a>
+                </span></template></div>
 
                 <div
                   v-if="sourceInfo.downloadActions.length"
                   class="mediatypes_also"
                   :class="{ larger: sourceInfo.workIntroductionHtml }"
-                >Ladda ner <template
+                >Ladda ner <span
                   v-for="(action, index) in sourceInfo.downloadActions"
                   :key="action.mediaType"
-                ><span v-if="index > 0 && index === sourceInfo.downloadActions.length - 1"> eller </span><a
+                ><template v-if="index > 0 && index === sourceInfo.downloadActions.length - 1">{{ " " }}<span>eller</span>{{ " " }}</template><a
                   class="sc hover:underline"
                   :href="action.url"
                   target="_self"
                   :download="action.filename"
-                >{{ action.label }}<span v-if="fileSize(action.sizeBytes)">
-                  ({{ fileSize(action.sizeBytes) }})</span></a></template></div>
+                >{{ action.label }} <span v-if="fileSize(action.sizeBytes)">({{ fileSize(action.sizeBytes) }})</span>
+                  </a>
+                </span></div>
 
                 <div
                   v-if="sourceInfo.librisId"

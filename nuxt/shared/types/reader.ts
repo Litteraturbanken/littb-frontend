@@ -1,3 +1,5 @@
+import type { ReaderAuthorContribution } from "../utils/reader-author"
+
 export type ReaderMediaType = "etext" | "faksimil"
 
 export type ReaderFacsimileSize = 1 | 2 | 3 | 4 | 5
@@ -32,11 +34,14 @@ export interface ReaderPart {
 
 export interface ReaderPageBase {
   author: {
+    authorType: ReaderAuthorContribution | null
     id: string
     name: string
+    role: ReaderAuthorContribution | null
   }
   description: string
   fullTitle: string
+  hasDramawebben: boolean
   imprintYear: string | null
   isDrama: boolean
   endPageName: string | null
@@ -51,6 +56,7 @@ export interface ReaderPageBase {
   previousPageName: string | null
   previousPartPageName: string | null
   startPageName: string | null
+  sliderPercent: number
   title: string
   workId: string
 }

@@ -20,7 +20,7 @@ export const doktorGlasSourceInfo = {
     author_type: null,
     url: "/författare/S%C3%B6derbergH"
   }],
-  source_description_html: "Albert Bonniers förlag, Stockholm 1905. ",
+  source_description_html: "Albert Bonniers förlag, Stockholm 1905.",
   source_description_author_id: null,
   work_introduction_html: null,
   work_introduction_author_id: null,
@@ -58,8 +58,8 @@ export const doktorGlasSourceInfo = {
     size_bytes: 530557
   }],
   errata: [
-    { cells_html: ["sid. 12", "<i>hvar</i> ändrat till <em>var</em>"] },
-    { cells_html: ["sid. 27", "rad <sup>2</sup>"] }
+    { cells_html: ["sid. 1", "rättning <em>1</em>"] },
+    { cells_html: ["sid. 2", "rättning <em>2</em>"] }
   ],
   dramawebben: null
 }
@@ -82,7 +82,7 @@ export const dramaSourceInfo = {
     author_type: null,
     url: "/författare/Alml%C3%B6fN"
   }],
-  source_description_html: "Stockholm, 1871.",
+  source_description_html: "<p>Stockholm, 1871.</p>",
   source_description_author_id: "DramaRedaktionen",
   work_introduction_html: "<p>En komedi i fem akter.</p><p><strong>Affärer</strong> uruppfördes 1871.</p>",
   work_introduction_author_id: "LindgrenU",
@@ -210,19 +210,44 @@ export const longErrataSourceInfo = {
     author_type: null,
     url: "/författare/LongErrataA"
   }],
-  source_description_html: null,
-  urn: null,
+  source_description_html: [
+    "<p>En utförlig källbeskrivning för den långa granskningsbilden.</p>",
+    "<p>Den andra paragrafen bevarar indrag, radavstånd och modalens typografi.</p>",
+    "<p>Den tredje paragrafen gör scrolläget entydigt även på desktop.</p>"
+  ].join(""),
+  work_introduction_html: [
+    "<p>Detta är en längre redaktionell inledning.</p>",
+    "<p>Den används bara för att frysa det nedre scrolläget.</p>"
+  ].join(""),
+  work_introduction_author_id: "DramaRedaktionen",
+  urn: "urn:nbn:se:lb-lbLongErrata1-etext",
   libris_id: null,
-  license_key: null,
-  provenance: [],
+  license_key: "cc-0",
+  provenance: [
+    { library: "GUB", signum: "Litt. Sv.", use_alternate_text: false },
+    { library: "KB", signum: "Sv. saml. 12", use_alternate_text: false },
+    { library: "Dramawebben", signum: null, use_alternate_text: true }
+  ],
   cover: {
     small_url: "/txt/lbLongErrata1/lbLongErrata1_small.jpeg",
     large_url: "/txt/lbLongErrata1/lbLongErrata1_large.jpeg"
   },
-  read_actions: [],
-  download_actions: [],
+  read_actions: [
+    {
+      media_type: "etext",
+      label: "etext",
+      url: "/författare/LongErrataA/titlar/LongErrata/sida/-2/etext"
+    }
+  ],
+  download_actions: [{
+    media_type: "epub",
+    label: "epub",
+    url: "/txt/epub/LongErrataA_LongErrata.epub",
+    filename: "LongErrataA_LongErrata.epub",
+    size_bytes: 530557
+  }],
   errata: Array.from({ length: 10 }, (_, index) => ({
-    cells_html: [`sid. ${index + 1}`, `rättning ${index + 1}`]
+    cells_html: [`sid. ${index + 1}`, `rättning <em>${index + 1}</em>`]
   }))
 }
 

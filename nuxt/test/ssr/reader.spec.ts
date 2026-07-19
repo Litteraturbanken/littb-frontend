@@ -7,6 +7,7 @@ const readerPartsPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-1
 const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
 const dramaFacsimilePath = "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil"
+const longErrataPath = "/författare/LongErrataA/titlar/LongErrata/sida/-2/etext"
 const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_3/" +
   "lb-reader-gosta-berlings-saga_3_0009.jpeg"
@@ -127,6 +128,21 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(await sourceInfoStaticRequests(request)).toEqual([])
 })
 
+test("legacy main-author contribution is present in the Reader SSR fallback", async ({
+  request
+}) => {
+  const response = await request.get(longErrataPath)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(html).toContain(
+    'class="reader-context-ssr" aria-label="Läsinformation och sidnavigering"'
+  )
+  expect(html).toContain(
+    'href="/författare/LongErrataA">Rita Redaktör <span class="authortype">red.</span></a>'
+  )
+})
+
 test("direct bare source-information SSR renders the Reader and complete modal once", async ({
   request
 }) => {
@@ -214,7 +230,10 @@ test("drama Reader projects closed copy and complete source-information facts", 
   expect(html).toContain("Direktören")
   expect(html).toContain("Teaterkritik")
   const { document } = parseHTML(html)
-  expect(document.querySelector(".dw_logo")).toBeNull()
+  const sidebarLogo = document.querySelector(".reader-context-ssr .dw_logo")
+  expect(sidebarLogo?.getAttribute("alt")).toBe("Dramawebben logotyp")
+  expect(sidebarLogo?.parentElement?.getAttribute("href")).toBe("/dramawebben")
+  expect(document.querySelector(".modal.about .dw_logo")).toBeNull()
   expect(document.querySelector("h3.introheader")).toBeNull()
   const roleSections = [...document.querySelectorAll(".dramaweb > div")]
   const roleSection = roleSections.find(section => (
@@ -262,9 +281,15 @@ test("canonical API returns the exact faksimil image arm without fetching assets
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toEqual({
-    author: { id: "LagerlöfS", name: "Selma Lagerlöf" },
+    author: {
+      authorType: null,
+      id: "LagerlöfS",
+      name: "Selma Lagerlöf",
+      role: null
+    },
     description: "Gösta Berlings saga av Selma Lagerlöf, sida 3 som faksimil.",
     fullTitle: "Gösta Berlings saga. Roman",
+    hasDramawebben: false,
     currentPartIndex: 0,
     endPageName: "5",
     imageNumber: 9,
@@ -292,6 +317,7 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     preferredSize: 3,
     previousPageName: "1",
     previousPartPageName: "1",
+    sliderPercent: 0,
     sources: [
       {
         size: 2,

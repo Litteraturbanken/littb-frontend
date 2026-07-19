@@ -91,6 +91,51 @@ describe("reader media and exact representation selection", () => {
     expect(normalize({ texttype: undefined })).toMatchObject({ isDrama: false })
   })
 
+  test("projects only an actual Dramawebben object for the Reader sidebar", () => {
+    expect(normalize({ dramawebben: {} })).toMatchObject({ hasDramawebben: true })
+    expect(normalize({ dramawebben: null })).toMatchObject({ hasDramawebben: false })
+    expect(normalize({ dramawebben: true })).toMatchObject({ hasDramawebben: false })
+    expect(normalize({ dramawebben: "yes" })).toMatchObject({ hasDramawebben: false })
+  })
+
+  test("projects a valid explicit page count for legacy slider positioning", () => {
+    expect(normalize({ page_count: 2 })).toMatchObject({ explicitPageCount: 2 })
+    expect(normalize({ page_count: 1 })).toMatchObject({ explicitPageCount: 1 })
+    expect(normalize({ page_count: undefined })).toMatchObject({ explicitPageCount: null })
+    expect(normalize({ page_count: 0 })).toMatchObject({ explicitPageCount: null })
+    expect(normalize({ page_count: 2.5 })).toMatchObject({ explicitPageCount: null })
+    expect(normalize({ page_count: "2" })).toMatchObject({ explicitPageCount: null })
+  })
+
+  test("projects only safe legacy main-author contribution values", () => {
+    expect(normalize({
+      authors: [{
+        authorid: "LagerlöfS",
+        full_name: "Selma Lagerlöf",
+        role: "translator",
+        type: "editor"
+      }]
+    }).author).toEqual({
+      id: "LagerlöfS",
+      name: "Selma Lagerlöf",
+      authorType: "editor",
+      role: "translator"
+    })
+    expect(normalize({
+      authors: [{
+        authorid: "LagerlöfS",
+        full_name: "Selma Lagerlöf",
+        role: "unknown",
+        type: "editor\n"
+      }]
+    }).author).toEqual({
+      id: "LagerlöfS",
+      name: "Selma Lagerlöf",
+      authorType: null,
+      role: null
+    })
+  })
+
   test("rejects absent exact media/title and mismatched author identities", () => {
     expectSourceError(() => normalizeReaderMetadata(
       payload(representation({ mediatype: "etext" })),

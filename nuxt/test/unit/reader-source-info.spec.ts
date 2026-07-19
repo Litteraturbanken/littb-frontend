@@ -73,7 +73,13 @@ describe("Reader source-information runtime contract", () => {
     await expect(buildReaderSourceInfo(
       source,
       { provenance: sourceInfoProvenance, licenses: sourceInfoLicenses },
-      async () => ({ items: [] })
+      async authorIds => authorIds.flatMap(authorId => authorId === "DramaRedaktionen"
+          ? [{
+              author_id: "DramaRedaktionen",
+              full_name: "Dramawebbens redaktion",
+              surname: null
+            }]
+          : [])
     )).resolves.toMatchObject({ title: source.title })
   })
 
@@ -486,7 +492,7 @@ describe("Reader source-information attribution boundary", () => {
   test("reuses work authors and resolves missing IDs in one bounded ordered call", async () => {
     const resolver = vi.fn().mockResolvedValue([
       { author_id: "DramaRedaktionen", full_name: "Dramawebbens redaktion", surname: null },
-      { author_id: "LindgrenU", full_name: "Ulla-Britta Lindgren", surname: "Lindgren" }
+      { author_id: "LindgrenU", full_name: "Ulrika Lindgren", surname: "Lindgren" }
     ])
     const result = await resolveReaderSourceInfoAttributions(dramaSourceInfo, resolver)
     expect(resolver).toHaveBeenCalledOnce()
@@ -499,7 +505,7 @@ describe("Reader source-information attribution boundary", () => {
       },
       workIntroductionAuthor: {
         authorId: "LindgrenU",
-        fullName: "Ulla-Britta Lindgren",
+        fullName: "Ulrika Lindgren",
         surname: "Lindgren"
       }
     })

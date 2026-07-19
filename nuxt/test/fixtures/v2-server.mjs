@@ -744,14 +744,29 @@ function readerMetadataResponse(titlePath) {
             full_name: "Nils Almlöf",
             surname: "Almlöf"
           }],
-          endpagename: "-2",
+          endpagename: "-1",
+          imprintyear: "1905",
           lbworkid: "lb31230",
-          pages: [{ pagename: "-2", pageindex: 0, imagenumber: 1 }],
-          parts: [],
+          page_count: 2,
+          pages: [
+            { pagename: "-2", pageindex: 1, imagenumber: 1 },
+            { pagename: "-1", pageindex: 2, imagenumber: 2 }
+          ],
+          parts: [{
+            authors: [{ authorid: "AlmlöfN" }],
+            endpagename: "-1",
+            navtitle: "Affärer",
+            shorttitle: "Affärer",
+            startpagename: "-2",
+            title: "Affärer",
+            titleid: "Affarer"
+          }],
           shorttitle: "Affärer",
+          sort_date_imprint: { plain: "1905" },
           startpagename: "-2",
           texttype: "drama",
-          title: "Affärer"
+          title: "Affärer",
+          dramawebben: {}
         })]
       }
     case "SparseTitle":
@@ -776,9 +791,9 @@ function readerMetadataResponse(titlePath) {
           authors: [{
             authorid: "LongErrataA",
             full_name: "Rita Redaktör",
-            surname: "Redaktör"
+            surname: "Redaktör",
+            type: "editor"
           }],
-          parts: [],
           shorttitle: "Lång errata",
           title: "Lång errata"
         })]
@@ -2462,6 +2477,9 @@ const server = createServer(async (request, response) => {
 
   const shared = sharedContent.get(url.pathname)
   if (request.method === "GET" && shared) {
+    if (/^\/txt\/lb31230\/lb31230_([1-5])\/lb31230_\1_000[12]\.jpeg$/.test(url.pathname)) {
+      readerJpegRequests.push(`${url.pathname}${url.search}`)
+    }
     return sendBody(response, 200, shared[0], shared[1])
   }
 
@@ -3175,7 +3193,7 @@ const server = createServer(async (request, response) => {
         },
         {
           author_id: "LindgrenU",
-          full_name: "Ulla-Britta Lindgren",
+          full_name: "Ulrika Lindgren",
           surname: "Lindgren"
         }
       ].map(author => [author.author_id, author])

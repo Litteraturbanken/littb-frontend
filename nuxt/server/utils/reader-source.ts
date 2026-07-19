@@ -8,6 +8,7 @@ import type {
   ReaderPart,
   ReaderPartAuthor
 } from "../../shared/types/reader"
+import { normalizeReaderAuthorContribution } from "../../shared/utils/reader-author"
 
 type UnknownRecord = Record<string, unknown>
 
@@ -29,10 +30,17 @@ export interface ReaderFacsimileSourcePage extends ReaderSourcePage {
 }
 
 interface ReaderWorkMetadataBase {
-  author: { id: string, name: string }
+  author: {
+    authorType: ReturnType<typeof normalizeReaderAuthorContribution>
+    id: string
+    name: string
+    role: ReturnType<typeof normalizeReaderAuthorContribution>
+  }
   base: string
   displayTitle: string
   fullTitle: string
+  explicitPageCount: number | null
+  hasDramawebben: boolean
   imprintYear: string | null
   isDrama: boolean
   endPageName: string | null
@@ -429,13 +437,23 @@ function commonMetadata(
   const imprint = isRecord(representation.sort_date_imprint)
     ? requiredString(representation.sort_date_imprint, "plain")
     : null
+  const explicitPageCount = representation.page_count
 
   return {
-    author: { id: authorId, name: authorName },
+    author: {
+      authorType: normalizeReaderAuthorContribution(firstAuthor.type),
+      id: authorId,
+      name: authorName,
+      role: normalizeReaderAuthorContribution(firstAuthor.role)
+    },
     base,
     displayTitle,
     endPageName,
+    explicitPageCount: safeNonnegativeInteger(explicitPageCount) && explicitPageCount > 0
+      ? explicitPageCount
+      : null,
     fullTitle,
+    hasDramawebben: isRecord(representation.dramawebben),
     imprintYear: imprint ?? requiredString(representation, "imprintyear"),
     isDrama: representation.texttype === "drama",
     parts: [],

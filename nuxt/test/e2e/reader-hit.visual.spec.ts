@@ -112,7 +112,7 @@ for (const visualCase of visualCases) {
     const subnav = page.locator("#toolkit-right .subnav")
     await expect(subnav).not.toHaveAttribute("aria-hidden", "true")
     await expect(subnav.getByRole("link", { name: "Innehållsförteckning" })).toHaveCount(1)
-    await expect(subnav.locator("li[aria-hidden='true']")).toHaveCount(4)
+    await expect(subnav.locator("li[aria-hidden='true']")).toHaveCount(3)
 
     const toolkit = page.locator("#toolkit > #search_nav")
     if (visualCase.query === null) {

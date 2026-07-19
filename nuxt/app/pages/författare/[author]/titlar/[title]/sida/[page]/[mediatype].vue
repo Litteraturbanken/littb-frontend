@@ -7,6 +7,9 @@ import type {
   ReaderPage
 } from "#shared/types/reader"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
+import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
+import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
+import dramawebbenLogo from "~/assets/img/dramawebben_svart.svg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import {
@@ -500,6 +503,22 @@ const authorHref = computed(() => reader.value
   ? readerAuthorHref(authorParam.value)
   : ""
 )
+const readerAuthorSuffix = computed(() => {
+  const author = reader.value?.author
+  return author
+    ? readerAuthorContributionSuffix(author.authorType, author.role)
+    : null
+})
+const readerSliderStyles = computed(() => {
+  // Search-hit mode owns the legacy slider through `.has-search-hit`; avoid
+  // inline page-position styles overriding that established visual state.
+  if (searchState.value) return { pointer: undefined, selection: undefined }
+  const geometry = readerSliderGeometryStyles(reader.value?.sliderPercent ?? 0)
+  return {
+    pointer: { left: geometry.pointerLeft },
+    selection: { width: geometry.selectionWidth }
+  }
+})
 const pageTitle = computed(
   () => reader.value
     ? `${reader.value.title} sida ${reader.value.pageName} ${reader.value.mediaType} | Litteraturbanken`
@@ -934,7 +953,9 @@ watch(readerRequestIdentity, () => {
             aria-label="Läsinformation och sidnavigering"
           >
             <div>
-              <div class="author"><a :href="authorHref">{{ reader.author.name }}</a></div>
+              <div class="author"><a :href="authorHref">{{ reader.author.name }}{{
+                readerAuthorSuffix ? " " : ""
+              }}<span v-if="readerAuthorSuffix" class="authortype">{{ readerAuthorSuffix }}</span></a></div>
               <a
                 ref="titleSourceInfoTrigger"
                 class="title"
@@ -1075,9 +1096,15 @@ watch(readerRequestIdentity, () => {
               <span class="rzslider mt-3 slider-large">
                 <span class="rz-base">
                   <span class="rz-bar-wrapper"><span class="rz-bar" /></span>
-                  <span class="rz-bar-wrapper"><span class="rz-bar rz-selection" /></span>
+                  <span class="rz-bar-wrapper"><span
+                    class="rz-bar rz-selection"
+                    :style="readerSliderStyles.selection"
+                  /></span>
                 </span>
-                <span class="rz-pointer rz-pointer-min" />
+                <span
+                  class="rz-pointer rz-pointer-min"
+                  :style="readerSliderStyles.pointer"
+                />
               </span>
             </div>
 
@@ -1098,6 +1125,13 @@ watch(readerRequestIdentity, () => {
                 <li aria-hidden="true">Läsfokus</li>
                 <li aria-hidden="true">Sök i verket</li>
                 <li aria-hidden="true">Sök i författarens texter</li>
+                <li v-if="reader.hasDramawebben">
+                  <a href="/dramawebben"><img
+                    class="dw_logo"
+                    :src="dramawebbenLogo"
+                    alt="Dramawebben logotyp"
+                  ></a>
+                </li>
               </ul>
             </div>
           </aside>
@@ -1155,7 +1189,9 @@ watch(readerRequestIdentity, () => {
         </Teleport>
         <template #fallback>
           <aside class="reader-context-ssr" aria-label="Läsinformation och sidnavigering">
-            <a :href="authorHref">{{ reader.author.name }}</a>
+            <a :href="authorHref">{{ reader.author.name }}{{
+              readerAuthorSuffix ? " " : ""
+            }}<span v-if="readerAuthorSuffix" class="authortype">{{ readerAuthorSuffix }}</span></a>
             <span><a :href="sourceInfoHref">{{ reader.title }}</a><template
               v-if="reader.imprintYear"
             > ({{ reader.imprintYear }})</template></span>
@@ -1175,6 +1211,11 @@ watch(readerRequestIdentity, () => {
               :href="contentsHref"
             >Innehållsförteckning</a>
             <a :href="sourceInfoHref">{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a>
+            <a v-if="reader.hasDramawebben" href="/dramawebben"><img
+              class="dw_logo"
+              :src="dramawebbenLogo"
+              alt="Dramawebben logotyp"
+            ></a>
             <nav
               v-if="previousHit || nextHit"
               class="reader-hit-navigation"
