@@ -170,6 +170,20 @@ const oversizedSlaAuthorDocumentContent = Buffer.concat([
   ),
   oversizedSlaAuthorDocumentSuffix
 ])
+const exactSlaArticlePrefix = Buffer.from(
+  "<!doctype html><html><body><p>cap-boundary-start"
+)
+const exactSlaArticleSuffix = Buffer.from(
+  "cap-boundary-end</p></body></html>"
+)
+const exactSlaArticleContent = Buffer.concat([
+  exactSlaArticlePrefix,
+  Buffer.alloc(
+    262_144 - exactSlaArticlePrefix.length - exactSlaArticleSuffix.length,
+    "x"
+  ),
+  exactSlaArticleSuffix
+])
 const authorDocumentPdf = readFileSync(
   new URL("./presentation-content/Figurdiktensombarockblandkonst.pdf", import.meta.url)
 )
@@ -254,6 +268,11 @@ let dramawebbenExcludedDataRequests = []
 let slaExcludedDataRequests = []
 let slaArticleDescriptorRequests = []
 let slaArticleSourceRequests = []
+let slaArticleDescriptorFailure = null
+let slaArticleSourceFailure = null
+let slaArticleRedirectTargetRequests = []
+let slaArticleSourceCancellations = []
+let slaArticleRequestHeaders = { descriptor: [], source: [] }
 let textSearchRequests = { results: [], count: [], options: [] }
 let textSearchFailures = new Set()
 let textSearchDelays = { results: {}, count: {}, options: {} }
@@ -1655,6 +1674,89 @@ const server = createServer(async (request, response) => {
     slaArticleSourceRequests = []
     return sendJson(response, 200, { requests: slaArticleSourceRequests })
   }
+  if (url.pathname === "/_sla_article_descriptor_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: slaArticleDescriptorFailure })
+  }
+  if (url.pathname === "/_sla_article_descriptor_failure" && request.method === "PUT") {
+    const body = await readJson(request)
+    const allowed = new Set([
+      "status-404",
+      "status-503",
+      "redirect-307",
+      "redirect-308",
+      "malformed-json",
+      "source-query",
+      "extra-field"
+    ])
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1 || !allowed.has(body.failure)
+    ) return validationError(response)
+    slaArticleDescriptorFailure = body.failure
+    return sendJson(response, 200, { failure: slaArticleDescriptorFailure })
+  }
+  if (url.pathname === "/_sla_article_descriptor_failure" && request.method === "DELETE") {
+    slaArticleDescriptorFailure = null
+    return sendJson(response, 200, { failure: slaArticleDescriptorFailure })
+  }
+  if (url.pathname === "/_sla_article_source_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: slaArticleSourceFailure })
+  }
+  if (url.pathname === "/_sla_article_source_failure" && request.method === "PUT") {
+    const body = await readJson(request)
+    const allowed = new Set([
+      "status-404",
+      "status-503",
+      "redirect-302",
+      "wrong-media-type",
+      "media-without-charset",
+      "media-with-quoted-charset",
+      "exact-declared-cap",
+      "exact-streamed-cap",
+      "oversized-declared",
+      "oversized-streamed",
+      "rejected-stream",
+      "missing-body",
+      "multiple-bodies"
+    ])
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1 || !allowed.has(body.failure)
+    ) return validationError(response)
+    slaArticleSourceFailure = body.failure
+    return sendJson(response, 200, { failure: slaArticleSourceFailure })
+  }
+  if (url.pathname === "/_sla_article_source_failure" && request.method === "DELETE") {
+    slaArticleSourceFailure = null
+    return sendJson(response, 200, { failure: slaArticleSourceFailure })
+  }
+  if (
+    url.pathname === "/_sla_article_redirect_target_requests"
+    && request.method === "GET"
+  ) {
+    return sendJson(response, 200, { requests: slaArticleRedirectTargetRequests })
+  }
+  if (
+    url.pathname === "/_sla_article_redirect_target_requests"
+    && request.method === "DELETE"
+  ) {
+    slaArticleRedirectTargetRequests = []
+    return sendJson(response, 200, { requests: slaArticleRedirectTargetRequests })
+  }
+  if (url.pathname === "/_sla_article_source_cancellations" && request.method === "GET") {
+    return sendJson(response, 200, { requests: slaArticleSourceCancellations })
+  }
+  if (url.pathname === "/_sla_article_source_cancellations" && request.method === "DELETE") {
+    slaArticleSourceCancellations = []
+    return sendJson(response, 200, { requests: slaArticleSourceCancellations })
+  }
+  if (url.pathname === "/_sla_article_request_headers" && request.method === "GET") {
+    return sendJson(response, 200, slaArticleRequestHeaders)
+  }
+  if (url.pathname === "/_sla_article_request_headers" && request.method === "DELETE") {
+    slaArticleRequestHeaders = { descriptor: [], source: [] }
+    return sendJson(response, 200, slaArticleRequestHeaders)
+  }
   if (
     url.pathname === "/_dramawebben_document_redirect_target_requests"
     && request.method === "GET"
@@ -1906,6 +2008,98 @@ const server = createServer(async (request, response) => {
   const slaArticleBody = slaArticleContent.get(rawPathname)
   if (request.method === "GET" && slaArticleBody && !url.search) {
     slaArticleSourceRequests.push({ method: request.method, path: request.url })
+    slaArticleRequestHeaders.source.push({
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null,
+      origin: request.headers.origin ?? null
+    })
+    if (slaArticleSourceFailure === "status-404") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "source not found")
+    }
+    if (slaArticleSourceFailure === "status-503") {
+      return sendBody(
+        response,
+        503,
+        "text/plain; charset=utf-8",
+        "upstream-provider-payload-probe"
+      )
+    }
+    if (slaArticleSourceFailure === "redirect-302") {
+      response.writeHead(302, {
+        location: `${redirectTargetOrigin}/sla-article/source`
+      })
+      return response.end()
+    }
+    if (slaArticleSourceFailure === "wrong-media-type") {
+      return sendBody(response, 200, "application/xhtml+xml; charset=utf-8", slaArticleBody)
+    }
+    if (slaArticleSourceFailure === "media-without-charset") {
+      return sendBody(response, 200, "text/html", slaArticleBody)
+    }
+    if (slaArticleSourceFailure === "media-with-quoted-charset") {
+      return sendBody(response, 200, "text/html; charset=\"utf-8\"", slaArticleBody)
+    }
+    if (slaArticleSourceFailure === "exact-declared-cap") {
+      return sendBody(
+        response,
+        200,
+        "text/html; charset=utf-8",
+        exactSlaArticleContent,
+        { "content-length": exactSlaArticleContent.length }
+      )
+    }
+    if (slaArticleSourceFailure === "exact-streamed-cap") {
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+      response.write(exactSlaArticleContent.subarray(0, 200_000))
+      return response.end(exactSlaArticleContent.subarray(200_000))
+    }
+    if (slaArticleSourceFailure === "oversized-declared") {
+      return sendBody(
+        response,
+        200,
+        "text/html; charset=utf-8",
+        oversizedSlaAuthorDocumentContent,
+        { "content-length": oversizedSlaAuthorDocumentContent.length }
+      )
+    }
+    if (slaArticleSourceFailure === "oversized-streamed") {
+      const recordedRequest = { method: request.method, path: request.url }
+      let finished = false
+      response.once("finish", () => {
+        finished = true
+      })
+      response.once("close", () => {
+        if (!finished) slaArticleSourceCancellations.push(recordedRequest)
+      })
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+      response.write(oversizedSlaAuthorDocumentContent.subarray(0, 200_000))
+      return setImmediate(() => {
+        if (!response.destroyed) {
+          response.write(oversizedSlaAuthorDocumentContent.subarray(200_000))
+        }
+      })
+    }
+    if (slaArticleSourceFailure === "rejected-stream") {
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+      response.write("<!doctype html><html><body><p>upstream-provider-payload-probe")
+      return setImmediate(() => request.socket.destroy())
+    }
+    if (slaArticleSourceFailure === "missing-body") {
+      return sendBody(
+        response,
+        200,
+        "text/html; charset=utf-8",
+        "<!doctype html><html><head><title>Missing body</title></head></html>"
+      )
+    }
+    if (slaArticleSourceFailure === "multiple-bodies") {
+      return sendBody(
+        response,
+        200,
+        "text/html; charset=utf-8",
+        "<!doctype html><html><body><p>first</p></body><body><p>second</p></body></html>"
+      )
+    }
     return sendBody(response, 200, "text/html; charset=utf-8", slaArticleBody)
   }
 
@@ -2307,6 +2501,50 @@ const server = createServer(async (request, response) => {
       })
     }
     slaArticleDescriptorRequests.push({ method: request.method, path: request.url })
+    slaArticleRequestHeaders.descriptor.push({
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null,
+      origin: request.headers.origin ?? null
+    })
+    if (slaArticleDescriptorFailure === "status-404") {
+      return sendJson(response, 404, {
+        error: { code: "not_found", message: "Resource not found", details: null }
+      })
+    }
+    if (slaArticleDescriptorFailure === "status-503") {
+      return sendJson(response, 503, {
+        error: {
+          code: "sla_article_unavailable",
+          message: "upstream-provider-payload-probe",
+          details: null
+        }
+      })
+    }
+    if (
+      slaArticleDescriptorFailure === "redirect-307"
+      || slaArticleDescriptorFailure === "redirect-308"
+    ) {
+      response.writeHead(Number(slaArticleDescriptorFailure.slice(-3)), {
+        location: `${redirectTargetOrigin}/sla-article/descriptor`
+      })
+      return response.end()
+    }
+    if (slaArticleDescriptorFailure === "malformed-json") {
+      response.writeHead(200, { "content-type": "application/json; charset=utf-8" })
+      return response.end("{")
+    }
+    if (slaArticleDescriptorFailure === "source-query") {
+      return sendJson(response, 200, {
+        ...descriptor,
+        source_path: `${descriptor.source_path}?authority=lost`
+      })
+    }
+    if (slaArticleDescriptorFailure === "extra-field") {
+      return sendJson(response, 200, {
+        ...descriptor,
+        unexpected: "must not cross the private boundary"
+      })
+    }
     return sendJson(response, 200, descriptor)
   }
 
@@ -2568,6 +2806,19 @@ const redirectTargetServer = createServer(async (request, response) => {
     body
   }
 
+  if (request.url === "/sla-article/descriptor") {
+    slaArticleRedirectTargetRequests.push(recordedRequest)
+    return sendJson(response, 200, slaArticleDescriptorMap.get("PublishedWorks.html"))
+  }
+  if (request.url === "/sla-article/source") {
+    slaArticleRedirectTargetRequests.push(recordedRequest)
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      slaArticleContent.get("/red/sla/PublishedWorks.html")
+    )
+  }
   if (request.url === "/dramawebben-document/content") {
     dramawebbenDocumentRedirectTargetRequests.push(recordedRequest)
     return sendBody(

@@ -1,5 +1,7 @@
 import type { components } from "../../app/lib/api/generated/lbapi"
 
+import type { AuthorSupplementalAuthor } from "./author-document"
+
 export type SlaArticleId = components["schemas"]["SlaArticleDescriptor"]["article_id"]
 
 export const SLA_ARTICLE_REGISTRY_BY_ID = {
@@ -40,3 +42,19 @@ export const SLA_ARTICLE_REGISTRY = (
 
 export type SlaArticleSourcePath =
   typeof SLA_ARTICLE_REGISTRY_BY_ID[SlaArticleId]["sourcePath"]
+
+export type SlaArticleErrorCode =
+  | "sla_article_not_found"
+  | "sla_article_unavailable"
+
+export function isSlaArticleId(value: unknown): value is SlaArticleId {
+  return typeof value === "string"
+    && Object.hasOwn(SLA_ARTICLE_REGISTRY_BY_ID, value)
+}
+
+export interface SlaArticlePage {
+  author: AuthorSupplementalAuthor
+  articleId: SlaArticleId
+  sourcePath: SlaArticleSourcePath
+  bodyHtml: string
+}

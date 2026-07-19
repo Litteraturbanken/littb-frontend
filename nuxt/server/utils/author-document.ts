@@ -88,7 +88,7 @@ const slaNormalizedAuthorId = "LagerlofS"
 const slaSourcePath = "/red/sla/omtexterna.html"
 const slaHrefPrefix = "/författare/LagerlöfS/"
 
-function isRecord(value: unknown): value is UnknownRecord {
+export function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
 
@@ -365,7 +365,7 @@ export function documentError(
   })
 }
 
-function fetchStatus(error: unknown): number | null {
+export function fetchStatus(error: unknown): number | null {
   if (!isRecord(error)) return null
   if (isRecord(error.response) && typeof error.response.status === "number") {
     return error.response.status
@@ -375,11 +375,11 @@ function fetchStatus(error: unknown): number | null {
   return null
 }
 
-async function cancelResponseBody(response: Response): Promise<void> {
+export async function cancelResponseBody(response: Response): Promise<void> {
   await response.body?.cancel().catch(() => undefined)
 }
 
-async function readAuthorDocumentResponse(
+export async function readAuthorDocumentResponse(
   response: Response,
   maxBytes: number
 ): Promise<string> {
@@ -423,13 +423,13 @@ async function readAuthorDocumentResponse(
   return new TextDecoder().decode(bytes)
 }
 
-function isExactSlaHtmlResponse(response: Response): boolean {
+export function isExactSlaHtmlResponse(response: Response): boolean {
   const contentType = response.headers.get("content-type")
   return contentType !== null && /^[ \t]*text\/html[ \t]*(?:;[ \t]*charset[ \t]*=[ \t]*(?:"[^"]+"|[!#$%&'*+.^_`|~0-9A-Za-z-]+)[ \t]*)?$/iu
     .test(contentType)
 }
 
-function formatYears(birth: string | null, death: string | null): string {
+export function formatYears(birth: string | null, death: string | null): string {
   const left = birth && birth !== "0000" ? birth : ""
   const right = death && death !== "0000" ? death : ""
   if (left && right) return `${left}-${right}`
