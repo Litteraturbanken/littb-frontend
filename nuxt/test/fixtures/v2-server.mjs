@@ -2423,7 +2423,10 @@ const server = createServer(async (request, response) => {
     if (url.searchParams.get("username") !== "app") {
       return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
     }
-    const pageHtml = readerPartsPageHtmlByIndex[Number(readerPartsPageMatch[1])]
+    const pageIndex = Number(readerPartsPageMatch[1])
+    const pageHtml = pageIndex === 3
+      ? readerPageHtmlByIndex[2]
+      : readerPartsPageHtmlByIndex[pageIndex]
     return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
   }
 
@@ -2496,7 +2499,10 @@ const server = createServer(async (request, response) => {
 
   if (
     request.method === "GET" &&
-    url.pathname === "/txt/css/lb-reader-doktor-glas-etext.css"
+    (
+      url.pathname === "/txt/css/lb-reader-doktor-glas-etext.css" ||
+      url.pathname === "/txt/css/lb-reader-doktor-glas-parts-etext.css"
+    )
   ) {
     readerRequests.push(`${url.pathname}${url.search}`)
     return sendBody(response, 200, "text/css; charset=utf-8", workReaderCss)
