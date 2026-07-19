@@ -222,6 +222,7 @@ export async function loadDramawebbenDocument(
   }
 
   if (response.status === 404) {
+    await response.body?.cancel().catch(() => undefined)
     return dramawebbenDocumentError(404, "dramawebben_document_not_found")
   }
   if (response.status !== 200 || !isHtmlResponse(response)) {

@@ -246,6 +246,45 @@ describe("Dramawebben managed source boundary", () => {
     await expectDocumentError(loadDramawebbenDocument(event, "om"), publicStatus, code)
   })
 
+  test("cancels an upstream 404 body before returning the local 404", async () => {
+    stubRuntimeConfig()
+    let readerRequested = false
+    const cancel = vi.fn(async () => undefined)
+    const response = {
+      status: 404,
+      headers: new Headers({ "content-type": "text/plain" }),
+      body: {
+        cancel,
+        getReader() {
+          readerRequested = true
+          throw new Error("upstream 404 body must not be read")
+        }
+      }
+    } as unknown as Response
+    vi.stubGlobal("fetch", vi.fn(async () => response))
+
+    await expectDocumentError(
+      loadDramawebbenDocument(event, "om"),
+      404,
+      "dramawebben_document_not_found"
+    )
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(readerRequested).toBe(false)
+  })
+
+  test("maps a fetch rejection to the local non-leaking 502", async () => {
+    stubRuntimeConfig()
+    const fetchMock = vi.fn(async () => {
+      throw new Error("fetch-rejection-upstream-probe")
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    const result = loadDramawebbenDocument(event, "om")
+    await expectDocumentError(result, 502, "dramawebben_document_unavailable")
+    await expect(result).rejects.not.toThrow(/fetch-rejection-upstream-probe/iu)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
   test.each([301, 302, 307, 308])("rejects manual upstream redirect %i", async status => {
     stubRuntimeConfig()
     const fetchMock = vi.fn(async () => new Response(null, {
