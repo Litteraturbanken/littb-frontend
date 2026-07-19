@@ -38,6 +38,7 @@ page-local SSR fetch, Headless UI dialog, and strict Angular visual parity.
 - Modify: `lbapi/elasticapi.py`
 - Modify: `lbapi/v2/models.py`
 - Modify: `lbapi/v2/app.py`
+- Modify: `openapi/v2.json`
 - Add: `test_lbapi/v2/test_source_info_models.py`
 - Add: `test_lbapi/v2/test_source_info_provider.py`
 - Add: `test_lbapi/v2/test_source_info_api.py`
