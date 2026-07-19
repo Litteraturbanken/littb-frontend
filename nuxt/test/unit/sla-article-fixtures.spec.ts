@@ -13,7 +13,11 @@ import type {
   operations,
   paths
 } from "../../app/lib/api/generated/lbapi"
-import { SLA_ARTICLE_REGISTRY } from "../../shared/types/sla-article"
+import {
+  SLA_ARTICLE_REGISTRY,
+  SLA_ARTICLE_REGISTRY_BY_ID,
+  type SlaArticleId
+} from "../../shared/types/sla-article"
 import {
   slaArticleDescriptors,
   slaArticleFixtures
@@ -27,12 +31,20 @@ let fixture: ChildProcess
 type SlaArticleOperation = paths["/authors/{author_id}/documents/omtexterna/articles/{article_id}"]["get"]
 type SlaArticleDescriptor = components["schemas"]["SlaArticleDescriptor"]
 type SlaArticleOperationById = operations["v2_get_sla_article"]
+type AssertNever<Value extends never> = Value
+type MissingGeneratedArticle = AssertNever<
+  Exclude<SlaArticleId, keyof typeof SLA_ARTICLE_REGISTRY_BY_ID>
+>
+type ExtraRuntimeArticle = AssertNever<
+  Exclude<keyof typeof SLA_ARTICLE_REGISTRY_BY_ID, SlaArticleId>
+>
 
 const generatedTypeSentinel: {
   descriptor: SlaArticleDescriptor
   operation: SlaArticleOperation
   operationById: SlaArticleOperationById
 } | null = null
+const registryCompletenessSentinel: [MissingGeneratedArticle, ExtraRuntimeArticle] | null = null
 
 async function waitUntilReady() {
   for (let attempt = 0; attempt < 100; attempt += 1) {
@@ -97,6 +109,12 @@ describe("SLA article corpus fixture", () => {
       23
     )
     expect(generatedTypeSentinel).toBeNull()
+    expect(registryCompletenessSentinel).toBeNull()
+    expect(Object.entries(SLA_ARTICLE_REGISTRY_BY_ID)).toEqual(
+      slaArticleFixtures.map(article => [article.articleId, {
+        sourcePath: article.sourcePath
+      }])
+    )
     expect(slaArticleFixtures.slice(0, 18).reduce((total, article) => total + article.bytes, 0))
       .toBe(608_574)
     expect(slaArticleFixtures.reduce((total, article) => total + article.bytes, 0))
