@@ -57,6 +57,8 @@ type PrimaryEnvelope = Readonly<{
   results: SearchResultsView | null
 }>
 type CountView = Readonly<{ documents: number, hits: number }>
+type ChronologyBounds = Readonly<{ yearFrom: number, yearTo: number }>
+type ChronologyEnvelope = Readonly<{ bounds: ChronologyBounds | null }>
 type AuthorChoice = Readonly<{ value: string, label: string, selectionLabel: string }>
 type OptionsView = Readonly<{
   titles: readonly SearchMultiSelectOption[]
@@ -130,10 +132,13 @@ const router = useRouter()
 const config = useRuntimeConfig()
 const requestFetch = useRequestFetch()
 const contextualFetch = requestFetch as unknown as {
-  (input: RequestInfo | URL, init?: RequestInit & { ignoreResponseError?: boolean }): Promise<unknown>
+  (
+    input: RequestInfo | URL,
+    init?: RequestInit & { ignoreResponseError?: boolean, retry?: number }
+  ): Promise<unknown>
   raw?: (
     input: RequestInfo | URL,
-    init?: RequestInit & { ignoreResponseError?: boolean }
+    init?: RequestInit & { ignoreResponseError?: boolean, retry?: number }
   ) => Promise<Response & { _data?: unknown }>
 }
 const generatedClientFetch: typeof globalThis.fetch = async (input, init) => {
@@ -145,8 +150,9 @@ const generatedClientFetch: typeof globalThis.fetch = async (input, init) => {
     method: request.method,
     headers: request.headers,
     body,
-    signal: request.signal
-  } satisfies RequestInit
+    signal: request.signal,
+    retry: 0
+  } satisfies RequestInit & { retry: number }
   if (contextualFetch.raw) {
     const raw = await contextualFetch.raw(request.url, {
       ...requestOptions,
@@ -180,7 +186,6 @@ const client = createLbApiClient(
   import.meta.server ? config.apiBase : config.public.apiBase,
   generatedClientFetch
 )
-
 const rawQuery = computed(() => route.query as unknown as TextSearchRouteQuery)
 const state = computed(() => parseTextSearchRouteQuery(rawQuery.value))
 const routeIdentity = computed(() => textSearchRouteIdentity(state.value))
@@ -188,6 +193,37 @@ const primaryIdentity = computed(() => state.value.phrase
   ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(state.value))
   : "empty")
 const primaryKey = computed(() => `text-search-primary:${primaryIdentity.value}`)
+
+function chronologyBounds(value: unknown): ChronologyBounds | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null
+  const record = value as Record<string, unknown>
+  if (Object.keys(record).sort().join(",") !== "year_from,year_to") return null
+  if (record.year_from === null && record.year_to === null) return null
+  if (!Number.isSafeInteger(record.year_from) || !Number.isSafeInteger(record.year_to)) return null
+  const yearFrom = record.year_from as number
+  const yearTo = record.year_to as number
+  if (yearFrom < 1000 || yearTo > 2200 || yearFrom > yearTo) return null
+  return { yearFrom, yearTo }
+}
+
+const chronologyAsyncData = useAsyncData<ChronologyEnvelope>(
+  "text-search-chronology",
+  async () => {
+    if (state.value.advanced) return { bounds: null }
+    try {
+      const result = await client.GET("/text-search/chronology")
+      return {
+        bounds: result.response.status === 200 ? chronologyBounds(result.data) : null
+      }
+    } catch {
+      return { bounds: null }
+    }
+  },
+  {
+    default: () => ({ bounds: null })
+  }
+)
+
 let primaryController: AbortController | null = null
 watch(primaryIdentity, () => { primaryController?.abort() }, { flush: "sync" })
 const queryInput = ref(state.value.phrase ?? "")
@@ -236,7 +272,7 @@ function resultsView(
   }
 }
 
-const { data: primaryData, pending: primaryPending } = await useAsyncData<PrimaryEnvelope>(
+const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
   primaryKey,
   async (_nuxtApp, { signal }) => {
     const requestedState = state.value
@@ -272,6 +308,11 @@ const { data: primaryData, pending: primaryPending } = await useAsyncData<Primar
     }
   }
 )
+
+const [
+  { data: chronologyData },
+  { data: primaryData, pending: primaryPending }
+] = await Promise.all([chronologyAsyncData, primaryAsyncData])
 
 const acceptedPrimary = shallowRef<PrimaryEnvelope | null>(null)
 const displayPrimary = shallowRef<PrimaryEnvelope | null>(null)
@@ -413,8 +454,8 @@ const initialOptions = state.value.advanced ? loadOptions() : Promise.resolve()
 await initialOptions
 const options = computed(() => optionsCache.value[routeIdentity.value] ?? null)
 const lastAcceptedChronologyBounds = shallowRef({
-  yearFrom: options.value?.yearFrom ?? 1800,
-  yearTo: options.value?.yearTo ?? 1950
+  yearFrom: options.value?.yearFrom ?? chronologyData.value?.bounds?.yearFrom ?? 1800,
+  yearTo: options.value?.yearTo ?? chronologyData.value?.bounds?.yearTo ?? 1950
 })
 watch(options, candidate => {
   if (candidate?.yearFrom == null || candidate.yearTo == null) return
@@ -1010,7 +1051,7 @@ useHead({
           </button>
         </div>
         <div class="w-4">
-          <i class="spinner fa fa-spinner fa-pulse mt-2" />
+          <i v-show="primaryPending" class="spinner fa fa-spinner fa-pulse mt-2" />
         </div>
       </div>
 

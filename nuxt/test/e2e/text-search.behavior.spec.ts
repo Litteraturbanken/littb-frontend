@@ -2,11 +2,14 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 const fixture = "http://127.0.0.1:4100"
 
-type Operation = "results" | "count" | "options"
+type Operation = "results" | "count" | "options" | "chronology"
 type RecordedRequest = {
   method: string
   path: string
   body: Record<string, unknown>
+  started_at?: number
+  completed_at?: number | null
+  results_started_before_completion?: number | null
 }
 
 async function reset(request: APIRequestContext) {
@@ -107,6 +110,62 @@ test("advanced mode does not refetch an unchanged primary search", async ({ page
   expect(await requests(request, "results")).toHaveLength(1)
   expect(await requests(request, "count")).toHaveLength(initialCountRequests)
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+})
+
+test("simple search loads chronology bounds without loading full options", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1248")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("2026")
+  expect(await requests(request, "chronology")).toHaveLength(1)
+  expect(await requests(request, "options")).toEqual([])
+})
+
+test("failed chronology is serialized once and is not retried during hydration", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_text_search/failures`, {
+    data: { operation: "chronology" }
+  })
+
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1800")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("1950")
+  await page.waitForTimeout(500)
+
+  expect(await requests(request, "chronology")).toHaveLength(1)
+})
+
+test("direct advanced routes use option bounds without requesting chronology", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1849")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("1940")
+  expect(await requests(request, "chronology")).toEqual([])
+  expect(await requests(request, "options")).toHaveLength(1)
+})
+
+test("simple-route chronology and primary search start concurrently during SSR", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "chronology", selector: "", delay: 800 }
+  })
+
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+
+  const chronologyRequest = (await requests(request, "chronology"))[0]
+  expect(chronologyRequest?.completed_at).not.toBeNull()
+  expect(chronologyRequest?.completed_at).toBeGreaterThan(chronologyRequest?.started_at ?? 0)
+  expect(chronologyRequest?.results_started_before_completion).toBe(1)
 })
 
 test("every advanced filter family serializes exactly and reaches the semantic request", async ({
@@ -591,6 +650,11 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
   expect(response?.status()).toBe(200)
   await expect(page.locator("body")).toHaveClass(/page-reading/)
   expect(problems).toEqual([])
+})
+
+test("completed searches hide the top-row activity indicator", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  await expect(page.locator(".submit_form .top_row .spinner")).toBeHidden()
 })
 
 test("search head, body, background, and toolkit state clean up after client navigation", async ({

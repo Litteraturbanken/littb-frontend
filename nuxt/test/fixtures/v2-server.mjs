@@ -285,12 +285,12 @@ let slaArticleSourceFailure = null
 let slaArticleRedirectTargetRequests = []
 let slaArticleSourceCancellations = []
 let slaArticleRequestHeaders = { descriptor: [], source: [] }
-let textSearchRequests = { results: [], count: [], options: [] }
+let textSearchRequests = { results: [], count: [], options: [], chronology: [] }
 let textSearchFailures = new Set()
-let textSearchDelays = { results: {}, count: {}, options: {} }
+let textSearchDelays = { results: {}, count: {}, options: {}, chronology: {} }
 let textSearchAuthorityMode = false
 
-const textSearchOperations = new Set(["results", "count", "options"])
+const textSearchOperations = new Set(["results", "count", "options", "chronology"])
 
 const errorByResource = {
   stats: ["stats_unavailable", "Unable to load statistics"],
@@ -497,6 +497,7 @@ function waitForAuthorDocumentDelay() {
 }
 
 function textSearchSelector(operation, body) {
+  if (operation === "chronology") return ""
   return operation === "options" ? body.title_filter : body.query
 }
 
@@ -1465,7 +1466,7 @@ const server = createServer(async (request, response) => {
       }
       if (request.method === "DELETE") {
         if (selectedOperation) textSearchRequests[selectedOperation] = []
-        else textSearchRequests = { results: [], count: [], options: [] }
+        else textSearchRequests = { results: [], count: [], options: [], chronology: [] }
         return selectedOperation
           ? sendJson(response, 200, { requests: textSearchRequests[selectedOperation] })
           : sendJson(response, 200, textSearchRequests)
@@ -1517,7 +1518,7 @@ const server = createServer(async (request, response) => {
       }
       if (request.method === "DELETE") {
         if (selectedOperation) textSearchDelays[selectedOperation] = {}
-        else textSearchDelays = { results: {}, count: {}, options: {} }
+        else textSearchDelays = { results: {}, count: {}, options: {}, chronology: {} }
         return sendJson(response, 200, { delays: textSearchDelays })
       }
     }
@@ -2794,6 +2795,34 @@ const server = createServer(async (request, response) => {
       return sendJson(response, 200, catalog)
     }
     return sendJson(response, 200, dramawebbenCatalogFixture())
+  }
+
+  if (apiPathname === "/v2/text-search/chronology") {
+    if (request.method !== "GET") return methodNotAllowed(response, ["GET"])
+    const recordedRequest = {
+      method: request.method,
+      path: url.pathname,
+      body: {},
+      started_at: Date.now(),
+      completed_at: null,
+      results_started_before_completion: null
+    }
+    textSearchRequests.chronology.push(recordedRequest)
+    await waitForTextSearchDelay("chronology", {})
+    recordedRequest.completed_at = Date.now()
+    recordedRequest.results_started_before_completion = textSearchRequests.results.length
+    if (textSearchFailures.has("chronology")) {
+      return sendJson(response, 503, {
+        error: {
+          code: "text_search_chronology_unavailable",
+          message: "Unable to load text-search chronology",
+          details: null
+        }
+      })
+    }
+    return sendJson(response, 200, textSearchAuthorityMode
+      ? { year_from: 1800, year_to: 1950 }
+      : { year_from: 1248, year_to: 2026 })
   }
 
   const textSearchMatch = /^\/v2\/text-search\/(results|count|options)$/.exec(apiPathname)
