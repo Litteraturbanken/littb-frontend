@@ -115,6 +115,15 @@ content length/hash, resettable descriptor/content ledgers, and zero generic
 source fallback. Add negative probes for another author, normalized-author
 paths, query variants, non-GET methods, and guessed article filenames.
 
+Add a separately resettable `_sla_excluded_data_requests` ledger at the
+fixture's otherwise-unhandled terminal fallback. It records exact raw
+`{ method, path }` entries for `/api/get_author/LagerlöfS`,
+`/api/get_authors`, Selma-specific `list_all` and
+`list_parts_in_others_works` paths, and `/api/query/litteraturkartan`, without
+changing their existing response status or body. Its unit regression must
+inject representative repeated/encoded query strings, prove they were
+previously invisible, then prove exact recording and independent reset.
+
 - [ ] Regenerate from the checked backend snapshot and derive the shared kind.
 
 Generate from the backend `openapi/v2.json`. Change the handwritten
@@ -199,7 +208,9 @@ git commit -m "test(nuxt): capture SLA omtexterna authority"
 
 - Modify: `nuxt/server/utils/author-document.ts`
 - Modify: `nuxt/server/api/author-documents/[author]/[document].get.ts`
+- Modify: `nuxt/test/fixtures/v2-server.mjs`
 - Modify: `nuxt/test/unit/author-document.spec.ts`
+- Modify: `nuxt/test/unit/v2-server.spec.ts`
 - Modify: `nuxt/test/ssr/author-documents-api.spec.ts`
 
 - [ ] Write RED tuple, source, transport, and sanitizer tests.
@@ -214,6 +225,10 @@ Cover manual redirects, source 404, rejected content types, declared/streamed
 removal, dangerous subtree removal, unknown-element unwrapping, URL traversal
 and repeated-encoding probes, and response-body cancellation for every rejected
 upstream response.
+
+Extend the fixture's author-document failure controls as needed for wrong
+content type, declared oversize, streamed oversize, and fetch rejection. Unit
+test each control and its independent reset before consuming it from SSR tests.
 
 For `omtexterna`, accept only the exact landing element/attribute set. Preserve
 only complete canonical `clear: both` styles on title `h1`/`h2` and
@@ -242,7 +257,9 @@ cd ..
 git diff --check
 git add nuxt/server/utils/author-document.ts \
   'nuxt/server/api/author-documents/[author]/[document].get.ts' \
+  nuxt/test/fixtures/v2-server.mjs \
   nuxt/test/unit/author-document.spec.ts \
+  nuxt/test/unit/v2-server.spec.ts \
   nuxt/test/ssr/author-documents-api.spec.ts
 git commit -m "feat(nuxt): bound SLA omtexterna source"
 ```
@@ -259,16 +276,19 @@ git commit -m "feat(nuxt): bound SLA omtexterna source"
 
 SSR must include the managed body and exact metadata/classes, exactly one
 descriptor plus one content request, and no legacy/profile/works/map/audio
-fan-out. Assert the hidden shell DOM remains present, no portrait renders, all
-21 links are exact, upstream head/title/doctype/comments do not leak, and
-sanitized probes are absent.
+fan-out. Assert the dedicated SLA excluded-data ledger and all adjacent data
+ledgers are empty. Assert the hidden shell DOM remains present, no portrait
+renders, all 21 links are exact, upstream head/title/doctype/comments do not
+leak, and sanitized probes are absent.
 
 Browser tests cover direct hydration reuse, query-only push/back/forward with no
 refetch, same-page query preservation, stable redacted source/descriptor error
 shells, stale-result identity protection when navigating from another author
 document, and zero console/page/hydration problems. Other-author `omtexterna`,
 nested article names, malformed segments, and excluded names must be global
-404s with zero API/source requests.
+404s with zero API/source requests. Every flow resets and asserts the exact SLA
+excluded-data ledger, while a catch-all browser route records and aborts any
+unexpected local data path or production-origin request, including audio.
 
 - [ ] Extend the page's exact validation and generated kind handling.
 
@@ -314,8 +334,9 @@ git commit -m "feat(nuxt): render SLA omtexterna landing"
 Wait for exact body state, managed heading, fonts, and decoded ordinary
 background. Assert hidden author H1/nav, no portrait, exact link ledger, no
 browser API/content request, no production request, no excluded data request,
-and no console/page errors. Compare to the two Angular images with
-`threshold: 0` and `maxDiffPixels: 0`.
+and no console/page errors. Read and assert the dedicated SLA excluded-data
+ledger after readiness and again after the screenshot. Compare to the two
+Angular images with `threshold: 0` and `maxDiffPixels: 0`.
 
 - [ ] Diagnose RED using DOM/computed-style evidence.
 
@@ -356,7 +377,8 @@ git diff --check
 
 Record the source hash, two new baseline hashes, unchanged six prior author
 baseline hashes, exact descriptor/content and empty excluded-data ledgers,
-suite totals, warnings, and any deferred concern. Confirm there are no
+including representative fail-closed legacy probes, suite totals, warnings,
+and any deferred concern. Confirm there are no
 `*-actual.png` or `*-diff.png` artifacts and no unrelated staged files.
 
 - [ ] Commit only tracked parity evidence.

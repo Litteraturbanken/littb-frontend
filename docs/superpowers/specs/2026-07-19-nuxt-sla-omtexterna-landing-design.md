@@ -177,8 +177,13 @@ Deterministic tests must prove:
   unrecognized local or production request is blocked;
 - Nuxt SSR makes exactly one descriptor request and one content request;
 - hydration makes no browser API/content request;
-- the general, author-profile, author-works, Library, Reader-search, managed
-  asset, and excluded legacy-data ledgers remain empty;
+- a dedicated fail-closed SLA excluded-data ledger records otherwise-unhandled
+  legacy `/api/get_author/LagerlöfS`, `/api/get_authors`, Selma `list_all` and
+  `list_parts_in_others_works`, and `/api/query/litteraturkartan` probes with
+  their exact raw query strings, resets independently, and remains empty;
+- the general, author-profile, author-works, Library, Reader-search, and managed
+  asset ledgers remain empty, while browser interception separately blocks and
+  records any production-origin audio or other request;
 - query-only history changes do not refetch;
 - other-author and malformed route variants fetch nothing;
 - the 18 article links and three Reader links remain exact;
