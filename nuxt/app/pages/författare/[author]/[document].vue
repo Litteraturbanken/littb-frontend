@@ -27,7 +27,7 @@ function validRouteParam(value: unknown, maximum: number): value is string {
 }
 
 function isDocumentKind(value: unknown): value is AuthorDocumentKind {
-  return value === "presentation" || value === "bibliografi"
+  return value === "presentation" || value === "bibliografi" || value === "semer"
 }
 
 function encodeRfc3986Segment(value: string): string {
@@ -120,7 +120,7 @@ const documentKind = computed<AuthorDocumentKind>(() => {
   const value = Array.isArray(route.params.document)
     ? route.params.document[0]
     : route.params.document
-  return value === "bibliografi" ? "bibliografi" : "presentation"
+  return isDocumentKind(value) ? value : "presentation"
 })
 const currentIdentity = computed(() => `${documentKind.value}:${authorId.value}`)
 const asyncKey = computed(() => `author-document:${currentIdentity.value}`)
@@ -155,9 +155,12 @@ if (import.meta.server && accepted.value?.status !== 200) {
 }
 
 const page = computed(() => accepted.value?.status === 200 ? accepted.value.page : null)
-const pageLabel = computed(() => documentKind.value === "presentation"
-  ? "Presentation"
-  : "Bibliografi")
+const labels: Record<AuthorDocumentKind, string> = {
+  presentation: "Presentation",
+  bibliografi: "Bibliografi",
+  semer: "Mera om"
+}
+const pageLabel = computed(() => labels[documentKind.value])
 const rootHref = computed(() => `/f%C3%B6rfattare/${encodeRfc3986Segment(authorId.value)}`)
 const titlesHref = computed(() => `${rootHref.value}/titlar`)
 const dramawebbenHref = computed(() => `${rootHref.value}/dramawebben`)

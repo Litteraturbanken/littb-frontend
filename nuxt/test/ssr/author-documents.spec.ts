@@ -82,6 +82,56 @@ for (const documentCase of [
   })
 }
 
+test("SSR renders the exact Almqvist Mera om shell and frozen managed body", async ({
+  request
+}) => {
+  const response = await request.get("/författare/AlmqvistCJL/semer")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+
+  expect(document.title).toBe("Carl Jonas Love Almqvist, Mera om | Litteraturbanken")
+  expect(document.querySelector('meta[name="description"]')?.getAttribute("content"))
+    .toBe("Carl Jonas Love Almqvist, Mera om")
+  expect(document.body.getAttribute("class")).toBe("focus page-authorInfo ready")
+  expect(document.querySelector("h1")?.textContent?.replace(/\s+/gu, " ").trim())
+    .toBe("Carl Jonas Love Almqvist (1793-1866)")
+  expect([...document.querySelectorAll("ul.links a")].map(link => link.textContent?.trim()))
+    .toEqual(["Introduktion", "Verk", "Sök i texterna"])
+
+  const managedBody = document.querySelector(".page_content > .content.unbox")
+  expect(managedBody).not.toBeNull()
+  expect(managedBody?.querySelector("h1")?.textContent?.trim())
+    .toBe("Carl Jonas Love Almqvist")
+  expect(managedBody?.querySelector("h2")?.textContent?.trim())
+    .toBe("Mera om och av författaren")
+  expect(managedBody?.textContent).toContain("fotograferad i Philadelphia, USA, 1863")
+  expect(managedBody?.textContent).toContain("Debatten kring Det går an")
+  expect(managedBody?.querySelectorAll("img")).toHaveLength(13)
+  expect(managedBody?.querySelector("img")?.getAttribute("src")).toBe(
+    "/red/forfattare/AlmqvistCJL/semer/pictures/200_almqvist_cjl_fa1.jpeg"
+  )
+  expect(managedBody?.querySelector(
+    'a[href="/forfattare/AlmqvistCJL/titlar/DetGarAn1838/sida/1/faksimil"]'
+  )).not.toBeNull()
+  expect(managedBody?.querySelector(
+    'a[href="/red/forfattare/AlmqvistCJL/semer/pictures/Burman2003.pdf"]'
+  )?.getAttribute("target")).toBe("_blank")
+  expect(managedBody?.querySelector("script, style, form, iframe, svg, math")).toBeNull()
+  expect(managedBody?.innerHTML).not.toMatch(/\son\w+=/iu)
+  expect(html).not.toMatch(/private-v2|127\.0\.0\.1:4100|red\.litteraturbanken\.se/iu)
+  expect(await requests(request)).toEqual([
+    {
+      kind: "descriptor",
+      path: "/private-v2/authors/AlmqvistCJL/documents/semer"
+    },
+    {
+      kind: "content",
+      path: "/red/forfattare/AlmqvistCJL/semer/index.html"
+    }
+  ])
+})
+
 test("SSR preserves normalized Reader and bibliography PDF link behavior", async ({ request }) => {
   const presentation = parseHTML(await (await request.get(
     "/författare/S%C3%B6derbergH/presentation"
@@ -117,7 +167,7 @@ for (const [failure, status, message] of [
   [
     "descriptor-404",
     404,
-    "Ett fel har inträffat: författarid SöderbergH kan inte hittas. Kontrollera adressen."
+    "Ett fel har inträffat: författarid AlmqvistCJL kan inte hittas. Kontrollera adressen."
   ],
   [
     "content-404",
@@ -132,7 +182,7 @@ for (const [failure, status, message] of [
 ] as const) {
   test(`SSR maps ${failure} to the exact local ${status} page`, async ({ request }) => {
     await setFailure(request, failure)
-    const response = await request.get("/författare/S%C3%B6derbergH/presentation")
+    const response = await request.get("/författare/AlmqvistCJL/semer")
     expect(response.status()).toBe(status)
     const { document } = parseHTML(await response.text())
     expect(document.querySelector(".error")?.textContent?.replace(/\s+/gu, " ").trim())

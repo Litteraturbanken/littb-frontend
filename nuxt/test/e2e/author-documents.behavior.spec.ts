@@ -7,6 +7,7 @@ async function reset(request: APIRequestContext) {
     request.delete(`${fixture}/_author_document_requests`),
     request.delete(`${fixture}/_author_document_failure`),
     request.delete(`${fixture}/_author_document_delay`),
+    request.delete(`${fixture}/_author_document_asset_requests`),
     request.delete(`${fixture}/_author_document_pdf_requests`)
   ])
 }
@@ -17,6 +18,10 @@ async function documentRequests(request: APIRequestContext) {
 
 async function pdfRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_author_document_pdf_requests`)).json()).requests
+}
+
+async function assetRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_author_document_asset_requests`)).json()).requests
 }
 
 async function routerPush(page: Page, path: string) {
@@ -41,21 +46,39 @@ function collectProblems(page: Page) {
 
 test.beforeEach(async ({ request }) => reset(request))
 
-test("hydrates the presentation once without duplicate fetches or browser warnings", async ({
+test("hydrates semer once without duplicate managed fetches or browser warnings", async ({
   page,
   request
 }) => {
   const problems = collectProblems(page)
-  await page.goto("/författare/S%C3%B6derbergH/presentation", { waitUntil: "networkidle" })
-  await expect(page.locator("h1").first()).toContainText("Hjalmar Söderberg")
-  await expect(page.locator(".page_content")).toContainText("Hjalmar Söderberg, född 1869")
-  expect(await documentRequests(request)).toHaveLength(2)
+  await page.goto("/författare/AlmqvistCJL/semer", { waitUntil: "networkidle" })
+  await expect(page).toHaveTitle("Carl Jonas Love Almqvist, Mera om | Litteraturbanken")
+  await expect(page.locator("h1").first()).toContainText("Carl Jonas Love Almqvist")
+  await expect(page.locator(".page_content")).toContainText("Mera om och av författaren")
+  expect(await documentRequests(request)).toEqual([
+    {
+      kind: "descriptor",
+      path: "/private-v2/authors/AlmqvistCJL/documents/semer"
+    },
+    {
+      kind: "content",
+      path: "/red/forfattare/AlmqvistCJL/semer/index.html"
+    }
+  ])
   expect(problems).toEqual([])
 })
 
-test("router and history transitions replace metadata, navigation, and managed content", async ({ page }) => {
+test("presentation, semer, bibliography, and history change metadata and content atomically", async ({
+  page
+}) => {
   const problems = collectProblems(page)
   await page.goto("/författare/S%C3%B6derbergH/presentation", { waitUntil: "networkidle" })
+
+  await routerPush(page, "/f%C3%B6rfattare/AlmqvistCJL/semer")
+  await expect(page).toHaveTitle("Carl Jonas Love Almqvist, Mera om | Litteraturbanken")
+  await expect(page.locator("h1").first()).toContainText("Carl Jonas Love Almqvist")
+  await expect(page.locator(".page_content")).toContainText("Mera om och av författaren")
+  await expect(page.locator(".page_content")).not.toContainText("Hjalmar Söderberg, född 1869")
 
   await routerPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS/bibliografi")
   await expect(page).toHaveTitle("Selma Lagerlöf, Bibliografi | Litteraturbanken")
@@ -67,9 +90,22 @@ test("router and history transitions replace metadata, navigation, and managed c
   ])
 
   await page.goBack()
+  await expect(page).toHaveTitle("Carl Jonas Love Almqvist, Mera om | Litteraturbanken")
+  await expect(page.locator(".page_content")).toContainText("Mera om och av författaren")
+  await expect(page.locator(".page_content")).not.toContainText("Selma Lagerlöf. Bibliografi")
+
+  await page.goBack()
   await expect(page).toHaveTitle("Hjalmar Söderberg, Presentation | Litteraturbanken")
   await expect(page.locator(".page_content")).toContainText("Hjalmar Söderberg, född 1869")
-  await expect(page.locator(".page_content")).not.toContainText("Selma Lagerlöf. Bibliografi")
+  await expect(page.locator(".page_content")).not.toContainText("Mera om och av författaren")
+
+  await page.goForward()
+  await expect(page).toHaveTitle("Carl Jonas Love Almqvist, Mera om | Litteraturbanken")
+  await expect(page.locator(".page_content")).toContainText("Mera om och av författaren")
+
+  await page.goForward()
+  await expect(page).toHaveTitle("Selma Lagerlöf, Bibliografi | Litteraturbanken")
+  await expect(page.locator(".page_content")).toContainText("Selma Lagerlöf. Bibliografi")
   expect(problems).toEqual([])
 })
 
@@ -82,21 +118,63 @@ test("a newer route clears loading state and ignores a late stale document", asy
   await reset(request)
   await request.put(`${fixture}/_author_document_delay`, { data: { delay: 800 } })
 
-  const slowNavigation = routerPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS/bibliografi")
+  const slowNavigation = routerPush(page, "/f%C3%B6rfattare/AlmqvistCJL/semer")
   await expect(page.locator(".preloader")).toBeVisible()
   await expect.poll(async () => (await documentRequests(request)).some(
-    (entry: { path: string }) => entry.path.includes("Lagerl%C3%B6fS")
+    (entry: { path: string }) => entry.path.includes("AlmqvistCJL")
   )).toBe(true)
 
   await request.delete(`${fixture}/_author_document_delay`)
-  await routerPush(page, "/f%C3%B6rfattare/SparseDocument/presentation")
-  await expect(page.locator(".page_content")).toContainText("Ett litet giltigt författardokument")
+  await routerPush(page, "/f%C3%B6rfattare/Lagerl%C3%B6fS/bibliografi")
+  await expect(page.locator(".page_content")).toContainText("Selma Lagerlöf. Bibliografi")
   await slowNavigation
   await page.waitForTimeout(900)
-  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/SparseDocument\/presentation$/u)
-  await expect(page.locator(".page_content")).not.toContainText("Selma Lagerlöf. Bibliografi")
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS\/bibliografi$/u)
+  await expect(page.locator(".page_content")).not.toContainText("Mera om och av författaren")
   await expect(page.locator(".preloader")).toBeHidden()
   expect(problems).toEqual([])
+})
+
+test("semer retains safe legacy links, managed images, and native PDF behavior", async ({
+  page,
+  request
+}) => {
+  await page.goto("/författare/AlmqvistCJL/semer", { waitUntil: "networkidle" })
+
+  const normalized = page.locator(
+    'a[href="/forfattare/AlmqvistCJL/titlar/DetGarAn1838/sida/1/faksimil"]'
+  )
+  await expect(normalized).toHaveAttribute(
+    "href",
+    "/forfattare/AlmqvistCJL/titlar/DetGarAn1838/sida/1/faksimil"
+  )
+
+  const portrait = page.locator(
+    'img[src="/red/forfattare/AlmqvistCJL/semer/pictures/200_almqvist_cjl_fa1.jpeg"]'
+  )
+  await expect(portrait).toBeVisible()
+  expect(await portrait.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0)
+  expect(await assetRequests(request)).toContain(
+    "/red/forfattare/AlmqvistCJL/semer/pictures/200_almqvist_cjl_fa1.jpeg"
+  )
+
+  const pdf = page.locator(
+    'a[href="/red/forfattare/AlmqvistCJL/semer/pictures/Burman2003.pdf"]'
+  )
+  await expect(pdf).toHaveAttribute("target", "_blank")
+  await expect(pdf).toHaveAttribute("rel", /noopener.*noreferrer/u)
+  await expect(pdf).not.toHaveAttribute("download", /.*/u)
+})
+
+test("mer remains AuthorWorksContent and performs no semer source request", async ({
+  page,
+  request
+}) => {
+  await page.goto("/författare/StrindbergA/mer", { waitUntil: "networkidle" })
+  await expect(page.locator("h1").first()).toContainText("August Strindberg (1849-1912)")
+  await expect(page.locator(".unbox h2").first()).toHaveText("Verk om August Strindberg")
+  await expect(page.locator(".unbox")).toContainText("August Strindberg (1940)")
+  expect(await documentRequests(request)).toEqual([])
 })
 
 test("normalized managed links reach canonical Reader and profile pages", async ({ page }) => {

@@ -724,6 +724,11 @@ function legacyAuthorRouteResolution(body) {
     || !Object.hasOwn(body, "media_type")
   ) return null
   if (
+    body.normalized_author_id === semerAuthorDocumentDescriptor.normalized_author_id
+    && body.normalized_title_id === null
+    && body.media_type === null
+  ) return { author_id: semerAuthorDocumentDescriptor.author_id, title_id: null }
+  if (
     body.normalized_author_id === "SoderbergH"
     && body.normalized_title_id === null
     && body.media_type === null

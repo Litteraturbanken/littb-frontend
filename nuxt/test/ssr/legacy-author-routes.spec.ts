@@ -85,6 +85,24 @@ test("uses author-only resolution for safe unsupported suffixes", async ({ reque
   })
 })
 
+test("canonicalizes the Almqvist semer suffix and preserves its raw query", async ({
+  request
+}) => {
+  const response = await request.get("/forfattare/AlmqvistCJL/semer?x=1", {
+    maxRedirects: 0
+  })
+  expect(response.status()).toBe(307)
+  expect(response.headers().location).toBe("/f%C3%B6rfattare/AlmqvistCJL/semer?x=1")
+  expect(await resolverRequests(request)).toEqual([{
+    path: "/private-v2/legacy-author-routes/resolve",
+    body: {
+      normalized_author_id: "AlmqvistCJL",
+      normalized_title_id: null,
+      media_type: null
+    }
+  }])
+})
+
 for (const [length, reachesResolver] of [
   [100, true],
   [101, false]
