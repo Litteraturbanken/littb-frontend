@@ -177,7 +177,7 @@ non-GET source methods.
 
 Require `focus page-authorInfo site-sla ready`, the exact title/description,
 global LB logo/navigation visible, ordinary author background decoded, managed
-heading visible, author H1/local links hidden, no portrait, fonts loaded, all 21
+heading visible, Selma author H1 visible, local links hidden, no portrait, fonts loaded, all 21
 href/target pairs exact, and no unexpected console/page errors beyond the one
 already recorded legacy selector warning.
 
@@ -277,7 +277,7 @@ git commit -m "feat(nuxt): bound SLA omtexterna source"
 SSR must include the managed body and exact metadata/classes, exactly one
 descriptor plus one content request, and no legacy/profile/works/map/audio
 fan-out. Assert the dedicated SLA excluded-data ledger and all adjacent data
-ledgers are empty. Assert the hidden shell DOM remains present, no portrait
+ledgers are empty. Assert the visible Selma H1 and hidden local-navigation DOM remain present, no portrait
 renders, all 21 links are exact, upstream head/title/doctype/comments do not
 leak, and sanitized probes are absent.
 
@@ -300,8 +300,11 @@ author-document API. Do not add a composable.
 - [ ] Apply exact SLA head/body state and render through the existing DOM.
 
 Use reactive head output so only this identity gains `site-sla`. Keep the
-ordinary background, existing direct author H1/nav DOM, and
-`.page_content > .content.unbox`. Do not add a portrait or CSS changes.
+ordinary background, existing author H1/nav DOM, and
+`.page_content > .content.unbox`. Add only the smallest layout-neutral host
+wrapper required to reproduce Angular's proven selector boundary so the Selma
+H1 remains visible while `.links` stays hidden. Do not add a portrait or CSS
+changes, and rerun all six existing author-document baselines.
 
 - [ ] Verify and commit.
 
@@ -332,7 +335,7 @@ git commit -m "feat(nuxt): render SLA omtexterna landing"
 - [ ] Add strict desktop/mobile Nuxt comparisons.
 
 Wait for exact body state, managed heading, fonts, and decoded ordinary
-background. Assert hidden author H1/nav, no portrait, exact link ledger, no
+background. Assert visible Selma author H1, hidden local nav, no portrait, exact link ledger, no
 browser API/content request, no production request, no excluded data request,
 and no console/page errors. Read and assert the dedicated SLA excluded-data
 ledger after readiness and again after the screenshot. Compare to the two

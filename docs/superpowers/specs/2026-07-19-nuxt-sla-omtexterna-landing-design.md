@@ -156,9 +156,14 @@ title: Selma Lagerlöf, Om texterna | Litteraturbanken
 description: Selma Lagerlöf, Om texterna
 ```
 
-The existing author-document DOM is reused: direct author heading and `.links`
-navigation remain present but are hidden by the established `.site-sla`
-authority CSS, exactly as Angular does. The managed body renders at:
+The existing author-document DOM is reused. Deterministic Angular authority
+proves that the direct author heading is visible: the legacy
+`<author-info-page>` host sits between `#mainview` and the template root, so the
+old `.site-sla #mainview > div > h1` selector does not match it. The local
+`.links` navigation is hidden by its separate descendant selector, and no
+portrait renders. Nuxt must preserve that actual outcome, using the smallest
+layout-neutral host wrapper needed to reproduce the selector boundary rather
+than changing CSS. The managed body renders at:
 
 ```text
 .page_content > .content.unbox
@@ -186,7 +191,8 @@ Deterministic tests must prove:
   records any production-origin audio or other request;
 - query-only history changes do not refetch;
 - other-author and malformed route variants fetch nothing;
-- the 18 article links and three Reader links remain exact;
+- the visible Selma author heading, hidden local navigation, absent portrait,
+  and the 18 article links plus three Reader links remain exact;
 - unsafe style, URL, active subtree, head, and oversized-source probes are
   rejected or stripped without source leakage;
 - desktop and mobile screenshots match Angular at zero tolerance;
