@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dramawebben/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dramawebben Catalog */
+        get: operations["v2_get_dramawebben_catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/epubs/popular": {
         parameters: {
             query?: never;
@@ -525,6 +542,71 @@ export interface components {
             sender_address: string;
             /** Sender Name */
             sender_name?: string | null;
+        };
+        /** DramawebbenCatalogAuthor */
+        DramawebbenCatalogAuthor: {
+            /** Author Id */
+            author_id: string;
+            /** Birth Year */
+            birth_year: string | null;
+            /** Death Year */
+            death_year: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Gender */
+            gender: string | null;
+            /** Name For Index */
+            name_for_index: string;
+            /** Surname */
+            surname: string | null;
+        };
+        /** DramawebbenCatalogMedia */
+        DramawebbenCatalogMedia: {
+            /** Downloadable */
+            downloadable: boolean;
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil" | "pdf" | "infopost";
+            /** Url */
+            url: string;
+        };
+        /** DramawebbenCatalogResponse */
+        DramawebbenCatalogResponse: {
+            /** Authors */
+            authors: components["schemas"]["DramawebbenCatalogAuthor"][];
+            /** Works */
+            works: components["schemas"]["DramawebbenCatalogWork"][];
+        };
+        /** DramawebbenCatalogWork */
+        DramawebbenCatalogWork: {
+            /** Authors */
+            authors: components["schemas"]["DramawebbenCatalogAuthor"][];
+            /** Female Roles */
+            female_roles?: number | null;
+            /** Is Childrens Play */
+            is_childrens_play: boolean;
+            /** Male Roles */
+            male_roles?: number | null;
+            /** Media */
+            media: components["schemas"]["DramawebbenCatalogMedia"][];
+            /** Number Of Acts */
+            number_of_acts?: number | null;
+            /** Number Of Pages */
+            number_of_pages?: number | null;
+            /** Number Of Roles */
+            number_of_roles?: number | null;
+            /** Other Roles */
+            other_roles?: number | null;
+            /** Short Title */
+            short_title: string | null;
+            /** Title */
+            title: string;
+            /** Title Path */
+            title_path: string;
+            /** Work Id */
+            work_id: string;
         };
         /** DramawebbenProfile */
         DramawebbenProfile: {
@@ -1395,6 +1477,44 @@ export interface operations {
             };
             /** @description Contact delivery failed */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_dramawebben_catalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DramawebbenCatalogResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

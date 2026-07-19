@@ -1,6 +1,8 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
+import { dramawebbenCatalogExpected } from "../fixtures/dramawebben-catalog-data.mjs"
+
 const fixture = "http://127.0.0.1:4100"
 const nuxtOrigin = `http://127.0.0.1:${process.env.LITTB_NUXT_TEST_PORT || 3000}`
 const legacyDescription = "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
@@ -14,6 +16,7 @@ const requestLedgers = [
   "/_home_requests",
   "/_library_query_requests",
   "/_presentation_requests",
+  "/_dramawebben_catalog_requests",
   "/_dramawebben_excluded_data_requests",
   "/_text_search/requests"
 ] as const
@@ -23,18 +26,36 @@ async function resetRequestLedgers(request: APIRequestContext) {
     ...requestLedgers.map(path => request.delete(`${fixture}${path}`)),
     request.delete(`${fixture}/_dramawebben_document_requests`),
     request.delete(`${fixture}/_dramawebben_document_failure`),
-    request.delete(`${fixture}/_dramawebben_document_redirect_target_requests`)
+    request.delete(`${fixture}/_dramawebben_document_redirect_target_requests`),
+    request.delete(`${fixture}/_dramawebben_catalog_failure`)
   ])
 }
 
-async function expectNoDataRequests(request: APIRequestContext) {
+async function expectNoDataRequests(
+  request: APIRequestContext,
+  allowed: readonly string[] = []
+) {
   for (const path of requestLedgers) {
+    if (allowed.includes(path)) continue
     const payload = await (await request.get(`${fixture}${path}`)).json()
     const values = path === "/_text_search/requests"
       ? [...payload.results, ...payload.count, ...payload.options]
       : payload.requests
     expect(values, path).toEqual([])
   }
+}
+
+async function catalogRequests(request: APIRequestContext) {
+  return (await (await request.get(
+    `${fixture}/_dramawebben_catalog_requests`
+  )).json()).requests
+}
+
+async function setCatalogFailure(request: APIRequestContext, failure: string) {
+  const response = await request.put(`${fixture}/_dramawebben_catalog_failure`, {
+    data: { failure }
+  })
+  expect(response.status()).toBe(200)
 }
 
 async function dramawebbenRequests(request: APIRequestContext) {
@@ -98,7 +119,7 @@ function expectStartShell(html: string) {
 
 function expectManagedShell(
   html: string,
-  kind: "om" | "kringtexter",
+  kind: "pjäser" | "om" | "kringtexter",
   expectedBody: string
 ) {
   const { document } = parseHTML(html)
@@ -133,7 +154,11 @@ function expectManagedShell(
   ])
   expect([...(wrapper?.querySelectorAll("ul.links li.active a") ?? [])].map(
     link => link.getAttribute("href")
-  )).toEqual(kind === "kringtexter" ? ["/dramawebben/kringtexter"] : [])
+  )).toEqual(kind === "pjäser"
+    ? ["/dramawebben/pjäser"]
+    : kind === "kringtexter"
+      ? ["/dramawebben/kringtexter"]
+      : [])
 
   const content = wrapper?.querySelector(".page_content")
   expect(content).not.toBeNull()
@@ -143,6 +168,34 @@ function expectManagedShell(
 }
 
 test.beforeEach(async ({ request }) => resetRequestLedgers(request))
+
+test("SSR renders the populated catalog through one private typed request", async ({
+  request
+}) => {
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expectManagedShell(html, "pjäser", "Dömd")
+  const { document } = parseHTML(html)
+  const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tr")]
+  expect(rows.map(row => normalizedText(row.textContent))).toEqual(
+    dramawebbenCatalogExpected.plays
+  )
+  const firstReadHref = document.querySelector(
+    'a[href$="/AgrellA/titlar/Domd/sida/1/etext#dw"]'
+  )?.getAttribute("href")
+  expect(firstReadHref && decodeURI(firstReadHref)).toBe(
+    "/författare/AgrellA/titlar/Domd/sida/1/etext#dw"
+  )
+  expect(await catalogRequests(request)).toEqual([{
+    method: "GET",
+    path: "/private-v2/dramawebben/catalog",
+    authorization: null,
+    cookie: null
+  }])
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
 
 test("SSR renders the exact data-free Dramawebben start shell", async ({ request }) => {
   const response = await request.get("/dramawebben")
@@ -197,7 +250,7 @@ for (const documentCase of [
   })
 }
 
-for (const invalidName of ["pjäser", "författare", "unknown"]) {
+for (const invalidName of ["författare", "unknown"]) {
   test(`${invalidName} uses the global 404 before any source fetch`, async ({ request }) => {
     const response = await request.get(`/dramawebben/${invalidName}`)
 
@@ -206,6 +259,30 @@ for (const invalidName of ["pjäser", "författare", "unknown"]) {
     expect(html).not.toContain(neutralError)
     expect(await dramawebbenRequests(request)).toEqual([])
     await expectNoDataRequests(request)
+  })
+}
+
+for (const [failure, status] of [
+  ["status-503", 503],
+  ["malformed-200", 502]
+] as const) {
+  test(`SSR keeps a stable catalog shell for ${failure}`, async ({ request }) => {
+    await setCatalogFailure(request, failure)
+    const response = await request.get("/dramawebben/pjäser")
+
+    expect(response.status()).toBe(status)
+    const html = await response.text()
+    expectManagedShell(html, "pjäser", neutralError)
+    expect(html).not.toMatch(
+      /127\.0\.0\.1:4100|upstream-payload-probe|Unable to load Dramawebben catalog/iu
+    )
+    expect(await catalogRequests(request)).toEqual([{
+      method: "GET",
+      path: "/private-v2/dramawebben/catalog",
+      authorization: null,
+      cookie: null
+    }])
+    await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
   })
 }
 

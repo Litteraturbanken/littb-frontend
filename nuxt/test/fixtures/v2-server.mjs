@@ -18,6 +18,10 @@ import {
   malformedAuthorWorksResponse
 } from "./author-works-data.mjs"
 import { historyAuthorSummaries } from "./history-data.mjs"
+import {
+  dramawebbenCatalogAuthors,
+  dramawebbenCatalogResponse
+} from "./dramawebben-catalog-data.mjs"
 import { libraryPdfResponse } from "./library-pdf-data.mjs"
 import { libraryQueryStringResponse } from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
@@ -271,6 +275,8 @@ let dramawebbenDocumentRequests = []
 let dramawebbenDocumentFailure = null
 let dramawebbenDocumentRedirectTargetRequests = []
 let dramawebbenExcludedDataRequests = []
+let dramawebbenCatalogRequests = []
+let dramawebbenCatalogFailure = null
 let slaExcludedDataRequests = []
 let slaArticleDescriptorRequests = []
 let slaArticleSourceRequests = []
@@ -302,6 +308,81 @@ const dramawebbenExcludedDataPaths = new Set([
   "/api/get_authors",
   "/api/list_all/etext,faksimil,pdf,infopost"
 ])
+
+const dramawebbenMediaPriority = ["etext", "faksimil", "pdf", "infopost"]
+
+function dramawebbenCatalogAuthor(author) {
+  return {
+    author_id: author.authorid,
+    full_name: author.full_name,
+    name_for_index: author.name_for_index,
+    surname: author.surname ?? null,
+    gender: author.gender ?? null,
+    birth_year: author.birth?.plain ?? null,
+    death_year: author.death?.plain ?? null
+  }
+}
+
+function dramawebbenCatalogMedia(row) {
+  const mediaType = row.mediatype
+  const authorId = row.authors[0].authorid
+  let url
+  if (mediaType === "pdf") {
+    const workId = encodeURIComponent(row.lbworkid)
+    url = `/txt/${workId}/${workId}.pdf`
+  } else if (mediaType === "infopost") {
+    url = "/dramawebben/pj%C3%A4ser?om-boken"
+      + `&authorid=${encodeURIComponent(authorId)}`
+      + `&titlepath=${encodeURIComponent(row.titlepath)}`
+  } else {
+    url = `/författare/${encodeURIComponent(authorId)}`
+      + `/titlar/${encodeURIComponent(row.titleid)}`
+      + `/sida/${encodeURIComponent(row.startpagename)}/${mediaType}`
+  }
+  return {
+    media_type: mediaType,
+    url,
+    downloadable: mediaType === "pdf"
+  }
+}
+
+function dramawebbenCatalogFixture() {
+  const authors = dramawebbenCatalogAuthors.map(dramawebbenCatalogAuthor)
+  const groups = new Map()
+  for (const row of dramawebbenCatalogResponse.data) {
+    const key = `${row.titlepath}\u0000${row.lbworkid}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(row)
+  }
+  const works = [...groups.values()].map(rows => {
+    const ordered = [...rows].sort((left, right) => (
+      dramawebbenMediaPriority.indexOf(left.mediatype)
+      - dramawebbenMediaPriority.indexOf(right.mediatype)
+    ))
+    const main = ordered[0]
+    const dramawebben = main.dramawebben ?? {}
+    const optionalInteger = field => {
+      const value = dramawebben[field]
+      return value === undefined || value === null ? null : Number(value)
+    }
+    return {
+      work_id: main.lbworkid,
+      title_path: main.titlepath,
+      title: main.title,
+      short_title: main.shorttitle ?? null,
+      authors: main.authors.map(dramawebbenCatalogAuthor),
+      media: ordered.map(dramawebbenCatalogMedia),
+      is_childrens_play: main.keyword?.includes("Barnlitteratur") ?? false,
+      number_of_acts: optionalInteger("number_of_acts"),
+      number_of_roles: optionalInteger("number_of_roles"),
+      number_of_pages: optionalInteger("number_of_pages"),
+      female_roles: optionalInteger("female_roles"),
+      male_roles: optionalInteger("male_roles"),
+      other_roles: optionalInteger("other_roles")
+    }
+  })
+  return { works, authors }
+}
 
 function isSlaExcludedDataPath(pathname) {
   return pathname === "/api/get_author/Lagerl%C3%B6fS"
@@ -1854,6 +1935,35 @@ const server = createServer(async (request, response) => {
     dramawebbenExcludedDataRequests = []
     return sendJson(response, 200, { requests: dramawebbenExcludedDataRequests })
   }
+  if (url.pathname === "/_dramawebben_catalog_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: dramawebbenCatalogRequests })
+  }
+  if (url.pathname === "/_dramawebben_catalog_requests" && request.method === "DELETE") {
+    dramawebbenCatalogRequests = []
+    return sendJson(response, 200, { requests: dramawebbenCatalogRequests })
+  }
+  if (url.pathname === "/_dramawebben_catalog_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: dramawebbenCatalogFailure })
+  }
+  if (url.pathname === "/_dramawebben_catalog_failure" && request.method === "PUT") {
+    let body
+    try {
+      body = await readJson(request)
+    } catch {
+      return validationError(response)
+    }
+    const allowed = new Set(["status-503", "malformed-200"])
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1 || !allowed.has(body.failure)
+    ) return validationError(response)
+    dramawebbenCatalogFailure = body.failure
+    return sendJson(response, 200, { failure: dramawebbenCatalogFailure })
+  }
+  if (url.pathname === "/_dramawebben_catalog_failure" && request.method === "DELETE") {
+    dramawebbenCatalogFailure = null
+    return sendJson(response, 200, { failure: dramawebbenCatalogFailure })
+  }
   if (url.pathname === "/_sla_excluded_data_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: slaExcludedDataRequests })
   }
@@ -2640,6 +2750,31 @@ const server = createServer(async (request, response) => {
       })
     }
     return sendJson(response, 200, quickSearchResponse(query))
+  }
+
+  if (request.method === "GET" && apiPathname === "/v2/dramawebben/catalog") {
+    dramawebbenCatalogRequests.push({
+      method: request.method,
+      path: `${rawPathname}${url.search}`,
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null
+    })
+    if (dramawebbenCatalogFailure === "status-503") {
+      return sendJson(response, 503, {
+        error: {
+          code: "dramawebben_catalog_unavailable",
+          message: "Unable to load Dramawebben catalog",
+          details: null
+        }
+      })
+    }
+    if (dramawebbenCatalogFailure === "malformed-200") {
+      return sendJson(response, 200, {
+        works: [{ title: "upstream-payload-probe" }],
+        authors: []
+      })
+    }
+    return sendJson(response, 200, dramawebbenCatalogFixture())
   }
 
   const textSearchMatch = /^\/v2\/text-search\/(results|count|options)$/.exec(apiPathname)

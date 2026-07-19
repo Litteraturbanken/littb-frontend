@@ -1,5 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
+import { dramawebbenCatalogExpected } from "../fixtures/dramawebben-catalog-data.mjs"
+
 const fixture = "http://127.0.0.1:4100"
 const legacyDescription = "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 
@@ -8,7 +10,9 @@ async function reset(request: APIRequestContext) {
     request.delete(`${fixture}/_dramawebben_document_requests`),
     request.delete(`${fixture}/_dramawebben_document_failure`),
     request.delete(`${fixture}/_dramawebben_document_redirect_target_requests`),
-    request.delete(`${fixture}/_dramawebben_excluded_data_requests`)
+    request.delete(`${fixture}/_dramawebben_excluded_data_requests`),
+    request.delete(`${fixture}/_dramawebben_catalog_requests`),
+    request.delete(`${fixture}/_dramawebben_catalog_failure`)
   ])
 }
 
@@ -22,6 +26,19 @@ async function expectNoExcludedDataRequests(request: APIRequestContext) {
   expect((await (await request.get(
     `${fixture}/_dramawebben_excluded_data_requests`
   )).json()).requests).toEqual([])
+}
+
+async function catalogRequests(request: APIRequestContext) {
+  return (await (await request.get(
+    `${fixture}/_dramawebben_catalog_requests`
+  )).json()).requests
+}
+
+async function setCatalogFailure(request: APIRequestContext, failure: string) {
+  const response = await request.put(`${fixture}/_dramawebben_catalog_failure`, {
+    data: { failure }
+  })
+  expect(response.status()).toBe(200)
 }
 
 async function routerPush(page: Page, path: string) {
@@ -48,7 +65,7 @@ function collectProblems(page: Page) {
   return problems
 }
 
-async function expectExactLinks(page: Page, kind: "om" | "kringtexter") {
+async function expectExactLinks(page: Page, kind: "pjäser" | "om" | "kringtexter") {
   await expect(page.locator(".subpage ul.links a")).toHaveText([
     "Pjäser", "Mer läsning", "Sök", "Om", "Till Litteraturbanken"
   ])
@@ -63,11 +80,11 @@ async function expectExactLinks(page: Page, kind: "om" | "kringtexter") {
     { href: "/", text: "Till Litteraturbanken" }
   ])
   await expect(page.locator(".subpage ul.links li.active a")).toHaveCount(
-    kind === "kringtexter" ? 1 : 0
+    kind === "om" ? 0 : 1
   )
-  if (kind === "kringtexter") {
+  if (kind !== "om") {
     await expect(page.locator(".subpage ul.links li.active a"))
-      .toHaveAttribute("href", "/dramawebben/kringtexter")
+      .toHaveAttribute("href", `/dramawebben/${kind}`)
   }
 }
 
@@ -242,14 +259,63 @@ test("a malformed successful document is redacted inside the stable latest shell
   expect(problems).toEqual([])
 })
 
-test("invalid document routes remain global 404s without managed fetches", async ({
+test("the catalog hydrates once from SSR without a browser or legacy data request", async ({
   page,
   request
 }) => {
+  const problems = collectProblems(page)
+  const browserCatalogRequests: string[] = []
+  page.on("request", outgoing => {
+    if (new URL(outgoing.url()).pathname === "/api/v2/dramawebben/catalog") {
+      browserCatalogRequests.push(outgoing.url())
+    }
+  })
   const response = await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
 
-  expect(response?.status()).toBe(404)
-  await expect(page.locator("#mainview > .subpage")).toHaveCount(0)
+  expect(response?.status()).toBe(200)
+  await expect(page.locator("body")).toHaveClass(
+    "focus page-dramaweb drama-dramasubpage ready"
+  )
+  await expect(page.locator("#mainview > .cover.show")).toHaveCount(1)
+  await expect(page.locator("#mainview > .subpage")).toHaveCount(1)
+  await expectExactLinks(page, "pjäser")
+  await expect(page.locator("table.contenttable:not(.authors) tr")).toHaveText(
+    dramawebbenCatalogExpected.plays
+  )
+  expect(browserCatalogRequests).toEqual([])
+  expect(await catalogRequests(request)).toEqual([{
+    method: "GET",
+    path: "/private-v2/dramawebben/catalog",
+    authorization: null,
+    cookie: null
+  }])
   expect(await documentRequests(request)).toEqual([])
   await expectNoExcludedDataRequests(request)
+  expect(problems).toEqual([])
+})
+
+test("a catalog 503 keeps the hydrated shell stable without leaking upstream text", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await setCatalogFailure(request, "status-503")
+  const response = await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+
+  expect(response?.status()).toBe(503)
+  await expect(page.locator("#mainview > .subpage")).toHaveCount(1)
+  await expectExactLinks(page, "pjäser")
+  await expect(page.locator(".error")).toHaveText("Innehållet kan inte visas just nu.")
+  await expect(page.locator(".page_content")).not.toContainText(
+    "Unable to load Dramawebben catalog"
+  )
+  expect(await catalogRequests(request)).toEqual([{
+    method: "GET",
+    path: "/private-v2/dramawebben/catalog",
+    authorization: null,
+    cookie: null
+  }])
+  expect(await documentRequests(request)).toEqual([])
+  await expectNoExcludedDataRequests(request)
+  expect(problems).toEqual([])
 })
