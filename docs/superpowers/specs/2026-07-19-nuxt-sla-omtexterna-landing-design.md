@@ -66,16 +66,19 @@ allowlist.
 For `GET /v2/authors/{author_id}/documents/omtexterna`:
 
 - `author_id` must be exactly `LagerlöfS` after FastAPI path decoding;
-- any other author returns the standard non-leaking 404 before an OpenSearch
-  provider query;
+- any other requested author returns the standard non-leaking 404 before an
+  OpenSearch provider query;
 - the returned descriptor retains the canonical Selma author metadata;
 - `document_kind` is exactly `omtexterna`;
 - `source_path` is exactly `/red/sla/omtexterna.html`;
 - no generic `/red/forfattare/{author}/omtexterna/index.html` fallback exists.
 
-The pure transformer also rejects an `omtexterna` request for any other author,
-so direct callers cannot bypass the route guard. Existing document kinds keep
-their exact current source mapping and behavior. OpenAPI and generated
+The pure transformer also rejects an `omtexterna` request for any other
+requested author, so direct callers cannot bypass the route guard. If the exact
+Selma provider record returns a normalized ID other than `LagerlofS`, that is a
+malformed provider response and follows the existing non-leaking internal-error
+path rather than being misreported as a missing author. Existing document kinds
+keep their exact current source mapping and behavior. OpenAPI and generated
 TypeScript must make the new literal visible; no handwritten frontend copy may
 be treated as the canonical transport type.
 

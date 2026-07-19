@@ -48,12 +48,14 @@ content; stage only exact task files.
 
 - [ ] Write RED model, transformer, route, and OpenAPI tests.
 
-Assert that the descriptor accepts/serializes `omtexterna`, the transformer
-returns the fixed path only for the exact requested and normalized author IDs,
-and mismatched requested or normalized IDs are non-leaking 404s. At the route
-level, spy on `query_author_document` and prove that an unsupported author-kind
-pair does not call it. Preserve 422 for an unknown enum literal and current
-404/503/500 semantics.
+Assert that the descriptor accepts/serializes `omtexterna` and the transformer
+returns the fixed path only for the exact requested and normalized author IDs.
+A different requested author is a non-leaking 404; an exact Selma request whose
+provider record has the wrong normalized ID is malformed provider data and
+follows the existing internal-error path. At the route level, spy on
+`query_author_document` and prove that an unsupported author-kind pair does not
+call it. Preserve 422 for an unknown enum literal and current 404/503/500
+semantics.
 
 - [ ] Implement one exact registry and preflight guard.
 
