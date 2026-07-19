@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 import { dramawebbenCatalogExpected } from "../fixtures/dramawebben-catalog-data.mjs"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const legacyDescription = "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 
 async function reset(request: APIRequestContext) {
@@ -32,6 +32,28 @@ async function catalogRequests(request: APIRequestContext) {
   return (await (await request.get(
     `${fixture}/_dramawebben_catalog_requests`
   )).json()).requests
+}
+
+async function expectOneCatalogRequest(request: APIRequestContext) {
+  expect(await catalogRequests(request)).toEqual([{
+    method: "GET",
+    path: "/private-v2/dramawebben/catalog",
+    authorization: null,
+    cookie: null
+  }])
+  await expectNoExcludedDataRequests(request)
+}
+
+async function expectPlayRows(page: Page, rows: readonly string[]) {
+  await expect(page.locator("table.contenttable:not(.authors) tr")).toHaveText([...rows])
+}
+
+async function expectAuthorRows(page: Page, rows: readonly string[]) {
+  await expect(page.locator("table.contenttable.authors tr")).toHaveText([...rows])
+}
+
+async function expectQuery(page: Page, key: string, value: string | null) {
+  await expect.poll(() => new URL(page.url()).searchParams.get(key)).toBe(value)
 }
 
 async function setCatalogFailure(request: APIRequestContext, failure: string) {
@@ -294,6 +316,173 @@ test("the catalog hydrates once from SSR without a browser or legacy data reques
   expect(problems).toEqual([])
 })
 
+test("the list toggle pushes query-owned history and Back/Forward restores each table", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+  await expect(page.getByRole("button", { name: "Pjäser", exact: true })).toHaveClass(/\bactive\b/u)
+  await expect(page.getByRole("button", { name: "Författare", exact: true }))
+    .not.toHaveClass(/\bactive\b/u)
+
+  await page.getByRole("button", { name: "Författare", exact: true }).click()
+  await expectQuery(page, "visa", "författare")
+  await expectAuthorRows(page, dramawebbenCatalogExpected.authors)
+  await expect(page.getByRole("button", { name: "Författare", exact: true }))
+    .toHaveAttribute("aria-pressed", "true")
+  await expect(page.getByRole("button", { name: "Pjäser", exact: true }))
+    .not.toHaveClass(/\bactive\b/u)
+  await expect(page.getByRole("button", { name: "Författare", exact: true }))
+    .toHaveClass(/\bactive\b/u)
+
+  await page.goBack()
+  await expectQuery(page, "visa", null)
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+
+  await page.goForward()
+  await expectQuery(page, "visa", "författare")
+  await expectAuthorRows(page, dramawebbenCatalogExpected.authors)
+
+  await expectOneCatalogRequest(request)
+  expect(problems).toEqual([])
+})
+
+test("every legacy catalog filter is query-owned, local, inclusive, and clearable", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  const clear = page.getByRole("button", { name: "Rensa filter", exact: true })
+
+  await page.getByRole("button", { name: "Visa författare", exact: true }).click()
+  await page.getByRole("option", { name: "Strindberg, August 1849-1912" }).click()
+  await expectQuery(page, "author", "StrindbergA")
+  await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
+  await clear.click()
+  await expectQuery(page, "author", null)
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+
+  await page.getByRole("button", { name: "Kön", exact: true }).click()
+  await page.getByRole("option", { name: "Kvinnliga författare", exact: true }).click()
+  await expectQuery(page, "gender", "female")
+  await expectPlayRows(page, [
+    dramawebbenCatalogExpected.plays[0]!,
+    dramawebbenCatalogExpected.plays[3]!
+  ])
+  await clear.click()
+
+  await page.getByRole("button", { name: "Utgivningsformat", exact: true }).click()
+  await page.getByRole("option", { name: "PDF", exact: true }).click()
+  await expectQuery(page, "mediatype", "pdf")
+  await expectPlayRows(page, [
+    dramawebbenCatalogExpected.plays[0]!,
+    dramawebbenCatalogExpected.plays[2]!
+  ])
+  await clear.click()
+
+  await page.getByRole("textbox", { name: "Sök", exact: true }).fill("AUGUST 1888")
+  await expectQuery(page, "filterTxt", "AUGUST 1888")
+  await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
+  await clear.click()
+
+  const rangeButton = page.getByRole("button", { name: "Akter och roller", exact: true })
+  await rangeButton.click()
+  await page.getByRole("button", { name: "Barnpjäs", exact: true }).click()
+  await expectQuery(page, "barnlitteratur", "true")
+  await expectPlayRows(page, [dramawebbenCatalogExpected.plays[1]!])
+  await clear.click()
+
+  await rangeButton.click()
+  const pagesFrom = page.getByRole("slider", { name: "Antal sidor från", exact: true })
+  await pagesFrom.evaluate((input: HTMLInputElement) => {
+    input.value = "90"
+    input.dispatchEvent(new Event("change", { bubbles: true }))
+  })
+  await expectQuery(page, "number_of_pages", "90,120")
+  await expectPlayRows(page, [
+    dramawebbenCatalogExpected.plays[2]!,
+    dramawebbenCatalogExpected.plays[3]!
+  ])
+  const pagesTo = page.getByRole("slider", { name: "Antal sidor till", exact: true })
+  await pagesTo.evaluate((input: HTMLInputElement) => {
+    input.value = "100"
+    input.dispatchEvent(new Event("change", { bubbles: true }))
+  })
+  await expectQuery(page, "number_of_pages", "90,100")
+  await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
+
+  await clear.click()
+  await expect(page).toHaveURL(/\/dramawebben\/pj%C3%A4ser$/u)
+  await expect(clear).toHaveCount(0)
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+  await expectOneCatalogRequest(request)
+  expect(problems).toEqual([])
+})
+
+test("Headless UI catalog controls support keyboard, Escape, outside close, and focus return", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+
+  const genderButton = page.getByRole("button", { name: "Kön", exact: true })
+  await genderButton.focus()
+  await page.keyboard.press("Enter")
+  await expect(page.getByRole("option", { name: "Alla författare", exact: true })).toBeVisible()
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("option", { name: "Alla författare", exact: true })).toHaveCount(0)
+  await expect(genderButton).toBeFocused()
+
+  await page.keyboard.press("Enter")
+  await page.keyboard.press("ArrowDown")
+  await page.keyboard.press("Enter")
+  await expectQuery(page, "gender", "female")
+  await expect(genderButton).toBeFocused()
+  await routerPush(page, "/dramawebben/pj%C3%A4ser")
+  await expectQuery(page, "gender", null)
+
+  const mediaButton = page.getByRole("button", { name: "Utgivningsformat", exact: true })
+  await mediaButton.click()
+  await expect(page.getByRole("option", { name: "PDF", exact: true })).toBeVisible()
+  await page.locator(".page_content p").first().click()
+  await expect(page.getByRole("option", { name: "PDF", exact: true })).toHaveCount(0)
+
+  const rangeButton = page.getByRole("button", { name: "Akter och roller", exact: true })
+  await rangeButton.click()
+  const childrenButton = page.getByRole("button", { name: "Barnpjäs", exact: true })
+  await childrenButton.focus()
+  await page.keyboard.press("Escape")
+  await expect(childrenButton).toHaveCount(0)
+  await expect(rangeButton).toBeFocused()
+  await rangeButton.click()
+  await expect(page.getByRole("button", { name: "Barnpjäs", exact: true })).toBeVisible()
+  await page.locator(".page_content p").first().click()
+  await expect(page.getByRole("button", { name: "Barnpjäs", exact: true })).toHaveCount(0)
+  await expect(rangeButton).toBeFocused()
+
+  // Headless UI labels the input from its associated trigger button.
+  const authorInput = page.getByRole("combobox", { name: "Visa författare", exact: true })
+  await authorInput.focus()
+  await expect(authorInput).toBeFocused()
+  await authorInput.press("ArrowDown")
+  await authorInput.fill("Strindberg")
+  const strindbergOption = page.getByRole("option", { name: "Strindberg, August 1849-1912" })
+  await expect(strindbergOption).toBeVisible()
+  await authorInput.press("ArrowDown")
+  await expect(strindbergOption).toHaveAttribute("data-headlessui-state", /\bactive\b/u)
+  await authorInput.press("Enter")
+  await expectQuery(page, "author", "StrindbergA")
+  await expect(authorInput).toBeFocused()
+  await expectPlayRows(page, [dramawebbenCatalogExpected.plays[2]!])
+
+  await expectOneCatalogRequest(request)
+  expect(problems).toEqual([])
+})
+
 test("a catalog 503 keeps the hydrated shell stable without leaking upstream text", async ({
   page,
   request
@@ -317,5 +506,6 @@ test("a catalog 503 keeps the hydrated shell stable without leaking upstream tex
   }])
   expect(await documentRequests(request)).toEqual([])
   await expectNoExcludedDataRequests(request)
-  expect(problems).toEqual([])
+  expect(problems.filter(problem => !/status of 503 \(Service Unavailable\)/u.test(problem)))
+    .toEqual([])
 })

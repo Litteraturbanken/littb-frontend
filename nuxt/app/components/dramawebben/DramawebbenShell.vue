@@ -2,7 +2,7 @@
 import dramawebbenLogo from "~/assets/img/dramawebben_vit.svg"
 
 const props = defineProps<{
-  page: "start" | "om" | "kringtexter"
+  page: "start" | "pjäser" | "om" | "kringtexter"
 }>()
 
 const isStartPage = computed(() => props.page === "start")
@@ -21,7 +21,7 @@ const isStartPage = computed(() => props.page === "start")
 
     <div>
       <ul class="links">
-        <li>
+        <li :class="{ active: page === 'pjäser' }">
           <a href="/dramawebben/pjäser">Pjäser</a>
         </li>{{ " " }}
         <li :class="{ active: page === 'kringtexter' }">

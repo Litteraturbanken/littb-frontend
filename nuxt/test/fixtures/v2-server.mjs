@@ -1952,7 +1952,12 @@ const server = createServer(async (request, response) => {
     } catch {
       return validationError(response)
     }
-    const allowed = new Set(["status-503", "malformed-200"])
+    const allowed = new Set([
+      "status-503",
+      "malformed-200",
+      "unsafe-media-url-200",
+      "pdf-primary-200"
+    ])
     if (
       body === null || typeof body !== "object" || Array.isArray(body)
       || Object.keys(body).length !== 1 || !allowed.has(body.failure)
@@ -2773,6 +2778,20 @@ const server = createServer(async (request, response) => {
         works: [{ title: "upstream-payload-probe" }],
         authors: []
       })
+    }
+    if (dramawebbenCatalogFailure === "unsafe-media-url-200") {
+      const catalog = dramawebbenCatalogFixture()
+      catalog.works[0].media[0].url = "javascript:alert('unsafe-media-url-probe')"
+      return sendJson(response, 200, catalog)
+    }
+    if (dramawebbenCatalogFailure === "pdf-primary-200") {
+      const catalog = dramawebbenCatalogFixture()
+      catalog.works[0].media = [{
+        media_type: "pdf",
+        url: "/txt/lb-dramat-001/lb-dramat-001.pdf",
+        downloadable: true
+      }]
+      return sendJson(response, 200, catalog)
     }
     return sendJson(response, 200, dramawebbenCatalogFixture())
   }

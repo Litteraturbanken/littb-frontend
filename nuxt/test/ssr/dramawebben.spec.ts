@@ -3,7 +3,7 @@ import { parseHTML } from "linkedom"
 
 import { dramawebbenCatalogExpected } from "../fixtures/dramawebben-catalog-data.mjs"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const nuxtOrigin = `http://127.0.0.1:${process.env.LITTB_NUXT_TEST_PORT || 3000}`
 const legacyDescription = "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 const neutralError = "Innehållet kan inte visas just nu."
@@ -188,6 +188,73 @@ test("SSR renders the populated catalog through one private typed request", asyn
   expect(firstReadHref && decodeURI(firstReadHref)).toBe(
     "/författare/AgrellA/titlar/Domd/sida/1/etext#dw"
   )
+  expect(await catalogRequests(request)).toEqual([{
+    method: "GET",
+    path: "/private-v2/dramawebben/catalog",
+    authorization: null,
+    cookie: null
+  }])
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
+for (const query of [
+  "gender=unknown",
+  "mediatype=unknown",
+  "author=MissingAuthor",
+  "number_of_pages=%2C"
+] as const) {
+  test(`SSR defaults the invalid catalog query ${query}`, async ({ request }) => {
+    const response = await request.get(`/dramawebben/pjäser?${query}`)
+
+    expect(response.status()).toBe(200)
+    const { document } = parseHTML(await response.text())
+    const rows = [...document.querySelectorAll("table.contenttable:not(.authors) tr")]
+    expect(rows.map(row => normalizedText(row.textContent))).toEqual(
+      dramawebbenCatalogExpected.plays
+    )
+    expect(await catalogRequests(request)).toEqual([{
+      method: "GET",
+      path: "/private-v2/dramawebben/catalog",
+      authorization: null,
+      cookie: null
+    }])
+    await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+  })
+}
+
+test("SSR rejects a structurally valid catalog with an unsafe media URL", async ({ request }) => {
+  await setCatalogFailure(request, "unsafe-media-url-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(502)
+  const html = await response.text()
+  expectManagedShell(html, "pjäser", neutralError)
+  expect(html).not.toContain("unsafe-media-url-probe")
+  expect(await catalogRequests(request)).toEqual([{
+    method: "GET",
+    path: "/private-v2/dramawebben/catalog",
+    authorization: null,
+    cookie: null
+  }])
+  await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
+})
+
+test("SSR keeps #dw on a PDF-primary title while its media action downloads", async ({
+  request
+}) => {
+  await setCatalogFailure(request, "pdf-primary-200")
+  const response = await request.get("/dramawebben/pjäser")
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const firstRow = document.querySelector("table.contenttable:not(.authors) tr")
+  expect(firstRow?.querySelector("td.title a")?.getAttribute("href"))
+    .toBe("/txt/lb-dramat-001/lb-dramat-001.pdf#dw")
+  const mediaAction = firstRow?.querySelector("ul.mediatypes a")
+  expect(mediaAction?.getAttribute("href"))
+    .toBe("/txt/lb-dramat-001/lb-dramat-001.pdf")
+  expect(mediaAction?.hasAttribute("download")).toBe(true)
+  expect(mediaAction?.getAttribute("target")).toBe("_self")
   expect(await catalogRequests(request)).toEqual([{
     method: "GET",
     path: "/private-v2/dramawebben/catalog",

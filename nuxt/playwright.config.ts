@@ -2,7 +2,8 @@ import { realpathSync } from "node:fs"
 import { resolve } from "node:path"
 import { defineConfig, devices } from "@playwright/test"
 
-const fixtureOrigin = "http://127.0.0.1:4100"
+const fixturePort = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
+const fixtureOrigin = `http://127.0.0.1:${fixturePort}`
 const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
 const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 const dependencyRoot = realpathSync(resolve(import.meta.dirname, "node_modules"))
@@ -50,7 +51,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "node test/fixtures/v2-server.mjs",
+      command: `LBAPI_FIXTURE_PORT=${fixturePort} node test/fixtures/v2-server.mjs`,
       url: `${fixtureOrigin}/health`,
       reuseExistingServer: false,
       timeout: 30_000
