@@ -27,7 +27,10 @@ function validRouteParam(value: unknown, maximum: number): value is string {
 }
 
 function isDocumentKind(value: unknown): value is AuthorDocumentKind {
-  return value === "presentation" || value === "bibliografi" || value === "semer"
+  return value === "presentation"
+    || value === "bibliografi"
+    || value === "semer"
+    || value === "omtexterna"
 }
 
 function encodeRfc3986Segment(value: string): string {
@@ -106,7 +109,9 @@ definePageMeta({
     const document = Array.isArray(route.params.document)
       ? route.params.document[0]
       : route.params.document
-    return validRouteParam(author, 100) && isDocumentKind(document)
+    return validRouteParam(author, 100)
+      && isDocumentKind(document)
+      && (document !== "omtexterna" || author === "LagerlöfS")
   }
 })
 
@@ -123,6 +128,7 @@ const documentKind = computed<AuthorDocumentKind>(() => {
   return isDocumentKind(value) ? value : "presentation"
 })
 const currentIdentity = computed(() => `${documentKind.value}:${authorId.value}`)
+const isSlaLanding = computed(() => currentIdentity.value === "omtexterna:LagerlöfS")
 const asyncKey = computed(() => `author-document:${currentIdentity.value}`)
 
 const { data } = await useAsyncData<PageResult>(
@@ -158,7 +164,8 @@ const page = computed(() => accepted.value?.status === 200 ? accepted.value.page
 const labels: Record<AuthorDocumentKind, string> = {
   presentation: "Presentation",
   bibliografi: "Bibliografi",
-  semer: "Mera om"
+  semer: "Mera om",
+  omtexterna: "Om texterna"
 }
 const pageLabel = computed(() => labels[documentKind.value])
 const rootHref = computed(() => `/f%C3%B6rfattare/${encodeRfc3986Segment(authorId.value)}`)
@@ -173,68 +180,74 @@ useSeoMeta({
     ? `${page.value.author.fullName}, ${pageLabel.value}`
     : "Författardokument"
 })
-useHead({
+useHead(() => ({
   htmlAttrs: { style: `background: url('${ordinaryBackground}') no-repeat;` },
-  bodyAttrs: { class: "focus page-authorInfo ready" }
-})
+  bodyAttrs: {
+    class: isSlaLanding.value
+      ? "focus page-authorInfo site-sla ready"
+      : "focus page-authorInfo ready"
+  }
+}))
 </script>
 
 <template>
-  <div :class="{ searching: !accepted }">
-    <div v-if="!accepted" class="preloader" aria-live="polite">
-      <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
-      <span class="sr-only">Laddar författardokument</span>
-    </div>
-    <div
-      v-else-if="accepted.errorCode === 'author_document_author_not_found'"
-      class="error"
-    >
-      Ett fel har inträffat: författarid <code>{{ authorId }}</code> kan inte hittas. Kontrollera adressen.
-    </div>
-    <div
-      v-else-if="accepted.errorCode === 'author_document_not_found'"
-      class="error"
-    >
-      Ett fel har inträffat: dokumentet kan inte hittas. Kontrollera adressen.
-    </div>
-    <div v-else-if="accepted.status !== 200 || !page" class="error">
-      Ett fel har inträffat. Författardokumentet kan inte visas just nu.
-    </div>
-    <template v-else>
-      <h1 class="text-balance max-w-5xl">
-        {{ page.author.fullName }}{{ " " }}<span
-          v-if="page.author.lifespan"
-          class="author_year"
-        >({{ page.author.lifespan }})</span>
-      </h1>
-
-      <nav aria-label="Författarsidor">
-        <ul class="links">
-          <li v-if="page.author.hasIntroduction">
-            <a :href="rootHref">Introduktion</a>
-          </li>{{ " " }}
-          <li>
-            <a :href="titlesHref">Verk</a>
-          </li>{{ " " }}
-          <li v-if="page.author.audioUrl">
-            <a
-              :href="page.author.audioUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-            >Ljud</a>
-          </li>{{ " " }}
-          <li v-if="page.author.hasDramawebben">
-            <a :href="dramawebbenHref">Dramawebben</a>
-          </li>{{ " " }}
-          <li v-if="page.author.searchUrl">
-            <a :href="page.author.searchUrl">Sök i texterna</a>
-          </li>
-        </ul>
-      </nav>
-
-      <div class="page_content">
-        <div class="content unbox" v-html="page.bodyHtml" />
+  <div class="contents">
+    <div :class="{ searching: !accepted }">
+      <div v-if="!accepted" class="preloader" aria-live="polite">
+        <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+        <span class="sr-only">Laddar författardokument</span>
       </div>
-    </template>
+      <div
+        v-else-if="accepted.errorCode === 'author_document_author_not_found'"
+        class="error"
+      >
+        Ett fel har inträffat: författarid <code>{{ authorId }}</code> kan inte hittas. Kontrollera adressen.
+      </div>
+      <div
+        v-else-if="accepted.errorCode === 'author_document_not_found'"
+        class="error"
+      >
+        Ett fel har inträffat: dokumentet kan inte hittas. Kontrollera adressen.
+      </div>
+      <div v-else-if="accepted.status !== 200 || !page" class="error">
+        Ett fel har inträffat. Författardokumentet kan inte visas just nu.
+      </div>
+      <template v-else>
+        <h1 class="text-balance max-w-5xl">
+          {{ page.author.fullName }}{{ " " }}<span
+            v-if="page.author.lifespan"
+            class="author_year"
+          >({{ page.author.lifespan }})</span>
+        </h1>
+
+        <nav aria-label="Författarsidor">
+          <ul class="links">
+            <li v-if="page.author.hasIntroduction">
+              <a :href="rootHref">Introduktion</a>
+            </li>{{ " " }}
+            <li>
+              <a :href="titlesHref">Verk</a>
+            </li>{{ " " }}
+            <li v-if="page.author.audioUrl">
+              <a
+                :href="page.author.audioUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Ljud</a>
+            </li>{{ " " }}
+            <li v-if="page.author.hasDramawebben">
+              <a :href="dramawebbenHref">Dramawebben</a>
+            </li>{{ " " }}
+            <li v-if="page.author.searchUrl">
+              <a :href="page.author.searchUrl">Sök i texterna</a>
+            </li>
+          </ul>
+        </nav>
+
+        <div class="page_content">
+          <div class="content unbox" v-html="page.bodyHtml" />
+        </div>
+      </template>
+    </div>
   </div>
 </template>

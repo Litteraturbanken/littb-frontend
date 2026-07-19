@@ -2,12 +2,56 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
 const fixture = "http://127.0.0.1:4100"
+const adjacentLedgers = [
+  "/_requests",
+  "/_sla_excluded_data_requests",
+  "/_author_profile_requests",
+  "/_author_works_requests",
+  "/_home_requests",
+  "/_library_query_requests",
+  "/_reader_requests",
+  "/_reader_metadata_requests",
+  "/_reader_html_requests",
+  "/_reader_ocr_requests",
+  "/_reader_jpeg_requests",
+  "/_reader_hit_requests",
+  "/_presentation_requests",
+  "/_dramawebben_excluded_data_requests",
+  "/_author_document_asset_requests",
+  "/_author_document_pdf_requests",
+  "/_author_document_redirect_target_requests"
+] as const
+
+const slaLinkTargets = [
+  ["/författare/LagerlöfS/omtexterna/TextkritiskaRiktlinjer.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/TextkritiskVerkstad.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/OmSelmaLagerlofArkivet.html", "_top"],
+  ["/författare/LagerlöfS/titlar/Körkarlen2012/sida/III/faksimil", "_top"],
+  ["/författare/LagerlöfS/titlar/GöstaBerlingsSaga1SLA/sida/I/etext", "_top"],
+  ["/författare/LagerlöfS/titlar/OsynligaLänkarSLA/sida/I/etext", "_top"],
+  ["/författare/LagerlöfS/omtexterna/Introduktion.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/Adaptioner.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/ForeGostaBerling.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/BrevOmGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/SprakandringarGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/AndringarGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/ForskningOchLitthist.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/TextkritiskGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/ManuskriptGBS.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/Oversattningar.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/IllustrationerOchOmslag.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/Recensioner.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/OLintroduktion.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/TextkritiskOL1894.html", "_top"],
+  ["/författare/LagerlöfS/omtexterna/MsTillOL.html", "_top"]
+] as const
 
 async function reset(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_author_document_requests`),
     request.delete(`${fixture}/_author_document_failure`),
-    request.delete(`${fixture}/_author_document_delay`)
+    request.delete(`${fixture}/_author_document_delay`),
+    ...adjacentLedgers.map(ledger => request.delete(`${fixture}${ledger}`))
   ])
 }
 
@@ -20,6 +64,14 @@ async function setFailure(request: APIRequestContext, failure: string) {
     data: { failure }
   })
   expect(response.status()).toBe(200)
+}
+
+async function expectAdjacentLedgersEmpty(request: APIRequestContext) {
+  for (const ledger of adjacentLedgers) {
+    const response = await request.get(`${fixture}${ledger}`)
+    expect(response.status(), ledger).toBe(200)
+    expect((await response.json()).requests, ledger).toEqual([])
+  }
 }
 
 test.beforeEach(async ({ request }) => reset(request))
@@ -130,6 +182,55 @@ test("SSR renders the exact Almqvist Mera om shell and frozen managed body", asy
       path: "/red/forfattare/AlmqvistCJL/semer/index.html"
     }
   ])
+})
+
+test("SSR renders the exact SLA Om texterna shell and bounded managed body", async ({
+  request
+}) => {
+  const response = await request.get("/författare/Lagerl%C3%B6fS/omtexterna")
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  const { document } = parseHTML(html)
+
+  expect(document.title).toBe("Selma Lagerlöf, Om texterna | Litteraturbanken")
+  expect(document.querySelector('meta[name="description"]')?.getAttribute("content"))
+    .toBe("Selma Lagerlöf, Om texterna")
+  expect(document.documentElement.getAttribute("style"))
+    .toMatch(/forf2_bkg(?:\.[A-Za-z0-9_-]+)?\.jpg/u)
+  expect(document.body.getAttribute("class"))
+    .toBe("focus page-authorInfo site-sla ready")
+
+  const host = document.querySelector("#mainview > .contents > div")
+  expect(host).not.toBeNull()
+  expect(host?.querySelector(":scope > h1")?.textContent?.replace(/\s+/gu, " ").trim())
+    .toBe("Selma Lagerlöf (1858-1940)")
+  expect(host?.querySelector(":scope > nav > ul.links")).not.toBeNull()
+  expect([...document.querySelectorAll("ul.links a")].map(link => link.textContent?.trim()))
+    .toEqual(["Introduktion", "Verk", "Ljud", "Dramawebben", "Sök i texterna"])
+  expect(document.querySelector(".portrait_container, .portrait")).toBeNull()
+
+  const managedBody = document.querySelector(".page_content > .content.unbox")
+  expect(managedBody).not.toBeNull()
+  expect(managedBody?.textContent)
+    .toContain("Utgåvor och andra vetenskapliga texter i Selma Lagerlöf-arkivet")
+  expect([...managedBody!.querySelectorAll("a.ulink")].map(link => [
+    link.getAttribute("href"),
+    link.getAttribute("target")
+  ])).toEqual(slaLinkTargets)
+  expect(managedBody?.querySelector("script, style, form, iframe, svg, math, meta, title"))
+    .toBeNull()
+  expect(managedBody?.innerHTML)
+    .not.toMatch(/<!doctype|<!--|xml:lang|generator|docbook|\son\w+=|javascript:/iu)
+  expect(html).not.toMatch(/private-v2|127\.0\.0\.1:4100|red\.litteraturbanken\.se/iu)
+
+  expect(await requests(request)).toEqual([
+    {
+      kind: "descriptor",
+      path: "/private-v2/authors/Lagerl%C3%B6fS/documents/omtexterna"
+    },
+    { kind: "content", path: "/red/sla/omtexterna.html" }
+  ])
+  await expectAdjacentLedgersEmpty(request)
 })
 
 test("SSR preserves normalized Reader and bibliography PDF link behavior", async ({ request }) => {
