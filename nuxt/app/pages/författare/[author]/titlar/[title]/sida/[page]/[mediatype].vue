@@ -52,7 +52,7 @@ const canonicalSearchKeys = [
   "prefix",
   "suffix"
 ] as const
-const wordIdPattern = /^w(?<page>\d+)_(?<ordinal>\d+)$/
+const wordIdPattern = /^w(?<page>[0-9]+)_(?<ordinal>[0-9]+)$/
 const maximumHitOffset = 1_000_000
 const maximumNavigableHit = maximumHitOffset + 1
 
@@ -111,7 +111,33 @@ function isSafeInteger(value: unknown, minimum = 0): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= minimum
 }
 
-function isWorkSearchHit(value: unknown): value is WorkSearchHit {
+type ReaderWordPosition = Readonly<{
+  scope: string
+  ordinal: number
+  pageIndex: number | null
+}>
+
+function readerWordPosition(value: string, workId: string): ReaderWordPosition | null {
+  const pageMatch = wordIdPattern.exec(value)
+  if (pageMatch?.groups) {
+    const pageIndex = Number(pageMatch.groups.page)
+    const ordinal = Number(pageMatch.groups.ordinal)
+    return Number.isSafeInteger(pageIndex) && Number.isSafeInteger(ordinal)
+      ? { scope: `page:${pageMatch.groups.page}`, ordinal, pageIndex }
+      : null
+  }
+
+  const prefix = `${workId}_`
+  if (!workId || !value.startsWith(prefix)) return null
+  const rawOrdinal = value.slice(prefix.length)
+  if (!/^[0-9]+$/.test(rawOrdinal)) return null
+  const ordinal = Number(rawOrdinal)
+  return Number.isSafeInteger(ordinal)
+    ? { scope: `work:${workId}`, ordinal, pageIndex: null }
+    : null
+}
+
+function isWorkSearchHit(value: unknown, workId: string): value is WorkSearchHit {
   if (!isRecord(value)) return false
   if (
     !isSafeInteger(value.index) ||
@@ -130,16 +156,20 @@ function isWorkSearchHit(value: unknown): value is WorkSearchHit {
     toWordId.length > 100
   ) return false
 
-  const fromMatch = wordIdPattern.exec(fromWordId)
-  const toMatch = wordIdPattern.exec(toWordId)
-  return fromMatch?.groups?.page === String(value.page_index) &&
-    toMatch?.groups?.page === String(value.page_index)
+  const fromPosition = readerWordPosition(fromWordId, workId)
+  const toPosition = readerWordPosition(toWordId, workId)
+  if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
+    fromPosition.ordinal > toPosition.ordinal) return false
+
+  return (fromPosition.pageIndex === null || fromPosition.pageIndex === value.page_index) &&
+    (toPosition.pageIndex === null || toPosition.pageIndex === value.page_index)
 }
 
 function isExpectedHitResponse(
   value: unknown,
   state: CanonicalSearchState,
-  offset: number
+  offset: number,
+  workId: string
 ): value is WorkSearchHitsResponse {
   if (!isRecord(value) || !Array.isArray(value.items)) return false
   if (
@@ -153,7 +183,7 @@ function isExpectedHitResponse(
 
   for (const [position, item] of value.items.entries()) {
     if (
-      !isWorkSearchHit(item) ||
+      !isWorkSearchHit(item, workId) ||
       item.index !== offset + position ||
       item.index >= value.total_hits
     ) return false
@@ -328,7 +358,12 @@ const hitFetch = await useAsyncData(
               }
             }
           })
-          if (result.error || !isExpectedHitResponse(result.data, state, offset)) {
+          if (result.error || !isExpectedHitResponse(
+            result.data,
+            state,
+            offset,
+            currentReader.reader.workId
+          )) {
             return { status: "error" as const, identity }
           }
           return { status: "success" as const, identity, response: result.data }

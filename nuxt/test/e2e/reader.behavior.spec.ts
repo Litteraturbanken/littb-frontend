@@ -8,6 +8,7 @@ import {
 
 const fixture = "http://127.0.0.1:4100"
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
 const readerEncodedPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerPublicCanonicalPath = "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerShorthandPath = "/författare/SöderbergH/titlar/DoktorGlas/etext"
@@ -728,6 +729,21 @@ test("hydrates the SSR phrase marker and active toolkit without a duplicate publ
   expect(await readerHitRequests(request)).toHaveLength(1)
   expect((await readerHitRequests(request))[0]?.path).toContain("/private-v2/")
   expect(publicHitRequests).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("work-scoped live word ids hydrate, highlight, and navigate to the next hit", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${workScopedReaderPath}?q=kyrka&hit=0`, { waitUntil: "networkidle" })
+
+  await expect(page.locator("#lb7604979_8654.markee")).toHaveCount(1)
+  await expect(page.locator("#lb7604979_8658.markee")).toHaveCount(1)
+  await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page).toHaveURL(/\/WorkScopedIdsReader\/sida\/-1\/etext\?q=kyrka&hit=1$/)
+  await expect(page.locator("#lb7604979_8700.markee")).toHaveCount(1)
+  await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -1")
   expect(problems).toEqual([])
 })
 

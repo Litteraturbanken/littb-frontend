@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 
 const fixture = "http://127.0.0.1:4100"
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
 const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_3/" +
@@ -313,6 +314,27 @@ test("canonical search state fetches one private hit window and marks its exact 
   )
 })
 
+test("work-scoped word ids are bound to the Reader work and mark the exact live range", async ({
+  request
+}) => {
+  const response = await request.get(`${workScopedReaderPath}?q=kyrka&hit=0`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(await readerHitRequests(request)).toEqual([{
+    path: "/private-v2/works/lb7604979/search-hits",
+    query: "media_type=etext&query=kyrka&offset=0&limit=3" +
+      "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
+  }])
+  expect(html).toMatch(/id="lb7604979_8654"[^>]*class="[^"]*\bmarkee\b|class="[^"]*\bmarkee\b[^"]*"[^>]*id="lb7604979_8654"/)
+  expect(html).toMatch(/id="lb7604979_8658"[^>]*class="[^"]*\bmarkee\b|class="[^"]*\bmarkee\b[^"]*"[^>]*id="lb7604979_8658"/)
+  expect(html).toContain("Sökträff 1 av 2")
+  expect(html).toContain(
+    "href=\"/författare/S%C3%B6derbergH/titlar/WorkScopedIdsReader/sida/-1/etext" +
+    "?q=kyrka&amp;hit=1\""
+  )
+})
+
 test("canonical flags map exactly to the generated hit request", async ({ request }) => {
   const response = await request.get(
     `${readerPath}?q=glas&hit=0&lemma=1&ej_modern=1&prefix=1&suffix=1`
@@ -400,13 +422,40 @@ test("a malformed hit response is contained locally", async ({ request }) => {
   expect(html).not.toContain("markee")
 })
 
-for (const query of ["page-mismatch", "reversed-range"]) {
+test("page-mismatch preserves the original Reader HTML without a marker", async ({
+  request
+}) => {
+  const response = await request.get(`${readerPath}?q=page-mismatch&hit=0`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("DOKTOR")
+  expect(html).toContain("Sökträff 1 av 1")
+  expect(html).not.toContain("markee")
+})
+
+for (const query of [
+  "cross-work-id",
+  "malformed-work-id",
+  "descending-work-range",
+  "mixed-work-range"
+]) {
+  test(`${query} is rejected as malformed work-scoped hit data`, async ({ request }) => {
+    const response = await request.get(`${workScopedReaderPath}?q=${query}&hit=0`)
+    expect(response.status()).toBe(200)
+    const html = await response.text()
+    expect(html).toContain("DEN")
+    expect(html).toContain("Sökträffen kunde inte hämtas.")
+    expect(html).not.toContain("markee")
+  })
+}
+
+for (const query of ["reversed-range"]) {
   test(`${query} preserves the original Reader HTML without a marker`, async ({ request }) => {
     const response = await request.get(`${readerPath}?q=${query}&hit=0`)
     expect(response.status()).toBe(200)
     const html = await response.text()
     expect(html).toContain("DOKTOR")
-    expect(html).toContain("Sökträff 1 av 1")
+    expect(html).toContain("Sökträffen kunde inte hämtas.")
     expect(html).not.toContain("markee")
   })
 }

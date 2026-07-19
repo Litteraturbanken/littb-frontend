@@ -96,6 +96,23 @@ export const readerPageHtmlByIndex = Object.freeze({
 `
 })
 
+export const workScopedReaderPageHtmlByIndex = Object.freeze({
+  13: `
+<div class="pname" pname="-2">
+  <div class="titelsida center">
+    <div class="_p title"><span class="w" id="lb7604979_8654">DEN</span> <span class="w" id="lb7604979_8656">GAMLA</span> <span class="w" id="lb7604979_8658">KYRKAN</span></div>
+  </div>
+</div>
+`,
+  14: `
+<div class="pname" pname="-1">
+  <div class="titelsida center">
+    <div class="_p title"><span class="w" id="lb7604979_8700">NÄSTA</span> <span class="w" id="lb7604979_8701">TRÄFF</span></div>
+  </div>
+</div>
+`
+})
+
 const phraseHits = [
   {
     index: 0,
@@ -129,7 +146,44 @@ const phraseHits = [
   }
 ]
 
-function hitsForQuery(query) {
+function hitsForQuery(query, workId) {
+  const workScopedRangeVariants = {
+    "cross-work-id": ["lb7604980_8654", "lb7604980_8658"],
+    "malformed-work-id": ["lb7604979_x", "lb7604979_8658"],
+    "descending-work-range": ["lb7604979_8658", "lb7604979_8654"],
+    "mixed-work-range": ["w13_1", "lb7604979_8658"]
+  }
+  if (workId === "lb7604979" && Object.hasOwn(workScopedRangeVariants, query)) {
+    const [fromWordId, toWordId] = workScopedRangeVariants[query]
+    return [{
+      index: 0,
+      page_name: "-2",
+      page_index: 13,
+      highlight: { from_word_id: fromWordId, to_word_id: toWordId }
+    }]
+  }
+  if (query === "kyrka" && workId === "lb7604979") {
+    return [
+      {
+        index: 0,
+        page_name: "-2",
+        page_index: 13,
+        highlight: {
+          from_word_id: "lb7604979_8654",
+          to_word_id: "lb7604979_8658"
+        }
+      },
+      {
+        index: 1,
+        page_name: "-1",
+        page_index: 14,
+        highlight: {
+          from_word_id: "lb7604979_8700",
+          to_word_id: "lb7604979_8701"
+        }
+      }
+    ]
+  }
   if (query === "inga") return []
   if (query === "glas") {
     return [{
@@ -217,7 +271,7 @@ export function readerSearchHitResponse(workId, query, offset = 0, limit = 3) {
     }
   }
 
-  const items = hitsForQuery(query)
+  const items = hitsForQuery(query, workId)
   return {
     query,
     media_type: "etext",

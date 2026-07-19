@@ -32,6 +32,7 @@ import {
   readerSearchHitResponse,
   readerWorkInfoResponse,
   sharedReaderCss,
+  workScopedReaderPageHtmlByIndex,
   workReaderCss
 } from "./reader-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
@@ -460,6 +461,18 @@ function readerMetadataResponse(titlePath) {
       }
     case "Förvillelser":
       return forvillelserReaderWorkInfoResponse
+    case "WorkScopedIdsReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          lbworkid: "lb7604979",
+          pages: [
+            { pagename: "-2", pageindex: 13 },
+            { pagename: "-1", pageindex: 14 }
+          ],
+          startpagename: "-2"
+        })]
+      }
     case "Rfc!Reader'()*":
       return {
         hits: 1,
@@ -2183,6 +2196,20 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
     }
     const pageHtml = readerPageHtmlByIndex[Number(readerPageMatch[1])]
+    return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
+  }
+
+  const workScopedReaderPageMatch = request.method === "GET"
+    ? /^\/txt\/lb7604979\/res_000(13|14)\.html$/.exec(url.pathname)
+    : null
+  if (workScopedReaderPageMatch) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    const pageHtml = workScopedReaderPageHtmlByIndex[Number(workScopedReaderPageMatch[1])]
     return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
   }
 
