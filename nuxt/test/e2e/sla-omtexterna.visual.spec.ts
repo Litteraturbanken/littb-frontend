@@ -131,11 +131,15 @@ test.beforeEach(async ({ request }) => resetLedgers(request))
 test.afterEach(async ({ request }) => resetLedgers(request))
 
 test("matches the Angular SLA omtexterna authority", async ({ page, request }, testInfo) => {
+  const appOrigin = new URL(testInfo.project.use.baseURL as string).origin
   const problems = collectProblems(page)
   const browserApiRequests: string[] = []
   const browserContentRequests: string[] = []
+  const frameworkMetadataRequests: string[] = []
   const productionRequests: string[] = []
+  const rejectedFirewallProbes: string[] = []
   const unexpectedRequests: string[] = []
+  let probing = false
 
   await page.route("**/*", route => {
     const browserRequest = route.request()
@@ -144,6 +148,7 @@ test("matches the Angular SLA omtexterna authority", async ({ page, request }, t
     const isDataRequest = ["fetch", "xhr", "eventsource", "websocket"]
       .includes(browserRequest.resourceType())
     const isNuxtDevMetadata = browserRequest.method() === "GET"
+      && url.origin === appOrigin
       && url.pathname === "/_nuxt/builds/meta/dev.json"
       && url.search === ""
     const productionOrigin = url.hostname === "litteraturbanken.se"
@@ -165,10 +170,15 @@ test("matches the Angular SLA omtexterna authority", async ({ page, request }, t
       browserContentRequests.push(label)
       return route.abort("blockedbyclient")
     }
+    if (isNuxtDevMetadata) {
+      frameworkMetadataRequests.push(label)
+      return route.continue()
+    }
     if (url.port === "4100"
-      || (isDataRequest && !isNuxtDevMetadata)
+      || isDataRequest
       || !["127.0.0.1", "localhost"].includes(url.hostname)) {
-      unexpectedRequests.push(label)
+      if (probing) rejectedFirewallProbes.push(label)
+      else unexpectedRequests.push(label)
       return route.abort("blockedbyclient")
     }
     return route.continue()
@@ -202,9 +212,32 @@ test("matches the Angular SLA omtexterna authority", async ({ page, request }, t
     naturalHeight: background.naturalHeight
   }).toEqual({ naturalWidth: 2_464, naturalHeight: 1_953 })
 
+  const crossOriginProbe = "http://127.0.0.1:31999/_nuxt/builds/meta/dev.json"
+  expect(problems).toEqual([])
+  probing = true
+  const probeResult = await page.evaluate(async url => {
+    try {
+      await fetch(url)
+      return true
+    } catch {
+      return false
+    }
+  }, crossOriginProbe)
+  probing = false
+  expect(probeResult).toBe(false)
+  expect(rejectedFirewallProbes).toEqual([`GET ${crossOriginProbe}`])
+  expect(problems).toEqual([
+    "console error: Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+  ])
+  problems.length = 0
+
   await expectExactLedgers(request)
   expect(browserApiRequests).toEqual([])
   expect(browserContentRequests).toEqual([])
+  expect(frameworkMetadataRequests.every(
+    label => label === `GET ${appOrigin}/_nuxt/builds/meta/dev.json`
+  )).toBe(true)
+  expect(frameworkMetadataRequests.length).toBeLessThanOrEqual(2)
   expect(productionRequests).toEqual([])
   expect(unexpectedRequests).toEqual([])
   expect(problems).toEqual([])
@@ -222,6 +255,10 @@ test("matches the Angular SLA omtexterna authority", async ({ page, request }, t
   await expectExactLedgers(request)
   expect(browserApiRequests).toEqual([])
   expect(browserContentRequests).toEqual([])
+  expect(frameworkMetadataRequests.every(
+    label => label === `GET ${appOrigin}/_nuxt/builds/meta/dev.json`
+  )).toBe(true)
+  expect(frameworkMetadataRequests.length).toBeLessThanOrEqual(2)
   expect(productionRequests).toEqual([])
   expect(unexpectedRequests).toEqual([])
   expect(problems).toEqual([])
