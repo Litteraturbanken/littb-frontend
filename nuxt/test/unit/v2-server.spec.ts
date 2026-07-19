@@ -48,6 +48,12 @@ import {
   sparseDocument
 } from "../fixtures/author-document-data.mjs"
 import {
+  libraryPdfFilteredResponse,
+  libraryPdfMalformedRowResponse,
+  libraryPdfPageOneResponse,
+  libraryPdfPageTwoResponse
+} from "../fixtures/library-pdf-data.mjs"
+import {
   readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
   readerSearchHitResponse
@@ -2964,78 +2970,72 @@ describe("v2 fixture server operations", () => {
       return await response.json() as Record<string, unknown>
     }))
 
-    expect(responses[0]).toEqual({
-      data: [
-        {
-          _index: "faksimil",
-          lbworkid: "lb-GostaBerlingsSaga",
-          titlepath: "GostaBerlingsSaga",
-          titleid: "GostaBerlingsSaga",
-          work_titleid: "GostaBerlingsSaga",
-          shorttitle: "Gösta Berlings saga",
-          title: "Gösta Berlings saga. Roman",
-          texttype: "roman",
-          mediatype: "faksimil",
-          startpagename: "1",
-          license: "pd",
-          sort_date_imprint: { plain: "1891" },
-          main_author: {
-            authorid: "LagerlofS",
-            full_name: "Selma Lagerlöf",
-            surname: "Lagerlöf"
-          },
-          work_authors: [{ authorid: "LagerlofS", surname: "Lagerlöf" }],
-          export: [{
-            type: "pdf",
-            url: "https://litteraturbanken.se/txt/lb-GostaBerlingsSaga/lb-GostaBerlingsSaga.pdf",
-            filename: "LagerlofS_GostaBerlingsSaga",
-            size: 1_482_731
-          }]
-        },
-        {
-          _index: "pdf",
-          lbworkid: "lb-RodaRummet",
-          titlepath: "RodaRummet",
-          titleid: "RodaRummet",
-          work_titleid: "RodaRummet",
-          shorttitle: "Röda rummet",
-          title: "Röda rummet. Skildringar ur artist- och författarlivet",
-          texttype: "roman",
-          mediatype: "pdf",
-          startpagename: "1",
-          license: "restricted",
-          sort_date_imprint: { plain: "1879" },
-          main_author: {
-            authorid: "StrindbergA",
-            full_name: "August Strindberg",
-            surname: "Strindberg"
-          },
-          work_authors: [{ authorid: "StrindbergA", surname: "Strindberg" }],
-          export: [{
-            type: "pdf",
-            url: "/txt/lb-RodaRummet/lb-RodaRummet.pdf",
-            filename: "StrindbergA_RodaRummet",
-            size: 2_104_806
-          }]
-        }
-      ],
-      hits: 201,
-      distinct_hits: 201,
-      suggest: []
-    })
+    expect(responses[0]).toEqual(libraryPdfPageOneResponse)
+    expect(responses[1]).toEqual(libraryPdfPageTwoResponse)
+    expect(responses[3]).toEqual(libraryPdfFilteredResponse)
+    const pageOne = responses[0] as { data: Array<Record<string, unknown>> }
+    expect(pageOne).toMatchObject({ hits: 307, distinct_hits: 201, suggest: [] })
+    expect(JSON.stringify(pageOne)).not.toContain('"url"')
+    expect(JSON.stringify(pageOne)).not.toContain('"filename"')
+
+    const representations = Object.groupBy(
+      pageOne.data,
+      row => String(row.titleid)
+    )
+    expect(representations.GostaBerlingsSaga).toMatchObject([{
+      mediatype: "etext",
+      license: "pd",
+      export: [{ type: "pdf", size: 1_482_731 }]
+    }])
+    expect(representations.SvenskaFolkvisor).toMatchObject([{
+      mediatype: "faksimil",
+      license: "pd",
+      main_author: { authorid: "GeijerEGA", full_name: "Erik Gustaf Geijer" },
+      work_authors: [{ authorid: "AfzeliusAA", surname: "Afzelius" }],
+      export: [{ type: "pdf", size: 1_720_419 }]
+    }])
+    expect(representations.RodaRummet).toMatchObject([{
+      mediatype: "pdf",
+      authors: [{ authorid: "StrindbergA", surname: "Strindberg" }]
+    }])
+    expect(representations.RodaRummet?.[0]).not.toHaveProperty("export")
+    expect(representations.NilsHolgersson).toMatchObject([
+      { mediatype: "faksimil", export: [{ type: "pdf", size: 2_210_001 }] },
+      { mediatype: "pdf" }
+    ])
+    expect(representations.NilsHolgersson?.[1]).not.toHaveProperty("export")
+    expect(representations.Jerusalem).toMatchObject([{
+      mediatype: "etext",
+      export: [
+        { type: "pdf", size: 1_100_001 },
+        { type: "pdf", size: 1_100_002 }
+      ]
+    }])
+    expect(representations.RestrictedExport).toMatchObject([{
+      mediatype: "faksimil",
+      license: "restricted",
+      export: [{ type: "pdf", size: 900_001 }]
+    }])
+    for (const row of pageOne.data) {
+      for (const descriptor of Array.isArray(row.export) ? row.export : []) {
+        expect(Object.keys(descriptor as Record<string, unknown>).sort()).toEqual(["size", "type"])
+      }
+    }
+
     expect(responses[1]).toMatchObject({
-      hits: 201,
+      hits: 307,
       distinct_hits: 201,
       data: [{
         titleid: "DoktorGlas",
         mediatype: "faksimil",
         sort_date_imprint: { plain: "1905" },
-        main_author: { authorid: "SoderbergH", full_name: "Hjalmar Söderberg" }
+        main_author: { authorid: "SöderbergH", full_name: "Hjalmar Söderberg" },
+        export: [{ type: "pdf", size: 1_930_005 }]
       }]
     })
     expect(responses[2]).toEqual(responses[0])
     expect(responses[3]).toMatchObject({
-      hits: 1,
+      hits: 2,
       distinct_hits: 1,
       data: [{
         titleid: "GostaBerlingsSaga",
@@ -3071,17 +3071,17 @@ describe("v2 fixture server operations", () => {
     const absentSuggest = await responseFor("missing-suggest")
     expect(Object.hasOwn(absentSuggest, "suggest")).toBe(false)
     expect(absentSuggest).toMatchObject({
-      hits: 201,
+      hits: 307,
       distinct_hits: 201,
-      data: [{ mediatype: "faksimil" }, { mediatype: "pdf" }]
+      data: expect.any(Array)
     })
 
     const nullSuggest = await responseFor("null-suggest")
     expect(nullSuggest).toMatchObject({
-      hits: 201,
+      hits: 307,
       distinct_hits: 201,
       suggest: null,
-      data: [{ mediatype: "faksimil" }, { mediatype: "pdf" }]
+      data: expect.any(Array)
     })
 
     expect(await responseFor("malformed-top")).toEqual({
@@ -3092,10 +3092,11 @@ describe("v2 fixture server operations", () => {
     })
 
     const malformedRows = await responseFor("malformed-row") as { data: unknown[] }
-    expect(malformedRows.data).toHaveLength(9)
+    expect(malformedRows).toEqual(libraryPdfMalformedRowResponse)
+    expect(malformedRows.data).toHaveLength(11)
     expect(malformedRows.data[0]).toMatchObject({
       titleid: "GostaBerlingsSaga",
-      export: [{ type: "pdf" }]
+      export: [{ type: "pdf", size: 1_482_731 }]
     })
     expect(malformedRows.data[1]).toBeNull()
     expect(malformedRows.data[2]).toEqual({ _index: "pdf", title: "Ofullständig" })
@@ -3104,18 +3105,27 @@ describe("v2 fixture server operations", () => {
       main_author: { authorid: "../unsafe" }
     })
     expect(malformedRows.data[4]).toMatchObject({ titleid: "Unsafe/Title" })
-    expect(malformedRows.data[5]).toMatchObject({ mediatype: "../pdf" })
-    expect(malformedRows.data[6]).toMatchObject({
-      titleid: "UnsafeUrl",
-      export: [{ url: "https://example.test/unsafe.pdf" }]
+    expect(malformedRows.data[5]).toMatchObject({
+      titleid: "UnsupportedAudio",
+      mediatype: "audio",
+      lbworkid: "lb-UnsupportedAudio"
     })
+    expect(malformedRows.data[6]).toMatchObject({ titleid: "UnsafeDotWork", lbworkid: ".." })
     expect(malformedRows.data[7]).toMatchObject({
-      titleid: "UnsafeFilename",
-      export: [{ filename: "../unsafe.pdf" }]
+      titleid: "UnsafeSlashWork",
+      lbworkid: "lb/unsafe"
     })
     expect(malformedRows.data[8]).toMatchObject({
-      titleid: "DuplicateDownloads",
-      export: [{ type: "pdf" }, { type: "pdf" }]
+      titleid: "UnsafeControlWork",
+      lbworkid: "lb-\u0000unsafe"
+    })
+    expect(malformedRows.data[9]).toMatchObject({
+      titleid: "NumericWork",
+      lbworkid: 123
+    })
+    expect(malformedRows.data[10]).toMatchObject({
+      titleid: "UnencodableWork",
+      lbworkid: "\uD800"
     })
 
     expect(await responseFor("inga")).toEqual({
