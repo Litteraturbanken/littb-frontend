@@ -4,6 +4,8 @@ import { expect, test } from "@playwright/test"
 
 import {
   lagerlofBibliography,
+  semerAuthorDocumentAssets,
+  semerAuthorDocumentDescriptor,
   soderbergPresentation
 } from "../fixtures/author-document-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
@@ -14,6 +16,35 @@ const authorityOrigin = "http://127.0.0.1:9000"
 const audioOrigin = "https://litteraturbanken.se"
 const authorExclude = "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
 const restrictedPrefixes = ["/api/", "/red/", "/txt/", "/export/", "/query/", "/xhr/", "/ws/"]
+
+function sortedQuery(url: URL) {
+  return [...url.searchParams.entries()]
+    .sort(([leftKey, leftValue], [rightKey, rightValue]) =>
+      leftKey.localeCompare(rightKey) || leftValue.localeCompare(rightValue))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("&")
+}
+
+function requestSignature(url: URL) {
+  const query = sortedQuery(url)
+  return query ? `${url.pathname}?${query}` : url.pathname
+}
+
+function expectedWorkRequests(authorId: string) {
+  const shared = "exclude=text,parts,sourcedesc,pages,errata&sort_field=sortkey|desc&to=10000"
+  const allTypes = "etext,faksimil,pdf,etext-part,faksimil-part"
+  return [
+    `/api/list_all/etext,faksimil,pdf,infopost/${authorId}?author_type=main,scholar&${shared}`,
+    `/api/list_parts_in_others_works/${authorId}?sort_field=sortkey|desc`,
+    ...["photographer", "illustrator", "editor", "translator"].map(authorType =>
+      `/api/list_all/${allTypes}/${authorId}?author_type=${authorType}&${shared}`
+    ),
+    `/api/list_all/etext,faksimil,pdf,infopost/${authorId}?about_author=true&${shared}`,
+    `/api/list_parts_in_others_works/${authorId}?about_author=true&sort_field=main_author.name_for_index|desc`,
+    `/api/list_all/etext,faksimil,pdf/${authorId}?about_author=true&author_type=editor&${shared}`,
+    `/api/list_all/etext,faksimil,pdf/${authorId}?about_author=true&author_type=translator&${shared}`
+  ].map(value => requestSignature(new URL(value, authorityOrigin)))
+}
 
 const cases = [
   {
@@ -29,6 +60,13 @@ const cases = [
     descriptor: lagerlofBibliography,
     bodyFile: "LagerlofS-bibliografi.html",
     expectedBody: "Selma Lagerlöf. Bibliografi"
+  },
+  {
+    name: "semer",
+    route: "/författare/AlmqvistCJL/semer",
+    descriptor: semerAuthorDocumentDescriptor,
+    bodyFile: "AlmqvistCJL-semer.html",
+    expectedBody: "Mera om och av författaren"
   }
 ] as const
 
@@ -60,6 +98,7 @@ function legacyAuthor(documentCase: typeof cases[number]) {
 let authorityFonts: Buffer
 let ordinaryBackground: Buffer
 let dramawebbenBackground: Buffer
+let semerAssets: Map<string, Buffer>
 
 test.beforeAll(async () => {
   ;[authorityFonts, ordinaryBackground, dramawebbenBackground] = await Promise.all([
@@ -67,6 +106,13 @@ test.beforeAll(async () => {
     readFile(resolve(import.meta.dirname, "../../../app/img/forf2_bkg.jpg")),
     readFile(resolve(import.meta.dirname, "../../../app/img/dramawebben_fade_more.jpg"))
   ])
+  semerAssets = new Map(await Promise.all(semerAuthorDocumentAssets.map(async asset => [
+    asset.path,
+    await readFile(resolve(
+      import.meta.dirname,
+      `../fixtures/author-document-content/${asset.file}`
+    ))
+  ] as const)))
 })
 
 for (const documentCase of cases) {
@@ -77,22 +123,44 @@ for (const documentCase of cases) {
       import.meta.dirname,
       `../fixtures/author-document-content/${documentCase.bodyFile}`
     ))
+    const expectedWorks = expectedWorkRequests(profile.authorid)
+    const mapSearch = JSON.stringify({
+      query: {
+        query_string: {
+          query: `status:published AND lb_author.authorid:${profile.authorid}`,
+          fields: ["lb_author.authorid"]
+        }
+      }
+    })
+    const expectedMapSignature = requestSignature(new URL(
+      `/api/query/litteraturkartan?to=0&search=${encodeURIComponent(mapSearch)}`,
+      authorityOrigin
+    ))
+    const expectedAudioSignature = `${audioOrigin}${requestSignature(new URL(
+      `${audioOrigin}/ljudochbild/wp-json/wp/v2/pages?slug=${encodeURIComponent(profile.authorid_norm.toLowerCase())}&_fields=slug`
+    ))}`
+    const selectedAssets = documentCase.name === "semer"
+      ? new Map(semerAssets)
+      : new Map<string, Buffer>()
     const authorRequests: string[] = []
     const authorsRequests: string[] = []
     const workRequests: string[] = []
     const audioRequests: string[] = []
     const mapRequests: string[] = []
     const contentRequests: string[] = []
+    const assetRequests: string[] = []
     const bootstrapRequests: string[] = []
     const backgroundRequests: string[] = []
     const unexpectedRequests: string[] = []
     const productionRequests: string[] = []
+    const rejectedNegativeProbes: string[] = []
     const problems: string[] = []
     const knownAuthorityProblems: string[] = []
+    let probing = false
 
     page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
     page.on("console", message => {
-      if (["error", "warning"].includes(message.type())) {
+      if (!probing && ["error", "warning"].includes(message.type())) {
         const problem = `console ${message.type()}: ${message.text()}`
         if (message.text().includes("unrecognized expression: a.footnote[href^=#ftn]")) {
           knownAuthorityProblems.push(problem)
@@ -102,43 +170,61 @@ for (const documentCase of cases) {
       }
     })
 
+    const negativeProbes = documentCase.name === "semer"
+      ? [
+          { method: "GET", url: `${authorityOrigin}/red/forfattare/AlmqvistCJL/presentation/index.html` },
+          { method: "GET", url: `${authorityOrigin}/red/forfattare/WrongAuthor/semer/index.html` },
+          { method: "GET", url: `${authorityOrigin}${documentCase.descriptor.source_path}?extra=1` },
+          { method: "GET", url: `${authorityOrigin}/red/forfattare/AlmqvistCJL/semer/pictures/unlisted.jpg` },
+          { method: "GET", url: `${authorityOrigin}/red/forfattare/AlmqvistCJL/semer/redirect` },
+          {
+            method: "GET",
+            url: `${authorityOrigin}/api/get_authors?exclude=${encodeURIComponent(authorExclude)}` +
+              `&exclude=${encodeURIComponent(authorExclude)}`
+          },
+          { method: "GET", url: `https://red.litteraturbanken.se${documentCase.descriptor.source_path}` },
+          { method: "POST", url: `${authorityOrigin}${documentCase.descriptor.source_path}` }
+        ]
+      : []
+    const negativeProbeLabels = new Set(negativeProbes.map(probe => `${probe.method} ${probe.url}`))
+
     await page.route("**/*", route => {
       const request = route.request()
       const url = new URL(request.url())
       const label = `${request.method()} ${request.url()}`
       const decodedPathname = decodeURIComponent(url.pathname)
+      const signature = requestSignature(url)
 
       if (request.method() === "GET" && url.origin === authorityOrigin
         && decodedPathname === `/api/get_author/${profile.authorid}` && !url.search) {
-        authorRequests.push(url.pathname)
+        authorRequests.push(signature)
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: profile }) })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
         && url.pathname === "/api/get_authors"
-        && url.searchParams.get("exclude") === authorExclude) {
-        authorsRequests.push(`${url.pathname}${url.search}`)
+        && JSON.stringify([...url.searchParams.entries()]) === JSON.stringify([["exclude", authorExclude]])) {
+        authorsRequests.push(signature)
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
-        && (/^\/api\/list_all\//u.test(url.pathname)
-          || url.pathname.startsWith("/api/list_parts_in_others_works/"))) {
-        workRequests.push(`${url.pathname}${url.search}`)
+        && expectedWorks.includes(signature)) {
+        workRequests.push(signature)
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [] }) })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
-        && url.pathname === "/api/query/litteraturkartan") {
-        mapRequests.push(`${url.pathname}${url.search}`)
+        && signature === expectedMapSignature) {
+        mapRequests.push(signature)
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ hits: 0 }) })
       }
       if (request.method() === "GET" && url.origin === audioOrigin
-        && url.pathname === "/ljudochbild/wp-json/wp/v2/pages"
-        && url.searchParams.get("slug") === profile.authorid_norm.toLowerCase()
-        && url.searchParams.get("_fields") === "slug") {
-        audioRequests.push(`${url.origin}${url.pathname}${url.search}`)
+        && `${url.origin}${signature}` === expectedAudioSignature) {
+        audioRequests.push(`${url.origin}${signature}`)
         return route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify([{ slug: profile.authorid_norm.toLowerCase() }])
+          body: JSON.stringify(documentCase.descriptor.audio_url
+            ? [{ slug: profile.authorid_norm.toLowerCase() }]
+            : [])
         })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
@@ -147,8 +233,18 @@ for (const documentCase of cases) {
         return route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
-        && url.pathname === "/red/bilder/bakgrundsbilder/backgrounds.xml") {
-        bootstrapRequests.push(`${url.pathname}${url.search}`)
+        && url.search === "" && selectedAssets.has(url.pathname)) {
+        assetRequests.push(url.pathname)
+        return route.fulfill({
+          status: 200,
+          contentType: "image/jpeg",
+          body: selectedAssets.get(url.pathname)
+        })
+      }
+      if (request.method() === "GET" && url.origin === authorityOrigin
+        && url.pathname === "/red/bilder/bakgrundsbilder/backgrounds.xml"
+        && JSON.stringify([...url.searchParams.entries()]) === JSON.stringify([["username", "app"]])) {
+        bootstrapRequests.push(signature)
         return route.fulfill({ status: 200, contentType: "application/xml", body: "<backgrounds />" })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
@@ -167,14 +263,19 @@ for (const documentCase of cases) {
         })
       }
       if (request.method() === "GET" && url.hostname === "cloud.typography.com"
-        && url.pathname === "/7426274/770508/css/fonts.css") {
+        && url.pathname === "/7426274/770508/css/fonts.css" && url.search === "") {
         bootstrapRequests.push(`${url.origin}${url.pathname}`)
         return route.fulfill({ status: 200, contentType: "text/css", body: authorityFonts })
       }
       if (request.method() === "GET" && url.hostname === "www.googletagmanager.com"
-        && url.pathname === "/gtag/js") {
+        && url.pathname === "/gtag/js"
+        && JSON.stringify([...url.searchParams.entries()]) === JSON.stringify([["id", "UA-132486790-1"]])) {
         bootstrapRequests.push(`${url.origin}${url.pathname}${url.search}`)
         return route.fulfill({ status: 200, contentType: "application/javascript", body: "" })
+      }
+      if (negativeProbeLabels.has(label)) {
+        rejectedNegativeProbes.push(label)
+        return route.abort("blockedbyclient")
       }
       if (url.origin !== authorityOrigin) {
         productionRequests.push(label)
@@ -193,20 +294,41 @@ for (const documentCase of cases) {
     await expect(page.locator("#mainview > author-info-page > div > h1"))
       .toContainText(documentCase.descriptor.full_name)
     await expect(page.locator(".page_content .content.unbox")).toContainText(documentCase.expectedBody)
-    await expect(page.locator("ul.links a")).toHaveText(documentCase.name === "presentation"
-      ? ["Introduktion", "Verk", "Ljud", "Sök i texterna"]
-      : ["Introduktion", "Verk", "Ljud", "Dramawebben", "Sök i texterna"])
+    await expect(page.locator("ul.links a")).toHaveText([
+      ...(documentCase.descriptor.has_introduction ? ["Introduktion"] : []),
+      "Verk",
+      ...(documentCase.descriptor.audio_url ? ["Ljud"] : []),
+      ...(documentCase.descriptor.has_dramawebben ? ["Dramawebben"] : []),
+      ...(documentCase.descriptor.search_url ? ["Sök i texterna"] : [])
+    ])
     await expect(page.locator("ul.links li.active")).toHaveCount(0)
     await expect(page.locator(".preloader")).toBeHidden()
     await waitForVisualAssets(page)
+    expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
+    if (selectedAssets.size) {
+      await expect(page.locator(".page_content img")).toHaveCount(selectedAssets.size)
+      expect(await page.locator(".page_content img").evaluateAll(images => images.every(image => {
+        const selected = image as HTMLImageElement
+        return selected.complete && selected.naturalWidth > 0 && selected.naturalHeight > 0
+      }))).toBe(true)
+    }
 
-    expect(authorRequests).toHaveLength(1)
-    expect(authorsRequests).toHaveLength(1)
-    expect(workRequests).toHaveLength(10)
-    expect(audioRequests).toHaveLength(1)
-    expect(mapRequests).toHaveLength(1)
+    expect(authorRequests).toEqual([`/api/get_author/${encodeURIComponent(profile.authorid)}`])
+    expect(authorsRequests).toEqual([requestSignature(new URL(
+      `/api/get_authors?exclude=${encodeURIComponent(authorExclude)}`,
+      authorityOrigin
+    ))])
+    expect(workRequests.sort()).toEqual([...expectedWorks].sort())
+    expect(audioRequests).toEqual([expectedAudioSignature])
+    expect(mapRequests).toEqual([expectedMapSignature])
     expect(contentRequests).toEqual([documentCase.descriptor.source_path])
-    expect(bootstrapRequests).toHaveLength(4)
+    expect(assetRequests.sort()).toEqual([...selectedAssets.keys()].sort())
+    expect(bootstrapRequests.sort()).toEqual([
+      "/red/bilder/bakgrundsbilder/backgrounds.xml?username=app",
+      "/red/css/etext.css",
+      "https://cloud.typography.com/7426274/770508/css/fonts.css",
+      "https://www.googletagmanager.com/gtag/js?id=UA-132486790-1"
+    ].sort())
     expect(backgroundRequests.sort()).toEqual([
       "/img/dramawebben_fade_more.jpg",
       "/img/forf2_bkg.jpg",
@@ -215,6 +337,24 @@ for (const documentCase of cases) {
     expect(unexpectedRequests).toEqual([])
     expect(productionRequests).toEqual([])
     expect(knownAuthorityProblems).toHaveLength(1)
+    expect(problems).toEqual([])
+
+    probing = true
+    const probeResults = await page.evaluate(async probes => await Promise.all(probes.map(
+      async probe => {
+        try {
+          await fetch(probe.url, { method: probe.method })
+          return true
+        } catch {
+          return false
+        }
+      }
+    )), negativeProbes)
+    probing = false
+    expect(probeResults).toEqual(negativeProbes.map(() => false))
+    expect(rejectedNegativeProbes.sort()).toEqual([...negativeProbeLabels].sort())
+    expect(unexpectedRequests).toEqual([])
+    expect(productionRequests).toEqual([])
     expect(problems).toEqual([])
 
     const directory = resolve(import.meta.dirname, "baselines")
