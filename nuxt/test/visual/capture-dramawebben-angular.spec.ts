@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto"
 import { mkdir, readFile } from "node:fs/promises"
 import { resolve } from "node:path"
-import { expect, test } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 
 import { dramawebbenCases } from "../fixtures/dramawebben-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
@@ -123,6 +123,26 @@ function shellStaticKey(url: URL) {
 
 function exactEntries(url: URL, expected: ReadonlyArray<readonly [string, string]>) {
   return JSON.stringify([...url.searchParams.entries()]) === JSON.stringify(expected)
+}
+
+async function decodedBodyBackground(page: Page) {
+  return await page.locator("body.page-dramaweb").evaluate(async body => {
+    const backgroundImage = getComputedStyle(body).backgroundImage
+    const match = backgroundImage.match(/^url\(["']?(.+?)["']?\)$/u)
+    if (!match) {
+      return { backgroundImage, url: null, naturalWidth: 0, naturalHeight: 0 }
+    }
+
+    const image = new Image()
+    image.src = new URL(match[1]!, document.baseURI).href
+    await image.decode()
+    return {
+      backgroundImage,
+      url: image.src,
+      naturalWidth: image.naturalWidth,
+      naturalHeight: image.naturalHeight
+    }
+  })
 }
 
 type Fixture = {
@@ -307,9 +327,9 @@ for (const documentCase of dramawebbenCases) {
       "/dramawebben/om",
       "/"
     ])
-    await expect(page.locator("dramaweb-page ul.links li.active")).toHaveCount(
-      documentCase.kind === "kringtexter" ? 1 : 0
-    )
+    expect(await page.locator("dramaweb-page ul.links li.active a").evaluateAll(links => links.map(
+      link => link.getAttribute("href")
+    ))).toEqual(documentCase.kind === "kringtexter" ? ["/dramawebben/kringtexter"] : [])
     if (documentCase.heading) {
       await expect(page.getByRole("heading", { name: documentCase.heading, exact: true })).toBeVisible()
     } else {
@@ -318,6 +338,15 @@ for (const documentCase of dramawebbenCases) {
 
     await waitForVisualAssets(page)
     expect(await page.evaluate(() => document.fonts.status)).toBe("loaded")
+    const expectedBackgroundPath = documentCase.kind === "start"
+      ? "/img/dramawebben.jpg"
+      : "/img/dramawebben_fade.jpg"
+    const background = await decodedBodyBackground(page)
+    expect(background.url).toBe(`${authorityOrigin}${expectedBackgroundPath}`)
+    expect({
+      naturalWidth: background.naturalWidth,
+      naturalHeight: background.naturalHeight
+    }).toEqual({ naturalWidth: 2012, naturalHeight: 1308 })
     await expect.poll(() => unexpectedRequests).toEqual([])
 
     expect(authorRequests).toHaveLength(1)
@@ -339,7 +368,8 @@ for (const documentCase of dramawebbenCases) {
       `GET ${authorityOrigin}/img/dramawebben.jpg`,
       ...(documentCase.kind === "start"
         ? []
-        : [`GET ${authorityOrigin}/img/dramawebben_fade.jpg`])
+        : [`GET ${authorityOrigin}/img/dramawebben_fade.jpg`]),
+      `GET ${authorityOrigin}${expectedBackgroundPath}`
     ].sort())
     const shellUrls = shellRequests.map(label => new URL(label.replace(/^GET /u, "")))
     expect(shellUrls.filter(url => url.href === expectedShellDocument.href)).toHaveLength(1)
