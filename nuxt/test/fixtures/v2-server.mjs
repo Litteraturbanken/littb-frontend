@@ -79,7 +79,8 @@ const sourceInfoCoverIds = [
   "lb31230",
   "lbSparse1",
   "lbLongErrata1",
-  "lbEmptyErrata1"
+  "lbEmptyErrata1",
+  "lb-dramat-002"
 ]
 const sharedContent = new Map([
   ["/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", ["image/jpeg", readFileSync(new URL("./library-content/biblioteket_bakgrund.jpg", import.meta.url))]],
@@ -603,6 +604,21 @@ function readerMetadataResponse(titlePath) {
       return { hits: 0, data: [] }
     case "DoktorGlasParts":
       return readerPartsWorkInfoResponse
+    case "SparseKeyboardReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          endpagename: "57",
+          lbworkid: "lb-reader-sparse-keyboard",
+          pages: [
+            { pagename: "2", pageindex: 2 },
+            { pagename: "12", pageindex: 12 },
+            { pagename: "57", pageindex: 57 }
+          ],
+          parts: [],
+          startpagename: "2"
+        })]
+      }
     case "PartlessReader":
       return {
         hits: 1,
@@ -2196,7 +2212,8 @@ const server = createServer(async (request, response) => {
       "status-503",
       "malformed-200",
       "unsafe-media-url-200",
-      "pdf-primary-200"
+      "pdf-primary-200",
+      "long-mixed-media-author-200"
     ])
     if (
       body === null || typeof body !== "object" || Array.isArray(body)
@@ -2788,6 +2805,27 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
   }
 
+  const sparseKeyboardPageMatch = request.method === "GET"
+    ? /^\/txt\/lb-reader-sparse-keyboard\/res_(00002|00012|00057)\.html$/.exec(
+        url.pathname
+      )
+    : null
+  if (sparseKeyboardPageMatch) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    const pageIndex = Number(sparseKeyboardPageMatch[1])
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      `<div class="pname" pname="${pageIndex}">Sparse page ${pageIndex}</div>`
+    )
+  }
+
   const workScopedReaderPageMatch = request.method === "GET"
     ? /^\/txt\/lb7604979\/res_000(13|14)\.html$/.exec(url.pathname)
     : null
@@ -3037,6 +3075,32 @@ const server = createServer(async (request, response) => {
       }]
       return sendJson(response, 200, catalog)
     }
+    if (dramawebbenCatalogFailure === "long-mixed-media-author-200") {
+      const catalog = dramawebbenCatalogFixture()
+      const target = catalog.works.find(work => work.work_id === "lb-dramat-002")
+      const firstAuthor = catalog.authors.find(author => author.author_id === "WahlenbergA")
+      if (target && firstAuthor) {
+        const infopostAuthor = target.authors[0]
+        target.authors = [firstAuthor, infopostAuthor]
+        target.media.unshift({
+          media_type: "faksimil",
+          url: "/författare/WahlenbergA/titlar/BarnensTeater/sida/1/faksimil",
+          downloadable: false
+        })
+        const filler = catalog.works[0]
+        catalog.works = [
+          ...Array.from({ length: 24 }, (_, index) => ({
+            ...filler,
+            work_id: `${filler.work_id}-scroll-${index}`,
+            title_path: `${filler.title_path}Scroll${index}`,
+            title: `${filler.title} ${index + 1}`,
+            short_title: `${filler.short_title} ${index + 1}`
+          })),
+          target
+        ]
+      }
+      return sendJson(response, 200, catalog)
+    }
     return sendJson(response, 200, dramawebbenCatalogFixture())
   }
 
@@ -3195,6 +3259,11 @@ const server = createServer(async (request, response) => {
           author_id: "LindgrenU",
           full_name: "Ulrika Lindgren",
           surname: "Lindgren"
+        },
+        {
+          author_id: "Anonym",
+          full_name: "Anonym",
+          surname: "Anonym"
         }
       ].map(author => [author.author_id, author])
     )
@@ -3283,13 +3352,19 @@ const server = createServer(async (request, response) => {
         }
       })
     }
-    const item = sourceInfoIdentity.authorId === "SparseA"
-      && sourceInfoIdentity.titlePath === "SparseTitle"
-      && mediaType === "etext"
-      ? navigableSparseSourceInfo
-      : sourceInfoByIdentity.get(
-        `${sourceInfoIdentity.authorId}|${sourceInfoIdentity.titlePath}`
-      )
+    const item = sourceInfoIdentity.authorId === "CanonicalNotPublicA"
+      && sourceInfoIdentity.titlePath === "DoktorGlas"
+      ? {
+          ...sourceInfoByIdentity.get("SöderbergH|DoktorGlas"),
+          author_id: "OtherAuthor"
+        }
+      : sourceInfoIdentity.authorId === "SparseA"
+        && sourceInfoIdentity.titlePath === "SparseTitle"
+        && mediaType === "etext"
+        ? navigableSparseSourceInfo
+        : sourceInfoByIdentity.get(
+          `${sourceInfoIdentity.authorId}|${sourceInfoIdentity.titlePath}`
+        )
     if (!item) {
       return sendJson(response, 404, {
         error: { code: "source_info_not_found", message: "Work not found", details: null }

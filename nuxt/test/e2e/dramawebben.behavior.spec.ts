@@ -12,7 +12,12 @@ async function reset(request: APIRequestContext) {
     request.delete(`${fixture}/_dramawebben_document_redirect_target_requests`),
     request.delete(`${fixture}/_dramawebben_excluded_data_requests`),
     request.delete(`${fixture}/_dramawebben_catalog_requests`),
-    request.delete(`${fixture}/_dramawebben_catalog_failure`)
+    request.delete(`${fixture}/_dramawebben_catalog_failure`),
+    request.delete(`${fixture}/_source_info_requests`),
+    request.delete(`${fixture}/_source_info_static_requests`),
+    request.delete(`${fixture}/_source_info_failure`),
+    request.delete(`${fixture}/_source_info_delays`),
+    request.delete(`${fixture}/_source_info_static_failure`)
   ])
 }
 
@@ -31,6 +36,12 @@ async function expectNoExcludedDataRequests(request: APIRequestContext) {
 async function catalogRequests(request: APIRequestContext) {
   return (await (await request.get(
     `${fixture}/_dramawebben_catalog_requests`
+  )).json()).requests
+}
+
+async function sourceInfoRequests(request: APIRequestContext) {
+  return (await (await request.get(
+    `${fixture}/_source_info_requests`
   )).json()).requests
 }
 
@@ -313,6 +324,175 @@ test("the catalog hydrates once from SSR without a browser or legacy data reques
   }])
   expect(await documentRequests(request)).toEqual([])
   await expectNoExcludedDataRequests(request)
+  expect(problems).toEqual([])
+})
+
+test("a visible infopost link opens source information and close restores its focus", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/dramawebben/pjäser?visa=pjäser&keep=one&keep=two", {
+    waitUntil: "networkidle"
+  })
+
+  const trigger = page.getByRole("link", { name: "infopost", exact: true })
+  await trigger.click()
+
+  const dialog = page.getByRole("dialog", { name: "Om boken", exact: true })
+  await expect(dialog).toBeVisible()
+  await expect(dialog).toContainText("Barnens teater")
+  await expect(dialog).toBeFocused()
+  expect(new URL(page.url()).hash).toBe("#dw")
+  expect(new URL(page.url()).searchParams.getAll("keep")).toEqual(["one", "two"])
+  await expect.poll(() => new URL(page.url()).searchParams.has("om-boken")).toBe(true)
+
+  await page.getByRole("button", { name: "Stäng", exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+  const closed = new URL(page.url())
+  expect(closed.searchParams.getAll("keep")).toEqual(["one", "two"])
+  expect(closed.searchParams.has("om-boken")).toBe(false)
+  expect(closed.searchParams.has("authorid")).toBe(false)
+  expect(closed.searchParams.has("titlepath")).toBe(false)
+  expect(closed.hash).toBe("#dw")
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(problems).toEqual([])
+})
+
+test("a long mixed-author catalog uses the clicked infopost identity without scrolling", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await setCatalogFailure(request, "long-mixed-media-author-200")
+  await page.setViewportSize({ width: 1280, height: 420 })
+  await page.goto("/dramawebben/pj%C3%A4ser?visa=pj%C3%A4ser&keep=scroll", {
+    waitUntil: "networkidle"
+  })
+
+  const trigger = page.getByRole("link", { name: "infopost", exact: true })
+  await trigger.scrollIntoViewIfNeeded()
+  const before = await page.evaluate(() => window.scrollY)
+  expect(before).toBeGreaterThan(500)
+
+  await trigger.click()
+  const dialog = page.getByRole("dialog", { name: "Om boken", exact: true })
+  await expect(dialog).toContainText("Barnens teater")
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before)
+  const hashTarget = page.locator("#dw")
+  await expect(hashTarget).toHaveCount(1)
+  expect(await hashTarget.evaluate(element => {
+    const style = getComputedStyle(element)
+    const bounds = element.getBoundingClientRect()
+    return {
+      position: style.position,
+      pointerEvents: style.pointerEvents,
+      width: bounds.width,
+      height: bounds.height,
+      ariaHidden: element.getAttribute("aria-hidden")
+    }
+  })).toEqual({
+    position: "fixed",
+    pointerEvents: "none",
+    width: 0,
+    height: 0,
+    ariaHidden: "true"
+  })
+  const opened = new URL(page.url())
+  expect(opened.hash).toBe("#dw")
+  expect(opened.searchParams.get("keep")).toBe("scroll")
+  expect(opened.searchParams.get("authorid")).toBe("Anonym")
+  expect(opened.searchParams.get("titlepath")).toBe("BarnensTeater")
+
+  await page.getByRole("button", { name: "Stäng", exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(trigger).toBeFocused()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before)
+  const closed = new URL(page.url())
+  expect(closed.hash).toBe("#dw")
+  expect(closed.searchParams.get("keep")).toBe("scroll")
+  expect(closed.searchParams.has("om-boken")).toBe(false)
+  expect(await sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/Anonym/BarnensTeater/source-info",
+    query: ""
+  }])
+  expect(problems).toEqual([])
+})
+
+test("direct source-information query survives hydration, Escape, Back, and Forward", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  const openPath = "/dramawebben/pjäser?om-boken&authorid=Alml%C3%B6fN" +
+    "&titlepath=Affarer&visa=f%C3%B6rfattare&repeat=one&repeat=two#dw"
+  await page.goto(openPath, { waitUntil: "networkidle" })
+
+  const dialog = page.getByRole("dialog", { name: "Om boken", exact: true })
+  await expect(dialog).toContainText("Affärer")
+  await expect(dialog).toBeFocused()
+
+  await page.keyboard.press("Escape")
+  await expect(dialog).toHaveCount(0)
+  expect(new URL(page.url()).searchParams.getAll("repeat")).toEqual(["one", "two"])
+
+  await page.goBack()
+  await expect(dialog).toContainText("Affärer")
+  await page.goForward()
+  await expect(dialog).toHaveCount(0)
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(problems).toEqual([])
+})
+
+test("invalid or missing source-information identifiers stay closed without a request", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+
+  for (const path of [
+    "/dramawebben/pj%C3%A4ser?om-boken&authorid=Alml%C3%B6fN",
+    "/dramawebben/pj%C3%A4ser?om-boken&authorid=..%2Fbad&titlepath=Affarer",
+    "/dramawebben/pj%C3%A4ser?om-boken=&authorid=Alml%C3%B6fN&titlepath=Affarer"
+  ]) {
+    await routerPush(page, path)
+    await expect(page.getByRole("dialog", { name: "Om boken", exact: true })).toHaveCount(0)
+  }
+  expect(await sourceInfoRequests(request)).toEqual([])
+
+  await routerPush(
+    page,
+    "/dramawebben/pj%C3%A4ser?om-boken=yes&authorid=Alml%C3%B6fN&titlepath=Affarer"
+  )
+  await expect(page.getByRole("dialog", { name: "Om boken", exact: true }))
+    .toContainText("Affärer")
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(problems).toEqual([])
+})
+
+test("a source-information failure remains modal-local and retries from history", async ({
+  page,
+  request
+}) => {
+  const problems = collectProblems(page)
+  await request.put(`${fixture}/_source_info_failure`)
+  const openPath = "/dramawebben/pj%C3%A4ser?om-boken&authorid=Alml%C3%B6fN&titlepath=Affarer"
+  const response = await page.goto(openPath, { waitUntil: "networkidle" })
+
+  expect(response?.status()).toBe(200)
+  const dialog = page.getByRole("dialog", { name: "Om boken", exact: true })
+  await expect(dialog.getByRole("alert")).toHaveText("Ett fel har uppstått.")
+  await expectPlayRows(page, dramawebbenCatalogExpected.plays)
+
+  await page.keyboard.press("Escape")
+  await expect(dialog).toHaveCount(0)
+  await request.delete(`${fixture}/_source_info_failure`)
+  await page.goBack()
+  await expect(dialog).toContainText("Affärer")
+  expect(await sourceInfoRequests(request)).toHaveLength(2)
   expect(problems).toEqual([])
 })
 

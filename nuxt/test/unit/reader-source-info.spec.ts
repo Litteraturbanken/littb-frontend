@@ -128,6 +128,36 @@ describe("Reader source-information runtime contract", () => {
       "SparseTitle"
     ).media_type).toBe("infopost")
   })
+
+  test("accepts a backend lookup alias absent from projected public authors", () => {
+    expect(validateReaderSourceInfoResponse(
+      doktorGlasSourceInfo,
+      "EditorRoute",
+      "DoktorGlas",
+      "etext"
+    )).toEqual(doktorGlasSourceInfo)
+  })
+
+  test("rejects a canonical author that is not a public response author", () => {
+    const value = clone(doktorGlasSourceInfo)
+    value.author_id = "OtherAuthor"
+
+    expect(() => validateReaderSourceInfoResponse(
+      value,
+      "SöderbergH",
+      "DoktorGlas",
+      "etext"
+    )).toThrow("Invalid Reader source information")
+  })
+
+  test("accepts the backend selected-media fallback for an explicit request", () => {
+    expect(validateReaderSourceInfoResponse(
+      doktorGlasSourceInfo,
+      "SöderbergH",
+      "DoktorGlas",
+      "faksimil"
+    ).media_type).toBe("etext")
+  })
 })
 
 describe("Reader source-information request boundary", () => {

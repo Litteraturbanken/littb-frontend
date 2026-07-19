@@ -32,6 +32,11 @@ export interface ReaderPart {
   authors: ReaderPartAuthor[]
 }
 
+export interface ReaderPageIdentity {
+  pageIndex: number
+  pageName: string
+}
+
 export interface ReaderPageBase {
   author: {
     authorType: ReaderAuthorContribution | null
@@ -50,6 +55,7 @@ export interface ReaderPageBase {
   nextPartPageName: string | null
   pageCount: number
   pageIndex: number
+  pageMap: ReaderPageIdentity[]
   pageName: string
   pageNames: string[]
   parts: ReaderPart[]

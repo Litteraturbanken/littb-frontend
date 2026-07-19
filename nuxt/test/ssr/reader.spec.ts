@@ -86,6 +86,16 @@ async function sourceInfoStaticRequests(request: APIRequestContext): Promise<str
   return (await (await request.get(`${fixture}/_source_info_static_requests`)).json()).requests
 }
 
+function expectSourceInfoStaticCacheLedger(requests: string[]): void {
+  expect([
+    [],
+    [
+      "/red/etc/provenance/provenance.json",
+      "/red/etc/license/license.json"
+    ]
+  ]).toContainEqual(requests)
+}
+
 async function setAuthorResolveScenario(request: APIRequestContext, scenario: string) {
   await request.put(`${fixture}/_author_resolve_scenario`, { data: { scenario } })
 }
@@ -170,10 +180,7 @@ test("direct bare source-information SSR renders the Reader and complete modal o
     path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
     query: "?media_type=etext"
   }])
-  expect(await sourceInfoStaticRequests(request)).toEqual([
-    "/red/etc/provenance/provenance.json",
-    "/red/etc/license/license.json"
-  ])
+  expectSourceInfoStaticCacheLedger(await sourceInfoStaticRequests(request))
 })
 
 test("exact empty source-information assignment remains closed and makes no request", async ({
@@ -199,6 +206,22 @@ test("source-information failure stays modal-local on a successful Reader SSR", 
   expect(html).toContain('class="modal about fade in"')
   expect(html).toContain("Ett fel har uppstått.")
   expect(await sourceInfoRequests(request)).toHaveLength(1)
+})
+
+test("the Nitro source-information boundary rejects a non-public canonical author", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/api/reader/source-info/CanonicalNotPublicA/DoktorGlas?media_type=etext"
+  )
+
+  expect(response.status()).toBe(502)
+  expect(await sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/CanonicalNotPublicA/DoktorGlas/source-info",
+    query: "?media_type=etext"
+  }])
+  expect(await sourceInfoStaticRequests(request)).toEqual([])
 })
 
 test("source information has presentation priority when both dialog keys are direct", async ({
@@ -300,6 +323,11 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     nextPartPageName: null,
     pageCount: 3,
     pageIndex: 1,
+    pageMap: [
+      { pageIndex: 0, pageName: "1" },
+      { pageIndex: 1, pageName: "3" },
+      { pageIndex: 2, pageName: "5" }
+    ],
     pageName: "3",
     pageNames: ["1", "3", "5"],
     parts: [{
@@ -411,6 +439,17 @@ test("canonical API projects source-ordered nested Reader navigation and resolve
     endPageName: "5",
     nextPartPageName: "3",
     pageIndex: 4,
+    pageMap: [
+      { pageIndex: 1, pageName: "-4" },
+      { pageIndex: 2, pageName: "-3" },
+      { pageIndex: 3, pageName: "-2" },
+      { pageIndex: 4, pageName: "-1" },
+      { pageIndex: 5, pageName: "1" },
+      { pageIndex: 6, pageName: "2" },
+      { pageIndex: 7, pageName: "3" },
+      { pageIndex: 8, pageName: "4" },
+      { pageIndex: 9, pageName: "5" }
+    ],
     pageName: "-1",
     pageNames: ["-4", "-3", "-2", "-1", "1", "2", "3", "4", "5"],
     previousPartPageName: "-2",

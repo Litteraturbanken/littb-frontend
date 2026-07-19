@@ -333,6 +333,7 @@ export function validateReaderSourceInfoResponse(
     ) invalidSourceInfo()
     authorIds.add(item.author_id)
   }
+  if (authors.length > 0 && !authorIds.has(value.author_id)) invalidSourceInfo()
 
   if (!isRecord(value.cover) || !exactKeys(value.cover, coverKeys)) invalidSourceInfo()
   const encodedWorkId = encodeRfc3986Segment(value.work_id as string)

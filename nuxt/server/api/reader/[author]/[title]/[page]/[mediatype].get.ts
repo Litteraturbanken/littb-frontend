@@ -178,6 +178,10 @@ export default defineEventHandler(async event => {
     nextPartPageName: partNavigation.nextPartPageName,
     pageCount: metadata.pages.length,
     pageIndex: currentPage.pageIndex,
+    pageMap: metadata.pages.map(page => ({
+      pageIndex: page.pageIndex,
+      pageName: page.pageName
+    })),
     pageName,
     pageNames: metadata.pages.map(page => page.pageName),
     parts,

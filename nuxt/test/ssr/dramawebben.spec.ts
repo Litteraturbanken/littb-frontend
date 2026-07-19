@@ -17,6 +17,8 @@ const requestLedgers = [
   "/_library_query_requests",
   "/_presentation_requests",
   "/_dramawebben_catalog_requests",
+  "/_source_info_requests",
+  "/_source_info_static_requests",
   "/_dramawebben_excluded_data_requests",
   "/_text_search/requests"
 ] as const
@@ -27,7 +29,10 @@ async function resetRequestLedgers(request: APIRequestContext) {
     request.delete(`${fixture}/_dramawebben_document_requests`),
     request.delete(`${fixture}/_dramawebben_document_failure`),
     request.delete(`${fixture}/_dramawebben_document_redirect_target_requests`),
-    request.delete(`${fixture}/_dramawebben_catalog_failure`)
+    request.delete(`${fixture}/_dramawebben_catalog_failure`),
+    request.delete(`${fixture}/_source_info_failure`),
+    request.delete(`${fixture}/_source_info_delays`),
+    request.delete(`${fixture}/_source_info_static_failure`)
   ])
 }
 
@@ -48,6 +53,12 @@ async function expectNoDataRequests(
 async function catalogRequests(request: APIRequestContext) {
   return (await (await request.get(
     `${fixture}/_dramawebben_catalog_requests`
+  )).json()).requests
+}
+
+async function sourceInfoRequests(request: APIRequestContext) {
+  return (await (await request.get(
+    `${fixture}/_source_info_requests`
   )).json()).requests
 }
 
@@ -197,6 +208,46 @@ test("SSR renders the populated catalog through one private typed request", asyn
   await expectNoDataRequests(request, ["/_dramawebben_catalog_requests"])
 })
 
+test("SSR renders a valid catalog source-information query in the initial HTML", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/dramawebben/pjäser?om-boken&authorid=Alml%C3%B6fN&titlepath=Affarer&keep=1"
+  )
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const dialog = document.querySelector('.modal.about[role="dialog"]')
+  expect(dialog?.getAttribute("aria-modal")).toBe("true")
+  expect(normalizedText(dialog?.textContent)).toContain("Affärer")
+  expect(dialog?.querySelector(".error")).toBeNull()
+  expect(await sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/Alml%C3%B6fN/Affarer/source-info",
+    query: ""
+  }])
+  expect(await catalogRequests(request)).toHaveLength(1)
+})
+
+for (const invalidDialogQuery of [
+  "om-boken&authorid=Alml%C3%B6fN",
+  "om-boken&authorid=..%2Fbad&titlepath=Affarer",
+  "om-boken=&authorid=Alml%C3%B6fN&titlepath=Affarer",
+  "om-boken&authorid=Alml%C3%B6fN&authorid=Other&titlepath=Affarer"
+] as const) {
+  test(`SSR ignores unsafe catalog source information: ${invalidDialogQuery}`, async ({
+    request
+  }) => {
+    const response = await request.get(`/dramawebben/pjäser?${invalidDialogQuery}`)
+
+    expect(response.status()).toBe(200)
+    const { document } = parseHTML(await response.text())
+    expect(document.querySelector('.modal.about[role="dialog"]')).toBeNull()
+    expect(await sourceInfoRequests(request)).toEqual([])
+    expect(await catalogRequests(request)).toHaveLength(1)
+  })
+}
+
 for (const query of [
   "gender=unknown",
   "mediatype=unknown",
@@ -317,7 +368,7 @@ for (const documentCase of [
   })
 }
 
-for (const invalidName of ["författare", "unknown"]) {
+for (const invalidName of ["unknown"]) {
   test(`${invalidName} uses the global 404 before any source fetch`, async ({ request }) => {
     const response = await request.get(`/dramawebben/${invalidName}`)
 

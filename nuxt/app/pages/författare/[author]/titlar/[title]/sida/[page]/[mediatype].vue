@@ -866,6 +866,59 @@ function anotherDialogOwnsFocus(target: EventTarget | null): boolean {
   return Boolean(dialog && !dialog.classList.contains("about"))
 }
 
+function readerDialogIsOpen(): boolean {
+  return document.body.classList.contains("modal-open")
+    || document.querySelector('[role="dialog"][aria-modal="true"]') !== null
+}
+
+function keyboardPageTarget(event: KeyboardEvent): string | null {
+  const currentReader = reader.value
+  if (!currentReader) return null
+
+  const forwards = event.key === "ArrowRight"
+  const backwards = event.key === "ArrowLeft"
+  if (!forwards && !backwards) return null
+
+  if (event.altKey && event.shiftKey) {
+    const targetPageIndex = currentReader.pageIndex + (forwards ? 10 : -10)
+    return currentReader.pageMap.find(page => page.pageIndex === targetPageIndex)?.pageName
+      ?? null
+  }
+  if (event.altKey) {
+    return forwards
+      ? currentReader.nextPartPageName
+      : currentReader.previousPartPageName
+  }
+  if (event.shiftKey) {
+    return forwards
+      ? currentReader.nextPageName
+      : currentReader.previousPageName
+  }
+
+  if (forwards) {
+    const atRightEdge = document.body.scrollWidth - window.scrollX === window.innerWidth
+    return atRightEdge ? currentReader.nextPageName : null
+  }
+  return window.scrollX < 10 ? currentReader.previousPageName : null
+}
+
+function handleReaderPagingKeydown(event: KeyboardEvent): void {
+  if (
+    event.defaultPrevented
+    || event.isComposing
+    || event.ctrlKey
+    || event.metaKey
+    || isEditableTarget(event.target)
+    || isEditableTarget(document.activeElement)
+    || readerDialogIsOpen()
+  ) return
+
+  const target = keyboardPageTarget(event)
+  if (!target) return
+  event.preventDefault()
+  void navigateRawFullPath(pageHref(target), false, rawFullPath.value)
+}
+
 function handleSourceInfoKeydown(event: KeyboardEvent): void {
   if (
     (event.key !== "o" && event.key !== "F18")
@@ -886,6 +939,9 @@ function handleSourceInfoKeydown(event: KeyboardEvent): void {
 
 onMounted(() => document.addEventListener("keydown", handleSourceInfoKeydown))
 onBeforeUnmount(() => document.removeEventListener("keydown", handleSourceInfoKeydown))
+onMounted(() => document.addEventListener("keydown", handleReaderPagingKeydown))
+onBeforeUnmount(() => document.removeEventListener("keydown", handleReaderPagingKeydown))
+onBeforeRouteLeave(() => document.removeEventListener("keydown", handleReaderPagingKeydown))
 
 function selectContentsPage(pageName: string): void {
   const currentReader = reader.value

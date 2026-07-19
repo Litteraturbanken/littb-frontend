@@ -15,8 +15,11 @@ import {
 } from "@headlessui/vue"
 
 import DramawebbenShell from "~/components/dramawebben/DramawebbenShell.vue"
+import ReaderSourceInfoDialog from "~/components/reader/ReaderSourceInfoDialog.vue"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
+import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
+import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 
 type Catalog = components["schemas"]["DramawebbenCatalogResponse"]
 type CatalogAuthor = components["schemas"]["DramawebbenCatalogAuthor"]
@@ -140,6 +143,14 @@ function oneQuery(value: unknown): string | null {
   return typeof value === "string" ? value : null
 }
 
+function validSourceInfoSegment(value: unknown, maximum: number): value is string {
+  return typeof value === "string"
+    && value.length >= 1 && value.length <= maximum
+    && value === value.trim()
+    && value !== "." && value !== ".."
+    && !/[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)
+}
+
 function normalizedTokens(value: string): string[] {
   return value.toLocaleLowerCase("sv-SE").split(/\s+/u).filter(Boolean)
 }
@@ -174,10 +185,146 @@ function titleHref(media: CatalogMedia): string {
   return `${media.url}#dw`
 }
 
+function sourceInfoIdentityFromMedia(media: CatalogMedia) {
+  if (
+    media.media_type !== "infopost"
+    || !isSafeCatalogMediaUrl(media.media_type, media.url, media.downloadable)
+  ) return null
+  const parsed = new URL(media.url, "http://catalog.local")
+  const authorId = parsed.searchParams.get("authorid")
+  const titlePath = parsed.searchParams.get("titlepath")
+  return validSourceInfoSegment(authorId, 100) && validSourceInfoSegment(titlePath, 200)
+    ? { authorId, titlePath }
+    : null
+}
+
 const route = useRoute()
 const router = useRouter()
+const nuxtApp = useNuxtApp()
 const config = useRuntimeConfig()
+const requestFetch = useRequestFetch()
 const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+
+const sourceInfoIdentity = computed(() => {
+  const marker = route.query["om-boken"]
+  if (
+    !Object.prototype.hasOwnProperty.call(route.query, "om-boken")
+    || !readerSourceInfoIsOpen(marker)
+  ) return null
+  const authorId = route.query.authorid
+  const titlePath = route.query.titlepath
+  return validSourceInfoSegment(authorId, 100) && validSourceInfoSegment(titlePath, 200)
+    ? { authorId, titlePath }
+    : null
+})
+const sourceInfoRequestIdentity = computed(() => sourceInfoIdentity.value
+  ? `${sourceInfoIdentity.value.authorId}|${sourceInfoIdentity.value.titlePath}`
+  : "")
+const initialSourceInfoRequested = sourceInfoIdentity.value !== null
+type CatalogSourceInfoResult =
+  | { status: "success", identity: string, sourceInfo: ReaderSourceInfo }
+  | { status: "error", identity: string }
+
+const sourceInfoFetch = await useAsyncData<CatalogSourceInfoResult>(
+  "dramawebben-source-info",
+  async () => {
+    const identity = sourceInfoIdentity.value
+    const requestIdentity = sourceInfoRequestIdentity.value
+    if (!identity) return { status: "error" as const, identity: requestIdentity }
+    try {
+      const sourceInfo = await requestFetch<ReaderSourceInfo>(
+        "/api/reader/source-info/"
+        + [identity.authorId, identity.titlePath].map(encodeURIComponent).join("/"),
+        { retry: 0 }
+      )
+      return { status: "success" as const, identity: requestIdentity, sourceInfo }
+    } catch {
+      return { status: "error" as const, identity: requestIdentity }
+    }
+  },
+  { immediate: initialSourceInfoRequested }
+)
+
+const sourceInfo = computed(() => {
+  const current = sourceInfoFetch.data.value
+  return current?.status === "success"
+    && current.identity === sourceInfoRequestIdentity.value
+    ? current.sourceInfo
+    : null
+})
+const sourceInfoFailed = computed(() => {
+  const current = sourceInfoFetch.data.value
+  return current?.status === "error" && current.identity === sourceInfoRequestIdentity.value
+})
+const sourceInfoLoading = computed(() => sourceInfoIdentity.value !== null
+  && !sourceInfo.value
+  && !sourceInfoFailed.value
+  && (sourceInfoFetch.status.value === "idle" || sourceInfoFetch.status.value === "pending"))
+const sourceInfoOpen = computed(() => sourceInfoIdentity.value !== null)
+
+watch(sourceInfoRequestIdentity, identity => {
+  if (!identity || (import.meta.client && nuxtApp.isHydrating)) return
+  const current = sourceInfoFetch.data.value
+  if (!current || current.identity !== identity || current.status === "error") {
+    void sourceInfoFetch.execute()
+  }
+})
+
+onMounted(() => {
+  const identity = sourceInfoRequestIdentity.value
+  const current = sourceInfoFetch.data.value
+  if (identity && (!current || current.identity !== identity)) {
+    void sourceInfoFetch.execute()
+  }
+})
+
+let sourceInfoTrigger: HTMLElement | null = null
+
+function sourceInfoQuery(authorId?: string, titlePath?: string) {
+  const query = { ...route.query }
+  delete query["om-boken"]
+  delete query.authorid
+  delete query.titlepath
+  if (authorId && titlePath) {
+    query["om-boken"] = null
+    query.authorid = authorId
+    query.titlepath = titlePath
+  }
+  return query
+}
+
+async function pushSourceInfoQuery(
+  query: ReturnType<typeof sourceInfoQuery>,
+  hash: string
+): Promise<void> {
+  await router.push({ path: route.path, query })
+  if (import.meta.client && hash) {
+    const target = router.resolve({ path: route.path, query, hash }).fullPath
+    window.history.replaceState(window.history.state, "", target)
+  }
+}
+
+function openCatalogSourceInfo(event: MouseEvent, media: CatalogMedia): void {
+  const identity = sourceInfoIdentityFromMedia(media)
+  if (
+    !identity || event.button !== 0 || event.altKey || event.ctrlKey
+    || event.metaKey || event.shiftKey
+  ) return
+  event.preventDefault()
+  sourceInfoTrigger = event.currentTarget instanceof HTMLElement ? event.currentTarget : null
+  const href = sourceInfoTrigger?.getAttribute("href") ?? ""
+  const hash = href.includes("#") ? `#${href.split("#", 2)[1]}` : route.hash
+  void pushSourceInfoQuery(sourceInfoQuery(identity.authorId, identity.titlePath), hash)
+}
+
+async function closeCatalogSourceInfo(): Promise<void> {
+  if (!sourceInfoOpen.value) return
+  const hash = import.meta.client ? window.location.hash : route.hash
+  await pushSourceInfoQuery(sourceInfoQuery(), hash)
+  await nextTick()
+  sourceInfoTrigger?.focus()
+  sourceInfoTrigger = null
+}
 
 const { data } = await useAsyncData<CatalogResult>(
   "dramawebben-catalog",
@@ -344,10 +491,17 @@ useSeoMeta({
   title: "Litteraturbanken",
   description: "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 })
-useHead({ bodyAttrs: { class: "focus page-dramaweb drama-dramasubpage ready" } })
+useHead(() => ({
+  bodyAttrs: {
+    class: sourceInfoOpen.value
+      ? "focus page-dramaweb drama-dramasubpage ready modal-open"
+      : "focus page-dramaweb drama-dramasubpage ready"
+  }
+}))
 </script>
 
 <template>
+  <span id="dw" class="drama_hash_target" aria-hidden="true" />
   <DramawebbenShell page="pjäser">
     <div v-if="catalog" class="catalog_page" :class="{ catalog_plays: listType === 'pjäser' }">
       <p class="max-w-prose mb-8">
@@ -495,12 +649,20 @@ useHead({ bodyAttrs: { class: "focus page-dramaweb drama-dramasubpage ready" } }
                 <span class="sc">{{ authorName(work.authors[0]!).surname }}</span><template v-if="authorName(work.authors[0]!).given">,<span class="firstname">{{ " " }}{{ authorName(work.authors[0]!).given }}</span></template>
               </a>
             </td>{{ " " }}
-            <td class="title"><a :href="titleHref(work.media[0]!)">{{ work.short_title || work.title }}</a></td>{{ " " }}
+            <td class="title"><a
+              :href="titleHref(work.media[0]!)"
+              @click="work.media[0]!.media_type === 'infopost' && openCatalogSourceInfo($event, work.media[0]!)"
+            >{{ work.short_title || work.title }}</a></td>{{ " " }}
             <td>
               <ul class="mediatypes">
                 <li v-for="(media, index) in work.media" :key="`${media.media_type}-${index}`">
                   <a v-if="media.downloadable" class="sc" target="_self" download :href="media.url">{{ media.media_type }}</a>
-                  <a v-else class="sc" :href="mediaHref(media)">{{ media.media_type }}</a>
+                  <a
+                    v-else
+                    class="sc"
+                    :href="mediaHref(media)"
+                    @click="media.media_type === 'infopost' && openCatalogSourceInfo($event, media)"
+                  >{{ media.media_type }}</a>
                   {{ " " }}
                 </li>
               </ul>
@@ -524,9 +686,25 @@ useHead({ bodyAttrs: { class: "focus page-dramaweb drama-dramasubpage ready" } }
     </div>
     <p v-else class="error">Innehållet kan inte visas just nu.</p>
   </DramawebbenShell>
+  <ReaderSourceInfoDialog
+    :open="sourceInfoOpen"
+    :loading="sourceInfoLoading"
+    :failed="sourceInfoFailed"
+    :source-info="sourceInfo"
+    @close="closeCatalogSourceInfo"
+  />
 </template>
 
 <style scoped>
+.drama_hash_target {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 .catalog_select {
   display: inline-block;
   position: relative;

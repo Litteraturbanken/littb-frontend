@@ -185,6 +185,32 @@ export const sparseSourceInfo = {
 }
 
 /** @satisfies {WorkSourceInfoResponse} */
+export const catalogInfopostSourceInfo = {
+  ...sparseSourceInfo,
+  work_id: "lb-dramat-002",
+  author_id: "Anonym",
+  title_path: "BarnensTeater",
+  title: "Barnens teater",
+  short_title: "Barnens teater",
+  text_type: "drama",
+  authors: [{
+    author_id: "Anonym",
+    full_name: "Anonym",
+    surname: "Anonym",
+    role: null,
+    author_type: null,
+    url: "/författare/Anonym"
+  }],
+  cover: {
+    small_url: "/txt/lb-dramat-002/lb-dramat-002_small.jpeg",
+    large_url: "/txt/lb-dramat-002/lb-dramat-002_large.jpeg"
+  },
+  provenance: [],
+  license_key: null,
+  errata: []
+}
+
+/** @satisfies {WorkSourceInfoResponse} */
 export const navigableSparseSourceInfo = {
   ...sparseSourceInfo,
   media_type: "etext",
@@ -288,6 +314,7 @@ export const oversizedSourceInfo = {
 export const sourceInfoByIdentity = new Map([
   ["SöderbergH|DoktorGlas", doktorGlasSourceInfo],
   ["AlmlöfN|Affarer", dramaSourceInfo],
+  ["Anonym|BarnensTeater", catalogInfopostSourceInfo],
   ["SparseA|SparseTitle", sparseSourceInfo],
   ["LongErrataA|LongErrata", longErrataSourceInfo],
   ["EmptyErrataA|EmptyErrata", emptyErrataSourceInfo],

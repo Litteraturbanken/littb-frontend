@@ -1074,6 +1074,130 @@ test("part gaps and page boundaries remove metadata and disabled focus targets",
   await expect(last).toHaveAttribute("tabindex", "-1")
 })
 
+test("keyboard paging follows page and part targets without stealing other shortcuts", async ({
+  page
+}) => {
+  const rawQuery = "?bare&empty=&repeat=%2f&repeat=%2F"
+  await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+
+  await page.keyboard.press("ArrowRight")
+  await expect(page).toHaveURL(
+    `/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext${rawQuery}`
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+
+  await page.keyboard.press("ArrowRight")
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+  await page.keyboard.press("ArrowLeft")
+  await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
+
+  await page.evaluate(() => {
+    const spacer = document.createElement("div")
+    spacer.id = "keyboard-horizontal-spacer"
+    spacer.style.cssText = "position:absolute;left:0;top:0;width:3000px;height:1px"
+    document.body.append(spacer)
+    window.scrollTo(500, 0)
+  })
+  await expect.poll(() => page.evaluate(() => window.scrollX)).toBeGreaterThan(10)
+
+  await page.keyboard.press("ArrowRight")
+  await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
+  await page.keyboard.press("Shift+ArrowRight")
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+
+  await navigateClient(
+    page,
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext"
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+  await page.keyboard.press("Alt+ArrowLeft")
+  await expect(page.locator(".reader-page-position")).toHaveText("-2 av 9")
+
+  await navigateClient(
+    page,
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext"
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+  await page.keyboard.press("Alt+ArrowRight")
+  await expect(page.locator(".reader-page-position")).toHaveText("3 av 9")
+
+  await navigateClient(
+    page,
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext"
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+  await page.keyboard.press("Alt+Shift+ArrowRight")
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+  await page.keyboard.press("Control+ArrowRight")
+  await page.keyboard.press("Meta+ArrowLeft")
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+})
+
+test("Alt+Shift paging uses exact numeric indexes across a sparse page map", async ({
+  page
+}) => {
+  await page.goto(
+    "/författare/SöderbergH/titlar/SparseKeyboardReader/sida/2/etext",
+    { waitUntil: "networkidle" }
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("2 av 3")
+
+  await page.keyboard.press("Alt+Shift+ArrowRight")
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/12/etext"
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("12 av 3")
+
+  await page.keyboard.press("Alt+Shift+ArrowRight")
+  await expect(page.locator(".reader-page-position")).toHaveText("12 av 3")
+
+  await page.keyboard.press("Alt+Shift+ArrowLeft")
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/2/etext"
+  )
+})
+
+test("keyboard paging is guarded by editors and dialogs and is removed on unmount", async ({
+  page
+}) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const initialUrl = page.url()
+  const goto = page.locator(".reader-navigation form.goto")
+  await goto.getByRole("link", { name: /Gå till sida/ }).click()
+  await goto.getByRole("textbox").focus()
+  await page.keyboard.press("ArrowRight")
+  await expect(page).toHaveURL(initialUrl)
+
+  for (const kind of ["textarea", "select", "contenteditable"] as const) {
+    await page.evaluate(activeKind => {
+      document.querySelector("#keyboard-editable-probe")?.remove()
+      const element = activeKind === "contenteditable"
+        ? document.createElement("div")
+        : document.createElement(activeKind)
+      element.id = "keyboard-editable-probe"
+      if (activeKind === "contenteditable") element.contentEditable = "true"
+      document.body.append(element)
+      element.focus()
+    }, kind)
+    await page.keyboard.press("ArrowRight")
+    await expect(page).toHaveURL(initialUrl)
+  }
+
+  await page.evaluate(() => document.querySelector("#keyboard-editable-probe")?.remove())
+  await page.keyboard.press("o")
+  await expect(page.getByRole("dialog", { name: "Om boken", exact: true })).toBeVisible()
+  await page.keyboard.press("ArrowRight")
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?om-boken$/u)
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog", { name: "Om boken", exact: true })).toHaveCount(0)
+
+  await navigateClient(page, "/bibliotek")
+  await expect(page).toHaveURL("/bibliotek")
+  await page.keyboard.press("Shift+ArrowRight")
+  await page.waitForTimeout(100)
+  await expect(page).toHaveURL("/bibliotek")
+})
+
 test("goto accepts only exact page names and preserves the raw destination query", async ({
   page
 }) => {
