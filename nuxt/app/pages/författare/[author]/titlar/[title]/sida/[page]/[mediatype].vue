@@ -6,6 +6,7 @@ import type {
   ReaderFacsimileSize,
   ReaderPage
 } from "#shared/types/reader"
+import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import {
@@ -13,10 +14,14 @@ import {
   readerContentsHref,
   readerContentsIsOpen,
   readerContentsNeutralFullPath,
+  readerDialogNeutralFullPath,
   readerFullPathWithFragment,
   readerHitHref,
   readerPartAuthorKey,
   readerPageFullPath,
+  readerSourceInfoHref,
+  readerSourceInfoIsOpen,
+  readerSourceInfoNeutralFullPath,
   type ReaderRouteQuery
 } from "~/lib/reader-routes"
 
@@ -123,11 +128,21 @@ watch(() => route.fullPath, (nextRouteFullPath, previousRouteFullPath) => {
     ? readerFullPathWithFragment(rawFullPath.value, nextBrowserFullPath)
     : nextBrowserFullPath
 }, { flush: "sync" })
-const contentsNeutralIdentity = computed(
+const dialogNeutralIdentity = computed(
+  () => readerDialogNeutralFullPath(rawFullPath.value)
+)
+const contentsNeutralFullPath = computed(
   () => readerContentsNeutralFullPath(rawFullPath.value)
 )
 const contentsRequested = computed(() => readerContentsIsOpen(route.query.innehall))
 const contentsHref = computed(() => readerContentsHref(rawFullPath.value))
+const sourceInfoRequested = computed(
+  () => readerSourceInfoIsOpen(route.query["om-boken"])
+)
+const sourceInfoHref = computed(() => readerSourceInfoHref(rawFullPath.value))
+const sourceInfoNeutralFullPath = computed(
+  () => readerSourceInfoNeutralFullPath(rawFullPath.value)
+)
 
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
 type WorkSearchHitsResponse = components["schemas"]["WorkSearchHitsResponse"]
@@ -192,7 +207,7 @@ function parseCanonicalSearchState(): CanonicalSearchState | null {
 function preservedQuery(): ReaderRouteQuery {
   return Object.fromEntries(
     Object.entries(route.query)
-      .filter(([key]) => key !== "innehall")
+      .filter(([key]) => key !== "innehall" && key !== "om-boken")
       .map(([key, value]) => [
         key,
         Array.isArray(value)
@@ -376,6 +391,69 @@ if (import.meta.server) {
   }
 }
 
+const sourceInfoRequestIdentity = computed(() => JSON.stringify([
+  authorParam.value,
+  titleParam.value,
+  mediaTypeParam.value
+]))
+const initialSourceInfoRequested = sourceInfoRequested.value
+type CurrentReaderSourceInfo =
+  | { status: "success", identity: string, sourceInfo: ReaderSourceInfo }
+  | { status: "error", identity: string }
+
+const sourceInfoFetch = await useAsyncData<CurrentReaderSourceInfo>(
+  computed(() => `reader-source-info:${sourceInfoRequestIdentity.value}`),
+  async () => {
+    const identity = sourceInfoRequestIdentity.value
+    const sourceInfoApiUrl = [
+      "/api/reader/source-info",
+      encodeURIComponent(authorParam.value),
+      encodeURIComponent(titleParam.value)
+    ].join("/")
+    try {
+      const sourceInfo = await requestFetch<ReaderSourceInfo>(sourceInfoApiUrl, {
+        query: { media_type: mediaTypeParam.value },
+        retry: 0
+      })
+      return { status: "success" as const, identity, sourceInfo }
+    } catch {
+      return { status: "error" as const, identity }
+    }
+  },
+  { immediate: initialSourceInfoRequested }
+)
+
+const sourceInfo = computed(() => {
+  const current = sourceInfoFetch.data.value
+  return current?.status === "success"
+    && current.identity === sourceInfoRequestIdentity.value
+    ? current.sourceInfo
+    : null
+})
+const sourceInfoFailed = computed(
+  () => sourceInfoFetch.data.value?.status === "error"
+    && sourceInfoFetch.data.value.identity === sourceInfoRequestIdentity.value
+)
+const sourceInfoLoading = computed(
+  () => sourceInfoRequested.value
+    && !sourceInfo.value
+    && !sourceInfoFailed.value
+    && (sourceInfoFetch.status.value === "idle"
+      || sourceInfoFetch.status.value === "pending")
+)
+
+watch(sourceInfoRequested, open => {
+  if (!open || (import.meta.client && nuxtApp.isHydrating)) return
+  const current = sourceInfoFetch.data.value
+  if (
+    !current
+    || current.identity !== sourceInfoRequestIdentity.value
+    || current.status === "error"
+  ) {
+    void sourceInfoFetch.execute()
+  }
+})
+
 const reader = computed(() => {
   const current = data.value
   return current?.status === "success" && current.identity === readerRequestIdentity.value
@@ -383,8 +461,11 @@ const reader = computed(() => {
     : null
 })
 const contentsOpen = computed(
-  () => contentsRequested.value && (reader.value?.parts.length ?? 0) > 0
+  () => !sourceInfoRequested.value
+    && contentsRequested.value
+    && (reader.value?.parts.length ?? 0) > 0
 )
+const sourceInfoOpen = computed(() => sourceInfoRequested.value && reader.value !== null)
 onMounted(() => {
   rawFullPath.value = readerFullPathWithFragment(rawFullPath.value, browserFullPath())
 })
@@ -446,12 +527,12 @@ function currentPartAuthorLabel(index: number): string {
 const hitFetch = await useAsyncData(
   computed(() => [
         "reader-hit",
-        contentsNeutralIdentity.value,
+        dialogNeutralIdentity.value,
         data.value?.identity ?? "pending",
         data.value?.status === "success" ? data.value.reader.workId : "pending"
       ].join(":")),
       async () => {
-        const identity = contentsNeutralIdentity.value
+        const identity = dialogNeutralIdentity.value
         const state = searchState.value
         const currentReader = data.value
         if (
@@ -495,13 +576,13 @@ const hitFetch = await useAsyncData(
           return { status: "error" as const, identity }
         }
       },
-      { watch: [contentsNeutralIdentity, () => data.value?.identity] }
+      { watch: [dialogNeutralIdentity, () => data.value?.identity] }
     )
 
 const hitResponse = computed(() => {
   const value = hitFetch.data.value
   return value?.status === "success" &&
-    value.identity === contentsNeutralIdentity.value &&
+    value.identity === dialogNeutralIdentity.value &&
     data.value?.status === "success" &&
     data.value.identity === readerRequestIdentity.value &&
     data.value.reader.mediaType === "etext"
@@ -510,7 +591,7 @@ const hitResponse = computed(() => {
 })
 const hitRequestFailed = computed(
   () => hitFetch.data.value?.status === "error" &&
-    hitFetch.data.value.identity === contentsNeutralIdentity.value
+    hitFetch.data.value.identity === dialogNeutralIdentity.value
 )
 const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
@@ -572,7 +653,7 @@ function writeLastPageView(): void {
     lbworkid: currentReader.workId,
     author: authorParam.value,
     label: currentReader.title,
-    url: contentsNeutralIdentity.value
+    url: dialogNeutralIdentity.value
   }
   try {
     const raw = localStorage.getItem("lastPageViews")
@@ -601,7 +682,7 @@ function writeLastPageView(): void {
 
 onMounted(writeLastPageView)
 watch(
-  [contentsNeutralIdentity, () => data.value?.identity, () => data.value?.status],
+  [dialogNeutralIdentity, () => data.value?.identity, () => data.value?.status],
   ([_historyIdentity, identity, status]) => {
     if (status === "success" && identity === readerRequestIdentity.value) {
       writeLastPageView()
@@ -617,7 +698,7 @@ useSeoMeta({
 
 useHead(() => ({
   bodyAttrs: {
-    class: contentsOpen.value
+    class: contentsOpen.value || sourceInfoOpen.value
       ? "focus page-reading ready modal-open"
       : "focus page-reading ready"
   },
@@ -702,6 +783,9 @@ const gotoPage = ref("")
 const gotoMessage = ref("")
 const gotoInput = ref<HTMLInputElement | null>(null)
 const contentsTrigger = ref<HTMLAnchorElement | null>(null)
+const titleSourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
+const sidebarSourceInfoTrigger = ref<HTMLAnchorElement | null>(null)
+let sourceInfoTrigger: HTMLElement | null = null
 const contentsPartHrefs = computed(() => reader.value?.parts.map(
   part => readerPageFullPath(rawFullPath.value, part.startPageName)
 ) ?? [])
@@ -709,20 +793,80 @@ let contentsClosePending = false
 
 function openContents(): void {
   if (contentsOpen.value) return
-  void navigateRawFullPath(contentsHref.value, false, rawFullPath.value)
+  void navigateRawFullPath(contentsHref.value, true, rawFullPath.value)
 }
 
 async function closeContents(): Promise<void> {
   if (!contentsOpen.value || contentsClosePending) return
   contentsClosePending = true
   try {
-    await navigateRawFullPath(contentsNeutralIdentity.value, true)
+    await navigateRawFullPath(contentsNeutralFullPath.value, true)
     await nextTick()
     contentsTrigger.value?.focus()
   } finally {
     contentsClosePending = false
   }
 }
+
+function openSourceInfo(trigger: HTMLElement | null): void {
+  if (sourceInfoOpen.value) return
+  sourceInfoTrigger = trigger
+  void navigateRawFullPath(sourceInfoHref.value, true, rawFullPath.value)
+}
+
+async function closeSourceInfo(): Promise<void> {
+  if (!sourceInfoOpen.value) return
+  await navigateRawFullPath(sourceInfoNeutralFullPath.value, true)
+  await nextTick()
+  sourceInfoTrigger?.focus()
+  sourceInfoTrigger = null
+}
+
+function openSourceInfoFromTitle(): void {
+  openSourceInfo(titleSourceInfoTrigger.value)
+}
+
+function openSourceInfoFromSidebar(): void {
+  openSourceInfo(sidebarSourceInfoTrigger.value)
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  const name = target.tagName.toLowerCase()
+  return name === "input" || name === "textarea" || name === "select"
+    || target.isContentEditable
+}
+
+function anotherDialogOwnsFocus(target: EventTarget | null): boolean {
+  const focused = target instanceof HTMLElement
+    ? target
+    : document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+  const dialog = focused?.closest<HTMLElement>('[role="dialog"]')
+  return Boolean(dialog && !dialog.classList.contains("about"))
+}
+
+function handleSourceInfoKeydown(event: KeyboardEvent): void {
+  if (
+    (event.key !== "o" && event.key !== "F18")
+    || event.ctrlKey
+    || event.metaKey
+    || isEditableTarget(event.target)
+    || anotherDialogOwnsFocus(event.target)
+  ) return
+  event.preventDefault()
+  if (sourceInfoOpen.value) {
+    void closeSourceInfo()
+    return
+  }
+  openSourceInfo(document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null)
+}
+
+onMounted(() => document.addEventListener("keydown", handleSourceInfoKeydown))
+onBeforeUnmount(() => document.removeEventListener("keydown", handleSourceInfoKeydown))
 
 function selectContentsPage(pageName: string): void {
   const currentReader = reader.value
@@ -791,7 +935,12 @@ watch(readerRequestIdentity, () => {
           >
             <div>
               <div class="author"><a :href="authorHref">{{ reader.author.name }}</a></div>
-              <a class="title" aria-hidden="true">{{ reader.title }}</a>
+              <a
+                ref="titleSourceInfoTrigger"
+                class="title"
+                :href="sourceInfoHref"
+                @click.prevent="openSourceInfoFromTitle"
+              >{{ reader.title }}</a>
               <span v-if="reader.imprintYear"> ({{ reader.imprintYear }})</span>
             </div>
             <span class="reader-page-position sr-only">{{ reader.pageName }} av {{ reader.pageCount }}</span>
@@ -941,7 +1090,11 @@ watch(readerRequestIdentity, () => {
                     @click.prevent="openContents"
                   >Innehållsförteckning</a>
                 </li>
-                <li aria-hidden="true">Mer om boken</li>
+                <li><a
+                  ref="sidebarSourceInfoTrigger"
+                  :href="sourceInfoHref"
+                  @click.prevent="openSourceInfoFromSidebar"
+                >{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a></li>
                 <li aria-hidden="true">Läsfokus</li>
                 <li aria-hidden="true">Sök i verket</li>
                 <li aria-hidden="true">Sök i författarens texter</li>
@@ -1001,9 +1154,11 @@ watch(readerRequestIdentity, () => {
         </nav>
         </Teleport>
         <template #fallback>
-          <aside class="reader-context-ssr sr-only" aria-label="Läsinformation och sidnavigering">
+          <aside class="reader-context-ssr" aria-label="Läsinformation och sidnavigering">
             <a :href="authorHref">{{ reader.author.name }}</a>
-            <span>{{ reader.title }}<template v-if="reader.imprintYear"> ({{ reader.imprintYear }})</template></span>
+            <span><a :href="sourceInfoHref">{{ reader.title }}</a><template
+              v-if="reader.imprintYear"
+            > ({{ reader.imprintYear }})</template></span>
             <nav aria-label="Sidnavigering">
               <a
                 v-if="reader.previousPageName"
@@ -1019,6 +1174,7 @@ watch(readerRequestIdentity, () => {
               v-if="reader.parts.length"
               :href="contentsHref"
             >Innehållsförteckning</a>
+            <a :href="sourceInfoHref">{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a>
             <nav
               v-if="previousHit || nextHit"
               class="reader-hit-navigation"
@@ -1051,6 +1207,13 @@ watch(readerRequestIdentity, () => {
           @select-page="selectContentsPage"
         />
       </ClientOnly>
+      <ReaderSourceInfoDialog
+        :open="sourceInfoOpen"
+        :loading="sourceInfoLoading"
+        :failed="sourceInfoFailed"
+        :source-info="sourceInfo"
+        @close="closeSourceInfo"
+      />
     </template>
     <p
       v-else-if="primaryReaderFailed"

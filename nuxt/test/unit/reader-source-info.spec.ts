@@ -17,6 +17,9 @@ import {
 import {
   doktorGlasSourceInfo,
   dramaSourceInfo,
+  emptyErrataSourceInfo,
+  longErrataSourceInfo,
+  navigableSparseSourceInfo,
   sourceInfoLicenses,
   sourceInfoProvenance,
   sparseSourceInfo
@@ -52,6 +55,26 @@ describe("Reader source-information runtime contract", () => {
       "SparseA",
       "SparseTitle"
     )).toEqual(sparseSourceInfo)
+  })
+
+  test.each([
+    ["navigable sparse", navigableSparseSourceInfo, "SparseA", "SparseTitle"],
+    ["long errata", longErrataSourceInfo, "LongErrataA", "LongErrata"],
+    ["empty errata", emptyErrataSourceInfo, "EmptyErrataA", "EmptyErrata"]
+  ])("accepts the %s browser fixture", (_name, source, author, title) => {
+    expect(validateReaderSourceInfoResponse(source, author, title, "etext")).toEqual(source)
+  })
+
+  test.each([
+    ["navigable sparse", navigableSparseSourceInfo],
+    ["long errata", longErrataSourceInfo],
+    ["empty errata", emptyErrataSourceInfo]
+  ])("builds the %s browser fixture", async (_name, source) => {
+    await expect(buildReaderSourceInfo(
+      source,
+      { provenance: sourceInfoProvenance, licenses: sourceInfoLicenses },
+      async () => ({ items: [] })
+    )).resolves.toMatchObject({ title: source.title })
   })
 
   test.each([

@@ -58,6 +58,14 @@
     }
 }
 
+.modal.about {
+    display: block;
+
+    > .modal-dialog {
+        z-index: 1050;
+    }
+}
+
 .page-id {
     td:last-of-type > span::before,
     td:last-of-type > span::after {

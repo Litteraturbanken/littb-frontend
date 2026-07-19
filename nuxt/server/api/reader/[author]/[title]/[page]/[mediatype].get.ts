@@ -163,6 +163,7 @@ export default defineEventHandler(async event => {
       `${metadata.displayTitle} av ${metadata.author.name}, sida ${pageName} som ${metadata.mediaType}.`,
     fullTitle: metadata.fullTitle,
     imprintYear: metadata.imprintYear,
+    isDrama: metadata.isDrama,
     currentPartIndex: partNavigation.currentPartIndex,
     endPageName: metadata.endPageName && knownNames.has(metadata.endPageName)
       ? metadata.endPageName

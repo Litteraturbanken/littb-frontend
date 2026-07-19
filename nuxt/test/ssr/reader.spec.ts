@@ -1,10 +1,12 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
+import { parseHTML } from "linkedom"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerPartsPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-1/etext"
 const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
+const dramaFacsimilePath = "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil"
 const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_3/" +
   "lb-reader-gosta-berlings-saga_3_0009.jpeg"
@@ -25,6 +27,11 @@ async function resetReader(request: APIRequestContext) {
     request.delete(`${fixture}/_reader_hit_requests`),
     request.delete(`${fixture}/_reader_hit_failure`),
     request.delete(`${fixture}/_reader_hit_delays`),
+    request.delete(`${fixture}/_source_info_requests`),
+    request.delete(`${fixture}/_source_info_static_requests`),
+    request.delete(`${fixture}/_source_info_failure`),
+    request.delete(`${fixture}/_source_info_delays`),
+    request.delete(`${fixture}/_source_info_static_failure`),
     request.delete(`${fixture}/_author_resolve_requests`),
     request.delete(`${fixture}/_author_resolve_failure`),
     request.delete(`${fixture}/_author_resolve_scenario`)
@@ -66,6 +73,18 @@ async function authorResolveRequests(request: APIRequestContext): Promise<Array<
   return (await (await request.get(`${fixture}/_author_resolve_requests`)).json()).requests
 }
 
+async function sourceInfoRequests(request: APIRequestContext): Promise<Array<{
+  scope: "private" | "public"
+  path: string
+  query: string
+}>> {
+  return (await (await request.get(`${fixture}/_source_info_requests`)).json()).requests
+}
+
+async function sourceInfoStaticRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_source_info_static_requests`)).json()).requests
+}
+
 async function setAuthorResolveScenario(request: APIRequestContext, scenario: string) {
   await request.put(`${fixture}/_author_resolve_scenario`, { data: { scenario } })
 }
@@ -90,6 +109,13 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(html).toContain('href="/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext"')
   expect(html).toContain('href="/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"')
   expect(html).not.toContain("Hämtar sida")
+  const sourceHref =
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?om-boken"
+  expect(html.split(`href="${sourceHref}"`)).toHaveLength(3)
+  expect(html).toContain(`href="${sourceHref}">Doktor Glas</a>`)
+  expect(html).toContain(`href="${sourceHref}">Mer om boken</a>`)
+  expect(html).toContain('class="reader-context-ssr"')
+  expect(html).not.toContain('class="reader-context-ssr sr-only"')
 
   const recorded = await readerRequests(request)
   expect(recorded.filter(path => path.startsWith("/api/get_work_info?"))).toHaveLength(1)
@@ -97,6 +123,113 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
     "/txt/lb-reader-doktor-glas/res_00002.html?"
   ))).toHaveLength(1)
   expect(await readerHitRequests(request)).toEqual([])
+  expect(await sourceInfoRequests(request)).toEqual([])
+  expect(await sourceInfoStaticRequests(request)).toEqual([])
+})
+
+test("direct bare source-information SSR renders the Reader and complete modal once", async ({
+  request
+}) => {
+  const response = await request.get(`${readerPath}?om-boken`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(html).toContain("DOKTOR")
+  expect(html).toContain('class="modal about fade in"')
+  expect(html).toContain("Doktor Glas. Roman")
+  expect(html).toContain("Hjalmar Söderberg")
+  expect(html).toContain("Albert Bonniers förlag, Stockholm 1905")
+  expect(html).toContain("Läs som")
+  expect(html).toContain("Ladda ner")
+  expect(html).toContain("Verket i")
+  expect(html).toContain("Libris")
+  expect(html).toContain("Hänvisa till detta verk")
+  expect(html).toContain("Göteborgs universitetsbibliotek")
+  expect(html).toContain("För e-boken gäller licensen CC0")
+  expect(html).toContain("följande ändringar gjorts mot originalet")
+  expect(html).not.toContain("Ett fel har uppstått.")
+  expect(html).toMatch(/<body[^>]*class="focus page-reading ready modal-open"/u)
+  expect(await sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
+    query: "?media_type=etext"
+  }])
+  expect(await sourceInfoStaticRequests(request)).toEqual([
+    "/red/etc/provenance/provenance.json",
+    "/red/etc/license/license.json"
+  ])
+})
+
+test("exact empty source-information assignment remains closed and makes no request", async ({
+  request
+}) => {
+  const response = await request.get(`${readerPath}?om-boken=`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).not.toContain('class="modal about fade in"')
+  expect(html).not.toContain("Ett fel har uppstått.")
+  expect(await sourceInfoRequests(request)).toEqual([])
+  expect(await sourceInfoStaticRequests(request)).toEqual([])
+})
+
+test("source-information failure stays modal-local on a successful Reader SSR", async ({
+  request
+}) => {
+  await request.put(`${fixture}/_source_info_failure`)
+  const response = await request.get(`${readerPath}?om-boken`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("DOKTOR")
+  expect(html).toContain('class="modal about fade in"')
+  expect(html).toContain("Ett fel har uppstått.")
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+})
+
+test("source information has presentation priority when both dialog keys are direct", async ({
+  request
+}) => {
+  const response = await request.get(`${readerPath}?innehall&om-boken`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain('class="modal about fade in"')
+  expect(html).not.toContain('class="modal chapters fade in"')
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+})
+
+test("drama Reader projects closed copy and complete source-information facts", async ({
+  request
+}) => {
+  const closed = await request.get(dramaFacsimilePath)
+  expect(closed.status()).toBe(200)
+  const closedHtml = await closed.text()
+  expect(closedHtml).toContain("Mer om pjäsen")
+  expect(await sourceInfoRequests(request)).toEqual([])
+
+  const opened = await request.get(`${dramaFacsimilePath}?om-boken`)
+  expect(opened.status()).toBe(200)
+  const html = await opened.text()
+  expect(html).toContain('class="modal about fade in"')
+  expect(html).toContain("Affärer")
+  expect(html).toContain("Antal akter")
+  expect(html).toContain("Direktören")
+  expect(html).toContain("Teaterkritik")
+  const { document } = parseHTML(html)
+  expect(document.querySelector(".dw_logo")).toBeNull()
+  expect(document.querySelector("h3.introheader")).toBeNull()
+  const roleSections = [...document.querySelectorAll(".dramaweb > div")]
+  const roleSection = roleSections.find(section => (
+    section.querySelector("h3")?.textContent?.trim() === "Rollista"
+  ))
+  const roles = roleSection?.querySelector("div")
+  expect(roles?.innerHTML).toBe(
+    '<i>Direktören</i>, grosshandlare<br><span class="role">Anna</span>, hans dotter'
+  )
+  expect([...roles?.children ?? []].map(child => child.tagName)).toEqual([
+    "I",
+    "BR",
+    "SPAN"
+  ])
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
 })
 
 test("partful SSR exposes one raw-preserving contents trigger without a dialog tree", async ({
@@ -136,6 +269,7 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     endPageName: "5",
     imageNumber: 9,
     imprintYear: "1891",
+    isDrama: false,
     mediaType: "faksimil",
     nextPageName: "5",
     nextPartPageName: null,

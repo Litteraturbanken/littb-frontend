@@ -78,10 +78,17 @@ describe("reader media and exact representation selection", () => {
 
     expect(metadata).toMatchObject({
       author: { id: "LagerlöfS", name: "Selma Lagerlöf" },
+      isDrama: false,
       mediaType: "faksimil",
       titlePath: "GostaBerlingsSaga",
       workId: "lb 12/!*'()"
     })
+  })
+
+  test("projects the selected representation's drama classification", () => {
+    expect(normalize({ texttype: "drama" })).toMatchObject({ isDrama: true })
+    expect(normalize({ texttype: "roman" })).toMatchObject({ isDrama: false })
+    expect(normalize({ texttype: undefined })).toMatchObject({ isDrama: false })
   })
 
   test("rejects absent exact media/title and mismatched author identities", () => {

@@ -33,7 +33,8 @@ export const readerWorkInfoResponse = {
         }
       ],
       title: "Doktor Glas. Roman",
-      titlepath: "DoktorGlas"
+      titlepath: "DoktorGlas",
+      texttype: "roman"
     }
   ]
 }
@@ -75,6 +76,7 @@ export const readerFacsimileWorkInfoResponse = {
       ],
       title: "Gösta Berlings saga. Roman",
       titlepath: "GostaBerlingsSaga",
+      texttype: "roman",
       width: {
         size_2: 450,
         size_3: 625,

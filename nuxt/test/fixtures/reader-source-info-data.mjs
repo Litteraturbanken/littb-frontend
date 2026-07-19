@@ -129,7 +129,7 @@ export const dramaSourceInfo = {
   ],
   errata: [],
   dramawebben: {
-    has_introduction: false,
+    has_introduction: true,
     facts: [
       { key: "number_of_pages", value: "204" },
       { key: "number_of_acts", value: "5" },
@@ -184,6 +184,71 @@ export const sparseSourceInfo = {
   }
 }
 
+/** @satisfies {WorkSourceInfoResponse} */
+export const navigableSparseSourceInfo = {
+  ...sparseSourceInfo,
+  media_type: "etext",
+  start_page: "-2",
+  provenance: [],
+  license_key: null,
+  errata: []
+}
+
+/** @satisfies {WorkSourceInfoResponse} */
+export const longErrataSourceInfo = {
+  ...doktorGlasSourceInfo,
+  work_id: "lbLongErrata1",
+  author_id: "LongErrataA",
+  title_path: "LongErrata",
+  title: "Lång errata",
+  short_title: "Lång errata",
+  authors: [{
+    author_id: "LongErrataA",
+    full_name: "Rita Redaktör",
+    surname: "Redaktör",
+    role: "redaktör",
+    author_type: null,
+    url: "/författare/LongErrataA"
+  }],
+  source_description_html: null,
+  urn: null,
+  libris_id: null,
+  license_key: null,
+  provenance: [],
+  cover: {
+    small_url: "/txt/lbLongErrata1/lbLongErrata1_small.jpeg",
+    large_url: "/txt/lbLongErrata1/lbLongErrata1_large.jpeg"
+  },
+  read_actions: [],
+  download_actions: [],
+  errata: Array.from({ length: 10 }, (_, index) => ({
+    cells_html: [`sid. ${index + 1}`, `rättning ${index + 1}`]
+  }))
+}
+
+/** @satisfies {WorkSourceInfoResponse} */
+export const emptyErrataSourceInfo = {
+  ...longErrataSourceInfo,
+  work_id: "lbEmptyErrata1",
+  author_id: "EmptyErrataA",
+  title_path: "EmptyErrata",
+  title: "Tom errata",
+  short_title: "Tom errata",
+  authors: [{
+    author_id: "EmptyErrataA",
+    full_name: "Erik Exempel",
+    surname: "Exempel",
+    role: null,
+    author_type: null,
+    url: "/författare/EmptyErrataA"
+  }],
+  cover: {
+    small_url: "/txt/lbEmptyErrata1/lbEmptyErrata1_small.jpeg",
+    large_url: "/txt/lbEmptyErrata1/lbEmptyErrata1_large.jpeg"
+  },
+  errata: []
+}
+
 export const malformedSourceInfo = {
   ...doktorGlasSourceInfo,
   work_id: 1728740,
@@ -199,6 +264,8 @@ export const sourceInfoByIdentity = new Map([
   ["SöderbergH|DoktorGlas", doktorGlasSourceInfo],
   ["AlmlöfN|Affarer", dramaSourceInfo],
   ["SparseA|SparseTitle", sparseSourceInfo],
+  ["LongErrataA|LongErrata", longErrataSourceInfo],
+  ["EmptyErrataA|EmptyErrata", emptyErrataSourceInfo],
   ["MalformedA|MalformedTitle", malformedSourceInfo],
   ["OversizedA|OversizedTitle", oversizedSourceInfo]
 ])

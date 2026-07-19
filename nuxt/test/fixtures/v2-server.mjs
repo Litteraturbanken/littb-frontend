@@ -44,6 +44,7 @@ import {
   workReaderCss
 } from "./reader-data.mjs"
 import {
+  navigableSparseSourceInfo,
   sourceInfoByIdentity,
   sourceInfoLicenses,
   sourceInfoProvenance
@@ -72,12 +73,39 @@ const homeContent = new Map([
   ["/red/bilder/bakgrundsbilder/start_bkg_172_2026.jpg", ["image/jpeg", readFileSync(new URL("./home-content/start_bkg_172_2026.jpg", import.meta.url))]]
 ])
 
+const readerFacsimileJpeg = readFileSync(readerFacsimileJpegFile)
+const sourceInfoCoverIds = [
+  "lb1728740",
+  "lb31230",
+  "lbSparse1",
+  "lbLongErrata1",
+  "lbEmptyErrata1"
+]
 const sharedContent = new Map([
   ["/red/bilder/bakgrundsbilder/biblioteket_bakgrund.jpg", ["image/jpeg", readFileSync(new URL("./library-content/biblioteket_bakgrund.jpg", import.meta.url))]],
   ["/red/bilder/bakgrundsbilder/ljudlandskap.jpg", ["image/jpeg", readFileSync(new URL("./library-content/ljudlandskap.jpg", import.meta.url))]],
-  ["/red/bilder/bakgrundsbilder/sok_bkg.jpg", ["image/jpeg", Buffer.from(textSearchBackgroundBase64, "base64")]]
+  ["/red/bilder/bakgrundsbilder/sok_bkg.jpg", ["image/jpeg", Buffer.from(textSearchBackgroundBase64, "base64")]],
+  ...sourceInfoCoverIds.flatMap(workId => [
+    [`/txt/${workId}/${workId}_small.jpeg`, ["image/jpeg", readerFacsimileJpeg]],
+    [`/txt/${workId}/${workId}_large.jpeg`, ["image/jpeg", readerFacsimileJpeg]]
+  ]),
+  ...Array.from({ length: 5 }, (_, index) => {
+    const size = index + 1
+    return [
+      `/txt/lb31230/lb31230_${size}/lb31230_${size}_0001.jpeg`,
+      ["image/jpeg", readerFacsimileJpeg]
+    ]
+  }),
+  ["/red/bilder/gemensamt/gublogga.png", ["image/png", readFileSync(new URL("./about-content/cc_by.png", import.meta.url))]],
+  ["/red/bilder/gemensamt/kblogga.png", ["image/png", readFileSync(new URL("./about-content/cc_by.png", import.meta.url))]],
+  ["/red/bilder/gemensamt/cc-128x128.png", ["image/png", readFileSync(new URL("./about-content/cc_by.png", import.meta.url))]],
+  ["/red/bilder/gemensamt/cc0-128x128.png", ["image/png", readFileSync(new URL("./about-content/cc_publicdomain.png", import.meta.url))]],
+  ["/red/bilder/gemensamt/cc-pd-128x128.png", ["image/png", readFileSync(new URL("./about-content/cc_publicdomain.png", import.meta.url))]],
+  ["/red/bilder/gemensamt/dramawebben_svart.svg", [
+    "image/svg+xml",
+    Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>')
+  ]]
 ])
-const readerFacsimileJpeg = readFileSync(readerFacsimileJpegFile)
 
 const presentationContent = new Map([
   ["/red/presentationer/presentationerForfattare.html", ["xhtml", "text/html; charset=utf-8", readFileSync(new URL("./presentation-content/presentationerForfattare.html", import.meta.url))]],
@@ -707,6 +735,68 @@ function readerMetadataResponse(titlePath) {
       }
     case "GostaBerlingsSaga":
       return readerFacsimileWorkInfoResponse
+    case "Affarer":
+      return {
+        hits: 1,
+        data: [readerFacsimileRepresentation(titlePath, {
+          authors: [{
+            authorid: "AlmlöfN",
+            full_name: "Nils Almlöf",
+            surname: "Almlöf"
+          }],
+          endpagename: "-2",
+          lbworkid: "lb31230",
+          pages: [{ pagename: "-2", pageindex: 0, imagenumber: 1 }],
+          parts: [],
+          shorttitle: "Affärer",
+          startpagename: "-2",
+          texttype: "drama",
+          title: "Affärer"
+        })]
+      }
+    case "SparseTitle":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          authors: [{
+            authorid: "SparseA",
+            full_name: "Sparsamt Författarnamn",
+            surname: "Författarnamn"
+          }],
+          parts: [],
+          shorttitle: "Glest verk",
+          title: "Glest verk",
+          texttype: null
+        })]
+      }
+    case "LongErrata":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          authors: [{
+            authorid: "LongErrataA",
+            full_name: "Rita Redaktör",
+            surname: "Redaktör"
+          }],
+          parts: [],
+          shorttitle: "Lång errata",
+          title: "Lång errata"
+        })]
+      }
+    case "EmptyErrata":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          authors: [{
+            authorid: "EmptyErrataA",
+            full_name: "Erik Exempel",
+            surname: "Exempel"
+          }],
+          parts: [],
+          shorttitle: "Tom errata",
+          title: "Tom errata"
+        })]
+      }
     case "MalformedFacsimileImageReader":
       return {
         hits: 1,
@@ -2751,7 +2841,8 @@ const server = createServer(async (request, response) => {
     request.method === "GET" &&
     (
       url.pathname === "/txt/css/lb-reader-doktor-glas-etext.css" ||
-      url.pathname === "/txt/css/lb-reader-doktor-glas-parts-etext.css"
+      url.pathname === "/txt/css/lb-reader-doktor-glas-parts-etext.css" ||
+      url.pathname === "/txt/css/lb7604979-etext.css"
     )
   ) {
     readerRequests.push(`${url.pathname}${url.search}`)
@@ -3174,9 +3265,13 @@ const server = createServer(async (request, response) => {
         }
       })
     }
-    const item = sourceInfoByIdentity.get(
-      `${sourceInfoIdentity.authorId}|${sourceInfoIdentity.titlePath}`
-    )
+    const item = sourceInfoIdentity.authorId === "SparseA"
+      && sourceInfoIdentity.titlePath === "SparseTitle"
+      && mediaType === "etext"
+      ? navigableSparseSourceInfo
+      : sourceInfoByIdentity.get(
+        `${sourceInfoIdentity.authorId}|${sourceInfoIdentity.titlePath}`
+      )
     if (!item) {
       return sendJson(response, 404, {
         error: { code: "source_info_not_found", message: "Work not found", details: null }

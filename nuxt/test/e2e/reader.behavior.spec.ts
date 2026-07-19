@@ -6,7 +6,7 @@ import {
   type Page
 } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerPartsPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-1/etext"
 const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
@@ -14,6 +14,10 @@ const readerEncodedPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/si
 const readerPublicCanonicalPath = "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerShorthandPath = "/författare/SöderbergH/titlar/DoktorGlas/etext"
 const readerShorthandRouterPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext"
+const dramaReaderPath = "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil"
+const sparseReaderPath = "/författare/SparseA/titlar/SparseTitle/sida/-2/etext"
+const longErrataReaderPath = "/författare/LongErrataA/titlar/LongErrata/sida/-2/etext"
+const emptyErrataReaderPath = "/författare/EmptyErrataA/titlar/EmptyErrata/sida/-2/etext"
 const storedReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const storedNextReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
@@ -59,7 +63,12 @@ async function resetReader(request: APIRequestContext) {
     request.delete(`${fixture}/_reader_metadata_delays`),
     request.delete(`${fixture}/_reader_hit_requests`),
     request.delete(`${fixture}/_reader_hit_failure`),
-    request.delete(`${fixture}/_reader_hit_delays`)
+    request.delete(`${fixture}/_reader_hit_delays`),
+    request.delete(`${fixture}/_source_info_requests`),
+    request.delete(`${fixture}/_source_info_static_requests`),
+    request.delete(`${fixture}/_source_info_failure`),
+    request.delete(`${fixture}/_source_info_delays`),
+    request.delete(`${fixture}/_source_info_static_failure`)
   ])
 }
 
@@ -77,17 +86,76 @@ async function readerHitRequests(request: APIRequestContext): Promise<ReaderHitR
   return (await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests
 }
 
-function captureBrowserProblems(page: Page) {
+type SourceInfoRequest = { scope: "private" | "public", path: string, query: string }
+
+async function sourceInfoRequests(request: APIRequestContext): Promise<SourceInfoRequest[]> {
+  return (await (await request.get(`${fixture}/_source_info_requests`)).json()).requests
+}
+
+type AllowedHttpError = {
+  method: "GET"
+  status: number
+  url: string
+}
+
+type AllowedRequestFailure = {
+  errorText: string
+  method: "GET"
+  urlSuffix: string
+}
+
+function captureBrowserProblems(
+  page: Page,
+  allowances: {
+    httpErrors?: readonly AllowedHttpError[]
+    requestFailures?: readonly AllowedRequestFailure[]
+  } = {}
+) {
   const problems: string[] = []
+  const remainingAllowedHttpErrors = [...(allowances.httpErrors ?? [])]
+  const remainingAllowedRequestFailures = [...(allowances.requestFailures ?? [])]
   page.on("console", message => {
     if (
       /hydration/i.test(message.text()) ||
+      // Chromium reports HTTP failures generically here; the response listener below
+      // retains the status, method, and exact URL needed for a useful assertion.
       (message.type() === "error" && !message.text().startsWith("Failed to load resource:"))
     ) {
       problems.push(`console: ${message.text()}`)
     }
   })
   page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
+  page.on("response", response => {
+    if (response.status() < 400) return
+    const responseUrl = new URL(response.url())
+    const relativeUrl = `${responseUrl.pathname}${responseUrl.search}`
+    const allowedIndex = remainingAllowedHttpErrors.findIndex(allowed =>
+      allowed.status === response.status()
+      && allowed.method === response.request().method()
+      && allowed.url === relativeUrl
+    )
+    if (allowedIndex !== -1) {
+      remainingAllowedHttpErrors.splice(allowedIndex, 1)
+      return
+    }
+    problems.push(
+      `response: ${response.status()} ${response.request().method()} ${response.url()}`
+    )
+  })
+  page.on("requestfailed", request => {
+    const failure = request.failure()?.errorText ?? "unknown failure"
+    if (failure.includes("ERR_ABORTED")) return
+    const allowedIndex = remainingAllowedRequestFailures.findIndex(allowed =>
+      allowed.errorText === failure
+      && allowed.method === request.method()
+      && request.url().endsWith(allowed.urlSuffix)
+    )
+    if (allowedIndex !== -1) {
+      remainingAllowedRequestFailures.splice(allowedIndex, 1)
+      return
+    }
+    problems.push(`requestfailed: ${request.method()} ${request.url()} (${failure})`)
+  })
   return problems
 }
 
@@ -228,7 +296,7 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
   expect(problems).toEqual([])
 })
 
-test("contents trigger pushes one focus-trapped dialog without Reader requests and supports history", async ({
+test("contents trigger replaces one focus-trapped dialog without Reader requests", async ({
   page,
   request
 }) => {
@@ -251,6 +319,10 @@ test("contents trigger pushes one focus-trapped dialog without Reader requests a
   const dialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
   await expect(dialog).toHaveCount(1)
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
+  await expect.poll(() => page.evaluate(() => [
+    getComputedStyle(document.documentElement).overflow,
+    getComputedStyle(document.body).overflow
+  ])).toContain("hidden")
   await expect.poll(() => page.evaluate(() => Boolean(
     document.activeElement?.closest('[role="dialog"]')
   ))).toBe(true)
@@ -258,14 +330,13 @@ test("contents trigger pushes one focus-trapped dialog without Reader requests a
   expect(await page.evaluate(() => Boolean(
     document.activeElement?.closest('[role="dialog"]')
   ))).toBe(true)
-  expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1)
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
   expect(await readerRequests(request)).toEqual([])
   expect(await readerHitRequests(request)).toEqual([])
 
-  await page.goBack()
+  await dialog.getByRole("button", { name: "Stäng" }).click()
   await expect(dialog).toHaveCount(0)
-  await page.goForward()
-  await expect(dialog).toHaveCount(1)
+  await expect(page).toHaveURL(`${readerPartsPath}${rawQuery}`)
   expect(await readerRequests(request)).toEqual([])
   expect(await readerHitRequests(request)).toEqual([])
   expect(problems).toEqual([])
@@ -316,17 +387,11 @@ for (const closeMethod of ["Escape", "backdrop", "Stäng"] as const) {
     await trigger.click()
     await expect(page).toHaveURL(contentsPath)
     await expect(dialog).toHaveCount(1)
-    expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
-    expect(await page.evaluate(() => window.history.length)).toBe(historyLengthBeforeOpen + 1)
+    expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 1 })
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLengthBeforeOpen)
     expect(await readerRequests(request)).toEqual([])
     expect(await readerHitRequests(request)).toEqual([])
 
-    await page.goBack()
-    await expect(page).toHaveURL(retainedPath)
-    await expect(dialog).toHaveCount(0)
-    await page.goForward()
-    await expect(page).toHaveURL(contentsPath)
-    await expect(dialog).toHaveCount(1)
     expect(await page.evaluate(() => window.history.state.current)).toBe(contentsEncodedPath)
     await startHistoryMutationCounter(page)
     const historyLengthBeforeClose = await page.evaluate(() => window.history.length)
@@ -367,17 +432,500 @@ for (const closeMethod of ["Escape", "backdrop", "Stäng"] as const) {
     expect(await readerRequests(request)).toEqual([])
     expect(await readerHitRequests(request)).toEqual([])
 
-    await page.goBack()
-    await expect(page).toHaveURL(retainedPath)
-    await expect(dialog).toHaveCount(0)
-    await page.goForward()
-    await expect(page).toHaveURL(retainedPath)
-    await expect(dialog).toHaveCount(0)
     await expect(
       page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" })
     ).toHaveAttribute("href", nextHref)
   })
 }
+
+test("direct source information hydrates once without a client refetch", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const clientSourceInfoRequests: string[] = []
+  page.on("request", browserRequest => {
+    if (new URL(browserRequest.url()).pathname.includes("/api/reader/source-info/")) {
+      clientSourceInfoRequests.push(browserRequest.url())
+    }
+  })
+
+  const response = await page.goto(`${readerPath}?bare&om-boken`, {
+    waitUntil: "networkidle"
+  })
+
+  expect(response?.status()).toBe(200)
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toHaveCount(1)
+  await expect(dialog).toContainText("Doktor Glas. Roman")
+  await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
+  expect(clientSourceInfoRequests).toEqual([])
+  expect(await sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
+    query: "?media_type=etext"
+  }])
+  expect(problems).toEqual([])
+})
+
+test("direct source information remains visible and linked without JavaScript", async ({
+  browser
+}, testInfo) => {
+  test.skip(testInfo.project.name === "mobile-chromium", "One no-JavaScript browser pass is sufficient")
+  const context = await browser.newContext({ javaScriptEnabled: false })
+  const page = await context.newPage()
+  const blockedNuxtEntry = {
+    errorText: "csp",
+    method: "GET" as const,
+    urlSuffix: "/node_modules/nuxt/dist/app/entry.async.js"
+  }
+  const problems = captureBrowserProblems(page, {
+    requestFailures: [blockedNuxtEntry, blockedNuxtEntry]
+  })
+  const origin = `http://127.0.0.1:${process.env.LITTB_NUXT_TEST_PORT || 3000}`
+  const response = await page.goto(`${origin}${readerPath}`, {
+    waitUntil: "networkidle"
+  })
+
+  expect(response?.status()).toBe(200)
+  const fallback = page.locator(".reader-context-ssr")
+  await expect(fallback).toBeAttached()
+  const expectedHref = `${readerEncodedPath}?om-boken`
+  const title = fallback.locator("a").filter({ hasText: "Doktor Glas" })
+  const sidebar = fallback.locator("a").filter({ hasText: "Mer om boken" })
+  await expect(title).toHaveAttribute("href", expectedHref)
+  await expect(sidebar).toHaveAttribute("href", expectedHref)
+
+  const titleHref = await title.getAttribute("href")
+  const directResponse = await page.goto(`${origin}${titleHref}`, { waitUntil: "networkidle" })
+  expect(directResponse?.status()).toBe(200)
+  await expect(page).toHaveURL(`${readerPath}?om-boken`)
+  const dialog = page.locator('.modal.about[role="dialog"]')
+  await expect(dialog).toBeVisible()
+  await expect(dialog.locator(".header .title")).toHaveText("Doktor Glas. Roman")
+  await expect(dialog.locator(".header .author").getByRole("link", {
+    name: "Hjalmar Söderberg"
+  })).toHaveAttribute("href", "/författare/S%C3%B6derbergH")
+  await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
+  await expect.poll(() => page.evaluate(() => [
+    getComputedStyle(document.documentElement).overflow,
+    getComputedStyle(document.body).overflow
+  ])).toContain("hidden")
+  for (const corridor of ["#leftCorridor", "#mainview", "#rightCorridor"]) {
+    await expect(page.locator(corridor)).toHaveCSS("filter", "blur(4px)")
+  }
+  expect(problems).toEqual([])
+  await context.close()
+})
+
+test("source information entrances replace history and preserve raw query bytes", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawQuery = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  const openPath = `${readerPath}${rawQuery}&om-boken`
+  const openEncodedPath = `${readerEncodedPath}${rawQuery}&om-boken`
+  await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+  await resetReader(request)
+
+  const title = page.locator(".reader-context").getByRole("link", {
+    name: "Doktor Glas"
+  })
+  const sidebar = page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(title).toHaveAttribute("href", openEncodedPath)
+  await expect(sidebar).toHaveAttribute("href", openEncodedPath)
+  const historyLength = await page.evaluate(() => window.history.length)
+
+  await startHistoryMutationCounter(page)
+  await title.click()
+  await expect(page).toHaveURL(openPath)
+  await expect(dialog).toHaveCount(1)
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 1 })
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
+  await dialog.getByRole("button", { name: "Stäng" }).click()
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(title).toBeFocused()
+
+  await sidebar.click()
+  await expect(page).toHaveURL(openPath)
+  await expect(dialog).toHaveCount(1)
+  await page.keyboard.press("Escape")
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(sidebar).toBeFocused()
+
+  await page.keyboard.press("o")
+  await expect(page).toHaveURL(openPath)
+  await expect(dialog).toHaveCount(1)
+  await page.evaluate(() => document.dispatchEvent(new KeyboardEvent("keydown", {
+    bubbles: true,
+    key: "F18"
+  })))
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(dialog).toHaveCount(0)
+
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(problems).toEqual([])
+})
+
+test("source information is focus-trapped and backdrop-close restores its trigger", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const trigger = page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" })
+  await trigger.click()
+
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toHaveCount(1)
+  await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
+  await expect.poll(() => page.evaluate(() => [
+    getComputedStyle(document.documentElement).overflow,
+    getComputedStyle(document.body).overflow
+  ])).toContain("hidden")
+  for (const corridor of ["#leftCorridor", "#mainview", "#rightCorridor"]) {
+    await expect(page.locator(corridor)).toHaveCSS("filter", "blur(4px)")
+  }
+  await expect.poll(() => page.evaluate(() => Boolean(
+    document.activeElement?.closest('[role="dialog"]')
+  ))).toBe(true)
+  await page.keyboard.press("Shift+Tab")
+  expect(await page.evaluate(() => Boolean(
+    document.activeElement?.closest('[role="dialog"]')
+  ))).toBe(true)
+
+  const backdrop = page.locator(".modal.about .modal-backdrop")
+  if ((page.viewportSize()?.width ?? Number.POSITIVE_INFINITY) < 768) {
+    await backdrop.dispatchEvent("touchend")
+  } else {
+    await backdrop.click({ position: { x: 5, y: 5 } })
+  }
+  await expect(dialog).toHaveCount(0)
+  await expect(page.locator("body")).not.toHaveClass(/\bmodal-open\b/u)
+  await expect.poll(() => page.evaluate(() => [
+    getComputedStyle(document.documentElement).overflow,
+    getComputedStyle(document.body).overflow
+  ])).not.toContain("hidden")
+  for (const corridor of ["#leftCorridor", "#mainview", "#rightCorridor"]) {
+    await expect(page.locator(corridor)).toHaveCSS("filter", "none")
+  }
+  await expect(trigger).toBeFocused()
+  expect(problems).toEqual([])
+})
+
+test("source information wins over contents and closing it reveals contents", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPartsPath}?bare&innehall&om-boken`, {
+    waitUntil: "networkidle"
+  })
+
+  const sourceDialog = page.getByRole("dialog", { name: "Om boken" })
+  const contentsDialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  await expect(sourceDialog).toHaveCount(1)
+  await expect(contentsDialog).toHaveCount(0)
+  await sourceDialog.getByRole("button", { name: "Stäng" }).click()
+
+  await expect(page).toHaveURL(`${readerPartsPath}?bare&innehall`)
+  await expect(sourceDialog).toHaveCount(0)
+  await expect(contentsDialog).toHaveCount(1)
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(problems).toEqual([])
+})
+
+test("a failed source-information request is modal-local and retries on reopen", async ({
+  page,
+  request
+}) => {
+  const failedSourceInfoUrl =
+    "/api/reader/source-info/S%C3%B6derbergH/DoktorGlas?media_type=etext"
+  const problems = captureBrowserProblems(page, {
+    httpErrors: [{
+      method: "GET",
+      status: 502,
+      url: failedSourceInfoUrl
+    }]
+  })
+  await request.put(`${fixture}/_source_info_failure`)
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const trigger = page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+
+  const failedResponse = page.waitForResponse(response => {
+    const url = new URL(response.url())
+    return `${url.pathname}${url.search}` === failedSourceInfoUrl
+  })
+  await trigger.click()
+  expect((await failedResponse).status()).toBe(502)
+  await expect(dialog.getByRole("alert")).toHaveText("Ett fel har uppstått.")
+  await dialog.getByRole("button", { name: "Stäng" }).click()
+  await request.delete(`${fixture}/_source_info_failure`)
+  await trigger.click()
+
+  await expect(dialog).toContainText("Doktor Glas. Roman")
+  await expect(dialog.getByRole("alert")).toHaveCount(0)
+  expect(await sourceInfoRequests(request)).toHaveLength(2)
+  expect(problems).toEqual([])
+})
+
+test("source-information shortcuts yield while the contents dialog owns focus", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPartsPath}?innehall`, { waitUntil: "networkidle" })
+  await resetReader(request)
+  const contentsDialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  const contentsClose = contentsDialog.getByRole("button", { name: "Stäng" })
+  await contentsClose.focus()
+  await expect(contentsClose).toBeFocused()
+
+  await page.keyboard.press("o")
+  await page.evaluate(() => document.dispatchEvent(new KeyboardEvent("keydown", {
+    bubbles: true,
+    key: "F18"
+  })))
+
+  await expect(page).toHaveURL(`${readerPartsPath}?innehall`)
+  await expect(contentsDialog).toHaveCount(1)
+  await expect(page.getByRole("dialog", { name: "Om boken" })).toHaveCount(0)
+  expect(await sourceInfoRequests(request)).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("source information shows only its own loading state", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  await request.put(`${fixture}/_source_info_delays`, {
+    data: { "SöderbergH|DoktorGlas": 400 }
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" }).click()
+
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog.locator(".preloader")).toContainText("Hämtar")
+  await expect(page.locator(".reader-primary-loading")).toHaveCount(0)
+  await expect(dialog).toContainText("Doktor Glas. Roman")
+  expect(problems).toEqual([])
+})
+
+test("external query removal closes source information without refetching Reader state", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawQuery = "?q=doktor%20glas&hit=1&owner=one&owner=two"
+  await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+  const historyBefore = await rawStoredPageViews(page)
+  await resetReader(request)
+
+  const trigger = page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" })
+  await trigger.click()
+  await expect(page.getByRole("dialog", { name: "Om boken" })).toHaveCount(1)
+  await navigateClient(page, `${readerEncodedPath}${rawQuery}`)
+  await expect(page.getByRole("dialog", { name: "Om boken" })).toHaveCount(0)
+
+  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await readerHitRequests(request)).toEqual([])
+  expect(await rawStoredPageViews(page)).toBe(historyBefore)
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(problems).toEqual([])
+})
+
+test("Back and Forward restore cached source-information query state", async ({ page, request }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?om-boken`, { waitUntil: "networkidle" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toHaveCount(1)
+  await resetReader(request)
+
+  await navigateClient(page, `${readerEncodedPath}?owner=closed`)
+  await expect(page).toHaveURL(`${readerPath}?owner=closed`)
+  await expect(dialog).toHaveCount(0)
+  await page.goBack()
+  await expect(page).toHaveURL(`${readerPath}?om-boken`)
+  await expect(dialog).toHaveCount(1)
+  await page.goForward()
+  await expect(page).toHaveURL(`${readerPath}?owner=closed`)
+  await expect(dialog).toHaveCount(0)
+
+  expect(await sourceInfoRequests(request)).toEqual([])
+  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await readerHitRequests(request)).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("normal source information renders exact actions and source metadata", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?om-boken`, { waitUntil: "networkidle" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+
+  await expect(dialog.locator(".header .author a")).toHaveAttribute(
+    "href",
+    "/författare/S%C3%B6derbergH"
+  )
+  await expect(dialog.locator(".header .title")).toHaveText("Doktor Glas. Roman")
+  await expect(dialog.locator(".sourcedesc")).toHaveText(
+    "Albert Bonniers förlag, Stockholm 1905."
+  )
+  await expect(dialog.locator(".mediatypes").getByRole("link", { name: "etext" }))
+    .toHaveAttribute("href", "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext")
+  await expect(dialog.locator(".mediatypes").getByRole("link", { name: "faksimil" }))
+    .toHaveAttribute("href", "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/faksimil")
+  const epub = dialog.locator(".mediatypes_also").getByRole("link", { name: /epub/ })
+  await expect(epub).toHaveAttribute("href", "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub")
+  await expect(epub).toHaveAttribute("download", "SöderbergH_DoktorGlas.epub")
+  await expect(epub).toContainText("518 KB")
+  await expect(dialog.getByRole("link", { name: "Libris" })).toHaveAttribute(
+    "href",
+    "https://libris.kb.se/bib/1728740"
+  )
+  await dialog.getByText("Hänvisa till detta verk", { exact: true }).click()
+  await expect(dialog.locator("code")).toHaveText(
+    "https://urn.kb.se/resolve?urn=urn:nbn:se:lb-lb1728740-etext"
+  )
+  await expect(dialog.locator(".col_right img")).toHaveAttribute(
+    "srcset",
+    "/txt/lb1728740/lb1728740_small.jpeg 1x, /txt/lb1728740/lb1728740_large.jpeg 2x"
+  )
+  const provenance = dialog.locator(".provenance")
+  await expect(provenance.getByRole("link")).toHaveAttribute("href", "http://www.ub.gu.se/")
+  await expect(provenance.locator("img")).toHaveAttribute(
+    "src",
+    "/red/bilder/gemensamt/gublogga.png"
+  )
+  await expect(provenance).toContainText(
+    "Det exemplar som ligger till grund för Litteraturbankens utgåva tillhör " +
+    "Göteborgs universitetsbibliotek (Litt. Sv.)."
+  )
+  await expect(dialog.locator(".license").getByRole("link")).toHaveAttribute(
+    "href",
+    "https://creativecommons.org/publicdomain/zero/1.0/deed.sv"
+  )
+  await expect(dialog.locator(".license")).toContainText("För e-boken gäller licensen CC0.")
+  expect(problems).toEqual([])
+})
+
+test("drama source information renders drama facts, attributions, and exact targets", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${dramaReaderPath}?om-boken`, { waitUntil: "networkidle" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+
+  await expect(page.locator(".reader-context .subnav a").filter({
+    hasText: "Mer om pjäsen"
+  })).toBeVisible()
+  await expect(dialog.locator(".header .author a"))
+    .toHaveAttribute("href", "/författare/Alml%C3%B6fN")
+  await expect(dialog.locator(".sourcedesc")).toHaveText("Stockholm, 1871.")
+  await expect(dialog).toContainText("Dramawebbens redaktion")
+  await expect(dialog.locator(".workintro")).toContainText("En komedi i fem akter.")
+  await expect(dialog).toContainText("Ulla-Britta Lindgren")
+  await expect(dialog.locator(".mediatypes").getByRole("link", { name: "etext" }))
+    .toHaveAttribute("href", "/författare/Alml%C3%B6fN/titlar/Affarer/sida/-2/etext")
+  await expect(dialog.locator(".mediatypes").getByRole("link", { name: "faksimil" }))
+    .toHaveAttribute("href", "/författare/Alml%C3%B6fN/titlar/Affarer/sida/-2/faksimil")
+  await expect(dialog.locator(".dramaweb table")).toContainText("Antal akter")
+  await expect(dialog.locator(".dramaweb table")).toContainText("5")
+  const roles = dialog.locator(".dramaweb > div").filter({ hasText: "Rollista" }).locator("> div")
+  await expect(roles).toHaveCount(1)
+  await expect(roles.locator(":scope > i")).toHaveText("Direktören")
+  await expect(roles.locator(":scope > br")).toHaveCount(1)
+  await expect(roles.locator(":scope > span.role")).toHaveText("Anna")
+  await expect(roles.locator(":scope > span:not(.role)")).toHaveCount(0)
+  await expect(roles).toContainText("Direktören, grosshandlare")
+  await expect(dialog.locator(".dramaweb").getByRole("link", { name: "Kungliga teatern" }))
+    .toHaveAttribute("href", "https://example.test/teater")
+  const epub = dialog.locator(".mediatypes_also").getByRole("link", { name: /epub/ })
+  const pdf = dialog.locator(".mediatypes_also").getByRole("link", { name: /pdf/ })
+  await expect(epub).toHaveAttribute("href", "/txt/epub/Alml%C3%B6fN_Affarer.epub")
+  await expect(epub).toHaveAttribute("download", "AlmlöfN_Affarer.epub")
+  await expect(epub).toContainText("65536 MB")
+  await expect(pdf).toHaveAttribute("href", "/export/faksimil/lb31230.pdf")
+  await expect(pdf).toHaveAttribute("download", "AlmlöfN_Affarer.pdf")
+  await expect(pdf).toContainText("4096 MB")
+  await dialog.getByText("Hänvisa till detta verk", { exact: true }).click()
+  await expect(dialog.locator("code")).toHaveText(
+    "https://urn.kb.se/resolve?urn=urn:nbn:se:lb-lb31230-faksimil"
+  )
+  await expect(dialog.locator(".provenance")).toHaveCount(2)
+  await expect(dialog.locator(".license").getByRole("link", { name: "Kungl. biblioteket" }))
+    .toHaveAttribute("href", "http://www.kb.se/")
+  await expect(dialog.locator(".license")).toContainText(
+    "Hänvisa till Kungl. biblioteket – Dramawebben och Litteraturbanken."
+  )
+  expect(problems).toEqual([])
+})
+
+test("sparse source information omits unavailable optional sections", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${sparseReaderPath}?om-boken`, { waitUntil: "networkidle" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog.locator(".header .title")).toHaveText("Glest verk")
+  await expect(dialog.locator(".header .author")).toBeEmpty()
+  await expect(dialog.locator(".sourcedesc, .workintro, .provenance, .license"))
+    .toHaveCount(0)
+  await expect(dialog.locator(".mediatypes, .mediatypes_also, .urn"))
+    .toHaveCount(0)
+  await expect(dialog.locator(".errata")).toHaveCount(1)
+  await expect(dialog.locator(".errata_table tbody tr")).toHaveCount(0)
+  await expect(dialog.getByText(
+    "Inga ändringar har gjorts mot orginalet.",
+    { exact: true }
+  )).toHaveCount(0)
+  await expect(dialog.getByText("undefined")).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
+test("long errata toggles between the first eight and all rows with exact role copy", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${longErrataReaderPath}?om-boken`, { waitUntil: "networkidle" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  const authorLink = dialog.locator(".header .author > a")
+  const role = authorLink.locator(":scope > .authortype")
+  await expect(authorLink).toContainText("Rita Redaktör")
+  expect(await authorLink.evaluate(element => element.innerHTML)).toBe(
+    'Rita Redaktör <span class="authortype">red.</span>'
+  )
+  await expect(role).toHaveText("red.")
+  await expect(role).not.toContainText(",")
+  await expect(dialog.locator(".header .author > .authortype")).toHaveCount(0)
+  const rows = dialog.locator(".errata_table tbody tr")
+  await expect(rows).toHaveCount(8)
+  await expect(rows.first().locator("td")).toHaveText(["sid. 1", "rättning 1"])
+  await expect(rows.last().locator("td")).toHaveText(["sid. 8", "rättning 8"])
+  await dialog.getByRole("button", { name: "Visa fler" }).click()
+  await expect(rows).toHaveCount(10)
+  await expect(rows.last().locator("td")).toHaveText(["sid. 10", "rättning 10"])
+  await dialog.getByRole("button", { name: "Visa färre" }).click()
+  await expect(rows).toHaveCount(8)
+  expect(problems).toEqual([])
+})
+
+test("empty errata hides the legacy correction copy and controls", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${emptyErrataReaderPath}?om-boken`, { waitUntil: "networkidle" })
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog.locator(".header .title")).toHaveText("Tom errata")
+  await expect(dialog.getByText(
+    "I etexten har följande ändringar gjorts mot originalet:",
+    { exact: true }
+  )).toHaveCount(0)
+  await expect(dialog.locator(".errata_table tbody tr")).toHaveCount(0)
+  await expect(dialog.getByRole("button", { name: /Visa (fler|färre)/ })).toHaveCount(0)
+  expect(problems).toEqual([])
+})
 
 test("contents rows use surnames and selecting a nested part pushes its raw target", async ({
   page,
@@ -1079,7 +1627,17 @@ test("search-shaped faksimil navigation never requests e-text hits", async ({
 test("a failed faksimil scan stays bounded while context and navigation contract remain intact", async ({
   page
 }) => {
-  const problems = captureBrowserProblems(page)
+  const failedImageUrl = (page.viewportSize()?.width ?? Number.POSITIVE_INFINITY) < 768
+    ? facsimileRetinaPath
+    : facsimileImagePath
+  const expectedImageFailure = {
+    method: "GET" as const,
+    status: 404,
+    url: failedImageUrl
+  }
+  const problems = captureBrowserProblems(page, {
+    httpErrors: [expectedImageFailure, expectedImageFailure]
+  })
   const documentRequests: string[] = []
   page.on("request", browserRequest => {
     if (browserRequest.resourceType() === "document") {
@@ -1090,10 +1648,15 @@ test("a failed faksimil scan stays bounded while context and navigation contract
     await route.fulfill({ status: 404, contentType: "text/plain", body: "missing" })
   })
 
+  const failedResponse = page.waitForResponse(response => {
+    const url = new URL(response.url())
+    return url.pathname === failedImageUrl
+  })
   const response = await page.goto(facsimilePath, { waitUntil: "networkidle" })
   documentRequests.length = 0
 
   expect(response?.status()).toBe(200)
+  expect((await failedResponse).status()).toBe(404)
   const alert = page.locator(".reader-facsimile-error[role=alert]")
   await expect(alert).toHaveCount(1)
   await expect(alert).toHaveText(
@@ -1359,7 +1922,15 @@ test("a delayed primary Reader request never renders the prior page under the ne
 test("a failed primary Reader client request shows a bounded state without stale content or History", async ({
   page
 }) => {
-  const problems = captureBrowserProblems(page)
+  const failedReaderUrl = "/api/reader/S%C3%B6derbergH/DoktorGlas/-1/etext"
+  const expectedReaderFailure = {
+    method: "GET" as const,
+    status: 503,
+    url: failedReaderUrl
+  }
+  const problems = captureBrowserProblems(page, {
+    httpErrors: [expectedReaderFailure, expectedReaderFailure]
+  })
   await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
   const historyBefore = await rawStoredPageViews(page)
   await page.route("**/api/reader/**/-1/etext", async route => {
@@ -1370,11 +1941,16 @@ test("a failed primary Reader client request shows a bounded state without stale
     })
   })
 
+  const failedResponse = page.waitForResponse(response => {
+    const url = new URL(response.url())
+    return url.pathname === failedReaderUrl
+  })
   await activateReaderLink(
     page,
     "Nästa sida",
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor%20glas&hit=1"
   )
+  expect((await failedResponse).status()).toBe(503)
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor%20glas&hit=1$/)
   await expect(page.locator(".reader-primary-error")).toHaveText(
     "Läsarsidan kunde inte hämtas."
@@ -1392,12 +1968,22 @@ test("a failed primary Reader client request shows a bounded state without stale
 })
 
 test("a public hit failure stays local to the hydrated Reader", async ({ page, request }) => {
-  const problems = captureBrowserProblems(page)
+  const failedHitUrl = "/api/v2/works/lb-reader-doktor-glas/search-hits" +
+    "?media_type=etext&query=doktor%20glas&offset=1&limit=3" +
+    "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
+  const problems = captureBrowserProblems(page, {
+    httpErrors: [{ method: "GET", status: 503, url: failedHitUrl }]
+  })
   await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
   await request.delete(`${fixture}/_reader_hit_requests`)
   await request.put(`${fixture}/_reader_hit_failure`)
 
+  const failedResponse = page.waitForResponse(response => {
+    const url = new URL(response.url())
+    return `${url.pathname}${url.search}` === failedHitUrl
+  })
   await page.locator("#search_nav").getByRole("link", { name: "Nästa sökträff" }).click()
+  expect((await failedResponse).status()).toBe(503)
   await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor\+glas&hit=2$/)
   await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
   await expect(page.locator(".reader-search-message")).toHaveText(

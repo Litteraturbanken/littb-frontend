@@ -38,6 +38,7 @@ export interface ReaderPageBase {
   description: string
   fullTitle: string
   imprintYear: string | null
+  isDrama: boolean
   endPageName: string | null
   currentPartIndex: number | null
   nextPageName: string | null
