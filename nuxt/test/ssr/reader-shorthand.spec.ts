@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test"
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
 const fixture = "http://127.0.0.1:4100"
 const resolveBase = "/api/reader/resolve/S%C3%B6derbergH"
@@ -36,12 +36,50 @@ const legacyFallbackTitles = new Set([
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
-    request.delete(`${fixture}/_reader_metadata_delays`)
+    request.delete(`${fixture}/_reader_metadata_delays`),
+    request.delete(`${fixture}/_source_info_requests`),
+    request.delete(`${fixture}/_source_info_failure`),
+    request.delete(`${fixture}/_source_info_delays`),
+    request.delete(`${fixture}/_source_info_static_requests`)
   ])
 }
 
 async function readerRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_requests`)).json()).requests
+}
+
+async function sourceInfoRequests(request: APIRequestContext) {
+  return (await (await request.get(`${fixture}/_source_info_requests`)).json()).requests
+}
+
+async function sourceInfoStaticRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_source_info_static_requests`)).json()).requests
+}
+
+async function navigateClient(page: Page, rawPath: string): Promise<void> {
+  await page.evaluate(async path => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        push: (target: string) => Promise<void>
+      } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    await router.push(path)
+  }, rawPath)
+}
+
+async function startClientNavigation(page: Page, rawPath: string): Promise<void> {
+  await page.evaluate(path => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        push: (target: string) => Promise<void>
+      } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    void router.push(path)
+  }, rawPath)
 }
 
 function expectedMetadataRequest(titlePath: string) {
@@ -233,4 +271,158 @@ test("shorthand rejects unknown media before upstream IO", async ({ request }) =
   })
   expect(response.status()).toBe(404)
   expect(await readerRequests(request)).toEqual([])
+})
+
+test("source-information resolver selects the default readable representation", async ({
+  request
+}) => {
+  const response = await request.get(`${resolveBase}/DoktorGlas`)
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toEqual({
+    authorId: "SöderbergH",
+    canonicalPath:
+      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext",
+    mediaType: "etext",
+    startPageName: "-2",
+    titlePath: "DoktorGlas"
+  })
+  expect(await sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
+    query: ""
+  }])
+  expect(await sourceInfoStaticRequests(request)).toEqual([])
+})
+
+test("source-information resolver selects requested media when available", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/api/reader/resolve/Alml%C3%B6fN/Affarer?media_type=faksimil"
+  )
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toEqual({
+    authorId: "AlmlöfN",
+    canonicalPath:
+      "/författare/Alml%C3%B6fN/titlar/Affarer/sida/-2/faksimil",
+    mediaType: "faksimil",
+    startPageName: "-2",
+    titlePath: "Affarer"
+  })
+  expect(await sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/Alml%C3%B6fN/Affarer/source-info",
+    query: "?media_type=faksimil"
+  }])
+})
+
+test("source-information resolver accepts the backend requested-media fallback", async ({
+  request
+}) => {
+  const response = await request.get(
+    `${resolveBase}/DoktorGlas?media_type=faksimil`
+  )
+  expect(response.status()).toBe(200)
+  expect((await response.json()).mediaType).toBe("etext")
+  expect(await sourceInfoRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
+    query: "?media_type=faksimil"
+  }])
+})
+
+for (const [alias, destination] of [
+  [
+    "/författare/SöderbergH/titlar/DoktorGlas",
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?om-boken"
+  ],
+  [
+    "/författare/SöderbergH/titlar/DoktorGlas/info",
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?om-boken"
+  ],
+  [
+    "/författare/AlmlöfN/titlar/Affarer/info/faksimil",
+    "/f%C3%B6rfattare/Alml%C3%B6fN/titlar/Affarer/sida/-2/faksimil?om-boken"
+  ]
+] as const) {
+  test(`${alias} replaces history with the canonical source-information Reader`, async ({
+    request
+  }) => {
+    const response = await request.get(
+      `${alias}?incoming=discard%20me&om-boken=&repeat=one&repeat=two#discarded`,
+      { maxRedirects: 0 }
+    )
+    expect(response.status()).toBe(307)
+    expect(response.headers().location).toBe(destination)
+    expect(await sourceInfoRequests(request)).toHaveLength(1)
+    expect(await sourceInfoStaticRequests(request)).toEqual([])
+  })
+}
+
+test("a bare-title alias resolves once before the ordinary canonical Reader load", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/författare/SöderbergH/titlar/DoktorGlas"
+  )
+  expect(response.status()).toBe(200)
+  expect(response.url()).toContain(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?om-boken"
+  )
+  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  expect(await readerRequests(request)).toEqual([
+    expectedMetadataRequest("DoktorGlas"),
+    "/txt/lb-reader-doktor-glas/res_00002.html?username=app"
+  ])
+})
+
+test("a late source-information alias cannot leave the route that replaced it", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_source_info_delays`, {
+    data: { "SöderbergH|DoktorGlas": 350 }
+  })
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+  const resolverResponse = page.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith(
+      "/api/reader/resolve/S%C3%B6derbergH/DoktorGlas"
+    )
+  )
+
+  await startClientNavigation(
+    page,
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas"
+  )
+  await expect.poll(async () => (await sourceInfoRequests(request)).length).toBe(1)
+  await navigateClient(page, "/")
+
+  expect((await resolverResponse).status()).toBe(200)
+  await page.waitForTimeout(400)
+  await expect(page).toHaveURL("/")
+})
+
+for (const [alias, expectedStatus] of [
+  ["/författare/MissingA/titlar/MissingTitle", 404],
+  ["/författare/ValidationA/titlar/ValidationTitle", 502],
+  ["/författare/ServerErrorA/titlar/ServerErrorTitle/info", 502],
+  ["/författare/MalformedA/titlar/MalformedTitle/info", 502],
+  ["/författare/SparseA/titlar/SparseTitle/info", 404],
+  ["/författare/SöderbergH/titlar/DoktorGlas/info/pdf", 404]
+] as const) {
+  test(`${alias} maps resolver failures to ${expectedStatus}`, async ({ request }) => {
+    const response = await request.get(alias, { maxRedirects: 0 })
+    expect(response.status()).toBe(expectedStatus)
+  })
+}
+
+test("source-information aliases map upstream unavailability to the public 502", async ({
+  request
+}) => {
+  await request.put(`${fixture}/_source_info_failure`)
+  const response = await request.get(
+    "/författare/SöderbergH/titlar/DoktorGlas/info",
+    { maxRedirects: 0 }
+  )
+  expect(response.status()).toBe(502)
 })

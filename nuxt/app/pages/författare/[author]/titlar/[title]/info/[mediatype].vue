@@ -1,0 +1,17 @@
+<script setup lang="ts">
+import type { ReaderMediaType } from "#shared/types/reader"
+
+import ReaderSourceInfoAlias from "../index.vue"
+
+definePageMeta({
+  validate: route => route.params.mediatype === "etext"
+    || route.params.mediatype === "faksimil"
+})
+
+const route = useRoute()
+const requestedMediaType = route.params.mediatype as ReaderMediaType
+</script>
+
+<template>
+  <ReaderSourceInfoAlias :media-type="requestedMediaType" />
+</template>

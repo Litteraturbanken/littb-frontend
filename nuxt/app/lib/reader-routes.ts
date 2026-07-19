@@ -22,18 +22,52 @@ function splitFragment(fullPath: string): { beforeFragment: string, fragment: st
       }
 }
 
-function isContentsSegment(segment: string): boolean {
+type ReaderDialogKey = "innehall" | "om-boken"
+
+const contentsKey = new Set<ReaderDialogKey>(["innehall"])
+const sourceInfoKey = new Set<ReaderDialogKey>(["om-boken"])
+const readerDialogKeys = new Set<ReaderDialogKey>(["innehall", "om-boken"])
+
+function isDialogSegment(segment: string, keys: ReadonlySet<ReaderDialogKey>): boolean {
   const separator = segment.indexOf("=")
   const rawKey = separator < 0 ? segment : segment.slice(0, separator)
   try {
-    return decodeURIComponent(rawKey) === "innehall"
+    return keys.has(decodeURIComponent(rawKey) as ReaderDialogKey)
   } catch {
     return false
   }
 }
 
+function withoutReaderDialogKeys(
+  fullPath: string,
+  keys: ReadonlySet<ReaderDialogKey>
+): string {
+  const { beforeFragment, fragment } = splitFragment(fullPath)
+  const queryIndex = beforeFragment.indexOf("?")
+  if (queryIndex < 0) return fullPath
+
+  const path = beforeFragment.slice(0, queryIndex)
+  const rawQuery = beforeFragment.slice(queryIndex + 1)
+  const retained = rawQuery.split("&").filter(segment => !isDialogSegment(segment, keys))
+  return `${path}${retained.length > 0 ? `?${retained.join("&")}` : ""}${fragment}`
+}
+
+function appendBareQueryKey(fullPath: string, key: ReaderDialogKey): string {
+  const { beforeFragment, fragment } = splitFragment(fullPath)
+  const separator = beforeFragment.includes("?")
+    ? beforeFragment.endsWith("?") ? "" : "&"
+    : "?"
+  return `${beforeFragment}${separator}${key}${fragment}`
+}
+
 export function readerContentsIsOpen(value: unknown): boolean {
   return value === null || value === ""
+}
+
+export function readerSourceInfoIsOpen(value: unknown): boolean {
+  return value === null
+    || Array.isArray(value)
+    || (typeof value === "string" && value.length > 0)
 }
 
 export function readerFullPathWithFragment(
@@ -50,27 +84,27 @@ export function readerPartAuthorKey(authorId: string, index: number): string {
 }
 
 export function readerContentsNeutralFullPath(fullPath: string): string {
-  const { beforeFragment, fragment } = splitFragment(fullPath)
-  const queryIndex = beforeFragment.indexOf("?")
-  if (queryIndex < 0) return fullPath
+  return withoutReaderDialogKeys(fullPath, contentsKey)
+}
 
-  const path = beforeFragment.slice(0, queryIndex)
-  const rawQuery = beforeFragment.slice(queryIndex + 1)
-  const retained = rawQuery.split("&").filter(segment => !isContentsSegment(segment))
-  return `${path}${retained.length > 0 ? `?${retained.join("&")}` : ""}${fragment}`
+export function readerSourceInfoNeutralFullPath(fullPath: string): string {
+  return withoutReaderDialogKeys(fullPath, sourceInfoKey)
+}
+
+export function readerDialogNeutralFullPath(fullPath: string): string {
+  return withoutReaderDialogKeys(fullPath, readerDialogKeys)
 }
 
 export function readerContentsHref(fullPath: string): string {
-  const neutral = readerContentsNeutralFullPath(fullPath)
-  const { beforeFragment, fragment } = splitFragment(neutral)
-  const queryIndex = beforeFragment.indexOf("?")
-  if (queryIndex < 0) return `${beforeFragment}?innehall${fragment}`
-  const separator = beforeFragment.endsWith("?") ? "" : "&"
-  return `${beforeFragment}${separator}innehall${fragment}`
+  return appendBareQueryKey(readerDialogNeutralFullPath(fullPath), "innehall")
+}
+
+export function readerSourceInfoHref(fullPath: string): string {
+  return appendBareQueryKey(readerDialogNeutralFullPath(fullPath), "om-boken")
 }
 
 export function readerPageFullPath(fullPath: string, pageName: string): string {
-  const neutral = readerContentsNeutralFullPath(fullPath)
+  const neutral = readerDialogNeutralFullPath(fullPath)
   const { beforeFragment, fragment } = splitFragment(neutral)
   const queryIndex = beforeFragment.indexOf("?")
   const path = queryIndex < 0 ? beforeFragment : beforeFragment.slice(0, queryIndex)

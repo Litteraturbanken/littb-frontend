@@ -5,11 +5,15 @@ import {
   readerContentsHref,
   readerContentsIsOpen,
   readerContentsNeutralFullPath,
+  readerDialogNeutralFullPath,
   readerFullPathWithFragment,
   readerHitHref,
   readerPartAuthorKey,
   readerPageFullPath,
-  readerPageHref
+  readerPageHref,
+  readerSourceInfoHref,
+  readerSourceInfoIsOpen,
+  readerSourceInfoNeutralFullPath
 } from "../../app/lib/reader-routes"
 
 describe("reader route links", () => {
@@ -179,5 +183,75 @@ describe("Reader contents raw-query ownership", () => {
     expect(readerContentsNeutralFullPath(
       "/reader?hit=2&x=1&q=glas&x=2&innehall&storlek=4"
     )).toBe("/reader?hit=2&x=1&q=glas&x=2&storlek=4")
+  })
+})
+
+describe("Reader source-information raw-query ownership", () => {
+  test.each([
+    [null, true],
+    ["", false],
+    ["false", true],
+    ["1", true],
+    [[null], true],
+    [[""], true],
+    [[null, null], true],
+    [[], true],
+    [undefined, false],
+    [false, false]
+  ])("parses Angular-compatible source-information value %j", (value, expected) => {
+    expect(readerSourceInfoIsOpen(value)).toBe(expected)
+  })
+
+  test("removes only decoded exact source-information keys byte-for-byte", () => {
+    const fullPath =
+      "/f%C3%B6rfattare/A/titlar/T/sida/-2/etext" +
+      "?bare&om-boken&empty=&plus=a+b&percent=a%20b&repeat=%2f" +
+      "&%6Fm-boken=1&repeat=%2F&om-boken=&om-boken=1" +
+      "&innehall&Om-boken&om-bokenx&%E0%A4%A=1#del?om-boken"
+
+    expect(readerSourceInfoNeutralFullPath(fullPath)).toBe(
+      "/f%C3%B6rfattare/A/titlar/T/sida/-2/etext" +
+      "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f" +
+      "&repeat=%2F&innehall&Om-boken&om-bokenx&%E0%A4%A=1#del?om-boken"
+    )
+  })
+
+  test("closing contents retains source-information state", () => {
+    expect(readerContentsNeutralFullPath(
+      "/reader?bare&innehall&om-boken=false&repeat=%2f#frag"
+    )).toBe("/reader?bare&om-boken=false&repeat=%2f#frag")
+  })
+
+  test("adds one bare source-information key and switches away from contents", () => {
+    expect(readerSourceInfoHref(
+      "/reader?bare&innehall&om-boken=&plus=a+b&repeat=%2f" +
+      "&%69nnehall=1&om-boken=false&repeat=%2F#frag%20part"
+    )).toBe(
+      "/reader?bare&plus=a+b&repeat=%2f&repeat=%2F&om-boken#frag%20part"
+    )
+  })
+
+  test("adds one bare contents key and switches away from source information", () => {
+    expect(readerContentsHref(
+      "/reader?bare&om-boken&innehall=1&repeat=%2f" +
+      "&%6Fm-boken=false&repeat=%2F#frag"
+    )).toBe(
+      "/reader?bare&repeat=%2f&repeat=%2F&innehall#frag"
+    )
+  })
+
+  test("removes both transient Reader keys from neutral identity", () => {
+    expect(readerDialogNeutralFullPath(
+      "/reader?hit=2&om-boken&x=1&q=glas&innehall=&x=2&%6Fm-boken=1#frag"
+    )).toBe("/reader?hit=2&x=1&q=glas&x=2#frag")
+  })
+
+  test.each([
+    ["/reader", "/reader?om-boken"],
+    ["/reader#frag", "/reader?om-boken#frag"],
+    ["/reader?om-boken", "/reader?om-boken"],
+    ["/reader?om-boken=&om-boken=1#frag", "/reader?om-boken#frag"]
+  ])("builds a single bare source-information href from %s", (fullPath, expected) => {
+    expect(readerSourceInfoHref(fullPath)).toBe(expected)
   })
 })
