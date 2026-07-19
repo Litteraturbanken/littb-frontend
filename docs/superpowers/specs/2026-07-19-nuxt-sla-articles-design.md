@@ -79,15 +79,17 @@ GET /v2/authors/{author_id}/documents/omtexterna/articles/{article_id}
 It guarantees:
 
 - the requested author is exactly `LagerlöfS` after FastAPI path decoding;
-- an unsupported author or article returns the standard non-leaking 404 before
-  an OpenSearch/provider query;
+- an unsupported author returns the standard non-leaking 404 before an
+  OpenSearch/provider query;
 - the returned author metadata is the canonical Selma record;
 - `document_kind` is exactly `omtexterna`;
 - `article_id` echoes the exact registered filename;
 - `source_path` is the corresponding fixed `/red/sla/<registered file>` value;
 - a Selma provider response with a normalized ID other than `LagerlofS` is a
   malformed-provider internal error, not a missing author;
-- unknown enum literals retain FastAPI's 422 contract.
+- an article value outside the 23-member path enum is rejected by FastAPI as
+  422 before route logic or a provider query. The public Nuxt page independently
+  maps values outside its generated registry to a global 404.
 
 The route and pure transformer both enforce the exact author/article tuple.
 The fixed mapping is data, not a formula using the public path value. Existing
@@ -131,9 +133,35 @@ form:
 Mixed, duplicated, escaped, commented, `url()`, `var()`, custom-property, or
 `!important` declarations drop the entire style attribute.
 
-Href handling accepts safe fragments, the exact 23 public corpus routes,
-existing author/title/Reader routes under `/författare/LagerlöfS/`, the audited
-first-party PDF paths, and ordinary `http`/`https` external links. It rejects
+Href handling accepts safe fragments and these bounded root-relative families:
+
+- `/författare/<safe author>` and `/forfattare/<safe legacy author>` profiles;
+- their exact `/titlar/<safe title>/sida/<safe page>/(etext|faksimil)` Reader
+  and `/titlar/<safe title>/info` work-information forms;
+- the exact 23 canonical SLA corpus routes plus their audited legacy
+  `/forfattare/LagerlofS/omtexterna/<registered file>` forms;
+- the audited Selma roots `/titlar`, `/jamfor`, `/jamfor.html`, and
+  `/SelmaLagerlofEnglish`;
+- exactly `/bibliotek?sort=titlar&filter=selma%20lagerlöf`.
+
+Every dynamic segment follows the existing managed-segment restrictions, and
+no other query string is accepted. Tests compare the sanitized href ledger for
+all 23 bodies against the frozen source ledger, with only the explicitly
+malformed `italic` href removed.
+
+The policy also accepts these exact audited first-party PDF paths and ordinary
+`http`/`https` external links:
+
+```text
+/red/sla/VisualiseringGBSms.pdf
+/red/sla/ManuskriptforteckningOL.pdf
+/red/sla/TrycktabellOL.pdf
+/red/sla/IntVarianterKorkarlen.pdf
+/red/om/omtexerna/ManuskriptforteckningOL.pdf
+```
+
+The last path is an authority typo and remains exact for continuity. The
+sanitizer rejects
 control characters, backslashes, protocol-relative values, repeated decoding,
 traversal, unregistered corpus filenames, and the malformed relative
 `href="italic"` present in one authority file. Fragment targets and backlinks

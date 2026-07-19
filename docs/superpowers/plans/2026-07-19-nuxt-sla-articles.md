@@ -55,7 +55,7 @@ Preserve the unrelated modified supplemental-author plan and untracked
 
 - [ ] Freeze the closed request firewall and exact ready state for:
   `TextkritiskaRiktlinjer.html`, `Introduktion.html`,
-  `ForeGostaBerling.html`, `AndringarGBS.html`, and
+  `ForeGostaBerling.html`, `SprakandringarGBS.html`, and
   `AboutTheSLagerlofArchive.html`, at desktop and mobile widths.
 - [ ] Assert the exact shell, metadata, body inventory, internal/external links,
   visible author heading, hidden local links, absent portrait, fonts/background,
@@ -82,6 +82,10 @@ Preserve the unrelated modified supplemental-author plan and untracked
 - [ ] Implement the article-specific sanitizer from the audited DOM/attribute/
   style/href inventory. Preserve paired footnote IDs/fragments and drop
   `href="italic"`.
+- [ ] Compare every sanitized corpus href ledger to its frozen source ledger.
+  Preserve the bounded canonical and legacy cross-author/profile/Reader/work,
+  registered article, exact Library query, PDF, and external HTTP(S) families;
+  prove unrecognized root-relative or query-bearing variants are removed.
 - [ ] Prove other authors, unknown/case/encoded/traversal article values, query
   source paths, and extra descriptor fields fail closed before source fetching.
 - [ ] Run focused unit/API SSR/typecheck/diff checks.
