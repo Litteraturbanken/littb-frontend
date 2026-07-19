@@ -59,6 +59,15 @@ import {
   readerPartsWorkInfoResponse,
   readerSearchHitResponse
 } from "../fixtures/reader-data.mjs"
+import {
+  doktorGlasSourceInfo,
+  dramaSourceInfo,
+  malformedSourceInfo,
+  oversizedSourceInfo,
+  sourceInfoLicenses,
+  sourceInfoProvenance,
+  sparseSourceInfo
+} from "../fixtures/reader-source-info-data.mjs"
 
 type ReaderHitOperation = paths["/works/{work_id}/search-hits"]["get"]
 type ReaderHitResponse = components["schemas"]["WorkSearchHitsResponse"]
@@ -79,6 +88,8 @@ type TextSearchOptionsResponse = components["schemas"]["TextSearchOptionsRespons
 type TextSearchResultsOperation = paths["/text-search/results"]["post"]
 type TextSearchCountOperation = paths["/text-search/count"]["post"]
 type TextSearchOptionsOperation = paths["/text-search/options"]["post"]
+type SourceInfoOperation = paths["/works/{author_id}/{title_path}/source-info"]["get"]
+type SourceInfoResponse = components["schemas"]["WorkSourceInfoResponse"]
 
 const generatedReaderHitContract: ReaderHitOperation = null as unknown as
   operations["v2_get_work_search_hits"]
@@ -94,6 +105,8 @@ const generatedTextSearchCountContract: TextSearchCountOperation = null as unkno
   operations["v2_post_text_search_count"]
 const generatedTextSearchOptionsContract: TextSearchOptionsOperation = null as unknown as
   operations["v2_post_text_search_options"]
+const generatedSourceInfoContract: SourceInfoOperation = null as unknown as
+  operations["v2_get_work_source_info"]
 const generatedAuthorDocumentDescriptor: AuthorDocumentDescriptor = soderbergPresentation
 const generatedSlaAuthorDocumentDescriptor: AuthorDocumentDescriptor = lagerlofOmtexterna
 const generatedLegacyAuthorRouteResolution: LegacyAuthorRouteResolution = {
@@ -196,6 +209,22 @@ async function postWorkLookup(path: string, body: unknown) {
 async function authorResolveRequests() {
   return await (await fetch(`${origin}/_author_resolve_requests`)).json() as {
     requests: Array<{ path: string, body: unknown }>
+  }
+}
+
+async function sourceInfoRequests() {
+  return await (await fetch(`${origin}/_source_info_requests`)).json() as {
+    requests: Array<{
+      scope: "private" | "public"
+      path: string
+      query: string
+    }>
+  }
+}
+
+async function sourceInfoStaticRequests() {
+  return await (await fetch(`${origin}/_source_info_static_requests`)).json() as {
+    requests: string[]
   }
 }
 
@@ -452,6 +481,11 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_author_resolve_failure`, { method: "DELETE" }),
       fetch(`${origin}/_author_resolve_delays`, { method: "DELETE" }),
       fetch(`${origin}/_author_resolve_scenario`, { method: "DELETE" }),
+      fetch(`${origin}/_source_info_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_source_info_static_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_source_info_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_source_info_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_source_info_static_failure`, { method: "DELETE" }),
       fetch(`${origin}/_author_profile_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_profile_failure`, { method: "DELETE" }),
       fetch(`${origin}/_author_works_requests`, { method: "DELETE" }),
@@ -494,6 +528,106 @@ describe("v2 fixture server operations", () => {
 
   afterEach(async () => {
     await fetch(`${origin}/_contact_defer`, { method: "DELETE" })
+  })
+
+  test("serves deterministic source information through public and private v2 paths", async () => {
+    expect(generatedSourceInfoContract).toBeNull()
+
+    const normal = await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/DoktorGlas/source-info?media_type=etext`
+    )
+    const drama = await fetch(
+      `${origin}/private-v2/works/Alml%C3%B6fN/Affarer/source-info?media_type=faksimil`
+    )
+    const sparse = await fetch(
+      `${origin}/private-v2/works/SparseA/SparseTitle/source-info`
+    )
+
+    expect(normal.status).toBe(200)
+    expect(await normal.json() as SourceInfoResponse).toEqual(doktorGlasSourceInfo)
+    expect(drama.status).toBe(200)
+    expect(await drama.json() as SourceInfoResponse).toEqual(dramaSourceInfo)
+    expect(sparse.status).toBe(200)
+    expect(await sparse.json() as SourceInfoResponse).toEqual(sparseSourceInfo)
+    expect(await sourceInfoRequests()).toEqual({
+      requests: [
+        {
+          scope: "public",
+          path: "/v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
+          query: "?media_type=etext"
+        },
+        {
+          scope: "private",
+          path: "/private-v2/works/Alml%C3%B6fN/Affarer/source-info",
+          query: "?media_type=faksimil"
+        },
+        {
+          scope: "private",
+          path: "/private-v2/works/SparseA/SparseTitle/source-info",
+          query: ""
+        }
+      ]
+    })
+  })
+
+  test("serves missing failed malformed oversized and delayed source-info scenarios", async () => {
+    expect((await fetch(
+      `${origin}/v2/works/MissingA/MissingTitle/source-info`
+    )).status).toBe(404)
+
+    expect(await (await fetch(
+      `${origin}/v2/works/MalformedA/MalformedTitle/source-info`
+    )).json()).toEqual(malformedSourceInfo)
+    expect(await (await fetch(
+      `${origin}/v2/works/OversizedA/OversizedTitle/source-info`
+    )).json()).toEqual(oversizedSourceInfo)
+
+    await fetch(`${origin}/_source_info_failure`, { method: "PUT" })
+    expect((await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/DoktorGlas/source-info`
+    )).status).toBe(503)
+    await fetch(`${origin}/_source_info_failure`, { method: "DELETE" })
+
+    await fetch(`${origin}/_source_info_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ "SöderbergH|DoktorGlas": 25 })
+    })
+    const startedAt = Date.now()
+    expect((await fetch(
+      `${origin}/v2/works/S%C3%B6derbergH/DoktorGlas/source-info`
+    )).status).toBe(200)
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(20)
+  })
+
+  test("serves byte-representative provenance and license resources with ledgers", async () => {
+    const provenance = await fetch(`${origin}/red/etc/provenance/provenance.json`)
+    const licenses = await fetch(`${origin}/red/etc/license/license.json`)
+
+    expect(provenance.status).toBe(200)
+    expect(provenance.headers.get("content-type")).toContain("application/json")
+    expect(await provenance.json()).toEqual(sourceInfoProvenance)
+    expect(await licenses.json()).toEqual(sourceInfoLicenses)
+    expect(await sourceInfoStaticRequests()).toEqual({
+      requests: [
+        "/red/etc/provenance/provenance.json",
+        "/red/etc/license/license.json"
+      ]
+    })
+  })
+
+  test("controls malformed oversized and failed static source-info resources", async () => {
+    for (const scenario of ["malformed", "oversized", "failed"]) {
+      await fetch(`${origin}/_source_info_static_failure`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ scenario })
+      })
+      const response = await fetch(`${origin}/red/etc/license/license.json`)
+      if (scenario === "failed") expect(response.status).toBe(503)
+      else if (scenario === "malformed") expect(await response.text()).toBe("{not-json")
+      else expect((await response.text()).length).toBeGreaterThan(1_048_576)
+    }
   })
 
   test("serves exact author document descriptors and byte-frozen XHTML provenance", async () => {
@@ -1928,14 +2062,16 @@ describe("v2 fixture server operations", () => {
         }
       ],
       count: [{ method: "POST", path: "/v2/text-search/count", body: countBody }],
-      options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }]
+      options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }],
+      chronology: []
     })
 
     await fetch(`${origin}/_text_search/requests/results`, { method: "DELETE" })
     expect(await textSearchRequests()).toEqual({
       results: [],
       count: [{ method: "POST", path: "/v2/text-search/count", body: countBody }],
-      options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }]
+      options: [{ method: "POST", path: "/v2/text-search/options", body: optionsBody }],
+      chronology: []
     })
   })
 
@@ -1945,7 +2081,9 @@ describe("v2 fixture server operations", () => {
       const response = await fetch(`${origin}/v2/text-search/${operation}`)
 
       expect(response.status).toBe(405)
-      expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+      expect(await textSearchRequests()).toEqual({
+        results: [], count: [], options: [], chronology: []
+      })
     }
   )
 
@@ -1963,7 +2101,9 @@ describe("v2 fixture server operations", () => {
 
     expect(malformedJson.status).toBe(400)
     expect(unknownField.status).toBe(422)
-    expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+    expect(await textSearchRequests()).toEqual({
+      results: [], count: [], options: [], chronology: []
+    })
   })
 
   test("rejects legacy text-search filter values longer than 100 characters", async () => {
@@ -1972,7 +2112,9 @@ describe("v2 fixture server operations", () => {
     }))
 
     expect(response.status).toBe(422)
-    expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+    expect(await textSearchRequests()).toEqual({
+      results: [], count: [], options: [], chronology: []
+    })
   })
 
   test.each(["application/jsonp", "application/json-patch+json"])(
@@ -1985,7 +2127,9 @@ describe("v2 fixture server operations", () => {
       })
 
       expect(response.status).toBe(422)
-      expect(await textSearchRequests()).toEqual({ results: [], count: [], options: [] })
+      expect(await textSearchRequests()).toEqual({
+        results: [], count: [], options: [], chronology: []
+      })
     }
   )
 
@@ -2073,7 +2217,8 @@ describe("v2 fixture server operations", () => {
       delays: {
         results: {},
         count: {},
-        options: { lager: 70 }
+        options: { lager: 70 },
+        chronology: {}
       }
     })
   })

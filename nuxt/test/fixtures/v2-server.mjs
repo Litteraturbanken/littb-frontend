@@ -43,6 +43,11 @@ import {
   workScopedReaderPageHtmlByIndex,
   workReaderCss
 } from "./reader-data.mjs"
+import {
+  sourceInfoByIdentity,
+  sourceInfoLicenses,
+  sourceInfoProvenance
+} from "./reader-source-info-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
 import { textSearchBackgroundBase64 } from "./text-search-data.mjs"
 import { workLookupResponse } from "./work-lookup-data.mjs"
@@ -237,6 +242,11 @@ let authorResolveRequests = []
 let authorResolveFailure = false
 let authorResolveDelays = {}
 let authorResolveScenario = null
+let sourceInfoRequests = []
+let sourceInfoStaticRequests = []
+let sourceInfoFailure = false
+let sourceInfoDelays = {}
+let sourceInfoStaticFailure = null
 let authorProfileRequests = []
 let authorProfileFailure = false
 let authorWorksRequests = []
@@ -442,6 +452,11 @@ function waitForWorkLookupDelay(body) {
 function waitForAuthorResolveDelay(body) {
   const delay = authorResolveDelays[JSON.stringify(body)] || 0
   return new Promise(resolve => setTimeout(resolve, delay))
+}
+
+function waitForSourceInfoDelay(authorId, titlePath) {
+  const delay = Number(sourceInfoDelays[`${authorId}|${titlePath}`] || 0)
+  return delay > 0 ? new Promise(resolve => setTimeout(resolve, delay)) : Promise.resolve()
 }
 
 function waitForAuthorWorksDelay(authorId) {
@@ -1163,6 +1178,45 @@ function decodedAuthorWorksAuthorId(pathname) {
   return { valid, authorId }
 }
 
+function decodedSourceInfoIdentity(pathname) {
+  const match = /^\/v2\/works\/([^/]+)\/([^/]+)\/source-info$/.exec(pathname)
+  if (!match) return null
+
+  let authorId
+  let titlePath
+  try {
+    authorId = decodeURIComponent(match[1])
+    titlePath = decodeURIComponent(match[2])
+  } catch {
+    return { valid: false, authorId: null, titlePath: null }
+  }
+
+  const validSegment = (value, maximum) => value.length >= 1
+    && value.length <= maximum
+    && value.trim() === value
+    && !value.includes("%")
+    && !value.includes("/")
+    && !value.includes("\\")
+    && !/\p{Cc}/u.test(value)
+    && value !== "."
+    && value !== ".."
+  return {
+    valid: validSegment(authorId, 100) && validSegment(titlePath, 200),
+    authorId,
+    titlePath
+  }
+}
+
+function sourceInfoMedia(searchParams) {
+  for (const key of searchParams.keys()) {
+    if (key !== "media_type" || searchParams.getAll(key).length !== 1) return null
+  }
+  const mediaType = searchParams.get("media_type")
+  return mediaType === null || mediaType === "etext" || mediaType === "faksimil"
+    ? mediaType
+    : null
+}
+
 function resourceFor(pathname) {
   if (pathname === "/v2/stats") return "stats"
   if (pathname === "/v2/works/popular") return "works"
@@ -1544,6 +1598,86 @@ const server = createServer(async (request, response) => {
   }
   if (url.pathname === "/_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests })
+  }
+  if (url.pathname === "/_source_info_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: sourceInfoRequests })
+  }
+  if (url.pathname === "/_source_info_requests" && request.method === "DELETE") {
+    sourceInfoRequests = []
+    return sendJson(response, 200, { requests: sourceInfoRequests })
+  }
+  if (url.pathname === "/_source_info_static_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: sourceInfoStaticRequests })
+  }
+  if (url.pathname === "/_source_info_static_requests" && request.method === "DELETE") {
+    sourceInfoStaticRequests = []
+    return sendJson(response, 200, { requests: sourceInfoStaticRequests })
+  }
+  if (url.pathname === "/_source_info_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: sourceInfoFailure })
+  }
+  if (url.pathname === "/_source_info_failure" && request.method === "PUT") {
+    sourceInfoFailure = true
+    return sendJson(response, 200, { failure: sourceInfoFailure })
+  }
+  if (url.pathname === "/_source_info_failure" && request.method === "DELETE") {
+    sourceInfoFailure = false
+    return sendJson(response, 200, { failure: sourceInfoFailure })
+  }
+  if (url.pathname === "/_source_info_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: sourceInfoDelays })
+  }
+  if (url.pathname === "/_source_info_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    sourceInfoDelays = Object.fromEntries(
+      Object.entries(body).map(([identity, delay]) => [identity, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: sourceInfoDelays })
+  }
+  if (url.pathname === "/_source_info_delays" && request.method === "DELETE") {
+    sourceInfoDelays = {}
+    return sendJson(response, 200, { delays: sourceInfoDelays })
+  }
+  if (url.pathname === "/_source_info_static_failure" && request.method === "GET") {
+    return sendJson(response, 200, { scenario: sourceInfoStaticFailure })
+  }
+  if (url.pathname === "/_source_info_static_failure" && request.method === "PUT") {
+    const body = await readJson(request)
+    sourceInfoStaticFailure = typeof body.scenario === "string" ? body.scenario : null
+    return sendJson(response, 200, { scenario: sourceInfoStaticFailure })
+  }
+  if (url.pathname === "/_source_info_static_failure" && request.method === "DELETE") {
+    sourceInfoStaticFailure = null
+    return sendJson(response, 200, { scenario: sourceInfoStaticFailure })
+  }
+
+  if (
+    request.method === "GET"
+    && (url.pathname === "/red/etc/provenance/provenance.json"
+      || url.pathname === "/red/etc/license/license.json")
+  ) {
+    sourceInfoStaticRequests.push(url.pathname)
+    if (sourceInfoStaticFailure === "failed") {
+      return sendJson(response, 503, {
+        error: { code: "source_info_static_unavailable", message: "Unavailable", details: null }
+      })
+    }
+    if (sourceInfoStaticFailure === "malformed") {
+      return sendBody(response, 200, "application/json; charset=utf-8", "{not-json")
+    }
+    if (sourceInfoStaticFailure === "oversized") {
+      return sendBody(
+        response,
+        200,
+        "application/json; charset=utf-8",
+        JSON.stringify({ oversized: "x".repeat(1_048_577) })
+      )
+    }
+    return sendJson(
+      response,
+      200,
+      url.pathname.includes("provenance") ? sourceInfoProvenance : sourceInfoLicenses
+    )
   }
   if (url.pathname === "/_requests" && request.method === "DELETE") {
     requests = []
@@ -2942,6 +3076,16 @@ const server = createServer(async (request, response) => {
           author_id: "NullSurnameAuthor",
           full_name: "Förnamn Efternamn",
           surname: null
+        },
+        {
+          author_id: "DramaRedaktionen",
+          full_name: "Dramawebbens redaktion",
+          surname: null
+        },
+        {
+          author_id: "LindgrenU",
+          full_name: "Ulla-Britta Lindgren",
+          surname: "Lindgren"
         }
       ].map(author => [author.author_id, author])
     )
@@ -2987,6 +3131,67 @@ const server = createServer(async (request, response) => {
         ? scenarioResponses[authorResolveScenario]
         : { items }
     )
+  }
+
+  const sourceInfoIdentity = request.method === "GET"
+    ? decodedSourceInfoIdentity(rawApiPathname)
+    : null
+  if (sourceInfoIdentity !== null) {
+    sourceInfoRequests.push({
+      scope: rawPathname.startsWith("/private-v2/") ? "private" : "public",
+      path: rawPathname,
+      query: url.search
+    })
+    const mediaType = sourceInfoMedia(url.searchParams)
+    if (!sourceInfoIdentity.valid || mediaType === null && url.searchParams.has("media_type")) {
+      return validationError(response)
+    }
+    await waitForSourceInfoDelay(sourceInfoIdentity.authorId, sourceInfoIdentity.titlePath)
+    if (sourceInfoFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "source_info_unavailable",
+          message: "Unable to load source information",
+          details: null
+        }
+      })
+    }
+    if (
+      sourceInfoIdentity.authorId === "ValidationA"
+      && sourceInfoIdentity.titlePath === "ValidationTitle"
+    ) {
+      return validationError(response)
+    }
+    if (
+      sourceInfoIdentity.authorId === "ServerErrorA"
+      && sourceInfoIdentity.titlePath === "ServerErrorTitle"
+    ) {
+      return sendJson(response, 500, {
+        error: {
+          code: "source_info_invalid_source",
+          message: "Invalid source information",
+          details: null
+        }
+      })
+    }
+    const item = sourceInfoByIdentity.get(
+      `${sourceInfoIdentity.authorId}|${sourceInfoIdentity.titlePath}`
+    )
+    if (!item) {
+      return sendJson(response, 404, {
+        error: { code: "source_info_not_found", message: "Work not found", details: null }
+      })
+    }
+    if (
+      mediaType !== null && item.media_type !== mediaType
+      && sourceInfoIdentity.authorId !== "SöderbergH"
+      && sourceInfoIdentity.authorId !== "AlmlöfN"
+    ) {
+      return sendJson(response, 404, {
+        error: { code: "source_info_not_found", message: "Work not found", details: null }
+      })
+    }
+    return sendJson(response, 200, item)
   }
 
   const slaArticleCandidate = request.method === "GET" && !url.search

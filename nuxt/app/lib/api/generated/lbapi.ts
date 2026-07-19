@@ -870,6 +870,8 @@ export interface components {
             library: string;
             /** Signum */
             signum: string | null;
+            /** Use Alternate Text */
+            use_alternate_text: boolean;
         };
         /** SourceInfoReadAction */
         SourceInfoReadAction: {
