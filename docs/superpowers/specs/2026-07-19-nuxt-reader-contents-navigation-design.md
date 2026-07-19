@@ -71,10 +71,29 @@ Reader metadata. It extends its internal work model with:
 
 Each normalized part contains a stable source index, exact start/end page names
 and indexes, full title, optional navigation/short title and title ID, and
-ordered authors. Part-author display names are resolved only from author records
-already present in the same representation. An otherwise valid unknown part
-author remains linkable by ID and uses that ID as its bounded display fallback;
-this slice does not add an author-directory request.
+ordered author IDs. Production metadata proves representation-local author
+records are incomplete for translated and collected parts: `Nattmusik`, for
+example, has one representation author but four distinct part authors. After
+strict metadata normalization, the Nitro Reader handler therefore resolves the
+distinct part-author IDs in one bounded call to the existing typed
+`POST /authors/resolve` FastAPI operation. Resolved summaries provide exact full
+names and surnames. A structurally valid ID omitted by a successful resolver
+remains linkable and uses the ID as its bounded display fallback; an unavailable
+or malformed resolver response produces the existing `502 Invalid reader
+source` boundary instead of silently changing visible names.
+
+The checked resolver accepts at most 50 distinct IDs. After subtracting exact
+representation-local summaries, more than 50 unresolved distinct part-author
+IDs is therefore an invalid Reader metadata projection and returns `502` before
+the resolver or page asset is fetched. One request remains sufficient for every
+accepted graph. The generated client supplies compile-time types, but the Nitro
+boundary also validates the runtime 200 response: an exact `{ items }` object,
+an array of at most 50 exact summary objects, unique requested safe IDs, bounded
+nonempty full names, and `null` or bounded nonempty surnames. Extra keys,
+duplicate or unrequested IDs, and malformed strings are invalid. Successfully
+omitted IDs use the ID fallback. A resolved `surname: null` displays the bounded
+full name wherever Angular asks for a surname, then the ID only if the whole
+summary was omitted.
 
 The canonical page endpoint uses pure server-side navigation helpers to add this
 page-specific projection to the existing `ReaderPage` base:
@@ -91,11 +110,17 @@ page-specific projection to the existing `ReaderPage` base:
 receive raw legacy dictionaries and does not reimplement the nested-part
 algorithm. Both e-text and faksimil arms inherit the same navigation projection.
 
-The existing page-local `useAsyncData` remains the only Reader model fetch. A
-query-only contents open or close does not change the primary request identity
-and must not refetch metadata, e-text HTML, or search-hit data. No composable,
-store, second Nitro endpoint, FastAPI change, or generated client change is
-introduced.
+The existing page-local `useAsyncData` remains the only browser Reader model
+fetch. The Nitro handler may make the one conditional typed author-resolution
+request described above; it adds no browser endpoint or composable. A query-only
+contents open or close does not change the primary request identity
+and must not refetch metadata, e-text HTML, or search-hit data. The existing
+search-hit async-data key, watcher, accepted-response identity, and stale matcher
+therefore use one raw-query identity that removes only `innehall` while
+preserving every other raw query pair, order, and encoding. Search-relevant
+changes still produce distinct identities. No composable, store, second Nitro
+endpoint, FastAPI change, or generated client change is introduced because the
+typed resolver already exists in the checked schema and generated client.
 
 ### Strict but compatible legacy boundaries
 
@@ -111,7 +136,8 @@ record with:
 - start and end names that each identify exactly one normalized page;
 - a start index less than or equal to its end index;
 - optional `navtitle`, `shorttitle`, and `titleid` values that are strings when
-  present; and
+  present (empty optional display labels normalize to `null`, matching legacy
+  truthy fallback); and
 - an absent/`null` author list or an array of records containing nonempty string
   `authorid` values.
 
@@ -161,11 +187,20 @@ part.
 
 Previous/next part, start/end page, page chooser, contents rows, and the existing
 previous/next page links all use the canonical route and preserve every current
-query value other than the contents key when leaving the dialog. Repeated
-unknown keys retain their order. Canonical e-text `q`, `hit`, `lemma`,
+query byte other than the contents key when leaving the dialog. Helpers operate
+on the raw query suffix of `route.fullPath`, not Vue query objects or
+`URLSearchParams`, so bare keys, empty values, `+` versus `%20`, percent-escape
+case, cross-key interleaving, repeated unknown keys, and fragments remain
+byte-identical. They split only on `&`, decode only enough to decide whether a
+key is exactly `innehall`, and copy all nonmatching segments verbatim. Canonical
+e-text `q`, `hit`, `lemma`,
 `ej_modern`, `prefix`, and `suffix` state remains intact; faksimil `storlek` and
 search-shaped unknown state remain intact. Navigation continues to update the
-existing Reader history producer through the resolved `route.fullPath`.
+existing Reader history producer through a history identity that removes only
+`innehall`. Contents-only open/close does not write or reorder `lastPageViews`,
+and a direct contents-open entry stores the restorable canonical URL without the
+transient modal key. Selecting a part or otherwise changing page stores the
+exact resulting destination query.
 
 Disabled controls have no `href`, keyboard focus, or click behavior but retain
 the exact legacy disabled appearance. The current page chooser opens from the
@@ -189,7 +224,7 @@ are preserved but ignored. This fail-closed parser prevents ambiguous query
 state from opening UI.
 
 Opening from the sidebar pushes the same canonical page with all existing query
-values preserved, any invalid/repeated prior `innehall` value removed, and one
+bytes preserved, any invalid/repeated prior `innehall` segment removed, and one
 bare `innehall` key appended. Browser Back closes the newly opened dialog and
 Forward reopens it. Headless UI `Dialog`, `DialogPanel`, and `DialogTitle` own
 focus trapping, Escape, backdrop close, focus restoration, and accessible modal
@@ -204,19 +239,26 @@ removes only `innehall`, and preserves all other query values. A contents-open
 query never changes the Reader request identity and never creates duplicate
 metadata, page-body, image, or hit requests.
 
+Headless UI alone owns outside-click/backdrop dismissal; the backdrop has no
+second click handler. The page-owned close operation is idempotent, so one user
+action produces at most one router replacement and one history mutation.
+
 The dialog is client-rendered using the existing global legacy modal styles. Its
-header shows the work author, title, and optional imprint year. Every row shows
-part authors using the legacy one-full-name/multiple-surnames rule, uses
-`navtitle || shorttitle || title` as its label, exposes the full title as a
-native tooltip only when it differs, and retains an ordinary canonical `href`.
+header shows the work author, title, and optional imprint year. Every contents
+row shows the surname for every part author, including a single author, and uses
+`navtitle || shorttitle || title` as its label, always exposes the full title as
+its native tooltip exactly as Angular does, and retains an ordinary canonical
+`href`.
 
 ## Rendering and metadata
 
 The existing sidebar title, typography, spacing, corridor placement, arrows,
 slider decoration, and subnavigation order do not change. The current-part block
-uses the normalized current part only when one exists. Its author links and
-label follow the same rules as contents rows. A page outside all part ranges has
-an empty current-part block rather than fabricated work context.
+uses the normalized current part only when one exists. Unlike contents rows, it
+shows one author's full name or multiple authors' surnames, matching Angular. A
+page outside all part ranges has an empty current-part block rather than
+fabricated work context. Its tooltip is present only when the displayed fallback
+label differs from the full title.
 
 When the current part has a nonempty `titleid`, the page emits
 `<meta name="part" content="...">`. It removes that metadata on a page without a
@@ -238,8 +280,9 @@ their existing deferrals.
 - During canonical client page navigation, the old sidebar/parts model is not
   rendered under the new URL.
 - Query-only dialog transitions reuse the current successful Reader model.
-- Contents state never suppresses history for a successful page; history stores
-  the exact resulting canonical URL after selection or close.
+- Contents-only state never creates a page view; history stores the exact
+  resulting canonical URL without `innehall` on initial success or after page
+  selection.
 
 ## Visual authority and verification
 

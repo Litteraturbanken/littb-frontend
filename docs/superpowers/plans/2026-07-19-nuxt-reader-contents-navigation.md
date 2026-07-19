@@ -4,7 +4,7 @@
 
 **Goal:** Replace the Nuxt Reader's inert current-part, part-navigation, first/last, goto-page, and contents placeholders with a typed page-local implementation that matches Angular without changing existing closed Reader visuals.
 
-**Architecture:** Extend the existing strict Nitro `get_work_info` normalization with source-ordered parts and a page-specific navigation projection shared by e-text and faksimil. The canonical Reader page owns query/history transitions and exact-name goto behavior, while a focused Headless UI component renders the `?innehall` dialog from the already-fetched model.
+**Architecture:** Extend the existing strict Nitro `get_work_info` normalization with source-ordered parts, one conditional typed `POST /authors/resolve` lookup, and a page-specific navigation projection shared by e-text and faksimil. The canonical Reader page owns raw-query/history transitions and exact-name goto behavior, while a focused Headless UI component renders the `?innehall` dialog from the already-fetched model.
 
 **Tech Stack:** Nuxt 4, Nitro/H3, Vue 3, TypeScript, Headless UI, SCSS, Vitest, Playwright.
 
@@ -15,8 +15,10 @@
 ## Global Constraints
 
 - Preserve the current Angular layout and all ten existing Reader-hit/faksimil desktop/mobile comparisons. Do not replace existing baselines, mask regions, redesign controls, or relax screenshot thresholds.
-- Keep the existing page-local `useAsyncData` and params-only primary Reader identity. Opening or closing contents must make no metadata, page-body, image, or hit request.
-- Reuse the exact existing `/api/get_work_info` call. Add no FastAPI operation, generated API type, second Nitro endpoint, client store, or one-use composable.
+- Keep the existing page-local `useAsyncData` and params-only primary Reader identity. Opening or closing contents must make no metadata, page-body, image, or hit request. The search-hit request and history identities must exclude only the presentation-owned `innehall` query.
+- Reuse the exact existing `/api/get_work_info` call and generated
+  `POST /authors/resolve` contract. Add no new FastAPI operation, generated API
+  type, second browser/Nitro endpoint, client store, or one-use composable.
 - Support only the existing canonical and shorthand public `etext | faksimil` routes. Do not add `/editor` or source-info routes.
 - Preserve canonical search state, faksimil size state, repeated unknown query values, query ordering, Reader history, stale-response ownership, and current error status semantics.
 - Treat absent, `null`, or empty parts as a valid partless work. Reject a present malformed nonempty parts graph before fetching a page asset.
@@ -48,7 +50,7 @@
 - Modify: `nuxt/server/utils/reader-source.ts`
 
 **Interfaces:**
-- Consumes: exact legacy representation `pages`, optional `startpagename`, optional `endpagename`, optional `parts`, and representation-local `authors`.
+- Consumes: exact legacy representation `pages`, optional `startpagename`, optional `endpagename`, optional `parts`, representation-local `authors`, and existing typed author summaries resolved in Task 2.
 - Produces: shared `ReaderPartAuthor`, `ReaderPart`, and Reader base navigation fields; server `resolveReaderPartNavigation(parts, pageIndex)` returning source-array indexes/page names.
 
 - [ ] **Step 1: Write failing page and part normalization tests**
@@ -149,8 +151,11 @@ bounds (100,000 pages, 10,000 parts, 100 part authors, 100 characters for IDs
 and page names, and 2,000 characters for titles); reject rather than truncate.
 Treat absent/`null` `parts` as `[]`, but reject any malformed present value.
 
-Resolve part-author names only from well-formed representation-local author
-records. Do not call another service. Preserve duplicate ranges and equal starts.
+Normalize empty optional `navtitle`, `shorttitle`, and `titleid` strings to
+`null`, preserving Angular's truthy `navtitle || shorttitle || title` fallback.
+At this layer retain author IDs and any well-formed representation-local names;
+Task 2 completes names through the existing typed resolver. Preserve duplicate
+ranges and equal starts.
 
 - [ ] **Step 6: Implement the exact stable navigation helper**
 
@@ -214,7 +219,7 @@ git commit -m "feat(nuxt): model reader contents navigation"
 - Modify: `nuxt/server/api/reader/[author]/[title]/[page]/[mediatype].get.ts`
 
 **Interfaces:**
-- Consumes: Task 1 `ReaderWorkMetadata.parts`, exact ordered pages, optional declared boundaries, and `resolveReaderPartNavigation`.
+- Consumes: Task 1 `ReaderWorkMetadata.parts`, exact ordered pages, optional declared boundaries, `resolveReaderPartNavigation`, and generated `POST /authors/resolve` types.
 - Produces: complete `ReaderPageBase` navigation projection for both media arms; deterministic `DoktorGlasParts` fixture and separate request ledgers.
 
 - [ ] **Step 1: Extend deterministic fixtures with unchanged and part-rich models**
@@ -258,7 +263,7 @@ no page-body request.
 - [ ] **Step 4: Run focused SSR and verify RED**
 
 ```bash
-cd nuxt && npm run test:ssr -- test/ssr/reader.spec.ts test/ssr/reader-shorthand.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3040 npm run test:ssr -- test/ssr/reader.spec.ts test/ssr/reader-shorthand.spec.ts
 ```
 
 Expected: FAIL because the canonical DTO lacks the navigation projection while
@@ -273,15 +278,41 @@ const partNavigation = resolveReaderPartNavigation(metadata.parts, currentPage.p
 const knownNames = new Set(metadata.pages.map(page => page.pageName))
 ```
 
+Collect distinct part-author IDs in source order. Resolve only IDs whose exact
+summary is not already authoritative through one bounded
+`POST /authors/resolve` call using `createLbApiClient(config.apiBase)`. Merge
+summaries by exact ID, preserve author order, and retain a safe ID fallback only
+for IDs omitted by a successful resolver response. Reject more than 50 distinct
+unresolved IDs as `502` before either the resolver or page asset is fetched.
+Treat transport, non-200, or malformed resolver data as `502 Invalid reader
+source` before the page asset fetch. Do not trust the generated compile-time
+type alone: validate an exact top-level `{ items }` object; an array of at most
+50 exact `{ author_id, full_name, surname }` objects; unique, requested, safe
+IDs of at most 100 characters; bounded nonempty full names; and `null` or
+bounded nonempty surnames. Reject extra keys, duplicate/unrequested IDs,
+controls, surrounding whitespace, empty strings, and overlong values. A
+successful omission falls back to the ID. A resolved `surname: null` uses the
+full name for surname-style rendering.
+
+Fixture ledgers must
+prove zero resolver calls for partless/all-local works and one exact call for
+`DoktorGlasParts`, including authors absent from representation-local metadata.
+Add independent `502` cases for primitive/wrong response containers, non-array
+or oversized `items`, extra keys, malformed item containers, duplicate or
+unrequested IDs, invalid/empty/overlong ID/full-name/surname strings, resolver
+transport/non-200 failures, and 51 unresolved IDs. Assert each failure happens
+before a page asset. Add successful omission and `surname: null` cases to freeze
+the visible ID/full-name fallbacks.
+
 Add `pageNames` in sorted page order, include declared start/end only when found
-in `knownNames`, copy normalized parts, and spread `partNavigation` into the
+in `knownNames`, copy the resolved parts, and spread `partNavigation` into the
 shared `commonPage`. Do not alter the e-text HTML fetch or faksimil source arm.
 
 - [ ] **Step 6: Run Task 2 tests to GREEN**
 
 ```bash
 cd nuxt && npm run test:unit -- test/unit/v2-server.spec.ts
-cd nuxt && npm run test:ssr -- test/ssr/reader.spec.ts test/ssr/reader-shorthand.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3040 npm run test:ssr -- test/ssr/reader.spec.ts test/ssr/reader-shorthand.spec.ts
 ```
 
 Expected: PASS, exactly one metadata and one media-appropriate page asset for a
@@ -321,9 +352,17 @@ readerContentsIsOpen("1") === false
 readerContentsIsOpen([null, null]) === false
 ```
 
-Add `readerContentsHref` cases that remove an existing invalid/repeated
-`innehall`, preserve repeated unknown values in order, preserve canonical hit
-and `storlek`, and append one bare `innehall` without `=`.
+Add raw-full-path `readerContentsHref` cases that remove an existing
+invalid/repeated `innehall`, preserve repeated unknown values in order, preserve
+canonical hit and `storlek`, and append one bare `innehall` without `=`. Add a
+raw full-path identity helper that removes only query segments whose decoded key
+is exactly `innehall` while preserving every other segment's original bytes and
+order. Freeze bare, empty, repeated, malformed/encoded-key lookalikes, reordered
+search keys, fragments, and this exact corpus:
+
+```text
+bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F
+```
 
 - [ ] **Step 2: Run route units and verify RED**
 
@@ -335,10 +374,13 @@ Expected: FAIL because the contents parser/href helper is absent.
 
 - [ ] **Step 3: Implement minimal pure query helpers**
 
-Keep `ReaderRouteQuery` compatible with existing page/hit serialization. Add a
-scalar parser for Vue's `LocationQueryValue | LocationQueryValue[]`, clone the
-query while omitting only `innehall`, build the ordinary canonical href, then
-append `?innehall` or `&innehall`. Do not normalize any other key/value.
+Parse open state fail-closed, but perform every identity and URL mutation on the
+raw query suffix of `route.fullPath`. Do not clone Vue query objects and do not
+use `URLSearchParams`: both normalize bytes and lose cross-key interleaving.
+Split raw segments only on `&`, decode only their key for the exact `innehall`
+comparison, copy all nonmatching bytes verbatim, preserve any fragment, replace
+only the path segment for canonical page navigation, and append the bare key for
+open. Malformed percent-encoded keys are nonmatching and preserved.
 
 - [ ] **Step 4: Write failing browser tests for closed sidebar behavior**
 
@@ -350,6 +392,12 @@ On the part-rich middle page, assert:
 - previous/next part and first/last controls have exact public hrefs;
 - disabled boundaries have no href or focus target;
 - all targets preserve `q`, `hit`, `storlek`, and repeated unknown values;
+- opening/closing contents on a valid `q+hit` route makes zero new hit requests,
+  but changing any search-relevant query still makes exactly one replacement
+  request and rejects the old response;
+- contents-only transitions do not write/reorder `lastPageViews`; direct
+  contents-open entry stores a restorable URL without `innehall`, while a real
+  page/part navigation stores its exact destination query;
 - valid goto `-1` pushes one canonical navigation and updates history;
 - invalid, trimmed-only, and wrong-case goto values do not change URL/content and
   expose one bounded status;
@@ -359,7 +407,7 @@ On the part-rich middle page, assert:
 - [ ] **Step 5: Run focused browser cases and verify RED**
 
 ```bash
-cd nuxt && npm run test:e2e -- test/e2e/reader.behavior.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3041 npm run test:e2e -- test/e2e/reader.behavior.spec.ts
 ```
 
 Expected: new cases FAIL on the current inert anchors/form while all existing
@@ -368,7 +416,7 @@ Reader content, hit, faksimil, and history cases remain green.
 - [ ] **Step 6: Implement the minimal sidebar behavior**
 
 Derive `currentPart` from `reader.parts[reader.currentPartIndex]`, render exact
-author links and `navTitle ?? shortTitle ?? title`, and use ordinary canonical
+author links and the truthy `navTitle || shortTitle || title` fallback, and use ordinary canonical
 hrefs plus Nuxt custom navigation for real controls. Render disabled anchors as
 noninteractive legacy-styled elements.
 
@@ -389,6 +437,10 @@ function submitGoto(): void {
 
 Reset local input/message on Reader identity change. Preserve all existing query
 values. Emit the current part's `titleId` through `useHead` only when present.
+Replace every search-hit use of `route.fullPath`—async-data key, handler
+identity, watcher, accepted-response matcher, and error matcher—with the one
+contents-neutral raw identity. Use the same helper as the history watch key and
+stored URL so presentation-only transitions cannot create page views.
 
 Remove `aria-hidden` only from controls made real. Keep slider, keyboard help,
 and deferred subnav items individually hidden from accessibility APIs.
@@ -397,7 +449,7 @@ and deferred subnav items individually hidden from accessibility APIs.
 
 ```bash
 cd nuxt && npm run test:unit -- test/unit/reader-routes.spec.ts
-cd nuxt && npm run test:e2e -- test/e2e/reader.behavior.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3041 npm run test:e2e -- test/e2e/reader.behavior.spec.ts
 ```
 
 Expected: PASS on desktop and mobile; query-only and page transitions keep
@@ -441,19 +493,20 @@ Cover these exact transitions:
 2. Browser Back closes and Forward reopens after a trigger-open;
 3. direct `?innehall` and `?innehall=` open after hydration;
 4. `?innehall=1` and repeated `?innehall&innehall` remain closed and preserved;
-5. Escape, backdrop, and `Stäng` each replace away only `innehall` and restore
-   trigger focus;
+5. Escape, backdrop, and `Stäng` each replace away only `innehall`, restore
+   trigger focus, and produce exactly one router/history mutation per action;
 6. selecting a nested part pushes its exact start page, removes only
    `innehall`, preserves `q`, `hit`, `storlek`, and repeated unknown values, and
    updates `lastPageViews`; and
-7. multi-author rows use comma-separated surnames while single-author rows use
-   full name and every author has an exact encoded profile href.
+7. contents rows always use author surnames, for one or many authors, while the
+   closed current-part block alone uses one full name or multiple surnames; every
+   author has an exact encoded profile href.
 
 - [ ] **Step 3: Run focused SSR/browser tests and verify RED**
 
 ```bash
-cd nuxt && npm run test:ssr -- test/ssr/reader.spec.ts
-cd nuxt && npm run test:e2e -- test/e2e/reader.behavior.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3042 npm run test:ssr -- test/ssr/reader.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3043 npm run test:e2e -- test/e2e/reader.behavior.spec.ts
 ```
 
 Expected: FAIL because no real trigger/dialog/query transitions exist.
@@ -464,7 +517,7 @@ Use the installed primitives:
 
 ```vue
 <Dialog v-if="open" :open="open" as="div" class="modal chapters fade in" @close="$emit('close')">
-  <div class="modal-backdrop fade in" aria-hidden="true" @click="$emit('close')" />
+  <div class="modal-backdrop fade in" aria-hidden="true" />
   <div class="modal-dialog">
     <DialogPanel class="modal-content">
       <div class="chapters-modal modal-body">
@@ -477,14 +530,17 @@ Use the installed primitives:
 </Dialog>
 ```
 
-Render ordinary hrefs for every row and emit its page name after preventing the
-client click. Do not fetch or own router state inside the component.
+Render ordinary hrefs for every row, always set the native title tooltip to the
+part's full title, and emit its page name after preventing the client click. Let
+Headless UI alone own outside-click dismissal; do not add a backdrop click
+handler. Do not fetch or own router state inside the component.
 
 - [ ] **Step 5: Implement page-owned open/close/select transitions**
 
-Derive open state from the exact parser. Trigger with `router.push` and a bare
-query value. Close with `router.replace` after deleting only `innehall`. Select
-with `router.push` to the part page after deleting only `innehall`. Keep raw
+Derive open state from the exact parser. Trigger with `router.push` using the
+raw-full-path helper. Close idempotently with one `router.replace` after deleting
+only `innehall`. Select with `router.push` to the part page after deleting only
+`innehall`. Keep raw
 shorthand preservation unchanged and primary Reader identity params-only.
 
 Remove `aria-hidden` from the subnav container, expose only the real contents
@@ -496,8 +552,8 @@ activate existing `_modals.scss`; do not restyle the legacy dialog. Add
 - [ ] **Step 6: Run Task 4 tests to GREEN**
 
 ```bash
-cd nuxt && npm run test:ssr -- test/ssr/reader.spec.ts test/ssr/reader-shorthand.spec.ts
-cd nuxt && npm run test:e2e -- test/e2e/reader.behavior.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3044 npm run test:ssr -- test/ssr/reader.spec.ts test/ssr/reader-shorthand.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3045 npm run test:e2e -- test/e2e/reader.behavior.spec.ts
 ```
 
 Expected: PASS with exact history/query transitions, one dialog, no hydration
@@ -551,12 +607,13 @@ matching desktop/mobile full-page images.
 Run:
 
 ```bash
-cd nuxt && npx playwright test --config=playwright.reader-contents-angular.config.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_ANGULAR_TEST_PORT=3046 npx playwright test --config=playwright.reader-contents-angular.config.ts
 ```
 
-Expected: 4 PASS and four new authority images. Record their SHA-256 hashes in
-the capture test or adjacent provenance comments, following existing Reader
-authority practice.
+Expected: 4 PASS and four new authority images. Write all four SHA-256 hashes to
+an executable manifest assertion in the capture test; comments alone are not
+verification. The new Angular config must read `LITTB_ANGULAR_TEST_PORT` and
+must not reuse a live Nuxt or legacy-shell port.
 
 - [ ] **Step 3: Add strict Nuxt closed/open comparisons**
 
@@ -586,7 +643,7 @@ wrapper/layout mismatch rather than a missing fixture, use that comparison as
 RED, and adjust only layout-neutral Headless UI glue proven by the diff.
 
 ```bash
-cd nuxt && npx playwright test test/e2e/reader-contents.visual.spec.ts \
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3047 npx playwright test test/e2e/reader-contents.visual.spec.ts \
   --project=desktop-chromium --project=mobile-chromium
 ```
 
@@ -597,14 +654,15 @@ Expected final result: 4 PASS within the established tolerance.
 Run:
 
 ```bash
-cd nuxt && npx playwright test test/e2e/reader-hit.visual.spec.ts \
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3048 npx playwright test test/e2e/reader-hit.visual.spec.ts \
   --project=desktop-chromium --project=mobile-chromium
-cd nuxt && npx playwright test test/e2e/reader-faksimil.visual.spec.ts \
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3049 npx playwright test test/e2e/reader-faksimil.visual.spec.ts \
   --project=desktop-chromium --project=mobile-chromium
 ```
 
-Expected: 10 PASS with no generated actual/diff images and byte-identical
-committed baseline hashes. If a prior baseline changes, fix production markup or
+Expected: 10 PASS with no generated actual/diff images. Add an executable
+SHA-256 manifest for all ten existing Reader baselines and assert it before and
+after the new captures. If a prior hash changes, fix production markup or
 wrapper glue; never update that baseline in this slice.
 
 - [ ] **Step 6: Commit Task 5**
@@ -640,13 +698,13 @@ failing regression test before production changes, then request re-review.
 - [ ] **Step 2: Run focused deterministic verification**
 
 ```bash
-cd nuxt && npm run test:unit -- \
+cd nuxt && NUXT_IGNORE_LOCK=1 npm run test:unit -- \
   test/unit/reader-source.spec.ts test/unit/reader-routes.spec.ts test/unit/v2-server.spec.ts
-cd nuxt && npm run test:ssr -- \
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3050 npm run test:ssr -- \
   test/ssr/reader.spec.ts test/ssr/reader-shorthand.spec.ts
-cd nuxt && npm run test:e2e -- test/e2e/reader.behavior.spec.ts
-cd nuxt && npx playwright test --config=playwright.reader-contents-angular.config.ts
-cd nuxt && npx playwright test test/e2e/reader-contents.visual.spec.ts \
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3051 npm run test:e2e -- test/e2e/reader.behavior.spec.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_ANGULAR_TEST_PORT=3052 npx playwright test --config=playwright.reader-contents-angular.config.ts
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3053 npx playwright test test/e2e/reader-contents.visual.spec.ts \
   test/e2e/reader-hit.visual.spec.ts test/e2e/reader-faksimil.visual.spec.ts \
   --project=desktop-chromium --project=mobile-chromium
 ```
@@ -658,10 +716,10 @@ unexpected requests, warnings, actual images, or diff images remain.
 - [ ] **Step 3: Run full frontend and contract gates**
 
 ```bash
-cd nuxt && npm run test:unit
-cd nuxt && npm run test:ssr
+cd nuxt && NUXT_IGNORE_LOCK=1 npm run test:unit
+cd nuxt && NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3054 npm run test:ssr
 cd nuxt && npm run typecheck
-cd nuxt && npm run api:check
+cd nuxt && LBAPI_OPENAPI_SCHEMA=../../lb-backend/openapi/v2.json npm run api:check
 cd nuxt && npm run build
 ```
 
