@@ -201,6 +201,14 @@ function hitsForQuery(query, workId) {
       highlight: { from_word_id: "w3_1", to_word_id: "w3_1" }
     }]
   }
+  if (query === "leading-zero-page") {
+    return [{
+      index: 0,
+      page_name: "-3",
+      page_index: 1,
+      highlight: { from_word_id: "w01_4", to_word_id: "w01_4" }
+    }]
+  }
   if (query === "missing-range") {
     return [{
       index: 0,

@@ -433,6 +433,20 @@ test("page-mismatch preserves the original Reader HTML without a marker", async 
   expect(html).not.toContain("markee")
 })
 
+test("a leading-zero w page identity is rejected as malformed hit data", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/författare/SöderbergH/titlar/DoktorGlas/sida/-3/etext" +
+    "?q=leading-zero-page&hit=0"
+  )
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("FÖREGÅENDE")
+  expect(html).toContain("Sökträffen kunde inte hämtas.")
+  expect(html).not.toContain("markee")
+})
+
 for (const query of [
   "cross-work-id",
   "malformed-work-id",

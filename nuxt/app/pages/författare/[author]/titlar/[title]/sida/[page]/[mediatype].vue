@@ -161,8 +161,9 @@ function isWorkSearchHit(value: unknown, workId: string): value is WorkSearchHit
   if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
     fromPosition.ordinal > toPosition.ordinal) return false
 
-  return (fromPosition.pageIndex === null || fromPosition.pageIndex === value.page_index) &&
-    (toPosition.pageIndex === null || toPosition.pageIndex === value.page_index)
+  const expectedPageScope = `page:${value.page_index}`
+  return (fromPosition.pageIndex === null || fromPosition.scope === expectedPageScope) &&
+    (toPosition.pageIndex === null || toPosition.scope === expectedPageScope)
 }
 
 function isExpectedHitResponse(
