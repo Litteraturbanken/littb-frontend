@@ -62,12 +62,17 @@ Add one synchronous operation:
 GET /v2/works/{author_id}/{title_path}/source-info?media_type=etext|faksimil
 ```
 
-`media_type` is optional. With no media type, selection follows legacy order:
-the first usable e-text, otherwise the first usable faksimil, otherwise the
-first usable public representation. With a requested media type, the exact
-representation is preferred and legacy fallback order is used only when it is
-absent. The response identifies which media type was selected so every alias
-can canonicalize deterministically.
+`media_type` is optional. `(author_id, title_path)` is not unique in production,
+so selection reproduces Angular's grouping precisely: preserve raw provider
+insertion order of `(title_path, work_id)` groups; within each group put the
+requested media first when present, then use `etext`, `faksimil`, `pdf`,
+`infopost`; select the first group-main matching the request, or the first
+group-main when the requested media is absent. With no media request, select the
+first raw group and its standard-order main. The response identifies the
+selected media and the selected representation's canonical first/main author
+so every alias can redirect to a canonical Reader route that Nuxt will accept.
+Using the canonical selected author instead of retaining an ambiguous editor
+lookup ID is a deliberate routing repair for strict Reader identity.
 
 The provider extends the neutral `elasticapi.get_work_by_titlepath` helper to
 accept explicit source includes/excludes, then calls it once by author/title. It
@@ -80,8 +85,8 @@ non-leaking `500`.
 
 The strict recursive response contains:
 
-- selected `work_id`, `author_id`, `title_path`, `media_type`, start page, full
-  title, short title, and text type;
+- selected `work_id`, canonical selected `author_id`, `title_path`, `media_type`,
+  start page, full title, short title, and text type;
 - ordered public authors with IDs, names, surnames, role/type, and safe author
   URLs;
 - normalized source-description HTML plus an optional attribution ID;
@@ -89,7 +94,10 @@ The strict recursive response contains:
 - imprint display text, URN, Libris ID, license key, and provenance entries;
 - a small/large cover source pair derived from the selected work ID;
 - ordered read actions for e-text/faksimil and ordered download actions for
-  EPUB/PDF, including label, safe URL, safe filename, and optional byte size;
+  EPUB/PDF, including label, safe URL, safe filename, and optional byte size.
+  Each action uses that representation's legacy main-author precedence
+  (`work_authors`, then `authors`, then `main_author`) and title ID. Direct PDF
+  actions never expose a size; only derived export actions do;
 - structured errata rows rather than the raw provider table; and
 - optional strict Dramawebben facts, roles, and history HTML. The top-level work
   introduction remains separate; do not invent `dramawebben.workintro`.
@@ -192,7 +200,7 @@ representation and canonical start page. The three Nuxt alias pages use that
 resolver and return history-replacing redirects to:
 
 ```text
-/författare/{author}/titlar/{title}/sida/{start}/{media}?om-boken
+/författare/{canonical-selected-author}/titlar/{title}/sida/{start}/{media}?om-boken
 ```
 
 All incoming query and fragment state is discarded. Unsafe/missing identity is

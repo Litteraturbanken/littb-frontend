@@ -48,7 +48,8 @@ page-local SSR fetch, Headless UI dialog, and strict Angular visual parity.
 
 Write strict model, provider, route, and OpenAPI tests for:
 
-- optional and exact `etext`/`faksimil` media selection plus legacy fallback;
+- optional and exact `etext`/`faksimil` media selection plus legacy fallback,
+  including multiple raw-order work-ID groups for one author/title lookup;
 - one exact author/title provider call with explicit source includes;
 - Doktor Glas normal metadata, multiple representations, read/download order,
   cover, URN, Libris, provenance, license, and parsed errata;
@@ -56,6 +57,8 @@ Write strict model, provider, route, and OpenAPI tests for:
 - sparse valid metadata using required `null`/empty DTO fields, nullable/unknown
   provenance rows, sparse drama objects, and exports above 32-bit size;
 - one-cell and empty errata cells normalized without rejecting the work;
+- per-representation `work_authors`/`authors`/`main_author` action identity,
+  canonical selected author routing, and direct-PDF null size;
 - absent work/media, unsafe path segments, oversized values, duplicate identity,
   malformed top-level/provider rows, malformed HTML field types, malformed
   errata, and provider failure;
