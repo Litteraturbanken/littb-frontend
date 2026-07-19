@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 
 const fixture = "http://127.0.0.1:4100"
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+const readerPartsPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-1/etext"
 const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
 const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
@@ -96,6 +97,28 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
     "/txt/lb-reader-doktor-glas/res_00002.html?"
   ))).toHaveLength(1)
   expect(await readerHitRequests(request)).toEqual([])
+})
+
+test("partful SSR exposes one raw-preserving contents trigger without a dialog tree", async ({
+  request
+}) => {
+  const response = await request.get(`${readerPartsPath}?repeat=one&repeat=two`)
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+
+  expect(html).toContain(
+    "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext" +
+    "?repeat=one&amp;repeat=two&amp;innehall\""
+  )
+  expect(html.match(/>Innehållsförteckning<\/a>/gu)).toHaveLength(1)
+  expect(html.match(/reader-context-ssr/gu)).toHaveLength(1)
+  expect(html).not.toContain('role="dialog"')
+
+  const partless = await request.get(
+    "/författare/SöderbergH/titlar/PartlessReader/sida/-2/etext?repeat=one&repeat=two"
+  )
+  expect(partless.status()).toBe(200)
+  expect(await partless.text()).not.toContain(">Innehållsförteckning</a>")
 })
 
 test("canonical API returns the exact faksimil image arm without fetching assets", async ({

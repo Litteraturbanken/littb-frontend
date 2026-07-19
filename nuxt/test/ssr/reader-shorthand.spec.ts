@@ -26,6 +26,12 @@ const readerStatuses = [
   ["MalformedReader", 502],
   ["UnavailableReader", 502]
 ] as const
+const legacyFallbackTitles = new Set([
+  "MissingReader",
+  "NoRequestedMediaReader",
+  "WrongAuthorReader",
+  "MediaMismatchReader"
+])
 
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
@@ -40,6 +46,11 @@ async function readerRequests(request: APIRequestContext): Promise<string[]> {
 
 function expectedMetadataRequest(titlePath: string) {
   return "/api/get_work_info?authorid=S%C3%B6derbergH" +
+    `&exclude=content_vector&titlepath=${titlePath}`
+}
+
+function expectedLegacyMetadataRequest(titlePath: string) {
+  return "/legacy-api/get_work_info?authorid=S%C3%B6derbergH" +
     `&exclude=content_vector&titlepath=${titlePath}`
 }
 
@@ -64,12 +75,14 @@ for (const [titlePath, status] of readerStatuses) {
   test(`${titlePath} resolves with ${status}`, async ({ request }) => {
     const response = await request.get(`${resolveBase}/${titlePath}/etext`)
     expect(response.status()).toBe(status)
-    expect(await readerRequests(request)).toEqual([
-      expectedMetadataRequest(titlePath)
+    const requests = await readerRequests(request)
+    expect(requests).toEqual([
+      expectedMetadataRequest(titlePath),
+      ...(legacyFallbackTitles.has(titlePath)
+        ? [expectedLegacyMetadataRequest(titlePath)]
+        : [])
     ])
-    if (titlePath.endsWith("PageIndexReader")) {
-      expect((await readerRequests(request)).some(path => path.includes("/txt/"))).toBe(false)
-    }
+    expect(requests.some(path => path.includes("/txt/"))).toBe(false)
   })
 }
 

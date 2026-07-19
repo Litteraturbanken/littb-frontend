@@ -127,6 +127,38 @@ async function navigateClient(page: Page, rawPath: string) {
   }, rawPath)
 }
 
+type HistoryMutationCounts = { pushState: number, replaceState: number }
+
+async function startHistoryMutationCounter(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const scope = window as typeof window & {
+      __readerHistoryMutationCounts?: HistoryMutationCounts
+      __readerHistoryMutationCounterStarted?: boolean
+    }
+    scope.__readerHistoryMutationCounts = { pushState: 0, replaceState: 0 }
+    if (scope.__readerHistoryMutationCounterStarted) return
+    scope.__readerHistoryMutationCounterStarted = true
+    const originalPush = window.history.pushState.bind(window.history)
+    const originalReplace = window.history.replaceState.bind(window.history)
+    window.history.pushState = (...args) => {
+      const counts = scope.__readerHistoryMutationCounts
+      if (counts) counts.pushState += 1
+      return originalPush(...args)
+    }
+    window.history.replaceState = (...args) => {
+      const counts = scope.__readerHistoryMutationCounts
+      if (counts) counts.replaceState += 1
+      return originalReplace(...args)
+    }
+  })
+}
+
+async function historyMutationCounts(page: Page): Promise<HistoryMutationCounts> {
+  return page.evaluate(() => (
+    window as typeof window & { __readerHistoryMutationCounts?: HistoryMutationCounts }
+  ).__readerHistoryMutationCounts ?? { pushState: 0, replaceState: 0 })
+}
+
 async function activateReaderLink(
   page: Page,
   name: "Föregående sida" | "Nästa sida",
@@ -153,7 +185,7 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
   const problems = captureBrowserProblems(page)
   const rawQuery =
     "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F" +
-    "&q=inga&hit=0&storlek=3&innehall"
+    "&q=inga&hit=0&storlek=3&innehall=1"
   await page.goto(`${readerPartsPath}${rawQuery}`, { waitUntil: "networkidle" })
 
   const context = page.locator(".reader-context")
@@ -194,6 +226,238 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
   await expect(context.locator('div[aria-hidden="true"] > .rzslider')).toHaveCount(1)
   await expect(context.locator(".expl.small")).toHaveAttribute("aria-hidden", "true")
   expect(problems).toEqual([])
+})
+
+test("contents trigger pushes one focus-trapped dialog without Reader requests and supports history", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawQuery = "?bare&repeat=one&repeat=two"
+  await page.goto(`${readerPartsPath}${rawQuery}`, { waitUntil: "networkidle" })
+  await resetReader(request)
+
+  const trigger = page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Innehållsförteckning" })
+  await expect(trigger).toHaveAttribute(
+    "href",
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext" +
+    `${rawQuery}&innehall`
+  )
+  const historyLength = await page.evaluate(() => window.history.length)
+  await trigger.click()
+
+  await expect(page).toHaveURL(`${readerPartsPath}${rawQuery}&innehall`)
+  const dialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  await expect(dialog).toHaveCount(1)
+  await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
+  await expect.poll(() => page.evaluate(() => Boolean(
+    document.activeElement?.closest('[role="dialog"]')
+  ))).toBe(true)
+  await page.keyboard.press("Shift+Tab")
+  expect(await page.evaluate(() => Boolean(
+    document.activeElement?.closest('[role="dialog"]')
+  ))).toBe(true)
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1)
+  expect(await readerRequests(request)).toEqual([])
+  expect(await readerHitRequests(request)).toEqual([])
+
+  await page.goBack()
+  await expect(dialog).toHaveCount(0)
+  await page.goForward()
+  await expect(dialog).toHaveCount(1)
+  expect(await readerRequests(request)).toEqual([])
+  expect(await readerHitRequests(request)).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("contents parser opens only bare or empty singleton values", async ({ page }) => {
+  for (const suffix of ["?innehall", "?innehall="]) {
+    await page.goto(`${readerPartsPath}${suffix}`, { waitUntil: "networkidle" })
+    await expect(page.getByRole("dialog", { name: "Innehållsförteckning" })).toHaveCount(1)
+  }
+  for (const suffix of ["?innehall=1", "?innehall&innehall"]) {
+    await page.goto(`${readerPartsPath}${suffix}`, { waitUntil: "networkidle" })
+    await expect(page.getByRole("dialog", { name: "Innehållsförteckning" })).toHaveCount(0)
+    expect(new URL(page.url()).search).toBe(suffix)
+  }
+  await page.goto(
+    "/författare/SöderbergH/titlar/PartlessReader/sida/-2/etext?innehall",
+    { waitUntil: "networkidle" }
+  )
+  await expect(page.getByRole("dialog", { name: "Innehållsförteckning" })).toHaveCount(0)
+})
+
+for (const closeMethod of ["Escape", "backdrop", "Stäng"] as const) {
+  test(`contents ${closeMethod} closes once, preserves raw state, and restores focus`, async ({
+    page,
+    request
+  }) => {
+    const retainedQuery =
+      "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F&q=inga&hit=0"
+    const rawQuery = `${retainedQuery}&innehall`
+    const retainedPath = `${readerPartsPath}${retainedQuery}`
+    const retainedEncodedPath =
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext" +
+      retainedQuery
+    const contentsPath = `${readerPartsPath}${rawQuery}`
+    const contentsEncodedPath = `${retainedEncodedPath}&innehall`
+    const nextHref =
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/1/etext" +
+      retainedQuery
+    await page.goto(retainedPath, { waitUntil: "networkidle" })
+    const trigger = page.locator(".reader-context .subnav")
+      .getByRole("link", { name: "Innehållsförteckning" })
+    const dialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+    await expect(trigger).toHaveAttribute("href", contentsEncodedPath)
+    await resetReader(request)
+    await startHistoryMutationCounter(page)
+    const historyLengthBeforeOpen = await page.evaluate(() => window.history.length)
+    await trigger.click()
+    await expect(page).toHaveURL(contentsPath)
+    await expect(dialog).toHaveCount(1)
+    expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLengthBeforeOpen + 1)
+    expect(await readerRequests(request)).toEqual([])
+    expect(await readerHitRequests(request)).toEqual([])
+
+    await page.goBack()
+    await expect(page).toHaveURL(retainedPath)
+    await expect(dialog).toHaveCount(0)
+    await page.goForward()
+    await expect(page).toHaveURL(contentsPath)
+    await expect(dialog).toHaveCount(1)
+    expect(await page.evaluate(() => window.history.state.current)).toBe(contentsEncodedPath)
+    await startHistoryMutationCounter(page)
+    const historyLengthBeforeClose = await page.evaluate(() => window.history.length)
+
+    if (closeMethod === "Escape") {
+      await page.keyboard.press("Escape")
+    } else if (closeMethod === "backdrop") {
+      const backdrop = page.locator(".modal.chapters .modal-backdrop")
+      if ((page.viewportSize()?.width ?? Number.POSITIVE_INFINITY) < 768) {
+        await backdrop.dispatchEvent("touchend")
+      } else {
+        await backdrop.click({ position: { x: 5, y: 5 } })
+      }
+    } else {
+      await dialog.getByRole("button", { name: "Stäng" }).click()
+    }
+
+    await expect(dialog).toHaveCount(0)
+    await expect(page).toHaveURL(retainedPath)
+    expect(await page.evaluate(() => ({
+      current: window.history.state.current,
+      search: window.location.search
+    }))).toEqual({
+      current: retainedEncodedPath,
+      search: retainedQuery
+    })
+    await expect(
+      page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" })
+    ).toHaveAttribute(
+      "href",
+      nextHref
+    )
+    await expect.poll(async () => (await storedPageViews(page))[0]?.url)
+      .toBe(retainedEncodedPath)
+    await expect(trigger).toBeFocused()
+    expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 1 })
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLengthBeforeClose)
+    expect(await readerRequests(request)).toEqual([])
+    expect(await readerHitRequests(request)).toEqual([])
+
+    await page.goBack()
+    await expect(page).toHaveURL(retainedPath)
+    await expect(dialog).toHaveCount(0)
+    await page.goForward()
+    await expect(page).toHaveURL(retainedPath)
+    await expect(dialog).toHaveCount(0)
+    await expect(
+      page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" })
+    ).toHaveAttribute("href", nextHref)
+  })
+}
+
+test("contents rows use surnames and selecting a nested part pushes its raw target", async ({
+  page,
+  request
+}) => {
+  const selectedReaderRequests: string[] = []
+  const selectedHitRequests: string[] = []
+  page.on("request", browserRequest => {
+    const pathname = new URL(browserRequest.url()).pathname
+    if (pathname.startsWith("/api/reader/")) {
+      selectedReaderRequests.push(browserRequest.url())
+    }
+    if (pathname.includes("/works/lb-reader-doktor-glas-parts/search-hits")) {
+      selectedHitRequests.push(browserRequest.url())
+    }
+  })
+  const retainedQuery =
+    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F" +
+    "&q=inga&hit=0&storlek=3"
+  const rawQuery = `${retainedQuery}&innehall`
+  await page.goto(`${readerPartsPath}${rawQuery}`, { waitUntil: "networkidle" })
+  const dialog = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  await expect(dialog.locator(".header .author")).toHaveText("Hjalmar Söderberg")
+  await expect(dialog.locator(".header .title")).toContainText(
+    "Doktor Glas delar. Roman (1905)"
+  )
+  const rows = dialog.locator(".part_menu > li")
+  await expect(rows).toHaveCount(5)
+  await expect(rows.nth(0)).toHaveAttribute("title", "Den yttre delen")
+  await expect(rows.nth(0).locator(".author")).toHaveText("Söderberg")
+  await expect(rows.nth(1).locator(".author")).toHaveText("Mörike")
+  await expect(rows.nth(2).locator(".author")).toHaveText(["Rilke, ", "Shelley"])
+  await expect(rows.nth(2).getByRole("link", { name: "Rilke" }))
+    .toHaveAttribute("href", "/författare/RilkeRM")
+  await expect(rows.nth(2).getByRole("link", { name: "Shelley" }))
+    .toHaveAttribute("href", "/författare/ShelleyPB")
+  await resetReader(request)
+  selectedReaderRequests.length = 0
+  selectedHitRequests.length = 0
+  await startHistoryMutationCounter(page)
+  const historyLength = await page.evaluate(() => window.history.length)
+
+  await rows.nth(1).getByRole("link", { name: "Mellandelen" }).click()
+  const selectedPath =
+    `/författare/SöderbergH/titlar/DoktorGlasParts/sida/-3/etext${retainedQuery}`
+  const selectedEncodedPath =
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-3/etext" +
+    retainedQuery
+  await expect(page).toHaveURL(selectedPath)
+  expect(await page.evaluate(() => window.history.state.current))
+    .toBe(selectedEncodedPath)
+  await expect(
+    page.locator(".reader-navigation").getByRole("link", { name: "Nästa sida" })
+  ).toHaveAttribute(
+    "href",
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-2/etext" +
+    retainedQuery
+  )
+  await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
+    selectedEncodedPath
+  )
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength + 1)
+  expect(selectedReaderRequests).toHaveLength(1)
+  expect(selectedHitRequests).toHaveLength(1)
+  expect(await readerHitRequests(request)).toHaveLength(1)
+
+  const contentsEncodedPath =
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext" +
+    rawQuery
+  await page.goBack()
+  await expect(page).toHaveURL(`${readerPartsPath}${rawQuery}`)
+  await expect(dialog).toHaveCount(1)
+  expect(await page.evaluate(() => window.history.state.current))
+    .toBe(contentsEncodedPath)
+  await page.goForward()
+  await expect(page).toHaveURL(selectedPath)
+  await expect(dialog).toHaveCount(0)
+  expect(await page.evaluate(() => window.history.state.current))
+    .toBe(selectedEncodedPath)
 })
 
 test("part gaps and page boundaries remove metadata and disabled focus targets", async ({
@@ -567,6 +831,8 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
   await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
   await expect(page.locator(".reader_main .etext.txt")).toContainText("HJALMAR SÖDERBERG")
   await expect(page.locator(".reader-context")).toContainText("Doktor Glas (1905)")
+  await expect(page.locator(".reader-context .current_part .header a"))
+    .not.toHaveAttribute("aria-label")
   await expect(page.getByRole("link", { name: "Hjalmar Söderberg" }).first()).toHaveAttribute(
     "href",
     "/författare/S%C3%B6derbergH"

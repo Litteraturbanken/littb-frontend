@@ -1,0 +1,87 @@
+<script setup lang="ts">
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/vue"
+
+import type { ReaderPart } from "#shared/types/reader"
+import { readerAuthorHref, readerPartAuthorKey } from "~/lib/reader-routes"
+
+defineProps<{
+  open: boolean
+  authorName: string
+  authorHref: string
+  title: string
+  imprintYear: string | null
+  parts: readonly ReaderPart[]
+  partHrefs: readonly string[]
+}>()
+
+const emit = defineEmits<{
+  close: []
+  "select-page": [pageName: string]
+}>()
+
+function partLabel(part: ReaderPart): string {
+  return part.navTitle || part.shortTitle || part.title
+}
+
+function authorLabel(part: ReaderPart, index: number): string {
+  const author = part.authors[index]
+  return author ? (author.surname ?? author.name ?? author.id) : ""
+}
+
+const dialogPanel = ref<HTMLElement | null>(null)
+</script>
+
+<template>
+  <Dialog
+    v-if="open"
+    :open="open"
+    :initial-focus="dialogPanel"
+    as="div"
+    class="modal chapters fade in"
+    @close="emit('close')"
+  >
+    <div class="modal-backdrop fade in" aria-hidden="true" />
+    <div class="modal-dialog">
+      <DialogPanel ref="dialogPanel" class="modal-content" tabindex="-1">
+        <div class="chapters-modal modal-body">
+          <button
+            class="close_btn submit btn pull-right"
+            type="button"
+            @click="emit('close')"
+          >Stäng</button>
+          <DialogTitle class="sr-only">Innehållsförteckning</DialogTitle>
+
+          <div class="header">
+            <h2 class="author sc"><a :href="authorHref">{{ authorName }}</a></h2>
+            <h2 class="title">
+              {{ title }} <span v-if="imprintYear">({{ imprintYear }})</span>
+            </h2>
+          </div>
+
+          <ul class="part_menu">
+            <li
+              v-for="(part, partIndex) in parts"
+              :key="part.sourceIndex"
+              :title="part.title"
+            >
+              <span>
+                <span
+                  v-for="(author, authorIndex) in part.authors"
+                  :key="readerPartAuthorKey(author.id, authorIndex)"
+                  class="author"
+                ><a :href="readerAuthorHref(author.id)">{{ authorLabel(part, authorIndex) }}</a><span
+                  v-if="authorIndex < part.authors.length - 1"
+                >, </span>{{ " " }}</span>
+              </span><span class="title">
+                <a
+                  :href="partHrefs[partIndex]"
+                  @click.prevent="emit('select-page', part.startPageName)"
+                >{{ partLabel(part) }}</a>
+              </span>
+            </li>
+          </ul>
+        </div>
+      </DialogPanel>
+    </div>
+  </Dialog>
+</template>

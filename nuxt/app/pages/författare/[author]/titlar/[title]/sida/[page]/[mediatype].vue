@@ -10,6 +10,8 @@ import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import {
   readerAuthorHref,
+  readerContentsHref,
+  readerContentsIsOpen,
   readerContentsNeutralFullPath,
   readerFullPathWithFragment,
   readerHitHref,
@@ -54,6 +56,62 @@ function browserFullPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`
 }
 
+function navigateRawFullPath(
+  fullPath: string,
+  replace: boolean,
+  previousFullPath = browserFullPath()
+): Promise<void> {
+  if (!import.meta.client) {
+    return (replace ? router.replace(fullPath) : router.push(fullPath))
+      .then(() => undefined)
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const removeAfterEach = router.afterEach((_to, _from, failure) => {
+      removeAfterEach()
+      if (failure) reject(failure)
+      else resolve()
+    })
+    try {
+      const currentState = window.history.state ?? {}
+      let state
+      if (replace) {
+        state = {
+          ...currentState,
+          current: fullPath,
+          replaced: true
+        }
+        window.history.replaceState(state, "", fullPath)
+      } else {
+        window.history.replaceState(
+          {
+            ...currentState,
+            current: previousFullPath,
+            forward: fullPath
+          },
+          "",
+          previousFullPath
+        )
+        state = {
+          back: previousFullPath,
+          current: fullPath,
+          forward: null,
+          position: typeof currentState.position === "number"
+            ? currentState.position + 1
+            : window.history.length,
+          replaced: false,
+          scroll: null
+        }
+        window.history.pushState(state, "", fullPath)
+      }
+      window.dispatchEvent(new PopStateEvent("popstate", { state }))
+    } catch (error) {
+      removeAfterEach()
+      reject(error)
+    }
+  })
+}
+
 watch(() => route.fullPath, (nextRouteFullPath, previousRouteFullPath) => {
   if (!import.meta.client) {
     rawFullPath.value = nextRouteFullPath
@@ -65,12 +123,11 @@ watch(() => route.fullPath, (nextRouteFullPath, previousRouteFullPath) => {
     ? readerFullPathWithFragment(rawFullPath.value, nextBrowserFullPath)
     : nextBrowserFullPath
 }, { flush: "sync" })
-onMounted(() => {
-  rawFullPath.value = readerFullPathWithFragment(rawFullPath.value, browserFullPath())
-})
 const contentsNeutralIdentity = computed(
   () => readerContentsNeutralFullPath(rawFullPath.value)
 )
+const contentsRequested = computed(() => readerContentsIsOpen(route.query.innehall))
+const contentsHref = computed(() => readerContentsHref(rawFullPath.value))
 
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
 type WorkSearchHitsResponse = components["schemas"]["WorkSearchHitsResponse"]
@@ -325,6 +382,12 @@ const reader = computed(() => {
     ? current.reader
     : null
 })
+const contentsOpen = computed(
+  () => contentsRequested.value && (reader.value?.parts.length ?? 0) > 0
+)
+onMounted(() => {
+  rawFullPath.value = readerFullPathWithFragment(rawFullPath.value, browserFullPath())
+})
 const primaryReaderFailed = computed(
   () => data.value?.status === "error" &&
     data.value.identity === readerRequestIdentity.value
@@ -553,7 +616,11 @@ useSeoMeta({
 })
 
 useHead(() => ({
-  bodyAttrs: { class: "focus page-reading ready" },
+  bodyAttrs: {
+    class: contentsOpen.value
+      ? "focus page-reading ready modal-open"
+      : "focus page-reading ready"
+  },
   meta: currentPart.value?.titleId
     ? [{ name: "part", content: currentPart.value.titleId }]
     : [],
@@ -634,6 +701,38 @@ const showGotoInput = ref(false)
 const gotoPage = ref("")
 const gotoMessage = ref("")
 const gotoInput = ref<HTMLInputElement | null>(null)
+const contentsTrigger = ref<HTMLAnchorElement | null>(null)
+const contentsPartHrefs = computed(() => reader.value?.parts.map(
+  part => readerPageFullPath(rawFullPath.value, part.startPageName)
+) ?? [])
+let contentsClosePending = false
+
+function openContents(): void {
+  if (contentsOpen.value) return
+  void navigateRawFullPath(contentsHref.value, false, rawFullPath.value)
+}
+
+async function closeContents(): Promise<void> {
+  if (!contentsOpen.value || contentsClosePending) return
+  contentsClosePending = true
+  try {
+    await navigateRawFullPath(contentsNeutralIdentity.value, true)
+    await nextTick()
+    contentsTrigger.value?.focus()
+  } finally {
+    contentsClosePending = false
+  }
+}
+
+function selectContentsPage(pageName: string): void {
+  const currentReader = reader.value
+  if (!currentReader || !currentReader.pageNames.includes(pageName)) return
+  void navigateRawFullPath(
+    readerPageFullPath(rawFullPath.value, pageName),
+    false,
+    rawFullPath.value
+  )
+}
 
 function toggleGoto(): void {
   showGotoInput.value = !showGotoInput.value
@@ -706,7 +805,9 @@ watch(readerRequestIdentity, () => {
                     v-for="(partAuthor, index) in currentPart.authors"
                     :key="readerPartAuthorKey(partAuthor.id, index)"
                   >
-                    <a :href="readerAuthorHref(partAuthor.id)">{{ currentPartAuthorLabel(index) }}</a><span
+                    <a
+                      :href="readerAuthorHref(partAuthor.id)"
+                    >{{ currentPartAuthorLabel(index) }}</a><span
                       v-if="index < currentPart.authors.length - 1"
                     >, </span>
                   </template>
@@ -831,13 +932,19 @@ watch(readerRequestIdentity, () => {
               </span>
             </div>
 
-            <div class="subnav mt-10" aria-hidden="true">
+            <div class="subnav mt-10">
               <ul>
-                <li>Innehållsförteckning</li>
-                <li>Mer om boken</li>
-                <li>Läsfokus</li>
-                <li>Sök i verket</li>
-                <li>Sök i författarens texter</li>
+                <li v-if="reader.parts.length">
+                  <a
+                    ref="contentsTrigger"
+                    :href="contentsHref"
+                    @click.prevent="openContents"
+                  >Innehållsförteckning</a>
+                </li>
+                <li aria-hidden="true">Mer om boken</li>
+                <li aria-hidden="true">Läsfokus</li>
+                <li aria-hidden="true">Sök i verket</li>
+                <li aria-hidden="true">Sök i författarens texter</li>
               </ul>
             </div>
           </aside>
@@ -908,6 +1015,10 @@ watch(readerRequestIdentity, () => {
               >Nästa sida</a>
             </nav>
             <span class="reader-page-position">{{ reader.pageName }} av {{ reader.pageCount }}</span>
+            <a
+              v-if="reader.parts.length"
+              :href="contentsHref"
+            >Innehållsförteckning</a>
             <nav
               v-if="previousHit || nextHit"
               class="reader-hit-navigation"
@@ -926,6 +1037,19 @@ watch(readerRequestIdentity, () => {
             </nav>
           </aside>
         </template>
+      </ClientOnly>
+      <ClientOnly>
+        <ReaderContentsDialog
+          :open="contentsOpen"
+          :author-name="reader.author.name"
+          :author-href="authorHref"
+          :title="reader.fullTitle"
+          :imprint-year="reader.imprintYear"
+          :parts="reader.parts"
+          :part-hrefs="contentsPartHrefs"
+          @close="closeContents"
+          @select-page="selectContentsPage"
+        />
       </ClientOnly>
     </template>
     <p
