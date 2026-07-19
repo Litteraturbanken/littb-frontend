@@ -318,6 +318,12 @@ async function legacyAuthorRouteRequests() {
   }
 }
 
+async function dramawebbenExcludedDataRequests() {
+  return await (await fetch(`${origin}/_dramawebben_excluded_data_requests`)).json() as {
+    requests: Array<{ method: string, path: string }>
+  }
+}
+
 async function authorDocumentPdfRequests() {
   return await (await fetch(`${origin}/_author_document_pdf_requests`)).json() as {
     requests: string[]
@@ -461,6 +467,7 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_author_document_delay`, { method: "DELETE" }),
       fetch(`${origin}/_legacy_author_route_requests`, { method: "DELETE" }),
       fetch(`${origin}/_legacy_author_route_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_dramawebben_excluded_data_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_document_pdf_requests`, { method: "DELETE" }),
       fetch(`${origin}/_text_search/requests`, { method: "DELETE" }),
       fetch(`${origin}/_text_search/failures`, { method: "DELETE" }),
@@ -1008,6 +1015,21 @@ describe("v2 fixture server operations", () => {
     expect(await legacyAuthorRouteRequests()).toEqual({
       requests: [{ path, body }]
     })
+  })
+
+  test("records and resets exact otherwise-unhandled Dramawebben data probes", async () => {
+    const paths = [
+      "/api/get_authors?exclude=dramawebben&repeat=one&repeat=two",
+      "/api/list_all/etext,faksimil,pdf,infopost?filter_and=Dramawebben"
+    ]
+
+    for (const path of paths) expect((await fetch(`${origin}${path}`)).status).toBe(404)
+    expect(await dramawebbenExcludedDataRequests()).toEqual({
+      requests: paths.map(path => ({ method: "GET", path }))
+    })
+
+    await fetch(`${origin}/_dramawebben_excluded_data_requests`, { method: "DELETE" })
+    expect(await dramawebbenExcludedDataRequests()).toEqual({ requests: [] })
   })
 
   test("author document, resolver, and PDF ledgers reset independently", async () => {

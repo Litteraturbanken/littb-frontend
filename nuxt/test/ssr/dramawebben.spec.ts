@@ -14,6 +14,7 @@ const requestLedgers = [
   "/_home_requests",
   "/_library_query_requests",
   "/_presentation_requests",
+  "/_dramawebben_excluded_data_requests",
   "/_text_search/requests"
 ] as const
 
@@ -218,6 +219,7 @@ test("SSR renders only the sanitized malicious source body", async ({ request })
   expect(html).not.toMatch(
     /script-probe|form-probe|svg-probe|comment-probe|javascript:|data:text|http:\/\/evil\.test|\.\.\/private/iu
   )
+  await expectNoDataRequests(request)
 })
 
 for (const [failure, status] of [
@@ -244,5 +246,6 @@ for (const [failure, status] of [
       authorization: null,
       cookie: null
     }])
+    await expectNoDataRequests(request)
   })
 }

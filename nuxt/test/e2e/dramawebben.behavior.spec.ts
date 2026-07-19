@@ -7,7 +7,8 @@ async function reset(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_dramawebben_document_requests`),
     request.delete(`${fixture}/_dramawebben_document_failure`),
-    request.delete(`${fixture}/_dramawebben_document_redirect_target_requests`)
+    request.delete(`${fixture}/_dramawebben_document_redirect_target_requests`),
+    request.delete(`${fixture}/_dramawebben_excluded_data_requests`)
   ])
 }
 
@@ -15,6 +16,12 @@ async function documentRequests(request: APIRequestContext) {
   return (await (await request.get(
     `${fixture}/_dramawebben_document_requests`
   )).json()).requests
+}
+
+async function expectNoExcludedDataRequests(request: APIRequestContext) {
+  expect((await (await request.get(
+    `${fixture}/_dramawebben_excluded_data_requests`
+  )).json()).requests).toEqual([])
 }
 
 async function routerPush(page: Page, path: string) {
@@ -107,6 +114,7 @@ for (const documentCase of [
       authorization: null,
       cookie: null
     }])
+    await expectNoExcludedDataRequests(request)
     expect(problems).toEqual([])
   })
 }
@@ -132,6 +140,7 @@ test("query-only history preserves the managed identity without refetching", asy
   await page.goForward()
   await expect(page).toHaveURL(/repeat=one&repeat=two&unknown=%2F$/u)
   expect(await documentRequests(request)).toEqual(initialRequests)
+  await expectNoExcludedDataRequests(request)
   expect(problems).toEqual([])
 })
 
@@ -164,10 +173,14 @@ test("om and kringtexter navigation accepts only the current document identity",
       cookie: null
     }
   ])
+  await expectNoExcludedDataRequests(request)
   expect(problems).toEqual([])
 })
 
-test("a delayed om response cannot replace the latest kringtexter identity", async ({ page }) => {
+test("a delayed om response cannot replace the latest kringtexter identity", async ({
+  page,
+  request
+}) => {
   const problems = collectProblems(page)
   await page.goto("/dramawebben", { waitUntil: "networkidle" })
 
@@ -204,11 +217,13 @@ test("a delayed om response cannot replace the latest kringtexter identity", asy
   await expect(page).toHaveURL(/\/dramawebben\/kringtexter$/u)
   await expect(page.locator(".page_content")).not.toContainText("late-om-probe")
   await expect(page.locator(".error")).toHaveCount(0)
+  await expectNoExcludedDataRequests(request)
   expect(problems).toEqual([])
 })
 
 test("a malformed successful document is redacted inside the stable latest shell", async ({
-  page
+  page,
+  request
 }) => {
   const problems = collectProblems(page)
   await page.goto("/dramawebben/om", { waitUntil: "networkidle" })
@@ -223,6 +238,7 @@ test("a malformed successful document is redacted inside the stable latest shell
   await expect(page.locator(".error")).toHaveText("Innehållet kan inte visas just nu.")
   await expect(page.locator(".page_content")).not.toContainText("Om Dramawebben")
   await expectExactLinks(page, "kringtexter")
+  await expectNoExcludedDataRequests(request)
   expect(problems).toEqual([])
 })
 
@@ -235,4 +251,5 @@ test("invalid document routes remain global 404s without managed fetches", async
   expect(response?.status()).toBe(404)
   await expect(page.locator("#mainview > .subpage")).toHaveCount(0)
   expect(await documentRequests(request)).toEqual([])
+  await expectNoExcludedDataRequests(request)
 })

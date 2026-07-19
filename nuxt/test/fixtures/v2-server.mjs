@@ -222,6 +222,7 @@ let authorDocumentRedirectTargetRequests = []
 let dramawebbenDocumentRequests = []
 let dramawebbenDocumentFailure = null
 let dramawebbenDocumentRedirectTargetRequests = []
+let dramawebbenExcludedDataRequests = []
 let textSearchRequests = { results: [], count: [], options: [] }
 let textSearchFailures = new Set()
 let textSearchDelays = { results: {}, count: {}, options: {} }
@@ -238,6 +239,10 @@ const errorByResource = {
 const libraryQueryPaths = new Set([
   "/api/query_string/etext,faksimil,pdf",
   "/legacy-api/query_string/etext,faksimil,pdf"
+])
+const dramawebbenExcludedDataPaths = new Set([
+  "/api/get_authors",
+  "/api/list_all/etext,faksimil,pdf,infopost"
 ])
 
 function sendJson(response, status, body) {
@@ -1583,6 +1588,13 @@ const server = createServer(async (request, response) => {
     dramawebbenDocumentRequests = []
     return sendJson(response, 200, { requests: dramawebbenDocumentRequests })
   }
+  if (url.pathname === "/_dramawebben_excluded_data_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: dramawebbenExcludedDataRequests })
+  }
+  if (url.pathname === "/_dramawebben_excluded_data_requests" && request.method === "DELETE") {
+    dramawebbenExcludedDataRequests = []
+    return sendJson(response, 200, { requests: dramawebbenExcludedDataRequests })
+  }
   if (
     url.pathname === "/_dramawebben_document_redirect_target_requests"
     && request.method === "GET"
@@ -2406,6 +2418,10 @@ const server = createServer(async (request, response) => {
       return sendJson(response, 200, { items: popularWorks.slice(0, limit) })
     }
     return sendJson(response, 200, { items: popularEpubs.slice(0, limit) })
+  }
+
+  if (dramawebbenExcludedDataPaths.has(rawPathname)) {
+    dramawebbenExcludedDataRequests.push({ method: request.method, path: request.url })
   }
 
   return sendJson(response, 404, {
