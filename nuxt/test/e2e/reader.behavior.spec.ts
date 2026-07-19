@@ -8,6 +8,7 @@ import {
 
 const fixture = "http://127.0.0.1:4100"
 const readerPath = "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+const readerPartsPath = "/författare/SöderbergH/titlar/DoktorGlasParts/sida/-1/etext"
 const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReader/sida/-2/etext"
 const readerEncodedPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const readerPublicCanonicalPath = "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
@@ -33,7 +34,7 @@ function facsimileSource(size: 2 | 3 | 4 | 5, imageNumber: 7 | 9 | 12): string {
 }
 
 function facsimilePageHref(pageName: "1" | "3" | "5", query = ""): string {
-  return "/författare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/" +
+  return "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/" +
     `sida/${pageName}/faksimil${query}`
 }
 
@@ -145,6 +146,174 @@ async function activateReaderLink(
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
+
+test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving targets", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawQuery =
+    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F" +
+    "&q=inga&hit=0&storlek=3&innehall"
+  await page.goto(`${readerPartsPath}${rawQuery}`, { waitUntil: "networkidle" })
+
+  const context = page.locator(".reader-context")
+  const currentPart = context.locator(".current_part")
+  await expect(currentPart.locator(".navtitle")).toHaveText("Överlappningen")
+  await expect(currentPart.locator(".navtitle").locator(".."))
+    .toHaveAttribute("title", "Den överlappande delen")
+  await expect(currentPart.locator(".header").getByRole("link", { name: "Rilke" }))
+    .toHaveAttribute("href", "/författare/RilkeRM")
+  await expect(currentPart.locator(".header").getByRole("link", { name: "Shelley" }))
+    .toHaveAttribute("href", "/författare/ShelleyPB")
+  await expect(page.locator('meta[name="part"]')).toHaveAttribute("content", "overlap")
+
+  const retained =
+    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F" +
+    "&q=inga&hit=0&storlek=3"
+  const navigation = context.locator(".reader-navigation")
+  await expect(navigation.getByRole("link", { name: "Gå bakåt en del" }))
+    .toHaveAttribute(
+      "href",
+      `/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-2/etext${retained}`
+    )
+  await expect(navigation.getByRole("link", { name: "Gå till nästa del" }))
+    .toHaveAttribute(
+      "href",
+      `/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/3/etext${retained}`
+    )
+  await expect(navigation.getByRole("link", { name: "Gå till första sidan" }))
+    .toHaveAttribute(
+      "href",
+      `/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-3/etext${retained}`
+    )
+  await expect(navigation.getByRole("link", { name: "Gå till sista sidan" }))
+    .toHaveAttribute(
+      "href",
+      `/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/5/etext${retained}`
+    )
+  await expect(context.locator('div[aria-hidden="true"] > .rzslider')).toHaveCount(1)
+  await expect(context.locator(".expl.small")).toHaveAttribute("aria-hidden", "true")
+  expect(problems).toEqual([])
+})
+
+test("part gaps and page boundaries remove metadata and disabled focus targets", async ({
+  page
+}) => {
+  await page.goto(
+    "/författare/SöderbergH/titlar/DoktorGlasParts/sida/2/etext",
+    { waitUntil: "networkidle" }
+  )
+  await expect(page.locator(".reader-context .current_part .header")).toHaveCount(0)
+  await expect(page.locator(".reader-context .current_part .navtitle")).toHaveCount(0)
+  await expect(page.locator('meta[name="part"]')).toHaveCount(0)
+
+  await navigateClient(
+    page,
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-3/etext"
+  )
+  const first = page.locator(".reader-navigation").getByText("Gå till första sidan", {
+    exact: true
+  })
+  await expect(first).not.toHaveAttribute("href", /.+/)
+  await expect(first).toHaveAttribute("tabindex", "-1")
+  await expect(page.locator(".reader-context .current_part .header")).toHaveText(
+    "Eduard Mörike"
+  )
+
+  await navigateClient(
+    page,
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/5/etext"
+  )
+  const last = page.locator(".reader-navigation").getByText("Gå till sista sidan", {
+    exact: true
+  })
+  await expect(last).not.toHaveAttribute("href", /.+/)
+  await expect(last).toHaveAttribute("tabindex", "-1")
+})
+
+test("goto accepts only exact page names and preserves the raw destination query", async ({
+  page
+}) => {
+  const rawQuery = "?bare&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+  const goto = page.locator(".reader-navigation form.goto")
+  await goto.getByRole("link", { name: /Gå till sida/ }).click()
+  const input = goto.getByRole("textbox")
+  await expect(input).toHaveAttribute("aria-label", "Gå till sida")
+  await input.fill(" -1")
+  await input.press("Enter")
+  await expect(page).toHaveURL(
+    `${readerPath}?bare&plus=a+b&percent=a+b&repeat=/&repeat=/`
+  )
+  await expect(goto.getByRole("status")).toHaveText("Sidan finns inte i verket.")
+
+  await input.fill("-1")
+  await input.press("Enter")
+  await expect(page).toHaveURL(
+    `/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext${rawQuery}`
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+  await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
+    `${storedNextReaderPath}${rawQuery}`
+  )
+})
+
+test("direct and hash-only fragments preserve the server-captured raw Reader identity", async ({
+  page
+}) => {
+  const rawQuery = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  await page.goto(`${readerPath}${rawQuery}#direct-fragment`, {
+    waitUntil: "networkidle"
+  })
+
+  const next = page.getByRole("link", { name: "Nästa sida" })
+  const nextPath =
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
+  await expect(next).toHaveAttribute("href", `${nextPath}${rawQuery}#direct-fragment`)
+  await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
+    `${storedReaderPath}${rawQuery}#direct-fragment`
+  )
+
+  await navigateClient(page, `${readerEncodedPath}${rawQuery}#changed-fragment`)
+  await expect(next).toHaveAttribute("href", `${nextPath}${rawQuery}#changed-fragment`)
+  await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
+    `${storedReaderPath}${rawQuery}#changed-fragment`
+  )
+})
+
+test("contents-only query transitions reuse hit state and leave Reader history untouched", async ({
+  page,
+  request
+}) => {
+  const rawQuery = "?q=doktor%20glas&hit=1&x=one&x=two"
+  await page.goto(`${readerPath}${rawQuery}&innehall`, { waitUntil: "networkidle" })
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+  await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
+    `${storedReaderPath}${rawQuery}`
+  )
+  const historyBefore = await rawStoredPageViews(page)
+  await resetReader(request)
+
+  await navigateClient(page, `${readerEncodedPath}${rawQuery}`)
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+  expect(await readerHitRequests(request)).toEqual([])
+  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await rawStoredPageViews(page)).toBe(historyBefore)
+
+  await navigateClient(page, `${readerEncodedPath}${rawQuery}&innehall`)
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}&innehall`)
+  expect(await readerHitRequests(request)).toEqual([])
+  expect(await readerMetadataRequests(request)).toEqual([])
+  expect(await rawStoredPageViews(page)).toBe(historyBefore)
+
+  await navigateClient(page, `${readerEncodedPath}?q=doktor%20glas&hit=2&x=one&x=two`)
+  await expect(page.locator("#search_nav")).toContainText("Träff 3, sida -2")
+  await expect.poll(async () => (await readerHitRequests(request)).length).toBe(1)
+  await expect.poll(async () => (await storedPageViews(page))[0]?.url).toBe(
+    `${storedReaderPath}?q=doktor%20glas&hit=2&x=one&x=two`
+  )
+})
 
 test("Library EPUB shorthand navigation shows only its preloader and replaces History", async ({
   page,
@@ -398,18 +567,18 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
   await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
   await expect(page.locator(".reader_main .etext.txt")).toContainText("HJALMAR SÖDERBERG")
   await expect(page.locator(".reader-context")).toContainText("Doktor Glas (1905)")
-  await expect(page.getByRole("link", { name: "Hjalmar Söderberg" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Hjalmar Söderberg" }).first()).toHaveAttribute(
     "href",
     "/författare/S%C3%B6derbergH"
   )
   await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
   await expect(page.getByRole("link", { name: "Föregående sida" })).toHaveAttribute(
     "href",
-    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext"
   )
   await expect(page.getByRole("link", { name: "Nästa sida" })).toHaveAttribute(
     "href",
-    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
   )
   await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(1)
   await expect(page.locator('link[href="/txt/css/lb-reader-doktor-glas-etext.css"]'))
@@ -855,7 +1024,7 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
   await activateReaderLink(
     page,
     "Nästa sida",
-    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1"
   )
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
@@ -891,14 +1060,16 @@ test("a delayed primary Reader request never renders the prior page under the ne
   await activateReaderLink(
     page,
     "Nästa sida",
-    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor%20glas&hit=1"
   )
   await requestStarted
-  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor%20glas&hit=1$/)
   await expect(page.locator(".reader-primary-loading")).toHaveText("Hämtar läsarsidan …")
   await expect(page.locator(".reader_main")).toHaveCount(0)
   await expect(page.locator(".reader-page-position")).toHaveCount(0)
   await expect(page.locator("#toolkit > #search_nav")).toHaveCount(0)
+  await expect(page.locator(".reader-context .current_part")).toHaveCount(0)
+  await expect(page.locator('meta[name="part"]')).toHaveCount(0)
   await expect(page).toHaveTitle("Litteraturbanken")
   await expect(page.locator('meta[name="description"]')).toHaveCount(0)
   await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(0)
@@ -909,6 +1080,8 @@ test("a delayed primary Reader request never renders the prior page under the ne
   releaseRequest()
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
   await expect(page.locator(".reader_main .etext.txt")).toContainText("NÄSTA SIDA")
+  await expect(page.locator(".reader-context .current_part .navtitle")).toHaveText("Doktor Glas")
+  await expect(page.locator('meta[name="part"]')).toHaveAttribute("content", "DoktorGlas")
   await expect(page).toHaveTitle("Doktor Glas sida -1 etext | Litteraturbanken")
   await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(1)
   await expect(page.locator('link[href="/txt/css/lb-reader-doktor-glas-etext.css"]'))
@@ -934,9 +1107,9 @@ test("a failed primary Reader client request shows a bounded state without stale
   await activateReaderLink(
     page,
     "Nästa sida",
-    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor%20glas&hit=1"
   )
-  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor\+glas&hit=1$/)
+  await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor%20glas&hit=1$/)
   await expect(page.locator(".reader-primary-error")).toHaveText(
     "Läsarsidan kunde inte hämtas."
   )
@@ -1192,7 +1365,7 @@ test("next-page navigation updates the matching Reader history record", async ({
     activateReaderLink(
       page,
       "Nästa sida",
-      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
     )
   ])
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")

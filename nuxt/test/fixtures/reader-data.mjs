@@ -85,6 +85,44 @@ export const readerFacsimileWorkInfoResponse = {
   ]
 }
 
+export const readerAarnsethFacsimileWorkInfoResponse = {
+  hits: 1,
+  data: [
+    {
+      authors: [
+        {
+          authorid: "AarnsethF",
+          full_name: "Fredrik Aarnseth",
+          surname: "Aarnseth"
+        }
+      ],
+      faksimil_sizes: [0, 1, 2, 3, 4],
+      imprintyear: "1911",
+      lbworkid: "lb3203777",
+      mediatype: "faksimil",
+      pages: [
+        { pagename: "3", pageindex: 2, imagenumber: 3 },
+        { pagename: "58", pageindex: 57, imagenumber: 58 },
+        { pagename: "99", pageindex: 98, imagenumber: 99 }
+      ],
+      shorttitle: "Rallarliv",
+      sort_date_imprint: { plain: "1911" },
+      startpagename: "3",
+      endpagename: "99",
+      parts: [],
+      title: "Rallarliv",
+      titlepath: "Rallarliv",
+      width: {
+        size_1: 426,
+        size_2: 511,
+        size_3: 750,
+        size_4: 1023,
+        size_5: 2080
+      }
+    }
+  ]
+}
+
 const partPages = ["-4", "-3", "-2", "-1", "1", "2", "3", "4", "5"]
 
 export const readerPartsWorkInfoResponse = {

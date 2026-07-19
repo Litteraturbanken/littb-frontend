@@ -86,8 +86,8 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(html).toContain("HJALMAR SÖDERBERG")
   expect(html).toContain("-2 av 3")
   expect(html).toContain('href="/författare/S%C3%B6derbergH"')
-  expect(html).toContain('href="/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext"')
-  expect(html).toContain('href="/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"')
+  expect(html).toContain('href="/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext"')
+  expect(html).toContain('href="/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"')
   expect(html).not.toContain("Hämtar sida")
 
   const recorded = await readerRequests(request)
@@ -180,6 +180,38 @@ test("canonical API returns the exact faksimil image arm without fetching assets
   })
   expect(await readerHitRequests(request)).toEqual([])
   expect(await authorResolveRequests(request)).toEqual([])
+})
+
+test("real faksimil search hit falls back to backend metadata when the asset source omits it", async ({
+  request
+}) => {
+  const continuation =
+    "?q=kyrka&hit=0&traff=w58_123&traffslut=w58_123" +
+    "&s_query=kyrka&s_lbworkid=lb3203777&s_mediatype=faksimil" +
+    "&s_word_form_only=true&s_include_modernized=true&hit_index=0" +
+    "&s_from=0&s_to=29&s_page=1&s_page_size=30"
+  const response = await request.get(
+    `/f%C3%B6rfattare/AarnsethF/titlar/Rallarliv/sida/58/faksimil${continuation}`
+  )
+
+  expect(response.status()).toBe(200)
+  const html = await response.text()
+  expect(html).toContain("<title>Rallarliv sida 58 faksimil | Litteraturbanken</title>")
+  expect(html).toContain("Rallarliv av Fredrik Aarnseth, sida 58 som faksimil.")
+  expect(html).toContain(
+    'src="/txt/lb3203777/lb3203777_3/lb3203777_3_0058.jpeg"'
+  )
+  expect(await separateReaderRequests(request)).toEqual({
+    metadata: [
+      "/api/get_work_info?authorid=AarnsethF&exclude=content_vector&titlepath=Rallarliv",
+      "/legacy-api/get_work_info?authorid=AarnsethF" +
+        "&exclude=content_vector&titlepath=Rallarliv"
+    ],
+    html: [],
+    ocr: [],
+    jpeg: []
+  })
+  expect(await readerHitRequests(request)).toEqual([])
 })
 
 test("canonical API projects source-ordered nested Reader navigation and resolves missing authors once", async ({
@@ -436,10 +468,10 @@ test("the exact faksimil page renders its fixed scan without e-text output", asy
     'alt="Gösta Berlings saga av Selma Lagerlöf, sida 3"'
   )
   expect(html).toContain(
-    'href="/författare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/1/faksimil"'
+    'href="/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/1/faksimil"'
   )
   expect(html).toContain(
-    'href="/författare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/5/faksimil"'
+    'href="/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar/GostaBerlingsSaga/sida/5/faksimil"'
   )
   expect(html).not.toContain('class="etext')
   expect(html).not.toContain('href="/red/css/etext.css"')
@@ -461,7 +493,7 @@ test("faksimil preserves search-shaped and invalid size queries without e-text h
   for (const pageName of ["1", "5"]) {
     expect(html).toContain(
       `/sida/${pageName}/faksimil?q=doktor&amp;hit=1&amp;s_from=w1&amp;s_to=w2` +
-      "&amp;storlek=1&amp;return=first&amp;return=second&amp;unknown=bevara+mig"
+      "&amp;storlek=1&amp;return=first&amp;return=second&amp;unknown=bevara%20mig"
     )
   }
   expect(html).not.toContain("reader-search-state")
@@ -493,6 +525,8 @@ test("canonical faksimil requires an exact representation", async ({ request }) 
   expect(await separateReaderRequests(request)).toEqual({
     metadata: [
       "/api/get_work_info?authorid=S%C3%B6derbergH" +
+        "&exclude=content_vector&titlepath=DoktorGlas",
+      "/legacy-api/get_work_info?authorid=S%C3%B6derbergH" +
         "&exclude=content_vector&titlepath=DoktorGlas"
     ],
     html: [],
@@ -559,12 +593,12 @@ test("canonical search state fetches one private hit window and marks its exact 
   expect(html).toMatch(/<span[^>]*class="[^"]*\bmarkee\b[^"]*\bflip\b[^"]*"[^>]*id="w2_2"|<span[^>]*id="w2_2"[^>]*class="[^"]*\bmarkee\b[^"]*\bflip\b/)
   expect(html).toContain("Sökträff 2 av 5")
   expect(html).toContain(
-    "href=\"/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
-    "?q=doktor+glas&amp;hit=1&amp;unknown=bevara+mig\""
+    "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
+    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig\""
   )
   expect(html).toContain(
-    "href=\"/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" +
-    "?q=doktor+glas&amp;hit=1&amp;unknown=bevara+mig\""
+    "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" +
+    "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig\""
   )
   expect(html).toContain(
     "href=\"/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
@@ -619,8 +653,8 @@ test("repeated unknown query values survive page and hit links only", async ({ r
   expect(await readerHitRequests(request)).toHaveLength(1)
   expect((await readerHitRequests(request))[0]?.query).not.toContain("return")
   for (const target of [
-    "/sida/-3/etext?q=doktor+glas&amp;hit=1&amp;return=first&amp;return=second",
-    "/sida/-1/etext?q=doktor+glas&amp;hit=1&amp;return=first&amp;return=second",
+    "/sida/-3/etext?q=doktor%20glas&amp;hit=1&amp;return=first&amp;return=second",
+    "/sida/-1/etext?q=doktor%20glas&amp;hit=1&amp;return=first&amp;return=second",
     "/sida/-3/etext?q=doktor+glas&amp;hit=0&amp;return=first&amp;return=second",
     "/sida/-2/etext?q=doktor+glas&amp;hit=2&amp;return=first&amp;return=second"
   ]) {

@@ -27,6 +27,7 @@ import {
   slaArticleFixtures
 } from "./sla-article-data.mjs"
 import {
+  readerAarnsethFacsimileWorkInfoResponse,
   readerFacsimileJpegFile,
   readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
@@ -473,6 +474,8 @@ function readerLocalPartAuthorRepresentation(titlePath, author) {
 
 function readerMetadataResponse(titlePath) {
   switch (titlePath) {
+    case "Rallarliv":
+      return { hits: 0, data: [] }
     case "DoktorGlasParts":
       return readerPartsWorkInfoResponse
     case "PartlessReader":
@@ -2378,6 +2381,22 @@ const server = createServer(async (request, response) => {
       return validationError(response)
     }
     return sendJson(response, 200, readerMetadataResponse(titlePath))
+  }
+
+  if (request.method === "GET" && url.pathname === "/legacy-api/get_work_info") {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerMetadataRequests.push(recordedRequest)
+    const titlePath = url.searchParams.get("titlepath") || ""
+    if (titlePath !== "Rallarliv") return sendJson(response, 200, { hits: 0, data: [] })
+    if (
+      url.searchParams.size !== 3
+      || url.searchParams.get("authorid") !== "AarnsethF"
+      || url.searchParams.get("exclude") !== "content_vector"
+    ) {
+      return validationError(response)
+    }
+    return sendJson(response, 200, readerAarnsethFacsimileWorkInfoResponse)
   }
 
   const readerPageMatch = request.method === "GET"

@@ -220,11 +220,12 @@ export function facsimileSourcePair(
 
 async function fetchReaderMetadata(
   base: string,
+  path: "/api/get_work_info" | "/get_work_info",
   author: string,
   titlePath: string
 ): Promise<unknown> {
   try {
-    return await $fetch(`${base}/api/get_work_info`, {
+    return await $fetch(`${base}${path}`, {
       query: {
         authorid: author,
         exclude: "content_vector",
@@ -502,9 +503,28 @@ export async function loadReaderMetadata(
 ): Promise<ReaderWorkMetadata> {
   if (!isReaderMediaType(mediaType)) readerPageNotFound()
 
-  const base = useRuntimeConfig(event).readerSourceBase.replace(/\/$/, "")
-  const raw = await fetchReaderMetadata(base, author, titlePath)
-  return normalizeReaderMetadata(raw, base, author, titlePath, mediaType)
+  const config = useRuntimeConfig(event)
+  const assetBase = config.readerSourceBase.replace(/\/$/, "")
+  const raw = await fetchReaderMetadata(
+    assetBase,
+    "/api/get_work_info",
+    author,
+    titlePath
+  )
+  try {
+    return normalizeReaderMetadata(raw, assetBase, author, titlePath, mediaType)
+  } catch (error) {
+    if (!isRecord(error) || error.statusCode !== 404) throw error
+  }
+
+  const metadataBase = config.libraryApiBase.replace(/\/$/, "")
+  const fallback = await fetchReaderMetadata(
+    metadataBase,
+    "/get_work_info",
+    author,
+    titlePath
+  )
+  return normalizeReaderMetadata(fallback, assetBase, author, titlePath, mediaType)
 }
 
 export async function fetchReaderPageHtml(

@@ -10,8 +10,11 @@ import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import {
   readerAuthorHref,
+  readerContentsNeutralFullPath,
+  readerFullPathWithFragment,
   readerHitHref,
-  readerPageHref,
+  readerPartAuthorKey,
+  readerPageFullPath,
   type ReaderRouteQuery
 } from "~/lib/reader-routes"
 
@@ -30,7 +33,44 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
+const nuxtApp = useNuxtApp()
 const config = useRuntimeConfig()
+const requestUrl = useRequestURL()
+const initialRawFullPath = useState(
+  `reader-initial-raw-full-path:${route.path}`,
+  () => `${requestUrl.pathname}${requestUrl.search}${requestUrl.hash}`
+)
+const rawFullPath = ref(
+  import.meta.client && !nuxtApp.isHydrating
+    ? `${window.location.pathname}${window.location.search}${window.location.hash}`
+    : initialRawFullPath.value
+)
+function beforeFragment(fullPath: string): string {
+  const fragmentIndex = fullPath.indexOf("#")
+  return fragmentIndex < 0 ? fullPath : fullPath.slice(0, fragmentIndex)
+}
+
+function browserFullPath(): string {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`
+}
+
+watch(() => route.fullPath, (nextRouteFullPath, previousRouteFullPath) => {
+  if (!import.meta.client) {
+    rawFullPath.value = nextRouteFullPath
+    return
+  }
+  const nextBrowserFullPath = browserFullPath()
+  rawFullPath.value = previousRouteFullPath !== undefined &&
+    beforeFragment(previousRouteFullPath) === beforeFragment(nextRouteFullPath)
+    ? readerFullPathWithFragment(rawFullPath.value, nextBrowserFullPath)
+    : nextBrowserFullPath
+}, { flush: "sync" })
+onMounted(() => {
+  rawFullPath.value = readerFullPathWithFragment(rawFullPath.value, browserFullPath())
+})
+const contentsNeutralIdentity = computed(
+  () => readerContentsNeutralFullPath(rawFullPath.value)
+)
 
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
 type WorkSearchHitsResponse = components["schemas"]["WorkSearchHitsResponse"]
@@ -94,12 +134,14 @@ function parseCanonicalSearchState(): CanonicalSearchState | null {
 
 function preservedQuery(): ReaderRouteQuery {
   return Object.fromEntries(
-    Object.entries(route.query).map(([key, value]) => [
-      key,
-      Array.isArray(value)
-        ? value.map(item => item ?? "")
-        : value ?? ""
-    ])
+    Object.entries(route.query)
+      .filter(([key]) => key !== "innehall")
+      .map(([key, value]) => [
+        key,
+        Array.isArray(value)
+          ? value.map(item => item ?? "")
+          : value ?? ""
+      ])
   )
 }
 
@@ -319,16 +361,34 @@ const pageTitle = computed(
     ? `${reader.value.title} sida ${reader.value.pageName} ${reader.value.mediaType} | Litteraturbanken`
     : "Litteraturbanken"
 )
+const currentPart = computed(() => {
+  const currentReader = reader.value
+  if (!currentReader || currentReader.currentPartIndex === null) return null
+  return currentReader.parts[currentReader.currentPartIndex] ?? null
+})
+const currentPartLabel = computed(() => {
+  const part = currentPart.value
+  return part ? (part.navTitle || part.shortTitle || part.title) : ""
+})
+
+function currentPartAuthorLabel(index: number): string {
+  const part = currentPart.value
+  const author = part?.authors[index]
+  if (!part || !author) return ""
+  return part.authors.length === 1
+    ? (author.name ?? author.id)
+    : (author.surname ?? author.name ?? author.id)
+}
 
 const hitFetch = await useAsyncData(
   computed(() => [
         "reader-hit",
-        route.fullPath,
+        contentsNeutralIdentity.value,
         data.value?.identity ?? "pending",
         data.value?.status === "success" ? data.value.reader.workId : "pending"
       ].join(":")),
       async () => {
-        const identity = route.fullPath
+        const identity = contentsNeutralIdentity.value
         const state = searchState.value
         const currentReader = data.value
         if (
@@ -372,13 +432,13 @@ const hitFetch = await useAsyncData(
           return { status: "error" as const, identity }
         }
       },
-      { watch: [() => route.fullPath, () => data.value?.identity] }
+      { watch: [contentsNeutralIdentity, () => data.value?.identity] }
     )
 
 const hitResponse = computed(() => {
   const value = hitFetch.data.value
   return value?.status === "success" &&
-    value.identity === route.fullPath &&
+    value.identity === contentsNeutralIdentity.value &&
     data.value?.status === "success" &&
     data.value.identity === readerRequestIdentity.value &&
     data.value.reader.mediaType === "etext"
@@ -387,7 +447,7 @@ const hitResponse = computed(() => {
 })
 const hitRequestFailed = computed(
   () => hitFetch.data.value?.status === "error" &&
-    hitFetch.data.value.identity === route.fullPath
+    hitFetch.data.value.identity === contentsNeutralIdentity.value
 )
 const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
@@ -449,7 +509,7 @@ function writeLastPageView(): void {
     lbworkid: currentReader.workId,
     author: authorParam.value,
     label: currentReader.title,
-    url: route.fullPath
+    url: contentsNeutralIdentity.value
   }
   try {
     const raw = localStorage.getItem("lastPageViews")
@@ -478,8 +538,8 @@ function writeLastPageView(): void {
 
 onMounted(writeLastPageView)
 watch(
-  [() => route.fullPath, () => data.value?.identity, () => data.value?.status],
-  ([_fullPath, identity, status]) => {
+  [contentsNeutralIdentity, () => data.value?.identity, () => data.value?.status],
+  ([_historyIdentity, identity, status]) => {
     if (status === "success" && identity === readerRequestIdentity.value) {
       writeLastPageView()
     }
@@ -494,6 +554,9 @@ useSeoMeta({
 
 useHead(() => ({
   bodyAttrs: { class: "focus page-reading ready" },
+  meta: currentPart.value?.titleId
+    ? [{ name: "part", content: currentPart.value.titleId }]
+    : [],
   link: etextReader.value
     ? [
         { rel: "stylesheet", href: etextReader.value.sharedStylesheetUrl },
@@ -503,6 +566,7 @@ useHead(() => ({
 }))
 
 function readerTarget(pageName: string, hit?: number): RouteLocationRaw {
+  if (hit === undefined) return readerPageFullPath(rawFullPath.value, pageName)
   const query = Object.fromEntries(
     Object.entries(pageQuery.value).map(([key, value]) => [
       key,
@@ -523,13 +587,7 @@ function readerTarget(pageName: string, hit?: number): RouteLocationRaw {
 }
 
 function pageHref(pageName: string): string {
-  return readerPageHref({
-    author: authorParam.value,
-    title: titleParam.value,
-    page: pageName,
-    mediaType: mediaTypeParam.value,
-    query: pageQuery.value
-  })
+  return readerPageFullPath(rawFullPath.value, pageName)
 }
 
 function hitHref(hit: WorkSearchHit): string {
@@ -571,6 +629,36 @@ function selectFacsimileSize(size: ReaderFacsimileSize): void {
     query
   })
 }
+
+const showGotoInput = ref(false)
+const gotoPage = ref("")
+const gotoMessage = ref("")
+const gotoInput = ref<HTMLInputElement | null>(null)
+
+function toggleGoto(): void {
+  showGotoInput.value = !showGotoInput.value
+  gotoMessage.value = ""
+  if (showGotoInput.value) {
+    void nextTick(() => gotoInput.value?.focus())
+  }
+}
+
+function submitGoto(): void {
+  const currentReader = reader.value
+  if (!currentReader || !currentReader.pageNames.includes(gotoPage.value)) {
+    gotoMessage.value = "Sidan finns inte i verket."
+    return
+  }
+  gotoMessage.value = ""
+  showGotoInput.value = false
+  void router.push(readerTarget(gotoPage.value))
+}
+
+watch(readerRequestIdentity, () => {
+  showGotoInput.value = false
+  gotoPage.value = ""
+  gotoMessage.value = ""
+})
 </script>
 
 <template>
@@ -612,23 +700,99 @@ function selectFacsimileSize(size: ReaderFacsimileSize): void {
             <hr>
 
             <div class="current_part">
-              <div class="header"><a aria-hidden="true">{{ reader.author.name }}</a></div>
-              <div><p class="navtitle line-clamp-4">{{ reader.title }}</p></div>
+              <template v-if="currentPart">
+                <div class="header">
+                  <template
+                    v-for="(partAuthor, index) in currentPart.authors"
+                    :key="readerPartAuthorKey(partAuthor.id, index)"
+                  >
+                    <a :href="readerAuthorHref(partAuthor.id)">{{ currentPartAuthorLabel(index) }}</a><span
+                      v-if="index < currentPart.authors.length - 1"
+                    >, </span>
+                  </template>
+                </div>
+                <div
+                  :title="currentPart.title !== currentPartLabel ? currentPart.title : undefined"
+                ><p class="navtitle line-clamp-4">{{ currentPartLabel }}</p></div>
+              </template>
             </div>
 
             <hr class="lower">
 
             <nav class="pager_ctrls reader-navigation" aria-label="Sidnavigering">
-              <a class="prev_part" aria-hidden="true">Gå bakåt en del</a>
+              <NuxtLink
+                v-if="reader.previousPartPageName"
+                v-slot="{ navigate }"
+                custom
+                :to="readerTarget(reader.previousPartPageName)"
+              ><a
+                class="prev_part"
+                :href="pageHref(reader.previousPartPageName)"
+                @click="navigate"
+              >Gå bakåt en del</a></NuxtLink>
+              <a
+                v-else
+                class="prev_part disabled"
+                aria-disabled="true"
+                tabindex="-1"
+              >Gå bakåt en del</a>
               <br>
-              <a class="next_part disabled" aria-hidden="true">Gå till nästa del</a>
+              <NuxtLink
+                v-if="reader.nextPartPageName"
+                v-slot="{ navigate }"
+                custom
+                :to="readerTarget(reader.nextPartPageName)"
+              ><a
+                class="next_part"
+                :href="pageHref(reader.nextPartPageName)"
+                @click="navigate"
+              >Gå till nästa del</a></NuxtLink>
+              <a
+                v-else
+                class="next_part disabled"
+                aria-disabled="true"
+                tabindex="-1"
+              >Gå till nästa del</a>
               <br>
-              <a class="disabled" aria-hidden="true">Gå till första sidan</a>
+              <NuxtLink
+                v-if="reader.startPageName && reader.pageName !== reader.startPageName"
+                v-slot="{ navigate }"
+                custom
+                :to="readerTarget(reader.startPageName)"
+              ><a
+                :href="pageHref(reader.startPageName)"
+                @click="navigate"
+              >Gå till första sidan</a></NuxtLink>
+              <a
+                v-else
+                class="disabled"
+                aria-disabled="true"
+                tabindex="-1"
+              >Gå till första sidan</a>
               <br>
-              <a aria-hidden="true">Gå till sista sidan</a>
+              <NuxtLink
+                v-if="reader.endPageName && reader.pageName !== reader.endPageName"
+                v-slot="{ navigate }"
+                custom
+                :to="readerTarget(reader.endPageName)"
+              ><a
+                :href="pageHref(reader.endPageName)"
+                @click="navigate"
+              >Gå till sista sidan</a></NuxtLink>
+              <a
+                v-else
+                class="disabled"
+                aria-disabled="true"
+                tabindex="-1"
+              >Gå till sista sidan</a>
               <br>
-              <form class="goto" aria-hidden="true"><a>Gå till sida . . .
-                <span class="pages">{{ reader.pageName }} av {{ reader.nextPageName || reader.pageCount }}</span></a>
+              <form class="goto" @submit.prevent="submitGoto"><a href="" @click.prevent="toggleGoto">Gå till sida . . .
+                <span class="pages">{{ reader.pageName }} av {{ reader.endPageName || reader.pageCount }}</span></a>
+                <template v-if="showGotoInput">
+                  <input ref="gotoInput" v-model="gotoPage" type="text" aria-label="Gå till sida">
+                  <button type="submit" class="goto-submit" aria-label="Gå"><i class="fa fa-angle-double-right" /></button>
+                  <span v-if="gotoMessage" class="goto-message" role="status">{{ gotoMessage }}</span>
+                </template>
               </form>
 
               <NuxtLink

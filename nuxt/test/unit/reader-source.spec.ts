@@ -113,6 +113,59 @@ describe("reader media and exact representation selection", () => {
     expect(fetch).not.toHaveBeenCalled()
   })
 
+  test("falls back to backend metadata for the real Rallarliv faksimil identity", async () => {
+    const runtimeConfig = vi.fn(() => ({
+      libraryApiBase: "http://backend.test",
+      readerSourceBase: "https://assets.test"
+    }))
+    const fetch = vi.fn()
+      .mockResolvedValueOnce({ hits: 0, data: [] })
+      .mockResolvedValueOnce(payload(representation({
+        authors: [{
+          authorid: "AarnsethF",
+          full_name: "Fredrik Aarnseth",
+          surname: "Aarnseth"
+        }],
+        lbworkid: "lb3203777",
+        pages: [{ imagenumber: 58, pageindex: 57, pagename: "58" }],
+        shorttitle: "Rallarliv",
+        title: "Rallarliv",
+        titlepath: "Rallarliv"
+      })))
+    vi.stubGlobal("useRuntimeConfig", runtimeConfig)
+    vi.stubGlobal("$fetch", fetch)
+
+    const metadata = await loadReaderMetadata(
+      {} as Parameters<typeof loadReaderMetadata>[0],
+      "AarnsethF",
+      "Rallarliv",
+      "faksimil"
+    )
+
+    expect(metadata).toMatchObject({
+      base: "https://assets.test",
+      mediaType: "faksimil",
+      pages: [{ imageNumber: 58, pageIndex: 57, pageName: "58" }],
+      workId: "lb3203777"
+    })
+    expect(fetch).toHaveBeenNthCalledWith(1, "https://assets.test/api/get_work_info", {
+      query: {
+        authorid: "AarnsethF",
+        exclude: "content_vector",
+        titlepath: "Rallarliv"
+      },
+      retry: 0
+    })
+    expect(fetch).toHaveBeenNthCalledWith(2, "http://backend.test/get_work_info", {
+      query: {
+        authorid: "AarnsethF",
+        exclude: "content_vector",
+        titlepath: "Rallarliv"
+      },
+      retry: 0
+    })
+  })
+
   test("preserves e-text sibling-page inheritance by work identity", () => {
     const metadata = normalizeReaderMetadata(
       payload(
