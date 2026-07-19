@@ -20,10 +20,10 @@ Angular's `library-page` is the behavioral and visual authority. PDF reuses the
 same work table, four sort choices, 100-row pagination, empty/error states, and
 ordinary title/author links as EPUB. The only row-level differences are:
 
-- the title opens the work's about-book view using `faksimil` when the indexed
-  document itself has media type `pdf`;
-- `Hämta` points to the validated PDF export URL and carries the legacy
-  download filename when one is supplied;
+- the title opens the work's about-book view using `faksimil` when the selected
+  display representation itself has media type `pdf`;
+- `Hämta` uses a locally synthesized legacy PDF route and filename; provider
+  export URLs and filenames are never trusted;
 - the active tab and query state are `pdf`, not `epub`.
 
 The `/bibliotek` shell keeps its Library background, heading, full tab row, and
@@ -65,16 +65,41 @@ When a sanitized free-text filter exists, combine it with that predicate using
 `AND`. Do not add an inactive-tab count request or create a new composable.
 
 The top-level envelope guard remains strict: object `data`, finite numeric
-`hits`, finite numeric `distinct_hits`, and absent/null/array `suggest`. Each
-PDF row must independently prove:
+`hits`, finite numeric `distinct_hits`, and absent/null/array `suggest`. Raw
+representations are grouped by the exact `(titlepath, lbworkid)` tuple before
+rendering, matching Angular's `createExpandMediatypes` behavior without its
+ambiguous string-concatenation key. One grouped work produces at most one row.
+Within a group, a real indexed `mediatype:pdf` representation takes precedence
+over every PDF export. Only when no real PDF exists may the first source-ordered
+public-domain representation with an export object whose `type` is `pdf`
+provide the download. Duplicate export descriptors still produce one action;
+they do not invalidate the work. Real PDF representations remain valid when
+`export` is absent.
 
-- safe author, title, and media-type path segments;
+Every accepted representation/group must prove:
+
+- safe `lbworkid`, author, title, and media-type path segments;
+- a media type in the exact `etext | faksimil | pdf` set;
 - display title, imprint year, and complete main-author identity;
-- either a public-domain PDF export or an indexed PDF representation;
-- exactly one safe same-origin `/txt/**` or HTTP(S) Litteraturbanken download
-  destination;
-- an optional filename that cannot inject path separators, control characters,
-  or a second extension.
+- either a real indexed PDF representation or a public-domain PDF export; and
+- an ordered filename-author identity from `work_authors`, then `authors`, then
+  `main_author`, matching the legacy authority.
+
+Destinations are synthesized exactly as Angular does, with one leading slash:
+
+```text
+Real PDF: /txt/{pdf.lbworkid}/{pdf.lbworkid}.pdf
+Export:   /export/faksimil/{group-main.lbworkid}.pdf
+```
+
+The download filename is synthesized as
+`{filename-author-id}_{work_titleid || titleid}.pdf` from the real PDF
+representation, or from the group-main representation for an export. Provider
+`url` and `filename` values are ignored. All inserted values are validated as
+single safe path/filename segments before either anchor is rendered. An
+exported e-text or faksimil retains that representation's media type in the
+about-book title link; only a selected raw PDF maps the title link to
+`faksimil`.
 
 Malformed rows are omitted. Malformed envelopes or transport failures render
 `Ett fel uppstod.`; valid empty results render `Inga träffar.`. No upstream
@@ -100,9 +125,9 @@ cover:
 
 1. exact PDF fixture request predicates, page windows, success, empty,
    malformed-envelope, malformed-row, delayed, and failed responses;
-2. SSR for both shells, all four sorts, invalid/default pages, safe title,
-   author, and download links, filename handling, empty/error states, and
-   pagination;
+2. SSR for both shells, all four sorts, invalid/default pages, grouping and
+   direct-PDF precedence, safe title/author/synthesized-download links, filename
+   identity, empty/error states, and pagination;
 3. browser tab switching, debounced filtering, sort/page reset, stale-response
    rejection, Back/Forward restoration, download attributes, hydration reuse,
    and one active request per state;

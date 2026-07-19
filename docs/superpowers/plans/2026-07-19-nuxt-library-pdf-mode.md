@@ -27,6 +27,7 @@ shells while preserving the reviewed Library appearance and page-local model.
 **Files:**
 
 - Modify: `nuxt/test/fixtures/v2-server.mjs`
+- Add: `nuxt/test/fixtures/library-pdf-data.mjs`
 - Modify: `nuxt/test/unit/v2-server.spec.ts`
 
 ### RED
@@ -37,12 +38,18 @@ Require deterministic cases for:
 - page one and page two;
 - each legacy work sort;
 - sanitized filter composition;
-- one exported public-domain PDF row;
-- one indexed `mediatype:pdf` row;
+- one exported e-text and one exported faksimil represented only by
+  `{ type: "pdf", size }`;
+- one indexed `mediatype:pdf` representation with no export;
+- one grouped direct-PDF plus export collision proving direct-PDF precedence;
+- duplicate export descriptors proving deterministic first-match behavior;
+- a restricted export rejected by the grouping/parser contract;
+- differing `work_authors[0]` and `main_author` identities;
 - empty results;
 - absent and null `suggest`;
 - malformed top-level response;
-- unsafe/missing row fields;
+- unsafe/missing row fields, including control characters, unsafe `lbworkid`,
+  and a safe-but-unsupported `audio` media type;
 - delayed identities by filter, sort, `from`, and `to`;
 - transport failure;
 - exact private/public request-ledger reset and readback.
@@ -58,10 +65,14 @@ expected failures.
 
 ### GREEN
 
-Extend the fixture server without changing existing EPUB identities or ledgers.
-PDF data must include truthful export URL, filename, license, media type, author,
-work identity, and year variants. Make delay/failure controls independently
-resettable and safe with outstanding requests.
+Create one shared PDF fixture module consumed by the fixture server, SSR/browser
+tests, and Angular authority capture. Do not model provider-owned PDF URLs or
+filenames: real export descriptors are `{ type, size }`, while all routes and
+filenames are synthesized by the page model. Give at least one response unequal
+`hits` and `distinct_hits` so pagination ownership is executable. Extend the
+fixture server without changing existing EPUB identities or ledgers. Make
+delay/failure controls independently resettable and safe with outstanding
+requests.
 
 Run:
 
@@ -90,11 +101,16 @@ Add SSR tests proving:
 - page two produces exact `from=100&to=200` bounds;
 - all four PDF sort expressions are exact;
 - free text is sanitized and combined with the PDF predicate;
-- title links use `faksimil` for indexed PDF rows;
+- title links use `faksimil` only for selected indexed PDF rows and retain
+  `etext`/`faksimil` for export-backed rows;
 - author links encode one safe segment;
-- download anchors contain exact safe `href`, `download`, and `target="_self"`;
-- unsafe cross-origin URLs, controls, slashes, dot segments, and filenames are
-  omitted with their row;
+- download anchors synthesize exact `/txt/{lbworkid}/{lbworkid}.pdf` or
+  `/export/faksimil/{lbworkid}.pdf` hrefs plus safe legacy filenames;
+- raw representations group by `(titlepath, lbworkid)`, direct PDFs take
+  precedence, duplicate export descriptors render one action, and filename
+  authors follow `work_authors`, then `authors`, then `main_author`;
+- unsafe controls, slashes, dot segments, `lbworkid`, and unsupported media are
+  omitted without invalidating an otherwise independent group;
 - pagination uses `distinct_hits`, not raw hits;
 - valid empty and failed/malformed states remain distinct;
 - unrelated repeated query keys survive generated tab/sort/page hrefs;
@@ -114,7 +130,9 @@ Implement only the behavior specified by Task 2:
 
 1. Extend the mode/state discriminants with `pdf`.
 2. Keep the EPUB and PDF work-sort table shared.
-3. Add a strict PDF response/row parser and safe download helper.
+3. Add a strict PDF response/group parser and safe download helper. It must
+   ignore provider `url`/`filename`, group representations, prefer real PDFs,
+   and otherwise select the first public-domain PDF export.
 4. Add the exact PDF request predicate to the existing query-string request
    builder.
 5. Reuse current abort/version/owned-navigation/hydration logic for PDF.
@@ -130,9 +148,9 @@ Run:
 
 ```bash
 cd nuxt
-yarn vitest run test/ssr/library.spec.ts
+NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3038 yarn playwright test test/ssr/library.spec.ts --project=ssr
 yarn typecheck
-yarn api:check
+LBAPI_OPENAPI_SCHEMA=../../lb-backend/openapi/v2.json yarn api:check
 ```
 
 Then rerun the existing Library behavior suite to catch regressions. Commit
@@ -173,7 +191,7 @@ limited to `bibliotek.vue`; fixture defects belong in Task 1 files. Re-run:
 ```bash
 cd nuxt
 yarn playwright test test/e2e/library.behavior.spec.ts --project=desktop-chromium
-yarn vitest run test/ssr/library.spec.ts
+NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3038 yarn playwright test test/ssr/library.spec.ts --project=ssr
 yarn typecheck
 ```
 
@@ -185,16 +203,22 @@ Commit Task 4 tests and any reviewed correction separately.
 
 - Modify: `nuxt/test/visual/capture-library-epub-angular.spec.ts`
 - Modify: `nuxt/test/e2e/library.visual.spec.ts`
+- Read: `nuxt/test/fixtures/library-pdf-data.mjs`
 - Add only the required deterministic PDF baseline images under the existing
   Library visual snapshot directory.
 
 ### RED authority capture
 
-Extend the isolated Angular authority with exact PDF request interception for a
-populated desktop and mobile state in both Library and standalone shells. The
+Extend the isolated Angular authority with the shared PDF fixture for a populated
+desktop and mobile state in both Library and standalone shells. Its exact legacy
+request intentionally includes `pdfOnly=true`, `author_aggregation=true`, and
+`imported_aggregation=false`, plus the existing inactive count fan-out; do not
+mistake that authority traffic for Nuxt's one-active-request contract. The
 firewall must reject production data, unregistered assets, query drift, and
-unexpected extra requests. Record exact screenshot and request hashes while
-proving all existing relevance/EPUB hashes remain byte-identical.
+unexpected extra requests. Add executable baselines named
+`library-pdf-{desktop,mobile}.png` and
+`standalone-pdf-{desktop,mobile}.png`, while proving existing relevance/EPUB
+baselines remain byte-identical.
 
 ### GREEN Nuxt comparison
 
@@ -204,7 +228,13 @@ scoped page CSS; do not edit copied shared styles, Angular source, or existing
 baselines.
 
 Run the complete Library authority and visual commands documented in the
-existing test files, then rerun existing relevance and EPUB comparisons.
+existing test files, including:
+
+```bash
+yarn playwright test --config=playwright.library-epub-angular.config.ts
+```
+
+Then rerun existing relevance and EPUB comparisons.
 
 Commit authority/baselines separately from the Nuxt visual assertions where the
 existing Library workflow does so.
@@ -220,13 +250,13 @@ Run fresh verification:
 ```bash
 cd nuxt
 yarn vitest run test/unit/v2-server.spec.ts
-yarn vitest run test/ssr/library.spec.ts
+NUXT_IGNORE_LOCK=1 LITTB_NUXT_TEST_PORT=3038 yarn playwright test test/ssr/library.spec.ts --project=ssr
 yarn playwright test test/e2e/library.behavior.spec.ts --project=desktop-chromium
 yarn playwright test test/e2e/library.visual.spec.ts --project=desktop-chromium --project=mobile-chromium
 yarn test:unit
 yarn typecheck
 yarn build
-yarn api:check
+LBAPI_OPENAPI_SCHEMA=../../lb-backend/openapi/v2.json yarn api:check
 git diff --check
 ```
 
