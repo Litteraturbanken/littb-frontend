@@ -6,6 +6,7 @@ import {
   forvillelserReaderPageHtml,
   forvillelserReaderWorkInfoResponse,
   lagerlofBibliography,
+  lagerlofOmtexterna,
   semerAuthorDocumentAssets,
   semerAuthorDocumentDescriptor,
   soderbergPresentation,
@@ -89,6 +90,10 @@ const authorDocumentContent = new Map([
     readFileSync(new URL("./author-document-content/LagerlofS-bibliografi.html", import.meta.url))
   ],
   [
+    lagerlofOmtexterna.source_path,
+    readFileSync(new URL("./author-document-content/LagerlofS-omtexterna.html", import.meta.url))
+  ],
+  [
     semerAuthorDocumentDescriptor.source_path,
     readFileSync(new URL("./author-document-content/AlmqvistCJL-semer.html", import.meta.url))
   ],
@@ -164,6 +169,7 @@ const authorDocumentPdfs = new Map([
 const authorDocumentDescriptors = new Map([
   [`${soderbergPresentation.author_id}|${soderbergPresentation.document_kind}`, soderbergPresentation],
   [`${lagerlofBibliography.author_id}|${lagerlofBibliography.document_kind}`, lagerlofBibliography],
+  [`${lagerlofOmtexterna.author_id}|${lagerlofOmtexterna.document_kind}`, lagerlofOmtexterna],
   [`${semerAuthorDocumentDescriptor.author_id}|${semerAuthorDocumentDescriptor.document_kind}`, semerAuthorDocumentDescriptor],
   [`${sparseDocument.author_id}|${sparseDocument.document_kind}`, sparseDocument]
 ])
@@ -223,6 +229,7 @@ let dramawebbenDocumentRequests = []
 let dramawebbenDocumentFailure = null
 let dramawebbenDocumentRedirectTargetRequests = []
 let dramawebbenExcludedDataRequests = []
+let slaExcludedDataRequests = []
 let textSearchRequests = { results: [], count: [], options: [] }
 let textSearchFailures = new Set()
 let textSearchDelays = { results: {}, count: {}, options: {} }
@@ -244,6 +251,14 @@ const dramawebbenExcludedDataPaths = new Set([
   "/api/get_authors",
   "/api/list_all/etext,faksimil,pdf,infopost"
 ])
+
+function isSlaExcludedDataPath(pathname) {
+  return pathname === "/api/get_author/Lagerl%C3%B6fS"
+    || pathname === "/api/get_authors"
+    || /^\/api\/list_all\/[^/]+\/Lagerl%C3%B6fS$/.test(pathname)
+    || pathname === "/api/list_parts_in_others_works/Lagerl%C3%B6fS"
+    || pathname === "/api/query/litteraturkartan"
+}
 
 function sendJson(response, status, body) {
   response.writeHead(status, {
@@ -1595,6 +1610,13 @@ const server = createServer(async (request, response) => {
     dramawebbenExcludedDataRequests = []
     return sendJson(response, 200, { requests: dramawebbenExcludedDataRequests })
   }
+  if (url.pathname === "/_sla_excluded_data_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: slaExcludedDataRequests })
+  }
+  if (url.pathname === "/_sla_excluded_data_requests" && request.method === "DELETE") {
+    slaExcludedDataRequests = []
+    return sendJson(response, 200, { requests: slaExcludedDataRequests })
+  }
   if (
     url.pathname === "/_dramawebben_document_redirect_target_requests"
     && request.method === "GET"
@@ -1840,7 +1862,8 @@ const server = createServer(async (request, response) => {
   }
 
   const authorDocumentBody = authorDocumentContent.get(rawPathname)
-  if (request.method === "GET" && authorDocumentBody) {
+  const exactSlaSourceRequest = rawPathname !== lagerlofOmtexterna.source_path || !url.search
+  if (request.method === "GET" && authorDocumentBody && exactSlaSourceRequest) {
     authorDocumentRequests.push({
       kind: "content",
       path: request.url
@@ -2186,8 +2209,11 @@ const server = createServer(async (request, response) => {
     })
   }
 
-  const authorDocumentMatch = request.method === "GET"
-    ? /^\/v2\/authors\/([^/]+)\/documents\/(presentation|bibliografi|semer)$/.exec(rawApiPathname)
+  const authorDocumentCandidate = request.method === "GET"
+    ? /^\/v2\/authors\/([^/]+)\/documents\/(presentation|bibliografi|semer|omtexterna)$/.exec(rawApiPathname)
+    : null
+  const authorDocumentMatch = authorDocumentCandidate?.[2] !== "omtexterna" || !url.search
+    ? authorDocumentCandidate
     : null
   if (authorDocumentMatch) {
     authorDocumentRequests.push({
@@ -2422,6 +2448,9 @@ const server = createServer(async (request, response) => {
 
   if (dramawebbenExcludedDataPaths.has(rawPathname)) {
     dramawebbenExcludedDataRequests.push({ method: request.method, path: request.url })
+  }
+  if (isSlaExcludedDataPath(rawPathname)) {
+    slaExcludedDataRequests.push({ method: request.method, path: request.url })
   }
 
   return sendJson(response, 404, {

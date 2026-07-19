@@ -33,6 +33,21 @@ export const lagerlofBibliography = {
 }
 
 /** @satisfies {AuthorDocumentDescriptor} */
+export const lagerlofOmtexterna = {
+  author_id: "LagerlöfS",
+  normalized_author_id: "LagerlofS",
+  full_name: "Selma Lagerlöf",
+  birth_year: "1858",
+  death_year: "1940",
+  has_introduction: true,
+  has_dramawebben: true,
+  search_url: "/sok?forfattare=Lagerl%C3%B6fS&avancerad",
+  audio_url: "https://litteraturbanken.se/ljudochbild/författare/lagerlofs",
+  document_kind: "omtexterna",
+  source_path: "/red/sla/omtexterna.html"
+}
+
+/** @satisfies {AuthorDocumentDescriptor} */
 export const semerAuthorDocumentDescriptor = {
   author_id: "AlmqvistCJL",
   normalized_author_id: "AlmqvistCJL",
@@ -72,6 +87,12 @@ export const authorDocumentProvenance = Object.freeze([
     path: lagerlofBibliography.source_path,
     sourceUrl: "https://red.litteraturbanken.se/red/forfattare/LagerlofS/bibliografi/index.html",
     sha256: "54d289da89e61225fdfbfc68aed19762614529c06c6f2707ed50a493359d179b"
+  },
+  {
+    path: lagerlofOmtexterna.source_path,
+    sourceUrl: "https://red.litteraturbanken.se/red/sla/omtexterna.html",
+    bytes: 7225,
+    sha256: "ca4812e8f5a88342f1699b3a41471da556ba27760bcd51bb635c0c0e20485928"
   },
   {
     path: semerAuthorDocumentDescriptor.source_path,

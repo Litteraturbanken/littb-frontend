@@ -41,6 +41,7 @@ import {
   forvillelserReaderPageHtml,
   forvillelserReaderWorkInfoResponse,
   lagerlofBibliography,
+  lagerlofOmtexterna,
   semerAuthorDocumentAssets,
   semerAuthorDocumentDescriptor,
   soderbergPresentation,
@@ -87,6 +88,7 @@ const generatedTextSearchCountContract: TextSearchCountOperation = null as unkno
 const generatedTextSearchOptionsContract: TextSearchOptionsOperation = null as unknown as
   operations["v2_post_text_search_options"]
 const generatedAuthorDocumentDescriptor: AuthorDocumentDescriptor = soderbergPresentation
+const generatedSlaAuthorDocumentDescriptor: AuthorDocumentDescriptor = lagerlofOmtexterna
 const generatedLegacyAuthorRouteResolution: LegacyAuthorRouteResolution = {
   author_id: "SöderbergH",
   title_id: "Förvillelser"
@@ -324,6 +326,12 @@ async function dramawebbenExcludedDataRequests() {
   }
 }
 
+async function slaExcludedDataRequests() {
+  return await (await fetch(`${origin}/_sla_excluded_data_requests`)).json() as {
+    requests: Array<{ method: string, path: string }>
+  }
+}
+
 async function authorDocumentPdfRequests() {
   return await (await fetch(`${origin}/_author_document_pdf_requests`)).json() as {
     requests: string[]
@@ -468,6 +476,7 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_legacy_author_route_requests`, { method: "DELETE" }),
       fetch(`${origin}/_legacy_author_route_failure`, { method: "DELETE" }),
       fetch(`${origin}/_dramawebben_excluded_data_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_sla_excluded_data_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_document_pdf_requests`, { method: "DELETE" }),
       fetch(`${origin}/_text_search/requests`, { method: "DELETE" }),
       fetch(`${origin}/_text_search/failures`, { method: "DELETE" }),
@@ -551,6 +560,12 @@ describe("v2 fixture server operations", () => {
         sha256: "54d289da89e61225fdfbfc68aed19762614529c06c6f2707ed50a493359d179b"
       },
       {
+        path: "/red/sla/omtexterna.html",
+        sourceUrl: "https://red.litteraturbanken.se/red/sla/omtexterna.html",
+        bytes: 7225,
+        sha256: "ca4812e8f5a88342f1699b3a41471da556ba27760bcd51bb635c0c0e20485928"
+      },
+      {
         path: "/red/forfattare/AlmqvistCJL/semer/index.html",
         sourceUrl: "https://litteraturbanken.se/red/forfattare/AlmqvistCJL/semer/index.html",
         retrievedFrom: "https://red.litteraturbanken.se/red/forfattare/AlmqvistCJL/semer/index.html",
@@ -571,10 +586,15 @@ describe("v2 fixture server operations", () => {
     }
 
     for (const provenance of authorDocumentProvenance) {
-      const response = await fetch(`${origin}${provenance.path}?authority=exact`)
+      const requestPath = provenance.path === lagerlofOmtexterna.source_path
+        ? provenance.path
+        : `${provenance.path}?authority=exact`
+      const response = await fetch(`${origin}${requestPath}`)
       expect(response.status, provenance.path).toBe(200)
       expect(response.headers.get("content-type")).toBe("text/html; charset=utf-8")
-      expect(createHash("sha256").update(Buffer.from(await response.arrayBuffer())).digest("hex"))
+      const body = Buffer.from(await response.arrayBuffer())
+      if ("bytes" in provenance) expect(body).toHaveLength(provenance.bytes)
+      expect(createHash("sha256").update(body).digest("hex"))
         .toBe(provenance.sha256)
     }
 
@@ -603,12 +623,66 @@ describe("v2 fixture server operations", () => {
         { kind: "descriptor", path: "/v2/authors/SparseDocument/documents/presentation" },
         ...authorDocumentProvenance.map(({ path }) => ({
           kind: "content" as const,
-          path: `${path}?authority=exact`
+          path: path === lagerlofOmtexterna.source_path
+            ? path
+            : `${path}?authority=exact`
         }))
       ]
     })
     expect(await authorDocumentAssetRequests()).toEqual({
       requests: semerAuthorDocumentAssets.map(({ path }) => path)
+    })
+  })
+
+  test("serves only the exact SLA omtexterna descriptor and byte-frozen landing source", async () => {
+    const descriptorPath = "/v2/authors/Lagerl%C3%B6fS/documents/omtexterna"
+    const sourcePath = "/red/sla/omtexterna.html"
+
+    expect(generatedSlaAuthorDocumentDescriptor).toEqual(lagerlofOmtexterna)
+    const descriptorResponse = await fetch(`${origin}${descriptorPath}`)
+    expect(descriptorResponse.status).toBe(200)
+    expect(await descriptorResponse.json()).toEqual(lagerlofOmtexterna)
+
+    const sourceResponse = await fetch(`${origin}${sourcePath}`)
+    const source = Buffer.from(await sourceResponse.arrayBuffer())
+    expect(sourceResponse.status).toBe(200)
+    expect(sourceResponse.headers.get("content-type")).toBe("text/html; charset=utf-8")
+    expect(source).toHaveLength(7_225)
+    expect(createHash("sha256").update(source).digest("hex"))
+      .toBe("ca4812e8f5a88342f1699b3a41471da556ba27760bcd51bb635c0c0e20485928")
+
+    expect(await authorDocumentRequests()).toEqual({
+      requests: [
+        { kind: "descriptor", path: descriptorPath },
+        { kind: "content", path: sourcePath }
+      ]
+    })
+
+    await fetch(`${origin}/_author_document_requests`, { method: "DELETE" })
+    for (const [path, method] of [
+      ["/v2/authors/S%C3%B6derbergH/documents/omtexterna", "GET"],
+      ["/v2/authors/LagerlofS/documents/omtexterna", "GET"],
+      [`${descriptorPath}?authority=exact`, "GET"],
+      [descriptorPath, "POST"],
+      [`${sourcePath}?authority=exact`, "GET"],
+      [sourcePath, "POST"],
+      ["/red/sla/TextkritiskaRiktlinjer.html", "GET"],
+      ["/red/sla/omtexterna/TextkritiskaRiktlinjer.html", "GET"],
+      ["/red/forfattare/LagerlofS/omtexterna/index.html", "GET"]
+    ] as const) {
+      expect(await rawStatus(path, method), `${method} ${path}`).toBe(404)
+    }
+    expect(await authorDocumentRequests()).toEqual({
+      requests: [
+        {
+          kind: "descriptor",
+          path: "/v2/authors/S%C3%B6derbergH/documents/omtexterna"
+        },
+        {
+          kind: "descriptor",
+          path: "/v2/authors/LagerlofS/documents/omtexterna"
+        }
+      ]
     })
   })
 
@@ -1030,6 +1104,51 @@ describe("v2 fixture server operations", () => {
 
     await fetch(`${origin}/_dramawebben_excluded_data_requests`, { method: "DELETE" })
     expect(await dramawebbenExcludedDataRequests()).toEqual({ requests: [] })
+  })
+
+  test("records and independently resets exact otherwise-unhandled SLA data probes", async () => {
+    const probes = [
+      {
+        method: "GET",
+        path: "/api/get_author/Lagerl%C3%B6fS?probe=%2f&repeat=one&repeat=two"
+      },
+      {
+        method: "POST",
+        path: "/api/get_authors?exclude=dramawebben&repeat=one&repeat=two"
+      },
+      {
+        method: "GET",
+        path: "/api/list_all/etext,faksimil,pdf,infopost/Lagerl%C3%B6fS?author_type=main%2Cscholar&repeat=one&repeat=two"
+      },
+      {
+        method: "GET",
+        path: "/api/list_parts_in_others_works/Lagerl%C3%B6fS?sort_field=sortkey%7Cdesc&repeat=one&repeat=two"
+      },
+      {
+        method: "GET",
+        path: "/api/query/litteraturkartan?search=%7B%22author%22%3A%22Lagerl%C3%B6fS%22%7D&repeat=one&repeat=two"
+      }
+    ] as const
+
+    for (const probe of probes) {
+      expect(await rawStatus(probe.path, probe.method), `${probe.method} ${probe.path}`).toBe(404)
+    }
+    expect(await slaExcludedDataRequests()).toEqual({ requests: probes })
+
+    expect((await dramawebbenExcludedDataRequests()).requests).toHaveLength(1)
+    await fetch(`${origin}/v2/authors/S%C3%B6derbergH/documents/presentation`)
+    expect((await authorDocumentRequests()).requests).toHaveLength(1)
+
+    await fetch(`${origin}/_sla_excluded_data_requests`, { method: "DELETE" })
+    expect(await slaExcludedDataRequests()).toEqual({ requests: [] })
+    expect((await dramawebbenExcludedDataRequests()).requests).toHaveLength(1)
+    expect((await authorDocumentRequests()).requests).toHaveLength(1)
+
+    expect(await rawStatus("/api/get_author/S%C3%B6derbergH?repeat=one&repeat=two"))
+      .toBe(404)
+    expect(await rawStatus("/api/list_all/etext,faksimil,pdf,infopost/StrindbergA?repeat=one"))
+      .toBe(404)
+    expect(await slaExcludedDataRequests()).toEqual({ requests: [] })
   })
 
   test("author document, resolver, and PDF ledgers reset independently", async () => {

@@ -1,4 +1,7 @@
-export type AuthorDocumentKind = "presentation" | "bibliografi" | "semer"
+import type { components } from "../../app/lib/api/generated/lbapi"
+
+export type AuthorDocumentKind =
+  components["schemas"]["AuthorDocumentDescriptor"]["document_kind"]
 
 export type AuthorDocumentErrorCode =
   | "author_document_author_not_found"
