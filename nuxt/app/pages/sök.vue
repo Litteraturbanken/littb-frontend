@@ -220,9 +220,16 @@ const chronologyAsyncData = useAsyncData<ChronologyEnvelope>(
     }
   },
   {
-    default: () => ({ bounds: null })
+    default: () => ({ bounds: null }),
+    immediate: !state.value.advanced
   }
 )
+const chronologyRequested = ref(!state.value.advanced)
+watch(() => state.value.advanced, advanced => {
+  if (advanced || chronologyRequested.value) return
+  chronologyRequested.value = true
+  void chronologyAsyncData.execute()
+}, { flush: "sync" })
 
 let primaryController: AbortController | null = null
 watch(primaryIdentity, () => { primaryController?.abort() }, { flush: "sync" })
@@ -453,22 +460,26 @@ async function loadOptions() {
 const initialOptions = state.value.advanced ? loadOptions() : Promise.resolve()
 await initialOptions
 const options = computed(() => optionsCache.value[routeIdentity.value] ?? null)
-const lastAcceptedChronologyBounds = shallowRef({
-  yearFrom: options.value?.yearFrom ?? chronologyData.value?.bounds?.yearFrom ?? 1800,
-  yearTo: options.value?.yearTo ?? chronologyData.value?.bounds?.yearTo ?? 1950
+const lastAcceptedAdvancedChronologyBounds = shallowRef({
+  yearFrom: options.value?.yearFrom ?? 1800,
+  yearTo: options.value?.yearTo ?? 1950
 })
 watch(options, candidate => {
   if (candidate?.yearFrom == null || candidate.yearTo == null) return
-  lastAcceptedChronologyBounds.value = {
+  lastAcceptedAdvancedChronologyBounds.value = {
     yearFrom: candidate.yearFrom,
     yearTo: candidate.yearTo
   }
 }, { flush: "sync" })
 const chronologyFloor = computed(() => (
-  options.value?.yearFrom ?? lastAcceptedChronologyBounds.value.yearFrom
+  state.value.advanced
+    ? options.value?.yearFrom ?? lastAcceptedAdvancedChronologyBounds.value.yearFrom
+    : chronologyData.value?.bounds?.yearFrom ?? 1800
 ))
 const chronologyCeiling = computed(() => (
-  options.value?.yearTo ?? lastAcceptedChronologyBounds.value.yearTo
+  state.value.advanced
+    ? options.value?.yearTo ?? lastAcceptedAdvancedChronologyBounds.value.yearTo
+    : chronologyData.value?.bounds?.yearTo ?? 1950
 ))
 const chronologyFromDraft = ref("")
 const chronologyToDraft = ref("")

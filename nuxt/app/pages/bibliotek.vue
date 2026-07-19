@@ -243,7 +243,7 @@ function parsePresentationResult(record: UnknownRecord): LibraryResult | null {
   const label = stringAt(record, "title")
   const href = safeProvidedDestination(stringAt(record, "url"))
   const author = stringAt(record, "article_author")
-  if (!label || !href || !author) return null
+  if (!label || !href) return null
   return {
     ...baseResult("presentations"),
     sourceLabel: "Kringtexter",

@@ -34,6 +34,14 @@ const presentation = {
   highlight: {}
 }
 
+const presentationWithoutArticleAuthor = {
+  _index: "presentations",
+  title: "sent på jorden (1932–1962): en samling",
+  url: "https://litteraturbanken.se/presentationer/specialomraden/Spj_utg.html",
+  article_author: null,
+  highlight: {}
+}
+
 const faksimil = {
   _index: "faksimil",
   title: "Gösta Berlings saga",
@@ -130,6 +138,17 @@ const latest = {
 
 export const libraryDefaultResults = [rodaRummet, strindberg, presentation]
 
+export const libraryProductionShapeResults = [
+  ...Array.from({ length: 99 }, (_, index) => ({
+    ...rodaRummet,
+    lbworkid: `lb-production-${index + 1}`,
+    work_titleid: `ProductionResult${index + 1}`,
+    title: `Produktionsresultat ${index + 1}`,
+    shorttitle: `Produktionsresultat ${index + 1}`
+  })),
+  presentationWithoutArticleAuthor
+]
+
 export const libraryMixedResults = [
   rodaRummet,
   faksimil,
@@ -156,7 +175,8 @@ export function libraryRelevanceResponse(query = "") {
     return { data: "invalid", hits: 0, suggest: [] }
   }
   let data = libraryDefaultResults
-  if (normalized.includes("blandat")) data = libraryMixedResults
+  if (normalized.includes("produktionsform")) data = libraryProductionShapeResults
+  else if (normalized.includes("blandat")) data = libraryMixedResults
   else if (normalized.includes("selma")) data = [selma]
   else if (normalized.includes("senaste")) data = [latest]
   else if (normalized.includes("röda")) data = [rodaRummet]

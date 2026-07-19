@@ -152,6 +152,44 @@ test("direct advanced routes use option bounds without requesting chronology", a
   expect(await requests(request, "options")).toHaveLength(1)
 })
 
+test("simple chronology bounds survive an advanced mode round trip", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1248")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("2026")
+
+  await page.locator("[data-search-advanced]").click()
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1849")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("1940")
+  await page.locator("[data-search-advanced]").click()
+
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1248")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("2026")
+  expect(await requests(request, "chronology")).toHaveLength(1)
+})
+
+test("leaving a direct advanced route loads simple chronology exactly once", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+  expect(await requests(request, "chronology")).toEqual([])
+
+  await page.locator("[data-search-advanced]").click()
+
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1248")
+  await expect(page.getByLabel("Till år", { exact: true })).toHaveValue("2026")
+  expect(await requests(request, "chronology")).toHaveLength(1)
+
+  await page.locator("[data-search-advanced]").click()
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1849")
+  await page.locator("[data-search-advanced]").click()
+  await expect(page.getByLabel("Från år", { exact: true })).toHaveValue("1248")
+  expect(await requests(request, "chronology")).toHaveLength(1)
+})
+
 test("simple-route chronology and primary search start concurrently during SSR", async ({
   page,
   request

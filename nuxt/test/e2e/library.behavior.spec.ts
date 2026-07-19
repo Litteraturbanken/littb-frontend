@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const epubPath = "/api/query_string/etext,faksimil,pdf"
 const epubQueryPrefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
 const pdfPredicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
@@ -61,6 +61,25 @@ async function pushRoute(page: import("@playwright/test").Page, path: string) {
 }
 
 test.beforeEach(async ({ request }) => reset(request))
+
+test("keeps all production-shaped rows when a presentation has no article author", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?filter=produktionsform", { waitUntil: "networkidle" })
+
+  await expect(page.locator("[data-library-result]")).toHaveCount(100)
+  const title = page.getByRole("link", {
+    name: "sent på jorden (1932–1962): en samling",
+    exact: true
+  })
+  await expect(title).toHaveAttribute(
+    "href",
+    "https://litteraturbanken.se/presentationer/specialomraden/Spj_utg.html"
+  )
+  const row = page.locator("[data-library-result]").filter({ has: title })
+  await expect(row).toHaveCount(1)
+  await expect(row.locator("td").nth(3)).toHaveText("")
+})
 
 test("client-side Library entry uses public runtime config without private-key warnings", async ({
   page,
