@@ -4,10 +4,20 @@ import type {
   ReaderFacsimileSize,
   ReaderFacsimileSizeSource,
   ReaderFacsimileSource,
-  ReaderMediaType
+  ReaderMediaType,
+  ReaderPart,
+  ReaderPartAuthor
 } from "../../shared/types/reader"
 
 type UnknownRecord = Record<string, unknown>
+
+const MAX_READER_PAGES = 100_000
+const MAX_READER_PARTS = 10_000
+const MAX_READER_PART_AUTHORS = 100
+const MAX_READER_ID_LENGTH = 100
+const MAX_READER_PAGE_NAME_LENGTH = 100
+const MAX_READER_TITLE_LENGTH = 2_000
+const READER_CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/u
 
 export interface ReaderSourcePage {
   pageIndex: number
@@ -24,6 +34,8 @@ interface ReaderWorkMetadataBase {
   displayTitle: string
   fullTitle: string
   imprintYear: string | null
+  endPageName: string | null
+  parts: ReaderPart[]
   startPageName: string | null
   titlePath: string
   workId: string
@@ -58,22 +70,40 @@ function safeNonnegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
 }
 
+function strictReaderString(value: unknown, maximumLength: number): value is string {
+  return typeof value === "string"
+    && value.length > 0
+    && value.length <= maximumLength
+    && value.trim() === value
+    && !READER_CONTROL_CHARACTERS.test(value)
+}
+
 function readerPages(value: unknown): ReaderSourcePage[] | null {
-  if (!Array.isArray(value)) return null
+  if (!Array.isArray(value) || value.length > MAX_READER_PAGES) return null
 
   const pages: ReaderSourcePage[] = []
+  const pageNames = new Set<string>()
+  const pageIndexes = new Set<number>()
   for (const page of value) {
     if (!isRecord(page)) return null
     const pageName = requiredString(page, "pagename")
     const pageIndex = page.pageindex
-    if (!pageName || !safeNonnegativeInteger(pageIndex)) return null
+    if (
+      !pageName ||
+      pageName.length > MAX_READER_PAGE_NAME_LENGTH ||
+      !safeNonnegativeInteger(pageIndex) ||
+      pageNames.has(pageName) ||
+      pageIndexes.has(pageIndex)
+    ) return null
+    pageNames.add(pageName)
+    pageIndexes.add(pageIndex)
     pages.push({ pageName, pageIndex })
   }
   return pages.sort((left, right) => left.pageIndex - right.pageIndex)
 }
 
 function facsimilePages(value: unknown): ReaderFacsimileSourcePage[] | null {
-  if (!Array.isArray(value)) return null
+  if (!Array.isArray(value) || value.length > MAX_READER_PAGES) return null
 
   const pages: ReaderFacsimileSourcePage[] = []
   const pageNames = new Set<string>()
@@ -85,6 +115,7 @@ function facsimilePages(value: unknown): ReaderFacsimileSourcePage[] | null {
     const imageNumber = page.imagenumber
     if (
       !pageName ||
+      pageName.length > MAX_READER_PAGE_NAME_LENGTH ||
       !safeNonnegativeInteger(pageIndex) ||
       !safeNonnegativeInteger(imageNumber) ||
       pageNames.has(pageName) ||
@@ -214,6 +245,149 @@ function readerPageNotFound(): never {
   throw createError({ statusCode: 404, statusMessage: "Reader page not found" })
 }
 
+function boundedRequiredString(
+  record: UnknownRecord,
+  key: string,
+  maximumLength: number
+): string {
+  const value = record[key]
+  if (typeof value !== "string" || value.length === 0 || value.length > maximumLength) {
+    invalidReaderSource()
+  }
+  return value
+}
+
+function boundedOptionalString(
+  record: UnknownRecord,
+  key: string,
+  maximumLength: number
+): string | null {
+  if (!Object.hasOwn(record, key)) return null
+  const value = record[key]
+  if (typeof value !== "string" || value.length > maximumLength) invalidReaderSource()
+  return value.length > 0 ? value : null
+}
+
+function localPartAuthorSummaries(representation: UnknownRecord): Map<string, ReaderPartAuthor> {
+  const summaries = new Map<string, ReaderPartAuthor>()
+  if (!Array.isArray(representation.authors)) return summaries
+
+  for (const value of representation.authors) {
+    if (!isRecord(value)) continue
+    const id = value.authorid
+    const name = value.full_name
+    if (
+      !strictReaderString(id, MAX_READER_ID_LENGTH)
+      || !strictReaderString(name, MAX_READER_TITLE_LENGTH)
+    ) continue
+    const surname = value.surname
+    if (
+      surname !== undefined
+      && surname !== null
+      && surname !== ""
+      && !strictReaderString(surname, MAX_READER_TITLE_LENGTH)
+    ) continue
+    summaries.set(id, {
+      id,
+      name,
+      surname: strictReaderString(surname, MAX_READER_TITLE_LENGTH)
+        ? surname
+        : null
+    })
+  }
+  return summaries
+}
+
+function readerPartAuthors(
+  value: unknown,
+  localAuthors: ReadonlyMap<string, ReaderPartAuthor>
+): ReaderPartAuthor[] {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value) || value.length > MAX_READER_PART_AUTHORS) invalidReaderSource()
+
+  return value.map(author => {
+    if (!isRecord(author)) invalidReaderSource()
+    const id = author.authorid
+    if (!strictReaderString(id, MAX_READER_ID_LENGTH)) invalidReaderSource()
+    return localAuthors.get(id) ?? { id, name: null, surname: null }
+  })
+}
+
+function readerParts(
+  representation: UnknownRecord,
+  pages: readonly ReaderSourcePage[]
+): ReaderPart[] {
+  const value = representation.parts
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value) || value.length > MAX_READER_PARTS) invalidReaderSource()
+
+  const pageIndexes = new Map(pages.map(page => [page.pageName, page.pageIndex]))
+  const localAuthors = localPartAuthorSummaries(representation)
+  return value.map((rawPart, sourceIndex) => {
+    if (!isRecord(rawPart)) invalidReaderSource()
+    const startPageName = boundedRequiredString(
+      rawPart,
+      "startpagename",
+      MAX_READER_PAGE_NAME_LENGTH
+    )
+    const endPageName = boundedRequiredString(
+      rawPart,
+      "endpagename",
+      MAX_READER_PAGE_NAME_LENGTH
+    )
+    const startPageIndex = pageIndexes.get(startPageName)
+    const endPageIndex = pageIndexes.get(endPageName)
+    if (
+      startPageIndex === undefined ||
+      endPageIndex === undefined ||
+      startPageIndex > endPageIndex
+    ) invalidReaderSource()
+
+    return {
+      authors: readerPartAuthors(rawPart.authors, localAuthors),
+      endPageIndex,
+      endPageName,
+      navTitle: boundedOptionalString(rawPart, "navtitle", MAX_READER_TITLE_LENGTH),
+      shortTitle: boundedOptionalString(rawPart, "shorttitle", MAX_READER_TITLE_LENGTH),
+      sourceIndex,
+      startPageIndex,
+      startPageName,
+      title: boundedRequiredString(rawPart, "title", MAX_READER_TITLE_LENGTH),
+      titleId: boundedOptionalString(rawPart, "titleid", MAX_READER_ID_LENGTH)
+    }
+  })
+}
+
+export function resolveReaderPartNavigation(
+  parts: readonly ReaderPart[],
+  pageIndex: number
+): {
+  currentPartIndex: number | null
+  previousPartPageName: string | null
+  nextPartPageName: string | null
+} {
+  for (const [sourceIndex, part] of parts.entries()) {
+    if (part.sourceIndex !== sourceIndex) {
+      throw new RangeError("Reader part source indexes must match source order")
+    }
+  }
+
+  const ordered = [...parts].sort((left, right) => (
+    left.startPageIndex - right.startPageIndex || left.sourceIndex - right.sourceIndex
+  ))
+  const starting = ordered.find(part => part.startPageIndex === pageIndex)
+  const active = ordered.filter(part => (
+    part.startPageIndex <= pageIndex && pageIndex <= part.endPageIndex
+  ))
+  const previous = ordered.filter(part => part.startPageIndex <= pageIndex - 1).at(-1)
+  const next = ordered.find(part => part.startPageIndex >= pageIndex + 1)
+  return {
+    currentPartIndex: (starting ?? active.at(-1))?.sourceIndex ?? null,
+    previousPartPageName: previous?.startPageName ?? null,
+    nextPartPageName: next?.startPageName ?? null
+  }
+}
+
 function commonMetadata(
   representation: UnknownRecord,
   base: string,
@@ -234,8 +408,20 @@ function commonMetadata(
 
   let startPageName: string | null = null
   if (Object.hasOwn(representation, "startpagename")) {
-    startPageName = requiredString(representation, "startpagename")
-    if (!startPageName) invalidReaderSource()
+    startPageName = boundedRequiredString(
+      representation,
+      "startpagename",
+      MAX_READER_PAGE_NAME_LENGTH
+    )
+  }
+
+  let endPageName: string | null = null
+  if (Object.hasOwn(representation, "endpagename")) {
+    endPageName = boundedRequiredString(
+      representation,
+      "endpagename",
+      MAX_READER_PAGE_NAME_LENGTH
+    )
   }
 
   const imprint = isRecord(representation.sort_date_imprint)
@@ -246,8 +432,10 @@ function commonMetadata(
     author: { id: authorId, name: authorName },
     base,
     displayTitle,
+    endPageName,
     fullTitle,
     imprintYear: imprint ?? requiredString(representation, "imprintyear"),
+    parts: [],
     startPageName,
     titlePath,
     workId
@@ -278,12 +466,15 @@ export function normalizeReaderMetadata(
       ...common,
       mediaType,
       pages,
+      parts: readerParts(representation, pages),
       preferredSize: preferredFacsimileSize(sizes),
       sizes
     }
   }
 
+  const hasExactPages = representation.pages !== undefined && representation.pages !== null
   let pages = readerPages(representation.pages)
+  if (hasExactPages && !pages) invalidReaderSource()
   if (!pages) {
     for (const sibling of raw.data) {
       if (
@@ -300,7 +491,7 @@ export function normalizeReaderMetadata(
     }
   }
   if (!pages) invalidReaderSource()
-  return { ...common, mediaType, pages }
+  return { ...common, mediaType, pages, parts: readerParts(representation, pages) }
 }
 
 export async function loadReaderMetadata(

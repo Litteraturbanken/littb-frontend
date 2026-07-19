@@ -20,6 +20,18 @@ export const readerWorkInfoResponse = {
       shorttitle: "Doktor Glas",
       sort_date_imprint: { plain: "1905" },
       startpagename: "-2",
+      endpagename: "-1",
+      parts: [
+        {
+          authors: [{ authorid: "SöderbergH" }],
+          endpagename: "-1",
+          navtitle: "Doktor Glas",
+          shorttitle: "Doktor Glas",
+          startpagename: "-3",
+          title: "Doktor Glas",
+          titleid: "DoktorGlas"
+        }
+      ],
       title: "Doktor Glas. Roman",
       titlepath: "DoktorGlas"
     }
@@ -49,6 +61,18 @@ export const readerFacsimileWorkInfoResponse = {
       shorttitle: "Gösta Berlings saga",
       sort_date_imprint: { plain: "1891" },
       startpagename: "3",
+      endpagename: "5",
+      parts: [
+        {
+          authors: [{ authorid: "LagerlöfS" }],
+          endpagename: "5",
+          navtitle: "Gösta Berlings saga",
+          shorttitle: "Gösta Berlings saga",
+          startpagename: "1",
+          title: "Gösta Berlings saga",
+          titleid: "GostaBerlingsSaga"
+        }
+      ],
       title: "Gösta Berlings saga. Roman",
       titlepath: "GostaBerlingsSaga",
       width: {
@@ -60,6 +84,81 @@ export const readerFacsimileWorkInfoResponse = {
     }
   ]
 }
+
+const partPages = ["-4", "-3", "-2", "-1", "1", "2", "3", "4", "5"]
+
+export const readerPartsWorkInfoResponse = {
+  hits: 1,
+  data: [
+    {
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      endpagename: "5",
+      lbworkid: "lb-reader-doktor-glas-parts",
+      pages: partPages.map((pagename, index) => ({ pagename, pageindex: index + 1 })),
+      parts: [
+        {
+          authors: [{ authorid: "SöderbergH" }],
+          endpagename: "1",
+          navtitle: "Yttre delen",
+          shorttitle: "Yttre",
+          startpagename: "-4",
+          title: "Den yttre delen",
+          titleid: "outer"
+        },
+        {
+          authors: [{ authorid: "MörikeE" }],
+          endpagename: "-2",
+          navtitle: "Mellandelen",
+          shorttitle: "Mellan",
+          startpagename: "-3",
+          title: "Den nästlade mellandelen",
+          titleid: "nested"
+        },
+        {
+          authors: [{ authorid: "RilkeRM" }, { authorid: "ShelleyPB" }],
+          endpagename: "1",
+          navtitle: "Överlappningen",
+          shorttitle: "Överlapp",
+          startpagename: "-2",
+          title: "Den överlappande delen",
+          titleid: "overlap"
+        },
+        {
+          authors: [{ authorid: "SöderbergH" }],
+          endpagename: "5",
+          navtitle: "Senare delen",
+          shorttitle: "Senare",
+          startpagename: "3",
+          title: "Den senare delen",
+          titleid: "later"
+        },
+        {
+          authors: [{ authorid: "MörikeE" }],
+          endpagename: "4",
+          navtitle: "Samma start",
+          shorttitle: "Samma",
+          startpagename: "3",
+          title: "Delen med samma start",
+          titleid: "same-start"
+        }
+      ],
+      shorttitle: "Doktor Glas delar",
+      startpagename: "-3",
+      title: "Doktor Glas delar. Roman",
+      titlepath: "DoktorGlasParts"
+    }
+  ]
+}
+
+export const readerPartsPageHtmlByIndex = Object.freeze(Object.fromEntries(
+  partPages.map((pageName, index) => [index + 1, `
+<div class="pname" pname="${pageName}">
+  <div class="titelsida center">
+    <div class="_p title"><span class="w">DELAD SIDA ${pageName}</span></div>
+  </div>
+</div>
+`])
+))
 
 export const readerFacsimileJpegFile = new URL(
   "./library-content/ljudlandskap.jpg",

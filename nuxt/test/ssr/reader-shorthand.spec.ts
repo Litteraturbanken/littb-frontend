@@ -172,14 +172,17 @@ test("canonical Reader rejects present malformed start metadata", async ({ reque
 test("SSR preserves the raw shorthand query in a canonical redirect", async ({ request }) => {
   const response = await request.get(
     `${shorthandBase}/DoktorGlas/etext` +
-    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F",
+    "?innehall&repeat=one&repeat=two&bare&empty=&plus=a+b&percent=a%20b" +
+      "&slash=%2f&slash=%2F",
     { maxRedirects: 0 }
   )
   expect(response.status()).toBe(307)
   expect(response.headers().location).toBe(
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
-    "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+    "?innehall&repeat=one&repeat=two&bare&empty=&plus=a+b&percent=a%20b" +
+      "&slash=%2f&slash=%2F"
   )
+  expect((await readerRequests(request)).some(path => path.includes("/res_"))).toBe(false)
 })
 
 for (const [titlePath, resolverStatus] of readerStatuses) {

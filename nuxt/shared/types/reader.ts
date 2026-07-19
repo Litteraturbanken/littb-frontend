@@ -11,6 +11,25 @@ export interface ReaderFacsimileSource extends ReaderFacsimileSizeSource {
   url: string
 }
 
+export interface ReaderPartAuthor {
+  id: string
+  name: string | null
+  surname: string | null
+}
+
+export interface ReaderPart {
+  sourceIndex: number
+  startPageName: string
+  startPageIndex: number
+  endPageName: string
+  endPageIndex: number
+  title: string
+  navTitle: string | null
+  shortTitle: string | null
+  titleId: string | null
+  authors: ReaderPartAuthor[]
+}
+
 export interface ReaderPageBase {
   author: {
     id: string
@@ -19,11 +38,18 @@ export interface ReaderPageBase {
   description: string
   fullTitle: string
   imprintYear: string | null
+  endPageName: string | null
+  currentPartIndex: number | null
   nextPageName: string | null
+  nextPartPageName: string | null
   pageCount: number
   pageIndex: number
   pageName: string
+  pageNames: string[]
+  parts: ReaderPart[]
   previousPageName: string | null
+  previousPartPageName: string | null
+  startPageName: string | null
   title: string
   workId: string
 }

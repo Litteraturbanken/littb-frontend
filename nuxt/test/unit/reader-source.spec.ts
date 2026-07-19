@@ -7,8 +7,11 @@ import {
   isReaderMediaType,
   loadReaderMetadata,
   normalizeReaderMetadata,
-  preferredFacsimileSize
+  preferredFacsimileSize,
+  resolveReaderPartNavigation
 } from "../../server/utils/reader-source"
+
+import type { ReaderPart } from "../../shared/types/reader"
 
 function representation(overrides: Record<string, unknown> = {}) {
   return {
@@ -134,6 +137,286 @@ describe("reader media and exact representation selection", () => {
         { pageIndex: 3, pageName: "1" }
       ]
     })
+  })
+
+  test.each([
+    ["page name", [
+      { pageindex: 0, pagename: "1" },
+      { pageindex: 1, pagename: "1" }
+    ]],
+    ["page index", [
+      { pageindex: 0, pagename: "1" },
+      { pageindex: 0, pagename: "2" }
+    ]]
+  ])("rejects duplicate e-text %s identities", (_label, pages) => {
+    expectSourceError(() => normalizeReaderMetadata(
+      payload(representation({ mediatype: "etext", pages })),
+      "https://example.test/base",
+      "LagerlöfS",
+      "GostaBerlingsSaga",
+      "etext"
+    ), 502)
+  })
+})
+
+describe("reader part normalization", () => {
+  const pages = ["-4", "-3", "-2", "-1", "1"].map((pagename, pageindex) => ({
+    imagenumber: pageindex + 1,
+    pageindex,
+    pagename
+  }))
+  const part = {
+    authors: [{ authorid: "SöderbergH" }],
+    endpagename: "-1",
+    navtitle: "Romanen",
+    shorttitle: "",
+    startpagename: "-3",
+    title: "Doktor Glas",
+    titleid: "part-doktor-glas"
+  }
+
+  function partMetadata(overrides: Record<string, unknown> = {}) {
+    return normalize({
+      authors: [
+        { authorid: "LagerlöfS", full_name: "Selma Lagerlöf", surname: "Lagerlöf" },
+        {
+          authorid: "SöderbergH",
+          full_name: "Hjalmar Söderberg",
+          surname: "Söderberg"
+        }
+      ],
+      endpagename: "1",
+      pages,
+      parts: [part],
+      ...overrides
+    })
+  }
+
+  test.each([
+    ["absent", undefined],
+    ["null", null],
+    ["empty", []]
+  ])("accepts a valid %s partless representation", (_label, parts) => {
+    const metadata = partMetadata({ parts })
+    expect(metadata.parts).toEqual([])
+  })
+
+  test("normalizes exact page bounds, optional labels, and local part authors", () => {
+    const metadata = partMetadata()
+
+    expect(metadata).toMatchObject({
+      endPageName: "1",
+      startPageName: "scan-A"
+    })
+    expect(metadata.parts).toEqual([{
+      sourceIndex: 0,
+      startPageName: "-3",
+      startPageIndex: 1,
+      endPageName: "-1",
+      endPageIndex: 3,
+      title: "Doktor Glas",
+      navTitle: "Romanen",
+      shortTitle: null,
+      titleId: "part-doktor-glas",
+      authors: [{
+        id: "SöderbergH",
+        name: "Hjalmar Söderberg",
+        surname: "Söderberg"
+      }]
+    }])
+  })
+
+  test("normalizes empty optional labels and an unknown valid author to null", () => {
+    const metadata = partMetadata({
+      parts: [{
+        ...part,
+        authors: [{ authorid: "Okänd" }],
+        navtitle: "",
+        shorttitle: "",
+        titleid: ""
+      }]
+    })
+
+    expect(metadata.parts[0]).toMatchObject({
+      authors: [{ id: "Okänd", name: null, surname: null }],
+      navTitle: null,
+      shortTitle: null,
+      titleId: null
+    })
+  })
+
+  test.each([
+    ["whitespace full name", { full_name: " Hjalmar Söderberg", surname: "Söderberg" }],
+    ["control full name", { full_name: "Hjalmar\nSöderberg", surname: "Söderberg" }],
+    ["whitespace surname", { full_name: "Hjalmar Söderberg", surname: " Söderberg" }],
+    ["control surname", { full_name: "Hjalmar Söderberg", surname: "Söderberg\n" }]
+  ])("does not trust a local author with %s", (_label, invalidSummary) => {
+    const metadata = partMetadata({
+      authors: [
+        { authorid: "LagerlöfS", full_name: "Selma Lagerlöf", surname: "Lagerlöf" },
+        { authorid: "SöderbergH", ...invalidSummary }
+      ]
+    })
+
+    expect(metadata.parts[0]?.authors).toEqual([{
+      id: "SöderbergH",
+      name: null,
+      surname: null
+    }])
+  })
+
+  test.each([
+    ["surrounding whitespace", " SöderbergH"],
+    ["control characters", "SöderbergH\n"]
+  ])("rejects a matching local and part author ID with %s", (_label, authorid) => {
+    expectSourceError(() => partMetadata({
+      authors: [
+        { authorid: "LagerlöfS", full_name: "Selma Lagerlöf", surname: "Lagerlöf" },
+        { authorid, full_name: "Hjalmar Söderberg", surname: "Söderberg" }
+      ],
+      parts: [{ ...part, authors: [{ authorid }] }]
+    }), 502)
+  })
+
+  test("preserves duplicate ranges and equal starts in source order", () => {
+    const metadata = partMetadata({ parts: [part, { ...part }, { ...part, title: "Tredje" }] })
+    expect(metadata.parts.map(item => ({
+      sourceIndex: item.sourceIndex,
+      startPageIndex: item.startPageIndex,
+      title: item.title
+    }))).toEqual([
+      { sourceIndex: 0, startPageIndex: 1, title: "Doktor Glas" },
+      { sourceIndex: 1, startPageIndex: 1, title: "Doktor Glas" },
+      { sourceIndex: 2, startPageIndex: 1, title: "Tredje" }
+    ])
+  })
+
+  test.each([
+    ["non-array container", {}],
+    ["non-record item", ["part"]],
+    ["missing title", [{ ...part, title: undefined }]],
+    ["wrong title type", [{ ...part, title: 1 }]],
+    ["missing start", [{ ...part, startpagename: undefined }]],
+    ["wrong start type", [{ ...part, startpagename: 1 }]],
+    ["missing end", [{ ...part, endpagename: undefined }]],
+    ["wrong end type", [{ ...part, endpagename: 1 }]],
+    ["wrong nav title type", [{ ...part, navtitle: 1 }]],
+    ["wrong short title type", [{ ...part, shorttitle: 1 }]],
+    ["wrong title id type", [{ ...part, titleid: 1 }]],
+    ["unknown start endpoint", [{ ...part, startpagename: "missing" }]],
+    ["unknown end endpoint", [{ ...part, endpagename: "missing" }]],
+    ["reversed endpoints", [{ ...part, startpagename: "-1", endpagename: "-3" }]],
+    ["non-array authors", [{ ...part, authors: {} }]],
+    ["missing author id", [{ ...part, authors: [{}] }]],
+    ["wrong author id type", [{ ...part, authors: [{ authorid: 1 }] }]]
+  ])("rejects a malformed parts graph with %s", (_label, parts) => {
+    expectSourceError(() => partMetadata({ parts }), 502)
+  })
+
+  test.each([
+    ["overlong page name", { pages: [{ imagenumber: 1, pageindex: 0, pagename: "p".repeat(101) }] }],
+    ["too many pages", { pages: Array.from({ length: 100_001 }, (_, pageindex) => ({
+      imagenumber: pageindex,
+      pageindex,
+      pagename: String(pageindex)
+    })) }],
+    ["too many parts", { parts: Array.from({ length: 10_001 }, () => part) }],
+    ["too many part authors", { parts: [{
+      ...part,
+      authors: Array.from({ length: 101 }, (_, index) => ({ authorid: `Author${index}` }))
+    }] }],
+    ["overlong part author id", { parts: [{
+      ...part,
+      authors: [{ authorid: "a".repeat(101) }]
+    }] }],
+    ["overlong part title", { parts: [{ ...part, title: "t".repeat(2_001) }] }],
+    ["overlong optional part title", { parts: [{ ...part, navtitle: "n".repeat(2_001) }] }],
+    ["overlong optional title id", { parts: [{ ...part, titleid: "i".repeat(101) }] }]
+  ])("rejects %s at the public Reader bounds", (_label, overrides) => {
+    expectSourceError(() => partMetadata(overrides), 502)
+  })
+
+  test.each([
+    ["start page", { startpagename: "s".repeat(101) }],
+    ["end page", { endpagename: "e".repeat(101) }]
+  ])("rejects an overlong declared %s name", (_label, overrides) => {
+    expectSourceError(() => partMetadata(overrides), 502)
+  })
+})
+
+describe("nested and overlapping Reader part navigation", () => {
+  function navigationPart(
+    sourceIndex: number,
+    startPageIndex: number,
+    endPageIndex: number,
+    startPageName = String(startPageIndex)
+  ): ReaderPart {
+    return {
+      authors: [],
+      endPageIndex,
+      endPageName: String(endPageIndex),
+      navTitle: null,
+      shortTitle: null,
+      sourceIndex,
+      startPageIndex,
+      startPageName,
+      title: `Part ${sourceIndex}`,
+      titleId: null
+    }
+  }
+
+  const parts: ReaderPart[] = [
+    navigationPart(0, 0, 4),
+    navigationPart(1, 1, 2),
+    navigationPart(2, 3, 4, "2"),
+    navigationPart(3, 6, 7),
+    navigationPart(4, 6, 8),
+    navigationPart(5, 9, 10)
+  ]
+
+  test("selects the last active stable overlap and bounds neighboring starts", () => {
+    expect(resolveReaderPartNavigation(parts, 4)).toEqual({
+      currentPartIndex: 2,
+      previousPartPageName: "2",
+      nextPartPageName: "6"
+    })
+  })
+
+  test("chooses the first source entry at an exact equal start", () => {
+    expect(resolveReaderPartNavigation(parts, 6)).toEqual({
+      currentPartIndex: 3,
+      previousPartPageName: "2",
+      nextPartPageName: "9"
+    })
+  })
+
+  test("chooses the last active entry when inside equal-start ranges", () => {
+    expect(resolveReaderPartNavigation(parts, 7)).toEqual({
+      currentPartIndex: 4,
+      previousPartPageName: "6",
+      nextPartPageName: "9"
+    })
+  })
+
+  test("keeps gaps empty while retaining nearest bounded part starts", () => {
+    expect(resolveReaderPartNavigation(parts, 5)).toEqual({
+      currentPartIndex: null,
+      previousPartPageName: "2",
+      nextPartPageName: "6"
+    })
+  })
+
+  test.each([
+    [-1, { currentPartIndex: null, previousPartPageName: null, nextPartPageName: "0" }],
+    [11, { currentPartIndex: null, previousPartPageName: "9", nextPartPageName: null }]
+  ])("bounds navigation outside all parts at page %s", (pageIndex, expected) => {
+    expect(resolveReaderPartNavigation(parts, pageIndex)).toEqual(expected)
+  })
+
+  test("rejects a graph whose public source indexes no longer match source order", () => {
+    expect(() => resolveReaderPartNavigation([
+      navigationPart(1, 0, 1)
+    ], 0)).toThrow(RangeError)
   })
 })
 

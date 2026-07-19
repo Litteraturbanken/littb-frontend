@@ -23,7 +23,10 @@ async function resetReader(request: APIRequestContext) {
     request.delete(`${fixture}/_reader_jpeg_requests`),
     request.delete(`${fixture}/_reader_hit_requests`),
     request.delete(`${fixture}/_reader_hit_failure`),
-    request.delete(`${fixture}/_reader_hit_delays`)
+    request.delete(`${fixture}/_reader_hit_delays`),
+    request.delete(`${fixture}/_author_resolve_requests`),
+    request.delete(`${fixture}/_author_resolve_failure`),
+    request.delete(`${fixture}/_author_resolve_scenario`)
   ])
 }
 
@@ -53,6 +56,17 @@ async function readerHitRequests(request: APIRequestContext): Promise<Array<{
   query: string
 }>> {
   return (await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests
+}
+
+async function authorResolveRequests(request: APIRequestContext): Promise<Array<{
+  path: string
+  body: unknown
+}>> {
+  return (await (await request.get(`${fixture}/_author_resolve_requests`)).json()).requests
+}
+
+async function setAuthorResolveScenario(request: APIRequestContext, scenario: string) {
+  await request.put(`${fixture}/_author_resolve_scenario`, { data: { scenario } })
 }
 
 test.beforeEach(async ({ request }) => resetReader(request))
@@ -95,15 +109,32 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     author: { id: "LagerlöfS", name: "Selma Lagerlöf" },
     description: "Gösta Berlings saga av Selma Lagerlöf, sida 3 som faksimil.",
     fullTitle: "Gösta Berlings saga. Roman",
+    currentPartIndex: 0,
+    endPageName: "5",
     imageNumber: 9,
     imprintYear: "1891",
     mediaType: "faksimil",
     nextPageName: "5",
+    nextPartPageName: null,
     pageCount: 3,
     pageIndex: 1,
     pageName: "3",
+    pageNames: ["1", "3", "5"],
+    parts: [{
+      authors: [{ id: "LagerlöfS", name: "Selma Lagerlöf", surname: "Lagerlöf" }],
+      endPageIndex: 2,
+      endPageName: "5",
+      navTitle: "Gösta Berlings saga",
+      shortTitle: "Gösta Berlings saga",
+      sourceIndex: 0,
+      startPageIndex: 0,
+      startPageName: "1",
+      title: "Gösta Berlings saga",
+      titleId: "GostaBerlingsSaga"
+    }],
     preferredSize: 3,
     previousPageName: "1",
+    previousPartPageName: "1",
     sources: [
       {
         size: 2,
@@ -134,6 +165,7 @@ test("canonical API returns the exact faksimil image arm without fetching assets
         width: 1250
       }
     ],
+    startPageName: "3",
     title: "Gösta Berlings saga",
     workId: "lb-reader-gosta-berlings-saga"
   })
@@ -147,7 +179,237 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     jpeg: []
   })
   expect(await readerHitRequests(request)).toEqual([])
+  expect(await authorResolveRequests(request)).toEqual([])
 })
+
+test("canonical API projects source-ordered nested Reader navigation and resolves missing authors once", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/api/reader/S%C3%B6derbergH/DoktorGlasParts/-1/etext"
+  )
+  expect(response.status()).toBe(200)
+  const body = await response.json()
+
+  expect(body).toMatchObject({
+    currentPartIndex: 2,
+    endPageName: "5",
+    nextPartPageName: "3",
+    pageIndex: 4,
+    pageName: "-1",
+    pageNames: ["-4", "-3", "-2", "-1", "1", "2", "3", "4", "5"],
+    previousPartPageName: "-2",
+    startPageName: "-3"
+  })
+  expect(body.parts).toEqual([
+    expect.objectContaining({
+      authors: [{ id: "SöderbergH", name: "Hjalmar Söderberg", surname: "Söderberg" }],
+      sourceIndex: 0,
+      startPageName: "-4",
+      endPageName: "1"
+    }),
+    expect.objectContaining({
+      authors: [{ id: "MörikeE", name: "Eduard Mörike", surname: "Mörike" }],
+      sourceIndex: 1
+    }),
+    expect.objectContaining({
+      authors: [
+        { id: "RilkeRM", name: "Rainer Maria Rilke", surname: "Rilke" },
+        { id: "ShelleyPB", name: "Percy Bysshe Shelley", surname: "Shelley" }
+      ],
+      sourceIndex: 2
+    }),
+    expect.objectContaining({ sourceIndex: 3 }),
+    expect.objectContaining({ sourceIndex: 4 })
+  ])
+  expect(await authorResolveRequests(request)).toEqual([{
+    path: "/private-v2/authors/resolve",
+    body: { author_ids: ["MörikeE", "RilkeRM", "ShelleyPB"] }
+  }])
+  expect(await separateReaderRequests(request)).toEqual({
+    metadata: [
+      "/api/get_work_info?authorid=S%C3%B6derbergH" +
+        "&exclude=content_vector&titlepath=DoktorGlasParts"
+    ],
+    html: ["/txt/lb-reader-doktor-glas-parts/res_00004.html?username=app"],
+    ocr: [],
+    jpeg: []
+  })
+})
+
+test("navigation projection keeps a page gap empty and chooses the first same-start source", async ({
+  request
+}) => {
+  const gap = await request.get("/api/reader/S%C3%B6derbergH/DoktorGlasParts/2/etext")
+  expect(gap.status()).toBe(200)
+  expect(await gap.json()).toMatchObject({
+    currentPartIndex: null,
+    previousPartPageName: "-2",
+    nextPartPageName: "3"
+  })
+
+  await resetReader(request)
+  const tie = await request.get("/api/reader/S%C3%B6derbergH/DoktorGlasParts/3/etext")
+  expect(tie.status()).toBe(200)
+  expect(await tie.json()).toMatchObject({
+    currentPartIndex: 3,
+    previousPartPageName: "-2",
+    nextPartPageName: null
+  })
+})
+
+test("partless metadata publishes empty navigation without calling the author resolver", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/api/reader/S%C3%B6derbergH/PartlessReader/-2/etext"
+  )
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toMatchObject({
+    currentPartIndex: null,
+    nextPartPageName: null,
+    parts: [],
+    previousPartPageName: null
+  })
+  expect(await authorResolveRequests(request)).toEqual([])
+})
+
+for (const title of [
+  "MalformedPartsReader",
+  "UnknownPartPageReader",
+  "ReversedPartReader"
+] as const) {
+  test(`${title} fails before resolver and page asset IO`, async ({ request }) => {
+    const response = await request.get(
+      `/api/reader/S%C3%B6derbergH/${title}/-1/etext`
+    )
+    expect(response.status()).toBe(502)
+    expect(await authorResolveRequests(request)).toEqual([])
+    const ledgers = await separateReaderRequests(request)
+    expect(ledgers.html).toEqual([])
+    expect(ledgers.ocr).toEqual([])
+    expect(ledgers.jpeg).toEqual([])
+  })
+}
+
+for (const scenario of [
+  "primitive",
+  "wrong-container",
+  "non-array-items",
+  "oversized-items",
+  "extra-top-key",
+  "malformed-item",
+  "extra-item-key",
+  "duplicate",
+  "unrequested",
+  "empty-id",
+  "whitespace-id",
+  "control-id",
+  "overlong-id",
+  "empty-name",
+  "whitespace-name",
+  "control-name",
+  "overlong-name",
+  "wrong-surname",
+  "empty-surname",
+  "whitespace-surname",
+  "control-surname",
+  "overlong-surname",
+  "disconnect"
+] as const) {
+  test(`rejects malformed author resolver scenario ${scenario} before page IO`, async ({
+    request
+  }) => {
+    await setAuthorResolveScenario(request, scenario)
+    const response = await request.get(
+      "/api/reader/S%C3%B6derbergH/DoktorGlasParts/-1/etext"
+    )
+    expect(response.status()).toBe(502)
+    expect((await authorResolveRequests(request))).toHaveLength(1)
+    expect((await separateReaderRequests(request)).html).toEqual([])
+  })
+}
+
+test("contains an author resolver non-200 before page IO", async ({ request }) => {
+  await request.put(`${fixture}/_author_resolve_failure`)
+  const response = await request.get(
+    "/api/reader/S%C3%B6derbergH/DoktorGlasParts/-1/etext"
+  )
+  expect(response.status()).toBe(502)
+  expect((await authorResolveRequests(request))).toHaveLength(1)
+  expect((await separateReaderRequests(request)).html).toEqual([])
+})
+
+for (const [title, expectedCalls] of [
+  ["ReaderTooManyAuthors", 0],
+  ["ReaderUnsafePartAuthor", 0]
+] as const) {
+  test(`${title} is rejected before resolver and page IO`, async ({ request }) => {
+    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-4/etext`)
+    expect(response.status()).toBe(502)
+    expect(await authorResolveRequests(request)).toHaveLength(expectedCalls)
+    expect((await separateReaderRequests(request)).html).toEqual([])
+  })
+}
+
+for (const [title, expectedAuthor] of [
+  [
+    "ReaderAuthorOmission",
+    { id: "MissingSummaryAuthor", name: "MissingSummaryAuthor", surname: "MissingSummaryAuthor" }
+  ],
+  [
+    "ReaderAuthorNullSurname",
+    { id: "NullSurnameAuthor", name: "Förnamn Efternamn", surname: "Förnamn Efternamn" }
+  ]
+] as const) {
+  test(`${title} completes deterministic author fallbacks`, async ({ request }) => {
+    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-1/etext`)
+    expect(response.status()).toBe(200)
+    const body = await response.json()
+    expect(body.parts[0].authors).toEqual([expectedAuthor])
+    expect(await authorResolveRequests(request)).toHaveLength(1)
+    expect((await separateReaderRequests(request)).html).toHaveLength(1)
+  })
+}
+
+for (const title of [
+  "ReaderLocalWhitespaceName",
+  "ReaderLocalControlName",
+  "ReaderLocalWhitespaceSurname",
+  "ReaderLocalControlSurname"
+] as const) {
+  test(`${title} resolves instead of trusting malformed local author text`, async ({
+    request
+  }) => {
+    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-1/etext`)
+    expect(response.status()).toBe(200)
+    const body = await response.json()
+    expect(body.parts[0].authors).toEqual([{
+      id: "MörikeE",
+      name: "Eduard Mörike",
+      surname: "Mörike"
+    }])
+    expect(await authorResolveRequests(request)).toEqual([{
+      path: "/private-v2/authors/resolve",
+      body: { author_ids: ["MörikeE"] }
+    }])
+    expect((await separateReaderRequests(request)).html).toHaveLength(1)
+  })
+}
+
+for (const title of [
+  "ReaderMatchingWhitespaceAuthorId",
+  "ReaderMatchingControlAuthorId"
+] as const) {
+  test(`${title} rejects an unsafe locally matched author before resolver and page IO`, async ({
+    request
+  }) => {
+    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-1/etext`)
+    expect(response.status()).toBe(502)
+    expect(await authorResolveRequests(request)).toEqual([])
+    expect((await separateReaderRequests(request)).html).toEqual([])
+  })
+}
 
 test("the exact faksimil page renders its fixed scan without e-text output", async ({
   request

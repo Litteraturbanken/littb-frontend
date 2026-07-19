@@ -30,6 +30,8 @@ import {
   readerFacsimileJpegFile,
   readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
+  readerPartsPageHtmlByIndex,
+  readerPartsWorkInfoResponse,
   readerSearchHitResponse,
   readerWorkInfoResponse,
   sharedReaderCss,
@@ -229,6 +231,7 @@ let workLookupDelays = {}
 let authorResolveRequests = []
 let authorResolveFailure = false
 let authorResolveDelays = {}
+let authorResolveScenario = null
 let authorProfileRequests = []
 let authorProfileFailure = false
 let authorWorksRequests = []
@@ -422,6 +425,10 @@ function waitForTextSearchDelay(operation, body) {
 
 function readerRepresentation(titlePath, overrides = {}) {
   const representation = structuredClone(readerWorkInfoResponse.data[0])
+  if (Object.hasOwn(overrides, "pages") && !Object.hasOwn(overrides, "parts")) {
+    representation.parts = []
+    delete representation.endpagename
+  }
   return {
     ...representation,
     shorttitle: titlePath,
@@ -442,8 +449,162 @@ function readerFacsimileRepresentation(titlePath, overrides = {}) {
   }
 }
 
+function readerPartsRepresentation(titlePath, overrides = {}) {
+  const representation = structuredClone(readerPartsWorkInfoResponse.data[0])
+  return {
+    ...representation,
+    shorttitle: titlePath,
+    title: `${titlePath}. Roman`,
+    titlepath: titlePath,
+    ...overrides
+  }
+}
+
+function readerLocalPartAuthorRepresentation(titlePath, author) {
+  const representation = structuredClone(readerPartsWorkInfoResponse.data[0])
+  return readerPartsRepresentation(titlePath, {
+    authors: [representation.authors[0], author],
+    parts: [{
+      ...representation.parts[0],
+      authors: [{ authorid: author.authorid }]
+    }]
+  })
+}
+
 function readerMetadataResponse(titlePath) {
   switch (titlePath) {
+    case "DoktorGlasParts":
+      return readerPartsWorkInfoResponse
+    case "PartlessReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, { endpagename: "-1", parts: [] })]
+      }
+    case "ReaderAuthorOmission":
+      return {
+        hits: 1,
+        data: [readerPartsRepresentation(titlePath, {
+          parts: [{
+            ...structuredClone(readerPartsWorkInfoResponse.data[0].parts[0]),
+            authors: [{ authorid: "MissingSummaryAuthor" }]
+          }]
+        })]
+      }
+    case "ReaderAuthorNullSurname":
+      return {
+        hits: 1,
+        data: [readerPartsRepresentation(titlePath, {
+          parts: [{
+            ...structuredClone(readerPartsWorkInfoResponse.data[0].parts[0]),
+            authors: [{ authorid: "NullSurnameAuthor" }]
+          }]
+        })]
+      }
+    case "ReaderLocalWhitespaceName":
+      return {
+        hits: 1,
+        data: [readerLocalPartAuthorRepresentation(titlePath, {
+          authorid: "MörikeE",
+          full_name: " Eduard Mörike",
+          surname: "Mörike"
+        })]
+      }
+    case "ReaderLocalControlName":
+      return {
+        hits: 1,
+        data: [readerLocalPartAuthorRepresentation(titlePath, {
+          authorid: "MörikeE",
+          full_name: "Eduard\nMörike",
+          surname: "Mörike"
+        })]
+      }
+    case "ReaderLocalWhitespaceSurname":
+      return {
+        hits: 1,
+        data: [readerLocalPartAuthorRepresentation(titlePath, {
+          authorid: "MörikeE",
+          full_name: "Eduard Mörike",
+          surname: " Mörike"
+        })]
+      }
+    case "ReaderLocalControlSurname":
+      return {
+        hits: 1,
+        data: [readerLocalPartAuthorRepresentation(titlePath, {
+          authorid: "MörikeE",
+          full_name: "Eduard Mörike",
+          surname: "Mörike\n"
+        })]
+      }
+    case "ReaderMatchingWhitespaceAuthorId":
+      return {
+        hits: 1,
+        data: [readerLocalPartAuthorRepresentation(titlePath, {
+          authorid: " MörikeE",
+          full_name: "Eduard Mörike",
+          surname: "Mörike"
+        })]
+      }
+    case "ReaderMatchingControlAuthorId":
+      return {
+        hits: 1,
+        data: [readerLocalPartAuthorRepresentation(titlePath, {
+          authorid: "MörikeE\n",
+          full_name: "Eduard Mörike",
+          surname: "Mörike"
+        })]
+      }
+    case "ReaderUnsafePartAuthor":
+      return {
+        hits: 1,
+        data: [readerPartsRepresentation(titlePath, {
+          parts: [{
+            ...structuredClone(readerPartsWorkInfoResponse.data[0].parts[0]),
+            authors: [{ authorid: " unsafe " }]
+          }]
+        })]
+      }
+    case "ReaderTooManyAuthors":
+      return {
+        hits: 1,
+        data: [readerPartsRepresentation(titlePath, {
+          parts: Array.from({ length: 51 }, (_, index) => ({
+            authors: [{ authorid: `UnresolvedAuthor${index}` }],
+            endpagename: "-4",
+            navtitle: `Del ${index}`,
+            shorttitle: `Del ${index}`,
+            startpagename: "-4",
+            title: `Del ${index}`,
+            titleid: `part-${index}`
+          }))
+        })]
+      }
+    case "MalformedPartsReader":
+      return {
+        hits: 1,
+        data: [readerPartsRepresentation(titlePath, { parts: {} })]
+      }
+    case "UnknownPartPageReader":
+      return {
+        hits: 1,
+        data: [readerPartsRepresentation(titlePath, {
+          parts: [{
+            ...structuredClone(readerPartsWorkInfoResponse.data[0].parts[0]),
+            startpagename: "missing"
+          }]
+        })]
+      }
+    case "ReversedPartReader":
+      return {
+        hits: 1,
+        data: [readerPartsRepresentation(titlePath, {
+          parts: [{
+            ...structuredClone(readerPartsWorkInfoResponse.data[0].parts[0]),
+            startpagename: "1",
+            endpagename: "-4"
+          }]
+        })]
+      }
     case "GostaBerlingsSaga":
       return readerFacsimileWorkInfoResponse
     case "MalformedFacsimileImageReader":
@@ -1427,6 +1588,18 @@ const server = createServer(async (request, response) => {
     authorResolveDelays = {}
     return sendJson(response, 200, { delays: authorResolveDelays })
   }
+  if (url.pathname === "/_author_resolve_scenario" && request.method === "GET") {
+    return sendJson(response, 200, { scenario: authorResolveScenario })
+  }
+  if (url.pathname === "/_author_resolve_scenario" && request.method === "PUT") {
+    const body = await readJson(request)
+    authorResolveScenario = typeof body.scenario === "string" ? body.scenario : null
+    return sendJson(response, 200, { scenario: authorResolveScenario })
+  }
+  if (url.pathname === "/_author_resolve_scenario" && request.method === "DELETE") {
+    authorResolveScenario = null
+    return sendJson(response, 200, { scenario: authorResolveScenario })
+  }
   if (url.pathname === "/_author_profile_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: authorProfileRequests })
   }
@@ -2194,6 +2367,16 @@ const server = createServer(async (request, response) => {
     if (titlePath === "UnavailableReader") {
       return sendBody(response, 503, "text/plain; charset=utf-8", "reader unavailable")
     }
+    if (
+      titlePath === "DoktorGlasParts"
+      && (
+        url.searchParams.size !== 3
+        || url.searchParams.get("authorid") !== "SöderbergH"
+        || url.searchParams.get("exclude") !== "content_vector"
+      )
+    ) {
+      return validationError(response)
+    }
     return sendJson(response, 200, readerMetadataResponse(titlePath))
   }
 
@@ -2208,6 +2391,20 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
     }
     const pageHtml = readerPageHtmlByIndex[Number(readerPageMatch[1])]
+    return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
+  }
+
+  const readerPartsPageMatch = request.method === "GET"
+    ? /^\/txt\/lb-reader-doktor-glas-parts\/res_0000([1-9])\.html$/.exec(url.pathname)
+    : null
+  if (readerPartsPageMatch) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    const pageHtml = readerPartsPageHtmlByIndex[Number(readerPartsPageMatch[1])]
     return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
   }
 
@@ -2505,6 +2702,11 @@ const server = createServer(async (request, response) => {
       })
     }
 
+    if (authorResolveScenario === "disconnect") {
+      request.socket.destroy()
+      return
+    }
+
     const authorsById = new Map(
       [
         ...historyAuthorSummaries,
@@ -2512,15 +2714,71 @@ const server = createServer(async (request, response) => {
           author_id: "SöderbergH",
           full_name: "Hjalmar Söderberg",
           surname: "Söderberg"
+        },
+        {
+          author_id: "MörikeE",
+          full_name: "Eduard Mörike",
+          surname: "Mörike"
+        },
+        {
+          author_id: "RilkeRM",
+          full_name: "Rainer Maria Rilke",
+          surname: "Rilke"
+        },
+        {
+          author_id: "ShelleyPB",
+          full_name: "Percy Bysshe Shelley",
+          surname: "Shelley"
+        },
+        {
+          author_id: "NullSurnameAuthor",
+          full_name: "Förnamn Efternamn",
+          surname: null
         }
       ].map(author => [author.author_id, author])
     )
-    return sendJson(response, 200, {
-      items: authorIds.flatMap(authorId => {
-        const author = authorsById.get(authorId)
-        return author ? [author] : []
-      })
+    const items = authorIds.flatMap(authorId => {
+      const author = authorsById.get(authorId)
+      return author ? [author] : []
     })
+    const first = items[0] || {
+      author_id: authorIds[0],
+      full_name: "Fixture Author",
+      surname: "Author"
+    }
+    const scenarioResponses = {
+      primitive: "malformed",
+      "wrong-container": [],
+      "non-array-items": { items: {} },
+      "oversized-items": { items: Array.from({ length: 51 }, () => first) },
+      "extra-top-key": { items, unexpected: true },
+      "malformed-item": { items: [null] },
+      "extra-item-key": { items: [{ ...first, unexpected: true }] },
+      duplicate: { items: [first, first] },
+      unrequested: {
+        items: [{ author_id: "OtherAuthor", full_name: "Other Author", surname: "Author" }]
+      },
+      "empty-id": { items: [{ ...first, author_id: "" }] },
+      "whitespace-id": { items: [{ ...first, author_id: ` ${first.author_id}` }] },
+      "control-id": { items: [{ ...first, author_id: `${first.author_id}\n` }] },
+      "overlong-id": { items: [{ ...first, author_id: "a".repeat(101) }] },
+      "empty-name": { items: [{ ...first, full_name: "" }] },
+      "whitespace-name": { items: [{ ...first, full_name: ` ${first.full_name}` }] },
+      "control-name": { items: [{ ...first, full_name: `${first.full_name}\n` }] },
+      "overlong-name": { items: [{ ...first, full_name: "n".repeat(2_001) }] },
+      "wrong-surname": { items: [{ ...first, surname: 42 }] },
+      "empty-surname": { items: [{ ...first, surname: "" }] },
+      "whitespace-surname": { items: [{ ...first, surname: ` ${first.surname || "Author"}` }] },
+      "control-surname": { items: [{ ...first, surname: `${first.surname || "Author"}\n` }] },
+      "overlong-surname": { items: [{ ...first, surname: "s".repeat(2_001) }] }
+    }
+    return sendJson(
+      response,
+      200,
+      authorResolveScenario && Object.hasOwn(scenarioResponses, authorResolveScenario)
+        ? scenarioResponses[authorResolveScenario]
+        : { items }
+    )
   }
 
   const slaArticleCandidate = request.method === "GET" && !url.search

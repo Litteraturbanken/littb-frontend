@@ -56,6 +56,7 @@ import {
 import {
   readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
+  readerPartsWorkInfoResponse,
   readerSearchHitResponse
 } from "../fixtures/reader-data.mjs"
 
@@ -450,6 +451,7 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_author_resolve_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_resolve_failure`, { method: "DELETE" }),
       fetch(`${origin}/_author_resolve_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_author_resolve_scenario`, { method: "DELETE" }),
       fetch(`${origin}/_author_profile_requests`, { method: "DELETE" }),
       fetch(`${origin}/_author_profile_failure`, { method: "DELETE" }),
       fetch(`${origin}/_author_works_requests`, { method: "DELETE" }),
@@ -989,6 +991,46 @@ describe("v2 fixture server operations", () => {
       requests: [metadataPath]
     })
     expect(await readerHitRequests()).toEqual({ requests: [] })
+  })
+
+  test("serves the part-rich Reader graph only for the exact metadata query", async () => {
+    const metadataPath =
+      `/api/get_work_info?authorid=${encodeURIComponent("SöderbergH")}`
+      + "&exclude=content_vector&titlepath=DoktorGlasParts"
+    const metadata = await fetch(`${origin}${metadataPath}`)
+
+    expect(metadata.status).toBe(200)
+    expect(await metadata.json()).toEqual(readerPartsWorkInfoResponse)
+    expect(readerPartsWorkInfoResponse.data[0].parts.map(part => ({
+      authors: part.authors.map(author => author.authorid),
+      end: part.endpagename,
+      start: part.startpagename,
+      title: part.title
+    }))).toEqual([
+      { authors: ["SöderbergH"], end: "1", start: "-4", title: "Den yttre delen" },
+      { authors: ["MörikeE"], end: "-2", start: "-3", title: "Den nästlade mellandelen" },
+      {
+        authors: ["RilkeRM", "ShelleyPB"],
+        end: "1",
+        start: "-2",
+        title: "Den överlappande delen"
+      },
+      { authors: ["SöderbergH"], end: "5", start: "3", title: "Den senare delen" },
+      { authors: ["MörikeE"], end: "4", start: "3", title: "Delen med samma start" }
+    ])
+    expect(await (await fetch(`${origin}/_reader_metadata_requests`)).json()).toEqual({
+      requests: [metadataPath]
+    })
+
+    const withExtra = await fetch(`${origin}${metadataPath}&unexpected=1`)
+    expect(withExtra.status).toBe(422)
+    expect(await withExtra.json()).toEqual({
+      error: {
+        code: "validation_error",
+        message: "Request validation failed",
+        details: null
+      }
+    })
   })
 
   test("records Reader metadata, HTML, OCR, JPEG, and search hits separately", async () => {
