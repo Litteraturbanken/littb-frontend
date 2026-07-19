@@ -10,23 +10,34 @@ const expectedDocumentRequests = [
   { kind: "content", path: "/red/sla/omtexterna.html" }
 ] as const
 const adjacentLedgers = [
-  "/_requests",
-  "/_sla_excluded_data_requests",
-  "/_author_profile_requests",
-  "/_author_works_requests",
-  "/_home_requests",
-  "/_library_query_requests",
-  "/_reader_requests",
-  "/_reader_metadata_requests",
-  "/_reader_html_requests",
-  "/_reader_ocr_requests",
-  "/_reader_jpeg_requests",
-  "/_reader_hit_requests",
-  "/_presentation_requests",
-  "/_dramawebben_excluded_data_requests",
-  "/_author_document_asset_requests",
-  "/_author_document_pdf_requests",
-  "/_author_document_redirect_target_requests"
+  { path: "/_requests", field: "requests" },
+  { path: "/_contact_submissions", field: "contactSubmissions" },
+  { path: "/_quick_search_requests", field: "queries" },
+  { path: "/_work_lookup_requests", field: "requests" },
+  { path: "/_author_resolve_requests", field: "requests" },
+  { path: "/_author_profile_requests", field: "requests" },
+  { path: "/_author_works_requests", field: "requests" },
+  { path: "/_home_requests", field: "requests" },
+  { path: "/_presentation_requests", field: "requests" },
+  { path: "/_litteraturkartan_requests", field: "requests" },
+  { path: "/_reader_requests", field: "requests" },
+  { path: "/_reader_metadata_requests", field: "requests" },
+  { path: "/_reader_html_requests", field: "requests" },
+  { path: "/_reader_ocr_requests", field: "requests" },
+  { path: "/_reader_jpeg_requests", field: "requests" },
+  { path: "/_reader_hit_requests", field: "requests" },
+  { path: "/_export_faksimil_requests", field: "requests" },
+  { path: "/_library_relevance_requests", field: "requests" },
+  { path: "/_library_query_requests", field: "requests" },
+  { path: "/_dramawebben_document_requests", field: "requests" },
+  { path: "/_dramawebben_document_redirect_target_requests", field: "requests" },
+  { path: "/_dramawebben_excluded_data_requests", field: "requests" },
+  { path: "/_sla_excluded_data_requests", field: "requests" },
+  { path: "/_author_document_asset_requests", field: "requests" },
+  { path: "/_author_document_redirect_target_requests", field: "requests" },
+  { path: "/_legacy_author_route_requests", field: "requests" },
+  { path: "/_author_document_pdf_requests", field: "requests" },
+  { path: "/_text_search/requests", field: "textSearchOperations" }
 ] as const
 
 async function reset(request: APIRequestContext) {
@@ -34,7 +45,7 @@ async function reset(request: APIRequestContext) {
     request.delete(`${fixture}/_author_document_requests`),
     request.delete(`${fixture}/_author_document_failure`),
     request.delete(`${fixture}/_author_document_delay`),
-    ...adjacentLedgers.map(ledger => request.delete(`${fixture}${ledger}`))
+    ...adjacentLedgers.map(ledger => request.delete(`${fixture}${ledger.path}`))
   ])
 }
 
@@ -44,9 +55,14 @@ async function documentRequests(request: APIRequestContext) {
 
 async function expectAdjacentLedgersEmpty(request: APIRequestContext) {
   for (const ledger of adjacentLedgers) {
-    const response = await request.get(`${fixture}${ledger}`)
-    expect(response.status(), ledger).toBe(200)
-    expect((await response.json()).requests, ledger).toEqual([])
+    const response = await request.get(`${fixture}${ledger.path}`)
+    expect(response.status(), ledger.path).toBe(200)
+    const payload = await response.json()
+    if (ledger.field === "textSearchOperations") {
+      expect(payload, ledger.path).toEqual({ results: [], count: [], options: [] })
+    } else {
+      expect(payload[ledger.field], ledger.path).toEqual([])
+    }
   }
 }
 
@@ -63,35 +79,75 @@ async function routerPush(page: Page, path: string) {
   }, path)
 }
 
-function collectProblems(page: Page, ignored: RegExp[] = []) {
+function collectProblems(page: Page) {
   const problems: string[] = []
   page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
   page.on("console", message => {
-    if ((["error", "warning"].includes(message.type()) || /hydration|unhandled/iu.test(message.text()))
-      && !ignored.some(pattern => pattern.test(message.text()))) {
+    if (["error", "warning"].includes(message.type()) || /hydration|unhandled/iu.test(message.text())) {
       problems.push(`console ${message.type()}: ${message.text()}`)
     }
   })
   return problems
 }
 
+function collectExpectedTopLevel502(page: Page) {
+  const problems: string[] = []
+  const diagnostics: string[] = []
+  const navigationResponses: Array<{ path: string, status: number }> = []
+  const exactDiagnostic = "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+  page.on("pageerror", error => problems.push(`pageerror: ${error.message}`))
+  page.on("console", message => {
+    if (message.type() === "error" && message.text() === exactDiagnostic) {
+      diagnostics.push(message.text())
+    } else if (["error", "warning"].includes(message.type())
+      || /hydration|unhandled/iu.test(message.text())) {
+      problems.push(`console ${message.type()}: ${message.text()}`)
+    }
+  })
+  page.on("response", response => {
+    if (response.request().isNavigationRequest() && response.status() >= 400) {
+      const url = new URL(response.url())
+      navigationResponses.push({ path: `${url.pathname}${url.search}`, status: response.status() })
+    }
+  })
+  return { diagnostics, navigationResponses, problems }
+}
+
 async function installDataFirewall(page: Page) {
   const browserDocumentRequests: string[] = []
   const unexpected: string[] = []
+  const allowedDocumentRequests = new Set([
+    "/api/author-documents/Lagerl%C3%B6fS/omtexterna",
+    "/api/author-documents/Lagerl%C3%B6fS/bibliografi"
+  ])
+  page.on("request", request => {
+    const url = new URL(request.url())
+    if (url.pathname.startsWith("/api/author-documents/")) {
+      browserDocumentRequests.push(`${url.pathname}${url.search}`)
+    }
+  })
   await page.route("**/*", route => {
     const request = route.request()
     const url = new URL(request.url())
     const label = `${request.method()} ${url.href}`
     if (url.pathname.startsWith("/api/author-documents/")) {
-      browserDocumentRequests.push(`${url.pathname}${url.search}`)
-      return route.continue()
+      if (request.method() === "GET"
+        && allowedDocumentRequests.has(`${url.pathname}${url.search}`)) {
+        return route.continue()
+      }
+      unexpected.push(label)
+      return route.abort("blockedbyclient")
     }
-    const productionOrigin = url.hostname === "litteraturbanken.se"
-      || url.hostname.endsWith(".litteraturbanken.se")
-    const unexpectedLocalData = url.port === "4100"
-      || url.pathname.startsWith("/api/")
-      || url.pathname.startsWith("/legacy-api/")
-    if (productionOrigin || unexpectedLocalData) {
+    const isHttp = url.protocol === "http:" || url.protocol === "https:"
+    const isLocal = url.hostname === "127.0.0.1" || url.hostname === "localhost"
+    const isDataRequest = ["fetch", "xhr", "eventsource", "websocket"]
+      .includes(request.resourceType())
+    const isKnownDataOrSourcePath = /^\/(?:api|legacy-api|red|private-v2|v2|export)(?:\/|$)/u
+      .test(url.pathname)
+    const directFixture = isLocal && url.port === "4100"
+    const unexpectedLocalData = isLocal && (isDataRequest || isKnownDataOrSourcePath)
+    const nonLocalProduction = isHttp && !isLocal
+    if (directFixture || unexpectedLocalData || nonLocalProduction) {
       unexpected.push(label)
       return route.abort("blockedbyclient")
     }
@@ -117,6 +173,7 @@ async function expectExactLanding(page: Page) {
 }
 
 test.beforeEach(async ({ request }) => reset(request))
+test.afterEach(async ({ request }) => expectAdjacentLedgersEmpty(request))
 
 test("hydrates the exact SLA landing without browser refetches or legacy fan-out", async ({
   page,
@@ -168,9 +225,7 @@ test("preserves query-only push, back, and forward without refetching", async ({
 
 for (const failure of ["descriptor-503", "content-503"] as const) {
   test(`keeps a stable redacted SLA shell for ${failure}`, async ({ page, request }) => {
-    const problems = collectProblems(page, [
-      /^Failed to load resource: the server responded with a status of 502 \(Bad Gateway\)$/u
-    ])
+    const evidence = collectExpectedTopLevel502(page)
     const firewall = await installDataFirewall(page)
     await request.put(`${fixture}/_author_document_failure`, { data: { failure } })
 
@@ -186,7 +241,11 @@ for (const failure of ["descriptor-503", "content-503"] as const) {
     expect(firewall.browserDocumentRequests).toEqual([])
     expect(firewall.unexpected).toEqual([])
     await expectAdjacentLedgersEmpty(request)
-    expect(problems).toEqual([])
+    expect(evidence.diagnostics).toEqual([
+      "Failed to load resource: the server responded with a status of 502 (Bad Gateway)"
+    ])
+    expect(evidence.navigationResponses).toEqual([{ path: slaRoute, status: 502 }])
+    expect(evidence.problems).toEqual([])
   })
 }
 
@@ -195,9 +254,9 @@ test("a late SLA result cannot replace a newer adjacent author document", async 
   request
 }) => {
   const problems = collectProblems(page)
-  const firewall = await installDataFirewall(page)
   await page.goto("/författare/AlmqvistCJL/semer", { waitUntil: "networkidle" })
   await reset(request)
+  const firewall = await installDataFirewall(page)
 
   let releaseSla!: () => void
   const gate = new Promise<void>(resolve => { releaseSla = resolve })
@@ -248,6 +307,10 @@ test("a late SLA result cannot replace a newer adjacent author document", async 
       kind: "content",
       path: "/red/forfattare/LagerlofS/bibliografi/index.html"
     }
+  ])
+  expect(firewall.browserDocumentRequests).toEqual([
+    "/api/author-documents/Lagerl%C3%B6fS/omtexterna",
+    "/api/author-documents/Lagerl%C3%B6fS/bibliografi"
   ])
   expect(firewall.unexpected).toEqual([])
   await expectAdjacentLedgersEmpty(request)

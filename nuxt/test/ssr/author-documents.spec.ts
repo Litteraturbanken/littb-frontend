@@ -3,23 +3,34 @@ import { parseHTML } from "linkedom"
 
 const fixture = "http://127.0.0.1:4100"
 const adjacentLedgers = [
-  "/_requests",
-  "/_sla_excluded_data_requests",
-  "/_author_profile_requests",
-  "/_author_works_requests",
-  "/_home_requests",
-  "/_library_query_requests",
-  "/_reader_requests",
-  "/_reader_metadata_requests",
-  "/_reader_html_requests",
-  "/_reader_ocr_requests",
-  "/_reader_jpeg_requests",
-  "/_reader_hit_requests",
-  "/_presentation_requests",
-  "/_dramawebben_excluded_data_requests",
-  "/_author_document_asset_requests",
-  "/_author_document_pdf_requests",
-  "/_author_document_redirect_target_requests"
+  { path: "/_requests", field: "requests" },
+  { path: "/_contact_submissions", field: "contactSubmissions" },
+  { path: "/_quick_search_requests", field: "queries" },
+  { path: "/_work_lookup_requests", field: "requests" },
+  { path: "/_author_resolve_requests", field: "requests" },
+  { path: "/_author_profile_requests", field: "requests" },
+  { path: "/_author_works_requests", field: "requests" },
+  { path: "/_home_requests", field: "requests" },
+  { path: "/_presentation_requests", field: "requests" },
+  { path: "/_litteraturkartan_requests", field: "requests" },
+  { path: "/_reader_requests", field: "requests" },
+  { path: "/_reader_metadata_requests", field: "requests" },
+  { path: "/_reader_html_requests", field: "requests" },
+  { path: "/_reader_ocr_requests", field: "requests" },
+  { path: "/_reader_jpeg_requests", field: "requests" },
+  { path: "/_reader_hit_requests", field: "requests" },
+  { path: "/_export_faksimil_requests", field: "requests" },
+  { path: "/_library_relevance_requests", field: "requests" },
+  { path: "/_library_query_requests", field: "requests" },
+  { path: "/_dramawebben_document_requests", field: "requests" },
+  { path: "/_dramawebben_document_redirect_target_requests", field: "requests" },
+  { path: "/_dramawebben_excluded_data_requests", field: "requests" },
+  { path: "/_sla_excluded_data_requests", field: "requests" },
+  { path: "/_author_document_asset_requests", field: "requests" },
+  { path: "/_author_document_redirect_target_requests", field: "requests" },
+  { path: "/_legacy_author_route_requests", field: "requests" },
+  { path: "/_author_document_pdf_requests", field: "requests" },
+  { path: "/_text_search/requests", field: "textSearchOperations" }
 ] as const
 
 const slaLinkTargets = [
@@ -51,7 +62,7 @@ async function reset(request: APIRequestContext) {
     request.delete(`${fixture}/_author_document_requests`),
     request.delete(`${fixture}/_author_document_failure`),
     request.delete(`${fixture}/_author_document_delay`),
-    ...adjacentLedgers.map(ledger => request.delete(`${fixture}${ledger}`))
+    ...adjacentLedgers.map(ledger => request.delete(`${fixture}${ledger.path}`))
   ])
 }
 
@@ -68,13 +79,19 @@ async function setFailure(request: APIRequestContext, failure: string) {
 
 async function expectAdjacentLedgersEmpty(request: APIRequestContext) {
   for (const ledger of adjacentLedgers) {
-    const response = await request.get(`${fixture}${ledger}`)
-    expect(response.status(), ledger).toBe(200)
-    expect((await response.json()).requests, ledger).toEqual([])
+    const response = await request.get(`${fixture}${ledger.path}`)
+    expect(response.status(), ledger.path).toBe(200)
+    const payload = await response.json()
+    if (ledger.field === "textSearchOperations") {
+      expect(payload, ledger.path).toEqual({ results: [], count: [], options: [] })
+    } else {
+      expect(payload[ledger.field], ledger.path).toEqual([])
+    }
   }
 }
 
 test.beforeEach(async ({ request }) => reset(request))
+test.afterEach(async ({ request }) => expectAdjacentLedgersEmpty(request))
 
 for (const documentCase of [
   {
