@@ -136,8 +136,8 @@ export const libraryPdfPageOneResponse = {
     exportedEtextPdfRepresentation,
     exportedFaksimilPdfRepresentation,
     indexedPdfRepresentation,
-    groupedPdfExportRepresentation,
     groupedDirectPdfRepresentation,
+    groupedPdfExportRepresentation,
     duplicatePdfExportRepresentation,
     restrictedPdfExportRepresentation
   ],
@@ -221,10 +221,118 @@ const tupleCollisionTwo = libraryPdfRepresentation({
   exports: [{ type: "pdf", size: 610_002 }]
 })
 
+const samePathOne = libraryPdfRepresentation({
+  id: "SamePathOne",
+  authorId: "SamePathA",
+  fullName: "Första delade sökvägen",
+  surname: "Sökväg",
+  year: "1905",
+  title: "Första delade sökvägen",
+  lbworkid: "lb-same-path-one",
+  titlepath: "shared-path",
+  exports: [{ type: "pdf", size: 620_001 }]
+})
+
+const samePathTwo = libraryPdfRepresentation({
+  id: "SamePathTwo",
+  authorId: "SamePathB",
+  fullName: "Andra delade sökvägen",
+  surname: "Sökväg",
+  year: "1906",
+  title: "Andra delade sökvägen",
+  lbworkid: "lb-same-path-two",
+  titlepath: "shared-path",
+  exports: [{ type: "pdf", size: 620_002 }]
+})
+
+const sameWorkOne = libraryPdfRepresentation({
+  id: "SameWorkOne",
+  authorId: "SameWorkA",
+  fullName: "Första delade verket",
+  surname: "Verk",
+  year: "1907",
+  title: "Första delade verket",
+  lbworkid: "lb-shared-work",
+  titlepath: "same-work-one",
+  exports: [{ type: "pdf", size: 630_001 }]
+})
+
+const sameWorkTwo = libraryPdfRepresentation({
+  id: "SameWorkTwo",
+  authorId: "SameWorkB",
+  fullName: "Andra delade verket",
+  surname: "Verk",
+  year: "1908",
+  title: "Andra delade verket",
+  lbworkid: "lb-shared-work",
+  titlepath: "same-work-two",
+  exports: [{ type: "pdf", size: 630_002 }]
+})
+
+const exactTupleFirst = libraryPdfRepresentation({
+  id: "ExactTupleFirst",
+  authorId: "FirstTupleA",
+  fullName: "Första exakta gruppen",
+  surname: "Första",
+  year: "1909",
+  title: "Första exakta gruppen",
+  mediatype: "etext",
+  lbworkid: "lb-exact-tuple",
+  titlepath: "exact-tuple",
+  exports: [{ type: "pdf", size: 710_001 }]
+})
+
+const exactTupleSecond = libraryPdfRepresentation({
+  id: "ExactTupleSecond",
+  authorId: "SecondTupleA",
+  fullName: "Andra exakta gruppen",
+  surname: "Andra",
+  year: "1910",
+  title: "Andra exakta gruppen",
+  lbworkid: "lb-exact-tuple",
+  titlepath: "exact-tuple",
+  exports: [{ type: "pdf", size: 710_002 }]
+})
+
+const laterExportGroupMain = libraryPdfRepresentation({
+  id: "LaterExportGroupMain",
+  authorId: "GroupMainA",
+  fullName: "Grupphuvud Författare",
+  surname: "Grupphuvud",
+  year: "1911",
+  title: "Grupphuvud utan export",
+  mediatype: "etext",
+  lbworkid: "lb-later-export-group",
+  titlepath: "later-export-group"
+})
+
+const laterExportRepresentation = libraryPdfRepresentation({
+  id: "LaterExportRepresentation",
+  authorId: "LaterExportA",
+  fullName: "Senare Exportkälla",
+  surname: "Exportkälla",
+  year: "1912",
+  title: "Senare PDF-exportkälla",
+  lbworkid: "lb-later-export-group",
+  titlepath: "later-export-group",
+  exports: [{ type: "pdf", size: 720_002 }]
+})
+
 export const libraryPdfTupleCollisionResponse = {
-  data: [tupleCollisionOne, tupleCollisionTwo],
-  hits: 2,
-  distinct_hits: 2,
+  data: [
+    tupleCollisionOne,
+    tupleCollisionTwo,
+    samePathOne,
+    samePathTwo,
+    sameWorkOne,
+    sameWorkTwo,
+    exactTupleFirst,
+    exactTupleSecond,
+    laterExportGroupMain,
+    laterExportRepresentation
+  ],
+  hits: 10,
+  distinct_hits: 8,
   suggest: []
 }
 
@@ -385,6 +493,25 @@ export function libraryPdfResponse(query = {}) {
     delete cloned.suggest
   } else if (normalized.includes("null-suggest") || normalized.includes("null suggest")) {
     cloned.suggest = null
+  }
+
+  if (typeof query.include === "string" && Array.isArray(cloned?.data)) {
+    const included = new Set(query.include.split(","))
+    for (const row of cloned.data) {
+      if (row === null || typeof row !== "object" || Array.isArray(row)) continue
+      if (!included.has("license")) delete row.license
+      if (!included.has("authors.authorid") && !included.has("authors.surname")) {
+        delete row.authors
+      } else if (Array.isArray(row.authors)) {
+        row.authors = row.authors.map((author) => {
+          if (author === null || typeof author !== "object" || Array.isArray(author)) return author
+          return {
+            ...(included.has("authors.authorid") ? { authorid: author.authorid } : {}),
+            ...(included.has("authors.surname") ? { surname: author.surname } : {})
+          }
+        })
+      }
+    }
   }
   return cloned
 }

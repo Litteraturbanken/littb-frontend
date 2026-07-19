@@ -3002,18 +3002,18 @@ describe("v2 fixture server operations", () => {
     expect(representations.RodaRummet?.[0]).not.toHaveProperty("export")
     expect(representations.NilsHolgersson).toMatchObject([
       {
+        mediatype: "pdf",
+        work_titleid: "NilsHolgerssonPdf",
+        work_authors: [{ authorid: "DirectPdfA", surname: "Direkt" }]
+      },
+      {
         mediatype: "faksimil",
         work_titleid: "NilsHolgersson",
         work_authors: [{ authorid: "LagerlofS" }],
         export: [{ type: "pdf", size: 2_210_001 }]
-      },
-      {
-        mediatype: "pdf",
-        work_titleid: "NilsHolgerssonPdf",
-        work_authors: [{ authorid: "DirectPdfA", surname: "Direkt" }]
       }
     ])
-    expect(representations.NilsHolgersson?.[1]).not.toHaveProperty("export")
+    expect(representations.NilsHolgersson?.[0]).not.toHaveProperty("export")
     expect(representations.Jerusalem).toMatchObject([{
       mediatype: "etext",
       export: [
@@ -3063,6 +3063,38 @@ describe("v2 fixture server operations", () => {
     expect(await libraryRelevanceRequests()).toEqual(relevanceLedger)
   })
 
+  test("projects PDF license and fallback authors only when the include requests them", async () => {
+    const path = "/api/query_string/etext,faksimil,pdf"
+    const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+    const epubInclude = "lbworkid,titlepath,title,titleid,work_titleid,texttype,shorttitle,mediatype,searchable,imported,sort_date_imprint.plain,main_author.authorid,main_author.surname,main_author.full_name,main_author.birth,main_author.death,main_author.name_for_index,main_author.type,work_authors.authorid,work_authors.surname,startpagename,has_epub,sort_date.plain,export,keyword"
+    const request = async (include: string) => {
+      const params = new URLSearchParams({
+        q: `${prefix} (${predicate})`,
+        sort_field: "popularity|desc",
+        from: "0",
+        to: "100",
+        include
+      })
+      return await (await fetch(`${origin}${path}?${params}`)).json() as {
+        data: Array<Record<string, unknown>>
+      }
+    }
+
+    const reduced = await request(epubInclude)
+    expect(reduced.data.every(row => !Object.hasOwn(row, "license"))).toBe(true)
+    expect(reduced.data.every(row => !Object.hasOwn(row, "authors"))).toBe(true)
+
+    const full = await request(`${epubInclude},license,authors.authorid,authors.surname`)
+    expect(full).toEqual(libraryPdfPageOneResponse)
+    expect(full.data.find(row => row.titleid === "GostaBerlingsSaga"))
+      .toMatchObject({ license: "pd" })
+    expect(full.data.find(row => row.titleid === "RodaRummet")).toMatchObject({
+      license: "restricted",
+      authors: [{ authorid: "ArchiveA", surname: "Arkiv" }]
+    })
+  })
+
   test.each(["tuple-collision", "tuple collision"])(
     "serves exact-tuple PDF grouping collisions for %s without sharing Angular's concatenated key",
     async marker => {
@@ -3082,10 +3114,43 @@ describe("v2 fixture server operations", () => {
     expect(await response.json()).toMatchObject({
       data: [
         { titleid: "TupleCollisionOne", titlepath: "ab", lbworkid: "c" },
-        { titleid: "TupleCollisionTwo", titlepath: "a", lbworkid: "bc" }
+        { titleid: "TupleCollisionTwo", titlepath: "a", lbworkid: "bc" },
+        { titleid: "SamePathOne", titlepath: "shared-path", lbworkid: "lb-same-path-one" },
+        { titleid: "SamePathTwo", titlepath: "shared-path", lbworkid: "lb-same-path-two" },
+        { titleid: "SameWorkOne", titlepath: "same-work-one", lbworkid: "lb-shared-work" },
+        { titleid: "SameWorkTwo", titlepath: "same-work-two", lbworkid: "lb-shared-work" },
+        {
+          titleid: "ExactTupleFirst",
+          titlepath: "exact-tuple",
+          lbworkid: "lb-exact-tuple",
+          main_author: { authorid: "FirstTupleA" },
+          export: [{ type: "pdf", size: 710_001 }]
+        },
+        {
+          titleid: "ExactTupleSecond",
+          titlepath: "exact-tuple",
+          lbworkid: "lb-exact-tuple",
+          main_author: { authorid: "SecondTupleA" },
+          export: [{ type: "pdf", size: 710_002 }]
+        },
+        {
+          titleid: "LaterExportGroupMain",
+          titlepath: "later-export-group",
+          lbworkid: "lb-later-export-group",
+          mediatype: "etext",
+          main_author: { authorid: "GroupMainA" }
+        },
+        {
+          titleid: "LaterExportRepresentation",
+          titlepath: "later-export-group",
+          lbworkid: "lb-later-export-group",
+          mediatype: "faksimil",
+          main_author: { authorid: "LaterExportA" },
+          export: [{ type: "pdf", size: 720_002 }]
+        }
       ],
-      hits: 2,
-      distinct_hits: 2,
+      hits: 10,
+      distinct_hits: 8,
       suggest: []
     })
     }
