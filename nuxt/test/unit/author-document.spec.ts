@@ -1,13 +1,16 @@
 import { readFileSync } from "node:fs"
+import type { H3Event } from "h3"
 import { parseHTML } from "linkedom"
-import { describe, expect, test } from "vitest"
+import { afterEach, describe, expect, test, vi } from "vitest"
 
 import {
   InvalidAuthorDocumentSource,
   expectedAuthorDocumentSource,
+  loadAuthorDocument,
   parseAuthorDocumentBody
 } from "../../server/utils/author-document"
 import {
+  lagerlofOmtexterna,
   semerAuthorDocumentAssets,
   semerAuthorDocumentDescriptor
 } from "../fixtures/author-document-data.mjs"
@@ -31,6 +34,38 @@ const descriptor = (overrides: Partial<Descriptor> = {}): Descriptor => ({
 })
 
 describe("strict author document descriptors", () => {
+  test("accepts only the exact SLA omtexterna tuple and fixed source", () => {
+    expect(expectedAuthorDocumentSource(
+      lagerlofOmtexterna,
+      "LagerlöfS",
+      "omtexterna"
+    )).toBe("/red/sla/omtexterna.html")
+  })
+
+  test.each([
+    [{ author_id: "SöderbergH" }, "LagerlöfS", "omtexterna"],
+    [{ normalized_author_id: "LagerlöfS" }, "LagerlöfS", "omtexterna"],
+    [{ document_kind: "presentation" }, "LagerlöfS", "omtexterna"],
+    [{ source_path: "/red/forfattare/LagerlofS/omtexterna/index.html" }, "LagerlöfS", "omtexterna"],
+    [{ source_path: "/red/sla/omtexterna.html?authority=exact" }, "LagerlöfS", "omtexterna"],
+    [{}, "SöderbergH", "omtexterna"],
+    [{}, "LagerlöfS", "presentation"]
+  ] as const)("rejects a non-exact SLA descriptor tuple %#", (overrides, author, kind) => {
+    expect(() => expectedAuthorDocumentSource(
+      { ...lagerlofOmtexterna, ...overrides },
+      author,
+      kind
+    )).toThrow("Invalid author document descriptor")
+  })
+
+  test("rejects extra keys on the otherwise exact SLA descriptor", () => {
+    expect(() => expectedAuthorDocumentSource(
+      { ...lagerlofOmtexterna, unexpected: "must not cross the boundary" },
+      "LagerlöfS",
+      "omtexterna"
+    )).toThrow("Invalid author document descriptor")
+  })
+
   test("accepts the exact Almqvist semer descriptor and managed source path", () => {
     expect(expectedAuthorDocumentSource(
       semerAuthorDocumentDescriptor,
@@ -207,6 +242,154 @@ const maliciousBody = [
 ].join("")
 
 describe("managed author XHTML sanitization", () => {
+  test("preserves the real SLA landing through its exact element and attribute policy", () => {
+    const source = readFileSync(
+      new URL("../fixtures/author-document-content/LagerlofS-omtexterna.html", import.meta.url),
+      "utf8"
+    )
+    const output = parseAuthorDocumentBody(source, "omtexterna")
+    const { document } = parseHTML(`<body>${output}</body>`)
+    const elements = [...document.querySelectorAll("*")]
+    const links = [...document.querySelectorAll("a[href]")]
+
+    expect(links).toHaveLength(21)
+    expect(new Set(elements.map(element => element.localName))).toEqual(new Set([
+      "a", "body", "div", "h1", "h2", "hr", "li", "p", "span", "ul"
+    ]))
+    expect(elements.some(element => element.hasAttribute("xml:lang"))).toBe(false)
+    expect([...document.querySelectorAll("h1[style], h2[style]")]
+      .map(element => element.getAttribute("style")))
+      .toEqual(Array(6).fill("clear: both"))
+    expect([...document.querySelectorAll("ul[style]")]
+      .map(element => element.getAttribute("style")))
+      .toEqual(Array(4).fill("list-style-type: disc"))
+    expect(links.every(link => link.getAttribute("href")
+      ?.startsWith("/författare/LagerlöfS/"))).toBe(true)
+    expect(links.every(link => link.getAttribute("target") === "_top")).toBe(true)
+    expect(output).not.toMatch(/<(?:html|head|body|title|meta)\b/iu)
+    expect(output).not.toMatch(/\s(?:onclick|data-probe|xml:lang)=/iu)
+  })
+
+  test("removes dangerous SLA subtrees and unwraps every unknown inert element", () => {
+    const output = parseAuthorDocumentBody([
+      "<!doctype html><html><head><title>head-probe</title></head><body>",
+      "<!-- comment-probe --><script>script-probe</script><style>style-probe</style>",
+      "<form><p>form-probe</p></form><iframe>iframe-probe</iframe>",
+      "<section>unwrapped <em>nested-unwrapped <span>kept</span></em></section>",
+      "</body></html>"
+    ].join(""), "omtexterna")
+
+    expect(output).toContain("unwrapped nested-unwrapped <span>kept</span>")
+    expect(output).not.toMatch(/head-probe|comment-probe|script-probe|style-probe/iu)
+    expect(output).not.toMatch(/form-probe|iframe-probe|<(?:section|em)\b/iu)
+  })
+
+  test("retains only the SLA landing attributes and only the _top target", () => {
+    const output = parseAuthorDocumentBody([
+      "<!doctype html><html><body>",
+      '<div class="kept" id="kept" lang="sv" xml:lang="sv" title="drop" data-x="drop">',
+      '<a class="link" id="link" lang="sv" href="/författare/LagerlöfS/omtexterna/Safe.html" target="_top" rel="external" download="x">Top</a>',
+      '<a href="/författare/LagerlöfS/omtexterna/Safe.html" target="_blank">Blank</a>',
+      "</div></body></html>"
+    ].join(""), "omtexterna")
+    const { document } = parseHTML(`<body>${output}</body>`)
+    const div = document.querySelector("div")!
+    const [top, blank] = [...document.querySelectorAll("a")]
+
+    expect([...div.attributes].map(attribute => attribute.name).sort())
+      .toEqual(["class", "id", "lang"])
+    expect([...top!.attributes].map(attribute => attribute.name).sort())
+      .toEqual(["class", "href", "id", "lang", "rel", "target"])
+    expect(top?.getAttribute("target")).toBe("_top")
+    expect(blank?.hasAttribute("target")).toBe(false)
+  })
+
+  test.each([
+    "/författare/LagerlöfS/omtexterna/../private.html",
+    "/författare/LagerlöfS/omtexterna/%2e%2e/private.html",
+    "/författare/LagerlöfS/omtexterna/%252e%252e/private.html",
+    "/författare/LagerlöfS/omtexterna/Safe.html%0Aevil",
+    "/författare/LagerlöfS\\omtexterna\\Safe.html",
+    "//evil.test/författare/LagerlöfS/Safe.html",
+    "https://litteraturbanken.se/författare/LagerlöfS/Safe.html",
+    "/författare/StrindbergA/omtexterna/Safe.html",
+    "/forfattare/LagerlofS/omtexterna/Safe.html",
+    "relative.html",
+    "#fragment",
+    "/%ZZ/private"
+  ])("removes an href outside the exact safe SLA subtree %#", href => {
+    const output = parseAuthorDocumentBody(
+      `<!doctype html><html><body><a href="${href}">Unsafe</a></body></html>`,
+      "omtexterna"
+    )
+    expect(parseHTML(`<body>${output}</body>`).document.querySelector("a")
+      ?.hasAttribute("href")).toBe(false)
+  })
+
+  test.each([
+    ["h1", "title", "clear: both", "clear: both"],
+    ["h2", "section title", " CLEAR : BOTH ; ", "clear: both"],
+    ["ul", "itemizedlist", "list-style-type: disc; ", "list-style-type: disc"]
+  ])("canonicalizes the one complete SLA %s style", (element, className, style, expected) => {
+    const output = parseAuthorDocumentBody(
+      `<!doctype html><html><body><${element} class="${className}" style="${style}">Safe</${element}></body></html>`,
+      "omtexterna"
+    )
+    expect(parseHTML(`<body>${output}</body>`).document.querySelector(element)
+      ?.getAttribute("style")).toBe(expected)
+  })
+
+  test.each([
+    ["h1", "clear: both; color: red"],
+    ["h1", "clear: both; clear: both"],
+    ["h1", "clear: both;;"],
+    ["h1", "cl\\65 ar: both"],
+    ["h1", "clear/**/: both"],
+    ["h1", "clear: var(--probe)"],
+    ["h1", "clear: url(https://evil.test)"],
+    ["h1", "--probe: both"],
+    ["h1", "clear: both !important"],
+    ["ul", "list-style-type: disc; color: red"],
+    ["ul", "list-style-type: disc!important"],
+    ["p", "clear: both"]
+  ])("drops the full unsafe SLA style %#", (element, style) => {
+    const output = parseAuthorDocumentBody(
+      `<!doctype html><html><body><${element} style="${style}">Safe</${element}></body></html>`,
+      "omtexterna"
+    )
+    expect(parseHTML(`<body>${output}</body>`).document.querySelector(element)
+      ?.hasAttribute("style")).toBe(false)
+  })
+
+  test.each([
+    ["h1", "other", "clear: both"],
+    ["h2", "", "clear: both"],
+    ["ul", "other", "list-style-type: disc"]
+  ])("drops the otherwise safe style outside the exact title/list class %#", (
+    element,
+    className,
+    style
+  ) => {
+    const output = parseAuthorDocumentBody(
+      `<!doctype html><html><body><${element} class="${className}" style="${style}">Safe</${element}></body></html>`,
+      "omtexterna"
+    )
+    expect(parseHTML(`<body>${output}</body>`).document.querySelector(element)
+      ?.hasAttribute("style")).toBe(false)
+  })
+
+  test.each(["presentation", "bibliografi", "semer"] as const)(
+    "continues to strip every inline style from %s documents",
+    kind => {
+      const output = parseAuthorDocumentBody(
+        '<!doctype html><html><body><h1 style="clear: both">Safe</h1></body></html>',
+        kind
+      )
+      expect(parseHTML(`<body>${output}</body>`).document.querySelector("h1")
+        ?.hasAttribute("style")).toBe(false)
+    }
+  )
+
   test("preserves the real Almqvist semer body inside the sanitizer boundary", () => {
     const source = readFileSync(
       new URL("../fixtures/author-document-content/AlmqvistCJL-semer.html", import.meta.url),
@@ -339,5 +522,256 @@ describe("managed author XHTML sanitization", () => {
     )
     expect(parseHTML(`<body>${output}</body>`).document.querySelector("a")?.getAttribute("href"))
       .toBeNull()
+  })
+})
+
+const event = {} as H3Event
+
+function stubAuthorRuntimeConfig() {
+  vi.stubGlobal("useRuntimeConfig", vi.fn(() => ({
+    apiBase: "https://private-api.test/v2",
+    contentBase: "https://managed.test/"
+  })))
+}
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" }
+  })
+}
+
+function htmlResponse(body: BodyInit | null, init: ResponseInit = {}): Response {
+  return new Response(body, {
+    status: 200,
+    headers: { "content-type": "text/html; charset=utf-8" },
+    ...init
+  })
+}
+
+function stubSlaResponses(sourceResponse: Response) {
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(jsonResponse(lagerlofOmtexterna))
+    .mockResolvedValueOnce(sourceResponse)
+  vi.stubGlobal("fetch", fetchMock)
+  return fetchMock
+}
+
+async function expectUnavailable(promise: Promise<unknown>, statusCode: 404 | 502, code: string) {
+  await expect(promise).rejects.toMatchObject({ statusCode, data: { code } })
+  await expect(promise).rejects.not.toThrow(/private-api|managed\.test|upstream-probe/iu)
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
+
+describe("SLA author document transport boundary", () => {
+  test("uses only the fixed private descriptor and source requests", async () => {
+    stubAuthorRuntimeConfig()
+    const fetchMock = stubSlaResponses(htmlResponse(
+      "<!doctype html><html><body><h1 class=\"title\" style=\"clear: both\">Safe</h1></body></html>"
+    ))
+
+    await expect(loadAuthorDocument(event, "LagerlöfS", "omtexterna"))
+      .resolves.toMatchObject({
+        documentKind: "omtexterna",
+        bodyHtml: '<h1 class="title" style="clear: both">Safe</h1>'
+      })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const descriptorRequest = fetchMock.mock.calls[0]?.[0] as Request
+    expect(descriptorRequest.url).toBe(
+      "https://private-api.test/v2/authors/Lagerl%C3%B6fS/documents/omtexterna"
+    )
+    expect(descriptorRequest.redirect).toBe("manual")
+    expect(fetchMock.mock.calls[1]).toEqual([
+      "https://managed.test/red/sla/omtexterna.html",
+      { method: "GET", redirect: "manual" }
+    ])
+  })
+
+  test.each([
+    [404, "text/plain", 404, "author_document_not_found"],
+    [503, "text/plain", 502, "author_document_unavailable"],
+    [301, "text/html", 502, "author_document_unavailable"],
+    [302, "text/html", 502, "author_document_unavailable"],
+    [307, "text/html", 502, "author_document_unavailable"],
+    [308, "text/html", 502, "author_document_unavailable"],
+    [200, "application/xhtml+xml", 502, "author_document_unavailable"]
+  ] as const)("cancels a rejected SLA source response %#", async (
+    sourceStatus,
+    contentType,
+    publicStatus,
+    code
+  ) => {
+    stubAuthorRuntimeConfig()
+    const source = new Response("upstream-probe", {
+      status: sourceStatus,
+      headers: { "content-type": contentType }
+    })
+    const cancel = vi.spyOn(source.body!, "cancel")
+    stubSlaResponses(source)
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "LagerlöfS", "omtexterna"),
+      publicStatus,
+      code
+    )
+    expect(cancel).toHaveBeenCalledOnce()
+  })
+
+  test.each([
+    "text/plain",
+    "application/xhtml+xml",
+    "text/html-malformed",
+    "text/html; boundary=x",
+    "text/html; charset=utf-8; boundary=x",
+    ""
+  ])("rejects and cancels the non-exact SLA media type %#", async contentType => {
+    stubAuthorRuntimeConfig()
+    const source = new Response("upstream-probe", {
+      status: 200,
+      headers: contentType ? { "content-type": contentType } : {}
+    })
+    const cancel = vi.spyOn(source.body!, "cancel")
+    stubSlaResponses(source)
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "LagerlöfS", "omtexterna"),
+      502,
+      "author_document_unavailable"
+    )
+    expect(cancel).toHaveBeenCalledOnce()
+  })
+
+  test.each([
+    "text/html",
+    " TEXT/HTML ",
+    "text/html; charset=UTF-8",
+    'text/html; CHARSET="utf-8"'
+  ])("accepts the exact SLA media type with optional charset %#", async contentType => {
+    stubAuthorRuntimeConfig()
+    stubSlaResponses(new Response(
+      "<!doctype html><html><body><p>Safe</p></body></html>",
+      { status: 200, headers: { "content-type": contentType } }
+    ))
+
+    await expect(loadAuthorDocument(event, "LagerlöfS", "omtexterna"))
+      .resolves.toMatchObject({ documentKind: "omtexterna", bodyHtml: "<p>Safe</p>" })
+  })
+
+  test.each([
+    [404, 404, "author_document_author_not_found"],
+    [503, 502, "author_document_unavailable"],
+    [307, 502, "author_document_unavailable"],
+    [308, 502, "author_document_unavailable"]
+  ] as const)("cancels a rejected descriptor response %#", async (
+    descriptorStatus,
+    publicStatus,
+    code
+  ) => {
+    stubAuthorRuntimeConfig()
+    const descriptorResponse = jsonResponse({ upstream: "probe" }, descriptorStatus)
+    const cancel = vi.spyOn(descriptorResponse.body!, "cancel")
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(descriptorResponse))
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "LagerlöfS", "omtexterna"),
+      publicStatus,
+      code
+    )
+    expect(cancel).toHaveBeenCalledOnce()
+  })
+
+  test("preserves the legacy media-type and larger-cap behavior for existing kinds", async () => {
+    stubAuthorRuntimeConfig()
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(descriptor()))
+      .mockResolvedValueOnce(new Response(
+        "<!doctype html><html><body><h1 style=\"clear: both\">Safe</h1></body></html>",
+        { status: 200, headers: { "content-type": "application/xhtml+xml" } }
+      ))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expect(loadAuthorDocument(event, "SöderbergH", "presentation"))
+      .resolves.toMatchObject({ documentKind: "presentation", bodyHtml: "<h1>Safe</h1>" })
+  })
+
+  test("cancels an over-limit declared SLA body before reading", async () => {
+    stubAuthorRuntimeConfig()
+    let readerRequested = false
+    const cancel = vi.fn(async () => undefined)
+    const source = {
+      status: 200,
+      headers: new Headers({
+        "content-type": "text/html; charset=utf-8",
+        "content-length": "262145"
+      }),
+      body: {
+        cancel,
+        getReader() {
+          readerRequested = true
+          throw new Error("declared oversize must not be read")
+        }
+      }
+    } as unknown as Response
+    stubSlaResponses(source)
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "LagerlöfS", "omtexterna"),
+      502,
+      "author_document_unavailable"
+    )
+    expect(cancel).toHaveBeenCalledOnce()
+    expect(readerRequested).toBe(false)
+  })
+
+  test("cancels a streamed SLA body immediately after crossing 262144 bytes", async () => {
+    stubAuthorRuntimeConfig()
+    let cancelled = false
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(200_000).fill(120))
+        controller.enqueue(new Uint8Array(62_145).fill(120))
+      },
+      cancel() {
+        cancelled = true
+      }
+    })
+    stubSlaResponses(htmlResponse(body))
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "LagerlöfS", "omtexterna"),
+      502,
+      "author_document_unavailable"
+    )
+    expect(cancelled).toBe(true)
+  })
+
+  test("accepts an SLA body at exactly 262144 streamed bytes", async () => {
+    stubAuthorRuntimeConfig()
+    const prefix = "<!doctype html><html><body><p>"
+    const suffix = "</p></body></html>"
+    const source = `${prefix}${"x".repeat(262_144 - prefix.length - suffix.length)}${suffix}`
+    expect(Buffer.byteLength(source)).toBe(262_144)
+    stubSlaResponses(htmlResponse(source))
+
+    await expect(loadAuthorDocument(event, "LagerlöfS", "omtexterna"))
+      .resolves.toMatchObject({ documentKind: "omtexterna" })
+  })
+
+  test("maps an SLA source fetch rejection without leaking its error", async () => {
+    stubAuthorRuntimeConfig()
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(lagerlofOmtexterna))
+      .mockRejectedValueOnce(new Error("upstream-probe fetch rejected"))
+    vi.stubGlobal("fetch", fetchMock)
+
+    await expectUnavailable(
+      loadAuthorDocument(event, "LagerlöfS", "omtexterna"),
+      502,
+      "author_document_unavailable"
+    )
   })
 })

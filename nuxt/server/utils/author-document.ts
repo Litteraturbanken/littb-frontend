@@ -34,13 +34,16 @@ type ParsedAuthorDocument = {
   querySelectorAll: (selector: string) => Iterable<SanitizableElement>
 }
 
-const allowedElements = new Set([
+const genericAllowedElements = new Set([
   "a", "abbr", "b", "blockquote", "br", "caption", "cite", "code",
   "col", "colgroup", "dd", "del", "div", "dl", "dt", "em",
   "figcaption", "figure", "h1", "h2", "h3", "h4", "h5", "h6", "hr",
   "i", "img", "ins", "li", "ol", "p", "pre", "q", "s", "small",
   "span", "strong", "sub", "sup", "table", "tbody", "td", "tfoot",
   "th", "thead", "tr", "u", "ul"
+])
+const slaAllowedElements = new Set([
+  "a", "div", "h1", "h2", "hr", "li", "p", "span", "ul"
 ])
 
 const removedSubtrees = new Set([
@@ -50,7 +53,8 @@ const removedSubtrees = new Set([
   "style", "svg", "template", "textarea", "video"
 ])
 
-const globalAttributes = new Set(["class", "id", "lang", "title"])
+const genericGlobalAttributes = new Set(["class", "id", "lang", "title"])
+const slaGlobalAttributes = new Set(["class", "id", "lang"])
 const descriptorKeys = new Set([
   "audio_url",
   "author_id",
@@ -77,7 +81,12 @@ const elementAttributes: Record<string, ReadonlySet<string>> = {
 
 const unsafeCharacters = /[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
 const unsafeUrlCharacters = /[\\\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
-const maxAuthorDocumentBytes = 1_048_576
+const maxGenericAuthorDocumentBytes = 1_048_576
+const maxSlaAuthorDocumentBytes = 262_144
+const slaAuthorId = "LagerlöfS"
+const slaNormalizedAuthorId = "LagerlofS"
+const slaSourcePath = "/red/sla/omtexterna.html"
+const slaHrefPrefix = "/författare/LagerlöfS/"
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -140,7 +149,8 @@ function isAuthorDocumentDescriptor(value: unknown): value is AuthorDocumentDesc
     && (value.audio_url === null || typeof value.audio_url === "string")
     && (value.document_kind === "presentation"
       || value.document_kind === "bibliografi"
-      || value.document_kind === "semer")
+      || value.document_kind === "semer"
+      || value.document_kind === "omtexterna")
     && typeof value.source_path === "string"
 }
 
@@ -153,6 +163,13 @@ export function expectedAuthorDocumentSource(
     || value.author_id !== requestedAuthor
     || value.document_kind !== requestedKind
     || !descriptorLinksAreExact(value)) invalidDescriptor()
+
+  if (requestedKind === "omtexterna") {
+    if (requestedAuthor !== slaAuthorId
+      || value.normalized_author_id !== slaNormalizedAuthorId
+      || value.source_path !== slaSourcePath) invalidDescriptor()
+    return slaSourcePath
+  }
 
   const expected = expectedSourcePath(value.normalized_author_id, requestedKind)
   if (value.source_path !== expected) invalidDescriptor()
@@ -192,26 +209,101 @@ function safeUrl(value: string, kind: "href" | "src"): boolean {
   return ["http", "https", "mailto", "tel"].includes(scheme)
 }
 
-function sanitizeElement(element: SanitizableElement): void {
+function safeSlaHref(value: string): boolean {
+  if (value !== value.trim() || unsafeUrlCharacters.test(value)) return false
+  if (!value.startsWith(slaHrefPrefix)) return false
+  const decoded = fullyDecode(value)
+  return decoded !== null
+    && !unsafeUrlCharacters.test(decoded)
+    && decoded.startsWith(slaHrefPrefix)
+    && !decoded.startsWith("//")
+    && !hasTraversalSegment(decoded)
+}
+
+function hasClass(element: SanitizableElement, className: string): boolean {
+  return (element.getAttribute("class") ?? "").split(/\s+/u).includes(className)
+}
+
+function canonicalSlaStyle(
+  element: SanitizableElement,
+  name: string,
+  value: string
+): string | null {
+  if ((name === "h1" || name === "h2") && hasClass(element, "title")) {
+    return /^[ \t]*clear[ \t]*:[ \t]*both[ \t]*;?[ \t]*$/iu.test(value)
+      ? "clear: both"
+      : null
+  }
+  if (name === "ul" && hasClass(element, "itemizedlist")) {
+    return /^[ \t]*list-style-type[ \t]*:[ \t]*disc[ \t]*;?[ \t]*$/iu.test(value)
+      ? "list-style-type: disc"
+      : null
+  }
+  return null
+}
+
+function sanitizeElement(
+  element: SanitizableElement,
+  kind: AuthorDocumentKind
+): void {
   const name = element.localName.toLowerCase()
   if (removedSubtrees.has(name)) {
     element.remove()
     return
   }
 
-  for (const child of [...element.childNodes]) sanitizeNode(child)
+  for (const child of [...element.childNodes]) sanitizeNode(child, kind)
 
+  const allowedElements = kind === "omtexterna"
+    ? slaAllowedElements
+    : genericAllowedElements
   if (!allowedElements.has(name)) {
     element.replaceWith(...element.childNodes)
     return
   }
 
-  const specificAttributes = elementAttributes[name]
+  const specificAttributes = kind === "omtexterna"
+    ? name === "a"
+      ? new Set(["href", "target", "rel"])
+      : new Set<string>()
+    : elementAttributes[name]
+  const globalAttributes = kind === "omtexterna"
+    ? slaGlobalAttributes
+    : genericGlobalAttributes
   for (const attribute of [...element.attributes]) {
     const attributeName = attribute.name.toLowerCase()
-    if (!globalAttributes.has(attributeName) && !specificAttributes?.has(attributeName)) {
+    const isSlaStyle = kind === "omtexterna" && attributeName === "style"
+      && (name === "h1" || name === "h2" || name === "ul")
+    if (!globalAttributes.has(attributeName)
+      && !specificAttributes?.has(attributeName)
+      && !isSlaStyle) {
       element.removeAttribute(attribute.name)
     }
+  }
+
+  if (kind === "omtexterna" && element.hasAttribute("style")) {
+    const canonical = canonicalSlaStyle(
+      element,
+      name,
+      element.getAttribute("style") ?? ""
+    )
+    if (canonical === null) element.removeAttribute("style")
+    else element.setAttribute("style", canonical)
+  }
+
+  if (kind === "omtexterna" && name === "a") {
+    if (element.hasAttribute("href")
+      && !safeSlaHref(element.getAttribute("href") ?? "")) {
+      element.removeAttribute("href")
+    }
+    if (!element.hasAttribute("href")) {
+      element.removeAttribute("target")
+      element.removeAttribute("rel")
+    } else if (element.hasAttribute("target")
+      && element.getAttribute("target") !== "_top") {
+      element.removeAttribute("target")
+    }
+    return
   }
 
   if (name === "a" && element.hasAttribute("href")) {
@@ -230,12 +322,12 @@ function sanitizeElement(element: SanitizableElement): void {
   }
 }
 
-function sanitizeNode(node: SanitizableNode): void {
-  if (node.nodeType === 8) {
+function sanitizeNode(node: SanitizableNode, kind: AuthorDocumentKind): void {
+  if (node.nodeType === 7 || node.nodeType === 8) {
     node.parentNode?.removeChild(node)
     return
   }
-  if (node.nodeType === 1) sanitizeElement(node as SanitizableElement)
+  if (node.nodeType === 1) sanitizeElement(node as SanitizableElement, kind)
 }
 
 export class InvalidAuthorDocumentSource extends Error {
@@ -245,7 +337,10 @@ export class InvalidAuthorDocumentSource extends Error {
   }
 }
 
-export function parseAuthorDocumentBody(source: string): string {
+export function parseAuthorDocumentBody(
+  source: string,
+  kind: AuthorDocumentKind = "presentation"
+): string {
   let document: ParsedAuthorDocument
   try {
     ({ document } = parseHTML(source) as unknown as { document: ParsedAuthorDocument })
@@ -255,7 +350,7 @@ export function parseAuthorDocumentBody(source: string): string {
   const bodies = [...document.querySelectorAll("body")]
   if (bodies.length !== 1) throw new InvalidAuthorDocumentSource()
   const body = bodies[0]!
-  for (const child of [...body.childNodes]) sanitizeNode(child)
+  for (const child of [...body.childNodes]) sanitizeNode(child, kind)
   return body.innerHTML
 }
 
@@ -280,12 +375,19 @@ function fetchStatus(error: unknown): number | null {
   return null
 }
 
-async function readAuthorDocumentResponse(response: Response): Promise<string> {
+async function cancelResponseBody(response: Response): Promise<void> {
+  await response.body?.cancel().catch(() => undefined)
+}
+
+async function readAuthorDocumentResponse(
+  response: Response,
+  maxBytes: number
+): Promise<string> {
   const declaredLength = response.headers.get("content-length")
   if (declaredLength !== null
     && /^\d+$/u.test(declaredLength)
-    && Number(declaredLength) > maxAuthorDocumentBytes) {
-    await response.body?.cancel().catch(() => undefined)
+    && Number(declaredLength) > maxBytes) {
+    await cancelResponseBody(response)
     throw new InvalidAuthorDocumentSource()
   }
 
@@ -298,7 +400,7 @@ async function readAuthorDocumentResponse(response: Response): Promise<string> {
     if (done) break
     if (value === undefined) continue
     totalBytes += value.byteLength
-    if (totalBytes > maxAuthorDocumentBytes) {
+    if (totalBytes > maxBytes) {
       await reader.cancel().catch(() => undefined)
       throw new InvalidAuthorDocumentSource()
     }
@@ -312,6 +414,12 @@ async function readAuthorDocumentResponse(response: Response): Promise<string> {
     offset += chunk.byteLength
   }
   return new TextDecoder().decode(bytes)
+}
+
+function isExactSlaHtmlResponse(response: Response): boolean {
+  const contentType = response.headers.get("content-type")
+  return contentType !== null && /^[ \t]*text\/html[ \t]*(?:;[ \t]*charset[ \t]*=[ \t]*(?:"[^"]+"|[!#$%&'*+.^_`|~0-9A-Za-z-]+)[ \t]*)?$/iu
+    .test(contentType)
 }
 
 function formatYears(birth: string | null, death: string | null): string {
@@ -346,9 +454,11 @@ export async function loadAuthorDocument(
   }
 
   if (result.response.status === 404) {
+    await cancelResponseBody(result.response)
     return documentError(404, "author_document_author_not_found")
   }
   if (result.response.status !== 200) {
+    await cancelResponseBody(result.response)
     return documentError(502, "author_document_unavailable")
   }
 
@@ -356,6 +466,7 @@ export async function loadAuthorDocument(
   try {
     expected = expectedAuthorDocumentSource(result.data, requestedAuthor, requestedKind)
   } catch {
+    await cancelResponseBody(result.response)
     return documentError(502, "author_document_unavailable")
   }
   const descriptor = result.data as AuthorDocumentDescriptor
@@ -364,15 +475,23 @@ export async function loadAuthorDocument(
   try {
     const response = await fetch(
       `${config.contentBase.replace(/\/$/u, "")}${expected}`,
-      { redirect: "manual" }
+      { method: "GET", redirect: "manual" }
     )
     if (response.status === 404) {
+      await cancelResponseBody(response)
       return documentError(404, "author_document_not_found")
     }
-    if (response.status !== 200) {
+    if (response.status !== 200
+      || (requestedKind === "omtexterna" && !isExactSlaHtmlResponse(response))) {
+      await cancelResponseBody(response)
       return documentError(502, "author_document_unavailable")
     }
-    source = await readAuthorDocumentResponse(response)
+    source = await readAuthorDocumentResponse(
+      response,
+      requestedKind === "omtexterna"
+        ? maxSlaAuthorDocumentBytes
+        : maxGenericAuthorDocumentBytes
+    )
   } catch (error) {
     if (fetchStatus(error) === 404) {
       return documentError(404, "author_document_not_found")
@@ -382,7 +501,7 @@ export async function loadAuthorDocument(
 
   let bodyHtml: string
   try {
-    bodyHtml = parseAuthorDocumentBody(source)
+    bodyHtml = parseAuthorDocumentBody(source, requestedKind)
   } catch {
     return documentError(502, "author_document_unavailable")
   }

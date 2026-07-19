@@ -4,6 +4,7 @@ const fixture = "http://127.0.0.1:4100"
 const presentationApi = "/api/author-documents/S%C3%B6derbergH/presentation"
 const bibliographyApi = "/api/author-documents/Lagerl%C3%B6fS/bibliografi"
 const semerApi = "/api/author-documents/AlmqvistCJL/semer"
+const omtexternaApi = "/api/author-documents/Lagerl%C3%B6fS/omtexterna"
 
 type AuthorDocumentRequest = {
   kind: "descriptor" | "content"
@@ -154,6 +155,38 @@ test("loads and sanitizes the exact Almqvist semer document through private orig
   ])
 })
 
+test("loads the exact SLA landing through the fixed bounded source", async ({ request }) => {
+  const response = await request.get(omtexternaApi)
+  expect(response.status()).toBe(200)
+  expect(response.headers()["cache-control"]).toBe("no-store")
+  const payload = await response.json()
+
+  expect(payload.author).toEqual({
+    authorId: "LagerlöfS",
+    fullName: "Selma Lagerlöf",
+    lifespan: "1858-1940",
+    hasIntroduction: true,
+    hasDramawebben: true,
+    searchUrl: "/sok?forfattare=Lagerl%C3%B6fS&avancerad",
+    audioUrl: "https://litteraturbanken.se/ljudochbild/författare/lagerlofs"
+  })
+  expect(payload.documentKind).toBe("omtexterna")
+  expect(payload.bodyHtml).toContain("Utgåvor och andra vetenskapliga texter")
+  expect(payload.bodyHtml).toContain('style="clear: both"')
+  expect(payload.bodyHtml).toContain('style="list-style-type: disc"')
+  expect(payload.bodyHtml).toContain(
+    'href="/författare/LagerlöfS/omtexterna/TextkritiskaRiktlinjer.html" target="_top"'
+  )
+  expect(payload.bodyHtml).not.toMatch(/<(?:html|head|body|title|meta)\b/iu)
+  expect(await authorDocumentRequests(request)).toEqual([
+    {
+      kind: "descriptor",
+      path: "/private-v2/authors/Lagerl%C3%B6fS/documents/omtexterna"
+    },
+    { kind: "content", path: "/red/sla/omtexterna.html" }
+  ])
+})
+
 test("supports the sparse descriptor without inventing optional navigation", async ({
   request
 }) => {
@@ -197,6 +230,28 @@ for (const [failure, status, code] of [
   })
 }
 
+for (const failure of [
+  "wrong-content-type",
+  "oversized-declared",
+  "oversized-streamed",
+  "fetch-rejection"
+] as const) {
+  test(`rejects the SLA ${failure} transport without leaking upstream state`, async ({
+    request
+  }) => {
+    await setFailure(request, failure)
+    const response = await request.get(omtexternaApi)
+    await expectErrorCode(response, 502, "author_document_unavailable")
+    expect(await authorDocumentRequests(request)).toEqual([
+      {
+        kind: "descriptor",
+        path: "/private-v2/authors/Lagerl%C3%B6fS/documents/omtexterna"
+      },
+      { kind: "content", path: "/red/sla/omtexterna.html" }
+    ])
+  })
+}
+
 test("rejects a just-over-limit managed body without leaking upstream payload", async ({
   request
 }) => {
@@ -235,6 +290,7 @@ test("rejects unsupported kinds and unsafe author params without upstream conten
 }) => {
   for (const path of [
     "/api/author-documents/S%C3%B6derbergH/omtexterna",
+    "/api/author-documents/AlmqvistCJL/omtexterna",
     "/api/author-documents/%252e%252e/presentation",
     "/api/author-documents/%20S%C3%B6derbergH/presentation",
     `/api/author-documents/${"A".repeat(101)}/presentation`
@@ -244,6 +300,7 @@ test("rejects unsupported kinds and unsafe author params without upstream conten
   }
   expect((await authorDocumentRequests(request)).filter(entry => entry.kind === "content"))
     .toEqual([])
+  expect(await authorDocumentRequests(request)).toEqual([])
 })
 
 test("does not forward public query, cookies, or authorization to either private request", async ({

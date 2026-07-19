@@ -741,6 +741,39 @@ describe("v2 fixture server operations", () => {
     expect(oversized.status).toBe(200)
     expect((await oversized.arrayBuffer()).byteLength).toBe(1_048_577)
 
+    const slaContentPath = lagerlofOmtexterna.source_path
+    for (const [failure, expectedType, expectedLength] of [
+      ["wrong-content-type", "application/xhtml+xml; charset=utf-8", null],
+      ["oversized-declared", "text/html; charset=utf-8", 262_145],
+      ["oversized-streamed", "text/html; charset=utf-8", null]
+    ] as const) {
+      await fetch(`${origin}/_author_document_failure`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ failure })
+      })
+      const response = await fetch(`${origin}${slaContentPath}`)
+      expect(response.status, failure).toBe(200)
+      expect(response.headers.get("content-type"), failure).toBe(expectedType)
+      if (expectedLength === null) {
+        expect(response.headers.get("content-length"), failure).toBeNull()
+      } else {
+        expect(Number(response.headers.get("content-length")), failure).toBe(expectedLength)
+      }
+      if (failure === "oversized-streamed") {
+        expect((await response.arrayBuffer()).byteLength).toBe(262_145)
+      }
+    }
+
+    await fetch(`${origin}/_author_document_failure`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ failure: "fetch-rejection" })
+    })
+    await expect(fetch(`${origin}${slaContentPath}`)).rejects.toThrow()
+    expect(await (await fetch(`${origin}/_author_document_failure`)).json())
+      .toEqual({ failure: "fetch-rejection" })
+
     const invalidFailure = await fetch(`${origin}/_author_document_failure`, {
       method: "PUT",
       headers: { "content-type": "application/json" },
@@ -757,6 +790,8 @@ describe("v2 fixture server operations", () => {
     }
 
     await fetch(`${origin}/_author_document_failure`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_author_document_failure`)).json())
+      .toEqual({ failure: null })
     await fetch(`${origin}/_author_document_delay`, {
       method: "PUT",
       headers: { "content-type": "application/json" },

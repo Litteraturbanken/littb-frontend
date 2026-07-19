@@ -20,6 +20,7 @@ function requiredParam(
 
 function documentKind(value: string): AuthorDocumentKind | null {
   return value === "presentation" || value === "bibliografi" || value === "semer"
+    || value === "omtexterna"
     ? value
     : null
 }
@@ -33,5 +34,8 @@ export default defineEventHandler(async event => {
 
   const kind = documentKind(requiredParam(event, "document"))
   if (!kind) return documentError(404, "author_document_not_found")
+  if (kind === "omtexterna" && author !== "LagerlöfS") {
+    return documentError(404, "author_document_author_not_found")
+  }
   return await loadAuthorDocument(event, author, kind)
 })

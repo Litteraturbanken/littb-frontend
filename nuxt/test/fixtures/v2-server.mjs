@@ -153,6 +153,19 @@ const oversizedAuthorDocumentContent = Buffer.concat([
   ),
   oversizedAuthorDocumentSuffix
 ])
+const oversizedSlaAuthorDocumentPrefix = Buffer.from("<!doctype html><html><body><p>")
+const oversizedSlaAuthorDocumentSuffix = Buffer.from(
+  "upstream-provider-payload-probe</p></body></html>"
+)
+const oversizedSlaAuthorDocumentContent = Buffer.concat([
+  oversizedSlaAuthorDocumentPrefix,
+  Buffer.alloc(
+    262_145 - oversizedSlaAuthorDocumentPrefix.length
+      - oversizedSlaAuthorDocumentSuffix.length,
+    "x"
+  ),
+  oversizedSlaAuthorDocumentSuffix
+])
 const authorDocumentPdf = readFileSync(
   new URL("./presentation-content/Figurdiktensombarockblandkonst.pdf", import.meta.url)
 )
@@ -1696,6 +1709,10 @@ const server = createServer(async (request, response) => {
       "content-503",
       "content-redirect",
       "oversized-content",
+      "wrong-content-type",
+      "oversized-declared",
+      "oversized-streamed",
+      "fetch-rejection",
       "malformed-descriptor",
       "unsafe-source-path",
       "malformed-content"
@@ -1880,6 +1897,31 @@ const server = createServer(async (request, response) => {
         location: `${redirectTargetOrigin}/author-document/content`
       })
       return response.end()
+    }
+    if (authorDocumentFailure === "fetch-rejection") {
+      return request.socket.destroy()
+    }
+    if (authorDocumentFailure === "wrong-content-type") {
+      return sendBody(
+        response,
+        200,
+        "application/xhtml+xml; charset=utf-8",
+        authorDocumentBody
+      )
+    }
+    if (authorDocumentFailure === "oversized-declared") {
+      return sendBody(
+        response,
+        200,
+        "text/html; charset=utf-8",
+        oversizedSlaAuthorDocumentContent,
+        { "content-length": oversizedSlaAuthorDocumentContent.length }
+      )
+    }
+    if (authorDocumentFailure === "oversized-streamed") {
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+      response.write(oversizedSlaAuthorDocumentContent.subarray(0, 200_000))
+      return response.end(oversizedSlaAuthorDocumentContent.subarray(200_000))
     }
     return sendBody(
       response,
