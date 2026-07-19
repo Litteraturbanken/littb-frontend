@@ -22,6 +22,10 @@ import { libraryQueryStringResponse } from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import {
+  slaArticleDescriptors,
+  slaArticleFixtures
+} from "./sla-article-data.mjs"
+import {
   readerFacsimileJpegFile,
   readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
@@ -186,6 +190,11 @@ const authorDocumentDescriptors = new Map([
   [`${semerAuthorDocumentDescriptor.author_id}|${semerAuthorDocumentDescriptor.document_kind}`, semerAuthorDocumentDescriptor],
   [`${sparseDocument.author_id}|${sparseDocument.document_kind}`, sparseDocument]
 ])
+const slaArticleContent = new Map(slaArticleFixtures.map(article => [
+  article.sourcePath,
+  readFileSync(new URL(`./sla-article-content/${article.file}`, import.meta.url))
+]))
+const slaArticleDescriptorMap = new Map(Object.entries(slaArticleDescriptors))
 
 const port = Number(process.env.LBAPI_FIXTURE_PORT || 4100)
 const redirectTargetPort = port + 1
@@ -243,6 +252,8 @@ let dramawebbenDocumentFailure = null
 let dramawebbenDocumentRedirectTargetRequests = []
 let dramawebbenExcludedDataRequests = []
 let slaExcludedDataRequests = []
+let slaArticleDescriptorRequests = []
+let slaArticleSourceRequests = []
 let textSearchRequests = { results: [], count: [], options: [] }
 let textSearchFailures = new Set()
 let textSearchDelays = { results: {}, count: {}, options: {} }
@@ -1630,6 +1641,20 @@ const server = createServer(async (request, response) => {
     slaExcludedDataRequests = []
     return sendJson(response, 200, { requests: slaExcludedDataRequests })
   }
+  if (url.pathname === "/_sla_article_descriptor_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: slaArticleDescriptorRequests })
+  }
+  if (url.pathname === "/_sla_article_descriptor_requests" && request.method === "DELETE") {
+    slaArticleDescriptorRequests = []
+    return sendJson(response, 200, { requests: slaArticleDescriptorRequests })
+  }
+  if (url.pathname === "/_sla_article_source_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: slaArticleSourceRequests })
+  }
+  if (url.pathname === "/_sla_article_source_requests" && request.method === "DELETE") {
+    slaArticleSourceRequests = []
+    return sendJson(response, 200, { requests: slaArticleSourceRequests })
+  }
   if (
     url.pathname === "/_dramawebben_document_redirect_target_requests"
     && request.method === "GET"
@@ -1876,6 +1901,12 @@ const server = createServer(async (request, response) => {
   if (request.method === "GET" && authorDocumentAsset && !url.search) {
     authorDocumentAssetRequests.push(rawPathname)
     return sendBody(response, 200, "image/jpeg", authorDocumentAsset)
+  }
+
+  const slaArticleBody = slaArticleContent.get(rawPathname)
+  if (request.method === "GET" && slaArticleBody && !url.search) {
+    slaArticleSourceRequests.push({ method: request.method, path: request.url })
+    return sendBody(response, 200, "text/html; charset=utf-8", slaArticleBody)
   }
 
   const authorDocumentBody = authorDocumentContent.get(rawPathname)
@@ -2249,6 +2280,34 @@ const server = createServer(async (request, response) => {
         return author ? [author] : []
       })
     })
+  }
+
+  const slaArticleCandidate = request.method === "GET" && !url.search
+    ? /^\/v2\/authors\/([^/]+)\/documents\/omtexterna\/articles\/([^/]+)$/.exec(
+        rawApiPathname
+      )
+    : null
+  if (slaArticleCandidate) {
+    let authorId
+    let articleId
+    try {
+      authorId = decodeURIComponent(slaArticleCandidate[1])
+      articleId = decodeURIComponent(slaArticleCandidate[2])
+    } catch {
+      return sendJson(response, 404, {
+        error: { code: "not_found", message: "Resource not found", details: null }
+      })
+    }
+    const descriptor = authorId === "LagerlöfS"
+      ? slaArticleDescriptorMap.get(articleId)
+      : null
+    if (!descriptor) {
+      return sendJson(response, 404, {
+        error: { code: "not_found", message: "Resource not found", details: null }
+      })
+    }
+    slaArticleDescriptorRequests.push({ method: request.method, path: request.url })
+    return sendJson(response, 200, descriptor)
   }
 
   const authorDocumentCandidate = request.method === "GET"

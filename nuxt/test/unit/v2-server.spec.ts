@@ -666,7 +666,6 @@ describe("v2 fixture server operations", () => {
       [descriptorPath, "POST"],
       [`${sourcePath}?authority=exact`, "GET"],
       [sourcePath, "POST"],
-      ["/red/sla/TextkritiskaRiktlinjer.html", "GET"],
       ["/red/sla/omtexterna/TextkritiskaRiktlinjer.html", "GET"],
       ["/red/forfattare/LagerlofS/omtexterna/index.html", "GET"]
     ] as const) {

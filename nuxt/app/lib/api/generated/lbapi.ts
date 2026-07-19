@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/authors/{author_id}/documents/omtexterna/articles/{article_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Sla Article */
+        get: operations["v2_get_sla_article"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/authors/{author_id}/works": {
         parameters: {
             query?: never;
@@ -631,6 +648,39 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** SlaArticleDescriptor */
+        SlaArticleDescriptor: {
+            /**
+             * Article Id
+             * @enum {string}
+             */
+            article_id: "TextkritiskaRiktlinjer.html" | "TextkritiskVerkstad.html" | "OmSelmaLagerlofArkivet.html" | "Introduktion.html" | "Adaptioner.html" | "ForeGostaBerling.html" | "BrevOmGBS.html" | "SprakandringarGBS.html" | "AndringarGBS.html" | "ForskningOchLitthist.html" | "TextkritiskGBS.html" | "ManuskriptGBS.html" | "Oversattningar.html" | "IllustrationerOchOmslag.html" | "Recensioner.html" | "OLintroduktion.html" | "TextkritiskOL1894.html" | "MsTillOL.html" | "AboutTheSLagerlofArchive.html" | "SelmaLagerlofShort.html" | "SelmaLagerlofEnglish.html" | "PublishedWorks.html" | "ScholarlyEditions.html";
+            /** Audio Url */
+            audio_url: string | null;
+            /** Author Id */
+            author_id: string;
+            /** Birth Year */
+            birth_year: string | null;
+            /** Death Year */
+            death_year: string | null;
+            /**
+             * Document Kind
+             * @constant
+             */
+            document_kind: "omtexterna";
+            /** Full Name */
+            full_name: string;
+            /** Has Dramawebben */
+            has_dramawebben: boolean;
+            /** Has Introduction */
+            has_introduction: boolean;
+            /** Normalized Author Id */
+            normalized_author_id: string;
+            /** Search Url */
+            search_url: string | null;
+            /** Source Path */
+            source_path: string;
+        };
         /** StatsResponse */
         StatsResponse: {
             /** Authors */
@@ -1095,6 +1145,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthorDocumentDescriptor"];
+                };
+            };
+            /** @description Author document not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_sla_article: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: "TextkritiskaRiktlinjer.html" | "TextkritiskVerkstad.html" | "OmSelmaLagerlofArkivet.html" | "Introduktion.html" | "Adaptioner.html" | "ForeGostaBerling.html" | "BrevOmGBS.html" | "SprakandringarGBS.html" | "AndringarGBS.html" | "ForskningOchLitthist.html" | "TextkritiskGBS.html" | "ManuskriptGBS.html" | "Oversattningar.html" | "IllustrationerOchOmslag.html" | "Recensioner.html" | "OLintroduktion.html" | "TextkritiskOL1894.html" | "MsTillOL.html" | "AboutTheSLagerlofArchive.html" | "SelmaLagerlofShort.html" | "SelmaLagerlofEnglish.html" | "PublishedWorks.html" | "ScholarlyEditions.html";
+                author_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlaArticleDescriptor"];
                 };
             };
             /** @description Author document not found */
