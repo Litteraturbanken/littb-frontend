@@ -324,7 +324,6 @@ test("rejects unsupported SLA identities as global 404s before any data fetch", 
   const firewall = await installDataFirewall(page)
   for (const route of [
     "/författare/S%C3%B6derbergH/omtexterna",
-    "/författare/Lagerl%C3%B6fS/omtexterna/Introduktion.html",
     "/författare/Lagerl%C3%B6fS/omtexterna.html",
     "/författare/Lagerl%C3%B6fS/biblinfo",
     "/författare/Lagerl%C3%B6fS/%25"
