@@ -50,9 +50,9 @@ This would avoid a nearly empty page, but it changes the public URL, start backg
 
 `/dramawebben` returns `200` and renders the start shell during SSR with no document or plays request.
 
-`/dramawebben/om` and `/dramawebben/kringtexter` return `200` with their sanitized managed bodies in the initial SSR HTML. An upstream `404` becomes a public `404`; an upstream redirect, other status, invalid content type, oversize body, malformed document, or fetch failure becomes `502`. Error responses retain the stable shell, disclose no upstream body or URL, and use a neutral local message.
+`/dramawebben/om` and `/dramawebben/kringtexter` return `200` with their sanitized managed bodies in the initial SSR HTML. An upstream `404` becomes a public `404`; an upstream redirect, other status, invalid content type, oversize body, malformed document, or fetch failure becomes `502`. These valid-route source failures retain the stable shell, disclose no upstream body or URL, and use a neutral local message.
 
-Unknown dynamic document names return `404` before any fetch. The excluded `pjäser` and `författare` names are not accepted by the managed-document page.
+Unknown dynamic document names return Nuxt's global `404` before the page is created or any fetch occurs. The excluded `pjäser` and `författare` names are not accepted by the managed-document page. Shell-preserving errors apply only after one of the two valid managed names has passed route validation.
 
 All three routes accept and preserve arbitrary query strings exactly as ordinary Nuxt routing state. Query-only changes do not refetch or change the selected document. This matches Angular's `reloadOnSearch: false` behavior for these pages. Navigation links themselves use the legacy query-free hrefs.
 
@@ -68,7 +68,7 @@ type DramawebbenPage = "start" | "om" | "kringtexter"
 
 The component reproduces the meaningful DOM in `app/views/dramaweb.html`: cover, `startpage`/`subpage` wrapper, white Dramawebben logo, start-only tagline/expanded link wording, exact navigation order and hrefs, and a `page_content` slot. Only `Mer läsning` is active on `kringtexter`; legacy Om has no active class and remains that way.
 
-Pages set the authority body classes established by the frozen Angular capture. Expected classes are `page-dramaweb ready` for start and `page-dramaweb drama-dramasubpage ready` for managed subpages; the capture test is the authority if Angular adds another stable class. Existing `styles.scss` already contains the complete `.page-dramaweb` styling and is byte-identical between Angular and Nuxt. Existing Nuxt assets `dramawebben.jpg`, `dramawebben_fade.jpg`, and `dramawebben_vit.svg` are byte-identical to Angular. No visual redesign, Tailwind replacement, or new CSS is part of this slice.
+Pages set the authority body classes established by the frozen Angular capture. The exact classes are `focus page-dramaweb ready` for start and `focus page-dramaweb drama-dramasubpage ready` for managed subpages. Existing `styles.scss` already contains the complete `.page-dramaweb` styling and is byte-identical between Angular and Nuxt. Existing Nuxt assets `dramawebben.jpg`, `dramawebben_fade.jpg`, and `dramawebben_vit.svg` are byte-identical to Angular. No visual redesign, Tailwind replacement, or new CSS is part of this slice.
 
 `app/pages/dramawebben/index.vue` owns the start page and performs no fetch. `app/pages/dramawebben/[document].vue` validates the two exact document names and owns its `useAsyncData` call directly in `<script setup>`; no one-use composable is introduced.
 
@@ -136,7 +136,7 @@ The Angular capture uses the real Angular route/template/controller with frozen 
 
 Capture six authority images: start, om, and kringtexter at desktop and mobile sizes. Wait for the exact managed heading, fonts, logo, and CSS background before capture. Assert exact body/wrapper classes, active links, link labels, content source request, Angular dataset request shape, and no production or unexpected requests.
 
-Unit tests cover exact mapping, one-body extraction, the current full XHTML fixtures, URL/element/attribute sanitation, dangerous payload removal, redirects, media type, streaming limit, and error mapping. SSR tests cover body-in-initial-HTML, exact request ledgers, no plays endpoint, title/classes, root zero-fetch, query behavior, 404-before-fetch, and shell-preserving 404/502 without leaks. Browser behavior tests cover query-only no-refetch, document navigation/stale-response isolation, and exact links. Visual tests require zero-pixel parity where deterministic; any nonzero tolerance requires documented evidence rather than CSS changes by default.
+Unit tests cover exact mapping, one-body extraction, the current full XHTML fixtures, URL/element/attribute sanitation, dangerous payload removal, redirects, media type, streaming limit, and error mapping. SSR tests cover body-in-initial-HTML, exact request ledgers, no plays endpoint, title/classes, root zero-fetch, query behavior, invalid-name global 404-before-fetch, and valid-route shell-preserving source 404/502 without leaks. Browser behavior tests cover query-only no-refetch, document navigation/stale-response isolation, and exact links. Visual tests require zero-pixel parity where deterministic; any nonzero tolerance requires documented evidence rather than CSS changes by default.
 
 ## Success Criteria
 

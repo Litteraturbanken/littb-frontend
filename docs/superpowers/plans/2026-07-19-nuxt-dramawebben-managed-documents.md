@@ -93,7 +93,11 @@ Extend `playwright.angular.config.ts`, match only `capture-dramawebben-angular.s
 
 - [ ] **Step 4: Write the closed Angular capture test**
 
-Build an exact allowlist from the observed Vite shell requests. Fulfill only:
+Start from the already reviewed explicit `allowedShellStaticRequests` inventory in
+`capture-author-documents-angular.spec.ts`, then commit the exact Dramawebben
+inventory after adding/removing only observed route-specific entries. Every
+listed shell signature must occur exactly once and the router must default-deny;
+do not generate an allowlist from the traffic under test. Fulfill only:
 
 ```ts
 const managed = new Map([
@@ -101,23 +105,35 @@ const managed = new Map([
   ["/red/dramawebben/kringtexter/kringtexter.html", kringtexterBytes]
 ])
 
-const expectedDramaQuery = {
-  exclude: "text,parts,sourcedesc,pages,errata",
-  include: "shorttitle,title,lbworkid,titlepath,authors,titleid,mediatype,dramawebben,keyword,startpagename,sortkey",
-  filter_and: {
-    "provenance.library": "Dramawebben",
-    texttype: "drama"
-  },
-  sort_field: "sortkey|asc",
-  show_all: "true",
-  to: "10000",
-  author_aggregation: "true"
-}
+const expectedDramaQueryEntries = [
+  ["author_aggregation", "true"],
+  ["exclude", "text,parts,sourcedesc,pages,errata"],
+  ["filter_and", '{"provenance.library":"Dramawebben","texttype":"drama"}'],
+  ["include", "shorttitle,title,lbworkid,titlepath,authors,titleid,mediatype,dramawebben,keyword,startpagename,sortkey"],
+  ["show_all", "true"],
+  ["sort_field", "sortkey|asc"],
+  ["to", "10000"]
+] as const
 ```
 
-Return `{ data: [], author_aggregation: [] }` for the one exact Angular `list_all/etext,faksimil,pdf,infopost` request, the exact legacy author bootstrap response required by the shell, local typography CSS, backgrounds XML/CSS, and exact static/logo/background assets. Abort every other request. Add negative probes for an unlisted same-origin script/document, wrong source query/method, HTTP/alternate-port Typography/GTM origins, an unlisted API, and the production managed origin.
+Assert that `[...url.searchParams.entries()]` equals this alphabetically ordered
+wire list exactly, including one JSON-valued `filter_and` parameter and no
+duplicates. Return `{ data: [], author_aggregation: [] }` for the one exact
+Angular `list_all/etext,faksimil,pdf,infopost` request. Admit exactly one author
+bootstrap request,
+`GET /api/get_authors?exclude=intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben`,
+and return `{ data: [] }`. Fulfill only the established exact local Typography
+CSS, backgrounds XML/CSS, and explicit static/logo/background inventory. Abort
+every other request. Add negative probes for an unlisted same-origin
+script/document, wrong source query/method, duplicate or reordered plays
+parameters, HTTP/alternate-port Typography/GTM origins, an unlisted API, and the
+production managed origin.
 
-For each case assert exact body classes, `startpage`/`subpage`, logo/tagline, link text/hrefs/active state, expected heading/body, exactly one Angular plays request, zero/one exact managed request, loaded fonts/background/logo, no production/unexpected requests, and no new console/page errors.
+For each case assert exact body classes (`focus page-dramaweb ready`, plus
+`drama-dramasubpage` on subpages), `startpage`/`subpage`, logo/tagline, link
+text/hrefs/active state, expected heading/body, exactly one Angular plays
+request, zero/one exact managed request, loaded fonts/background/logo, no
+production/unexpected requests, and no new console/page errors.
 
 - [ ] **Step 5: Run the Angular authority and inspect all six images**
 
@@ -173,7 +189,7 @@ export type DramawebbenDocumentErrorCode =
 
 - [ ] **Step 2: Write failing unit tests for the complete trust boundary**
 
-Test exact mapping, wrong names, exactly one body, body-only output, current frozen fixtures, comment/head/doctype removal, dangerous subtree removal, unknown-element unwrapping, attribute allowlisting, root-relative/fragment/HTTPS href preservation, protocol-relative/HTTP/javascript/data/traversal/control rejection, `_blank` rel hardening, invalid content type, manual redirects, declared and streamed bodies over 262,144 bytes, upstream 404, and payload non-leakage.
+Test exact mapping, wrong names, exactly one body, body-only output, current frozen fixtures, comment/head/doctype removal, dangerous subtree removal, unknown-element unwrapping, attribute allowlisting, root-relative/fragment/HTTPS href preservation, protocol-relative/HTTP/javascript/data/traversal/control rejection, `_blank` rel hardening, invalid content type, manual redirects, declared and streamed bodies over 262,144 bytes, upstream 404, and payload non-leakage. Prove that public query parameters, cookies, and authorization headers are never forwarded to the managed origin.
 
 Run:
 
@@ -312,7 +328,7 @@ git commit -m "feat(nuxt): render Dramawebben start shell"
 
 - [ ] **Step 1: Extend SSR tests with failing managed-page contracts**
 
-For both routes assert `200`, body content in initial HTML, exact one-source request, no plays/authors/API request, subpage/body classes, compact logo/no tagline, exact link wording/active state, upstream head/title/doctype absence, and sanitized probes absent. Add exact invalid-name 404-before-fetch, source 404, source failure, redirect, wrong content type, malformed XHTML, and oversize cases with stable shell/no source leak.
+For both routes assert `200`, body content in initial HTML, exact one-source request, no plays/authors/API request, subpage/body classes, compact logo/no tagline, exact link wording/active state, upstream head/title/doctype absence, and sanitized probes absent. Add exact invalid-name global 404-before-fetch. Add source 404, source failure, redirect, wrong content type, malformed XHTML, and oversize cases with the stable Dramawebben shell and no source leak.
 
 - [ ] **Step 2: Write failing browser behavior tests**
 
@@ -323,7 +339,8 @@ Run:
 ```bash
 cd nuxt
 LITTB_NUXT_TEST_PORT=3027 npx playwright test \
-  test/ssr/dramawebben.spec.ts --project=ssr \
+  test/ssr/dramawebben.spec.ts --project=ssr
+LITTB_NUXT_TEST_PORT=3027 npx playwright test \
   test/e2e/dramawebben.behavior.spec.ts --project=desktop-chromium
 ```
 
@@ -331,22 +348,55 @@ Expected: managed-page cases fail because the dynamic page does not exist.
 
 - [ ] **Step 3: Implement exact validation and page-local fetch ownership**
 
-Use `definePageMeta.validate` to accept only `om` and `kringtexter`. Keep the fetch in the page:
+Use `definePageMeta.validate` to accept only `om` and `kringtexter`; invalid and
+excluded names intentionally use Nuxt's global 404 before the page is created.
+Keep the fetch in the page and reuse the proven accepted-identity ownership
+pattern from the author-document page:
 
 ```ts
+type PageResult = {
+  identity: string
+  status: 200 | 404 | 502
+  errorCode: DramawebbenDocumentErrorCode | null
+  page: DramawebbenManagedDocument | null
+}
+
 const route = useRoute()
 const fetcher = useRequestFetch()
-const kind = computed<DramawebbenDocumentKind>(() => exactDocument(route.params.document))
-const identity = computed(() => `dramawebben-document:${kind.value}`)
-const { data } = await useAsyncData(identity, async () => {
-  return await fetcher<DramawebbenManagedDocument>(
-    `/api/dramawebben/documents/${kind.value}`,
-    { retry: 0 }
-  )
-}, { lazy: true })
+const kind = computed<DramawebbenDocumentKind>(() => validatedDocumentParam(route))
+const currentIdentity = computed(() => kind.value)
+const asyncKey = computed(() => `dramawebben-document:${currentIdentity.value}`)
+const { data } = await useAsyncData<PageResult>(asyncKey, async () => {
+  const requestedKind = kind.value
+  return await loadPageResult(fetcher, requestedKind, requestedKind)
+}, {
+  lazy: true,
+  getCachedData: (key, nuxtApp) => {
+    const cached = nuxtApp.payload.data[key] as PageResult | undefined
+    return cached?.identity === currentIdentity.value ? cached : undefined
+  }
+})
+
+const accepted = shallowRef<PageResult | null>(null)
+watch(currentIdentity, () => { accepted.value = null }, { flush: "sync" })
+watch([data, currentIdentity], ([candidate, identity]) => {
+  if (candidate?.identity === identity) accepted.value = candidate
+}, { immediate: true, flush: "sync" })
+
+if (import.meta.server && accepted.value?.status !== 200) {
+  setResponseStatus(accepted.value?.status ?? 502)
+}
+
+const page = computed(() => accepted.value?.status === 200
+  ? accepted.value.page
+  : null)
 ```
 
-Validate `documentKind`, retain only a result matching the current identity, clear accepted state synchronously on document changes, and set the SSR status from local 404/502 error codes. Do not include `route.query` in the async key.
+`validatedDocumentParam` must be total after route validation. `loadPageResult`
+catches the same-origin API error, extracts only the two local error codes, maps
+them to `404`/`502`, validates the complete successful object and matching
+`documentKind`, and otherwise returns a redacted `502` result. Do not include
+`route.query` in the async key.
 
 - [ ] **Step 4: Render only validated sanitized HTML inside the shell**
 
@@ -355,7 +405,7 @@ Use the exact subpage shell and one content container:
 ```vue
 <DramawebbenShell :page="kind">
   <div v-if="page" v-html="page.bodyHtml" />
-  <p v-else-if="settled" class="error">Innehållet kan inte visas just nu.</p>
+  <p v-else-if="accepted" class="error">Innehållet kan inte visas just nu.</p>
 </DramawebbenShell>
 ```
 
