@@ -25,15 +25,15 @@ const isStartPage = computed(() => props.page === "start")
           <a href="/dramawebben/pjäser">Pjäser</a>
         </li>{{ " " }}
         <li :class="{ active: page === 'kringtexter' }">
-          <a href="/dramawebben/kringtexter">Mer läsning</a>
+          {{ " " }}<a href="/dramawebben/kringtexter">Mer läsning</a>
         </li>{{ " " }}
         <li>
-          <a href="/sok?avancerad&amp;keywords=keyword:Dramawebben">Sök <span
+          {{ " " }}<a href="/sok?avancerad&amp;keywords=keyword:Dramawebben">Sök <span
             v-if="isStartPage"
           >i pjäserna</span></a>
         </li>{{ " " }}
         <li>
-          <a href="/dramawebben/om">Om <span v-if="isStartPage">dramawebben</span></a>
+          {{ " " }}<a href="/dramawebben/om">Om <span v-if="isStartPage">dramawebben</span></a>
         </li>{{ " " }}
         <li><a href="/">Till Litteraturbanken</a></li>
       </ul>
