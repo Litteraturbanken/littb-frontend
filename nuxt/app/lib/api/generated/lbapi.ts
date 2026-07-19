@@ -259,6 +259,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/works/{author_id}/{title_path}/source-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Work Source Info */
+        get: operations["v2_get_work_source_info"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/works/{work_id}/search-hits": {
         parameters: {
             query?: never;
@@ -780,6 +797,95 @@ export interface components {
             /** Source Path */
             source_path: string;
         };
+        /** SourceInfoAuthor */
+        SourceInfoAuthor: {
+            /** Author Id */
+            author_id: string;
+            /** Author Type */
+            author_type: string | null;
+            /** Full Name */
+            full_name: string;
+            /** Role */
+            role: string | null;
+            /** Surname */
+            surname: string | null;
+            /** Url */
+            url: string;
+        };
+        /** SourceInfoCover */
+        SourceInfoCover: {
+            /** Large Url */
+            large_url: string;
+            /** Small Url */
+            small_url: string;
+        };
+        /** SourceInfoDownloadAction */
+        SourceInfoDownloadAction: {
+            /** Filename */
+            filename: string;
+            /**
+             * Label
+             * @enum {string}
+             */
+            label: "epub" | "pdf";
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "epub" | "pdf";
+            /** Size Bytes */
+            size_bytes: number | null;
+            /** Url */
+            url: string;
+        };
+        /** SourceInfoDramaFact */
+        SourceInfoDramaFact: {
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "first_staged" | "first_staged_in_sweden" | "number_of_pages" | "number_of_acts" | "number_of_roles" | "male_roles" | "female_roles" | "other_roles";
+            /** Value */
+            value: string;
+        };
+        /** SourceInfoDramawebben */
+        SourceInfoDramawebben: {
+            /** Facts */
+            facts: components["schemas"]["SourceInfoDramaFact"][];
+            /** Has Introduction */
+            has_introduction: boolean;
+            /** History Html */
+            history_html: string | null;
+            /** Roles */
+            roles: string[];
+        };
+        /** SourceInfoErrataRow */
+        SourceInfoErrataRow: {
+            /** Cells Html */
+            cells_html: string[];
+        };
+        /** SourceInfoProvenance */
+        SourceInfoProvenance: {
+            /** Library */
+            library: string;
+            /** Signum */
+            signum: string | null;
+        };
+        /** SourceInfoReadAction */
+        SourceInfoReadAction: {
+            /**
+             * Label
+             * @enum {string}
+             */
+            label: "etext" | "faksimil";
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil";
+            /** Url */
+            url: string;
+        };
         /** StatsResponse */
         StatsResponse: {
             /** Authors */
@@ -1164,6 +1270,58 @@ export interface components {
             query: string;
             /** Total Hits */
             total_hits: number;
+        };
+        /** WorkSourceInfoResponse */
+        WorkSourceInfoResponse: {
+            /** Author Id */
+            author_id: string;
+            /** Authors */
+            authors: components["schemas"]["SourceInfoAuthor"][];
+            cover: components["schemas"]["SourceInfoCover"];
+            /** Download Actions */
+            download_actions: components["schemas"]["SourceInfoDownloadAction"][];
+            dramawebben: components["schemas"]["SourceInfoDramawebben"] | null;
+            /** Errata */
+            errata: components["schemas"]["SourceInfoErrataRow"][];
+            /** Imprint */
+            imprint: string | null;
+            /** Is Printed */
+            is_printed: boolean | null;
+            /** Libris Id */
+            libris_id: string | null;
+            /** License Key */
+            license_key: string | null;
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil" | "pdf" | "infopost";
+            /** Provenance */
+            provenance: components["schemas"]["SourceInfoProvenance"][];
+            /** Read Actions */
+            read_actions: components["schemas"]["SourceInfoReadAction"][];
+            /** Short Title */
+            short_title: string | null;
+            /** Source Description Author Id */
+            source_description_author_id: string | null;
+            /** Source Description Html */
+            source_description_html: string | null;
+            /** Start Page */
+            start_page: string | null;
+            /** Text Type */
+            text_type: string | null;
+            /** Title */
+            title: string;
+            /** Title Path */
+            title_path: string;
+            /** Urn */
+            urn: string | null;
+            /** Work Id */
+            work_id: string;
+            /** Work Introduction Author Id */
+            work_introduction_author_id: string | null;
+            /** Work Introduction Html */
+            work_introduction_html: string | null;
         };
     };
     responses: never;
@@ -1913,6 +2071,67 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TextSearchResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_work_source_info: {
+        parameters: {
+            query?: {
+                media_type?: ("etext" | "faksimil") | null;
+            };
+            header?: never;
+            path: {
+                author_id: string;
+                title_path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkSourceInfoResponse"];
+                };
+            };
+            /** @description Work not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Invalid request */
