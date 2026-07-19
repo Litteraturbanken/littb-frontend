@@ -44,16 +44,16 @@
 
 - [ ] **Step 1: Copy and verify the live managed XHTML fixtures**
 
-Retrieve only the two approved sources and verify before adding them:
+Retrieve only the two approved sources read-only, verify them, and then add the
+verified text fixtures with `apply_patch` (not `curl --output` or another shell
+write):
 
 ```bash
 curl --fail --location --max-time 20 \
-  https://red.litteraturbanken.se/red/dramawebben/om.html \
-  --output nuxt/test/fixtures/dramawebben-content/om.html
+  https://red.litteraturbanken.se/red/dramawebben/om.html
 curl --fail --location --max-time 20 \
-  https://red.litteraturbanken.se/red/dramawebben/kringtexter/kringtexter.html \
-  --output nuxt/test/fixtures/dramawebben-content/kringtexter.html
-sha256sum nuxt/test/fixtures/dramawebben-content/{om,kringtexter}.html
+  https://red.litteraturbanken.se/red/dramawebben/kringtexter/kringtexter.html
+shasum -a 256 nuxt/test/fixtures/dramawebben-content/{om,kringtexter}.html
 ```
 
 Expected hashes, in order:
@@ -104,6 +104,10 @@ const managed = new Map([
 const expectedDramaQuery = {
   exclude: "text,parts,sourcedesc,pages,errata",
   include: "shorttitle,title,lbworkid,titlepath,authors,titleid,mediatype,dramawebben,keyword,startpagename,sortkey",
+  filter_and: {
+    "provenance.library": "Dramawebben",
+    texttype: "drama"
+  },
   sort_field: "sortkey|asc",
   show_all: "true",
   to: "10000",
