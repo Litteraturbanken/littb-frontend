@@ -127,6 +127,8 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(html).toContain(`href="${sourceHref}">Mer om boken</a>`)
   expect(html).toContain('class="reader-context-ssr"')
   expect(html).not.toContain('class="reader-context-ssr sr-only"')
+  expect(html).toContain("Sök i verket")
+  expect(html).toContain('class="reader-work-search-trigger"')
 
   const recorded = await readerRequests(request)
   expect(recorded.filter(path => path.startsWith("/api/get_work_info?"))).toHaveLength(1)
@@ -136,6 +138,20 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(await readerHitRequests(request)).toEqual([])
   expect(await sourceInfoRequests(request)).toEqual([])
   expect(await sourceInfoStaticRequests(request)).toEqual([])
+})
+
+test("canonical Reader API projects exact work searchability", async ({ request }) => {
+  const searchable = await request.get(
+    "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/etext"
+  )
+  expect(searchable.status()).toBe(200)
+  expect((await searchable.json()).searchable).toBe(true)
+
+  const inert = await request.get(
+    "/api/reader/S%C3%B6derbergH/UnsearchableEtextReader/-2/etext"
+  )
+  expect(inert.status()).toBe(200)
+  expect((await inert.json()).searchable).toBe(false)
 })
 
 test("legacy main-author contribution is present in the Reader SSR fallback", async ({
@@ -345,6 +361,7 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     preferredSize: 3,
     previousPageName: "1",
     previousPartPageName: "1",
+    searchable: true,
     sliderPercent: 0,
     sources: [
       {

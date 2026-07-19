@@ -170,10 +170,14 @@ test("SSR renders every safe mixed family and rejects malformed rows and destina
     .toBe("M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25")
   expect(document.querySelector<HTMLButtonElement>("[data-library-advanced]")?.disabled)
     .toBe(true)
+  expect(document.querySelector('[data-library-tab="latest"]')?.getAttribute("href"))
+    .toBe("/bibliotek?visa=latest&filter=blandat&sort=nytillkommet")
+  expect(document.querySelector('[data-library-tab="latest"]')?.hasAttribute("data-deferred"))
+    .toBe(false)
   expect([...document.querySelectorAll<HTMLButtonElement>("[data-library-tab][data-deferred]")]
     .every(button => button.disabled)).toBe(true)
   expect([...document.querySelectorAll<HTMLButtonElement>("[data-library-tab][data-deferred]")])
-    .toHaveLength(4)
+    .toHaveLength(3)
   expect(document.querySelector('[data-library-tab="epub"]')?.tagName).toBe("A")
   expect(document.querySelector('[data-library-tab="epub"]')?.getAttribute("href"))
     .toBe("/bibliotek?visa=epub&filter=blandat&sort=popularitet")
@@ -181,6 +185,73 @@ test("SSR renders every safe mixed family and rejects malformed rows and destina
   const ledger = await requests(request)
   expect(ledger).toHaveLength(1)
   expect(ledger[0]?.query.sort_field).toBe("sortkey|asc")
+})
+
+test("SSR renders the canonical latest-work slice with imported-date groups", async ({ request }) => {
+  const response = await request.get("/bibliotek?visa=latest&sort=nytillkommet")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(document.querySelector('[data-library-tab="latest"]')?.getAttribute("aria-current"))
+    .toBe("page")
+  expect(document.querySelector('[data-library-tab="latest"]')?.classList.contains("active"))
+    .toBe(true)
+  expect([...document.querySelectorAll("[data-library-latest-header]")].map(node =>
+    node.textContent?.trim()
+  )).toEqual(["18 juli 2026 (3 verk)", "17 juli 2026 (1 verk)"])
+  expect([...document.querySelectorAll("[data-library-latest-row]")]).toHaveLength(3)
+  expect(document.querySelector('[data-library-latest-title="DoktorGlas"]')?.textContent?.trim())
+    .toBe("Doktor Glas")
+  expect(document.querySelector('[data-library-latest-title="DoktorGlas"]')?.getAttribute("href"))
+    .toBe("/författare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken")
+
+  const ledger = await epubRequests(request)
+  expect(ledger).toHaveLength(1)
+  expect(ledger[0]).toEqual({
+    path: "/legacy-api/query_string/etext,faksimil,pdf",
+    query: {
+      author_aggregation: "true",
+      exclude: epubExclude,
+      from: "0",
+      imported_aggregation: "true",
+      include: epubInclude,
+      partial_string: "true",
+      q: `${epubQueryPrefix} *`,
+      sort_field: "imported|desc,main_author.name_for_index|asc,sortkey|asc,sort_date_imprint.date|asc",
+      suggest: "true",
+      to: "100"
+    }
+  })
+})
+
+test("Nytt groups a work by its newest representation while keeping the preferred display row", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/bibliotek?visa=latest&sort=nytillkommet&filter=latest-regression"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect([...document.querySelectorAll("[data-library-latest-header]")].map(node =>
+    node.textContent?.trim()
+  )).toEqual(["19 juli 2026 (1 verk)", "17 juli 2026 (1 verk)"])
+  expect(document.querySelector('[data-library-latest-title="LatestMixed"]')?.getAttribute("href"))
+    .toBe("/författare/S%C3%B6derbergH/titlar/LatestMixed/etext?om-boken")
+})
+
+test("Nytt never links a selected PDF representation to an unsupported Reader mode", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/bibliotek?visa=latest&sort=nytillkommet&filter=latest-regression"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(document.querySelector('[data-library-latest-title="LatestPdfOnly"]')?.getAttribute("href"))
+    .toBe("/författare/S%C3%B6derbergH/titlar/LatestPdfOnly/faksimil?om-boken")
+  expect(document.querySelector('a[href$="/LatestPdfOnly/pdf?om-boken"]')).toBeNull()
 })
 
 for (const [sort, expression] of [

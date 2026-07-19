@@ -309,17 +309,19 @@ const primaryAsyncData = useAsyncData<PrimaryEnvelope>(
     }
   },
   {
+    server: false,
+    lazy: true,
     getCachedData: (key, nuxtApp) => {
       const cached = nuxtApp.payload.data[key] as PrimaryEnvelope | undefined
-      return cached?.identity === primaryIdentity.value ? cached : undefined
+      return cached?.identity === primaryIdentity.value && cached.status !== 502
+        ? cached
+        : undefined
     }
   }
 )
 
-const [
-  { data: chronologyData },
-  { data: primaryData, pending: primaryPending }
-] = await Promise.all([chronologyAsyncData, primaryAsyncData])
+const { data: chronologyData } = await chronologyAsyncData
+const { data: primaryData, pending: primaryPending } = primaryAsyncData
 
 const acceptedPrimary = shallowRef<PrimaryEnvelope | null>(null)
 const displayPrimary = shallowRef<PrimaryEnvelope | null>(null)
@@ -331,8 +333,6 @@ watch([primaryData, primaryIdentity], ([candidate, identity]) => {
   else displayPrimary.value = null
 }, { immediate: true, flush: "sync" })
 
-if (import.meta.server && acceptedPrimary.value?.status === 502) setResponseStatus(502)
-
 const results = computed(() => displayPrimary.value?.status === 200
   ? displayPrimary.value.results
   : null)
@@ -342,6 +342,8 @@ const currentPrimaryFacets = computed(() => (
     : []
 ))
 const primaryFailed = computed(() => acceptedPrimary.value?.status === 502)
+const primaryLoading = computed(() => Boolean(state.value.phrase)
+  && (primaryPending.value || acceptedPrimary.value === null))
 
 const countCache = useState<Record<string, CountView>>(
   "text-search-count-cache",
@@ -385,7 +387,7 @@ async function loadCount() {
 }
 
 const count = computed(() => countCache.value[countIdentity.value] ?? null)
-void loadCount()
+if (import.meta.client) void loadCount()
 
 function authorLabel(author: TextSearchOptionsResponse["authors"][number]): string {
   const years = author.birth_year || author.death_year
@@ -766,7 +768,7 @@ watch(countIdentity, () => {
   countVersion += 1
   countController?.abort()
   countInFlight.clear()
-  void loadCount()
+  if (import.meta.client) void loadCount()
 }, { flush: "post" })
 watch(routeIdentity, () => {
   optionsVersion += 1
@@ -967,7 +969,7 @@ useHead({
     data-search-root
     :data-search-mounted="toolkitMounted"
     :class="{
-      searching: primaryPending,
+      searching: primaryLoading,
       advanced: state.advanced,
       simple: !state.advanced
     }"
@@ -1062,7 +1064,7 @@ useHead({
           </button>
         </div>
         <div class="w-4">
-          <i v-show="primaryPending" class="spinner fa fa-spinner fa-pulse mt-2" />
+          <i v-show="primaryLoading" class="spinner fa fa-spinner fa-pulse mt-2" />
         </div>
       </div>
 
@@ -1258,7 +1260,7 @@ useHead({
     <div
       id="results"
       class="row results_container"
-      :class="{ searching: primaryPending }"
+      :class="{ searching: primaryLoading }"
     >
       <div v-if="displayPrimary?.status === 200" class="table_viewport">
         <div class="table_container">

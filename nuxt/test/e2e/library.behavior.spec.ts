@@ -189,6 +189,52 @@ test("Library reset and sort links update supported query state", async ({ page 
   await expect(page.locator('[data-library-sort="titlar"]')).toHaveClass(/active/)
 })
 
+test("Nytt owns its canonical query state and restores through browser history", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?filter=Selma", { waitUntil: "networkidle" })
+  await reset(request)
+
+  await page.locator('[data-library-tab="latest"]').click()
+  await expect(page).toHaveURL(/visa=latest/)
+  const selectedUrl = new URL(page.url())
+  expect(selectedUrl.searchParams.get("filter")).toBe("Selma")
+  expect(selectedUrl.searchParams.get("sort")).toBe("nytillkommet")
+  await expect(page.locator('[data-library-tab="latest"]')).toHaveAttribute("aria-current", "page")
+  await expect(page.locator("[data-library-latest-row]")).toHaveCount(1)
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+
+  let ledger = publicEpubRequests(await epubRequests(request))
+  expect(ledger).toHaveLength(1)
+  expect(ledger[0]).toMatchObject({
+    path: epubPath,
+    query: {
+      author_aggregation: "true",
+      imported_aggregation: "true",
+      q: `${epubQueryPrefix} (Selma)`,
+      sort_field: "imported|desc,main_author.name_for_index|asc,sortkey|asc,sort_date_imprint.date|asc",
+      from: "0",
+      to: "100"
+    }
+  })
+
+  await pushRoute(page, "/bibliotek?filter=Senaste")
+  await expect(page.getByRole("link", { name: "Senaste träffen", exact: true })).toBeVisible()
+  await page.goBack()
+  await expect(page.locator('[data-library-tab="latest"]')).toHaveAttribute("aria-current", "page")
+  await expect(page.locator("[data-library-filter]")).toHaveValue("Selma")
+  await expect(page.getByRole("link", { name: "Gösta Berlings saga", exact: true })).toBeVisible()
+
+  await page.locator("[data-library-hide-1800]").click()
+  await expect(page).toHaveURL(/(?:\?|&)hide1800(?:=|&|$)/)
+  await expect(page.locator("[data-library-hide-1800]")).toBeVisible()
+
+  ledger = publicEpubRequests(await epubRequests(request))
+  expect(ledger).toHaveLength(3)
+  expect(ledger[2]?.query.q).toBe(`${epubQueryPrefix} (Selma) AND NOT keyword:1800`)
+})
+
 test("delayed input cannot replace an immediate sort or reset intent", async ({
   page,
   request

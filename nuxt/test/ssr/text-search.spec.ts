@@ -83,12 +83,38 @@ test("SSR renders the pristine full form without requesting search results", asy
   expect(html).not.toContain(fixture)
 })
 
-test("direct result SSR sends the exact generated body and renders the legacy rows", async ({
+test("direct result SSR returns the loading shell without starting expensive search work", async ({
   request
 }) => {
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 5000 }
+  })
+  const started = Date.now()
+
   const response = await request.get("/s%C3%B6k?fras=frihet")
-  expect(response.status()).toBe(200)
+  const elapsed = Date.now() - started
   const html = await response.text()
+  const { document } = parseHTML(html)
+
+  expect(response.status()).toBe(200)
+  expect(elapsed).toBeLessThan(2500)
+  expect(document.querySelector<HTMLInputElement>(".submit_form input")?.value)
+    .toBe("frihet")
+  expect(document.querySelector(".submit_form .spinner")).not.toBeNull()
+  expect(document.querySelector("#results table.results")).toBeNull()
+  expect(document.querySelector("[data-search-error]")).toBeNull()
+  expect(await requests(request, "results")).toEqual([])
+  expect(await requests(request, "count")).toEqual([])
+})
+
+test("hydrated result sends the exact generated body and renders the legacy rows", async ({
+  page,
+  request
+}) => {
+  const response = await page.goto("/s%C3%B6k?fras=frihet")
+  expect(response?.status()).toBe(200)
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  const html = await page.content()
   const { document } = parseHTML(html)
 
   expect(document.title).toBe('Sök: "frihet" | Litteraturbanken')
@@ -114,7 +140,7 @@ test("direct result SSR sends the exact generated body and renders the legacy ro
 
   expect(await requests(request, "results")).toEqual([{
     method: "POST",
-    path: "/private-v2/text-search/results",
+    path: "/v2/text-search/results",
     body: basicSearchBody
   }])
   expect(html).not.toContain("private-v2")
@@ -124,10 +150,11 @@ test("direct result SSR sends the exact generated body and renders the legacy ro
   }
 })
 
-test("SSR preserves the no-hit copy and toolkit", async ({ request }) => {
-  const response = await request.get("/s%C3%B6k?fras=inga")
-  expect(response.status()).toBe(200)
-  const { document } = parseHTML(await response.text())
+test("hydration preserves the no-hit copy and toolkit", async ({ page }) => {
+  const response = await page.goto("/s%C3%B6k?fras=inga")
+  expect(response?.status()).toBe(200)
+  await expect(page.getByText("Din sökning gav inga träffar", { exact: true })).toBeVisible()
+  const { document } = parseHTML(await page.content())
 
   expect(compactText(document.querySelector("#results")?.textContent))
     .toBe("Din sökning gav inga träffar")
@@ -196,21 +223,21 @@ test("advanced SSR resolves every selected label through its independent options
   }])
 })
 
-test("a slow count never gates result SSR", async ({ request }) => {
+test("a slow count never gates the hydrated primary result", async ({ page, request }) => {
   await request.put(`${fixture}/_text_search/delays`, {
     data: { operation: "count", selector: "frihet", delay: 3000 }
   })
   const started = Date.now()
-  const response = await request.get("/s%C3%B6k?fras=frihet")
+  const response = await page.goto("/s%C3%B6k?fras=frihet")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
   const elapsed = Date.now() - started
 
-  expect(response.status()).toBe(200)
+  expect(response?.status()).toBe(200)
   expect(elapsed).toBeLessThan(2500)
-  expect((await response.text())).toContain("Röda rummet")
   await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
 })
 
-test("hydration reuses the SSR primary result without a duplicate request", async ({
+test("hydration starts the deferred primary result without a duplicate request", async ({
   page,
   request
 }) => {
@@ -220,11 +247,15 @@ test("hydration reuses the SSR primary result without a duplicate request", asyn
   expect(await requests(request, "results")).toHaveLength(1)
 })
 
-test("primary failure returns a redacted local 502", async ({ request }) => {
+test("primary failure keeps the shell 200 and renders a redacted local error", async ({
+  page,
+  request
+}) => {
   await request.put(`${fixture}/_text_search/failures`, { data: { operation: "results" } })
-  const response = await request.get("/s%C3%B6k?fras=frihet")
-  expect(response.status()).toBe(502)
-  const html = await response.text()
+  const response = await page.goto("/s%C3%B6k?fras=frihet")
+  expect(response?.status()).toBe(200)
+  await expect(page.locator("[data-search-error]")).toBeVisible()
+  const html = await page.content()
   const { document } = parseHTML(html)
 
   expect(compactText(document.querySelector("[data-search-error]")?.textContent))
@@ -236,14 +267,17 @@ test("primary failure returns a redacted local 502", async ({ request }) => {
   expect(html).not.toContain(fixture)
 })
 
-test("Reader hit indices restart for every work and every result page", async ({ request }) => {
+test("Reader hit indices restart for every work and every hydrated result page", async ({
+  page
+}) => {
   for (const route of [
     "/s%C3%B6k?fras=frihet",
     "/s%C3%B6k?fras=frihet&traffsida=2"
   ]) {
-    const response = await request.get(route)
-    expect(response.status()).toBe(200)
-    const { document } = parseHTML(await response.text())
+    const response = await page.goto(route)
+    expect(response?.status()).toBe(200)
+    await expect(page.locator("#results .match a")).toHaveCount(2)
+    const { document } = parseHTML(await page.content())
     const links = [...document.querySelectorAll<HTMLAnchorElement>("#results .match a")]
       .map(link => new URL(link.getAttribute("href")!, "http://litteraturbanken.test"))
 
@@ -256,7 +290,7 @@ test("Reader hit indices restart for every work and every result page", async ({
   }
 })
 
-test("a count omitted from the SSR payload is retried and displayed after hydration", async ({
+test("the client-only count is requested once and displayed after hydration", async ({
   page,
   request
 }) => {
@@ -267,7 +301,7 @@ test("a count omitted from the SSR payload is retried and displayed after hydrat
   await page.goto("/s%C3%B6k?fras=frihet")
   await expect(page.locator("#results .match").first()).toHaveText("frihet")
   await expect(page.locator(".hits_info .hits")).toHaveText("3", { timeout: 6000 })
-  await expect.poll(async () => (await requests(request, "count")).length).toBe(2)
+  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
 })
 
 test("failed and aborted options ownership retries on route re-entry", async ({ page, request }) => {
@@ -404,6 +438,25 @@ test("rapid A to B to A navigation refetches an aborted primary identity", async
   await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
   await expect.poll(async () => (await requests(request, "results")).length).toBe(3)
+  expect((await requests(request, "results")).map(entry => entry.body.query))
+    .toEqual(["frihet", "inga", "frihet"])
+})
+
+test("a failed primary identity retries on history re-entry", async ({ page, request }) => {
+  await request.put(`${fixture}/_text_search/failures`, {
+    data: { operation: "results" }
+  })
+  await page.goto("/s%C3%B6k?fras=frihet")
+  await waitForHydration(page)
+  await expect(page.locator("[data-search-error]")).toBeVisible()
+  await request.delete(`${fixture}/_text_search/failures/results`)
+
+  await page.getByLabel("Sökfras").fill("inga")
+  await page.locator(".submit_form").evaluate(form => (form as HTMLFormElement).requestSubmit())
+  await expect(page.getByText("Din sökning gav inga träffar", { exact: true })).toBeVisible()
+
+  await page.goBack()
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
   expect((await requests(request, "results")).map(entry => entry.body.query))
     .toEqual(["frihet", "inga", "frihet"])
 })
@@ -668,15 +721,17 @@ test("absent and explicit all gender stay visibly distinct without a backend fil
   page,
   request
 }) => {
-  const response = await request.get("/s%C3%B6k?fras=frihet&avancerad&k%C3%B6n=all")
-  const { document } = parseHTML(await response.text())
+  await page.goto("/s%C3%B6k?fras=frihet&avancerad&k%C3%B6n=all")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  const { document } = parseHTML(await page.content())
   expect(document.querySelector(".gender_select")?.getAttribute("data-gender-value"))
     .toBe("all")
   expect((await requests(request, "results"))[0]?.body).not.toHaveProperty("gender")
 
   await reset(request)
-  const absent = await request.get("/s%C3%B6k?fras=frihet&avancerad")
-  const absentDocument = parseHTML(await absent.text()).document
+  await page.goto("/s%C3%B6k?fras=frihet&avancerad")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  const absentDocument = parseHTML(await page.content()).document
   expect(absentDocument.querySelector(".gender_select")?.getAttribute("data-gender-value"))
     .toBe("")
   expect((await requests(request, "results"))[0]?.body).not.toHaveProperty("gender")
@@ -692,10 +747,11 @@ test("absent and explicit all gender stay visibly distinct without a backend fil
 })
 
 test("result and overflow rows keep flattened Angular parity and media classes", async ({
-  request
+  page
 }) => {
-  const response = await request.get("/s%C3%B6k?fras=frihet")
-  const { document } = parseHTML(await response.text())
+  await page.goto("/s%C3%B6k?fras=frihet")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  const { document } = parseHTML(await page.content())
   const rows = [...document.querySelectorAll("#results table.results tr")]
   expect(rows.map(row => [...row.classList].sort())).toEqual([
     ["even"],

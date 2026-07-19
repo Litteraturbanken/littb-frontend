@@ -76,6 +76,70 @@ export const libraryQueryPageTwoResponse = {
   suggest: []
 }
 
+const latestDoktorGlas = {
+  ...doktorGlas,
+  work_titleid: "LegacyDoktorWorkId",
+  imported: "2026-07-18"
+}
+const latestDoktorGlasFaksimil = {
+  ...latestDoktorGlas,
+  _index: "faksimil",
+  mediatype: "faksimil",
+  has_epub: false,
+  export: [{ type: "pdf", size: 730000 }]
+}
+const latestEditorWork = { ...editorWork, imported: "2026-07-18" }
+const latestIllustratorWork = { ...illustratorWork, imported: "2026-07-17" }
+const latestGostaBerlingsSaga = { ...gostaBerlingsSaga, imported: "2026-07-16" }
+
+export const libraryLatestResponse = {
+  data: [latestDoktorGlas, latestDoktorGlasFaksimil, latestEditorWork, latestIllustratorWork],
+  hits: 4,
+  distinct_hits: 4,
+  suggest: [],
+  imported_aggregation: [
+    { imported: Date.UTC(2026, 6, 18), doc_count: 3 },
+    { imported: Date.UTC(2026, 6, 17), doc_count: 1 }
+  ]
+}
+
+export const libraryLatestFilteredResponse = {
+  data: [latestGostaBerlingsSaga],
+  hits: 1,
+  distinct_hits: 1,
+  suggest: [],
+  imported_aggregation: [{ imported: Date.UTC(2026, 6, 16), doc_count: 1 }]
+}
+
+const latestMixedEtext = {
+  ...epubWork({ id: "LatestMixed", title: "Blandade representationer" }),
+  imported: "2026-07-18"
+}
+const latestMixedFacsimile = {
+  ...latestMixedEtext,
+  _index: "faksimil",
+  mediatype: "faksimil",
+  imported: "2026-07-19"
+}
+const latestPdfOnly = {
+  ...epubWork({ id: "LatestPdfOnly", title: "Senaste PDF-verket" }),
+  _index: "pdf",
+  mediatype: "pdf",
+  imported: "2026-07-17"
+}
+
+export const libraryLatestRegressionResponse = {
+  data: [latestMixedFacsimile, latestMixedEtext, latestPdfOnly],
+  hits: 3,
+  distinct_hits: 2,
+  suggest: [],
+  imported_aggregation: [
+    { imported: Date.UTC(2026, 6, 19), doc_count: 1 },
+    { imported: Date.UTC(2026, 6, 18), doc_count: 1 },
+    { imported: Date.UTC(2026, 6, 17), doc_count: 1 }
+  ]
+}
+
 export const libraryQueryFilteredResponse = {
   data: [gostaBerlingsSaga],
   hits: 1,
@@ -140,6 +204,13 @@ export const libraryQueryNullSuggestResponse = {
 
 export function libraryQueryStringResponse(query = {}) {
   const normalized = (query.q || "").toLocaleLowerCase("sv-SE")
+  if (query.imported_aggregation === "true") {
+    return structuredClone(
+      normalized.includes("latest regression")
+        ? libraryLatestRegressionResponse
+        : normalized.includes("selma") ? libraryLatestFilteredResponse : libraryLatestResponse
+    )
+  }
   let response = libraryQueryPageOneResponse
 
   if (normalized.includes("malformed-top") || normalized.includes("malformed top")) {

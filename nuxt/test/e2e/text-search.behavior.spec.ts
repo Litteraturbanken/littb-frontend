@@ -124,6 +124,32 @@ test("simple search loads chronology bounds without loading full options", async
   expect(await requests(request, "options")).toEqual([])
 })
 
+test("direct search hydrates its loading shell before rendering one client result", async ({
+  page,
+  request
+}) => {
+  const problems = browserProblems(page)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 5000 }
+  })
+  const started = Date.now()
+
+  const response = await page.goto("/s%C3%B6k?fras=frihet", { waitUntil: "domcontentloaded" })
+  const elapsed = Date.now() - started
+
+  expect(response?.status()).toBe(200)
+  expect(elapsed).toBeLessThan(3500)
+  await page.locator('[data-search-root][data-search-mounted="true"]').waitFor()
+  await expect(page.locator(".submit_form .top_row .spinner")).toBeVisible()
+  await expect(page.locator("#results table.results")).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true }))
+    .toBeVisible({ timeout: 9000 })
+  await expect(page.locator(".submit_form .top_row .spinner")).toBeHidden()
+  expect(await requests(request, "results")).toHaveLength(1)
+  expect(await requests(request, "count")).toHaveLength(1)
+  expect(problems).toEqual([])
+})
+
 test("failed chronology is serialized once and is not retried during hydration", async ({
   page,
   request
@@ -190,7 +216,7 @@ test("leaving a direct advanced route loads simple chronology exactly once", asy
   expect(await requests(request, "chronology")).toHaveLength(1)
 })
 
-test("simple-route chronology and primary search start concurrently during SSR", async ({
+test("simple-route chronology finishes before the deferred client primary search starts", async ({
   page,
   request
 }) => {
@@ -203,7 +229,7 @@ test("simple-route chronology and primary search start concurrently during SSR",
   const chronologyRequest = (await requests(request, "chronology"))[0]
   expect(chronologyRequest?.completed_at).not.toBeNull()
   expect(chronologyRequest?.completed_at).toBeGreaterThan(chronologyRequest?.started_at ?? 0)
-  expect(chronologyRequest?.results_started_before_completion).toBe(1)
+  expect(chronologyRequest?.results_started_before_completion).toBe(0)
 })
 
 test("every advanced filter family serializes exactly and reaches the semantic request", async ({

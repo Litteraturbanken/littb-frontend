@@ -45,6 +45,7 @@ interface ReaderWorkMetadataBase {
   isDrama: boolean
   endPageName: string | null
   parts: ReaderPart[]
+  searchable: boolean
   startPageName: string | null
   titlePath: string
   workId: string
@@ -457,6 +458,7 @@ function commonMetadata(
     imprintYear: imprint ?? requiredString(representation, "imprintyear"),
     isDrama: representation.texttype === "drama",
     parts: [],
+    searchable: representation.searchable === true,
     startPageName,
     titlePath,
     workId

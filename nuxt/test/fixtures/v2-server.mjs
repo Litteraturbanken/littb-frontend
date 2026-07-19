@@ -308,6 +308,9 @@ let authorDocumentFailure = null
 let authorDocumentDelay = 0
 let legacyAuthorRouteRequests = []
 let legacyAuthorRouteFailure = null
+let legacyDramawebbenRouteRequests = []
+let legacyDramawebbenRouteFailure = null
+let legacyDramawebbenRedirectTargetRequests = []
 let authorDocumentPdfRequests = []
 let authorDocumentRedirectTargetRequests = []
 let dramawebbenDocumentRequests = []
@@ -623,6 +626,11 @@ function readerMetadataResponse(titlePath) {
       return {
         hits: 1,
         data: [readerRepresentation(titlePath, { endpagename: "-1", parts: [] })]
+      }
+    case "UnsearchableEtextReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, { searchable: false })]
       }
     case "ReaderAuthorOmission":
       return {
@@ -1250,6 +1258,32 @@ function legacyAuthorRouteResolution(body) {
     && body.normalized_title_id === "Forvillelser"
     && body.media_type === "etext"
   ) return { author_id: "SöderbergH", title_id: "Förvillelser" }
+  return null
+}
+
+function legacyDramawebbenRouteResolution(body) {
+  if (
+    body === null || typeof body !== "object" || Array.isArray(body)
+    || Object.keys(body).length !== 2
+    || !Object.hasOwn(body, "kind")
+    || !Object.hasOwn(body, "legacy_url")
+  ) return null
+  if (body.kind === "play" && body.legacy_url === "fiskargossarne") {
+    return {
+      location: "/författare/StrindbergA/titlar/Fiskargossarne/sida/1/etext"
+    }
+  }
+  if (body.kind === "play" && body.legacy_url === "pdf-only") {
+    return { location: "/txt/lb9/lb9.pdf" }
+  }
+  if (body.kind === "play" && body.legacy_url === "information-only") {
+    return {
+      location: "/dramawebben/pj%C3%A4ser?om-boken&authorid=StrindbergA&titlepath=Info"
+    }
+  }
+  if (body.kind === "author" && body.legacy_url === "strindberg") {
+    return { location: "/författare/StrindbergA/dramawebben" }
+  }
   return null
 }
 
@@ -2475,6 +2509,40 @@ const server = createServer(async (request, response) => {
     legacyAuthorRouteFailure = null
     return sendJson(response, 200, { failure: legacyAuthorRouteFailure })
   }
+  if (url.pathname === "/_legacy_dramawebben_route_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: legacyDramawebbenRouteRequests })
+  }
+  if (url.pathname === "/_legacy_dramawebben_route_requests" && request.method === "DELETE") {
+    legacyDramawebbenRouteRequests = []
+    return sendJson(response, 200, { requests: legacyDramawebbenRouteRequests })
+  }
+  if (url.pathname === "/_legacy_dramawebben_route_failure" && request.method === "PUT") {
+    const body = await readJson(request)
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1
+      || ![
+        "malformed-200",
+        "extra-key-200",
+        "resolver-503",
+        "resolver-redirect-307",
+        "resolver-redirect-308"
+      ].includes(body.failure)
+    ) return validationError(response)
+    legacyDramawebbenRouteFailure = body.failure
+    return sendJson(response, 200, { failure: legacyDramawebbenRouteFailure })
+  }
+  if (url.pathname === "/_legacy_dramawebben_route_failure" && request.method === "DELETE") {
+    legacyDramawebbenRouteFailure = null
+    return sendJson(response, 200, { failure: legacyDramawebbenRouteFailure })
+  }
+  if (url.pathname === "/_legacy_dramawebben_redirect_target_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: legacyDramawebbenRedirectTargetRequests })
+  }
+  if (url.pathname === "/_legacy_dramawebben_redirect_target_requests" && request.method === "DELETE") {
+    legacyDramawebbenRedirectTargetRequests = []
+    return sendJson(response, 200, { requests: legacyDramawebbenRedirectTargetRequests })
+  }
   if (url.pathname === "/_author_document_pdf_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: authorDocumentPdfRequests })
   }
@@ -3571,6 +3639,51 @@ const server = createServer(async (request, response) => {
     })
   }
 
+  if (
+    request.method === "POST"
+    && rawApiPathname === "/v2/dramawebben/legacy-routes/resolve"
+  ) {
+    const body = await readJson(request)
+    legacyDramawebbenRouteRequests.push({ path: request.url, body })
+    if (legacyDramawebbenRouteFailure === "malformed-200") {
+      return sendJson(response, 200, { location: 7 })
+    }
+    if (legacyDramawebbenRouteFailure === "extra-key-200") {
+      return sendJson(response, 200, {
+        location: "/författare/StrindbergA/dramawebben",
+        private: "must not cross the boundary"
+      })
+    }
+    if (legacyDramawebbenRouteFailure === "resolver-503") {
+      return sendJson(response, 503, {
+        error: {
+          code: "legacy_dramawebben_route_unavailable",
+          message: "Unable to resolve legacy Dramawebben route",
+          details: null
+        }
+      })
+    }
+    if (
+      legacyDramawebbenRouteFailure === "resolver-redirect-307"
+      || legacyDramawebbenRouteFailure === "resolver-redirect-308"
+    ) {
+      const status = Number(legacyDramawebbenRouteFailure.slice(-3))
+      response.writeHead(status, {
+        location: `${redirectTargetOrigin}/legacy-dramawebben-route/resolution`
+      })
+      return response.end()
+    }
+    const resolution = legacyDramawebbenRouteResolution(body)
+    if (resolution) return sendJson(response, 200, resolution)
+    return sendJson(response, 404, {
+      error: {
+        code: "legacy_dramawebben_route_not_found",
+        message: "Legacy Dramawebben route not found",
+        details: null
+      }
+    })
+  }
+
   const readerHitWork = request.method === "GET"
     ? decodedReaderHitWorkId(rawApiPathname)
     : null
@@ -3710,6 +3823,13 @@ const redirectTargetServer = createServer(async (request, response) => {
     method: request.method,
     path: request.url,
     body
+  }
+
+  if (request.url === "/legacy-dramawebben-route/resolution") {
+    legacyDramawebbenRedirectTargetRequests.push(recordedRequest)
+    return sendJson(response, 200, {
+      location: "/författare/StrindbergA/dramawebben"
+    })
   }
 
   if (request.url === "/sla-article/descriptor") {

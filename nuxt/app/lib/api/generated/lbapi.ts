@@ -123,6 +123,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dramawebben/legacy-routes/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Legacy Dramawebben Route */
+        post: operations["v2_post_legacy_dramawebben_route_resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/epubs/popular": {
         parameters: {
             query?: never;
@@ -673,6 +690,21 @@ export interface components {
             author_id: string;
             /** Title Id */
             title_id: string | null;
+        };
+        /** LegacyDramawebbenRouteRequest */
+        LegacyDramawebbenRouteRequest: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "play" | "author";
+            /** Legacy Url */
+            legacy_url: string;
+        };
+        /** LegacyDramawebbenRouteResolution */
+        LegacyDramawebbenRouteResolution: {
+            /** Location */
+            location: string;
         };
         /** MediaCounts */
         MediaCounts: {
@@ -1686,6 +1718,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DramawebbenCatalogResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_post_legacy_dramawebben_route_resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LegacyDramawebbenRouteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LegacyDramawebbenRouteResolution"];
+                };
+            };
+            /** @description Legacy route not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Unexpected server error */

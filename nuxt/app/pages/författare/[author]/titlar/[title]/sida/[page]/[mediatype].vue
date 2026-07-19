@@ -480,7 +480,10 @@ const etextReader = computed(() => reader.value?.mediaType === "etext" ? reader.
 const facsimileReader = computed(
   () => reader.value?.mediaType === "faksimil" ? reader.value : null
 )
-const searchState = computed(() => etextReader.value ? parseCanonicalSearchState() : null)
+const searchState = computed(() => etextReader.value?.searchable
+  ? parseCanonicalSearchState()
+  : null
+)
 const pageQuery = computed(() => {
   const query = preservedQuery()
   if (searchState.value) {
@@ -649,6 +652,203 @@ const hitMessage = computed(() => {
   if (hitResponse.value && !activeHit.value) return "Ingen sådan sökträff."
   return null
 })
+
+type WorkSearchOption = "default" | "lemma" | "modernize" | "prefix" | "suffix" | "infix"
+
+const workSearchOpen = ref(false)
+const workSearchQuery = ref("")
+const workSearchMessage = ref("")
+const workSearchInput = ref<HTMLInputElement | null>(null)
+const workSearchLemma = ref(false)
+const workSearchOlderSpellings = ref(true)
+const workSearchPrefix = ref(false)
+const workSearchSuffix = ref(false)
+
+const workSearchOptions = computed<ReadonlyArray<{
+  key: WorkSearchOption
+  label: string
+  selected: boolean
+}>>(() => [
+  {
+    key: "default",
+    label: "SÖK EFTER ORD ELLER FRAS",
+    selected: !workSearchLemma.value && !workSearchPrefix.value && !workSearchSuffix.value
+  },
+  {
+    key: "lemma",
+    label: "INKLUDERA BÖJNINGSFORMER",
+    selected: workSearchLemma.value
+  },
+  {
+    key: "modernize",
+    label: "INKLUDERA ÄLDRE STAVNINGSFORMER",
+    selected: workSearchOlderSpellings.value
+  },
+  {
+    key: "prefix",
+    label: "SÖK EFTER ORDBÖRJAN",
+    selected: workSearchPrefix.value
+  },
+  {
+    key: "suffix",
+    label: "SÖK EFTER ORDSLUT",
+    selected: workSearchSuffix.value
+  },
+  {
+    key: "infix",
+    label: "SÖK EFTER DEL AV ORD",
+    selected: workSearchPrefix.value && workSearchSuffix.value
+  }
+])
+
+function syncWorkSearchFromRoute(): void {
+  const query = typeof route.query.q === "string" ? route.query.q : null
+  workSearchQuery.value = query?.trim() ?? ""
+  workSearchLemma.value = route.query.lemma === "1"
+  workSearchOlderSpellings.value = route.query.ej_modern !== "1"
+  workSearchPrefix.value = route.query.prefix === "1"
+  workSearchSuffix.value = route.query.suffix === "1"
+  workSearchMessage.value = ""
+}
+
+watch(
+  () => [
+    route.query.q,
+    route.query.lemma,
+    route.query.ej_modern,
+    route.query.prefix,
+    route.query.suffix
+  ],
+  syncWorkSearchFromRoute,
+  { immediate: true }
+)
+
+function toggleWorkSearch(): void {
+  if (!etextReader.value) return
+  workSearchOpen.value = !workSearchOpen.value
+  workSearchMessage.value = ""
+  if (workSearchOpen.value) {
+    syncWorkSearchFromRoute()
+    void nextTick(() => workSearchInput.value?.focus())
+  }
+}
+
+function chooseWorkSearchOption(option: WorkSearchOption): void {
+  if (option === "default") {
+    workSearchLemma.value = false
+    workSearchOlderSpellings.value = false
+    workSearchPrefix.value = false
+    workSearchSuffix.value = false
+    return
+  }
+  if (option === "lemma") {
+    workSearchLemma.value = true
+    workSearchOlderSpellings.value = false
+    workSearchPrefix.value = false
+    workSearchSuffix.value = false
+    return
+  }
+  if (option === "modernize") {
+    if (workSearchOlderSpellings.value) {
+      workSearchOlderSpellings.value = false
+    } else {
+      workSearchLemma.value = false
+      workSearchOlderSpellings.value = true
+      workSearchPrefix.value = false
+      workSearchSuffix.value = false
+    }
+    return
+  }
+  if (option === "infix") {
+    if (!workSearchPrefix.value || !workSearchSuffix.value) {
+      workSearchLemma.value = false
+      workSearchOlderSpellings.value = false
+      workSearchPrefix.value = true
+      workSearchSuffix.value = true
+    }
+    return
+  }
+
+  workSearchLemma.value = false
+  workSearchOlderSpellings.value = false
+  if (option === "prefix") workSearchPrefix.value = !workSearchPrefix.value
+  if (option === "suffix") workSearchSuffix.value = !workSearchSuffix.value
+}
+
+function activateWorkSearchOption(event: KeyboardEvent, option: WorkSearchOption): void {
+  if (event.key !== "Enter" && event.key !== " ") return
+  event.preventDefault()
+  chooseWorkSearchOption(option)
+}
+
+const workSearchQueryKeys = new Set([
+  "q",
+  "hit",
+  "lemma",
+  "ej_modern",
+  "prefix",
+  "suffix"
+])
+
+function decodedRawQueryKey(segment: string): string | null {
+  const separator = segment.indexOf("=")
+  const rawKey = separator < 0 ? segment : segment.slice(0, separator)
+  try {
+    return decodeURIComponent(rawKey.replace(/\+/g, " "))
+  } catch {
+    return null
+  }
+}
+
+function workSearchFullPath(query: string | null): string {
+  const fragmentIndex = rawFullPath.value.indexOf("#")
+  const fragment = fragmentIndex < 0 ? "" : rawFullPath.value.slice(fragmentIndex)
+  const beforeFragment = fragmentIndex < 0
+    ? rawFullPath.value
+    : rawFullPath.value.slice(0, fragmentIndex)
+  const queryIndex = beforeFragment.indexOf("?")
+  const path = queryIndex < 0 ? beforeFragment : beforeFragment.slice(0, queryIndex)
+  const rawQuery = queryIndex < 0 ? "" : beforeFragment.slice(queryIndex + 1)
+  const retained = rawQuery.length === 0
+    ? []
+    : rawQuery.split("&").filter(segment => {
+        const key = decodedRawQueryKey(segment)
+        return key === null || !workSearchQueryKeys.has(key)
+      })
+
+  if (query !== null) {
+    retained.push(new URLSearchParams({ q: query }).toString(), "hit=0")
+    if (workSearchLemma.value) retained.push("lemma=1")
+    if (!workSearchOlderSpellings.value) retained.push("ej_modern=1")
+    if (workSearchPrefix.value) retained.push("prefix=1")
+    if (workSearchSuffix.value) retained.push("suffix=1")
+  }
+  return `${path}${retained.length > 0 ? `?${retained.join("&")}` : ""}${fragment}`
+}
+
+function submitWorkSearch(): void {
+  const query = workSearchQuery.value.trim()
+  if (query.length < 1) {
+    workSearchMessage.value = "Ange ett sökord eller en fras."
+    workSearchInput.value?.focus()
+    return
+  }
+  if (query.length > 200) {
+    workSearchMessage.value = "Sökningen får vara högst 200 tecken."
+    workSearchInput.value?.focus()
+    return
+  }
+  workSearchMessage.value = ""
+  workSearchQuery.value = query
+  void navigateRawFullPath(workSearchFullPath(query), false, rawFullPath.value)
+}
+
+function closeWorkSearchHits(): void {
+  workSearchOpen.value = false
+  workSearchQuery.value = ""
+  workSearchMessage.value = ""
+  void navigateRawFullPath(workSearchFullPath(null), false, rawFullPath.value)
+}
 
 type LastPageView = {
   pageix: number
@@ -1179,7 +1379,62 @@ watch(readerRequestIdentity, () => {
                   @click.prevent="openSourceInfoFromSidebar"
                 >{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a></li>
                 <li aria-hidden="true">Läsfokus</li>
-                <li aria-hidden="true">Sök i verket</li>
+                <li v-if="etextReader && reader.searchable">
+                  <a
+                    class="reader-work-search-trigger"
+                    href=""
+                    :aria-expanded="workSearchOpen"
+                    @click.prevent="toggleWorkSearch"
+                  >Sök i verket</a>
+                  <div v-show="workSearchOpen" class="searchbox">
+                    <div class="collapse-content">
+                      <div class="header">
+                        <div class="auth">
+                          Sök i <span class="author">{{ reader.author.name }}</span>
+                        </div>
+                        <div class="title">{{ reader.title }}</div>
+                      </div>
+                      <div
+                        class="ctrls"
+                        :class="{ searching: hitFetch.status.value === 'pending' }"
+                      >
+                        <form @submit.prevent="submitWorkSearch">
+                          <input
+                            ref="workSearchInput"
+                            v-model="workSearchQuery"
+                            class="border border-gray-300"
+                            type="search"
+                            aria-label="Sök i verket"
+                          >
+                          <i class="spinner fa fa-spinner fa-pulse" aria-hidden="true" />
+                          <button type="submit" class="submit btn">Sök</button>
+                        </form>
+                        <p v-if="workSearchMessage" class="work-search-message" role="status">
+                          {{ workSearchMessage }}
+                        </p>
+                        <ul class="search_opts_widget inline-block">
+                          <li
+                            v-for="option in workSearchOptions"
+                            :key="option.key"
+                            class="hover:text-primary"
+                          >
+                            <span aria-hidden="true"><span>{{ option.selected ? "✓" : "" }}</span></span>
+                            <span
+                              role="checkbox"
+                              :aria-checked="option.selected"
+                              tabindex="0"
+                              @click="chooseWorkSearchOption(option.key)"
+                              @keydown="activateWorkSearchOption($event, option.key)"
+                            >{{ option.label }}</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+                <li v-else aria-disabled="true">
+                  <a class="disabled" aria-disabled="true" tabindex="-1">Sök i verket</a>
+                </li>
                 <li aria-hidden="true">Sök i författarens texter</li>
                 <li v-if="reader.hasDramawebben">
                   <a href="/dramawebben"><img
@@ -1239,7 +1494,7 @@ watch(readerRequestIdentity, () => {
             <li><a aria-hidden="true">Gå till första träffen</a></li>
             <li><a aria-hidden="true">Gå till sista träffen</a></li>
             <li><a aria-hidden="true">Gå direkt till träff . . .</a></li>
-            <li><a aria-hidden="true">Stäng träffvisningen</a></li>
+            <li><a href="" @click.prevent="closeWorkSearchHits">Stäng träffvisningen</a></li>
           </ul>
         </nav>
         </Teleport>
@@ -1267,6 +1522,10 @@ watch(readerRequestIdentity, () => {
               :href="contentsHref"
             >Innehållsförteckning</a>
             <a :href="sourceInfoHref">{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a>
+            <span
+              class="reader-work-search-trigger"
+              :class="{ disabled: !reader.searchable || !etextReader }"
+            >Sök i verket</span>
             <a v-if="reader.hasDramawebben" href="/dramawebben"><img
               class="dw_logo"
               :src="dramawebbenLogo"

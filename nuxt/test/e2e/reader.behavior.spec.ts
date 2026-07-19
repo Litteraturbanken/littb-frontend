@@ -1885,6 +1885,182 @@ test("hydrates the SSR phrase marker and active toolkit without a duplicate publ
   expect(problems).toEqual([])
 })
 
+test("opens the Angular Reader search panel, focuses it, and guards paging keys", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+
+  const trigger = page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Sök i verket", exact: true })
+  const searchbox = page.locator(".reader-context .searchbox")
+  await expect(searchbox).toBeHidden()
+  await trigger.click()
+  await expect(searchbox).toBeVisible()
+  await expect(searchbox).toContainText("Sök i Hjalmar Söderberg")
+  await expect(searchbox).toContainText("Doktor Glas")
+
+  const input = searchbox.getByRole("searchbox")
+  await expect(input).toBeFocused()
+  await input.fill("glas")
+  await input.press("ArrowRight")
+  await expect(page).toHaveURL(readerPath)
+  await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
+
+  await trigger.click()
+  await expect(searchbox).toBeHidden()
+  expect(problems).toEqual([])
+})
+
+test("submits a canonical work search, preserves raw owners, and follows History", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawQuery = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F&q=old&hit=2"
+  const retained = "?bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+
+  const trigger = page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Sök i verket", exact: true })
+  await trigger.click()
+  const searchbox = page.locator(".reader-context .searchbox")
+  const input = searchbox.getByRole("searchbox")
+  await expect(input).toHaveValue("old")
+  await input.fill("  glas  ")
+  await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+
+  const canonicalQuery = `${retained}&q=glas&hit=0`
+  await expect(page).toHaveURL(`${readerPath}${canonicalQuery}`)
+  await expect(page.locator("#search_nav")).toContainText("1 sökträff")
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -2")
+  await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+  expect(await readerHitRequests(request)).toEqual([
+    expect.objectContaining({
+      path: "/v2/works/lb-reader-doktor-glas/search-hits",
+      query: expect.stringContaining("query=glas&offset=0&limit=3")
+    })
+  ])
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(`${readerPath}${rawQuery}`)
+  await expect(input).toHaveValue("old")
+  await page.goForward({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(`${readerPath}${canonicalQuery}`)
+  await expect(input).toHaveValue("glas")
+  await expect(page.locator("#w2_2.markee")).toHaveCount(1)
+  expect(problems).toEqual([])
+})
+
+test("validates empty work searches and closes active hits without touching raw owners", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const retained = "?bare&repeat=first&repeat=second"
+  await page.goto(`${readerPath}${retained}`, { waitUntil: "networkidle" })
+  await page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Sök i verket", exact: true }).click()
+  const searchbox = page.locator(".reader-context .searchbox")
+  const input = searchbox.getByRole("searchbox")
+  await input.fill("   ")
+  await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+  await expect(page).toHaveURL(`${readerPath}${retained}`)
+  await expect(searchbox.getByRole("status")).toHaveText("Ange ett sökord eller en fras.")
+  expect(await readerHitRequests(request)).toEqual([])
+
+  await input.fill("x".repeat(201))
+  await input.press("Enter")
+  await expect(page).toHaveURL(`${readerPath}${retained}`)
+  await expect(searchbox.getByRole("status"))
+    .toHaveText("Sökningen får vara högst 200 tecken.")
+  expect(await readerHitRequests(request)).toEqual([])
+
+  await input.fill("glas")
+  await input.press("Enter")
+  await expect(page).toHaveURL(`${readerPath}${retained}&q=glas&hit=0`)
+  await page.locator("#search_nav").getByRole("link", {
+    name: "Stäng träffvisningen"
+  }).click()
+  await expect(page).toHaveURL(`${readerPath}${retained}`)
+  await expect(page.locator("#search_nav")).toHaveCount(0)
+  await expect(searchbox).toBeHidden()
+  await expect(searchbox.locator('input[type="search"]')).toHaveValue("")
+  expect(problems).toEqual([])
+})
+
+test("projects Angular work-search options onto canonical generated hit flags", async ({
+  page,
+  request
+}) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Sök i verket", exact: true }).click()
+  const searchbox = page.locator(".reader-context .searchbox")
+  await searchbox.getByRole("checkbox", { name: "INKLUDERA BÖJNINGSFORMER" }).click()
+  await expect(searchbox.getByRole("checkbox", {
+    name: "INKLUDERA BÖJNINGSFORMER"
+  })).toHaveAttribute("aria-checked", "true")
+  await searchbox.getByRole("searchbox").fill("glas")
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await searchbox.getByRole("button", { name: "Sök", exact: true }).click()
+
+  await expect(page).toHaveURL(`${readerPath}?q=glas&hit=0&lemma=1&ej_modern=1`)
+  await expect.poll(async () => (await readerHitRequests(request)).length).toBe(1)
+  expect(await readerHitRequests(request)).toEqual([
+    expect.objectContaining({
+      query: "media_type=etext&query=glas&offset=0&limit=3" +
+        "&word_forms=true&include_older_spellings=false&prefix=false&suffix=false"
+    })
+  ])
+})
+
+test("work-search options expose one keyboard-operable checkbox each", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Sök i verket", exact: true }).click()
+  const searchbox = page.locator(".reader-context .searchbox")
+  const prefix = searchbox.getByRole("checkbox", { name: "SÖK EFTER ORDBÖRJAN" })
+
+  await expect(prefix).toHaveAttribute("tabindex", "0")
+  await prefix.focus()
+  await expect(prefix).toBeFocused()
+  await prefix.press(" ")
+  await expect(prefix).toHaveAttribute("aria-checked", "true")
+  await prefix.press("Enter")
+  await expect(prefix).toHaveAttribute("aria-checked", "false")
+  await expect(searchbox.getByRole("button", { name: "SÖK EFTER ORDBÖRJAN" })).toHaveCount(0)
+})
+
+test("keeps work search disabled for a Reader representation without typed hit support", async ({
+  page
+}) => {
+  await page.goto(facsimilePath, { waitUntil: "networkidle" })
+  const item = page.locator(".reader-context .subnav li").filter({ hasText: "Sök i verket" })
+  await expect(item.locator("a.disabled")).toHaveText("Sök i verket")
+  await expect(item).toHaveAttribute("aria-disabled", "true")
+  await expect(page.locator(".reader-context .searchbox")).toHaveCount(0)
+})
+
+test("keeps work search inert when exact e-text metadata is not searchable", async ({
+  page,
+  request
+}) => {
+  await page.goto(
+    "/författare/SöderbergH/titlar/UnsearchableEtextReader/sida/-2/etext" +
+      "?q=glas&hit=0",
+    { waitUntil: "networkidle" }
+  )
+  const item = page.locator(".reader-context .subnav li")
+    .filter({ hasText: "Sök i verket" })
+  await expect(item.getByRole("link", { name: "Sök i verket" })).toHaveCount(0)
+  await expect(item).toHaveAttribute("aria-disabled", "true")
+  await expect(page.locator(".reader-context .searchbox")).toHaveCount(0)
+  await expect(page.locator("#search_nav")).toHaveCount(0)
+  expect(await readerHitRequests(request)).toEqual([])
+})
+
 test("work-scoped live word ids hydrate, highlight, and navigate to the next hit", async ({
   page
 }) => {

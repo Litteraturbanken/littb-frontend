@@ -17,6 +17,7 @@ export const readerWorkInfoResponse = {
         { pagename: "-2", pageindex: 2 },
         { pagename: "-1", pageindex: 3 }
       ],
+      searchable: true,
       shorttitle: "Doktor Glas",
       sort_date_imprint: { plain: "1905" },
       startpagename: "-2",
@@ -59,6 +60,7 @@ export const readerFacsimileWorkInfoResponse = {
         { pagename: "3", pageindex: 1, imagenumber: 9 },
         { pagename: "5", pageindex: 2, imagenumber: 12 }
       ],
+      searchable: true,
       shorttitle: "Gösta Berlings saga",
       sort_date_imprint: { plain: "1891" },
       startpagename: "3",

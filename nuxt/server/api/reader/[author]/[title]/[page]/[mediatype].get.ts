@@ -187,6 +187,7 @@ export default defineEventHandler(async event => {
     parts,
     previousPageName: metadata.pages[currentPosition - 1]?.pageName ?? null,
     previousPartPageName: partNavigation.previousPartPageName,
+    searchable: metadata.searchable,
     startPageName: metadata.startPageName && knownNames.has(metadata.startPageName)
       ? metadata.startPageName
       : null,

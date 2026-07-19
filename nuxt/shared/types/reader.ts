@@ -61,6 +61,7 @@ export interface ReaderPageBase {
   parts: ReaderPart[]
   previousPageName: string | null
   previousPartPageName: string | null
+  searchable: boolean
   startPageName: string | null
   sliderPercent: number
   title: string
