@@ -571,6 +571,15 @@ describe("v2 fixture server operations", () => {
         .toBe(provenance.sha256)
     }
 
+    const selectedAsset = semerAuthorDocumentAssets[0]!
+    const queriedAsset = await fetch(`${origin}${selectedAsset.path}?download=1`)
+    expect(queriedAsset.status).toBe(404)
+    const unlistedSibling = await fetch(
+      `${origin}/red/forfattare/AlmqvistCJL/semer/pictures/not-listed.jpeg`
+    )
+    expect(unlistedSibling.status).toBe(404)
+    expect(await authorDocumentAssetRequests()).toEqual({ requests: [] })
+
     for (const asset of semerAuthorDocumentAssets) {
       const response = await fetch(`${origin}${asset.path}`)
       expect(response.status, asset.path).toBe(200)
@@ -641,6 +650,15 @@ describe("v2 fixture server operations", () => {
           .toBe("<html><head><title>Malformed</title></head></html>")
       }
     }
+
+    await fetch(`${origin}/_author_document_failure`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ failure: "oversized-content" })
+    })
+    const oversized = await fetch(`${origin}${contentPath}`)
+    expect(oversized.status).toBe(200)
+    expect((await oversized.arrayBuffer()).byteLength).toBe(1_048_577)
 
     const invalidFailure = await fetch(`${origin}/_author_document_failure`, {
       method: "PUT",

@@ -197,6 +197,26 @@ for (const [failure, status, code] of [
   })
 }
 
+test("rejects a just-over-limit managed body without leaking upstream payload", async ({
+  request
+}) => {
+  await setFailure(request, "oversized-content")
+  const response = await request.get(presentationApi)
+
+  await expectErrorCode(response, 502, "author_document_unavailable")
+  expect(await response.text()).not.toMatch(/upstream-provider-payload-probe|x{32}/u)
+  expect(await authorDocumentRequests(request)).toEqual([
+    {
+      kind: "descriptor",
+      path: "/private-v2/authors/S%C3%B6derbergH/documents/presentation"
+    },
+    {
+      kind: "content",
+      path: "/red/forfattare/SoderbergH/presentation/index.html"
+    }
+  ])
+})
+
 for (const failure of [
   "descriptor-redirect-307",
   "descriptor-redirect-308",

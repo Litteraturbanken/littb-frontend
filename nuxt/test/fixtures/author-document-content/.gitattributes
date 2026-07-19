@@ -1,2 +1,2 @@
 # Preserve byte-exact authority whitespace while keeping repository diff checks strict elsewhere.
-AlmqvistCJL-semer.html whitespace=-trailing-space,-space-before-tab
+AlmqvistCJL-semer.html -text whitespace=-trailing-space,-space-before-tab

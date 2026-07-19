@@ -77,6 +77,7 @@ const elementAttributes: Record<string, ReadonlySet<string>> = {
 
 const unsafeCharacters = /[\\/%\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
 const unsafeUrlCharacters = /[\\\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u
+const maxAuthorDocumentBytes = 1_048_576
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -279,6 +280,40 @@ function fetchStatus(error: unknown): number | null {
   return null
 }
 
+async function readAuthorDocumentResponse(response: Response): Promise<string> {
+  const declaredLength = response.headers.get("content-length")
+  if (declaredLength !== null
+    && /^\d+$/u.test(declaredLength)
+    && Number(declaredLength) > maxAuthorDocumentBytes) {
+    await response.body?.cancel().catch(() => undefined)
+    throw new InvalidAuthorDocumentSource()
+  }
+
+  if (response.body === null) return ""
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let totalBytes = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (value === undefined) continue
+    totalBytes += value.byteLength
+    if (totalBytes > maxAuthorDocumentBytes) {
+      await reader.cancel().catch(() => undefined)
+      throw new InvalidAuthorDocumentSource()
+    }
+    chunks.push(value)
+  }
+
+  const bytes = new Uint8Array(totalBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder().decode(bytes)
+}
+
 function formatYears(birth: string | null, death: string | null): string {
   const left = birth && birth !== "0000" ? birth : ""
   const right = death && death !== "0000" ? death : ""
@@ -327,10 +362,17 @@ export async function loadAuthorDocument(
 
   let source: string
   try {
-    source = await $fetch<string>(
+    const response = await fetch(
       `${config.contentBase.replace(/\/$/u, "")}${expected}`,
-      { redirect: "manual", responseType: "text", retry: 0 }
+      { redirect: "manual" }
     )
+    if (response.status === 404) {
+      return documentError(404, "author_document_not_found")
+    }
+    if (response.status !== 200) {
+      return documentError(502, "author_document_unavailable")
+    }
+    source = await readAuthorDocumentResponse(response)
   } catch (error) {
     if (fetchStatus(error) === 404) {
       return documentError(404, "author_document_not_found")

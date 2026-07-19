@@ -102,6 +102,18 @@ const authorDocumentAssets = new Map(semerAuthorDocumentAssets.map(asset => [
   readFileSync(new URL(`./author-document-content/${asset.file}`, import.meta.url))
 ]))
 const malformedAuthorDocumentContent = "<html><head><title>Malformed</title></head></html>"
+const oversizedAuthorDocumentPrefix = Buffer.from("<html><body>")
+const oversizedAuthorDocumentSuffix = Buffer.from(
+  "upstream-provider-payload-probe</body></html>"
+)
+const oversizedAuthorDocumentContent = Buffer.concat([
+  oversizedAuthorDocumentPrefix,
+  Buffer.alloc(
+    1_048_577 - oversizedAuthorDocumentPrefix.length - oversizedAuthorDocumentSuffix.length,
+    "x"
+  ),
+  oversizedAuthorDocumentSuffix
+])
 const authorDocumentPdf = readFileSync(
   new URL("./presentation-content/Figurdiktensombarockblandkonst.pdf", import.meta.url)
 )
@@ -1562,6 +1574,7 @@ const server = createServer(async (request, response) => {
       "content-404",
       "content-503",
       "content-redirect",
+      "oversized-content",
       "malformed-descriptor",
       "unsafe-source-path",
       "malformed-content"
@@ -1694,7 +1707,9 @@ const server = createServer(async (request, response) => {
       "text/html; charset=utf-8",
       authorDocumentFailure === "malformed-content"
         ? malformedAuthorDocumentContent
-        : authorDocumentBody
+        : authorDocumentFailure === "oversized-content"
+          ? oversizedAuthorDocumentContent
+          : authorDocumentBody
     )
   }
 
