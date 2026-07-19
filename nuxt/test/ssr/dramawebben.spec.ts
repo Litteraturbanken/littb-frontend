@@ -2,6 +2,8 @@ import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
 const fixture = "http://127.0.0.1:4100"
+const nuxtOrigin = `http://127.0.0.1:${process.env.LITTB_NUXT_TEST_PORT || 3000}`
+const legacyDescription = "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 
 const requestLedgers = [
   "/_requests",
@@ -32,6 +34,8 @@ function expectStartShell(html: string) {
   const { document } = parseHTML(html)
 
   expect(document.title).toBe("Litteraturbanken")
+  expect(document.querySelector('meta[name="description"]')?.getAttribute("content"))
+    .toBe(legacyDescription)
   expect(document.body.className).toBe("focus page-dramaweb ready")
   expect(document.querySelector("#mainview > .cover")).not.toBeNull()
   expect(document.querySelector("#mainview > .cover.show")).toBeNull()
@@ -81,11 +85,11 @@ test("SSR renders the exact data-free Dramawebben start shell", async ({ request
 test("a root query leaves the empty shell and request ownership unchanged", async ({
   request
 }) => {
-  const response = await request.get(
-    "/dramawebben?fran=test&repeat=one&repeat=two&unknown=%2F"
-  )
+  const path = "/dramawebben?fran=test&repeat=one&repeat=two&unknown=%2F"
+  const response = await request.get(path, { maxRedirects: 0 })
 
   expect(response.status()).toBe(200)
+  expect(response.url()).toBe(`${nuxtOrigin}${path}`)
   expectStartShell(await response.text())
   await expectNoDataRequests(request)
 })
