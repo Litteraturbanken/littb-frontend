@@ -2927,6 +2927,268 @@ describe("v2 fixture server operations", () => {
       .toEqual({ failure: true })
   })
 
+  test("serves exact public and private Library PDF pages, sorts, filter, and request ledger", async () => {
+    const publicPath = "/api/query_string/etext,faksimil,pdf"
+    const privatePath = "/legacy-api/query_string/etext,faksimil,pdf"
+    const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+    const q = `${prefix} (${predicate})`
+    const filteredQ = `${prefix} (${predicate} AND (Selma Lagerlöf))`
+    const requests = [
+      {
+        path: publicPath,
+        query: { q, sort_field: "popularity|desc", from: "0", to: "100" }
+      },
+      {
+        path: privatePath,
+        query: { q, sort_field: "sort_date_imprint.date|desc", from: "100", to: "200" }
+      },
+      {
+        path: publicPath,
+        query: {
+          q,
+          sort_field: "main_author.name_for_index|asc,sortkey|asc",
+          from: "0",
+          to: "100"
+        }
+      },
+      {
+        path: privatePath,
+        query: { q: filteredQ, sort_field: "sortkey|asc", from: "0", to: "100" }
+      }
+    ]
+
+    const responses = await Promise.all(requests.map(async ({ path, query }) => {
+      const response = await fetch(`${origin}${path}?${new URLSearchParams(query)}`)
+      expect(response.status).toBe(200)
+      return await response.json() as Record<string, unknown>
+    }))
+
+    expect(responses[0]).toEqual({
+      data: [
+        {
+          _index: "faksimil",
+          lbworkid: "lb-GostaBerlingsSaga",
+          titlepath: "GostaBerlingsSaga",
+          titleid: "GostaBerlingsSaga",
+          work_titleid: "GostaBerlingsSaga",
+          shorttitle: "Gösta Berlings saga",
+          title: "Gösta Berlings saga. Roman",
+          texttype: "roman",
+          mediatype: "faksimil",
+          startpagename: "1",
+          license: "pd",
+          sort_date_imprint: { plain: "1891" },
+          main_author: {
+            authorid: "LagerlofS",
+            full_name: "Selma Lagerlöf",
+            surname: "Lagerlöf"
+          },
+          work_authors: [{ authorid: "LagerlofS", surname: "Lagerlöf" }],
+          export: [{
+            type: "pdf",
+            url: "https://litteraturbanken.se/txt/lb-GostaBerlingsSaga/lb-GostaBerlingsSaga.pdf",
+            filename: "LagerlofS_GostaBerlingsSaga",
+            size: 1_482_731
+          }]
+        },
+        {
+          _index: "pdf",
+          lbworkid: "lb-RodaRummet",
+          titlepath: "RodaRummet",
+          titleid: "RodaRummet",
+          work_titleid: "RodaRummet",
+          shorttitle: "Röda rummet",
+          title: "Röda rummet. Skildringar ur artist- och författarlivet",
+          texttype: "roman",
+          mediatype: "pdf",
+          startpagename: "1",
+          license: "restricted",
+          sort_date_imprint: { plain: "1879" },
+          main_author: {
+            authorid: "StrindbergA",
+            full_name: "August Strindberg",
+            surname: "Strindberg"
+          },
+          work_authors: [{ authorid: "StrindbergA", surname: "Strindberg" }],
+          export: [{
+            type: "pdf",
+            url: "/txt/lb-RodaRummet/lb-RodaRummet.pdf",
+            filename: "StrindbergA_RodaRummet",
+            size: 2_104_806
+          }]
+        }
+      ],
+      hits: 201,
+      distinct_hits: 201,
+      suggest: []
+    })
+    expect(responses[1]).toMatchObject({
+      hits: 201,
+      distinct_hits: 201,
+      data: [{
+        titleid: "DoktorGlas",
+        mediatype: "faksimil",
+        sort_date_imprint: { plain: "1905" },
+        main_author: { authorid: "SoderbergH", full_name: "Hjalmar Söderberg" }
+      }]
+    })
+    expect(responses[2]).toEqual(responses[0])
+    expect(responses[3]).toMatchObject({
+      hits: 1,
+      distinct_hits: 1,
+      data: [{
+        titleid: "GostaBerlingsSaga",
+        license: "pd",
+        export: [{ type: "pdf" }]
+      }]
+    })
+
+    expect(await libraryQueryRequests()).toEqual({ requests })
+
+    await fetch(`${origin}/api/relevance/test?q=%28preserved-pdf-ledger%29`)
+    const relevanceLedger = await libraryRelevanceRequests()
+    await fetch(`${origin}/_library_query_requests`, { method: "DELETE" })
+    expect(await libraryQueryRequests()).toEqual({ requests: [] })
+    expect(await libraryRelevanceRequests()).toEqual(relevanceLedger)
+  })
+
+  test("selects deterministic Library PDF empty, suggest, and unsafe response variants", async () => {
+    const path = "/api/query_string/etext,faksimil,pdf"
+    const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+    const responseFor = async (marker: string) => {
+      const q = `${prefix} (${predicate} AND (${marker}))`
+      const params = new URLSearchParams({
+        q,
+        sort_field: "popularity|desc",
+        from: "0",
+        to: "100"
+      })
+      return await (await fetch(`${origin}${path}?${params}`)).json() as Record<string, unknown>
+    }
+
+    const absentSuggest = await responseFor("missing-suggest")
+    expect(Object.hasOwn(absentSuggest, "suggest")).toBe(false)
+    expect(absentSuggest).toMatchObject({
+      hits: 201,
+      distinct_hits: 201,
+      data: [{ mediatype: "faksimil" }, { mediatype: "pdf" }]
+    })
+
+    const nullSuggest = await responseFor("null-suggest")
+    expect(nullSuggest).toMatchObject({
+      hits: 201,
+      distinct_hits: 201,
+      suggest: null,
+      data: [{ mediatype: "faksimil" }, { mediatype: "pdf" }]
+    })
+
+    expect(await responseFor("malformed-top")).toEqual({
+      data: "invalid",
+      hits: 0,
+      distinct_hits: 0,
+      suggest: []
+    })
+
+    const malformedRows = await responseFor("malformed-row") as { data: unknown[] }
+    expect(malformedRows.data).toHaveLength(9)
+    expect(malformedRows.data[0]).toMatchObject({
+      titleid: "GostaBerlingsSaga",
+      export: [{ type: "pdf" }]
+    })
+    expect(malformedRows.data[1]).toBeNull()
+    expect(malformedRows.data[2]).toEqual({ _index: "pdf", title: "Ofullständig" })
+    expect(malformedRows.data[3]).toMatchObject({
+      titleid: "UnsafeAuthor",
+      main_author: { authorid: "../unsafe" }
+    })
+    expect(malformedRows.data[4]).toMatchObject({ titleid: "Unsafe/Title" })
+    expect(malformedRows.data[5]).toMatchObject({ mediatype: "../pdf" })
+    expect(malformedRows.data[6]).toMatchObject({
+      titleid: "UnsafeUrl",
+      export: [{ url: "https://example.test/unsafe.pdf" }]
+    })
+    expect(malformedRows.data[7]).toMatchObject({
+      titleid: "UnsafeFilename",
+      export: [{ filename: "../unsafe.pdf" }]
+    })
+    expect(malformedRows.data[8]).toMatchObject({
+      titleid: "DuplicateDownloads",
+      export: [{ type: "pdf" }, { type: "pdf" }]
+    })
+
+    expect(await responseFor("inga")).toEqual({
+      data: [],
+      hits: 0,
+      distinct_hits: 0,
+      suggest: []
+    })
+  })
+
+  test("Library PDF delay and failure controls snapshot exact outstanding identities", async () => {
+    const path = "/api/query_string/etext,faksimil,pdf"
+    const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+    const q = `${prefix} (${predicate})`
+    const filteredQ = `${prefix} (${predicate} AND (Selma Lagerlöf))`
+    const identities = [
+      { q: filteredQ, sort_field: "popularity|desc", from: "0", to: "100" },
+      { q, sort_field: "sortkey|asc", from: "0", to: "100" },
+      { q, sort_field: "popularity|desc", from: "1", to: "100" },
+      { q, sort_field: "popularity|desc", from: "0", to: "101" }
+    ]
+    const delays = Object.fromEntries(identities.map(query => [
+      [query.q, query.sort_field, query.from, query.to].join("|"),
+      100
+    ]))
+
+    await fetch(`${origin}/_library_query_delays`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(delays)
+    })
+    await fetch(`${origin}/_library_query_failure`, { method: "PUT" })
+    expect(await (await fetch(`${origin}/_library_query_delays`)).json())
+      .toEqual({ delays })
+    expect(await (await fetch(`${origin}/_library_query_failure`)).json())
+      .toEqual({ failure: true })
+
+    const startedAt = Date.now()
+    const settled = identities.map(() => false)
+    const outstanding = identities.map((query, index) => fetch(
+      `${origin}${path}?${new URLSearchParams(query)}`
+    ).then((response) => {
+      settled[index] = true
+      return response
+    }))
+
+    await new Promise(resolve => setTimeout(resolve, 15))
+    expect(settled).toEqual([false, false, false, false])
+
+    await fetch(`${origin}/_library_query_delays`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_library_query_delays`)).json())
+      .toEqual({ delays: {} })
+    expect(await (await fetch(`${origin}/_library_query_failure`)).json())
+      .toEqual({ failure: true })
+
+    await fetch(`${origin}/_library_query_failure`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_library_query_failure`)).json())
+      .toEqual({ failure: false })
+    expect((await fetch(`${origin}${path}?${new URLSearchParams(identities[0]!)}`)).status)
+      .toBe(200)
+
+    const failed = await Promise.all(outstanding)
+    expect(failed.map(response => response.status)).toEqual([503, 503, 503, 503])
+    expect(Date.now() - startedAt).toBeGreaterThanOrEqual(90)
+    expect(await failed[0]!.json()).toEqual({
+      error: {
+        code: "library_query_unavailable",
+        message: "Unable to load Library PDFs"
+      }
+    })
+  })
+
   test("serves public and private legacy Library relevance responses with isolated accounting", async () => {
     const types = "etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress"
     const query = "q=%28R%C3%B6da+rummet%29&from=0&to=100&sort_field=_score%7Cdesc"
