@@ -35,6 +35,7 @@ page-local SSR fetch, Headless UI dialog, and strict Angular visual parity.
 **Backend files:**
 
 - Add: `lbapi/v2/source_info.py`
+- Modify: `lbapi/elasticapi.py`
 - Modify: `lbapi/v2/models.py`
 - Modify: `lbapi/v2/app.py`
 - Add: `test_lbapi/v2/test_source_info_models.py`
@@ -51,7 +52,9 @@ Write strict model, provider, route, and OpenAPI tests for:
 - Doktor Glas normal metadata, multiple representations, read/download order,
   cover, URN, Libris, provenance, license, and parsed errata;
 - Dramawebben introduction, facts, roles, and history;
-- sparse valid metadata using required `null`/empty DTO fields;
+- sparse valid metadata using required `null`/empty DTO fields, nullable/unknown
+  provenance rows, sparse drama objects, and exports above 32-bit size;
+- one-cell and empty errata cells normalized without rejecting the work;
 - absent work/media, unsafe path segments, oversized values, duplicate identity,
   malformed top-level/provider rows, malformed HTML field types, malformed
   errata, and provider failure;
@@ -80,6 +83,7 @@ uv run pytest \
   test_lbapi/v2/test_source_info_provider.py \
   test_lbapi/v2/test_source_info_api.py \
   test_lbapi/v2/test_openapi.py
+uv run python scripts/export_v2_openapi.py
 uv run python scripts/export_v2_openapi.py --check
 ```
 
@@ -89,8 +93,7 @@ Commit only backend Task 1 files.
 
 **Frontend files:**
 
-- Modify: `nuxt/openapi/v2.json`
-- Modify: `nuxt/app/lib/api/client.ts`
+- Modify: `nuxt/app/lib/api/generated/lbapi.ts`
 - Modify: `nuxt/test/unit/api-client-drift.spec.ts` if operation assertions are
   centralized there
 
@@ -105,7 +108,7 @@ Run:
 
 ```bash
 cd /Users/johan/.codex/worktrees/8c5c/littb/nuxt
-yarn api:generate
+LBAPI_OPENAPI_SCHEMA=../../lb-backend/openapi/v2.json yarn api:generate
 LBAPI_OPENAPI_SCHEMA=../../lb-backend/openapi/v2.json yarn api:check
 yarn typecheck
 ```
@@ -139,8 +142,10 @@ Add unit tests proving:
 
 - exact runtime validation of the generated response and every recursive field;
 - path/query safety and status mapping;
-- static JSON runtime fetch paths, caching/revalidation options, key lookup, and
-  known provenance image rewriting;
+- static JSON runtime fetch paths, caching/revalidation options, key lookup,
+  graceful unknown-key degradation, provenance image rewriting, license
+  `<text>` unwrapping, `{{provenance}}` interpolation, and relative license
+  image rewriting;
 - bounded one-call attribution resolution with existing author reuse;
 - sanitizer preservation of allowed editorial paragraphs/tables/links and
   removal of scripts, handlers, unsafe protocols, forms, embeds, and unknown
@@ -181,7 +186,7 @@ Commit Task 3 files after review.
 
 Add route-helper tests for:
 
-- bare/empty/repeated/encoded exact `om-boken` keys and explicit invalid values;
+- Angular-exact bare/empty/nonempty/repeated/encoded `om-boken` truthiness;
 - adding one bare key while removing every existing exact occurrence;
 - removing only `om-boken`, or both Reader dialog keys when switching dialogs;
 - preserving unrelated bare/empty/repeated keys, order, `+`/`%20`, percent case,
@@ -241,22 +246,25 @@ Add SSR tests for:
 Add browser tests for:
 
 - title, sidebar, `o`, F18, direct query, Back/Forward, and no-JavaScript links;
-- close button, Escape, backdrop, external query removal, and mutual exclusion
-  with contents;
+- close button, Escape, backdrop, external query removal, and the documented
+  source-info presentation priority when both dialog keys are direct-loaded;
 - exact replace semantics and raw-query byte preservation;
 - no base Reader/search-hit/history refetch or write on modal-only transitions;
 - modal-local loading/retry/error behavior;
 - Headless UI focus trap, focus restoration, Escape, backdrop, and scroll lock;
 - “Mer om pjäsen” drama copy;
 - read/download/author/Libris/URN/provenance/license links;
-- errata first-eight and “Visa fler”/“Visa färre”; and
+- errata first-eight and “Visa fler”/“Visa färre”, plus the actual empty-array
+  behavior; and
 - no hydration, console, page, or failed-request errors.
 
 ### GREEN
 
-Implement `ReaderSourceInfoDialog.vue` as presentation-only Headless UI. Add one
-conditional/on-demand `useAsyncData` inside the canonical page's `<script
-setup>`, query-derived open state, replace helpers, triggers, keyboard action,
+Implement `ReaderSourceInfoDialog.vue` as presentation-only Headless UI. Create
+one unconditional page-local `useAsyncData` instance inside the canonical
+page's `<script setup>`, disable immediate execution for an initially closed
+modal, and execute the same instance on demand. Add query-derived open state,
+replace helpers, triggers, keyboard action,
 and body/corridor modal state. Extend the existing primary/search/history
 identities to exclude both transient dialog keys. Add only the minimal `.about`
 activation bridge required by copied legacy rules.
@@ -278,6 +286,7 @@ Commit Task 5 files after review.
 **Frontend files:**
 
 - Add: `nuxt/test/visual/capture-reader-source-info-angular.spec.ts`
+- Add: `nuxt/playwright.reader-source-info-angular.config.ts`
 - Add: `nuxt/test/e2e/reader-source-info.visual.spec.ts`
 - Add only reviewed normal/drama desktop/mobile baseline images under the
   existing Reader visual baseline directory
@@ -287,7 +296,8 @@ Commit Task 5 files after review.
 ### Authority capture
 
 Use deterministic normal Doktor Glas and Dramawebben fixtures in the isolated
-Angular server. Firewall all unregistered network traffic and wait for fonts,
+Angular server through the dedicated Reader source-info Playwright config.
+Firewall all unregistered network traffic and wait for fonts,
 images, modal animation, and scroll position. Capture identical desktop and
 mobile viewports for:
 
@@ -308,6 +318,7 @@ Run:
 
 ```bash
 cd nuxt
+yarn playwright test --config=playwright.reader-source-info-angular.config.ts
 yarn playwright test test/e2e/reader-source-info.visual.spec.ts --project=desktop-chromium --project=mobile-chromium
 yarn playwright test test/e2e/reader-faksimil.visual.spec.ts test/e2e/reader-hit.visual.spec.ts test/e2e/reader-contents.visual.spec.ts --project=desktop-chromium
 ```
@@ -344,4 +355,3 @@ test:
 Perform independent code review of both repositories. Commit any reviewed fix
 separately. Preserve all unrelated user work and keep protected ports 3000,
 8000, 3018, and 4102 untouched.
-

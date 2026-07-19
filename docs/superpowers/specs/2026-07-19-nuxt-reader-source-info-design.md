@@ -69,8 +69,9 @@ representation is preferred and legacy fallback order is used only when it is
 absent. The response identifies which media type was selected so every alias
 can canonicalize deterministically.
 
-The provider must call the existing work lookup with explicit source-field
-selection. It may query by author/title once and must never return raw
+The provider extends the neutral `elasticapi.get_work_by_titlepath` helper to
+accept explicit source includes/excludes, then calls it once by author/title. It
+must never return raw
 OpenSearch records, `content_vector`, page text, page maps, parts, or unrelated
 metadata. It validates the complete provider container before normalization and
 maps provider unavailability to the standard non-leaking `503`, absent work to
@@ -90,8 +91,8 @@ The strict recursive response contains:
 - ordered read actions for e-text/faksimil and ordered download actions for
   EPUB/PDF, including label, safe URL, safe filename, and optional byte size;
 - structured errata rows rather than the raw provider table; and
-- optional strict Dramawebben facts, roles, history HTML, and introduction
-  marker.
+- optional strict Dramawebben facts, roles, and history HTML. The top-level work
+  introduction remains separate; do not invent `dramawebben.workintro`.
 
 All strings and collections have explicit bounds above observed production
 values. DTOs inherit the existing `V2Model` extra-field rejection. Every field
@@ -106,8 +107,9 @@ legacy string field into typed data.
 
 ### Generated client and thin Nitro boundary
 
-Regenerate `nuxt/openapi/v2.json` and `nuxt/app/lib/api/client.ts` from the
-checked backend schema. The Nuxt server handler uses only the generated client
+Export the checked backend `openapi/v2.json` and regenerate
+`nuxt/app/lib/api/generated/lbapi.ts` from that file. The Nuxt server handler
+uses only the existing client wrapper around the generated contract
 for the FastAPI request; no handwritten duplicate transport type is allowed.
 
 Add:
@@ -136,29 +138,35 @@ The Nitro handler:
 
 Static metadata is cached by Nuxt server fetch semantics with a bounded
 revalidation interval, but it is still fetched from the runtime source rather
-than copied or hard-coded. Missing, malformed, oversized, or key-mismatched
-static data is a modal-local `502`; it must never take down the base Reader.
+than copied or hard-coded. Transport-level, malformed, or oversized static data
+is a modal-local `502`; it must never take down the base Reader. A well-formed
+unknown provenance or license key follows Angular's degradation behavior:
+unknown provenance rows are skipped and an unknown license renders no license
+block without discarding the rest of the source information.
 
 The sanitizer accepts the minimal legacy source-info vocabulary: paragraphs,
 line breaks, headings, emphasis, strong text, links with safe protocols,
-small inline spans/classes from known editorial data, lists, tables, and
-sup/subscript. It removes scripts, style/event attributes, unsafe URLs,
-iframes/objects, forms, and unknown elements. Links gain safe external-link
-attributes where required. Plain text stays escaped.
+small inline spans/classes from known editorial data, lists, tables,
+sup/subscript, and allowlisted license/history images. License handling unwraps
+the legacy `<text>` container, interpolates `{{provenance}}` with the resolved
+provenance links, and rewrites every relative license image to
+`/red/bilder/gemensamt/{filename}`. It removes scripts, style/event attributes,
+unsafe URLs, iframes/objects, forms, and unknown elements. Links gain safe
+external-link attributes where required. Plain text stays escaped.
 
 ### Page-local SSR fetch and query ownership
 
-The canonical Reader page remains the model owner. It performs one conditional
-`useAsyncData` source-info fetch inside `<script setup>` only when the raw query
-contains an accepted `om-boken` key. A later client open executes that same
-page-local async-data instance on demand. No composable, Pinia store, global
+The canonical Reader page remains the model owner. It unconditionally creates
+one page-local `useAsyncData` instance inside `<script setup>`, with immediate
+execution enabled only when the initial raw query requests `om-boken`. A later
+client open executes that same instance on demand. No composable, Pinia store, global
 middleware model, or source-info fetch is added to a closed Reader.
 
-Accepted modal state matches Angular's boolean key semantics: a bare key or an
-empty value opens the dialog; explicit nonempty values do not. Repeated keys are
-accepted when at least one exact key is bare/empty. Matching is based on decoded
-key identity while every unrelated raw query segment, order, encoding, and
-fragment remains byte-for-byte unchanged.
+Accepted modal state matches Angular's parse/truthiness semantics: a bare key
+opens the dialog; an exact empty assignment (`om-boken=`) is false; every
+nonempty string value, including `false` and `1`, is true; and every repeated-key
+array is truthy. Matching is based on decoded key identity while every unrelated
+raw query segment, order, encoding, and fragment remains byte-for-byte unchanged.
 
 Opening and closing use `router.replace`, never push. Opening adds exactly one
 bare `om-boken`; closing removes every exact `om-boken` segment and preserves
@@ -208,12 +216,17 @@ The rendered order and copy remain the `sourceInfo.html` authority:
 3. source description and attribution;
 4. “Läs som …” actions;
 5. “Ladda ner …” actions with optional sizes;
-6. Libris, Dramawebben logo, and expandable URN help;
+6. Libris and expandable URN help. Preserve the current Angular quirk that the
+   Dramawebben logo is hidden because the template checks the absent nested
+   `dramawebben.workintro` field;
 7. 200px cover with small/large `srcset`;
-8. drama handling/introduction, facts, roles, and history;
+8. top-level drama introduction, facts, roles, and history. Preserve the current
+   hidden “Handling” header for the same absent nested-field check;
 9. provenance blocks and license HTML;
-10. e-text errata, initially eight rows, “Visa fler”/“Visa färre”, preserving
-    the legacy typo “Inga ändringar har gjorts mot orginalet.”
+10. e-text errata, initially eight rows and “Visa fler”/“Visa färre”. Angular
+    normalizes missing errata to a truthy empty array, so its intended typo copy
+    “Inga ändringar har gjorts mot orginalet.” is normally hidden; preserve that
+    actual rendered behavior.
 
 The Reader title and sidebar entry are real links so SSR/no-JavaScript behavior
 still reaches canonical `?om-boken`. Drama copy is “Mer om pjäsen”. Keyboard
@@ -223,8 +236,13 @@ dialog action all remove only the modal key. Focus returns to the invoking
 control after close where Headless UI can identify it.
 
 While either Reader dialog is open, body receives `modal-open` and the three
-Reader corridors receive the copied 4px blur. Only one Reader dialog may be
-open: opening one removes the other's transient key in the same replace.
+Reader corridors receive the copied 4px blur. Direct URLs can contain both
+dialog keys in Angular and create stacked independent modals. Headless UI cannot
+safely maintain two simultaneous focus traps, so Nuxt deliberately gives source
+information presentation priority while retaining both raw keys; closing it
+reveals contents without rewriting the other key. Ordinary triggers remove the
+other dialog key in the same replace. This is an intentional accessibility
+recommendation, not a claim of exact Angular stacking behavior.
 
 ## Visual invariants
 
@@ -276,4 +294,3 @@ Completion of this slice requires:
   comparisons against Angular; and
 - live 3020 checks using the patched 8010 backend with no hydration, console,
   or failed-request errors.
-
