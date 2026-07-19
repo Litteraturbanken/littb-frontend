@@ -4,7 +4,7 @@ import { defineConfig } from "@playwright/test"
 import angularConfig from "./playwright.angular.config"
 
 export default defineConfig(angularConfig, {
-  testMatch: /capture-dramawebben-angular\.spec\.ts/,
+  testMatch: /capture-dramawebben(?:-catalog)?-angular\.spec\.ts/,
   use: {
     baseURL: "http://127.0.0.1:9000"
   },
