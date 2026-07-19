@@ -3063,11 +3063,13 @@ describe("v2 fixture server operations", () => {
     expect(await libraryRelevanceRequests()).toEqual(relevanceLedger)
   })
 
-  test("serves exact-tuple PDF grouping collisions without sharing Angular's concatenated key", async () => {
+  test.each(["tuple-collision", "tuple collision"])(
+    "serves exact-tuple PDF grouping collisions for %s without sharing Angular's concatenated key",
+    async marker => {
     const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
     const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
     const params = new URLSearchParams({
-      q: `${prefix} (${predicate} AND (tuple-collision))`,
+      q: `${prefix} (${predicate} AND (${marker}))`,
       sort_field: "popularity|desc",
       from: "0",
       to: "100"
@@ -3086,14 +3088,15 @@ describe("v2 fixture server operations", () => {
       distinct_hits: 2,
       suggest: []
     })
-  })
+    }
+  )
 
   test.each([
-    ["primitive-envelope", null],
-    ["invalid-hits", { data: [], hits: "307", distinct_hits: 0, suggest: [] }],
-    ["invalid-distinct", { data: [], hits: 0, distinct_hits: null, suggest: [] }],
-    ["invalid-suggest", { data: [], hits: 0, distinct_hits: 0, suggest: {} }]
-  ])("serves the %s PDF envelope boundary", async (marker, expected) => {
+    ["primitive-envelope", "primitive envelope", null],
+    ["invalid-hits", "invalid hits", { data: [], hits: "307", distinct_hits: 0, suggest: [] }],
+    ["invalid-distinct", "invalid distinct", { data: [], hits: 0, distinct_hits: null, suggest: [] }],
+    ["invalid-suggest", "invalid suggest", { data: [], hits: 0, distinct_hits: 0, suggest: {} }]
+  ])("serves the %s PDF envelope boundary", async (marker, sanitizedMarker, expected) => {
     const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
     const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
     const params = new URLSearchParams({
@@ -3102,12 +3105,15 @@ describe("v2 fixture server operations", () => {
       from: "0",
       to: "100"
     })
-    const response = await fetch(
-      `${origin}/api/query_string/etext,faksimil,pdf?${params}`
-    )
+    for (const value of [marker, sanitizedMarker]) {
+      params.set("q", `${prefix} (${predicate} AND (${value}))`)
+      const response = await fetch(
+        `${origin}/api/query_string/etext,faksimil,pdf?${params}`
+      )
 
-    expect(response.status).toBe(200)
-    expect(await response.json()).toEqual(expected)
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual(expected)
+    }
   })
 
   test("serves preferred-author and same-group malformed PDF boundaries", async () => {

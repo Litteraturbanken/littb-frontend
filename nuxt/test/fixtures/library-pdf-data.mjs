@@ -358,15 +358,15 @@ export function libraryPdfResponse(query = {}) {
   const normalized = (query.q || "").toLocaleLowerCase("sv-SE")
   let response = libraryPdfPageOneResponse
 
-  if (normalized.includes("primitive-envelope")) {
+  if (normalized.includes("primitive-envelope") || normalized.includes("primitive envelope")) {
     response = libraryPdfPrimitiveEnvelopeResponse
-  } else if (normalized.includes("invalid-hits")) {
+  } else if (normalized.includes("invalid-hits") || normalized.includes("invalid hits")) {
     response = libraryPdfInvalidHitsResponse
-  } else if (normalized.includes("invalid-distinct")) {
+  } else if (normalized.includes("invalid-distinct") || normalized.includes("invalid distinct")) {
     response = libraryPdfInvalidDistinctHitsResponse
-  } else if (normalized.includes("invalid-suggest")) {
+  } else if (normalized.includes("invalid-suggest") || normalized.includes("invalid suggest")) {
     response = libraryPdfInvalidSuggestResponse
-  } else if (normalized.includes("tuple-collision")) {
+  } else if (normalized.includes("tuple-collision") || normalized.includes("tuple collision")) {
     response = libraryPdfTupleCollisionResponse
   } else if (normalized.includes("malformed-top") || normalized.includes("malformed top")) {
     response = libraryPdfMalformedEnvelopeResponse
