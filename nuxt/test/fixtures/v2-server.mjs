@@ -293,6 +293,7 @@ const libraryQueryPaths = new Set([
   "/legacy-api/query_string/etext,faksimil,pdf"
 ])
 const libraryPdfPredicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+const libraryQueryPrefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
 const dramawebbenExcludedDataPaths = new Set([
   "/api/get_authors",
   "/api/list_all/etext,faksimil,pdf,infopost"
@@ -371,6 +372,15 @@ function waitForLibraryRelevanceDelay(query) {
 function waitForLibraryQueryDelay(query) {
   const key = [query.q || "", query.sort_field || "", query.from || "", query.to || ""].join("|")
   return new Promise(resolve => setTimeout(resolve, libraryQueryDelays[key] || 0))
+}
+
+function isLibraryPdfQuery(query) {
+  const value = query.q || ""
+  return value === `${libraryQueryPrefix} (${libraryPdfPredicate})`
+    || (
+      value.startsWith(`${libraryQueryPrefix} (${libraryPdfPredicate} AND (`)
+      && value.endsWith("))")
+    )
 }
 
 function readerHitDelayKey(input) {
@@ -2335,7 +2345,7 @@ const server = createServer(async (request, response) => {
 
   if (request.method === "GET" && libraryQueryPaths.has(url.pathname)) {
     const query = Object.fromEntries(url.searchParams)
-    const pdfQuery = (query.q || "").includes(libraryPdfPredicate)
+    const pdfQuery = isLibraryPdfQuery(query)
     const queryFailure = libraryQueryFailure
     libraryQueryRequests.push({ path: url.pathname, query })
     await waitForLibraryQueryDelay(query)

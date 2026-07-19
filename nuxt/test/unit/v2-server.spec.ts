@@ -2996,12 +2996,22 @@ describe("v2 fixture server operations", () => {
     }])
     expect(representations.RodaRummet).toMatchObject([{
       mediatype: "pdf",
-      authors: [{ authorid: "StrindbergA", surname: "Strindberg" }]
+      main_author: { authorid: "StrindbergA" },
+      authors: [{ authorid: "ArchiveA", surname: "Arkiv" }]
     }])
     expect(representations.RodaRummet?.[0]).not.toHaveProperty("export")
     expect(representations.NilsHolgersson).toMatchObject([
-      { mediatype: "faksimil", export: [{ type: "pdf", size: 2_210_001 }] },
-      { mediatype: "pdf" }
+      {
+        mediatype: "faksimil",
+        work_titleid: "NilsHolgersson",
+        work_authors: [{ authorid: "LagerlofS" }],
+        export: [{ type: "pdf", size: 2_210_001 }]
+      },
+      {
+        mediatype: "pdf",
+        work_titleid: "NilsHolgerssonPdf",
+        work_authors: [{ authorid: "DirectPdfA", surname: "Direkt" }]
+      }
     ])
     expect(representations.NilsHolgersson?.[1]).not.toHaveProperty("export")
     expect(representations.Jerusalem).toMatchObject([{
@@ -3053,6 +3063,124 @@ describe("v2 fixture server operations", () => {
     expect(await libraryRelevanceRequests()).toEqual(relevanceLedger)
   })
 
+  test("serves exact-tuple PDF grouping collisions without sharing Angular's concatenated key", async () => {
+    const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+    const params = new URLSearchParams({
+      q: `${prefix} (${predicate} AND (tuple-collision))`,
+      sort_field: "popularity|desc",
+      from: "0",
+      to: "100"
+    })
+    const response = await fetch(
+      `${origin}/api/query_string/etext,faksimil,pdf?${params}`
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      data: [
+        { titleid: "TupleCollisionOne", titlepath: "ab", lbworkid: "c" },
+        { titleid: "TupleCollisionTwo", titlepath: "a", lbworkid: "bc" }
+      ],
+      hits: 2,
+      distinct_hits: 2,
+      suggest: []
+    })
+  })
+
+  test.each([
+    ["primitive-envelope", null],
+    ["invalid-hits", { data: [], hits: "307", distinct_hits: 0, suggest: [] }],
+    ["invalid-distinct", { data: [], hits: 0, distinct_hits: null, suggest: [] }],
+    ["invalid-suggest", { data: [], hits: 0, distinct_hits: 0, suggest: {} }]
+  ])("serves the %s PDF envelope boundary", async (marker, expected) => {
+    const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+    const params = new URLSearchParams({
+      q: `${prefix} (${predicate} AND (${marker}))`,
+      sort_field: "popularity|desc",
+      from: "0",
+      to: "100"
+    })
+    const response = await fetch(
+      `${origin}/api/query_string/etext,faksimil,pdf?${params}`
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual(expected)
+  })
+
+  test("serves preferred-author and same-group malformed PDF boundaries", async () => {
+    const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+    const params = new URLSearchParams({
+      q: `${prefix} (${predicate} AND (malformed-row))`,
+      sort_field: "popularity|desc",
+      from: "0",
+      to: "100"
+    })
+    const response = await fetch(
+      `${origin}/api/query_string/etext,faksimil,pdf?${params}`
+    )
+    const body = await response.json() as { data: Array<Record<string, unknown>> }
+    const byTitle = Object.groupBy(body.data, row => String(row?.titleid))
+
+    expect(byTitle.UnsafeWorkAuthor?.[0]).toMatchObject({
+      work_authors: [{ authorid: "../unsafe" }],
+      main_author: { authorid: "SafeA" }
+    })
+    expect(byTitle.MalformedAuthors?.[0]).toMatchObject({
+      authors: [null],
+      main_author: { authorid: "SafeA" }
+    })
+    expect(byTitle.EmptyWorkAuthors?.[0]).toMatchObject({
+      work_authors: [],
+      main_author: { authorid: "SafeA" }
+    })
+    expect(byTitle.MissingYear?.[0]).not.toHaveProperty("sort_date_imprint")
+    expect(byTitle.MissingDisplayTitle?.[0]).toMatchObject({ shorttitle: "", title: "" })
+    expect(byTitle.MissingAuthorName?.[0]).toMatchObject({
+      main_author: { authorid: "SafeA", surname: "Säker" }
+    })
+    expect(byTitle.MissingAuthorName?.[0]?.main_author).not.toHaveProperty("full_name")
+    expect(byTitle.MalformedGroupedFallback).toMatchObject([
+      {
+        titlepath: "MalformedGroupedFallback",
+        lbworkid: "lb-MalformedGroupedFallback",
+        mediatype: "faksimil",
+        export: [{ type: "pdf" }]
+      },
+      {
+        titlepath: "MalformedGroupedFallback",
+        lbworkid: "lb-MalformedGroupedFallback",
+        mediatype: "pdf",
+        work_authors: [{ authorid: "../unsafe" }]
+      }
+    ])
+  })
+
+  test("does not select PDF fixtures for an EPUB query containing predicate-like filter text", async () => {
+    const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+    const predicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
+    const params = new URLSearchParams({
+      q: `${prefix} (has_epub:true AND (${predicate}))`,
+      sort_field: "popularity|desc",
+      from: "0",
+      to: "100"
+    })
+    const response = await fetch(
+      `${origin}/api/query_string/etext,faksimil,pdf?${params}`
+    )
+    const body = await response.json() as { data: Array<{ titleid: string }> }
+
+    expect(response.status).toBe(200)
+    expect(body.data.map(row => row.titleid)).toEqual([
+      "DoktorGlas",
+      "SvenskaFolkvisor",
+      "BlandTomtarOchTroll"
+    ])
+  })
+
   test("selects deterministic Library PDF empty, suggest, and unsafe response variants", async () => {
     const path = "/api/query_string/etext,faksimil,pdf"
     const prefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
@@ -3093,7 +3221,7 @@ describe("v2 fixture server operations", () => {
 
     const malformedRows = await responseFor("malformed-row") as { data: unknown[] }
     expect(malformedRows).toEqual(libraryPdfMalformedRowResponse)
-    expect(malformedRows.data).toHaveLength(11)
+    expect(malformedRows.data).toHaveLength(19)
     expect(malformedRows.data[0]).toMatchObject({
       titleid: "GostaBerlingsSaga",
       export: [{ type: "pdf", size: 1_482_731 }]

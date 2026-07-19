@@ -67,7 +67,7 @@ export const indexedPdfRepresentation = libraryPdfRepresentation({
   title: "Röda rummet",
   mediatype: "pdf",
   license: "restricted",
-  authors: [{ authorid: "StrindbergA", surname: "Strindberg" }],
+  authors: [{ authorid: "ArchiveA", surname: "Arkiv" }],
   overrides: { title: "Röda rummet. Skildringar ur artist- och författarlivet" }
 })
 
@@ -91,7 +91,8 @@ export const groupedDirectPdfRepresentation = libraryPdfRepresentation({
   title: "Nils Holgerssons underbara resa",
   mediatype: "pdf",
   license: "restricted",
-  workAuthors: [{ authorid: "LagerlofS", surname: "Lagerlöf" }]
+  workAuthors: [{ authorid: "DirectPdfA", surname: "Direkt" }],
+  overrides: { work_titleid: "NilsHolgerssonPdf" }
 })
 
 export const duplicatePdfExportRepresentation = libraryPdfRepresentation({
@@ -173,6 +174,60 @@ export const libraryPdfMalformedEnvelopeResponse = {
   suggest: []
 }
 
+export const libraryPdfPrimitiveEnvelopeResponse = null
+
+export const libraryPdfInvalidHitsResponse = {
+  data: [],
+  hits: "307",
+  distinct_hits: 0,
+  suggest: []
+}
+
+export const libraryPdfInvalidDistinctHitsResponse = {
+  data: [],
+  hits: 0,
+  distinct_hits: null,
+  suggest: []
+}
+
+export const libraryPdfInvalidSuggestResponse = {
+  data: [],
+  hits: 0,
+  distinct_hits: 0,
+  suggest: {}
+}
+
+const tupleCollisionOne = libraryPdfRepresentation({
+  id: "TupleCollisionOne",
+  authorId: "TupleA",
+  fullName: "Första Kollision",
+  surname: "Kollision",
+  year: "1903",
+  title: "Första tuple-kollisionen",
+  lbworkid: "c",
+  titlepath: "ab",
+  exports: [{ type: "pdf", size: 610_001 }]
+})
+
+const tupleCollisionTwo = libraryPdfRepresentation({
+  id: "TupleCollisionTwo",
+  authorId: "TupleB",
+  fullName: "Andra Kollision",
+  surname: "Kollision",
+  year: "1904",
+  title: "Andra tuple-kollisionen",
+  lbworkid: "bc",
+  titlepath: "a",
+  exports: [{ type: "pdf", size: 610_002 }]
+})
+
+export const libraryPdfTupleCollisionResponse = {
+  data: [tupleCollisionOne, tupleCollisionTwo],
+  hits: 2,
+  distinct_hits: 2,
+  suggest: []
+}
+
 const malformedBase = {
   authorId: "SafeA",
   fullName: "Säker Författare",
@@ -181,6 +236,13 @@ const malformedBase = {
   mediatype: "pdf",
   license: "restricted"
 }
+
+const missingYearRepresentation = libraryPdfRepresentation({
+  ...malformedBase,
+  id: "MissingYear",
+  title: "Saknat år"
+})
+delete missingYearRepresentation.sort_date_imprint
 
 export const libraryPdfMalformedRowResponse = {
   data: [
@@ -238,6 +300,53 @@ export const libraryPdfMalformedRowResponse = {
       id: "UnencodableWork",
       title: "Okodbart id",
       lbworkid: "\uD800"
+    }),
+    libraryPdfRepresentation({
+      ...malformedBase,
+      id: "UnsafeWorkAuthor",
+      title: "Osäker verkförfattare",
+      workAuthors: [{ authorid: "../unsafe", surname: "Osäker" }]
+    }),
+    libraryPdfRepresentation({
+      ...malformedBase,
+      id: "MalformedAuthors",
+      title: "Felaktig författarlista",
+      authors: [null]
+    }),
+    libraryPdfRepresentation({
+      ...malformedBase,
+      id: "EmptyWorkAuthors",
+      title: "Tom verkförfattarlista",
+      workAuthors: []
+    }),
+    missingYearRepresentation,
+    libraryPdfRepresentation({
+      ...malformedBase,
+      id: "MissingDisplayTitle",
+      title: "Saknad titel",
+      overrides: { shorttitle: "", title: "" }
+    }),
+    libraryPdfRepresentation({
+      ...malformedBase,
+      id: "MissingAuthorName",
+      title: "Saknat författarnamn",
+      overrides: {
+        main_author: { authorid: "SafeA", surname: "Säker" }
+      }
+    }),
+    libraryPdfRepresentation({
+      ...malformedBase,
+      id: "MalformedGroupedFallback",
+      title: "Giltig gruppexport",
+      mediatype: "faksimil",
+      license: "pd",
+      exports: [{ type: "pdf", size: 620_001 }]
+    }),
+    libraryPdfRepresentation({
+      ...malformedBase,
+      id: "MalformedGroupedFallback",
+      title: "Felaktig direkt-PDF",
+      workAuthors: [{ authorid: "../unsafe", surname: "Osäker" }]
     })
   ],
   hits: 307,
@@ -249,7 +358,17 @@ export function libraryPdfResponse(query = {}) {
   const normalized = (query.q || "").toLocaleLowerCase("sv-SE")
   let response = libraryPdfPageOneResponse
 
-  if (normalized.includes("malformed-top") || normalized.includes("malformed top")) {
+  if (normalized.includes("primitive-envelope")) {
+    response = libraryPdfPrimitiveEnvelopeResponse
+  } else if (normalized.includes("invalid-hits")) {
+    response = libraryPdfInvalidHitsResponse
+  } else if (normalized.includes("invalid-distinct")) {
+    response = libraryPdfInvalidDistinctHitsResponse
+  } else if (normalized.includes("invalid-suggest")) {
+    response = libraryPdfInvalidSuggestResponse
+  } else if (normalized.includes("tuple-collision")) {
+    response = libraryPdfTupleCollisionResponse
+  } else if (normalized.includes("malformed-top") || normalized.includes("malformed top")) {
     response = libraryPdfMalformedEnvelopeResponse
   } else if (normalized.includes("malformed-row") || normalized.includes("malformed row")) {
     response = libraryPdfMalformedRowResponse
