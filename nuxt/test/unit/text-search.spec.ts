@@ -463,8 +463,10 @@ describe("text search route state", () => {
       ) }
     },
     {
-      name: "mixed page names",
-      mutate: (copy: any) => { copy.works[0].highlights[0].right_context[0].page_name = "13" }
+      name: "mixed match page names",
+      mutate: (copy: any) => { copy.works[0].highlights[0].match.push(
+        { word: "nu", page_name: "13", word_id: "w12_5" }
+      ) }
     },
     { name: "incoherent total", mutate: (copy: any) => { copy.total_work_hits = 0 } }
   ])("rejects result responses with $name", ({ mutate }) => {
@@ -493,17 +495,44 @@ describe("text search route state", () => {
     expect(acceptTextSearchResultsResponse(response, request, identity)).toBeNull()
   })
 
-  test("rejects incoherent encoded word pages across the whole highlight", () => {
+  test("accepts context crossing a page boundary", () => {
     const request = buildTextSearchResultsRequest(
       parseTextSearchRouteQuery({ fras: "frihet" })
     )
     const response = resultsResponse()
+    response.works[0]!.highlights[0]!.right_context[0]!.page_name = "13"
     response.works[0]!.highlights[0]!.right_context[0]!.word_id = "w13_5"
     expect(acceptTextSearchResultsResponse(
       response,
       request,
       textSearchResultsRequestIdentity(request)
-    )).toBeNull()
+    )).toEqual(response)
+  })
+
+  test("accepts work-scoped word IDs for the matching work", () => {
+    const request = buildTextSearchResultsRequest(
+      parseTextSearchRouteQuery({ fras: "kyrka" })
+    )
+    const response = resultsResponse()
+    response.query = "kyrka"
+    response.works[0]!.lbworkid = "lb7604979"
+    response.works[0]!.highlights[0] = {
+      left_context: [
+        { word: "Er", page_name: "13", word_id: "lb7604979_8650" }
+      ],
+      match: [
+        { word: "kyrka", page_name: "13", word_id: "lb7604979_8654" }
+      ],
+      right_context: [
+        { word: "i", page_name: "13", word_id: "lb7604979_8658" }
+      ]
+    }
+
+    expect(acceptTextSearchResultsResponse(
+      response,
+      request,
+      textSearchResultsRequestIdentity(request)
+    )).toEqual(response)
   })
 
   test("rejects differently encoded word-page identities", () => {
@@ -973,6 +1002,32 @@ describe("text search route state", () => {
     expect(href).not.toContain("fuzzy")
     expect(href).not.toContain("text_filter")
     expect(href).not.toContain("sort")
+  })
+
+  test("preserves work-scoped word IDs in Reader hit parameters", () => {
+    const state = parseTextSearchRouteQuery({ fras: "kyrka" })
+    const work = {
+      lbworkid: "lb7604979", author_id: "AuthorA", author_name: "Author A",
+      title: "Work", title_id: "work", mediatype: "etext" as const,
+      has_more_highlights: false, highlights: []
+    }
+    const highlight = {
+      left_context: [],
+      match: [
+        { word: "kyrka", page_name: "13", word_id: "lb7604979_8654" },
+        { word: "nu", page_name: "13", word_id: "lb7604979_8658" }
+      ],
+      right_context: []
+    }
+
+    const url = new URL(
+      buildTextSearchReaderHref(work, highlight, 0, state),
+      "https://example.test"
+    )
+
+    expect(url.pathname).toBe("/f%C3%B6rfattare/AuthorA/titlar/work/sida/13/etext")
+    expect(url.searchParams.get("traff")).toBe("lb7604979_8654")
+    expect(url.searchParams.get("traffslut")).toBe("lb7604979_8658")
   })
 
   test("builds faksimil Reader links at both zero-based hit boundaries", () => {

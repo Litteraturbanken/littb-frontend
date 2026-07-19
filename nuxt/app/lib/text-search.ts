@@ -469,16 +469,24 @@ function isSafeInteger(value: unknown, minimum = 0, maximum = Number.MAX_SAFE_IN
     value >= minimum && value <= maximum
 }
 
-type WordPosition = readonly [page: string, ordinal: number]
+type WordPosition = readonly [scope: string, ordinal: number]
 
-function wordPosition(value: string): WordPosition | null {
+function wordPosition(value: string, workId: string): WordPosition | null {
   const match = /^w(\d+)_(\d+)$/.exec(value)
-  if (!match) return null
-  const ordinal = Number(match[2])
-  const page = Number(match[1])
-  return Number.isSafeInteger(page) && Number.isSafeInteger(ordinal)
-    ? [match[1]!, ordinal]
-    : null
+  let scope: string
+  let rawOrdinal: string
+  if (match) {
+    scope = `page:${match[1]}`
+    rawOrdinal = match[2]!
+  } else {
+    const prefix = `${workId}_`
+    if (!isSafeIdentifier(workId) || !value.startsWith(prefix)) return null
+    scope = `work:${workId}`
+    rawOrdinal = value.slice(prefix.length)
+    if (!/^\d+$/u.test(rawOrdinal)) return null
+  }
+  const ordinal = Number(rawOrdinal)
+  return Number.isSafeInteger(ordinal) ? [scope, ordinal] : null
 }
 
 function isSafePageName(value: unknown): value is string {
@@ -487,43 +495,45 @@ function isSafePageName(value: unknown): value is string {
     ![...value].some(character => /[\p{Cc}\p{Cs}]/u.test(character))
 }
 
-function isTextSearchWord(value: unknown): value is TextSearchWord {
+function isTextSearchWord(value: unknown, workId: string): value is TextSearchWord {
   return isRecord(value) && hasExactKeys(value, ["word", "page_name", "word_id"]) &&
     isBoundedString(value.word, 1, 10_000) &&
     isSafePageName(value.page_name) &&
     typeof value.word_id === "string" && value.word_id.length <= 100 &&
-    wordPosition(value.word_id) !== null
+    wordPosition(value.word_id, workId) !== null
 }
 
-function isWordList(value: unknown): value is TextSearchWord[] {
-  return Array.isArray(value) && value.length <= 1_000 && value.every(isTextSearchWord)
+function isWordList(value: unknown, workId: string): value is TextSearchWord[] {
+  return Array.isArray(value) && value.length <= 1_000 &&
+    value.every(word => isTextSearchWord(word, workId))
 }
 
-function isTextSearchHighlight(value: unknown): value is TextSearchHighlight {
+function isTextSearchHighlight(value: unknown, workId: string): value is TextSearchHighlight {
   if (!isRecord(value) ||
     !hasExactKeys(value, ["left_context", "match", "right_context"]) ||
-    !isWordList(value.left_context) || !isWordList(value.match) ||
-    !isWordList(value.right_context) || value.match.length === 0) return false
-  const words = [...value.left_context, ...value.match, ...value.right_context]
-  if (new Set(words.map(word => word.page_name)).size !== 1) return false
-  const positions = words.map(word => wordPosition(word.word_id)!)
+    !isWordList(value.left_context, workId) || !isWordList(value.match, workId) ||
+    !isWordList(value.right_context, workId) || value.match.length === 0) return false
+  if (new Set(value.match.map(word => word.page_name)).size !== 1) return false
+  const positions = value.match.map(word => wordPosition(word.word_id, workId)!)
   return positions.every((position, index) => index === 0 ||
     position[1] > positions[index - 1]![1]) &&
     positions.every(position => position[0] === positions[0]![0])
 }
 
 function isTextSearchWork(value: unknown): value is TextSearchWork {
-  return isRecord(value) && hasExactKeys(value, [
+  if (!isRecord(value) || !hasExactKeys(value, [
     "lbworkid", "author_id", "author_name", "title", "title_id", "mediatype",
     "highlights", "has_more_highlights"
-  ]) && typeof value.lbworkid === "string" && isSafeIdentifier(value.lbworkid) &&
+  ]) || typeof value.lbworkid !== "string") return false
+  const workId = value.lbworkid
+  return isSafeIdentifier(workId) &&
     typeof value.author_id === "string" && isSafeIdentifier(value.author_id) &&
     isBoundedString(value.author_name, 1, 1_000) &&
     isBoundedString(value.title, 1, 10_000) &&
     typeof value.title_id === "string" && isSafeIdentifier(value.title_id) &&
     (value.mediatype === "etext" || value.mediatype === "faksimil") &&
     Array.isArray(value.highlights) && value.highlights.length <= 500 &&
-    value.highlights.every(isTextSearchHighlight) &&
+    value.highlights.every(highlight => isTextSearchHighlight(highlight, workId)) &&
     typeof value.has_more_highlights === "boolean"
 }
 
@@ -705,7 +715,7 @@ export function buildTextSearchReaderHref(
   if (!isSafeIdentifier(work.author_id) || !isSafeIdentifier(work.title_id) ||
     !isSafeIdentifier(work.lbworkid) ||
     (work.mediatype !== "etext" && work.mediatype !== "faksimil") ||
-    !isTextSearchHighlight(highlight)) {
+    !isTextSearchHighlight(highlight, work.lbworkid)) {
     throw new TypeError("Cannot build a Reader link from malformed search data")
   }
   const firstMatch = highlight.match[0]!
