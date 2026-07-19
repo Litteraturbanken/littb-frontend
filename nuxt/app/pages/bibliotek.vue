@@ -36,16 +36,19 @@ type LibraryResponse = {
   failed: boolean
 }
 
-type LibraryMode = "all" | "latest" | "epub" | "pdf"
+type LibraryMode = "all" | "latest" | "authors" | "works" | "parts" | "epub" | "pdf"
 type RelevanceSortKey = "relevans" | "forfattare" | "titlar" | "kronologi"
 type EpubSortKey = "forfattare" | "titlar" | "popularitet" | "kronologi"
 type LatestSortKey = "nytillkommet"
+type AuthorSortKey = "namn" | "popularitet" | "kronologi"
+type PartSortKey = "forfattare" | "titlar"
+type BrowseSortKey = EpubSortKey | AuthorSortKey | PartSortKey
 
 type LibraryRouteState = {
   standalone: boolean
   mode: LibraryMode
   filter: string
-  sort: RelevanceSortKey | EpubSortKey | LatestSortKey
+  sort: RelevanceSortKey | BrowseSortKey | LatestSortKey
   page: number
   hide1800: boolean
 }
@@ -82,6 +85,44 @@ type PdfResponse = {
   failed: boolean
 }
 
+type BrowseResult = {
+  key: string
+  titlePath: string
+  title: string
+  year: string
+  surname: string
+  roleSuffix: string
+  titleHref: string
+  authorHref: string
+  actions: BrowseAction[]
+}
+
+type BrowseAction = {
+  kind: "read" | "download" | "search" | "about"
+  label: string
+  href: string
+  downloadFilename: string
+}
+
+type BrowseCandidate = BrowseResult & {
+  authorId: string
+  downloadBase: string
+  searchAuthorId: string
+  titleId: string
+  workId: string
+  mediaType: string
+  searchable: boolean
+  exportTypes: string[]
+}
+
+type BrowseResponse = {
+  data: BrowseResult[]
+  hits: number
+  distinctHits: number
+  suggest: unknown[]
+  failed: boolean
+}
+
 type LatestResult = {
   title: string
   titleId: string
@@ -109,6 +150,8 @@ type LatestResponse = {
 
 type LibraryPageData =
   | { mode: "all", response: LibraryResponse }
+  | { mode: "authors", response: LibraryResponse }
+  | { mode: "works" | "parts", response: BrowseResponse }
   | { mode: "latest", response: LatestResponse }
   | { mode: "epub", response: EpubResponse }
   | { mode: "pdf", response: PdfResponse }
@@ -370,6 +413,15 @@ function safePathSegment(value: string): string {
   }
 }
 
+function safeQueryComponent(value: string): string {
+  if (!value || /[\\\u0000-\u001F\u007F]/.test(value)) return ""
+  try {
+    return encodeURIComponent(value)
+  } catch {
+    return ""
+  }
+}
+
 function epubStringAt(record: UnknownRecord | null, key: string): string {
   const value = record?.[key]
   return typeof value === "string" ? value.trim() : ""
@@ -431,6 +483,162 @@ function parseEpubResponse(value: unknown): EpubResponse {
 }
 
 function emptyEpubResponse(failed = false): EpubResponse {
+  return { data: [], hits: 0, distinctHits: 0, suggest: [], failed }
+}
+
+function parseBrowseResult(value: unknown, mode: "works" | "parts"): BrowseCandidate | null {
+  const record = asRecord(value)
+  if (!record) return null
+  const title = epubStringAt(record, "shorttitle") || epubStringAt(record, "title")
+  const mediaType = epubStringAt(record, "mediatype")
+  const page = epubStringAt(record, "startpagename")
+  const mainAuthor = recordAt(record, "main_author")
+  const mainAuthorId = epubStringAt(mainAuthor, "authorid")
+  const workAuthor = recordsAt(record, "work_authors")[0] ?? null
+  const indexedAuthor = recordsAt(record, "authors")[0] ?? null
+  const readerAuthor = workAuthor || indexedAuthor || mainAuthor
+  const displayAuthor = mode === "parts" ? indexedAuthor || workAuthor : mainAuthor
+  const authorId = epubStringAt(readerAuthor, "authorid")
+  const fullName = epubStringAt(displayAuthor, "full_name")
+  const surname = epubStringAt(displayAuthor, "surname") || fullName
+  const titlePath = epubStringAt(record, "titlepath")
+  const titleId = epubStringAt(record, "work_titleid") || epubStringAt(record, "titleid")
+  const workId = epubStringAt(record, "lbworkid")
+  const encodedAuthor = safePathSegment(authorId)
+  const encodedTitle = safePathSegment(titleId)
+  const encodedTitlePath = safeQueryComponent(titlePath)
+  const encodedWork = safePathSegment(workId)
+  const encodedPage = safePathSegment(page)
+  const encodedMedia = safePathSegment(mediaType === "pdf" ? "faksimil" : mediaType)
+  const displayAuthorId = safePathSegment(epubStringAt(displayAuthor, "authorid"))
+  const indexedAuthorId = safePathSegment(epubStringAt(indexedAuthor, "authorid"))
+  if (!title || !surname || !encodedAuthor || !encodedTitle || !encodedMedia
+    || !encodedWork || !encodedTitlePath || !displayAuthorId
+    || (["etext", "faksimil"].includes(mediaType) && !encodedPage)
+    || (mediaType === "infopost" && !indexedAuthorId)) {
+    return null
+  }
+  const role = epubStringAt(displayAuthor, "type")
+  const titleHref = mediaType === "infopost"
+    ? `/dramawebben/pjäser?om-boken&authorid=${indexedAuthorId}&titlepath=${encodedTitlePath}`
+    : mediaType === "pdf"
+      ? `/txt/${encodedWork}/${encodedWork}.pdf`
+    : `/författare/${encodedAuthor}/titlar/${encodedTitle}/sida/${encodedPage}/${encodedMedia}`
+  return {
+    key: `${encodedTitlePath}:${encodedWork}`,
+    titlePath,
+    title,
+    year: imprintYear(record),
+    surname,
+    roleSuffix: role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : "",
+    titleHref,
+    authorHref: `/författare/${displayAuthorId}`,
+    actions: [],
+    authorId: encodedAuthor,
+    downloadBase: `${authorId}_${titleId}`,
+    searchAuthorId: safePathSegment(mainAuthorId || authorId),
+    titleId: encodedTitle,
+    workId: encodedWork,
+    mediaType: mediaType === "pdf" ? "pdf" : encodedMedia,
+    searchable: record.searchable === true,
+    exportTypes: recordsAt(record, "export").map(item => epubStringAt(item, "type"))
+      .filter(Boolean)
+  }
+}
+
+const browseMediaOrder: Record<string, number> = { etext: 0, faksimil: 1, pdf: 2 }
+
+function groupBrowseWork(candidates: BrowseCandidate[]): BrowseResult {
+  const ordered = [...candidates].sort((left, right) => (
+    (browseMediaOrder[left.mediaType] ?? 99) - (browseMediaOrder[right.mediaType] ?? 99)
+  ))
+  const primary = ordered[0]!
+  const actions: BrowseAction[] = ordered
+    .filter(item => item.mediaType !== "pdf")
+    .map(item => ({
+        kind: "read" as const,
+        label: `Läs som ${item.mediaType}`,
+        href: item.titleHref,
+        downloadFilename: ""
+      }))
+  if (ordered.some(item => item.exportTypes.includes("epub"))) {
+    actions.push({
+      kind: "download",
+      label: "Ladda ner epub",
+      href: `/txt/epub/${primary.authorId}_${primary.titleId}.epub`,
+        downloadFilename: `${primary.downloadBase}.epub`
+    })
+  }
+  if (!ordered.some(item => item.mediaType === "pdf")
+    && ordered.some(item => item.exportTypes.includes("pdf"))) {
+    actions.push({
+      kind: "download",
+      label: "Ladda ner pdf",
+      href: `/export/faksimil/${primary.workId}.pdf`,
+      downloadFilename: `${primary.downloadBase}.pdf`
+    })
+  } else {
+    const pdf = ordered.find(item => item.mediaType === "pdf")
+    if (pdf) {
+      actions.push({
+        kind: "download",
+        label: "Ladda ner pdf",
+        href: `/txt/${pdf.workId}/${pdf.workId}.pdf`,
+        downloadFilename: `${pdf.downloadBase}.pdf`
+      })
+    }
+  }
+  if (ordered.some(item => item.searchable)) {
+    actions.push({
+      kind: "search",
+      label: "Gör en sökning i verket",
+      href: `/sok?forfattare=${primary.searchAuthorId}&titlar=${primary.workId}&avancerad`,
+      downloadFilename: ""
+    })
+  }
+  const aboutRepresentation = ordered.find(item => (
+    item.mediaType === "etext" || item.mediaType === "faksimil"
+  ))
+  if (aboutRepresentation) {
+    actions.push({
+      kind: "about",
+      label: "Läs mer om verket",
+      href: `${aboutRepresentation.titleHref}?om-boken`,
+      downloadFilename: ""
+    })
+  }
+  return { ...primary, actions }
+}
+
+function parseBrowseResponse(value: unknown, mode: "works" | "parts"): BrowseResponse {
+  const record = asRecord(value)
+  const suggest = record?.suggest
+  if (!record || !Array.isArray(record.data) || typeof record.hits !== "number"
+    || !Number.isFinite(record.hits) || typeof record.distinct_hits !== "number"
+    || !Number.isFinite(record.distinct_hits)
+    || (suggest !== null && suggest !== undefined && !Array.isArray(suggest))) {
+    throw new Error(`Invalid Library ${mode} response`)
+  }
+
+  const parsed = record.data.map(item => parseBrowseResult(item, mode))
+    .filter((item): item is BrowseCandidate => item !== null)
+  const grouped = new Map<string, BrowseCandidate[]>()
+  for (const item of parsed) grouped.set(item.key, [...(grouped.get(item.key) ?? []), item])
+  const data: BrowseResult[] = [...grouped.values()].map(group => mode === "works"
+    ? groupBrowseWork(group)
+    : [...group].sort((left, right) => (
+        (browseMediaOrder[left.mediaType] ?? 99) - (browseMediaOrder[right.mediaType] ?? 99)
+      ))[0]!)
+  return {
+    data,
+    hits: record.hits,
+    distinctHits: record.distinct_hits,
+    suggest: Array.isArray(suggest) ? suggest : [],
+    failed: false
+  }
+}
+
+function emptyBrowseResponse(failed = false): BrowseResponse {
   return { data: [], hits: 0, distinctHits: 0, suggest: [], failed }
 }
 
@@ -763,6 +971,15 @@ const epubSorts: Array<{ key: EpubSortKey, label: string, expression: string }> 
   { key: "popularitet", label: "Populärt", expression: "popularity|desc" },
   { key: "kronologi", label: "Tryckår", expression: "sort_date_imprint.date|desc" }
 ]
+const authorSorts: Array<{ key: AuthorSortKey, label: string, expression: string }> = [
+  { key: "namn", label: "Namn", expression: "name_for_index|asc" },
+  { key: "popularitet", label: "Populärt", expression: "popularity|desc" },
+  { key: "kronologi", label: "Årtal", expression: "birth.date|asc" }
+]
+const partSorts: Array<{ key: PartSortKey, label: string, expression: string }> = [
+  { key: "forfattare", label: "Författare", expression: "main_author.name_for_index|asc,sortkey|asc" },
+  { key: "titlar", label: "Titel", expression: "sortkey|asc" }
+]
 
 const route = useRoute()
 const router = useRouter()
@@ -780,6 +997,14 @@ function epubSortKey(value: unknown): EpubSortKey {
   return epubSorts.some(item => item.key === value) ? value as EpubSortKey : "popularitet"
 }
 
+function authorSortKey(value: unknown): AuthorSortKey {
+  return authorSorts.some(item => item.key === value) ? value as AuthorSortKey : "popularitet"
+}
+
+function partSortKey(value: unknown): PartSortKey {
+  return partSorts.some(item => item.key === value) ? value as PartSortKey : "titlar"
+}
+
 function routeState(path: string, query: LocationQuery): LibraryRouteState {
   const standalone = path === "/epub"
   const requestedMode = queryValue(query.visa)
@@ -787,16 +1012,26 @@ function routeState(path: string, query: LocationQuery): LibraryRouteState {
     ? "pdf"
     : !standalone && requestedMode === "latest"
       ? "latest"
+    : !standalone && requestedMode === "authors"
+      ? "authors"
+    : !standalone && requestedMode === "works"
+      ? "works"
+    : !standalone && requestedMode === "parts"
+      ? "parts"
     : standalone || requestedMode === "epub" ? "epub" : "all"
   const parsed = Number(queryValue(query.sida))
   return {
     standalone,
     mode,
     filter: queryValue(query.filter),
-    sort: mode === "all"
-      ? relevanceSortKey(query.sort)
-      : mode === "latest" ? "nytillkommet" : epubSortKey(query.sort),
-    page: Number.isInteger(parsed) && parsed >= 1 ? parsed : 1,
+    sort: mode === "all" ? relevanceSortKey(query.sort)
+      : mode === "latest" ? "nytillkommet"
+      : mode === "authors" ? authorSortKey(query.sort)
+      : mode === "parts" ? partSortKey(query.sort)
+      : epubSortKey(query.sort),
+    page: mode === "authors"
+      ? 1
+      : Number.isInteger(parsed) && parsed >= 1 ? parsed : 1,
     hide1800: mode === "latest" && query.hide1800 !== undefined
   }
 }
@@ -831,6 +1066,46 @@ async function fetchResults(
 ): Promise<LibraryResponse> {
   try {
     const response = await $fetch<unknown>(requestUrl(base, filter, selectedSort), {
+      signal,
+      retry: 0
+    })
+    return parseLibraryResponse(response)
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return emptyLibraryResponse(true)
+  }
+}
+
+function authorRequestUrl(
+  base: string,
+  filter: string,
+  selectedSort: AuthorSortKey,
+  limit: number
+): string {
+  const params = new URLSearchParams({
+    exclude: excludedFields,
+    show_all: "false",
+    sort_field: authorSorts.find(item => item.key === selectedSort)?.expression
+      ?? "popularity|desc",
+    from: "0",
+    to: String(limit),
+    vectorize: "true",
+    sid: "true"
+  })
+  const sanitized = sanitizeFilter(filter)
+  if (sanitized) params.set("q", `(${sanitized})`)
+  return `${base.replace(/\/$/, "")}/relevance/author?${params}`
+}
+
+async function fetchAuthorResults(
+  base: string,
+  filter: string,
+  selectedSort: AuthorSortKey,
+  limit = 150,
+  signal?: AbortSignal
+): Promise<LibraryResponse> {
+  try {
+    const response = await $fetch<unknown>(authorRequestUrl(base, filter, selectedSort, limit), {
       signal,
       retry: 0
     })
@@ -878,6 +1153,100 @@ async function fetchEpubResults(
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error
     return emptyEpubResponse(true)
+  }
+}
+
+function browseRequestUrl(
+  base: string,
+  mode: "works" | "parts",
+  filter: string,
+  selectedSort: BrowseSortKey,
+  page: number
+): string {
+  const types = mode === "parts" ? "etext-part,faksimil-part" : epubResultTypes
+  const sortsForMode = mode === "parts" ? partSorts : epubSorts
+  const sanitized = sanitizeFilter(filter)
+  const params = new URLSearchParams({
+    exclude: epubExcludedFields,
+    include: mode === "parts" ? `${epubIncludedFields},authors` : epubIncludedFields,
+    partial_string: "true",
+    q: `${epubQueryPrefix} ${sanitized ? `(${sanitized})` : "*"}`,
+    sort_field: sortsForMode.find(item => item.key === selectedSort)?.expression
+      ?? (mode === "parts" ? "sortkey|asc" : "popularity|desc"),
+    author_aggregation: "true",
+    from: String((page - 1) * 100),
+    to: String(page * 100),
+    suggest: "true"
+  })
+  return `${base.replace(/\/$/, "")}/query_string/${types}?${params}`
+}
+
+async function fetchBrowseResults(
+  base: string,
+  mode: "works" | "parts",
+  filter: string,
+  selectedSort: BrowseSortKey,
+  page: number,
+  signal?: AbortSignal
+): Promise<BrowseResponse> {
+  try {
+    const response = await $fetch<unknown>(
+      browseRequestUrl(base, mode, filter, selectedSort, page),
+      { signal, retry: 0 }
+    )
+    return parseBrowseResponse(response, mode)
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return emptyBrowseResponse(true)
+  }
+}
+
+function countOnlyRequestUrl(url: string): string {
+  const separator = url.indexOf("?")
+  const path = separator === -1 ? url : url.slice(0, separator)
+  const params = new URLSearchParams(separator === -1 ? "" : url.slice(separator + 1))
+  params.set("from", "0")
+  params.set("to", "0")
+  return `${path}?${params}`
+}
+
+async function fetchAuthorCount(
+  base: string,
+  filter: string,
+  signal: AbortSignal
+): Promise<number | null> {
+  try {
+    const response = await $fetch<unknown>(authorRequestUrl(base, filter, "popularitet", 0), {
+      signal,
+      retry: 0
+    })
+    return parseLibraryResponse(response).hits
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return null
+  }
+}
+
+async function fetchBrowseCount(
+  base: string,
+  mode: "works" | "parts",
+  filter: string,
+  signal: AbortSignal
+): Promise<number | null> {
+  try {
+    const request = browseRequestUrl(
+      base,
+      mode,
+      filter,
+      mode === "parts" ? "titlar" : "popularitet",
+      1
+    )
+    const response = await $fetch<unknown>(countOnlyRequestUrl(request), { signal, retry: 0 })
+    const parsed = parseBrowseResponse(response, mode)
+    return mode === "parts" ? parsed.hits : parsed.distinctHits
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return null
   }
 }
 
@@ -978,59 +1347,87 @@ const initialSort = initialState.mode === "all"
 const initialEpubSort = initialState.mode === "epub" || initialState.mode === "pdf"
   ? initialState.sort as EpubSortKey
   : "popularitet"
+const initialBrowseSort = initialState.mode === "authors"
+  ? initialState.sort as AuthorSortKey
+  : initialState.mode === "parts"
+    ? initialState.sort as PartSortKey
+    : initialState.mode === "works"
+      ? initialState.sort as EpubSortKey
+      : "popularitet"
 const initialApiBase = import.meta.server
   ? config.libraryApiBase
   : config.public.libraryApiBase
+
+async function fetchInitialData(): Promise<LibraryPageData> {
+  if (initialState.mode === "epub") {
+    return {
+      mode: "epub",
+      response: await fetchEpubResults(
+        initialApiBase, initialFilter, initialEpubSort, initialState.page
+      )
+    }
+  }
+  if (initialState.mode === "pdf") {
+    return {
+      mode: "pdf",
+      response: await fetchPdfResults(
+        initialApiBase, initialFilter, initialEpubSort, initialState.page
+      )
+    }
+  }
+  if (initialState.mode === "latest") {
+    return {
+      mode: "latest",
+      response: await fetchLatestResults(
+        initialApiBase, initialFilter, initialState.page, initialState.hide1800
+      )
+    }
+  }
+  if (initialState.mode === "authors") {
+    return {
+      mode: "authors",
+      response: await fetchAuthorResults(
+        initialApiBase, initialFilter, initialBrowseSort as AuthorSortKey, 150
+      )
+    }
+  }
+  if (initialState.mode === "works" || initialState.mode === "parts") {
+    return {
+      mode: initialState.mode,
+      response: await fetchBrowseResults(
+        initialApiBase, initialState.mode, initialFilter, initialBrowseSort, initialState.page
+      )
+    }
+  }
+  return {
+    mode: "all",
+    response: await fetchResults(initialApiBase, initialFilter, initialSort)
+  }
+}
+
+function emptyInitialData(): LibraryPageData {
+  if (initialState.mode === "epub") return { mode: "epub", response: emptyEpubResponse() }
+  if (initialState.mode === "pdf") return { mode: "pdf", response: emptyPdfResponse() }
+  if (initialState.mode === "latest") return { mode: "latest", response: emptyLatestResponse() }
+  if (initialState.mode === "authors") {
+    return { mode: "authors", response: emptyLibraryResponse() }
+  }
+  if (initialState.mode === "works" || initialState.mode === "parts") {
+    return { mode: initialState.mode, response: emptyBrowseResponse() }
+  }
+  return { mode: "all", response: emptyLibraryResponse() }
+}
+
 const { data: initialData } = await useAsyncData<LibraryPageData>(
   `library:${route.path}:${mode}:${initialFilter}:${initialState.sort}:${initialState.page}:${initialState.hide1800}`,
-  async (): Promise<LibraryPageData> => initialState.mode === "epub"
-    ? {
-        mode: "epub",
-        response: await fetchEpubResults(
-          initialApiBase,
-          initialFilter,
-          initialEpubSort,
-          initialState.page
-        )
-      }
-    : initialState.mode === "pdf"
-      ? {
-          mode: "pdf",
-          response: await fetchPdfResults(
-            initialApiBase,
-            initialFilter,
-            initialEpubSort,
-            initialState.page
-          )
-        }
-      : initialState.mode === "latest"
-        ? {
-            mode: "latest",
-            response: await fetchLatestResults(
-              initialApiBase,
-              initialFilter,
-              initialState.page,
-              initialState.hide1800
-            )
-          }
-    : {
-        mode: "all",
-        response: await fetchResults(initialApiBase, initialFilter, initialSort)
-      },
-  {
-    default: (): LibraryPageData => initialState.mode === "epub"
-      ? { mode: "epub", response: emptyEpubResponse() }
-      : initialState.mode === "pdf"
-        ? { mode: "pdf", response: emptyPdfResponse() }
-        : initialState.mode === "latest"
-          ? { mode: "latest", response: emptyLatestResponse() }
-        : { mode: "all", response: emptyLibraryResponse() }
-  }
+  fetchInitialData,
+  { default: emptyInitialData }
 )
 
 const filter = ref(initialFilter)
 const selectedSort = ref(initialSort)
 const selectedEpubSort = ref(initialEpubSort)
+const selectedBrowseSort = ref<BrowseSortKey>(initialBrowseSort)
 const currentMode = ref(initialState.mode)
 const currentPage = ref(initialState.page)
 const hide1800 = ref(initialState.hide1800)
@@ -1046,17 +1443,47 @@ const pdfResults = ref(initialData.value?.mode === "pdf"
 const latestResults = ref(initialData.value?.mode === "latest"
   ? initialData.value.response
   : emptyLatestResponse())
+const authorResults = ref(initialData.value?.mode === "authors"
+  ? initialData.value.response
+  : emptyLibraryResponse())
+const workResults = ref(initialData.value?.mode === "works"
+  ? initialData.value.response
+  : emptyBrowseResponse())
+const partResults = ref(initialData.value?.mode === "parts"
+  ? initialData.value.response
+  : emptyBrowseResponse())
+type BrowseCounts = { filter: string, authors: number | null, works: number | null, parts: number | null }
+const browseCounts = ref<BrowseCounts>({
+  filter: initialFilter,
+  authors: initialData.value?.mode === "authors" && !initialData.value.response.failed
+    ? initialData.value.response.hits
+    : null,
+  works: initialData.value?.mode === "works" && !initialData.value.response.failed
+    ? initialData.value.response.distinctHits
+    : null,
+  parts: initialData.value?.mode === "parts" && !initialData.value.response.failed
+    ? initialData.value.response.hits
+    : null
+})
+const browseResults = computed(() => currentMode.value === "parts"
+  ? partResults.value
+  : workResults.value)
+const expandedWorkKey = ref(initialState.mode === "works"
+  ? workResults.value.data.find(item => item.titlePath === queryValue(route.query.title))?.key ?? ""
+  : "")
 const loading = ref(false)
 let timer: ReturnType<typeof setTimeout> | null = null
 let controller: AbortController | null = null
 let requestVersion = 0
+let countVersion = 0
+let countController: AbortController | null = null
 let ownedNavigation: { key: string, version: number } | null = null
 
 type QueryState = {
   standalone: boolean
   mode: LibraryMode
   filter: string
-  sort: RelevanceSortKey | EpubSortKey | LatestSortKey
+  sort: RelevanceSortKey | BrowseSortKey | LatestSortKey
   page: number
   hide1800: boolean
 }
@@ -1073,7 +1500,7 @@ function requestState(state: LibraryRouteState): QueryState {
     mode: state.mode,
     filter: state.filter,
     sort: state.sort,
-    page: state.mode === "all" ? 1 : state.page,
+    page: state.mode === "all" || state.mode === "authors" ? 1 : state.page,
     hide1800: state.hide1800
   }
 }
@@ -1085,7 +1512,10 @@ function currentState(): QueryState {
     filter: filter.value,
     sort: currentMode.value === "all"
       ? selectedSort.value
-      : currentMode.value === "latest" ? "nytillkommet" : selectedEpubSort.value,
+      : currentMode.value === "latest" ? "nytillkommet"
+      : currentMode.value === "epub" || currentMode.value === "pdf"
+        ? selectedEpubSort.value
+        : selectedBrowseSort.value,
     page: currentMode.value === "all" ? 1 : currentPage.value,
     hide1800: currentMode.value === "latest" && hide1800.value
   }
@@ -1104,6 +1534,67 @@ function invalidateIntent(): number {
   return ++requestVersion
 }
 
+function invalidateBrowseCounts(filterValue: string) {
+  if (browseCounts.value.filter === filterValue) return
+  countVersion += 1
+  countController?.abort()
+  countController = null
+  browseCounts.value = { filter: filterValue, authors: null, works: null, parts: null }
+}
+
+function updateBrowseCount(
+  filterValue: string,
+  mode: "authors" | "works" | "parts",
+  count: number
+) {
+  if (filterValue !== filter.value) return
+  const current = browseCounts.value.filter === filterValue
+    ? browseCounts.value
+    : { filter: filterValue, authors: null, works: null, parts: null }
+  browseCounts.value = { ...current, filter: filterValue, [mode]: count }
+}
+
+async function refreshBrowseCounts(filterValue: string) {
+  if (standalone || filterValue !== filter.value) return
+  if (browseCounts.value.filter !== filterValue) invalidateBrowseCounts(filterValue)
+  if (browseCounts.value.authors !== null
+    && browseCounts.value.works !== null
+    && browseCounts.value.parts !== null) return
+  const version = ++countVersion
+  countController?.abort()
+  const activeController = new AbortController()
+  countController = activeController
+  const currentCounts = browseCounts.value.filter === filterValue
+    ? browseCounts.value
+    : { filter: filterValue, authors: null, works: null, parts: null }
+  const [authors, works, parts] = await Promise.all([
+    currentCounts.authors === null
+      ? fetchAuthorCount(config.public.libraryApiBase, filterValue, activeController.signal)
+          .catch(() => null)
+      : Promise.resolve(null),
+    currentCounts.works === null
+      ? fetchBrowseCount(config.public.libraryApiBase, "works", filterValue, activeController.signal)
+          .catch(() => null)
+      : Promise.resolve(null),
+    currentCounts.parts === null
+      ? fetchBrowseCount(config.public.libraryApiBase, "parts", filterValue, activeController.signal)
+          .catch(() => null)
+      : Promise.resolve(null)
+  ])
+  if (version !== countVersion || activeController.signal.aborted
+    || filterValue !== filter.value) return
+  const current = browseCounts.value.filter === filterValue
+    ? browseCounts.value
+    : { filter: filterValue, authors: null, works: null, parts: null }
+  browseCounts.value = {
+    filter: filterValue,
+    authors: authors ?? current.authors,
+    works: works ?? current.works,
+    parts: parts ?? current.parts
+  }
+  countController = null
+}
+
 function queryFor(state: QueryState): LocationQuery {
   const query: LocationQuery = { ...route.query }
   delete query.visa
@@ -1111,12 +1602,15 @@ function queryFor(state: QueryState): LocationQuery {
   delete query.sort
   delete query.sida
   delete query.hide1800
+  delete query.title
   if (state.mode !== "all" && (!state.standalone || state.mode === "pdf")) {
     query.visa = state.mode
   }
   if (state.filter) query.filter = state.filter
   if (state.mode !== "all" || state.sort !== "relevans") query.sort = state.sort
-  if (state.mode !== "all" && state.page > 1) query.sida = String(state.page)
+  if (state.mode !== "all" && state.mode !== "authors" && state.page > 1) {
+    query.sida = String(state.page)
+  }
   if (state.mode === "latest" && state.hide1800) query.hide1800 = null
   return query
 }
@@ -1149,19 +1643,58 @@ async function runBrowserRequest(state: QueryState, version: number) {
             state.hide1800,
             controller.signal
           ).catch(() => null)
-        : await fetchResults(
-            config.public.libraryApiBase,
-            state.filter,
-            state.sort as RelevanceSortKey,
-            controller.signal
-          ).catch(() => null)
+        : state.mode === "authors"
+          ? await fetchAuthorResults(
+              config.public.libraryApiBase,
+              state.filter,
+              state.sort as AuthorSortKey,
+              150,
+              controller.signal
+            ).catch(() => null)
+          : state.mode === "works" || state.mode === "parts"
+            ? await fetchBrowseResults(
+                config.public.libraryApiBase,
+                state.mode,
+                state.filter,
+                state.sort as BrowseSortKey,
+                state.page,
+                controller.signal
+              ).catch(() => null)
+            : await fetchResults(
+                config.public.libraryApiBase,
+                state.filter,
+                state.sort as RelevanceSortKey,
+                controller.signal
+              ).catch(() => null)
   if (version !== requestVersion || response === null) return
   if (state.mode === "epub") epubResults.value = response as EpubResponse
   else if (state.mode === "pdf") pdfResults.value = response as PdfResponse
   else if (state.mode === "latest") latestResults.value = response as LatestResponse
+  else if (state.mode === "authors") {
+    authorResults.value = response as LibraryResponse
+    if (!authorResults.value.failed) {
+      updateBrowseCount(state.filter, "authors", authorResults.value.hits)
+    }
+  }
+  else if (state.mode === "works") {
+    workResults.value = response as BrowseResponse
+    if (!workResults.value.failed) {
+      updateBrowseCount(state.filter, "works", workResults.value.distinctHits)
+    }
+    expandedWorkKey.value = workResults.value.data.find(
+      item => item.titlePath === queryValue(route.query.title)
+    )?.key ?? ""
+  }
+  else if (state.mode === "parts") {
+    partResults.value = response as BrowseResponse
+    if (!partResults.value.failed) {
+      updateBrowseCount(state.filter, "parts", partResults.value.hits)
+    }
+  }
   else results.value = response as LibraryResponse
   loading.value = false
   controller = null
+  if (!(response as { failed: boolean }).failed) void refreshBrowseCounts(state.filter)
 }
 
 async function persistAndRequest(state: QueryState, version: number) {
@@ -1183,6 +1716,7 @@ function beginIntent(state: QueryState, delay = 0) {
   const captured = Object.freeze({ ...state })
   const version = invalidateIntent()
   currentMode.value = captured.mode
+  invalidateBrowseCounts(captured.filter)
   filter.value = captured.filter
   currentPage.value = captured.page
   hide1800.value = captured.hide1800
@@ -1190,6 +1724,9 @@ function beginIntent(state: QueryState, delay = 0) {
     selectedEpubSort.value = captured.sort as EpubSortKey
   }
   else if (captured.mode === "all") selectedSort.value = captured.sort as RelevanceSortKey
+  else if (captured.mode === "authors" || captured.mode === "works" || captured.mode === "parts") {
+    selectedBrowseSort.value = captured.sort as BrowseSortKey
+  }
   if (delay > 0) {
     timer = setTimeout(() => {
       timer = null
@@ -1219,19 +1756,45 @@ function selectMode(nextMode: LibraryMode) {
     filter: filter.value,
     sort: nextMode === "all"
       ? "relevans"
-      : nextMode === "latest" ? "nytillkommet" : "popularitet",
+      : nextMode === "latest"
+        ? "nytillkommet"
+        : nextMode === "parts" ? "titlar" : "popularitet",
     page: 1,
     hide1800: false
   })
 }
 
-function selectSort(key: RelevanceSortKey | EpubSortKey) {
+function selectSort(key: RelevanceSortKey | BrowseSortKey) {
   beginIntent({ ...currentState(), sort: key, page: 1 })
 }
 
 function selectPage(page: number) {
   const boundedPage = Math.max(1, Math.min(page, Math.max(1, pageCount.value)))
   beginIntent({ ...currentState(), page: boundedPage })
+}
+
+async function loadAllAuthors() {
+  const state = currentState()
+  if (state.mode !== "authors" || authorResults.value.failed
+    || authorResults.value.data.length >= authorResults.value.hits) return
+  const version = invalidateIntent()
+  const activeController = new AbortController()
+  controller = activeController
+  loading.value = true
+  const response = await fetchAuthorResults(
+    config.public.libraryApiBase,
+    state.filter,
+    state.sort as AuthorSortKey,
+    Math.max(150, authorResults.value.hits),
+    activeController.signal
+  ).catch(() => null)
+  if (version !== requestVersion || activeController.signal.aborted) return
+  if (response !== null && !response.failed) {
+    authorResults.value = response
+    updateBrowseCount(state.filter, "authors", response.hits)
+  }
+  loading.value = false
+  if (controller === activeController) controller = null
 }
 
 function toggle1800() {
@@ -1243,6 +1806,7 @@ watch(
   () => {
     const state = requestState(routeState(route.path, route.query))
     currentMode.value = state.mode
+    invalidateBrowseCounts(state.filter)
     filter.value = state.filter
     currentPage.value = state.page
     hide1800.value = state.hide1800
@@ -1250,6 +1814,9 @@ watch(
       selectedEpubSort.value = state.sort as EpubSortKey
     }
     else if (state.mode === "all") selectedSort.value = state.sort as RelevanceSortKey
+    else if (state.mode === "authors" || state.mode === "works" || state.mode === "parts") {
+      selectedBrowseSort.value = state.sort as BrowseSortKey
+    }
     if (ownedNavigation?.key === stateKey(state)) return
     const version = invalidateIntent()
     void runBrowserRequest(state, version)
@@ -1257,7 +1824,21 @@ watch(
   { flush: "sync" }
 )
 
-const ownedQueryKeys = new Set(["visa", "filter", "sort", "sida", "hide1800"])
+watch(
+  () => queryValue(route.query.title),
+  titlePath => {
+    if (currentMode.value !== "works") {
+      expandedWorkKey.value = ""
+      return
+    }
+    expandedWorkKey.value = workResults.value.data.find(
+      item => item.titlePath === titlePath
+    )?.key ?? ""
+  },
+  { flush: "sync" }
+)
+
+const ownedQueryKeys = new Set(["visa", "filter", "sort", "sida", "hide1800", "title"])
 
 function preservedQuery(): URLSearchParams {
   const params = new URLSearchParams()
@@ -1280,7 +1861,7 @@ function preservedQuery(): URLSearchParams {
 function stateHref(state: {
   mode: LibraryMode
   filter: string
-  sort: RelevanceSortKey | EpubSortKey | LatestSortKey
+  sort: RelevanceSortKey | BrowseSortKey | LatestSortKey
   page?: number
   hide1800?: boolean
 }): string {
@@ -1294,7 +1875,9 @@ function stateHref(state: {
   } else if (state.sort !== "relevans") {
     params.set("sort", state.sort)
   }
-  if (state.page !== undefined) params.set("sida", String(state.page))
+  if (state.page !== undefined && state.mode !== "authors") {
+    params.set("sida", String(state.page))
+  }
   if (state.mode === "latest" && state.hide1800) params.set("hide1800", "")
   const query = params.toString()
   return `${route.path}${query ? `?${query}` : ""}`
@@ -1309,6 +1892,21 @@ const latestTabHref = computed(() => stateHref({
   mode: "latest",
   filter: filter.value,
   sort: "nytillkommet"
+}))
+const authorsTabHref = computed(() => stateHref({
+  mode: "authors",
+  filter: filter.value,
+  sort: "popularitet"
+}))
+const worksTabHref = computed(() => stateHref({
+  mode: "works",
+  filter: filter.value,
+  sort: "popularitet"
+}))
+const partsTabHref = computed(() => stateHref({
+  mode: "parts",
+  filter: filter.value,
+  sort: "titlar"
 }))
 const epubTabHref = computed(() => stateHref({
   mode: "epub",
@@ -1325,6 +1923,14 @@ function epubSortHref(sort: EpubSortKey): string {
   return stateHref({ mode: currentMode.value === "pdf" ? "pdf" : "epub", filter: filter.value, sort, page: 1 })
 }
 
+function browseSortHref(sort: BrowseSortKey): string {
+  return stateHref({ mode: currentMode.value, filter: filter.value, sort, page: 1 })
+}
+
+const activeBrowseSorts = computed(() => currentMode.value === "authors"
+  ? authorSorts
+  : currentMode.value === "parts" ? partSorts : epubSorts)
+
 const downloadResults = computed(() => currentMode.value === "pdf"
   ? pdfResults.value.data
   : epubResults.value.data)
@@ -1335,7 +1941,15 @@ const downloadDistinctHits = computed(() => currentMode.value === "pdf"
   ? pdfResults.value.distinctHits
   : epubResults.value.distinctHits)
 const pageCount = computed(() => Math.ceil(
-  (currentMode.value === "latest" ? latestResults.value.distinctHits : downloadDistinctHits.value)
+  (currentMode.value === "latest"
+    ? latestResults.value.distinctHits
+    : currentMode.value === "authors"
+      ? 0
+      : currentMode.value === "works"
+        ? workResults.value.distinctHits
+        : currentMode.value === "parts"
+          ? partResults.value.hits
+        : downloadDistinctHits.value)
   / 100
 ))
 type PaginationItem = { key: string, page: number | null }
@@ -1381,8 +1995,29 @@ function latestPageHref(page: number): string {
   })
 }
 
+function browsePageHref(page: number): string {
+  return stateHref({
+    mode: currentMode.value,
+    filter: filter.value,
+    sort: selectedBrowseSort.value,
+    page
+  })
+}
+
+function toggleWorkActions(item: BrowseResult) {
+  const opening = expandedWorkKey.value !== item.key
+  expandedWorkKey.value = opening ? item.key : ""
+  const query: LocationQuery = { ...route.query }
+  if (opening) query.title = item.titlePath
+  else delete query.title
+  void router.push({ path: route.path, query })
+}
+
 function disposeLibraryRequest() {
   requestVersion += 1
+  countVersion += 1
+  countController?.abort()
+  countController = null
   cancelPending()
 }
 
@@ -1401,6 +2036,13 @@ useHead({
   bodyAttrs: { class: standalone ? "focus page-epub ready" : "focus page-library ready" }
 })
 
+onMounted(() => {
+  if (currentMode.value === "authors" && route.query.sida !== undefined) {
+    void router.replace({ path: route.path, query: queryFor(currentState()) })
+  }
+  const initialFailed = initialData.value?.response.failed ?? true
+  if (!initialFailed) void refreshBrowseCounts(filter.value)
+})
 onUnmounted(disposeLibraryRequest)
 </script>
 
@@ -1513,36 +2155,48 @@ onUnmounted(disposeLibraryRequest)
                 :class="{ active: currentMode === 'all' }"
                 @click.prevent="selectMode('all')"
               >Alla träffar</a>
-              <template
-                v-for="tab in [
-                  { key: 'latest', label: 'Nytt' },
-                  { key: 'authors', label: 'Författare' },
-                  { key: 'works', label: 'Verk' },
-                  { key: 'parts', label: 'Dikt, novell, etc.' }
-                ]"
-                :key="tab.key"
-              >
-                <template v-if="currentMode !== 'all'">{{ " " }}</template>
-                <a
-                  v-if="tab.key === 'latest'"
-                  data-library-tab="latest"
-                  :href="latestTabHref"
-                  :aria-current="currentMode === 'latest' ? 'page' : undefined"
-                  class="sc btn btn-small text-base"
-                  :class="{ active: currentMode === 'latest' }"
-                  @click.prevent="selectMode('latest')"
-                >{{ tab.label }}</a>
-                <button
-                  v-else
-                  :data-library-tab="tab.key"
-                  data-deferred
-                  type="button"
-                  disabled
-                  title="Inte tillgänglig i denna version"
-                  class="sc btn btn-small text-base disabled"
-                  :class="{ 'authority-available': currentMode !== 'all' && ['latest', 'works'].includes(tab.key) }"
-                >{{ tab.label }}<span v-if="tab.key === 'authors' && currentMode !== 'all'" class="num_hits">: 0</span></button>
-              </template>
+              <template v-if="currentMode !== 'all'">{{ " " }}</template>
+              <a
+                data-library-tab="latest"
+                :href="latestTabHref"
+                :aria-current="currentMode === 'latest' ? 'page' : undefined"
+                class="sc btn btn-small text-base"
+                :class="{ active: currentMode === 'latest' }"
+                @click.prevent="selectMode('latest')"
+              >Nytt</a>
+              <template v-if="currentMode !== 'all'">{{ " " }}</template>
+              <a
+                data-library-tab="authors"
+                :href="authorsTabHref"
+                :aria-current="currentMode === 'authors' ? 'page' : undefined"
+                class="sc btn btn-small text-base"
+                :class="{
+                  active: currentMode === 'authors',
+                  'library-tab-disabled-look': browseCounts.authors === 0
+                }"
+                @click.prevent="selectMode('authors')"
+              >Författare<span v-if="browseCounts.authors !== null" class="num_hits">: {{ browseCounts.authors }}</span></a>
+              <template v-if="currentMode !== 'all'">{{ " " }}</template>
+              <a
+                data-library-tab="works"
+                :href="worksTabHref"
+                :aria-current="currentMode === 'works' ? 'page' : undefined"
+                class="sc btn btn-small text-base"
+                :class="{ active: currentMode === 'works' }"
+                @click.prevent="selectMode('works')"
+              >Verk<span v-if="browseCounts.works" class="num_hits">: {{ browseCounts.works }}</span></a>
+              <template v-if="currentMode !== 'all'">{{ " " }}</template>
+              <a
+                data-library-tab="parts"
+                :href="partsTabHref"
+                :aria-current="currentMode === 'parts' ? 'page' : undefined"
+                class="sc btn btn-small text-base"
+                :class="{
+                  active: currentMode === 'parts',
+                  'library-tab-disabled-look': browseCounts.parts === 0
+                }"
+                @click.prevent="selectMode('parts')"
+              >Dikt, novell, etc.<span v-if="browseCounts.parts" class="parts num_hits">: {{ browseCounts.parts }}</span></a>
               <template v-if="currentMode !== 'all'">{{ " " }}</template>
               <a
                 data-library-tab="epub"
@@ -1726,7 +2380,161 @@ onUnmounted(disposeLibraryRequest)
               </ul>
             </nav>
           </div>
-          <div v-else class="result title pl-0 flex-column min-h-500">
+          <div v-else-if="currentMode === 'authors'" class="result author pl-0 flex-column min-h-500">
+            <div class="text-base">
+              <div class="inline-block sc mr-2">Sortera: </div>
+              <ul class="part_header top_header mb-4 inline-block">
+                <li v-for="item in activeBrowseSorts" :key="item.key" class="inline-block sc">
+                  <a
+                    :href="browseSortHref(item.key)"
+                    class="sort_item"
+                    :class="{ active: selectedBrowseSort === item.key }"
+                    :data-library-sort="item.key"
+                    @click.prevent="selectSort(item.key)"
+                  >{{ item.label }}</a><template v-if="selectedBrowseSort === item.key">{{ " " }}<i class="fa fa-caret-down" /></template>
+                </li>
+              </ul>
+            </div>
+            <div v-if="loading" data-library-loading class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0">
+              <i class="spinner fa fa-spinner fa-pulse" />
+            </div>
+            <div v-if="authorResults.failed" data-library-error>Ett fel uppstod.</div>
+            <div v-else-if="!authorResults.data.length" data-library-empty class="pb-4">Inga träffar.</div>
+            <table v-else class="table flex-grow w-full">
+              <tbody>
+                <tr
+                  v-for="(item, index) in authorResults.data"
+                  :key="`${item.primaryHref}:${index}`"
+                  data-library-author-row
+                  class="hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
+                >
+                  <td class="author_row">
+                    <a :href="item.primaryHref" data-library-author-name>
+                      <span class="surname uppercase">{{ item.authorSurname }}</span><span v-if="item.authorGivenNames">,</span>
+                      {{ item.authorGivenNames }}
+                    </a>
+                  </td>
+                  <td>{{ item.yearLabel }}</td>
+                </tr>
+                <tr v-if="authorResults.data.length < authorResults.hits">
+                  <td>
+                    <button
+                      type="button"
+                      data-library-authors-show-all
+                      class="btn btn-sm show_all"
+                      :disabled="loading"
+                      @click="loadAllAuthors"
+                    >
+                      Visa alla <span class="num">{{ authorResults.hits }}</span> träffar
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else-if="currentMode === 'works' || currentMode === 'parts'" class="result title pl-0 flex-column min-h-500">
+            <div class="text-base">
+              <div class="inline-block sc mr-2">Sortera: </div>
+              <ul class="part_header top_header mb-4 inline-block">
+                <li v-for="item in activeBrowseSorts" :key="item.key" class="inline-block sc">
+                  <a
+                    :href="browseSortHref(item.key)"
+                    class="sort_item"
+                    :class="{ active: selectedBrowseSort === item.key }"
+                    :data-library-sort="item.key"
+                    @click.prevent="selectSort(item.key)"
+                  >{{ item.label }}</a><template v-if="selectedBrowseSort === item.key">{{ " " }}<i class="fa fa-caret-down" /></template>
+                </li>
+              </ul>
+            </div>
+            <div v-if="loading" data-library-loading class="flex justify-center items-center spinner_row ng-fade transition duration-200 h-0">
+              <i class="spinner fa fa-spinner fa-pulse" />
+            </div>
+            <div v-if="browseResults.failed" data-library-error>Ett fel uppstod.</div>
+            <div v-else-if="!browseResults.data.length" data-library-empty class="pb-4">Inga träffar.</div>
+            <table v-else-if="currentMode === 'works'" id="table" class="table block w-full flex-grow -ml-2">
+              <tbody class="block">
+                <tr
+                  v-for="item in browseResults.data"
+                  :key="item.key"
+                  data-library-work-row
+                  class="work_link grid w-full items-baseline transition-colors duration-150 hover:bg-gray-300 hover:bg-opacity-50 grid-cols-[minmax(0,1fr)_11rem] sm:grid-cols-[minmax(0,1fr)_7rem_11rem]"
+                >
+                  <td class="block min-w-0">
+                    <div class="header block overflow-hidden text-ellipsis whitespace-nowrap text-lg leading-tight">
+                      <span class="title_inner">
+                        <button
+                          type="button"
+                          data-library-work-toggle
+                          class="library-work-toggle"
+                          :aria-expanded="expandedWorkKey === item.key"
+                          @click="toggleWorkActions(item)"
+                        >{{ item.title }}</button>
+                      </span>
+                    </div>
+                    <div
+                      v-show="expandedWorkKey === item.key"
+                      data-library-work-actions
+                      class="collapse-content"
+                    >
+                      <ul class="links">
+                        <li v-for="action in item.actions" :key="`${action.kind}:${action.href}`">
+                          <a
+                            :href="action.href"
+                            :target="action.kind === 'download' ? '_self' : undefined"
+                            :download="action.kind === 'download' ? action.downloadFilename : undefined"
+                          >{{ action.label }}</a>
+                        </li>
+                      </ul>
+                    </div>
+                  </td>
+                  <td class="text-left hidden sm:block w-28 text-base">{{ item.year }}</td>
+                  <td class="block w-44 text-right">
+                    <div class="text-ellipsis whitespace-nowrap overflow-hidden">
+                      <span class="author uppercase text-sm">
+                        <a :href="item.authorHref">{{ item.surname }}</a><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table v-else class="table flex-grow w-full">
+              <tbody>
+                <tr
+                  v-for="item in browseResults.data"
+                  :key="item.key"
+                  data-library-part-row
+                  class="parts hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
+                >
+                  <td class="title">
+                    <span class="title_inner"><a :href="item.titleHref">{{ item.title }}</a></span>
+                  </td>
+                  <td class="hidden lg:table-cell w-28">{{ item.year }}</td>
+                  <td class="text-right uppercase text-sm w-40">
+                    <a :href="item.authorHref">{{ item.surname }}</a><template v-if="item.roleSuffix">{{ " " }}<span class="text-xs text-gray-600">{{ item.roleSuffix.trim() }}</span></template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <nav v-if="pageCount > 1" aria-label="Sidnavigation">
+              <ul class="pagination pagination-sm sc">
+                <li :class="{ disabled: currentPage <= 1 }">
+                  <span v-if="currentPage <= 1" data-library-pagination-previous aria-disabled="true">Föregående</span>
+                  <a v-else data-library-pagination-previous :href="browsePageHref(currentPage - 1)" @click.prevent="selectPage(currentPage - 1)">Föregående</a>
+                </li>
+                <li v-for="item in pages" :key="item.key" :class="{ active: item.page === currentPage }">
+                  <span v-if="item.page === null" aria-hidden="true">…</span>
+                  <a v-else :data-library-page="item.page" :href="browsePageHref(item.page)" :aria-current="item.page === currentPage ? 'page' : undefined" @click.prevent="selectPage(item.page)">{{ item.page }}</a>
+                </li>
+                <li :class="{ disabled: currentPage >= pageCount }">
+                  <span v-if="currentPage >= pageCount" data-library-pagination-next aria-disabled="true">Nästa</span>
+                  <a v-else data-library-pagination-next :href="browsePageHref(currentPage + 1)" @click.prevent="selectPage(currentPage + 1)">Nästa</a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+          <div v-else-if="currentMode === 'epub' || currentMode === 'pdf'" class="result title pl-0 flex-column min-h-500">
             <div class="flex items-baseline">
               <div class="text-base">
                 <div class="inline-block sc mr-2">Sortera: </div>{{ " " }}
@@ -1861,13 +2669,28 @@ onUnmounted(disposeLibraryRequest)
 </template>
 
 <style scoped>
-.authority-available {
-  opacity: 1;
-}
-
 .relevance-unavailable {
   color: #333;
   opacity: 0.65;
+}
+
+.library-tab-disabled-look {
+  opacity: 0.65;
+  box-shadow: none;
+}
+
+.library-work-toggle {
+  padding: 0;
+  color: #7a1400;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.library-work-toggle:hover,
+.library-work-toggle:focus {
+  color: #333;
 }
 
 [data-library-chronology-range] .rzslider {

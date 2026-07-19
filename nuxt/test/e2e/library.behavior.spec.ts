@@ -19,9 +19,13 @@ async function reset(request: APIRequestContext) {
   ])
 }
 
-async function requests(request: APIRequestContext) {
+async function allRelevanceRequests(request: APIRequestContext) {
   return (await (await request.get(`${fixture}/_library_relevance_requests`)).json()).requests as
     Array<{ path: string, query: Record<string, string> }>
+}
+
+async function requests(request: APIRequestContext) {
+  return (await allRelevanceRequests(request)).filter(entry => entry.query.to !== "0")
 }
 
 async function epubRequests(request: APIRequestContext) {
@@ -30,7 +34,7 @@ async function epubRequests(request: APIRequestContext) {
 }
 
 function publicEpubRequests(entries: Awaited<ReturnType<typeof epubRequests>>) {
-  return entries.filter(entry => entry.path === epubPath)
+  return entries.filter(entry => entry.path === epubPath && entry.query.to !== "0")
 }
 
 function epubQuery(filter = "") {
@@ -233,6 +237,168 @@ test("Nytt owns its canonical query state and restores through browser history",
   ledger = publicEpubRequests(await epubRequests(request))
   expect(ledger).toHaveLength(3)
   expect(ledger[2]?.query.q).toBe(`${epubQueryPrefix} (Selma) AND NOT keyword:1800`)
+})
+
+test("Författare, Verk, and Dikt tabs navigate, render, and restore through history", async ({
+  page
+}) => {
+  await page.goto("/bibliotek", { waitUntil: "networkidle" })
+
+  for (const item of [
+    { mode: "authors", row: "[data-library-author-row]", text: "Strindberg, August" },
+    { mode: "works", row: "[data-library-work-row]", text: "Doktor Glas" },
+    { mode: "parts", row: "[data-library-part-row]", text: "En novell" }
+  ] as const) {
+    const tab = page.locator(`[data-library-tab="${item.mode}"]`)
+    await expect(tab).toBeEnabled()
+    await tab.click()
+    await expect(page).toHaveURL(new RegExp(`visa=${item.mode}`))
+    await expect(tab).toHaveAttribute("aria-current", "page")
+    await expect(page.locator(item.row).filter({ hasText: item.text }).first()).toBeVisible()
+  }
+
+  await pushRoute(page, "/bibliotek?visa=works&sort=popularitet")
+  await expect(page.locator("[data-library-work-row]").filter({ hasText: "Doktor Glas" }).first())
+    .toBeVisible()
+  await pushRoute(page, "/bibliotek?visa=parts&sort=titlar")
+  await expect(page.locator("[data-library-part-row]").filter({ hasText: "En novell" }).first())
+    .toBeVisible()
+  await page.goBack()
+  await expect(page.locator('[data-library-tab="works"]')).toHaveAttribute("aria-current", "page")
+  await expect(page.locator("[data-library-work-row]").filter({ hasText: "Doktor Glas" }).first())
+    .toBeVisible()
+})
+
+test("delayed Works and Dikt transitions never relabel rows owned by the other mode", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?visa=works&sort=popularitet", { waitUntil: "networkidle" })
+  await expect(page.locator("[data-library-work-row]").filter({ hasText: "Doktor Glas" }).first())
+    .toBeVisible()
+
+  await request.put(`${fixture}/_library_query_delays`, {
+    data: { [`${epubQueryPrefix} *|sortkey|asc|0|100`]: 900 }
+  })
+  await page.locator('[data-library-tab="parts"]').click()
+  await expect(page.locator("[data-library-loading] .spinner")).toBeVisible()
+  await expect(page.locator("[data-library-part-row]")).toHaveCount(0)
+  await expect(page.getByRole("link", { name: "Doktor Glas", exact: true })).toHaveCount(0)
+
+  await expect(page.locator("[data-library-part-row]").filter({ hasText: "En novell" }).first())
+    .toBeVisible()
+  await expect(page.locator("[data-library-work-row]")).toHaveCount(0)
+})
+
+test("a new filter invalidates delayed counts owned by the previous filter", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_library_relevance_delays`, {
+    data: { "|popularity|desc": 900 }
+  })
+  await request.put(`${fixture}/_library_query_delays`, {
+    data: {
+      [`${epubQueryPrefix} *|popularity|desc|0|0`]: 900,
+      [`${epubQueryPrefix} *|sortkey|asc|0|0`]: 900
+    }
+  })
+  await page.goto("/bibliotek", { waitUntil: "domcontentloaded" })
+  await expect.poll(async () => (await allRelevanceRequests(request)).filter(
+    entry => entry.query.to === "0"
+  ).length).toBe(1)
+  await expect.poll(async () => (await epubRequests(request)).filter(
+    entry => entry.query.to === "0"
+  ).length).toBe(2)
+
+  await page.locator("[data-library-filter]").fill("Selma")
+  await expect(page).toHaveURL(/filter=Selma/)
+  await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
+  await page.waitForTimeout(900)
+  await expect(page.locator('[data-library-tab="works"]')).toContainText(": 1")
+})
+
+test("browse tab totals use count-only requests without replacing active rows", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?visa=works&sort=popularitet", { waitUntil: "networkidle" })
+
+  await expect(page.locator("[data-library-work-row]")).toHaveCount(3)
+  await expect(page.locator('[data-library-tab="authors"]')).toContainText(": 1")
+  await expect(page.locator('[data-library-tab="works"]')).toContainText(": 3")
+  await expect(page.locator('[data-library-tab="parts"]')).toContainText(": 201")
+
+  const countRelevance = (await allRelevanceRequests(request)).filter(
+    entry => entry.path === "/api/relevance/author" && entry.query.to === "0"
+  )
+  expect(countRelevance).toHaveLength(1)
+  expect(countRelevance[0]?.query).toMatchObject({ from: "0", to: "0" })
+
+  const countQueries = (await epubRequests(request)).filter(
+    entry => entry.path.startsWith("/api/query_string/") && entry.query.to === "0"
+  )
+  expect(countQueries).toHaveLength(1)
+  expect(countQueries[0]?.path).toBe("/api/query_string/etext-part,faksimil-part")
+  expect(countQueries.every(entry => entry.query.from === "0")).toBe(true)
+})
+
+test("Författare hydrates 150 rows and expands the legacy Visa alla disclosure", async ({
+  page,
+  request
+}) => {
+  await page.goto(
+    "/bibliotek?visa=authors&sort=namn&filter=många-författare&sida=2",
+    { waitUntil: "networkidle" }
+  )
+
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(150)
+  await expect(page.locator("[data-library-pagination-next]")).toHaveCount(0)
+  const showAll = page.locator("[data-library-authors-show-all]")
+  await expect(showAll).toContainText("Visa alla")
+  await expect(showAll).toContainText("151")
+  expect(new URL(page.url()).searchParams.has("sida")).toBe(false)
+
+  await reset(request)
+  await showAll.click()
+  await expect(page.locator("[data-library-author-row]")).toHaveCount(151)
+  await expect(showAll).toHaveCount(0)
+
+  const visibleRequests = await requests(request)
+  expect(visibleRequests).toHaveLength(1)
+  expect(visibleRequests[0]?.query).toMatchObject({ from: "0", to: "151" })
+})
+
+test("Works groups representations and expands the legacy read, download, search, and about actions", async ({
+  page,
+  request
+}) => {
+  await page.goto("/bibliotek?visa=works&sort=popularitet", { waitUntil: "networkidle" })
+  const work = page.locator("[data-library-work-row]").filter({ hasText: "Doktor Glas" })
+  await expect(work).toHaveCount(1)
+  await work.locator("[data-library-work-toggle]").click()
+
+  await expect(work.getByRole("link", { name: "Läs som etext", exact: true }))
+    .toHaveAttribute("href", "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext")
+  await expect(work.getByRole("link", { name: "Läs som faksimil", exact: true }))
+    .toHaveAttribute("href", "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/faksimil")
+  await expect(work.getByRole("link", { name: "Ladda ner epub", exact: true }))
+    .toHaveAttribute("download", "SöderbergH_DoktorGlas.epub")
+  await expect(work.getByRole("link", { name: "Ladda ner pdf", exact: true }))
+    .toHaveAttribute("download", "SöderbergH_DoktorGlas.pdf")
+  await expect(work.getByRole("link", { name: "Gör en sökning i verket", exact: true }))
+    .toHaveAttribute("href", "/sok?forfattare=S%C3%B6derbergH&titlar=lb-DoktorGlas&avancerad")
+  await expect(work.getByRole("link", { name: "Läs mer om verket", exact: true }))
+    .toHaveAttribute("href", "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?om-boken")
+
+  const requestsBeforeDisclosure = (await epubRequests(request)).length
+  await expect(page).toHaveURL(/(?:\?|&)title=DoktorGlas(?:&|$)/)
+  await page.goBack()
+  await expect(work.locator("[data-library-work-actions]")).toBeHidden()
+  await page.goForward()
+  await expect(work.locator("[data-library-work-actions]")).toBeVisible()
+  expect(await epubRequests(request)).toHaveLength(requestsBeforeDisclosure)
 })
 
 test("delayed input cannot replace an immediate sort or reset intent", async ({

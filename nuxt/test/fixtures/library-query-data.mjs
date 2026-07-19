@@ -31,7 +31,14 @@ export function epubWork({
   }
 }
 
-const doktorGlas = epubWork()
+const doktorGlas = { ...epubWork(), searchable: true }
+const doktorGlasFaksimil = {
+  ...doktorGlas,
+  _index: "faksimil",
+  mediatype: "faksimil",
+  has_epub: false,
+  export: [{ type: "pdf", size: 730000 }]
+}
 
 const editorWork = epubWork({
   id: "SvenskaFolkvisor",
@@ -66,6 +73,13 @@ export const libraryQueryPageOneResponse = {
   data: [doktorGlas, editorWork, illustratorWork],
   hits: 201,
   distinct_hits: 201,
+  suggest: []
+}
+
+export const libraryWorksResponse = {
+  data: [doktorGlas, doktorGlasFaksimil, editorWork, illustratorWork],
+  hits: 4,
+  distinct_hits: 3,
   suggest: []
 }
 
@@ -187,6 +201,80 @@ export const libraryQueryEmptyResponse = {
   suggest: []
 }
 
+export const libraryPartsResponse = {
+  data: [{
+    _index: "etext-part",
+    lbworkid: "lb-Novellsamling",
+    titlepath: "Novellsamling/EnNovell",
+    titleid: "EnNovell",
+    work_titleid: "Novellsamling",
+    shorttitle: "En novell",
+    title: "En novell i samlingen",
+    texttype: "novell",
+    mediatype: "etext",
+    startpagename: "7",
+    sort_date_imprint: { plain: "1903" },
+    main_author: {
+      authorid: "NovellA",
+      full_name: "Nils Novellist",
+      surname: "Novellist"
+    },
+    authors: [{ authorid: "PoetP", full_name: "Pia Poet", surname: "Poet", type: "editor" }],
+    work_authors: [{ authorid: "NovellA", surname: "Novellist" }]
+  }, {
+    _index: "faksimil-part",
+    lbworkid: "lb-Novellsamling",
+    titlepath: "Novellsamling/EnNovell",
+    titleid: "EnNovell",
+    work_titleid: "Novellsamling",
+    shorttitle: "En novell",
+    title: "En novell i samlingen",
+    texttype: "novell",
+    mediatype: "faksimil",
+    startpagename: "7",
+    sort_date_imprint: { plain: "1903" },
+    main_author: { authorid: "NovellA", full_name: "Nils Novellist", surname: "Novellist" },
+    authors: [{ authorid: "PoetP", full_name: "Pia Poet", surname: "Poet", type: "editor" }],
+    work_authors: [{ authorid: "NovellA", surname: "Novellist" }]
+  }],
+  hits: 201,
+  distinct_hits: 1,
+  suggest: []
+}
+
+const realPdfEtext = {
+  ...epubWork({ id: "RealPdf", title: "Verk med riktig PDF" }),
+  searchable: true,
+  export: [{ type: "epub", size: 530557 }, { type: "pdf", size: 730000 }]
+}
+const realPdfFile = {
+  ...realPdfEtext,
+  _index: "pdf",
+  mediatype: "pdf",
+  startpagename: undefined,
+  export: []
+}
+export const libraryWorksRealPdfResponse = {
+  data: [realPdfEtext, realPdfFile],
+  hits: 2,
+  distinct_hits: 1,
+  suggest: []
+}
+
+export const libraryWorksInfopostResponse = {
+  data: [{
+    ...epubWork({ id: "InfopostWork", title: "Drama utan läsläge" }),
+    _index: "infopost",
+    mediatype: "infopost",
+    startpagename: undefined,
+    export: [],
+    authors: [{ authorid: "SöderbergH", full_name: "Hjalmar Söderberg", surname: "Söderberg" }]
+  }],
+  hits: 1,
+  distinct_hits: 1,
+  suggest: []
+}
+
 export const libraryQueryMalformedEnvelopeResponse = {
   data: "invalid",
   hits: 0,
@@ -211,7 +299,9 @@ export function libraryQueryStringResponse(query = {}) {
         : normalized.includes("selma") ? libraryLatestFilteredResponse : libraryLatestResponse
     )
   }
-  let response = libraryQueryPageOneResponse
+  let response = query.author_aggregation === "true"
+    ? libraryWorksResponse
+    : libraryQueryPageOneResponse
 
   if (normalized.includes("malformed-top") || normalized.includes("malformed top")) {
     response = libraryQueryMalformedEnvelopeResponse
@@ -223,6 +313,10 @@ export function libraryQueryStringResponse(query = {}) {
     response = libraryQueryEmptyResponse
   } else if (normalized.includes("selma")) {
     response = libraryQueryFilteredResponse
+  } else if (normalized.includes("real pdf")) {
+    response = libraryWorksRealPdfResponse
+  } else if (normalized.includes("infopost test")) {
+    response = libraryWorksInfopostResponse
   } else if (query.from === "100" && query.to === "200") {
     response = libraryQueryPageTwoResponse
   }
@@ -233,5 +327,7 @@ export function libraryQueryStringResponse(query = {}) {
     response = libraryQueryNullSuggestResponse
   }
 
-  return structuredClone(response)
+  const result = structuredClone(response)
+  if (query.to === "0" && Array.isArray(result.data)) result.data = []
+  return result
 }

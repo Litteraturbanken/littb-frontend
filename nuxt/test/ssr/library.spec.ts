@@ -13,7 +13,7 @@ import {
   pageTwoPdfRepresentation
 } from "../fixtures/library-pdf-data.mjs"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const relevancePath = "/legacy-api/relevance/etext,faksimil,pdf,etext-part,faksimil-part,author,presentations,sol,litteraturkartan,wordpress"
 const epubPath = "/legacy-api/query_string/etext,faksimil,pdf"
 const epubExclude = "text,parts,sourcedesc,pages,errata"
@@ -174,10 +174,9 @@ test("SSR renders every safe mixed family and rejects malformed rows and destina
     .toBe("/bibliotek?visa=latest&filter=blandat&sort=nytillkommet")
   expect(document.querySelector('[data-library-tab="latest"]')?.hasAttribute("data-deferred"))
     .toBe(false)
-  expect([...document.querySelectorAll<HTMLButtonElement>("[data-library-tab][data-deferred]")]
-    .every(button => button.disabled)).toBe(true)
-  expect([...document.querySelectorAll<HTMLButtonElement>("[data-library-tab][data-deferred]")])
-    .toHaveLength(3)
+  expect(document.querySelectorAll("[data-library-tab][data-deferred]")).toHaveLength(0)
+  expect([...document.querySelectorAll('[data-library-tab="authors"], [data-library-tab="works"], [data-library-tab="parts"]')]
+    .every(tab => tab.tagName === "A")).toBe(true)
   expect(document.querySelector('[data-library-tab="epub"]')?.tagName).toBe("A")
   expect(document.querySelector('[data-library-tab="epub"]')?.getAttribute("href"))
     .toBe("/bibliotek?visa=epub&filter=blandat&sort=popularitet")
@@ -222,6 +221,115 @@ test("SSR renders the canonical latest-work slice with imported-date groups", as
       to: "100"
     }
   })
+})
+
+test("SSR renders the three primary browse tabs as live routed result modes", async ({ request }) => {
+  const cases = [
+    {
+      mode: "authors",
+      sort: "namn",
+      row: "[data-library-author-row]",
+      text: "Strindberg, August",
+      path: "/legacy-api/relevance/author",
+      sortField: "name_for_index|asc"
+    },
+    {
+      mode: "works",
+      sort: "popularitet",
+      row: "[data-library-work-row]",
+      text: "Doktor Glas",
+      path: epubPath,
+      sortField: "popularity|desc"
+    },
+    {
+      mode: "parts",
+      sort: "titlar",
+      row: "[data-library-part-row]",
+      text: "En novell",
+      path: "/legacy-api/query_string/etext-part,faksimil-part",
+      sortField: "sortkey|asc"
+    }
+  ] as const
+
+  for (const item of cases) {
+    await reset(request)
+    const response = await request.get(`/bibliotek?visa=${item.mode}&sort=${item.sort}`)
+    expect(response.status(), item.mode).toBe(200)
+    const { document } = parseHTML(await response.text())
+    const tab = document.querySelector(`[data-library-tab="${item.mode}"]`)
+
+    expect(tab?.tagName, item.mode).toBe("A")
+    expect(tab?.hasAttribute("data-deferred"), item.mode).toBe(false)
+    expect(tab?.getAttribute("aria-current"), item.mode).toBe("page")
+    expect(document.querySelector(item.row)?.textContent, item.mode).toContain(item.text)
+
+    if (item.mode === "authors") {
+      expect(tab?.textContent?.trim()).toBe("Författare: 1")
+      expect(document.querySelector(item.row)?.querySelectorAll("td")).toHaveLength(2)
+      expect(document.querySelector("[data-library-pagination-next]")).toBeNull()
+      expect(document.querySelector('[data-library-sort="popularitet"]')?.getAttribute("href"))
+        .not.toContain("sida=")
+    } else if (item.mode === "works") {
+      expect(tab?.textContent?.trim()).toBe("Verk: 3")
+      expect(document.querySelectorAll(item.row)).toHaveLength(3)
+      expect([...document.querySelectorAll("[data-library-work-actions] a")]
+        .map(link => link.textContent?.trim())).toEqual([
+        "Läs som etext",
+        "Läs som faksimil",
+        "Ladda ner epub",
+        "Ladda ner pdf",
+        "Gör en sökning i verket",
+        "Läs mer om verket",
+        "Läs som etext",
+        "Ladda ner epub",
+        "Läs mer om verket",
+        "Läs som etext",
+        "Ladda ner epub",
+        "Läs mer om verket"
+      ])
+    } else {
+      expect(tab?.textContent?.trim()).toBe("Dikt, novell, etc.: 201")
+      expect(document.querySelectorAll(item.row)).toHaveLength(1)
+      expect(document.querySelector('[data-library-page="3"]')?.textContent?.trim()).toBe("3")
+      expect(document.querySelector(`${item.row} .title_inner a`)?.getAttribute("href"))
+        .toBe("/författare/NovellA/titlar/Novellsamling/sida/7/etext")
+      expect(document.querySelector(`${item.row} td:last-child a`)?.textContent?.trim()).toBe("Poet")
+    }
+
+    const ledger = item.mode === "authors" ? await requests(request) : await epubRequests(request)
+    expect(ledger, item.mode).toHaveLength(1)
+    expect(ledger[0]?.path, item.mode).toBe(item.path)
+    expect(ledger[0]?.query.sort_field, item.mode).toBe(item.sortField)
+    expect(ledger[0]?.query.to, item.mode).toBe(item.mode === "authors" ? "150" : "100")
+  }
+})
+
+test("Works prefers real PDF downloads, keeps raw filenames, and never invents About for infopost", async ({
+  request
+}) => {
+  const realPdfResponse = await request.get(
+    "/bibliotek?visa=works&sort=popularitet&filter=real-pdf"
+  )
+  expect(realPdfResponse.status()).toBe(200)
+  const realPdf = parseHTML(await realPdfResponse.text()).document
+  const realPdfRow = realPdf.querySelector("[data-library-work-row]")
+  expect(realPdf.querySelectorAll("[data-library-work-row]")).toHaveLength(1)
+  expect(realPdfRow?.querySelectorAll('a[href^="/export/faksimil/"]')).toHaveLength(0)
+  expect(realPdfRow?.querySelector('a[href="/txt/lb-RealPdf/lb-RealPdf.pdf"]')
+    ?.getAttribute("download")).toBe("SöderbergH_RealPdf.pdf")
+  expect(realPdfRow?.querySelector('a[href="/txt/epub/S%C3%B6derbergH_RealPdf.epub"]')
+    ?.getAttribute("download")).toBe("SöderbergH_RealPdf.epub")
+
+  const infopostResponse = await request.get(
+    "/bibliotek?visa=works&sort=popularitet&filter=infopost-test"
+  )
+  expect(infopostResponse.status()).toBe(200)
+  const infopost = parseHTML(await infopostResponse.text()).document
+  const infopostActions = [...infopost.querySelectorAll("[data-library-work-actions] a")]
+  expect(infopostActions.map(link => link.textContent?.trim())).toEqual(["Läs som infopost"])
+  expect(infopostActions[0]?.getAttribute("href")).toBe(
+    "/dramawebben/pjäser?om-boken&authorid=S%C3%B6derbergH&titlepath=InfopostWork"
+  )
 })
 
 test("Nytt groups a work by its newest representation while keeping the preferred display row", async ({
@@ -302,7 +410,7 @@ test("SSR renders Library EPUB mode with its Library shell and exact private req
     .toBe("page")
   expect([...library.querySelectorAll("[data-library-tab]")].map(node => node.textContent?.trim()))
     .toEqual([
-      "Alla träffar", "Nytt", "Författare: 0", "Verk", "Dikt, novell, etc.", "Epub: 1", "PDF"
+      "Alla träffar", "Nytt", "Författare", "Verk", "Dikt, novell, etc.", "Epub: 1", "PDF"
     ])
   expect(epubRows(library)).toEqual([{
     title: "Gösta Berlings saga",
@@ -356,7 +464,7 @@ test("SSR aliases bare and canonical EPUB routes to one row model with the stand
   expect([...library.querySelectorAll("[data-library-tab]")]
     .map(node => node.textContent?.trim()))
     .toEqual([
-      "Alla träffar", "Nytt", "Författare: 0", "Verk", "Dikt, novell, etc.", "Epub: 201", "PDF"
+      "Alla träffar", "Nytt", "Författare", "Verk", "Dikt, novell, etc.", "Epub: 201", "PDF"
     ])
   expect(epubRows(bare)).toEqual(epubRows(canonical))
   expect(epubRows(bare)).toHaveLength(3)

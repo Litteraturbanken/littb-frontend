@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 
 type Operation = "results" | "count" | "options" | "chronology"
 type RecordedRequest = {
@@ -142,12 +142,68 @@ test("direct search hydrates its loading shell before rendering one client resul
   await page.locator('[data-search-root][data-search-mounted="true"]').waitFor()
   await expect(page.locator(".submit_form .top_row .spinner")).toBeVisible()
   await expect(page.locator("#results table.results")).toHaveCount(0)
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  expect(await requests(request, "count")).toEqual([])
   await expect(page.getByRole("link", { name: "Röda rummet", exact: true }))
     .toBeVisible({ timeout: 9000 })
   await expect(page.locator(".submit_form .top_row .spinner")).toBeHidden()
   expect(await requests(request, "results")).toHaveLength(1)
   expect(await requests(request, "count")).toHaveLength(1)
   expect(problems).toEqual([])
+})
+
+test("a failed deferred count retries when its accepted primary identity is revisited", async ({
+  page,
+  request
+}) => {
+  await request.put(`${fixture}/_text_search/failures`, { data: { operation: "count" } })
+  const failedCountResponse = page.waitForResponse(response =>
+    response.request().method() === "POST"
+    && new URL(response.url()).pathname === "/api/v2/text-search/count"
+  )
+  await openSearch(page, "/s%C3%B6k?fras=frihet")
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
+  expect((await failedCountResponse).status()).toBe(503)
+  await expect(page.locator(".hits_info .hits")).toBeHidden()
+
+  await request.delete(`${fixture}/_text_search/failures/count`)
+  await pushRoute(page, "/s%C3%B6k?fras=inga")
+  await expect(page.getByText("Din sökning gav inga träffar", { exact: true })).toBeVisible()
+  await expect.poll(async () => (await requests(request, "count")).length).toBe(2)
+  await request.delete(`${fixture}/_text_search/requests/count`)
+
+  await page.goBack()
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true })).toBeVisible()
+  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
+  expect((await requests(request, "count"))[0]?.body.query).toBe("frihet")
+  await expect(page.locator(".hits_info .hits")).toHaveText("3")
+})
+
+test("rapid history changes launch a count only for the finally accepted primary", async ({
+  page,
+  request
+}) => {
+  await openSearch(page)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "frihet", delay: 1200 }
+  })
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "results", selector: "overflow", delay: 1200 }
+  })
+
+  await pushRoute(page, "/s%C3%B6k?fras=frihet")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
+  await pushRoute(page, "/s%C3%B6k?fras=overflow")
+  await expect.poll(async () => (await requests(request, "results")).length).toBe(2)
+  await page.goBack()
+
+  await expect(page.getByRole("link", { name: "Röda rummet", exact: true }))
+    .toBeVisible({ timeout: 5000 })
+  await expect(page.locator(".hits_info .hits")).toHaveText("3")
+  await expect.poll(async () => (await requests(request, "count")).length).toBe(1)
+  await page.waitForTimeout(1300)
+  expect((await requests(request, "count")).map(item => item.body.query)).toEqual(["frihet"])
 })
 
 test("failed chronology is serialized once and is not retried during hydration", async ({

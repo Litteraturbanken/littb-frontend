@@ -23,7 +23,10 @@ import {
   dramawebbenCatalogResponse
 } from "./dramawebben-catalog-data.mjs"
 import { libraryPdfResponse } from "./library-pdf-data.mjs"
-import { libraryQueryStringResponse } from "./library-query-data.mjs"
+import {
+  libraryPartsResponse,
+  libraryQueryStringResponse
+} from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
 import { quickSearchResponse } from "./quick-search-data.mjs"
 import {
@@ -342,7 +345,9 @@ const errorByResource = {
 
 const libraryQueryPaths = new Set([
   "/api/query_string/etext,faksimil,pdf",
-  "/legacy-api/query_string/etext,faksimil,pdf"
+  "/legacy-api/query_string/etext,faksimil,pdf",
+  "/api/query_string/etext-part,faksimil-part",
+  "/legacy-api/query_string/etext-part,faksimil-part"
 ])
 const libraryPdfPredicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
 const libraryQueryPrefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
@@ -3049,7 +3054,12 @@ const server = createServer(async (request, response) => {
     return sendJson(
       response,
       200,
-      pdfQuery ? libraryPdfResponse(query) : libraryQueryStringResponse(query)
+      url.pathname.endsWith("/etext-part,faksimil-part")
+        ? {
+            ...structuredClone(libraryPartsResponse),
+            data: query.to === "0" ? [] : structuredClone(libraryPartsResponse.data)
+          }
+        : pdfQuery ? libraryPdfResponse(query) : libraryQueryStringResponse(query)
     )
   }
 
@@ -3063,7 +3073,12 @@ const server = createServer(async (request, response) => {
         error: { code: "library_relevance_unavailable", message: "Unable to search Library" }
       })
     }
-    return sendJson(response, 200, libraryRelevanceResponse(query.q || ""))
+    const resultTypes = libraryRelevancePath.slice("/relevance/".length)
+    return sendJson(
+      response,
+      200,
+      libraryRelevanceResponse(query.q || "", resultTypes, query.from, query.to)
+    )
   }
 
   const content = aboutContent.get(url.pathname)

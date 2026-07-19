@@ -169,7 +169,7 @@ export const libraryMixedResults = [
   { _index: "wordpress", title: "Oväntad värd", link: "https://evil.example/p", source: "skolan" }
 ]
 
-export function libraryRelevanceResponse(query = "") {
+export function libraryRelevanceResponse(query = "", resultTypes = "", from = "0", to = "100") {
   const normalized = query.toLocaleLowerCase("sv-SE")
   if (normalized.includes("malformed-top") || normalized.includes("malformed top")) {
     return { data: "invalid", hits: 0, suggest: [] }
@@ -177,14 +177,31 @@ export function libraryRelevanceResponse(query = "") {
   let data = libraryDefaultResults
   if (normalized.includes("produktionsform")) data = libraryProductionShapeResults
   else if (normalized.includes("blandat")) data = libraryMixedResults
+  else if (normalized.includes("många författare")) {
+    data = Array.from({ length: 151 }, (_, index) => ({
+      _index: "author",
+      authorid: `Author${String(index + 1).padStart(3, "0")}`,
+      name_for_index: `Författare, Nummer ${String(index + 1).padStart(3, "0")}`,
+      birth: { plain: 1800 + index },
+      death: { plain: 1860 + index },
+      highlight: {}
+    }))
+  }
   else if (normalized.includes("selma")) data = [selma]
   else if (normalized.includes("senaste")) data = [latest]
   else if (normalized.includes("röda")) data = [rodaRummet]
   else if (normalized.includes("inga")) data = []
 
+  if (resultTypes === "author") {
+    data = data.filter(item => item?._index === "author")
+  }
+
+  const hits = data.length
+  const start = Math.max(0, Number.parseInt(from, 10) || 0)
+  const end = Math.max(start, Number.parseInt(to, 10) || 0)
   const response = {
-    data: structuredClone(data),
-    hits: data.length,
+    data: structuredClone(data.slice(start, end)),
+    hits,
     suggest: []
   }
   if (normalized.includes("null-suggest") || normalized.includes("null suggest")) {

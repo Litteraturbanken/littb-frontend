@@ -387,7 +387,11 @@ async function loadCount() {
 }
 
 const count = computed(() => countCache.value[countIdentity.value] ?? null)
-if (import.meta.client) void loadCount()
+watch([acceptedPrimary, primaryIdentity], ([candidate, identity]) => {
+  if (import.meta.client && candidate?.status === 200 && candidate.identity === identity) {
+    void loadCount()
+  }
+}, { immediate: true, flush: "post" })
 
 function authorLabel(author: TextSearchOptionsResponse["authors"][number]): string {
   const years = author.birth_year || author.death_year
@@ -768,8 +772,7 @@ watch(countIdentity, () => {
   countVersion += 1
   countController?.abort()
   countInFlight.clear()
-  if (import.meta.client) void loadCount()
-}, { flush: "post" })
+}, { flush: "sync" })
 watch(routeIdentity, () => {
   optionsVersion += 1
   optionsController?.abort()
