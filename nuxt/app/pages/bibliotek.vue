@@ -1212,7 +1212,10 @@ onUnmounted(disposeLibraryRequest)
                 :href="pdfTabHref"
                 :aria-current="currentMode === 'pdf' ? 'page' : undefined"
                 class="sc btn btn-small text-base"
-                :class="{ active: currentMode === 'pdf' }"
+                :class="{
+                  active: currentMode === 'pdf',
+                  'relevance-unavailable': currentMode !== 'pdf' && !pdfResults.distinctHits
+                }"
                 @click.prevent="selectMode('pdf')"
               >PDF<span v-if="pdfResults.distinctHits" class="num_hits">: {{ pdfResults.distinctHits }}</span></a>
             </template>
@@ -1263,7 +1266,10 @@ onUnmounted(disposeLibraryRequest)
                 :href="pdfTabHref"
                 :aria-current="currentMode === 'pdf' ? 'page' : undefined"
                 class="sc btn btn-small text-base"
-                :class="{ active: currentMode === 'pdf' }"
+                :class="{
+                  active: currentMode === 'pdf',
+                  'relevance-unavailable': currentMode !== 'pdf' && !pdfResults.distinctHits
+                }"
                 @click.prevent="selectMode('pdf')"
               >PDF<span v-if="pdfResults.distinctHits" class="num_hits">: {{ pdfResults.distinctHits }}</span></a>
             </template>
