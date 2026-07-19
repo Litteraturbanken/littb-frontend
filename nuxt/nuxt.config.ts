@@ -2,7 +2,8 @@ const apiProxyTarget = process.env.LBAPI_PROXY_TARGET || "http://127.0.0.1:8000"
 const contentProxyTarget = process.env.LITTB_CONTENT_PROXY_TARGET || "https://red.litteraturbanken.se"
 const litteraturkartanProxyTarget = process.env.LITTERATURKARTAN_PROXY_TARGET || "https://litteraturbanken.se"
 const readerSourceProxyTarget = process.env.READER_SOURCE_PROXY_TARGET || "https://litteraturbanken.se"
-const legacyApiProxyTarget = process.env.LBAPI_LEGACY_PROXY_TARGET || "https://red.litteraturbanken.se"
+const legacyApiProxyOverride = process.env.LBAPI_LEGACY_PROXY_TARGET
+const legacyApiProxyTarget = legacyApiProxyOverride || "http://127.0.0.1:8000"
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -37,7 +38,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     apiBase: "http://127.0.0.1:8000/v2",
-    libraryApiBase: "https://red.litteraturbanken.se/api",
+    libraryApiBase: "http://127.0.0.1:8000",
     contentBase: "https://red.litteraturbanken.se",
     readerSourceBase: "https://litteraturbanken.se",
     public: {
@@ -68,7 +69,10 @@ export default defineNuxtConfig({
         },
         "^/api/(?!v2(?:/|$)|reader(?:/|$)|author-documents(?:/|$)|dramawebben(?:/|$))": {
           target: legacyApiProxyTarget,
-          changeOrigin: true
+          changeOrigin: true,
+          ...(legacyApiProxyOverride
+            ? {}
+            : { rewrite: path => path.replace(/^\/api(?=\/|$)/, "") })
         },
         "^/red(?:/|$)": {
           target: contentProxyTarget,
