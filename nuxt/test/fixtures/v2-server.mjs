@@ -97,6 +97,40 @@ const authorDocumentContent = new Map([
     readFileSync(new URL("./author-document-content/sparse.html", import.meta.url))
   ]
 ])
+const dramawebbenDocumentContent = new Map([
+  [
+    "/red/dramawebben/om.html",
+    readFileSync(new URL("./dramawebben-content/om.html", import.meta.url))
+  ],
+  [
+    "/red/dramawebben/kringtexter/kringtexter.html",
+    readFileSync(new URL("./dramawebben-content/kringtexter.html", import.meta.url))
+  ]
+])
+const maliciousDramawebbenDocument = Buffer.from([
+  "<!doctype html><html><head><title>upstream-payload-probe</title></head><body>",
+  '<div class="safe" id="drop" onclick="bad()">safe-visible-probe</div>',
+  '<a href="javascript:alert(1)">unsafe-js-link</a>',
+  '<a href="data:text/html,evil">unsafe-data-link</a>',
+  '<a href="http://evil.test/path">unsafe-http-link</a>',
+  '<a href="/%252e%252e/private">unsafe-traversal-link</a>',
+  '<a href="https://example.test/safe" target="_blank" rel="external">blank-probe</a>',
+  "<!-- comment-probe --><script>script-probe</script>",
+  "<form><p>form-probe</p></form><svg><text>svg-probe</text></svg>",
+  "</body></html>"
+].join(""))
+const oversizedDramawebbenPrefix = Buffer.from("<!doctype html><html><body><p>")
+const oversizedDramawebbenSuffix = Buffer.from(
+  "upstream-payload-probe</p></body></html>"
+)
+const oversizedDramawebbenDocument = Buffer.concat([
+  oversizedDramawebbenPrefix,
+  Buffer.alloc(
+    262_145 - oversizedDramawebbenPrefix.length - oversizedDramawebbenSuffix.length,
+    "x"
+  ),
+  oversizedDramawebbenSuffix
+])
 const authorDocumentAssets = new Map(semerAuthorDocumentAssets.map(asset => [
   asset.path,
   readFileSync(new URL(`./author-document-content/${asset.file}`, import.meta.url))
@@ -185,6 +219,9 @@ let legacyAuthorRouteRequests = []
 let legacyAuthorRouteFailure = null
 let authorDocumentPdfRequests = []
 let authorDocumentRedirectTargetRequests = []
+let dramawebbenDocumentRequests = []
+let dramawebbenDocumentFailure = null
+let dramawebbenDocumentRedirectTargetRequests = []
 let textSearchRequests = { results: [], count: [], options: [] }
 let textSearchFailures = new Set()
 let textSearchDelays = { results: {}, count: {}, options: {} }
@@ -1539,6 +1576,51 @@ const server = createServer(async (request, response) => {
     libraryQueryDelays = {}
     return sendJson(response, 200, { delays: libraryQueryDelays })
   }
+  if (url.pathname === "/_dramawebben_document_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: dramawebbenDocumentRequests })
+  }
+  if (url.pathname === "/_dramawebben_document_requests" && request.method === "DELETE") {
+    dramawebbenDocumentRequests = []
+    return sendJson(response, 200, { requests: dramawebbenDocumentRequests })
+  }
+  if (
+    url.pathname === "/_dramawebben_document_redirect_target_requests"
+    && request.method === "GET"
+  ) {
+    return sendJson(response, 200, { requests: dramawebbenDocumentRedirectTargetRequests })
+  }
+  if (
+    url.pathname === "/_dramawebben_document_redirect_target_requests"
+    && request.method === "DELETE"
+  ) {
+    dramawebbenDocumentRedirectTargetRequests = []
+    return sendJson(response, 200, { requests: dramawebbenDocumentRedirectTargetRequests })
+  }
+  if (url.pathname === "/_dramawebben_document_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: dramawebbenDocumentFailure })
+  }
+  if (url.pathname === "/_dramawebben_document_failure" && request.method === "PUT") {
+    const body = await readJson(request)
+    const allowed = new Set([
+      "content-404",
+      "content-502",
+      "content-redirect",
+      "wrong-content-type",
+      "malicious",
+      "oversized-declared",
+      "oversized-streamed"
+    ])
+    if (
+      body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1 || !allowed.has(body.failure)
+    ) return validationError(response)
+    dramawebbenDocumentFailure = body.failure
+    return sendJson(response, 200, { failure: dramawebbenDocumentFailure })
+  }
+  if (url.pathname === "/_dramawebben_document_failure" && request.method === "DELETE") {
+    dramawebbenDocumentFailure = null
+    return sendJson(response, 200, { failure: dramawebbenDocumentFailure })
+  }
   if (url.pathname === "/_author_document_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: authorDocumentRequests })
   }
@@ -1671,6 +1753,64 @@ const server = createServer(async (request, response) => {
       return sendBody(response, 503, "text/plain; charset=utf-8", "content unavailable")
     }
     return sendBody(response, 200, home[0], home[1])
+  }
+
+  const dramawebbenDocumentBody = dramawebbenDocumentContent.get(rawPathname)
+  if (request.method === "GET" && dramawebbenDocumentBody && !url.search) {
+    dramawebbenDocumentRequests.push({
+      method: request.method,
+      path: request.url,
+      authorization: request.headers.authorization ?? null,
+      cookie: request.headers.cookie ?? null
+    })
+    if (dramawebbenDocumentFailure === "content-404") {
+      return sendBody(
+        response,
+        404,
+        "text/plain; charset=utf-8",
+        "upstream-payload-probe: content not found"
+      )
+    }
+    if (dramawebbenDocumentFailure === "content-502") {
+      return sendBody(
+        response,
+        502,
+        "text/plain; charset=utf-8",
+        "upstream-payload-probe: content unavailable"
+      )
+    }
+    if (dramawebbenDocumentFailure === "content-redirect") {
+      response.writeHead(302, {
+        location: `${redirectTargetOrigin}/dramawebben-document/content`
+      })
+      return response.end()
+    }
+    if (dramawebbenDocumentFailure === "wrong-content-type") {
+      return sendBody(
+        response,
+        200,
+        "application/xhtml+xml; charset=utf-8",
+        dramawebbenDocumentBody
+      )
+    }
+    if (dramawebbenDocumentFailure === "oversized-declared") {
+      return sendBody(response, 200, "text/html; charset=utf-8", oversizedDramawebbenDocument, {
+        "content-length": oversizedDramawebbenDocument.length
+      })
+    }
+    if (dramawebbenDocumentFailure === "oversized-streamed") {
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" })
+      response.write(oversizedDramawebbenDocument.subarray(0, 200_000))
+      return response.end(oversizedDramawebbenDocument.subarray(200_000))
+    }
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      dramawebbenDocumentFailure === "malicious"
+        ? maliciousDramawebbenDocument
+        : dramawebbenDocumentBody
+    )
   }
 
   const authorDocumentPdfDisposition = authorDocumentPdfs.get(rawPathname)
@@ -2276,11 +2416,22 @@ const server = createServer(async (request, response) => {
 const redirectTargetServer = createServer(async (request, response) => {
   let body = null
   if (request.method === "POST") body = await readJson(request)
-  authorDocumentRedirectTargetRequests.push({
+  const recordedRequest = {
     method: request.method,
     path: request.url,
     body
-  })
+  }
+
+  if (request.url === "/dramawebben-document/content") {
+    dramawebbenDocumentRedirectTargetRequests.push(recordedRequest)
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      dramawebbenDocumentContent.get("/red/dramawebben/om.html")
+    )
+  }
+  authorDocumentRedirectTargetRequests.push(recordedRequest)
 
   if (request.method === "GET" && request.url === "/author-document/descriptor") {
     return sendJson(response, 200, soderbergPresentation)
