@@ -13,6 +13,7 @@ export default defineNuxtConfig({
     "~/assets/styles/bootstrap.scss",
     "~/assets/styles/tailwind.css",
     "font-awesome/css/font-awesome.css",
+    "vue-multiselect/dist/vue-multiselect.css",
     "~/assets/styles/styles.scss",
     "~/assets/styles/nuxt.scss",
     "~/assets/styles/reader.scss"

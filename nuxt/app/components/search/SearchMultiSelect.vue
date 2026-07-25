@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import {
-  Combobox,
-  ComboboxButton,
-  ComboboxInput,
-  ComboboxOption,
-  ComboboxOptions
-} from "@headlessui/vue"
+import VueMultiselect from "vue-multiselect"
 
 defineOptions({ inheritAttrs: false })
 
@@ -14,6 +8,10 @@ export type SearchMultiSelectOption = Readonly<{
   label: string
   selectionLabel?: string
   disabled?: boolean
+}>
+
+type VueMultiselectOption = SearchMultiSelectOption & Readonly<{
+  $isDisabled?: boolean
 }>
 
 const props = withDefaults(defineProps<{
@@ -34,180 +32,104 @@ const emit = defineEmits<{
   query: [value: string]
 }>()
 
-const selectedOptions = computed(() => props.modelValue.map(value => (
-  props.options.find(option => option.value === value) ?? { value, label: value }
+const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
+const multiselectOptions = computed<VueMultiselectOption[]>(() => props.options.map(option => ({
+  ...option,
+  $isDisabled: option.disabled === true
+})))
+const selectedOptions = computed<VueMultiselectOption[]>(() => props.modelValue.map(value => (
+  multiselectOptions.value.find(option => option.value === value) ?? { value, label: value }
 )))
 
 function selectedLabel(option: SearchMultiSelectOption): string {
   return option.selectionLabel ?? option.label
 }
 
-function update(value: string[]) {
-  emit("update:modelValue", [...value])
+function update(value: readonly VueMultiselectOption[] | null) {
+  const selected = new Set((value ?? []).map(option => option.value))
+  const known = props.options
+    .filter(option => selected.has(option.value))
+    .map(option => option.value)
+  const unknown = props.modelValue.filter(value => (
+    selected.has(value) && !props.options.some(option => option.value === value)
+  ))
+  emit("update:modelValue", [...known, ...unknown])
 }
 
-function remove(value: string) {
-  emit("update:modelValue", props.modelValue.filter(item => item !== value))
-}
-
-function openOptions(event: Event) {
-  const currentTarget = event.currentTarget
-  if (!(currentTarget instanceof HTMLElement)) return
-  const selection = currentTarget.closest(".select2-selection") ?? currentTarget
-  const button = selection.querySelector<HTMLButtonElement>(".select2-selection__arrow")
+function openOptions(event: MouseEvent) {
   const target = event.target
-  if (target instanceof Node && button?.contains(target)) return
-  button?.click()
+  if (!(target instanceof HTMLElement) || target.closest("button, input")) return
+  multiselect.value?.activate()
 }
 
-function openReadonlyOptions(event: KeyboardEvent) {
-  if (props.searchable) return
-  const target = event.target
-  if (target instanceof HTMLElement && target.closest("button")) return
-  event.preventDefault()
-  openOptions(event)
-}
+onMounted(() => {
+  multiselect.value?.$el.querySelector("input.multiselect__input")
+    ?.classList.add("select2-search__field")
+})
 </script>
 
 <template>
-  <Combobox
-    :model-value="[...modelValue]"
-    multiple
-    nullable
-    @update:model-value="update"
+  <span
+    v-bind="$attrs"
+    class="filter_select select2 select2-container select2-container--default"
   >
-    <span
-      v-bind="$attrs"
-      class="filter_select select2 select2-container select2-container--default"
+    <VueMultiselect
+      ref="multiselect"
+      class="select2-selection select2-selection--multiple"
+      :model-value="selectedOptions"
+      :options="multiselectOptions"
+      :placeholder="placeholder"
+      :searchable="searchable"
+      :internal-search="false"
+      :loading="loading"
+      :multiple="true"
+      track-by="value"
+      label="label"
+      :close-on-select="false"
+      :hide-selected="false"
+      :show-labels="false"
+      :allow-empty="true"
+      @mousedown="openOptions"
+      @update:model-value="update"
+      @search-change="emit('query', $event)"
     >
-      <span class="selection">
-        <span
-          class="select2-selection select2-selection--multiple"
-          @click="openOptions"
-          @keydown.enter="openReadonlyOptions"
-          @keydown.space="openReadonlyOptions"
+      <template #caret="{ toggle }">
+        <button
+          type="button"
+          class="select2-selection__arrow multiselect__select"
+          :aria-label="`Visa alternativ för ${placeholder}`"
+          @mousedown.prevent.stop
+          @click.prevent.stop="toggle"
         >
-          <ul class="select2-selection__rendered">
-            <li
-              v-for="option in selectedOptions"
-              :key="option.value"
-              class="select2-selection__choice"
-              :title="option.label"
-            >
-              <button
-                type="button"
-                class="select2-selection__choice__remove"
-                :aria-label="`Ta bort ${selectedLabel(option)}`"
-                @click.stop="remove(option.value)"
-              >
-                ×
-              </button>{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}
-            </li>
-            <li class="select2-search select2-search--inline">
-              <ComboboxInput
-                class="select2-search__field"
-                :placeholder="placeholder"
-                :readonly="!searchable"
-                autocomplete="off"
-                @click.stop="openOptions"
-                @change="emit('query', ($event.target as HTMLInputElement).value)"
-              />
-            </li>
-          </ul>
-          <ComboboxButton
+          <b aria-hidden="true" />
+        </button>
+      </template>
+
+      <template #tag="{ option, remove }">
+        <span class="select2-selection__choice" :title="option.label">
+          <button
             type="button"
-            class="select2-selection__arrow"
-            :aria-label="`Visa alternativ för ${placeholder}`"
+            class="select2-selection__choice__remove"
+            :aria-label="`Ta bort ${selectedLabel(option)}`"
+            @mousedown.prevent.stop
+            @click.prevent.stop="remove(option)"
           >
-            <b aria-hidden="true" />
-          </ComboboxButton>
+            ×
+          </button>{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}
         </span>
-      </span>
-      <ComboboxOptions class="select2-results__options">
-        <ComboboxOption
-          v-for="option in options"
-          :key="option.value"
-          v-slot="{ active, selected }"
-          as="template"
-          :value="option.value"
-          :disabled="option.disabled"
-        >
-          <li
-            class="select2-results__option"
-            :class="{
-              'select2-results__option--highlighted': active,
-              'select2-results__option--selected': selected
-            }"
-          >
-            {{ option.label }}
-          </li>
-        </ComboboxOption>
-      </ComboboxOptions>
-      <i
-        v-if="loading"
-        class="spinner fa fa-spinner fa-pulse"
-        aria-label="Laddar alternativ"
-      />
-    </span>
-  </Combobox>
+      </template>
+
+      <template #option="{ option }">
+        <span class="select2-results__option">{{ option.label }}</span>
+      </template>
+
+      <template #loading>
+        <i
+          v-if="loading"
+          class="spinner fa fa-spinner fa-pulse"
+          aria-label="Laddar alternativ"
+        />
+      </template>
+    </VueMultiselect>
+  </span>
 </template>
-
-<style scoped>
-.select2-container {
-  box-sizing: border-box;
-  display: inline-block;
-  position: relative;
-  vertical-align: middle;
-}
-
-.select2-selection--multiple {
-  box-sizing: border-box;
-  display: block;
-  min-height: 32px;
-  cursor: text;
-  user-select: none;
-}
-
-.select2-selection__rendered {
-  box-sizing: border-box;
-  display: inline-block;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
-  list-style: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.select2-selection__rendered > li {
-  list-style: none;
-}
-
-.select2-selection__choice {
-  float: left;
-  padding: 0 5px;
-  margin-top: 5px;
-  border: 1px solid #aaa;
-}
-
-.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-  width: 20.171875px;
-  margin-right: -5px;
-}
-
-.select2-search--inline {
-  float: left;
-}
-
-.select2-selection__arrow {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  overflow: hidden;
-  border: 0;
-}
-</style>

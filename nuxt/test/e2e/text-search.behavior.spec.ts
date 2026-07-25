@@ -61,6 +61,27 @@ async function selectMulti(page: Page, placeholder: string, option: string | Reg
   await page.keyboard.press("Escape")
 }
 
+test("vue-multiselect title search selects and removes a route-owned title", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+  await request.delete(`${fixture}/_text_search/requests/options`)
+
+  const title = page.locator(".title_select")
+  await title.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  await expect(title.locator(".multiselect")).toBeVisible()
+  await title.locator("input.select2-search__field").pressSequentially("röda")
+  await expect.poll(async () => (
+    (await requests(request, "options")).at(-1)?.body.title_filter
+  )).toBe("röda")
+
+  await title.getByRole("option", { name: "Röda rummet", exact: true }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("titlar")).toBe("lb238704")
+  await title.getByRole("button", { name: "Ta bort Röda rummet" }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.has("titlar")).toBe(false)
+})
+
 async function pushRoute(page: Page, route: string) {
   await page.evaluate(async target => {
     type VueRoot = HTMLElement & {
@@ -383,7 +404,6 @@ test("title-only recovery cannot suppress a later static-options retry", async (
 
   const title = page.locator(".title_select input.select2-search__field")
   await title.fill("lager")
-  await title.dispatchEvent("change")
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
 
   await page.locator("[data-search-advanced]").click()
@@ -467,18 +487,18 @@ test("keyboard pagination does not intercept arrows inside form controls", async
   expect(new URL(page.url()).searchParams.get("traffsida")).toBe("2")
 })
 
-test("Headless UI filters traverse, select, and remove by keyboard", async ({ page, request }) => {
+test("vue-multiselect filters traverse by keyboard and remove accessibly", async ({ page, request }) => {
   await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
   await request.delete(`${fixture}/_text_search/requests/results`)
 
-  const authorInput = page.locator(".author_select input.select2-search__field")
-  await authorInput.focus()
-  await authorInput.press("Enter")
+  const authorControl = page.locator(".author_select").getByRole("combobox")
+  await authorControl.focus()
   const strindberg = page.getByRole("option", { name: /Strindberg, August/ })
   await expect(strindberg).toBeVisible()
-  await authorInput.press("ArrowDown")
-  await expect(strindberg).toHaveClass(/select2-results__option--highlighted/)
-  await authorInput.press("Enter")
+  await authorControl.press("ArrowDown")
+  await expect(strindberg.locator(".multiselect__option"))
+    .toHaveClass(/multiselect__option--highlight/)
+  await strindberg.click()
   await expect.poll(() => new URL(page.url()).searchParams.get("forfattare"))
     .toBe("StrindbergA")
   await expect.poll(async () => (await requests(request, "results")).length).toBe(1)
@@ -487,7 +507,7 @@ test("Headless UI filters traverse, select, and remove by keyboard", async ({ pa
     author_ids: ["StrindbergA"]
   })
 
-  await authorInput.press("Escape")
+  await authorControl.press("Escape")
   const removeAuthor = page.getByRole("button", { name: "Ta bort Strindberg" })
   await removeAuthor.focus()
   await removeAuthor.press("Enter")
@@ -590,14 +610,12 @@ test("static options are lazy and cached while title search is exact 250 ms late
   })
   const input = page.locator(".title_select input.select2-search__field")
   await input.fill("lag")
-  await input.dispatchEvent("change")
   await page.clock.runFor(249)
   expect(await requests(request, "options")).toEqual([])
   await page.clock.runFor(1)
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
 
   await input.fill("lager")
-  await input.dispatchEvent("change")
   await page.clock.runFor(249)
   expect(await requests(request, "options")).toHaveLength(1)
   await page.clock.runFor(1)
@@ -687,7 +705,6 @@ test("options and more cancellation clear loading and reject stale identity data
   })
   const input = page.locator(".title_select input.select2-search__field")
   await input.fill("lager")
-  await input.dispatchEvent("change")
   await expect(page.locator(".title_select .spinner")).toBeVisible()
   await page.locator("[data-search-advanced]").click()
   await expect(page.locator(".title_select .spinner")).toBeHidden()

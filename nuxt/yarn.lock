@@ -5753,6 +5753,11 @@ vue-devtools-stub@^0.1.0:
   resolved "https://registry.yarnpkg.com/vue-devtools-stub/-/vue-devtools-stub-0.1.0.tgz#a65b9485edecd4273cedcb8102c739b83add2c81"
   integrity sha512-RutnB7X8c5hjq39NceArgXg28WZtZpGc3+J16ljMiYnFhKvd8hITxSWQSQ5bvldxMDU6gG5mkxl1MTQLXckVSQ==
 
+vue-multiselect@3.5.0:
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/vue-multiselect/-/vue-multiselect-3.5.0.tgz#83efef15b1db9e7f6d492309d8bcb71a23c46d1d"
+  integrity sha512-i758SEqWFcFshL1eAg0F3EFeFQ1mOCmh2mgnGCZv1XpHFVIAv8fxo8bQQ4ZnMoaPhMp8KI1A6gPBVHh3YzRg/Q==
+
 vue-router@5.2.0, vue-router@^5.1.0:
   version "5.2.0"
   resolved "https://registry.yarnpkg.com/vue-router/-/vue-router-5.2.0.tgz#34f03b1012729c33bb23184d96ad8e1b1b5c4546"
