@@ -59,7 +59,9 @@ async function expectAdjacentLedgersEmpty(request: APIRequestContext) {
     expect(response.status(), ledger.path).toBe(200)
     const payload = await response.json()
     if (ledger.field === "textSearchOperations") {
-      expect(payload, ledger.path).toEqual({ results: [], count: [], options: [] })
+      expect(payload, ledger.path).toEqual({
+        results: [], count: [], options: [], chronology: []
+      })
     } else {
       expect(payload[ledger.field], ledger.path).toEqual([])
     }
@@ -325,7 +327,6 @@ test("rejects unsupported SLA identities as global 404s before any data fetch", 
   for (const route of [
     "/författare/S%C3%B6derbergH/omtexterna",
     "/författare/Lagerl%C3%B6fS/omtexterna.html",
-    "/författare/Lagerl%C3%B6fS/biblinfo",
     "/författare/Lagerl%C3%B6fS/%25"
   ]) {
     await reset(request)

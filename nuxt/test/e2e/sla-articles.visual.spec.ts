@@ -5,7 +5,8 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 
 import { waitForVisualAssets } from "../helpers/visual"
 
-const fixture = "http://127.0.0.1:4136"
+const fixturePort = process.env.LBAPI_FIXTURE_PORT || "4100"
+const fixture = `http://127.0.0.1:${fixturePort}`
 
 const visualCases = [
   {
@@ -193,7 +194,7 @@ for (const visualCase of visualCases) {
         frameworkMetadataRequests.push(label)
         return route.continue()
       }
-      if (url.port === "4136" || isDataRequest
+      if (url.port === fixturePort || isDataRequest
         || !["127.0.0.1", "localhost"].includes(url.hostname)) {
         unexpectedDataRequests.push(label)
         return route.abort("blockedbyclient")

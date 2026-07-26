@@ -163,7 +163,7 @@ for (const visualCase of visualCases) {
     const context = page.locator("#toolkit-right .reader-context")
     await expect(context).toHaveCount(1)
     await expect(context.locator(":scope > div:first-child > .author > a"))
-      .toHaveAttribute("href", "/författare/S%C3%B6derbergH")
+      .toHaveAttribute("href", encodeURI("/författare/SöderbergH"))
     await expect(context.locator(":scope > div:first-child")).toContainText(
       "Doktor Glas delar (1905)"
     )
@@ -171,9 +171,9 @@ for (const visualCase of visualCases) {
     await expect(currentPart.locator(".navtitle")).toHaveText("Överlappningen")
     await expect(currentPart.locator(".header")).toContainText("Rilke, Shelley")
     await expect(currentPart.locator(".header > a").filter({ hasText: "Rilke" }))
-      .toHaveAttribute("href", "/författare/RilkeRM")
+      .toHaveAttribute("href", encodeURI("/författare/RilkeRM"))
     await expect(currentPart.locator(".header > a").filter({ hasText: "Shelley" }))
-      .toHaveAttribute("href", "/författare/ShelleyPB")
+      .toHaveAttribute("href", encodeURI("/författare/ShelleyPB"))
     await expect(page.locator('meta[name="part"]')).toHaveAttribute("content", "overlap")
 
     const navigation = context.locator(".reader-navigation")
@@ -245,13 +245,13 @@ for (const visualCase of visualCases) {
         )
       }
       const expectedAuthorHrefs = [
-        "/författare/S%C3%B6derbergH",
-        "/författare/M%C3%B6rikeE",
+        "/författare/SöderbergH",
+        "/författare/MörikeE",
         "/författare/RilkeRM",
         "/författare/ShelleyPB",
-        "/författare/S%C3%B6derbergH",
-        "/författare/M%C3%B6rikeE"
-      ]
+        "/författare/SöderbergH",
+        "/författare/MörikeE"
+      ].map(href => encodeURI(href))
       const authorLinks = rows.locator("span.author > a")
       await expect(authorLinks).toHaveCount(expectedAuthorHrefs.length)
       for (const [index, href] of expectedAuthorHrefs.entries()) {

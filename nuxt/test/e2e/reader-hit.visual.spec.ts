@@ -111,8 +111,14 @@ for (const visualCase of visualCases) {
     await expect(page.locator(".reader-navigation .expl")).toHaveAttribute("aria-hidden", "true")
     const subnav = page.locator("#toolkit-right .subnav")
     await expect(subnav).not.toHaveAttribute("aria-hidden", "true")
-    await expect(subnav.getByRole("link", { name: "Innehållsförteckning" })).toHaveCount(1)
-    await expect(subnav.locator("li[aria-hidden='true']")).toHaveCount(3)
+    await expect(subnav.getByRole("link")).toHaveText([
+      "Innehållsförteckning",
+      "Mer om boken",
+      "Läsfokus",
+      "Sök i verket",
+      "Sök i författarens texter"
+    ])
+    await expect(subnav.locator("li[aria-hidden='true']")).toHaveCount(0)
 
     const toolkit = page.locator("#toolkit > #search_nav")
     if (visualCase.query === null) {

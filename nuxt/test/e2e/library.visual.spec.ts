@@ -1,6 +1,24 @@
-import { expect, test } from "@playwright/test"
+import { expect, test, type APIRequestContext } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
+
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+
+async function resetLibraryState(request: APIRequestContext) {
+  await Promise.all([
+    request.delete(`${fixture}/_library_relevance_requests`),
+    request.delete(`${fixture}/_library_relevance_failure`),
+    request.delete(`${fixture}/_library_relevance_delays`),
+    request.delete(`${fixture}/_library_query_requests`),
+    request.delete(`${fixture}/_library_query_failure`),
+    request.delete(`${fixture}/_library_query_delays`),
+    request.delete(`${fixture}/_library_imprint_range`),
+    request.delete(`${fixture}/_library_imprint_failure`),
+    request.delete(`${fixture}/_library_imprint_requests`)
+  ])
+}
+
+test.beforeEach(async ({ request }) => resetLibraryState(request))
 
 test("advanced Library controls remain labelled and keyboard operable on mobile", async ({
   page
@@ -11,8 +29,9 @@ test("advanced Library controls remain labelled and keyboard operable on mobile"
   await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
 
   await expect(page.locator("[data-library-gender]")).toHaveAccessibleName("Författarkön")
-  await expect(page.locator("[data-library-media]")).toHaveAccessibleName("Utgivningsformat")
-  await expect(page.locator("[data-library-languages]")).toHaveAccessibleName("Språk …")
+  await expect(page.getByRole("combobox", { name: "Utgivningsformat", exact: true }))
+    .toBeVisible()
+  await expect(page.getByRole("combobox", { name: "Språk …", exact: true })).toBeVisible()
   const from = page.getByRole("slider", { name: "Från tryckår reglage" })
   const to = page.getByRole("slider", { name: "Till tryckår reglage" })
   await expect(from).toBeVisible()
