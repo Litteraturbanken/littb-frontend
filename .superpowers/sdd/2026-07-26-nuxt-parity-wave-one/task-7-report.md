@@ -41,6 +41,9 @@ passes the configured backend and Nuxt origins to `yarn test:e2e:nuxt-live`.
 - Conventional `yarn test` and `yarn test:e2e` now delegate to the explicit
   Nuxt-live command, so neither can select the migrated spec through the legacy
   port-9000 configuration.
+- Conventional `yarn test:ui` and `yarn test:debug` also delegate to the same
+  Nuxt-live command with their respective Playwright modes; no conventional
+  test entry point can discover this spec through the legacy port-9000 config.
 - The default backend directory is derived from Git's common repository path,
   which works from both ordinary clones and linked worktrees, with
   `LB_BACKEND_DIR` still available as an override.

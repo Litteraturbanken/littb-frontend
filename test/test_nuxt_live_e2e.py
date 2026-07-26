@@ -63,6 +63,11 @@ class NuxtLivePlaywrightTest(unittest.TestCase):
 
         self.assertEqual(package["scripts"]["test"], "yarn test:e2e:nuxt-live")
         self.assertEqual(package["scripts"]["test:e2e"], "yarn test:e2e:nuxt-live")
+        self.assertEqual(package["scripts"]["test:ui"], "yarn test:e2e:nuxt-live --ui")
+        self.assertEqual(
+            package["scripts"]["test:debug"],
+            "yarn test:e2e:nuxt-live --debug",
+        )
 
     def test_config_lists_only_the_five_live_smoke_checks(self) -> None:
         result = run_live_playwright("--list")
