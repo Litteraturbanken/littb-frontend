@@ -49,10 +49,25 @@ async function expectAnchorOffset(page: Page, id: string) {
   }).toBeLessThanOrEqual(1)
 }
 
+test.beforeAll(async ({ baseURL, browser }) => {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+  const response = await page.goto(new URL("/om/hjalp", baseURL).href, {
+    waitUntil: "networkidle"
+  })
+  expect(response?.status()).toBe(200)
+  await context.close()
+})
 test.beforeEach(async ({ request }) => reset(request))
 
 test("Help renders the exact active state and authority submenu in the toolkit without browser errors", async ({ page, request }) => {
   const problems = captureBrowserProblems(page)
+  const browserContentRequests: string[] = []
+  page.on("request", browserRequest => {
+    if (new URL(browserRequest.url()).pathname === contentPath) {
+      browserContentRequests.push(browserRequest.url())
+    }
+  })
   const response = await page.goto("/om/hjalp", { waitUntil: "networkidle" })
   expect(response?.status()).toBe(200)
 
@@ -72,6 +87,7 @@ test("Help renders the exact active state and authority submenu in the toolkit w
     )
   }
 
+  expect(browserContentRequests).toEqual([])
   expect(await loggedContentRequests(request)).toEqual([contentPath])
   expect(problems).toEqual([])
 })
