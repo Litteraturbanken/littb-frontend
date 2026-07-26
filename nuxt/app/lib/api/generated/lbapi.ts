@@ -456,6 +456,8 @@ export interface components {
             introduction_by: components["schemas"]["AuthorSummary"] | null;
             /** Introduction Html */
             introduction_html: string | null;
+            /** Map Url */
+            map_url: string | null;
             /** Other Names */
             other_names: string[];
             portrait: components["schemas"]["AuthorPortrait"] | null;

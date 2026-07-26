@@ -237,6 +237,7 @@ describe("safe author profile view model", () => {
       },
       searchUrl: "/sok?forfattare=StrindbergA&avancerad",
       audioUrl: "",
+      mapUrl: profile.map_url,
       relatedLinks: profile.related_links,
       encyclopediaLinks: profile.encyclopedia_links,
       hasOrdinaryIntroduction: true,

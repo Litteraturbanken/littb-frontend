@@ -80,6 +80,7 @@ onBeforeUnmount(() => {
         :class="{
           'author-profile-sections--empty': !profile.portrait
             && !profile.relatedLinks.length
+            && !profile.mapUrl
             && !profile.encyclopediaLinks.length
         }"
       >
@@ -113,7 +114,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-if="profile.portrait || profile.relatedLinks.length || profile.encyclopediaLinks.length"
+          v-if="profile.portrait || profile.relatedLinks.length || profile.mapUrl || profile.encyclopediaLinks.length"
           class="portrait_container lg:ml-8"
         >
           <div v-if="profile.portrait" class="shadow-lg mt-2">
@@ -130,7 +131,7 @@ onBeforeUnmount(() => {
           </div>
 
           <div
-            v-if="profile.relatedLinks.length"
+            v-if="profile.relatedLinks.length || profile.mapUrl"
             class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75 max-w-xs"
           >
             <h3 class="sc mt-0">Mer om författarskapet</h3>
@@ -142,6 +143,9 @@ onBeforeUnmount(() => {
                     :to="canonicalNuxtHref(link.url)"
                   >{{ link.label }}</NuxtLink>
                   <a v-else :href="link.url">{{ link.label }}</a>
+                </li>
+                <li v-if="profile.mapUrl">
+                  <a :href="profile.mapUrl" target="_blank" rel="noopener noreferrer">Litteraturkartan</a>
                 </li>
               </ul>
             </section>
