@@ -3,7 +3,7 @@ import { parseHTML } from "linkedom"
 
 import { managedHtmlRawProbes } from "../fixtures/author-profile-data.mjs"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 
 async function reset(request: APIRequestContext) {
   await Promise.all([
@@ -48,7 +48,7 @@ test("SSR renders the complete ordinary author profile from one private request"
     .toBe("Verk")
   expect(navigation?.querySelector('a[href="/f%C3%B6rfattare/StrindbergA/dramawebben"]')?.textContent?.trim())
     .toBe("Dramawebben")
-  expect(navigation?.querySelector('a[href="/sok?forfattare=StrindbergA&avancerad"]')?.textContent?.trim())
+  expect(navigation?.querySelector('a[href="/s%C3%B6k?forfattare=StrindbergA&avancerad"]')?.textContent?.trim())
     .toBe("Sök i texterna")
 
   const intro = document.querySelector(".page_content .introtext.content.unbox.show_more")

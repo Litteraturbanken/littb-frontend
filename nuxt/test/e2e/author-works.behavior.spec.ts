@@ -6,7 +6,7 @@ import {
 } from "@playwright/test"
 import { readFileSync } from "node:fs"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const richTitlesPath = "/f%C3%B6rfattare/StrindbergA/titlar"
 const richMorePath = "/f%C3%B6rfattare/StrindbergA/mer"
 const sparseTitlesPath = "/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar"
@@ -170,7 +170,7 @@ test("hydrates both Author Works variants once without warnings or legacy semer 
   expect(problems).toEqual([])
 })
 
-test("actions and sidebars remain exact native anchors with legacy download behavior", async ({
+test("actions use canonical Nuxt paths while downloads preserve native behavior", async ({
   context,
   page
 }) => {
@@ -179,14 +179,14 @@ test("actions and sidebars remain exact native anchors with legacy download beha
   expect(await linkContracts(page, ".contenttable td.mediatypes a")).toEqual([
     {
       text: "etext",
-      href: "/författare/StrindbergA/titlar/RodaRummet/sida/-1/etext",
+      href: "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/-1/etext",
       target: null,
       rel: null,
       download: null
     },
     {
       text: "faksimil",
-      href: "/författare/StrindbergA/titlar/RodaRummet/sida/1/faksimil",
+      href: "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/faksimil",
       target: null,
       rel: null,
       download: null
@@ -214,28 +214,28 @@ test("actions and sidebars remain exact native anchors with legacy download beha
     },
     {
       text: "etext",
-      href: "/författare/StrindbergA/titlar/EttDromspelForord/sida/5/etext",
+      href: "/f%C3%B6rfattare/StrindbergA/titlar/EttDromspelForord/sida/5/etext",
       target: null,
       rel: null,
       download: null
     },
     {
       text: "faksimil",
-      href: "/författare/LundinC/titlar/BlandFranskaBonder/sida/1/faksimil",
+      href: "/f%C3%B6rfattare/LundinC/titlar/BlandFranskaBonder/sida/1/faksimil",
       target: null,
       rel: null,
       download: null
     },
     {
       text: "etext",
-      href: "/författare/LevertinO/titlar/SagorOchSkisser/sida/1/etext",
+      href: "/f%C3%B6rfattare/LevertinO/titlar/SagorOchSkisser/sida/1/etext",
       target: null,
       rel: null,
       download: null
     },
     {
       text: "faksimil",
-      href: "/författare/Flera/titlar/SvenskaOden/sida/1/faksimil",
+      href: "/f%C3%B6rfattare/Flera/titlar/SvenskaOden/sida/1/faksimil",
       target: null,
       rel: null,
       download: null
@@ -259,14 +259,14 @@ test("actions and sidebars remain exact native anchors with legacy download beha
     },
     {
       text: "Presentation",
-      href: "/författare/StrindbergA/presentation",
+      href: "/f%C3%B6rfattare/StrindbergA/presentation",
       target: null,
       rel: null,
       download: null
     },
     {
       text: "Bibliografi",
-      href: "/författare/StrindbergA/bibliografi",
+      href: "/f%C3%B6rfattare/StrindbergA/bibliografi",
       target: null,
       rel: null,
       download: null
@@ -308,7 +308,7 @@ test("actions and sidebars remain exact native anchors with legacy download beha
   await expect(page.locator(".contenttable").first().locator(".title a"))
     .toHaveAttribute(
       "href",
-      "/författare/StrindbergA/titlar/RodaRummet/sida/-1/etext?om-boken"
+      "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/-1/etext?om-boken"
     )
 
   const moreLink = page.getByRole("link", { name: "Texter om August Strindberg" })

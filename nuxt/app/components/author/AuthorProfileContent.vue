@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { authorProfilePath, type AuthorProfileView } from "~/lib/author-profile"
+import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
+import {
+  copyProductionValue,
+  isProductionShortcutGuarded
+} from "~/lib/production-shortcuts"
 
 const props = defineProps<{
   profile: AuthorProfileView
@@ -9,10 +14,38 @@ const props = defineProps<{
 const rootHref = computed(() => authorProfilePath(props.profile.authorId))
 const titlesHref = computed(() => authorProfilePath(props.profile.authorId, "titlar"))
 const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId, "dramawebben"))
+const shortcutMessage = ref("")
+let shortcutMessageTimer: ReturnType<typeof setTimeout> | null = null
+
+function showShortcutMessage(message: string): void {
+  shortcutMessage.value = message
+  if (shortcutMessageTimer) clearTimeout(shortcutMessageTimer)
+  shortcutMessageTimer = setTimeout(() => {
+    shortcutMessage.value = ""
+    shortcutMessageTimer = null
+  }, 2200)
+}
+
+async function handleAuthorShortcut(event: KeyboardEvent): Promise<void> {
+  if (event.key !== "i" || isProductionShortcutGuarded(event)) return
+  event.preventDefault()
+  if (await copyProductionValue(props.profile.authorId)) {
+    showShortcutMessage("Kopierade authorid")
+  } else {
+    showShortcutMessage("Kunde inte kopiera authorid")
+  }
+}
+
+onMounted(() => document.addEventListener("keydown", handleAuthorShortcut))
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", handleAuthorShortcut)
+  if (shortcutMessageTimer) clearTimeout(shortcutMessageTimer)
+})
 </script>
 
 <template>
   <div>
+    <LegacyNotice :message="shortcutMessage" />
     <h1 class="text-balance max-w-5xl">
       {{ profile.fullName }}{{ " " }}<span v-if="profile.lifespan" class="author_year">({{ profile.lifespan }})</span>
     </h1>
@@ -20,22 +53,22 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
     <nav aria-label="Författarsidor">
       <ul class="links">
         <li v-if="profile.hasOrdinaryIntroduction" :class="{ active: variant === 'ordinary' }">
-          <a
-            :href="rootHref"
+          <NuxtLink
+            :to="rootHref"
             :aria-current="variant === 'ordinary' ? 'page' : undefined"
-          >Introduktion</a>
+          >Introduktion</NuxtLink>
         </li>{{ " " }}
         <li>
-          <a :href="titlesHref">Verk</a>
+          <NuxtLink :to="titlesHref">Verk</NuxtLink>
         </li>{{ " " }}
         <li v-if="profile.hasDramawebben" :class="{ active: variant === 'dramawebben' }">
-          <a
-            :href="dramawebbenHref"
+          <NuxtLink
+            :to="dramawebbenHref"
             :aria-current="variant === 'dramawebben' ? 'page' : undefined"
-          >Dramawebben</a>
+          >Dramawebben</NuxtLink>
         </li>{{ " " }}
         <li v-if="profile.searchUrl">
-          <a :href="profile.searchUrl">Sök i texterna</a>
+          <NuxtLink :to="canonicalNuxtHref(profile.searchUrl)">Sök i texterna</NuxtLink>
         </li>
       </ul>
     </nav>
@@ -104,7 +137,11 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
             <section>
               <ul class="list-item pl-4">
                 <li v-for="link in profile.relatedLinks" :key="link.url">
-                  <a :href="link.url">{{ link.label }}</a>
+                  <NuxtLink
+                    v-if="isNuxtInternalHref(link.url)"
+                    :to="canonicalNuxtHref(link.url)"
+                  >{{ link.label }}</NuxtLink>
+                  <a v-else :href="link.url">{{ link.label }}</a>
                 </li>
               </ul>
             </section>
@@ -129,10 +166,10 @@ const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId,
           <div v-html="profile.introductionHtml" />
           <div v-if="profile.introductionBy" class="introauthor">
             <em>{{ profile.introductionBy }}</em>
-            <div class="drama_subtitle sc"><a href="/dramawebben">Dramawebben</a></div>
+            <div class="drama_subtitle sc"><NuxtLink to="/dramawebben">Dramawebben</NuxtLink></div>
           </div>
           <div v-else class="introauthor">
-            <div class="drama_subtitle sc"><a href="/dramawebben">Dramawebben</a></div>
+            <div class="drama_subtitle sc"><NuxtLink to="/dramawebben">Dramawebben</NuxtLink></div>
           </div>
           <div v-if="profile.sourceHtml.length" class="source drama-source">
             <span class="source_header sc drama-source-header">Källa</span>

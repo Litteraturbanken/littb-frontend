@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 
 import { managedHtmlRawProbes } from "../fixtures/author-profile-data.mjs"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const portraitBytes = readFileSync(new URL("../../app/assets/img/lagerlof_portrait.jpg", import.meta.url))
 
 async function reset(request: APIRequestContext) {
@@ -203,7 +203,7 @@ test("ordinary client navigation to a Dramawebben-only canonical profile uses on
   expect(problems).toEqual([])
 })
 
-test("profile links remain encoded ordinary anchors and blank targets are hardened", async ({
+test("profile links use canonical internal paths and blank targets are hardened", async ({
   page
 }) => {
   await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
@@ -213,8 +213,8 @@ test("profile links remain encoded ordinary anchors and blank targets are harden
     .filter((href): href is string => Boolean(href?.startsWith("/"))))
   expect(internalHrefs).toEqual([
     "/författare/StrindbergA/titlar/Fritankaren/etext",
-    "/författare/StrindbergA/presentation",
-    "/författare/StrindbergA/bibliografi",
+    "/f%C3%B6rfattare/StrindbergA/presentation",
+    "/f%C3%B6rfattare/StrindbergA/bibliografi",
     "/presentationer/specialomraden/Strindberg.html"
   ])
   expect(await page.locator("ul.links a").evaluateAll(links => links.every(link => link.tagName === "A")))

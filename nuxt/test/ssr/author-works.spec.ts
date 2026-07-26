@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 
 async function reset(request: APIRequestContext) {
   await Promise.all([
@@ -67,7 +67,7 @@ test("SSR renders rich authored works with the legacy DOM, actions, and sidebar"
     ["Verk", "/f%C3%B6rfattare/StrindbergA/titlar"],
     ["Ljud", "https://litteraturbanken.se/ljudochbild/författare/strindberga"],
     ["Dramawebben", "/f%C3%B6rfattare/StrindbergA/dramawebben"],
-    ["Sök i texterna", "/sok?forfattare=StrindbergA&avancerad"]
+    ["Sök i texterna", "/s%C3%B6k?forfattare=StrindbergA&avancerad"]
   ])
   const activeNavigation = navigation?.querySelectorAll("li.active") ?? []
   expect(activeNavigation).toHaveLength(1)
@@ -106,8 +106,8 @@ test("SSR renders rich authored works with the legacy DOM, actions, and sidebar"
   expect(actionLinks.map(link => link.textContent?.trim()))
     .toEqual(["etext", "faksimil", "infopost", "epub", "pdf"])
   expect(actionLinks.map(link => link.getAttribute("href"))).toEqual([
-    "/författare/StrindbergA/titlar/RodaRummet/sida/-1/etext",
-    "/författare/StrindbergA/titlar/RodaRummet/sida/1/faksimil",
+    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/-1/etext",
+    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/faksimil",
     "/dramawebben/pjäser?om-boken&authorid=StrindbergA&titlepath=RodaRummet",
     "/txt/epub/StrindbergA_RodaRummet.epub",
     "/export/faksimil/lb238704.pdf"
@@ -128,17 +128,17 @@ test("SSR renders rich authored works with the legacy DOM, actions, and sidebar"
   expect(title?.getAttribute("title") ?? title?.querySelector("a")?.getAttribute("title"))
     .toBe("Röda rummet")
   expect(title?.querySelector("a")?.getAttribute("href"))
-    .toBe("/författare/StrindbergA/titlar/RodaRummet/sida/-1/etext?om-boken")
+    .toBe("/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/-1/etext?om-boken")
   expect(compactText(title?.textContent)).toBe("Röda rummet (1879)")
   expect(firstRow.querySelector(".dots")).not.toBeNull()
 
   const containing = tables[1]!.querySelector(".extras")
   expect(compactText(containing?.textContent)).toBe("i Strindberg: Ett drömspel")
   expect(containing?.querySelector("a.author")?.getAttribute("href"))
-    .toBe("/författare/StrindbergA")
+    .toBe("/f%C3%B6rfattare/StrindbergA")
   const contributor = tables[2]!.querySelector("tr > td:nth-child(2) a")
   expect(contributor?.textContent?.trim()).toBe("Lundin, Claës (författare)")
-  expect(contributor?.getAttribute("href")).toBe("/författare/LundinC")
+  expect(contributor?.getAttribute("href")).toBe("/f%C3%B6rfattare/LundinC")
 
   const portrait = document.querySelector(".page_content .portrait_container")
   expect(portrait?.querySelector("img.author_img")?.getAttribute("src"))
@@ -157,8 +157,8 @@ test("SSR renders rich authored works with the legacy DOM, actions, and sidebar"
     link.getAttribute("href")
   ])).toEqual([
     ["Texter om August Strindberg", "/f%C3%B6rfattare/StrindbergA/mer"],
-    ["Presentation", "/författare/StrindbergA/presentation"],
-    ["Bibliografi", "/författare/StrindbergA/bibliografi"],
+    ["Presentation", "/f%C3%B6rfattare/StrindbergA/presentation"],
+    ["Bibliografi", "/f%C3%B6rfattare/StrindbergA/bibliografi"],
     ["Strindbergsmuseet", "/presentationer/specialomraden/Strindberg.html"],
     ["Litteraturkartan", "https://litteraturbanken.se/litteraturkartan?s=lb_author.authorid:StrindbergA"]
   ])
@@ -276,10 +276,10 @@ test("SSR accepts an RFC3986 author route once without double-encoding links", a
     "/f%C3%B6rfattare/O%27Neil%28A",
     "/f%C3%B6rfattare/O%27Neil%28A/titlar",
     "/f%C3%B6rfattare/O%27Neil%28A/dramawebben",
-    "/sok?forfattare=O%27Neil%28A&avancerad"
+    "/s%C3%B6k?forfattare=O%27Neil%28A&avancerad"
   ])
   expect(document.querySelector(".title a")?.getAttribute("href"))
-    .toBe("/författare/O%27Neil%28A/titlar/TestTitle/sida/1/etext?om-boken")
+    .toBe("/f%C3%B6rfattare/O%27Neil%28A/titlar/TestTitle/sida/1/etext?om-boken")
   expect(document.documentElement.outerHTML).not.toContain("%2527")
   expect(document.documentElement.outerHTML).not.toContain("%2528")
   await expectOnlyWorksRequest(request, "/private-v2/authors/O'Neil(A/works")

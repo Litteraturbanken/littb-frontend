@@ -11,6 +11,7 @@ import {
   formatAuthorYears,
   sanitizeAuthorHtml
 } from "~/lib/author-profile"
+import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
 
 const props = defineProps<{
   response: AuthorWorksResponse
@@ -57,19 +58,19 @@ function isDownloadTitle(work: AuthorWork): boolean {
     <nav aria-label="Författarsidor">
       <ul class="links">
         <li v-if="author.has_introduction">
-          <a :href="rootHref">Introduktion</a>
+          <NuxtLink :to="rootHref">Introduktion</NuxtLink>
         </li>{{ " " }}
         <li :class="{ active: variant === 'titlar' }">
-          <a :href="titlesHref" :aria-current="variant === 'titlar' ? 'page' : undefined">Verk</a>
+          <NuxtLink :to="titlesHref" :aria-current="variant === 'titlar' ? 'page' : undefined">Verk</NuxtLink>
         </li>{{ " " }}
         <li v-if="author.audio_url">
           <a :href="author.audio_url" target="_blank" rel="noopener noreferrer">Ljud</a>
         </li>{{ " " }}
         <li v-if="author.has_dramawebben">
-          <a :href="dramawebbenHref">Dramawebben</a>
+          <NuxtLink :to="dramawebbenHref">Dramawebben</NuxtLink>
         </li>{{ " " }}
         <li v-if="author.search_url">
-          <a :href="author.search_url">Sök i texterna</a>
+          <NuxtLink :to="canonicalNuxtHref(author.search_url)">Sök i texterna</NuxtLink>
         </li>
       </ul>
     </nav>
@@ -95,7 +96,7 @@ function isDownloadTitle(work: AuthorWork): boolean {
                           target="_self"
                           :download="action.download_filename"
                         >{{ action.media_type }}</a>
-                        <a v-else :href="action.url">{{ action.media_type }}</a>
+                        <NuxtLink v-else :to="canonicalNuxtHref(action.url)">{{ action.media_type }}</NuxtLink>
                         <span
                           v-if="actionIndex < work.actions.length - 1"
                         ><span>&nbsp;</span><span>&nbsp;</span><span>&nbsp;</span></span>
@@ -103,25 +104,27 @@ function isDownloadTitle(work: AuthorWork): boolean {
                       </span>
                     </td>
                     <td v-if="section.show_author">
-                      <a v-if="work.display_author" :href="work.display_author.url">
+                      <NuxtLink v-if="work.display_author" :to="canonicalNuxtHref(work.display_author.url)">
                         {{ work.display_author.name_for_index }}
-                      </a>
+                      </NuxtLink>
                     </td>
                     <td>
                       <span class="title" :title="work.title_tooltip ?? undefined">
-                        <a
-                          :href="work.title_url"
-                          :target="isDownloadTitle(work) ? '_self' : undefined"
-                        >
+                        <a v-if="isDownloadTitle(work)" :href="work.title_url" target="_self">
                           {{ work.short_title || work.title }}<template
                             v-if="work.imprint_year && !isInfopostTitle(work)"
                           >{{ " " }}<span>({{ work.imprint_year }})</span></template>
                         </a>
+                        <NuxtLink v-else :to="canonicalNuxtHref(work.title_url)">
+                          {{ work.short_title || work.title }}<template
+                            v-if="work.imprint_year && !isInfopostTitle(work)"
+                          >{{ " " }}<span>({{ work.imprint_year }})</span></template>
+                        </NuxtLink>
                       </span>
-                      <div v-if="work.containing_work" class="extras">i{{ " " }}<a
+                      <div v-if="work.containing_work" class="extras">i{{ " " }}<NuxtLink
                         class="author"
-                        :href="work.containing_work.author.url"
-                      >{{ work.containing_work.author.surname }}:</a>{{ " " }}<span
+                        :to="canonicalNuxtHref(work.containing_work.author.url)"
+                      >{{ work.containing_work.author.surname }}:</NuxtLink>{{ " " }}<span
                         class="extras_title"
                       >{{ work.containing_work.title }}</span><template
                         v-if="work.imprint_year"
@@ -157,10 +160,14 @@ function isDownloadTitle(work: AuthorWork): boolean {
             <section>
               <ul class="list-item pl-4">
                 <li v-if="hasAboutContent">
-                  <a :href="moreHref">Texter om {{ author.full_name }}</a>
+                  <NuxtLink :to="moreHref">Texter om {{ author.full_name }}</NuxtLink>
                 </li>
                 <li v-for="link in author.related_links" :key="link.url">
-                  <a :href="link.url">{{ link.label }}</a>
+                  <NuxtLink
+                    v-if="isNuxtInternalHref(link.url)"
+                    :to="canonicalNuxtHref(link.url)"
+                  >{{ link.label }}</NuxtLink>
+                  <a v-else :href="link.url">{{ link.label }}</a>
                 </li>
                 <li v-if="author.map_url">
                   <a
