@@ -1,5 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
+import { runSequentialCleanup } from "../helpers/sequential-cleanup"
+
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const contentPath = "/red/om/hjalp/hjalp.html"
 const submenu = [
@@ -66,17 +68,11 @@ test.beforeAll(async ({ baseURL, browser, request }) => {
     expect(response?.status()).toBe(200)
     expect(browserContentRequests).toEqual([])
   } finally {
-    const cleanup = await Promise.allSettled([
-      context.close(),
-      reset(request)
-    ])
-    const failures = cleanup.filter(result => result.status === "rejected")
-    if (failures.length > 0) {
-      throw new AggregateError(
-        failures.map(result => (result as PromiseRejectedResult).reason),
-        "Help cold-hydration cleanup failed"
-      )
-    }
+    await runSequentialCleanup(
+      () => context.close(),
+      () => reset(request),
+      "Help cold-hydration cleanup failed"
+    )
   }
 })
 test.beforeEach(async ({ request }) => reset(request))
