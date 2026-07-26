@@ -53,6 +53,34 @@ test("editor Reader resolves compact media aliases with legacy asset URLs and ra
   await expect(page).toHaveURL(/\/editor\/lb-editor-doktor\/ix\/1\/f$/u)
 })
 
+test("editor Reader restores multipart contributor context and mapped navigation history", async ({
+  page
+}) => {
+  await page.goto("/editor/lb-editor-boye/ix/0/f", { waitUntil: "networkidle" })
+
+  const context = page.locator("#toolkit-right .editor-reader-context")
+  await expect(context.getByRole("link", { name: "Karin Boye" }))
+    .toHaveAttribute("href", "/f%C3%B6rfattare/BoyeK")
+  await expect(context.getByRole("link", { name: "Paulina Helgeson (red.)" }))
+    .toHaveAttribute("href", "/f%C3%B6rfattare/HelgesonP")
+  await expect(context.locator(".current_part .navtitle"))
+    .toHaveText("Ett verkligt jordiskt liv. Brev")
+  await expect(context.getByRole("link", { name: "Gå till första sidan" }))
+    .toHaveAttribute("href", "/editor/lb-editor-boye/ix/2/f")
+  await expect(context.getByRole("link", { name: "Gå till nästa del" }))
+    .toHaveAttribute("href", "/editor/lb-editor-boye/ix/4/f")
+  await expect(context.getByText("Gå bakåt en del", { exact: true }))
+    .toHaveAttribute("aria-disabled", "true")
+
+  await context.getByRole("link", { name: "Gå till nästa del" }).click()
+  await expect(page).toHaveURL(/\/editor\/lb-editor-boye\/ix\/4\/f$/u)
+  await expect(context.locator(".current_part .navtitle")).toHaveText("Förord")
+  await page.goBack()
+  await expect(page).toHaveURL(/\/editor\/lb-editor-boye\/ix\/0\/f$/u)
+  await expect(context.locator(".current_part .navtitle"))
+    .toHaveText("Ett verkligt jordiskt liv. Brev")
+})
+
 test("contextual editor e-text route renders the current ordinary Reader page", async ({
   page
 }) => {

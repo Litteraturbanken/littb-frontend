@@ -57,9 +57,6 @@ const page = computed(() => loadedIdentity.value === requestIdentity.value
   ? loadedPage.value
   : null)
 const ocrMode = computed(() => route.query.ocr !== undefined && Boolean(page.value?.overlayHtml))
-const authorHref = computed(() => page.value?.authorId
-  ? `/f%C3%B6rfattare/${encodeURIComponent(page.value.authorId)}`
-  : null)
 const authorSearchHref = computed(() => page.value?.authorId
   ? `/s%C3%B6k?avancerad&forfattare=${encodeURIComponent(page.value.authorId)}`
   : null)
@@ -87,6 +84,10 @@ function rawSuffix(fullPath: string): string {
 }
 function href(pageIndex: number): string {
   return `/editor/${encodeURIComponent(workId.value)}/ix/${pageIndex}/${alias.value}${rawSuffix(rawFullPath.value)}`
+}
+function partLabel(): string {
+  const part = page.value?.currentPart
+  return part?.navTitle || part?.shortTitle || part?.title || page.value?.title || ""
 }
 function browserFullPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`
@@ -309,26 +310,28 @@ useHead(() => ({
       <Teleport to="#toolkit-right">
         <aside v-if="page" class="reader-context editor-reader-context" aria-label="Läsinformation och sidnavigering">
           <template v-if="page.metadataAvailable">
-            <div class="editor-metadata-controls"><div class="author"><NuxtLink v-if="authorHref" :to="authorHref">{{ page.authorName }}</NuxtLink><span v-else>{{ page.authorName }}</span></div><span class="title">{{ page.title }}{{ " " }}</span><span
+            <div class="editor-metadata-controls"><div class="author"><ReaderContributors :contributors="page.contributors" /></div><span class="title">{{ page.title }}{{ " " }}</span><span
               v-if="page.imprintYear"
               class="editor-imprint-year"
             >({{ page.imprintYear }})</span></div>
             <hr class="editor-metadata-controls">
             <div class="current_part editor-metadata-controls">
               <div class="header" />
-              <div><p class="navtitle" /></div>
+              <div><p class="navtitle">{{ partLabel() }}</p></div>
             </div>
             <hr class="lower editor-metadata-controls">
           </template>
           <nav class="pager_ctrls" aria-label="Sidnavigering">
-            <span class="prev_part disabled sc" aria-disabled="true">Gå bakåt en del</span>
+            <NuxtLink v-if="page.previousPartIndex !== null" custom :to="href(page.previousPartIndex)"><a class="prev_part sc" :href="href(page.previousPartIndex)" @click="navigateLink($event, href(page.previousPartIndex))">Gå bakåt en del</a></NuxtLink>
+            <span v-else class="prev_part disabled sc" aria-disabled="true">Gå bakåt en del</span>
             <br>
-            <span class="next_part disabled sc" aria-disabled="true">Gå till nästa del</span>
+            <NuxtLink v-if="page.nextPartIndex !== null" custom :to="href(page.nextPartIndex)"><a class="next_part sc" :href="href(page.nextPartIndex)" @click="navigateLink($event, href(page.nextPartIndex))">Gå till nästa del</a></NuxtLink>
+            <span v-else class="next_part disabled sc" aria-disabled="true">Gå till nästa del</span>
             <br>
-            <NuxtLink v-if="page.pageIndex > (page.pageIndexes?.[0] ?? 0)" custom :to="href(page.pageIndexes?.[0] ?? 0)"><a :href="href(page.pageIndexes?.[0] ?? 0)" @click="navigateLink($event, href(page.pageIndexes?.[0] ?? 0))">Gå till första sidan</a></NuxtLink>
+            <NuxtLink v-if="page.pageIndex !== page.firstReadableIndex" custom :to="href(page.firstReadableIndex)"><a :href="href(page.firstReadableIndex)" @click="navigateLink($event, href(page.firstReadableIndex))">Gå till första sidan</a></NuxtLink>
             <span v-else class="disabled sc" aria-disabled="true">Gå till första sidan</span>
             <br>
-            <NuxtLink v-if="page.pageCount !== null && page.pageIndex < (page.pageIndexes?.at(-1) ?? page.pageCount - 1)" custom :to="href(page.pageIndexes?.at(-1) ?? page.pageCount - 1)"><a :href="href(page.pageIndexes?.at(-1) ?? page.pageCount - 1)" @click="navigateLink($event, href(page.pageIndexes?.at(-1) ?? page.pageCount - 1))">Gå till sista sidan</a></NuxtLink>
+            <NuxtLink v-if="page.pageIndex !== page.lastReadableIndex" custom :to="href(page.lastReadableIndex)"><a :href="href(page.lastReadableIndex)" @click="navigateLink($event, href(page.lastReadableIndex))">Gå till sista sidan</a></NuxtLink>
             <span v-else class="disabled sc" aria-disabled="true">Gå till sista sidan</span>
             <br>
             <span class="goto"><span class="sc">Gå till sida . . .{{ " " }}<span
@@ -378,11 +381,19 @@ useHead(() => ({
       </Teleport>
       <template #fallback>
         <aside v-if="page" class="reader-context-ssr" aria-label="Läsinformation och sidnavigering">
-          <div v-if="page.metadataAvailable" class="editor-metadata-controls"><span>{{ page.authorName }}</span><span>{{ page.title }}<span
+          <div v-if="page.metadataAvailable" class="editor-metadata-controls"><span class="author"><ReaderContributors :contributors="page.contributors" /></span><span>{{ page.title }}<span
               v-if="page.imprintYear"
               class="editor-imprint-year"
             > ({{ page.imprintYear }})</span></span></div>
           <nav aria-label="Sidnavigering">
+            <a v-if="page.previousPartIndex !== null" :href="href(page.previousPartIndex)">Gå bakåt en del</a>
+            <span v-else aria-disabled="true">Gå bakåt en del</span>
+            <a v-if="page.nextPartIndex !== null" :href="href(page.nextPartIndex)">Gå till nästa del</a>
+            <span v-else aria-disabled="true">Gå till nästa del</span>
+            <a v-if="page.pageIndex !== page.firstReadableIndex" :href="href(page.firstReadableIndex)">Gå till första sidan</a>
+            <span v-else aria-disabled="true">Gå till första sidan</span>
+            <a v-if="page.pageIndex !== page.lastReadableIndex" :href="href(page.lastReadableIndex)">Gå till sista sidan</a>
+            <span v-else aria-disabled="true">Gå till sista sidan</span>
             <a v-if="page.previousIndex !== null" rel="prev" :href="href(page.previousIndex)">Föregående sida</a>
             <a v-if="page.nextIndex !== null" rel="next" :href="href(page.nextIndex)">Nästa sida</a>
           </nav>

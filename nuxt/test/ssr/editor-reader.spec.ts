@@ -144,7 +144,8 @@ test("SSR selects the requested representation and derives the close target from
   )
   expect(document.querySelector('input[aria-label="Gå till sida"]')?.getAttribute("max"))
     .toBe("4")
-  expect(document.querySelector('a[href*="/f%C3%B6rfattare/"]')?.getAttribute("href")).toBe(
+  expect([...document.querySelectorAll('a[href*="/f%C3%B6rfattare/"]')]
+    .find(link => link.textContent?.includes("Stäng editor"))?.getAttribute("href")).toBe(
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
   )
 })
@@ -159,4 +160,37 @@ test("SSR keeps the exact raw query spelling in editor page links", async ({ req
   expect(document.querySelector('a[rel="next"]')?.getAttribute("href")).toBe(
     "/editor/lb-editor-doktor/ix/2/f?bare&repeat=%2f&repeat=%2F"
   )
+})
+
+test("SSR exposes bounded Editor contributors, mapped readable bounds, and part navigation", async ({
+  request
+}) => {
+  const apiResponse = await request.get("/api/editor/lb-editor-boye/0/f")
+
+  expect(apiResponse.status()).toBe(200)
+  expect(await apiResponse.json()).toMatchObject({
+    contributors: [
+      { authorType: null, id: "BoyeK", name: "Karin Boye", role: null },
+      { authorType: "editor", id: "HelgesonP", name: "Paulina Helgeson", role: null }
+    ],
+    currentPart: null,
+    firstReadableIndex: 2,
+    lastReadableIndex: 8,
+    nextPartIndex: 4,
+    previousPartIndex: null,
+    searchable: true,
+    titlePath: "EttVerkligtJordiskt"
+  })
+
+  const response = await request.get("/editor/lb-editor-boye/ix/0/f")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector(".reader-context-ssr .author")?.textContent)
+    .toContain("Karin Boye")
+  expect(document.querySelector(".reader-context-ssr .author")?.textContent)
+    .toContain("Paulina Helgeson red.")
+  expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/2/f"]')
+    ?.textContent).toContain("Gå till första sidan")
+  expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/4/f"]')
+    ?.textContent).toContain("Gå till nästa del")
 })

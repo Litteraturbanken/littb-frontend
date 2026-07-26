@@ -1,4 +1,6 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
+import type { ReaderPart, ReaderPartAuthor, ReaderWorkContributor } from "#shared/types/reader"
+import { normalizeReaderAuthorContribution } from "#shared/utils/reader-author"
 import {
   fetchBoundedEditorJson,
   fetchBoundedEditorText,
@@ -71,6 +73,128 @@ function safePageCount(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0 && value <= 100_000
     ? value
     : null
+}
+
+function safeNonnegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value < 100_000
+}
+
+interface EditorMetadataPage {
+  pageName: string
+  pageIndex: number
+}
+
+function editorMetadataPages(value: unknown): EditorMetadataPage[] | null {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 100_000) return null
+  const names = new Set<string>()
+  const indexes = new Set<number>()
+  const pages: EditorMetadataPage[] = []
+  for (const raw of value) {
+    const item = record(raw)
+    const pageName = safeOptionalText(item?.pagename, 100)
+    const pageIndex = item?.pageindex
+    if (
+      !pageName || !safeNonnegativeInteger(pageIndex) || names.has(pageName) ||
+      indexes.has(pageIndex)
+    ) return null
+    names.add(pageName)
+    indexes.add(pageIndex)
+    pages.push({ pageName, pageIndex })
+  }
+  return pages.sort((left, right) => left.pageIndex - right.pageIndex)
+}
+
+function editorContributors(value: unknown): ReaderWorkContributor[] {
+  if (!Array.isArray(value) || value.length > 100) return []
+  const contributors: ReaderWorkContributor[] = []
+  for (const raw of value) {
+    const contributor = record(raw)
+    const id = safeRouteSegment(contributor?.authorid)
+    const name = safeOptionalText(contributor?.full_name)
+    if (!id || !name) continue
+    contributors.push({
+      authorType: normalizeReaderAuthorContribution(contributor?.type),
+      id,
+      name,
+      role: normalizeReaderAuthorContribution(contributor?.role)
+    })
+  }
+  return contributors
+}
+
+function editorParts(
+  value: unknown,
+  pages: readonly EditorMetadataPage[],
+  contributors: readonly ReaderWorkContributor[]
+): ReaderPart[] {
+  if (!Array.isArray(value) || value.length > 10_000) return []
+  const pageIndexes = new Map(pages.map(page => [page.pageName, page.pageIndex]))
+  const contributorNames = new Map(contributors.map(contributor => [contributor.id, contributor.name]))
+  const parts: ReaderPart[] = []
+  for (const [sourceIndex, raw] of value.entries()) {
+    const item = record(raw)
+    const startPageName = safeOptionalText(item?.startpagename, 100)
+    const endPageName = safeOptionalText(item?.endpagename, 100)
+    const title = safeOptionalText(item?.title)
+    const startPageIndex = startPageName ? pageIndexes.get(startPageName) : undefined
+    const endPageIndex = endPageName ? pageIndexes.get(endPageName) : undefined
+    if (
+      !startPageName || !endPageName || !title || startPageIndex === undefined ||
+      endPageIndex === undefined || startPageIndex > endPageIndex
+    ) continue
+    const rawAuthors = Array.isArray(item?.authors) && item.authors.length <= 100
+      ? item.authors
+      : []
+    const authors: ReaderPartAuthor[] = rawAuthors.flatMap(rawAuthor => {
+      const author = record(rawAuthor)
+      const id = safeRouteSegment(author?.authorid)
+      if (!id) return []
+      const name = contributorNames.get(id) ?? null
+      return [{ id, name, surname: name?.split(/\s+/u).at(-1) ?? null }]
+    })
+    parts.push({
+      authors,
+      endPageIndex,
+      endPageName,
+      navTitle: safeOptionalText(item?.navtitle),
+      shortTitle: safeOptionalText(item?.shorttitle),
+      sourceIndex,
+      startPageIndex,
+      startPageName,
+      title,
+      titleId: safeRouteSegment(item?.titleid)
+    })
+  }
+  return parts
+}
+
+function editorPartContext(parts: readonly ReaderPart[], pageIndex: number): {
+  currentPart: ReaderPart | null
+  nextPartIndex: number | null
+  previousPartIndex: number | null
+} {
+  const ordered = [...parts].sort((left, right) => (
+    left.startPageIndex - right.startPageIndex || left.sourceIndex - right.sourceIndex
+  ))
+  if (ordered.length === 0) {
+    return { currentPart: null, nextPartIndex: null, previousPartIndex: null }
+  }
+  const currentPosition = ordered.findLastIndex(part => (
+    part.startPageIndex <= pageIndex && pageIndex <= part.endPageIndex
+  ))
+  if (currentPosition < 0) {
+    return {
+      currentPart: null,
+      nextPartIndex: ordered.find(part => part.startPageIndex > pageIndex)?.startPageIndex ?? null,
+      previousPartIndex: ordered.findLast(part => part.endPageIndex < pageIndex)?.startPageIndex
+        ?? null
+    }
+  }
+  return {
+    currentPart: ordered[currentPosition] ?? null,
+    nextPartIndex: ordered[currentPosition + 1]?.startPageIndex ?? null,
+    previousPartIndex: ordered[currentPosition - 1]?.startPageIndex ?? null
+  }
 }
 
 function editorFacsimileUrl(workId: string, size: number, pageIndex: number): string {
@@ -248,6 +372,7 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
     // Assets remain useful to editors even when metadata is temporarily unavailable.
   }
   let pageCount = safePageCount(representation?.page_count)
+  const metadataPages = editorMetadataPages(representation?.pages)
   const sparsePages = pageCount === null ? parseEditorPageIndexes(representation?.pages) : null
   pageCount ??= sparsePages?.pageCount ?? null
   if (pageCount === null) {
@@ -261,6 +386,9 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
     } catch { sourceError() }
     if (pageCount === null) sourceError()
   }
+  const readablePages = metadataPages?.every(page => page.pageIndex < pageCount)
+    ? metadataPages
+    : null
   if (pageCount !== null && pageIndex >= pageCount) {
     throw createError({ statusCode: 404, statusMessage: "Editor page not found" })
   }
@@ -269,17 +397,33 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
     throw createError({ statusCode: 404, statusMessage: "Editor page not found" })
   }
   const title = safeOptionalText(representation?.shorttitle)
+  const titlePath = safeRouteSegment(representation?.titlepath)
+  const searchable = representation?.searchable === true
   const imprint = record(representation?.sort_date_imprint)
   const imprintYear = safeOptionalText(imprint?.plain, 100)
     ?? safeOptionalText(representation?.imprintyear, 100)
-  const pageName = safeOptionalText(representation?.pagename, 100)
+  const pageName = readablePages?.find(page => page.pageIndex === pageIndex)?.pageName
+    ?? safeOptionalText(representation?.pagename, 100)
   const endPageName = safeOptionalText(representation?.endpagename, 100)
-  const authors = Array.isArray(representation?.authors) ? representation.authors : []
-  const author = record(authors[0])
-  const authorId = safeRouteSegment(author?.authorid)
-  const authorName = author
-    ? safeOptionalText(author.full_name)
-    : null
+  const authors = Array.isArray(representation?.work_authors)
+    ? representation.work_authors
+    : representation?.authors
+  const contributors = editorContributors(authors)
+  const authorId = contributors[0]?.id ?? null
+  const authorName = contributors[0]?.name ?? null
+  const parts = editorParts(representation?.parts, readablePages ?? [], contributors)
+  const { currentPart, nextPartIndex, previousPartIndex } = editorPartContext(parts, pageIndex)
+  const namedStartIndex = readablePages?.find(
+    page => page.pageName === safeOptionalText(representation?.startpagename, 100)
+  )?.pageIndex
+  const namedEndIndex = readablePages?.find(
+    page => page.pageName === safeOptionalText(representation?.endpagename, 100)
+  )?.pageIndex
+  const firstReadableIndex = namedStartIndex ?? readablePages?.[0]?.pageIndex
+    ?? sparsePages?.indexes[0] ?? 0
+  const lastReadableIndex = namedEndIndex ?? readablePages?.at(-1)?.pageIndex
+    ?? sparsePages?.indexes.at(-1)
+    ?? (pageCount !== null ? pageCount - 1 : pageIndex)
   const closeHref = (
     Array.isArray(representation?.mediatypes) &&
     representation.mediatypes[0] && typeof representation.mediatypes[0] === "object"
@@ -332,17 +476,20 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   const sanitizedHtml = html === null ? null : sanitizeEditorEtextHtml(html)
   if (html !== null && sanitizedHtml === null) sourceError()
   return {
-    authorId, authorName, closeHref, endPageName, facsimileSources, html: sanitizedHtml, imageWidth,
+    authorId, authorName, closeHref, contributors, currentPart, endPageName, facsimileSources,
+    firstReadableIndex, html: sanitizedHtml, imageWidth,
     imageUrl, imprintYear,
+    lastReadableIndex,
     mediaType, metadataAvailable: representation !== null,
     nextIndex: sparsePages
       ? sparsePages.indexes[sparsePosition + 1] ?? null
       : pageCount !== null && pageIndex + 1 < pageCount ? pageIndex + 1 : null,
-    overlayHeight, overlayHtml, overlayWidth,
-    pageCount, pageIndex, pageIndexes: sparsePages?.indexes ?? null, pageName,
+    nextPartIndex, overlayHeight, overlayHtml, overlayWidth,
+    pageCount, pageIndex, pageIndexes: sparsePages?.indexes ?? null, pageName, parts,
+    previousPartIndex,
     previousIndex: sparsePages
       ? sparsePages.indexes[sparsePosition - 1] ?? null
       : pageIndex > 0 ? pageIndex - 1 : null,
-    title, workId
+    searchable, title, titlePath, workId
   } satisfies EditorReaderPage
 })
