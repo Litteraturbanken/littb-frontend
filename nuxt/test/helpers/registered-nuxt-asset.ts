@@ -4,6 +4,7 @@ const viteVersion = /^[a-f0-9]{8}$/u
 const maximumPathDecodes = 4
 
 function hasSafeNuxtAssetPath(pathname: string): boolean {
+  if (!pathname.startsWith("/_nuxt/")) return false
   let decoded = pathname
   for (let depth = 0; depth < maximumPathDecodes; depth += 1) {
     let next: string

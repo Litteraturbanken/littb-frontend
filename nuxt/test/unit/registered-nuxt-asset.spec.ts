@@ -42,6 +42,22 @@ describe("registered Nuxt visual-test assets", () => {
     ), origin)).toBe(true)
   })
 
+  test("requires the original pathname to contain the literal Nuxt asset prefix", () => {
+    expect(isSameOriginRegisteredNuxtAsset(
+      new URL("/_nuxt/app.js", origin),
+      origin
+    )).toBe(true)
+    for (const path of [
+      "/%5fnuxt/app.js",
+      "/%5Fnuxt/app.js",
+      "/%255fnuxt/app.js",
+      "/_%6euxt/app.js",
+      "/%2f_nuxt/app.js"
+    ]) {
+      expect(isSameOriginRegisteredNuxtAsset(new URL(path, origin), origin), path).toBe(false)
+    }
+  })
+
   test.each([
     "/_nuxt/../private?" + "t=1785071874909&v=40bb0872",
     "/_nuxt/%2e%2e/private?" + "t=1785071874909&v=40bb0872",

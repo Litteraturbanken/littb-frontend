@@ -169,3 +169,8 @@ The follow-up review found two test-boundary gaps, both now covered:
 Fresh follow-up verification: 25 focused unit tests, three source-info navigation
 behavior cases, eight source-info visual cases, and two standalone EPUB visual cases
 passed; Nuxt typechecking and `git diff --check` also completed successfully.
+
+Final boundary review also requires the original, undecoded pathname to begin with the
+literal `/_nuxt/` prefix. Encoded underscore/name/prefix variants remain rejected even
+when recursive decoding would otherwise turn them into that trusted prefix. The final
+focused unit count is 26; the same three behavior and ten visual cases remain green.
