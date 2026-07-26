@@ -35,6 +35,7 @@ test("Home renders the exact legacy shell and parsed editorial content during SS
   ]) expect(html).toContain(marker)
   expect(html).toContain('href="/bibliotek?filter=uppsala&visa=latest&sort=nytillkommet"')
   expect(html).toContain('href="/författare/WernerFE/titlar/UpsalaDomkyrka/sida/VII/faksimil"')
+  expect(html).toContain('href="/s%C3%B6k"')
   expect(html).not.toContain("data-ng-href")
   expect(html).not.toContain("bkg-img")
   expect(html).not.toContain("</img>")

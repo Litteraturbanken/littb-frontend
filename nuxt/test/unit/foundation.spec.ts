@@ -83,10 +83,52 @@ describe("standalone Nuxt foundation", () => {
       "/om/tack",
       "/om/statistik",
       "/om/kontakt"
-    ]) expect(shell).toContain(`href="${href}"`)
+    ]) expect(shell).toContain(`to="${href}"`)
 
     expect(statistics).toContain('import AboutPageShell from "../../components/about/AboutPageShell.vue"')
     expect(statistics).toContain('<AboutPageShell active-page="statistik">')
     expect(statistics).not.toContain('<ul class="links">')
+  })
+
+  test("Dramawebben shell uses Nuxt navigation for every internal destination", async () => {
+    const shell = await readFile(
+      resolve(nuxtRoot, "app/components/dramawebben/DramawebbenShell.vue"),
+      "utf8"
+    )
+
+    expect(shell.match(/<NuxtLink\b/gu)).toHaveLength(6)
+    expect(shell).not.toMatch(/<a\b[^>]*\bhref=["']\//u)
+    expect(shell).toContain('to="/s%C3%B6k?avancerad&amp;keywords=keyword:Dramawebben"')
+  })
+
+  test("authored low-level navigation stays inside the Nuxt router", async () => {
+    const [quickSearch, plays, idLookup] = await Promise.all([
+      readFile(resolve(nuxtRoot, "app/components/global/QuickSearch.vue"), "utf8"),
+      readFile(resolve(nuxtRoot, "app/pages/dramawebben/pjäser.vue"), "utf8"),
+      readFile(resolve(nuxtRoot, "app/pages/id/[[id]].vue"), "utf8")
+    ])
+
+    expect(quickSearch).toContain('<NuxtLink class="sc" to="/bibliotek" @click="close">')
+    expect(quickSearch).not.toContain("goToLibrary")
+    expect(plays).toContain('<NuxtLink to="/bibliotek?keywords=texttype:drama;dramasamling&amp;visa=works&amp;sort=titlar">Biblioteket</NuxtLink>')
+    expect(idLookup.match(/<NuxtLink\b/gu)).toHaveLength(3)
+    expect(idLookup.match(/v-if="isNuxtInternalHref\((?:item|media)\.[^)]+\)"/gu)).toHaveLength(3)
+    expect(idLookup.match(/<a v-else :href="(?:item|media)\.[^"]+"/gu)).toHaveLength(3)
+  })
+
+  test("author components reserve native anchors for downloads and external handoffs", async () => {
+    const [profile, works] = await Promise.all([
+      readFile(resolve(nuxtRoot, "app/components/author/AuthorProfileContent.vue"), "utf8"),
+      readFile(resolve(nuxtRoot, "app/components/author/AuthorWorksContent.vue"), "utf8")
+    ])
+
+    for (const source of [profile, works]) {
+      expect(source).toContain("canonicalNuxtHref")
+      expect(source).toContain("isNuxtInternalHref")
+    }
+    expect(profile).not.toMatch(/<a\b[^>]*:href="(?:rootHref|titlesHref|dramawebbenHref|profile\.searchUrl)"/u)
+    expect(works).not.toMatch(/<a\b[^>]*:href="(?:rootHref|titlesHref|dramawebbenHref|author\.search_url|moreHref)"/u)
+    expect(works).toContain("v-if=\"action.kind === 'download'\"")
+    expect(works).toContain("v-else :to=\"canonicalNuxtHref(action.url)\"")
   })
 })
