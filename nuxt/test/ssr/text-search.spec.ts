@@ -102,6 +102,9 @@ test("direct result SSR returns the loading shell without starting expensive sea
     .toBe("frihet")
   expect(document.querySelector(".submit_form .spinner")).not.toBeNull()
   expect(document.querySelector("#results table.results")).toBeNull()
+  const globalSearchLink = [...document.querySelectorAll<HTMLAnchorElement>(".mainnav a")]
+    .find(link => compactText(link.textContent) === "Sök i texterna")
+  expect(globalSearchLink?.getAttribute("href")).toBe("/s%C3%B6k?fras=frihet")
   expect(document.querySelector("[data-search-error]")).toBeNull()
   expect(await requests(request, "results")).toEqual([])
   expect(await requests(request, "count")).toEqual([])

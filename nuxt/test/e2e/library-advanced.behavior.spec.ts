@@ -120,6 +120,9 @@ test("multi facets and chronology compose exact safe predicates and commit once 
     input.dispatchEvent(new Event("input", { bubbles: true }))
     input.dispatchEvent(new Event("change", { bubbles: true }))
   })
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1900,2026")
+  await expect.poll(async () => (await relevanceQueries(request)).length).toBe(5)
   await ranges.nth(1).evaluate((input: HTMLInputElement) => {
     input.value = "1910"
     input.dispatchEvent(new Event("input", { bubbles: true }))
@@ -131,7 +134,7 @@ test("multi facets and chronology compose exact safe predicates and commit once 
   expect(params.getAll("keep")).toEqual(["", "ja"])
   expect(params.has("sida")).toBe(false)
 
-  await expect.poll(async () => (await relevanceQueries(request)).length).toBe(5)
+  await expect.poll(async () => (await relevanceQueries(request)).length).toBe(6)
   expect((await relevanceQueries(request)).at(-1)?.query.q).toBe(
     "(sort_date_imprint.date:[1900 TO 1910] OR birth.date:[1900 TO 1910] OR death.date:[1900 TO 1910]) AND " +
     "(language:swe OR proofread:false) AND (mediatype:etext OR has_epub:true)"

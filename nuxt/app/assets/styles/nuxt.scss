@@ -66,6 +66,14 @@
     }
 }
 
+.modal.reader-dictionary-modal {
+    display: block;
+
+    > .modal-dialog {
+        z-index: 1050;
+    }
+}
+
 .page-id {
     td:last-of-type > span::before,
     td:last-of-type > span::after {
@@ -113,15 +121,11 @@
     position: relative;
     vertical-align: middle;
 
-    &:has(.multiselect--active) {
-        z-index: 1050;
-    }
-
     .multiselect.select2-selection--multiple {
         box-sizing: border-box;
-        min-height: 30px;
-        border: 0 !important;
-        background: transparent;
+        min-height: 32px;
+        border: 1px solid lightgrey !important;
+        background: white;
         color: #444;
         font-family: "Requiem Text SC A", "Requiem Text SC B";
         font-size: 0.8rem;
@@ -136,35 +140,14 @@
     }
 
     .multiselect__tags-wrap {
-        display: flex;
-        flex-wrap: wrap;
-        min-height: 30px;
+        display: inline;
     }
 
     .select2-selection__choice {
-        display: inline-flex;
-        align-items: baseline;
+        float: left;
         padding: 0 5px;
-        margin-top: 5px;
+        margin-top: 6px;
         border: 1px solid #aaa;
-        font-size: 13.6px !important;
-        line-height: 16.32px;
-    }
-
-    .multiselect__input,
-    .search-multiselect__input-row {
-        box-sizing: border-box;
-        display: block;
-        position: relative !important;
-        width: 350px !important;
-        min-width: 200px;
-        min-height: 28px;
-        padding: 5px 5px 5px 10px;
-        margin: 0;
-        border: 1px solid lightgrey;
-        border-radius: 0;
-        background: white;
-        font: inherit;
     }
 
     .multiselect__placeholder {
@@ -176,15 +159,6 @@
         line-height: 19px;
     }
 
-    .multiselect__placeholder:not(.search-multiselect__input-row) {
-        display: none;
-    }
-
-    .search-multiselect__input-row {
-        min-height: 28px;
-        padding: 3px 24px 4px 10px;
-    }
-
     .multiselect.select2-selection--multiple::after {
         display: none;
     }
@@ -192,8 +166,7 @@
     .select2-selection__arrow.multiselect__select {
         position: absolute;
         z-index: 1;
-        top: auto;
-        bottom: 1px;
+        top: 1px;
         right: 1px;
         width: 20px;
         height: 26px;
@@ -254,21 +227,191 @@
     }
 }
 
+[data-library-advanced-panel] .filter_select .multiselect__input {
+    display: block;
+    width: 350px !important;
+    min-width: 200px;
+    min-height: 28px;
+    padding: 5px 5px 5px 10px;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: white;
+    font: inherit;
+}
+
 .page-search .filter_select {
     margin-bottom: 9px;
+
+    &:has(.multiselect--active) {
+        z-index: 1050;
+    }
+
+    .multiselect.select2-selection--multiple {
+        min-height: 30px;
+        border: 0 !important;
+        background: transparent;
+    }
+
+    .multiselect__tags-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        min-height: 30px;
+    }
+
+    .select2-selection__choice {
+        box-sizing: border-box;
+        display: list-item;
+        float: none;
+        height: 19.9375px;
+        list-style: none;
+        margin-top: 6px;
+        font-size: 13.6px !important;
+        line-height: 16.32px;
+    }
+
+    .select2-selection__choice__remove {
+        appearance: none;
+        display: inline-block;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: transparent !important;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        height: 17.9375px;
+        line-height: inherit;
+        margin-right: -5px;
+        vertical-align: baseline;
+        width: 20.171875px;
+
+        &::before {
+            color: #666;
+            content: "☒";
+            font-size: 1.1em;
+            vertical-align: baseline;
+        }
+    }
+
+    .multiselect__input,
+    .search-multiselect__input-row {
+        box-sizing: border-box;
+        display: block;
+        position: relative !important;
+        width: 350px !important;
+        min-width: 200px;
+        min-height: 28px;
+        padding: 5px 5px 5px 10px;
+        margin: 0;
+        border: 1px solid lightgrey;
+        border-radius: 0;
+        background: white;
+        font-family: "Requiem Text SC A", "Requiem Text SC B";
+        font-size: 13.6px;
+        line-height: 16.32px;
+        text-transform: lowercase;
+        vertical-align: baseline;
+    }
+
+    .multiselect__input::placeholder {
+        color: #999;
+        opacity: 1;
+    }
+
+    .multiselect__placeholder:not(.search-multiselect__input-row) {
+        display: none;
+    }
+
+    .search-multiselect__input-row {
+        top: -0.0625px;
+        pointer-events: none;
+    }
+
+    &.title_select input.multiselect__input {
+        appearance: textfield;
+        height: 28.3125px;
+        padding: 5px 5px 5px 10px !important;
+        margin-bottom: -0.3125px;
+        transform: translateY(-0.0625px);
+    }
+
+    .multiselect:has(.multiselect__tags-wrap) .multiselect__select {
+        &::before,
+        b {
+            display: none;
+        }
+    }
+
+    .select2-selection__arrow.multiselect__select {
+        top: auto;
+        bottom: 1px;
+    }
 }
 
 .page-search #mainview .bottom_row {
-    padding-bottom: 2px;
+    padding-bottom: 1.328125px;
 
     > .left > :first-child .filter_select,
     > .right > :first-child .filter_select {
         transform: translateY(-1px);
+        margin-bottom: 8.328125px;
+    }
+
+    > .left > :nth-child(2) .filter_select {
+        margin-bottom: 9.640625px;
+    }
+
+    > .right > .mb-1 {
+        margin-top: 1.328125px;
     }
 }
 
 @media (max-width: 767px) {
-    .page-search #mainview .bottom_row {
-        padding-bottom: 3px;
+    .page-search .filter_select {
+        margin-bottom: 8px;
     }
+
+    .page-search #mainview .bottom_row {
+        margin-bottom: calc(2em + 0.21875px) !important;
+        padding-bottom: 0;
+
+        > .left > :not(:first-child) .select2-selection__choice,
+        > .right > :not(:first-child) .select2-selection__choice {
+            margin-top: 5px;
+        }
+
+        > .left > :not(:first-child) .multiselect__input,
+        > .right > :not(:first-child) .multiselect__input {
+            transform: translateY(-1px);
+        }
+
+        > .left > .title_select_container .title_select .multiselect__input {
+            padding-top: 4px !important;
+            padding-bottom: 6px !important;
+            transform: translateY(-1.0625px);
+        }
+
+        > .left > .auth_select_container {
+            padding-bottom: 1.390625px;
+        }
+
+        > .left > .title_select_container {
+            margin-bottom: 20.390625px;
+        }
+
+        > .left > .lang_select_container {
+            padding-bottom: 1.328125px;
+        }
+
+        > .right > .about_select_container {
+            padding-bottom: 1px;
+        }
+    }
+
+    .page-search [data-search-root].advanced #results {
+        position: relative;
+        top: 0.21875px;
+    }
+
 }

@@ -195,6 +195,9 @@ async function expectSearchReady(page: Page, visualCase: VisualCase) {
     .toBeVisible()
   await expect(page.locator(".preloader")).toBeHidden()
   await expect(page.locator("search-page > div")).not.toHaveClass(/\bsearching\b/)
+  // Capture the settled Angular authority, not the transient frame where result
+  // markup has landed but ng-show has not hidden the top-row activity indicator.
+  await expect(page.locator(".submit_form .top_row .spinner")).toBeHidden()
   await expect(page.locator(".chronology_inputs input").first()).toHaveValue(
     visualCase.advanced ? "1879" : "1800"
   )

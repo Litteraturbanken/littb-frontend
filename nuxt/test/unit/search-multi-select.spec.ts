@@ -58,7 +58,8 @@ describe("SearchMultiSelect grouped normalization", () => {
         h(SearchMultiSelect, {
           modelValue: ["alpha"],
           options,
-          placeholder: "Författarskap"
+          placeholder: "Författarskap",
+          persistentInputRow: true
         }),
         h(SearchMultiSelect, {
           modelValue: ["alpha"],
@@ -76,7 +77,7 @@ describe("SearchMultiSelect grouped normalization", () => {
     const fixedTags = fixed!.querySelector(".multiselect__tags-wrap")
     const fixedRow = fixed!.querySelector(".search-multiselect__input-row")
     expect(fixedTags?.textContent).toContain("Alfa")
-    expect(fixedRow?.textContent?.trim()).toBe("Författarskap")
+    expect((fixedRow as HTMLInputElement | null)?.placeholder).toBe("Författarskap")
     expect([...fixedTags!.parentElement!.children].indexOf(fixedTags!))
       .toBeLessThan([...fixedRow!.parentElement!.children].indexOf(fixedRow!))
 

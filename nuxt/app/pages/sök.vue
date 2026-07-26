@@ -9,6 +9,7 @@ import {
   acceptTextSearchCountResponse,
   acceptTextSearchOptionsResponse,
   acceptTextSearchResultsResponse,
+  attachTextSearchReturnHref,
   buildTextSearchCountRequest,
   buildTextSearchOptionsRequest,
   buildTextSearchReaderHref,
@@ -130,6 +131,7 @@ const categoryOptions = [
 const route = useRoute()
 const router = useRouter()
 const config = useRuntimeConfig()
+const requestUrl = useRequestURL()
 const requestFetch = useRequestFetch()
 const contextualFetch = requestFetch as unknown as {
   (
@@ -188,6 +190,32 @@ const client = createLbApiClient(
 )
 const rawQuery = computed(() => route.query as unknown as TextSearchRouteQuery)
 const state = computed(() => parseTextSearchRouteQuery(rawQuery.value))
+const initialSearchFullPath = useState(
+  `text-search-initial-full-path:${route.path}`,
+  () => `${requestUrl.pathname}${requestUrl.search}`
+)
+const clientSearchFullPath = ref<string | null>(null)
+const { rememberTextSearchHref } = useTextSearchNavigation()
+rememberTextSearchHref(import.meta.client
+  ? `${window.location.pathname}${window.location.search}`
+  : initialSearchFullPath.value)
+
+function currentSearchFullPath(): string {
+  if (import.meta.client && clientSearchFullPath.value !== null) return clientSearchFullPath.value
+  return initialSearchFullPath.value
+}
+
+function readerHrefWithReturn(href: string | undefined): string | undefined {
+  return href === undefined ? undefined : attachTextSearchReturnHref(href, currentSearchFullPath())
+}
+
+watch(() => route.fullPath, () => {
+  if (import.meta.client) {
+    clientSearchFullPath.value = `${window.location.pathname}${window.location.search}`
+    rememberTextSearchHref(clientSearchFullPath.value)
+  }
+}, { flush: "sync" })
+
 const routeIdentity = computed(() => textSearchRouteIdentity(state.value))
 const primaryIdentity = computed(() => state.value.phrase
   ? textSearchResultsRequestIdentity(buildTextSearchResultsRequest(state.value))
@@ -1030,6 +1058,8 @@ useHead({
             data-search-advanced
             class="bg-white border border-gray-500 self-stretch w-14 focus:ring-1 focus:ring-inset focus:ring-primary"
             :title="state.advanced ? 'Enkel sökning' : 'Utökad sökning'"
+            :aria-expanded="state.advanced"
+            aria-controls="text-search-advanced-panel"
             @click="toggleAdvanced"
           >
             <svg
@@ -1151,11 +1181,12 @@ useHead({
         </div>
       </div>
 
-      <div v-if="state.advanced" class="bottom_row">
+      <div v-if="state.advanced" id="text-search-advanced-panel" class="bottom_row">
         <div class="left">
           <div class="auth_select_container">
             <SearchMultiSelect
               class="author_select"
+              persistent-input-row
               :model-value="state.authorIds"
               :options="authorChoices"
               placeholder="Författarskap"
@@ -1175,6 +1206,7 @@ useHead({
             </div>
             <SearchMultiSelect
               class="title_select"
+              persistent-input-row
               :model-value="state.workIds"
               :options="titleChoices"
               placeholder="Titlar"
@@ -1187,6 +1219,7 @@ useHead({
           <div class="lang_select_container">
             <SearchMultiSelect
               class="lang_select"
+              persistent-input-row
               :model-value="state.languages"
               :options="languageChoices"
               placeholder="Språk …"
@@ -1200,6 +1233,7 @@ useHead({
           <div class="about_select_container">
             <SearchMultiSelect
               class="about_select"
+              persistent-input-row
               :model-value="state.aboutAuthorIds"
               :options="aboutAuthorChoices"
               placeholder="Om ett författarskap"
@@ -1209,6 +1243,7 @@ useHead({
           <div class="title_select_container">
             <SearchMultiSelect
               class="keyword_select"
+              persistent-input-row
               :model-value="state.categories"
               :options="categoryChoices"
               placeholder="Filtrera: Kategorier / Utgivare"
@@ -1286,7 +1321,7 @@ useHead({
                   <div class="header_content" :title="row.work.title">
                     <span class="author">{{ row.work.authorName }}</span>{{ " " }}
                     <span class="title">
-                      <a :href="visibleHits(row.work)[0]?.href">{{ row.work.title }}</a>
+                      <NuxtLink :to="readerHrefWithReturn(visibleHits(row.work)[0]?.href)">{{ row.work.title }}</NuxtLink>
                     </span>
                   </div>
                 </td>
@@ -1302,7 +1337,7 @@ useHead({
                 </td>
                 <td class="match w-px whitespace-nowrap">
                   <span v-for="(word, wordIndex) in row.hit.match" :key="wordIndex">
-                    <a :href="row.hit.href" class="word" :class="{ punct: word.punct }">{{ word.text }}</a>
+                    <NuxtLink :to="readerHrefWithReturn(row.hit.href)" class="word" :class="{ punct: word.punct }">{{ word.text }}</NuxtLink>
                   </span>
                 </td>
                 <td class="right_context">
@@ -1516,7 +1551,7 @@ useHead({
   width: 100%;
   height: 28px;
   padding: 0 0 0 10px;
-  border: 0;
+  border: 1px solid lightgrey;
   border-radius: 0;
   background: white;
   color: #444;

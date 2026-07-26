@@ -4,6 +4,7 @@ import {
   acceptTextSearchCountResponse,
   acceptTextSearchOptionsResponse,
   acceptTextSearchResultsResponse,
+  attachTextSearchReturnHref,
   buildTextSearchCountRequest,
   buildTextSearchOptionsRequest,
   buildTextSearchReaderHref,
@@ -12,6 +13,7 @@ import {
   compactTextSearchRightContext,
   isTextSearchPunctuation,
   parseTextSearchRouteQuery,
+  parseTextSearchReturnHref,
   prepareTextSearchHighlight,
   resetTextSearchQuery,
   serializeTextSearchRouteState,
@@ -53,6 +55,57 @@ function optionsResponse() {
     about_authors: [], year_from: 1850, year_to: 1950
   }
 }
+
+describe("text search return href", () => {
+  const reader = "/författare/A/titlar/T/sida/1/etext?q=frihet&hit=0"
+  const origin = "/s%C3%B6k?fras=frihet&traffsida=2&utm=a+b&repeat=%2f&repeat=%2F"
+
+  test("attaches and parses the exact validated Search origin", () => {
+    const attached = attachTextSearchReturnHref(reader, origin)
+
+    expect(parseTextSearchReturnHref(
+      Object.fromEntries(new URL(attached, "https://x").searchParams)
+    )).toBe(origin)
+  })
+
+  test("accepts and preserves alternate raw encodings of the decoded Search path", () => {
+    for (const encodedOrigin of [
+      "/s%c3%b6k?fras=frihet",
+      "/%73%C3%B6k?fras=frihet"
+    ]) {
+      const attached = attachTextSearchReturnHref(reader, encodedOrigin)
+      expect(new URL(attached, "https://x").searchParams.get("s_return"))
+        .toBe(encodedOrigin)
+      expect(parseTextSearchReturnHref({ s_return: encodedOrigin })).toBe(encodedOrigin)
+    }
+  })
+
+  test("rejects unsafe origins and leaves invalid attachments unchanged", () => {
+    const invalidOrigins = [
+      "https://example.test/s%C3%B6k?fras=frihet",
+      "//example.test/s%C3%B6k?fras=frihet",
+      "/bibliotek?fras=frihet",
+      "/s%C3%B6k?fras=frihet#fragment",
+      "/s%C3%B6k?fras=bad\\path",
+      "/s%C3%B6k?fras=frihet\u0000",
+      "/s%C3%B6k?fras=%E0%A4%A",
+      "/s%C3%B6k",
+      "/s%C3%B6k?fras=",
+      `/s%C3%B6k?fras=${"x".repeat(201)}`,
+      "/s%C3%B6k?fras=frihet&fras=igen",
+      "/s%C3%B6k?fras=frihet&s_return=%2Fs%C3%B6k%3Ffras%3Dfrihet",
+      `/s%C3%B6k?fras=frihet&x=${"x".repeat(8_200)}`
+    ]
+
+    for (const origin of invalidOrigins) {
+      expect(attachTextSearchReturnHref(reader, origin)).toBe(reader)
+      expect(parseTextSearchReturnHref({ s_return: origin })).toBeNull()
+    }
+    expect(attachTextSearchReturnHref("https://x/reader", origin)).toBe("https://x/reader")
+    expect(parseTextSearchReturnHref({ s_return: [origin] })).toBeNull()
+    expect(parseTextSearchReturnHref({ s_return: "" })).toBeNull()
+  })
+})
 
 describe("text search route state", () => {
   test("parses, bounds, deduplicates, and independently resets malformed route fields", () => {

@@ -217,9 +217,14 @@ test("advanced mode does not refetch an unchanged primary search", async ({ page
   await page.waitForTimeout(100)
   const initialCountRequests = (await requests(request, "count")).length
 
-  await page.locator("[data-search-advanced]").click()
-  await expect(page.locator(".bottom_row")).toBeVisible()
-  await page.locator("[data-search-advanced]").click()
+  const disclosure = page.locator("[data-search-advanced]")
+  await expect(disclosure).toHaveAttribute("aria-expanded", "false")
+  await expect(disclosure).toHaveAttribute("aria-controls", "text-search-advanced-panel")
+  await disclosure.click()
+  await expect(disclosure).toHaveAttribute("aria-expanded", "true")
+  await expect(page.locator("#text-search-advanced-panel.bottom_row")).toBeVisible()
+  await disclosure.click()
+  await expect(disclosure).toHaveAttribute("aria-expanded", "false")
   await expect(page.locator(".bottom_row")).toHaveCount(0)
   await page.waitForTimeout(100)
 
@@ -776,14 +781,33 @@ test("primary, options, and more errors remain local and recover on retry", asyn
   await expect(page.getByRole("option", { name: /Lagerlöf, Selma/ })).toHaveCount(1)
   await page.keyboard.press("Escape")
 
+  const overflowPrimaryResponse = page.waitForResponse(response => {
+    if (response.request().method() !== "POST"
+      || new URL(response.url()).pathname !== "/api/v2/text-search/results") return false
+    const body = response.request().postDataJSON()
+    return body.query === "overflow" && body.highlight_limit === 5 && !body.work_ids
+  })
   await submitPhrase(page, "overflow")
+  expect((await overflowPrimaryResponse).status()).toBe(200)
   await request.put(`${fixture}/_text_search/failures`, { data: { operation: "results" } })
-  await page.locator("#results .overflow .more").last()
-    .evaluate((button: HTMLButtonElement) => button.click())
+  const more = page.locator("#results .overflow .more").last()
+  const failedMoreResponse = page.waitForResponse(response =>
+    response.request().method() === "POST"
+    && new URL(response.url()).pathname === "/api/v2/text-search/results"
+    && response.request().postDataJSON().highlight_limit === 100
+  )
+  await more.evaluate((button: HTMLButtonElement) => button.click())
+  expect((await failedMoreResponse).status()).toBe(503)
+  await expect(more).not.toHaveAttribute("aria-disabled", "true")
   await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(1)
   await request.delete(`${fixture}/_text_search/failures/results`)
-  await page.locator("#results .overflow .more").last()
-    .evaluate((button: HTMLButtonElement) => button.click())
+  const recoveredMoreResponse = page.waitForResponse(response =>
+    response.request().method() === "POST"
+    && new URL(response.url()).pathname === "/api/v2/text-search/results"
+    && response.request().postDataJSON().highlight_limit === 100
+  )
+  await more.evaluate((button: HTMLButtonElement) => button.click())
+  expect((await recoveredMoreResponse).status()).toBe(200)
   await expect(page.locator("tr.is_faksimil.sentence .match")).toHaveCount(2)
 })
 
@@ -878,7 +902,32 @@ test("SSR hydration is single-fetch and Reader hit destination is navigable", as
   const response = await page.goto(href!, { waitUntil: "domcontentloaded" })
   expect(response?.status()).toBe(200)
   await expect(page.locator("body")).toHaveClass(/page-reading/)
+  await expect(page.locator("#w1_11.markee")).toHaveCount(1)
   expect(problems).toEqual([])
+})
+
+test("Search result return restores the exact origin and Reader hit", async ({ page }) => {
+  const origin = "/s%C3%B6k?fras=frihet&traffsida=2&avancerad=1&forfattare=StrindbergA&utm=a+b&repeat=%2f&repeat=%2F"
+  await openSearch(page, origin)
+  const readerHref = await page.locator("#results .match a").first().getAttribute("href")
+  expect(readerHref).not.toBeNull()
+  await page.goto(readerHref!, { waitUntil: "networkidle" })
+
+  const back = page.locator("#search_nav").getByRole("link", {
+    name: "Tillbaka till sökningen"
+  })
+  await expect(back).toHaveAttribute("href", origin)
+  await back.click()
+  await expect(page).toHaveURL(origin)
+  await expect(page.locator("#results .match a").first()).toBeVisible()
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida 1")
+  await expect(page).toHaveURL(/q=frihet&hit=0&traff=w1_11/)
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav").getByRole("link", {
+    name: "Tillbaka till sökningen"
+  })).toHaveAttribute("href", origin)
 })
 
 test("completed searches hide the top-row activity indicator", async ({ page }) => {
@@ -903,4 +952,30 @@ test("search head, body, background, and toolkit state clean up after client nav
   await expect(page.locator("html")).not.toHaveCSS("background-image", /sok_bkg\.jpg/)
   await expect(page.locator("#toolkit .littb_pager")).toHaveCount(0)
   await expect(page).not.toHaveTitle(/Sök:/)
+})
+
+test("global search navigation remembers the exact query across pages and Back", async ({ page }) => {
+  const origin = "/s%C3%B6k?utm=keep&fras=frihet&avancerad=1"
+  await openSearch(page, origin)
+  await page.evaluate(() => { (window as typeof window & { __spaSentinel?: string }).__spaSentinel = "search-spa" })
+
+  await page.locator(".mainnav").getByRole("link", { name: "Om LB", exact: true }).click()
+  await expect(page).toHaveURL("/om/ide")
+  const searchLink = page.locator(".mainnav").getByRole("link", {
+    name: "Sök i texterna",
+    exact: true
+  })
+  await expect(searchLink).toHaveAttribute("href", origin)
+
+  await searchLink.click()
+  await expect(page).toHaveURL(origin)
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("search-spa")
+
+  await page.goBack()
+  await expect(page).toHaveURL("/om/ide")
+  await page.goBack()
+  await expect(page).toHaveURL(origin)
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("search-spa")
 })

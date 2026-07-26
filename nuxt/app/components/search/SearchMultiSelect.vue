@@ -34,10 +34,12 @@ const props = withDefaults(defineProps<{
   searchable?: boolean
   loading?: boolean
   spaceAfterRemove?: boolean
+  persistentInputRow?: boolean
 }>(), {
   searchable: false,
   loading: false,
-  spaceAfterRemove: true
+  spaceAfterRemove: true,
+  persistentInputRow: false
 })
 
 const emit = defineEmits<{
@@ -147,15 +149,18 @@ onMounted(() => {
               :aria-label="`Ta bort ${selectedLabel(option)}`"
               @mousedown.prevent.stop
               @click.prevent.stop="remove(option)"
-            >
-              ×
-            </button>{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}
+            >{{ "×" }}</button>{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}
           </span>
         </div>
-        <span
-          v-if="!searchable"
-          class="multiselect__placeholder search-multiselect__input-row"
-        >{{ placeholder }}</span>
+        <input
+          v-if="persistentInputRow && !searchable"
+          class="multiselect__input search-multiselect__input-row"
+          type="search"
+          :placeholder="placeholder"
+          readonly
+          tabindex="-1"
+          aria-hidden="true"
+        >
       </template>
 
       <template #option="{ option }">
