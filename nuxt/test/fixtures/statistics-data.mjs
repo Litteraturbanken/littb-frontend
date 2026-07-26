@@ -19,7 +19,7 @@ function workAt(rank) {
       title_path: "DoktorGlas",
       title: "Doktor Glas",
       short_title: null,
-      author: author("SoderbergH", "Hjalmar Söderberg", "Söderberg"),
+      author: author("SöderbergH", "Hjalmar Söderberg", "Söderberg"),
       representation: {
         work_id: "lb-doktor-glas",
         media_type: "etext",

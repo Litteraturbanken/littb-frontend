@@ -88,7 +88,7 @@ const allowedUrlProtocols = new Set(["http:", "https:", "mailto:", "tel:"])
 const unsafeCharacters = /[\\\u0000-\u001f\u007f-\u009f]/u
 const absoluteScheme = /^[a-z][a-z\d+.-]*:/iu
 
-function encodeRfc3986Segment(value: string): string {
+export function encodeRfc3986Segment(value: string): string {
   return encodeURIComponent(value).replace(
     /[!'()*]/g,
     character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`

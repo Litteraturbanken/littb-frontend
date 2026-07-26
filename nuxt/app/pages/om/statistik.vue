@@ -2,6 +2,7 @@
 import AboutPageShell from "../../components/about/AboutPageShell.vue"
 import { createLbApiClient } from "../../lib/api/client"
 import type { components } from "../../lib/api/generated/lbapi"
+import { authorProfilePath, encodeRfc3986Segment } from "../../lib/author-profile"
 
 type PopularWork = components["schemas"]["PopularWork"]
 type PopularEpub = components["schemas"]["PopularEpub"]
@@ -84,7 +85,7 @@ function numberFmt(value: number): string {
 }
 
 function authorHref(item: PopularWork | PopularEpub): string {
-  return `/författare/${item.author.author_id}`
+  return authorProfilePath(item.author.author_id)
 }
 
 function authorLabel(item: PopularWork | PopularEpub): string {
@@ -92,11 +93,17 @@ function authorLabel(item: PopularWork | PopularEpub): string {
 }
 
 function readerHref(item: PopularWork): string {
-  const base = `/författare/${item.author.author_id}/titlar/${item.title_id}`
+  const base = authorProfilePath(item.author.author_id, "titlar", item.title_id)
   const page = item.representation.start_page_name
   return page === null
-    ? `${base}/${item.representation.media_type}`
-    : `${base}/sida/${page}/${item.representation.media_type}`
+    ? `${base}/${encodeRfc3986Segment(item.representation.media_type)}`
+    : `${base}/sida/${encodeRfc3986Segment(page)}`
+      + `/${encodeRfc3986Segment(item.representation.media_type)}`
+}
+
+function pdfHref(item: PopularWork): string {
+  const workId = encodeRfc3986Segment(item.representation.work_id)
+  return `/txt/${workId}/${workId}.pdf`
 }
 
 function epubHref(item: PopularEpub): string {
@@ -121,10 +128,15 @@ function epubHref(item: PopularEpub): string {
     <ul>
       <li v-for="(item, index) in popularWorks" :key="item.representation.work_id">
         <span class="num">{{ index + 1 }}. </span>
-        <a :href="readerHref(item)">{{ item.short_title || item.title }}</a>
-        <a class="author pull-right" :href="authorHref(item)">
+        <a
+          v-if="item.representation.media_type === 'pdf'"
+          :href="pdfHref(item)"
+          target="_self"
+        >{{ item.short_title || item.title }}</a>
+        <NuxtLink v-else :to="readerHref(item)">{{ item.short_title || item.title }}</NuxtLink>
+        <NuxtLink class="author pull-right" :to="authorHref(item)">
           {{ authorLabel(item) }}
-        </a>
+        </NuxtLink>
       </li>
     </ul>
 
@@ -135,9 +147,9 @@ function epubHref(item: PopularEpub): string {
         <a :href="epubHref(item)" download target="_self">
           {{ item.short_title || item.title }}
         </a>
-        <a class="author pull-right" :href="authorHref(item)">
+        <NuxtLink class="author pull-right" :to="authorHref(item)">
           {{ authorLabel(item) }}
-        </a>
+        </NuxtLink>
       </li>
     </ul>
   </div>

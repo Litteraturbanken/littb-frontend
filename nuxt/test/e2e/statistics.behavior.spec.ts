@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const allRequests = [
   "/private-v2/epubs/popular?limit=30",
   "/private-v2/stats",
@@ -71,16 +71,23 @@ test("renders exact copy, order, URLs, metadata, and no hydration errors", async
 
   await expect(works.first().locator("a").first()).toHaveAttribute(
     "href",
-    "/författare/SoderbergH/titlar/DoktorGlas/sida/-2/etext"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
   )
   await expect(works.first().locator("a.author")).toHaveAttribute(
     "href",
-    "/författare/SoderbergH"
+    "/f%C3%B6rfattare/S%C3%B6derbergH"
   )
   await expect(works.nth(3).locator("a").first()).toHaveAttribute(
     "href",
-    "/författare/Author4/titlar/PopularWork4/faksimil"
+    "/f%C3%B6rfattare/Author4/titlar/PopularWork4/faksimil"
   )
+  const pdfWork = works.nth(5).locator("a").first()
+  await expect(pdfWork).toHaveAttribute(
+    "href",
+    "/txt/lb-popular-6/lb-popular-6.pdf"
+  )
+  await expect(pdfWork).toHaveAttribute("target", "_self")
+  expect(await pdfWork.getAttribute("download")).toBeNull()
   await expect(epubs.first().locator("a").first()).toHaveAttribute(
     "href",
     "/txt/epub/SoderbergH_DoktorGlas.epub"
@@ -89,6 +96,29 @@ test("renders exact copy, order, URLs, metadata, and no hydration errors", async
   await expect(epubs.first().locator("a").first()).toHaveAttribute("target", "_self")
 
   expect(await recordedRequests(request)).toEqual(allRequests)
+  expect(problems).toEqual([])
+})
+
+test("a Nuxt-owned popular work pushes history and Back restores Statistics", async ({
+  page
+}) => {
+  const problems = await openReadyPage(page)
+  await page.evaluate(() => {
+    Object.defineProperty(window, "__statisticsNavigationSentinel", { value: "alive" })
+  })
+
+  await page.locator(".content.stats > ul").nth(1).locator("li a").first().click()
+  await expect(page).toHaveURL(
+    "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext"
+  )
+  await expect(page.locator(".reader_main")).toBeVisible()
+  expect(await page.evaluate(() => (
+    window as Window & { __statisticsNavigationSentinel?: string }
+  ).__statisticsNavigationSentinel ?? null)).toBe("alive")
+
+  await page.goBack()
+  await expect(page).toHaveURL("/om/statistik")
+  await expect(page.locator(".content.stats > ul").nth(1).locator("li")).toHaveCount(30)
   expect(problems).toEqual([])
 })
 
