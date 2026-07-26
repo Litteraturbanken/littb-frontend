@@ -81,8 +81,14 @@ test("advanced disclosure and controls use push history and restore from the URL
   await expect(page.locator("[data-library-gender]")).toHaveValue("female")
 
   if (testInfo.project.name === "mobile-chromium") {
-    await expect(page.locator("[data-library-media]")).toHaveAccessibleName("Utgivningsformat")
-    await expect(page.locator("[data-library-languages]")).toHaveAccessibleName("Språk …")
+    for (const control of [
+      page.getByRole("combobox", { name: "Utgivningsformat", exact: true }),
+      page.getByRole("combobox", { name: "Språk …", exact: true })
+    ]) {
+      await expect(control).toHaveCount(1)
+      await control.focus()
+      await expect(control).toBeFocused()
+    }
     await expect(page.getByLabel("Från tryckår reglage")).toBeVisible()
     await expect(page.getByLabel("Till tryckår reglage")).toBeVisible()
   }

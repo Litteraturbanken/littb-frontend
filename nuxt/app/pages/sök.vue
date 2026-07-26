@@ -1156,7 +1156,6 @@ useHead({
           <div class="auth_select_container">
             <SearchMultiSelect
               class="author_select"
-              accessible-name="Författarskap"
               :model-value="state.authorIds"
               :options="authorChoices"
               placeholder="Författarskap"
@@ -1176,7 +1175,6 @@ useHead({
             </div>
             <SearchMultiSelect
               class="title_select"
-              accessible-name="Titlar"
               :model-value="state.workIds"
               :options="titleChoices"
               placeholder="Titlar"
@@ -1189,7 +1187,6 @@ useHead({
           <div class="lang_select_container">
             <SearchMultiSelect
               class="lang_select"
-              accessible-name="Språk …"
               :model-value="state.languages"
               :options="languageChoices"
               placeholder="Språk …"
@@ -1203,7 +1200,6 @@ useHead({
           <div class="about_select_container">
             <SearchMultiSelect
               class="about_select"
-              accessible-name="Om ett författarskap"
               :model-value="state.aboutAuthorIds"
               :options="aboutAuthorChoices"
               placeholder="Om ett författarskap"
@@ -1213,7 +1209,6 @@ useHead({
           <div class="title_select_container">
             <SearchMultiSelect
               class="keyword_select"
-              accessible-name="Filtrera: Kategorier / Utgivare"
               :model-value="state.categories"
               :options="categoryChoices"
               placeholder="Filtrera: Kategorier / Utgivare"
