@@ -14,7 +14,11 @@ defineProps<{ activePage: AboutPage | null }>()
   <h1>Om Litteraturbanken</h1>
   <ul class="links">
     <li><NuxtLink :class="{ active: activePage === 'ide' }" :prefetch="false" to="/om/ide">Intro</NuxtLink></li>{{ " " }}
-    <li><NuxtLink :prefetch="false" to="/om/organisation">Organisation</NuxtLink></li>{{ " " }}
+    <li>
+      <NuxtLink v-slot="{ href, navigate }" :prefetch="false" custom to="/om/organisation">
+        <a :href="href ?? undefined" @click="navigate">Organisation</a>
+      </NuxtLink>
+    </li>{{ " " }}
     <li><NuxtLink :class="{ active: activePage === 'hjalp' }" :prefetch="false" to="/om/hjalp">Hjälp</NuxtLink></li>{{ " " }}
     <li><NuxtLink :class="{ active: activePage === 'rattigheter' }" :prefetch="false" to="/om/rattigheter">Rättigheter</NuxtLink></li>{{ " " }}
     <li><NuxtLink :class="{ active: activePage === 'tack' }" :prefetch="false" to="/om/tack">Tack</NuxtLink></li>{{ " " }}

@@ -51,6 +51,16 @@ function expectActiveAboutLink(html: string, href: string | null) {
   expect(activeLinks[0]?.getAttribute("aria-current")).toBe("page")
 }
 
+function expectNeutralAboutLink(html: string, href: string) {
+  const { document } = parseHTML(html)
+  const link = document.querySelector(`#mainview .links a[href="${href}"]`)
+  expect(link).not.toBeNull()
+  expect(link?.classList.contains("active")).toBe(false)
+  expect(link?.classList.contains("router-link-active")).toBe(false)
+  expect(link?.classList.contains("router-link-exact-active")).toBe(false)
+  expect(link?.hasAttribute("aria-current")).toBe(false)
+}
+
 for (const [slug, contentPath, markers] of pages) {
   test(`${slug} fetches its allowlisted content during SSR`, async ({ request }) => {
     await reset(request)
@@ -62,6 +72,11 @@ for (const [slug, contentPath, markers] of pages) {
     for (const marker of markers) expect(html).toContain(marker)
     expect(html).not.toContain("XHTML 1.0 Transitional")
     expect(html).not.toMatch(/<title>(?:OM_LITTERATURBANKEN|ORGANISATION|RÄTTIGHETER)<\/title>/)
+    if (slug === "organisation") {
+      expectNeutralAboutLink(html, "/om/organisation")
+    } else {
+      expectActiveAboutLink(html, `/om/${slug}`)
+    }
     const log = await (await request.get(`${fixture}/_requests`)).json()
     expect(log.requests).toEqual([contentPath])
   })

@@ -96,9 +96,18 @@ for (const staticPage of staticPages) {
     const activeLinks = page.locator("ul.links a.active")
     if (staticPage.activeName === null) {
       await expect(activeLinks).toHaveCount(0)
+      const organisation = page.getByRole("link", { name: "Organisation", exact: true })
+      await expect(organisation).not.toHaveClass(
+        /(?:^|\s)(?:active|router-link-active|router-link-exact-active)(?:\s|$)/
+      )
+      expect(await organisation.getAttribute("aria-current")).toBeNull()
     } else {
       await expect(activeLinks).toHaveCount(1)
-      await expect(page.getByRole("link", { name: staticPage.activeName, exact: true })).toHaveClass(/\bactive\b/)
+      const activeLink = page.getByRole("link", { name: staticPage.activeName, exact: true })
+      await expect(activeLink).toHaveClass(/\bactive\b/)
+      await expect(activeLink).toHaveClass(/\brouter-link-active\b/)
+      await expect(activeLink).toHaveClass(/\brouter-link-exact-active\b/)
+      await expect(activeLink).toHaveAttribute("aria-current", "page")
     }
     await expect(page.getByRole("heading", { name: staticPage.heading, exact: true })).toBeVisible()
 
