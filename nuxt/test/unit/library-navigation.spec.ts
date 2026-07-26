@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   DEFAULT_LIBRARY_HREF,
+  libraryWorkIdFilterHref,
   rememberedLibraryHref
 } from "../../app/lib/library-navigation"
 
@@ -30,5 +31,12 @@ describe("rememberedLibraryHref", () => {
     "/bibliotek?unsafe=%5C"
   ])("rejects non-canonical or unsafe href %s", href => {
     expect(rememberedLibraryHref(href)).toBeNull()
+  })
+
+  it("serializes ordered work ids using the legacy Library query shape", () => {
+    expect(libraryWorkIdFilterHref(["lb12", "lbAbC_34"]))
+      .toBe("/bibliotek?filter=lbworkid:lb12%20OR%20lbworkid:lbAbC_34&visa=works&sort=popularitet")
+    expect(libraryWorkIdFilterHref([])).toBeNull()
+    expect(libraryWorkIdFilterHref(["lb-unsafe"])).toBeNull()
   })
 })

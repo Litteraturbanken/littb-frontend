@@ -194,3 +194,126 @@ test("hydrated Reader Dramawebben navigation stays inside the SPA", async ({ pag
     window as Window & { __readerDramaSpaSentinel?: boolean }
   ).__readerDramaSpaSentinel)).toBe(true)
 })
+
+async function pasteText(page: Page, value: string, selector = "body") {
+  await page.locator(selector).evaluate((element, text) => {
+    const clipboardData = new DataTransfer()
+    clipboardData.setData("text", text)
+    element.dispatchEvent(new ClipboardEvent("paste", {
+      bubbles: true,
+      cancelable: true,
+      clipboardData
+    }))
+  }, value)
+}
+
+test("public shell shortcuts preserve guards, remembered Library queries, and history", async ({
+  page
+}) => {
+  const browserProblems: string[] = []
+  page.on("console", message => {
+    if (/hydration/iu.test(message.text())) {
+      browserProblems.push(`console: ${message.text()}`)
+    }
+  })
+  page.on("pageerror", error => browserProblems.push(`pageerror: ${error.message}`))
+  const library = "/bibliotek?unknown=first&unknown=second&encoded=%2F&empty="
+  const expectRememberedLibrary = () => expect(page).toHaveURL(url => (
+    url.pathname === "/bibliotek"
+    && url.searchParams.getAll("unknown").join(",") === "first,second"
+    && url.searchParams.get("encoded") === "/"
+    && url.searchParams.get("empty") === ""
+    && url.searchParams.get("filter") === null
+  ))
+  const focusShell = () => page.getByRole("link", { name: "Litteraturbanken" }).focus()
+  await page.goto(library, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    (window as Window & { __shellShortcutHydrated?: boolean })
+      .__shellShortcutHydrated = true
+  })
+
+  await focusShell()
+  await page.keyboard.press("h")
+  await expect(page).toHaveURL("/historik")
+  expect(await page.evaluate(() => (
+    window as Window & { __shellShortcutHydrated?: boolean }
+  ).__shellShortcutHydrated)).toBe(true)
+
+  await page.keyboard.press("b")
+  await expectRememberedLibrary()
+  await page.goBack()
+  await expect(page).toHaveURL("/historik")
+  await page.goBack()
+  await expectRememberedLibrary()
+  await page.goForward()
+  await expect(page).toHaveURL("/historik")
+  await page.goForward()
+  await expectRememberedLibrary()
+
+  const search = page.getByRole("textbox", { name: "Skriv författarnamn eller titel" })
+  await search.focus()
+  await page.keyboard.press("h")
+  await expect(search).toHaveValue("h")
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter")).toBe("h")
+  await pasteText(page, "lb8345227", "[data-library-filter]")
+  await expect(search).toHaveValue("h")
+  await search.fill("")
+  await expectRememberedLibrary()
+
+  await search.blur()
+  await page.locator("#mainview").evaluate(element => {
+    element.setAttribute("contenteditable", "true")
+    ;(element as HTMLElement).focus()
+  })
+  await page.keyboard.press("h")
+  await expectRememberedLibrary()
+  await pasteText(page, "lb8345227", "#mainview")
+  await expectRememberedLibrary()
+  await page.locator("#mainview").evaluate(element => element.removeAttribute("contenteditable"))
+
+  await focusShell()
+  await page.keyboard.press("Control+h")
+  await page.keyboard.press("Alt+h")
+  await page.keyboard.press("Meta+h")
+  await page.keyboard.press("Shift+h")
+  await expectRememberedLibrary()
+
+  await openQuickSearch(page)
+  await page.keyboard.press("h")
+  await pasteText(page, "lb8345227", '[role="dialog"]')
+  await expectRememberedLibrary()
+  await page.keyboard.press("Escape")
+  await page.keyboard.press("Escape")
+  await expect(page.getByRole("dialog", { name: "Snabbsökning" })).toHaveCount(0)
+
+  await focusShell()
+  await pasteText(page, "LB8345227")
+  await expect(page).toHaveURL("/editor/lb8345227/ix/0/f")
+  await page.goBack()
+  await expectRememberedLibrary()
+
+  await focusShell()
+  await pasteText(page, "LB12 och lbAbC_34")
+  await expect.poll(() => {
+    const url = new URL(page.url())
+    return [
+      url.pathname,
+      url.searchParams.get("filter"),
+      url.searchParams.get("visa"),
+      url.searchParams.get("sort")
+    ]
+  }).toEqual([
+    "/bibliotek",
+    "lbworkid:lb12 OR lbworkid:lbAbC_34",
+    "works",
+    "popularitet"
+  ])
+  await page.goBack()
+  await expectRememberedLibrary()
+
+  await focusShell()
+  await pasteText(page, "blb123 lb-456")
+  await page.waitForTimeout(50)
+  await expectRememberedLibrary()
+  expect(browserProblems).toEqual([])
+})

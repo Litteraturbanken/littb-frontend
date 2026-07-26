@@ -1,9 +1,41 @@
 <script setup lang="ts">
 import QuickSearch from "../components/global/QuickSearch.vue"
 import saLogoUrl from "~/assets/img/SA_logo_type.svg"
+import {
+  isProductionShortcutGuarded,
+  isPublicShellPasteGuarded,
+  pastedLbNavigationDestination,
+  publicShellShortcutDestination
+} from "~/lib/production-shortcuts"
 
 const { textSearchHref } = useTextSearchNavigation()
 const { libraryHref } = useLibraryNavigation()
+const router = useRouter()
+
+function onShellKeydown(event: KeyboardEvent) {
+  if (isProductionShortcutGuarded(event)) return
+  const destination = publicShellShortcutDestination(event.key, libraryHref.value)
+  if (!destination) return
+  event.preventDefault()
+  void router.push(destination)
+}
+
+function onShellPaste(event: ClipboardEvent) {
+  if (isPublicShellPasteGuarded(event)) return
+  const destination = pastedLbNavigationDestination(event.clipboardData?.getData("text") ?? "")
+  if (!destination) return
+  event.preventDefault()
+  void router.push(destination)
+}
+
+onMounted(() => {
+  document.addEventListener("keydown", onShellKeydown)
+  document.addEventListener("paste", onShellPaste)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", onShellKeydown)
+  document.removeEventListener("paste", onShellPaste)
+})
 </script>
 
 <template>

@@ -1,10 +1,26 @@
+import { libraryWorkIdFilterHref } from "./library-navigation"
+
 const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/u
+const pastedLbId = /(?<![A-Za-z0-9_])lb[A-Za-z0-9_]+(?![A-Za-z0-9_])/giu
+const maximumPasteLength = 65_536
+const maximumPastedIds = 100
 
 function editableTarget(target: EventTarget | null): boolean {
-  if (!target || typeof target !== "object" || !("tagName" in target)) return false
-  const element = target as HTMLElement
-  const name = element.tagName.toLowerCase()
-  return name === "input" || name === "textarea" || name === "select" || element.isContentEditable
+  if (!target || typeof target !== "object" || !("closest" in target)) return false
+  const element = target as Element
+  return element.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null
+}
+
+function dialogTarget(target: EventTarget | null): boolean {
+  if (!target || typeof target !== "object" || !("closest" in target)) return false
+  return (target as Element).closest(
+    'dialog[open], [role="dialog"][aria-modal="true"]'
+  ) !== null
+}
+
+function openDialog(): boolean {
+  return typeof document !== "undefined"
+    && document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]') !== null
 }
 
 export function isProductionShortcutGuarded(
@@ -22,8 +38,46 @@ export function isProductionShortcutGuarded(
     || event.shiftKey
     || editableTarget(event.target)
     || editableTarget(currentActiveElement)
-    || (typeof document !== "undefined"
-      && document.querySelector('[role="dialog"][aria-modal="true"]') !== null)
+    || dialogTarget(event.target)
+    || dialogTarget(currentActiveElement)
+    || openDialog()
+}
+
+export function isPublicShellPasteGuarded(
+  event: ClipboardEvent,
+  activeElement?: EventTarget | null
+): boolean {
+  const currentActiveElement = activeElement === undefined && typeof document !== "undefined"
+    ? document.activeElement
+    : activeElement ?? null
+  return event.defaultPrevented
+    || editableTarget(event.target)
+    || editableTarget(currentActiveElement)
+    || dialogTarget(event.target)
+    || dialogTarget(currentActiveElement)
+    || openDialog()
+}
+
+export function publicShellShortcutDestination(
+  key: string,
+  libraryHref: string
+): string | null {
+  if (key === "h") return "/historik"
+  if (key === "b") return libraryHref
+  return null
+}
+
+export function pastedLbNavigationDestination(text: string): string | null {
+  if (!text || text.length > maximumPasteLength) return null
+  const matches = [...text.matchAll(pastedLbId)]
+  if (matches.length === 0 || matches.length > maximumPastedIds) return null
+  const ids = matches.map(match => {
+    const value = match[0]!
+    return `lb${value.slice(2)}`
+  })
+  if (ids.some(id => id.length > 100)) return null
+  if (ids.length > 1) return libraryWorkIdFilterHref(ids)
+  return `/editor/${encodeURIComponent(ids[0]!)}/ix/0/f`
 }
 
 export function urnResolverUrl(urn: string | null): string | null {
