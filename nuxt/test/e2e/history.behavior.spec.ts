@@ -3,7 +3,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 const nuxtPort = Number(process.env.LITTB_NUXT_TEST_PORT || 3000)
 const nuxtOrigin = `http://127.0.0.1:${nuxtPort}`
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 
 type StoredHistory = { author: string, label: string, url: string }
 type AuthorRequest = {
@@ -242,10 +242,16 @@ test("valid history is filtered before the 50-row limit and resolved once in sto
   await expect(rows.locator("a > span:last-child")).toHaveText(
     valid.slice(0, 50).map(entry => entry.label.trim())
   )
-  await expect(rows.nth(0).locator("a")).toHaveAttribute("href", special[0].url)
+  await expect(rows.nth(0).locator("a")).toHaveAttribute(
+    "href",
+    special[0].url.replace("/författare/", "/f%C3%B6rfattare/")
+  )
   await expect(rows.nth(0).locator("span").first()).toHaveText("August Strindberg")
   await expect(rows.nth(1).locator("span").first()).toHaveText("")
-  await expect(rows.nth(2).locator("a")).toHaveAttribute("href", special[2].url)
+  await expect(rows.nth(2).locator("a")).toHaveAttribute(
+    "href",
+    special[2].url.replace("/författare/", "/f%C3%B6rfattare/")
+  )
   expect(await rows.nth(2).locator("span").last().textContent()).toBe(special[2].label)
   await expect(rows.nth(49).locator("a")).toHaveAttribute("href", valid[49].url)
   await expect(page.locator(`a[href="${valid[50].url}"]`)).toHaveCount(0)
@@ -259,6 +265,49 @@ test("valid history is filtered before the 50-row limit and resolved once in sto
   }])
   expect(await page.evaluate(() => localStorage.getItem("lastPageViews"))).toBe(raw)
   expect(problems).toEqual([])
+})
+
+test("history uses SPA navigation only for Nuxt-owned destinations", async ({ page }) => {
+  const records: StoredHistory[] = [
+    {
+      author: "StrindbergA",
+      label: "Nuxt-författarsida",
+      url: "/författare/StrindbergA/titlar"
+    },
+    {
+      author: "StrindbergA",
+      label: "Äldre verkadress",
+      url: "/verk/legacy-only"
+    }
+  ]
+  await seedRawHistory(page, JSON.stringify(records))
+  await openHistory(page)
+  await page.evaluate(() => {
+    ;(window as typeof window & { __spaSentinel?: string }).__spaSentinel = "history-spa"
+  })
+
+  await page.getByRole("link", { name: /Äldre verkadress/u }).click()
+  await expect(page).toHaveURL("/verk/legacy-only")
+  expect(await page.evaluate(() =>
+    (window as typeof window & { __spaSentinel?: string }).__spaSentinel
+  )).toBeUndefined()
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page.getByRole("heading", { name: "Senast lästa verk" })).toBeVisible()
+  await page.evaluate(() => {
+    ;(window as typeof window & { __spaSentinel?: string }).__spaSentinel = "history-spa"
+  })
+  await page.getByRole("link", { name: /Nuxt-författarsida/u }).click()
+  await expect(page).toHaveURL("/f%C3%B6rfattare/StrindbergA/titlar")
+  expect(await page.evaluate(() =>
+    (window as typeof window & { __spaSentinel?: string }).__spaSentinel
+  )).toBe("history-spa")
+
+  await page.goBack()
+  await expect(page).toHaveURL("/historik")
+  expect(await page.evaluate(() =>
+    (window as typeof window & { __spaSentinel?: string }).__spaSentinel
+  )).toBe("history-spa")
 })
 
 test("a successful empty resolver response renders an unchanged blank-author row", async ({

@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const description = "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 
 type LookupBody = { work_id: string | null, titles: string[] }
@@ -148,6 +148,54 @@ async function settleTransportLookup(
 }
 
 test.beforeEach(async ({ request }) => reset(request))
+
+test("result titles use client routing and Back restores the ID lookup", async ({
+  page
+}) => {
+  const problems = await openIdPage(page, "/id/LB238704")
+  await page.evaluate(() => {
+    Object.defineProperty(window, "__idLookupNavigationSentinel", { value: "alive" })
+  })
+
+  await page.getByRole("link", { name: "Röda rummet", exact: true }).click()
+  await expect(page).toHaveURL(
+    "/författare/StrindbergA/titlar/RodaRummet/sida/1/etext"
+  )
+  await expect(page.locator(".reader_main")).toHaveAttribute(
+    "aria-label",
+    "Röda rummet, sida 1"
+  )
+  expect(await page.evaluate(() => (
+    window as Window & { __idLookupNavigationSentinel?: string }
+  ).__idLookupNavigationSentinel ?? null)).toBe("alive")
+
+  await page.goBack()
+  await expect(page).toHaveURL("/id/LB238704")
+  await expect(page.getByPlaceholder("lbid")).toHaveValue("lb238704")
+  expect(await page.evaluate(() => (
+    window as Window & { __idLookupNavigationSentinel?: string }
+  ).__idLookupNavigationSentinel ?? null)).toBe("alive")
+  expect(problems).toEqual([])
+})
+
+test("legacy work results use a native document handoff", async ({ page }) => {
+  await installIgnoringAbortTransport(page)
+  const problems = await openIdPage(page)
+  await page.getByPlaceholder("lbid").fill("lb-legacy-only")
+  await expect.poll(() => pendingTransportLookups(page)).toHaveLength(1)
+  await settleTransportLookup(page, "resolve", 0, "lb-legacy-only")
+
+  await page.evaluate(() => {
+    Object.defineProperty(window, "__idLookupNavigationSentinel", { value: "alive" })
+  })
+  await page.getByRole("link", { name: "lb-legacy-only", exact: true }).click()
+
+  await expect(page).toHaveURL("/verk/lb-legacy-only")
+  expect(await page.evaluate(() => (
+    window as Window & { __idLookupNavigationSentinel?: string }
+  ).__idLookupNavigationSentinel ?? null)).toBeNull()
+  expect(problems).toEqual([])
+})
 
 test("manual ID is immediate and keeps raw display while clearing only title state", async ({
   page,
@@ -320,11 +368,11 @@ test("duplicate representations render twice in order without duplicate-key warn
   await expect(links).toHaveText(["etext", "etext"])
   await expect(links.nth(0)).toHaveAttribute(
     "href",
-    "/författare/TestAuthor/titlar/Duplicate/etext"
+    "/f%C3%B6rfattare/TestAuthor/titlar/Duplicate/etext"
   )
   await expect(links.nth(1)).toHaveAttribute(
     "href",
-    "/författare/TestAuthor/titlar/Duplicate/etext"
+    "/f%C3%B6rfattare/TestAuthor/titlar/Duplicate/etext"
   )
   await expect(page.locator(".table-striped tr td").nth(3)).toHaveText(
     "etext:::etext"

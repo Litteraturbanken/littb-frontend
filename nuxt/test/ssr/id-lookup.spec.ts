@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 import { parseHTML } from "linkedom"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || "4100"}`
 const description = "På Litteraturbanken kan du söka bland hundratals kända svenska författare och svenska klassiska verk och ladda ner eböcker gratis."
 
 type LookupRequest = {
@@ -29,19 +29,19 @@ async function expectRenderedRodaRummet(page: Page) {
   await expect(row.locator("td").nth(0)).toHaveText("lb238704")
   await expect(row.locator("td").nth(1).locator("a")).toHaveAttribute(
     "href",
-    "/författare/StrindbergA"
+    "/f%C3%B6rfattare/StrindbergA"
   )
   await expect(row.locator("td").nth(2).locator("a")).toHaveAttribute(
     "href",
-    "/författare/StrindbergA/titlar/RodaRummet/etext"
+    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/etext"
   )
   await expect(row.locator("td").nth(3).locator("a").first()).toHaveAttribute(
     "href",
-    "/författare/StrindbergA/titlar/RodaRummet/etext"
+    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/etext"
   )
   await expect(row.locator("td").nth(3).locator("a").last()).toHaveAttribute(
     "href",
-    "/författare/StrindbergA/titlar/RodaRummet/faksimil"
+    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/faksimil"
   )
   await expect(row.locator("td").nth(3)).toHaveText("etext:::faksimil")
 }

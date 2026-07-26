@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { createLbApiClient } from "../../lib/api/client"
 import type { components } from "../../lib/api/generated/lbapi"
+import { canonicalNuxtHref, isNuxtInternalHref } from "../../lib/internal-navigation"
 
 type LookupBody =
   | { work_id: string, titles: [] }
@@ -232,14 +233,26 @@ onUnmounted(clearLookup)
           :key="`${item.work_id}:${item.title.url}:${rowIndex}`"
         >
           <td>{{ item.work_id }}</td>
-          <td><a :href="item.author.url">{{ item.author.label }}</a></td>
-          <td><a :href="item.title.url">{{ item.title.label }}</a></td>
+          <td>
+            <NuxtLink v-if="isNuxtInternalHref(item.author.url)" :to="canonicalNuxtHref(item.author.url)">
+              {{ item.author.label }}
+            </NuxtLink>
+            <a v-else :href="item.author.url">{{ item.author.label }}</a>
+          </td>
+          <td>
+            <NuxtLink v-if="isNuxtInternalHref(item.title.url)" :to="canonicalNuxtHref(item.title.url)">
+              {{ item.title.label }}
+            </NuxtLink>
+            <a v-else :href="item.title.url">{{ item.title.label }}</a>
+          </td>
           <td>
             <template
               v-for="(media, index) in item.media"
               :key="`${media.url}:${index}`"
             >
-              <span v-if="index">:::</span><a :href="media.url">{{ media.label }}</a>
+              <span v-if="index">:::</span><NuxtLink v-if="isNuxtInternalHref(media.url)" :to="canonicalNuxtHref(media.url)">
+                {{ media.label }}
+              </NuxtLink><a v-else :href="media.url">{{ media.label }}</a>
             </template>
           </td>
         </tr>

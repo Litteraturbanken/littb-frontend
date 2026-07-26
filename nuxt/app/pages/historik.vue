@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { createLbApiClient } from "../lib/api/client"
 import type { components } from "../lib/api/generated/lbapi"
+import { canonicalNuxtHref, isNuxtInternalHref } from "../lib/internal-navigation"
 
 type AuthorSummary = components["schemas"]["AuthorSummary"]
 type StoredHistory = { author: string, label: string, url: string }
@@ -88,7 +89,11 @@ onBeforeUnmount(() => {
     <h1>Senast lästa verk</h1>
     <ul v-if="authorsResolved">
       <li v-for="(pageview, index) in history" :key="`${index}:${pageview.url}`">
-        <a :href="pageview.url">
+        <NuxtLink v-if="isNuxtInternalHref(pageview.url)" :to="canonicalNuxtHref(pageview.url)">
+          <span>{{ authorsById[pageview.author]?.full_name ?? "" }}</span> –
+          <span class="">{{ pageview.label }}</span>
+        </NuxtLink>
+        <a v-else :href="pageview.url">
           <span>{{ authorsById[pageview.author]?.full_name ?? "" }}</span> –
           <span class="">{{ pageview.label }}</span>
         </a>
