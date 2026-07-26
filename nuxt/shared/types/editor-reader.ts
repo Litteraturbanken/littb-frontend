@@ -20,6 +20,7 @@ export interface EditorReaderPage {
   overlayHeight: number | null
   overlayHtml: string | null
   overlayWidth: number | null
+  pageIndexes: number[] | null
   pageCount: number | null
   pageIndex: number
   pageName: string | null

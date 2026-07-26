@@ -1,7 +1,10 @@
 import { describe, expect, test } from "vitest"
 
 import {
+  fetchBoundedEditorJson,
   fetchBoundedEditorText,
+  fetchTimedEditorHead,
+  parseEditorPageIndexes,
   sanitizeEditorEtextHtml
 } from "../../server/utils/editor-reader-html"
 
@@ -77,5 +80,40 @@ describe("Editor Reader bounded source transport", () => {
         init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true })
       })
     })).rejects.toThrow()
+  })
+
+  test("parses JSON only after enforcing the transport byte bound", async () => {
+    const fetcher = async () => new Response(JSON.stringify({ count: 3 }), {
+      headers: { "content-type": "application/json" }
+    })
+    await expect(fetchBoundedEditorJson("https://source.test/metadata", 100, {
+      fetcher
+    })).resolves.toEqual({ count: 3 })
+    await expect(fetchBoundedEditorJson("https://source.test/metadata", 5, {
+      fetcher
+    })).rejects.toThrow("bounded source")
+  })
+
+  test("times out a facsimile HEAD request", async () => {
+    await expect(fetchTimedEditorHead("https://source.test/page.jpeg", {
+      timeoutMs: 10,
+      fetcher: async (_input, init) => await new Promise<Response>((_resolve, reject) => {
+        expect(init?.method).toBe("HEAD")
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true })
+      })
+    })).rejects.toThrow()
+  })
+})
+
+describe("Editor Reader sparse page bounds", () => {
+  test("keeps sorted actual indices and caps the maximum raw index at 99,999", () => {
+    expect(parseEditorPageIndexes([
+      { pagename: "57", pageindex: 57 },
+      { pagename: "2", pageindex: 2 },
+      { pagename: "12", pageindex: 12 }
+    ])).toEqual({ indexes: [2, 12, 57], pageCount: 58 })
+    expect(parseEditorPageIndexes([{ pagename: "last", pageindex: 99_999 }]))
+      .toEqual({ indexes: [99_999], pageCount: 100_000 })
+    expect(parseEditorPageIndexes([{ pagename: "too far", pageindex: 100_000 }])).toBeNull()
   })
 })

@@ -1,7 +1,10 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
 import {
+  fetchBoundedEditorJson,
   fetchBoundedEditorText,
+  fetchTimedEditorHead,
   maximumEditorHtmlLength,
+  parseEditorPageIndexes,
   sanitizeEditorEtextHtml
 } from "#server/utils/editor-reader-html"
 import { parseHTML } from "linkedom"
@@ -10,6 +13,8 @@ const workIdPattern = /^[A-Za-z0-9_-]{1,100}$/
 const indexPattern = /^(?:0|[1-9]\d{0,6})$/
 const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/u
 const maxOverlayLength = 512 * 1024
+const maxMetadataLength = 2 * 1024 * 1024
+const maxPageCountLength = 64 * 1024
 const allowedOverlayTags = new Set(["BR", "DIV", "SPAN"])
 const allowedOverlayClasses = new Set(["parent", "w"])
 const allowedStyleProperties = new Set([
@@ -66,24 +71,6 @@ function safePageCount(value: unknown): number | null {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0 && value <= 100_000
     ? value
     : null
-}
-
-function safePagesLength(value: unknown): number | null {
-  if (!Array.isArray(value) || value.length === 0 || value.length > 100_000) return null
-  const indexes = new Set<number>()
-  let maximumIndex = -1
-  for (const rawPage of value) {
-    const sourcePage = record(rawPage)
-    const pageIndex = sourcePage?.pageindex
-    const pageName = safeOptionalText(sourcePage?.pagename, 100)
-    if (
-      !pageName || typeof pageIndex !== "number" || !Number.isSafeInteger(pageIndex) ||
-      pageIndex < 0 || pageIndex > 1_000_000 || indexes.has(pageIndex)
-    ) return null
-    indexes.add(pageIndex)
-    maximumIndex = Math.max(maximumIndex, pageIndex)
-  }
-  return maximumIndex + 1
 }
 
 function editorFacsimileUrl(workId: string, size: number, pageIndex: number): string {
@@ -246,9 +233,10 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   let representation: Record<string, unknown> | null = null
   let representations: Record<string, unknown>[] = []
   try {
-    const raw = await $fetch<unknown>(`${base}/api/get_work_info`, {
-      query: { lbworkid: workId, exclude: "content_vector" }, retry: 0
-    })
+    const url = new URL(`${base}/api/get_work_info`)
+    url.searchParams.set("lbworkid", workId)
+    url.searchParams.set("exclude", "content_vector")
+    const raw = await fetchBoundedEditorJson(url, maxMetadataLength)
     const response = record(raw)
     if (response && Array.isArray(response.data) && response.data.length <= 1_000) {
       representations = response.data.map(record).filter(
@@ -260,16 +248,24 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
     // Assets remain useful to editors even when metadata is temporarily unavailable.
   }
   let pageCount = safePageCount(representation?.page_count)
-    ?? safePagesLength(representation?.pages)
+  const sparsePages = pageCount === null ? parseEditorPageIndexes(representation?.pages) : null
+  pageCount ??= sparsePages?.pageCount ?? null
   if (pageCount === null) {
     try {
-      const rawCount: unknown = await $fetch(`${base}/count_pages/${encodeURIComponent(workId)}/${mediaType}`, { retry: 0 })
+      const rawCount = await fetchBoundedEditorJson(
+        `${base}/count_pages/${encodeURIComponent(workId)}/${mediaType}`,
+        maxPageCountLength
+      )
       const count: unknown = rawCount && typeof rawCount === "object" ? (rawCount as { count?: unknown }).count : null
       pageCount = safePageCount(count)
     } catch { sourceError() }
     if (pageCount === null) sourceError()
   }
   if (pageCount !== null && pageIndex >= pageCount) {
+    throw createError({ statusCode: 404, statusMessage: "Editor page not found" })
+  }
+  const sparsePosition = sparsePages?.indexes.indexOf(pageIndex) ?? -1
+  if (sparsePages && sparsePosition < 0) {
     throw createError({ statusCode: 404, statusMessage: "Editor page not found" })
   }
   const title = safeOptionalText(representation?.shorttitle)
@@ -309,7 +305,7 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   const imageUrl = initialFacsimileSource?.url ?? null
   if (imageUrl) {
     try {
-      await $fetch(`${base}${imageUrl}`, { method: "HEAD", retry: 0 })
+      await fetchTimedEditorHead(`${base}${imageUrl}`)
     } catch {
       sourceError()
     }
@@ -339,10 +335,14 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
     authorId, authorName, closeHref, endPageName, facsimileSources, html: sanitizedHtml, imageWidth,
     imageUrl, imprintYear,
     mediaType, metadataAvailable: representation !== null,
-    nextIndex: pageCount !== null && pageIndex + 1 < pageCount ? pageIndex + 1 : null,
+    nextIndex: sparsePages
+      ? sparsePages.indexes[sparsePosition + 1] ?? null
+      : pageCount !== null && pageIndex + 1 < pageCount ? pageIndex + 1 : null,
     overlayHeight, overlayHtml, overlayWidth,
-    pageCount, pageIndex, pageName,
-    previousIndex: pageIndex > 0 ? pageIndex - 1 : null,
+    pageCount, pageIndex, pageIndexes: sparsePages?.indexes ?? null, pageName,
+    previousIndex: sparsePages
+      ? sparsePages.indexes[sparsePosition - 1] ?? null
+      : pageIndex > 0 ? pageIndex - 1 : null,
     title, workId
   } satisfies EditorReaderPage
 })

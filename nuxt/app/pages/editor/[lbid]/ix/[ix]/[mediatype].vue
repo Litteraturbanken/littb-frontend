@@ -219,20 +219,21 @@ function isEditableTarget(target: EventTarget | null): boolean {
 function keyboardTarget(event: KeyboardEvent): number | null {
   const current = page.value
   if (!current) return null
+  const boundedTarget = (target: number) => {
+    if (current.pageIndexes) return current.pageIndexes.includes(target) ? target : null
+    return target >= 0 && current.pageCount !== null && target < current.pageCount ? target : null
+  }
   if (event.key === "n") return current.nextIndex
   if (event.key === "f") return current.previousIndex
   if (event.key === "m" || event.key === "F16") {
-    const target = current.pageIndex + 10
-    return current.pageCount !== null && target < current.pageCount ? target : null
+    return boundedTarget(current.pageIndex + 10)
   }
   if (event.key === "d" || event.key === "F15") {
-    const target = current.pageIndex - 10
-    return target >= 0 ? target : null
+    return boundedTarget(current.pageIndex - 10)
   }
   if (event.key === "ArrowRight") {
     if (event.altKey && event.shiftKey) {
-      const target = current.pageIndex + 10
-      return current.pageCount !== null && target < current.pageCount ? target : null
+      return boundedTarget(current.pageIndex + 10)
     }
     if (event.altKey) return null
     const atRightEdge = Math.ceil(window.scrollX + window.innerWidth) >=
@@ -241,8 +242,7 @@ function keyboardTarget(event: KeyboardEvent): number | null {
   }
   if (event.key === "ArrowLeft") {
     if (event.altKey && event.shiftKey) {
-      const target = current.pageIndex - 10
-      return target >= 0 ? target : null
+      return boundedTarget(current.pageIndex - 10)
     }
     if (event.altKey) return null
     return event.shiftKey || window.scrollX < 10 ? current.previousIndex : null
@@ -325,10 +325,10 @@ useHead(() => ({
             <br>
             <span class="next_part disabled sc" aria-disabled="true">Gå till nästa del</span>
             <br>
-            <NuxtLink v-if="page.pageIndex > 0" custom :to="href(0)"><a :href="href(0)" @click="navigateLink($event, href(0))">Gå till första sidan</a></NuxtLink>
+            <NuxtLink v-if="page.pageIndex > (page.pageIndexes?.[0] ?? 0)" custom :to="href(page.pageIndexes?.[0] ?? 0)"><a :href="href(page.pageIndexes?.[0] ?? 0)" @click="navigateLink($event, href(page.pageIndexes?.[0] ?? 0))">Gå till första sidan</a></NuxtLink>
             <span v-else class="disabled sc" aria-disabled="true">Gå till första sidan</span>
             <br>
-            <NuxtLink v-if="page.pageCount !== null && page.pageIndex < page.pageCount - 1" custom :to="href(page.pageCount - 1)"><a :href="href(page.pageCount - 1)" @click="navigateLink($event, href(page.pageCount - 1))">Gå till sista sidan</a></NuxtLink>
+            <NuxtLink v-if="page.pageCount !== null && page.pageIndex < (page.pageIndexes?.at(-1) ?? page.pageCount - 1)" custom :to="href(page.pageIndexes?.at(-1) ?? page.pageCount - 1)"><a :href="href(page.pageIndexes?.at(-1) ?? page.pageCount - 1)" @click="navigateLink($event, href(page.pageIndexes?.at(-1) ?? page.pageCount - 1))">Gå till sista sidan</a></NuxtLink>
             <span v-else class="disabled sc" aria-disabled="true">Gå till sista sidan</span>
             <br>
             <span class="goto"><span class="sc">Gå till sida . . .{{ " " }}<span
@@ -341,7 +341,7 @@ useHead(() => ({
             <NuxtLink v-if="page.nextIndex !== null" custom :to="href(page.nextIndex)"><a rel="next" :href="href(page.nextIndex)" aria-label="Nästa sida" @click="navigateLink($event, href(page.nextIndex))"><span class="submit btn navicon navicon-visual right" aria-hidden="true"><i class="fa fa-angle-right right" /></span></a></NuxtLink>
             <span class="expl small" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
           </nav>
-          <div v-if="page.pageCount !== null" class="w-11/12">
+          <div v-if="page.pageCount !== null && page.pageIndexes === null" class="w-11/12">
             <span class="rzslider mt-3 slider-large" :class="{ active: sliderDraft !== null }">
               <span class="rz-base" aria-hidden="true">
                 <span class="rz-bar-wrapper"><span class="rz-bar" /></span>
@@ -391,7 +391,7 @@ useHead(() => ({
           >{{ page.pageName }}{{ " " }}</template><template
             v-if="page.endPageName"
           >av {{ page.endPageName }}</template></span>
-          <input v-if="page.pageCount !== null" type="range" min="0" :max="page.pageCount - 1" :value="page.pageIndex" aria-label="Gå till sida">
+          <input v-if="page.pageCount !== null && page.pageIndexes === null" type="range" min="0" :max="page.pageCount - 1" :value="page.pageIndex" aria-label="Gå till sida">
           <a v-if="page.metadataAvailable && page.closeHref" :href="page.closeHref">Stäng editor</a>
         </aside>
       </template>

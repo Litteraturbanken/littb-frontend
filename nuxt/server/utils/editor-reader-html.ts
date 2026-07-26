@@ -48,13 +48,15 @@ type EditorTextFetcher = (
   init?: RequestInit
 ) => Promise<Response>
 
+type EditorSourceOptions = {
+  fetcher?: EditorTextFetcher
+  timeoutMs?: number
+}
+
 export async function fetchBoundedEditorText(
   url: string | URL,
   maximumBytes: number,
-  options: {
-    fetcher?: EditorTextFetcher
-    timeoutMs?: number
-  } = {}
+  options: EditorSourceOptions = {}
 ): Promise<string> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(new Error("Editor source timeout")),
@@ -97,6 +99,57 @@ export async function fetchBoundedEditorText(
   } finally {
     clearTimeout(timer)
   }
+}
+
+export async function fetchBoundedEditorJson(
+  url: string | URL,
+  maximumBytes: number,
+  options: EditorSourceOptions = {}
+): Promise<unknown> {
+  const source = await fetchBoundedEditorText(url, maximumBytes, options)
+  return JSON.parse(source) as unknown
+}
+
+export async function fetchTimedEditorHead(
+  url: string | URL,
+  options: EditorSourceOptions = {}
+): Promise<void> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(new Error("Editor source timeout")),
+    options.timeoutMs ?? 10_000)
+  try {
+    const response = await (options.fetcher ?? globalThis.fetch)(url, {
+      method: "HEAD",
+      redirect: "error",
+      signal: controller.signal
+    })
+    if (!response.ok) throw new Error("Invalid Editor source response")
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+export function parseEditorPageIndexes(value: unknown): {
+  indexes: number[]
+  pageCount: number
+} | null {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 100_000) return null
+  const indexes = new Set<number>()
+  for (const rawPage of value) {
+    if (rawPage === null || typeof rawPage !== "object" || Array.isArray(rawPage)) return null
+    const sourcePage = rawPage as Record<string, unknown>
+    const pageIndex = sourcePage.pageindex
+    const pageName = sourcePage.pagename
+    if (
+      typeof pageName !== "string" || pageName.length === 0 || pageName.length > 100 ||
+      pageName.trim() !== pageName || controlCharacters.test(pageName) ||
+      typeof pageIndex !== "number" || !Number.isSafeInteger(pageIndex) ||
+      pageIndex < 0 || pageIndex >= 100_000 || indexes.has(pageIndex)
+    ) return null
+    indexes.add(pageIndex)
+  }
+  const sorted = [...indexes].sort((left, right) => left - right)
+  return { indexes: sorted, pageCount: sorted[sorted.length - 1]! + 1 }
 }
 
 function safeIdentifier(value: string): boolean {

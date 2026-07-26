@@ -67,6 +67,21 @@ test("editor Reader rejects unknown aliases and negative raw indexes", async ({ 
   expect((await page.goto("/editor/lb-editor-doktor/ix/-1/f"))?.status()).toBe(404)
 })
 
+test("editor Reader navigates only actual indices from sparse metadata", async ({ page }) => {
+  await page.goto("/editor/lb-editor-sparse/ix/12/f", { waitUntil: "networkidle" })
+
+  await expect(page.getByRole("link", { name: "Föregående sida" }))
+    .toHaveAttribute("href", "/editor/lb-editor-sparse/ix/2/f")
+  await expect(page.getByRole("link", { name: "Nästa sida" }))
+    .toHaveAttribute("href", "/editor/lb-editor-sparse/ix/57/f")
+  await expect(page.getByRole("link", { name: "Gå till första sidan" }))
+    .toHaveAttribute("href", "/editor/lb-editor-sparse/ix/2/f")
+  await expect(page.getByRole("link", { name: "Gå till sista sidan" }))
+    .toHaveAttribute("href", "/editor/lb-editor-sparse/ix/57/f")
+  await expect(page.getByRole("slider", { name: "Gå till sida" })).toHaveCount(0)
+  expect((await page.goto("/editor/lb-editor-sparse/ix/13/f"))?.status()).toBe(404)
+})
+
 test("editor Reader first/last controls and raw slider push history", async ({ page }) => {
   await page.goto(editorFaksimil, { waitUntil: "networkidle" })
   await page.getByRole("link", { name: "Gå till första sidan" }).click()

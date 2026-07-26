@@ -125,9 +125,11 @@ test("SSR derives sparse raw Editor bounds from the largest page index", async (
   expect(await response.json()).toMatchObject({
     pageCount: 58,
     pageIndex: 12,
-    nextIndex: 13,
-    previousIndex: 11
+    nextIndex: 57,
+    previousIndex: 2
   })
+
+  expect((await request.get("/api/editor/lb-editor-sparse/13/f")).status()).toBe(404)
 })
 
 test("SSR selects the requested representation and derives the close target from raw works", async ({
