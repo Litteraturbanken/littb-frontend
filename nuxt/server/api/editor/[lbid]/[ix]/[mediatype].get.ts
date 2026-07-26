@@ -71,6 +71,7 @@ function safePageCount(value: unknown): number | null {
 function safePagesLength(value: unknown): number | null {
   if (!Array.isArray(value) || value.length === 0 || value.length > 100_000) return null
   const indexes = new Set<number>()
+  let maximumIndex = -1
   for (const rawPage of value) {
     const sourcePage = record(rawPage)
     const pageIndex = sourcePage?.pageindex
@@ -80,8 +81,9 @@ function safePagesLength(value: unknown): number | null {
       pageIndex < 0 || pageIndex > 1_000_000 || indexes.has(pageIndex)
     ) return null
     indexes.add(pageIndex)
+    maximumIndex = Math.max(maximumIndex, pageIndex)
   }
-  return Math.max(...indexes) + 1
+  return maximumIndex + 1
 }
 
 function editorFacsimileUrl(workId: string, size: number, pageIndex: number): string {
