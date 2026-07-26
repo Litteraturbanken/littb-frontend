@@ -11,104 +11,15 @@ import {
   soderbergPresentation
 } from "../fixtures/author-document-data.mjs"
 import { waitForVisualAssets } from "../helpers/visual"
+import { allowedAuthorShellStaticRequests } from "./angular-author-shell-static"
 
 test.use({ serviceWorkers: "block" })
 
 const authorityOrigin = "http://127.0.0.1:9000"
 const audioOrigin = "https://litteraturbanken.se"
 const authorExclude = "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
-const frontendRoot = resolve(import.meta.dirname, "../../..")
-const fsRoot = `/@fs${frontendRoot}`
-const allowedShellStaticRequests = new Set([
-  `${fsRoot}/node_modules/.vite/deps/angular-animate.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-aria.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-route.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-spinner.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-touch.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-bootstrap_src_buttons.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-bootstrap_src_collapse.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-bootstrap_src_dropdown.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-bootstrap_src_modal.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-bootstrap_src_pagination.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-bootstrap_src_popover.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-bootstrap_src_tooltip.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-bootstrap_src_typeahead.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular-ui-select2_src_select2__js.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angular.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/angularjs-slider.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/bodybuilder.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/chunk-43VAUSZK.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/chunk-MSAYGMWU.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/chunk-NMJR4R66.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/chunk-O2IEGSCI.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/chunk-SX436VLB.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/chunk-UIMFB7KA.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/chunk-ZLALJZVY.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/jquery.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/lodash.js?v=d83e272d`,
-  `${fsRoot}/node_modules/.vite/deps/underscore__string.js?v=d83e272d`,
-  `${fsRoot}/node_modules/angular-ui-bootstrap/src/position/position.css`,
-  `${fsRoot}/node_modules/angular-ui-bootstrap/src/tooltip/tooltip.css`,
-  `${fsRoot}/node_modules/angular-ui-bootstrap/src/typeahead/typeahead.css`,
-  `${fsRoot}/node_modules/angularjs-slider/dist/rzslider.css`,
-  `${fsRoot}/node_modules/font-awesome/fonts/fontawesome-webfont.woff2?v=4.4.0`,
-  `${fsRoot}/node_modules/font-awesome/scss/font-awesome.scss`,
-  `${fsRoot}/node_modules/select2/dist/css/select2.css`,
-  `${fsRoot}/node_modules/vite/dist/client/env.mjs`,
-  "/@vite/client",
-  "/img/SA_logo_type.svg",
-  "/img/SA_logo_type.svg?import&url",
-  "/lib/FileSaver.js",
-  "/lib/angular-ellipsis.js",
-  "/lib/angular-locale_sv-se.js",
-  "/lib/jquery.ui.position.js",
-  "/lib/select2.js",
-  "/main.js",
-  "/scripts/app.js",
-  "/scripts/components/about-page/index.js",
-  "/scripts/components/author-info-page/index.js",
-  "/scripts/components/autocomplete-global/index.js",
-  "/scripts/components/contact-form/index.js",
-  "/scripts/components/help-page/index.js",
-  "/scripts/components/history-page/index.js",
-  "/scripts/components/id-page/index.js",
-  "/scripts/components/lexicon-global/index.js",
-  "/scripts/components/library/downloadPopover.html?import&url",
-  "/scripts/components/library/library.html?import&url",
-  "/scripts/components/library/works_list.html?import&url",
-  "/scripts/components/page-start/index.js",
-  "/scripts/components/presentations-page/index.js",
-  "/scripts/components/search/template.html?import&url",
-  "/scripts/components/sla-biblinfo/index.js",
-  "/scripts/components/sla-omtexterna/index.js",
-  "/scripts/components/stats-page/index.js",
-  "/scripts/controllers.js",
-  "/scripts/directives.js",
-  "/scripts/dramaweb_controller.js",
-  "/scripts/features/stats/popularWorks.mjs",
-  "/scripts/library_controller.js",
-  "/scripts/query.ts",
-  "/scripts/search_controller.js",
-  "/scripts/services.js",
-  "/scripts/services/backend.js",
-  "/scripts/util.js",
-  "/styles/bootstrap.scss",
-  "/styles/styles.scss",
-  "/styles/tailwind.css",
-  "/views/about.html?import&url",
-  "/views/authorInfo.html",
-  "/views/authorInfo.html?import&url",
-  "/views/contactForm.html?import&url",
-  "/views/dramaweb.html?import&url",
-  "/views/help.html?import&url",
-  "/views/id.html?import&url",
-  "/views/presentations.html?import&url",
-  "/views/search.html?import&url",
-  "/views/sla/biblinfo.html?import&url",
-  "/views/sourceInfo.html?import&url",
-  "/views/start.html?import&raw",
-  "/views/stats.html?import&url"
-])
+const allowedShellStaticRequests = new Set(allowedAuthorShellStaticRequests)
+allowedShellStaticRequests.delete("/views/sla/biblinfo.html")
 
 function sortedQuery(url: URL) {
   return [...url.searchParams.entries()]
