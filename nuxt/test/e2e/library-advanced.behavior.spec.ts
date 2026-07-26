@@ -5,7 +5,11 @@ const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 async function resetRequests(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_library_relevance_requests`),
+    request.delete(`${fixture}/_library_relevance_failure`),
+    request.delete(`${fixture}/_library_relevance_delays`),
     request.delete(`${fixture}/_library_query_requests`),
+    request.delete(`${fixture}/_library_query_failure`),
+    request.delete(`${fixture}/_library_query_delays`),
     request.delete(`${fixture}/_library_imprint_range`),
     request.delete(`${fixture}/_library_imprint_failure`),
     request.delete(`${fixture}/_library_imprint_requests`)
