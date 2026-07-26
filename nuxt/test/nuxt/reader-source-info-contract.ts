@@ -8,9 +8,14 @@ type SourceInfoOperation = paths["/works/{author_id}/{title_path}/source-info"][
 type SourceInfoParameters = operations["v2_get_work_source_info"]["parameters"]
 type SourceInfoResponse = components["schemas"]["WorkSourceInfoResponse"]
 type ApiErrorResponse = components["schemas"]["ApiErrorResponse"]
+type SimilarWorksOperation = paths["/works/{work_id}/similar"]["get"]
+type SimilarWorksParameters = operations["v2_get_similar_works"]["parameters"]
+type SimilarWorksResponse = components["schemas"]["SimilarWorksResponse"]
 
 const operation: SourceInfoOperation = null as unknown as
   operations["v2_get_work_source_info"]
+const similarOperation: SimilarWorksOperation = null as unknown as
+  operations["v2_get_similar_works"]
 
 const withoutMedia: SourceInfoParameters = {
   path: { author_id: "SoderbergH", title_path: "DoktorGlas" }
@@ -24,6 +29,37 @@ const withInvalidMedia: SourceInfoParameters = {
   path: { author_id: "SoderbergH", title_path: "DoktorGlas" },
   // @ts-expect-error The source-info filter only accepts Reader media.
   query: { media_type: "pdf" }
+}
+
+const similarParameters: SimilarWorksParameters = {
+  path: { work_id: "lb1728740" },
+  query: { media_type: "etext" }
+}
+const similarWithInvalidMedia: SimilarWorksParameters = {
+  path: { work_id: "lb1728740" },
+  // @ts-expect-error Similar works only accepts Reader media.
+  query: { media_type: "pdf" }
+}
+// @ts-expect-error media_type is a required similar-works query parameter.
+const similarWithoutMedia: SimilarWorksParameters = {
+  path: { work_id: "lb1728740" }
+}
+const similarSuccess: SimilarWorksResponse = {
+  items: [{
+    author_id: "BoyeK",
+    author_surname: "Boye",
+    title_id: "Bebådelse",
+    start_page: "3",
+    media_type: "etext",
+    label: "Bebådelse [1941]"
+  }]
+}
+const similarWithContentVector: SimilarWorksResponse = {
+  items: [{
+    ...similarSuccess.items[0]!,
+    // @ts-expect-error Similar-work projections never expose the search vector.
+    content_vector: []
+  }]
 }
 
 const success: SourceInfoResponse = {
@@ -76,9 +112,15 @@ const unavailable: ApiErrorResponse = null as unknown as
   operations["v2_get_work_source_info"]["responses"][503]["content"]["application/json"]
 
 void operation
+void similarOperation
 void withoutMedia
 void withMedia
 void withInvalidMedia
+void similarParameters
+void similarWithInvalidMedia
+void similarWithoutMedia
+void similarSuccess
+void similarWithContentVector
 void success
 void successFromOperation
 void missingWorkId

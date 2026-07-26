@@ -48,6 +48,7 @@ import {
   workReaderCss
 } from "./reader-data.mjs"
 import {
+  doktorGlasSimilarWorks,
   navigableSparseSourceInfo,
   sourceInfoByIdentity,
   sourceInfoLicenses,
@@ -284,6 +285,9 @@ let sourceInfoStaticRequests = []
 let sourceInfoFailure = false
 let sourceInfoDelays = {}
 let sourceInfoStaticFailure = null
+let similarWorkRequests = []
+let similarWorkFailure = false
+let similarWorkMalformed = false
 let authorProfileRequests = []
 let authorProfileFailure = false
 let bibliographyRequests = []
@@ -1503,6 +1507,38 @@ function sourceInfoMedia(searchParams) {
     : null
 }
 
+function decodedSimilarWorkId(pathname) {
+  const match = /^\/v2\/works\/([^/]+)\/similar$/.exec(pathname)
+  if (!match) return null
+
+  let workId
+  try {
+    workId = decodeURIComponent(match[1])
+  } catch {
+    return { valid: false, workId: null }
+  }
+  const valid = workId.length >= 2
+    && workId.length <= 100
+    && workId === workId.trim()
+    && workId.toLowerCase().startsWith("lb")
+    && !workId.includes("%")
+    && !workId.includes("/")
+    && !workId.includes("\\")
+    && !/\p{Cc}/u.test(workId)
+    && workId !== "."
+    && workId !== ".."
+  return { valid, workId: workId.toLowerCase() }
+}
+
+function requiredSimilarMedia(searchParams) {
+  if (
+    [...searchParams.keys()].some(key => key !== "media_type")
+    || searchParams.getAll("media_type").length !== 1
+  ) return null
+  const mediaType = searchParams.get("media_type")
+  return mediaType === "etext" || mediaType === "faksimil" ? mediaType : null
+}
+
 function resourceFor(pathname) {
   if (pathname === "/v2/stats") return "stats"
   if (pathname === "/v2/works/popular") return "works"
@@ -1927,6 +1963,35 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_source_info_requests" && request.method === "DELETE") {
     sourceInfoRequests = []
     return sendJson(response, 200, { requests: sourceInfoRequests })
+  }
+  if (url.pathname === "/_similar_work_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: similarWorkRequests })
+  }
+  if (url.pathname === "/_similar_work_requests" && request.method === "DELETE") {
+    similarWorkRequests = []
+    return sendJson(response, 200, { requests: similarWorkRequests })
+  }
+  if (url.pathname === "/_similar_work_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: similarWorkFailure })
+  }
+  if (url.pathname === "/_similar_work_failure" && request.method === "PUT") {
+    similarWorkFailure = true
+    return sendJson(response, 200, { failure: similarWorkFailure })
+  }
+  if (url.pathname === "/_similar_work_failure" && request.method === "DELETE") {
+    similarWorkFailure = false
+    return sendJson(response, 200, { failure: similarWorkFailure })
+  }
+  if (url.pathname === "/_similar_work_malformed" && request.method === "GET") {
+    return sendJson(response, 200, { malformed: similarWorkMalformed })
+  }
+  if (url.pathname === "/_similar_work_malformed" && request.method === "PUT") {
+    similarWorkMalformed = true
+    return sendJson(response, 200, { malformed: similarWorkMalformed })
+  }
+  if (url.pathname === "/_similar_work_malformed" && request.method === "DELETE") {
+    similarWorkMalformed = false
+    return sendJson(response, 200, { malformed: similarWorkMalformed })
   }
   if (url.pathname === "/_source_info_static_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: sourceInfoStaticRequests })
@@ -3961,6 +4026,42 @@ const server = createServer(async (request, response) => {
       authorResolveScenario && Object.hasOwn(scenarioResponses, authorResolveScenario)
         ? scenarioResponses[authorResolveScenario]
         : { items }
+    )
+  }
+
+  const similarWorkIdentity = request.method === "GET"
+    ? decodedSimilarWorkId(rawApiPathname)
+    : null
+  if (similarWorkIdentity !== null) {
+    similarWorkRequests.push({
+      scope: rawPathname.startsWith("/private-v2/") ? "private" : "public",
+      path: rawPathname,
+      query: url.search
+    })
+    const mediaType = requiredSimilarMedia(url.searchParams)
+    if (!similarWorkIdentity.valid || mediaType === null) {
+      return validationError(response)
+    }
+    if (similarWorkFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "backend_unavailable",
+          message: "Search backend unavailable",
+          details: null
+        }
+      })
+    }
+    if (similarWorkMalformed) {
+      return sendJson(response, 200, {
+        items: [{ ...doktorGlasSimilarWorks.items[0], label: "Bebådelse\n" }]
+      })
+    }
+    return sendJson(
+      response,
+      200,
+      similarWorkIdentity.workId === "lb1728740"
+        ? doktorGlasSimilarWorks
+        : { items: [] }
     )
   }
 

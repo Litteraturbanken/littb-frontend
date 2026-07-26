@@ -1,6 +1,53 @@
 // @ts-check
 
 /** @typedef {import("../../app/lib/api/generated/lbapi").components["schemas"]["WorkSourceInfoResponse"]} WorkSourceInfoResponse */
+/** @typedef {import("../../app/lib/api/generated/lbapi").components["schemas"]["SimilarWorksResponse"]} SimilarWorksResponse */
+
+/** @satisfies {SimilarWorksResponse} */
+export const doktorGlasSimilarWorks = {
+  items: [
+    {
+      author_id: "BoyeK",
+      author_surname: "Boye",
+      title_id: "Bebådelse",
+      start_page: "3",
+      media_type: "etext",
+      label: "Bebådelse [1941]"
+    },
+    {
+      author_id: "BoyeK",
+      author_surname: "Boye",
+      title_id: "Bebådelse1948",
+      start_page: "3",
+      media_type: "etext",
+      label: "Bebådelse [Samlade skrifter 8, 1948]"
+    },
+    {
+      author_id: "BoyeK",
+      author_surname: "Boye",
+      title_id: "Uppgörelser",
+      start_page: "3",
+      media_type: "etext",
+      label: "Uppgörelser"
+    },
+    {
+      author_id: "BenedictssonV",
+      author_surname: "Benedictsson",
+      title_id: "Modern",
+      start_page: "1",
+      media_type: "etext",
+      label: "Modern [1888]"
+    },
+    {
+      author_id: "BoyeK",
+      author_surname: "Boye",
+      title_id: "UrFunktion",
+      start_page: "3",
+      media_type: "etext",
+      label: "Ur funktion"
+    }
+  ]
+}
 
 /** @satisfies {WorkSourceInfoResponse} */
 export const doktorGlasSourceInfo = {

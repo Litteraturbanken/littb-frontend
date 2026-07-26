@@ -71,6 +71,9 @@ async function resetReader(request: APIRequestContext) {
     request.delete(`${fixture}/_reader_hit_failure`),
     request.delete(`${fixture}/_reader_hit_delays`),
     request.delete(`${fixture}/_source_info_requests`),
+    request.delete(`${fixture}/_similar_work_requests`),
+    request.delete(`${fixture}/_similar_work_failure`),
+    request.delete(`${fixture}/_similar_work_malformed`),
     request.delete(`${fixture}/_source_info_static_requests`),
     request.delete(`${fixture}/_source_info_failure`),
     request.delete(`${fixture}/_source_info_delays`),
@@ -100,6 +103,10 @@ type SourceInfoRequest = { scope: "private" | "public", path: string, query: str
 
 async function sourceInfoRequests(request: APIRequestContext): Promise<SourceInfoRequest[]> {
   return (await (await request.get(`${fixture}/_source_info_requests`)).json()).requests
+}
+
+async function similarWorkRequests(request: APIRequestContext): Promise<SourceInfoRequest[]> {
+  return (await (await request.get(`${fixture}/_similar_work_requests`)).json()).requests
 }
 
 type AllowedHttpError = {
@@ -492,9 +499,13 @@ test("direct source information hydrates once without a client refetch", async (
 }) => {
   const problems = captureBrowserProblems(page)
   const clientSourceInfoRequests: string[] = []
+  const clientSimilarWorkRequests: string[] = []
   page.on("request", browserRequest => {
     if (new URL(browserRequest.url()).pathname.includes("/api/reader/source-info/")) {
       clientSourceInfoRequests.push(browserRequest.url())
+    }
+    if (/\/works\/[^/]+\/similar$/u.test(new URL(browserRequest.url()).pathname)) {
+      clientSimilarWorkRequests.push(browserRequest.url())
     }
   })
 
@@ -508,9 +519,15 @@ test("direct source information hydrates once without a client refetch", async (
   await expect(dialog).toContainText("Doktor Glas. Roman")
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
   expect(clientSourceInfoRequests).toEqual([])
+  expect(clientSimilarWorkRequests).toEqual([])
   expect(await sourceInfoRequests(request)).toEqual([{
     scope: "private",
     path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
+    query: "?media_type=etext"
+  }])
+  expect(await similarWorkRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/lb1728740/similar",
     query: "?media_type=etext"
   }])
   expect(problems).toEqual([])
@@ -860,6 +877,76 @@ test("normal source information renders exact actions and source metadata", asyn
     "https://creativecommons.org/publicdomain/zero/1.0/deed.sv"
   )
   await expect(dialog.locator(".license")).toContainText("För e-boken gäller licensen CC0.")
+  const similar = dialog.locator(".reader-similar-works")
+  await expect(similar.getByRole("heading", { name: "Läs gärna också" })).toBeVisible()
+  const rows = similar.locator("tbody tr")
+  await expect(rows).toHaveCount(5)
+  await expect(rows.locator("td:first-child")).toHaveText([
+    "Boye", "Boye", "Boye", "Benedictsson", "Boye"
+  ])
+  await expect(rows.getByRole("link")).toHaveText([
+    "Bebådelse [1941]",
+    "Bebådelse [Samlade skrifter 8, 1948]",
+    "Uppgörelser",
+    "Modern [1888]",
+    "Ur funktion"
+  ])
+  expect(await rows.getByRole("link").evaluateAll(links => (
+    links.map(link => link.getAttribute("href"))
+  ))).toEqual([
+    "/f%C3%B6rfattare/BoyeK/titlar/Beb%C3%A5delse/sida/3/etext",
+    "/f%C3%B6rfattare/BoyeK/titlar/Beb%C3%A5delse1948/sida/3/etext",
+    "/f%C3%B6rfattare/BoyeK/titlar/Uppg%C3%B6relser/sida/3/etext",
+    "/f%C3%B6rfattare/BenedictssonV/titlar/Modern/sida/1/etext",
+    "/f%C3%B6rfattare/BoyeK/titlar/UrFunktion/sida/3/etext"
+  ])
+  await expect(similar).toHaveCSS("font-size", "14px")
+  await expect(similar.locator("hr")).toHaveCSS("margin-top", "32px")
+  await expect(similar.locator("hr")).toHaveCSS("margin-bottom", "16px")
+  await expect(similar.getByRole("heading")).toHaveCSS("font-size", "18px")
+  await expect(rows.locator("td:first-child").first()).toHaveCSS("text-align", "right")
+  await expect(rows.locator("td:first-child").first()).toHaveCSS("padding-right", "16px")
+  expect(problems).toEqual([])
+})
+
+test("empty and failed recommendations stay absent without failing source information", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${sparseReaderPath}?om-boken`, { waitUntil: "networkidle" })
+  const sparseDialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(sparseDialog).toContainText("Glest verk")
+  await expect(sparseDialog.locator(".reader-similar-works")).toHaveCount(0)
+  expect(await similarWorkRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/lbSparse1/similar",
+    query: "?media_type=etext"
+  }])
+
+  await request.delete(`${fixture}/_similar_work_requests`)
+  await request.put(`${fixture}/_similar_work_failure`)
+  await page.goto(`${readerPath}?om-boken`, { waitUntil: "networkidle" })
+  const normalDialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(normalDialog).toContainText("Doktor Glas. Roman")
+  await expect(normalDialog.getByRole("alert")).toHaveCount(0)
+  await expect(normalDialog.locator(".reader-similar-works")).toHaveCount(0)
+  expect(await similarWorkRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/lb1728740/similar",
+    query: "?media_type=etext"
+  }])
+  await request.delete(`${fixture}/_similar_work_failure`)
+
+  await request.delete(`${fixture}/_similar_work_requests`)
+  await request.put(`${fixture}/_similar_work_malformed`)
+  await page.goto(`${readerPath}?om-boken`, { waitUntil: "networkidle" })
+  const malformedDialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(malformedDialog).toContainText("Doktor Glas. Roman")
+  await expect(malformedDialog.getByRole("alert")).toHaveCount(0)
+  await expect(malformedDialog.locator(".reader-similar-works")).toHaveCount(0)
+  expect(await similarWorkRequests(request)).toHaveLength(1)
+  await request.delete(`${fixture}/_similar_work_malformed`)
   expect(problems).toEqual([])
 })
 

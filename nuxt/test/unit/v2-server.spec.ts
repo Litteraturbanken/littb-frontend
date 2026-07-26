@@ -60,6 +60,7 @@ import {
   readerSearchHitResponse
 } from "../fixtures/reader-data.mjs"
 import {
+  doktorGlasSimilarWorks,
   doktorGlasSourceInfo,
   dramaSourceInfo,
   malformedSourceInfo,
@@ -90,6 +91,8 @@ type TextSearchCountOperation = paths["/text-search/count"]["post"]
 type TextSearchOptionsOperation = paths["/text-search/options"]["post"]
 type SourceInfoOperation = paths["/works/{author_id}/{title_path}/source-info"]["get"]
 type SourceInfoResponse = components["schemas"]["WorkSourceInfoResponse"]
+type SimilarWorksOperation = paths["/works/{work_id}/similar"]["get"]
+type SimilarWorksResponse = components["schemas"]["SimilarWorksResponse"]
 
 const generatedReaderHitContract: ReaderHitOperation = null as unknown as
   operations["v2_get_work_search_hits"]
@@ -107,6 +110,8 @@ const generatedTextSearchOptionsContract: TextSearchOptionsOperation = null as u
   operations["v2_post_text_search_options"]
 const generatedSourceInfoContract: SourceInfoOperation = null as unknown as
   operations["v2_get_work_source_info"]
+const generatedSimilarWorksContract: SimilarWorksOperation = null as unknown as
+  operations["v2_get_similar_works"]
 const generatedAuthorDocumentDescriptor: AuthorDocumentDescriptor = soderbergPresentation
 const generatedSlaAuthorDocumentDescriptor: AuthorDocumentDescriptor = lagerlofOmtexterna
 const generatedLegacyAuthorRouteResolution: LegacyAuthorRouteResolution = {
@@ -214,6 +219,16 @@ async function authorResolveRequests() {
 
 async function sourceInfoRequests() {
   return await (await fetch(`${origin}/_source_info_requests`)).json() as {
+    requests: Array<{
+      scope: "private" | "public"
+      path: string
+      query: string
+    }>
+  }
+}
+
+async function similarWorkRequests() {
+  return await (await fetch(`${origin}/_similar_work_requests`)).json() as {
     requests: Array<{
       scope: "private" | "public"
       path: string
@@ -482,6 +497,9 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_author_resolve_delays`, { method: "DELETE" }),
       fetch(`${origin}/_author_resolve_scenario`, { method: "DELETE" }),
       fetch(`${origin}/_source_info_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_similar_work_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_similar_work_failure`, { method: "DELETE" }),
+      fetch(`${origin}/_similar_work_malformed`, { method: "DELETE" }),
       fetch(`${origin}/_source_info_static_requests`, { method: "DELETE" }),
       fetch(`${origin}/_source_info_failure`, { method: "DELETE" }),
       fetch(`${origin}/_source_info_delays`, { method: "DELETE" }),
@@ -570,6 +588,45 @@ describe("v2 fixture server operations", () => {
         }
       ]
     })
+  })
+
+  test("serves exact bounded similar works and failure controls", async () => {
+    expect(generatedSimilarWorksContract).toBeNull()
+
+    const normal = await fetch(
+      `${origin}/v2/works/lb1728740/similar?media_type=etext`
+    )
+    const empty = await fetch(
+      `${origin}/private-v2/works/lbSparse1/similar?media_type=faksimil`
+    )
+
+    expect(normal.status).toBe(200)
+    expect(await normal.json() as SimilarWorksResponse).toEqual(doktorGlasSimilarWorks)
+    expect(empty.status).toBe(200)
+    expect(await empty.json() as SimilarWorksResponse).toEqual({ items: [] })
+    expect(await similarWorkRequests()).toEqual({
+      requests: [
+        {
+          scope: "public",
+          path: "/v2/works/lb1728740/similar",
+          query: "?media_type=etext"
+        },
+        {
+          scope: "private",
+          path: "/private-v2/works/lbSparse1/similar",
+          query: "?media_type=faksimil"
+        }
+      ]
+    })
+
+    expect((await fetch(`${origin}/v2/works/lb1728740/similar`)).status).toBe(422)
+    expect((await fetch(
+      `${origin}/v2/works/lb1728740/similar?media_type=pdf`
+    )).status).toBe(422)
+    await fetch(`${origin}/_similar_work_failure`, { method: "PUT" })
+    expect((await fetch(
+      `${origin}/v2/works/lb1728740/similar?media_type=etext`
+    )).status).toBe(503)
   })
 
   test("serves missing failed malformed oversized and delayed source-info scenarios", async () => {

@@ -5,13 +5,19 @@ import type {
   ReaderSourceInfo,
   ReaderSourceInfoDramaFact
 } from "#shared/types/reader-source-info"
+import type { components } from "~/lib/api/generated/lbapi"
 
-const props = defineProps<{
+type SimilarWork = components["schemas"]["SimilarWork"]
+
+const props = withDefaults(defineProps<{
   open: boolean
   loading: boolean
   failed: boolean
   sourceInfo: ReaderSourceInfo | null
-}>()
+  similarWorks?: SimilarWork[]
+}>(), {
+  similarWorks: () => []
+})
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -56,6 +62,19 @@ function hideBrokenImage(event: Event): void {
   if (event.currentTarget instanceof HTMLElement) {
     event.currentTarget.style.display = "none"
   }
+}
+
+function similarWorkHref(work: SimilarWork): string {
+  return [
+    "",
+    "författare",
+    work.author_id,
+    "titlar",
+    work.title_id,
+    "sida",
+    work.start_page,
+    work.media_type
+  ].map((segment, index) => index === 0 ? segment : encodeURIComponent(segment)).join("/")
 }
 
 watch(() => props.sourceInfo?.workId, () => {
@@ -302,6 +321,19 @@ onMounted(() => {
             </div>
 
             <div class="clearfix" />
+
+            <div v-if="similarWorks.length" class="reader-similar-works mt-4 text-sm">
+              <hr class="mt-8 mb-4">
+              <h3 class="text-lg">Läs gärna också</h3>
+              <table>
+                <tbody>
+                  <tr v-for="work in similarWorks" :key="`${work.author_id}:${work.title_id}:${work.start_page}:${work.media_type}`">
+                    <td class="text-right pr-4"><span class="sc text-primary">{{ work.author_surname }}</span></td>
+                    <td><NuxtLink :to="similarWorkHref(work)">{{ work.label }}</NuxtLink></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             </template>
           </div>
         </div>

@@ -344,6 +344,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/works/{work_id}/similar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Similar Works */
+        get: operations["v2_get_similar_works"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/works/lookup": {
         parameters: {
             query?: never;
@@ -858,6 +875,29 @@ export interface components {
             field: "author_ids" | "keyword" | "language" | "main_author.gender" | "mediatype" | "modernized" | "proofread" | "provenance.library" | "source" | "texttype";
             /** Value */
             value: string;
+        };
+        /** SimilarWork */
+        SimilarWork: {
+            /** Author Id */
+            author_id: string;
+            /** Author Surname */
+            author_surname: string;
+            /** Label */
+            label: string;
+            /**
+             * Media Type
+             * @enum {string}
+             */
+            media_type: "etext" | "faksimil";
+            /** Start Page */
+            start_page: string;
+            /** Title Id */
+            title_id: string;
+        };
+        /** SimilarWorksResponse */
+        SimilarWorksResponse: {
+            /** Items */
+            items: components["schemas"]["SimilarWork"][];
         };
         /** SlaArticleDescriptor */
         SlaArticleDescriptor: {
@@ -2455,6 +2495,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkSearchHitsResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_similar_works: {
+        parameters: {
+            query: {
+                media_type: "etext" | "faksimil";
+            };
+            header?: never;
+            path: {
+                work_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimilarWorksResponse"];
                 };
             };
             /** @description Invalid request */

@@ -30,6 +30,9 @@ async function resetReader(request: APIRequestContext) {
     request.delete(`${fixture}/_reader_hit_failure`),
     request.delete(`${fixture}/_reader_hit_delays`),
     request.delete(`${fixture}/_source_info_requests`),
+    request.delete(`${fixture}/_similar_work_requests`),
+    request.delete(`${fixture}/_similar_work_failure`),
+    request.delete(`${fixture}/_similar_work_malformed`),
     request.delete(`${fixture}/_source_info_static_requests`),
     request.delete(`${fixture}/_source_info_failure`),
     request.delete(`${fixture}/_source_info_delays`),
@@ -81,6 +84,14 @@ async function sourceInfoRequests(request: APIRequestContext): Promise<Array<{
   query: string
 }>> {
   return (await (await request.get(`${fixture}/_source_info_requests`)).json()).requests
+}
+
+async function similarWorkRequests(request: APIRequestContext): Promise<Array<{
+  scope: "private" | "public"
+  path: string
+  query: string
+}>> {
+  return (await (await request.get(`${fixture}/_similar_work_requests`)).json()).requests
 }
 
 async function sourceInfoStaticRequests(request: APIRequestContext): Promise<string[]> {
@@ -237,11 +248,52 @@ test("direct bare source-information SSR renders the Reader and complete modal o
   expect(html).toContain("Göteborgs universitetsbibliotek")
   expect(html).toContain("För e-boken gäller licensen CC0")
   expect(html).toContain("följande ändringar gjorts mot originalet")
+  const { document } = parseHTML(html)
+  const similarRows = [...document.querySelectorAll(".reader-similar-works tbody tr")]
+  expect(similarRows.map(row => ({
+    author: row.querySelector("td:first-child")?.textContent?.trim(),
+    label: row.querySelector("a")?.textContent?.trim(),
+    href: row.querySelector("a")?.getAttribute("href")
+  }))).toEqual([
+    {
+      author: "Boye",
+      label: "Bebådelse [1941]",
+      href: "/f%C3%B6rfattare/BoyeK/titlar/Beb%C3%A5delse/sida/3/etext"
+    },
+    {
+      author: "Boye",
+      label: "Bebådelse [Samlade skrifter 8, 1948]",
+      href: "/f%C3%B6rfattare/BoyeK/titlar/Beb%C3%A5delse1948/sida/3/etext"
+    },
+    {
+      author: "Boye",
+      label: "Uppgörelser",
+      href: "/f%C3%B6rfattare/BoyeK/titlar/Uppg%C3%B6relser/sida/3/etext"
+    },
+    {
+      author: "Benedictsson",
+      label: "Modern [1888]",
+      href: "/f%C3%B6rfattare/BenedictssonV/titlar/Modern/sida/1/etext"
+    },
+    {
+      author: "Boye",
+      label: "Ur funktion",
+      href: "/f%C3%B6rfattare/BoyeK/titlar/UrFunktion/sida/3/etext"
+    }
+  ])
+  expect(document.querySelector(".reader-similar-works h3")?.textContent?.trim())
+    .toBe("Läs gärna också")
+  expect(html).not.toContain("content_vector")
   expect(html).not.toContain("Ett fel har uppstått.")
   expect(html).toMatch(/<body[^>]*class="focus page-reading ready modal-open"/u)
   expect(await sourceInfoRequests(request)).toEqual([{
     scope: "private",
     path: "/private-v2/works/S%C3%B6derbergH/DoktorGlas/source-info",
+    query: "?media_type=etext"
+  }])
+  expect(await similarWorkRequests(request)).toEqual([{
+    scope: "private",
+    path: "/private-v2/works/lb1728740/similar",
     query: "?media_type=etext"
   }])
   expectSourceInfoStaticCacheLedger(await sourceInfoStaticRequests(request))
