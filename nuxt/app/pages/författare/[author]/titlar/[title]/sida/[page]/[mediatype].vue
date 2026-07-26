@@ -342,7 +342,11 @@ function readerWordPosition(value: string, workId: string): ReaderWordPosition |
     : null
 }
 
-function isWorkSearchHit(value: unknown, workId: string): value is WorkSearchHit {
+function isWorkSearchHit(
+  value: unknown,
+  workId: string,
+  mediaType: "etext" | "faksimil"
+): value is WorkSearchHit {
   if (!isRecord(value)) return false
   if (
     !isSafeInteger(value.index) ||
@@ -366,10 +370,13 @@ function isWorkSearchHit(value: unknown, workId: string): value is WorkSearchHit
   if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
     fromPosition.ordinal > toPosition.ordinal) return false
 
-  const expectedPageScopes = new Set([`page:${value.page_index}`])
-  if (/^[0-9]+$/.test(value.page_name)) expectedPageScopes.add(`page:${value.page_name}`)
-  return (fromPosition.pageIndex === null || expectedPageScopes.has(fromPosition.scope)) &&
-    (toPosition.pageIndex === null || expectedPageScopes.has(toPosition.scope))
+  const expectedPageScope = mediaType === "etext"
+    ? `page:${value.page_index}`
+    : /^[0-9]+$/.test(value.page_name)
+      ? `page:${value.page_name}`
+      : null
+  return (fromPosition.pageIndex === null || fromPosition.scope === expectedPageScope) &&
+    (toPosition.pageIndex === null || toPosition.scope === expectedPageScope)
 }
 
 function isExpectedHitResponse(
@@ -392,7 +399,7 @@ function isExpectedHitResponse(
 
   for (const [position, item] of value.items.entries()) {
     if (
-      !isWorkSearchHit(item, workId) ||
+      !isWorkSearchHit(item, workId, mediaType) ||
       item.index !== offset + position ||
       item.index >= value.total_hits
     ) return false
@@ -1077,7 +1084,7 @@ const selectedSearchHit = computed<WorkSearchHit | null>(() => {
       to_word_id: toWordId
     }
   }
-  return isWorkSearchHit(hit, currentReader.workId) ? hit : null
+  return isWorkSearchHit(hit, currentReader.workId, currentReader.mediaType) ? hit : null
 })
 const previousHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null

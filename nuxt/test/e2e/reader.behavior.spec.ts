@@ -2191,12 +2191,12 @@ test("faksimil search state requests its own hits and exposes live navigation", 
     "&repeat=%2f&repeat=%2F"
   )
   await expect.poll(() => page.evaluate(() => location.search)).toContain(
-    "&traff=w98_20&traffslut=w98_21"
+    "&traff=w99_20&traffslut=w99_21"
   )
   await expect.poll(() => page.evaluate(() => location.search)).toContain("&hit_index=1")
   await expect(toolkit).toContainText("Träff 2, sida 99")
-  await expect(page.locator(".reader_main .overlay #w98_20.markee")).toHaveCount(1)
-  await expect(page.locator(".reader_main .overlay #w98_21.markee.flip")).toHaveCount(1)
+  await expect(page.locator(".reader_main .overlay #w99_20.markee")).toHaveCount(1)
+  await expect(page.locator(".reader_main .overlay #w99_21.markee.flip")).toHaveCount(1)
 
   await page.goBack({ waitUntil: "networkidle" })
   await expect(page).toHaveURL(/\/sida\/58\/faksimil\?q=kyrka&hit=0/)
@@ -2297,6 +2297,45 @@ test("malformed faksimil canonical search state fails closed without hit IO", as
   await expect(page.locator(".reader_main .markee")).toHaveCount(0)
   expect(await readerHitRequests(request)).toEqual([])
 })
+
+for (const mismatch of [
+  {
+    label: "faksimil word id bound to page index",
+    path: "/författare/AarnsethF/titlar/Rallarliv/sida/58/faksimil",
+    query: "faksimil-index-word",
+    mediaType: "faksimil"
+  },
+  {
+    label: "etext word id bound to numeric page name",
+    path: readerPath,
+    query: "etext-name-word",
+    mediaType: "etext"
+  }
+]) {
+  test(`${mismatch.label} fails closed without controls or marquee`, async ({
+    page,
+    request
+  }) => {
+    await page.goto(`${mismatch.path}?q=${mismatch.query}&hit=0`, {
+      waitUntil: "networkidle"
+    })
+
+    await expect(page.locator(".reader-search-message")).toHaveText(
+      "Sökträffen kunde inte hämtas."
+    )
+    await expect(page.locator(".reader-search-position, .reader-hit-navigation")).toHaveCount(0)
+    await expect(page.locator("#search_nav").getByRole("link", {
+      name: /^(?:Föregående|Nästa) sökträff$/
+    })).toHaveCount(0)
+    await expect(page.locator(".reader_main .markee")).toHaveCount(0)
+    expect(await readerHitRequests(request)).toEqual([expect.objectContaining({
+      path: expect.stringContaining("/works/"),
+      query: expect.stringContaining(
+        `media_type=${mismatch.mediaType}&query=${mismatch.query}`
+      )
+    })])
+  })
+}
 
 test("a failed faksimil scan stays bounded while context and navigation contract remain intact", async ({
   page

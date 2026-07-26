@@ -554,7 +554,7 @@ test("real faksimil search hit falls back to backend metadata when the asset sou
   expect(html).toContain("Sökträff 1 av 3")
   expect(html).toContain("Nästa sökträff")
   expect(html).toContain("sida/99/faksimil?q=kyrka&amp;hit=1")
-  expect(html).toContain("traff=w98_20&amp;traffslut=w98_21")
+  expect(html).toContain("traff=w99_20&amp;traffslut=w99_21")
   expect(html).toContain("hit_index=1")
   expect(await separateReaderRequests(request)).toEqual({
     metadata: [
@@ -1109,6 +1109,38 @@ test("a malformed hit response is contained locally", async ({ request }) => {
   expect(html).toContain("Sökträffen kunde inte hämtas.")
   expect(html).not.toContain("markee")
 })
+
+for (const mismatch of [
+  {
+    label: "faksimil index-scoped word id",
+    path: "/f%C3%B6rfattare/AarnsethF/titlar/Rallarliv/sida/58/faksimil",
+    query: "faksimil-index-word",
+    mediaType: "faksimil"
+  },
+  {
+    label: "etext page-name-scoped word id",
+    path: readerPath,
+    query: "etext-name-word",
+    mediaType: "etext"
+  }
+]) {
+  test(`${mismatch.label} is rejected before hit presentation`, async ({ request }) => {
+    const response = await request.get(`${mismatch.path}?q=${mismatch.query}&hit=0`)
+    expect(response.status()).toBe(200)
+    const html = await response.text()
+
+    expect(html).toContain("Sökträffen kunde inte hämtas.")
+    expect(html).not.toContain("reader-search-position")
+    expect(html).not.toContain("reader-hit-navigation")
+    expect(html).not.toContain("markee")
+    expect(await readerHitRequests(request)).toEqual([expect.objectContaining({
+      path: expect.stringContaining("/works/"),
+      query: expect.stringContaining(
+        `media_type=${mismatch.mediaType}&query=${mismatch.query}`
+      )
+    })])
+  })
+}
 
 test("page-mismatch preserves the original Reader HTML without a marker", async ({
   request

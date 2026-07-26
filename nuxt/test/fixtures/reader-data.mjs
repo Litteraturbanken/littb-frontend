@@ -454,6 +454,36 @@ export function readerSearchHitResponse(
   limit = 3,
   mediaType = "etext"
 ) {
+  if (query === "faksimil-index-word") {
+    return {
+      query,
+      media_type: mediaType,
+      offset,
+      limit,
+      total_hits: 1,
+      items: [{
+        index: 0,
+        page_name: "58",
+        page_index: 57,
+        highlight: { from_word_id: "w57_123", to_word_id: "w57_123" }
+      }]
+    }
+  }
+  if (query === "etext-name-word") {
+    return {
+      query,
+      media_type: mediaType,
+      offset,
+      limit,
+      total_hits: 1,
+      items: [{
+        index: 0,
+        page_name: "58",
+        page_index: 57,
+        highlight: { from_word_id: "w58_123", to_word_id: "w58_123" }
+      }]
+    }
+  }
   if (workId === "lb3203777" && mediaType === "faksimil" && query === "kyrka") {
     const items = [
       {
@@ -466,13 +496,13 @@ export function readerSearchHitResponse(
         index: 1,
         page_name: "99",
         page_index: 98,
-        highlight: { from_word_id: "w98_20", to_word_id: "w98_21" }
+        highlight: { from_word_id: "w99_20", to_word_id: "w99_21" }
       },
       {
         index: 2,
         page_name: "3",
         page_index: 2,
-        highlight: { from_word_id: "w2_10", to_word_id: "w2_10" }
+        highlight: { from_word_id: "w3_10", to_word_id: "w3_10" }
       }
     ]
     return {

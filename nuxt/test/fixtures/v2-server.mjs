@@ -3593,8 +3593,8 @@ const server = createServer(async (request, response) => {
     const content = url.pathname.endsWith("00057.html")
       ? '<span class="w" style="top: 364px; left: 255.4px; font-size: 16.3408px"><span id="w58_123">kyrka </span><span id="w58_123">. </span></span>'
       : url.pathname.endsWith("00098.html")
-        ? '<span class="w"><span id="w98_20">kyrka </span><span id="w98_21">igen</span></span>'
-        : '<span class="w"><span id="w2_10">kyrka</span></span>'
+        ? '<span class="w"><span id="w99_20">kyrka </span><span id="w99_21">igen</span></span>'
+        : '<span class="w"><span id="w3_10">kyrka</span></span>'
     return sendBody(
       response,
       200,
