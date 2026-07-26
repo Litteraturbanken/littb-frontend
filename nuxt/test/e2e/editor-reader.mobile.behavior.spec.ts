@@ -61,3 +61,15 @@ test("mobile Editor exposes the restored Reader tools accessibly", async ({ page
   await closeFocus.focus()
   await closeFocus.press("Enter")
 })
+
+test("mobile Editor restores a serialized search hit and marquee", async ({ page }) => {
+  await page.goto(
+    "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2",
+    { waitUntil: "networkidle" }
+  )
+  await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" }))
+    .toContainText("Träff 1, sida 5")
+  await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+})

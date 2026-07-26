@@ -25,3 +25,11 @@ Playwright Editor SSR + desktop + mobile suites
 ```
 
 The focused coverage includes SSR source-dialog rendering and fallback links; hydration; Escape, backdrop, focus return; repeated raw query preservation; compact aliases; search result navigation; atomic metadata failure; and mobile keyboard accessibility.
+
+## Search-state follow-up
+
+Independent review found that the first implementation navigated to a shallow `q`/`hit` URL but did not restore the legacy hit session. The follow-up now serializes and validates the live `show_search_work`, `s_*`, `hit_index`, `traff`, and `traffslut` model; renders the search toolbar; marks the selected OCR range; and supports previous/next, first/last, direct-hit, close, reload, Back, and Forward behavior. Requests remain typed, bounded, identity-scoped, abortable, and fail closed.
+
+The Editor now also uses the same OCR loader as the ordinary Reader. This restores the real `lb8345227` overlay from the content source (including work-scoped IDs such as `lb8345227_501`) instead of probing the obsolete editor-source OCR path. A live local SSR check for `lb8345227`, query `brev`, hit 3/page 5 returned 237 hits and rendered `lb8345227_501` with `markee`.
+
+Fresh follow-up verification: `yarn typecheck` passed, and the complete Editor SSR/desktop/mobile suite passed 42/42.

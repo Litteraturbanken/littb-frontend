@@ -1,6 +1,7 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderPart, ReaderPartAuthor, ReaderWorkContributor } from "#shared/types/reader"
 import { normalizeReaderAuthorContribution } from "#shared/utils/reader-author"
+import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 import {
   fetchBoundedEditorJson,
   fetchBoundedEditorText,
@@ -471,19 +472,15 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   let overlayWidth: number | null = null
   let overlayHeight: number | null = null
   if (mediaType === "faksimil") {
-    try {
-      const filename = String(pageIndex).padStart(5, "0")
-      const url = new URL(`${base}/txt/${encodeURIComponent(workId)}/ocr_${filename}.html`)
-      url.searchParams.set("username", "app")
-      const rawOverlay = await fetchBoundedEditorText(url, maxOverlayLength)
-      const overlay = parseOverlay(rawOverlay)
-      if (overlay) {
-        overlayHtml = overlay.html
-        overlayWidth = overlay.width
-        overlayHeight = overlay.height
-      }
-    } catch {
-      // OCR is an enhancement. The facsimile remains useful when it is absent.
+    const overlay = await fetchReaderOcrOverlay(
+      config.contentBase.replace(/\/$/, ""),
+      workId,
+      pageIndex
+    )
+    if (overlay) {
+      overlayHtml = overlay.html
+      overlayWidth = overlay.width
+      overlayHeight = overlay.height
     }
   }
   const sanitizedHtml = html === null ? null : sanitizeEditorEtextHtml(html)

@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { parseHTML } from "linkedom"
+
 import type { EditorReaderPage } from "#shared/types/editor-reader"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
+import { parseTextSearchReturnHref } from "~/lib/text-search-navigation"
 import {
   readerContentsHref,
   readerContentsIsOpen,
@@ -416,6 +419,17 @@ function adjustFocusText(delta: number): void {
 }
 
 type WorkSearchHit = components["schemas"]["WorkSearchHit"]
+type WorkSearchHitsResponse = components["schemas"]["WorkSearchHitsResponse"]
+type EditorSearchState = Readonly<{
+  fromWordId: string
+  hit: number
+  includeOlderSpellings: boolean
+  prefix: boolean
+  query: string
+  suffix: boolean
+  toWordId: string
+  wordForms: boolean
+}>
 type WorkSearchOption = "default" | "lemma" | "modernize" | "prefix" | "suffix" | "infix"
 const workSearchOpen = ref(false)
 const workSearchQuery = ref("")
@@ -499,6 +513,224 @@ function decodedRawQueryKey(segment: string): string | null {
   }
 }
 
+function routeSingleString(key: string): string | null {
+  const value = route.query[key]
+  return typeof value === "string" ? value : null
+}
+
+function parseBooleanQuery(value: string | null, fallback: boolean): boolean | null {
+  if (value === null) return fallback
+  if (value === "true") return true
+  if (value === "false") return false
+  return null
+}
+
+const maximumHitOffset = 1_000_000
+const searchState = computed<EditorSearchState | null>(() => {
+  const current = page.value
+  const query = routeSingleString("s_query")?.trim() ?? ""
+  const hitIndex = routeSingleString("hit_index")
+  const fromWordId = routeSingleString("traff")
+  const toWordId = routeSingleString("traffslut")
+  const wordFormOnly = parseBooleanQuery(routeSingleString("s_word_form_only"), true)
+  const includeOlderSpellings = parseBooleanQuery(
+    routeSingleString("s_include_modernized"),
+    true
+  )
+  const prefix = parseBooleanQuery(routeSingleString("s_prefix"), false)
+  const suffix = parseBooleanQuery(routeSingleString("s_suffix"), false)
+  if (
+    !current?.searchable || query.length < 1 || query.length > 200 ||
+    routeSingleString("s_lbworkid") !== current.workId ||
+    routeSingleString("s_mediatype") !== current.mediaType ||
+    !hitIndex || !/^(?:0|[1-9]\d*)$/.test(hitIndex) ||
+    !fromWordId || !toWordId || fromWordId.length > 100 || toWordId.length > 100 ||
+    wordFormOnly === null || includeOlderSpellings === null || prefix === null || suffix === null
+  ) return null
+  const hit = Number(hitIndex)
+  if (!Number.isSafeInteger(hit) || hit > maximumHitOffset) return null
+  return Object.freeze({
+    fromWordId,
+    hit,
+    includeOlderSpellings,
+    prefix,
+    query,
+    suffix,
+    toWordId,
+    wordForms: !wordFormOnly
+  })
+})
+
+watch(() => route.query.show_search_work, value => {
+  workSearchOpen.value = value !== undefined
+}, { immediate: true })
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+}
+
+function wordPosition(value: string, currentWorkId: string): {
+  ordinal: number
+  page: number | null
+  scope: string
+} | null {
+  const match = /^w(?<page>[0-9]+)_(?<ordinal>[0-9]+)$/.exec(value)
+  if (match?.groups) {
+    const page = Number(match.groups.page)
+    const ordinal = Number(match.groups.ordinal)
+    return Number.isSafeInteger(page) && Number.isSafeInteger(ordinal)
+      ? { page, ordinal, scope: `page:${page}` }
+      : null
+  }
+  const prefix = `${currentWorkId}_`
+  const rawOrdinal = value.startsWith(prefix) ? value.slice(prefix.length) : ""
+  if (!/^[0-9]+$/.test(rawOrdinal)) return null
+  const ordinal = Number(rawOrdinal)
+  return Number.isSafeInteger(ordinal)
+    ? { page: null, ordinal, scope: `work:${currentWorkId}` }
+    : null
+}
+
+function isWorkSearchHit(value: unknown, current: EditorReaderPage): value is WorkSearchHit {
+  if (!isRecord(value) || typeof value.index !== "number" || !Number.isSafeInteger(value.index) ||
+    typeof value.page_name !== "string" || value.page_name.length < 1 ||
+    typeof value.page_index !== "number" || !Number.isSafeInteger(value.page_index) ||
+    !isRecord(value.highlight)) return false
+  const from = wordPosition(String(value.highlight.from_word_id ?? ""), current.workId)
+  const to = wordPosition(String(value.highlight.to_word_id ?? ""), current.workId)
+  if (!from || !to || from.scope !== to.scope || from.ordinal > to.ordinal) return false
+  if (current.mediaType === "faksimil" && from.page !== null &&
+    String(from.page) !== value.page_name) return false
+  return value.page_index >= 0 && value.page_index < (current.pageCount ?? 0)
+}
+
+function isExpectedHitResponse(
+  value: unknown,
+  state: EditorSearchState,
+  current: EditorReaderPage,
+  offset: number,
+  limit: number
+): value is WorkSearchHitsResponse {
+  if (!isRecord(value) || !Array.isArray(value.items) || value.query !== state.query ||
+    value.media_type !== current.mediaType || value.offset !== offset || value.limit !== limit ||
+    !Number.isSafeInteger(value.total_hits) || value.items.length > limit) return false
+  return value.items.every((item, position) => isWorkSearchHit(item, current) &&
+    item.index === offset + position && item.index < Number(value.total_hits))
+}
+
+const searchRequestIdentity = computed(() => JSON.stringify([
+  requestIdentity.value,
+  loadedIdentity.value,
+  searchState.value
+]))
+let hitFetchController: AbortController | null = null
+const hitFetch = await useAsyncData(
+  computed(() => `editor-hit:${searchRequestIdentity.value}`),
+  async (_nuxtApp, { signal }) => {
+    hitFetchController?.abort()
+    const identity = searchRequestIdentity.value
+    const state = searchState.value
+    const current = page.value
+    if (!state || !current) return { status: "inactive" as const, identity }
+    const offset = Math.max(state.hit - 1, 0)
+    const controller = new AbortController()
+    hitFetchController = controller
+    try {
+      const client = createLbApiClient(import.meta.server ? config.apiBase : config.public.apiBase)
+      const result = await client.GET("/works/{work_id}/search-hits", {
+        signal: AbortSignal.any([signal, controller.signal]),
+        params: {
+          path: { work_id: current.workId },
+          query: {
+            media_type: current.mediaType,
+            query: state.query,
+            offset,
+            limit: 3,
+            word_forms: state.wordForms,
+            include_older_spellings: state.includeOlderSpellings,
+            prefix: state.prefix,
+            suffix: state.suffix
+          }
+        }
+      })
+      if (result.error || !isExpectedHitResponse(result.data, state, current, offset, 3)) {
+        return { status: "error" as const, identity }
+      }
+      return { status: "success" as const, identity, response: result.data }
+    } catch {
+      return { status: "error" as const, identity }
+    } finally {
+      if (hitFetchController === controller) hitFetchController = null
+    }
+  },
+  { watch: [searchRequestIdentity] }
+)
+onBeforeUnmount(() => hitFetchController?.abort())
+const hitResponse = computed(() => {
+  const current = hitFetch.data.value
+  return current?.status === "success" && current.identity === searchRequestIdentity.value
+    ? current.response
+    : null
+})
+const activeHit = computed(() => {
+  const state = searchState.value
+  if (!state || !hitResponse.value) return null
+  const hit = hitResponse.value.items.find(item => item.index === state.hit) ?? null
+  return hit && hit.highlight.from_word_id === state.fromWordId &&
+    hit.highlight.to_word_id === state.toWordId ? hit : null
+})
+const previousHit = computed(() => {
+  const state = searchState.value
+  return state && hitResponse.value?.items.find(item => item.index === state.hit - 1) || null
+})
+const nextHit = computed(() => {
+  const state = searchState.value
+  return state && hitResponse.value?.items.find(item => item.index === state.hit + 1) || null
+})
+
+function markEditorHtml(html: string, hit: WorkSearchHit | null): string {
+  const current = page.value
+  if (!hit || !current || hit.page_index !== current.pageIndex) return html
+  const { document } = parseHTML(`<div data-editor-highlight-root>${html}</div>`)
+  const root = document.querySelector("[data-editor-highlight-root]")
+  if (!root) return html
+  const spans = Array.from(root.querySelectorAll("span[id]"))
+  const start = spans.findIndex(span => span.getAttribute("id") === hit.highlight.from_word_id)
+  const end = spans.findLastIndex(span => span.getAttribute("id") === hit.highlight.to_word_id)
+  if (start < 0 || end < start) return html
+  for (let position = start; position <= end; position += 1) {
+    spans[position]!.classList.add("markee")
+    if ((position - start) % 2 === 1) spans[position]!.classList.add("flip")
+  }
+  return root.innerHTML
+}
+const markedEditorHtml = computed(() => page.value?.html
+  ? markEditorHtml(page.value.html, activeHit.value)
+  : null)
+const markedOverlayHtml = computed(() => page.value?.overlayHtml
+  ? markEditorHtml(page.value.overlayHtml, activeHit.value)
+  : null)
+
+const editorSearchKeys = new Set([
+  "show_search_work", "s_query", "s_lbworkid", "s_mediatype",
+  "s_word_form_only", "s_include_modernized", "s_prefix", "s_suffix",
+  "hit_index", "traff", "traffslut"
+])
+
+function searchNeutralHref(fullPath: string): string {
+  const fragmentIndex = fullPath.indexOf("#")
+  const fragment = fragmentIndex < 0 ? "" : fullPath.slice(fragmentIndex)
+  const beforeHash = fragmentIndex < 0 ? fullPath : fullPath.slice(0, fragmentIndex)
+  const queryIndex = beforeHash.indexOf("?")
+  if (queryIndex < 0) return fullPath
+  const path = beforeHash.slice(0, queryIndex)
+  const retained = beforeHash.slice(queryIndex + 1).split("&").filter(segment => {
+    const key = decodedRawQueryKey(segment)
+    return key === null || !editorSearchKeys.has(key)
+  })
+  return `${path}${retained.length ? `?${retained.join("&")}` : ""}${fragment}`
+}
+
 function workSearchHitHref(hit: WorkSearchHit, query: string): string {
   const target = href(hit.page_index)
   const fragmentIndex = target.indexOf("#")
@@ -509,9 +741,23 @@ function workSearchHitHref(hit: WorkSearchHit, query: string): string {
   const rawQuery = queryIndex < 0 ? "" : beforeHash.slice(queryIndex + 1)
   const retained = rawQuery.length === 0 ? [] : rawQuery.split("&").filter(segment => {
     const key = decodedRawQueryKey(segment)
-    return key !== "q" && key !== "hit"
+    return key === null || !editorSearchKeys.has(key)
   })
-  retained.push(new URLSearchParams({ q: query }).toString(), `hit=${hit.index}`)
+  retained.push(
+    "show_search_work",
+    `s_query=${encodeURIComponent(query)}`,
+    `s_lbworkid=${encodeURIComponent(workId.value)}`,
+    `s_mediatype=${encodeURIComponent(page.value?.mediaType ?? "")}`,
+    `s_word_form_only=${String(!workSearchLemma.value)}`,
+    `s_include_modernized=${String(workSearchOlderSpellings.value)}`
+  )
+  if (workSearchPrefix.value) retained.push("s_prefix=true")
+  if (workSearchSuffix.value) retained.push("s_suffix=true")
+  retained.push(
+    `hit_index=${hit.index}`,
+    `traff=${encodeURIComponent(hit.highlight.from_word_id)}`,
+    `traffslut=${encodeURIComponent(hit.highlight.to_word_id)}`
+  )
   return `${path}?${retained.join("&")}${fragment}`
 }
 
@@ -552,11 +798,10 @@ async function submitWorkSearch(): Promise<void> {
       }
     })
     const hit = result.error ? null : result.data?.items[0]
-    if (!hit || hit.page_index < 0 || hit.page_index >= (current.pageCount ?? 0)) {
+    if (!hit || !isWorkSearchHit(hit, current)) {
       workSearchMessage.value = result.error ? "Sökningen kunde inte genomföras." : "Inga träffar."
       return
     }
-    workSearchOpen.value = false
     await navigateRawFullPath(workSearchHitHref(hit, query))
   } catch (searchError) {
     if (!(searchError instanceof DOMException && searchError.name === "AbortError")) {
@@ -566,6 +811,78 @@ async function submitWorkSearch(): Promise<void> {
     if (workSearchController === controller) workSearchController = null
   }
 }
+
+watch(searchState, state => {
+  if (!state) return
+  workSearchQuery.value = state.query
+  workSearchLemma.value = state.wordForms
+  workSearchOlderSpellings.value = state.includeOlderSpellings
+  workSearchPrefix.value = state.prefix
+  workSearchSuffix.value = state.suffix
+}, { immediate: true })
+
+let hitNavigationGeneration = 0
+watch(rawFullPath, () => {
+  hitNavigationGeneration += 1
+}, { flush: "sync" })
+
+async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
+  const state = searchState.value
+  const current = page.value
+  const response = hitResponse.value
+  const sourceIdentity = searchRequestIdentity.value
+  if (!state || !current || !response || index < 0 || index >= response.total_hits ||
+    index > maximumHitOffset) return null
+  const cached = response.items.find(item => item.index === index)
+  if (cached) return cached
+  try {
+    const client = createLbApiClient(config.public.apiBase)
+    const result = await client.GET("/works/{work_id}/search-hits", {
+      params: {
+        path: { work_id: current.workId },
+        query: {
+          media_type: current.mediaType,
+          query: state.query,
+          offset: index,
+          limit: 1,
+          word_forms: state.wordForms,
+          include_older_spellings: state.includeOlderSpellings,
+          prefix: state.prefix,
+          suffix: state.suffix
+        }
+      }
+    })
+    if (result.error || !isExpectedHitResponse(result.data, state, current, index, 1) ||
+      result.data.total_hits !== response.total_hits ||
+      sourceIdentity !== searchRequestIdentity.value) return null
+    return result.data.items[0] ?? null
+  } catch {
+    return null
+  }
+}
+
+async function navigateToHit(index: number): Promise<void> {
+  const generation = ++hitNavigationGeneration
+  const state = searchState.value
+  if (!state) return
+  const hit = await hitAtIndex(index)
+  if (!hit || generation !== hitNavigationGeneration) return
+  await navigateRawFullPath(workSearchHitHref(hit, state.query))
+}
+
+function closeWorkSearchHits(): void {
+  workSearchOpen.value = false
+  workSearchQuery.value = ""
+  workSearchMessage.value = ""
+  void navigateRawFullPath(searchNeutralHref(rawFullPath.value))
+}
+
+const searchReturnHref = computed(() => {
+  const value = route.query.s_return
+  return parseTextSearchReturnHref({
+    s_return: Array.isArray(value) ? value.map(item => item ?? "") : value ?? undefined
+  })
+})
 function isEditableTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && (
     target.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)
@@ -643,9 +960,9 @@ useHead(() => ({
   <div class="editor-reader reader-page">
     <p v-if="clientRequestFailed" class="reader-error" role="alert">Ett fel inträffade vid sidhämtningen.</p>
     <section v-if="page" class="reader_main state-not-parallel relative" :class="{ 'type-faksimil': page.mediaType === 'faksimil', focus: focusMode, night: focusMode && focusNightMode, ocr: ocrMode }" :style="focusReaderStyle" @click="toggleFocusBar">
-      <div v-if="page.html" class="etext txt" v-html="page.html" />
-      <div v-if="page.overlayHtml && page.overlayWidth && page.overlayHeight" class="absolute left-0 top-0 overflow-hidden h-full w-full pointer-events-none">
-        <div class="overlay overflow-hidden origin-top-left" :style="overlayStyle" v-html="page.overlayHtml" />
+      <div v-if="markedEditorHtml" class="etext txt" v-html="markedEditorHtml" />
+      <div v-if="markedOverlayHtml && page.overlayWidth && page.overlayHeight" class="absolute left-0 top-0 overflow-hidden h-full w-full pointer-events-none">
+        <div class="overlay overflow-hidden origin-top-left" :style="overlayStyle" v-html="markedOverlayHtml" />
       </div>
       <div v-if="selectedFacsimileSource" class="img_area" :style="selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px` } : undefined"><img ref="facsimileImage" class="faksimil transform transition duration-200" :style="{ ...(selectedFacsimileSource.width ? { width: `${selectedFacsimileSource.width}px`, maxWidth: `${selectedFacsimileSource.width}px` } : {}), transform: `rotate(${rotation}deg)` }" :src="selectedFacsimileSource.url" :alt="`Sida ${page.pageIndex}`" @load="updateImageWidth"></div>
     </section>
@@ -669,6 +986,37 @@ useHead(() => ({
       />
     </ClientOnly>
     <ClientOnly>
+      <Teleport v-if="searchState" to="#toolkit">
+        <EditorSearchNavigation
+          :active-hit="activeHit"
+          :current-page-name="page?.pageName ?? null"
+          :failed="hitFetch.data.value?.status === 'error'"
+          :loading="hitFetch.status.value === 'pending'"
+          :next-hit="nextHit"
+          :previous-hit="previousHit"
+          :return-href="searchReturnHref"
+          :total-hits="hitResponse?.total_hits ?? null"
+          @close="closeWorkSearchHits"
+          @navigate="navigateToHit"
+        />
+      </Teleport>
+      <template #fallback>
+        <EditorSearchNavigation
+          v-if="searchState"
+          :active-hit="activeHit"
+          :current-page-name="page?.pageName ?? null"
+          :failed="hitFetch.data.value?.status === 'error'"
+          :loading="hitFetch.status.value === 'pending'"
+          :next-hit="nextHit"
+          :previous-hit="previousHit"
+          :return-href="searchReturnHref"
+          :total-hits="hitResponse?.total_hits ?? null"
+          @close="closeWorkSearchHits"
+          @navigate="navigateToHit"
+        />
+      </template>
+    </ClientOnly>
+    <ClientOnly>
       <Teleport to="#toolkit">
         <div
           v-if="page?.mediaType === 'faksimil'"
@@ -687,7 +1035,7 @@ useHead(() => ({
         </div>
       </Teleport>
       <Teleport to="#toolkit-right">
-        <aside v-if="page" class="reader-context editor-reader-context" aria-label="Läsinformation och sidnavigering">
+        <aside v-if="page" class="reader-context editor-reader-context" :class="{ 'has-search-hit': searchState }" aria-label="Läsinformation och sidnavigering">
           <template v-if="page.metadataAvailable">
             <div class="editor-metadata-controls"><div class="author"><ReaderContributors :contributors="page.contributors" /></div><span class="title">{{ page.title }}{{ " " }}</span><span
               v-if="page.imprintYear"

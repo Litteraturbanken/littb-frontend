@@ -3318,6 +3318,7 @@ const server = createServer(async (request, response) => {
     }
     if (
       editorWorkId === "lb-editor-boye"
+      || editorWorkId === "lb8345227"
       || editorWorkId === "lb-editor-malformed-contributor"
       || editorWorkId === "lb-editor-malformed-part"
     ) {
@@ -3403,16 +3404,23 @@ const server = createServer(async (request, response) => {
   }
 
   if (request.method === "GET" && /^\/txt\/lb-editor-doktor\/ocr_0000[012]\.html$/.test(url.pathname)) {
-    if (url.searchParams.get("username") !== "app") {
-      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
-    }
     return sendBody(response, 200, "text/html; charset=utf-8", '<body><div data-size="2500x3600"><span class="w">OCR</span></div></body>')
   }
 
+  const editorBoyeOcrMatch = request.method === "GET"
+    ? /^\/txt\/(lb8345227|lb-editor-boye)\/ocr_0000([4-6])\.html$/.exec(url.pathname)
+    : null
+  if (editorBoyeOcrMatch) {
+    const pageName = String(Number(editorBoyeOcrMatch[2]) + 1)
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      `<body><div data-size="2500x3600"><span class="w" id="w${pageName}_1">brev</span> <span class="w" id="w${pageName}_2">till</span></div></body>`
+    )
+  }
+
   if (request.method === "GET" && /^\/txt\/lb-editor-fallback\/ocr_0000[012]\.html$/.test(url.pathname)) {
-    if (url.searchParams.get("username") !== "app") {
-      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
-    }
     return sendBody(
       response,
       200,
@@ -3423,7 +3431,7 @@ const server = createServer(async (request, response) => {
 
   if (
     ["GET", "HEAD"].includes(request.method) &&
-    /^\/txt\/(lb-editor-(?:boye|doktor|fallback|malformed-contributor|malformed-part|no-ocr|mixed|long|sparse))\/\1_[234]\/\1_[234]_\d{4}\.jpeg$/.test(url.pathname)
+    /^\/txt\/(lb8345227|lb-editor-(?:boye|doktor|fallback|malformed-contributor|malformed-part|no-ocr|mixed|long|sparse))\/\1_[234]\/\1_[234]_\d{4}\.jpeg$/.test(url.pathname)
   ) {
     return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }

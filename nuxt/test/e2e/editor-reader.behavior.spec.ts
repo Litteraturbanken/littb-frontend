@@ -131,22 +131,145 @@ test("editor Reader restores focus mode through raw-preserving router history", 
     .toBe(initial)
 })
 
-test("editor Reader work search opens, focuses, and navigates to the first raw hit", async ({
-  page
+test("editor Reader work search restores reloadable hit state, marquee, and history", async ({
+  page,
+  request
 }) => {
-  await page.goto(`${editorEtext}?keep=%2f&keep=%2F`, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  const initial = "/editor/lb8345227/ix/4/f?keep=%2f&keep=%2F"
+  await page.goto(initial, { waitUntil: "networkidle" })
 
   const trigger = page.getByRole("link", { name: "Sök i verket", exact: true })
   await trigger.click()
   const input = page.getByRole("searchbox", { name: "Sök i verket" })
   await expect(input).toBeFocused()
-  await input.fill("kyrka")
+  await input.fill("brev")
   await page.getByRole("button", { name: "Sök", exact: true }).click()
 
-  await expect(page).toHaveURL(
-    /\/editor\/lb-editor-doktor\/ix\/1\/e\?keep=%2f&keep=%2F&q=kyrka&hit=0$/u
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/4\/f.*s_query=brev/u)
+  const submitted = new URL(page.url())
+  expect(Object.fromEntries(submitted.searchParams)).toMatchObject({
+    s_query: "brev",
+    s_lbworkid: "lb8345227",
+    s_mediatype: "faksimil",
+    s_word_form_only: "true",
+    s_include_modernized: "true",
+    hit_index: "0",
+    traff: "w5_1",
+    traffslut: "w5_2"
+  })
+  expect(submitted.searchParams.has("show_search_work")).toBe(true)
+  expect(submitted.searchParams.getAll("keep")).toEqual(["/", "/"])
+  const hitNavigation = page.getByRole("navigation", { name: "Sökträffsnavigering" })
+  await expect(hitNavigation).toContainText("3 sökträffar")
+  await expect(hitNavigation).toContainText("Träff 1, sida 5")
+  await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+  await expect(page.locator("#w5_2.markee.flip")).toHaveCount(1)
+
+  await hitNavigation.getByRole("link", { name: "Nästa sökträff" }).click()
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f.*hit_index=1/u)
+  await expect(page.locator("#w6_1.markee")).toHaveCount(1)
+  await page.goBack()
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/4\/f.*hit_index=0/u)
+  await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+  await page.goForward()
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f.*hit_index=1/u)
+  await expect(page.locator("#w6_1.markee")).toHaveCount(1)
+  await page.goBack()
+  await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(hitNavigation).toContainText("Träff 1, sida 5")
+  await expect(page.locator("#w5_1.markee")).toHaveCount(1)
+  await hitNavigation.getByRole("link", { name: "Gå till sista träffen" }).click()
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/6\/f.*hit_index=2/u)
+  await expect(page.locator("#w7_1.markee")).toHaveCount(1)
+
+  await hitNavigation.getByRole("link", { name: "Gå direkt till träff" }).click()
+  const gotoHit = hitNavigation.getByRole("textbox", { name: "Träffnummer" })
+  await gotoHit.fill("2")
+  await gotoHit.press("Enter")
+  await expect(page).toHaveURL(/\/editor\/lb8345227\/ix\/5\/f.*hit_index=1/u)
+  await expect(page.locator("#w6_1.markee")).toHaveCount(1)
+
+  const requests = await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+  expect(requests.requests).toEqual(expect.arrayContaining([
+    expect.objectContaining({
+      path: "/v2/works/lb8345227/search-hits",
+      query: expect.stringContaining("media_type=faksimil&query=brev")
+    })
+  ]))
+
+  await hitNavigation.getByRole("link", { name: "Stäng träffvisningen" }).click()
+  expect(new URL(page.url()).pathname + new URL(page.url()).search)
+    .toBe("/editor/lb8345227/ix/5/f?keep=%2f&keep=%2F")
+  await expect(page.locator(".editor-reader .markee")).toHaveCount(0)
+  await expect(hitNavigation).toHaveCount(0)
+})
+
+test("editor Reader search state fails closed on mismatched identity and backend failure", async ({
+  page,
+  request
+}) => {
+  const suffix = "&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.goto(
+    "/editor/lb8345227/ix/4/f?s_query=brev&s_lbworkid=other" + suffix,
+    { waitUntil: "networkidle" }
   )
-  await expect(page.locator(".editor-reader .etext")).toContainText("EDITORSSIDA 1")
+  await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" })).toHaveCount(0)
+  await expect(page.locator(".editor-reader .markee")).toHaveCount(0)
+  expect((await (await request.get(`${fixture}/_reader_hit_requests`)).json()).requests)
+    .toEqual([])
+
+  await request.put(`${fixture}/_reader_hit_failure`)
+  try {
+    await page.goto(
+      "/editor/lb8345227/ix/4/f?s_query=brev&s_lbworkid=lb8345227" + suffix,
+      { waitUntil: "networkidle" }
+    )
+    await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" }))
+      .toContainText("Sökträffen kunde inte hämtas.")
+    await expect(page.locator(".editor-reader .markee")).toHaveCount(0)
+    await expect(page.locator(".editor-reader .faksimil")).toBeVisible()
+  } finally {
+    await request.delete(`${fixture}/_reader_hit_failure`)
+  }
+})
+
+test("a delayed obsolete Editor hit cannot mark a later raw route", async ({ page, request }) => {
+  await page.goto("/editor/lb8345227/ix/4/f", { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  const slowKey = "lb8345227|brev|0|3|false|true|false|false"
+  await request.put(`${fixture}/_reader_hit_delays`, { data: { [slowKey]: 350 } })
+  try {
+    await page.evaluate(() => {
+      const nuxt = (window as typeof window & { useNuxtApp?: () => {
+        $router: { push: (target: string) => Promise<unknown> }
+      } }).useNuxtApp?.()
+      void nuxt?.$router.push(
+        "/editor/lb8345227/ix/4/f?s_query=brev&s_lbworkid=lb8345227" +
+        "&s_mediatype=faksimil&s_word_form_only=true&s_include_modernized=true" +
+        "&hit_index=0&traff=w5_1&traffslut=w5_2"
+      )
+    })
+    await expect.poll(async () => (
+      await (await request.get(`${fixture}/_reader_hit_requests`)).json()
+    ).requests.length).toBe(1)
+    await page.evaluate(() => {
+      const nuxt = (window as typeof window & { useNuxtApp?: () => {
+        $router: { push: (target: string) => Promise<unknown> }
+      } }).useNuxtApp?.()
+      void nuxt?.$router.push("/editor/lb8345227/ix/6/f")
+    })
+    await expect(page).toHaveURL("/editor/lb8345227/ix/6/f")
+    await page.waitForTimeout(450)
+    await expect(page.getByRole("navigation", { name: "Sökträffsnavigering" })).toHaveCount(0)
+    await expect(page.locator(".editor-reader .markee")).toHaveCount(0)
+  } finally {
+    await request.delete(`${fixture}/_reader_hit_delays`)
+  }
 })
 
 test("editor Reader suppresses non-atomic contributor and part metadata", async ({ page }) => {

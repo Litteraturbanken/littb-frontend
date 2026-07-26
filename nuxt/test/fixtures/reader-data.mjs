@@ -347,6 +347,28 @@ const phraseHits = [
 ]
 
 function hitsForQuery(query, workId) {
+  if (query === "brev" && (workId === "lb8345227" || workId === "lb-editor-boye")) {
+    return [
+      {
+        index: 0,
+        page_name: "5",
+        page_index: 4,
+        highlight: { from_word_id: "w5_1", to_word_id: "w5_2" }
+      },
+      {
+        index: 1,
+        page_name: "6",
+        page_index: 5,
+        highlight: { from_word_id: "w6_1", to_word_id: "w6_1" }
+      },
+      {
+        index: 2,
+        page_name: "7",
+        page_index: 6,
+        highlight: { from_word_id: "w7_1", to_word_id: "w7_1" }
+      }
+    ]
+  }
   const workScopedRangeVariants = {
     "cross-work-id": ["lb7604980_8654", "lb7604980_8658"],
     "malformed-work-id": ["lb7604979_x", "lb7604979_8658"],

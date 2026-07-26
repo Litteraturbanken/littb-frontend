@@ -59,7 +59,8 @@ test("SSR falls back to count_pages when editor metadata is unavailable", async 
   )
   expect(document.querySelector(".editor-reader script")).toBeNull()
   expect(document.querySelector(".editor-reader [onclick]")).toBeNull()
-  expect(document.querySelector(".editor-reader .overlay [id]")).toBeNull()
+  expect(document.querySelector(".editor-reader .overlay #mainview")?.textContent)
+    .toContain("SAFE OCR")
   expect(document.querySelector(".editor-reader .overlay .absolute")).toBeNull()
   expect(document.querySelector(".editor-reader .overlay .pointer-events-auto")).toBeNull()
   expect(document.querySelector(".editor-reader .overlay > [data-size]")?.getAttribute("style"))
@@ -221,6 +222,19 @@ test("SSR renders a requested Editor source-information dialog", async ({ reques
   expect(dialog?.textContent).toContain("Doktor Glas. Roman")
   expect(dialog?.querySelector('a[href="/författare/S%C3%B6derbergH"]')?.textContent)
     .toContain("Hjalmar Söderberg")
+})
+
+test("SSR restores a serialized Editor search hit and marquee", async ({ request }) => {
+  const response = await request.get(
+    "/editor/lb8345227/ix/4/f?show_search_work&s_query=brev" +
+    "&s_lbworkid=lb8345227&s_mediatype=faksimil&s_word_form_only=true" +
+    "&s_include_modernized=true&hit_index=0&traff=w5_1&traffslut=w5_2"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("#search_nav")?.textContent).toContain("Träff 1, sida 5")
+  expect(document.querySelector("#w5_1.markee")).not.toBeNull()
+  expect(document.querySelector("#w5_2.markee.flip")).not.toBeNull()
 })
 
 test("SSR rejects partial Editor contributor and part metadata atomically", async ({ request }) => {
