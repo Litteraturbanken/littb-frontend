@@ -11,7 +11,7 @@ const source = readFileSync(
 
 test("hydrates the Reader Dramawebben logo as Nuxt navigation", () => {
   expect(source).toMatch(
-    /<li v-if="reader\.hasDramawebben">\s*<NuxtLink to="\/dramawebben"><img[\s\S]*?class="dw_logo"[\s\S]*?<\/NuxtLink>\s*<\/li>/u
+    /<li v-if="reader\.hasDramawebben">\s*<NuxtLink(?=[^>]*\bto="\/dramawebben")[^>]*><img[\s\S]*?class="dw_logo"[\s\S]*?<\/NuxtLink>\s*<\/li>/u
   )
 })
 
