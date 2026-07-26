@@ -18,6 +18,8 @@ import DramawebbenShell from "~/components/dramawebben/DramawebbenShell.vue"
 import ReaderSourceInfoDialog from "~/components/reader/ReaderSourceInfoDialog.vue"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
+import { authorProfilePath } from "~/lib/author-profile"
+import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import { readerSourceInfoIsOpen } from "~/lib/reader-routes"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 
@@ -178,11 +180,11 @@ function selectedAuthorLabel(value: unknown): string {
 }
 
 function mediaHref(media: CatalogMedia): string {
-  return media.downloadable ? media.url : `${media.url}#dw`
+  return media.downloadable ? media.url : canonicalNuxtHref(`${media.url}#dw`)
 }
 
 function titleHref(media: CatalogMedia): string {
-  return `${media.url}#dw`
+  return canonicalNuxtHref(`${media.url}#dw`)
 }
 
 function sourceInfoIdentityFromMedia(media: CatalogMedia) {
@@ -508,7 +510,7 @@ useHead(() => ({
         I Dramawebben hittar du pjäser som har mer metadata, till exempel information om
         hur många roller det är. Det finns många fler pjäser i Litteraturbanken som du
         kan hitta i
-        <a href="/bibliotek?keywords=texttype:drama;dramasamling&amp;visa=works&amp;sort=titlar">Biblioteket</a>.
+        <NuxtLink to="/bibliotek?keywords=texttype:drama;dramasamling&amp;visa=works&amp;sort=titlar">Biblioteket</NuxtLink>.
       </p>
 
       <div class="controls">
@@ -645,24 +647,28 @@ useHead(() => ({
         <tbody>
           <tr v-for="work in filteredWorks" :key="work.work_id">
             <td class="author">
-              <a :href="`/författare/${encodeURIComponent(work.authors[0]!.author_id)}/dramawebben`">
+              <NuxtLink :to="authorProfilePath(work.authors[0]!.author_id, 'dramawebben')">
                 <span class="sc">{{ authorName(work.authors[0]!).surname }}</span><template v-if="authorName(work.authors[0]!).given">,<span class="firstname">{{ " " }}{{ authorName(work.authors[0]!).given }}</span></template>
-              </a>
+              </NuxtLink>
             </td>{{ " " }}
             <td class="title"><a
+              v-if="work.media[0]!.downloadable"
               :href="titleHref(work.media[0]!)"
+            >{{ work.short_title || work.title }}</a><NuxtLink
+              v-else
+              :to="titleHref(work.media[0]!)"
               @click="work.media[0]!.media_type === 'infopost' && openCatalogSourceInfo($event, work.media[0]!)"
-            >{{ work.short_title || work.title }}</a></td>{{ " " }}
+            >{{ work.short_title || work.title }}</NuxtLink></td>{{ " " }}
             <td>
               <ul class="mediatypes">
                 <li v-for="(media, index) in work.media" :key="`${media.media_type}-${index}`">
                   <a v-if="media.downloadable" class="sc" target="_self" download :href="media.url">{{ media.media_type }}</a>
-                  <a
+                  <NuxtLink
                     v-else
                     class="sc"
-                    :href="mediaHref(media)"
+                    :to="mediaHref(media)"
                     @click="media.media_type === 'infopost' && openCatalogSourceInfo($event, media)"
-                  >{{ media.media_type }}</a>
+                  >{{ media.media_type }}</NuxtLink>
                   {{ " " }}
                 </li>
               </ul>
@@ -675,9 +681,9 @@ useHead(() => ({
         <tbody>
           <tr v-for="author in filteredAuthors" :key="author.author_id">
             <td class="author">
-              <a :href="`/författare/${encodeURIComponent(author.author_id)}/dramawebben`">
+              <NuxtLink :to="authorProfilePath(author.author_id, 'dramawebben')">
                 <span class="sc">{{ authorName(author).surname }}</span><template v-if="authorName(author).given">,<span class="firstname">{{ " " }}{{ authorName(author).given }}</span></template>
-              </a>
+              </NuxtLink>
             </td>{{ " " }}
             <td>{{ authorYear(author) }}</td>
           </tr>

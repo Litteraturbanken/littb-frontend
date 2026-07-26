@@ -496,6 +496,28 @@ test("a source-information failure remains modal-local and retries from history"
   expect(problems).toEqual([])
 })
 
+test("a PDF-primary Drama title remains a native static handoff", async ({
+  page,
+  request
+}) => {
+  await setCatalogFailure(request, "pdf-primary-200")
+  await page.goto("/dramawebben/pjäser", { waitUntil: "networkidle" })
+  const title = page.locator("table.contenttable:not(.authors) td.title a").first()
+  await expect(title).toHaveAttribute(
+    "href",
+    "/txt/lb-dramat-001/lb-dramat-001.pdf#dw"
+  )
+  await page.evaluate(() => {
+    ;(window as typeof window & { __spaSentinel?: string }).__spaSentinel = "drama-spa"
+  })
+
+  await title.click()
+  await expect(page).toHaveURL(/\/txt\/lb-dramat-001\/lb-dramat-001\.pdf#dw$/u)
+  expect(await page.evaluate(() =>
+    (window as typeof window & { __spaSentinel?: string }).__spaSentinel
+  )).toBeUndefined()
+})
+
 test("the list toggle pushes query-owned history and Back/Forward restores each table", async ({
   page,
   request

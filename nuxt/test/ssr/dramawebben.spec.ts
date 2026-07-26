@@ -114,7 +114,7 @@ function expectStartShell(html: string) {
     { href: "/dramawebben/pjäser", label: "Pjäser" },
     { href: "/dramawebben/kringtexter", label: "Mer läsning" },
     {
-      href: "/sok?avancerad&keywords=keyword:Dramawebben",
+      href: "/s%C3%B6k?avancerad&keywords=keyword:Dramawebben",
       label: "Sök i pjäserna"
     },
     { href: "/dramawebben/om", label: "Om dramawebben" },
@@ -159,7 +159,7 @@ function expectManagedShell(
   expect(links).toEqual([
     { href: "/dramawebben/pjäser", label: "Pjäser" },
     { href: "/dramawebben/kringtexter", label: "Mer läsning" },
-    { href: "/sok?avancerad&keywords=keyword:Dramawebben", label: "Sök" },
+    { href: "/s%C3%B6k?avancerad&keywords=keyword:Dramawebben", label: "Sök" },
     { href: "/dramawebben/om", label: "Om" },
     { href: "/", label: "Till Litteraturbanken" }
   ])
@@ -196,8 +196,13 @@ test("SSR renders the populated catalog through one private typed request", asyn
   const firstReadHref = document.querySelector(
     'a[href$="/AgrellA/titlar/Domd/sida/1/etext#dw"]'
   )?.getAttribute("href")
-  expect(firstReadHref && decodeURI(firstReadHref)).toBe(
-    "/författare/AgrellA/titlar/Domd/sida/1/etext#dw"
+  expect(firstReadHref).toBe(
+    "/f%C3%B6rfattare/AgrellA/titlar/Domd/sida/1/etext#dw"
+  )
+  expect(document.querySelector(
+    'table.contenttable:not(.authors) td.author a'
+  )?.getAttribute("href")).toBe(
+    "/f%C3%B6rfattare/AgrellA/dramawebben"
   )
   expect(await catalogRequests(request)).toEqual([{
     method: "GET",

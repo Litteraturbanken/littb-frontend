@@ -14,7 +14,7 @@ const isStartPage = computed(() => props.page === "start")
   <div :class="isStartPage ? 'startpage' : 'subpage'">
     <div class="logo">
       <h1>
-        <a href="/dramawebben"><img :src="dramawebbenLogo" alt="Dramawebben"></a>
+        <NuxtLink to="/dramawebben"><img :src="dramawebbenLogo" alt="Dramawebben"></NuxtLink>
       </h1>
       <h2>Fri svensk dramatik <br>hos Litteraturbanken</h2>
     </div>
@@ -22,20 +22,20 @@ const isStartPage = computed(() => props.page === "start")
     <div>
       <ul class="links">
         <li :class="{ active: page === 'pjäser' }">
-          <a href="/dramawebben/pjäser">Pjäser</a>
+          <NuxtLink to="/dramawebben/pjäser">Pjäser</NuxtLink>
         </li>{{ " " }}
         <li :class="{ active: page === 'kringtexter' }">
-          {{ " " }}<a href="/dramawebben/kringtexter">Mer läsning</a>
+          {{ " " }}<NuxtLink to="/dramawebben/kringtexter">Mer läsning</NuxtLink>
         </li>{{ " " }}
         <li>
-          {{ " " }}<a href="/sok?avancerad&amp;keywords=keyword:Dramawebben">Sök <span
+          {{ " " }}<NuxtLink to="/s%C3%B6k?avancerad&amp;keywords=keyword:Dramawebben">Sök <span
             v-if="isStartPage"
-          >i pjäserna</span></a>
+          >i pjäserna</span></NuxtLink>
         </li>{{ " " }}
         <li>
-          {{ " " }}<a href="/dramawebben/om">Om <span v-if="isStartPage">dramawebben</span></a>
+          {{ " " }}<NuxtLink to="/dramawebben/om">Om <span v-if="isStartPage">dramawebben</span></NuxtLink>
         </li>{{ " " }}
-        <li><a href="/">Till Litteraturbanken</a></li>
+        <li><NuxtLink to="/">Till Litteraturbanken</NuxtLink></li>
       </ul>
 
       <div class="page_content">
