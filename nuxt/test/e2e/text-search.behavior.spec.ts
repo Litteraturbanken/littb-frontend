@@ -541,6 +541,48 @@ test("chronology native slider keyboard input remains independent of the bare tr
   expect(new URL(page.url()).searchParams.get("keep")).toBe("keyboard")
 })
 
+test("chronology capture loss resets its draft and prevents a stale pointer commit", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&intervall=1300,1900&keep=capture")
+  const track = page.locator("[data-search-chronology-range]")
+  const box = await track.boundingBox()
+  expect(box).not.toBeNull()
+  const yearX = (year: number) => (
+    box!.x + 10 + (box!.width - 20) * (year - 1248) / (2026 - 1248)
+  )
+  const y = box!.y + box!.height / 2
+
+  await track.evaluate(element => {
+    element.setPointerCapture = () => undefined
+  })
+  await track.dispatchEvent("pointerdown", {
+    button: 0,
+    clientX: yearX(1400),
+    clientY: y,
+    pointerId: 81
+  })
+  await expect(page.getByRole("slider", { name: "Från år reglage" })).toHaveValue("1400")
+  await track.dispatchEvent("lostpointercapture", { pointerId: 81 })
+  await expect(page.getByRole("slider", { name: "Från år reglage" })).toHaveValue("1300")
+  await track.dispatchEvent("pointermove", {
+    button: 0,
+    clientX: yearX(1500),
+    clientY: y,
+    pointerId: 81
+  })
+  await track.dispatchEvent("pointerup", {
+    button: 0,
+    clientX: yearX(1500),
+    clientY: y,
+    pointerId: 81
+  })
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("intervall"))
+    .toBe("1300,1900")
+  expect(new URL(page.url()).searchParams.get("keep")).toBe("capture")
+})
+
 test("late option bounds do not overwrite a chronology edit in progress", async ({
   page,
   request

@@ -528,6 +528,7 @@ function finishRangePointer(event: PointerEvent, key: RangeKey) {
 }
 
 function cancelRangePointer() {
+  if (!rangePointer.value) return
   rangePointer.value = null
 }
 
@@ -653,6 +654,7 @@ useHead(() => ({
                   @pointerdown="beginRangePointer($event, field.key)"
                   @pointerup="finishRangePointer($event, field.key)"
                   @pointercancel="cancelRangePointer"
+                  @lostpointercapture="cancelRangePointer"
                 >
                   <span class="range_values"><span>{{ selectedRange(field.key).from }}</span><span>{{ selectedRange(field.key).to }}</span></span>
                   <input

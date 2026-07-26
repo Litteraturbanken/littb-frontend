@@ -621,6 +621,7 @@ function finishChronologyPointer(event: PointerEvent) {
 }
 
 function cancelChronologyPointer() {
+  if (!chronologyPointerEndpoint.value) return
   chronologyPointerEndpoint.value = null
   chronologyDraftDirty.value = false
   syncChronologyDraft()
@@ -1247,6 +1248,7 @@ useHead({
           @pointermove="moveChronologyPointer"
           @pointerup="finishChronologyPointer"
           @pointercancel="cancelChronologyPointer"
+          @lostpointercapture="cancelChronologyPointer"
         >
           <input
             type="range"

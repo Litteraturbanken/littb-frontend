@@ -651,9 +651,11 @@ test("range bare-track pointers choose the nearest handle and mutate the route o
   const clickPages = async (value: number) => {
     const track = page.locator("[data-drama-range=number_of_pages]")
     const box = await track.boundingBox()
+    const lineBox = await track.locator("input[type=range]").first().boundingBox()
     expect(box).not.toBeNull()
+    expect(lineBox).not.toBeNull()
     const x = box!.x + 7.5 + (box!.width - 15) * (value - 18) / (120 - 18)
-    await page.mouse.click(x, box!.y + box!.height - 4)
+    await page.mouse.click(x, lineBox!.y + lineBox!.height / 2)
   }
   const mutationCount = () => page.evaluate(
     () => (window as typeof window & { __rangeMutations?: number }).__rangeMutations
@@ -682,8 +684,10 @@ test("range bare-track pointers choose the nearest handle and mutate the route o
   await openPagesRange()
   const pagesTrack = page.locator("[data-drama-range=number_of_pages]")
   const box = await pagesTrack.boundingBox()
+  const lineBox = await pagesTrack.locator("input[type=range]").first().boundingBox()
   expect(box).not.toBeNull()
-  await page.mouse.click(box!.x + 1, box!.y + box!.height - 4)
+  expect(lineBox).not.toBeNull()
+  await page.mouse.click(box!.x + 1, lineBox!.y + lineBox!.height / 2)
   await expectQuery(page, "number_of_pages", "18,120")
   expect(await mutationCount()).toBe(1)
 })
@@ -704,8 +708,10 @@ test("all drama range tracks share pointer behavior while native keyboard input 
   ]) {
     const track = page.locator(`[data-drama-range=${key}]`)
     const box = await track.boundingBox()
+    const lineBox = await track.locator("input[type=range]").first().boundingBox()
     expect(box).not.toBeNull()
-    await page.mouse.click(box!.x + box!.width * 0.25, box!.y + box!.height - 4)
+    expect(lineBox).not.toBeNull()
+    await page.mouse.click(box!.x + box!.width * 0.25, lineBox!.y + lineBox!.height / 2)
     await expect.poll(() => new URL(page.url()).searchParams.has(key)).toBe(true)
   }
 
@@ -724,6 +730,54 @@ test("all drama range tracks share pointer behavior while native keyboard input 
     pointerId: 72
   })
   expect(page.url()).toBe(beforeRightClick)
+})
+
+test("drama range capture loss prevents a later stale pointer commit", async ({ page }) => {
+  await page.goto(
+    "/dramawebben/pj%C3%A4ser?number_of_pages=24,120&keep=capture",
+    { waitUntil: "networkidle" }
+  )
+  await page.getByRole("button", { name: "Akter och roller", exact: true }).click()
+  const track = page.locator("[data-drama-range=number_of_pages]")
+  const box = await track.boundingBox()
+  const lineBox = await track.locator("input[type=range]").first().boundingBox()
+  expect(box).not.toBeNull()
+  expect(lineBox).not.toBeNull()
+  const valueX = (value: number) => (
+    box!.x + 7.5 + (box!.width - 15) * (value - 18) / (120 - 18)
+  )
+  const y = lineBox!.y + lineBox!.height / 2
+
+  await track.evaluate(element => {
+    element.setPointerCapture = () => undefined
+    element.addEventListener("pointercancel", event => event.stopImmediatePropagation(), {
+      capture: true
+    })
+  })
+  await track.dispatchEvent("pointerdown", {
+    button: 0,
+    clientX: valueX(30),
+    clientY: y,
+    pointerId: 82
+  })
+  await expect(page.getByRole("slider", { name: "Antal sidor från" })).toBeFocused()
+  await track.dispatchEvent("lostpointercapture", { pointerId: 82 })
+  await track.dispatchEvent("pointermove", {
+    button: 0,
+    clientX: valueX(40),
+    clientY: y,
+    pointerId: 82
+  })
+  await track.dispatchEvent("pointerup", {
+    button: 0,
+    clientX: valueX(40),
+    clientY: y,
+    pointerId: 82
+  })
+
+  await page.waitForTimeout(100)
+  await expectQuery(page, "number_of_pages", "24,120")
+  expect(new URL(page.url()).searchParams.get("keep")).toBe("capture")
 })
 
 test("Headless UI catalog controls support keyboard, Escape, outside close, and focus return", async ({
