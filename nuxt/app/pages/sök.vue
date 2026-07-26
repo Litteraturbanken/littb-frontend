@@ -592,9 +592,14 @@ const titleLoading = ref(false)
 const titleOptionsFailed = ref(false)
 const titleOptionsExpanded = ref(false)
 const titleFilterText = ref("")
+let failedTitleOptionsRequest: Readonly<{
+  titleFilter: string
+  titleLimit: 30 | 500
+}> | null = null
 watch(routeIdentity, () => {
   titleOptionsExpanded.value = false
   titleOptionsFailed.value = false
+  failedTitleOptionsRequest = null
 })
 async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) {
   const requestedState = state.value
@@ -605,6 +610,7 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
   titleController = controller
   titleLoading.value = true
   titleOptionsFailed.value = false
+  failedTitleOptionsRequest = null
   const body = buildTextSearchOptionsRequest(requestedState, {
     titleFilter,
     selectedWorkIds: requestedState.workIds,
@@ -628,13 +634,16 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
         titleTotal: accepted.title_total
       }
       titleOptionsExpanded.value = titleLimit === 500
+      failedTitleOptionsRequest = null
     } else if (version === titleVersion && identity === routeIdentity.value) {
       titleOptionsFailed.value = true
+      failedTitleOptionsRequest = { titleFilter, titleLimit }
     }
   } catch (error) {
     if (!(error instanceof DOMException && error.name === "AbortError")) {
       if (version === titleVersion && identity === routeIdentity.value) {
         titleOptionsFailed.value = true
+        failedTitleOptionsRequest = { titleFilter, titleLimit }
       }
     }
   } finally {
@@ -643,7 +652,15 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
 }
 
 function queueTitleOptions(titleFilter: string) {
-  if (titleFilterText.value !== titleFilter) titleOptionsExpanded.value = false
+  if (titleFilterText.value !== titleFilter) {
+    titleVersion += 1
+    titleController?.abort()
+    titleController = null
+    titleLoading.value = false
+    titleOptionsExpanded.value = false
+    titleOptionsFailed.value = false
+    failedTitleOptionsRequest = null
+  }
   titleFilterText.value = titleFilter
   if (titleTimer) clearTimeout(titleTimer)
   titleTimer = setTimeout(() => {
@@ -658,6 +675,12 @@ function showAllTitleOptions() {
   void loadTitleOptions(titleFilterText.value, 500)
 }
 
+function retryTitleOptions() {
+  if (!failedTitleOptionsRequest) return
+  const { titleFilter, titleLimit } = failedTitleOptionsRequest
+  void loadTitleOptions(titleFilter, titleLimit)
+}
+
 function cancelTitleOptions() {
   titleVersion += 1
   if (titleTimer) clearTimeout(titleTimer)
@@ -667,6 +690,7 @@ function cancelTitleOptions() {
   titleLoading.value = false
   titleOptionsFailed.value = false
   titleOptionsExpanded.value = false
+  failedTitleOptionsRequest = null
 }
 
 const authorChoices = computed<SearchMultiSelectOption[]>(() => {
@@ -1232,7 +1256,7 @@ useHead({
               <button
                 type="button"
                 @mousedown.prevent
-                @click="showAllTitleOptions"
+                @click="retryTitleOptions"
               >Försök igen</button>
             </p>
             <SearchMultiSelect

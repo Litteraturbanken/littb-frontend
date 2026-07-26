@@ -1669,6 +1669,19 @@ const textSearchTitleCatalog = [
   }
 ]
 
+function selectedTextSearchTitleOptions(body, options) {
+  const merged = [...options]
+  for (const selectedWorkId of body.selected_work_ids || []) {
+    const selected = textSearchTitleCatalog.find(
+      item => item.option.work_id === selectedWorkId
+    )?.option
+    if (selected && !merged.some(option => option.work_id === selectedWorkId)) {
+      merged.unshift(selected)
+    }
+  }
+  return merged
+}
+
 function textSearchOptionsResponse(body) {
   const titleFilter = body.title_filter.toLocaleLowerCase("sv")
   if (titleFilter === "doktor") {
@@ -1676,11 +1689,14 @@ function textSearchOptionsResponse(body) {
     return {
       authors: [],
       about_authors: [],
-      title_options: Array.from({ length: visibleCount }, (_, index) => ({
-        work_id: `lb-doktor-${index + 1}`,
-        title: `Doktortitel ${index + 1}`,
-        author_name: "Test Doktor"
-      })),
+      title_options: selectedTextSearchTitleOptions(
+        body,
+        Array.from({ length: visibleCount }, (_, index) => ({
+          work_id: `lb-doktor-${index + 1}`,
+          title: `Doktortitel ${index + 1}`,
+          author_name: "Test Doktor"
+        }))
+      ),
       title_author_facets: [],
       title_total: 43,
       year_from: null,
@@ -1692,11 +1708,14 @@ function textSearchOptionsResponse(body) {
     return {
       authors: [],
       about_authors: [],
-      title_options: Array.from({ length: visibleCount }, (_, index) => ({
-        work_id: `lb-overflow-${index + 1}`,
-        title: `Överflödestitel ${index + 1}`,
-        author_name: "Test Överflöd"
-      })),
+      title_options: selectedTextSearchTitleOptions(
+        body,
+        Array.from({ length: visibleCount }, (_, index) => ({
+          work_id: `lb-overflow-${index + 1}`,
+          title: `Överflödestitel ${index + 1}`,
+          author_name: "Test Överflöd"
+        }))
+      ),
       title_author_facets: [{
         author_id: "OverflowAuthor",
         name_for_index: "Överflöd, Test",

@@ -770,6 +770,72 @@ test("filtered title disclosure stops after every distinct option is loaded", as
   await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
 })
 
+test("special title catalogs still resolve the selected route-owned title", async ({
+  page
+}) => {
+  await openSearch(
+    page,
+    "/s%C3%B6k?fras=overflow&avancerad=1&titlar=lb238704"
+  )
+
+  await expect(page.getByRole("button", { name: "Ta bort Röda rummet" })).toBeVisible()
+})
+
+test("changing the title filter immediately invalidates a delayed expansion", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+  const input = page.locator(".title_select input.select2-search__field")
+  await input.fill("overflow")
+  const showAll = page.getByRole("button", {
+    name: "Visa alla 731 matchande titlar"
+  })
+  await expect(showAll).toBeVisible()
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.put(`${fixture}/_text_search/delays`, {
+    data: { operation: "options", selector: "overflow", delay: 1000 }
+  })
+
+  await showAll.click()
+  await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
+    .toMatchObject({ title_filter: "overflow", title_limit: 500 })
+  await expect(page.locator(".title_select .spinner")).toBeVisible()
+
+  await input.fill("doktor")
+  await expect(page.locator(".title_select .spinner"))
+    .toHaveClass(/multiselect__loading-leave-/, { timeout: 150 })
+  await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
+    .toMatchObject({ title_filter: "doktor", title_limit: 30 })
+  await expect(page.getByRole("option", { name: "Doktortitel 1", exact: true })).toBeVisible()
+  await page.waitForTimeout(1100)
+  await expect(page.getByRole("option", { name: "Överflödestitel 1", exact: true }))
+    .toHaveCount(0)
+})
+
+test("title option retry repeats the exact failed filter and limit", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.put(`${fixture}/_text_search/failures`, {
+    data: { operation: "options" }
+  })
+
+  await page.locator(".title_select input.select2-search__field").fill("lager")
+  const failure = page.getByRole("alert")
+  await expect(failure).toContainText("Fler titlar kunde inte hämtas")
+  await request.delete(`${fixture}/_text_search/failures/options`)
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await failure.getByRole("button", { name: "Försök igen" }).click()
+
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
+  await expect.poll(async () => (await requests(request, "options"))[0]?.body)
+    .toMatchObject({ title_filter: "lager", title_limit: 30 })
+  await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toBeVisible()
+})
+
 test("primary and count owners cancel stale work and recover independently", async ({
   page,
   request
