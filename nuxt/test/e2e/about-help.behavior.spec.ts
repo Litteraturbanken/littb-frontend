@@ -49,14 +49,26 @@ async function expectAnchorOffset(page: Page, id: string) {
   }).toBeLessThanOrEqual(1)
 }
 
-test.beforeAll(async ({ baseURL, browser }) => {
+test.beforeAll(async ({ baseURL, browser, request }) => {
+  await reset(request)
   const context = await browser.newContext()
   const page = await context.newPage()
-  const response = await page.goto(new URL("/om/hjalp", baseURL).href, {
-    waitUntil: "networkidle"
+  const browserContentRequests: string[] = []
+  page.on("request", browserRequest => {
+    if (new URL(browserRequest.url()).pathname === contentPath) {
+      browserContentRequests.push(browserRequest.url())
+    }
   })
-  expect(response?.status()).toBe(200)
-  await context.close()
+  try {
+    const response = await page.goto(new URL("/om/hjalp", baseURL).href, {
+      waitUntil: "networkidle"
+    })
+    expect(response?.status()).toBe(200)
+    expect(browserContentRequests).toEqual([])
+  } finally {
+    await context.close()
+  }
+  await reset(request)
 })
 test.beforeEach(async ({ request }) => reset(request))
 
