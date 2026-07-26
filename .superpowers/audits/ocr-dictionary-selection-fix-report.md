@@ -13,6 +13,13 @@ The existing delayed mouseup path remains in place for manual and drag
 selection. Route changes now also cancel its pending timer before clearing the
 dictionary state.
 
+A follow-up review found that an invalid Reader double-click could return before
+cancelling the mouseup timer. If the browser retained the previous word
+selection, that timer could recreate the lookup icon after whitespace was
+double-clicked. Every double-click now cancels pending inspection and clears the
+indicator before target validation; a valid Reader word then replaces it
+immediately.
+
 ## Scope and safety
 
 - `reader-dictionary.ts` owns one shared trim, length, whitespace, and control
@@ -54,6 +61,14 @@ GREEN verification:
 - Combined isolated `test/ssr/reader.spec.ts` and full
   `test/e2e/reader-production.behavior.spec.ts` — 95 tests passed.
 - `git diff --check` — exit 0.
+
+Follow-up TDD evidence:
+
+- RED: the real Playwright whitespace double-click regression failed after the
+  prior indicator initially hid, because the retained `DOKTOR` selection made it
+  visible again after 650 ms.
+- GREEN: the same isolated regression passed after timer cancellation and
+  indicator clearing moved before target validation.
 
 The Playwright runs used dedicated fixture/Nuxt ports and
 `NUXT_IGNORE_LOCK=1`; the shared development servers were not stopped or

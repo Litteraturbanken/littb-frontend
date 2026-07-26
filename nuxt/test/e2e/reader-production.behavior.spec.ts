@@ -84,6 +84,34 @@ test("manual one-word selection retains delayed mouseup inspection", async ({ pa
     .toBeVisible()
 })
 
+test("double-clicking Reader whitespace clears stale selection and its pending inspection", async ({ page }) => {
+  await page.addInitScript(() => {
+    document.addEventListener("dblclick", event => {
+      const target = event.target
+      if (!(target instanceof Element) || target.closest(".w") || !target.closest(".reader_main")) {
+        return
+      }
+      const word = Array.from(document.querySelectorAll(".reader_main .w"))
+        .find(element => element.textContent?.trim() === "DOKTOR")
+      if (!word) return
+      const range = document.createRange()
+      range.selectNodeContents(word)
+      const selection = window.getSelection()!
+      selection.removeAllRanges()
+      selection.addRange(range)
+    }, true)
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.locator(".reader_main .w").filter({ hasText: "DOKTOR" }).first().dblclick()
+  const indicator = page.getByRole("button", { name: "Slå upp DOKTOR i Svensk ordbok" })
+  await expect(indicator).toBeVisible()
+
+  await page.locator(".reader_main").dblclick({ position: { x: 5, y: 5 } })
+  await expect(indicator).toBeHidden()
+  await page.waitForTimeout(650)
+  await expect(indicator).toBeHidden()
+})
+
 test("Reader production keys copy typed values and push alternate media history", async ({ page }) => {
   await page.goto(readerPath, { waitUntil: "networkidle" })
 

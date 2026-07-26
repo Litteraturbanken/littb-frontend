@@ -67,13 +67,14 @@ function handleMouseup(): void {
 }
 
 function handleDoubleClick(event: MouseEvent): void {
+  clearSelectionTimer()
+  indicator.value = null
   const target = event.target
   const root = document.querySelector(".reader_main")
   if (!(target instanceof Element) || !root) return
   const targetWord = readerWordFromTarget(target, root)
   if (!targetWord) return
   const selected = selectedReaderWord(window.getSelection(), root) ?? targetWord
-  clearSelectionTimer()
   showIndicator(selected)
 }
 
