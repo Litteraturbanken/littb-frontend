@@ -3567,7 +3567,7 @@ const server = createServer(async (request, response) => {
       response,
       200,
       "text/html; charset=utf-8",
-      '<body><div data-size="625x900"><span id="w1_147" class="w">OCR fixture</span></div></body>'
+      '<body><div data-size="625x900"><span id="w3_147" class="w">OCR fixture</span></div></body>'
     )
   }
 

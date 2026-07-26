@@ -47,7 +47,7 @@ describe("Reader final normal-parity metadata", () => {
       <body><div data-size="625x900" id="root" onclick="alert(1)" class="parent unsafe"
         style="position:absolute;left:20px;width:625px;background:url(javascript:alert(1))">
         <div class="parent unsafe" style="top:30px;position:absolute">
-          <span id="w1_147" class="w unsafe" onclick="alert(1)"
+          <span id="w3_147" class="w unsafe" onclick="alert(1)"
             style="left:4px;top:5px;font-size:12px;color:red">OCR fixture</span>
           <span id="bad id" class="w">invalid id</span>
           <script>alert(1)</script><a href="javascript:alert(1)">unsafe</a>
@@ -60,7 +60,7 @@ describe("Reader final normal-parity metadata", () => {
     expect(overlay?.html).toContain('data-size="625x900"')
     expect(overlay?.html).toContain('class="parent"')
     expect(overlay?.html).toContain('class="w"')
-    expect(overlay?.html).toContain('id="w1_147"')
+    expect(overlay?.html).toContain('id="w3_147"')
     expect(overlay?.html).toContain("left: 20px")
     expect(overlay?.html).not.toMatch(/script|onclick|javascript|unsafe|<a|bad id|id="root"|background|color/iu)
   })

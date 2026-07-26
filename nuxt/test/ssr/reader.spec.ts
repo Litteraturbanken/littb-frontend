@@ -451,7 +451,7 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
     nextPartPageName: null,
     ocrOverlay: {
       height: 900,
-      html: '<div data-size="625x900"><span id="w1_147" class="w">OCR fixture</span></div>',
+      html: '<div data-size="625x900"><span id="w3_147" class="w">OCR fixture</span></div>',
       width: 625
     },
     pageCount: 3,

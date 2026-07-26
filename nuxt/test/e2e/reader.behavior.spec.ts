@@ -2241,15 +2241,15 @@ test("a selected faksimil search row marks its word in the OCR overlay", async (
   request
 }) => {
   const problems = captureBrowserProblems(page)
-  const query = "?traff=w1_147&traffslut=w1_147" +
+  const query = "?traff=w3_147&traffslut=w3_147" +
     "&s_query=g%C3%B6sta&s_lbworkid=lb-reader-gosta-berlings-saga" +
     "&s_word_form_only=true&s_include_modernized=true&hit_index=0&s_from=0&s_to=29"
 
   const response = await page.goto(`${facsimilePath}${query}`, { waitUntil: "networkidle" })
 
   expect(response?.status()).toBe(200)
-  await expect(page.locator(".reader_main .overlay #w1_147")).toHaveCount(1)
-  await expect(page.locator(".reader_main .overlay #w1_147.markee")).toHaveCount(1)
+  await expect(page.locator(".reader_main .overlay #w3_147")).toHaveCount(1)
+  await expect(page.locator(".reader_main .overlay #w3_147.markee")).toHaveCount(1)
   await expect(page.locator(".reader_main img.faksimil")).toBeVisible()
   await expect(page.locator(".reader_main")).not.toHaveClass(/\bocr\b/u)
   expect(await readerHitRequests(request)).toEqual([])
