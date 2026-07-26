@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { CSSProperties } from "vue"
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
 
@@ -2058,6 +2059,13 @@ const mounted = ref(false)
 const selectedSourceWorks = ref<Map<string, BrowseResult>>(new Map())
 const selectedSourceFormats = ref<Set<string>>(new Set())
 const formatPopoverOpen = ref(false)
+const formatButtonElement = ref<HTMLButtonElement | null>(null)
+const formatPopoverElement = ref<HTMLDivElement | null>(null)
+const formatPopoverStyle = ref<CSSProperties>({
+  top: "0px",
+  left: "0px",
+  visibility: "hidden"
+})
 const sourceFormatGroups = [
   {
     mediatype: "etext" as const,
@@ -2657,6 +2665,40 @@ function clearSourceSelection() {
   formatPopoverOpen.value = false
 }
 
+function positionFormatPopover() {
+  if (!formatPopoverOpen.value) return
+  const button = formatButtonElement.value
+  const popover = formatPopoverElement.value
+  if (!button || !popover) return
+  const buttonBox = button.getBoundingClientRect()
+  const popoverBox = popover.getBoundingClientRect()
+  const buttonLeft = Math.round(window.scrollX + buttonBox.left)
+  const buttonWidth = Math.round(buttonBox.width)
+  formatPopoverStyle.value = {
+    top: `${Math.round(window.scrollY + buttonBox.top - popoverBox.height - 10)}px`,
+    left: `${Math.round(buttonLeft + buttonWidth / 2 - popover.offsetWidth / 2)}px`,
+    visibility: "visible"
+  }
+}
+
+async function toggleFormatPopover() {
+  if (formatPopoverOpen.value) {
+    formatPopoverOpen.value = false
+    return
+  }
+  formatPopoverStyle.value = { top: "0px", left: "0px", visibility: "hidden" }
+  formatPopoverOpen.value = true
+  await nextTick()
+  positionFormatPopover()
+}
+
+function handleFormatPopoverKeydown(event: KeyboardEvent) {
+  if (event.key !== "Escape" || !formatPopoverOpen.value) return
+  event.preventDefault()
+  formatPopoverOpen.value = false
+  void nextTick(() => formatButtonElement.value?.focus())
+}
+
 function toggleSourceWork(item: BrowseResult) {
   if (!downloadMode.value || item.sourceExports.length === 0) return
   const selected = new Map(selectedSourceWorks.value)
@@ -3142,13 +3184,21 @@ useHead({
 
 onMounted(() => {
   mounted.value = true
+  document.addEventListener("keydown", handleFormatPopoverKeydown)
+  window.addEventListener("resize", positionFormatPopover)
+  window.addEventListener("scroll", positionFormatPopover, true)
   if (currentMode.value === "authors" && route.query.sida !== undefined) {
     void router.replace({ path: route.path, query: queryFor(currentState()) })
   }
   const initialFailed = initialData.value?.response.failed ?? true
   if (!initialFailed) void refreshBrowseCounts(filter.value, currentState().advancedFilters)
 })
-onUnmounted(disposeLibraryRequest)
+onUnmounted(() => {
+  disposeLibraryRequest()
+  document.removeEventListener("keydown", handleFormatPopoverKeydown)
+  window.removeEventListener("resize", positionFormatPopover)
+  window.removeEventListener("scroll", positionFormatPopover, true)
+})
 </script>
 
 <template>
@@ -3238,10 +3288,11 @@ onUnmounted(disposeLibraryRequest)
                   :value="selectedGender"
                   data-library-gender
                   class="gender_select"
+                  :class="{ 'library-select-placeholder': !selectedGender }"
                   aria-label="Författarkön"
                   @change="commitGender"
                 >
-                  <option value="" :selected="selectedGender === ''">Alla författare</option>
+                  <option value="" :selected="selectedGender === ''">Filtrera: kvinnliga / manliga / alla</option>
                   <option value="female" :selected="selectedGender === 'female'">Kvinnliga författare</option>
                   <option value="male" :selected="selectedGender === 'male'">Manliga författare</option>
                 </select>
@@ -3521,7 +3572,7 @@ onUnmounted(disposeLibraryRequest)
           </div>
         </form>
       </div>
-      <div class="flex flex-col lg:flex-row items-stretch w-full lg:max-w-5xl text-lg leading-tight">
+      <div class="flex items-stretch w-full lg:max-w-5xl text-lg leading-tight">
         <div class="bg-white/65 lg:p-6 p-2 lg:border border-gray-900 flex-grow">
           <div v-if="currentMode === 'all'" class="result relevance pl-0 lg:ml-3 lg:ml-0 w-full lg:w-auto">
             <div class="text-base">
@@ -3807,7 +3858,7 @@ onUnmounted(disposeLibraryRequest)
                       <input
                         v-if="downloadMode"
                         data-library-source-checkbox
-                        class="align-middle shrink-0"
+                        class="align-middle shrink-0 relative z-10"
                         type="checkbox"
                         :checked="selectedSourceWorks.has(item.key)"
                         :disabled="item.sourceExports.length === 0"
@@ -4039,61 +4090,72 @@ onUnmounted(disposeLibraryRequest)
               >Rensa</button>
               {{ " " }}
               <button
+                ref="formatButtonElement"
                 type="button"
                 data-library-format-button
                 class="btn text-sm mb-4"
                 :disabled="selectedSourceWorkList.length === 0"
-                @click="formatPopoverOpen = !formatPopoverOpen"
+                aria-haspopup="dialog"
+                aria-controls="library-format-popover"
+                :aria-expanded="formatPopoverOpen"
+                @click="toggleFormatPopover"
               >Välj format <i class="fa fa-download ml-2" /></button>
 
-              <div
-                v-if="formatPopoverOpen"
-                data-library-format-popover
-                class="popover block p-4 bg-white border border-gray-700"
-              >
-                <h3 class="popover-title">Välj format</h3>
-                <div class="text-sm italic">
-                  {{ sourceFormatAvailability.get("etext:workdb") ?? 0 }} etext<span v-if="(sourceFormatAvailability.get('etext:workdb') ?? 0) !== 1">er</span> vald<span v-if="(sourceFormatAvailability.get('etext:workdb') ?? 0) !== 1">a</span>,
-                  {{ sourceFormatAvailability.get("faksimil:workdb") ?? 0 }} faksimil<span v-if="(sourceFormatAvailability.get('faksimil:workdb') ?? 0) !== 1">er</span> vald<span v-if="(sourceFormatAvailability.get('faksimil:workdb') ?? 0) !== 1">a</span>
-                </div>
-                <div class="flex justify-between w-64">
-                  <div
-                    v-for="group in sourceFormatGroups"
-                    :key="group.mediatype"
-                    :class="group.mediatype === 'etext' ? 'mr-4' : 'mx-2'"
-                  >
-                    <h3 class="uppercase text-base">{{ group.label }}</h3>
-                    <ul class="checks">
-                      <li v-for="format in group.formats" :key="format.type" class="whitespace-nowrap">
-                        <input
-                          :id="`source-${group.mediatype}-${format.type}`"
-                          :data-library-source-format="`${group.mediatype}:${format.type}`"
-                          type="checkbox"
-                          class="mb-1 mr-1"
-                          :checked="selectedSourceFormats.has(`${group.mediatype}:${format.type}`)"
-                          :disabled="!(sourceFormatAvailability.get(`${group.mediatype}:${format.type}`) ?? 0)"
-                          @change="toggleSourceFormat(`${group.mediatype}:${format.type}`)"
-                        >
-                        <label
-                          class="capitalize"
-                          :class="{ 'text-gray-500': !(sourceFormatAvailability.get(`${group.mediatype}:${format.type}`) ?? 0) }"
-                          :for="`source-${group.mediatype}-${format.type}`"
-                        >{{ format.label }}</label>
-                      </li>
-                    </ul>
+              <Teleport to="body">
+                <div
+                  v-if="formatPopoverOpen"
+                  ref="formatPopoverElement"
+                  id="library-format-popover"
+                  data-library-format-popover
+                  class="popover top block bg-white border border-gray-700"
+                  role="dialog"
+                  aria-label="Välj format"
+                  :style="formatPopoverStyle"
+                >
+                  <div class="arrow" aria-hidden="true" />
+                  <div class="text-sm italic">
+                    {{ sourceFormatAvailability.get("etext:workdb") ?? 0 }} etext<span v-if="(sourceFormatAvailability.get('etext:workdb') ?? 0) !== 1">er</span> vald<span v-if="(sourceFormatAvailability.get('etext:workdb') ?? 0) !== 1">a</span>,
+                    {{ sourceFormatAvailability.get("faksimil:workdb") ?? 0 }} faksimil<span v-if="(sourceFormatAvailability.get('faksimil:workdb') ?? 0) !== 1">er</span> vald<span v-if="(sourceFormatAvailability.get('faksimil:workdb') ?? 0) !== 1">a</span>
                   </div>
+                  <div class="flex justify-between w-64">
+                    <div
+                      v-for="group in sourceFormatGroups"
+                      :key="group.mediatype"
+                      :class="group.mediatype === 'etext' ? 'mr-4' : 'mx-2'"
+                    >
+                      <h3 class="uppercase text-base">{{ group.label }}</h3>
+                      <ul class="checks">
+                        <li v-for="format in group.formats" :key="format.type" class="whitespace-nowrap">
+                          <input
+                            :id="`source-${group.mediatype}-${format.type}`"
+                            :data-library-source-format="`${group.mediatype}:${format.type}`"
+                            type="checkbox"
+                            class="mb-1 mr-1"
+                            :checked="selectedSourceFormats.has(`${group.mediatype}:${format.type}`)"
+                            :disabled="!(sourceFormatAvailability.get(`${group.mediatype}:${format.type}`) ?? 0)"
+                            @change="toggleSourceFormat(`${group.mediatype}:${format.type}`)"
+                          >
+                          <label
+                            class="capitalize"
+                            :class="{ 'text-gray-500': !(sourceFormatAvailability.get(`${group.mediatype}:${format.type}`) ?? 0) }"
+                            :for="`source-${group.mediatype}-${format.type}`"
+                          >{{ format.label }}</label>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <form action="/api/download" method="POST" class="mt-8 mb-4 flex justify-between">
+                    <input type="hidden" name="files" :value="selectedDownloadFiles.join(',')">
+                    <span data-library-download-size class="text-sm self-center">{{ downloadSizeLabel }}</span>
+                    <button
+                      type="submit"
+                      data-library-download-submit
+                      class="btn text-xs pull-right"
+                      :disabled="selectedDownloadFiles.length === 0"
+                    >Hämta <i class="fa fa-download ml-2" /></button>
+                  </form>
                 </div>
-                <form action="/api/download" method="POST" class="mt-8 mb-4 flex justify-between">
-                  <input type="hidden" name="files" :value="selectedDownloadFiles.join(',')">
-                  <span data-library-download-size class="text-sm self-center">{{ downloadSizeLabel }}</span>
-                  <button
-                    type="submit"
-                    data-library-download-submit
-                    class="btn text-xs pull-right"
-                    :disabled="selectedDownloadFiles.length === 0"
-                  >Hämta <i class="fa fa-download ml-2" /></button>
-                </form>
-              </div>
+              </Teleport>
 
               <ul class="mt-2 mb-2 flex-grow">
                 <li v-for="item in selectedSourceWorkList" :key="item.key">
@@ -4152,6 +4214,30 @@ onUnmounted(disposeLibraryRequest)
   color: #444;
   background: white;
   border: 1px solid lightgrey;
+}
+
+[data-library-advanced-panel] select.library-select-placeholder,
+[data-library-advanced-panel] :deep(.multiselect__input::placeholder),
+[data-library-advanced-panel] :deep(.search-multiselect__input-row) {
+  color: #999 !important;
+  opacity: 1;
+}
+
+[data-library-advanced-panel] .keyword_select.filter_select {
+  margin-top: 0 !important;
+}
+
+[data-library-advanced-panel] :deep(.select2-selection__arrow.multiselect__select::before) {
+  display: none;
+}
+
+[data-library-format-popover] {
+  width: 288px;
+  padding: 14px;
+}
+
+[data-library-tab] {
+  margin-right: calc(0.2em + 4px);
 }
 
 [data-library-advanced-panel] option[data-library-placeholder] {

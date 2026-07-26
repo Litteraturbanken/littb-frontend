@@ -320,6 +320,42 @@ test("source-material selection remains operable at the project viewport", async
   await expect(page.locator('[data-library-source-format="etext:txt"]')).toBeEnabled()
 })
 
+test("download sidebar scrolling does not clip the body-level format popover", async ({ page }) => {
+  await page.goto("/bibliotek?avancerat=1&nedladdning=1", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+
+  const sidebar = page.locator(".dl")
+  await expect(sidebar).toHaveCSS("overflow-y", "auto")
+  await page.locator("[data-library-source-checkbox]").first().check({ force: true })
+
+  const button = page.locator("[data-library-format-button]")
+  await button.click({ force: true })
+  const popover = page.locator("body > [data-library-format-popover]")
+  await expect(popover).toBeVisible()
+
+  const [buttonBox, popoverBox] = await Promise.all([
+    button.boundingBox(),
+    popover.boundingBox()
+  ])
+  expect(buttonBox).not.toBeNull()
+  expect(popoverBox).not.toBeNull()
+  expect(Math.abs(
+    popoverBox!.x + popoverBox!.width / 2
+      - (buttonBox!.x + buttonBox!.width / 2)
+  )).toBeLessThanOrEqual(1)
+  expect(popoverBox!.y + popoverBox!.height).toBeLessThanOrEqual(buttonBox!.y)
+  await expect(popover.locator(".arrow")).toHaveCount(1)
+  await expect(button).toHaveAttribute("aria-haspopup", "dialog")
+  await expect(button).toHaveAttribute("aria-controls", "library-format-popover")
+  await expect(button).toHaveAttribute("aria-expanded", "true")
+  await expect(popover).toHaveRole("dialog", { name: "Välj format" })
+
+  await page.keyboard.press("Escape")
+  await expect(popover).toHaveCount(0)
+  await expect(button).toHaveAttribute("aria-expanded", "false")
+  await expect(button).toBeFocused()
+})
+
 test("vue-multiselect Library facets keep groups, disabled narrowing choices, and ordered route state", async ({
   page
 }) => {

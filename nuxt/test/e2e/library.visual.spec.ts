@@ -1,8 +1,26 @@
+import { createHash } from "node:crypto"
+import { readFile } from "node:fs/promises"
+import { resolve } from "node:path"
 import { expect, test, type APIRequestContext } from "@playwright/test"
 
 import { waitForVisualAssets } from "../helpers/visual"
 
 const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
+
+const libraryStateBaselineManifest = {
+  "library-advanced-desktop.png": "d60838f909cd640f394edbfb84a66128e7fea89b2dd6fd1d2a1fe97979128768",
+  "library-advanced-mobile.png": "74ebe521951d1741038e5b350a32414dcf3d17405cd8cc662275298b4a6f6f51",
+  "library-download-desktop.png": "15b446a0cb02e00f38db8c588e84c479569ee4368aceb084babb26c642bf6b26",
+  "library-download-mobile.png": "803bb2bde7462065e766f7c4ccc14bd80adec3b8af5a8ddf677e3cdabe14f2d7"
+} as const
+
+async function assertLibraryStateBaselineManifest() {
+  const directory = resolve(import.meta.dirname, "../visual/baselines")
+  for (const [filename, expectedHash] of Object.entries(libraryStateBaselineManifest)) {
+    const bytes = await readFile(resolve(directory, filename))
+    expect(createHash("sha256").update(bytes).digest("hex"), filename).toBe(expectedHash)
+  }
+}
 
 async function resetLibraryState(request: APIRequestContext) {
   await Promise.all([
@@ -18,6 +36,8 @@ async function resetLibraryState(request: APIRequestContext) {
   ])
 }
 
+test.beforeAll(assertLibraryStateBaselineManifest)
+test.afterAll(assertLibraryStateBaselineManifest)
 test.beforeEach(async ({ request }) => resetLibraryState(request))
 
 test("advanced Library controls remain labelled and keyboard operable on mobile", async ({
@@ -298,18 +318,26 @@ for (const visualCase of [
       await expect(multiselect).toHaveCSS("border-top-color", "rgb(211, 211, 211)")
       await expect(multiselect).toHaveCSS("font-size", "12.8px")
       await expect(multiselect).toHaveCSS("font-family", /Requiem Text SC/)
+      await expect(multiselect).toHaveCSS("margin-top", "0px")
     }
-    if (!visualCase.download) {
-      await expect(page.locator("[data-library-advanced-panel]")).toHaveScreenshot(
-        `library-advanced-controls-${mobile ? "mobile" : "desktop"}.png`,
+    const assertFullPageAuthority = async () => {
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+      await expect(page).toHaveScreenshot(
+        `${visualCase.name}-${mobile ? "mobile" : "desktop"}.png`,
         {
+          fullPage: true,
           animations: "disabled",
           caret: "hide",
           scale: "css",
           threshold: 0.1,
-          maxDiffPixels: 100
+          // The authority uses Select2 while Nuxt uses Vue-Multiselect; after
+          // exact geometry assertions, allow only their small rasterization delta.
+          maxDiffPixelRatio: 0.02
         }
       )
+    }
+    if (!visualCase.download) {
+      await assertFullPageAuthority()
 
       const keywords = page.locator("[data-library-keywords]")
       await page.getByRole("combobox", {
@@ -337,24 +365,8 @@ for (const visualCase of [
       const sidebarBox = await page.locator(".dl").evaluate(element => (
         element.getBoundingClientRect().toJSON()
       ))
-      if (mobile) expect(sidebarBox.top).toBeGreaterThanOrEqual(resultsBox.bottom)
-      else expect(sidebarBox.left).toBeGreaterThan(resultsBox.left)
-    }
-    if (visualCase.download) {
-      await expect(page.locator(".result.title:visible")).toHaveScreenshot(
-        `${visualCase.name}-results-${mobile ? "mobile" : "desktop"}.png`,
-        {
-          animations: "disabled",
-          caret: "hide",
-          scale: "css",
-          mask: [page.locator(".num_hits"), page.locator(".spinner")],
-          maskColor: "#00ff00",
-          threshold: 0.1,
-          // Angular's download rows use different mobile table markup, while the
-          // geometry and interaction layout are asserted separately above.
-          maxDiffPixelRatio: mobile ? 0.07 : 0.02
-        }
-      )
+      expect(sidebarBox.left).toBeGreaterThan(resultsBox.left)
+      await assertFullPageAuthority()
     }
     expect(forbidden).toEqual([])
     expect(problems).toEqual([])
