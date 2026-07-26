@@ -283,16 +283,14 @@ onMounted(() => {
 let sourceInfoTrigger: HTMLElement | null = null
 
 function sourceInfoQuery(authorId?: string, titlePath?: string) {
-  const query = { ...route.query }
-  delete query["om-boken"]
-  delete query.authorid
-  delete query.titlepath
   if (authorId && titlePath) {
-    query["om-boken"] = null
-    query.authorid = authorId
-    query.titlepath = titlePath
+    return {
+      "om-boken": null,
+      authorid: authorId,
+      titlepath: titlePath
+    }
   }
-  return query
+  return {}
 }
 
 async function pushSourceInfoQuery(

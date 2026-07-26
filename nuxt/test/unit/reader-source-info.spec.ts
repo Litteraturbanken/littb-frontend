@@ -15,6 +15,7 @@ import {
   validateReaderSourceInfoResponse
 } from "../../server/utils/reader-source-info"
 import {
+  cendrillonInfopostSourceInfo,
   doktorGlasSourceInfo,
   dramaSourceInfo,
   emptyErrataSourceInfo,
@@ -408,6 +409,46 @@ describe("Reader source-information static resources", () => {
     expect(projected[0]?.text).toBe("Litteraturbanken och Dramawebben.")
   })
 
+  test("keeps infopost provenance identity for attribution without inventing prose", () => {
+    const projected = projectReaderSourceInfoProvenance(
+      sourceInfoProvenance,
+      [{ library: "Dramawebben", signum: null, use_alternate_text: false }],
+      "infopost",
+      null
+    )
+
+    expect(projected).toEqual([{
+      fullName: "Dramawebben",
+      imageUrl: "/red/bilder/gemensamt/dramawebben_svart.svg",
+      link: "http://www.dramawebben.se/",
+      text: ""
+    }])
+    expect(projectReaderSourceInfoLicense(sourceInfoLicenses, "pd", projected))
+      .toContain("Dramawebben")
+    expect(projectReaderSourceInfoLicense(sourceInfoLicenses, "pd", projected))
+      .not.toContain("hänvisar till och")
+  })
+
+  test("builds the Cendrillon infopost attribution without a dangling conjunction", async () => {
+    expect(validateReaderSourceInfoResponse(
+      cendrillonInfopostSourceInfo,
+      "WahlenbergA",
+      "Cendrillon"
+    )).toEqual(cendrillonInfopostSourceInfo)
+    const sourceInfo = await buildReaderSourceInfo(
+      cendrillonInfopostSourceInfo,
+      { provenance: sourceInfoProvenance, licenses: sourceInfoLicenses },
+      async () => []
+    )
+
+    expect(sourceInfo.provenance).toHaveLength(1)
+    expect(sourceInfo.licenseHtml).toContain("Vid användning ber vi att du hänvisar till")
+    expect(sourceInfo.licenseHtml).toMatch(
+      /<a [^>]*href="http:\/\/www\.dramawebben\.se\/"[^>]*>Dramawebben<\/a>/u
+    )
+    expect(sourceInfo.licenseHtml).toContain("och Litteraturbanken.se.")
+  })
+
   test("skips unknown provenance and license keys without losing the source record", async () => {
     const projected = projectReaderSourceInfoProvenance(
       sourceInfoProvenance,
@@ -415,7 +456,12 @@ describe("Reader source-information static resources", () => {
       "infopost",
       null
     )
-    expect(projected).toEqual([])
+    expect(projected).toEqual([{
+      fullName: "Göteborgs universitetsbibliotek",
+      imageUrl: "/red/bilder/gemensamt/gublogga.png",
+      link: "http://www.ub.gu.se/",
+      text: ""
+    }])
     expect(projectReaderSourceInfoLicense(
       sourceInfoLicenses,
       "unknown-license",
@@ -428,7 +474,7 @@ describe("Reader source-information static resources", () => {
       async () => []
     )
     expect(sourceInfo.workId).toBe("lbSparse1")
-    expect(sourceInfo.provenance).toEqual([])
+    expect(sourceInfo.provenance).toEqual(projected)
     expect(sourceInfo.licenseHtml).toBeNull()
   })
 

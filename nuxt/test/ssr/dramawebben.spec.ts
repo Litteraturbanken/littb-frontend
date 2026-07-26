@@ -234,6 +234,42 @@ test("SSR renders a valid catalog source-information query in the initial HTML",
   expect(await catalogRequests(request)).toHaveLength(1)
 })
 
+test("SSR preserves Cendrillon infopost provenance, attribution, and live fact order", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/dramawebben/pjäser?om-boken&authorid=WahlenbergA&titlepath=Cendrillon#dw"
+  )
+
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const dialog = document.querySelector('.modal.about[role="dialog"]')
+  expect(dialog?.querySelector(".error")).toBeNull()
+  const provenance = dialog?.querySelector(".provenance")
+  expect(provenance?.querySelector("a")?.getAttribute("href"))
+    .toBe("http://www.dramawebben.se/")
+  expect(provenance?.querySelector("img")?.getAttribute("src"))
+    .toBe("/red/bilder/gemensamt/dramawebben_svart.svg")
+  expect(provenance?.querySelector("p")).toBeNull()
+  expect(normalizedText(dialog?.querySelector(".license")?.textContent)).toContain(
+    "Vid användning ber vi att du hänvisar till Dramawebben och Litteraturbanken.se."
+  )
+  expect(normalizedText(dialog?.querySelector(".license")?.textContent))
+    .not.toContain("hänvisar till och")
+  expect([...dialog!.querySelectorAll(".dramaweb tbody tr")].map(row =>
+    normalizedText(row.textContent)
+  )).toEqual([
+    "Svensk premiär1893",
+    "Urpremiär1892",
+    "Antal sidor96",
+    "Antal akter3",
+    "Antal roller8",
+    "Antal män3",
+    "Antal kvinnor4",
+    "Antal övriga1"
+  ])
+})
+
 for (const invalidDialogQuery of [
   "om-boken&authorid=Alml%C3%B6fN",
   "om-boken&authorid=..%2Fbad&titlepath=Affarer",

@@ -258,6 +258,47 @@ export const catalogInfopostSourceInfo = {
 }
 
 /** @satisfies {WorkSourceInfoResponse} */
+export const cendrillonInfopostSourceInfo = {
+  ...catalogInfopostSourceInfo,
+  work_id: "lb-cendrillon",
+  author_id: "WahlenbergA",
+  title_path: "Cendrillon",
+  title: "Cendrillon",
+  short_title: "Cendrillon",
+  authors: [{
+    author_id: "WahlenbergA",
+    full_name: "Anna Wahlenberg",
+    surname: "Wahlenberg",
+    role: null,
+    author_type: null,
+    url: "/författare/WahlenbergA"
+  }],
+  cover: {
+    small_url: "/txt/lb-cendrillon/lb-cendrillon_small.jpeg",
+    large_url: "/txt/lb-cendrillon/lb-cendrillon_large.jpeg"
+  },
+  license_key: "pd",
+  provenance: [
+    { library: "Dramawebben", signum: null, use_alternate_text: false }
+  ],
+  dramawebben: {
+    has_introduction: false,
+    facts: [
+      { key: "first_staged_in_sweden", value: "1893" },
+      { key: "first_staged", value: "1892" },
+      { key: "number_of_pages", value: "96" },
+      { key: "number_of_acts", value: "3" },
+      { key: "number_of_roles", value: "8" },
+      { key: "male_roles", value: "3" },
+      { key: "female_roles", value: "4" },
+      { key: "other_roles", value: "1" }
+    ],
+    roles: [],
+    history_html: null
+  }
+}
+
+/** @satisfies {WorkSourceInfoResponse} */
 export const navigableSparseSourceInfo = {
   ...sparseSourceInfo,
   media_type: "etext",
@@ -362,6 +403,7 @@ export const sourceInfoByIdentity = new Map([
   ["SöderbergH|DoktorGlas", doktorGlasSourceInfo],
   ["AlmlöfN|Affarer", dramaSourceInfo],
   ["Anonym|BarnensTeater", catalogInfopostSourceInfo],
+  ["WahlenbergA|Cendrillon", cendrillonInfopostSourceInfo],
   ["SparseA|SparseTitle", sparseSourceInfo],
   ["LongErrataA|LongErrata", longErrataSourceInfo],
   ["EmptyErrataA|EmptyErrata", emptyErrataSourceInfo],
@@ -434,7 +476,7 @@ export const sourceInfoLicenses = {
     '<div xmlns="https://www.w3.org/1999/xhtml"><p>',
     '<a rel="license" href="https://creativecommons.org/publicdomain/mark/1.0/deed.sv">',
     '<img src="cc-pd-128x128.png" style="border-style: none;" alt="Public domain"/>',
-    "</a>Hänvisa till {{provenance}} och Litteraturbanken.</p></div>",
+    "</a>Vid användning ber vi att du hänvisar till {{provenance}} och Litteraturbanken.se.</p></div>",
     "\n</text>\n"
   ].join("")
 }

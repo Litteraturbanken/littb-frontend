@@ -272,7 +272,7 @@ onMounted(() => {
               >
                 <img class="logo" width="75" height="75" :src="provenance.imageUrl" :alt="provenance.fullName">
               </a>
-              <p>{{ provenance.text }}</p>
+              <p v-if="provenance.text">{{ provenance.text }}</p>
             </div>
 
             <div

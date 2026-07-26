@@ -327,7 +327,7 @@ test("the catalog hydrates once from SSR without a browser or legacy data reques
   expect(problems).toEqual([])
 })
 
-test("a visible infopost link opens source information and close restores its focus", async ({
+test("a visible infopost link owns the exact live query and close returns to the bare catalog", async ({
   page,
   request
 }) => {
@@ -343,19 +343,24 @@ test("a visible infopost link opens source information and close restores its fo
   await expect(dialog).toBeVisible()
   await expect(dialog).toContainText("Barnens teater")
   await expect(dialog).toBeFocused()
-  expect(new URL(page.url()).hash).toBe("#dw")
-  expect(new URL(page.url()).searchParams.getAll("keep")).toEqual(["one", "two"])
+  const opened = new URL(page.url())
+  expect(opened.hash).toBe("#dw")
+  expect([...opened.searchParams.keys()]).toEqual(["om-boken", "authorid", "titlepath"])
   await expect.poll(() => new URL(page.url()).searchParams.has("om-boken")).toBe(true)
 
   await page.getByRole("button", { name: "Stäng", exact: true }).click()
   await expect(dialog).toHaveCount(0)
   await expect(trigger).toBeFocused()
   const closed = new URL(page.url())
-  expect(closed.searchParams.getAll("keep")).toEqual(["one", "two"])
-  expect(closed.searchParams.has("om-boken")).toBe(false)
-  expect(closed.searchParams.has("authorid")).toBe(false)
-  expect(closed.searchParams.has("titlepath")).toBe(false)
+  expect(closed.pathname).toBe("/dramawebben/pj%C3%A4ser")
+  expect(closed.search).toBe("")
   expect(closed.hash).toBe("#dw")
+
+  await page.goBack()
+  await expect(dialog).toContainText("Barnens teater")
+  await page.goBack()
+  await expect(dialog).toHaveCount(0)
+  expect(new URL(page.url()).searchParams.getAll("keep")).toEqual(["one", "two"])
   expect(await sourceInfoRequests(request)).toHaveLength(1)
   expect(problems).toEqual([])
 })
@@ -401,7 +406,7 @@ test("a long mixed-author catalog uses the clicked infopost identity without scr
   })
   const opened = new URL(page.url())
   expect(opened.hash).toBe("#dw")
-  expect(opened.searchParams.get("keep")).toBe("scroll")
+  expect(opened.searchParams.has("keep")).toBe(false)
   expect(opened.searchParams.get("authorid")).toBe("Anonym")
   expect(opened.searchParams.get("titlepath")).toBe("BarnensTeater")
 
@@ -411,8 +416,7 @@ test("a long mixed-author catalog uses the clicked infopost identity without scr
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before)
   const closed = new URL(page.url())
   expect(closed.hash).toBe("#dw")
-  expect(closed.searchParams.get("keep")).toBe("scroll")
-  expect(closed.searchParams.has("om-boken")).toBe(false)
+  expect(closed.search).toBe("")
   expect(await sourceInfoRequests(request)).toEqual([{
     scope: "private",
     path: "/private-v2/works/Anonym/BarnensTeater/source-info",
@@ -436,7 +440,7 @@ test("direct source-information query survives hydration, Escape, Back, and Forw
 
   await page.keyboard.press("Escape")
   await expect(dialog).toHaveCount(0)
-  expect(new URL(page.url()).searchParams.getAll("repeat")).toEqual(["one", "two"])
+  expect(new URL(page.url()).search).toBe("")
 
   await page.goBack()
   await expect(dialog).toContainText("Affärer")
@@ -444,6 +448,40 @@ test("direct source-information query survives hydration, Escape, Back, and Forw
   await expect(dialog).toHaveCount(0)
   expect(await sourceInfoRequests(request)).toHaveLength(1)
   expect(problems).toEqual([])
+})
+
+test("Cendrillon infopost renders its linked provenance, attribution, and live fact order", async ({
+  page
+}) => {
+  await page.goto(
+    "/dramawebben/pjäser?om-boken&authorid=WahlenbergA&titlepath=Cendrillon#dw",
+    { waitUntil: "networkidle" }
+  )
+
+  const dialog = page.getByRole("dialog", { name: "Om boken", exact: true })
+  const provenance = dialog.locator(".provenance")
+  await expect(provenance.getByRole("link")).toHaveAttribute(
+    "href",
+    "http://www.dramawebben.se/"
+  )
+  await expect(provenance.locator("img")).toHaveAttribute(
+    "src",
+    "/red/bilder/gemensamt/dramawebben_svart.svg"
+  )
+  await expect(provenance.locator("p")).toHaveCount(0)
+  await expect(dialog.locator(".license")).toContainText(
+    "Vid användning ber vi att du hänvisar till Dramawebben och Litteraturbanken.se."
+  )
+  await expect(dialog.locator(".dramaweb tbody tr")).toHaveText([
+    "Svensk premiär1893",
+    "Urpremiär1892",
+    "Antal sidor96",
+    "Antal akter3",
+    "Antal roller8",
+    "Antal män3",
+    "Antal kvinnor4",
+    "Antal övriga1"
+  ])
 })
 
 test("invalid or missing source-information identifiers stay closed without a request", async ({

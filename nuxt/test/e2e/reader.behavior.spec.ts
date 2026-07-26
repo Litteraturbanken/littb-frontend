@@ -1023,7 +1023,7 @@ test("drama source information renders drama facts, attributions, and exact targ
   await expect(dialog.locator(".license").getByRole("link", { name: "Kungl. biblioteket" }))
     .toHaveAttribute("href", "http://www.kb.se/")
   await expect(dialog.locator(".license")).toContainText(
-    "Hänvisa till Kungl. biblioteket – Dramawebben och Litteraturbanken."
+    "Vid användning ber vi att du hänvisar till Kungl. biblioteket – Dramawebben och Litteraturbanken.se."
   )
   expect(problems).toEqual([])
 })

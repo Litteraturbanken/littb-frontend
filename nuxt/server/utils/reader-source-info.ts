@@ -780,7 +780,6 @@ export function projectReaderSourceInfoProvenance(
   isPrinted: boolean | null
 ): ReaderSourceInfoProvenance[] {
   const key = provenanceTextKey(mediaType, isPrinted)
-  if (key === null) return []
   const result: ReaderSourceInfoProvenance[] = []
   requested.forEach(item => {
     const definition = definitions[item.library]
@@ -788,7 +787,7 @@ export function projectReaderSourceInfoProvenance(
     const textDefinition = item.use_alternate_text && definition.text2
       ? definition.text2
       : definition.text
-    const template = textDefinition[key]
+    const template = key === null ? "" : textDefinition[key]
     if (template === undefined) return
     const signum = item.signum ? ` (${item.signum})` : ""
     result.push({
