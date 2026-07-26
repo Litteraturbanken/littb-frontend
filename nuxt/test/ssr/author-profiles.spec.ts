@@ -78,7 +78,15 @@ test("SSR renders the complete ordinary author profile from one private request"
   expect(linkBoxes.map(box => box.querySelector("h3")?.textContent?.trim()))
     .toEqual(["Mer om författarskapet", "Författaren i uppslagsverk"])
   expect([...linkBoxes[0]!.querySelectorAll("a")].map(link => link.textContent?.trim()))
-    .toEqual(["Presentation", "Bibliografi", "Strindbergsmuseet", "Litteraturkartan"])
+    .toEqual([
+      "Texter om August Strindberg",
+      "Presentation",
+      "Bibliografi",
+      "Strindbergsmuseet",
+      "Litteraturkartan"
+    ])
+  expect(linkBoxes[0]!.querySelector("a")?.getAttribute("href"))
+    .toBe("/f%C3%B6rfattare/StrindbergA/mer")
   const mapLink = linkBoxes[0]!.querySelector('a[href*="litteraturkartan"]')
   expect(mapLink?.getAttribute("href"))
     .toBe("https://litteraturbanken.se/litteraturkartan?s=lb_author.authorid:StrindbergA")

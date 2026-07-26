@@ -43,6 +43,7 @@ export const strindbergAuthorProfile = {
   search_url: "/sok?forfattare=StrindbergA&avancerad",
   audio_url: null,
   map_url: "https://litteraturbanken.se/litteraturkartan?s=lb_author.authorid:StrindbergA",
+  has_more: true,
   related_links: [
     {
       label: "Presentation",
@@ -98,7 +99,8 @@ export const lagerlofAuthorProfile = {
   portrait: null,
   search_url: null,
   audio_url: null,
-  map_url: "https://litteraturbanken.se/litteraturkartan?s=lb_author.authorid:Lagerl%C3%B6fS",
+  map_url: null,
+  has_more: false,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: null
@@ -121,6 +123,7 @@ export const dramaOnlyAuthorProfile = {
   search_url: null,
   audio_url: null,
   map_url: null,
+  has_more: false,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: {
@@ -151,6 +154,7 @@ export const noIntroAuthorProfile = {
   search_url: null,
   audio_url: "https://litteraturbanken.se/ljudochbild/författare/nointro",
   map_url: null,
+  has_more: false,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: null
@@ -173,6 +177,7 @@ export const rfc3986AuthorProfile = {
   search_url: null,
   audio_url: null,
   map_url: null,
+  has_more: false,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: {
@@ -218,6 +223,7 @@ export const managedHtmlProbeAuthorProfile = {
   search_url: null,
   audio_url: null,
   map_url: null,
+  has_more: false,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: {

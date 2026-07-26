@@ -470,6 +470,8 @@ export interface components {
             encyclopedia_links: components["schemas"]["ProfileLink"][];
             /** Full Name */
             full_name: string;
+            /** Has More */
+            has_more: boolean;
             introduction_by: components["schemas"]["AuthorSummary"] | null;
             /** Introduction Html */
             introduction_html: string | null;

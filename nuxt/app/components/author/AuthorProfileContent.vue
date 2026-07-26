@@ -13,6 +13,7 @@ const props = defineProps<{
 
 const rootHref = computed(() => authorProfilePath(props.profile.authorId))
 const titlesHref = computed(() => authorProfilePath(props.profile.authorId, "titlar"))
+const moreHref = computed(() => authorProfilePath(props.profile.authorId, "mer"))
 const dramawebbenHref = computed(() => authorProfilePath(props.profile.authorId, "dramawebben"))
 const shortcutMessage = ref("")
 let shortcutMessageTimer: ReturnType<typeof setTimeout> | null = null
@@ -79,6 +80,7 @@ onBeforeUnmount(() => {
         class="lg:flex"
         :class="{
           'author-profile-sections--empty': !profile.portrait
+            && !profile.hasMore
             && !profile.relatedLinks.length
             && !profile.mapUrl
             && !profile.encyclopediaLinks.length
@@ -114,7 +116,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-if="profile.portrait || profile.relatedLinks.length || profile.mapUrl || profile.encyclopediaLinks.length"
+          v-if="profile.portrait || profile.hasMore || profile.relatedLinks.length || profile.mapUrl || profile.encyclopediaLinks.length"
           class="portrait_container lg:ml-8"
         >
           <div v-if="profile.portrait" class="shadow-lg mt-2">
@@ -131,12 +133,15 @@ onBeforeUnmount(() => {
           </div>
 
           <div
-            v-if="profile.relatedLinks.length || profile.mapUrl"
+            v-if="profile.hasMore || profile.relatedLinks.length || profile.mapUrl"
             class="ext_links w-100 border border-gray-400 p-4 mt-4 bg-white bg-opacity-75 max-w-xs"
           >
             <h3 class="sc mt-0">Mer om författarskapet</h3>
             <section>
               <ul class="list-item pl-4">
+                <li v-if="profile.hasMore">
+                  <NuxtLink :to="moreHref">Texter om {{ profile.fullName }}</NuxtLink>
+                </li>
                 <li v-for="link in profile.relatedLinks" :key="link.url">
                   <NuxtLink
                     v-if="isNuxtInternalHref(link.url)"

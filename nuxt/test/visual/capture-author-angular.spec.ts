@@ -153,6 +153,9 @@ async function expectAuthorReady(page: Page, visualCase: VisualCase) {
     await expect(page.locator(".source li")).toHaveCount(2)
     await expect(page.locator(".portrait_container .author_img")).toBeVisible()
     await expect(page.locator(".ext_links")).toHaveCount(2)
+    await expect(page.getByRole("link", {
+      name: `Texter om ${profile.full_name}`
+    })).toBeVisible()
   } else if (visualCase.name === "sparse") {
     await expect(page.locator(".introauthor em")).toHaveText("")
     await expect(page.locator(".source")).toBeHidden()
@@ -254,10 +257,25 @@ for (const visualCase of visualCases) {
       if (request.method() === "GET" && url.origin === authorityOrigin
         && [optionalListAllPrefix, optionalPartsPrefix].some(prefix => decodedPathname.startsWith(prefix))) {
         optionalRequests.push(requestSignature(url))
+        const isAboutWorkProbe = frozenProfile.has_more
+          && decodedPathname.startsWith("/api/list_all/etext,faksimil,pdf,infopost/")
+          && url.searchParams.get("about_author") === "true"
         return route.fulfill({
           status: 200,
           contentType: "application/json; charset=utf-8",
-          body: JSON.stringify({ data: [] })
+          body: JSON.stringify({
+            data: isAboutWorkProbe
+              ? [{
+                  titlepath: "ParityProbe",
+                  lbworkid: "lb-parity-probe",
+                  mediatype: "etext",
+                  main_author: { authorid: frozenProfile.author_id },
+                  work_titleid: "ParityProbe",
+                  startpagename: "1",
+                  imported: "1900"
+                }]
+              : []
+          })
         })
       }
       if (request.method() === "GET" && url.origin === authorityOrigin
@@ -266,7 +284,7 @@ for (const visualCase of visualCases) {
         return route.fulfill({
           status: 200,
           contentType: "application/json; charset=utf-8",
-          body: JSON.stringify({ hits: 0 })
+          body: JSON.stringify({ hits: frozenProfile.map_url ? 1 : 0 })
         })
       }
       if (request.method() === "GET" && url.hostname === "litteraturbanken.se"

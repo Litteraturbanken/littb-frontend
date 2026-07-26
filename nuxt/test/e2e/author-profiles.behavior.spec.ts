@@ -213,6 +213,7 @@ test("profile links use canonical internal paths and blank targets are hardened"
     .filter((href): href is string => Boolean(href?.startsWith("/"))))
   expect(internalHrefs).toEqual([
     "/författare/StrindbergA/titlar/Fritankaren/etext",
+    "/f%C3%B6rfattare/StrindbergA/mer",
     "/f%C3%B6rfattare/StrindbergA/presentation",
     "/f%C3%B6rfattare/StrindbergA/bibliografi",
     "/presentationer/specialomraden/Strindberg.html"
@@ -234,6 +235,29 @@ test("profile links use canonical internal paths and blank targets are hardened"
   await expect(page.locator('ul.links a[href="/f%C3%B6rfattare/Lagerl%C3%B6fS"]')).toHaveCount(1)
   await expect(page.locator('ul.links a[href="/f%C3%B6rfattare/Lagerl%C3%B6fS/titlar"]'))
     .toHaveCount(1)
+})
+
+test("more-content link uses Nuxt history and Back restores the hydrated profile", async ({
+  page
+}) => {
+  const problems = collectProblems(page)
+  await page.goto("/författare/StrindbergA", { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    (window as typeof window & { __authorMoreSentinel?: string }).__authorMoreSentinel
+      = "spa-history"
+  })
+
+  await page.getByRole("link", { name: "Texter om August Strindberg" }).click()
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA\/mer$/)
+  await expect(page.locator("h1")).toContainText("August Strindberg")
+  expect(await page.evaluate(() => (
+    window as typeof window & { __authorMoreSentinel?: string }
+  ).__authorMoreSentinel)).toBe("spa-history")
+
+  await page.goBack()
+  await expect(page).toHaveURL(/\/f%C3%B6rfattare\/StrindbergA$/)
+  await expect(page.getByRole("link", { name: "Texter om August Strindberg" })).toBeVisible()
+  expect(problems).toEqual([])
 })
 
 test("converted profile navigation keeps SPA state and Back restores the profile", async ({

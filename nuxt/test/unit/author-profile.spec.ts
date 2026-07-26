@@ -238,6 +238,7 @@ describe("safe author profile view model", () => {
       searchUrl: "/sok?forfattare=StrindbergA&avancerad",
       audioUrl: "",
       mapUrl: profile.map_url,
+      hasMore: true,
       relatedLinks: profile.related_links,
       encyclopediaLinks: profile.encyclopedia_links,
       hasOrdinaryIntroduction: true,
@@ -311,6 +312,23 @@ describe("safe author profile view model", () => {
     expect(view.encyclopediaLinks).toEqual(profile.encyclopedia_links)
     expect(view.relatedLinks).not.toBe(profile.related_links)
     expect(view.encyclopediaLinks).not.toBe(profile.encyclopedia_links)
+  })
+
+  test("maps the strict more-content flag without coercing malformed provider values", () => {
+    const withContent = structuredClone(strindbergAuthorProfile) as AuthorProfile
+    const withoutContent = structuredClone(strindbergAuthorProfile) as AuthorProfile
+    withoutContent.has_more = false
+    const malformed = structuredClone(strindbergAuthorProfile) as unknown as {
+      has_more: unknown
+    }
+    malformed.has_more = "true"
+
+    expect(createAuthorProfileView(withContent, "ordinary").hasMore).toBe(true)
+    expect(createAuthorProfileView(withoutContent, "ordinary").hasMore).toBe(false)
+    expect(createAuthorProfileView(
+      malformed as unknown as AuthorProfile,
+      "ordinary"
+    ).hasMore).toBe(false)
   })
 
   test.each([
