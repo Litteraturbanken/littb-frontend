@@ -1233,13 +1233,60 @@ test("the maximum valid cursor never links to an unrequestable next hit", async 
   )
 })
 
-test("an unknown page is a real 404", async ({ request }) => {
+test("an unknown e-text page is a work-specific real 404", async ({ request }) => {
   const response = await request.get(
     "/författare/SöderbergH/titlar/DoktorGlas/sida/missing/etext"
   )
   expect(response.status()).toBe(404)
-  expect(await response.text()).not.toContain("DOKTOR GLAS")
+  const html = await response.text()
+  expect(html).toContain("<title>Sidan kan inte hittas | Litteraturbanken</title>")
+  expect(html).toContain("Hittar ingen sida &#39;missing&#39; i verket.")
+  expect(html).not.toContain("DOKTOR GLAS")
   const recorded = await readerRequests(request)
   expect(recorded.filter(path => path.startsWith("/api/get_work_info?"))).toHaveLength(1)
   expect(recorded.filter(path => path.includes("/res_"))).toHaveLength(0)
+})
+
+test("an encoded faksimil page is escaped in the work-specific 404", async ({ request }) => {
+  const unsafePage = "A&B'<script>alert(1)</script>"
+  const response = await request.get(
+    `/författare/SöderbergH/titlar/DoktorGlas/sida/${encodeURIComponent(unsafePage)}/faksimil`
+  )
+  expect(response.status()).toBe(404)
+  const html = await response.text()
+  expect(html).toContain(
+    "Hittar ingen sida &#39;A&amp;B&#39;&lt;script&gt;alert(1)&lt;/script&gt;&#39; i verket."
+  )
+  expect(html).not.toContain("<script>alert(1)</script>")
+  expect(html).not.toContain("onerror=")
+})
+
+test("an unbounded Reader page name falls back to the generic 404 copy", async ({ request }) => {
+  const boundedPage = "x".repeat(160)
+  const boundedResponse = await request.get(
+    `/författare/SöderbergH/titlar/DoktorGlas/sida/${boundedPage}/etext`
+  )
+  expect(boundedResponse.status()).toBe(404)
+  expect(await boundedResponse.text()).toContain(
+    `Hittar ingen sida &#39;${boundedPage}&#39; i verket.`
+  )
+
+  const response = await request.get(
+    `/författare/SöderbergH/titlar/DoktorGlas/sida/${"x".repeat(161)}/etext`
+  )
+  expect(response.status()).toBe(404)
+  const html = await response.text()
+  expect(html).toContain("Du har angett en adress som inte finns på Litteraturbanken.")
+  expect(html).not.toContain("Hittar ingen sida")
+})
+
+test("a malformed Reader source stays a generic 502", async ({ request }) => {
+  const response = await request.get(
+    "/författare/SöderbergH/titlar/MalformedReader/sida/-2/etext"
+  )
+  expect(response.status()).toBe(502)
+  const html = await response.text()
+  expect(html).toContain("<title>Ett fel inträffade | Litteraturbanken</title>")
+  expect(html).toContain("Ett fel inträffade. Vänligen försök igen senare.")
+  expect(html).not.toContain("Hittar ingen sida")
 })

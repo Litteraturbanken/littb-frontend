@@ -3397,6 +3397,26 @@ for (const method of ["getItem", "setItem"] as const) {
   })
 }
 
+test("a direct unknown Reader page renders the work-specific 404 without HTML injection", async ({
+  page
+}) => {
+  const pageName = "A&B'<img src=x onerror=alert(1)>"
+  const response = await page.goto(
+    `/författare/SöderbergH/titlar/DoktorGlas/sida/${encodeURIComponent(pageName)}/etext`,
+    { waitUntil: "networkidle" }
+  )
+
+  expect(response?.status()).toBe(404)
+  await expect(page).toHaveTitle("Sidan kan inte hittas | Litteraturbanken")
+  await expect(page.locator("#mainview")).toHaveText(
+    `Hittar ingen sida '${pageName}' i verket.`
+  )
+  await expect(page.locator("#mainview img, #mainview script")).toHaveCount(0)
+  await expect(page.locator("#mainview")).not.toContainText(
+    "Du har angett en adress som inte finns"
+  )
+})
+
 test("an unknown Reader page leaves stored history unchanged", async ({ page }) => {
   const raw = JSON.stringify([{
     pageix: 7,

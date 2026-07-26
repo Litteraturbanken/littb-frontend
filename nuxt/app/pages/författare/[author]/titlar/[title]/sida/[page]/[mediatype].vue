@@ -14,6 +14,7 @@ import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
 import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
+import { readerMissingPageErrorData } from "~/lib/reader-missing-page"
 import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
   copyProductionValue,
@@ -508,9 +509,13 @@ const { data, error } = await useAsyncData<CurrentReaderPage>(
 
 if (import.meta.server) {
   if (error.value) {
+    const statusCode = error.value.statusCode ?? 500
     throw createError({
-      statusCode: error.value.statusCode ?? 500,
-      statusMessage: error.value.statusMessage ?? "Reader page unavailable"
+      statusCode,
+      statusMessage: error.value.statusMessage ?? "Reader page unavailable",
+      data: statusCode === 404
+        ? readerMissingPageErrorData(pageParam.value) ?? undefined
+        : undefined
     })
   }
   if (!data.value || data.value.status !== "success") {
