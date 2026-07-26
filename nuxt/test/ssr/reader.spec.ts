@@ -136,6 +136,9 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?om-boken"
   expect(html.split(`href="${sourceHref}"`)).toHaveLength(3)
   expect(html).toContain(`href="${sourceHref}">Doktor Glas</a>`)
+  expect(html).toContain(
+    'data-reader-title-tooltip-content="Doktor Glas. Roman"'
+  )
   expect(html).toContain(`href="${sourceHref}">Mer om boken</a>`)
   expect(html).toContain('class="reader-context-ssr"')
   expect(html).not.toContain('class="reader-context-ssr sr-only"')

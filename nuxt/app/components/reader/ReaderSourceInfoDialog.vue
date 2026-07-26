@@ -130,12 +130,12 @@ onMounted(() => {
                 <template v-for="(author, index) in sourceInfo.authors" :key="author.authorId">
                   <template v-if="index > 0"><template
                     v-if="index === sourceInfo.authors.length - 1"
-                    > <em class="font-normal">&amp;</em> </template><template v-else>, </template></template><a
-                    :href="author.url"
+                  > <em class="font-normal">&amp;</em> </template><template v-else>, </template></template><NuxtLink
+                    :to="author.url"
                   >{{ author.fullName }} <span
                     v-if="authorRole(author.authorType, author.role)"
                     class="authortype"
-                  >{{ authorRole(author.authorType, author.role) }}</span></a>
+                  >{{ authorRole(author.authorType, author.role) }}</span></NuxtLink>
                 </template>
               </h2>
               <h2 class="title"><span>{{ sourceInfo.title }}</span></h2>
@@ -159,15 +159,15 @@ onMounted(() => {
                 >Läs som <template
                   v-for="(action, index) in sourceInfo.readActions"
                   :key="action.mediaType"
-                ><a
+                ><NuxtLink
                   v-if="index === 0"
                   class="sc hover:underline"
-                  :href="action.url"
-                >{{ action.label }}</a><span v-else>
-                  eller <a
+                  :to="action.url"
+                >{{ action.label }}</NuxtLink><span v-else>
+                  eller <NuxtLink
                     class="sc hover:underline"
-                    :href="action.url"
-                  >{{ action.label }}</a>
+                    :to="action.url"
+                  >{{ action.label }}</NuxtLink>
                 </span></template></div>
 
                 <div

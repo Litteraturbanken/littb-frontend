@@ -635,6 +635,50 @@ test("source information entrances replace history and preserve raw query bytes"
   expect(problems).toEqual([])
 })
 
+test("source information author and read actions use client history without document loads", async ({
+  page,
+  request
+}, testInfo) => {
+  const problems = captureBrowserProblems(page)
+  const documentRequests: string[] = []
+  page.on("request", browserRequest => {
+    if (browserRequest.resourceType() === "document") documentRequests.push(browserRequest.url())
+  })
+  await page.goto(`${readerPath}?om-boken`, { waitUntil: "networkidle" })
+  documentRequests.length = 0
+  await resetReader(request)
+
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  if (testInfo.project.name !== "mobile-chromium") {
+    const authorLink = dialog.getByRole("link", { name: "Hjalmar Söderberg", exact: true })
+    await expect(authorLink).toHaveAttribute("href", "/författare/S%C3%B6derbergH")
+    await authorLink.dispatchEvent("click")
+    await expect(page).toHaveURL("/författare/S%C3%B6derbergH")
+    await page.goBack()
+    await expect(page).toHaveURL(`${readerPath}?om-boken`)
+    await expect(dialog).toHaveCount(1)
+    await page.goForward()
+    await expect(page).toHaveURL("/författare/S%C3%B6derbergH")
+    await page.goBack()
+    await expect(dialog).toHaveCount(1)
+  }
+
+  const facsimileLink = dialog.locator(
+    '.mediatypes a[href$="/DoktorGlas/sida/-2/faksimil"]'
+  )
+  await expect(facsimileLink).toBeAttached()
+  await facsimileLink.dispatchEvent("click")
+  await expect(page).toHaveURL(
+    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/faksimil"
+  )
+  await page.goBack()
+  await expect(page).toHaveURL(`${readerPath}?om-boken`)
+  await expect(dialog).toHaveCount(1)
+
+  expect(documentRequests).toEqual([])
+  expect(problems).toEqual([])
+})
+
 test("source information is focus-trapped and backdrop-close restores its trigger", async ({
   page
 }) => {
@@ -1734,6 +1778,97 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
   expect(problems).toEqual([])
 })
 
+for (const focusPath of [readerPath, facsimilePath] as const) {
+  test(`Escape exits Läsfokus through its raw-preserving replacement on ${focusPath}`, async ({
+    page,
+    request
+  }) => {
+    const problems = captureBrowserProblems(page)
+    const rawQuery = "?bare&repeat=%2f&repeat=%2F&fokus&empty=#focus"
+    await page.goto(`${focusPath}${rawQuery}`, { waitUntil: "networkidle" })
+    await resetReader(request)
+    await startHistoryMutationCounter(page)
+    const historyLength = await page.evaluate(() => window.history.length)
+
+    await page.keyboard.press("Escape")
+
+    await expect(page).toHaveURL(`${focusPath}?bare&repeat=%2f&repeat=%2F&empty=#focus`)
+    await expect(page.locator(".reader_main")).not.toHaveClass(/\bfocus\b/u)
+    expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 1 })
+    expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
+    expect(await readerMetadataRequests(request)).toEqual([])
+    expect(await readerHitRequests(request)).toEqual([])
+    expect(problems).toEqual([])
+  })
+}
+
+test("Läsfokus Escape yields to editable fields and Reader dialogs", async ({ page }) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(`${readerPath}?fokus`, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const input = document.createElement("input")
+    input.setAttribute("aria-label", "Tillfälligt redigerbart fält")
+    document.body.append(input)
+    input.focus()
+  })
+  await page.keyboard.press("Escape")
+  await expect(page).toHaveURL(`${readerPath}?fokus`)
+
+  await navigateClient(page, `${readerEncodedPath}?fokus&om-boken`)
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toHaveCount(1)
+  await page.keyboard.press("Escape")
+  await expect(dialog).toHaveCount(0)
+  await expect(page).toHaveURL(`${readerPath}?fokus`)
+
+  await page.keyboard.press("Escape")
+  await expect(page).toHaveURL(readerPath)
+  expect(problems).toEqual([])
+})
+
+test("Reader sidebar reveals one delayed text-only tooltip only for a distinct full title", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(facsimilePath, { waitUntil: "networkidle" })
+  const title = page.locator(".reader-context").getByRole("link", {
+    name: "Gösta Berlings saga"
+  })
+  await expect(title).toHaveAttribute(
+    "data-reader-title-tooltip-content",
+    "Gösta Berlings saga. Roman"
+  )
+
+  await title.dispatchEvent("mouseenter")
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
+  await page.waitForTimeout(550)
+  await expect(page.getByRole("tooltip")).toHaveText("Gösta Berlings saga. Roman")
+  await expect(page.getByRole("tooltip")).toHaveCount(1)
+  await expect(page.getByRole("tooltip").locator("a, button, input")).toHaveCount(0)
+  await title.focus()
+  await title.dispatchEvent("mouseleave")
+  await expect(page.getByRole("tooltip")).toHaveCount(1)
+  await title.blur()
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
+
+  await title.focus()
+  await page.waitForTimeout(550)
+  await expect(page.getByRole("tooltip")).toHaveCount(1)
+  await title.dispatchEvent("mouseenter")
+  await title.blur()
+  await expect(page.getByRole("tooltip")).toHaveCount(1)
+  await title.dispatchEvent("mouseleave")
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
+
+  await page.goto(boyeFacsimilePath, { waitUntil: "networkidle" })
+  await expect(page.locator(".reader-context .title"))
+    .not.toHaveAttribute("data-reader-title-tooltip-content")
+  await page.locator(".reader-context .title").dispatchEvent("mouseenter")
+  await page.waitForTimeout(550)
+  await expect(page.getByRole("tooltip")).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
 test("page navigation preserves each page's horizontal history position", async ({
   isMobile,
   page
@@ -1976,7 +2111,7 @@ test("faksimil rotation persists while a size change clears only the image error
   expect(problems).toEqual([])
 })
 
-test("faksimil page identity resets local rotation and image error state", async ({
+test("faksimil page identity preserves work rotation but clears image error state", async ({
   page
 }, testInfo) => {
   const problems = captureBrowserProblems(page)
@@ -1994,8 +2129,33 @@ test("faksimil page identity resets local rotation and image error state", async
   await expect(page).toHaveURL(/\/sida\/5\/faksimil$/)
   await expect(image).toHaveAttribute("src", facsimileSource(3, 12))
   await expect(image).toBeVisible()
-  await expect(image).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
+  if (testInfo.project.name !== "mobile-chromium") {
+    await expect(image).toHaveCSS("transform", "matrix(0, 1, -1, 0, 0, 0)")
+    await page.goBack()
+    await expect(page).toHaveURL(facsimilePath)
+    await expect(image).toHaveAttribute("src", facsimileSource(3, 9))
+    await expect(image).toHaveCSS("transform", "matrix(0, 1, -1, 0, 0, 0)")
+  }
   await expect(page.locator(".reader-facsimile-error[role=alert]")).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
+test("faksimil rotation resets after a different media session", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile-chromium", "Rotation controls are desktop-only")
+  const problems = captureBrowserProblems(page)
+  await page.goto(facsimilePath, { waitUntil: "networkidle" })
+  await page.locator("#toolkit .reader-facsimile-rotation-controls")
+    .getByRole("button", { name: "Höger" }).click()
+  await expect(page.locator("img.faksimil"))
+    .toHaveCSS("transform", "matrix(0, 1, -1, 0, 0, 0)")
+
+  await navigateClient(page, readerEncodedPath)
+  await expect(page).toHaveURL(readerPath)
+  await expect(page.locator("img.faksimil")).toHaveCount(0)
+  await page.goBack()
+  await expect(page).toHaveURL(facsimilePath)
+  await expect(page.locator("img.faksimil"))
+    .toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)")
   expect(problems).toEqual([])
 })
 

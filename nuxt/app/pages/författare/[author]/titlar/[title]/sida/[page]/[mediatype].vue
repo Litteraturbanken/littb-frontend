@@ -12,7 +12,9 @@ import dramawebbenLogo from "~/assets/img/dramawebben_svart.svg"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
+import { usefulLibraryTooltipText } from "~/lib/library-tooltip"
 import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
+import { readerTitleTooltipDirective } from "~/lib/reader-title-tooltip"
 import {
   copyProductionValue,
   isProductionShortcutGuarded,
@@ -55,6 +57,7 @@ definePageMeta({
 
 const route = useRoute()
 const router = useRouter()
+const vReaderTitleTooltip = readerTitleTooltipDirective
 const nuxtApp = useNuxtApp()
 const config = useRuntimeConfig()
 const requestUrl = useRequestURL()
@@ -676,6 +679,9 @@ const facsimileReader = computed(
   () => reader.value?.mediaType === "faksimil" ? reader.value : null
 )
 const focusMode = computed(() => route.query.fokus !== undefined)
+const readerTitleTooltip = computed(() => reader.value
+  ? usefulLibraryTooltipText(reader.value.fullTitle, reader.value.title)
+  : "")
 const focusHref = computed(() => readerFocusFullPath(rawFullPath.value, true))
 const focusNeutralHref = computed(() => readerFocusFullPath(rawFullPath.value, false))
 const focusBarVisible = ref(true)
@@ -1835,8 +1841,26 @@ function handleSourceInfoKeydown(event: KeyboardEvent): void {
     : null)
 }
 
+function handleFocusEscapeKeydown(event: KeyboardEvent): void {
+  if (
+    event.key !== "Escape"
+    || !focusMode.value
+    || event.defaultPrevented
+    || event.isComposing
+    || event.ctrlKey
+    || event.metaKey
+    || isEditableTarget(event.target)
+    || isEditableTarget(document.activeElement)
+    || readerDialogIsOpen()
+  ) return
+  event.preventDefault()
+  closeFocus()
+}
+
 onMounted(() => document.addEventListener("keydown", handleSourceInfoKeydown))
 onBeforeUnmount(() => document.removeEventListener("keydown", handleSourceInfoKeydown))
+onMounted(() => document.addEventListener("keydown", handleFocusEscapeKeydown))
+onBeforeUnmount(() => document.removeEventListener("keydown", handleFocusEscapeKeydown))
 onMounted(() => document.addEventListener("keydown", handleReaderPagingKeydown))
 onBeforeUnmount(() => document.removeEventListener("keydown", handleReaderPagingKeydown))
 onMounted(() => document.addEventListener("keydown", handleProductionShortcutKeydown))
@@ -1942,7 +1966,9 @@ watch(readerRequestIdentity, () => {
               <div class="author"><ReaderContributors :contributors="reader.contributors" /></div>
               <a
                 ref="titleSourceInfoTrigger"
+                v-reader-title-tooltip="readerTitleTooltip"
                 class="title"
+                :data-reader-title-tooltip-content="readerTitleTooltip || undefined"
                 :href="sourceInfoHref"
                 @click.prevent="openSourceInfoFromTitle"
               >{{ reader.title }}</a>
@@ -2287,7 +2313,10 @@ watch(readerRequestIdentity, () => {
             <span class="author"><ReaderContributors
               :contributors="reader.contributors"
             /></span>
-            <span><a :href="sourceInfoHref">{{ reader.title }}</a><template
+            <span><a
+              :data-reader-title-tooltip-content="readerTitleTooltip || undefined"
+              :href="sourceInfoHref"
+            >{{ reader.title }}</a><template
               v-if="reader.imprintYear"
             > ({{ reader.imprintYear }})</template></span>
             <nav aria-label="Sidnavigering">

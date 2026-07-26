@@ -52,8 +52,10 @@ const pageIdentity = computed(() => [
 const selectedSourceIdentity = computed(() => selectedSource.value.url)
 
 watch(pageIdentity, () => {
-  rotation.value = 0
   imageFailed.value = false
+})
+watch(() => props.page.workId, () => {
+  rotation.value = 0
 })
 watch(selectedSourceIdentity, () => {
   imageFailed.value = false
