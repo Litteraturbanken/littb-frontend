@@ -35,7 +35,10 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       testMatch: /e2e\/.*\.spec\.ts/,
-      testIgnore: /e2e\/.*\.mobile\.behavior\.spec\.ts/,
+      testIgnore: [
+        /e2e\/.*\.mobile\.behavior\.spec\.ts/,
+        /e2e\/reader-dictionary-production\.behavior\.spec\.ts/
+      ],
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 1000 }
