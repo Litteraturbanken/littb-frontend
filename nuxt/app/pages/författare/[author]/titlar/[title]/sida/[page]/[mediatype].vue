@@ -688,6 +688,7 @@ const readerAuthorSuffix = computed(() => {
 
 const pageRouteDraftName = ref(pageParam.value)
 let pendingPageNavigations = 0
+let pageNavigationGeneration = 0
 let pageNavigationChain = Promise.resolve()
 watch(pageParam, pageName => {
   if (pendingPageNavigations === 0) pageRouteDraftName.value = pageName
@@ -703,6 +704,7 @@ const draftNextPageName = computed(() => draftAdjacentPageName(1))
 function queueReaderPage(pageName: string): void {
   const currentReader = reader.value
   if (!currentReader?.pageMap.some(page => page.pageName === pageName)) return
+  const generation = ++pageNavigationGeneration
   pageRouteDraftName.value = pageName
   const href = pageHref(pageName)
   pendingPageNavigations += 1
@@ -711,7 +713,9 @@ function queueReaderPage(pageName: string): void {
       try {
         await router.push(href)
       } catch {
-        pageRouteDraftName.value = pageParam.value
+        if (generation === pageNavigationGeneration) {
+          pageRouteDraftName.value = pageParam.value
+        }
       }
     })
     .finally(() => {

@@ -73,3 +73,18 @@ GREEN evidence:
 - Focused desktop regressions passed `2/2` Reader navigation, `2/2` chronology, and `1/1` OCR; the corresponding mobile Reader/chronology set passed `4/4`.
 
 The six-path staged index was exported to detached worktree `/tmp/littb-reader-review-staged` at verification commit `e3cc921d`. Fresh isolated-index verification passed: `yarn typecheck` (`Done in 4.21s`); 7 focused unit files with 148 tests; 5 focused desktop browser regressions; 4 focused mobile browser regressions; the existing rapid navigation/debounce regression on desktop and mobile (`2/2`); and 95 Reader final-parity/core SSR tests. `git diff --cached --check` also passed. The staged Reader page excludes its unrelated unstaged Quick Search developer-context hunks.
+
+## Review fix round 2 (2026-07-26)
+
+Failed-push recovery is now generation-aware. Every valid page intent receives an increasing generation; a rejection resets the draft to the actual route only when that rejected intent is still the newest intent. An older rejection therefore cannot overwrite a newer queued draft while the serialized Router chain continues.
+
+RED evidence:
+
+- Starting at page `-4`, two synchronous intents queued `-3` and `-2`; a guard rejected `-3` and delayed `-2`; a third intent during that delay incorrectly ended at `-3` instead of newest sequential page `-1`. This isolated the unconditional catch assignment as the draft overwrite.
+
+GREEN evidence:
+
+- With generation-aware recovery, the same guard sequence ends at `-1`, Back visits `-2` then `-4`, and no page error is emitted. The focused rapid, single-rejection, and older-rejection set passes `3/3` on both desktop and mobile.
+- The searchable OCR selection regression now uses a genuine Playwright mouse drag across the transparent OCR word's rendered bounding box, then reads the browser selection text. This exercises hit testing, stacking, and user selection rather than constructing a Range programmatically.
+
+The four-path staged index was exported to detached worktree `/tmp/littb-reader-review2-staged` at verification commit `ae7b0f97`. Fresh isolated verification passed: typecheck (`Done in 4.39s`); 7 unit files with 148 tests; 5 focused desktop browser regressions; 4 focused mobile browser regressions; and 95 Reader final-parity/core SSR tests. The first combined desktop run observed transient duplicate fixture-ledger OCR entries; the OCR regression immediately passed alone and the complete five-test desktop command passed on a fresh isolated-port rerun. The staged diff excludes unrelated Quick Search hunks and passes `git diff --cached --check`.

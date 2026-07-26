@@ -3260,6 +3260,64 @@ test("a rejected queued page push is contained and the next paging intent recove
   expect(problems).toEqual([])
 })
 
+test("a failed older page intent cannot overwrite a newer queued draft", async ({ page }) => {
+  const start = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-4/etext"
+  const second = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-2/etext"
+  const newest = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext"
+  const problems = captureBrowserProblems(page)
+  await page.goto(start, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        beforeEach: (guard: (to: { fullPath: string }) => unknown) => () => void
+      } } } }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    const state = window as typeof window & {
+      __readerQueuedGuard?: { secondStarted: boolean, releaseSecond?: () => void }
+    }
+    state.__readerQueuedGuard = { secondStarted: false }
+    let rejectedFirst = false
+    router.beforeEach(to => {
+      if (!rejectedFirst && to.fullPath.endsWith("/sida/-3/etext")) {
+        rejectedFirst = true
+        throw new Error("rejected older Reader page push")
+      }
+      if (
+        !state.__readerQueuedGuard!.secondStarted
+        && to.fullPath.endsWith("/sida/-2/etext")
+      ) {
+        state.__readerQueuedGuard!.secondStarted = true
+        return new Promise<void>(resolve => {
+          state.__readerQueuedGuard!.releaseSecond = resolve
+        })
+      }
+    })
+    document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "n" }))
+    document.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "n" }))
+  })
+  await expect.poll(() => page.evaluate(() => Boolean((window as typeof window & {
+    __readerQueuedGuard?: { secondStarted: boolean }
+  }).__readerQueuedGuard?.secondStarted))).toBe(true)
+
+  await page.keyboard.press("n")
+  await page.evaluate(() => {
+    const guard = (window as typeof window & {
+      __readerQueuedGuard?: { releaseSecond?: () => void }
+    }).__readerQueuedGuard
+    if (!guard?.releaseSecond) throw new Error("second Reader page push was not delayed")
+    guard.releaseSecond()
+  })
+
+  await expect(page).toHaveURL(newest)
+  await page.goBack()
+  await expect(page).toHaveURL(second)
+  await page.goBack()
+  await expect(page).toHaveURL(start)
+  expect(problems).toEqual([])
+})
+
 test("a canceled leave keeps Reader keyboard paging active", async ({ page }) => {
   const problems = captureBrowserProblems(page)
   await page.goto(readerPath, { waitUntil: "networkidle" })
