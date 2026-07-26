@@ -30,8 +30,8 @@ test("SSR renders the author bibliographic database from typed private requests"
     .toBe("Bibliografisk databas")
   expect([...document.querySelectorAll("ul.links a")].map(link => link.textContent?.trim()))
     .toEqual(["Introduktion", "Verk", "Dramawebben", "Sök i texterna"])
-  expect(document.querySelector('form.search input[placeholder="Fritextsökning i hela databasen"]'))
-    .not.toBeNull()
+  expect(document.querySelector('form.search input[placeholder="Fritextsökning i hela databasen"]')
+    ?.getAttribute("maxlength")).toBe("200")
   expect([...document.querySelectorAll(".page_content input[type=checkbox]")]).toHaveLength(4)
   expect([...document.querySelectorAll(".results > div")]).toHaveLength(1)
   expect(document.querySelector(".results")?.textContent).toContain("Gösta Berlings saga")
@@ -41,6 +41,14 @@ test("SSR renders the author bibliographic database from typed private requests"
     .toEqual({ requests: ["/private-v2/authors/StrindbergA"] })
   expect(await (await request.get(`${fixture}/_bibliography_requests`)).json())
     .toEqual({ requests: ["/private-v2/bibliography/entries"] })
+})
+
+test("bibliography fixture rejects overlong whole-text queries", async ({ request }) => {
+  const response = await request.get(
+    `/api/v2/bibliography/entries?whole_text=${"x".repeat(201)}`
+  )
+
+  expect(response.status()).toBe(422)
 })
 
 test("SSR preserves the author shell across missing authors and provider failures", async ({

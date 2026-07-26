@@ -176,6 +176,12 @@ function safeHref(value: string): string | null {
     : value
 }
 
+function safeHttpUrl(value: string | null | undefined): string {
+  if (!value || !/^https?:\/\//iu.test(value)) return ""
+  const href = safeHref(value)
+  return href && /^https?:\/\//iu.test(href) ? href : ""
+}
+
 function hardenBlankTarget(element: Element): void {
   if (element.getAttribute("target")?.toLowerCase() !== "_blank") return
 
@@ -280,7 +286,7 @@ export function createAuthorProfileView(
         }
       : null,
     searchUrl: profile.search_url ?? "",
-    audioUrl: profile.audio_url ?? "",
+    audioUrl: safeHttpUrl(profile.audio_url),
     relatedLinks: profileLinks(profile.related_links),
     encyclopediaLinks: profileLinks(profile.encyclopedia_links),
     hasOrdinaryIntroduction: Boolean(profile.introduction_html),

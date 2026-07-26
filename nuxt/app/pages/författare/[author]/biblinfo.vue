@@ -133,6 +133,7 @@ const searching = ref(false)
 const showHit = ref(0)
 const showAll = ref(false)
 const wholeText = ref("")
+const searchValidationError = ref("")
 const selectedResources = reactive<Record<BibliographyResource, boolean>>({
   manus: false,
   tryckt_material: false,
@@ -208,6 +209,12 @@ async function submitSearch(): Promise<void> {
     .map(([resource]) => resource)
     .filter(resource => selectedResources[resource])
   const trimmedWholeText = wholeText.value.trim()
+  searchValidationError.value = ""
+  if (trimmedWholeText.length > 200) {
+    searching.value = false
+    searchValidationError.value = "Fritextsökningen får innehålla högst 200 tecken."
+    return
+  }
   searching.value = true
   try {
     const client = createLbApiClient(config.public.apiBase)
@@ -297,6 +304,7 @@ useHead({
           <form class="search" @submit.prevent="submitSearch">
             <input
               v-model="wholeText"
+              maxlength="200"
               placeholder="Fritextsökning i hela databasen"
             ><button type="submit">Sök</button>{{ " " }}
             <select aria-label="Verk">
@@ -315,6 +323,9 @@ useHead({
             </li>
           </ul>
 
+          <div v-if="searchValidationError" class="error" role="alert">
+            {{ searchValidationError }}
+          </div>
           <div v-if="entriesStatus === 'unavailable'" class="error">
             Den bibliografiska databasen kan inte visas just nu.
           </div>

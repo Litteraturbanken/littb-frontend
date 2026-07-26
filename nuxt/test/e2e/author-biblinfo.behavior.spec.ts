@@ -31,14 +31,18 @@ function collectProblems(page: Page): string[] {
   return problems
 }
 
-test.beforeAll(async ({ baseURL, browser }) => {
+test.beforeAll(async ({ baseURL, browser, request }) => {
+  await reset(request)
   const context = await browser.newContext()
-  const page = await context.newPage()
-  const response = await page.goto(new URL("/f%C3%B6rfattare/StrindbergA/biblinfo", baseURL).href, {
-    waitUntil: "networkidle"
-  })
-  expect(response?.status()).toBe(200)
-  await context.close()
+  try {
+    const page = await context.newPage()
+    const response = await page.goto(new URL("/f%C3%B6rfattare/StrindbergA/biblinfo", baseURL).href, {
+      waitUntil: "networkidle"
+    })
+    expect(response?.status()).toBe(200)
+  } finally {
+    await context.close()
+  }
 })
 test.beforeEach(async ({ request }) => reset(request))
 
@@ -108,6 +112,25 @@ test("submits exact resource filters and free text with latest-response ownershi
   await expect(page.locator(".results")).toContainText("Jerusalem i forskningen")
   await expect(page.locator(".results")).not.toContainText("Gösta Berlings saga")
   expect(problems).toEqual([])
+})
+
+test("rejects overlong free text locally without replacing truthful results", async ({
+  page,
+  request
+}) => {
+  await page.goto("/författare/StrindbergA/biblinfo", { waitUntil: "networkidle" })
+  const search = page.getByPlaceholder("Fritextsökning i hela databasen")
+  const initialRequests = await bibliographyRequests(request)
+  await search.evaluate((input, value) => {
+    const field = input as HTMLInputElement
+    field.value = value
+    field.dispatchEvent(new Event("input", { bubbles: true }))
+  }, "x".repeat(201))
+  await page.locator("form.search").getByRole("button", { name: "Sök" }).click()
+
+  await expect(page.getByRole("alert")).toContainText("högst 200 tecken")
+  await expect(page.locator(".results")).toContainText("Gösta Berlings saga")
+  expect(await bibliographyRequests(request)).toEqual(initialRequests)
 })
 
 test("shows empty and failure states and keeps internal author navigation client-side", async ({

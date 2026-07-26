@@ -311,4 +311,22 @@ describe("safe author profile view model", () => {
     expect(view.relatedLinks).not.toBe(profile.related_links)
     expect(view.encyclopediaLinks).not.toBe(profile.encyclopedia_links)
   })
+
+  test.each([
+    "javascript:alert(1)",
+    "data:text/html,unsafe",
+    "//evil.example/audio"
+  ])("drops an unsafe audio URL: %s", audioUrl => {
+    const profile = maliciousProfile()
+    profile.audio_url = audioUrl
+
+    expect(createAuthorProfileView(profile, "ordinary").audioUrl).toBe("")
+  })
+
+  test("keeps a safe HTTP audio handoff", () => {
+    const profile = maliciousProfile()
+    profile.audio_url = "http://litteraturbanken.se/ljudochbild/author"
+
+    expect(createAuthorProfileView(profile, "ordinary").audioUrl).toBe(profile.audio_url)
+  })
 })

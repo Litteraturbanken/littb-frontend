@@ -4283,6 +4283,14 @@ const server = createServer(async (request, response) => {
     const resources = url.searchParams.getAll("resource")
     const wholeText = url.searchParams.get("whole_text") ?? ""
     bibliographyRequests.push(`${rawPathname}${url.search}`)
+    const allowedResources = new Set(["manus", "tryckt_material", "annat_tryckt", "forskning"])
+    if (
+      [...url.searchParams.keys()].some(key => key !== "resource" && key !== "whole_text")
+      || url.searchParams.getAll("whole_text").length > 1
+      || wholeText.length > 200
+      || resources.some(resource => !allowedResources.has(resource))
+      || new Set(resources).size !== resources.length
+    ) return validationError(response)
     const delay = Number(bibliographyDelays[wholeText] || 0)
     if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay))
     if (bibliographyDisconnect) return response.destroy()
