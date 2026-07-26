@@ -12,6 +12,7 @@ The Nuxt source-information projection intentionally excludes `content_vector`, 
 
 - Added required `GET /works/{work_id}/similar?media_type=etext|faksimil`.
 - Reused the legacy two-query OpenSearch algorithm, including the etext boost and KNN cosine scoring.
+- Uses structured exact `term` filters for the requested and excluded work IDs; Lucene-like spaces, colons, and operators remain inert literal values rather than query syntax.
 - Added strict, path-safe models and a five-item maximum.
 - Projects only `author_id`, `author_surname`, `title_id`, `start_page`, `media_type`, and `label`; it never returns the vector or an arbitrary URL.
 - Returns `{ "items": [] }` when the source representation has no vector or the similarity query has no hits.
@@ -32,13 +33,14 @@ The Nuxt source-information projection intentionally excludes `content_vector`, 
 
 - Backend RED: the projection test failed because `lbapi.v2.similar_works` did not exist.
 - Backend model RED: unsafe path segments and control-bearing labels were initially accepted by the DTO.
+- Backend query-safety RED: captured calls still exposed user-controlled work IDs through `q` / `query_string`; API and query tests now prove operator-, colon-, and space-bearing values remain exact structured terms in both searches.
 - Frontend RED: SSR returned zero `.reader-similar-works` rows instead of the five literal Doktor Glas rows.
 - Frontend malformed RED: a control-bearing recommendation label initially rendered instead of being isolated.
 - Each case was rerun green after its minimal production change.
 
 ## Verification
 
-- Backend model/source-info/similar/OpenAPI suite: `264 passed`.
+- Backend model/source-info/similar/OpenAPI suite after the query-safety follow-up: `270 passed`.
 - Real read-only OpenSearch query for `lb1728740` / `etext`: returned the exact five required labels, order, and canonical components.
 - Nuxt focused unit suite (`v2-server` and `reader-source-info`): `164 passed`.
 - Complete Reader SSR file: `90 passed`.
