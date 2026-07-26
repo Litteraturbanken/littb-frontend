@@ -570,7 +570,7 @@ test("direct source information remains visible and linked without JavaScript", 
   await expect(dialog.locator(".header .title")).toHaveText("Doktor Glas. Roman")
   await expect(dialog.locator(".header .author").getByRole("link", {
     name: "Hjalmar Söderberg"
-  })).toHaveAttribute("href", "/författare/S%C3%B6derbergH")
+  })).toHaveAttribute("href", "/f%C3%B6rfattare/S%C3%B6derbergH")
   await expect(page.locator("body")).toHaveClass(/\bmodal-open\b/u)
   await expect.poll(() => page.evaluate(() => [
     getComputedStyle(document.documentElement).overflow,
@@ -651,7 +651,7 @@ test("source information author and read actions use client history without docu
   const dialog = page.getByRole("dialog", { name: "Om boken" })
   if (testInfo.project.name !== "mobile-chromium") {
     const authorLink = dialog.getByRole("link", { name: "Hjalmar Söderberg", exact: true })
-    await expect(authorLink).toHaveAttribute("href", "/författare/S%C3%B6derbergH")
+    await expect(authorLink).toHaveAttribute("href", "/f%C3%B6rfattare/S%C3%B6derbergH")
     await authorLink.dispatchEvent("click")
     await expect(page).toHaveURL("/författare/S%C3%B6derbergH")
     await page.goBack()

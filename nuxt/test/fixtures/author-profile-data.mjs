@@ -84,6 +84,29 @@ export const strindbergAuthorProfile = {
 }
 
 /** @satisfies {AuthorProfile} */
+export const soderbergAuthorProfile = {
+  author_id: "SöderbergH",
+  full_name: "Hjalmar Söderberg",
+  surname: "Söderberg",
+  birth_year: "1869",
+  death_year: "1941",
+  canonical_path: "/författare/S%C3%B6derbergH",
+  introduction_html: "<p>Hjalmar Söderberg var författare.</p>",
+  introduction_by: null,
+  source_html: [],
+  pseudonyms: [],
+  other_names: [],
+  portrait: null,
+  search_url: null,
+  audio_url: null,
+  map_url: null,
+  has_more: false,
+  related_links: [],
+  encyclopedia_links: [],
+  dramawebben: null
+}
+
+/** @satisfies {AuthorProfile} */
 export const lagerlofAuthorProfile = {
   author_id: "LagerlöfS",
   full_name: "Selma Lagerlöf",
@@ -240,6 +263,7 @@ export const managedHtmlProbeAuthorProfile = {
 /** @type {ReadonlyMap<string, AuthorProfile>} */
 export const authorProfiles = new Map([
   [strindbergAuthorProfile.author_id, strindbergAuthorProfile],
+  [soderbergAuthorProfile.author_id, soderbergAuthorProfile],
   [lagerlofAuthorProfile.author_id, lagerlofAuthorProfile],
   [dramaOnlyAuthorProfile.author_id, dramaOnlyAuthorProfile],
   [noIntroAuthorProfile.author_id, noIntroAuthorProfile],

@@ -1,10 +1,30 @@
 const javascriptAsset = /\.m?js$/u
 const viteTimestamp = /^\d{13}$/u
 const viteVersion = /^[a-f0-9]{8}$/u
+const maximumPathDecodes = 4
+
+function hasSafeNuxtAssetPath(pathname: string): boolean {
+  let decoded = pathname
+  for (let depth = 0; depth < maximumPathDecodes; depth += 1) {
+    let next: string
+    try {
+      next = decodeURIComponent(decoded).replaceAll("\\", "/")
+    } catch {
+      return false
+    }
+    if (!next.startsWith("/_nuxt/")) return false
+    if (next.split("/").some(segment => segment === "." || segment === "..")) return false
+    if (next === decoded) return true
+    decoded = next
+  }
+
+  // A residual escape after the bounded decode pass may conceal another
+  // separator or dot segment, so the strict visual allowlist rejects it.
+  return !decoded.includes("%")
+}
 
 export function isRegisteredNuxtAsset(url: URL): boolean {
-  if (!url.pathname.startsWith("/_nuxt/")) return false
-  if (/%(?:2e|5c)/iu.test(url.pathname)) return false
+  if (!hasSafeNuxtAssetPath(url.pathname)) return false
   if (url.search === "") return true
 
   if (url.searchParams.size === 1) {

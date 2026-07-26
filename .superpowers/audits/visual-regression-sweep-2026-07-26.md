@@ -150,3 +150,22 @@ Standalone EPUB visual: 2 passed (desktop + mobile)
 Focused source-info behavior: 2 passed
 Registered-asset + Playwright config unit tests: 15 passed
 ```
+
+### Review hardening
+
+The follow-up review found two test-boundary gaps, both now covered:
+
+- Asset paths are decoded safely for at most four passes, with backslashes treated
+  as separators. Every decoded form must remain below `/_nuxt/` and contain no literal
+  `.` or `..` segment. Malformed escapes and residual escapes after the bounded pass
+  are rejected. This catches encoded separators, mixed literal-dot/encoded-separator
+  traversal, and recursively encoded traversal while retaining Nuxt's legitimate
+  queryless encoded virtual-module paths. Query acceptance was not broadened.
+- The remaining no-JavaScript and client-history source-info expectations now assert
+  the canonical encoded author prefix. A deterministic Söderberg author profile was
+  added to the fixture so the author-link test reaches its back/forward and zero
+  document-load assertions rather than stopping at a fixture 404.
+
+Fresh follow-up verification: 25 focused unit tests, three source-info navigation
+behavior cases, eight source-info visual cases, and two standalone EPUB visual cases
+passed; Nuxt typechecking and `git diff --check` also completed successfully.
