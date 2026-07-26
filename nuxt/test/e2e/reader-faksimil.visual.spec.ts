@@ -11,6 +11,8 @@ function scanPath(size: number, imageNumber = 9) {
     `lb-reader-gosta-berlings-saga_${size}_${padded}.jpeg`
 }
 
+const ocrPath = "/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"
+
 async function resetReader(request: APIRequestContext) {
   await Promise.all([
     request.delete(`${fixture}/_reader_requests`),
@@ -107,6 +109,8 @@ for (const visualCase of visualCases) {
     expect(response?.status()).toBe(200)
     await expect(page.locator("body.focus.page-reading.ready")).toHaveCount(1)
     await expect(page.locator(".reader_main.type-faksimil")).toHaveCount(1)
+    await expect(page.locator(".reader_main.type-faksimil")).not.toHaveClass(/\bocr\b/u)
+    await expect(page.locator(".reader_main .reader-ocr-layer .overlay")).toHaveCount(1)
     await expect(page.locator(".reader_main .etext, #search_nav, .reader-search-state"))
       .toHaveCount(0)
 
@@ -160,7 +164,7 @@ for (const visualCase of visualCases) {
         "&exclude=content_vector&titlepath=GostaBerlingsSaga"
     ])
     expect(await fixtureRequests(request, "_reader_html_requests")).toEqual([])
-    expect(await fixtureRequests(request, "_reader_ocr_requests")).toEqual([])
+    expect(await fixtureRequests(request, "_reader_ocr_requests")).toEqual([ocrPath])
     expect(await fixtureRequests(request, "_reader_jpeg_requests")).toEqual([
       selectedBrowserScan,
       selectedBrowserScan
