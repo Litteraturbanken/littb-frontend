@@ -154,6 +154,29 @@ test("advanced vue-multiselect SSR hydration renders without browser warnings", 
   expect(problems).toEqual([])
 })
 
+test("selected advanced multiselects keep chips above a distinct labeled row", async ({ page }) => {
+  await openSearch(
+    page,
+    "/s%C3%B6k?avancerad=1&forfattare=StrindbergA&titlar=lb238704" +
+      "&languages=language:swe&keywords=texttype:roman&authorkeyword=Lagerl%C3%B6fS"
+  )
+
+  for (const control of ["author", "title", "lang", "about", "keyword"]) {
+    const root = page.locator(`.${control}_select`)
+    const chip = root.locator(".select2-selection__choice").first()
+    const row = root.locator(".search-multiselect__input-row, input.multiselect__input").first()
+    await expect(chip).toBeVisible()
+    await expect(row).toBeVisible()
+    const [rootBox, chipBox, rowBox] = await Promise.all([
+      root.boundingBox(),
+      chip.boundingBox(),
+      row.boundingBox()
+    ])
+    expect(rootBox?.height).toBeGreaterThan(45)
+    expect(rowBox!.y).toBeGreaterThanOrEqual(chipBox!.y + chipBox!.height)
+  }
+})
+
 async function pushRoute(page: Page, route: string) {
   await page.evaluate(async target => {
     type VueRoot = HTMLElement & {

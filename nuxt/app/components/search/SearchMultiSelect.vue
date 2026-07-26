@@ -133,18 +133,29 @@ onMounted(() => {
         </button>
       </template>
 
-      <template #tag="{ option, remove }">
-        <span class="select2-selection__choice" :title="option.label">
-          <button
-            type="button"
-            class="select2-selection__choice__remove"
-            :aria-label="`Ta bort ${selectedLabel(option)}`"
-            @mousedown.prevent.stop
-            @click.prevent.stop="remove(option)"
+      <template #selection="{ values, remove }">
+        <div v-if="values.length" class="multiselect__tags-wrap">
+          <span
+            v-for="option in values"
+            :key="option.value"
+            class="select2-selection__choice"
+            :title="option.label"
           >
-            ×
-          </button>{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}
-        </span>
+            <button
+              type="button"
+              class="select2-selection__choice__remove"
+              :aria-label="`Ta bort ${selectedLabel(option)}`"
+              @mousedown.prevent.stop
+              @click.prevent.stop="remove(option)"
+            >
+              ×
+            </button>{{ spaceAfterRemove ? " " : "" }}{{ selectedLabel(option) }}
+          </span>
+        </div>
+        <span
+          v-if="!searchable"
+          class="multiselect__placeholder search-multiselect__input-row"
+        >{{ placeholder }}</span>
       </template>
 
       <template #option="{ option }">

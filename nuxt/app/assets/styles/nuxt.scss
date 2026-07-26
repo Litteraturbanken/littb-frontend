@@ -113,11 +113,15 @@
     position: relative;
     vertical-align: middle;
 
+    &:has(.multiselect--active) {
+        z-index: 1050;
+    }
+
     .multiselect.select2-selection--multiple {
         box-sizing: border-box;
-        min-height: 32px;
-        border: 1px solid lightgrey !important;
-        background: white;
+        min-height: 30px;
+        border: 0 !important;
+        background: transparent;
         color: #444;
         font-family: "Requiem Text SC A", "Requiem Text SC B";
         font-size: 0.8rem;
@@ -132,24 +136,32 @@
     }
 
     .multiselect__tags-wrap {
-        display: inline;
+        display: flex;
+        flex-wrap: wrap;
+        min-height: 30px;
     }
 
     .select2-selection__choice {
-        float: left;
+        display: inline-flex;
+        align-items: baseline;
         padding: 0 5px;
         margin-top: 5px;
         border: 1px solid #aaa;
+        font-size: 13.6px !important;
+        line-height: 16.32px;
     }
 
-    .multiselect__input {
+    .multiselect__input,
+    .search-multiselect__input-row {
+        box-sizing: border-box;
         display: block;
+        position: relative !important;
         width: 350px !important;
         min-width: 200px;
         min-height: 28px;
         padding: 5px 5px 5px 10px;
         margin: 0;
-        border: 0;
+        border: 1px solid lightgrey;
         border-radius: 0;
         background: white;
         font: inherit;
@@ -164,6 +176,15 @@
         line-height: 19px;
     }
 
+    .multiselect__placeholder:not(.search-multiselect__input-row) {
+        display: none;
+    }
+
+    .search-multiselect__input-row {
+        min-height: 28px;
+        padding: 3px 24px 4px 10px;
+    }
+
     .multiselect.select2-selection--multiple::after {
         display: none;
     }
@@ -171,7 +192,8 @@
     .select2-selection__arrow.multiselect__select {
         position: absolute;
         z-index: 1;
-        top: 1px;
+        top: auto;
+        bottom: 1px;
         right: 1px;
         width: 20px;
         height: 26px;
@@ -229,5 +251,24 @@
         position: absolute;
         top: 4px;
         right: 4px;
+    }
+}
+
+.page-search .filter_select {
+    margin-bottom: 9px;
+}
+
+.page-search #mainview .bottom_row {
+    padding-bottom: 2px;
+
+    > .left > :first-child .filter_select,
+    > .right > :first-child .filter_select {
+        transform: translateY(-1px);
+    }
+}
+
+@media (max-width: 767px) {
+    .page-search #mainview .bottom_row {
+        padding-bottom: 3px;
     }
 }
