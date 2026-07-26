@@ -63,6 +63,43 @@ const pdf = {
   main_author: { authorid: "PdfA", full_name: "Pia Författare", type: "author" }
 }
 
+const longShortTitle = {
+  _index: "etext",
+  lbworkid: "lb-long-shorttitle",
+  work_titleid: "LongShorttitle",
+  title: "Den fullständiga titeln som ska visas som verktygstips när den korta titeln kapas",
+  shorttitle: "En avsiktligt mycket lång korttitel som måste förkortas visuellt utan att flytta årtal eller författare i resultatraden",
+  texttype: "roman",
+  mediatype: "etext",
+  startpagename: "1",
+  sort_date_imprint: { plain: 1905 },
+  main_author: { authorid: "LongA", full_name: "Lång Titel", type: "author" },
+  work_authors: [{ authorid: "LongA" }]
+}
+
+const editorResult = {
+  _index: "pdf",
+  title: "Redaktörens bok",
+  shorttitle: "Redaktörens bok",
+  texttype: "roman",
+  lbworkid: "lb-editor",
+  sort_date_imprint: { plain: 1906 },
+  main_author: { authorid: "EditorA", full_name: "Erik Redaktör", type: "editor" }
+}
+
+const illustratorResult = {
+  _index: "faksimil",
+  title: "Illustratörens bok",
+  shorttitle: "Illustratörens bok",
+  texttype: "roman",
+  mediatype: "faksimil",
+  startpagename: "1",
+  work_titleid: "IllustratorBook",
+  sort_date_imprint: { plain: 1907 },
+  main_author: { authorid: "IllustratorA", full_name: "Ida Illustratör", type: "illustrator" },
+  work_authors: [{ authorid: "IllustratorA" }]
+}
+
 const etextPart = {
   _index: "etext-part",
   title: "En novell",
@@ -116,6 +153,36 @@ const selma = {
   death: { plain: 1940 },
   highlight: {}
 }
+
+function authorResult(authorid, name_for_index, birth, death, popularity) {
+  return {
+    _index: "author",
+    authorid,
+    name_for_index,
+    birth: { plain: birth },
+    death: { plain: death },
+    popularity: String(popularity),
+    highlight: {}
+  }
+}
+
+const browseAuthors = [
+  authorResult("SöderbergH", "Söderberg, Hjalmar", 1869, 1941, 90),
+  authorResult("GeijerEGA", "Geijer, Erik Gustaf", 1783, 1847, 70),
+  authorResult("BauerJ", "Bauer, John", 1882, 1918, 60),
+  authorResult("PoetP", "Poet, Pia", 1878, 1948, 40),
+  { ...selma, popularity: "100" }
+]
+
+const manyAuthors = Array.from({ length: 151 }, (_, index) => authorResult(
+  `Author${String(index + 1).padStart(3, "0")}`,
+  `Författare, Nummer ${String(index + 1).padStart(3, "0")}`,
+  1800 + index,
+  1860 + index,
+  151 - index
+))
+
+const allBrowseAuthors = [...browseAuthors, ...manyAuthors]
 
 const latest = {
   _index: "etext",
@@ -176,24 +243,20 @@ export function libraryRelevanceResponse(query = "", resultTypes = "", from = "0
   }
   let data = libraryDefaultResults
   if (normalized.includes("produktionsform")) data = libraryProductionShapeResults
-  else if (normalized.includes("blandat")) data = libraryMixedResults
-  else if (normalized.includes("många författare")) {
-    data = Array.from({ length: 151 }, (_, index) => ({
-      _index: "author",
-      authorid: `Author${String(index + 1).padStart(3, "0")}`,
-      name_for_index: `Författare, Nummer ${String(index + 1).padStart(3, "0")}`,
-      birth: { plain: 1800 + index },
-      death: { plain: 1860 + index },
-      highlight: {}
-    }))
+  else if (normalized.includes("titelmetadata")) {
+    data = [longShortTitle, editorResult, illustratorResult, rodaRummet]
   }
+  else if (normalized.includes("blandat")) data = libraryMixedResults
+  else if (normalized.includes("många författare")) data = manyAuthors
   else if (normalized.includes("selma")) data = [selma]
   else if (normalized.includes("senaste")) data = [latest]
   else if (normalized.includes("röda")) data = [rodaRummet]
   else if (normalized.includes("inga")) data = []
 
   if (resultTypes === "author") {
-    data = data.filter(item => item?._index === "author")
+    data = normalized
+      ? data.filter(item => item?._index === "author")
+      : allBrowseAuthors
   }
 
   const hits = data.length

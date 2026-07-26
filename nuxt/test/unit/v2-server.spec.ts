@@ -502,6 +502,8 @@ describe("v2 fixture server operations", () => {
       fetch(`${origin}/_library_query_requests`, { method: "DELETE" }),
       fetch(`${origin}/_library_query_failure`, { method: "DELETE" }),
       fetch(`${origin}/_library_query_delays`, { method: "DELETE" }),
+      fetch(`${origin}/_library_metadata_requests`, { method: "DELETE" }),
+      fetch(`${origin}/_library_download_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_metadata_requests`, { method: "DELETE" }),
       fetch(`${origin}/_reader_html_requests`, { method: "DELETE" }),
@@ -2932,6 +2934,7 @@ describe("v2 fixture server operations", () => {
       title: "Doktor Glas. Roman",
       texttype: "roman",
       mediatype: "etext",
+      searchable: true,
       startpagename: "-2",
       has_epub: true,
       sort_date_imprint: { plain: "1905" },
@@ -2941,7 +2944,10 @@ describe("v2 fixture server operations", () => {
         surname: "Söderberg"
       },
       work_authors: [{ authorid: "SöderbergH", surname: "Söderberg" }],
-      export: [{ type: "epub", size: 530557 }]
+      export: [
+        { type: "epub", size: 530557 },
+        { type: "txt", size: 1024 }
+      ]
     })
     expect(await privateResponse.json()).toMatchObject({
       hits: 201,
@@ -2985,6 +2991,58 @@ describe("v2 fixture server operations", () => {
       .toBe(404)
     expect((await libraryQueryRequests()).requests).toHaveLength(2)
     expect(await libraryRelevanceRequests()).toEqual({ requests: [] })
+  })
+
+  test("serves and records strict Library about-author metadata on public and private paths", async () => {
+    const publicKeywords = await fetch(`${origin}/api/get_authorkeywords`)
+    const privateAuthors = await fetch(
+      `${origin}/legacy-api/get_authors?exclude=intro%2Cdb_*`
+    )
+
+    expect(publicKeywords.status).toBe(200)
+    expect(await publicKeywords.json()).toEqual(["LagerlöfS", "StrindbergA"])
+    expect(privateAuthors.status).toBe(200)
+    expect((await privateAuthors.json()).data).toEqual(expect.arrayContaining([
+        { authorid: "StrindbergA", full_name: "August Strindberg" },
+        { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" }
+    ].map(author => expect.objectContaining(author))))
+    expect(await (await fetch(`${origin}/_library_metadata_requests`)).json()).toEqual({
+      requests: [
+        { path: "/api/get_authorkeywords", query: {} },
+        { path: "/legacy-api/get_authors", query: { exclude: "intro,db_*" } }
+      ]
+    })
+
+    await fetch(`${origin}/_library_metadata_requests`, { method: "DELETE" })
+    expect(await (await fetch(`${origin}/_library_metadata_requests`)).json())
+      .toEqual({ requests: [] })
+  })
+
+  test("serves independently selectable duplicate Library metadata variants", async () => {
+    for (const variant of ["duplicate-authors", "duplicate-keywords"] as const) {
+      const configured = await fetch(`${origin}/_library_metadata_variant`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ variant })
+      })
+      expect(configured.status).toBe(200)
+      expect(await configured.json()).toEqual({ variant })
+
+      const authors = await (await fetch(
+        `${origin}/api/get_authors?exclude=intro%2Cdb_*`
+      )).json() as { data: Array<{ authorid: string }> }
+      const keywords = await (await fetch(`${origin}/api/get_authorkeywords`)).json() as string[]
+      expect(authors.data.filter(author => author.authorid === "LagerlöfS")).toHaveLength(
+        variant === "duplicate-authors" ? 2 : 1
+      )
+      expect(keywords.filter(authorId => authorId === "LagerlöfS")).toHaveLength(
+        variant === "duplicate-keywords" ? 2 : 1
+      )
+    }
+
+    const reset = await fetch(`${origin}/_library_metadata_variant`, { method: "DELETE" })
+    expect(reset.status).toBe(200)
+    expect(await reset.json()).toEqual({ variant: "normal" })
   })
 
   test("selects deterministic Library EPUB filter and malformed response variants", async () => {
@@ -3046,6 +3104,24 @@ describe("v2 fixture server operations", () => {
       distinct_hits: 0,
       suggest: []
     })
+  })
+
+  test("serves a delimiter-bearing Library source-work boundary", async () => {
+    const params = new URLSearchParams({
+      q: "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian " +
+        "(unsafe download token) AND export>type:(xml OR txt OR workdb)",
+      sort_field: "popularity|desc",
+      author_aggregation: "true",
+      from: "0",
+      to: "100"
+    })
+    const response = await fetch(`${origin}/api/query_string/etext,faksimil,pdf?${params}`)
+    expect(response.status).toBe(200)
+    const body = await response.json() as { data: Array<Record<string, unknown>> }
+    expect(body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({ lbworkid: "lb-SafeDownload" }),
+      expect.objectContaining({ lbworkid: "lb-Unsafe,Injected-etext-txt" })
+    ]))
   })
 
   test("Library EPUB failure, exact-state delay, and reset controls stay isolated", async () => {

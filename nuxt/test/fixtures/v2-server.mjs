@@ -24,7 +24,7 @@ import {
 } from "./dramawebben-catalog-data.mjs"
 import { libraryPdfResponse } from "./library-pdf-data.mjs"
 import {
-  libraryPartsResponse,
+  libraryPartsResponseForQuery,
   libraryQueryStringResponse
 } from "./library-query-data.mjs"
 import { libraryRelevanceResponse } from "./library-relevance-data.mjs"
@@ -53,7 +53,11 @@ import {
   sourceInfoProvenance
 } from "./reader-source-info-data.mjs"
 import { popularEpubs, popularWorks, stats } from "./statistics-data.mjs"
-import { textSearchBackgroundBase64 } from "./text-search-data.mjs"
+import {
+  textSearchAboutAuthors,
+  textSearchAuthors,
+  textSearchBackgroundBase64
+} from "./text-search-data.mjs"
 import { workLookupResponse } from "./work-lookup-data.mjs"
 
 const aboutContent = new Map([
@@ -305,6 +309,16 @@ let libraryRelevanceDelays = {}
 let libraryQueryRequests = []
 let libraryQueryFailure = false
 let libraryQueryDelays = {}
+const defaultLibraryImprintRange = {
+  start_year: { value_as_string: "1800" },
+  end_year: { value_as_string: "2026" }
+}
+let libraryImprintRange = structuredClone(defaultLibraryImprintRange)
+let libraryImprintFailure = false
+let libraryImprintRequests = []
+let libraryMetadataRequests = []
+let libraryMetadataVariant = "normal"
+let libraryDownloadRequests = []
 let authorDocumentRequests = []
 let authorDocumentAssetRequests = []
 let authorDocumentFailure = null
@@ -351,6 +365,10 @@ const libraryQueryPaths = new Set([
 ])
 const libraryPdfPredicate = "((export>type:pdf AND license:pd) OR mediatype:pdf)"
 const libraryQueryPrefix = "@type=cross_fields @default_operator=AND @fields=autocomplete.scandinavian"
+const libraryAuthorExcludeValues = new Set([
+  "intro,db_*",
+  "intro,db_*,doc_type,corpus,es_id,doc_id,doc_type,corpus_id,imported,updated,sources,intro_text,wikidata,dramawebben"
+])
 const dramawebbenExcludedDataPaths = new Set([
   "/api/get_authors",
   "/api/list_all/etext,faksimil,pdf,infopost"
@@ -462,6 +480,12 @@ async function readJson(request) {
   const chunks = []
   for await (const chunk of request) chunks.push(chunk)
   return chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : {}
+}
+
+async function readText(request) {
+  const chunks = []
+  for await (const chunk of request) chunks.push(chunk)
+  return Buffer.concat(chunks).toString("utf8")
 }
 
 function waitForContactRelease() {
@@ -2216,6 +2240,62 @@ const server = createServer(async (request, response) => {
     libraryQueryDelays = {}
     return sendJson(response, 200, { delays: libraryQueryDelays })
   }
+  if (url.pathname === "/_library_imprint_range" && request.method === "PUT") {
+    libraryImprintRange = await readJson(request)
+    return sendJson(response, 200, libraryImprintRange)
+  }
+  if (url.pathname === "/_library_imprint_range" && request.method === "DELETE") {
+    libraryImprintRange = structuredClone(defaultLibraryImprintRange)
+    return sendJson(response, 200, libraryImprintRange)
+  }
+  if (url.pathname === "/_library_imprint_failure" && request.method === "PUT") {
+    libraryImprintFailure = true
+    return sendJson(response, 200, { failure: true })
+  }
+  if (url.pathname === "/_library_imprint_failure" && request.method === "DELETE") {
+    libraryImprintFailure = false
+    return sendJson(response, 200, { failure: false })
+  }
+  if (url.pathname === "/_library_imprint_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: libraryImprintRequests })
+  }
+  if (url.pathname === "/_library_imprint_requests" && request.method === "DELETE") {
+    libraryImprintRequests = []
+    return sendJson(response, 200, { requests: [] })
+  }
+  if (url.pathname === "/_library_metadata_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: libraryMetadataRequests })
+  }
+  if (url.pathname === "/_library_metadata_requests" && request.method === "DELETE") {
+    libraryMetadataRequests = []
+    return sendJson(response, 200, { requests: [] })
+  }
+  if (url.pathname === "/_library_metadata_variant" && request.method === "PUT") {
+    let body
+    try {
+      body = await readJson(request)
+    } catch {
+      return validationError(response)
+    }
+    const variants = new Set(["normal", "duplicate-authors", "duplicate-keywords"])
+    if (body === null || typeof body !== "object" || Array.isArray(body)
+      || Object.keys(body).length !== 1 || !variants.has(body.variant)) {
+      return validationError(response)
+    }
+    libraryMetadataVariant = body.variant
+    return sendJson(response, 200, { variant: libraryMetadataVariant })
+  }
+  if (url.pathname === "/_library_metadata_variant" && request.method === "DELETE") {
+    libraryMetadataVariant = "normal"
+    return sendJson(response, 200, { variant: libraryMetadataVariant })
+  }
+  if (url.pathname === "/_library_download_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: libraryDownloadRequests })
+  }
+  if (url.pathname === "/_library_download_requests" && request.method === "DELETE") {
+    libraryDownloadRequests = []
+    return sendJson(response, 200, { requests: [] })
+  }
   if (url.pathname === "/_dramawebben_document_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: dramawebbenDocumentRequests })
   }
@@ -3035,6 +3115,48 @@ const server = createServer(async (request, response) => {
     return sendBody(response, 200, contentType, body)
   }
 
+  if (request.method === "GET" && ["/api/imprint_range", "/legacy-api/imprint_range"]
+    .includes(url.pathname)) {
+    libraryImprintRequests.push({ path: url.pathname })
+    if (libraryImprintFailure) {
+      return sendJson(response, 503, {
+        error: { code: "imprint_range_unavailable", message: "Unable to load imprint range" }
+      })
+    }
+    return sendJson(response, 200, structuredClone(libraryImprintRange))
+  }
+
+  if (request.method === "GET" && ["/api/get_authorkeywords", "/legacy-api/get_authorkeywords"]
+    .includes(url.pathname)) {
+    libraryMetadataRequests.push({ path: url.pathname, query: Object.fromEntries(url.searchParams) })
+    const ids = structuredClone(textSearchAboutAuthors)
+    if (libraryMetadataVariant === "duplicate-keywords") ids.push("LagerlöfS")
+    return sendJson(response, 200, ids)
+  }
+
+  if (request.method === "GET" && ["/api/get_authors", "/legacy-api/get_authors"]
+    .includes(url.pathname)
+    && url.searchParams.size === 1
+    && libraryAuthorExcludeValues.has(url.searchParams.get("exclude") || "")) {
+    libraryMetadataRequests.push({ path: url.pathname, query: Object.fromEntries(url.searchParams) })
+    const authors = structuredClone(textSearchAuthors)
+    if (libraryMetadataVariant === "duplicate-authors") {
+      authors.push({
+        ...authors.find(author => author.authorid === "LagerlöfS"),
+        full_name: "Duplicerad Lagerlöf"
+      })
+    }
+    return sendJson(response, 200, { data: authors })
+  }
+
+  if (request.method === "POST" && ["/api/download", "/legacy-api/download"]
+    .includes(url.pathname)) {
+    const body = new URLSearchParams(await readText(request))
+    const files = (body.get("files") || "").split(",").filter(Boolean)
+    libraryDownloadRequests.push({ path: url.pathname, files })
+    return sendJson(response, 200, { files })
+  }
+
   if (request.method === "GET" && libraryQueryPaths.has(url.pathname)) {
     const query = Object.fromEntries(url.searchParams)
     const pdfQuery = isLibraryPdfQuery(query)
@@ -3055,10 +3177,7 @@ const server = createServer(async (request, response) => {
       response,
       200,
       url.pathname.endsWith("/etext-part,faksimil-part")
-        ? {
-            ...structuredClone(libraryPartsResponse),
-            data: query.to === "0" ? [] : structuredClone(libraryPartsResponse.data)
-          }
+        ? libraryPartsResponseForQuery(query)
         : pdfQuery ? libraryPdfResponse(query) : libraryQueryStringResponse(query)
     )
   }

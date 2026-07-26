@@ -29,7 +29,11 @@ async function reset(request: APIRequestContext) {
     request.delete(`${fixture}/_library_relevance_delays`),
     request.delete(`${fixture}/_library_query_requests`),
     request.delete(`${fixture}/_library_query_failure`),
-    request.delete(`${fixture}/_library_query_delays`)
+    request.delete(`${fixture}/_library_query_delays`),
+    request.delete(`${fixture}/_library_imprint_range`),
+    request.delete(`${fixture}/_library_imprint_failure`),
+    request.delete(`${fixture}/_library_imprint_requests`),
+    request.delete(`${fixture}/_library_metadata_variant`)
   ])
 }
 
@@ -65,6 +69,11 @@ function pdfRows(document: Document) {
     download: row.querySelector("[data-library-pdf-download]")?.getAttribute("download"),
     target: row.querySelector("[data-library-pdf-download]")?.getAttribute("target")
   }))
+}
+
+function selectedChipTitles(document: Document, selector: string) {
+  return [...document.querySelectorAll(`${selector} .select2-selection__choice`)]
+    .map(chip => chip.getAttribute("title"))
 }
 
 test.beforeEach(async ({ request }) => reset(request))
@@ -117,6 +126,32 @@ test("SSR preserves the legacy empty and failed result messages", async ({ reque
   expect(failed.querySelectorAll("[data-library-result]")).toHaveLength(0)
 })
 
+test("SSR keeps full relevance titles and contribution labels separate from their links", async ({
+  request
+}) => {
+  const response = await request.get("/bibliotek?filter=titelmetadata")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const rows = [...document.querySelectorAll("[data-library-result]")]
+  const longTitle = rows[0]?.querySelector<HTMLElement>("[data-library-result-title]")
+
+  expect(longTitle?.textContent?.trim()).toBe(
+    "En avsiktligt mycket lång korttitel som måste förkortas visuellt utan att flytta årtal eller författare i resultatraden"
+  )
+  expect(longTitle?.getAttribute("title")).toBe(
+    "Den fullständiga titeln som ska visas som verktygstips när den korta titeln kapas"
+  )
+  expect(rows[1]?.querySelector("[data-library-result-title]")?.getAttribute("title")).toBeNull()
+  expect(rows[1]?.querySelector("[data-library-author-contribution]")?.textContent?.trim())
+    .toBe("(red.)")
+  expect(rows[2]?.querySelector("[data-library-author-contribution]")?.textContent?.trim())
+    .toBe("(ill.)")
+  expect(rows[3]?.querySelector("[data-library-author-contribution]")).toBeNull()
+  expect(rows[1]?.querySelector("[data-library-author-contribution]")?.closest("a")).toBeNull()
+  expect(rows[1]?.querySelector("[data-library-result-title]")?.className)
+    .toContain("text-ellipsis")
+})
+
 for (const filter of ["null-suggest", "missing-suggest"]) {
   test(`SSR renders Library results when suggest is ${filter.split("-")[0]}`, async ({ request }) => {
     const response = await request.get(`/bibliotek?filter=${filter}`)
@@ -149,12 +184,12 @@ test("SSR renders every safe mixed family and rejects malformed rows and destina
 
   expect(rows).toHaveLength(10)
   expect(destinations).toEqual([
-    "/författare/StrindbergA/titlar/RodaRummet/sida/1/etext",
-    "/författare/LagerlofS/titlar/GostaBerlingsSaga/sida/3/faksimil",
+    "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/sida/1/etext",
+    "/f%C3%B6rfattare/LagerlofS/titlar/GostaBerlingsSaga/sida/3/faksimil",
     "/txt/lb-pdf/lb-pdf.pdf",
-    "/författare/NovellA/titlar/Novellsamling/sida/7/etext",
-    "/författare/DiktA/titlar/Diktsamling/sida/9/faksimil",
-    "/författare/StrindbergA/",
+    "/f%C3%B6rfattare/NovellA/titlar/Novellsamling/sida/7/etext",
+    "/f%C3%B6rfattare/DiktA/titlar/Diktsamling/sida/9/faksimil",
+    "/f%C3%B6rfattare/StrindbergA/",
     "/presentationer/forfattare/StrindbergA.html",
     "https://litteraturbanken.se/översättarlexikon/artiklar/Ada_Nilsson",
     "https://litteraturbanken.se/litteraturkartan/?id=G%C3%B6teborg&article=artikel%2F1",
@@ -169,7 +204,7 @@ test("SSR renders every safe mixed family and rejects malformed rows and destina
   expect(document.querySelector("[data-library-filter-icon] path")?.getAttribute("d"))
     .toBe("M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25")
   expect(document.querySelector<HTMLButtonElement>("[data-library-advanced]")?.disabled)
-    .toBe(true)
+    .toBe(false)
   expect(document.querySelector('[data-library-tab="latest"]')?.getAttribute("href"))
     .toBe("/bibliotek?visa=latest&filter=blandat&sort=nytillkommet")
   expect(document.querySelector('[data-library-tab="latest"]')?.hasAttribute("data-deferred"))
@@ -184,6 +219,267 @@ test("SSR renders every safe mixed family and rejects malformed rows and destina
   const ledger = await requests(request)
   expect(ledger).toHaveLength(1)
   expect(ledger[0]?.query.sort_field).toBe("sortkey|asc")
+})
+
+test("SSR restores validated advanced Library controls and sends the exact legacy predicate", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/bibliotek?keep=ja&avancerat=1&k%C3%B6n=female" +
+    "&mediatypes=mediatype%3Aetext%2Chas_epub%3Atrue" +
+    "&languages=language%3Aswe%2Cproofread%3Afalse&intervall=1900%2C1910"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(document.querySelector("[data-library-advanced]")?.getAttribute("aria-expanded"))
+    .toBe("true")
+  expect(document.querySelector("[data-library-advanced-panel]")).not.toBeNull()
+  expect(document.querySelector("[data-library-media]")?.getAttribute("aria-label"))
+    .toBe("Utgivningsformat")
+  expect(document.querySelector("[data-library-languages]")?.getAttribute("aria-label"))
+    .toBe("Språk …")
+  expect(document.querySelector<HTMLOptionElement>("[data-library-gender] option[selected]")?.value)
+    .toBe("female")
+  expect(selectedChipTitles(document, "[data-library-media]")).toEqual(["Etext", "Epub"])
+  expect(selectedChipTitles(document, "[data-library-languages]")).toEqual([
+    "Svenska", "Ej korrekturläst"
+  ])
+  expect([...document.querySelectorAll<HTMLInputElement>(
+    "[data-library-chronology-range] input[type=range]"
+  )].map(input => input.value)).toEqual(["1900", "1910"])
+
+  const ledger = await requests(request)
+  expect(ledger).toHaveLength(1)
+  expect(ledger[0]?.query.q).toBe(
+    "(gender:female OR authors>(gender:female)) AND " +
+    "(sort_date_imprint.date:[1900 TO 1910] OR birth.date:[1900 TO 1910] OR death.date:[1900 TO 1910]) AND " +
+    "(language:swe OR proofread:false) AND (mediatype:etext OR has_epub:true)"
+  )
+})
+
+test("SSR composes ordinary Library collections with OR and narrowing collections with AND", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/bibliotek?avancerat=1" +
+    "&keywords=texttype%3Aroman%2Cprovenance.library%3ASA" +
+    "&keywords_aux=keyword%3AHumor%2Ctexttype%3Abrev%3Bbrevsamling" +
+    "&about_authors=Lagerl%C3%B6fS"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(selectedChipTitles(document, "[data-library-keywords]")).toEqual([
+    "Romaner", "Svenska Akademien"
+  ])
+  expect(selectedChipTitles(document, "[data-library-narrowing]")).toEqual([
+    "Humoristiska verk", "Brev"
+  ])
+  expect(selectedChipTitles(document, "[data-library-about-authors]")).toEqual([
+    "Selma Lagerlöf"
+  ])
+
+  expect((await requests(request))[0]?.query.q).toBe(
+    "(keyword:(Humor) AND texttype:(brev OR brevsamling)) AND " +
+    "(authorkeyword>(authorid:LagerlöfS)) AND " +
+    "(texttype:roman OR provenance.library:SA)"
+  )
+})
+
+test("SSR fails closed for unsupported Library facet bytes", async ({ request }) => {
+  const response = await request.get(
+    "/bibliotek?avancerat=1" +
+    "&keywords=keyword%3AHumor%2CRAW%3A*" +
+    "&keywords_aux=keyword%3AHumor%2CNOT%20keyword%3A1800" +
+    "&about_authors=..%2Funsafe"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(selectedChipTitles(document, "[data-library-keywords]")).toEqual([])
+  expect(selectedChipTitles(document, "[data-library-narrowing]")).toEqual([])
+  expect(selectedChipTitles(document, "[data-library-about-authors]")).toEqual([])
+  expect((await requests(request))[0]?.query.q).toBeUndefined()
+})
+
+test("SSR discards duplicate about-author records and keyword IDs", async ({ request }) => {
+  for (const variant of ["duplicate-authors", "duplicate-keywords"] as const) {
+    await request.put(`${fixture}/_library_metadata_variant`, { data: { variant } })
+    await request.delete(`${fixture}/_library_relevance_requests`)
+
+    const response = await request.get(
+      "/bibliotek?avancerat=1&about_authors=Lagerl%C3%B6fS"
+    )
+    expect(response.status()).toBe(200)
+    const { document } = parseHTML(await response.text())
+    expect(selectedChipTitles(document, "[data-library-about-authors]")).toEqual([])
+    expect((await requests(request))[0]?.query.q).toBeUndefined()
+  }
+})
+
+test("SSR emits Nuxt-client-compatible encoded author and Reader prefixes", async ({ request }) => {
+  const response = await request.get("/bibliotek?filter=blandat")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const internal = [...document.querySelectorAll<HTMLAnchorElement>("[data-library-result] a")]
+    .map(link => link.getAttribute("href"))
+    .filter(href => href?.startsWith("/författare/") || href?.startsWith("/f%C3%B6rfattare/"))
+
+  expect(internal.length).toBeGreaterThan(0)
+  expect(internal.every(href => href?.startsWith("/f%C3%B6rfattare/"))).toBe(true)
+})
+
+test("Library route aliases preserve supported query bytes and keep hide1800 recent-only", async ({
+  request
+}) => {
+  const redirect = await request.get(
+    "/titlar?visa=works&keywords=texttype%3Aroman&keep=ja",
+    { maxRedirects: 0 }
+  )
+  expect(redirect.status()).toBe(308)
+  expect(redirect.headers().location)
+    .toBe("/bibliotek?visa=works&keywords=texttype:roman&keep=ja")
+
+  const all = parseHTML(await (await request.get("/bibliotek?hide1800")).text()).document
+  expect(all.querySelector("[data-library-hide-1800]")).toBeNull()
+  expect((await requests(request)).at(-1)?.query.q ?? "").not.toContain("NOT keyword:1800")
+
+  const works = parseHTML(
+    await (await request.get("/bibliotek?visa=works&hide1800")).text()
+  ).document
+  expect(works.querySelector("[data-library-hide-1800]")).toBeNull()
+  expect((await epubRequests(request)).at(-1)?.query.q ?? "").not.toContain("NOT keyword:1800")
+
+  const standalone = parseHTML(await (await request.get("/epub?hide1800")).text()).document
+  expect(standalone.querySelector("[data-library-hide-1800]")).toBeNull()
+  expect((await epubRequests(request)).at(-1)?.query.q ?? "").not.toContain("NOT keyword:1800")
+
+  const latest = parseHTML(
+    await (await request.get("/bibliotek?visa=latest&hide1800")).text()
+  ).document
+  expect(latest.querySelector("[data-library-hide-1800]")).not.toBeNull()
+  expect((await epubRequests(request)).at(-1)?.query.q).toContain("NOT keyword:1800")
+})
+
+test("download mode is Library-only, forces Works, and requests source exports on SSR", async ({
+  request
+}) => {
+  const library = parseHTML(
+    await (await request.get("/bibliotek?visa=pdf&nedladdning=1")).text()
+  ).document
+  expect(library.querySelector(".dl_mode")).not.toBeNull()
+  expect(library.querySelector('[data-library-tab="works"]')?.getAttribute("aria-current"))
+    .toBe("page")
+  expect(library.querySelectorAll("[data-library-source-checkbox]")).toHaveLength(3)
+  expect((await epubRequests(request)).at(-1)?.query.q)
+    .toContain("export>type:(xml OR txt OR workdb)")
+
+  const standalone = parseHTML(await (await request.get("/epub?nedladdning=1")).text()).document
+  expect(standalone.querySelector(".dl_mode")).toBeNull()
+  expect(standalone.querySelector("[data-library-source-checkbox]")).toBeNull()
+  expect((await epubRequests(request)).at(-1)?.query.q ?? "")
+    .not.toContain("export>type:(xml OR txt OR workdb)")
+})
+
+test("SSR obtains deterministic chronology bounds from the typed imprint-range response", async ({
+  request
+}) => {
+  await request.put(`${fixture}/_library_imprint_range`, {
+    data: { start_year: { value_as_string: "1814" }, end_year: { value_as_string: "1915" } }
+  })
+  const response = await request.get("/bibliotek?avancerat=1&intervall=1850%2C1900")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const ranges = [...document.querySelectorAll<HTMLInputElement>(
+    "[data-library-chronology-range] input[type=range]"
+  )]
+  expect(ranges.map(input => [
+    input.getAttribute("min"), input.getAttribute("max"), input.value
+  ])).toEqual([
+    ["1814", "1915", "1850"],
+    ["1814", "1915", "1900"]
+  ])
+  expect((await (await request.get(`${fixture}/_library_imprint_requests`)).json()).requests)
+    .toEqual([{ path: "/legacy-api/imprint_range" }])
+  expect((await requests(request))[0]?.query.q).toContain(
+    "sort_date_imprint.date:[1850 TO 1900]"
+  )
+})
+
+test("SSR fails chronology closed when imprint bounds are malformed", async ({ request }) => {
+  await request.put(`${fixture}/_library_imprint_range`, {
+    data: { start_year: { value_as_string: "later" }, end_year: { value_as_string: "earlier" } }
+  })
+  const response = await request.get("/bibliotek?avancerat=1&intervall=1850%2C1900")
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector("[data-library-chronology-unavailable]")?.textContent?.trim())
+    .toBe("Tidslinjen kunde inte hämtas.")
+  expect(document.querySelector("[data-library-chronology-range]")).toBeNull()
+  expect((await requests(request))[0]?.query.q).toBeUndefined()
+})
+
+test("author mode derives rows and count from filtered work and part aggregations", async ({
+  request
+}) => {
+  const response = await request.get(
+    "/bibliotek?visa=authors&sort=namn&k%C3%B6n=female&mediatypes=mediatype%3Aetext"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  expect(document.querySelector('[data-library-tab="authors"]')?.textContent?.trim())
+    .toBe("Författare: 4")
+  expect([...document.querySelectorAll("[data-library-author-row]")]).toHaveLength(4)
+
+  const authorDetail = (await requests(request)).find(entry => entry.path.endsWith("/author"))
+  expect(authorDetail?.query.q).toBeUndefined()
+  expect(authorDetail?.query.to).toBe("10000")
+  const aggregates = (await epubRequests(request)).filter(entry => entry.query.to === "0")
+  expect(aggregates.map(entry => entry.path)).toEqual([
+    "/legacy-api/query_string/etext,faksimil,pdf",
+    "/legacy-api/query_string/etext-part,faksimil-part"
+  ])
+  expect(aggregates.every(entry => entry.query.q.includes("gender:female"))).toBe(true)
+  expect(aggregates.every(entry => entry.query.q.includes("mediatype:etext"))).toBe(true)
+})
+
+test("SSR preserves malformed advanced bytes but never executes them", async ({ request }) => {
+  const response = await request.get(
+    "/bibliotek?keep=%28unsafe%29&avancerat=maybe&k%C3%B6n=other" +
+    "&mediatypes=mediatype%3Aetext%2Cmediatype%3Aunknown" +
+    "&languages=language%3Aswe%2CRAW%3A%2A&intervall=1910%2C1900"
+  )
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+
+  expect(document.querySelector("[data-library-advanced]")?.getAttribute("aria-expanded"))
+    .toBe("false")
+  expect(document.querySelector<HTMLSelectElement>("[data-library-gender]")).toBeNull()
+  expect(document.querySelector('[data-library-tab="epub"]')?.getAttribute("href"))
+    .toContain("keep=%28unsafe%29")
+  expect((await requests(request))[0]?.query.q).toBeUndefined()
+})
+
+test("SSR composes advanced predicates in EPUB and work query-string modes", async ({
+  request
+}) => {
+  const advanced = "k%C3%B6n=female&mediatypes=mediatype%3Aetext"
+  const expectedAdvanced =
+    "(gender:female OR authors>(gender:female)) AND (mediatype:etext)"
+
+  const epub = await request.get(`/bibliotek?visa=epub&sort=popularitet&${advanced}`)
+  expect(epub.status()).toBe(200)
+  expect((await epubRequests(request))[0]?.query.q).toBe(
+    `${epubQueryPrefix} (has_epub:true AND ${expectedAdvanced})`
+  )
+
+  await reset(request)
+  const works = await request.get(`/bibliotek?visa=works&sort=popularitet&${advanced}`)
+  expect(works.status()).toBe(200)
+  expect((await epubRequests(request))[0]?.query.q).toBe(
+    `${epubQueryPrefix} ${expectedAdvanced}`
+  )
 })
 
 test("SSR renders the canonical latest-work slice with imported-date groups", async ({ request }) => {
@@ -202,7 +498,7 @@ test("SSR renders the canonical latest-work slice with imported-date groups", as
   expect(document.querySelector('[data-library-latest-title="DoktorGlas"]')?.textContent?.trim())
     .toBe("Doktor Glas")
   expect(document.querySelector('[data-library-latest-title="DoktorGlas"]')?.getAttribute("href"))
-    .toBe("/författare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken")
+    .toBe("/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken")
 
   const ledger = await epubRequests(request)
   expect(ledger).toHaveLength(1)
@@ -229,7 +525,7 @@ test("SSR renders the three primary browse tabs as live routed result modes", as
       mode: "authors",
       sort: "namn",
       row: "[data-library-author-row]",
-      text: "Strindberg, August",
+      text: "Bauer, John",
       path: "/legacy-api/relevance/author",
       sortField: "name_for_index|asc"
     },
@@ -264,7 +560,7 @@ test("SSR renders the three primary browse tabs as live routed result modes", as
     expect(document.querySelector(item.row)?.textContent, item.mode).toContain(item.text)
 
     if (item.mode === "authors") {
-      expect(tab?.textContent?.trim()).toBe("Författare: 1")
+      expect(tab?.textContent?.trim()).toBe("Författare: 4")
       expect(document.querySelector(item.row)?.querySelectorAll("td")).toHaveLength(2)
       expect(document.querySelector("[data-library-pagination-next]")).toBeNull()
       expect(document.querySelector('[data-library-sort="popularitet"]')?.getAttribute("href"))
@@ -292,7 +588,7 @@ test("SSR renders the three primary browse tabs as live routed result modes", as
       expect(document.querySelectorAll(item.row)).toHaveLength(1)
       expect(document.querySelector('[data-library-page="3"]')?.textContent?.trim()).toBe("3")
       expect(document.querySelector(`${item.row} .title_inner a`)?.getAttribute("href"))
-        .toBe("/författare/NovellA/titlar/Novellsamling/sida/7/etext")
+        .toBe("/f%C3%B6rfattare/NovellA/titlar/Novellsamling/sida/7/etext")
       expect(document.querySelector(`${item.row} td:last-child a`)?.textContent?.trim()).toBe("Poet")
     }
 
@@ -300,7 +596,7 @@ test("SSR renders the three primary browse tabs as live routed result modes", as
     expect(ledger, item.mode).toHaveLength(1)
     expect(ledger[0]?.path, item.mode).toBe(item.path)
     expect(ledger[0]?.query.sort_field, item.mode).toBe(item.sortField)
-    expect(ledger[0]?.query.to, item.mode).toBe(item.mode === "authors" ? "150" : "100")
+    expect(ledger[0]?.query.to, item.mode).toBe(item.mode === "authors" ? "10000" : "100")
   }
 })
 
@@ -345,7 +641,7 @@ test("Nytt groups a work by its newest representation while keeping the preferre
     node.textContent?.trim()
   )).toEqual(["19 juli 2026 (1 verk)", "17 juli 2026 (1 verk)"])
   expect(document.querySelector('[data-library-latest-title="LatestMixed"]')?.getAttribute("href"))
-    .toBe("/författare/S%C3%B6derbergH/titlar/LatestMixed/etext?om-boken")
+    .toBe("/f%C3%B6rfattare/S%C3%B6derbergH/titlar/LatestMixed/etext?om-boken")
 })
 
 test("Nytt never links a selected PDF representation to an unsupported Reader mode", async ({
@@ -358,7 +654,7 @@ test("Nytt never links a selected PDF representation to an unsupported Reader mo
   const { document } = parseHTML(await response.text())
 
   expect(document.querySelector('[data-library-latest-title="LatestPdfOnly"]')?.getAttribute("href"))
-    .toBe("/författare/S%C3%B6derbergH/titlar/LatestPdfOnly/faksimil?om-boken")
+    .toBe("/f%C3%B6rfattare/S%C3%B6derbergH/titlar/LatestPdfOnly/faksimil?om-boken")
   expect(document.querySelector('a[href$="/LatestPdfOnly/pdf?om-boken"]')).toBeNull()
 })
 
@@ -414,10 +710,10 @@ test("SSR renders Library EPUB mode with its Library shell and exact private req
     ])
   expect(epubRows(library)).toEqual([{
     title: "Gösta Berlings saga",
-    titleHref: "/författare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken",
+    titleHref: "/f%C3%B6rfattare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken",
     year: "1891",
     author: "Lagerlöf",
-    authorHref: "/författare/LagerlofS",
+    authorHref: "/f%C3%B6rfattare/LagerlofS",
     downloadHref: "/txt/epub/LagerlofS_GostaBerlingsSaga.epub"
   }])
 
@@ -473,8 +769,8 @@ test("SSR aliases bare and canonical EPUB routes to one row model with the stand
   const titleHref = firstRow?.querySelector("[data-library-epub-title]")?.getAttribute("href")
   const authorHref = firstRow?.querySelector("[data-library-epub-author]")?.getAttribute("href")
   const download = firstRow?.querySelector("[data-library-epub-download]")
-  expect(titleHref).toBe("/författare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken")
-  expect(authorHref).toBe("/författare/S%C3%B6derbergH")
+  expect(titleHref).toBe("/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken")
+  expect(authorHref).toBe("/f%C3%B6rfattare/S%C3%B6derbergH")
   expect(download?.getAttribute("href"))
     .toBe("/txt/epub/S%C3%B6derbergH_DoktorGlas.epub")
   expect(download?.getAttribute("download")).not.toBeNull()
@@ -635,50 +931,50 @@ test("SSR renders grouped PDF actions in the Library shell from one private requ
   expect(pdfRows(document)).toEqual([
     {
       title: exportedEtextPdfRepresentation.shorttitle,
-      titleHref: "/författare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken",
+      titleHref: "/f%C3%B6rfattare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken",
       year: exportedEtextPdfRepresentation.sort_date_imprint.plain,
       author: exportedEtextPdfRepresentation.main_author.surname,
-      authorHref: "/författare/LagerlofS",
+      authorHref: "/f%C3%B6rfattare/LagerlofS",
       downloadHref: "/export/faksimil/lb-GostaBerlingsSaga.pdf",
       download: "LagerlofS_GostaBerlingsSaga.pdf",
       target: "_self"
     },
     {
       title: exportedFaksimilPdfRepresentation.shorttitle,
-      titleHref: "/författare/GeijerEGA/titlar/SvenskaFolkvisor/faksimil?om-boken",
+      titleHref: "/f%C3%B6rfattare/GeijerEGA/titlar/SvenskaFolkvisor/faksimil?om-boken",
       year: exportedFaksimilPdfRepresentation.sort_date_imprint.plain,
       author: exportedFaksimilPdfRepresentation.main_author.surname,
-      authorHref: "/författare/GeijerEGA",
+      authorHref: "/f%C3%B6rfattare/GeijerEGA",
       downloadHref: "/export/faksimil/lb-SvenskaFolkvisor.pdf",
       download: "AfzeliusAA_SvenskaFolkvisor.pdf",
       target: "_self"
     },
     {
       title: indexedPdfRepresentation.shorttitle,
-      titleHref: "/författare/StrindbergA/titlar/RodaRummet/faksimil?om-boken",
+      titleHref: "/f%C3%B6rfattare/StrindbergA/titlar/RodaRummet/faksimil?om-boken",
       year: indexedPdfRepresentation.sort_date_imprint.plain,
       author: indexedPdfRepresentation.main_author.surname,
-      authorHref: "/författare/StrindbergA",
+      authorHref: "/f%C3%B6rfattare/StrindbergA",
       downloadHref: "/txt/lb-RodaRummet/lb-RodaRummet.pdf",
       download: "ArchiveA_RodaRummet.pdf",
       target: "_self"
     },
     {
       title: groupedPdfExportRepresentation.shorttitle,
-      titleHref: "/författare/LagerlofS/titlar/NilsHolgersson/faksimil?om-boken",
+      titleHref: "/f%C3%B6rfattare/LagerlofS/titlar/NilsHolgersson/faksimil?om-boken",
       year: groupedPdfExportRepresentation.sort_date_imprint.plain,
       author: groupedPdfExportRepresentation.main_author.surname,
-      authorHref: `/författare/${groupedPdfExportRepresentation.main_author.authorid}`,
+      authorHref: `/f%C3%B6rfattare/${groupedPdfExportRepresentation.main_author.authorid}`,
       downloadHref: "/txt/lb-NilsHolgersson/lb-NilsHolgersson.pdf",
       download: "DirectPdfA_NilsHolgerssonPdf.pdf",
       target: "_self"
     },
     {
       title: duplicatePdfExportRepresentation.shorttitle,
-      titleHref: "/författare/LagerlofS/titlar/Jerusalem/etext?om-boken",
+      titleHref: "/f%C3%B6rfattare/LagerlofS/titlar/Jerusalem/etext?om-boken",
       year: duplicatePdfExportRepresentation.sort_date_imprint.plain,
       author: duplicatePdfExportRepresentation.main_author.surname,
-      authorHref: "/författare/LagerlofS",
+      authorHref: "/f%C3%B6rfattare/LagerlofS",
       downloadHref: "/export/faksimil/lb-Jerusalem.pdf",
       download: "LagerlofS_Jerusalem.pdf",
       target: "_self"
@@ -840,10 +1136,10 @@ test("SSR selects PDF page two with encoded author and exact bounds", async ({ r
 
   expect(pdfRows(document)).toEqual([{
     title: pageTwoPdfRepresentation.shorttitle,
-    titleHref: "/författare/S%C3%B6derbergH/titlar/DoktorGlas/faksimil?om-boken",
+    titleHref: "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/faksimil?om-boken",
     year: pageTwoPdfRepresentation.sort_date_imprint.plain,
     author: pageTwoPdfRepresentation.main_author.surname,
-    authorHref: "/författare/S%C3%B6derbergH",
+    authorHref: "/f%C3%B6rfattare/S%C3%B6derbergH",
     downloadHref: "/export/faksimil/lb-DoktorGlas.pdf",
     download: "SöderbergH_DoktorGlas.pdf",
     target: "_self"
@@ -903,10 +1199,10 @@ test("SSR groups PDFs by the exact tuple and selects the first valid export sour
 
   expect(pdfRows(document)).toEqual(selected.map(record => ({
     title: record.shorttitle,
-    titleHref: `/författare/${record.main_author.authorid}/titlar/${record.work_titleid}/${record.mediatype}?om-boken`,
+    titleHref: `/f%C3%B6rfattare/${record.main_author.authorid}/titlar/${record.work_titleid}/${record.mediatype}?om-boken`,
     year: record.sort_date_imprint.plain,
     author: record.main_author.surname,
-    authorHref: `/författare/${record.main_author.authorid}`,
+    authorHref: `/f%C3%B6rfattare/${record.main_author.authorid}`,
     downloadHref: `/export/faksimil/${record.lbworkid}.pdf`,
     download: `${record.main_author.authorid}_${record.work_titleid}.pdf`,
     target: "_self"
@@ -946,30 +1242,30 @@ test("SSR omits unsupported and unsafe PDF rows without invalidating the safe gr
   expect(pdfRows(document)).toEqual([
     {
       title: exportedEtextPdfRepresentation.shorttitle,
-      titleHref: "/författare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken",
+      titleHref: "/f%C3%B6rfattare/LagerlofS/titlar/GostaBerlingsSaga/etext?om-boken",
       year: exportedEtextPdfRepresentation.sort_date_imprint.plain,
       author: exportedEtextPdfRepresentation.main_author.surname,
-      authorHref: "/författare/LagerlofS",
+      authorHref: "/f%C3%B6rfattare/LagerlofS",
       downloadHref: "/export/faksimil/lb-GostaBerlingsSaga.pdf",
       download: "LagerlofS_GostaBerlingsSaga.pdf",
       target: "_self"
     },
     {
       title: "Tom verkförfattarlista",
-      titleHref: "/författare/SafeA/titlar/EmptyWorkAuthors/faksimil?om-boken",
+      titleHref: "/f%C3%B6rfattare/SafeA/titlar/EmptyWorkAuthors/faksimil?om-boken",
       year: "1902",
       author: "Säker",
-      authorHref: "/författare/SafeA",
+      authorHref: "/f%C3%B6rfattare/SafeA",
       downloadHref: "/txt/lb-EmptyWorkAuthors/lb-EmptyWorkAuthors.pdf",
       download: "SafeA_EmptyWorkAuthors.pdf",
       target: "_self"
     },
     {
       title: "Giltig gruppexport",
-      titleHref: "/författare/SafeA/titlar/MalformedGroupedFallback/faksimil?om-boken",
+      titleHref: "/f%C3%B6rfattare/SafeA/titlar/MalformedGroupedFallback/faksimil?om-boken",
       year: "1902",
       author: "Säker",
-      authorHref: "/författare/SafeA",
+      authorHref: "/f%C3%B6rfattare/SafeA",
       downloadHref: "/export/faksimil/lb-MalformedGroupedFallback.pdf",
       download: "SafeA_MalformedGroupedFallback.pdf",
       target: "_self"

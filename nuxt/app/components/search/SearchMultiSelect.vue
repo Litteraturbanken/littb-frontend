@@ -10,13 +10,24 @@ export type SearchMultiSelectOption = Readonly<{
   disabled?: boolean
 }>
 
+export type SearchMultiSelectOptionGroup = Readonly<{
+  label: string
+  options: readonly SearchMultiSelectOption[]
+}>
+
 type VueMultiselectOption = SearchMultiSelectOption & Readonly<{
   $isDisabled?: boolean
+}>
+
+type VueMultiselectOptionGroup = Readonly<{
+  label: string
+  options: readonly VueMultiselectOption[]
 }>
 
 const props = withDefaults(defineProps<{
   modelValue: readonly string[]
   options: readonly SearchMultiSelectOption[]
+  optionGroups?: readonly SearchMultiSelectOptionGroup[]
   placeholder: string
   searchable?: boolean
   loading?: boolean
@@ -33,12 +44,20 @@ const emit = defineEmits<{
 }>()
 
 const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
-const multiselectOptions = computed<VueMultiselectOption[]>(() => props.options.map(option => ({
-  ...option,
-  $isDisabled: option.disabled === true
-})))
+const flatOptions = computed(() => props.optionGroups
+  ? props.optionGroups.flatMap(group => group.options)
+  : props.options)
+const multiselectOptions = computed<VueMultiselectOption[] | VueMultiselectOptionGroup[]>(() => {
+  const mapOption = (option: SearchMultiSelectOption): VueMultiselectOption => ({
+    ...option,
+    $isDisabled: option.disabled === true
+  })
+  return props.optionGroups
+    ? props.optionGroups.map(group => ({ label: group.label, options: group.options.map(mapOption) }))
+    : props.options.map(mapOption)
+})
 const selectedOptions = computed<VueMultiselectOption[]>(() => props.modelValue.map(value => (
-  multiselectOptions.value.find(option => option.value === value) ?? { value, label: value }
+  flatOptions.value.find(option => option.value === value) ?? { value, label: value }
 )))
 
 function selectedLabel(option: SearchMultiSelectOption): string {
@@ -47,7 +66,7 @@ function selectedLabel(option: SearchMultiSelectOption): string {
 
 function update(value: readonly VueMultiselectOption[] | null) {
   const selected = new Set((value ?? []).map(option => option.value))
-  const known = props.options
+  const known = flatOptions.value
     .filter(option => selected.has(option.value))
     .map(option => option.value)
   const unknown = props.modelValue.filter(value => (
@@ -78,6 +97,9 @@ onMounted(() => {
       class="select2-selection select2-selection--multiple"
       :model-value="selectedOptions"
       :options="multiselectOptions"
+      :group-values="optionGroups ? 'options' : undefined"
+      :group-label="optionGroups ? 'label' : undefined"
+      :group-select="false"
       :placeholder="placeholder"
       :searchable="searchable"
       :internal-search="false"
@@ -120,7 +142,15 @@ onMounted(() => {
       </template>
 
       <template #option="{ option }">
-        <span class="select2-results__option">{{ option.label }}</span>
+        <span
+          v-if="option.$isLabel"
+          class="select2-results__group"
+        >{{ option.$groupLabel }}</span>
+        <span
+          v-else
+          class="select2-results__option"
+          :aria-disabled="option.$isDisabled ? 'true' : undefined"
+        >{{ option.label }}</span>
       </template>
 
       <template #loading>

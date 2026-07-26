@@ -31,7 +31,14 @@ export function epubWork({
   }
 }
 
-const doktorGlas = { ...epubWork(), searchable: true }
+const doktorGlas = {
+  ...epubWork(),
+  searchable: true,
+  export: [
+    { type: "epub", size: 530557 },
+    { type: "txt", size: 1024 }
+  ]
+}
 const doktorGlasFaksimil = {
   ...doktorGlas,
   _index: "faksimil",
@@ -49,6 +56,7 @@ const editorWork = epubWork({
   role: "editor",
   title: "Svenska folkvisor"
 })
+editorWork.export.push({ type: "xml", size: 2048 })
 
 const illustratorWork = epubWork({
   id: "BlandTomtarOchTroll",
@@ -59,6 +67,7 @@ const illustratorWork = epubWork({
   role: "illustrator",
   title: "Bland tomtar och troll"
 })
+illustratorWork.export.push({ type: "workdb", size: 512 })
 
 const gostaBerlingsSaga = epubWork({
   id: "GostaBerlingsSaga",
@@ -80,6 +89,22 @@ export const libraryWorksResponse = {
   data: [doktorGlas, doktorGlasFaksimil, editorWork, illustratorWork],
   hits: 4,
   distinct_hits: 3,
+  suggest: []
+}
+
+const safeDownloadWork = {
+  ...epubWork({ id: "SafeDownload", title: "Säkert källmaterial" }),
+  export: [{ type: "txt", size: 1024 }]
+}
+const unsafeDownloadTokenWork = {
+  ...epubWork({ id: "UnsafeDownload", title: "Osäkert källmaterial" }),
+  lbworkid: "lb-Unsafe,Injected-etext-txt",
+  export: [{ type: "txt", size: 2048 }]
+}
+export const libraryUnsafeDownloadTokenResponse = {
+  data: [safeDownloadWork, unsafeDownloadTokenWork],
+  hits: 2,
+  distinct_hits: 2,
   suggest: []
 }
 
@@ -239,7 +264,8 @@ export const libraryPartsResponse = {
   }],
   hits: 201,
   distinct_hits: 1,
-  suggest: []
+  suggest: [],
+  author_aggregation: [{ authorid: "PoetP" }]
 }
 
 const realPdfEtext = {
@@ -290,6 +316,37 @@ export const libraryQueryNullSuggestResponse = {
   suggest: null
 }
 
+function authorAggregationFor(response, mode = "works") {
+  if (!Array.isArray(response?.data)) return []
+  const ids = response.data.flatMap(row => {
+    if (!row || typeof row !== "object") return []
+    if (mode === "parts") {
+      return Array.isArray(row.authors)
+        ? row.authors.map(author => author?.authorid).filter(Boolean)
+        : []
+    }
+    return row.main_author?.authorid ? [row.main_author.authorid] : []
+  })
+  return [...new Set(ids)].map(authorid => ({ authorid }))
+}
+
+function manyAuthorAggregation() {
+  return Array.from({ length: 151 }, (_, index) => ({
+    authorid: `Author${String(index + 1).padStart(3, "0")}`
+  }))
+}
+
+export function libraryPartsResponseForQuery(query = {}) {
+  const normalized = (query.q || "").toLocaleLowerCase("sv-SE")
+  const filtered = normalized.includes("selma") || normalized.includes("inga")
+    || normalized.includes("många författare")
+  const result = structuredClone(filtered
+    ? { data: [], hits: 0, distinct_hits: 0, suggest: [], author_aggregation: [] }
+    : libraryPartsResponse)
+  if (query.to === "0") result.data = []
+  return result
+}
+
 export function libraryQueryStringResponse(query = {}) {
   const normalized = (query.q || "").toLocaleLowerCase("sv-SE")
   if (query.imported_aggregation === "true") {
@@ -309,6 +366,10 @@ export function libraryQueryStringResponse(query = {}) {
     response = libraryQueryStrictRowResponse
   } else if (normalized.includes("malformed-row") || normalized.includes("malformed row")) {
     response = libraryQueryMalformedRowResponse
+  } else if (normalized.includes("sort race")) {
+    response = query.sort_field === "sortkey|desc"
+      ? libraryQueryPageTwoResponse
+      : libraryQueryPageOneResponse
   } else if (normalized.includes("inga")) {
     response = libraryQueryEmptyResponse
   } else if (normalized.includes("selma")) {
@@ -317,6 +378,8 @@ export function libraryQueryStringResponse(query = {}) {
     response = libraryWorksRealPdfResponse
   } else if (normalized.includes("infopost test")) {
     response = libraryWorksInfopostResponse
+  } else if (normalized.includes("unsafe download token")) {
+    response = libraryUnsafeDownloadTokenResponse
   } else if (query.from === "100" && query.to === "200") {
     response = libraryQueryPageTwoResponse
   }
@@ -328,6 +391,11 @@ export function libraryQueryStringResponse(query = {}) {
   }
 
   const result = structuredClone(response)
+  if (query.author_aggregation === "true") {
+    result.author_aggregation = normalized.includes("många författare")
+      ? manyAuthorAggregation()
+      : authorAggregationFor(response)
+  }
   if (query.to === "0" && Array.isArray(result.data)) result.data = []
   return result
 }
