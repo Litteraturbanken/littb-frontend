@@ -193,4 +193,46 @@ test("SSR exposes bounded Editor contributors, mapped readable bounds, and part 
     ?.textContent).toContain("Gå till första sidan")
   expect(document.querySelector('.reader-context-ssr a[href="/editor/lb-editor-boye/ix/4/f"]')
     ?.textContent).toContain("Gå till nästa del")
+
+  expect(document.querySelector(".reader-context-ssr .current_part")).toBeNull()
+
+  const partResponse = await request.get("/editor/lb-editor-boye/ix/4/f")
+  expect(partResponse.status()).toBe(200)
+  const partDocument = parseHTML(await partResponse.text()).document
+  expect(partDocument.querySelector(".reader-context-ssr .current_part .header")?.textContent)
+    .toContain("Paulina Helgeson")
+  expect(partDocument.querySelector(".reader-context-ssr .current_part .navtitle")?.textContent)
+    .toBe("Förord")
+})
+
+test("SSR rejects partial Editor contributor and part metadata atomically", async ({ request }) => {
+  for (const workId of [
+    "lb-editor-malformed-contributor",
+    "lb-editor-malformed-part"
+  ]) {
+    const apiResponse = await request.get(`/api/editor/${workId}/0/f`)
+    expect(apiResponse.status()).toBe(200)
+    expect(await apiResponse.json()).toMatchObject({
+      authorId: null,
+      authorName: null,
+      contributors: [],
+      currentPart: null,
+      firstReadableIndex: 0,
+      lastReadableIndex: 8,
+      metadataAvailable: false,
+      nextPartIndex: null,
+      parts: [],
+      previousPartIndex: null,
+      searchable: false,
+      titlePath: null
+    })
+
+    const response = await request.get(`/editor/${workId}/ix/0/f`)
+    expect(response.status()).toBe(200)
+    const document = parseHTML(await response.text()).document
+    expect(document.querySelector(".reader-context-ssr .editor-metadata-controls")).toBeNull()
+    expect(document.querySelector('.reader-context-ssr a[href$="/ix/4/f"]')).toBeNull()
+    expect(document.querySelector('.reader-context-ssr a[rel="next"]')?.getAttribute("href"))
+      .toBe(`/editor/${workId}/ix/1/f`)
+  }
 })

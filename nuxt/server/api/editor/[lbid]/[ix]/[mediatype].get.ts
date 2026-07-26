@@ -104,14 +104,16 @@ function editorMetadataPages(value: unknown): EditorMetadataPage[] | null {
   return pages.sort((left, right) => left.pageIndex - right.pageIndex)
 }
 
-function editorContributors(value: unknown): ReaderWorkContributor[] {
-  if (!Array.isArray(value) || value.length > 100) return []
+function editorContributors(value: unknown): ReaderWorkContributor[] | null {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 100) return null
   const contributors: ReaderWorkContributor[] = []
+  const ids = new Set<string>()
   for (const raw of value) {
     const contributor = record(raw)
     const id = safeRouteSegment(contributor?.authorid)
     const name = safeOptionalText(contributor?.full_name)
-    if (!id || !name) continue
+    if (!id || !name || ids.has(id)) return null
+    ids.add(id)
     contributors.push({
       authorType: normalizeReaderAuthorContribution(contributor?.type),
       id,
@@ -126,8 +128,9 @@ function editorParts(
   value: unknown,
   pages: readonly EditorMetadataPage[],
   contributors: readonly ReaderWorkContributor[]
-): ReaderPart[] {
-  if (!Array.isArray(value) || value.length > 10_000) return []
+): ReaderPart[] | null {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value) || value.length > 10_000) return null
   const pageIndexes = new Map(pages.map(page => [page.pageName, page.pageIndex]))
   const contributorNames = new Map(contributors.map(contributor => [contributor.id, contributor.name]))
   const parts: ReaderPart[] = []
@@ -141,17 +144,20 @@ function editorParts(
     if (
       !startPageName || !endPageName || !title || startPageIndex === undefined ||
       endPageIndex === undefined || startPageIndex > endPageIndex
-    ) continue
-    const rawAuthors = Array.isArray(item?.authors) && item.authors.length <= 100
-      ? item.authors
-      : []
-    const authors: ReaderPartAuthor[] = rawAuthors.flatMap(rawAuthor => {
+    ) return null
+    if (
+      item?.authors !== undefined && item.authors !== null &&
+      (!Array.isArray(item.authors) || item.authors.length > 100)
+    ) return null
+    const rawAuthors = Array.isArray(item?.authors) ? item.authors : []
+    const authors: ReaderPartAuthor[] = []
+    for (const rawAuthor of rawAuthors) {
       const author = record(rawAuthor)
       const id = safeRouteSegment(author?.authorid)
-      if (!id) return []
+      if (!id) return null
       const name = contributorNames.get(id) ?? null
-      return [{ id, name, surname: name?.split(/\s+/u).at(-1) ?? null }]
-    })
+      authors.push({ id, name, surname: name?.split(/\s+/u).at(-1) ?? null })
+    }
     parts.push({
       authors,
       endPageIndex,
@@ -408,10 +414,15 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   const authors = Array.isArray(representation?.work_authors)
     ? representation.work_authors
     : representation?.authors
-  const contributors = editorContributors(authors)
+  const parsedContributors = editorContributors(authors)
+  const parsedParts = parsedContributors === null
+    ? null
+    : editorParts(representation?.parts, readablePages ?? [], parsedContributors)
+  const metadataAvailable = representation !== null && parsedContributors !== null && parsedParts !== null
+  const contributors = metadataAvailable ? parsedContributors : []
   const authorId = contributors[0]?.id ?? null
   const authorName = contributors[0]?.name ?? null
-  const parts = editorParts(representation?.parts, readablePages ?? [], contributors)
+  const parts = metadataAvailable ? parsedParts : []
   const { currentPart, nextPartIndex, previousPartIndex } = editorPartContext(parts, pageIndex)
   const namedStartIndex = readablePages?.find(
     page => page.pageName === safeOptionalText(representation?.startpagename, 100)
@@ -419,11 +430,13 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   const namedEndIndex = readablePages?.find(
     page => page.pageName === safeOptionalText(representation?.endpagename, 100)
   )?.pageIndex
-  const firstReadableIndex = namedStartIndex ?? readablePages?.[0]?.pageIndex
-    ?? sparsePages?.indexes[0] ?? 0
-  const lastReadableIndex = namedEndIndex ?? readablePages?.at(-1)?.pageIndex
-    ?? sparsePages?.indexes.at(-1)
-    ?? (pageCount !== null ? pageCount - 1 : pageIndex)
+  const firstReadableIndex = metadataAvailable
+    ? namedStartIndex ?? readablePages?.[0]?.pageIndex ?? sparsePages?.indexes[0] ?? 0
+    : sparsePages?.indexes[0] ?? 0
+  const lastReadableIndex = metadataAvailable
+    ? namedEndIndex ?? readablePages?.at(-1)?.pageIndex ?? sparsePages?.indexes.at(-1)
+      ?? (pageCount !== null ? pageCount - 1 : pageIndex)
+    : sparsePages?.indexes.at(-1) ?? pageCount - 1
   const closeHref = (
     Array.isArray(representation?.mediatypes) &&
     representation.mediatypes[0] && typeof representation.mediatypes[0] === "object"
@@ -476,20 +489,25 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   const sanitizedHtml = html === null ? null : sanitizeEditorEtextHtml(html)
   if (html !== null && sanitizedHtml === null) sourceError()
   return {
-    authorId, authorName, closeHref, contributors, currentPart, endPageName, facsimileSources,
+    authorId, authorName, closeHref, contributors, currentPart,
+    endPageName: metadataAvailable ? endPageName : null, facsimileSources,
     firstReadableIndex, html: sanitizedHtml, imageWidth,
     imageUrl, imprintYear,
     lastReadableIndex,
-    mediaType, metadataAvailable: representation !== null,
+    mediaType, metadataAvailable,
     nextIndex: sparsePages
       ? sparsePages.indexes[sparsePosition + 1] ?? null
       : pageCount !== null && pageIndex + 1 < pageCount ? pageIndex + 1 : null,
     nextPartIndex, overlayHeight, overlayHtml, overlayWidth,
-    pageCount, pageIndex, pageIndexes: sparsePages?.indexes ?? null, pageName, parts,
+    pageCount, pageIndex, pageIndexes: sparsePages?.indexes ?? null,
+    pageName: metadataAvailable ? pageName : null, parts,
     previousPartIndex,
     previousIndex: sparsePages
       ? sparsePages.indexes[sparsePosition - 1] ?? null
       : pageIndex > 0 ? pageIndex - 1 : null,
-    searchable, title, titlePath, workId
+    searchable: metadataAvailable && searchable,
+    title,
+    titlePath: metadataAvailable ? titlePath : null,
+    workId
   } satisfies EditorReaderPage
 })

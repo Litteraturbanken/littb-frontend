@@ -63,8 +63,7 @@ test("editor Reader restores multipart contributor context and mapped navigation
     .toHaveAttribute("href", "/f%C3%B6rfattare/BoyeK")
   await expect(context.getByRole("link", { name: "Paulina Helgeson (red.)" }))
     .toHaveAttribute("href", "/f%C3%B6rfattare/HelgesonP")
-  await expect(context.locator(".current_part .navtitle"))
-    .toHaveText("Ett verkligt jordiskt liv. Brev")
+  await expect(context.locator(".current_part .navtitle")).toHaveCount(0)
   await expect(context.getByRole("link", { name: "Gå till första sidan" }))
     .toHaveAttribute("href", "/editor/lb-editor-boye/ix/2/f")
   await expect(context.getByRole("link", { name: "Gå till nästa del" }))
@@ -74,11 +73,31 @@ test("editor Reader restores multipart contributor context and mapped navigation
 
   await context.getByRole("link", { name: "Gå till nästa del" }).click()
   await expect(page).toHaveURL(/\/editor\/lb-editor-boye\/ix\/4\/f$/u)
+  await expect(context.locator(".current_part .header").getByRole("link", {
+    name: "Paulina Helgeson"
+  })).toHaveAttribute("href", "/f%C3%B6rfattare/HelgesonP")
   await expect(context.locator(".current_part .navtitle")).toHaveText("Förord")
   await page.goBack()
   await expect(page).toHaveURL(/\/editor\/lb-editor-boye\/ix\/0\/f$/u)
-  await expect(context.locator(".current_part .navtitle"))
-    .toHaveText("Ett verkligt jordiskt liv. Brev")
+  await expect(context.locator(".current_part .navtitle")).toHaveCount(0)
+})
+
+test("editor Reader suppresses non-atomic contributor and part metadata", async ({ page }) => {
+  for (const workId of [
+    "lb-editor-malformed-contributor",
+    "lb-editor-malformed-part"
+  ]) {
+    await page.goto(`/editor/${workId}/ix/0/f`, { waitUntil: "networkidle" })
+    const context = page.locator("#toolkit-right .editor-reader-context")
+    await expect(context.locator(".editor-metadata-controls")).toHaveCount(0)
+    await expect(context.getByRole("link", { name: "Karin Boye" })).toHaveCount(0)
+    await expect(context.getByRole("link", { name: "Paulina Helgeson" })).toHaveCount(0)
+    await expect(context.getByRole("link", { name: "Gå till nästa del" })).toHaveCount(0)
+    await expect(context.getByText("Gå till nästa del", { exact: true }))
+      .toHaveAttribute("aria-disabled", "true")
+    await expect(context.getByRole("link", { name: "Nästa sida" }))
+      .toHaveAttribute("href", `/editor/${workId}/ix/1/f`)
+  }
 })
 
 test("contextual editor e-text route renders the current ordinary Reader page", async ({

@@ -632,6 +632,56 @@ function readerRepresentation(titlePath, overrides = {}) {
   }
 }
 
+function editorBoyeRepresentation(workId = "lb-editor-boye") {
+  return {
+    authors: [
+      { authorid: "BoyeK", full_name: "Karin Boye", surname: "Boye" },
+      {
+        authorid: "HelgesonP",
+        full_name: "Paulina Helgeson",
+        surname: "Helgeson",
+        type: "editor"
+      }
+    ],
+    endpagename: "9",
+    faksimil_sizes: [2],
+    imprintyear: "2022",
+    lbworkid: workId,
+    mediatype: "faksimil",
+    page_count: 9,
+    pages: Array.from({ length: 9 }, (_, pageindex) => ({
+      pagename: String(pageindex + 1),
+      pageindex
+    })),
+    parts: [
+      {
+        authors: [{ authorid: "HelgesonP" }],
+        endpagename: "7",
+        navtitle: null,
+        shorttitle: null,
+        startpagename: "5",
+        title: "Förord",
+        titleid: "Förord"
+      },
+      {
+        authors: [],
+        endpagename: "9",
+        navtitle: null,
+        shorttitle: null,
+        startpagename: "9",
+        title: "Kronologi",
+        titleid: "Kronologi"
+      }
+    ],
+    searchable: true,
+    shorttitle: "Ett verkligt jordiskt liv. Brev",
+    startpagename: "3",
+    title: "Ett verkligt jordiskt liv. Brev",
+    titlepath: "EttVerkligtJordiskt",
+    width: { size_3: 625 }
+  }
+}
+
 function readerFacsimileRepresentation(titlePath, overrides = {}) {
   const representation = structuredClone(readerFacsimileWorkInfoResponse.data[0])
   return {
@@ -3178,6 +3228,7 @@ const server = createServer(async (request, response) => {
           lbworkid: editorWorkId,
           mediatype: "faksimil",
           page_count: 3,
+          parts: [],
           mediatypes: [],
           width: { size_2: 450, size_3: 625, size_4: 900 }
         }]
@@ -3258,68 +3309,27 @@ const server = createServer(async (request, response) => {
           faksimil_sizes: [3],
           mediatype: "faksimil",
           page_count: 3,
+          parts: [],
           width: { size_2: 450, size_3: 625, size_4: 900 },
           mediatypes: [{ url: "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext" }]
         }]
       })
     }
-    if (editorWorkId === "lb-editor-boye") {
+    if (
+      editorWorkId === "lb-editor-boye"
+      || editorWorkId === "lb-editor-malformed-contributor"
+      || editorWorkId === "lb-editor-malformed-part"
+    ) {
+      const representation = editorBoyeRepresentation(editorWorkId)
+      if (editorWorkId === "lb-editor-malformed-contributor") {
+        representation.authors.splice(1, 0, { authorid: "BrokenWithoutName" })
+      }
+      if (editorWorkId === "lb-editor-malformed-part") {
+        representation.parts.splice(1, 0, { title: "Broken without page bounds" })
+      }
       return sendJson(response, 200, {
         hits: 1,
-        data: [{
-          authors: [
-            { authorid: "BoyeK", full_name: "Karin Boye", surname: "Boye" },
-            {
-              authorid: "HelgesonP",
-              full_name: "Paulina Helgeson",
-              surname: "Helgeson",
-              type: "editor"
-            }
-          ],
-          endpagename: "9",
-          faksimil_sizes: [2],
-          imprintyear: "2022",
-          lbworkid: "lb-editor-boye",
-          mediatype: "faksimil",
-          page_count: 9,
-          pages: [
-            { pagename: "1", pageindex: 0 },
-            { pagename: "2", pageindex: 1 },
-            { pagename: "3", pageindex: 2 },
-            { pagename: "4", pageindex: 3 },
-            { pagename: "5", pageindex: 4 },
-            { pagename: "6", pageindex: 5 },
-            { pagename: "7", pageindex: 6 },
-            { pagename: "8", pageindex: 7 },
-            { pagename: "9", pageindex: 8 }
-          ],
-          parts: [
-            {
-              authors: [{ authorid: "BoyeK" }],
-              endpagename: "7",
-              navtitle: null,
-              shorttitle: null,
-              startpagename: "5",
-              title: "Förord",
-              titleid: "Förord"
-            },
-            {
-              authors: [{ authorid: "BoyeK" }],
-              endpagename: "9",
-              navtitle: null,
-              shorttitle: null,
-              startpagename: "9",
-              title: "Kronologi",
-              titleid: "Kronologi"
-            }
-          ],
-          searchable: true,
-          shorttitle: "Ett verkligt jordiskt liv. Brev",
-          startpagename: "3",
-          title: "Ett verkligt jordiskt liv. Brev",
-          titlepath: "EttVerkligtJordiskt",
-          width: { size_3: 625 }
-        }]
+        data: [representation]
       })
     }
     await waitForReaderMetadataDelay(titlePath)
@@ -3412,7 +3422,7 @@ const server = createServer(async (request, response) => {
 
   if (
     ["GET", "HEAD"].includes(request.method) &&
-    /^\/txt\/(lb-editor-(?:boye|doktor|fallback|no-ocr|mixed|long|sparse))\/\1_[234]\/\1_[234]_\d{4}\.jpeg$/.test(url.pathname)
+    /^\/txt\/(lb-editor-(?:boye|doktor|fallback|malformed-contributor|malformed-part|no-ocr|mixed|long|sparse))\/\1_[234]\/\1_[234]_\d{4}\.jpeg$/.test(url.pathname)
   ) {
     return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }

@@ -87,7 +87,15 @@ function href(pageIndex: number): string {
 }
 function partLabel(): string {
   const part = page.value?.currentPart
-  return part?.navTitle || part?.shortTitle || part?.title || page.value?.title || ""
+  return part?.navTitle || part?.shortTitle || part?.title || ""
+}
+function currentPartAuthorLabel(index: number): string {
+  const part = page.value?.currentPart
+  const author = part?.authors[index]
+  if (!part || !author) return ""
+  return part.authors.length === 1
+    ? (author.name ?? author.id)
+    : (author.surname ?? author.name ?? author.id)
 }
 function browserFullPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`
@@ -316,8 +324,19 @@ useHead(() => ({
             >({{ page.imprintYear }})</span></div>
             <hr class="editor-metadata-controls">
             <div class="current_part editor-metadata-controls">
-              <div class="header" />
-              <div><p class="navtitle">{{ partLabel() }}</p></div>
+              <template v-if="page.currentPart">
+                <div class="header">
+                  <template
+                    v-for="(partAuthor, partAuthorIndex) in page.currentPart.authors"
+                    :key="`${partAuthor.id}:${partAuthorIndex}`"
+                  >
+                    <NuxtLink :to="`/f%C3%B6rfattare/${encodeURIComponent(partAuthor.id)}`">{{ currentPartAuthorLabel(partAuthorIndex) }}</NuxtLink><span
+                      v-if="partAuthorIndex < page.currentPart.authors.length - 1"
+                    >, </span>
+                  </template>
+                </div>
+                <div><p class="navtitle line-clamp-4">{{ partLabel() }}</p></div>
+              </template>
             </div>
             <hr class="lower editor-metadata-controls">
           </template>
@@ -385,6 +404,17 @@ useHead(() => ({
               v-if="page.imprintYear"
               class="editor-imprint-year"
             > ({{ page.imprintYear }})</span></span></div>
+          <div v-if="page.metadataAvailable && page.currentPart" class="current_part editor-metadata-controls">
+            <div class="header">
+              <template
+                v-for="(partAuthor, partAuthorIndex) in page.currentPart.authors"
+                :key="`${partAuthor.id}:${partAuthorIndex}`"
+              ><NuxtLink :to="`/f%C3%B6rfattare/${encodeURIComponent(partAuthor.id)}`">{{ currentPartAuthorLabel(partAuthorIndex) }}</NuxtLink><span
+                  v-if="partAuthorIndex < page.currentPart.authors.length - 1"
+                >, </span></template>
+            </div>
+            <p class="navtitle line-clamp-4">{{ partLabel() }}</p>
+          </div>
           <nav aria-label="Sidnavigering">
             <a v-if="page.previousPartIndex !== null" :href="href(page.previousPartIndex)">Gå bakåt en del</a>
             <span v-else aria-disabled="true">Gå bakåt en del</span>
