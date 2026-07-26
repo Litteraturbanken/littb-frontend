@@ -41,6 +41,7 @@ export const strindbergAuthorProfile = {
     caption_html: "August Strindberg, fotograferad 1902."
   },
   search_url: "/sok?forfattare=StrindbergA&avancerad",
+  audio_url: null,
   related_links: [
     {
       label: "Presentation",
@@ -95,6 +96,7 @@ export const lagerlofAuthorProfile = {
   other_names: [],
   portrait: null,
   search_url: null,
+  audio_url: null,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: null
@@ -115,6 +117,7 @@ export const dramaOnlyAuthorProfile = {
   other_names: [],
   portrait: null,
   search_url: null,
+  audio_url: null,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: {
@@ -143,6 +146,7 @@ export const noIntroAuthorProfile = {
   other_names: [],
   portrait: null,
   search_url: null,
+  audio_url: "https://litteraturbanken.se/ljudochbild/författare/nointro",
   related_links: [],
   encyclopedia_links: [],
   dramawebben: null
@@ -163,6 +167,7 @@ export const rfc3986AuthorProfile = {
   other_names: [],
   portrait: null,
   search_url: null,
+  audio_url: null,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: {
@@ -206,6 +211,7 @@ export const managedHtmlProbeAuthorProfile = {
     caption_html: '<span onmouseover="ordinary-caption-attribute()">Ordinary intended caption</span><style>ordinary-caption-raw-marker</style>'
   },
   search_url: null,
+  audio_url: null,
   related_links: [],
   encyclopedia_links: [],
   dramawebben: {

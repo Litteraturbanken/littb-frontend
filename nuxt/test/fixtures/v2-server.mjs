@@ -286,6 +286,10 @@ let sourceInfoDelays = {}
 let sourceInfoStaticFailure = null
 let authorProfileRequests = []
 let authorProfileFailure = false
+let bibliographyRequests = []
+let bibliographyFailure = false
+let bibliographyDisconnect = false
+let bibliographyDelays = {}
 let authorWorksRequests = []
 let authorWorksFailures = new Set()
 let authorWorksDelays = {}
@@ -350,6 +354,30 @@ let textSearchRequests = { results: [], count: [], options: [], chronology: [] }
 let textSearchFailures = new Set()
 let textSearchDelays = { results: {}, count: {}, options: {}, chronology: {} }
 let textSearchAuthorityMode = false
+
+const bibliographyEntries = [
+  {
+    resource: "manus",
+    title: "Gösta Berlings saga",
+    isbn: "978-00-1",
+    issn: "",
+    archive: "SE/ULA/123"
+  },
+  {
+    resource: "tryckt_material",
+    title: "En herrgårdssägen",
+    isbn: null,
+    issn: "1400-0001",
+    archive: null
+  },
+  {
+    resource: "forskning",
+    title: "Jerusalem i forskningen",
+    isbn: "978-00-3",
+    issn: null,
+    archive: "SE/KB/456"
+  }
+]
 
 const textSearchOperations = new Set(["results", "count", "options", "chronology"])
 
@@ -2093,6 +2121,46 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_author_profile_failure" && request.method === "DELETE") {
     authorProfileFailure = false
     return sendJson(response, 200, { failure: authorProfileFailure })
+  }
+  if (url.pathname === "/_bibliography_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: bibliographyRequests })
+  }
+  if (url.pathname === "/_bibliography_requests" && request.method === "DELETE") {
+    bibliographyRequests = []
+    return sendJson(response, 200, { requests: bibliographyRequests })
+  }
+  if (url.pathname === "/_bibliography_failure" && request.method === "GET") {
+    return sendJson(response, 200, { failure: bibliographyFailure })
+  }
+  if (url.pathname === "/_bibliography_failure" && request.method === "PUT") {
+    bibliographyFailure = true
+    return sendJson(response, 200, { failure: bibliographyFailure })
+  }
+  if (url.pathname === "/_bibliography_failure" && request.method === "DELETE") {
+    bibliographyFailure = false
+    return sendJson(response, 200, { failure: bibliographyFailure })
+  }
+  if (url.pathname === "/_bibliography_disconnect" && request.method === "PUT") {
+    bibliographyDisconnect = true
+    return sendJson(response, 200, { disconnect: bibliographyDisconnect })
+  }
+  if (url.pathname === "/_bibliography_disconnect" && request.method === "DELETE") {
+    bibliographyDisconnect = false
+    return sendJson(response, 200, { disconnect: bibliographyDisconnect })
+  }
+  if (url.pathname === "/_bibliography_delays" && request.method === "GET") {
+    return sendJson(response, 200, { delays: bibliographyDelays })
+  }
+  if (url.pathname === "/_bibliography_delays" && request.method === "PUT") {
+    const body = await readJson(request)
+    bibliographyDelays = Object.fromEntries(
+      Object.entries(body).map(([key, delay]) => [key, Number(delay)])
+    )
+    return sendJson(response, 200, { delays: bibliographyDelays })
+  }
+  if (url.pathname === "/_bibliography_delays" && request.method === "DELETE") {
+    bibliographyDelays = {}
+    return sendJson(response, 200, { delays: bibliographyDelays })
   }
   if (url.pathname === "/_author_works_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: authorWorksRequests })
@@ -4209,6 +4277,31 @@ const server = createServer(async (request, response) => {
     return sendJson(response, 404, {
       error: { code: "not_found", message: "Resource not found", details: null }
     })
+  }
+
+  if (request.method === "GET" && apiPathname === "/v2/bibliography/entries") {
+    const resources = url.searchParams.getAll("resource")
+    const wholeText = url.searchParams.get("whole_text") ?? ""
+    bibliographyRequests.push(`${rawPathname}${url.search}`)
+    const delay = Number(bibliographyDelays[wholeText] || 0)
+    if (delay > 0) await new Promise(resolve => setTimeout(resolve, delay))
+    if (bibliographyDisconnect) return response.destroy()
+    if (bibliographyFailure) {
+      return sendJson(response, 503, {
+        error: {
+          code: "bibliography_unavailable",
+          message: "Unable to load bibliography entries",
+          details: null
+        }
+      })
+    }
+    const normalizedWholeText = wholeText.trim().toLocaleLowerCase("sv")
+    const items = bibliographyEntries
+      .filter(entry => !resources.length || resources.includes(entry.resource))
+      .filter(entry => !normalizedWholeText
+        || entry.title.toLocaleLowerCase("sv").includes(normalizedWholeText))
+      .map(({ resource, ...entry }) => entry)
+    return sendJson(response, 200, { items })
   }
 
   if (request.method === "GET" && apiPathname === "/v2/dictionary/articles") {

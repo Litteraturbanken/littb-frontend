@@ -89,6 +89,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/bibliography/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Bibliography Entries */
+        get: operations["v2_get_bibliography_entries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/contact": {
         parameters: {
             query?: never;
@@ -421,6 +438,8 @@ export interface components {
         };
         /** AuthorProfile */
         AuthorProfile: {
+            /** Audio Url */
+            audio_url: string | null;
             /** Author Id */
             author_id: string;
             /** Birth Year */
@@ -585,6 +604,22 @@ export interface components {
             related_links: components["schemas"]["ProfileLink"][];
             /** Search Url */
             search_url: string | null;
+        };
+        /** BibliographyEntriesResponse */
+        BibliographyEntriesResponse: {
+            /** Items */
+            items: components["schemas"]["BibliographyEntry"][];
+        };
+        /** BibliographyEntry */
+        BibliographyEntry: {
+            /** Archive */
+            archive: string | null;
+            /** Isbn */
+            isbn: string | null;
+            /** Issn */
+            issn: string | null;
+            /** Title */
+            title: string | null;
         };
         /** ContactAcceptedResponse */
         ContactAcceptedResponse: {
@@ -1667,6 +1702,56 @@ export interface operations {
                 };
             };
             /** @description Search backend unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_bibliography_entries: {
+        parameters: {
+            query?: {
+                resource?: ("manus" | "tryckt_material" | "annat_tryckt" | "forskning")[] | null;
+                whole_text?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BibliographyEntriesResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Bibliography provider unavailable */
             503: {
                 headers: {
                     [name: string]: unknown;

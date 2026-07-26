@@ -16,6 +16,7 @@ export type AuthorProfileView = {
   otherNames: string[]
   portrait: { url: string, captionHtml: string } | null
   searchUrl: string
+  audioUrl: string
   relatedLinks: Array<{ label: string, url: string }>
   encyclopediaLinks: Array<{ label: string, url: string }>
   hasOrdinaryIntroduction: boolean
@@ -279,6 +280,7 @@ export function createAuthorProfileView(
         }
       : null,
     searchUrl: profile.search_url ?? "",
+    audioUrl: profile.audio_url ?? "",
     relatedLinks: profileLinks(profile.related_links),
     encyclopediaLinks: profileLinks(profile.encyclopedia_links),
     hasOrdinaryIntroduction: Boolean(profile.introduction_html),

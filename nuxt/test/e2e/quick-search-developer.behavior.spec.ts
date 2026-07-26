@@ -10,6 +10,7 @@ const authorInfoRoutes = [
   ["presentation", "/författare/S%C3%B6derbergH/presentation", "Hjalmar Söderberg"],
   ["mer", "/författare/StrindbergA/mer", "August Strindberg"],
   ["semer", "/författare/AlmqvistCJL/semer", "Carl Jonas Love Almqvist"],
+  ["biblinfo", "/författare/Lagerl%C3%B6fS/biblinfo", "Selma Lagerlöf"],
   ["omtexterna", "/författare/Lagerl%C3%B6fS/omtexterna", "Selma Lagerlöf"],
   [
     "supplemental article",
