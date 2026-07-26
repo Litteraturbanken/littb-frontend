@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import QuickSearch from "../components/global/QuickSearch.vue"
 import saLogoUrl from "~/assets/img/SA_logo_type.svg"
+const { libraryHref } = useLibraryNavigation()
 </script>
 
 <template>
@@ -29,7 +30,7 @@ import saLogoUrl from "~/assets/img/SA_logo_type.svg"
         </svg>
       </a>
       <ul role="navigation" class="mainnav">
-        <li><a href="/bibliotek">Biblioteket</a></li>
+        <li><NuxtLink :to="libraryHref">Biblioteket</NuxtLink></li>
         <QuickSearch />
         <li><a href="/sök">Sök i texterna</a></li>
         <li><a href="/epub?visa=epub&amp;sort=popularitet">Hämta e-böcker</a></li>

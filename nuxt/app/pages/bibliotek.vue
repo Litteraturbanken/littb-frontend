@@ -1092,6 +1092,16 @@ function sortExpression(expression: string, reversed: boolean): string {
 const route = useRoute()
 const router = useRouter()
 const config = useRuntimeConfig()
+const { rememberLibraryHref } = useLibraryNavigation()
+
+watch(
+  () => route.fullPath,
+  () => {
+    if (!import.meta.client) return
+    rememberLibraryHref(route.fullPath)
+  },
+  { immediate: true }
+)
 
 const collectionOptionGroups = [
   {

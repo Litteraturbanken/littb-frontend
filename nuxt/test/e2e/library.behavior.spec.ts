@@ -66,6 +66,73 @@ async function pushRoute(page: import("@playwright/test").Page, path: string) {
 
 test.beforeEach(async ({ request }) => reset(request))
 
+test("SSR starts global Library navigation from the clean default", async ({ request }) => {
+  const response = await request.get(
+    "/bibliotek?avancerat=1&mediatypes=mediatype%3Aetext&future=one&future=two"
+  )
+
+  expect(response.ok()).toBeTruthy()
+  expect(await response.text()).toMatch(
+    /<li[^>]*><a[^>]+href="\/bibliotek"[^>]*>Biblioteket<\/a><\/li>/u
+  )
+})
+
+test("a hydrated client without Library memory starts from the default", async ({ page }) => {
+  await page.goto("/presentationer", { waitUntil: "networkidle" })
+
+  const libraryLink = page.locator(".mainnav").getByRole("link", {
+    name: "Biblioteket",
+    exact: true
+  })
+  await expect(libraryLink).toHaveAttribute("href", "/bibliotek")
+  await libraryLink.click()
+  await expect(page).toHaveURL("/bibliotek")
+})
+
+test("global Library navigation remembers route-owned query state across pages", async ({ page }) => {
+  const origin = "/bibliotek?avancerat=1&mediatypes=mediatype%3Aetext&languages=language%3Aswe&future=one&future=two"
+  const canonicalOrigin = "/bibliotek?avancerat=1&mediatypes=mediatype:etext&languages=language:swe&future=one&future=two"
+  const browserErrors: string[] = []
+  page.on("pageerror", error => browserErrors.push(error.message))
+  page.on("console", message => {
+    if (message.type() === "error") browserErrors.push(message.text())
+  })
+  await page.goto(origin, { waitUntil: "networkidle" })
+  await expect(page.getByRole("button", { name: "Ta bort Etext" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Ta bort Svenska" })).toBeVisible()
+  await page.evaluate(() => {
+    ;(window as typeof window & { __spaSentinel?: string }).__spaSentinel = "library-spa"
+  })
+
+  await page.locator(".mainnav").getByRole("link", { name: "Presentationer", exact: true }).click()
+  await expect(page).toHaveURL("/presentationer")
+
+  const libraryLink = page.locator(".mainnav").getByRole("link", {
+    name: "Biblioteket",
+    exact: true
+  })
+  await expect(libraryLink).toHaveAttribute("href", canonicalOrigin)
+  await libraryLink.click()
+  await expect(page).toHaveURL(canonicalOrigin)
+  await expect(page.getByRole("button", { name: "Ta bort Etext" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Ta bort Svenska" })).toBeVisible()
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("library-spa")
+
+  await page.reload({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(canonicalOrigin)
+  await expect(page.getByRole("button", { name: "Ta bort Etext" })).toBeVisible()
+
+  await page.locator(".mainnav").getByRole("link", { name: "Presentationer", exact: true }).click()
+  await expect(page).toHaveURL("/presentationer")
+  await page.goBack()
+  await expect(page).toHaveURL(canonicalOrigin)
+  await page.goForward()
+  await expect(page).toHaveURL("/presentationer")
+  await expect(libraryLink).toHaveAttribute("href", canonicalOrigin)
+  expect(browserErrors).toEqual([])
+})
+
 test("keeps all production-shaped rows when a presentation has no article author", async ({
   page
 }) => {
