@@ -215,22 +215,30 @@ test("SSR rejects partial Editor contributor and part metadata atomically", asyn
     expect(await apiResponse.json()).toMatchObject({
       authorId: null,
       authorName: null,
+      closeHref: null,
       contributors: [],
       currentPart: null,
       firstReadableIndex: 0,
+      imprintYear: null,
       lastReadableIndex: 8,
       metadataAvailable: false,
       nextPartIndex: null,
       parts: [],
       previousPartIndex: null,
       searchable: false,
+      title: null,
       titlePath: null
     })
 
     const response = await request.get(`/editor/${workId}/ix/0/f`)
     expect(response.status()).toBe(200)
     const document = parseHTML(await response.text()).document
+    expect(document.querySelector("title")?.textContent)
+      .toBe(`${workId} sida 0 | Litteraturbanken`)
     expect(document.querySelector(".reader-context-ssr .editor-metadata-controls")).toBeNull()
+    expect(document.body.textContent).not.toContain("Ett verkligt jordiskt liv. Brev")
+    expect(document.body.textContent).not.toContain("2022")
+    expect(document.querySelector('a[href*="EttVerkligtJordiskt"]')).toBeNull()
     expect(document.querySelector('.reader-context-ssr a[href$="/ix/4/f"]')).toBeNull()
     expect(document.querySelector('.reader-context-ssr a[rel="next"]')?.getAttribute("href"))
       .toBe(`/editor/${workId}/ix/1/f`)

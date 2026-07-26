@@ -97,6 +97,10 @@ test("editor Reader suppresses non-atomic contributor and part metadata", async 
       .toHaveAttribute("aria-disabled", "true")
     await expect(context.getByRole("link", { name: "Nästa sida" }))
       .toHaveAttribute("href", `/editor/${workId}/ix/1/f`)
+    await expect(page).toHaveTitle(`${workId} sida 0 | Litteraturbanken`)
+    await expect(page.getByRole("link", { name: "Stäng editor" })).toHaveCount(0)
+    await expect(page.locator("body")).not.toContainText("Ett verkligt jordiskt liv. Brev")
+    await expect(page.locator("body")).not.toContainText("2022")
   }
 })
 

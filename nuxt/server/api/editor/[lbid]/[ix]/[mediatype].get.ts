@@ -489,10 +489,11 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   const sanitizedHtml = html === null ? null : sanitizeEditorEtextHtml(html)
   if (html !== null && sanitizedHtml === null) sourceError()
   return {
-    authorId, authorName, closeHref, contributors, currentPart,
+    authorId, authorName, closeHref: metadataAvailable ? closeHref : null,
+    contributors, currentPart,
     endPageName: metadataAvailable ? endPageName : null, facsimileSources,
     firstReadableIndex, html: sanitizedHtml, imageWidth,
-    imageUrl, imprintYear,
+    imageUrl, imprintYear: metadataAvailable ? imprintYear : null,
     lastReadableIndex,
     mediaType, metadataAvailable,
     nextIndex: sparsePages
@@ -506,7 +507,7 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
       ? sparsePages.indexes[sparsePosition - 1] ?? null
       : pageIndex > 0 ? pageIndex - 1 : null,
     searchable: metadataAvailable && searchable,
-    title,
+    title: metadataAvailable ? title : null,
     titlePath: metadataAvailable ? titlePath : null,
     workId
   } satisfies EditorReaderPage
