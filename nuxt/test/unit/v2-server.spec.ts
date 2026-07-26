@@ -26,6 +26,7 @@ import {
   managedHtmlProbeAuthorProfile,
   noIntroAuthorProfile,
   rfc3986AuthorProfile,
+  soderbergAuthorProfile,
   strindbergAuthorProfile
 } from "../fixtures/author-profile-data.mjs"
 import {
@@ -1468,6 +1469,7 @@ describe("v2 fixture server operations", () => {
   test("serves complete deterministic author profiles on public and private paths", async () => {
     expect([...authorProfiles.values()]).toEqual([
       strindbergAuthorProfile,
+      soderbergAuthorProfile,
       lagerlofAuthorProfile,
       dramaOnlyAuthorProfile,
       noIntroAuthorProfile,
