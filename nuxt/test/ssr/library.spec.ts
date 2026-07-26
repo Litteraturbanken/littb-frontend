@@ -503,6 +503,11 @@ test("SSR renders the canonical latest-work slice with imported-date groups", as
     .toBe("Doktor Glas")
   expect(document.querySelector('[data-library-latest-title="DoktorGlas"]')?.getAttribute("href"))
     .toBe("/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken")
+  const latestRow = document.querySelector("[data-library-latest-row]")
+  expect(latestRow?.querySelector('[data-library-tooltip-kind="title"]')
+    ?.getAttribute("data-library-tooltip-content")).toBe("Doktor Glas. Roman")
+  expect(latestRow?.querySelector('[data-library-tooltip-kind="author"]')
+    ?.getAttribute("data-library-tooltip-content")).toBe("Hjalmar Söderberg (1869-1941)")
 
   const ledger = await epubRequests(request)
   expect(ledger).toHaveLength(1)
@@ -562,6 +567,15 @@ test("SSR renders the three primary browse tabs as live routed result modes", as
     expect(tab?.hasAttribute("data-deferred"), item.mode).toBe(false)
     expect(tab?.getAttribute("aria-current"), item.mode).toBe("page")
     expect(document.querySelector(item.row)?.textContent, item.mode).toContain(item.text)
+
+    if (item.mode === "works") {
+      const row = document.querySelector(item.row)
+      expect(row?.querySelector('[data-library-tooltip-kind="title"]')
+        ?.getAttribute("data-library-tooltip-content")).toBe("Doktor Glas. Roman")
+      expect(row?.querySelector('[data-library-tooltip-kind="author"]')
+        ?.getAttribute("data-library-tooltip-content")).toBe("Hjalmar Söderberg (1869-1941)")
+      expect(document.querySelector('[role="tooltip"]')).toBeNull()
+    }
 
     if (item.mode === "authors") {
       expect(tab?.textContent?.trim()).toBe("Författare: 4")
@@ -783,6 +797,15 @@ test("SSR aliases bare and canonical EPUB routes to one row model with the stand
     ?.textContent?.trim()).toBe("Geijer (red.)")
   expect(bare.querySelector('[data-library-epub-row]:nth-child(3) .author')
     ?.textContent?.trim()).toBe("Bauer (ill.)")
+  expect(firstRow?.querySelector('[data-library-tooltip-kind="title"]')
+    ?.getAttribute("data-library-tooltip-content")).toBe("Doktor Glas. Roman")
+  expect(firstRow?.querySelector('[data-library-tooltip-kind="author"]')
+    ?.getAttribute("data-library-tooltip-content")).toBe("Hjalmar Söderberg (1869-1941)")
+  expect(bare.querySelector('[data-library-epub-row]:nth-child(2) [data-library-tooltip-kind="title"]')
+    ?.getAttribute("data-library-tooltip-content")).toBeNull()
+  expect(bare.querySelector('[data-library-epub-row]:nth-child(3) [data-library-tooltip-kind="title"]')
+    ?.getAttribute("data-library-tooltip-content")).toBeNull()
+  expect(bare.querySelector('[role="tooltip"]')).toBeNull()
 })
 
 for (const [sort, expression] of [
@@ -984,6 +1007,12 @@ test("SSR renders grouped PDF actions in the Library shell from one private requ
       target: "_self"
     }
   ])
+  const firstPdfRow = document.querySelector("[data-library-pdf-row]")
+  expect(firstPdfRow?.querySelector('[data-library-tooltip-kind="title"]')
+    ?.getAttribute("data-library-tooltip-content")).toBe("Gösta Berlings saga. Roman")
+  expect(firstPdfRow?.querySelector('[data-library-tooltip-kind="author"]')
+    ?.getAttribute("data-library-tooltip-content")).toBe("Selma Lagerlöf (1858-1940)")
+  expect(document.querySelector('[role="tooltip"]')).toBeNull()
   expect(document.body.textContent).not.toContain("Begränsad export")
   expect([...document.querySelectorAll("[data-library-page]")].map(node => node.textContent))
     .toEqual(["1", "2", "3"])

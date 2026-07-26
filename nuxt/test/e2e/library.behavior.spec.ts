@@ -339,6 +339,58 @@ test("Författare, Verk, and Dikt tabs navigate, render, and restore through his
     .toBeVisible()
 })
 
+for (const mode of ["works", "latest", "epub", "pdf"] as const) {
+  test(`${mode} restores delayed full title and author hover details`, async ({ page, request }) => {
+    const problems: string[] = []
+    page.on("pageerror", error => problems.push(error.message))
+    page.on("console", message => {
+      if (message.type() === "error" || message.text().toLowerCase().includes("hydration")) {
+        problems.push(message.text())
+      }
+    })
+    await page.goto(`/bibliotek?visa=${mode}`, { waitUntil: "networkidle" })
+    const row = page.locator(`[data-library-${mode === "works" ? "work" : mode}-row]`).first()
+    const title = row.locator("[data-library-tooltip-kind=title]")
+    const author = row.locator("[data-library-tooltip-kind=author]")
+
+    await expect(title).toContainText(mode === "pdf" ? "Gösta Berlings saga" : "Doktor Glas")
+    await expect(title.locator("xpath=ancestor::*[contains(@class, 'header')][1]"))
+      .toHaveCSS("text-overflow", "ellipsis")
+    await expect(page.getByRole("tooltip")).toHaveCount(0)
+    await title.hover()
+    await page.waitForTimeout(300)
+    await expect(page.getByRole("tooltip")).toHaveCount(0)
+    await expect(page.getByRole("tooltip")).toHaveText(
+      mode === "pdf" ? "Gösta Berlings saga. Roman" : "Doktor Glas. Roman",
+      { timeout: 400 }
+    )
+    await page.mouse.move(0, 0)
+    await expect(page.getByRole("tooltip")).toHaveCount(0)
+
+    await author.focus()
+    await expect(page.getByRole("tooltip")).toHaveText(
+      mode === "pdf" ? "Selma Lagerlöf (1858-1940)" : "Hjalmar Söderberg (1869-1941)",
+      { timeout: 700 }
+    )
+    await author.blur()
+    await expect(page.getByRole("tooltip")).toHaveCount(0)
+
+    if (mode === "epub") {
+      await expect(page.locator("[data-library-epub-row]").nth(1).locator(".author"))
+        .toHaveText("Geijer (red.)")
+    }
+    if (mode === "works") {
+      await title.hover()
+      await expect(page.getByRole("tooltip")).toBeVisible()
+      await pushRoute(page, "/presentationer")
+      await expect(page.getByRole("tooltip")).toHaveCount(0)
+    }
+
+    expect((await epubRequests(request)).filter(entry => entry.query.to !== "0")).toHaveLength(1)
+    expect(problems).toEqual([])
+  })
+}
+
 test("delayed Works and Dikt transitions never relabel rows owned by the other mode", async ({
   page,
   request

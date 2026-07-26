@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import type { CSSProperties } from "vue"
+import type { CSSProperties, DirectiveBinding, ObjectDirective } from "vue"
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
+import {
+  libraryAuthorTooltipText,
+  usefulLibraryTooltipText
+} from "~/lib/library-tooltip"
 
 definePageMeta({ alias: ["/epub"] })
 
@@ -94,8 +98,10 @@ type LibraryRouteState = {
 
 type EpubResult = {
   title: string
+  titleTooltip: string
   year: string
   surname: string
+  authorTooltip: string
   roleSuffix: string
   titleHref: string
   titleTo: RouteLocationRaw
@@ -128,8 +134,10 @@ type BrowseResult = {
   key: string
   titlePath: string
   title: string
+  titleTooltip: string
   year: string
   surname: string
+  authorTooltip: string
   roleSuffix: string
   titleHref: string
   authorHref: string
@@ -173,9 +181,11 @@ type BrowseResponse = {
 
 type LatestResult = {
   title: string
+  titleTooltip: string
   titleId: string
   year: string
   surname: string
+  authorTooltip: string
   roleSuffix: string
   titleHref: string
   authorHref: string
@@ -238,6 +248,108 @@ function recordsAt(record: UnknownRecord | null, key: string): UnknownRecord[] {
   return Array.isArray(value)
     ? value.map(asRecord).filter((item): item is UnknownRecord => item !== null)
     : []
+}
+
+const libraryTooltipDelay = 500
+let libraryTooltipSequence = 0
+
+type LibraryTooltipState = {
+  content: string
+  timer: ReturnType<typeof setTimeout> | null
+  popup: HTMLDivElement | null
+  previousDescribedBy: string | null
+  cleanup: () => void
+}
+
+const libraryTooltipStates = new WeakMap<HTMLElement, LibraryTooltipState>()
+
+function hideLibraryTooltip(element: HTMLElement, state: LibraryTooltipState) {
+  if (state.timer) clearTimeout(state.timer)
+  state.timer = null
+  state.popup?.remove()
+  state.popup = null
+  if (state.previousDescribedBy === null) element.removeAttribute("aria-describedby")
+  else element.setAttribute("aria-describedby", state.previousDescribedBy)
+}
+
+function showLibraryTooltip(element: HTMLElement, state: LibraryTooltipState) {
+  hideLibraryTooltip(element, state)
+  if (!state.content) return
+  state.timer = setTimeout(() => {
+    if (!element.isConnected || !state.content) return
+    const popup = document.createElement("div")
+    const inner = document.createElement("div")
+    const arrow = document.createElement("div")
+    const id = `library-tooltip-${++libraryTooltipSequence}`
+    popup.id = id
+    popup.className = "tooltip top in library-tooltip"
+    popup.role = "tooltip"
+    popup.style.position = "fixed"
+    popup.style.pointerEvents = "none"
+    inner.className = "tooltip-inner"
+    inner.textContent = state.content
+    arrow.className = "tooltip-arrow"
+    popup.append(inner, arrow)
+    document.body.append(popup)
+    const rect = element.getBoundingClientRect()
+    popup.style.left = `${rect.left + rect.width / 2}px`
+    popup.style.top = `${rect.top}px`
+    popup.style.transform = "translate(-50%, -100%)"
+    state.popup = popup
+    element.setAttribute("aria-describedby", id)
+    state.timer = null
+  }, libraryTooltipDelay)
+}
+
+function mountLibraryTooltip(element: HTMLElement, binding: DirectiveBinding<string>) {
+  const enter = () => showLibraryTooltip(element, state)
+  const leave = () => hideLibraryTooltip(element, state)
+  const state: LibraryTooltipState = {
+    content: binding.value || "",
+    timer: null,
+    popup: null,
+    previousDescribedBy: element.getAttribute("aria-describedby"),
+    cleanup: () => {
+      for (const [event, handler] of [
+        ["mouseenter", enter], ["mouseleave", leave], ["focus", enter], ["blur", leave]
+      ] as const) {
+        element.removeEventListener(event, handler)
+      }
+    }
+  }
+  for (const [event, handler] of [
+    ["mouseenter", enter], ["mouseleave", leave], ["focus", enter], ["blur", leave]
+  ] as const) element.addEventListener(event, handler)
+  libraryTooltipStates.set(element, state)
+}
+
+const vLibraryTooltip: ObjectDirective<HTMLElement, string> = {
+  getSSRProps(binding) {
+    return binding.value ? { "data-library-tooltip-content": binding.value } : {}
+  },
+  mounted(element, binding) {
+    if (binding.value) mountLibraryTooltip(element, binding)
+  },
+  updated(element, binding) {
+    const state = libraryTooltipStates.get(element)
+    if (!state) {
+      if (binding.value) mountLibraryTooltip(element, binding)
+      return
+    }
+    if (state.content !== binding.value) hideLibraryTooltip(element, state)
+    state.content = binding.value || ""
+    if (!state.content) {
+      state.cleanup()
+      libraryTooltipStates.delete(element)
+    }
+  },
+  beforeUnmount(element) {
+    const state = libraryTooltipStates.get(element)
+    if (!state) return
+    hideLibraryTooltip(element, state)
+    state.cleanup()
+    libraryTooltipStates.delete(element)
+  }
 }
 
 function baseResult(index: LibraryIndex): LibraryResult {
@@ -520,8 +632,10 @@ function parseEpubResult(value: unknown): EpubResult | null {
   const roleSuffix = role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : ""
   return {
     title,
+    titleTooltip: usefulLibraryTooltipText(record.title, title),
     year,
     surname,
+    authorTooltip: libraryAuthorTooltipText(mainAuthor, surname),
     roleSuffix,
     titleHref: `/f%C3%B6rfattare/${encodedAuthor}/titlar/${encodedTitle}/${encodedMedia}?om-boken`,
     titleTo: {
@@ -616,8 +730,10 @@ function parseBrowseResult(value: unknown, mode: "works" | "parts"): BrowseCandi
     key: `${encodedTitlePath}:${encodedWork}`,
     titlePath,
     title,
+    titleTooltip: usefulLibraryTooltipText(record.title, title),
     year: imprintYear(record),
     surname,
+    authorTooltip: libraryAuthorTooltipText(displayAuthor, surname),
     roleSuffix: role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : "",
     titleHref,
     authorHref: `/f%C3%B6rfattare/${displayAuthorId}`,
@@ -800,9 +916,11 @@ function parseLatestRepresentation(value: unknown): (LatestResult & {
   const role = epubStringAt(mainAuthor, "type")
   return {
     title,
+    titleTooltip: usefulLibraryTooltipText(record.title, title),
     titleId,
     year,
     surname,
+    authorTooltip: libraryAuthorTooltipText(mainAuthor, surname),
     roleSuffix: role === "editor" ? " (red.)" : role === "illustrator" ? " (ill.)" : "",
     titleHref: `/f%C3%B6rfattare/${encodedAuthor}/titlar/${encodedTitle}/${encodedAboutMedia}?om-boken`,
     authorHref: `/f%C3%B6rfattare/${encodedAuthor}`,
@@ -968,8 +1086,10 @@ function parsePdfRepresentation(value: unknown): ParsedPdfRepresentation | null 
 
   return {
     title,
+    titleTooltip: usefulLibraryTooltipText(record.title, title),
     year,
     surname,
+    authorTooltip: libraryAuthorTooltipText(mainAuthor, surname),
     roleSuffix,
     titleHref,
     titleTo: {
@@ -3724,6 +3844,8 @@ onUnmounted(() => {
                             <span class="title_inner">
                               <NuxtLink
                                 :data-library-latest-title="item.titleId"
+                                data-library-tooltip-kind="title"
+                                v-library-tooltip="item.titleTooltip"
                                 :to="canonicalNuxtHref(item.titleHref)"
                               >{{ item.title }}</NuxtLink>
                             </span>
@@ -3735,7 +3857,11 @@ onUnmounted(() => {
                     <td class="block w-44 text-right">
                       <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                         <span class="author uppercase text-sm">
-                          <NuxtLink :to="canonicalNuxtHref(item.authorHref)">{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
+                          <NuxtLink
+                            data-library-tooltip-kind="author"
+                            v-library-tooltip="item.authorTooltip"
+                            :to="canonicalNuxtHref(item.authorHref)"
+                          >{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
                         </span>
                       </div>
                     </td>
@@ -3871,6 +3997,8 @@ onUnmounted(() => {
                           <button
                             type="button"
                             data-library-work-toggle
+                            data-library-tooltip-kind="title"
+                            v-library-tooltip="item.titleTooltip"
                             class="library-work-toggle"
                             :aria-expanded="!downloadMode && expandedWorkKey === item.key"
                             @click.stop="downloadMode ? toggleSourceWork(item) : toggleWorkActions(item)"
@@ -3903,7 +4031,11 @@ onUnmounted(() => {
                   <td class="block w-44 text-right">
                     <div class="text-ellipsis whitespace-nowrap overflow-hidden">
                       <span class="author uppercase text-sm">
-                        <NuxtLink :to="canonicalNuxtHref(item.authorHref)">{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
+                        <NuxtLink
+                          data-library-tooltip-kind="author"
+                          v-library-tooltip="item.authorTooltip"
+                          :to="canonicalNuxtHref(item.authorHref)"
+                        >{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
                       </span>
                     </div>
                   </td>
@@ -3919,11 +4051,19 @@ onUnmounted(() => {
                   class="parts hover:bg-gray-300 hover:bg-opacity-80 transition-colors duration-150"
                 >
                   <td class="title">
-                    <span class="title_inner"><NuxtLink :to="canonicalNuxtHref(item.titleHref)">{{ item.title }}</NuxtLink></span>
+                    <span class="title_inner"><NuxtLink
+                      data-library-tooltip-kind="title"
+                      v-library-tooltip="item.titleTooltip"
+                      :to="canonicalNuxtHref(item.titleHref)"
+                    >{{ item.title }}</NuxtLink></span>
                   </td>
                   <td class="hidden lg:table-cell w-28">{{ item.year }}</td>
                   <td class="text-right uppercase text-sm w-40">
-                    <NuxtLink :to="canonicalNuxtHref(item.authorHref)">{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-xs text-gray-600">{{ item.roleSuffix.trim() }}</span></template>
+                    <NuxtLink
+                      data-library-tooltip-kind="author"
+                      v-library-tooltip="item.authorTooltip"
+                      :to="canonicalNuxtHref(item.authorHref)"
+                    >{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-xs text-gray-600">{{ item.roleSuffix.trim() }}</span></template>
                   </td>
                 </tr>
               </tbody>
@@ -3992,6 +4132,8 @@ onUnmounted(() => {
                               <a
                                 :data-library-epub-title="currentMode === 'epub' || undefined"
                                 :data-library-pdf-title="currentMode === 'pdf' || undefined"
+                                data-library-tooltip-kind="title"
+                                v-library-tooltip="item.titleTooltip"
                                 :href="item.titleHref"
                                 @click="navigate"
                               >{{ item.title }}</a>
@@ -4013,6 +4155,8 @@ onUnmounted(() => {
                         <NuxtLink
                           :data-library-epub-author="currentMode === 'epub' || undefined"
                           :data-library-pdf-author="currentMode === 'pdf' || undefined"
+                          data-library-tooltip-kind="author"
+                          v-library-tooltip="item.authorTooltip"
                           :to="canonicalNuxtHref(item.authorHref)"
                         >{{ item.surname }}</NuxtLink><template v-if="item.roleSuffix">{{ " " }}<span class="text-gray-700 sc">{{ item.roleSuffix.trim() }}</span></template>
                       </span>

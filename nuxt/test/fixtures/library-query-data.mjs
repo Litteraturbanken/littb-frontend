@@ -3,6 +3,8 @@ export function epubWork({
   authorId = "SöderbergH",
   fullName = "Hjalmar Söderberg",
   surname = "Söderberg",
+  birth = "1869",
+  death = "1941",
   year = "1905",
   role,
   title = "Doktor Glas"
@@ -24,6 +26,8 @@ export function epubWork({
       authorid: authorId,
       full_name: fullName,
       surname,
+      birth: { plain: birth },
+      death: { plain: death },
       ...(role ? { type: role } : {})
     },
     work_authors: [{ authorid: authorId, surname }],
@@ -52,28 +56,36 @@ const editorWork = epubWork({
   authorId: "GeijerEGA",
   fullName: "Erik Gustaf Geijer",
   surname: "Geijer",
+  birth: "1783",
+  death: "1847",
   year: "1814",
   role: "editor",
   title: "Svenska folkvisor"
 })
 editorWork.export.push({ type: "xml", size: 2048 })
+editorWork.title = editorWork.shorttitle
 
 const illustratorWork = epubWork({
   id: "BlandTomtarOchTroll",
   authorId: "BauerJ",
   fullName: "John Bauer",
   surname: "Bauer",
+  birth: "1882",
+  death: "1918",
   year: "1915",
   role: "illustrator",
   title: "Bland tomtar och troll"
 })
 illustratorWork.export.push({ type: "workdb", size: 512 })
+illustratorWork.title = "x".repeat(501)
 
 const gostaBerlingsSaga = epubWork({
   id: "GostaBerlingsSaga",
   authorId: "LagerlofS",
   fullName: "Selma Lagerlöf",
   surname: "Lagerlöf",
+  birth: "1858",
+  death: "1940",
   year: "1891",
   title: "Gösta Berlings saga"
 })
