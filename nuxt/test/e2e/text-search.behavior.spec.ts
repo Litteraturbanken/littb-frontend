@@ -82,6 +82,57 @@ test("vue-multiselect title search selects and removes a route-owned title", asy
   await expect.poll(() => new URL(page.url()).searchParams.has("titlar")).toBe(false)
 })
 
+test("vue-multiselect preserves declared option order, unknown selections, labels, and disabled rows", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1&forfattare=missing,StrindbergA")
+  const authors = page.locator(".author_select")
+  await expect(authors.getByRole("button", { name: "Ta bort Strindberg" })).toBeVisible()
+  await expect(authors.getByRole("button", { name: "Ta bort missing" })).toBeVisible()
+  await authors.getByRole("button", { name: "Visa alternativ för Författarskap" }).click()
+  await expect(authors.getByRole("option", { name: "Lagerlöf, Selma (1858-1940)" })).toBeVisible()
+  await authors.getByRole("option", { name: "Lagerlöf, Selma (1858-1940)" }).click()
+  await expect.poll(() => new URL(page.url()).searchParams.get("forfattare"))
+    .toBe("LagerlöfS,StrindbergA,missing")
+
+  const categories = page.locator(".keyword_select")
+  await categories.getByRole("button", {
+    name: "Visa alternativ för Filtrera: Kategorier / Utgivare"
+  }).click()
+  await expect(categories.getByText("Dramatik", { exact: true })).toBeVisible()
+  await expect(categories.getByRole("option", { name: "Dramatik" })).toHaveCount(0)
+
+  await page.reload({ waitUntil: "domcontentloaded" })
+  await expect(authors.getByRole("button", { name: "Ta bort Lagerlöf" })).toBeVisible()
+  await expect(authors.getByRole("button", { name: "Ta bort Strindberg" })).toBeVisible()
+  await expect(authors.getByRole("button", { name: "Ta bort missing" })).toBeVisible()
+})
+
+test("vue-multiselect accepts Enter selection and keeps legacy dropdown geometry", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+  const authors = page.locator(".author_select")
+  const control = authors.getByRole("combobox")
+  await control.focus()
+  await control.press("Enter")
+  await expect.poll(() => new URL(page.url()).searchParams.get("forfattare")).toBe("LagerlöfS")
+
+  await authors.getByRole("button", { name: "Visa alternativ för Författarskap" }).click()
+  const option = authors.getByRole("option", { name: "Lagerlöf, Selma (1858-1940)" })
+    .locator(".multiselect__option")
+  await expect(option).toHaveCSS("padding-top", "6px")
+  await expect(option).toHaveCSS("min-height", "0px")
+  await expect(option).toHaveCSS("line-height", "normal")
+})
+
+test("advanced vue-multiselect SSR hydration renders without browser warnings", async ({ page }) => {
+  const problems = browserProblems(page)
+  await openSearch(page, "/s%C3%B6k?avancerad=1&forfattare=StrindbergA")
+  await expect(page.locator(".author_select .multiselect")).toBeVisible()
+  await expect(page.getByRole("button", { name: "Ta bort Strindberg" })).toBeVisible()
+  await page.waitForTimeout(200)
+  expect(problems).toEqual([])
+})
+
 async function pushRoute(page: Page, route: string) {
   await page.evaluate(async target => {
     type VueRoot = HTMLElement & {
@@ -590,7 +641,6 @@ test("static options are lazy and cached while title search is exact 250 ms late
   page,
   request
 }) => {
-  await page.clock.install()
   await openSearch(page)
   expect(await requests(request, "options")).toEqual([])
   await page.locator("[data-search-advanced]").click()
@@ -610,20 +660,18 @@ test("static options are lazy and cached while title search is exact 250 ms late
   })
   const input = page.locator(".title_select input.select2-search__field")
   await input.fill("lag")
-  await page.clock.runFor(249)
+  await page.waitForTimeout(200)
   expect(await requests(request, "options")).toEqual([])
-  await page.clock.runFor(1)
   await expect.poll(async () => (await requests(request, "options")).length).toBe(1)
 
   await input.fill("lager")
-  await page.clock.runFor(249)
+  await page.waitForTimeout(200)
   expect(await requests(request, "options")).toHaveLength(1)
-  await page.clock.runFor(1)
   await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
   await expect(page.locator(".title_select .spinner")).toBeHidden()
   await expect(page.getByRole("option", { name: "Gösta Berlings saga" })).toHaveCount(1)
   await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(0)
-  await page.clock.runFor(600)
+  await page.waitForTimeout(700)
   await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(0)
 })
 
