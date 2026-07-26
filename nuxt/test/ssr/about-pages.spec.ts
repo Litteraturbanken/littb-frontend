@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext } from "@playwright/test"
+import { parseHTML } from "linkedom"
 
 const fixture = "http://127.0.0.1:4100"
 
@@ -41,6 +42,15 @@ async function reset(request: APIRequestContext) {
   await request.delete(`${fixture}/_failure`)
 }
 
+function expectActiveAboutLink(html: string, href: string | null) {
+  const { document } = parseHTML(html)
+  const activeLinks = [...document.querySelectorAll("#mainview .links a.active")]
+  expect(activeLinks).toHaveLength(href ? 1 : 0)
+  if (!href) return
+  expect(activeLinks[0]?.getAttribute("href")).toBe(href)
+  expect(activeLinks[0]?.getAttribute("aria-current")).toBe("page")
+}
+
 for (const [slug, contentPath, markers] of pages) {
   test(`${slug} fetches its allowlisted content during SSR`, async ({ request }) => {
     await reset(request)
@@ -66,7 +76,7 @@ for (const [slug, contentPath, markers, upstreamTitle] of unlistedPages) {
     for (const marker of markers) expect(html).toContain(marker)
     expect(html).not.toContain("XHTML 1.0")
     expect(html).not.toContain(upstreamTitle)
-    expect(html.match(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/)[^>]*>/g) ?? []).toHaveLength(0)
+    expectActiveAboutLink(html, null)
     const log = await (await request.get(`${fixture}/_requests`)).json()
     expect(log.requests).toEqual([contentPath])
   })
@@ -95,8 +105,7 @@ test("Help fetches its allowlisted content and activates only Help during SSR", 
   expect(html).not.toContain("XHTML 1.0 Strict")
   expect(html).not.toContain("<!DOCTYPE html PUBLIC")
   expect(html).toContain('<div class="help_content content unbox page-help"')
-  expect(html.match(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/)[^>]*>/g) ?? []).toHaveLength(1)
-  expect(html).toMatch(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/hjalp")[^>]*>/)
+  expectActiveAboutLink(html, "/om/hjalp")
   const log = await (await request.get(`${fixture}/_requests`)).json()
   expect(log.requests).toEqual(["/red/om/hjalp/hjalp.html"])
 })
@@ -108,7 +117,7 @@ test("Help content failure preserves the active About shell without leaking upst
   expect(response.status()).toBe(200)
   const html = await response.text()
   expect(html).toContain("Om Litteraturbanken")
-  expect(html).toMatch(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/hjalp")[^>]*>/)
+  expectActiveAboutLink(html, "/om/hjalp")
   expect(html).not.toContain("Söka efter en text eller en författare")
   expect(html).not.toContain("content unavailable")
   const log = await (await request.get(`${fixture}/_requests`)).json()
@@ -138,8 +147,7 @@ test("Contact renders exact metadata, copy, and active state without submitting 
   expect(html).toContain("Tack för ditt meddelande, vi svarar så fort vi kan.")
   expect(html).toContain("Tack för din anmälan.")
   expect(html).toContain("Ett fel uppstod. Vänligen försök igen senare.")
-  expect(html.match(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/)[^>]*>/g) ?? []).toHaveLength(1)
-  expect(html).toMatch(/<a\b(?=[^>]*\bclass="active")(?=[^>]*\bhref="\/om\/kontakt")[^>]*>/)
+  expectActiveAboutLink(html, "/om/kontakt")
 
   const submissions = await (await request.get(`${fixture}/_contact_submissions`)).json()
   expect(submissions.contactSubmissions).toEqual([])

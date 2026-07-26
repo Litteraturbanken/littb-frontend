@@ -51,15 +51,16 @@ async function expectNotRedirected(request: APIRequestContext, path: string) {
   expect(response.headers().location).toBeUndefined()
 }
 
-async function expectRawNotRedirected(path: string) {
+async function expectRawNotRedirected(baseURL: string, path: string) {
+  const origin = new URL(baseURL)
   const result = await new Promise<{
     status: number | undefined
     location: string | undefined
   }>((resolve, reject) => {
     const outgoing = makeHttpRequest(
       {
-        hostname: "127.0.0.1",
-        port: 3000,
+        hostname: origin.hostname,
+        port: origin.port,
         method: "GET",
         path
       },
@@ -132,7 +133,8 @@ for (const project of projects) {
     await expectNotRedirected(request, `/${project.lookalike}/nested`)
   })
 
-  test(`rejects malformed and unsafe ${project.slug} suffixes`, async () => {
+  test(`rejects malformed and unsafe ${project.slug} suffixes`, async ({ baseURL }) => {
+    expect(baseURL).toBeTruthy()
     for (const suffix of [
       "%E0%A4%A",
       "./admin",
@@ -142,7 +144,7 @@ for (const project of projects) {
       "safe%2Fadmin",
       "safe%5Cadmin"
     ]) {
-      await expectRawNotRedirected(`/${project.encodedSlug}/${suffix}`)
+      await expectRawNotRedirected(baseURL!, `/${project.encodedSlug}/${suffix}`)
     }
   })
 }
