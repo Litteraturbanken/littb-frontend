@@ -2,6 +2,7 @@
 import QuickSearch from "../components/global/QuickSearch.vue"
 import saLogoUrl from "~/assets/img/SA_logo_type.svg"
 
+const { textSearchHref } = useTextSearchNavigation()
 const { libraryHref } = useLibraryNavigation()
 </script>
 
@@ -33,7 +34,7 @@ const { libraryHref } = useLibraryNavigation()
       <ul role="navigation" class="mainnav">
         <li><NuxtLink :to="libraryHref">Biblioteket</NuxtLink></li>
         <QuickSearch />
-        <li><NuxtLink to="/s%C3%B6k">Sök i texterna</NuxtLink></li>
+        <li><NuxtLink :to="textSearchHref">Sök i texterna</NuxtLink></li>
         <li><NuxtLink to="/epub?visa=epub&amp;sort=popularitet">Hämta e-böcker</NuxtLink></li>
         <li><NuxtLink to="/presentationer">Presentationer</NuxtLink></li>
         <li><a href="https://litteraturbanken.se/diktensmuseum/">Diktens museum</a></li>
