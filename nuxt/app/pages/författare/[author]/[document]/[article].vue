@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
+import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import {
   SLA_ARTICLE_REGISTRY_BY_ID,
   isSlaArticleId,
@@ -205,10 +206,10 @@ useHead({
         <nav aria-label="Författarsidor">
           <ul class="links">
             <li>
-              <a :href="rootHref">Introduktion</a>
+              <NuxtLink :to="canonicalNuxtHref(rootHref)">Introduktion</NuxtLink>
             </li>{{ " " }}
             <li>
-              <a :href="titlesHref">Verk</a>
+              <NuxtLink :to="canonicalNuxtHref(titlesHref)">Verk</NuxtLink>
             </li>{{ " " }}
             <li>
               <a
@@ -218,10 +219,10 @@ useHead({
               >Ljud</a>
             </li>{{ " " }}
             <li>
-              <a :href="dramawebbenHref">Dramawebben</a>
+              <NuxtLink :to="canonicalNuxtHref(dramawebbenHref)">Dramawebben</NuxtLink>
             </li>{{ " " }}
             <li>
-              <a :href="page.author.searchUrl!">Sök i texterna</a>
+              <NuxtLink :to="canonicalNuxtHref(page.author.searchUrl!)">Sök i texterna</NuxtLink>
             </li>
           </ul>
         </nav>

@@ -37,11 +37,11 @@ test("authored document search navigation is canonical and stays inside the SPA"
   await expectSpaSentinel(page)
 })
 
-test("authored article author navigation reaches profile content without reload", async ({
+test("visible supplemental-document author navigation reaches profile content without reload", async ({
   page
 }) => {
   await page.goto(
-    "/författare/Lagerl%C3%B6fS/omtexterna/PublishedWorks.html",
+    "/författare/Lagerl%C3%B6fS/bibliografi",
     { waitUntil: "networkidle" }
   )
   await installSpaSentinel(page)
@@ -52,9 +52,24 @@ test("authored article author navigation reaches profile content without reload"
     "href",
     "/f%C3%B6rfattare/Lagerl%C3%B6fS"
   )
-  await introduction.evaluate(link => link.click())
+  await introduction.click()
 
   await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS$/u)
   await expect(page.locator("h1").first()).toContainText("Selma Lagerlöf")
   await expectSpaSentinel(page)
+})
+
+test("hidden SLA article navigation retains canonical author links", async ({ page }) => {
+  await page.goto(
+    "/författare/Lagerl%C3%B6fS/omtexterna/PublishedWorks.html",
+    { waitUntil: "networkidle" }
+  )
+
+  const introduction = page.getByLabel("Författarsidor")
+    .getByRole("link", { name: "Introduktion", exact: true, includeHidden: true })
+  await expect(introduction).toHaveAttribute(
+    "href",
+    "/f%C3%B6rfattare/Lagerl%C3%B6fS"
+  )
+  await expect(introduction).toBeHidden()
 })

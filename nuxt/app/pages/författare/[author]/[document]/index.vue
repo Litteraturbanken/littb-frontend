@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ordinaryBackground from "~/assets/img/forf2_bkg.jpg"
+import { canonicalNuxtHref } from "~/lib/internal-navigation"
 import type {
   AuthorDocumentErrorCode,
   AuthorDocumentKind,
@@ -223,10 +224,10 @@ useHead(() => ({
         <nav aria-label="Författarsidor">
           <ul class="links">
             <li v-if="page.author.hasIntroduction">
-              <a :href="rootHref">Introduktion</a>
+              <NuxtLink :to="canonicalNuxtHref(rootHref)">Introduktion</NuxtLink>
             </li>{{ " " }}
             <li>
-              <a :href="titlesHref">Verk</a>
+              <NuxtLink :to="canonicalNuxtHref(titlesHref)">Verk</NuxtLink>
             </li>{{ " " }}
             <li v-if="page.author.audioUrl">
               <a
@@ -236,10 +237,10 @@ useHead(() => ({
               >Ljud</a>
             </li>{{ " " }}
             <li v-if="page.author.hasDramawebben">
-              <a :href="dramawebbenHref">Dramawebben</a>
+              <NuxtLink :to="canonicalNuxtHref(dramawebbenHref)">Dramawebben</NuxtLink>
             </li>{{ " " }}
             <li v-if="page.author.searchUrl">
-              <a :href="page.author.searchUrl">Sök i texterna</a>
+              <NuxtLink :to="canonicalNuxtHref(page.author.searchUrl)">Sök i texterna</NuxtLink>
             </li>
           </ul>
         </nav>
