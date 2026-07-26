@@ -880,16 +880,16 @@ test("normal source information renders exact actions and source metadata", asyn
 
   await expect(dialog.locator(".header .author a")).toHaveAttribute(
     "href",
-    "/författare/S%C3%B6derbergH"
+    "/f%C3%B6rfattare/S%C3%B6derbergH"
   )
   await expect(dialog.locator(".header .title")).toHaveText("Doktor Glas. Roman")
   await expect(dialog.locator(".sourcedesc")).toHaveText(
     "Albert Bonniers förlag, Stockholm 1905."
   )
   await expect(dialog.locator(".mediatypes").getByRole("link", { name: "etext" }))
-    .toHaveAttribute("href", "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext")
   await expect(dialog.locator(".mediatypes").getByRole("link", { name: "faksimil" }))
-    .toHaveAttribute("href", "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/faksimil")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/faksimil")
   const epub = dialog.locator(".mediatypes_also").getByRole("link", { name: /epub/ })
   await expect(epub).toHaveAttribute("href", "/txt/epub/S%C3%B6derbergH_DoktorGlas.epub")
   await expect(epub).toHaveAttribute("download", "SöderbergH_DoktorGlas.epub")
@@ -1028,15 +1028,15 @@ test("drama source information renders drama facts, attributions, and exact targ
   expect(Math.abs(sliderGeometry.selectionRight - sliderGeometry.pointerCenter)).toBeLessThanOrEqual(1)
   expect(Math.abs(sliderGeometry.pointerRight - sliderGeometry.trackRight)).toBeLessThanOrEqual(1)
   await expect(dialog.locator(".header .author a"))
-    .toHaveAttribute("href", "/författare/Alml%C3%B6fN")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/Alml%C3%B6fN")
   await expect(dialog.locator(".sourcedesc")).toHaveText("Stockholm, 1871.")
   await expect(dialog).toContainText("Dramawebbens redaktion")
   await expect(dialog.locator(".workintro")).toContainText("En komedi i fem akter.")
   await expect(dialog).toContainText("Ulrika Lindgren")
   await expect(dialog.locator(".mediatypes").getByRole("link", { name: "etext" }))
-    .toHaveAttribute("href", "/författare/Alml%C3%B6fN/titlar/Affarer/sida/-2/etext")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/Alml%C3%B6fN/titlar/Affarer/sida/-2/etext")
   await expect(dialog.locator(".mediatypes").getByRole("link", { name: "faksimil" }))
-    .toHaveAttribute("href", "/författare/Alml%C3%B6fN/titlar/Affarer/sida/-2/faksimil")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/Alml%C3%B6fN/titlar/Affarer/sida/-2/faksimil")
   await expect(dialog.locator(".dramaweb table")).toContainText("Antal akter")
   await expect(dialog.locator(".dramaweb table")).toContainText("5")
   const roles = dialog.locator(".dramaweb > div").filter({ hasText: "Rollista" }).locator("> div")

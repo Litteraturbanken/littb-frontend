@@ -3,6 +3,9 @@ import { readFile } from "node:fs/promises"
 import { resolve } from "node:path"
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
+import {
+  isSameOriginRegisteredNuxtAsset
+} from "../helpers/registered-nuxt-asset"
 import { waitForVisualAssets } from "../helpers/visual"
 
 test.use({ serviceWorkers: "block" })
@@ -65,6 +68,8 @@ async function resetReader(request: APIRequestContext) {
     request.delete(`${fixture}/_reader_ocr_requests`),
     request.delete(`${fixture}/_reader_jpeg_requests`),
     request.delete(`${fixture}/_reader_hit_requests`),
+    request.delete(`${fixture}/_similar_work_requests`),
+    request.delete(`${fixture}/_similar_work_failure`),
     request.delete(`${fixture}/_source_info_requests`),
     request.delete(`${fixture}/_source_info_static_requests`),
     request.delete(`${fixture}/_source_info_failure`),
@@ -105,49 +110,6 @@ function captureBrowserProblems(page: Page) {
   return problems
 }
 
-function isRegisteredNuxtAsset(url: URL) {
-  if (!url.pathname.startsWith("/_nuxt/")) return false
-  if (url.search === "") return true
-  if (url.searchParams.size === 1) {
-    const version = url.searchParams.get("v") ?? ""
-    if (/^[a-f0-9]{8}$/u.test(version) && /\.m?js$/u.test(url.pathname)) return true
-    if (
-      version === "4.4.0"
-      && /\/font-awesome\/fonts\/fontawesome-webfont\.(?:ttf|woff2?)$/u.test(url.pathname)
-    ) return true
-  }
-  if (
-    url.searchParams.size === 1
-    && url.searchParams.get("macro") === "true"
-    && /\.(?:js|ts|vue)$/u.test(url.pathname)
-  ) return true
-  if (
-    url.searchParams.size === 1
-    && url.searchParams.has("import")
-    && url.searchParams.get("import") === ""
-    && /\.(?:gif|jpe?g|png|svg|webp)$/u.test(url.pathname)
-  ) return true
-
-  const componentName = /\/([A-Z][A-Za-z0-9]*)\.vue$/u.exec(url.pathname)?.[1]
-  if (
-    componentName
-    && url.searchParams.size === 3
-    && url.searchParams.get("nuxt_component") === "async"
-    && url.searchParams.get("nuxt_component_name") === componentName
-    && url.searchParams.get("nuxt_component_export") === "default"
-  ) return true
-
-  const styleQueryKeys = ["vue", "type", "index", "scoped", "lang.css"]
-  return url.pathname.endsWith(".vue")
-    && url.searchParams.size === styleQueryKeys.length
-    && styleQueryKeys.every(key => url.searchParams.has(key))
-    && url.searchParams.get("vue") === ""
-    && url.searchParams.get("type") === "style"
-    && /^\d+$/u.test(url.searchParams.get("index") ?? "")
-    && /^[a-f0-9]{8}$/u.test(url.searchParams.get("scoped") ?? "")
-    && url.searchParams.get("lang.css") === ""
-}
-
 function isRegisteredBrowserRequest(url: URL, route: string, method: string) {
   if (method !== "GET" || url.origin !== nuxtOrigin) return false
   const expectedDocument = new URL(route, nuxtOrigin)
@@ -155,7 +117,7 @@ function isRegisteredBrowserRequest(url: URL, route: string, method: string) {
     url.pathname === expectedDocument.pathname &&
     url.search === expectedDocument.search
   ) return true
-  if (isRegisteredNuxtAsset(url)) return true
+  if (isSameOriginRegisteredNuxtAsset(url, nuxtOrigin)) return true
   return url.search === "" && [
     /^\/red\/css\/etext\.css$/u,
     /^\/txt\/css\/(?:lb-reader-doktor-glas|lb31230|lbLongErrata1)-etext\.css$/u,
@@ -205,6 +167,22 @@ test.beforeAll(async () => {
     "GET"
   )).toBe(false)
   expect(isRegisteredBrowserRequest(
+    new URL(
+      "/_nuxt/@fs/project/node_modules/nuxt/dist/app/entry.js?t=1785071874909&v=40bb0872",
+      nuxtOrigin
+    ),
+    normalPath,
+    "GET"
+  )).toBe(true)
+  expect(isRegisteredBrowserRequest(
+    new URL(
+      "/_nuxt/@fs/project/node_modules/nuxt/dist/app/entry.js?t=1785071874909&v=40bb0872",
+      `http://127.0.0.1:${nuxtPort + 1}`
+    ),
+    normalPath,
+    "GET"
+  )).toBe(false)
+  expect(isRegisteredBrowserRequest(
     new URL("/txt/lb1728740/unexpected.jpeg", nuxtOrigin),
     normalPath,
     "GET"
@@ -221,7 +199,12 @@ test.afterAll(async () => {
   await assertBaselineManifest(sourceInfoAuthorityManifest)
 })
 
-test.beforeEach(async ({ request }) => resetReader(request))
+test.beforeEach(async ({ request }) => {
+  await resetReader(request)
+  // Recommendations have their own visual/behavior authority. Keep this
+  // source-information snapshot focused on the pre-existing modal sections.
+  await request.put(`${fixture}/_similar_work_failure`)
+})
 test.afterEach(async ({ request }) => resetReader(request))
 
 const visualCases = [
@@ -330,6 +313,23 @@ for (const visualCase of visualCases) {
         getComputedStyle(element).boxShadow
       )).not.toBe("none")
       await expect(dialog.locator("button.close_btn")).toHaveText("Stäng")
+      const internalLinkHrefs = await dialog
+        .locator(
+          "h2.author a, .mediatypes:not(.sc) > a, "
+          + ".mediatypes:not(.sc) > span > a, .reader-similar-works a"
+        )
+        .evaluateAll(links => links.map(link => link.getAttribute("href")))
+      expect(internalLinkHrefs.length).toBeGreaterThan(0)
+      expect(internalLinkHrefs.every(href => href?.startsWith("/f%C3%B6rfattare/")))
+        .toBe(true)
+      expect(await page.evaluate(hrefs => {
+        const nuxt = (globalThis as typeof globalThis & {
+          useNuxtApp: () => {
+            $router: { resolve: (href: string) => { matched: unknown[] } }
+          }
+        }).useNuxtApp()
+        return hrefs.map(href => href === null ? 0 : nuxt.$router.resolve(href).matched.length)
+      }, internalLinkHrefs)).not.toContain(0)
       const activeElement = await page.evaluate(() => {
         if (document.activeElement === document.querySelector(".modal.about")) {
           return ".modal.about"

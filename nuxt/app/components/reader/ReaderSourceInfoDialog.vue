@@ -6,6 +6,7 @@ import type {
   ReaderSourceInfoDramaFact
 } from "#shared/types/reader-source-info"
 import type { components } from "~/lib/api/generated/lbapi"
+import { canonicalNuxtHref } from "~/lib/internal-navigation"
 
 type SimilarWork = components["schemas"]["SimilarWork"]
 
@@ -65,7 +66,7 @@ function hideBrokenImage(event: Event): void {
 }
 
 function similarWorkHref(work: SimilarWork): string {
-  return [
+  return canonicalNuxtHref([
     "",
     "författare",
     work.author_id,
@@ -74,7 +75,7 @@ function similarWorkHref(work: SimilarWork): string {
     "sida",
     work.start_page,
     work.media_type
-  ].map((segment, index) => index === 0 ? segment : encodeURIComponent(segment)).join("/")
+  ].map((segment, index) => index === 0 ? segment : encodeURIComponent(segment)).join("/"))
 }
 
 watch(() => props.sourceInfo?.workId, () => {
@@ -131,7 +132,7 @@ onMounted(() => {
                   <template v-if="index > 0"><template
                     v-if="index === sourceInfo.authors.length - 1"
                   > <em class="font-normal">&amp;</em> </template><template v-else>, </template></template><NuxtLink
-                    :to="author.url"
+                    :to="canonicalNuxtHref(author.url)"
                   >{{ author.fullName }} <span
                     v-if="authorRole(author.authorType, author.role)"
                     class="authortype"
@@ -162,11 +163,11 @@ onMounted(() => {
                 ><NuxtLink
                   v-if="index === 0"
                   class="sc hover:underline"
-                  :to="action.url"
+                  :to="canonicalNuxtHref(action.url)"
                 >{{ action.label }}</NuxtLink><span v-else>
                   eller <NuxtLink
                     class="sc hover:underline"
-                    :to="action.url"
+                    :to="canonicalNuxtHref(action.url)"
                   >{{ action.label }}</NuxtLink>
                 </span></template></div>
 

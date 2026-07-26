@@ -21,4 +21,13 @@ describe("Playwright project boundaries", () => {
     expect(matches(mobile?.testMatch, spec)).toBe(true)
     expect(matches(mobile?.testIgnore, spec)).toBe(false)
   })
+
+  test("bypasses only the Nuxt checkout lock while keeping isolated servers non-reusable", () => {
+    const servers = Array.isArray(config.webServer) ? config.webServer : [config.webServer]
+    const nuxtServer = servers.find(server => server?.command.includes("yarn dev"))
+
+    expect(nuxtServer?.command).toContain("NUXT_IGNORE_LOCK=1 yarn dev")
+    expect(nuxtServer?.reuseExistingServer).toBe(false)
+    expect(servers.every(server => server?.reuseExistingServer === false)).toBe(true)
+  })
 })
