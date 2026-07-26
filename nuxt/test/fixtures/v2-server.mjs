@@ -1671,11 +1671,28 @@ const textSearchTitleCatalog = [
 
 function textSearchOptionsResponse(body) {
   const titleFilter = body.title_filter.toLocaleLowerCase("sv")
-  if (titleFilter === "overflow") {
+  if (titleFilter === "doktor") {
+    const visibleCount = body.title_limit === 500 ? 41 : Math.min(body.title_limit, 30)
     return {
       authors: [],
       about_authors: [],
-      title_options: Array.from({ length: 30 }, (_, index) => ({
+      title_options: Array.from({ length: visibleCount }, (_, index) => ({
+        work_id: `lb-doktor-${index + 1}`,
+        title: `Doktortitel ${index + 1}`,
+        author_name: "Test Doktor"
+      })),
+      title_author_facets: [],
+      title_total: 43,
+      year_from: null,
+      year_to: null
+    }
+  }
+  if (titleFilter === "overflow" || (body.query === "overflow" && !titleFilter)) {
+    const visibleCount = Math.min(body.title_limit, 731)
+    return {
+      authors: [],
+      about_authors: [],
+      title_options: Array.from({ length: visibleCount }, (_, index) => ({
         work_id: `lb-overflow-${index + 1}`,
         title: `Överflödestitel ${index + 1}`,
         author_name: "Test Överflöd"

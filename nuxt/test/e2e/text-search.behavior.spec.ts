@@ -724,6 +724,52 @@ test("static options are lazy and cached while title search is exact 250 ms late
   await expect(page.getByRole("option", { name: "Röda rummet" })).toHaveCount(0)
 })
 
+test("title disclosure loads the expanded set and retries a local failure", async ({
+  page,
+  request
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=overflow&avancerad=1")
+  await request.delete(`${fixture}/_text_search/requests/options`)
+  await request.put(`${fixture}/_text_search/failures`, {
+    data: { operation: "options" }
+  })
+
+  await page.getByRole("button", {
+    name: "Visa alla 731 titlar"
+  }).click()
+  await expect.poll(async () => (await requests(request, "options")).at(-1)?.body)
+    .toMatchObject({
+      title_filter: "",
+      title_limit: 500,
+      include_static_options: false
+    })
+  const failure = page.getByRole("alert")
+  await expect(failure).toContainText("Fler titlar kunde inte hämtas")
+
+  await request.delete(`${fixture}/_text_search/failures/options`)
+  await failure.getByRole("button", { name: "Försök igen" }).click()
+  await expect.poll(async () => (await requests(request, "options")).length).toBe(2)
+  await page.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  await expect(page.getByRole("option", { name: "Överflödestitel 500" })).toBeVisible()
+})
+
+test("filtered title disclosure stops after every distinct option is loaded", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?fras=frihet&avancerad=1")
+  await page.locator(".title_select input.select2-search__field").fill("doktor")
+  const showAll = page.getByRole("button", {
+    name: "Visa alla 43 matchande titlar"
+  })
+  await expect(showAll).toBeVisible()
+  await showAll.click()
+  await expect(page.getByText("Visar de första 41 matchande titlarna", { exact: true }))
+    .toBeVisible()
+  await expect(showAll).toHaveCount(0)
+  await page.getByRole("button", { name: "Visa alternativ för Titlar" }).click()
+  await expect(page.getByRole("option", { name: "Doktortitel 41" })).toBeVisible()
+})
+
 test("primary and count owners cancel stale work and recover independently", async ({
   page,
   request

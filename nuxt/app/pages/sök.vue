@@ -589,7 +589,13 @@ let titleVersion = 0
 let titleController: AbortController | null = null
 let titleTimer: ReturnType<typeof setTimeout> | null = null
 const titleLoading = ref(false)
+const titleOptionsFailed = ref(false)
+const titleOptionsExpanded = ref(false)
 const titleFilterText = ref("")
+watch(routeIdentity, () => {
+  titleOptionsExpanded.value = false
+  titleOptionsFailed.value = false
+})
 async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) {
   const requestedState = state.value
   const identity = textSearchRouteIdentity(requestedState)
@@ -598,6 +604,7 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
   const controller = new AbortController()
   titleController = controller
   titleLoading.value = true
+  titleOptionsFailed.value = false
   const body = buildTextSearchOptionsRequest(requestedState, {
     titleFilter,
     selectedWorkIds: requestedState.workIds,
@@ -620,10 +627,15 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
         titles: optionsView(accepted).titles,
         titleTotal: accepted.title_total
       }
+      titleOptionsExpanded.value = titleLimit === 500
+    } else if (version === titleVersion && identity === routeIdentity.value) {
+      titleOptionsFailed.value = true
     }
   } catch (error) {
     if (!(error instanceof DOMException && error.name === "AbortError")) {
-      // A failed typeahead leaves the last accepted choices in place.
+      if (version === titleVersion && identity === routeIdentity.value) {
+        titleOptionsFailed.value = true
+      }
     }
   } finally {
     if (version === titleVersion) titleLoading.value = false
@@ -631,6 +643,7 @@ async function loadTitleOptions(titleFilter: string, titleLimit: 30 | 500 = 30) 
 }
 
 function queueTitleOptions(titleFilter: string) {
+  if (titleFilterText.value !== titleFilter) titleOptionsExpanded.value = false
   titleFilterText.value = titleFilter
   if (titleTimer) clearTimeout(titleTimer)
   titleTimer = setTimeout(() => {
@@ -652,6 +665,8 @@ function cancelTitleOptions() {
   titleController?.abort()
   titleController = null
   titleLoading.value = false
+  titleOptionsFailed.value = false
+  titleOptionsExpanded.value = false
 }
 
 const authorChoices = computed<SearchMultiSelectOption[]>(() => {
@@ -1194,16 +1209,32 @@ useHead({
             />
           </div>
           <div class="title_select_container">
-            <div v-if="(options?.titleTotal ?? 0) > 30" class="title_limit_notice">
+            <div
+              v-if="(options?.titleTotal ?? 0) > (options?.titles.length ?? 0)"
+              class="title_limit_notice"
+            >
               {{ titleFilterText
-                ? "Visar de första 30 matchande titlarna"
-                : "Visar de första 30 titlarna" }}
-              <button type="button" @click="showAllTitleOptions">
+                ? `Visar de första ${options?.titles.length} matchande titlarna`
+                : `Visar de första ${options?.titles.length} titlarna` }}
+              <button
+                v-if="!titleOptionsExpanded && !titleOptionsFailed"
+                type="button"
+                @mousedown.prevent
+                @click="showAllTitleOptions"
+              >
                 {{ titleFilterText
                   ? `Visa alla ${options?.titleTotal} matchande titlar`
                   : `Visa alla ${options?.titleTotal} titlar` }}
               </button>
             </div>
+            <p v-if="titleOptionsFailed" class="title_options_error" role="alert">
+              Fler titlar kunde inte hämtas.
+              <button
+                type="button"
+                @mousedown.prevent
+                @click="showAllTitleOptions"
+              >Försök igen</button>
+            </p>
             <SearchMultiSelect
               class="title_select"
               persistent-input-row
