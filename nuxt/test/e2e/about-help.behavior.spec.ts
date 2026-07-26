@@ -66,9 +66,18 @@ test.beforeAll(async ({ baseURL, browser, request }) => {
     expect(response?.status()).toBe(200)
     expect(browserContentRequests).toEqual([])
   } finally {
-    await context.close()
+    const cleanup = await Promise.allSettled([
+      context.close(),
+      reset(request)
+    ])
+    const failures = cleanup.filter(result => result.status === "rejected")
+    if (failures.length > 0) {
+      throw new AggregateError(
+        failures.map(result => (result as PromiseRejectedResult).reason),
+        "Help cold-hydration cleanup failed"
+      )
+    }
   }
-  await reset(request)
 })
 test.beforeEach(async ({ request }) => reset(request))
 

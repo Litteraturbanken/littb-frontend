@@ -1,6 +1,9 @@
 import type { EditorFacsimileSource, EditorReaderPage } from "#shared/types/editor-reader"
-import { sanitizeEditorEtextHtml } from "#server/utils/editor-reader-html"
-import { fetchReaderPageHtml } from "#server/utils/reader-source"
+import {
+  fetchBoundedEditorText,
+  maximumEditorHtmlLength,
+  sanitizeEditorEtextHtml
+} from "#server/utils/editor-reader-html"
 import { parseHTML } from "linkedom"
 
 const workIdPattern = /^[A-Za-z0-9_-]{1,100}$/
@@ -78,7 +81,7 @@ function safePagesLength(value: unknown): number | null {
     ) return null
     indexes.add(pageIndex)
   }
-  return value.length
+  return Math.max(...indexes) + 1
 }
 
 function editorFacsimileUrl(workId: string, size: number, pageIndex: number): string {
@@ -285,9 +288,17 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
       ? safeInternalHref((representation.mediatypes[0] as { url?: unknown }).url)
       : null
   ) ?? editorCloseHref(representations)
-  const html = mediaType === "etext"
-    ? await fetchReaderPageHtml(base, workId, pageIndex)
-    : null
+  let html: string | null = null
+  if (mediaType === "etext") {
+    try {
+      const filename = String(pageIndex).padStart(5, "0")
+      const url = new URL(`${base}/txt/${encodeURIComponent(workId)}/res_${filename}.html`)
+      url.searchParams.set("username", "app")
+      html = await fetchBoundedEditorText(url, maximumEditorHtmlLength)
+    } catch {
+      sourceError()
+    }
+  }
   const facsimileSources = mediaType === "faksimil"
     ? editorFacsimileSources(representation, workId, pageIndex)
     : []
@@ -307,9 +318,9 @@ export default defineEventHandler(async (event): Promise<EditorReaderPage> => {
   if (mediaType === "faksimil") {
     try {
       const filename = String(pageIndex).padStart(5, "0")
-      const rawOverlay = await $fetch<string>(`${base}/txt/${encodeURIComponent(workId)}/ocr_${filename}.html`, {
-        query: { username: "app" }, responseType: "text", retry: 0
-      })
+      const url = new URL(`${base}/txt/${encodeURIComponent(workId)}/ocr_${filename}.html`)
+      url.searchParams.set("username", "app")
+      const rawOverlay = await fetchBoundedEditorText(url, maxOverlayLength)
       const overlay = parseOverlay(rawOverlay)
       if (overlay) {
         overlayHtml = overlay.html

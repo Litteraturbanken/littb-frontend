@@ -1,6 +1,6 @@
 import { parseHTML } from "linkedom"
 
-const maximumEditorHtmlLength = 2 * 1024 * 1024
+export const maximumEditorHtmlLength = 2 * 1024 * 1024
 const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/u
 const activeTags = new Set([
   "APPLET", "BASE", "EMBED", "FORM", "IFRAME", "LINK", "META", "NOSCRIPT",
@@ -41,6 +41,62 @@ interface SanitizedElement {
   replaceWith: (...nodes: unknown[]) => void
   setAttribute: (name: string, value: string) => void
   tagName: string
+}
+
+type EditorTextFetcher = (
+  input: string | URL,
+  init?: RequestInit
+) => Promise<Response>
+
+export async function fetchBoundedEditorText(
+  url: string | URL,
+  maximumBytes: number,
+  options: {
+    fetcher?: EditorTextFetcher
+    timeoutMs?: number
+  } = {}
+): Promise<string> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(new Error("Editor source timeout")),
+    options.timeoutMs ?? 10_000)
+  try {
+    const response = await (options.fetcher ?? globalThis.fetch)(url, {
+      redirect: "error",
+      signal: controller.signal
+    })
+    if (!response.ok) throw new Error("Invalid bounded source response")
+    const declaredLength = response.headers.get("content-length")
+    if (declaredLength !== null) {
+      const declaredBytes = Number(declaredLength)
+      if (!Number.isSafeInteger(declaredBytes) || declaredBytes < 0 || declaredBytes > maximumBytes) {
+        throw new Error("Invalid bounded source length")
+      }
+    }
+    if (!response.body) throw new Error("Missing bounded source body")
+
+    const reader = response.body.getReader()
+    const chunks: Uint8Array[] = []
+    let total = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      total += value.byteLength
+      if (total > maximumBytes) {
+        await reader.cancel("Editor source exceeds bound")
+        throw new Error("Invalid bounded source length")
+      }
+      chunks.push(value)
+    }
+    const bytes = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset)
+      offset += chunk.byteLength
+    }
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes)
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 function safeIdentifier(value: string): boolean {

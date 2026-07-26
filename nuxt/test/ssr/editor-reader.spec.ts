@@ -109,13 +109,25 @@ test("SSR derives editor page count from a valid pages array", async ({ request 
   expect(apiResponse.status()).toBe(200)
   expect(await apiResponse.json()).toMatchObject({
     metadataAvailable: true,
-    pageCount: 3,
+    pageCount: 4,
     pageIndex: 2
   })
 
   const response = await request.get("/editor/lb-reader-doktor-glas/ix/2/e")
   expect(response.status()).toBe(200)
   expect((await response.text())).toContain("DOKTOR")
+})
+
+test("SSR derives sparse raw Editor bounds from the largest page index", async ({ request }) => {
+  const response = await request.get("/api/editor/lb-editor-sparse/12/f")
+
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toMatchObject({
+    pageCount: 58,
+    pageIndex: 12,
+    nextIndex: 13,
+    previousIndex: 11
+  })
 })
 
 test("SSR selects the requested representation and derives the close target from raw works", async ({

@@ -3110,6 +3110,23 @@ const server = createServer(async (request, response) => {
         }]
       })
     }
+    if (editorWorkId === "lb-editor-sparse") {
+      return sendJson(response, 200, {
+        hits: 1,
+        data: [{
+          ...structuredClone(readerWorkInfoResponse.data[0]),
+          lbworkid: editorWorkId,
+          mediatype: "faksimil",
+          pages: [
+            { pagename: "2", pageindex: 2 },
+            { pagename: "12", pageindex: 12 },
+            { pagename: "57", pageindex: 57 }
+          ],
+          page_count: null,
+          width: { size_3: 625 }
+        }]
+      })
+    }
     if (editorWorkId === "lb-editor-missing-image") {
       return sendJson(response, 200, {
         hits: 1,
@@ -3227,7 +3244,7 @@ const server = createServer(async (request, response) => {
 
   if (
     ["GET", "HEAD"].includes(request.method) &&
-    /^\/txt\/(lb-editor-(?:doktor|fallback|no-ocr|mixed|long))\/\1_[234]\/\1_[234]_\d{4}\.jpeg$/.test(url.pathname)
+    /^\/txt\/(lb-editor-(?:doktor|fallback|no-ocr|mixed|long|sparse))\/\1_[234]\/\1_[234]_\d{4}\.jpeg$/.test(url.pathname)
   ) {
     return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }
