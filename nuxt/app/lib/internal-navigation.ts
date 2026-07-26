@@ -1,5 +1,5 @@
 import { validatePresentationSegments } from "./presentation-routes"
-import { isSlaArticleId } from "../../shared/types/sla-article"
+import { isSlaArticleId } from "#shared/types/sla-article"
 
 const authorPrefixes = ["/forfattare", "/författare", "/f%C3%B6rfattare"] as const
 const searchPrefixes = ["/sok", "/sök", "/s%C3%B6k"] as const

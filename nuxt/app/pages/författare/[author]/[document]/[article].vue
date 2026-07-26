@@ -7,7 +7,7 @@ import {
   type SlaArticleErrorCode,
   type SlaArticleId,
   type SlaArticlePage
-} from "~~/shared/types/sla-article"
+} from "#shared/types/sla-article"
 
 type UnknownRecord = Record<string, unknown>
 type PageResult = {
