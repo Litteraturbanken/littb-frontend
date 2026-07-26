@@ -19,7 +19,7 @@ import {
 describe("reader route links", () => {
   test("encodes every dynamic segment without encoding route separators", () => {
     expect(readerAuthorHref("Söderberg/H? #")).toBe(
-      "/författare/S%C3%B6derberg%2FH%3F%20%23"
+      "/f%C3%B6rfattare/S%C3%B6derberg%2FH%3F%20%23"
     )
     expect(readerPageHref({
       author: "Söderberg/H? #",
@@ -27,7 +27,7 @@ describe("reader route links", () => {
       page: "-2?x#y/z",
       mediaType: "e/text"
     })).toBe(
-      "/författare/S%C3%B6derberg%2FH%3F%20%23" +
+      "/f%C3%B6rfattare/S%C3%B6derberg%2FH%3F%20%23" +
       "/titlar/Doktor%20Glas%2Futkast" +
       "/sida/-2%3Fx%23y%2Fz/e%2Ftext"
     )
@@ -46,7 +46,7 @@ describe("reader route links", () => {
         tom: ""
       }
     })).toBe(
-      "/författare/S%C3%B6derbergH/titlar/Doktor%20Glas/sida/-2/etext" +
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/Doktor%20Glas/sida/-2/etext" +
       "?q=glas+%26+%C3%B6ga&hit=1&return=%2Fs%C3%B6k%3Ffras%3Ddoktor+glas&tom="
     )
   })
@@ -65,7 +65,7 @@ describe("reader route links", () => {
         unknown: "bevara & koda"
       }
     })).toBe(
-      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" +
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" +
       "?q=doktor+glas&hit=4&lemma=1&unknown=bevara+%26+koda"
     )
   })
@@ -89,7 +89,7 @@ describe("reader route links", () => {
       mediaType: "etext",
       query
     })).toBe(
-      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" + serialized
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext" + serialized
     )
     expect(readerHitHref({
       author: "SöderbergH",
@@ -99,7 +99,7 @@ describe("reader route links", () => {
       hit: 0,
       query
     })).toBe(
-      "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
+      "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
       serialized.replace("hit=1", "hit=0")
     )
   })

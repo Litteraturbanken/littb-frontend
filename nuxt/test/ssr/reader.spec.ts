@@ -116,7 +116,7 @@ test("the exact Doktor Glas page is complete in the SSR response", async ({ requ
   expect(html).toContain("GLAS")
   expect(html).toContain("HJALMAR SÖDERBERG")
   expect(html).toContain("-2 av 3")
-  expect(html).toContain('href="/författare/S%C3%B6derbergH"')
+  expect(html).toContain('href="/f%C3%B6rfattare/S%C3%B6derbergH"')
   expect(html).toContain('href="/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext"')
   expect(html).toContain('href="/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"')
   expect(html).not.toContain("Hämtar sida")
@@ -165,7 +165,7 @@ test("legacy main-author contribution is present in the Reader SSR fallback", as
     'class="reader-context-ssr" aria-label="Läsinformation och sidnavigering"'
   )
   expect(html).toContain(
-    'href="/författare/LongErrataA">Rita Redaktör <span class="authortype">red.</span></a>'
+    'href="/f%C3%B6rfattare/LongErrataA">Rita Redaktör <span class="authortype">red.</span></a>'
   )
 })
 
@@ -312,7 +312,7 @@ test("partful SSR exposes one raw-preserving contents trigger without a dialog t
   expect(await partless.text()).not.toContain(">Innehållsförteckning</a>")
 })
 
-test("canonical API returns the exact faksimil image arm without fetching assets", async ({
+test("canonical API returns the exact searchable faksimil arm with selectable OCR", async ({
   request
 }) => {
   const response = await request.get(
@@ -320,6 +320,7 @@ test("canonical API returns the exact faksimil image arm without fetching assets
   )
   expect(response.status()).toBe(200)
   expect(await response.json()).toEqual({
+    alternateMedia: null,
     author: {
       authorType: null,
       id: "LagerlöfS",
@@ -327,8 +328,10 @@ test("canonical API returns the exact faksimil image arm without fetching assets
       role: null
     },
     description: "Gösta Berlings saga av Selma Lagerlöf, sida 3 som faksimil.",
+    editorWorkId: null,
     fullTitle: "Gösta Berlings saga. Roman",
     hasDramawebben: false,
+    hasNyaVagar: false,
     currentPartIndex: 0,
     endPageName: "5",
     imageNumber: 9,
@@ -337,6 +340,11 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     mediaType: "faksimil",
     nextPageName: "5",
     nextPartPageName: null,
+    ocrOverlay: {
+      height: 900,
+      html: '<div data-size="625x900"><span id="w1_147" class="w">OCR fixture</span></div>',
+      width: 625
+    },
     pageCount: 3,
     pageIndex: 1,
     pageMap: [
@@ -362,6 +370,7 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     previousPageName: "1",
     previousPartPageName: "1",
     searchable: true,
+    sliderMaximum: null,
     sliderPercent: 0,
     sources: [
       {
@@ -395,6 +404,7 @@ test("canonical API returns the exact faksimil image arm without fetching assets
     ],
     startPageName: "3",
     title: "Gösta Berlings saga",
+    urn: null,
     workId: "lb-reader-gosta-berlings-saga"
   })
   expect(await separateReaderRequests(request)).toEqual({
@@ -403,7 +413,7 @@ test("canonical API returns the exact faksimil image arm without fetching assets
         "&exclude=content_vector&titlepath=GostaBerlingsSaga"
     ],
     html: [],
-    ocr: [],
+    ocr: ["/txt/lb-reader-gosta-berlings-saga/ocr_00001.html"],
     jpeg: []
   })
   expect(await readerHitRequests(request)).toEqual([])
@@ -429,6 +439,9 @@ test("real faksimil search hit falls back to backend metadata when the asset sou
   expect(html).toContain(
     'src="/txt/lb3203777/lb3203777_3/lb3203777_3_0058.jpeg"'
   )
+  expect(html).toMatch(
+    /id="w58_123"[^>]*class="[^"]*\bmarkee\b|class="[^"]*\bmarkee\b[^"]*"[^>]*id="w58_123"/
+  )
   expect(await separateReaderRequests(request)).toEqual({
     metadata: [
       "/api/get_work_info?authorid=AarnsethF&exclude=content_vector&titlepath=Rallarliv",
@@ -436,7 +449,7 @@ test("real faksimil search hit falls back to backend metadata when the asset sou
         "&exclude=content_vector&titlepath=Rallarliv"
     ],
     html: [],
-    ocr: [],
+    ocr: ["/txt/lb3203777/ocr_00057.html"],
     jpeg: []
   })
   expect(await readerHitRequests(request)).toEqual([])
@@ -756,16 +769,22 @@ test("an advertised direct faksimil size is server-rendered without a density pa
   expect(html).toContain("/sida/5/faksimil?storlek=4")
 })
 
-test("canonical faksimil requires an exact representation", async ({ request }) => {
+test("canonical faksimil selects the requested alternate representation", async ({ request }) => {
   const response = await request.get(
     "/api/reader/S%C3%B6derbergH/DoktorGlas/-2/faksimil"
   )
-  expect(response.status()).toBe(404)
+  expect(response.status()).toBe(200)
+  expect(await response.json()).toMatchObject({
+    alternateMedia: { mediaType: "etext", pageName: "-2" },
+    imageNumber: 2,
+    mediaType: "faksimil",
+    pageIndex: 2,
+    pageName: "-2",
+    workId: "lb-reader-doktor-glas"
+  })
   expect(await separateReaderRequests(request)).toEqual({
     metadata: [
       "/api/get_work_info?authorid=S%C3%B6derbergH" +
-        "&exclude=content_vector&titlepath=DoktorGlas",
-      "/legacy-api/get_work_info?authorid=S%C3%B6derbergH" +
         "&exclude=content_vector&titlepath=DoktorGlas"
     ],
     html: [],
@@ -840,11 +859,11 @@ test("canonical search state fetches one private hit window and marks its exact 
     "?q=doktor%20glas&amp;hit=1&amp;unknown=bevara%20mig\""
   )
   expect(html).toContain(
-    "href=\"/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
+    "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-3/etext" +
     "?q=doktor+glas&amp;hit=0&amp;unknown=bevara+mig\""
   )
   expect(html).toContain(
-    "href=\"/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
+    "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext" +
     "?q=doktor+glas&amp;hit=2&amp;unknown=bevara+mig\""
   )
 })
@@ -865,7 +884,7 @@ test("work-scoped word ids are bound to the Reader work and mark the exact live 
   expect(html).toMatch(/id="lb7604979_8658"[^>]*class="[^"]*\bmarkee\b|class="[^"]*\bmarkee\b[^"]*"[^>]*id="lb7604979_8658"/)
   expect(html).toContain("Sökträff 1 av 2")
   expect(html).toContain(
-    "href=\"/författare/S%C3%B6derbergH/titlar/WorkScopedIdsReader/sida/-1/etext" +
+    "href=\"/f%C3%B6rfattare/S%C3%B6derbergH/titlar/WorkScopedIdsReader/sida/-1/etext" +
     "?q=kyrka&amp;hit=1\""
   )
 })

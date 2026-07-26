@@ -114,6 +114,7 @@ export const readerAarnsethFacsimileWorkInfoResponse = {
       startpagename: "3",
       endpagename: "99",
       parts: [],
+      searchable: true,
       title: "Rallarliv",
       titlepath: "Rallarliv",
       width: {

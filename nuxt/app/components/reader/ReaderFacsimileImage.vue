@@ -35,6 +35,15 @@ const sourceSet = computed(() => retinaSource.value
   ? `${selectedSource.value.url} 1x, ${retinaSource.value.url} 2x`
   : undefined
 )
+const overlayStyle = computed(() => {
+  const overlay = props.page.ocrOverlay
+  if (!overlay) return undefined
+  return {
+    width: `${overlay.width}px`,
+    height: `${overlay.height}px`,
+    transform: `scale(${selectedSource.value.width / overlay.width})`
+  }
+})
 const pageIdentity = computed(() => [
   props.page.workId,
   props.page.pageName,
@@ -53,6 +62,16 @@ watch(selectedSourceIdentity, () => {
 
 <template>
   <div class="img_area" :style="{ width: `${selectedSource.width}px` }">
+    <div
+      v-if="page.ocrOverlay"
+      class="reader-ocr-layer absolute left-0 top-0 overflow-hidden h-full w-full"
+    >
+      <div
+        class="overlay overflow-hidden origin-top-left"
+        :style="overlayStyle"
+        v-html="page.ocrOverlay.html"
+      />
+    </div>
     <img
       :key="selectedSourceIdentity"
       v-show="!imageFailed"

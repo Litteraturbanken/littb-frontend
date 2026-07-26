@@ -44,7 +44,8 @@ export default defineConfig({
       name: "mobile-chromium",
       testMatch: [
         /e2e\/.*\.visual\.spec\.ts/,
-        /e2e\/reader\.behavior\.spec\.ts/
+        /e2e\/reader\.behavior\.spec\.ts/,
+        /e2e\/library-advanced\.behavior\.spec\.ts/
       ],
       use: { ...devices["iPhone 13"], browserName: "chromium" }
     }

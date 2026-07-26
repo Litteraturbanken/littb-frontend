@@ -52,7 +52,7 @@ const dialogPanel = ref<HTMLElement | null>(null)
           <DialogTitle class="sr-only">Innehållsförteckning</DialogTitle>
 
           <div class="header">
-            <h2 class="author sc"><a :href="authorHref">{{ authorName }}</a></h2>
+            <h2 class="author sc"><NuxtLink :to="authorHref">{{ authorName }}</NuxtLink></h2>
             <h2 class="title">
               {{ title }} <span v-if="imprintYear">({{ imprintYear }})</span>
             </h2>
@@ -69,14 +69,18 @@ const dialogPanel = ref<HTMLElement | null>(null)
                   v-for="(author, authorIndex) in part.authors"
                   :key="readerPartAuthorKey(author.id, authorIndex)"
                   class="author"
-                ><a :href="readerAuthorHref(author.id)">{{ authorLabel(part, authorIndex) }}</a><span
+                ><NuxtLink :to="readerAuthorHref(author.id)">{{ authorLabel(part, authorIndex) }}</NuxtLink><span
                   v-if="authorIndex < part.authors.length - 1"
                 >, </span>{{ " " }}</span>
               </span><span class="title">
-                <a
-                  :href="partHrefs[partIndex]"
-                  @click.prevent="emit('select-page', part.startPageName)"
-                >{{ partLabel(part) }}</a>
+                <NuxtLink
+                  v-slot="{ href }"
+                  custom
+                  :to="partHrefs[partIndex]"
+                ><a
+                  :href="href || partHrefs[partIndex] || ''"
+                  @click.prevent.stop="emit('select-page', part.startPageName)"
+                >{{ partLabel(part) }}</a></NuxtLink>
               </span>
             </li>
           </ul>

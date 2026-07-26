@@ -2785,6 +2785,60 @@ function setChronologyDraft(endpoint: "from" | "to", value: string) {
   }
 }
 
+const chronologyPointerEndpoint = ref<"from" | "to" | null>(null)
+function chronologyPointerYear(event: PointerEvent): number | null {
+  const bounds = chronologyBounds.value
+  if (!bounds || !(event.currentTarget instanceof HTMLElement)) return null
+  const box = event.currentTarget.getBoundingClientRect()
+  const usableWidth = Math.max(1, box.width - 20)
+  const fraction = Math.max(0, Math.min(1, (event.clientX - box.left - 10) / usableWidth))
+  return Math.round(bounds.from + fraction * (bounds.to - bounds.from))
+}
+
+function beginChronologyPointer(event: PointerEvent) {
+  const track = event.currentTarget
+  if (
+    event.button !== 0
+    || !(track instanceof HTMLElement)
+  ) return
+  event.preventDefault()
+  const year = chronologyPointerYear(event)
+  if (year === null) return
+  const from = Number(chronologyFromDraft.value)
+  const to = Number(chronologyToDraft.value)
+  const fromDistance = Math.abs(year - from)
+  const toDistance = Math.abs(year - to)
+  chronologyPointerEndpoint.value = fromDistance < toDistance
+    ? "from"
+    : fromDistance > toDistance
+      ? "to"
+      : year < from ? "from" : "to"
+  track.setPointerCapture(event.pointerId)
+  setChronologyDraft(chronologyPointerEndpoint.value, String(year))
+}
+
+function moveChronologyPointer(event: PointerEvent) {
+  const endpoint = chronologyPointerEndpoint.value
+  if (!endpoint) return
+  const year = chronologyPointerYear(event)
+  if (year !== null) setChronologyDraft(endpoint, String(year))
+}
+
+function finishChronologyPointer(event: PointerEvent) {
+  const endpoint = chronologyPointerEndpoint.value
+  if (!endpoint) return
+  moveChronologyPointer(event)
+  chronologyPointerEndpoint.value = null
+  void commitChronologyDraft(endpoint, endpoint === "from"
+    ? chronologyFromDraft.value
+    : chronologyToDraft.value)
+}
+
+function cancelChronologyPointer() {
+  chronologyPointerEndpoint.value = null
+  resetChronologyDraft()
+}
+
 function resetChronologyDraft() {
   chronologyDraftDirty.value = false
   const range = routeState(route.path, route.query).advancedFilters.yearRange
@@ -3290,7 +3344,14 @@ onUnmounted(disposeLibraryRequest)
             <span class="sc mt-8">Tidslinje: kronologisk sökning</span>
           </div>
           <div v-if="chronologyBounds" data-library-chronology-range class="flex">
-            <div class="rzslider mt-3 slider-large chronology_ranges" :style="chronologyRangeStyle">
+            <div
+              class="rzslider mt-3 slider-large chronology_ranges"
+              :style="chronologyRangeStyle"
+              @pointerdown="beginChronologyPointer"
+              @pointermove="moveChronologyPointer"
+              @pointerup="finishChronologyPointer"
+              @pointercancel="cancelChronologyPointer"
+            >
               <input
                 type="range"
                 :min="chronologyFloor"

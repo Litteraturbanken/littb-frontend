@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dictionary/articles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dictionary Article */
+        get: operations["v2_get_dictionary_article"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/dramawebben/catalog": {
         parameters: {
             query?: never;
@@ -593,6 +610,15 @@ export interface components {
             sender_address: string;
             /** Sender Name */
             sender_name?: string | null;
+        };
+        /** DictionaryArticleResponse */
+        DictionaryArticleResponse: {
+            /** Article Html */
+            article_html: string;
+            /** Base Form */
+            base_form: string;
+            /** Word */
+            word: string;
         };
         /** DramawebbenCatalogAuthor */
         DramawebbenCatalogAuthor: {
@@ -1693,6 +1719,64 @@ export interface operations {
             };
             /** @description Contact delivery failed */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    v2_get_dictionary_article: {
+        parameters: {
+            query: {
+                word: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DictionaryArticleResponse"];
+                };
+            };
+            /** @description No dictionary article found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Invalid request */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Dictionary provider unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

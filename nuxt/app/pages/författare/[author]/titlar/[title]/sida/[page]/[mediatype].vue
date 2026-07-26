@@ -10,8 +10,18 @@ import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
 import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import dramawebbenLogo from "~/assets/img/dramawebben_svart.svg"
+import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
+import {
+  copyProductionValue,
+  isProductionShortcutGuarded,
+  urnResolverUrl
+} from "~/lib/production-shortcuts"
+import {
+  parseTextSearchReturnHref,
+  type TextSearchRouteQuery
+} from "~/lib/text-search-navigation"
 import {
   readerAuthorHref,
   readerContentsHref,
@@ -20,6 +30,7 @@ import {
   readerDialogNeutralFullPath,
   readerFullPathWithFragment,
   readerHitHref,
+  readerMediaFullPath,
   readerPartAuthorKey,
   readerPageFullPath,
   readerSourceInfoHref,
@@ -29,6 +40,7 @@ import {
 } from "~/lib/reader-routes"
 
 definePageMeta({
+  key: route => [route.params.author, route.params.title, route.params.mediatype].join(":"),
   validate: route => {
     const values = [
       route.params.author,
@@ -58,6 +70,28 @@ const rawFullPath = ref(
 function beforeFragment(fullPath: string): string {
   const fragmentIndex = fullPath.indexOf("#")
   return fragmentIndex < 0 ? fullPath : fullPath.slice(0, fragmentIndex)
+}
+
+function readerFocusFullPath(fullPath: string, enabled: boolean): string {
+  const fragmentIndex = fullPath.indexOf("#")
+  const fragment = fragmentIndex < 0 ? "" : fullPath.slice(fragmentIndex)
+  const beforeHash = fragmentIndex < 0 ? fullPath : fullPath.slice(0, fragmentIndex)
+  const queryIndex = beforeHash.indexOf("?")
+  const path = queryIndex < 0 ? beforeHash : beforeHash.slice(0, queryIndex)
+  const segments = queryIndex < 0 || queryIndex === beforeHash.length - 1
+    ? []
+    : beforeHash.slice(queryIndex + 1).split("&")
+  const preserved = segments.filter(segment => {
+    const separator = segment.indexOf("=")
+    const rawKey = separator < 0 ? segment : segment.slice(0, separator)
+    try {
+      return decodeURIComponent(rawKey.replace(/\+/g, " ")) !== "fokus"
+    } catch {
+      return true
+    }
+  })
+  if (enabled) preserved.push("fokus")
+  return `${path}${preserved.length ? `?${preserved.join("&")}` : ""}${fragment}`
 }
 
 function browserFullPath(): string {
@@ -131,6 +165,7 @@ watch(() => route.fullPath, (nextRouteFullPath, previousRouteFullPath) => {
     ? readerFullPathWithFragment(rawFullPath.value, nextBrowserFullPath)
     : nextBrowserFullPath
 }, { flush: "sync" })
+
 const dialogNeutralIdentity = computed(
   () => readerDialogNeutralFullPath(rawFullPath.value)
 )
@@ -278,25 +313,27 @@ function isWorkSearchHit(value: unknown, workId: string): value is WorkSearchHit
   if (!fromPosition || !toPosition || fromPosition.scope !== toPosition.scope ||
     fromPosition.ordinal > toPosition.ordinal) return false
 
-  const expectedPageScope = `page:${value.page_index}`
-  return (fromPosition.pageIndex === null || fromPosition.scope === expectedPageScope) &&
-    (toPosition.pageIndex === null || toPosition.scope === expectedPageScope)
+  const expectedPageScopes = new Set([`page:${value.page_index}`])
+  if (/^[0-9]+$/.test(value.page_name)) expectedPageScopes.add(`page:${value.page_name}`)
+  return (fromPosition.pageIndex === null || expectedPageScopes.has(fromPosition.scope)) &&
+    (toPosition.pageIndex === null || expectedPageScopes.has(toPosition.scope))
 }
 
 function isExpectedHitResponse(
   value: unknown,
   state: CanonicalSearchState,
   offset: number,
-  workId: string
+  workId: string,
+  limit = 3
 ): value is WorkSearchHitsResponse {
   if (!isRecord(value) || !Array.isArray(value.items)) return false
   if (
     value.query !== state.query ||
     value.media_type !== "etext" ||
     value.offset !== offset ||
-    value.limit !== 3 ||
+    value.limit !== limit ||
     !isSafeInteger(value.total_hits) ||
-    value.items.length > 3
+    value.items.length > limit
   ) return false
 
   for (const [position, item] of value.items.entries()) {
@@ -324,10 +361,23 @@ function markReaderHtml(
   const spans = Array.from(root.querySelectorAll("span[id]"))
   const startMatches = spans.filter(span => span.getAttribute("id") === hit.highlight.from_word_id)
   const endMatches = spans.filter(span => span.getAttribute("id") === hit.highlight.to_word_id)
-  if (startMatches.length !== 1 || endMatches.length !== 1) return html
+  if (startMatches.length === 0 || endMatches.length === 0) return html
+
+  const isValidDuplicateGroup = (matches: typeof spans): boolean => {
+    if (matches.length === 1) return true
+
+    const indexes = matches.map(match => spans.indexOf(match))
+    return matches.every((match, index) =>
+      indexes[index] === indexes[0]! + index &&
+      !match.hasAttribute("hidden") &&
+      match.getAttribute("aria-hidden") !== "true" &&
+      Boolean(match.textContent?.trim())
+    )
+  }
+  if (!isValidDuplicateGroup(startMatches) || !isValidDuplicateGroup(endMatches)) return html
 
   const start = spans.indexOf(startMatches[0]!)
-  const end = spans.indexOf(endMatches[0]!)
+  const end = spans.indexOf(endMatches.at(-1)!)
   if (start < 0 || end < start) return html
 
   for (let index = start; index <= end; index += 1) {
@@ -349,12 +399,29 @@ const authorParam = computed(() => routeParam("author"))
 const titleParam = computed(() => routeParam("title"))
 const pageParam = computed(() => routeParam("page"))
 const mediaTypeParam = computed(() => routeParam("mediatype"))
+const explicitOcrRequested = computed(() => route.query.ocr !== undefined)
 const readerRequestIdentity = computed(() => JSON.stringify([
   authorParam.value,
   titleParam.value,
   pageParam.value,
   mediaTypeParam.value
 ]))
+const readerFetchIdentity = ref(readerRequestIdentity.value)
+let readerFetchDebounce: ReturnType<typeof setTimeout> | null = null
+watch(readerRequestIdentity, identity => {
+  if (!import.meta.client) {
+    readerFetchIdentity.value = identity
+    return
+  }
+  if (readerFetchDebounce) clearTimeout(readerFetchDebounce)
+  readerFetchDebounce = setTimeout(() => {
+    readerFetchDebounce = null
+    readerFetchIdentity.value = identity
+  }, 200)
+}, { flush: "sync" })
+onBeforeUnmount(() => {
+  if (readerFetchDebounce) clearTimeout(readerFetchDebounce)
+})
 const requestFetch = useRequestFetch()
 
 type CurrentReaderPage =
@@ -362,15 +429,11 @@ type CurrentReaderPage =
   | { status: "error", identity: string }
 
 const { data, error } = await useAsyncData<CurrentReaderPage>(
-  computed(() => `reader:${readerRequestIdentity.value}`),
+  computed(() => `reader:${readerFetchIdentity.value}`),
   async () => {
-    const identity = readerRequestIdentity.value
-    const readerApiUrl = [
-      authorParam.value,
-      titleParam.value,
-      pageParam.value,
-      mediaTypeParam.value
-    ].map(encodeURIComponent).join("/")
+    const identity = readerFetchIdentity.value
+    const requestParts = JSON.parse(identity) as [string, string, string, string]
+    const readerApiUrl = requestParts.map(encodeURIComponent).join("/")
     try {
       const currentReader = await requestFetch<ReaderPage>(`/api/reader/${readerApiUrl}`)
       return { status: "success" as const, identity, reader: currentReader }
@@ -379,7 +442,7 @@ const { data, error } = await useAsyncData<CurrentReaderPage>(
       return { status: "error" as const, identity }
     }
   },
-  { lazy: true, watch: [readerRequestIdentity] }
+  { lazy: true, watch: [readerFetchIdentity] }
 )
 
 if (import.meta.server) {
@@ -457,12 +520,46 @@ watch(sourceInfoRequested, open => {
   }
 })
 
-const reader = computed(() => {
+const currentReader = computed(() => {
   const current = data.value
   return current?.status === "success" && current.identity === readerRequestIdentity.value
     ? current.reader
     : null
 })
+const retainedReaderKey = [authorParam.value, titleParam.value, mediaTypeParam.value].join(":")
+const retainedReader = import.meta.client
+  ? useState<ReaderPage | null>(`reader-retained:${retainedReaderKey}`, () => currentReader.value)
+  : shallowRef<ReaderPage | null>(currentReader.value)
+watch(data, current => {
+  if (current?.status === "success") {
+    retainedReader.value = current.reader
+  } else if (current?.status === "error" && current.identity === readerRequestIdentity.value) {
+    retainedReader.value = null
+  }
+}, { immediate: true })
+const reader = computed(() => currentReader.value ?? retainedReader.value)
+const readerLoadStatus = computed(() => {
+  const current = data.value
+  return current?.identity === readerRequestIdentity.value ? current.status : null
+})
+watch(readerLoadStatus, (status, _previousStatus, onCleanup) => {
+  if (!import.meta.client || !status) return
+  const fullPath = route.fullPath
+  let cancelled = false
+  let frame = 0
+  onCleanup(() => {
+    cancelled = true
+    if (frame) cancelAnimationFrame(frame)
+  })
+  void nextTick().then(() => {
+    if (cancelled) return
+    frame = requestAnimationFrame(() => {
+      if (!cancelled) {
+        void nuxtApp.callHook("reader:page-ready", fullPath, status === "success")
+      }
+    })
+  })
+}, { flush: "post", immediate: true })
 const contentsOpen = computed(
   () => !sourceInfoRequested.value
     && contentsRequested.value
@@ -480,9 +577,63 @@ const etextReader = computed(() => reader.value?.mediaType === "etext" ? reader.
 const facsimileReader = computed(
   () => reader.value?.mediaType === "faksimil" ? reader.value : null
 )
+const focusMode = computed(() => route.query.fokus !== undefined)
+const focusHref = computed(() => readerFocusFullPath(rawFullPath.value, true))
+const focusNeutralHref = computed(() => readerFocusFullPath(rawFullPath.value, false))
+const focusBarVisible = ref(true)
+const focusStateKey = [authorParam.value, titleParam.value, mediaTypeParam.value].join(":")
+const focusNightMode = useState(`reader-focus-night:${focusStateKey}`, () => false)
+const focusTextScale = useState(`reader-focus-scale:${focusStateKey}`, () => 1)
+const focusTextScaleInitialized = useState(
+  `reader-focus-scale-initialized:${focusStateKey}`,
+  () => false
+)
+const focusReaderStyle = computed(() => focusMode.value && etextReader.value
+  ? {
+      transform: `scaleX(${focusTextScale.value}) scaleY(${focusTextScale.value})`,
+      transformOrigin: "left top"
+    }
+  : undefined
+)
+const ocrMode = computed(() => Boolean(
+  explicitOcrRequested.value && facsimileReader.value?.ocrOverlay
+))
 const searchState = computed(() => etextReader.value?.searchable
   ? parseCanonicalSearchState()
   : null
+)
+function decodeRawQueryComponent(value: string): string | null {
+  try {
+    return decodeURIComponent(value.replace(/\+/g, " "))
+  } catch {
+    return null
+  }
+}
+
+function rawReaderReturnQuery(fullPath: string): TextSearchRouteQuery {
+  const beforeHash = beforeFragment(fullPath)
+  const queryIndex = beforeHash.indexOf("?")
+  if (queryIndex < 0) return {}
+
+  const values: string[] = []
+  for (const segment of beforeHash.slice(queryIndex + 1).split("&")) {
+    const separator = segment.indexOf("=")
+    const rawKey = separator < 0 ? segment : segment.slice(0, separator)
+    const key = decodeRawQueryComponent(rawKey)
+    if (key !== "s_return") continue
+    const rawValue = separator < 0 ? "" : segment.slice(separator + 1)
+    const value = decodeRawQueryComponent(rawValue)
+    if (value === null) return { s_return: null }
+    values.push(value)
+  }
+  if (values.length === 0) return {}
+  return { s_return: values.length === 1 ? values[0]! : values }
+}
+const searchReturnHref = computed(() => parseTextSearchReturnHref(
+  rawReaderReturnQuery(rawFullPath.value)
+))
+const hasActiveSearchOrigin = computed(() => searchReturnHref.value !== null &&
+  typeof route.query.q === "string" && typeof route.query.hit === "string"
 )
 const pageQuery = computed(() => {
   const query = preservedQuery()
@@ -502,6 +653,28 @@ const selectedFacsimileSize = computed<ReaderFacsimileSize | null>(() => {
   }
   return currentReader.preferredSize
 })
+const focusSmallerSizeEnabled = computed(() => {
+  const current = selectedFacsimileSize.value
+  return current !== null && Boolean(
+    facsimileReader.value?.sources.some(source => source.size === current - 1)
+  )
+})
+const focusLargerSizeEnabled = computed(() => {
+  const current = selectedFacsimileSize.value
+  return current !== null && Boolean(
+    facsimileReader.value?.sources.some(source => source.size === current + 1)
+  )
+})
+const focusParts = computed(() => reader.value?.parts.map(part => ({
+  href: pageHref(part.startPageName),
+  label: part.navTitle || part.shortTitle || part.title
+})) ?? [])
+const alternateMediaHref = computed(() => {
+  const alternate = reader.value?.alternateMedia
+  return alternate
+    ? readerMediaFullPath(rawFullPath.value, alternate.pageName, alternate.mediaType)
+    : null
+})
 const authorHref = computed(() => reader.value
   ? readerAuthorHref(authorParam.value)
   : ""
@@ -512,11 +685,150 @@ const readerAuthorSuffix = computed(() => {
     ? readerAuthorContributionSuffix(author.authorType, author.role)
     : null
 })
+
+const pageRouteDraftName = ref(pageParam.value)
+let pendingPageNavigations = 0
+let pageNavigationChain = Promise.resolve()
+watch(pageParam, pageName => {
+  if (pendingPageNavigations === 0) pageRouteDraftName.value = pageName
+}, { flush: "sync" })
+function draftAdjacentPageName(direction: -1 | 1): string | null {
+  const currentReader = reader.value
+  if (!currentReader) return null
+  const position = currentReader.pageMap.findIndex(page => page.pageName === pageRouteDraftName.value)
+  return currentReader.pageMap[position + direction]?.pageName ?? null
+}
+const draftPreviousPageName = computed(() => draftAdjacentPageName(-1))
+const draftNextPageName = computed(() => draftAdjacentPageName(1))
+function queueReaderPage(pageName: string): void {
+  const currentReader = reader.value
+  if (!currentReader?.pageMap.some(page => page.pageName === pageName)) return
+  pageRouteDraftName.value = pageName
+  const href = pageHref(pageName)
+  pendingPageNavigations += 1
+  pageNavigationChain = pageNavigationChain
+    .catch(() => undefined)
+    .then(() => router.push(href).then(() => undefined))
+    .finally(() => {
+      pendingPageNavigations -= 1
+      if (pendingPageNavigations === 0) pageRouteDraftName.value = pageParam.value
+    })
+}
+function queueReaderHref(href: string): void {
+  const target = reader.value?.pageMap.find(page => pageHref(page.pageName) === href)
+  if (target) queueReaderPage(target.pageName)
+}
+type SliderDraft = Readonly<{
+  identity: string
+  rawIndex: number
+}>
+
+const sliderDraft = ref<SliderDraft | null>(null)
+const sliderKeyboardPending = ref(false)
+const sliderMaximum = computed(() => reader.value?.sliderMaximum ?? null)
+const sliderDraftIndex = computed(() => {
+  const draft = sliderDraft.value
+  const maximum = sliderMaximum.value
+  if (!draft || maximum === null || draft.identity !== readerRequestIdentity.value) return null
+  return Math.min(maximum, Math.max(0, draft.rawIndex))
+})
+const sliderValue = computed(() => sliderDraftIndex.value ?? reader.value?.pageIndex ?? 0)
+const sliderPercent = computed(() => {
+  const maximum = sliderMaximum.value
+  if (sliderDraftIndex.value === null || maximum === null || maximum === 0) return null
+  return sliderDraftIndex.value / maximum * 100
+})
+function sliderPageName(rawIndex: number): string {
+  return reader.value?.pageMap.find(page => page.pageIndex === rawIndex)?.pageName ?? String(rawIndex)
+}
+const sliderValueText = computed(() => `Sida ${sliderPageName(sliderValue.value)}`)
+const sliderBubbleStyles = computed(() => {
+  if (searchState.value) return { left: "calc(100% - 10px)" }
+  if (sliderPercent.value === null) return undefined
+  return { left: readerSliderGeometryStyles(sliderPercent.value).selectionWidth }
+})
+function sliderRawValue(event: Event): number | null {
+  const maximum = sliderMaximum.value
+  if (maximum === null || !(event.currentTarget instanceof HTMLInputElement)) return null
+  const value = event.currentTarget.valueAsNumber
+  return Number.isInteger(value) && value >= 0 && value <= maximum ? value : null
+}
+function previewSlider(rawIndex: number): void {
+  sliderDraft.value = {
+    identity: readerRequestIdentity.value,
+    rawIndex
+  }
+}
+function clearSliderDraft(): void {
+  sliderDraft.value = null
+  sliderKeyboardPending.value = false
+}
+function previewSliderInput(event: Event): void {
+  const rawIndex = sliderRawValue(event)
+  if (rawIndex !== null) previewSlider(rawIndex)
+}
+function commitSliderDraft(): void {
+  const draft = sliderDraft.value
+  const currentReader = reader.value
+  if (!draft || !currentReader || draft.identity !== readerRequestIdentity.value) {
+    clearSliderDraft()
+    return
+  }
+  const target = currentReader.pageMap.find(page => page.pageIndex === draft.rawIndex)
+  sliderKeyboardPending.value = false
+  if (!target || target.pageName === currentReader.pageName) {
+    sliderDraft.value = null
+    return
+  }
+  queueReaderPage(target.pageName)
+}
+function handleSliderChange(): void {
+  if (!sliderKeyboardPending.value) commitSliderDraft()
+}
+function sliderKeyboardTarget(event: KeyboardEvent): number | null {
+  const maximum = sliderMaximum.value
+  if (maximum === null || event.altKey || event.ctrlKey || event.metaKey) return null
+  const current = sliderValue.value
+  switch (event.key) {
+    case "ArrowLeft":
+    case "ArrowDown":
+      return Math.max(0, current - 1)
+    case "ArrowRight":
+    case "ArrowUp":
+      return Math.min(maximum, current + 1)
+    case "PageDown":
+      return Math.max(0, current - Math.max(1, Math.round(maximum * 0.1)))
+    case "PageUp":
+      return Math.min(maximum, current + Math.max(1, Math.round(maximum * 0.1)))
+    case "Home":
+      return 0
+    case "End":
+      return maximum
+    default:
+      return null
+  }
+}
+function handleSliderKeydown(event: KeyboardEvent): void {
+  const target = sliderKeyboardTarget(event)
+  if (target === null) return
+  event.preventDefault()
+  event.stopPropagation()
+  sliderKeyboardPending.value = true
+  previewSlider(target)
+}
+function handleSliderKeyup(event: KeyboardEvent): void {
+  if (sliderKeyboardTarget(event) === null || !sliderKeyboardPending.value) return
+  event.preventDefault()
+  event.stopPropagation()
+  commitSliderDraft()
+}
 const readerSliderStyles = computed(() => {
   // Search-hit mode owns the legacy slider through `.has-search-hit`; avoid
   // inline page-position styles overriding that established visual state.
   if (searchState.value) return { pointer: undefined, selection: undefined }
-  const geometry = readerSliderGeometryStyles(reader.value?.sliderPercent ?? 0)
+  const geometry = readerSliderGeometryStyles(
+    sliderPercent.value ?? reader.value?.sliderPercent ?? 0
+  )
   return {
     pointer: { left: geometry.pointerLeft },
     selection: { width: geometry.selectionWidth }
@@ -619,6 +931,41 @@ const activeHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
   return hitResponse.value.items.find(item => item.index === searchState.value!.hit) ?? null
 })
+const selectedSearchHit = computed<WorkSearchHit | null>(() => {
+  const currentReader = reader.value
+  if (!currentReader?.searchable) return null
+
+  const rawHitIndex = route.query.hit_index
+  const rawQuery = route.query.s_query
+  const fromWordId = route.query.traff
+  const toWordId = route.query.traffslut
+  if (
+    typeof rawHitIndex !== "string" || !/^(?:0|[1-9]\d*)$/.test(rawHitIndex) ||
+    typeof rawQuery !== "string" || rawQuery.trim().length < 1 || rawQuery.length > 200 ||
+    route.query.s_lbworkid !== currentReader.workId ||
+    (route.query.s_mediatype !== undefined && route.query.s_mediatype !== currentReader.mediaType) ||
+    typeof fromWordId !== "string" || typeof toWordId !== "string"
+  ) return null
+
+  const hitIndex = Number(rawHitIndex)
+  if (!Number.isSafeInteger(hitIndex) || hitIndex > maximumNavigableHit) return null
+  const hasCanonicalState = route.query.q !== undefined || route.query.hit !== undefined
+  const canonicalState = hasCanonicalState ? parseCanonicalSearchState() : null
+  if (hasCanonicalState && (
+    !canonicalState || canonicalState.query !== rawQuery || canonicalState.hit !== hitIndex
+  )) return null
+
+  const hit: WorkSearchHit = {
+    index: hitIndex,
+    page_name: currentReader.pageName,
+    page_index: currentReader.pageIndex,
+    highlight: {
+      from_word_id: fromWordId,
+      to_word_id: toWordId
+    }
+  }
+  return isWorkSearchHit(hit, currentReader.workId) ? hit : null
+})
 const previousHit = computed(() => {
   if (!searchState.value || !hitResponse.value) return null
   return hitResponse.value.items.find(
@@ -634,13 +981,33 @@ const nextHit = computed(() => {
 const markedReaderHtml = computed(() => {
   const currentReader = etextReader.value
   if (!currentReader) return ""
-  if (!activeHit.value) return currentReader.html
+  const hit = selectedSearchHit.value ?? activeHit.value
+  if (!hit) return currentReader.html
   return markReaderHtml(
     currentReader.html,
-    activeHit.value,
+    hit,
     currentReader.pageName,
     currentReader.pageIndex
   )
+})
+const markedFacsimileReader = computed(() => {
+  const currentReader = facsimileReader.value
+  const overlay = currentReader?.ocrOverlay
+  const hit = selectedSearchHit.value
+  if (!currentReader || !overlay || !hit) return currentReader
+
+  return {
+    ...currentReader,
+    ocrOverlay: {
+      ...overlay,
+      html: markReaderHtml(
+        overlay.html,
+        hit,
+        currentReader.pageName,
+        currentReader.pageIndex
+      )
+    }
+  }
 })
 const hitPosition = computed(() => {
   if (!searchState.value || !activeHit.value || !hitResponse.value) return null
@@ -652,6 +1019,150 @@ const hitMessage = computed(() => {
   if (hitResponse.value && !activeHit.value) return "Ingen sådan sökträff."
   return null
 })
+
+const gotoHitInputOpen = ref(false)
+const gotoHitOrdinal = ref("")
+const gotoHitInput = ref<HTMLInputElement | null>(null)
+const gotoHitPending = ref(false)
+let hitNavigationGeneration = 0
+
+watch(rawFullPath, () => {
+  hitNavigationGeneration += 1
+  gotoHitPending.value = false
+}, { flush: "sync" })
+
+function toggleGotoHitInput(): void {
+  gotoHitInputOpen.value = !gotoHitInputOpen.value
+  if (gotoHitInputOpen.value) {
+    void nextTick(() => gotoHitInput.value?.focus())
+  }
+}
+
+async function hitAtIndex(index: number): Promise<WorkSearchHit | null> {
+  const state = searchState.value
+  const response = hitResponse.value
+  const currentReader = data.value
+  const sourceIdentity = dialogNeutralIdentity.value
+  if (
+    !state ||
+    !response ||
+    index < 0 ||
+    index >= response.total_hits ||
+    index > maximumNavigableHit ||
+    currentReader?.status !== "success" ||
+    currentReader.identity !== readerRequestIdentity.value ||
+    currentReader.reader.mediaType !== "etext"
+  ) return null
+
+  const cached = response.items.find(item => item.index === index)
+  if (cached) return cached
+
+  try {
+    const client = createLbApiClient(config.public.apiBase)
+    const result = await client.GET("/works/{work_id}/search-hits", {
+      params: {
+        path: { work_id: currentReader.reader.workId },
+        query: {
+          media_type: "etext",
+          query: state.query,
+          offset: index,
+          limit: 1,
+          word_forms: state.wordForms,
+          include_older_spellings: state.includeOlderSpellings,
+          prefix: state.prefix,
+          suffix: state.suffix
+        }
+      }
+    })
+    if (
+      result.error ||
+      !isExpectedHitResponse(result.data, state, index, currentReader.reader.workId, 1) ||
+      result.data.total_hits !== response.total_hits
+    ) return null
+    const latestState = searchState.value
+    const latestReader = data.value
+    if (
+      dialogNeutralIdentity.value !== sourceIdentity ||
+      latestReader?.status !== "success" ||
+      latestReader.identity !== currentReader.identity ||
+      !latestState ||
+      latestState.query !== state.query ||
+      latestState.hit !== state.hit ||
+      latestState.wordForms !== state.wordForms ||
+      latestState.includeOlderSpellings !== state.includeOlderSpellings ||
+      latestState.prefix !== state.prefix ||
+      latestState.suffix !== state.suffix
+    ) return null
+    return result.data.items[0] ?? null
+  } catch {
+    return null
+  }
+}
+
+function rawHitFullPath(hit: Pick<WorkSearchHit, "page_name" | "index">): string {
+  const pagePath = readerPageFullPath(rawFullPath.value, hit.page_name)
+  const fragmentIndex = pagePath.indexOf("#")
+  const fragment = fragmentIndex < 0 ? "" : pagePath.slice(fragmentIndex)
+  const beforeHash = fragmentIndex < 0 ? pagePath : pagePath.slice(0, fragmentIndex)
+  const queryIndex = beforeHash.indexOf("?")
+  if (queryIndex < 0) return `${beforeHash}?hit=${hit.index}${fragment}`
+
+  const path = beforeHash.slice(0, queryIndex)
+  const segments = beforeHash.slice(queryIndex + 1).split("&")
+  let replaced = false
+  const query = segments.map(segment => {
+    const separator = segment.indexOf("=")
+    const rawKey = separator < 0 ? segment : segment.slice(0, separator)
+    let key: string
+    try {
+      key = decodeURIComponent(rawKey.replace(/\+/g, " "))
+    } catch {
+      return segment
+    }
+    if (key !== "hit") return segment
+    replaced = true
+    return `hit=${hit.index}`
+  })
+  if (!replaced) query.push(`hit=${hit.index}`)
+  return `${path}?${query.join("&")}${fragment}`
+}
+
+async function navigateToHit(index: number): Promise<void> {
+  const generation = ++hitNavigationGeneration
+  if (searchState.value?.hit === index) {
+    gotoHitInputOpen.value = false
+    gotoHitOrdinal.value = ""
+    return
+  }
+  gotoHitPending.value = true
+  try {
+    const hit = await hitAtIndex(index)
+    if (generation !== hitNavigationGeneration) return
+    if (!hit) {
+      gotoHitInput.value?.focus()
+      return
+    }
+    gotoHitInputOpen.value = false
+    gotoHitOrdinal.value = ""
+    await navigateRawFullPath(rawHitFullPath(hit), false, rawFullPath.value)
+  } finally {
+    if (generation === hitNavigationGeneration) gotoHitPending.value = false
+  }
+}
+
+function submitGotoHit(): void {
+  if (!/^[1-9]\d*$/.test(gotoHitOrdinal.value)) {
+    gotoHitInput.value?.focus()
+    return
+  }
+  const ordinal = Number(gotoHitOrdinal.value)
+  const totalHits = hitResponse.value?.total_hits ?? 0
+  if (!Number.isSafeInteger(ordinal) || ordinal > totalHits) {
+    gotoHitInput.value?.focus()
+    return
+  }
+  void navigateToHit(ordinal - 1)
+}
 
 type WorkSearchOption = "default" | "lemma" | "modernize" | "prefix" | "suffix" | "infix"
 
@@ -899,7 +1410,9 @@ function writeLastPageView(): void {
   }
 }
 
-onMounted(writeLastPageView)
+onMounted(() => {
+  if (currentReader.value) writeLastPageView()
+})
 watch(
   [dialogNeutralIdentity, () => data.value?.identity, () => data.value?.status],
   ([_historyIdentity, identity, status]) => {
@@ -917,9 +1430,12 @@ useSeoMeta({
 
 useHead(() => ({
   bodyAttrs: {
-    class: contentsOpen.value || sourceInfoOpen.value
-      ? "focus page-reading ready modal-open"
-      : "focus page-reading ready"
+    class: [
+      "focus page-reading ready",
+      focusMode.value ? "reader-focus-mode" : "",
+      focusMode.value && etextReader.value && focusNightMode.value ? "night" : "",
+      contentsOpen.value || sourceInfoOpen.value ? "modal-open" : ""
+    ].filter(Boolean).join(" ")
   },
   meta: currentPart.value?.titleId
     ? [{ name: "part", content: currentPart.value.titleId }]
@@ -996,6 +1512,38 @@ function selectFacsimileSize(size: ReaderFacsimileSize): void {
     query
   })
 }
+
+function activateFocus(): void {
+  focusBarVisible.value = true
+  focusNightMode.value = false
+  void navigateRawFullPath(focusHref.value, true, rawFullPath.value)
+}
+
+function closeFocus(): void {
+  void navigateRawFullPath(focusNeutralHref.value, true, rawFullPath.value)
+}
+
+function toggleFocusBar(): void {
+  if (focusMode.value) focusBarVisible.value = !focusBarVisible.value
+}
+
+function adjustFocusText(delta: number): void {
+  focusTextScale.value = Math.min(2.5, Math.max(0.5, focusTextScale.value + delta))
+}
+
+function selectFocusFacsimileSize(delta: -1 | 1): void {
+  const current = selectedFacsimileSize.value
+  if (current === null) return
+  selectFacsimileSize((current + delta) as ReaderFacsimileSize)
+}
+
+onMounted(() => {
+  if (!focusTextScaleInitialized.value) {
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight
+    focusTextScale.value = Math.min(2.5, Math.max(0.5, viewportHeight / 900))
+    focusTextScaleInitialized.value = true
+  }
+})
 
 const showGotoInput = ref(false)
 const gotoPage = ref("")
@@ -1075,12 +1623,22 @@ function keyboardPageTarget(event: KeyboardEvent): string | null {
   const currentReader = reader.value
   if (!currentReader) return null
 
+  if (event.key === "n") return draftNextPageName.value
+  if (event.key === "f") return draftPreviousPageName.value
+  if (event.key === "m" || event.key === "F16") {
+    return currentReader.nextPartPageName
+  }
+  if (event.key === "d" || event.key === "F15") {
+    return currentReader.previousPartPageName
+  }
+
   const forwards = event.key === "ArrowRight"
   const backwards = event.key === "ArrowLeft"
   if (!forwards && !backwards) return null
 
   if (event.altKey && event.shiftKey) {
-    const targetPageIndex = currentReader.pageIndex + (forwards ? 10 : -10)
+    const draftPage = currentReader.pageMap.find(page => page.pageName === pageRouteDraftName.value)
+    const targetPageIndex = (draftPage?.pageIndex ?? currentReader.pageIndex) + (forwards ? 10 : -10)
     return currentReader.pageMap.find(page => page.pageIndex === targetPageIndex)?.pageName
       ?? null
   }
@@ -1091,15 +1649,15 @@ function keyboardPageTarget(event: KeyboardEvent): string | null {
   }
   if (event.shiftKey) {
     return forwards
-      ? currentReader.nextPageName
-      : currentReader.previousPageName
+      ? draftNextPageName.value
+      : draftPreviousPageName.value
   }
 
   if (forwards) {
     const atRightEdge = document.body.scrollWidth - window.scrollX === window.innerWidth
-    return atRightEdge ? currentReader.nextPageName : null
+    return atRightEdge ? draftNextPageName.value : null
   }
-  return window.scrollX < 10 ? currentReader.previousPageName : null
+  return window.scrollX < 10 ? draftPreviousPageName.value : null
 }
 
 function handleReaderPagingKeydown(event: KeyboardEvent): void {
@@ -1116,7 +1674,51 @@ function handleReaderPagingKeydown(event: KeyboardEvent): void {
   const target = keyboardPageTarget(event)
   if (!target) return
   event.preventDefault()
-  void navigateRawFullPath(pageHref(target), false, rawFullPath.value)
+  queueReaderPage(target)
+}
+
+const productionShortcutMessage = ref("")
+let productionShortcutMessageTimer: ReturnType<typeof setTimeout> | null = null
+
+function showProductionShortcutMessage(message: string): void {
+  productionShortcutMessage.value = message
+  if (productionShortcutMessageTimer) clearTimeout(productionShortcutMessageTimer)
+  productionShortcutMessageTimer = setTimeout(() => {
+    productionShortcutMessage.value = ""
+    productionShortcutMessageTimer = null
+  }, 2200)
+}
+
+async function handleProductionShortcutKeydown(event: KeyboardEvent): Promise<void> {
+  const currentReader = reader.value
+  if (!currentReader || isProductionShortcutGuarded(event)) return
+
+  if (event.key === "i" || event.key === "F17") {
+    event.preventDefault()
+    const value = currentReader.editorWorkId || currentReader.workId
+    showProductionShortcutMessage(
+      await copyProductionValue(value) ? "Kopierade lbworkid" : "Kunde inte kopiera lbworkid"
+    )
+    return
+  }
+  if (event.key === "u" || event.key === "F21") {
+    event.preventDefault()
+    const url = urnResolverUrl(currentReader.urn)
+    if (!url) {
+      showProductionShortcutMessage("Ingen urn hittades")
+      return
+    }
+    showProductionShortcutMessage(
+      await copyProductionValue(url) ? "Kopierade urn" : "Kunde inte kopiera urn"
+    )
+    return
+  }
+  if (event.key === "å" || event.key === "[") {
+    const href = alternateMediaHref.value
+    if (!href) return
+    event.preventDefault()
+    void router.push(href)
+  }
 }
 
 function handleSourceInfoKeydown(event: KeyboardEvent): void {
@@ -1142,6 +1744,11 @@ onBeforeUnmount(() => document.removeEventListener("keydown", handleSourceInfoKe
 onMounted(() => document.addEventListener("keydown", handleReaderPagingKeydown))
 onBeforeUnmount(() => document.removeEventListener("keydown", handleReaderPagingKeydown))
 onBeforeRouteLeave(() => document.removeEventListener("keydown", handleReaderPagingKeydown))
+onMounted(() => document.addEventListener("keydown", handleProductionShortcutKeydown))
+onBeforeUnmount(() => {
+  document.removeEventListener("keydown", handleProductionShortcutKeydown)
+  if (productionShortcutMessageTimer) clearTimeout(productionShortcutMessageTimer)
+})
 
 function selectContentsPage(pageName: string): void {
   const currentReader = reader.value
@@ -1169,10 +1776,11 @@ function submitGoto(): void {
   }
   gotoMessage.value = ""
   showGotoInput.value = false
-  void router.push(readerTarget(gotoPage.value))
+  queueReaderPage(gotoPage.value)
 }
 
 watch(readerRequestIdentity, () => {
+  clearSliderDraft()
   showGotoInput.value = false
   gotoPage.value = ""
   gotoMessage.value = ""
@@ -1183,18 +1791,47 @@ watch(readerRequestIdentity, () => {
   <div class="reader-page">
     <template v-if="reader">
       <section
-        class="reader_main state-not-parallel"
-        :class="{ 'type-faksimil': facsimileReader }"
+        :class="[
+          'reader_main',
+          'state-not-parallel',
+          { 'type-faksimil': facsimileReader, focus: focusMode, ocr: ocrMode }
+        ]"
+        :style="focusReaderStyle"
         :aria-label="`${reader.title}, sida ${reader.pageName}`"
+        @click="toggleFocusBar"
       >
         <div v-if="etextReader" class="etext txt" v-html="markedReaderHtml" />
         <ReaderFacsimileImage
-          v-else-if="facsimileReader && selectedFacsimileSize"
-          :page="facsimileReader"
+          v-else-if="markedFacsimileReader && selectedFacsimileSize"
+          :page="markedFacsimileReader"
           :selected-size="selectedFacsimileSize"
           @select-size="selectFacsimileSize"
         />
       </section>
+
+      <ClientOnly>
+        <ReaderDictionaryLookup />
+      </ClientOnly>
+      <LegacyNotice :message="productionShortcutMessage" />
+      <ClientOnly>
+        <ReaderFocusControls
+          v-if="focusMode"
+          :bar-visible="focusBarVisible"
+          :larger-size-enabled="focusLargerSizeEnabled"
+          :media-type="reader.mediaType"
+          :next-href="draftNextPageName ? pageHref(draftNextPageName) : null"
+          :night-mode="focusNightMode"
+          :parts="focusParts"
+          :previous-href="draftPreviousPageName ? pageHref(draftPreviousPageName) : null"
+          :smaller-size-enabled="focusSmallerSizeEnabled"
+          :start-href="reader.startPageName ? pageHref(reader.startPageName) : null"
+          @adjust-text="adjustFocusText"
+          @close="closeFocus"
+          @navigate="queueReaderHref"
+          @select-size="selectFocusFacsimileSize"
+          @toggle-night="focusNightMode = !focusNightMode"
+        />
+      </ClientOnly>
 
       <div v-if="searchState" class="reader-search-state sr-only" aria-live="polite">
         <p v-if="hitPosition" class="reader-search-position">{{ hitPosition }}</p>
@@ -1209,9 +1846,9 @@ watch(readerRequestIdentity, () => {
             aria-label="Läsinformation och sidnavigering"
           >
             <div>
-              <div class="author"><a :href="authorHref">{{ reader.author.name }}{{
+              <div class="author"><NuxtLink :to="authorHref">{{ reader.author.name }}{{
                 readerAuthorSuffix ? " " : ""
-              }}<span v-if="readerAuthorSuffix" class="authortype">{{ readerAuthorSuffix }}</span></a></div>
+              }}<span v-if="readerAuthorSuffix" class="authortype">{{ readerAuthorSuffix }}</span></NuxtLink></div>
               <a
                 ref="titleSourceInfoTrigger"
                 class="title"
@@ -1231,9 +1868,9 @@ watch(readerRequestIdentity, () => {
                     v-for="(partAuthor, index) in currentPart.authors"
                     :key="readerPartAuthorKey(partAuthor.id, index)"
                   >
-                    <a
-                      :href="readerAuthorHref(partAuthor.id)"
-                    >{{ currentPartAuthorLabel(index) }}</a><span
+                    <NuxtLink
+                      :to="readerAuthorHref(partAuthor.id)"
+                    >{{ currentPartAuthorLabel(index) }}</NuxtLink><span
                       v-if="index < currentPart.authors.length - 1"
                     >, </span>
                   </template>
@@ -1322,35 +1959,30 @@ watch(readerRequestIdentity, () => {
                 </template>
               </form>
 
-              <NuxtLink
-                v-if="reader.previousPageName"
-                v-slot="{ navigate }"
-                custom
-                :to="readerTarget(reader.previousPageName)"
-              ><a
+              <a
+                v-if="draftPreviousPageName"
                 rel="prev"
-                :href="pageHref(reader.previousPageName)"
+                :href="pageHref(draftPreviousPageName)"
                 aria-label="Föregående sida"
-                @click="navigate"
-              ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}</a></NuxtLink>
-              <NuxtLink
-                v-if="reader.nextPageName"
-                v-slot="{ navigate }"
-                custom
-                :to="readerTarget(reader.nextPageName)"
-              ><a
+                @click.prevent="queueReaderPage(draftPreviousPageName)"
+              ><span class="submit btn navicon navicon-visual left" aria-hidden="true"><i class="fa fa-angle-left" /></span>{{ " " }}</a>
+              <a
+                v-if="draftNextPageName"
                 rel="next"
-                :href="pageHref(reader.nextPageName)"
+                :href="pageHref(draftNextPageName)"
                 aria-label="Nästa sida"
-                @click="navigate"
-              ><span class="submit btn navicon navicon-visual right" aria-hidden="true"><i class="fa fa-angle-right right" /></span>{{ " " }}</a></NuxtLink>
+                @click.prevent="queueReaderPage(draftNextPageName)"
+              ><span class="submit btn navicon navicon-visual right" aria-hidden="true"><i class="fa fa-angle-right right" /></span>{{ " " }}</a>
 
               <span class="expl small" aria-hidden="true">Du kan också bläddra med tangentbordets piltangenter.</span>
             </nav>
 
-            <div class="w-11/12" aria-hidden="true">
-              <span class="rzslider mt-3 slider-large">
-                <span class="rz-base">
+            <div class="w-11/12">
+              <span
+                class="rzslider mt-3 slider-large"
+                :class="{ active: sliderDraftIndex !== null }"
+              >
+                <span class="rz-base" aria-hidden="true">
                   <span class="rz-bar-wrapper"><span class="rz-bar" /></span>
                   <span class="rz-bar-wrapper"><span
                     class="rz-bar rz-selection"
@@ -1360,7 +1992,31 @@ watch(readerRequestIdentity, () => {
                 <span
                   class="rz-pointer rz-pointer-min"
                   :style="readerSliderStyles.pointer"
+                  aria-hidden="true"
                 />
+                <span
+                  v-if="sliderDraftIndex !== null"
+                  class="rz-bubble rz-model-value"
+                  :style="sliderBubbleStyles"
+                  aria-hidden="true"
+                >{{ sliderPageName(sliderDraftIndex) }}</span>
+                <input
+                  v-if="sliderMaximum !== null"
+                  class="reader-slider-input"
+                  type="range"
+                  min="0"
+                  :max="sliderMaximum"
+                  step="1"
+                  :value="sliderValue"
+                  aria-label="Gå till sida"
+                  :aria-valuetext="sliderValueText"
+                  @input="previewSliderInput"
+                  @change="handleSliderChange"
+                  @keydown="handleSliderKeydown"
+                  @keyup="handleSliderKeyup"
+                  @blur="clearSliderDraft"
+                  @pointercancel="clearSliderDraft"
+                >
               </span>
             </div>
 
@@ -1378,8 +2034,8 @@ watch(readerRequestIdentity, () => {
                   :href="sourceInfoHref"
                   @click.prevent="openSourceInfoFromSidebar"
                 >{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a></li>
-                <li aria-hidden="true">Läsfokus</li>
-                <li v-if="etextReader && reader.searchable">
+                <li><a :href="focusHref" @click.prevent="activateFocus">Läsfokus</a></li>
+                <li v-if="reader.searchable && etextReader">
                   <a
                     class="reader-work-search-trigger"
                     href=""
@@ -1435,26 +2091,41 @@ watch(readerRequestIdentity, () => {
                 <li v-else aria-disabled="true">
                   <a class="disabled" aria-disabled="true" tabindex="-1">Sök i verket</a>
                 </li>
-                <li aria-hidden="true">Sök i författarens texter</li>
+                <li>
+                  <NuxtLink :to="{ path: '/s%C3%B6k', query: { avancerad: null, forfattare: reader.author.id } }">
+                    Sök i författarens texter
+                  </NuxtLink>
+                </li>
                 <li v-if="reader.hasDramawebben">
-                  <a href="/dramawebben"><img
+                  <NuxtLink to="/dramawebben"><img
                     class="dw_logo"
                     :src="dramawebbenLogo"
                     alt="Dramawebben logotyp"
+                  ></NuxtLink>
+                </li>
+                <li v-if="reader.hasNyaVagar" class="-ml-px">
+                  <a
+                    class="block w-3/6 -ml-3 reader-nya-vagar"
+                    href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"
+                  ><img
+                    class="object-contain"
+                    :src="nyaVagarLogo"
+                    alt="Logotyp för Nya vägar"
                   ></a>
                 </li>
               </ul>
             </div>
           </aside>
         </Teleport>
-        <Teleport v-if="searchState" to="#toolkit">
+        <Teleport v-if="searchState || hasActiveSearchOrigin" to="#toolkit">
         <i
+          v-if="searchState"
           class="spinner_search fa fa-spinner fa-pulse"
           :class="{ searching: hitFetch?.status.value === 'pending' }"
           aria-hidden="true"
         />
         <nav id="search_nav" class="active" aria-label="Sökträffsnavigering">
-          <div v-if="hitResponse" class="text">
+          <div v-if="searchState && hitResponse" class="text">
             <div>
               <span class="num">{{ hitResponse.total_hits }}</span>
               {{ hitResponse.total_hits === 1 ? "sökträff" : "sökträffar" }}
@@ -1463,8 +2134,9 @@ watch(readerRequestIdentity, () => {
               Träff <span>{{ activeHit.index + 1 }}</span>, sida {{ reader.pageName }}
             </div>
           </div>
-          <p v-else-if="hitMessage" class="text">{{ hitMessage }}</p>
+          <p v-else-if="searchState && hitMessage" class="text">{{ hitMessage }}</p>
           <ul class="ctrls">
+            <template v-if="searchState">
             <li class="arrows">
               <NuxtLink
                 v-if="previousHit"
@@ -1491,10 +2163,29 @@ watch(readerRequestIdentity, () => {
               ><span class="submit btn navicon navicon-visual" aria-hidden="true"><i class="fa fa-angle-right" /></span></a></NuxtLink>
               <button v-else rel="next" class="submit btn navicon" disabled aria-hidden="true" tabindex="-1"><i class="fa fa-angle-right" /></button>
             </li>
-            <li><a aria-hidden="true">Gå till första träffen</a></li>
-            <li><a aria-hidden="true">Gå till sista träffen</a></li>
-            <li><a aria-hidden="true">Gå direkt till träff . . .</a></li>
+            <li><a href="" @click.prevent="navigateToHit(0)">Gå till första träffen</a></li>
+            <li><a
+              href=""
+              @click.prevent="navigateToHit((hitResponse?.total_hits ?? 0) - 1)"
+            >Gå till sista träffen</a></li>
+            <li :class="{ open: gotoHitInputOpen }">
+              <a href="" @click.prevent="toggleGotoHitInput">Gå direkt till träff . . .</a>
+              <form v-show="gotoHitInputOpen" @submit.prevent="submitGotoHit">
+                <input
+                  ref="gotoHitInput"
+                  v-model="gotoHitOrdinal"
+                  class="border border-gray-300"
+                  type="text"
+                  aria-label="Träffnummer"
+                >
+                <i v-show="gotoHitInputOpen" class="fa fa-angle-double-right" />
+              </form>
+            </li>
+            </template>
             <li><a href="" @click.prevent="closeWorkSearchHits">Stäng träffvisningen</a></li>
+            <li v-if="searchReturnHref">
+              <NuxtLink :to="searchReturnHref">Tillbaka till sökningen</NuxtLink>
+            </li>
           </ul>
         </nav>
         </Teleport>
@@ -1522,15 +2213,22 @@ watch(readerRequestIdentity, () => {
               :href="contentsHref"
             >Innehållsförteckning</a>
             <a :href="sourceInfoHref">{{ reader.isDrama ? "Mer om pjäsen" : "Mer om boken" }}</a>
+            <a :href="focusHref">Läsfokus</a>
             <span
               class="reader-work-search-trigger"
               :class="{ disabled: !reader.searchable || !etextReader }"
             >Sök i verket</span>
+            <!-- Progressive-enhancement fallback: native before hydration. -->
             <a v-if="reader.hasDramawebben" href="/dramawebben"><img
               class="dw_logo"
               :src="dramawebbenLogo"
               alt="Dramawebben logotyp"
             ></a>
+            <a
+              v-if="reader.hasNyaVagar"
+              class="reader-nya-vagar"
+              href="https://litteraturbanken.se/diktensmuseum/nya-vagar-inledning/"
+            ><img :src="nyaVagarLogo" alt="Logotyp för Nya vägar"></a>
             <nav
               v-if="previousHit || nextHit"
               class="reader-hit-navigation"
@@ -1576,11 +2274,5 @@ watch(readerRequestIdentity, () => {
       class="reader-primary-error"
       role="alert"
     >Läsarsidan kunde inte hämtas.</p>
-    <p
-      v-else
-      class="reader-primary-loading"
-      role="status"
-      aria-live="polite"
-    >Hämtar läsarsidan …</p>
   </div>
 </template>

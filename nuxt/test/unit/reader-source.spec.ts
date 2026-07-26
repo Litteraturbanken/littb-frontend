@@ -107,6 +107,14 @@ describe("reader media and exact representation selection", () => {
     expect(normalize({ page_count: "2" })).toMatchObject({ explicitPageCount: null })
   })
 
+  test("projects the legacy facsimile page step used by pager navigation", () => {
+    expect(normalize({ pagestep: "2" })).toMatchObject({ pageStep: 2 })
+    expect(normalize({ pagestep: 3 })).toMatchObject({ pageStep: 3 })
+    expect(normalize({ pagestep: undefined })).toMatchObject({ pageStep: 1 })
+    expect(normalize({ pagestep: "0" })).toMatchObject({ pageStep: 1 })
+    expect(normalize({ pagestep: "2.5" })).toMatchObject({ pageStep: 1 })
+  })
+
   test("projects only safe legacy main-author contribution values", () => {
     expect(normalize({
       authors: [{

@@ -13,6 +13,12 @@ export interface ReaderFacsimileSource extends ReaderFacsimileSizeSource {
   url: string
 }
 
+export interface ReaderOcrOverlay {
+  html: string
+  width: number
+  height: number
+}
+
 export interface ReaderPartAuthor {
   id: string
   name: string | null
@@ -37,7 +43,13 @@ export interface ReaderPageIdentity {
   pageName: string
 }
 
+export interface ReaderAlternateMedia {
+  mediaType: ReaderMediaType
+  pageName: string
+}
+
 export interface ReaderPageBase {
+  alternateMedia: ReaderAlternateMedia | null
   author: {
     authorType: ReaderAuthorContribution | null
     id: string
@@ -45,8 +57,10 @@ export interface ReaderPageBase {
     role: ReaderAuthorContribution | null
   }
   description: string
+  editorWorkId: string | null
   fullTitle: string
   hasDramawebben: boolean
+  hasNyaVagar: boolean
   imprintYear: string | null
   isDrama: boolean
   endPageName: string | null
@@ -62,9 +76,11 @@ export interface ReaderPageBase {
   previousPageName: string | null
   previousPartPageName: string | null
   searchable: boolean
+  sliderMaximum: number | null
   startPageName: string | null
   sliderPercent: number
   title: string
+  urn: string | null
   workId: string
 }
 
@@ -78,6 +94,7 @@ export interface ReaderEtextPage extends ReaderPageBase {
 export interface ReaderFacsimilePage extends ReaderPageBase {
   imageNumber: number
   mediaType: "faksimil"
+  ocrOverlay: ReaderOcrOverlay | null
   preferredSize: ReaderFacsimileSize
   sources: ReaderFacsimileSource[]
 }

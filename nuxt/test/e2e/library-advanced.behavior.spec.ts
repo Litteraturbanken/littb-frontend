@@ -162,6 +162,60 @@ test("multi facets and chronology compose exact safe predicates and commit once 
   await expect(page.getByLabel("Till tryckår", { exact: true })).toHaveValue("2026")
 })
 
+test("chronology bare track clicks move the nearest handle and ties choose the upper handle", async ({
+  page
+}) => {
+  await page.goto("/bibliotek?avancerat=1&intervall=1900,2000", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  const track = page.locator("[data-library-chronology-range] .rzslider")
+  const from = page.getByLabel("Från tryckår", { exact: true })
+  const to = page.getByLabel("Till tryckår", { exact: true })
+  const installPushCounter = () => page.evaluate(() => {
+    const state = window as typeof window & { __chronologyPushes?: number }
+    const original = history.pushState.bind(history)
+    state.__chronologyPushes = 0
+    history.pushState = (...args) => {
+      state.__chronologyPushes! += 1
+      return original(...args)
+    }
+  })
+  await installPushCounter()
+  const clickYear = async (year: number) => {
+    await track.scrollIntoViewIfNeeded()
+    const box = await track.boundingBox()
+    expect(box).not.toBeNull()
+    const x = box!.x + 10 + (box!.width - 20) * (year - 1800) / (2026 - 1800)
+    await page.mouse.click(x, box!.y + box!.height / 2)
+    await expect.poll(() => page.evaluate(
+      () => (window as typeof window & { __chronologyPushes?: number }).__chronologyPushes
+    )).toBeGreaterThan(0)
+  }
+
+  await clickYear(1880)
+  await expect(from).toHaveValue("1880")
+  await expect(to).toHaveValue("2000")
+  expect(await page.evaluate(
+    () => (window as typeof window & { __chronologyPushes?: number }).__chronologyPushes
+  )).toBe(1)
+
+  await page.goto("/bibliotek?avancerat=1&intervall=1900,2000", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await installPushCounter()
+  await clickYear(2010)
+  await expect(from).toHaveValue("1900")
+  await expect(to).toHaveValue("2010")
+
+  await page.goto("/bibliotek?avancerat=1&intervall=1900,2000", { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await installPushCounter()
+  await clickYear(1950)
+  await expect(from).toHaveValue("1900")
+  await expect(to).toHaveValue("1950")
+  expect(await page.evaluate(
+    () => (window as typeof window & { __chronologyPushes?: number }).__chronologyPushes
+  )).toBe(1)
+})
+
 test("a delayed advanced request cannot replace a newer route-owned result", async ({
   page,
   request

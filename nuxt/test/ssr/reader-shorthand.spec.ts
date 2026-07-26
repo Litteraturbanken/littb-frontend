@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test"
 
-const fixture = "http://127.0.0.1:4100"
+const fixture = `http://127.0.0.1:${process.env.LBAPI_FIXTURE_PORT || 4100}`
 const resolveBase = "/api/reader/resolve/S%C3%B6derbergH"
 const resolvePath = `${resolveBase}/DoktorGlas/etext`
 const shorthandBase = "/författare/SöderbergH/titlar"
@@ -359,7 +359,7 @@ for (const [alias, destination] of [
   })
 }
 
-test("a bare-title alias resolves once before the ordinary canonical Reader load", async ({
+test("a bare-title alias and canonical Reader independently load source information", async ({
   request
 }) => {
   const response = await request.get(
@@ -369,7 +369,9 @@ test("a bare-title alias resolves once before the ordinary canonical Reader load
   expect(response.url()).toContain(
     "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?om-boken"
   )
-  expect(await sourceInfoRequests(request)).toHaveLength(1)
+  // The 307 resolver and its canonical destination are separate stateless HTTP
+  // requests; the destination owns the dialog payload it renders.
+  expect(await sourceInfoRequests(request)).toHaveLength(2)
   expect(await readerRequests(request)).toEqual([
     expectedMetadataRequest("DoktorGlas"),
     "/txt/lb-reader-doktor-glas/res_00002.html?username=app"

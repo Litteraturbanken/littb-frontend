@@ -30,6 +30,10 @@ export interface ReaderFacsimileSourcePage extends ReaderSourcePage {
 }
 
 interface ReaderWorkMetadataBase {
+  alternateMedia: {
+    mediaType: ReaderMediaType
+    pages: ReaderSourcePage[]
+  } | null
   author: {
     authorType: ReturnType<typeof normalizeReaderAuthorContribution>
     id: string
@@ -38,16 +42,20 @@ interface ReaderWorkMetadataBase {
   }
   base: string
   displayTitle: string
+  editorWorkId: string | null
   fullTitle: string
   explicitPageCount: number | null
   hasDramawebben: boolean
+  hasNyaVagar: boolean
   imprintYear: string | null
   isDrama: boolean
   endPageName: string | null
   parts: ReaderPart[]
+  pageStep: number
   searchable: boolean
   startPageName: string | null
   titlePath: string
+  urn: string | null
   workId: string
 }
 
@@ -80,12 +88,36 @@ function safeNonnegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
 }
 
+function readerPageStep(value: unknown): number {
+  const numeric = typeof value === "string" && /^[1-9]\d*$/.test(value)
+    ? Number(value)
+    : value
+  return typeof numeric === "number"
+    && Number.isSafeInteger(numeric)
+    && numeric > 0
+    && numeric <= MAX_READER_PAGES
+    ? numeric
+    : 1
+}
+
 function strictReaderString(value: unknown, maximumLength: number): value is string {
   return typeof value === "string"
     && value.length > 0
     && value.length <= maximumLength
     && value.trim() === value
     && !READER_CONTROL_CHARACTERS.test(value)
+}
+
+function hasNyaVagarKeyword(value: unknown): boolean {
+  return Array.isArray(value)
+    && value.length <= 1_000
+    && value.every(keyword => (
+      typeof keyword === "string"
+      && keyword.length > 0
+      && keyword.length <= 200
+      && !READER_CONTROL_CHARACTERS.test(keyword)
+    ))
+    && value.includes("1800")
 }
 
 function readerPages(value: unknown): ReaderSourcePage[] | null {
@@ -279,6 +311,17 @@ function boundedOptionalString(
   return value.length > 0 ? value : null
 }
 
+function boundedNullableStrictString(
+  record: UnknownRecord,
+  key: string,
+  maximumLength: number
+): string | null {
+  if (!Object.hasOwn(record, key) || record[key] === null || record[key] === "") return null
+  const value = record[key]
+  if (!strictReaderString(value, maximumLength)) invalidReaderSource()
+  return value
+}
+
 function localPartAuthorSummaries(representation: UnknownRecord): Map<string, ReaderPartAuthor> {
   const summaries = new Map<string, ReaderPartAuthor>()
   if (!Array.isArray(representation.authors)) return summaries
@@ -441,6 +484,7 @@ function commonMetadata(
   const explicitPageCount = representation.page_count
 
   return {
+    alternateMedia: null,
     author: {
       authorType: normalizeReaderAuthorContribution(firstAuthor.type),
       id: authorId,
@@ -449,20 +493,48 @@ function commonMetadata(
     },
     base,
     displayTitle,
+    editorWorkId: boundedNullableStrictString(
+      representation,
+      "editor_lbworkid",
+      MAX_READER_ID_LENGTH
+    ),
     endPageName,
     explicitPageCount: safeNonnegativeInteger(explicitPageCount) && explicitPageCount > 0
       ? explicitPageCount
       : null,
     fullTitle,
     hasDramawebben: isRecord(representation.dramawebben),
+    hasNyaVagar: hasNyaVagarKeyword(representation.keyword),
     imprintYear: imprint ?? requiredString(representation, "imprintyear"),
     isDrama: representation.texttype === "drama",
+    pageStep: readerPageStep(representation.pagestep),
     parts: [],
     searchable: representation.searchable === true,
     startPageName,
     titlePath,
+    urn: boundedNullableStrictString(representation, "urn", MAX_READER_ID_LENGTH),
     workId
   }
+}
+
+function alternateMediaMetadata(
+  representations: unknown[],
+  selected: UnknownRecord,
+  titlePath: string,
+  mediaType: ReaderMediaType
+): ReaderWorkMetadataBase["alternateMedia"] {
+  const alternateType: ReaderMediaType = mediaType === "etext" ? "faksimil" : "etext"
+  const candidate = representations.find(item => (
+    item !== selected
+    && isRecord(item)
+    && item.mediatype === alternateType
+    && item.titlepath === titlePath
+  ))
+  if (candidate === undefined) return null
+  if (!isRecord(candidate)) invalidReaderSource()
+  const pages = readerPages(candidate.pages)
+  if (!pages || pages.length === 0) invalidReaderSource()
+  return { mediaType: alternateType, pages }
 }
 
 export function normalizeReaderMetadata(
@@ -481,6 +553,12 @@ export function normalizeReaderMetadata(
   if (!isRecord(representation)) readerPageNotFound()
 
   const common = commonMetadata(representation, base, author, titlePath)
+  common.alternateMedia = alternateMediaMetadata(
+    raw.data,
+    representation,
+    titlePath,
+    mediaType
+  )
   if (mediaType === "faksimil") {
     const pages = facsimilePages(representation.pages)
     const sizes = facsimileSizes(representation)

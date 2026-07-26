@@ -16,6 +16,10 @@ const readerShorthandPath = "/författare/SöderbergH/titlar/DoktorGlas/etext"
 const readerShorthandRouterPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext"
 const dramaReaderPath = "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil"
 const sparseReaderPath = "/författare/SparseA/titlar/SparseTitle/sida/-2/etext"
+const sparseSliderReaderPath = "/författare/SöderbergH/titlar/SparseKeyboardReader/sida/2/etext"
+const countedSliderReaderPath = "/författare/SöderbergH/titlar/CountedSliderReader/sida/-2/etext"
+const onePageSliderReaderPath = "/författare/SöderbergH/titlar/OnePageSliderReader/sida/0/etext"
+const invalidCountSliderReaderPath = "/författare/SöderbergH/titlar/InvalidCountSliderReader/sida/57/etext"
 const longErrataReaderPath = "/författare/LongErrataA/titlar/LongErrata/sida/-2/etext"
 const emptyErrataReaderPath = "/författare/EmptyErrataA/titlar/EmptyErrata/sida/-2/etext"
 const storedReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
@@ -78,6 +82,10 @@ async function readerRequests(request: APIRequestContext): Promise<string[]> {
 
 async function readerMetadataRequests(request: APIRequestContext): Promise<string[]> {
   return (await (await request.get(`${fixture}/_reader_metadata_requests`)).json()).requests
+}
+
+async function readerHtmlRequests(request: APIRequestContext): Promise<string[]> {
+  return (await (await request.get(`${fixture}/_reader_html_requests`)).json()).requests
 }
 
 type ReaderHitRequest = { path: string, query: string }
@@ -262,9 +270,9 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
   await expect(currentPart.locator(".navtitle").locator(".."))
     .toHaveAttribute("title", "Den överlappande delen")
   await expect(currentPart.locator(".header").getByRole("link", { name: "Rilke" }))
-    .toHaveAttribute("href", "/författare/RilkeRM")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/RilkeRM")
   await expect(currentPart.locator(".header").getByRole("link", { name: "Shelley" }))
-    .toHaveAttribute("href", "/författare/ShelleyPB")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/ShelleyPB")
   await expect(page.locator('meta[name="part"]')).toHaveAttribute("content", "overlap")
 
   const retained =
@@ -291,7 +299,7 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
       "href",
       `/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/5/etext${retained}`
     )
-  await expect(context.locator('div[aria-hidden="true"] > .rzslider')).toHaveCount(1)
+  await expect(context.locator(".rzslider > .rz-base[aria-hidden=\"true\"]")).toHaveCount(1)
   await expect(context.locator(".expl.small")).toHaveAttribute("aria-hidden", "true")
   expect(problems).toEqual([])
 })
@@ -990,9 +998,9 @@ test("contents rows use surnames and selecting a nested part pushes its raw targ
   await expect(rows.nth(1).locator(".author")).toHaveText("Mörike")
   await expect(rows.nth(2).locator(".author")).toHaveText(["Rilke, ", "Shelley"])
   await expect(rows.nth(2).getByRole("link", { name: "Rilke" }))
-    .toHaveAttribute("href", "/författare/RilkeRM")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/RilkeRM")
   await expect(rows.nth(2).getByRole("link", { name: "Shelley" }))
-    .toHaveAttribute("href", "/författare/ShelleyPB")
+    .toHaveAttribute("href", "/f%C3%B6rfattare/ShelleyPB")
   await resetReader(request)
   selectedReaderRequests.length = 0
   selectedHitRequests.length = 0
@@ -1130,6 +1138,35 @@ test("keyboard paging follows page and part targets without stealing other short
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
   await page.keyboard.press("Control+ArrowRight")
   await page.keyboard.press("Meta+ArrowLeft")
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+})
+
+test("legacy n/f and d/m keyboard shortcuts push page and part history", async ({ page }) => {
+  const rawQuery = "?bare&repeat=%2f&repeat=%2F"
+  await page.goto(`${readerPath}${rawQuery}`, { waitUntil: "networkidle" })
+
+  await page.keyboard.press("n")
+  await expect(page).toHaveURL(
+    `/författare/SöderbergH/titlar/DoktorGlas/sida/-1/etext${rawQuery}`
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 3")
+  await page.keyboard.press("f")
+  await expect(page).toHaveURL(
+    `/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext${rawQuery}`
+  )
+
+  await navigateClient(
+    page,
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-1/etext"
+  )
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+  await page.keyboard.press("d")
+  await expect(page.locator(".reader-page-position")).toHaveText("-2 av 9")
+  await page.goBack()
+  await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
+  await page.keyboard.press("m")
+  await expect(page.locator(".reader-page-position")).toHaveText("3 av 9")
+  await page.goBack()
   await expect(page.locator(".reader-page-position")).toHaveText("-1 av 9")
 })
 
@@ -1306,7 +1343,7 @@ test("Library EPUB shorthand navigation shows only its preloader and replaces Hi
   await expect(title).toHaveCount(1)
   await expect(title).toHaveAttribute(
     "href",
-    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/etext?om-boken"
   )
   await title.click()
 
@@ -1538,7 +1575,7 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
     .not.toHaveAttribute("aria-label")
   await expect(page.getByRole("link", { name: "Hjalmar Söderberg" }).first()).toHaveAttribute(
     "href",
-    "/författare/S%C3%B6derbergH"
+    "/f%C3%B6rfattare/S%C3%B6derbergH"
   )
   await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
   await expect(page.getByRole("link", { name: "Föregående sida" })).toHaveAttribute(
@@ -1565,6 +1602,83 @@ test("hydrates one runtime e-text page with ordinary reader navigation", async (
   expect(new URL(pages[0]!, fixture).searchParams.get("username")).toBe("app")
   expect(clientReaderRequests).toEqual([])
   expect(problems).toEqual([])
+})
+
+test("page navigation preserves each page's horizontal history position", async ({
+  isMobile,
+  page
+}) => {
+  test.skip(isMobile, "the responsive reader has no horizontal page overflow")
+  await page.setViewportSize({ width: 800, height: 900 })
+  await page.route("**/api/reader/**/-1/etext", async route => {
+    await new Promise(resolve => setTimeout(resolve, 800))
+    const response = await route.fetch()
+    const reader = await response.json() as { html: string }
+    reader.html += '<div data-history-overflow style="width:3000px;height:1200px"></div>'
+    await route.fulfill({ response, json: reader })
+  })
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    const spacer = document.createElement("div")
+    spacer.id = "history-vertical-spacer"
+    spacer.style.cssText = "position:absolute;left:0;top:0;width:1px;height:1400px"
+    document.body.append(spacer)
+  })
+
+  const maximumLeft = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth
+  )
+  expect(maximumLeft).toBeGreaterThanOrEqual(200)
+  expect(await page.evaluate(
+    () => document.documentElement.scrollHeight - window.innerHeight
+  )).toBeGreaterThanOrEqual(150)
+
+  await page.evaluate(() => window.scrollTo(100, 150))
+  await expect.poll(() => page.evaluate(() => [window.scrollX, window.scrollY]))
+    .toEqual([100, 150])
+
+  await page.getByRole("link", { name: "Nästa sida" }).evaluate(link => {
+    ;(link as HTMLAnchorElement).click()
+  })
+  await expect(page).toHaveURL(/\/sida\/-1\/etext$/)
+  await page.evaluate(async () => {
+    const root = document.querySelector("#__nuxt") as HTMLElement & {
+      __vue_app__?: {
+        config: {
+          globalProperties: {
+            $router: {
+              beforeEach: (guard: () => false) => () => void
+              push: (path: string) => Promise<void>
+            }
+          }
+        }
+      }
+    }
+    const router = root.__vue_app__?.config.globalProperties.$router
+    if (!router) throw new Error("Nuxt client router is unavailable")
+    const removeGuard = router.beforeEach(() => {
+      removeGuard()
+      return false
+    })
+    await router.push("/bibliotek")
+  })
+  await expect(page).toHaveURL(/\/sida\/-1\/etext$/)
+  await expect.poll(() => page.evaluate(() => [window.scrollX, window.scrollY]))
+    .toEqual([100, 0])
+
+  await page.evaluate(() => window.scrollTo(200, 200))
+  await expect.poll(() => page.evaluate(() => [window.scrollX, window.scrollY]))
+    .toEqual([200, 200])
+
+  await page.goBack()
+  await expect(page).toHaveURL(readerPath)
+  await expect.poll(() => page.evaluate(() => [window.scrollX, window.scrollY]))
+    .toEqual([100, 150])
+
+  await page.goForward()
+  await expect(page).toHaveURL(/\/sida\/-1\/etext$/)
+  await expect.poll(() => page.evaluate(() => [window.scrollX, window.scrollY]))
+    .toEqual([200, 200])
 })
 
 test("hydrates a fixed-width faksimil scan with legacy size and rotation controls", async ({
@@ -1776,6 +1890,26 @@ test("search-shaped faksimil navigation never requests e-text hits", async ({
   await expect(page.locator("#search_nav, .reader-search-state")).toHaveCount(0)
   expect(await readerHitRequests(request)).toEqual([])
   expect(publicHitRequests).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("a selected faksimil search row marks its word in the OCR overlay", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const query = "?traff=w1_147&traffslut=w1_147" +
+    "&s_query=g%C3%B6sta&s_lbworkid=lb-reader-gosta-berlings-saga" +
+    "&s_word_form_only=true&s_include_modernized=true&hit_index=0&s_from=0&s_to=29"
+
+  const response = await page.goto(`${facsimilePath}${query}`, { waitUntil: "networkidle" })
+
+  expect(response?.status()).toBe(200)
+  await expect(page.locator(".reader_main .overlay #w1_147")).toHaveCount(1)
+  await expect(page.locator(".reader_main .overlay #w1_147.markee")).toHaveCount(1)
+  await expect(page.locator(".reader_main img.faksimil")).toBeVisible()
+  await expect(page.locator(".reader_main")).not.toHaveClass(/\bocr\b/u)
+  expect(await readerHitRequests(request)).toEqual([])
   expect(problems).toEqual([])
 })
 
@@ -2108,7 +2242,7 @@ test("the first of several hits omits previous and keeps the exact next target",
   await expect(toolkit.getByRole("link", { name: "Föregående sökträff" })).toHaveCount(0)
   await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toHaveAttribute(
     "href",
-    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?q=doktor+glas&hit=1"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext?q=doktor+glas&hit=1"
   )
   expect(problems).toEqual([])
 })
@@ -2127,9 +2261,230 @@ test("the last of several hits keeps the exact previous target and omits next", 
   await expect(toolkit).toContainText("Träff 5, sida -1")
   await expect(toolkit.getByRole("link", { name: "Föregående sökträff" })).toHaveAttribute(
     "href",
-    "/författare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=3"
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext?q=doktor+glas&hit=3"
   )
   await expect(toolkit.getByRole("link", { name: "Nästa sökträff" })).toHaveCount(0)
+  expect(problems).toEqual([])
+})
+
+test("first and last hit controls preserve raw state and push exact Reader history", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawOwners = "bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  const initialQuery = `?${rawOwners}&q=doktor%20glas&hit=1`
+  const initialEncodedPath = `${storedReaderPath}${initialQuery}`
+  await page.goto(`${readerPath}${initialQuery}`, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+
+  const toolkit = page.locator("#search_nav")
+  await toolkit.getByRole("link", { name: "Gå till sista träffen" }).click()
+  const lastQuery = `?${rawOwners}&q=doktor%20glas&hit=4`
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search))
+    .toBe(`${storedNextReaderPath}${lastQuery}`)
+  await expect(toolkit).toContainText("Träff 5, sida -1")
+  await expect(page.locator("#w3_2.markee")).toHaveCount(1)
+  expect(await readerHitRequests(request)).toContainEqual(expect.objectContaining({
+    path: "/v2/works/lb-reader-doktor-glas/search-hits",
+    query: expect.stringContaining("query=doktor%20glas&offset=4&limit=1")
+  }))
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search))
+    .toBe(initialEncodedPath)
+  await expect(toolkit).toContainText("Träff 2, sida -2")
+
+  await toolkit.getByRole("link", { name: "Gå till första träffen" }).click()
+  const firstQuery = `?${rawOwners}&q=doktor%20glas&hit=0`
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search))
+    .toBe(`${storedReaderPath.replace("/sida/-2/", "/sida/-3/")}${firstQuery}`)
+  await expect(toolkit).toContainText("Träff 1, sida -3")
+  await expect(page.locator("#w1_1.markee")).toHaveCount(1)
+  const historyLength = await page.evaluate(() => window.history.length)
+  await toolkit.getByRole("link", { name: "Gå till första träffen" }).click()
+  await expect.poll(() => page.evaluate(() => window.history.length)).toBe(historyLength)
+  expect(problems).toEqual([])
+})
+
+test("direct hit input toggles and focuses, rejects bad ordinals, and pushes a valid hit", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawOwners = "bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  const initialQuery = `?${rawOwners}&q=doktor%20glas&hit=1#direct-hit`
+  const initialEncodedPath = `${storedReaderPath}${initialQuery}`
+  await page.goto(`${readerPath}${initialQuery}`, { waitUntil: "networkidle" })
+  const settledInitialPath = await page.evaluate(() => location.pathname + location.search)
+  await request.delete(`${fixture}/_reader_hit_requests`)
+
+  const toolkit = page.locator("#search_nav")
+  const trigger = toolkit.getByRole("link", { name: "Gå direkt till träff . . ." })
+  await trigger.click()
+  const input = toolkit.getByRole("textbox", { name: "Träffnummer" })
+  await expect(input).toBeVisible()
+  await expect(input).toBeFocused()
+  const directItem = trigger.locator("..")
+  const directForm = directItem.locator("form")
+  await expect(directItem).toHaveCSS("white-space", "nowrap")
+  await expect(directForm).toHaveCSS("display", "inline")
+  await expect(input).toHaveCSS("width", "40px")
+  await expect(input).toHaveCSS("height", "16px")
+  const [inputBox, triggerBox, fontRatio] = await Promise.all([
+    input.boundingBox(),
+    trigger.boundingBox(),
+    input.evaluate(element => {
+      const inputSize = Number.parseFloat(getComputedStyle(element).fontSize)
+      const parentSize = Number.parseFloat(getComputedStyle(element.parentElement!).fontSize)
+      return inputSize / parentSize
+    })
+  ])
+  expect(inputBox).not.toBeNull()
+  expect(triggerBox).not.toBeNull()
+  expect(inputBox!.width).toBeCloseTo(40, 0)
+  expect(inputBox!.height).toBeCloseTo(16, 0)
+  expect(inputBox!.y).toBeLessThan(triggerBox!.y + triggerBox!.height)
+  expect(fontRatio).toBeCloseTo(0.7, 2)
+  await trigger.click()
+  await expect(input).toBeHidden()
+  await trigger.click()
+  await expect(input).toBeFocused()
+
+  for (const invalid of ["0", "6", "inte ett nummer"]) {
+    await input.fill(invalid)
+    await input.press("Enter")
+    await expect.poll(() => page.evaluate(() => location.pathname + location.search))
+      .toBe(settledInitialPath)
+    await expect(input).toBeVisible()
+  }
+  expect(await readerHitRequests(request)).toEqual([])
+
+  await input.fill("4")
+  await input.press("Enter")
+  const targetQuery = `?${rawOwners}&q=doktor%20glas&hit=3`
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search))
+    .toBe(`${storedNextReaderPath}${targetQuery}`)
+  await expect(page).toHaveURL(`${storedNextReaderPath}${targetQuery}#direct-hit`)
+  await expect(toolkit).toContainText("Träff 4, sida -1")
+  await expect(page.locator("#w3_1.markee")).toHaveCount(1)
+  await expect(toolkit.getByRole("textbox", { name: "Träffnummer" })).toHaveCount(0)
+  expect(await readerHitRequests(request)).toContainEqual(expect.objectContaining({
+    path: "/v2/works/lb-reader-doktor-glas/search-hits",
+    query: expect.stringContaining("query=doktor%20glas&offset=3&limit=1")
+  }))
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(initialEncodedPath)
+  await expect(toolkit).toContainText("Träff 2, sida -2")
+  expect(problems).toEqual([])
+})
+
+test("no-hit first, last, and direct controls retain the exact Reader location", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const rawOwners = "bare&empty=&plus=a+b&percent=a%20b&repeat=%2f&repeat=%2F"
+  await page.goto(`${readerPath}?${rawOwners}&q=inga&hit=0#no-hit`, { waitUntil: "networkidle" })
+  const settledPath = await page.evaluate(() => location.pathname + location.search + location.hash)
+  await expect(page.locator("#search_nav")).toContainText("0 sökträffar")
+  await request.delete(`${fixture}/_reader_hit_requests`)
+
+  const toolkit = page.locator("#search_nav")
+  await toolkit.getByRole("link", { name: "Gå till första träffen" }).click()
+  await toolkit.getByRole("link", { name: "Gå till sista träffen" }).click()
+  const direct = toolkit.getByRole("link", { name: "Gå direkt till träff . . ." })
+  await direct.click()
+  const input = toolkit.getByRole("textbox", { name: "Träffnummer" })
+  await input.fill("1")
+  await input.press("Enter")
+
+  await expect.poll(() => page.evaluate(() => location.pathname + location.search + location.hash))
+    .toBe(settledPath)
+  await expect(input).toBeFocused()
+  expect(await readerHitRequests(request)).toEqual([])
+  expect(problems).toEqual([])
+})
+
+test("an obsolete direct target lookup cannot navigate after an A-B-A route cycle", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const sourcePath = `${storedReaderPath}?q=doktor%20glas&hit=1`
+  await page.goto(sourcePath, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  const slowTargetKey = [
+    "lb-reader-doktor-glas",
+    "doktor glas",
+    "4",
+    "1",
+    "false",
+    "true",
+    "false",
+    "false"
+  ].join("|")
+  await request.put(`${fixture}/_reader_hit_delays`, {
+    data: { [slowTargetKey]: 350 }
+  })
+
+  await page.locator("#search_nav")
+    .getByRole("link", { name: "Gå till sista träffen" }).click()
+  await expect.poll(async () => (await readerHitRequests(request)).some(
+    hit => hit.query.includes("offset=4&limit=1")
+  )).toBe(true)
+
+  await navigateClient(page, `${storedReaderPath}?q=glas&hit=0`)
+  await expect(page.locator("#search_nav")).toContainText("Träff 1, sida -2")
+  await navigateClient(page, sourcePath)
+  await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -2")
+
+  await page.waitForTimeout(450)
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor(?:%20|\+)glas&hit=1$/)
+  await expect(page.locator("#search_nav")).toContainText("Träff 2, sida -2")
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
+  expect(problems).toEqual([])
+})
+
+test("opening Reader source information invalidates a delayed target lookup", async ({
+  page,
+  request
+}) => {
+  const problems = captureBrowserProblems(page)
+  const sourcePath = `${storedReaderPath}?q=doktor%20glas&hit=1`
+  await page.goto(sourcePath, { waitUntil: "networkidle" })
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  const slowTargetKey = [
+    "lb-reader-doktor-glas",
+    "doktor glas",
+    "4",
+    "1",
+    "false",
+    "true",
+    "false",
+    "false"
+  ].join("|")
+  await request.put(`${fixture}/_reader_hit_delays`, {
+    data: { [slowTargetKey]: 700 }
+  })
+
+  await page.locator("#search_nav")
+    .getByRole("link", { name: "Gå till sista träffen" }).click()
+  await expect.poll(async () => (await readerHitRequests(request)).some(
+    hit => hit.query.includes("offset=4&limit=1")
+  )).toBe(true)
+
+  await page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Mer om boken" }).click()
+  const dialog = page.getByRole("dialog", { name: "Om boken" })
+  await expect(dialog).toHaveCount(1)
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor(?:%20|\+)glas&hit=1&om-boken$/)
+
+  await page.waitForTimeout(800)
+  await expect(dialog).toHaveCount(1)
+  await expect(page).toHaveURL(/\/sida\/-2\/etext\?q=doktor(?:%20|\+)glas&hit=1&om-boken$/)
+  await expect(page.locator("#w2_1.markee")).toHaveCount(1)
   expect(problems).toEqual([])
 })
 
@@ -2201,7 +2556,7 @@ test("previous-hit and ordinary-page links use distinct target pages and preserv
   expect(problems).toEqual([])
 })
 
-test("a delayed primary Reader request never renders the prior page under the new URL", async ({
+test("a delayed primary Reader request keeps the reader shell mounted until the new page arrives", async ({
   page
 }) => {
   const problems = captureBrowserProblems(page)
@@ -2224,17 +2579,17 @@ test("a delayed primary Reader request never renders the prior page under the ne
   )
   await requestStarted
   await expect(page).toHaveURL(/\/sida\/-1\/etext\?q=doktor%20glas&hit=1$/)
-  await expect(page.locator(".reader-primary-loading")).toHaveText("Hämtar läsarsidan …")
-  await expect(page.locator(".reader_main")).toHaveCount(0)
-  await expect(page.locator(".reader-page-position")).toHaveCount(0)
-  await expect(page.locator("#toolkit > #search_nav")).toHaveCount(0)
-  await expect(page.locator(".reader-context .current_part")).toHaveCount(0)
-  await expect(page.locator('meta[name="part"]')).toHaveCount(0)
-  await expect(page).toHaveTitle("Litteraturbanken")
-  await expect(page.locator('meta[name="description"]')).toHaveCount(0)
-  await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(0)
+  await expect(page.locator(".reader-primary-loading")).toHaveCount(0)
+  await expect(page.locator(".reader_main .etext.txt")).toContainText("DOKTOR GLAS")
+  await expect(page.locator(".reader-page-position")).toHaveText("-2 av 3")
+  await expect(page.locator("#toolkit > #search_nav")).toHaveCount(1)
+  await expect(page.locator(".reader-context .current_part .navtitle")).toHaveText("Doktor Glas")
+  await expect(page.locator('meta[name="part"]')).toHaveAttribute("content", "DoktorGlas")
+  await expect(page).toHaveTitle("Doktor Glas sida -2 etext | Litteraturbanken")
+  await expect(page.locator('meta[name="description"]')).toHaveCount(1)
+  await expect(page.locator('link[href="/red/css/etext.css"]')).toHaveCount(1)
   await expect(page.locator('link[href="/txt/css/lb-reader-doktor-glas-etext.css"]'))
-    .toHaveCount(0)
+    .toHaveCount(1)
   expect(await rawStoredPageViews(page)).toBe(historyBefore)
 
   releaseRequest()
@@ -2649,4 +3004,369 @@ test("Reader history is consumed by the existing history page", async ({ page })
   await expect(page.getByRole("link", {
     name: "Hjalmar Söderberg – Doktor Glas"
   })).toHaveAttribute("href", storedReaderPath)
+})
+
+test("return link is absent without a validated Search origin", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav").getByRole("link", {
+    name: "Tillbaka till sökningen"
+  })).toHaveCount(0)
+
+  await page.goto(`${readerPath}?q=doktor%20glas&hit=1`, { waitUntil: "networkidle" })
+  await expect(page.locator("#search_nav")).toBeVisible()
+  await expect(page.locator("#search_nav").getByRole("link", {
+    name: "Tillbaka till sökningen"
+  })).toHaveCount(0)
+})
+
+test("return link on faksimil skips e-text hit loading", async ({ page, request }) => {
+  const origin = "/s%C3%B6k?fras=frihet&traffsida=2"
+  await request.delete(`${fixture}/_reader_hit_requests`)
+  await page.goto(`${facsimilePath}?q=frihet&hit=0&s_return=${encodeURIComponent(origin)}`, {
+    waitUntil: "networkidle"
+  })
+
+  await expect(page.locator("#search_nav").getByRole("link", {
+    name: "Tillbaka till sökningen"
+  })).toHaveAttribute("href", origin)
+  await page.locator("#search_nav").getByRole("link", {
+    name: "Stäng träffvisningen"
+  }).click()
+  await expect(page.locator("#search_nav")).toHaveCount(0)
+  await expect.poll(() => {
+    const url = new URL(page.url())
+    return {
+      q: url.searchParams.get("q"),
+      hit: url.searchParams.get("hit"),
+      searchReturn: url.searchParams.get("s_return")
+    }
+  }).toEqual({ q: null, hit: null, searchReturn: origin })
+  expect(await readerHitRequests(request)).toEqual([])
+})
+
+test("return link rejects malformed UTF-8 in the raw outer parameter", async ({ page }) => {
+  await page.goto(
+    `${readerPath}?q=x&hit=0&s_return=/s%C3%B6k?fras=%FF`,
+    { waitUntil: "networkidle" }
+  )
+
+  await expect(page.locator("#search_nav").getByRole("link", {
+    name: "Tillbaka till sökningen"
+  })).toHaveCount(0)
+})
+
+test("author-scoped search link selects the current Reader author", async ({ page }) => {
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  const authorSearch = page.getByRole("link", { name: "Sök i författarens texter" })
+  await expect(authorSearch).toHaveAttribute(
+    "href",
+    "/s%C3%B6k?avancerad&forfattare=S%C3%B6derbergH"
+  )
+  await authorSearch.click()
+  await expect(page).toHaveURL("/s%C3%B6k?avancerad&forfattare=S%C3%B6derbergH")
+  await expect(page.locator(".author_select")).toContainText("SöderbergH")
+})
+
+test("page-position slider preserves raw index holes and commits keyboard targets on key-up", async ({
+  page,
+  request
+}) => {
+  const rawQuery = "?bare&repeat=%2f&repeat=%2F&Mixed=%2a#slider"
+  await page.goto(`${sparseSliderReaderPath}${rawQuery}`, { waitUntil: "networkidle" })
+  const slider = page.getByRole("slider", { name: "Gå till sida" })
+  await expect(slider).toHaveAttribute("min", "0")
+  await expect(slider).toHaveAttribute("max", "57")
+  await expect(slider).toHaveValue("2")
+  const initialBrowserPath = await page.evaluate(
+    () => location.pathname + location.search + location.hash
+  )
+
+  await request.delete(`${fixture}/_reader_requests`)
+  await startHistoryMutationCounter(page)
+  await slider.focus()
+  await page.keyboard.down("ArrowRight")
+  await expect(slider).toHaveValue("3")
+  await expect(page).toHaveURL(initialBrowserPath)
+  await page.keyboard.up("ArrowRight")
+  await expect(slider).toHaveValue("2")
+  await expect(page).toHaveURL(initialBrowserPath)
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 0 })
+  expect(await readerRequests(request)).toEqual([])
+
+  await page.keyboard.down("End")
+  await expect(slider).toHaveValue("57")
+  await expect(page).toHaveURL(initialBrowserPath)
+  await page.keyboard.up("End")
+  const rawTarget = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/57/etext" + rawQuery
+  await expect(page).toHaveURL(rawTarget)
+  expect(await page.evaluate(() => window.history.state.current)).toBe(rawTarget)
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
+
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(initialBrowserPath)
+})
+
+test("page-position slider previews pointer input and commits exactly once on release", async ({
+  page,
+  request
+}) => {
+  const rawQuery = "?bare&empty=&repeat=%2f&repeat=%2F&Mixed=%2a#slider"
+  await page.goto(`${sparseSliderReaderPath}${rawQuery}`, { waitUntil: "networkidle" })
+  const slider = page.getByRole("slider", { name: "Gå till sida" })
+  const initialBrowserPath = await page.evaluate(
+    () => location.pathname + location.search + location.hash
+  )
+  await request.delete(`${fixture}/_reader_requests`)
+  await startHistoryMutationCounter(page)
+
+  await slider.evaluate(input => {
+    const range = input as HTMLInputElement
+    range.value = "12"
+    range.dispatchEvent(new Event("input", { bubbles: true }))
+    range.value = "57"
+    range.dispatchEvent(new Event("input", { bubbles: true }))
+    range.value = "12"
+    range.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  await expect(slider).toHaveValue("12")
+  const bubble = page.locator(".reader-context .rz-bubble.rz-model-value")
+  await expect(bubble).toHaveText("12")
+  await expect(bubble).toHaveCSS("opacity", "1")
+  await expect(bubble).toHaveCSS("font-size", "12px")
+  const [bubbleBox, sliderBox] = await Promise.all([bubble.boundingBox(), slider.boundingBox()])
+  expect(bubbleBox).not.toBeNull()
+  expect(sliderBox).not.toBeNull()
+  expect(bubbleBox!.y + bubbleBox!.height).toBeLessThan(sliderBox!.y)
+  const pointerCenter = await page.locator(".reader-context .rz-pointer").evaluate(pointer => {
+    const box = pointer.getBoundingClientRect()
+    return box.left + box.width / 2
+  })
+  expect(bubbleBox!.x + bubbleBox!.width / 2).toBeCloseTo(pointerCenter, 0)
+  await expect(page).toHaveURL(initialBrowserPath)
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 0, replaceState: 0 })
+  expect(await readerRequests(request)).toEqual([])
+
+  await slider.evaluate(input => input.dispatchEvent(new Event("change", { bubbles: true })))
+  const rawTarget = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/12/etext" + rawQuery
+  await expect(page).toHaveURL(rawTarget)
+  expect(await page.evaluate(() => window.history.state.current)).toBe(rawTarget)
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
+})
+
+test("rapid page intents push every draft route and debounce only the final content request", async ({
+  page,
+  request
+}) => {
+  const start = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/-4/etext"
+  const pages = ["-3", "-2", "-1"].map(pageName =>
+    `/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlasParts/sida/${pageName}/etext`
+  )
+  const problems = captureBrowserProblems(page)
+  await page.goto(start, { waitUntil: "networkidle" })
+  await page.locator(".reader-context").evaluate(element => {
+    element.setAttribute("data-rapid-sidebar-sentinel", "stable")
+  })
+  await Promise.all([
+    request.delete(`${fixture}/_reader_requests`),
+    request.delete(`${fixture}/_reader_metadata_requests`),
+    request.delete(`${fixture}/_reader_html_requests`)
+  ])
+  await page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as (HTMLElement & {
+      __vue_app__?: { config: { globalProperties: { $router: {
+        afterEach: (callback: (to: { fullPath: string }) => void) => void
+      } } } }
+    }) | null
+    const state = window as typeof window & {
+      __rapidReaderRoutes?: Array<{ fullPath: string, at: number }>
+    }
+    state.__rapidReaderRoutes = []
+    root?.__vue_app__?.config.globalProperties.$router.afterEach(to => {
+      state.__rapidReaderRoutes!.push({ fullPath: to.fullPath, at: performance.now() })
+    })
+    performance.clearResourceTimings()
+  })
+
+  await page.keyboard.press("n")
+  await page.keyboard.press("n")
+  await page.keyboard.press("n")
+
+  await expect(page).toHaveURL(pages[2]!)
+  await expect(page.locator(".reader-context[data-rapid-sidebar-sentinel=stable]")).toHaveCount(1)
+  await expect(page.locator(".reader-primary-loading, [data-reader-loading]")).toHaveCount(0)
+
+  await expect.poll(async () => readerMetadataRequests(request), { timeout: 2_000 })
+    .toHaveLength(1)
+  await expect.poll(async () => readerHtmlRequests(request), { timeout: 2_000 })
+    .toHaveLength(1)
+  const debounceDelay = await page.evaluate(() => {
+    const state = window as typeof window & {
+      __rapidReaderRoutes?: Array<{ fullPath: string, at: number }>
+    }
+    const routeAt = state.__rapidReaderRoutes?.at(-1)?.at
+    const requestAt = performance.getEntriesByType("resource")
+      .filter(entry => entry.name.includes("/api/reader/"))
+      .at(-1)?.startTime
+    return routeAt === undefined || requestAt === undefined ? null : requestAt - routeAt
+  })
+  expect(debounceDelay).not.toBeNull()
+  expect(debounceDelay!).toBeGreaterThanOrEqual(195)
+  expect((await readerHtmlRequests(request))[0]).toContain("res_00004.html")
+  await expect(page.locator(".reader_main")).toHaveAttribute(
+    "aria-label",
+    "Doktor Glas delar, sida -1"
+  )
+
+  for (const expected of [pages[1]!, pages[0]!, start]) {
+    await page.goBack()
+    await expect(page).toHaveURL(expected)
+  }
+  expect(problems).toEqual([])
+})
+
+test("a bare page-position track click previews its integer and commits once", async ({
+  page,
+  request
+}) => {
+  await page.goto(sparseSliderReaderPath, { waitUntil: "networkidle" })
+  const slider = page.getByRole("slider", { name: "Gå till sida" })
+  await slider.scrollIntoViewIfNeeded()
+  const box = await slider.boundingBox()
+  expect(box).not.toBeNull()
+  await request.delete(`${fixture}/_reader_requests`)
+  await startHistoryMutationCounter(page)
+
+  const targetIndex = 12
+  const targetX = box!.x + 10 + (box!.width - 20) * targetIndex / 57
+  await page.mouse.click(targetX, box!.y + box!.height / 2)
+
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/12/etext"
+  )
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
+})
+
+test("page-position slider keeps search-hit state and has explicit-count edge behavior", async ({
+  page
+}) => {
+  await page.goto(`${countedSliderReaderPath}?q=doktor%20glas&hit=1`, {
+    waitUntil: "networkidle"
+  })
+  const hitSlider = page.getByRole("slider", { name: "Gå till sida" })
+  await expect(hitSlider).toHaveValue("2")
+  await hitSlider.focus()
+  await page.keyboard.down("End")
+  await page.keyboard.up("End")
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/CountedSliderReader/sida/-1/etext?q=doktor%20glas&hit=1"
+  )
+
+  await page.goto(readerPath, { waitUntil: "networkidle" })
+  await expect(page.getByRole("slider", { name: "Gå till sida" })).toHaveCount(0)
+
+  await page.goto(invalidCountSliderReaderPath, { waitUntil: "networkidle" })
+  await expect(page.getByRole("slider", { name: "Gå till sida" })).toHaveCount(0)
+
+  await page.goto(onePageSliderReaderPath, { waitUntil: "networkidle" })
+  const onePageSlider = page.getByRole("slider", { name: "Gå till sida" })
+  await expect(onePageSlider).toHaveValue("0")
+  await expect(onePageSlider).toHaveAttribute("min", "0")
+  await expect(onePageSlider).toHaveAttribute("max", "0")
+  await onePageSlider.focus()
+  await expect(onePageSlider).toBeFocused()
+})
+
+test("page-position slider clears a keyboard preview on blur and supports pointer-coordinate drag", async ({
+  page,
+  request
+}) => {
+  await page.goto(sparseSliderReaderPath, { waitUntil: "networkidle" })
+  const slider = page.getByRole("slider", { name: "Gå till sida" })
+  await slider.focus()
+  await page.keyboard.down("End")
+  await expect(slider).toHaveValue("57")
+  await slider.blur()
+  await page.keyboard.up("End")
+  await expect(page).toHaveURL(sparseSliderReaderPath)
+  await expect(slider).toHaveValue("2")
+
+  await request.delete(`${fixture}/_reader_requests`)
+  await startHistoryMutationCounter(page)
+  const box = await slider.boundingBox()
+  expect(box).not.toBeNull()
+  const startX = box!.x + 10 + (box!.width - 20) * 2 / 57
+  const minimumX = box!.x + 10
+  const targetX = box!.x + 10 + (box!.width - 20) * 12 / 57
+  const maximumX = box!.x + box!.width - 10
+  const y = box!.y + box!.height / 2
+
+  await page.mouse.move(startX, y)
+  await page.mouse.down()
+  await page.mouse.move(minimumX, y, { steps: 2 })
+  await page.mouse.up()
+  await expect(page).toHaveURL(sparseSliderReaderPath)
+  await expect(slider).toHaveValue("2")
+
+  await page.mouse.move(startX, y)
+  await page.mouse.down()
+  await page.mouse.move(maximumX, y, { steps: 2 })
+  await page.mouse.up()
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/57/etext"
+  )
+  await page.goBack({ waitUntil: "networkidle" })
+  await expect(page).toHaveURL(sparseSliderReaderPath)
+
+  await startHistoryMutationCounter(page)
+  await page.mouse.move(startX, y)
+  await page.mouse.down()
+  await page.mouse.move(targetX, y, { steps: 4 })
+  await expect(slider).toHaveValue("12")
+  await expect(page).toHaveURL(sparseSliderReaderPath)
+  await page.mouse.up()
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/12/etext"
+  )
+  expect(await historyMutationCounts(page)).toEqual({ pushState: 1, replaceState: 1 })
+})
+
+test("page-position slider clears committed drafts across A-B-A and aligns the hit bubble", async ({
+  page,
+  request
+}) => {
+  await page.goto(sparseSliderReaderPath, { waitUntil: "networkidle" })
+  await request.put(`${fixture}/_reader_metadata_delays`, {
+    data: { SparseKeyboardReader: 350 }
+  })
+  const slider = page.getByRole("slider", { name: "Gå till sida" })
+  await slider.focus()
+  await page.keyboard.down("End")
+  await page.keyboard.up("End")
+  await expect(page).toHaveURL(
+    "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/SparseKeyboardReader/sida/57/etext"
+  )
+  await page.goBack()
+  await expect(page).toHaveURL(sparseSliderReaderPath)
+  await expect(slider).toHaveValue("2")
+  await expect(page.locator(".reader-context .rz-bubble.rz-model-value")).toHaveCount(0)
+
+  await page.goto(`${countedSliderReaderPath}?q=doktor%20glas&hit=1`, {
+    waitUntil: "networkidle"
+  })
+  const hitSlider = page.getByRole("slider", { name: "Gå till sida" })
+  await hitSlider.evaluate(input => {
+    const range = input as HTMLInputElement
+    range.value = "3"
+    range.dispatchEvent(new Event("input", { bubbles: true }))
+  })
+  const hitBubble = page.locator(".reader-context .rz-bubble.rz-model-value")
+  const [hitBubbleBox, hitPointerCenter] = await Promise.all([
+    hitBubble.boundingBox(),
+    page.locator(".reader-context .rz-pointer").evaluate(pointer => {
+      const box = pointer.getBoundingClientRect()
+      return box.left + box.width / 2
+    })
+  ])
+  expect(hitBubbleBox).not.toBeNull()
+  expect(hitBubbleBox!.x + hitBubbleBox!.width / 2).toBeCloseTo(hitPointerCenter, 0)
 })

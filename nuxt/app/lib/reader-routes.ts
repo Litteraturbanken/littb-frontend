@@ -117,8 +117,26 @@ export function readerPageFullPath(fullPath: string, pageName: string): string {
   return `${segments.join("/")}${query}${fragment}`
 }
 
+export function readerMediaFullPath(
+  fullPath: string,
+  pageName: string,
+  mediaType: "etext" | "faksimil"
+): string {
+  const pageFullPath = readerPageFullPath(fullPath, pageName)
+  const { beforeFragment, fragment } = splitFragment(pageFullPath)
+  const queryIndex = beforeFragment.indexOf("?")
+  const path = queryIndex < 0 ? beforeFragment : beforeFragment.slice(0, queryIndex)
+  const query = queryIndex < 0 ? "" : beforeFragment.slice(queryIndex)
+  const segments = path.split("/")
+  if (segments.length < 2 || (segments.at(-1) !== "etext" && segments.at(-1) !== "faksimil")) {
+    throw new RangeError("Reader full path is not canonical")
+  }
+  segments[segments.length - 1] = mediaType
+  return `${segments.join("/")}${query}${fragment}`
+}
+
 export function readerAuthorHref(author: string): string {
-  return `/författare/${encodeURIComponent(author)}`
+  return `/f%C3%B6rfattare/${encodeURIComponent(author)}`
 }
 
 export function readerPageHref({
@@ -129,7 +147,7 @@ export function readerPageHref({
   query
 }: ReaderRouteSegments): string {
   const path = [
-    "/författare",
+    "/f%C3%B6rfattare",
     encodeURIComponent(author),
     "titlar",
     encodeURIComponent(title),

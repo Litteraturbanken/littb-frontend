@@ -1,4 +1,5 @@
 import type { ReaderPage, ReaderPart, ReaderPartAuthor } from "#shared/types/reader"
+import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 
 import { createLbApiClient } from "../../../../../../app/lib/api/client"
 
@@ -145,6 +146,17 @@ function readerSliderPercent(pageIndex: number, explicitPageCount: number | null
   return Math.min(100, Math.max(0, pageIndex / (explicitPageCount - 1) * 100))
 }
 
+function readerSliderMaximum(
+  pages: readonly Pick<ReaderPage["pageMap"][number], "pageIndex">[],
+  explicitPageCount: number | null
+): number | null {
+  if (explicitPageCount === null) return null
+  const maximum = explicitPageCount - 1
+  return pages.every(page => page.pageIndex >= 0 && page.pageIndex <= maximum)
+    ? maximum
+    : null
+}
+
 export default defineEventHandler(async event => {
   setHeader(event, "cache-control", "no-store")
   const author = requiredParam(event, "author")
@@ -162,19 +174,30 @@ export default defineEventHandler(async event => {
   const parts = await completePartAuthors(event, metadata.parts)
   const partNavigation = resolveReaderPartNavigation(parts, currentPage.pageIndex)
   const knownNames = new Set(metadata.pages.map(page => page.pageName))
+  const alternatePage = metadata.alternateMedia?.pages.find(page => page.pageName === pageName)
+    ?? metadata.alternateMedia?.pages.find(page => page.pageIndex === currentPage.pageIndex)
+    ?? metadata.alternateMedia?.pages[0]
   const commonPage = {
+    alternateMedia: metadata.alternateMedia && alternatePage
+      ? {
+          mediaType: metadata.alternateMedia.mediaType,
+          pageName: alternatePage.pageName
+        }
+      : null,
     author: metadata.author,
     description:
       `${metadata.displayTitle} av ${metadata.author.name}, sida ${pageName} som ${metadata.mediaType}.`,
+    editorWorkId: metadata.editorWorkId,
     fullTitle: metadata.fullTitle,
     hasDramawebben: metadata.hasDramawebben,
+    hasNyaVagar: metadata.hasNyaVagar,
     imprintYear: metadata.imprintYear,
     isDrama: metadata.isDrama,
     currentPartIndex: partNavigation.currentPartIndex,
     endPageName: metadata.endPageName && knownNames.has(metadata.endPageName)
       ? metadata.endPageName
       : null,
-    nextPageName: metadata.pages[currentPosition + 1]?.pageName ?? null,
+    nextPageName: metadata.pages[currentPosition + metadata.pageStep]?.pageName ?? null,
     nextPartPageName: partNavigation.nextPartPageName,
     pageCount: metadata.pages.length,
     pageIndex: currentPage.pageIndex,
@@ -185,23 +208,30 @@ export default defineEventHandler(async event => {
     pageName,
     pageNames: metadata.pages.map(page => page.pageName),
     parts,
-    previousPageName: metadata.pages[currentPosition - 1]?.pageName ?? null,
+    previousPageName: metadata.pages[currentPosition - metadata.pageStep]?.pageName ?? null,
     previousPartPageName: partNavigation.previousPartPageName,
     searchable: metadata.searchable,
+    sliderMaximum: readerSliderMaximum(metadata.pages, metadata.explicitPageCount),
     startPageName: metadata.startPageName && knownNames.has(metadata.startPageName)
       ? metadata.startPageName
       : null,
     sliderPercent: readerSliderPercent(currentPage.pageIndex, metadata.explicitPageCount),
     title: metadata.displayTitle,
+    urn: metadata.urn,
     workId: metadata.workId
   }
 
   if (metadata.mediaType === "faksimil") {
     const facsimilePage = metadata.pages[currentPosition]!
+    const ocrBase = useRuntimeConfig(event).contentBase.replace(/\/$/, "")
+    const ocrOverlay = metadata.searchable
+      ? await fetchReaderOcrOverlay(ocrBase, metadata.workId, facsimilePage.pageIndex)
+      : null
     return {
       ...commonPage,
       imageNumber: facsimilePage.imageNumber,
       mediaType: metadata.mediaType,
+      ocrOverlay,
       preferredSize: metadata.preferredSize,
       sources: buildFacsimileSources(
         metadata.workId,

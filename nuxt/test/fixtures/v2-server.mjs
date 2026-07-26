@@ -632,8 +632,37 @@ function readerLocalPartAuthorRepresentation(titlePath, author) {
 
 function readerMetadataResponse(titlePath) {
   switch (titlePath) {
+    case "DoktorGlas": {
+      const etext = readerRepresentation(titlePath, {
+        editor_lbworkid: "lb-editor-doktor-glas",
+        shorttitle: "Doktor Glas",
+        title: "Doktor Glas. Roman",
+        urn: "urn:nbn:se:lb-lb-reader-doktor-glas"
+      })
+      const faksimil = readerFacsimileRepresentation(titlePath, {
+        authors: structuredClone(etext.authors),
+        endpagename: "-1",
+        lbworkid: etext.lbworkid,
+        pages: [
+          { pagename: "-3", pageindex: 1, imagenumber: 1 },
+          { pagename: "-2", pageindex: 2, imagenumber: 2 },
+          { pagename: "-1", pageindex: 3, imagenumber: 3 }
+        ],
+        parts: structuredClone(etext.parts),
+        shorttitle: etext.shorttitle,
+        startpagename: "-2",
+        title: etext.title,
+        titlepath: etext.titlepath
+      })
+      return { hits: 2, data: [etext, faksimil] }
+    }
     case "Rallarliv":
       return { hits: 0, data: [] }
+    case "NyaVagarReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, { keyword: ["1800"] })]
+      }
     case "DoktorGlasParts":
       return readerPartsWorkInfoResponse
     case "SparseKeyboardReader":
@@ -642,6 +671,7 @@ function readerMetadataResponse(titlePath) {
         data: [readerRepresentation(titlePath, {
           endpagename: "57",
           lbworkid: "lb-reader-sparse-keyboard",
+          page_count: 58,
           pages: [
             { pagename: "2", pageindex: 2 },
             { pagename: "12", pageindex: 12 },
@@ -649,6 +679,39 @@ function readerMetadataResponse(titlePath) {
           ],
           parts: [],
           startpagename: "2"
+        })]
+      }
+    case "CountedSliderReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, { page_count: 4 })]
+      }
+    case "InvalidCountSliderReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          endpagename: "57",
+          lbworkid: "lb-reader-sparse-keyboard",
+          page_count: 57,
+          pages: [
+            { pagename: "2", pageindex: 2 },
+            { pagename: "12", pageindex: 12 },
+            { pagename: "57", pageindex: 57 }
+          ],
+          parts: [],
+          startpagename: "2"
+        })]
+      }
+    case "OnePageSliderReader":
+      return {
+        hits: 1,
+        data: [readerRepresentation(titlePath, {
+          endpagename: "0",
+          lbworkid: "lb-reader-one-page",
+          page_count: 1,
+          pages: [{ pagename: "0", pageindex: 0 }],
+          parts: [],
+          startpagename: "0"
         })]
       }
     case "PartlessReader":
@@ -660,6 +723,11 @@ function readerMetadataResponse(titlePath) {
       return {
         hits: 1,
         data: [readerRepresentation(titlePath, { searchable: false })]
+      }
+    case "UnsearchableFacsimileReader":
+      return {
+        hits: 1,
+        data: [readerFacsimileRepresentation(titlePath, { searchable: false })]
       }
     case "ReaderAuthorOmission":
       return {
@@ -922,6 +990,7 @@ function readerMetadataResponse(titlePath) {
             full_name: "August Strindberg",
             surname: "Strindberg"
           }],
+          lbworkid: "lb238704",
           pages: [{ pagename: "1", pageindex: 1 }],
           shorttitle: "Röda rummet",
           startpagename: "1"
@@ -2979,6 +3048,24 @@ const server = createServer(async (request, response) => {
     )
   }
 
+  if (
+    request.method === "GET"
+    && url.pathname === "/txt/lb-reader-one-page/res_00000.html"
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<div class="pname" pname="0">En sida</div>'
+    )
+  }
+
   const workScopedReaderPageMatch = request.method === "GET"
     ? /^\/txt\/lb7604979\/res_000(13|14)\.html$/.exec(url.pathname)
     : null
@@ -2991,6 +3078,24 @@ const server = createServer(async (request, response) => {
     }
     const pageHtml = workScopedReaderPageHtmlByIndex[Number(workScopedReaderPageMatch[1])]
     return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
+  }
+
+  if (
+    request.method === "GET"
+    && url.pathname === "/txt/lb238704/res_00001.html"
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerHtmlRequests.push(recordedRequest)
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<div class="pname" pname="1"><span class="w" id="w1_10">ropade</span> <span class="w" id="w1_11">frihet</span> <span class="w" id="w1_12">och</span></div>'
+    )
   }
 
   if (
@@ -3028,12 +3133,42 @@ const server = createServer(async (request, response) => {
     const recordedRequest = `${url.pathname}${url.search}`
     readerRequests.push(recordedRequest)
     readerOcrRequests.push(recordedRequest)
-    return sendBody(response, 200, "text/html; charset=utf-8", "<div>OCR fixture</div>")
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<body><div data-size="625x900"><span id="w1_147" class="w">OCR fixture</span></div></body>'
+    )
+  }
+
+  if (
+    request.method === "GET"
+    && url.pathname === "/txt/lb3203777/ocr_00057.html"
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerOcrRequests.push(recordedRequest)
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<div data-size="488.160004x756"><span class="w" style="top: 364px; left: 255.4px; font-size: 16.3408px"><span id="w58_123">kyrka </span><span id="w58_123">. </span></span></div>'
+    )
   }
 
   if (
     request.method === "GET"
     && /^\/txt\/lb-reader-gosta-berlings-saga\/lb-reader-gosta-berlings-saga_[1-5]\/lb-reader-gosta-berlings-saga_[1-5]_\d{4}\.jpeg$/.test(url.pathname)
+  ) {
+    const recordedRequest = `${url.pathname}${url.search}`
+    readerRequests.push(recordedRequest)
+    readerJpegRequests.push(recordedRequest)
+    return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
+  }
+
+  if (
+    request.method === "GET"
+    && /^\/txt\/lb-reader-doktor-glas\/lb-reader-doktor-glas_[1-5]\/lb-reader-doktor-glas_[1-5]_\d{4}\.jpeg$/.test(url.pathname)
   ) {
     const recordedRequest = `${url.pathname}${url.search}`
     readerRequests.push(recordedRequest)
@@ -3051,6 +3186,7 @@ const server = createServer(async (request, response) => {
     (
       url.pathname === "/txt/css/lb-reader-doktor-glas-etext.css" ||
       url.pathname === "/txt/css/lb-reader-doktor-glas-parts-etext.css" ||
+      url.pathname === "/txt/css/lb238704-etext.css" ||
       url.pathname === "/txt/css/lb7604979-etext.css"
     )
   ) {
@@ -3886,6 +4022,27 @@ const server = createServer(async (request, response) => {
     if (works) return sendJson(response, 200, works)
     return sendJson(response, 404, {
       error: { code: "not_found", message: "Resource not found", details: null }
+    })
+  }
+
+  if (request.method === "GET" && apiPathname === "/v2/dictionary/articles") {
+    const word = url.searchParams.get("word")
+    if (!word || url.searchParams.size !== 1 || /\s/u.test(word) || word.length > 100) {
+      return validationError(response)
+    }
+    if (word === "SAKNAS") {
+      return sendJson(response, 404, {
+        error: {
+          code: "dictionary_article_not_found",
+          message: "No dictionary article found",
+          details: null
+        }
+      })
+    }
+    return sendJson(response, 200, {
+      word,
+      base_form: word,
+      article_html: `<lemma id="unsafe" onclick="bad()"><grundform-clean>${word}</grundform-clean><grundform>${word}</grundform><lexem><def>En deterministisk ordboksartikel.</def></lexem><script>bad()</script></lemma>`
     })
   }
 
