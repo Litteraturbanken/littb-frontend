@@ -47,3 +47,29 @@ NUXT_IGNORE_LOCK=1 LBAPI_FIXTURE_PORT=4261 LITTB_NUXT_TEST_PORT=3161 \
   --grep "global search navigation remembers"
 NUXT_IGNORE_LOCK=1 yarn typecheck
 ```
+
+## Review fix — committed SPA departure prerequisites
+
+Reviewing an archive of the original Task6 commit exposed a staging-only
+failure: the working tree's internal `NuxtLink` conversions had made the test
+green, but the committed layout still used a native Presentationer anchor. The
+departure reloaded the document, cleared the intended session-only module ref,
+and reset the Library href to `/bibliotek`.
+
+The regression now asserts that a sentinel survives the Presentationer
+departure before checking the remembered Library href. Against the original
+commit archive it failed with expected `library-spa`, received `undefined`.
+
+The fix converts Nuxt-owned global destinations to `NuxtLink`: home,
+text search, epub, Presentationer, Dramawebben, Om LB, and the language pages.
+External and legacy-managed destinations remain native anchors. The staged
+Search link uses its canonical static `/s%C3%B6k` target so this Task6 fix does
+not absorb the separate unstaged Search-memory implementation.
+
+Verification was run from an archive of the exact staged code snapshot
+(`934760ad97c7c733a37965292934b946fef075e4`), not from the dirty working tree:
+
+- Strengthened Library SPA-return regression: 1 passed.
+- Full desktop Library behavior suite: 45 passed.
+- Library navigation helper: 11 passed.
+- `yarn typecheck`: passed.

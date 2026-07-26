@@ -106,6 +106,8 @@ test("global Library navigation remembers route-owned query state across pages",
 
   await page.locator(".mainnav").getByRole("link", { name: "Presentationer", exact: true }).click()
   await expect(page).toHaveURL("/presentationer")
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("library-spa")
 
   const libraryLink = page.locator(".mainnav").getByRole("link", {
     name: "Biblioteket",
