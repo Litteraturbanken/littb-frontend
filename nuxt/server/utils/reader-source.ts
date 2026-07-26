@@ -6,7 +6,8 @@ import type {
   ReaderFacsimileSource,
   ReaderMediaType,
   ReaderPart,
-  ReaderPartAuthor
+  ReaderPartAuthor,
+  ReaderWorkContributor
 } from "../../shared/types/reader"
 import { normalizeReaderAuthorContribution } from "../../shared/utils/reader-author"
 
@@ -15,6 +16,7 @@ type UnknownRecord = Record<string, unknown>
 const MAX_READER_PAGES = 100_000
 const MAX_READER_PARTS = 10_000
 const MAX_READER_PART_AUTHORS = 100
+const MAX_READER_WORK_CONTRIBUTORS = 100
 const MAX_READER_ID_LENGTH = 100
 const MAX_READER_PAGE_NAME_LENGTH = 100
 const MAX_READER_TITLE_LENGTH = 2_000
@@ -34,13 +36,9 @@ interface ReaderWorkMetadataBase {
     mediaType: ReaderMediaType
     pages: ReaderSourcePage[]
   } | null
-  author: {
-    authorType: ReturnType<typeof normalizeReaderAuthorContribution>
-    id: string
-    name: string
-    role: ReturnType<typeof normalizeReaderAuthorContribution>
-  }
+  author: ReaderWorkContributor
   base: string
+  contributors: ReaderWorkContributor[]
   displayTitle: string
   editorWorkId: string | null
   fullTitle: string
@@ -352,6 +350,30 @@ function localPartAuthorSummaries(representation: UnknownRecord): Map<string, Re
   return summaries
 }
 
+function readerWorkContributors(value: unknown): ReaderWorkContributor[] {
+  if (
+    !Array.isArray(value)
+    || value.length === 0
+    || value.length > MAX_READER_WORK_CONTRIBUTORS
+  ) invalidReaderSource()
+
+  return value.map(contributor => {
+    if (!isRecord(contributor)) invalidReaderSource()
+    const id = contributor.authorid
+    const name = contributor.full_name
+    if (
+      !strictReaderString(id, MAX_READER_ID_LENGTH)
+      || !strictReaderString(name, MAX_READER_TITLE_LENGTH)
+    ) invalidReaderSource()
+    return {
+      authorType: normalizeReaderAuthorContribution(contributor.type),
+      id,
+      name,
+      role: normalizeReaderAuthorContribution(contributor.role)
+    }
+  })
+}
+
 function readerPartAuthors(
   value: unknown,
   localAuthors: ReadonlyMap<string, ReaderPartAuthor>
@@ -448,17 +470,13 @@ function commonMetadata(
   author: string,
   titlePath: string
 ): ReaderWorkMetadataBase {
-  const authors = representation.authors
-  const firstAuthor = Array.isArray(authors) ? authors[0] : null
+  const contributors = readerWorkContributors(representation.authors)
+  const primaryAuthor = contributors[0]!
   const workId = requiredString(representation, "lbworkid")
   const fullTitle = requiredString(representation, "title")
   const displayTitle = requiredString(representation, "shorttitle") ?? fullTitle
-  if (!isRecord(firstAuthor) || !workId || !fullTitle || !displayTitle) invalidReaderSource()
-
-  const authorId = requiredString(firstAuthor, "authorid")
-  const authorName = requiredString(firstAuthor, "full_name")
-  if (!authorId || !authorName) invalidReaderSource()
-  if (authorId !== author || representation.titlepath !== titlePath) readerPageNotFound()
+  if (!workId || !fullTitle || !displayTitle) invalidReaderSource()
+  if (primaryAuthor.id !== author || representation.titlepath !== titlePath) readerPageNotFound()
 
   let startPageName: string | null = null
   if (Object.hasOwn(representation, "startpagename")) {
@@ -485,13 +503,9 @@ function commonMetadata(
 
   return {
     alternateMedia: null,
-    author: {
-      authorType: normalizeReaderAuthorContribution(firstAuthor.type),
-      id: authorId,
-      name: authorName,
-      role: normalizeReaderAuthorContribution(firstAuthor.role)
-    },
+    author: primaryAuthor,
     base,
+    contributors,
     displayTitle,
     editorWorkId: boundedNullableStrictString(
       representation,

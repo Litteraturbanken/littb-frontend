@@ -35,6 +35,7 @@ import {
 } from "./sla-article-data.mjs"
 import {
   readerAarnsethFacsimileWorkInfoResponse,
+  readerBoyeWorkInfoResponse,
   readerFacsimileJpegFile,
   readerFacsimileWorkInfoResponse,
   readerPageHtmlByIndex,
@@ -856,6 +857,8 @@ function readerMetadataResponse(titlePath) {
       }
     case "GostaBerlingsSaga":
       return readerFacsimileWorkInfoResponse
+    case "EttVerkligtJordiskt":
+      return readerBoyeWorkInfoResponse
     case "Affarer":
       return {
         hits: 1,
@@ -3128,6 +3131,18 @@ const server = createServer(async (request, response) => {
 
   if (
     request.method === "GET"
+    && url.pathname === "/txt/lb-reader-boye-jordiskt/res_00001.html"
+  ) {
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<div class="pname" pname="3"><span class="w">ETT VERKLIGT JORDISKT</span></div>'
+    )
+  }
+
+  if (
+    request.method === "GET"
     && /^\/txt\/lb-reader-gosta-berlings-saga\/ocr_\d{5}\.html$/.test(url.pathname)
   ) {
     const recordedRequest = `${url.pathname}${url.search}`
@@ -3138,6 +3153,18 @@ const server = createServer(async (request, response) => {
       200,
       "text/html; charset=utf-8",
       '<body><div data-size="625x900"><span id="w1_147" class="w">OCR fixture</span></div></body>'
+    )
+  }
+
+  if (
+    request.method === "GET"
+    && url.pathname === "/txt/lb-reader-boye-jordiskt/ocr_00001.html"
+  ) {
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<body><div data-size="625x900"><span class="w">Boye OCR</span></div></body>'
     )
   }
 
@@ -3168,6 +3195,13 @@ const server = createServer(async (request, response) => {
 
   if (
     request.method === "GET"
+    && /^\/txt\/lb-reader-boye-jordiskt\/lb-reader-boye-jordiskt_[1-5]\/lb-reader-boye-jordiskt_[1-5]_0003\.jpeg$/.test(url.pathname)
+  ) {
+    return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
+  }
+
+  if (
+    request.method === "GET"
     && /^\/txt\/lb-reader-doktor-glas\/lb-reader-doktor-glas_[1-5]\/lb-reader-doktor-glas_[1-5]_\d{4}\.jpeg$/.test(url.pathname)
   ) {
     const recordedRequest = `${url.pathname}${url.search}`
@@ -3186,6 +3220,7 @@ const server = createServer(async (request, response) => {
     (
       url.pathname === "/txt/css/lb-reader-doktor-glas-etext.css" ||
       url.pathname === "/txt/css/lb-reader-doktor-glas-parts-etext.css" ||
+      url.pathname === "/txt/css/lb-reader-boye-jordiskt-etext.css" ||
       url.pathname === "/txt/css/lb238704-etext.css" ||
       url.pathname === "/txt/css/lb7604979-etext.css"
     )

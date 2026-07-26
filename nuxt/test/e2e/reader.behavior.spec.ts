@@ -25,6 +25,8 @@ const emptyErrataReaderPath = "/författare/EmptyErrataA/titlar/EmptyErrata/sida
 const storedReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-2/etext"
 const storedNextReaderPath = "/f%C3%B6rfattare/S%C3%B6derbergH/titlar/DoktorGlas/sida/-1/etext"
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
+const boyeFacsimilePath = "/författare/BoyeK/titlar/EttVerkligtJordiskt/sida/3/faksimil"
+const boyeEtextPath = "/författare/BoyeK/titlar/EttVerkligtJordiskt/sida/3/etext"
 const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_3/" +
   "lb-reader-gosta-berlings-saga_3_0009.jpeg"
@@ -253,6 +255,22 @@ async function activateReaderLink(
   }
 }
 
+async function expectBoyeContributors(container: Locator) {
+  const links = container.locator("a")
+  await expect(links).toHaveCount(2)
+  await expect(links.nth(0)).toHaveText("Karin Boye")
+  await expect(links.nth(0)).toHaveAttribute("href", "/f%C3%B6rfattare/BoyeK")
+  await expect(links.nth(1)).toContainText("Paulina Helgeson")
+  await expect(links.nth(1)).toHaveAttribute("href", "/f%C3%B6rfattare/HelgesonP")
+  await expect(container.locator("em")).toHaveText("&")
+  const suffix = container.locator(".authortype")
+  await expect(suffix).toHaveText("red.")
+  expect(await suffix.evaluate(element => [
+    getComputedStyle(element, "::before").content,
+    getComputedStyle(element, "::after").content
+  ])).toEqual(['"("', '")"'])
+}
+
 test.beforeEach(async ({ request }) => resetReader(request))
 
 test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving targets", async ({
@@ -301,6 +319,28 @@ test("part-rich sidebar exposes truthful authors, metadata, and raw-preserving t
     )
   await expect(context.locator(".rzslider > .rz-base[aria-hidden=\"true\"]")).toHaveCount(1)
   await expect(context.locator(".expl.small")).toHaveAttribute("aria-hidden", "true")
+  expect(problems).toEqual([])
+})
+
+test("Boye work contributors persist in sidebar, contents, and work search", async ({
+  page
+}) => {
+  const problems = captureBrowserProblems(page)
+  await page.goto(boyeFacsimilePath, { waitUntil: "networkidle" })
+  await expectBoyeContributors(page.locator(".reader-context > div").first().locator(".author"))
+
+  await page.locator(".reader-context .subnav")
+    .getByRole("link", { name: "Innehållsförteckning" })
+    .evaluate(link => (link as HTMLAnchorElement).click())
+  const contents = page.getByRole("dialog", { name: "Innehållsförteckning" })
+  await expectBoyeContributors(contents.locator(".header .author"))
+  await contents.getByRole("button", { name: "Stäng" }).click()
+
+  await page.goto(boyeEtextPath, { waitUntil: "networkidle" })
+  await page.locator(".reader-context")
+    .getByRole("link", { name: "Sök i verket" })
+    .evaluate(link => (link as HTMLAnchorElement).click())
+  await expectBoyeContributors(page.locator(".searchbox .header .author"))
   expect(problems).toEqual([])
 })
 
@@ -927,7 +967,8 @@ test("long errata toggles between the first eight and all rows with exact role c
   const problems = captureBrowserProblems(page)
   await page.goto(`${longErrataReaderPath}?om-boken`, { waitUntil: "networkidle" })
   const dialog = page.getByRole("dialog", { name: "Om boken" })
-  const sidebarAuthorLink = page.locator(".reader-context .author > a")
+  const sidebarAuthorLink = page.locator(".reader-context > div").first()
+    .locator(".author > a")
   expect(await sidebarAuthorLink.evaluate(element => element.innerHTML)).toBe(
     'Rita Redaktör <span class="authortype">red.</span>'
   )

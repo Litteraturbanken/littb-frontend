@@ -1,4 +1,5 @@
 import type { ReaderPage, ReaderPart, ReaderPartAuthor } from "#shared/types/reader"
+import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
 import { fetchReaderOcrOverlay } from "#server/utils/reader-ocr"
 
 import { createLbApiClient } from "../../../../../../app/lib/api/client"
@@ -157,6 +158,17 @@ function readerSliderMaximum(
     : null
 }
 
+function workContributorLabel(contributor: ReaderPage["contributors"][number]): string {
+  const suffix = readerAuthorContributionSuffix(contributor.authorType, contributor.role)
+  return suffix ? `${contributor.name} (${suffix})` : contributor.name
+}
+
+function workContributorText(contributors: ReaderPage["contributors"]): string {
+  const labels = contributors.map(workContributorLabel)
+  if (labels.length === 1) return labels[0]!
+  return `${labels.slice(0, -1).join(", ")} & ${labels.at(-1)}`
+}
+
 export default defineEventHandler(async event => {
   setHeader(event, "cache-control", "no-store")
   const author = requiredParam(event, "author")
@@ -185,8 +197,10 @@ export default defineEventHandler(async event => {
         }
       : null,
     author: metadata.author,
+    contributors: metadata.contributors,
     description:
-      `${metadata.displayTitle} av ${metadata.author.name}, sida ${pageName} som ${metadata.mediaType}.`,
+      `${metadata.displayTitle} av ${workContributorText(metadata.contributors)}, ` +
+      `sida ${pageName} som ${metadata.mediaType}.`,
     editorWorkId: metadata.editorWorkId,
     fullTitle: metadata.fullTitle,
     hasDramawebben: metadata.hasDramawebben,

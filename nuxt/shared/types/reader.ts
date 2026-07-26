@@ -25,6 +25,13 @@ export interface ReaderPartAuthor {
   surname: string | null
 }
 
+export interface ReaderWorkContributor {
+  authorType: ReaderAuthorContribution | null
+  id: string
+  name: string
+  role: ReaderAuthorContribution | null
+}
+
 export interface ReaderPart {
   sourceIndex: number
   startPageName: string
@@ -50,12 +57,8 @@ export interface ReaderAlternateMedia {
 
 export interface ReaderPageBase {
   alternateMedia: ReaderAlternateMedia | null
-  author: {
-    authorType: ReaderAuthorContribution | null
-    id: string
-    name: string
-    role: ReaderAuthorContribution | null
-  }
+  author: ReaderWorkContributor
+  contributors: ReaderWorkContributor[]
   description: string
   editorWorkId: string | null
   fullTitle: string

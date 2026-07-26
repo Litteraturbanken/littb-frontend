@@ -7,7 +7,6 @@ import type {
   ReaderPage
 } from "#shared/types/reader"
 import type { ReaderSourceInfo } from "#shared/types/reader-source-info"
-import { readerAuthorContributionSuffix } from "#shared/utils/reader-author"
 import { readerSliderGeometryStyles } from "#shared/utils/reader-slider"
 import dramawebbenLogo from "~/assets/img/dramawebben_svart.svg"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
@@ -675,17 +674,6 @@ const alternateMediaHref = computed(() => {
     ? readerMediaFullPath(rawFullPath.value, alternate.pageName, alternate.mediaType)
     : null
 })
-const authorHref = computed(() => reader.value
-  ? readerAuthorHref(authorParam.value)
-  : ""
-)
-const readerAuthorSuffix = computed(() => {
-  const author = reader.value?.author
-  return author
-    ? readerAuthorContributionSuffix(author.authorType, author.role)
-    : null
-})
-
 const pageRouteDraftName = ref(pageParam.value)
 let pendingPageNavigations = 0
 let pageNavigationGeneration = 0
@@ -1854,9 +1842,7 @@ watch(readerRequestIdentity, () => {
             aria-label="Läsinformation och sidnavigering"
           >
             <div>
-              <div class="author"><NuxtLink :to="authorHref">{{ reader.author.name }}{{
-                readerAuthorSuffix ? " " : ""
-              }}<span v-if="readerAuthorSuffix" class="authortype">{{ readerAuthorSuffix }}</span></NuxtLink></div>
+              <div class="author"><ReaderContributors :contributors="reader.contributors" /></div>
               <a
                 ref="titleSourceInfoTrigger"
                 class="title"
@@ -2054,7 +2040,9 @@ watch(readerRequestIdentity, () => {
                     <div class="collapse-content">
                       <div class="header">
                         <div class="auth">
-                          Sök i <span class="author">{{ reader.author.name }}</span>
+                          Sök i <span class="author"><ReaderContributors
+                            :contributors="reader.contributors"
+                          /></span>
                         </div>
                         <div class="title">{{ reader.title }}</div>
                       </div>
@@ -2199,9 +2187,9 @@ watch(readerRequestIdentity, () => {
         </Teleport>
         <template #fallback>
           <aside class="reader-context-ssr" aria-label="Läsinformation och sidnavigering">
-            <a :href="authorHref">{{ reader.author.name }}{{
-              readerAuthorSuffix ? " " : ""
-            }}<span v-if="readerAuthorSuffix" class="authortype">{{ readerAuthorSuffix }}</span></a>
+            <span class="author"><ReaderContributors
+              :contributors="reader.contributors"
+            /></span>
             <span><a :href="sourceInfoHref">{{ reader.title }}</a><template
               v-if="reader.imprintYear"
             > ({{ reader.imprintYear }})</template></span>
@@ -2259,8 +2247,7 @@ watch(readerRequestIdentity, () => {
       <ClientOnly>
         <ReaderContentsDialog
           :open="contentsOpen"
-          :author-name="reader.author.name"
-          :author-href="authorHref"
+          :contributors="reader.contributors"
           :title="reader.fullTitle"
           :imprint-year="reader.imprintYear"
           :parts="reader.parts"

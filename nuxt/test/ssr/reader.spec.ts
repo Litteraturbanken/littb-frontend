@@ -8,6 +8,7 @@ const workScopedReaderPath = "/författare/SöderbergH/titlar/WorkScopedIdsReade
 const facsimilePath = "/författare/LagerlöfS/titlar/GostaBerlingsSaga/sida/3/faksimil"
 const dramaFacsimilePath = "/författare/AlmlöfN/titlar/Affarer/sida/-2/faksimil"
 const longErrataPath = "/författare/LongErrataA/titlar/LongErrata/sida/-2/etext"
+const boyeFacsimilePath = "/författare/BoyeK/titlar/EttVerkligtJordiskt/sida/3/faksimil"
 const facsimileImagePath = "/txt/lb-reader-gosta-berlings-saga/" +
   "lb-reader-gosta-berlings-saga_3/" +
   "lb-reader-gosta-berlings-saga_3_0009.jpeg"
@@ -164,9 +165,48 @@ test("legacy main-author contribution is present in the Reader SSR fallback", as
   expect(html).toContain(
     'class="reader-context-ssr" aria-label="Läsinformation och sidnavigering"'
   )
-  expect(html).toContain(
-    'href="/f%C3%B6rfattare/LongErrataA">Rita Redaktör <span class="authortype">red.</span></a>'
+  const { document } = parseHTML(html)
+  const link = document.querySelector(".reader-context-ssr .author a")
+  expect(link?.getAttribute("href")).toBe("/f%C3%B6rfattare/LongErrataA")
+  expect(link?.textContent?.trim()).toBe("Rita Redaktör red.")
+  expect(link?.querySelector(".authortype")?.textContent).toBe("red.")
+})
+
+test("Boye Reader API and SSR retain ordered work contributors", async ({ request }) => {
+  const api = await request.get(
+    "/api/reader/BoyeK/EttVerkligtJordiskt/3/faksimil"
   )
+  expect(api.status()).toBe(200)
+  const body = await api.json()
+  expect(body.description).toBe(
+    "Ett verkligt jordiskt av Karin Boye & Paulina Helgeson (red.), sida 3 som faksimil."
+  )
+  expect(body.contributors).toEqual([
+    {
+      authorType: null,
+      id: "BoyeK",
+      name: "Karin Boye",
+      role: null
+    },
+    {
+      authorType: "editor",
+      id: "HelgesonP",
+      name: "Paulina Helgeson",
+      role: null
+    }
+  ])
+
+  const response = await request.get(boyeFacsimilePath)
+  expect(response.status()).toBe(200)
+  const { document } = parseHTML(await response.text())
+  const context = document.querySelector(".reader-context-ssr")
+  const links = [...context?.querySelectorAll(".author a") ?? []]
+  expect(links.map(link => [link.textContent?.trim(), link.getAttribute("href")])).toEqual([
+    ["Karin Boye", "/f%C3%B6rfattare/BoyeK"],
+    ["Paulina Helgeson red.", "/f%C3%B6rfattare/HelgesonP"]
+  ])
+  expect(context?.querySelector(".author em")?.textContent).toBe("&")
+  expect(context?.querySelector(".author .authortype")?.textContent).toBe("red.")
 })
 
 test("direct bare source-information SSR renders the Reader and complete modal once", async ({
@@ -327,6 +367,12 @@ test("canonical API returns the exact searchable faksimil arm with selectable OC
       name: "Selma Lagerlöf",
       role: null
     },
+    contributors: [{
+      authorType: null,
+      id: "LagerlöfS",
+      name: "Selma Lagerlöf",
+      role: null
+    }],
     description: "Gösta Berlings saga av Selma Lagerlöf, sida 3 som faksimil.",
     editorWorkId: null,
     fullTitle: "Gösta Berlings saga. Roman",
@@ -658,7 +704,19 @@ for (const [title, expectedAuthor] of [
 
 for (const title of [
   "ReaderLocalWhitespaceName",
-  "ReaderLocalControlName",
+  "ReaderLocalControlName"
+] as const) {
+  test(`${title} rejects a malformed work contributor before resolver and page IO`, async ({
+    request
+  }) => {
+    const response = await request.get(`/api/reader/S%C3%B6derbergH/${title}/-1/etext`)
+    expect(response.status()).toBe(502)
+    expect(await authorResolveRequests(request)).toEqual([])
+    expect((await separateReaderRequests(request)).html).toEqual([])
+  })
+}
+
+for (const title of [
   "ReaderLocalWhitespaceSurname",
   "ReaderLocalControlSurname"
 ] as const) {

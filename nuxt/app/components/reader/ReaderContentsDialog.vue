@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/vue"
 
-import type { ReaderPart } from "#shared/types/reader"
+import type { ReaderPart, ReaderWorkContributor } from "#shared/types/reader"
 import { readerAuthorHref, readerPartAuthorKey } from "~/lib/reader-routes"
 
 defineProps<{
   open: boolean
-  authorName: string
-  authorHref: string
+  contributors: readonly ReaderWorkContributor[]
   title: string
   imprintYear: string | null
   parts: readonly ReaderPart[]
@@ -52,7 +51,7 @@ const dialogPanel = ref<HTMLElement | null>(null)
           <DialogTitle class="sr-only">Innehållsförteckning</DialogTitle>
 
           <div class="header">
-            <h2 class="author sc"><NuxtLink :to="authorHref">{{ authorName }}</NuxtLink></h2>
+            <h2 class="author sc"><ReaderContributors :contributors="contributors" /></h2>
             <h2 class="title">
               {{ title }} <span v-if="imprintYear">({{ imprintYear }})</span>
             </h2>

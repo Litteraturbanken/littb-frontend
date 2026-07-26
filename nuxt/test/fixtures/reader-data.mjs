@@ -89,6 +89,64 @@ export const readerFacsimileWorkInfoResponse = {
   ]
 }
 
+const readerBoyeContributors = [
+  {
+    authorid: "BoyeK",
+    full_name: "Karin Boye",
+    surname: "Boye"
+  },
+  {
+    authorid: "HelgesonP",
+    full_name: "Paulina Helgeson",
+    surname: "Helgeson",
+    type: "editor"
+  }
+]
+
+const readerBoyeParts = [{
+  authors: [{ authorid: "BoyeK" }],
+  endpagename: "3",
+  navtitle: "Ett verkligt jordiskt",
+  shorttitle: "Ett verkligt jordiskt",
+  startpagename: "3",
+  title: "Ett verkligt jordiskt",
+  titleid: "EttVerkligtJordiskt"
+}]
+
+export const readerBoyeWorkInfoResponse = {
+  hits: 2,
+  data: [
+    {
+      ...structuredClone(readerFacsimileWorkInfoResponse.data[0]),
+      authors: structuredClone(readerBoyeContributors),
+      endpagename: "3",
+      imprintyear: "1933",
+      lbworkid: "lb-reader-boye-jordiskt",
+      pages: [{ pagename: "3", pageindex: 1, imagenumber: 3 }],
+      parts: structuredClone(readerBoyeParts),
+      shorttitle: "Ett verkligt jordiskt",
+      sort_date_imprint: { plain: "1933" },
+      startpagename: "3",
+      title: "Ett verkligt jordiskt",
+      titlepath: "EttVerkligtJordiskt"
+    },
+    {
+      ...structuredClone(readerWorkInfoResponse.data[0]),
+      authors: structuredClone(readerBoyeContributors),
+      endpagename: "3",
+      imprintyear: "1933",
+      lbworkid: "lb-reader-boye-jordiskt",
+      pages: [{ pagename: "3", pageindex: 1 }],
+      parts: structuredClone(readerBoyeParts),
+      shorttitle: "Ett verkligt jordiskt",
+      sort_date_imprint: { plain: "1933" },
+      startpagename: "3",
+      title: "Ett verkligt jordiskt",
+      titlepath: "EttVerkligtJordiskt"
+    }
+  ]
+}
+
 export const readerAarnsethFacsimileWorkInfoResponse = {
   hits: 1,
   data: [

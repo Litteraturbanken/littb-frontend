@@ -144,6 +144,89 @@ describe("reader media and exact representation selection", () => {
     })
   })
 
+  test("retains ordered work contributors with normalized contribution values", () => {
+    const metadata = normalize({
+      authors: [
+        {
+          authorid: "LagerlöfS",
+          full_name: "Selma Lagerlöf"
+        },
+        {
+          authorid: "HelgesonP",
+          full_name: "Paulina Helgeson",
+          role: "unknown",
+          type: "EDITOR"
+        }
+      ]
+    })
+
+    expect(metadata.contributors).toEqual([
+      {
+        id: "LagerlöfS",
+        name: "Selma Lagerlöf",
+        authorType: null,
+        role: null
+      },
+      {
+        id: "HelgesonP",
+        name: "Paulina Helgeson",
+        authorType: "editor",
+        role: null
+      }
+    ])
+    expect(metadata.author).toEqual(metadata.contributors[0])
+  })
+
+  test("validates the primary route author without rejecting other contributors", () => {
+    expect(normalize({
+      authors: [
+        { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+        { authorid: "HelgesonP", full_name: "Paulina Helgeson", type: "editor" }
+      ]
+    }).contributors).toHaveLength(2)
+
+    expectSourceError(() => normalize({
+      authors: [
+        { authorid: "HelgesonP", full_name: "Paulina Helgeson", type: "editor" },
+        { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" }
+      ]
+    }), 404)
+  })
+
+  test.each([
+    ["non-array", {}],
+    ["empty", []],
+    ["too many", [
+      { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+      ...Array.from({ length: 100 }, (_, index) => ({
+        authorid: `Contributor${index}`,
+        full_name: `Contributor ${index}`
+      }))
+    ]],
+    ["non-object entry", [
+      { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+      null
+    ]],
+    ["missing contributor ID", [
+      { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+      { full_name: "Paulina Helgeson" }
+    ]],
+    ["whitespace contributor ID", [
+      { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+      { authorid: " HelgesonP", full_name: "Paulina Helgeson" }
+    ]],
+    ["control character in contributor name", [
+      { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+      { authorid: "HelgesonP", full_name: "Paulina\nHelgeson" }
+    ]],
+    ["overlong contributor name", [
+      { authorid: "LagerlöfS", full_name: "Selma Lagerlöf" },
+      { authorid: "HelgesonP", full_name: "x".repeat(2_001) }
+    ]]
+  ])("rejects %s work contributor metadata", (_label, authors) => {
+    expectSourceError(() => normalize({ authors }), 502)
+  })
+
   test("rejects absent exact media/title and mismatched author identities", () => {
     expectSourceError(() => normalizeReaderMetadata(
       payload(representation({ mediatype: "etext" })),
@@ -360,7 +443,17 @@ describe("reader part normalization", () => {
 
   test.each([
     ["whitespace full name", { full_name: " Hjalmar Söderberg", surname: "Söderberg" }],
-    ["control full name", { full_name: "Hjalmar\nSöderberg", surname: "Söderberg" }],
+    ["control full name", { full_name: "Hjalmar\nSöderberg", surname: "Söderberg" }]
+  ])("rejects a work contributor with %s", (_label, invalidSummary) => {
+    expectSourceError(() => partMetadata({
+      authors: [
+        { authorid: "LagerlöfS", full_name: "Selma Lagerlöf", surname: "Lagerlöf" },
+        { authorid: "SöderbergH", ...invalidSummary }
+      ]
+    }), 502)
+  })
+
+  test.each([
     ["whitespace surname", { full_name: "Hjalmar Söderberg", surname: " Söderberg" }],
     ["control surname", { full_name: "Hjalmar Söderberg", surname: "Söderberg\n" }]
   ])("does not trust a local author with %s", (_label, invalidSummary) => {
