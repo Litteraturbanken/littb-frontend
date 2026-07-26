@@ -129,6 +129,7 @@ definePageMeta({
 
 const route = useRoute()
 const fetcher = useRequestFetch()
+const navigateManagedHtml = useManagedHtmlNavigation()
 const authorId = computed(() => routeParam(route.params.author))
 const documentKind = computed(() => routeParam(route.params.document))
 const articleId = computed<SlaArticleId>(() => {
@@ -229,7 +230,11 @@ useHead({
         </nav>
 
         <div class="page_content">
-          <div class="content unbox" v-html="page.bodyHtml" />
+          <div
+            class="content unbox"
+            v-html="page.bodyHtml"
+            @click="navigateManagedHtml"
+          />
         </div>
       </template>
     </div>

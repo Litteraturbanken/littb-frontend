@@ -177,13 +177,19 @@ test("mer remains AuthorWorksContent and performs no semer source request", asyn
   expect(await documentRequests(request)).toEqual([])
 })
 
-test("normalized managed links reach canonical Reader and profile pages", async ({ page }) => {
+test("legacy managed author aliases resolve natively to canonical Reader and profile pages", async ({ page }) => {
   await page.goto("/författare/S%C3%B6derbergH/presentation", { waitUntil: "networkidle" })
+  await page.evaluate(() => {
+    (window as typeof window & { __legacyAliasSentinel?: string }).__legacyAliasSentinel = "reload-me"
+  })
   await page.locator(
     'a[href="/forfattare/SoderbergH/titlar/Forvillelser/sida/3/etext"]'
   ).first().click()
   await expect(page).toHaveURL(/\/f%C3%B6rfattare\/S%C3%B6derbergH\/titlar\/F%C3%B6rvillelser\/sida\/3\/etext$/u)
   await expect(page.locator(".txt")).toContainText("KANONISK SIDA TRE")
+  expect(await page.evaluate(() => (
+    window as typeof window & { __legacyAliasSentinel?: string }
+  ).__legacyAliasSentinel)).toBeUndefined()
 
   await page.goto("/forfattare/LagerlofS")
   await expect(page).toHaveURL(/\/f%C3%B6rfattare\/Lagerl%C3%B6fS$/u)

@@ -37,6 +37,33 @@ test("authored document search navigation is canonical and stays inside the SPA"
   await expectSpaSentinel(page)
 })
 
+test("canonical links inside managed author documents navigate in the SPA and preserve Back", async ({
+  page
+}) => {
+  const documentUrl = /\/f%C3%B6rfattare\/SparseDocument\/presentation$/u
+  const readerUrl = /\/f%C3%B6rfattare\/S%C3%B6derbergH\/titlar\/F%C3%B6rvillelser\/sida\/3\/etext$/u
+
+  await page.goto("/författare/SparseDocument/presentation", { waitUntil: "networkidle" })
+  const managedLink = page.locator("#canonical-reader-link")
+  await expect(managedLink).toHaveText("Läs Förvillelser")
+  await expect(managedLink).toHaveAttribute(
+    "href",
+    "/författare/SöderbergH/titlar/Förvillelser/sida/3/etext"
+  )
+  await installSpaSentinel(page)
+
+  await managedLink.click()
+
+  await expect(page).toHaveURL(readerUrl)
+  await expect(page.locator(".txt")).toContainText("KANONISK SIDA TRE")
+  await expectSpaSentinel(page)
+
+  await page.goBack()
+  await expect(page).toHaveURL(documentUrl)
+  await expect(page.locator("h1").first()).toContainText("Författare utan tilläggsnavigering")
+  await expectSpaSentinel(page)
+})
+
 test("visible supplemental-document author navigation reaches profile content without reload", async ({
   page
 }) => {

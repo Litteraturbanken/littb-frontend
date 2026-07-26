@@ -118,6 +118,7 @@ definePageMeta({
 
 const route = useRoute()
 const fetcher = useRequestFetch()
+const navigateManagedHtml = useManagedHtmlNavigation()
 const authorId = computed(() => {
   const value = Array.isArray(route.params.author) ? route.params.author[0] : route.params.author
   return typeof value === "string" ? value : ""
@@ -247,7 +248,11 @@ useHead(() => ({
         </nav>
 
         <div class="page_content">
-          <div class="content unbox" v-html="page.bodyHtml" />
+          <div
+            class="content unbox"
+            v-html="page.bodyHtml"
+            @click="navigateManagedHtml"
+          />
         </div>
       </template>
     </div>
