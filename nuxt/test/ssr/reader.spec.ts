@@ -195,6 +195,11 @@ test("Boye Reader API and SSR retain ordered work contributors", async ({ reques
       role: null
     }
   ])
+  expect(body.ocrOverlay).toEqual({
+    height: 900,
+    html: '<div data-size="625x900"><span class="w">Boye OCR</span></div>',
+    width: 625
+  })
 
   const response = await request.get(boyeFacsimilePath)
   expect(response.status()).toBe(200)
@@ -207,6 +212,9 @@ test("Boye Reader API and SSR retain ordered work contributors", async ({ reques
   ])
   expect(context?.querySelector(".author em")?.textContent).toBe("&")
   expect(context?.querySelector(".author .authortype")?.textContent).toBe("red.")
+  const ocrLayer = document.querySelector(".reader-ocr-layer .overlay")
+  expect(ocrLayer?.getAttribute("style")).toContain("width:625px")
+  expect(ocrLayer?.querySelector('[data-size="625x900"]')?.textContent).toBe("Boye OCR")
 })
 
 test("direct bare source-information SSR renders the Reader and complete modal once", async ({

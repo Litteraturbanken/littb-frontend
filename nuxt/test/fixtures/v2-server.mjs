@@ -287,6 +287,7 @@ let sourceInfoStaticFailure = null
 let authorProfileRequests = []
 let authorProfileFailure = false
 let bibliographyRequests = []
+let dictionaryRequests = []
 let bibliographyFailure = false
 let bibliographyDisconnect = false
 let bibliographyDelays = {}
@@ -2124,6 +2125,13 @@ const server = createServer(async (request, response) => {
   }
   if (url.pathname === "/_bibliography_requests" && request.method === "GET") {
     return sendJson(response, 200, { requests: bibliographyRequests })
+  }
+  if (url.pathname === "/_dictionary_requests" && request.method === "GET") {
+    return sendJson(response, 200, { requests: dictionaryRequests })
+  }
+  if (url.pathname === "/_dictionary_requests" && request.method === "DELETE") {
+    dictionaryRequests = []
+    return sendJson(response, 200, { requests: dictionaryRequests })
   }
   if (url.pathname === "/_bibliography_requests" && request.method === "DELETE") {
     bibliographyRequests = []
@@ -4330,6 +4338,11 @@ const server = createServer(async (request, response) => {
   }
 
   if (request.method === "GET" && apiPathname === "/v2/dictionary/articles") {
+    dictionaryRequests.push({
+      scope: rawPathname.startsWith("/private-v2/") ? "private" : "public",
+      path: rawPathname,
+      query: url.search
+    })
     const word = url.searchParams.get("word")
     if (!word || url.searchParams.size !== 1 || /\s/u.test(word) || word.length > 100) {
       return validationError(response)
