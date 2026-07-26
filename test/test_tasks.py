@@ -4,7 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, call, patch
 
 import tasks
 
@@ -27,6 +27,24 @@ def run_invoke(*arguments: str, env: dict[str, str] | None = None) -> subprocess
 
 
 class InvokeTasksTest(unittest.TestCase):
+    def test_default_backend_dir_is_discovered_from_the_main_repository(self) -> None:
+        git_result = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="/workspace/littb/.git\n",
+            stderr="",
+        )
+        with patch.dict(os.environ, {}, clear=False), patch.object(
+            tasks.subprocess,
+            "run",
+            return_value=git_result,
+        ):
+            os.environ.pop("LB_BACKEND_DIR", None)
+            settings = tasks.Settings.from_environment()
+
+        self.assertEqual(settings.backend_dir, Path("/workspace/lb-backend"))
+        self.assertNotIn("/Users/", Path(tasks.__file__).read_text())
+
     def test_lists_the_public_development_tasks(self) -> None:
         result = run_invoke("--list")
 
@@ -121,6 +139,51 @@ class InvokeTasksTest(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("does not contain lbapi/v2/app.py", result.stderr)
+
+    def test_combined_dev_stops_both_children_when_sigterm_arrives(self) -> None:
+        backend_process = MagicMock()
+        nuxt_process = MagicMock()
+        backend_process.poll.return_value = None
+        nuxt_process.poll.return_value = None
+        handlers: dict[int, object] = {}
+
+        def install_handler(signum: int, handler: object) -> object:
+            previous = handlers.get(signum, tasks.signal.SIG_DFL)
+            handlers[signum] = handler
+            return previous
+
+        def send_sigterm(_seconds: float) -> None:
+            handler = handlers[tasks.signal.SIGTERM]
+            assert callable(handler)
+            handler(tasks.signal.SIGTERM, None)
+
+        with tempfile.TemporaryDirectory() as backend_dir, tempfile.TemporaryDirectory() as nuxt_dir:
+            settings = tasks.Settings(
+                backend_app="example.web:app",
+                backend_dir=Path(backend_dir),
+                backend_host="127.0.0.1",
+                backend_port=8000,
+                nuxt_dir=Path(nuxt_dir),
+                nuxt_port=3020,
+            )
+            with patch.object(
+                tasks.subprocess,
+                "Popen",
+                side_effect=[backend_process, nuxt_process],
+            ), patch.object(tasks.signal, "signal", side_effect=install_handler), patch.object(
+                tasks.time,
+                "sleep",
+                side_effect=send_sigterm,
+            ), patch.object(tasks, "_stop_process") as stop_process:
+                with self.assertRaises(tasks.Exit) as raised:
+                    tasks._run_development_servers(settings)
+
+        self.assertEqual(raised.exception.code, 128 + tasks.signal.SIGTERM)
+        self.assertEqual(
+            stop_process.call_args_list,
+            [call(nuxt_process), call(backend_process)],
+        )
+        self.assertEqual(handlers[tasks.signal.SIGTERM], tasks.signal.SIG_DFL)
 
     def test_nuxt_environment_tracks_the_backend_origin(self) -> None:
         with patch.dict(

@@ -4,8 +4,8 @@
     "private": true,
     "author": "Johan Roxendal",
     "scripts": {
-        "test": "node_modules/.bin/playwright test",
-        "test:e2e": "node_modules/.bin/playwright test",
+        "test": "yarn test:e2e:nuxt-live",
+        "test:e2e": "yarn test:e2e:nuxt-live",
         "test:e2e:nuxt-live": "playwright test --config playwright.nuxt-live.config.js",
         "test:unit": "node test/unit/run-unit-tests.mjs",
         "test:ui": "node_modules/.bin/playwright test --ui",

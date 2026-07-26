@@ -19,6 +19,24 @@ from invoke import Collection, Context, Exit, task
 ROOT = Path(__file__).resolve().parent
 
 
+def _default_backend_dir() -> Path:
+    result = subprocess.run(
+        ["git", "rev-parse", "--git-common-dir"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode == 0:
+        common_directory = Path(result.stdout.strip())
+        if not common_directory.is_absolute():
+            common_directory = ROOT / common_directory
+        common_directory = common_directory.resolve()
+        if common_directory.name == ".git":
+            return common_directory.parent.parent / "lb-backend"
+    return ROOT.parent / "lb-backend"
+
+
 def _environment_path(name: str, default: Path) -> Path:
     return Path(os.environ.get(name, str(default))).expanduser().resolve()
 
@@ -48,7 +66,7 @@ class Settings:
         return cls(
             backend_app=os.environ.get("LB_BACKEND_APP", "lbapi.web:app"),
             backend_dir=_environment_path(
-                "LB_BACKEND_DIR", Path("/Users/johan/dev/lb-backend")
+                "LB_BACKEND_DIR", _default_backend_dir()
             ),
             backend_host=os.environ.get("LB_BACKEND_HOST", "127.0.0.1"),
             backend_port=_environment_port("LB_BACKEND_PORT", 8000),
@@ -142,6 +160,29 @@ def _stop_process(process: subprocess.Popen[bytes]) -> None:
         process.wait()
 
 
+class _ShutdownRequested(Exception):
+    def __init__(self, signum: int) -> None:
+        self.signum = signum
+
+
+def _install_shutdown_handlers() -> dict[int, object]:
+    previous_handlers: dict[int, object] = {}
+
+    def request_shutdown(signum: int, _frame: object) -> None:
+        raise _ShutdownRequested(signum)
+
+    for name in ("SIGINT", "SIGTERM", "SIGHUP"):
+        signum = getattr(signal, name, None)
+        if signum is not None:
+            previous_handlers[signum] = signal.signal(signum, request_shutdown)
+    return previous_handlers
+
+
+def _restore_shutdown_handlers(previous_handlers: dict[int, object]) -> None:
+    for signum, handler in previous_handlers.items():
+        signal.signal(signum, handler)
+
+
 def _run_development_servers(settings: Settings) -> None:
     specifications = [
         ("backend", _backend_command(settings), settings.backend_dir, {}),
@@ -153,6 +194,8 @@ def _run_development_servers(settings: Settings) -> None:
         ),
     ]
     processes: list[tuple[str, subprocess.Popen[bytes]]] = []
+    previous_handlers = _install_shutdown_handlers()
+    shutdown: _ShutdownRequested | None = None
 
     try:
         for name, command, directory, environment in specifications:
@@ -176,11 +219,21 @@ def _run_development_servers(settings: Settings) -> None:
                         code=return_code or 1,
                     )
             time.sleep(0.25)
+    except _ShutdownRequested as error:
+        shutdown = error
+        print(f"Stopping development servers after signal {error.signum}…", flush=True)
     except KeyboardInterrupt:
         print("Stopping development servers…", flush=True)
     finally:
         for _, process in reversed(processes):
             _stop_process(process)
+        _restore_shutdown_handlers(previous_handlers)
+
+    if shutdown is not None:
+        raise Exit(
+            f"Development servers stopped by signal {shutdown.signum}",
+            code=128 + shutdown.signum,
+        )
 
 
 @task(name="backend", help={"app": "Override the ASGI app, for example package.web:app."})

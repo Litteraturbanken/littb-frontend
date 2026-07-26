@@ -31,7 +31,19 @@ passes the configured backend and Nuxt origins to `yarn test:e2e:nuxt-live`.
 - Nuxt preflight probe: `/_nuxt/@vite/client` returned HTTP 200 and JavaScript.
 - `yarn test:e2e:nuxt-live --list`: 5 tests in 1 file.
 - `yarn test:e2e:nuxt-live`: 5 passed in 7.0 seconds against ports 3020/8000.
-- `python test/test_nuxt_live_e2e.py -v`: 3 passed.
-- `python test/test_tasks.py -v`: 8 passed.
+- `python test/test_nuxt_live_e2e.py -v`: 4 passed.
+- `python test/test_tasks.py -v`: 10 passed.
 - `yarn test:unit`: all four root unit groups passed.
 - `git diff --check`: passed.
+
+## Review follow-up
+
+- Conventional `yarn test` and `yarn test:e2e` now delegate to the explicit
+  Nuxt-live command, so neither can select the migrated spec through the legacy
+  port-9000 configuration.
+- The default backend directory is derived from Git's common repository path,
+  which works from both ordinary clones and linked worktrees, with
+  `LB_BACKEND_DIR` still available as an override.
+- The combined development task installs SIGINT, SIGTERM, and SIGHUP handlers,
+  stops both child process groups in reverse order, restores previous handlers,
+  and returns the conventional signal-derived exit status.

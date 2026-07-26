@@ -58,6 +58,12 @@ class OpenApiHandler(BaseHTTPRequestHandler):
 
 
 class NuxtLivePlaywrightTest(unittest.TestCase):
+    def test_conventional_e2e_scripts_use_the_nuxt_live_configuration(self) -> None:
+        package = json.loads((ROOT / "package.json").read_text())
+
+        self.assertEqual(package["scripts"]["test"], "yarn test:e2e:nuxt-live")
+        self.assertEqual(package["scripts"]["test:e2e"], "yarn test:e2e:nuxt-live")
+
     def test_config_lists_only_the_five_live_smoke_checks(self) -> None:
         result = run_live_playwright("--list")
 
