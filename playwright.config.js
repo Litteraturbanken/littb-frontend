@@ -1,5 +1,8 @@
 const { defineConfig, devices } = require("@playwright/test")
 
+const baseURL = process.env.LITTB_BASE_URL ||
+    `http://${process.env.LITTB_DOCKER_HOST || "localhost"}:9000`
+
 module.exports = defineConfig({
     testDir: "./test/e2e",
     fullyParallel: true,
@@ -9,7 +12,7 @@ module.exports = defineConfig({
     reporter: "",
     timeout: 60000,
     use: {
-        baseURL: `http://${process.env.LITTB_DOCKER_HOST || "localhost"}:9000`,
+        baseURL,
         trace: "on-first-retry",
         navigationTimeout: 30000,
         actionTimeout: 10000
@@ -24,7 +27,7 @@ module.exports = defineConfig({
 
     webServer: {
         command: "yarn dev",
-        url: `http://${process.env.LITTB_DOCKER_HOST || "localhost"}:9000`,
+        url: baseURL,
         reuseExistingServer: !process.env.CI
     }
 })
