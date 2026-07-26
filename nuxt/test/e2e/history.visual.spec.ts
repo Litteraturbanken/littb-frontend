@@ -46,7 +46,7 @@ async function expectHistoryReady(page: Page) {
     const author = historyAuthorSummaries.find(item => item.author_id === record.author)
     const anchor = rows.nth(index).locator("a")
     await expect(anchor).toHaveText(`${author?.full_name ?? ""} – ${record.label}`)
-    await expect(anchor).toHaveAttribute("href", record.url)
+    await expect(anchor).toHaveAttribute("href", encodeURI(record.url))
   }
 }
 

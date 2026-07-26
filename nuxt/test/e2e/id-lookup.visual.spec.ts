@@ -50,12 +50,13 @@ async function expectRows(page: Page) {
     await expect(cells).toHaveCount(4)
     await expect(cells.nth(0)).toHaveText(item.work_id)
     await expect(cells.nth(1).locator("a")).toHaveText(item.author.label)
-    await expect(cells.nth(1).locator("a")).toHaveAttribute("href", item.author.url)
+    await expect(cells.nth(1).locator("a")).toHaveAttribute("href", encodeURI(item.author.url))
     await expect(cells.nth(2).locator("a")).toHaveText(item.title.label)
-    await expect(cells.nth(2).locator("a")).toHaveAttribute("href", item.title.url)
+    await expect(cells.nth(2).locator("a")).toHaveAttribute("href", encodeURI(item.title.url))
     await expect(cells.nth(3).locator("a")).toHaveText(item.media.map(media => media.label))
     for (const [mediaIndex, media] of item.media.entries()) {
-      await expect(cells.nth(3).locator("a").nth(mediaIndex)).toHaveAttribute("href", media.url)
+      await expect(cells.nth(3).locator("a").nth(mediaIndex))
+        .toHaveAttribute("href", encodeURI(media.url))
     }
   }
 }

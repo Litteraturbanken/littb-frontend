@@ -35,6 +35,7 @@ export default defineConfig({
     {
       name: "desktop-chromium",
       testMatch: /e2e\/.*\.spec\.ts/,
+      testIgnore: /e2e\/.*\.mobile\.behavior\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 1000 }
@@ -45,6 +46,7 @@ export default defineConfig({
       testMatch: [
         /e2e\/.*\.visual\.spec\.ts/,
         /e2e\/reader\.behavior\.spec\.ts/,
+        /e2e\/editor-reader\.mobile\.behavior\.spec\.ts/,
         /e2e\/library-advanced\.behavior\.spec\.ts/
       ],
       use: { ...devices["iPhone 13"], browserName: "chromium" }

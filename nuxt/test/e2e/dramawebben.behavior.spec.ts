@@ -108,7 +108,7 @@ async function expectExactLinks(page: Page, kind: "pjäser" | "om" | "kringtexte
   })))).toEqual([
     { href: "/dramawebben/pjäser", text: "Pjäser" },
     { href: "/dramawebben/kringtexter", text: "Mer läsning" },
-    { href: "/sok?avancerad&keywords=keyword:Dramawebben", text: "Sök" },
+    { href: "/s%C3%B6k?avancerad&keywords=keyword:Dramawebben", text: "Sök" },
     { href: "/dramawebben/om", text: "Om" },
     { href: "/", text: "Till Litteraturbanken" }
   ])
