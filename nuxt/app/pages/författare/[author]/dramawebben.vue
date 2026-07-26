@@ -82,6 +82,7 @@ if (response.value.status === 200 && !response.value.hasDramawebben) {
 }
 
 const view = computed(() => response.value.view)
+useAuthorQuickSearchContextPublisher(view)
 const description = computed(() => view.value
   ? `${view.value.fullName}, Introduktion av Dramawebben`
   : "Författarprofil")

@@ -12,6 +12,7 @@ import dramawebbenLogo from "~/assets/img/dramawebben_svart.svg"
 import nyaVagarLogo from "~/assets/img/lb_logga_nyavagar_2.2021.svg"
 import { createLbApiClient } from "~/lib/api/client"
 import type { components } from "~/lib/api/generated/lbapi"
+import { toBoundedDeveloperValue } from "~/lib/quick-search-developer"
 import {
   copyProductionValue,
   isProductionShortcutGuarded,
@@ -537,6 +538,22 @@ watch(data, current => {
   }
 }, { immediate: true })
 const reader = computed(() => currentReader.value ?? retainedReader.value)
+const quickSearchReaderContext = computed(() => {
+  const current = reader.value
+  if (!current) return null
+  const info = current.mediaType === "etext"
+    ? Object.fromEntries(Object.entries(current).filter(([key]) => key !== "html"))
+    : Object.fromEntries(Object.entries(current).filter(([key]) => key !== "ocrOverlay"))
+  return {
+    kind: "reader" as const,
+    workId: current.workId,
+    editorWorkId: current.editorWorkId,
+    pageIndex: current.pageIndex,
+    mediaType: current.mediaType,
+    info: toBoundedDeveloperValue(info)
+  }
+})
+useQuickSearchContextPublisher(quickSearchReaderContext)
 const readerLoadStatus = computed(() => {
   const current = data.value
   return current?.identity === readerRequestIdentity.value ? current.status : null
@@ -2093,7 +2110,7 @@ watch(readerRequestIdentity, () => {
                   </NuxtLink>
                 </li>
                 <li v-if="reader.hasDramawebben">
-                  <NuxtLink to="/dramawebben"><img
+                  <NuxtLink class="inline-block" to="/dramawebben"><img
                     class="dw_logo"
                     :src="dramawebbenLogo"
                     alt="Dramawebben logotyp"

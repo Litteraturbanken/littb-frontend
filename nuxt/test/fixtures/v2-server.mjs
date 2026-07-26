@@ -300,6 +300,7 @@ let readerHtmlRequests = []
 let readerOcrRequests = []
 let readerJpegRequests = []
 let readerMetadataDelays = {}
+let editorMetadataFailure = false
 let readerHitRequests = []
 let readerHitFailure = false
 let readerHitDelays = {}
@@ -2219,6 +2220,14 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/_reader_hit_failure" && request.method === "GET") {
     return sendJson(response, 200, { failure: readerHitFailure })
   }
+  if (url.pathname === "/_editor_metadata_failure" && request.method === "PUT") {
+    editorMetadataFailure = true
+    return sendJson(response, 200, { failure: true })
+  }
+  if (url.pathname === "/_editor_metadata_failure" && request.method === "DELETE") {
+    editorMetadataFailure = false
+    return sendJson(response, 200, { failure: false })
+  }
   if (url.pathname === "/_reader_hit_failure" && request.method === "PUT") {
     readerHitFailure = true
     return sendJson(response, 200, { failure: readerHitFailure })
@@ -2966,6 +2975,100 @@ const server = createServer(async (request, response) => {
     readerRequests.push(recordedRequest)
     readerMetadataRequests.push(recordedRequest)
     const titlePath = url.searchParams.get("titlepath") || ""
+    const editorWorkId = url.searchParams.get("lbworkid")
+    if (editorMetadataFailure && editorWorkId === "lb-editor-doktor") {
+      return sendBody(response, 503, "text/plain; charset=utf-8", "editor metadata unavailable")
+    }
+    if (editorWorkId === "lb-editor-fallback" || editorWorkId === "lb-editor-unavailable") {
+      return sendBody(response, 503, "text/plain; charset=utf-8", "editor metadata unavailable")
+    }
+    if (editorWorkId === "lb-editor-doktor-glas") {
+      const representation = structuredClone(readerMetadataResponse("DoktorGlas").data[0])
+      return sendJson(response, 200, {
+        hits: 1,
+        data: [{
+          ...representation,
+          lbworkid: editorWorkId,
+          page_count: 3
+        }]
+      })
+    }
+    if (editorWorkId === "lb-editor-no-ocr") {
+      return sendJson(response, 200, {
+        hits: 1,
+        data: [{
+          ...structuredClone(readerWorkInfoResponse.data[0]),
+          lbworkid: editorWorkId,
+          mediatype: "faksimil",
+          page_count: 3,
+          mediatypes: [],
+          width: { size_2: 450, size_3: 625, size_4: 900 }
+        }]
+      })
+    }
+    if (editorWorkId === "lb-editor-mixed") {
+      const common = {
+        ...structuredClone(readerWorkInfoResponse.data[0]),
+        authors: [{ authorid: "SöderbergH", full_name: "Hjalmar Söderberg" }],
+        lbworkid: editorWorkId,
+        shorttitle: "Blandad editor",
+        startpagename: "-2",
+        titlepath: "DoktorGlas"
+      }
+      return sendJson(response, 200, {
+        hits: 2,
+        data: [
+          { ...structuredClone(common), mediatype: "etext", page_count: 2 },
+          {
+            ...structuredClone(common),
+            faksimil_sizes: [3],
+            mediatype: "faksimil",
+            page_count: 5,
+            width: { size_2: 450, size_3: 625, size_4: 900 }
+          }
+        ]
+      })
+    }
+    if (editorWorkId === "lb-editor-long") {
+      return sendJson(response, 200, {
+        hits: 1,
+        data: [{
+          ...structuredClone(readerWorkInfoResponse.data[0]),
+          faksimil_sizes: [3],
+          lbworkid: editorWorkId,
+          mediatype: "faksimil",
+          page_count: 25,
+          width: { size_2: 450, size_3: 625, size_4: 900 }
+        }]
+      })
+    }
+    if (editorWorkId === "lb-editor-missing-image") {
+      return sendJson(response, 200, {
+        hits: 1,
+        data: [{
+          ...structuredClone(readerWorkInfoResponse.data[0]),
+          faksimil_sizes: [3],
+          lbworkid: editorWorkId,
+          mediatype: "faksimil",
+          page_count: 3,
+          width: { size_2: 450, size_3: 625, size_4: 900 }
+        }]
+      })
+    }
+    if (editorWorkId === "lb-editor-doktor") {
+      return sendJson(response, 200, {
+        hits: 1,
+        data: [{
+          ...structuredClone(readerWorkInfoResponse.data[0]),
+          lbworkid: "lb-editor-doktor",
+          faksimil_sizes: [3],
+          mediatype: "faksimil",
+          page_count: 3,
+          width: { size_2: 450, size_3: 625, size_4: 900 },
+          mediatypes: [{ url: "/författare/SöderbergH/titlar/DoktorGlas/sida/-2/etext" }]
+        }]
+      })
+    }
     await waitForReaderMetadataDelay(titlePath)
     if (titlePath === "UnavailableReader") {
       return sendBody(response, 503, "text/plain; charset=utf-8", "reader unavailable")
@@ -2981,6 +3084,16 @@ const server = createServer(async (request, response) => {
       return validationError(response)
     }
     return sendJson(response, 200, readerMetadataResponse(titlePath))
+  }
+
+  const editorPageCountMatch = request.method === "GET"
+    ? /^\/count_pages\/(lb-editor-fallback|lb-editor-unavailable)\/(faksimil|etext)$/.exec(url.pathname)
+    : null
+  if (editorPageCountMatch) {
+    if (editorPageCountMatch[1] === "lb-editor-unavailable") {
+      return sendBody(response, 503, "text/plain; charset=utf-8", "editor count unavailable")
+    }
+    return sendJson(response, 200, { count: 3 })
   }
 
   if (request.method === "GET" && url.pathname === "/legacy-api/get_work_info") {
@@ -3011,6 +3124,44 @@ const server = createServer(async (request, response) => {
     }
     const pageHtml = readerPageHtmlByIndex[Number(readerPageMatch[1])]
     return sendBody(response, 200, "text/html; charset=utf-8", pageHtml)
+  }
+
+  const editorEtextMatch = request.method === "GET"
+    ? /^\/txt\/lb-editor-(?:doktor|doktor-glas)\/res_0000([012])\.html$/.exec(url.pathname)
+    : null
+  if (editorEtextMatch) {
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      `<div class="pname" onclick="globalThis.editorInjected=true">EDITORSSIDA ${editorEtextMatch[1]} <em class="emphasis">bevarad</em><a href="javascript:alert(1)">farlig länk</a><script>globalThis.editorInjected=true</script></div>`
+    )
+  }
+
+  if (request.method === "GET" && /^\/txt\/lb-editor-doktor\/ocr_0000[012]\.html$/.test(url.pathname)) {
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    return sendBody(response, 200, "text/html; charset=utf-8", '<body><div data-size="2500x3600"><span class="w">OCR</span></div></body>')
+  }
+
+  if (request.method === "GET" && /^\/txt\/lb-editor-fallback\/ocr_0000[012]\.html$/.test(url.pathname)) {
+    if (url.searchParams.get("username") !== "app") {
+      return sendBody(response, 404, "text/plain; charset=utf-8", "missing username")
+    }
+    return sendBody(
+      response,
+      200,
+      "text/html; charset=utf-8",
+      '<body><div data-size="625x900" id="toolkit-right" class="absolute parent" style="width:999999999999px;left:10px"><span id="mainview" class="w pointer-events-auto" onclick="alert(1)" style="top:12px">SAFE OCR</span><script>alert(1)</script></div></body>'
+    )
+  }
+
+  if (
+    ["GET", "HEAD"].includes(request.method) &&
+    /^\/txt\/(lb-editor-(?:doktor|fallback|no-ocr|mixed|long))\/\1_[234]\/\1_[234]_\d{4}\.jpeg$/.test(url.pathname)
+  ) {
+    return sendBody(response, 200, "image/jpeg", readerFacsimileJpeg)
   }
 
   const readerPartsPageMatch = request.method === "GET"

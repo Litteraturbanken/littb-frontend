@@ -11,6 +11,12 @@ import {
 
 import { createLbApiClient } from "../../lib/api/client"
 import type { components } from "../../lib/api/generated/lbapi"
+import {
+  developerQuickSearchCommands,
+  stableDeveloperJson,
+  type QuickSearchDeveloperAction,
+  type RedFtpEntry
+} from "../../lib/quick-search-developer"
 
 type QuickSearchItem = components["schemas"]["QuickSearchItem"]
 
@@ -28,7 +34,13 @@ type SearchRow = {
   url: string | null
   correction: boolean
   disabled: boolean
+  developerAction: QuickSearchDeveloperAction | null
 }
+
+type DeveloperOutput =
+  | { kind: "id", value: string, status: string | null }
+  | { kind: "info", value: string }
+  | { kind: "ftp", entries: RedFtpEntry[], status: string | null }
 
 const commands: Command[] = [
   { label: "Start", url: "/" },
@@ -54,6 +66,8 @@ const query = ref("")
 const remoteItems = ref<QuickSearchItem[]>([])
 const correction = ref<string | null>(null)
 const requestState = ref<"idle" | "loading" | "success" | "failure">("idle")
+const developerOutput = ref<DeveloperOutput | null>(null)
+const developerContext = useQuickSearchContext()
 
 const config = useRuntimeConfig()
 const client = createLbApiClient(config.public.apiBase)
@@ -84,13 +98,32 @@ function remoteRow(item: QuickSearchItem, index: number): SearchRow {
     mediaTypeLabel: item.media_type_label,
     url: item.url,
     correction: false,
-    disabled: false
+    disabled: false,
+    developerAction: null
   }
 }
 
+const developerRows = computed<SearchRow[]>(() => developerQuickSearchCommands(
+  query.value,
+  developerContext.value,
+  import.meta.dev
+).map(command => ({
+  id: command.id,
+  label: command.label,
+  typeLabel: command.typeLabel,
+  mediaTypeLabel: null,
+  url: command.url,
+  correction: false,
+  disabled: false,
+  developerAction: command.action
+})))
+
 const rows = computed<SearchRow[]>(() => {
-  if (!query.value || query.value.startsWith("/")) return []
-  if (requestState.value === "idle" || requestState.value === "loading") return []
+  if (!query.value) return []
+  if (query.value.startsWith("/")) return developerRows.value
+  if (requestState.value === "idle" || requestState.value === "loading") {
+    return developerRows.value
+  }
 
   const output = requestState.value === "success"
     ? remoteItems.value.map(remoteRow)
@@ -104,7 +137,8 @@ const rows = computed<SearchRow[]>(() => {
       mediaTypeLabel: null,
       url: null,
       correction: true,
-      disabled: false
+      disabled: false,
+      developerAction: null
     })
   } else if (
     requestState.value === "success" &&
@@ -117,7 +151,8 @@ const rows = computed<SearchRow[]>(() => {
       mediaTypeLabel: null,
       url: null,
       correction: false,
-      disabled: true
+      disabled: true,
+      developerAction: null
     })
   }
 
@@ -128,8 +163,10 @@ const rows = computed<SearchRow[]>(() => {
     mediaTypeLabel: null,
     url: command.url,
     correction: false,
-    disabled: false
+    disabled: false,
+    developerAction: null
   })))
+  output.push(...developerRows.value)
   return output
 })
 
@@ -177,6 +214,7 @@ async function runSearch(value: string, version: number) {
 watch(query, value => {
   cancelPendingSearch()
   resetResults()
+  developerOutput.value = null
   const trimmed = value.trim()
   if (!trimmed || trimmed.startsWith("/")) return
 
@@ -200,6 +238,7 @@ function close() {
   cancelPendingSearch()
   query.value = ""
   resetResults()
+  developerOutput.value = null
   document.body.classList.remove("modal-open")
   void nextTick(() => trigger.value?.focus())
 }
@@ -255,14 +294,71 @@ async function selectRow(row: SearchRow | null) {
     }
     return
   }
+  if (row.developerAction) {
+    await runDeveloperAction(row.developerAction, row.label)
+    return
+  }
   if (!row.url) return
   close()
   await navigateTo(row.url)
 }
 
-async function goToLibrary() {
-  close()
-  await navigateTo("/bibliotek")
+function isRedFtpEntries(value: unknown): value is RedFtpEntry[] {
+  if (!Array.isArray(value) || value.length > 50) return false
+  return value.every(entry => entry !== null
+    && typeof entry === "object"
+    && typeof (entry as RedFtpEntry).url === "string"
+    && (entry as RedFtpEntry).url.startsWith("//mnt/")
+    && Array.isArray((entry as RedFtpEntry).breadcrumbs)
+    && (entry as RedFtpEntry).breadcrumbs.every(breadcrumb =>
+      typeof breadcrumb.label === "string"
+      && typeof breadcrumb.url === "string"
+      && breadcrumb.url.startsWith("//mnt/")
+    ))
+}
+
+async function runDeveloperAction(
+  action: QuickSearchDeveloperAction,
+  label: string
+): Promise<void> {
+  if (!import.meta.dev) return
+  const context = developerContext.value
+  if (action === "id") {
+    if (context?.kind !== "reader") return
+    developerOutput.value = { kind: "id", value: context.workId, status: null }
+    try {
+      await navigator.clipboard.writeText(context.workId)
+      if (developerOutput.value?.kind === "id") {
+        developerOutput.value.status = "Kopierat."
+      }
+    } catch {
+      if (developerOutput.value?.kind === "id") {
+        developerOutput.value.status = "Kunde inte kopiera id:t."
+      }
+    }
+    return
+  }
+  if (action === "info") {
+    if (!context) return
+    developerOutput.value = { kind: "info", value: stableDeveloperJson(context.info) }
+    return
+  }
+
+  developerOutput.value = { kind: "ftp", entries: [], status: "Söker i red …" }
+  try {
+    const response = await $fetch<{ entries: unknown }>("/api/dev/red-ftp", {
+      query: { q: label },
+      retry: 0
+    })
+    if (!isRedFtpEntries(response.entries)) throw new Error("Invalid Red FTP response")
+    developerOutput.value = { kind: "ftp", entries: response.entries, status: null }
+  } catch {
+    developerOutput.value = {
+      kind: "ftp",
+      entries: [],
+      status: "Hittade inte red-tjänsten."
+    }
+  }
 }
 
 onMounted(() => window.addEventListener("keydown", onGlobalKeydown))
@@ -297,7 +393,10 @@ onBeforeUnmount(() => {
       <div class="modal-dialog modal-sm">
         <DialogPanel class="modal-content">
           <DialogTitle class="sr-only">Snabbsökning</DialogTitle>
-          <div class="modal-body">
+          <div
+            class="modal-body"
+            :class="{ info: developerOutput?.kind === 'info' || developerOutput?.kind === 'ftp' }"
+          >
             <Combobox v-slot="{ activeIndex }" :model-value="null" nullable @update:model-value="selectRow">
               <ComboboxInput
                 id="autocomplete"
@@ -334,8 +433,46 @@ onBeforeUnmount(() => {
                 </ComboboxOption>
               </ComboboxOptions>
             </Combobox>
+            <pre
+              v-if="developerOutput?.kind === 'id'"
+              class="quick-search-developer-id"
+            >{{ developerOutput.value }}</pre>
+            <pre
+              v-else-if="developerOutput?.kind === 'info'"
+              class="quick-search-developer-info"
+            >{{ developerOutput.value }}</pre>
+            <div
+              v-else-if="developerOutput?.kind === 'ftp'"
+              class="quick-search-developer-ftp"
+            >
+              <ul>
+                <li v-for="entry in developerOutput.entries" :key="entry.url" class="mb-4">
+                  <ul class="flex gap-2">
+                    <li
+                      v-for="(breadcrumb, index) in entry.breadcrumbs"
+                      :key="breadcrumb.url"
+                    ><a
+                      class="!text-gray-600 hover:!text-gray-400"
+                      :href="breadcrumb.url"
+                    >{{ breadcrumb.label }}</a><span
+                      v-if="index < entry.breadcrumbs.length - 1"
+                      class="!text-gray-600"
+                    > &gt; </span></li>
+                  </ul>
+                  <a
+                    class="!text-gray-800 hover:!text-gray-400 font-mono text-sm"
+                    :href="entry.url"
+                  >/{{ entry.url.split('/').slice(4).join('/') }}</a>
+                </li>
+              </ul>
+            </div>
+            <p
+              v-if="developerOutput && 'status' in developerOutput && developerOutput.status"
+              class="quick-search-developer-status"
+              role="status"
+            >{{ developerOutput.status }}</p>
             <div class="footer">
-              <span>Gå till <a class="sc" href="/bibliotek" @click.prevent="goToLibrary">biblioteket</a> om du vill utföra mer avancerade sökningar</span>
+              <span>Gå till <NuxtLink class="sc" to="/bibliotek" @click="close">biblioteket</NuxtLink> om du vill utföra mer avancerade sökningar</span>
             </div>
           </div>
         </DialogPanel>

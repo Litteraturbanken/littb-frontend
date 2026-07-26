@@ -82,6 +82,7 @@ if (import.meta.server && accepted.value?.status !== 200) {
 const works = computed(() => accepted.value?.status === 200
   ? accepted.value.works
   : null)
+useAuthorQuickSearchContextPublisher(computed(() => works.value?.author ?? null))
 const description = computed(() => works.value
   ? `${works.value.author.full_name}, Mer`
   : "Författarverk")

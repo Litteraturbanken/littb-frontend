@@ -171,6 +171,7 @@ if (import.meta.server && accepted.value?.status !== 200) {
 }
 
 const page = computed(() => accepted.value?.status === 200 ? accepted.value.page : null)
+useAuthorQuickSearchContextPublisher(computed(() => page.value?.author ?? null))
 const rootHref = "/f%C3%B6rfattare/Lagerl%C3%B6fS"
 const titlesHref = `${rootHref}/titlar`
 const dramawebbenHref = `${rootHref}/dramawebben`

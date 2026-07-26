@@ -162,6 +162,7 @@ if (import.meta.server && accepted.value?.status !== 200) {
 }
 
 const page = computed(() => accepted.value?.status === 200 ? accepted.value.page : null)
+useAuthorQuickSearchContextPublisher(computed(() => page.value?.author ?? null))
 const labels: Record<AuthorDocumentKind, string> = {
   presentation: "Presentation",
   bibliografi: "Bibliografi",
