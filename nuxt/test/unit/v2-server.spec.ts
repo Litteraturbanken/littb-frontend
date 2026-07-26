@@ -3008,6 +3008,8 @@ describe("v2 fixture server operations", () => {
       sort_date_imprint: { plain: "1905" },
       main_author: {
         authorid: "SöderbergH",
+        birth: { plain: "1869" },
+        death: { plain: "1941" },
         full_name: "Hjalmar Söderberg",
         surname: "Söderberg"
       },
