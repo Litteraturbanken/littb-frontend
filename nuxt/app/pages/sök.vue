@@ -2,7 +2,10 @@
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/vue"
 import type { LocationQueryRaw } from "vue-router"
 
-import type { SearchMultiSelectOption } from "~/components/search/SearchMultiSelect.vue"
+import type {
+  SearchMultiSelectOption,
+  SearchMultiSelectOptionGroup
+} from "~/components/search/SearchMultiSelect.vue"
 import SearchMultiSelect from "~/components/search/SearchMultiSelect.vue"
 import { createLbApiClient } from "~/lib/api/client"
 import {
@@ -262,7 +265,11 @@ watch(() => state.value.advanced, advanced => {
 let primaryController: AbortController | null = null
 watch(primaryIdentity, () => { primaryController?.abort() }, { flush: "sync" })
 const queryInput = ref(state.value.phrase ?? "")
+const searchInputElement = ref<HTMLInputElement | null>(null)
 watch(() => state.value.phrase, phrase => { queryInput.value = phrase ?? "" })
+const searchIsPristine = computed(() => Object.keys(rawQuery.value).every(
+  key => key === "avancerad"
+))
 
 function wordView(word: { word: string }): SearchWordView {
   return { text: word.word, punct: isTextSearchPunctuation(word.word) }
@@ -809,6 +816,12 @@ const categoryChoices = categoryOptions.map(([value, label]) => ({
   disabled: value === "texttype:drama;dramasamling"
     || value === "texttype:essä;essäsamling"
 }))
+const categoryChoiceGroups: readonly SearchMultiSelectOptionGroup[] = [
+  { label: "Kategorier", options: categoryChoices.slice(0, 20) },
+  { label: "Projekt", options: categoryChoices.slice(20, 24) },
+  { label: "Avdelningar", options: categoryChoices.slice(24, 31) },
+  { label: "Utgivare", options: categoryChoices.slice(31) }
+]
 
 function navigate(query: Record<string, string | readonly string[] | null | undefined>) {
   const mutableQuery: LocationQueryRaw = {}
@@ -822,8 +835,10 @@ function submitSearch() {
   void navigate(textSearchSubmitQuery(rawQuery.value, queryInput.value))
 }
 
-function resetSearch() {
-  void navigate(resetTextSearchQuery(rawQuery.value))
+async function resetSearch() {
+  await navigate(resetTextSearchQuery(rawQuery.value))
+  await nextTick()
+  searchInputElement.value?.focus()
 }
 
 function patchFilters(patch: Parameters<typeof textSearchFilterQuery>[1]) {
@@ -1132,6 +1147,7 @@ useHead({
             />
           </svg>
           <input
+            ref="searchInputElement"
             v-model="queryInput"
             class="-ml-6 mr-2 flex-grow py-3 text-lg pl-12 pr-4 border border-gray-500"
             autofocus
@@ -1142,6 +1158,7 @@ useHead({
             aria-label="Sökfras"
           >
           <button
+            v-if="!searchIsPristine"
             type="button"
             class="reset self-center text-gray-700 transition duration-200 w-6 h-6 relative -left-14 top-0 cursor-pointer -mr-6"
             aria-label="Rensa sökningen"
@@ -1376,6 +1393,7 @@ useHead({
               persistent-input-row
               :model-value="state.categories"
               :options="categoryChoices"
+              :option-groups="categoryChoiceGroups"
               placeholder="Filtrera: Kategorier / Utgivare"
               :space-after-remove="false"
               @update:model-value="patchFilters({ categories: $event as TextSearchRouteState['categories'] })"

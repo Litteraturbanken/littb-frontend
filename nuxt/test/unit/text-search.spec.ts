@@ -373,8 +373,8 @@ describe("text search route state", () => {
     })
   })
 
-  test("full reset removes every known key and preserves unknown entries", () => {
-    expect(resetTextSearchQuery(transitionQuery)).toEqual({ unknown: ["keep", null] })
+  test("full reset removes known, unknown, and repeated query entries", () => {
+    expect(resetTextSearchQuery(transitionQuery)).toEqual({})
   })
 
   test("builds exact generated requests without fuzzy or provider controls", () => {

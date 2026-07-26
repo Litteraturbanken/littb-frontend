@@ -192,7 +192,78 @@ async function pushRoute(page: Page, route: string) {
 test.beforeEach(async ({ request }) => reset(request))
 test.afterEach(async ({ request }) => reset(request))
 
-test("submit, reset, and advanced toggle own search keys while preserving unrelated query", async ({
+test("reset is absent when pristine, clears every query key, and restores search focus", async ({
+  page
+}) => {
+  await openSearch(page)
+  await expect(page.getByRole("button", { name: "Rensa sökningen" })).toHaveCount(0)
+
+  await openSearch(page, "/s%C3%B6k?avancerad=1&avancerad=0")
+  await expect(page.getByRole("button", { name: "Rensa sökningen" })).toHaveCount(0)
+
+  await openSearch(page, "/s%C3%B6k?fras=frihet&utm=one&utm=two")
+  const resetButton = page.getByRole("button", { name: "Rensa sökningen" })
+  await expect(resetButton).toBeVisible()
+  const historyLength = await page.evaluate(() => history.length)
+
+  await resetButton.click()
+
+  await expect.poll(() => new URL(page.url()).search).toBe("")
+  await expect(page).toHaveURL(/\/s(?:%C3%B6|ö)k$/)
+  await expect(page.getByRole("button", { name: "Rensa sökningen" })).toHaveCount(0)
+  await expect(page.getByLabel("Sökfras")).toBeFocused()
+  await expect.poll(() => page.evaluate(() => history.length)).toBe(historyLength + 1)
+})
+
+test("an unrecognized query key makes reset available and reset removes it", async ({ page }) => {
+  await openSearch(page, "/s%C3%B6k?okand=ett&okand=tv%C3%A5")
+  const resetButton = page.getByRole("button", { name: "Rensa sökningen" })
+  await expect(resetButton).toBeVisible()
+
+  await resetButton.press("Enter")
+
+  await expect.poll(() => new URL(page.url()).search).toBe("")
+  await expect(page.getByLabel("Sökfras")).toBeFocused()
+})
+
+test("category multiselect exposes legacy groups and canonicalizes selections from each", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1&utm=keep&utm=twice")
+  const categories = page.locator(".keyword_select")
+  await categories.getByRole("button", {
+    name: "Visa alternativ för Filtrera: Kategorier / Utgivare"
+  }).click()
+
+  const headings = categories.locator(".select2-results__group")
+  await expect(headings).toHaveText(["Kategorier", "Projekt", "Avdelningar", "Utgivare"])
+
+  for (const option of [
+    "Svenska Akademien",
+    "Dramawebben",
+    "Gunnar Ekelöf. Sent på jorden",
+    "Romaner"
+  ]) {
+    await categories.getByRole("option", { name: option, exact: true }).click()
+  }
+
+  await expect.poll(() => new URL(page.url()).searchParams.get("keywords")).toBe(
+    "texttype:roman,keyword:sentpajorden,keyword:Dramawebben,provenance.library:SA"
+  )
+  const query = new URL(page.url()).searchParams
+  expect(query.getAll("utm")).toEqual(["keep", "twice"])
+  await expect(categories.getByRole("button", { name: "Ta bort Romaner" })).toBeVisible()
+  await expect(categories.getByRole("button", {
+    name: "Ta bort Gunnar Ekelöf. Sent på jorden"
+  })).toBeVisible()
+  await expect(categories.getByRole("button", { name: "Ta bort Dramawebben" })).toBeVisible()
+  await expect(categories.getByRole("button", { name: "Ta bort Svenska Akademien" })).toBeVisible()
+
+  await page.keyboard.press("Escape")
+  await expect(categories.locator(".multiselect__content-wrapper")).toBeHidden()
+})
+
+test("submit and advanced toggle preserve unrelated query while reset clears everything", async ({
   page
 }) => {
   await openSearch(page, "/s%C3%B6k?utm=keep&fras=old&traffsida=3&sok_filter=StrindbergA")
@@ -205,7 +276,7 @@ test("submit, reset, and advanced toggle own search keys while preserving unrela
   await expect(page.locator("[data-search-advanced]")).toHaveAttribute("type", "button")
 
   await page.getByRole("button", { name: "Rensa sökningen" }).click()
-  await expect.poll(() => new URL(page.url()).search).toBe("?utm=keep")
+  await expect.poll(() => new URL(page.url()).search).toBe("")
   await expect(page.getByLabel("Sökfras")).toHaveValue("")
   await expect(page.locator("#results table.results")).toHaveCount(0)
 })

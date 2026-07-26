@@ -331,11 +331,9 @@ export function textSearchPageQuery(
 }
 
 export function resetTextSearchQuery(
-  raw: TextSearchRouteQuery
+  _raw: TextSearchRouteQuery
 ): Record<string, string | readonly string[] | null | undefined> {
-  return Object.fromEntries(
-    Object.entries(raw).filter(([key]) => !textSearchRouteKeySet.has(key))
-  )
+  return {}
 }
 
 function commonRequest(state: TextSearchRouteState): Omit<
