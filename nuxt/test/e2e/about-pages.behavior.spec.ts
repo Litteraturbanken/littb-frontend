@@ -184,3 +184,22 @@ test("missing route clears a previously active About body and background state",
   await expect(page.locator("body")).not.toHaveClass(/\bpage-about\b/)
   expect(await page.locator("html").getAttribute("style")).not.toContain("about_bkg.jpg")
 })
+
+test("managed About links use Nuxt navigation and preserve Back history", async ({ page }) => {
+  await openSuccessfulPage(page, "/om/ide")
+  await page.evaluate(() => { (window as typeof window & { __spaSentinel?: string }).__spaSentinel = "about-spa" })
+
+  await page.locator("#mainview section").getByRole("link", {
+    name: "presentationer",
+    exact: true
+  }).click()
+  await expect(page).toHaveURL("/presentationer")
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("about-spa")
+
+  await page.goBack()
+  await expect(page).toHaveURL("/om/ide")
+  await expect(page.getByRole("heading", { name: "Introduktion", exact: true })).toBeVisible()
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("about-spa")
+})

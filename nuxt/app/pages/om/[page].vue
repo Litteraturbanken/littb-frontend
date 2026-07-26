@@ -119,6 +119,7 @@ const { data: content } = await useAsyncData(asyncKey, async () => {
 })
 
 const helpSubmenu = computed(() => pageKey.value === "hjalp" ? extractHelpSubmenu(content.value ?? "") : [])
+const navigateManagedHtml = useManagedHtmlNavigation()
 
 async function scrollToHelpAnchor(value: unknown) {
   if (!import.meta.client || typeof value !== "string" || !value) return
@@ -149,8 +150,9 @@ watch(
       v-if="pageKey === 'hjalp'"
       class="help_content content unbox page-help"
       v-html="content || ''"
+      @click="navigateManagedHtml"
     />
-    <section v-else v-html="content || ''" />
+    <section v-else v-html="content || ''" @click="navigateManagedHtml" />
     <ClientOnly>
       <Teleport v-if="pageKey === 'hjalp'" to="#toolkit">
         <div toolkit>

@@ -277,3 +277,24 @@ test("Presentation route transitions replace all document head and body state be
   expect(productionRequests).toEqual([])
   expect(problems).toEqual([])
 })
+
+test("managed Presentation links use Nuxt navigation and preserve Back history", async ({ page }) => {
+  await page.goto("/presentationer", { waitUntil: "networkidle" })
+  await page.evaluate(() => { (window as typeof window & { __spaSentinel?: string }).__spaSentinel = "presentation-spa" })
+
+  await page.locator(".doc.main").getByRole("link", {
+    name: "Figurdikten som barock blandkonst",
+    exact: true
+  }).click()
+  await expect(page).toHaveURL(
+    "/presentationer/specialomraden/FigurdiktenSomBarockBlandkonst.html"
+  )
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("presentation-spa")
+
+  await page.goBack()
+  await expect(page).toHaveURL("/presentationer")
+  await expect(page.getByRole("heading", { name: "Presentationer och introduktioner" })).toBeVisible()
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("presentation-spa")
+})

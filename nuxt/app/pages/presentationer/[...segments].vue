@@ -92,6 +92,7 @@ const { data } = await useAsyncData<PresentationPageData>(asyncKey, async () => 
 })
 
 const pageData = computed(() => data.value ?? emptyPageData())
+const navigateManagedHtml = useManagedHtmlNavigation()
 const metadata = computed(() => isIndex.value
   ? {
       title: "Presentationer | Litteraturbanken",
@@ -192,11 +193,13 @@ useHead(() => {
     v-if="isIndex"
     class="doc main"
     v-html="pageData.document.bodyHtml"
+    @click="navigateManagedHtml"
   />
   <div
     v-else
     class="content"
     style="position:relative;"
     v-html="pageData.document.bodyHtml"
+    @click="navigateManagedHtml"
   />
 </template>

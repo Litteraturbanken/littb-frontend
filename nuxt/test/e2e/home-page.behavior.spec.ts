@@ -129,3 +129,25 @@ test("Home to 404 to Home cleans and restores stylesheet, background, and body s
   expect(new Set(fragmentRequests)).toEqual(new Set([fragmentRequests[0]]))
   expect(problems).toEqual([])
 })
+
+test("managed Home and language links use SPA history without reloading the document", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" })
+  await page.evaluate(() => { (window as typeof window & { __spaSentinel?: string }).__spaSentinel = "home-spa" })
+
+  await page.locator('.home-editorial a[href="/om/ide"]').click()
+  await expect(page).toHaveURL("/om/ide")
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("home-spa")
+
+  await page.goBack()
+  await expect(page).toHaveURL("/")
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("home-spa")
+
+  await page.getByRole("link", { name: "English", exact: true }).click()
+  await expect(page).toHaveURL("/om/english.html")
+  expect(await page.evaluate(() => (window as typeof window & { __spaSentinel?: string }).__spaSentinel))
+    .toBe("home-spa")
+  await page.goBack()
+  await expect(page).toHaveURL("/")
+})

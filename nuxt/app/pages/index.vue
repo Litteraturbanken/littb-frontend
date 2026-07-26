@@ -258,6 +258,7 @@ export function parseHomeContent(source: string): HomeContent {
 
 <script setup lang="ts">
 const contentPath = "/red/om/start/startsida-ny.html"
+const navigateManagedHtml = useManagedHtmlNavigation()
 
 useSeoMeta({
   title: "Litteraturbanken | Svenska klassiker som e-bok och epub",
@@ -309,6 +310,6 @@ useHead(() => {
   <div class="center_col">
     <h1>Litteraturbanken</h1>
     <h2 class="caps">Nytt <i class="no-caps">&amp;</i> anmärkningsvärt</h2>
-    <div class="home-editorial" v-html="homeContent.bodyHtml" />
+    <div class="home-editorial" v-html="homeContent.bodyHtml" @click="navigateManagedHtml" />
   </div>
 </template>
