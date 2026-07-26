@@ -34,3 +34,18 @@ Keyboard and paste navigation are suppressed for inputs, textareas, selects, con
 - `git diff --check`: passed.
 
 The user-facing Nuxt server on port 3020 and backend server were not stopped or replaced during verification.
+
+## Independent-review follow-up
+
+The first implementation incorrectly allowed paste navigation while a noneditable link or button retained focus, although Angular suppresses paste whenever any element owns focus. Paste navigation now runs only when `document.activeElement` is the body, document element, or absent. The browser suite pastes successfully from a truly unfocused body and proves that a focused shell link suppresses the same paste.
+
+The initial dialog guard also covered only native open dialogs and ARIA modal dialogs. It now suppresses shared shortcuts whenever a rendered `[role="dialog"]` exists. A real Library download-format chooser test proves that the intentionally nonmodal chooser remains open and `h` does not add a history entry or navigate away.
+
+Finally, single pasted IDs had a looser length bound than multi-ID Library filters. Both paths now consume one exported canonical lb-id predicate. Boundary tests cover the maximum accepted identifier and max+1 rejection for both single and multiple paste.
+
+Fresh follow-up verification:
+
+- focused units: 25 passed;
+- desktop/mobile shortcut and real format-chooser flows: 4 passed;
+- scoped SSR shell test: passed;
+- Nuxt typecheck: passed.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   DEFAULT_LIBRARY_HREF,
+  isCanonicalPastedWorkId,
   libraryWorkIdFilterHref,
   rememberedLibraryHref
 } from "../../app/lib/library-navigation"
@@ -38,5 +39,14 @@ describe("rememberedLibraryHref", () => {
       .toBe("/bibliotek?filter=lbworkid:lb12%20OR%20lbworkid:lbAbC_34&visa=works&sort=popularitet")
     expect(libraryWorkIdFilterHref([])).toBeNull()
     expect(libraryWorkIdFilterHref(["lb-unsafe"])).toBeNull()
+  })
+
+  it("shares the exact pasted work-id length boundary", () => {
+    const maximum = `lb${"x".repeat(97)}`
+    const tooLong = `lb${"x".repeat(98)}`
+    expect(isCanonicalPastedWorkId(maximum)).toBe(true)
+    expect(isCanonicalPastedWorkId(tooLong)).toBe(false)
+    expect(libraryWorkIdFilterHref([maximum, "lb2"])).not.toBeNull()
+    expect(libraryWorkIdFilterHref([tooLong, "lb2"])).toBeNull()
   })
 })

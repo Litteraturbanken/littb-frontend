@@ -320,6 +320,24 @@ test("source-material selection remains operable at the project viewport", async
   await expect(page.locator('[data-library-source-format="etext:txt"]')).toBeEnabled()
 })
 
+test("the nonmodal format chooser suppresses the shared history shortcut", async ({ page }) => {
+  const path = "/bibliotek?avancerat=1&nedladdning=1&keep=first&keep=second"
+  await page.goto(path, { waitUntil: "networkidle" })
+  await waitForHydration(page)
+  await page.locator("[data-library-source-checkbox]").first().check({ force: true })
+  await page.locator("[data-library-format-button]").click({ force: true })
+
+  const chooser = page.getByRole("dialog", { name: "Välj format" })
+  await expect(chooser).toBeVisible()
+  await expect(chooser).not.toHaveAttribute("aria-modal", "true")
+  const historyLength = await page.evaluate(() => window.history.length)
+  await page.keyboard.press("h")
+  await page.waitForTimeout(100)
+  await expect(page).toHaveURL(path)
+  await expect(chooser).toBeVisible()
+  expect(await page.evaluate(() => window.history.length)).toBe(historyLength)
+})
+
 test("download sidebar scrolling does not clip the body-level format popover", async ({ page }) => {
   await page.goto("/bibliotek?avancerat=1&nedladdning=1", { waitUntil: "networkidle" })
   await waitForHydration(page)

@@ -226,6 +226,13 @@ test("public shell shortcuts preserve guards, remembered Library queries, and hi
     && url.searchParams.get("filter") === null
   ))
   const focusShell = () => page.getByRole("link", { name: "Litteraturbanken" }).focus()
+  const clearFocus = async () => {
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+    await expect.poll(() => page.evaluate(() => (
+      document.activeElement === document.body
+      || document.activeElement === document.documentElement
+    ))).toBe(true)
+  }
   await page.goto(library, { waitUntil: "networkidle" })
   await page.evaluate(() => {
     (window as Window & { __shellShortcutHydrated?: boolean })
@@ -288,11 +295,16 @@ test("public shell shortcuts preserve guards, remembered Library queries, and hi
 
   await focusShell()
   await pasteText(page, "LB8345227")
+  await page.waitForTimeout(50)
+  await expectRememberedLibrary()
+
+  await clearFocus()
+  await pasteText(page, "LB8345227")
   await expect(page).toHaveURL("/editor/lb8345227/ix/0/f")
   await page.goBack()
   await expectRememberedLibrary()
 
-  await focusShell()
+  await clearFocus()
   await pasteText(page, "LB12 och lbAbC_34")
   await expect.poll(() => {
     const url = new URL(page.url())
@@ -311,7 +323,7 @@ test("public shell shortcuts preserve guards, remembered Library queries, and hi
   await page.goBack()
   await expectRememberedLibrary()
 
-  await focusShell()
+  await clearFocus()
   await pasteText(page, "blb123 lb-456")
   await page.waitForTimeout(50)
   await expectRememberedLibrary()

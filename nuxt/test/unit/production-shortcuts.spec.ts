@@ -18,15 +18,19 @@ describe("production shortcuts", () => {
   })
 
   it("guards modifiers, composition, editable targets, and open dialogs", () => {
-    const { document } = parseHTML(`
+    const { document } = parseHTML(`<html><body>
       <input id="input">
       <div id="editor" contenteditable="true"><span id="editor-child">redigerbar</span></div>
-      <div role="dialog" aria-modal="true"><span id="dialog-child">modal</span></div>
+      <div role="dialog"><span id="dialog-child">dialog</span></div>
+      <a id="link" href="/bibliotek">länk</a>
+      <button id="button" type="button">knapp</button>
       <div id="plain"></div>
-    `)
+    </body></html>`)
     const input = document.querySelector("#input")!
     const editorChild = document.querySelector("#editor-child")!
     const dialogChild = document.querySelector("#dialog-child")!
+    const link = document.querySelector("#link")!
+    const button = document.querySelector("#button")!
     const plain = document.querySelector("#plain")!
     const event = (overrides: Partial<KeyboardEvent> = {}) => ({
       altKey: false,
@@ -50,8 +54,16 @@ describe("production shortcuts", () => {
       .toBe(true)
     expect(isPublicShellPasteGuarded({ defaultPrevented: false, target: dialogChild } as unknown as ClipboardEvent, dialogChild))
       .toBe(true)
-    expect(isPublicShellPasteGuarded({ defaultPrevented: false, target: plain } as unknown as ClipboardEvent, plain))
+    expect(isPublicShellPasteGuarded({ defaultPrevented: false, target: document.body } as unknown as ClipboardEvent, document.body))
       .toBe(false)
+    expect(isPublicShellPasteGuarded({ defaultPrevented: false, target: document.documentElement } as unknown as ClipboardEvent, document.documentElement))
+      .toBe(false)
+    expect(isPublicShellPasteGuarded({ defaultPrevented: false, target: document.body } as unknown as ClipboardEvent, null))
+      .toBe(false)
+    for (const focused of [plain, link, button]) {
+      expect(isPublicShellPasteGuarded({ defaultPrevented: false, target: focused } as unknown as ClipboardEvent, focused))
+        .toBe(true)
+    }
     expect(isProductionShortcutGuarded(event(), plain))
       .toBe(false)
   })
@@ -76,6 +88,18 @@ describe("production shortcuts", () => {
   it("maps multiple pasted lb-ids to the canonical legacy Library filter", () => {
     expect(pastedLbNavigationDestination("LB12 och lbAbC_34"))
       .toBe("/bibliotek?filter=lbworkid:lb12%20OR%20lbworkid:lbAbC_34&visa=works&sort=popularitet")
+  })
+
+  it("applies one shared identifier boundary to single and multiple paste", () => {
+    const maximum = `lb${"x".repeat(97)}`
+    const tooLong = `lb${"x".repeat(98)}`
+
+    expect(pastedLbNavigationDestination(maximum))
+      .toBe(`/editor/${maximum}/ix/0/f`)
+    expect(pastedLbNavigationDestination(tooLong)).toBeNull()
+    expect(pastedLbNavigationDestination(`${maximum} lb2`))
+      .toBe(`/bibliotek?filter=lbworkid:${maximum}%20OR%20lbworkid:lb2&visa=works&sort=popularitet`)
+    expect(pastedLbNavigationDestination(`${tooLong} lb2`)).toBeNull()
   })
 
   it.each([

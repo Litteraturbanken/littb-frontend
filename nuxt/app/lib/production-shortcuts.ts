@@ -1,4 +1,7 @@
-import { libraryWorkIdFilterHref } from "./library-navigation"
+import {
+  isCanonicalPastedWorkId,
+  libraryWorkIdFilterHref
+} from "./library-navigation"
 
 const controlCharacters = /[\u0000-\u001f\u007f-\u009f]/u
 const pastedLbId = /(?<![A-Za-z0-9_])lb[A-Za-z0-9_]+(?![A-Za-z0-9_])/giu
@@ -13,14 +16,20 @@ function editableTarget(target: EventTarget | null): boolean {
 
 function dialogTarget(target: EventTarget | null): boolean {
   if (!target || typeof target !== "object" || !("closest" in target)) return false
-  return (target as Element).closest(
-    'dialog[open], [role="dialog"][aria-modal="true"]'
-  ) !== null
+  return (target as Element).closest('dialog[open], [role="dialog"]') !== null
 }
 
 function openDialog(): boolean {
   return typeof document !== "undefined"
-    && document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]') !== null
+    && document.querySelector('dialog[open], [role="dialog"]') !== null
+}
+
+function hasFocusedPasteOwner(target: EventTarget | null): boolean {
+  if (target === null) return false
+  if (typeof target !== "object" || !("ownerDocument" in target)) return true
+  const element = target as Element
+  return element !== element.ownerDocument.body
+    && element !== element.ownerDocument.documentElement
 }
 
 export function isProductionShortcutGuarded(
@@ -51,10 +60,9 @@ export function isPublicShellPasteGuarded(
     ? document.activeElement
     : activeElement ?? null
   return event.defaultPrevented
+    || hasFocusedPasteOwner(currentActiveElement)
     || editableTarget(event.target)
-    || editableTarget(currentActiveElement)
     || dialogTarget(event.target)
-    || dialogTarget(currentActiveElement)
     || openDialog()
 }
 
@@ -75,7 +83,7 @@ export function pastedLbNavigationDestination(text: string): string | null {
     const value = match[0]!
     return `lb${value.slice(2)}`
   })
-  if (ids.some(id => id.length > 100)) return null
+  if (ids.some(id => !isCanonicalPastedWorkId(id))) return null
   if (ids.length > 1) return libraryWorkIdFilterHref(ids)
   return `/editor/${encodeURIComponent(ids[0]!)}/ix/0/f`
 }
