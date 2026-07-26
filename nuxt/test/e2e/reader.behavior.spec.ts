@@ -3463,7 +3463,10 @@ test("return link is absent without a validated Search origin", async ({ page })
   })).toHaveCount(0)
 })
 
-test("return link on faksimil skips e-text hit loading", async ({ page, request }) => {
+test("return link on faksimil preserves its origin while loading faksimil hits", async ({
+  page,
+  request
+}) => {
   const origin = "/s%C3%B6k?fras=frihet&traffsida=2"
   await request.delete(`${fixture}/_reader_hit_requests`)
   await page.goto(`${facsimilePath}?q=frihet&hit=0&s_return=${encodeURIComponent(origin)}`, {
@@ -3485,7 +3488,15 @@ test("return link on faksimil skips e-text hit loading", async ({ page, request 
       searchReturn: url.searchParams.get("s_return")
     }
   }).toEqual({ q: null, hit: null, searchReturn: origin })
-  expect(await readerHitRequests(request)).toEqual([])
+  const hitRequests = await readerHitRequests(request)
+  expect(hitRequests).toEqual([{
+    path: "/private-v2/works/lb-reader-gosta-berlings-saga/search-hits",
+    query: "media_type=faksimil&query=frihet&offset=0&limit=3" +
+      "&word_forms=false&include_older_spellings=true&prefix=false&suffix=false"
+  }])
+  expect(hitRequests.some(hitRequest => (
+    new URLSearchParams(hitRequest.query).get("media_type") === "etext"
+  ))).toBe(false)
 })
 
 test("return link rejects malformed UTF-8 in the raw outer parameter", async ({ page }) => {
