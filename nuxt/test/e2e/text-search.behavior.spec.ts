@@ -82,6 +82,27 @@ test("vue-multiselect title search selects and removes a route-owned title", asy
   await expect.poll(() => new URL(page.url()).searchParams.has("titlar")).toBe(false)
 })
 
+test("vue-multiselect names each real keyboard control without a searchbox suffix", async ({
+  page
+}) => {
+  await openSearch(page, "/s%C3%B6k?avancerad=1")
+
+  for (const control of [
+    page.getByRole("combobox", { name: "Författarskap", exact: true }),
+    page.getByRole("textbox", { name: "Titlar", exact: true }),
+    page.getByRole("combobox", { name: "Språk …", exact: true }),
+    page.getByRole("combobox", { name: "Om ett författarskap", exact: true }),
+    page.getByRole("combobox", {
+      name: "Filtrera: Kategorier / Utgivare", exact: true
+    })
+  ]) {
+    await expect(control).toHaveCount(1)
+    await control.focus()
+    await expect(control).toBeFocused()
+  }
+  await expect(page.getByLabel(/-searchbox$/)).toHaveCount(0)
+})
+
 test("vue-multiselect preserves declared option order, unknown selections, labels, and disabled rows", async ({
   page
 }) => {

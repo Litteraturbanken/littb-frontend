@@ -30,6 +30,21 @@ test("Library vue-multiselect facets preserve groups, history, reload state, and
     await expect(control.locator("select[multiple]")).toHaveCount(0)
   }
 
+  const focusableControls = [
+    page.getByRole("combobox", {
+      name: "Filtrera: Kategorier / Utgivare", exact: true
+    }),
+    page.getByRole("textbox", { name: "Om ett författarskap", exact: true }),
+    page.getByRole("combobox", { name: "Avgränsa sökningen", exact: true }),
+    page.getByRole("combobox", { name: "Utgivningsformat", exact: true }),
+    page.getByRole("combobox", { name: "Språk …", exact: true })
+  ]
+  for (const control of focusableControls) {
+    await expect(control).toHaveCount(1)
+    await control.focus()
+    await expect(control).toBeFocused()
+  }
+
   await keywords.click()
   await expect(keywords).toContainText("Kategorier")
   await expect(keywords).toContainText("Utgivare")

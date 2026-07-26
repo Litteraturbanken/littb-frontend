@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue"
 import VueMultiselect from "vue-multiselect"
 
 defineOptions({ inheritAttrs: false })
@@ -29,6 +30,7 @@ const props = withDefaults(defineProps<{
   options: readonly SearchMultiSelectOption[]
   optionGroups?: readonly SearchMultiSelectOptionGroup[]
   placeholder: string
+  accessibleName?: string
   searchable?: boolean
   loading?: boolean
   spaceAfterRemove?: boolean
@@ -44,6 +46,7 @@ const emit = defineEmits<{
 }>()
 
 const multiselect = ref<InstanceType<typeof VueMultiselect> | null>(null)
+const controlName = computed(() => props.accessibleName ?? props.placeholder)
 const flatOptions = computed(() => props.optionGroups
   ? props.optionGroups.flatMap(group => group.options)
   : props.options)
@@ -70,7 +73,7 @@ function update(value: readonly VueMultiselectOption[] | null) {
     .filter(option => selected.has(option.value))
     .map(option => option.value)
   const unknown = props.modelValue.filter(value => (
-    selected.has(value) && !props.options.some(option => option.value === value)
+    selected.has(value) && !flatOptions.value.some(option => option.value === value)
   ))
   emit("update:modelValue", [...known, ...unknown])
 }
@@ -82,8 +85,9 @@ function openOptions(event: MouseEvent) {
 }
 
 onMounted(() => {
-  multiselect.value?.$el.querySelector("input.multiselect__input")
-    ?.classList.add("select2-search__field")
+  const search = multiselect.value?.$el.querySelector("input.multiselect__input")
+  search?.classList.add("select2-search__field")
+  search?.setAttribute("aria-label", controlName.value)
 })
 </script>
 
@@ -97,6 +101,8 @@ onMounted(() => {
       class="select2-selection select2-selection--multiple"
       :model-value="selectedOptions"
       :options="multiselectOptions"
+      :name="controlName"
+      :aria-label="controlName"
       :group-values="optionGroups ? 'options' : undefined"
       :group-label="optionGroups ? 'label' : undefined"
       :group-select="false"

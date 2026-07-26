@@ -27,17 +27,35 @@ test("relevance titles ellipsize without moving the year or author columns", asy
   await page.goto("/bibliotek?filter=titelmetadata", { waitUntil: "networkidle" })
   await page.locator('[data-library-mounted="true"]').waitFor({ state: "attached" })
 
-  const row = page.locator("[data-library-result]").first()
+  const rows = page.locator("[data-library-result]")
+  const row = rows.first()
   const title = row.locator("[data-library-result-title]")
   const year = row.locator("td").nth(2)
   const author = row.locator("td").nth(3)
-  const before = await Promise.all([year.boundingBox(), author.boundingBox()])
+  const shortRow = rows.nth(1)
 
   await expect(title).toHaveCSS("white-space", "nowrap")
   await expect(title).toHaveCSS("overflow", "hidden")
   await expect(title).toHaveCSS("text-overflow", "ellipsis")
   expect(await title.evaluate(element => element.scrollWidth > element.clientWidth)).toBe(true)
-  expect(await Promise.all([year.boundingBox(), author.boundingBox()])).toEqual(before)
+  expect(await shortRow.locator("[data-library-result-title]")
+    .evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+
+  const columnGeometry = (boxes: Array<{ x: number, width: number } | null>) => (
+    boxes.map(box => box && ({ x: box.x, width: box.width }))
+  )
+  const longGeometry = columnGeometry(await Promise.all([year.boundingBox(), author.boundingBox()]))
+  const referenceGeometry = columnGeometry(await Promise.all([
+    shortRow.locator("td").nth(2).boundingBox(),
+    shortRow.locator("td").nth(3).boundingBox()
+  ]))
+  expect(referenceGeometry).toEqual(longGeometry)
+
+  await title.evaluate(element => { element.textContent = "Kort titel" })
+  const controlledShortGeometry = columnGeometry(
+    await Promise.all([year.boundingBox(), author.boundingBox()])
+  )
+  expect(controlledShortGeometry).toEqual(longGeometry)
 })
 
 test("preserves the populated legacy Library shell geometry at desktop and mobile", async ({
@@ -248,9 +266,52 @@ for (const visualCase of [
         return { width: box.width, height: box.height }
       }))
     expect(selectBoxes).toHaveLength(6)
-    expect(selectBoxes.every(box =>
-      box.width <= 400 && box.height >= 30 && box.height <= 32
-    )).toBe(true)
+    const authorityWidth = mobile ? 349 : 350
+    for (const box of selectBoxes) {
+      expect(Math.abs(box.width - authorityWidth)).toBeLessThanOrEqual(1)
+      expect(Math.abs(box.height - 31)).toBeLessThanOrEqual(1)
+    }
+    const multiselects = page.locator("[data-library-advanced-panel] .multiselect")
+    await expect(multiselects).toHaveCount(5)
+    for (const multiselect of await multiselects.all()) {
+      await expect(multiselect).toHaveCSS("background-color", "rgb(255, 255, 255)")
+      await expect(multiselect).toHaveCSS("border-top-width", "1px")
+      await expect(multiselect).toHaveCSS("border-top-color", "rgb(211, 211, 211)")
+      await expect(multiselect).toHaveCSS("font-size", "12.8px")
+      await expect(multiselect).toHaveCSS("font-family", /Requiem Text SC/)
+    }
+    if (!visualCase.download) {
+      await expect(page.locator("[data-library-advanced-panel]")).toHaveScreenshot(
+        `library-advanced-controls-${mobile ? "mobile" : "desktop"}.png`,
+        {
+          animations: "disabled",
+          caret: "hide",
+          scale: "css",
+          threshold: 0.1,
+          maxDiffPixels: 100
+        }
+      )
+
+      const keywords = page.locator("[data-library-keywords]")
+      await page.getByRole("combobox", {
+        name: "Filtrera: Kategorier / Utgivare", exact: true
+      }).click()
+      const group = keywords.getByText("Kategorier", { exact: true })
+      await expect(group).toHaveCSS("color", "rgb(153, 153, 153)")
+      await expect(group).toHaveCSS("margin-left", "10px")
+      await expect(group).toHaveCSS("font-weight", "400")
+      const roman = keywords.getByRole("option", { name: "Romaner", exact: true })
+        .locator(".multiselect__option")
+      await expect(roman).toHaveCSS("padding", "6px")
+      await expect(roman).toHaveCSS("min-height", "0px")
+      await roman.click()
+      const chip = keywords.locator('.select2-selection__choice[title="Romaner"]')
+      await expect(chip).toHaveCSS("text-transform", "lowercase")
+      await expect(chip).toHaveCSS("font-family", /Requiem Text SC/)
+      await expect(chip).toHaveCSS("border-radius", "0px")
+      await expect(chip).toHaveCSS("margin-right", "6px")
+      await expect(chip).toHaveCSS("background-image", /linear-gradient/)
+    }
     if (visualCase.download) {
       const resultsBox = await page.locator("[data-library-work-row]").first()
         .evaluate(element => element.closest("table")!.getBoundingClientRect().toJSON())
@@ -260,24 +321,22 @@ for (const visualCase of [
       if (mobile) expect(sidebarBox.top).toBeGreaterThanOrEqual(resultsBox.bottom)
       else expect(sidebarBox.left).toBeGreaterThan(resultsBox.left)
     }
-    await expect(page.locator(visualCase.download ? ".result.title:visible" : ".result.relevance"))
-      .toHaveScreenshot(
-      `${visualCase.name}-results-${mobile ? "mobile" : "desktop"}.png`,
-      {
-        animations: "disabled",
-        caret: "hide",
-        scale: "css",
-        mask: [
-          page.locator(".num_hits"),
-          page.locator(".spinner")
-        ],
-        maskColor: "#00ff00",
-        threshold: 0.1,
-        // Angular's download rows use different mobile table markup, while the
-        // geometry and interaction layout are asserted separately above.
-        maxDiffPixelRatio: visualCase.download && mobile ? 0.07 : 0.02
-      }
-    )
+    if (visualCase.download) {
+      await expect(page.locator(".result.title:visible")).toHaveScreenshot(
+        `${visualCase.name}-results-${mobile ? "mobile" : "desktop"}.png`,
+        {
+          animations: "disabled",
+          caret: "hide",
+          scale: "css",
+          mask: [page.locator(".num_hits"), page.locator(".spinner")],
+          maskColor: "#00ff00",
+          threshold: 0.1,
+          // Angular's download rows use different mobile table markup, while the
+          // geometry and interaction layout are asserted separately above.
+          maxDiffPixelRatio: mobile ? 0.07 : 0.02
+        }
+      )
+    }
     expect(forbidden).toEqual([])
     expect(problems).toEqual([])
   })

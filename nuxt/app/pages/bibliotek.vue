@@ -3183,7 +3183,7 @@ onUnmounted(disposeLibraryRequest)
                 <SearchMultiSelect
                   data-library-keywords
                   class="keyword_select"
-                  aria-label="Filtrera: Kategorier / Utgivare"
+                  accessible-name="Filtrera: Kategorier / Utgivare"
                   :model-value="selectedKeywords"
                   :options="collectionSelectOptions"
                   :option-groups="collectionSelectGroups"
@@ -3198,7 +3198,7 @@ onUnmounted(disposeLibraryRequest)
                 <SearchMultiSelect
                   data-library-about-authors
                   class="about_select"
-                  aria-label="Om ett författarskap"
+                  accessible-name="Om ett författarskap"
                   :model-value="selectedAboutAuthorIds"
                   :options="aboutAuthorOptions.map(author => ({ value: author.id, label: author.label }))"
                   placeholder="Om ett författarskap"
@@ -3217,7 +3217,7 @@ onUnmounted(disposeLibraryRequest)
                 <SearchMultiSelect
                   data-library-narrowing
                   class="keyword_select block"
-                  aria-label="Avgränsa sökningen"
+                  accessible-name="Avgränsa sökningen"
                   :model-value="selectedNarrowingKeywords"
                   :options="collectionSelectOptions"
                   :option-groups="narrowingSelectGroups"
@@ -3232,7 +3232,7 @@ onUnmounted(disposeLibraryRequest)
                 <SearchMultiSelect
                   data-library-media
                   class="keyword_select"
-                  aria-label="Utgivningsformat"
+                  accessible-name="Utgivningsformat"
                   :model-value="selectedMedia"
                   :options="mediaSelectOptions"
                   placeholder="Utgivningsformat"
@@ -3246,7 +3246,7 @@ onUnmounted(disposeLibraryRequest)
                 <SearchMultiSelect
                   data-library-languages
                   class="keyword_select"
-                  aria-label="Språk …"
+                  accessible-name="Språk …"
                   :model-value="selectedLanguages"
                   :options="languageSelectOptions"
                   placeholder="Språk …"

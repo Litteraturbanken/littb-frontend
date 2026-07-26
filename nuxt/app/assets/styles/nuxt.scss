@@ -116,13 +116,15 @@
     .multiselect.select2-selection--multiple {
         box-sizing: border-box;
         min-height: 32px;
+        border: 1px solid lightgrey !important;
+        background: white;
         color: #444;
         font-family: "Requiem Text SC A", "Requiem Text SC B";
-        font-size: 0.8em;
+        font-size: 0.8rem;
     }
 
     .multiselect__tags {
-        min-height: 32px;
+        min-height: 30px;
         padding: 0;
         border: 0;
         border-radius: 0;
@@ -147,10 +149,19 @@
         min-height: 28px;
         padding: 5px 5px 5px 10px;
         margin: 0;
-        border: 1px solid lightgrey;
+        border: 0;
         border-radius: 0;
         background: white;
         font: inherit;
+    }
+
+    .multiselect__placeholder {
+        display: block;
+        min-height: 30px;
+        padding: 7px 24px 4px 10px;
+        margin: 0;
+        color: #999;
+        line-height: 19px;
     }
 
     .multiselect.select2-selection--multiple::after {
@@ -190,7 +201,7 @@
         border-radius: 0;
         background: white;
         color: #333;
-        font-size: 0.8em;
+        font-size: 0.8rem;
     }
 
     .multiselect__content {
