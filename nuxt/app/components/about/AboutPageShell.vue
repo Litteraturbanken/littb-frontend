@@ -13,13 +13,13 @@ defineProps<{ activePage: AboutPage | null }>()
 <template>
   <h1>Om Litteraturbanken</h1>
   <ul class="links">
-    <li><a :class="{ active: activePage === 'ide' }" href="/om/ide">Intro</a></li>{{ " " }}
-    <li><a href="/om/organisation">Organisation</a></li>{{ " " }}
-    <li><a :class="{ active: activePage === 'hjalp' }" href="/om/hjalp">Hjälp</a></li>{{ " " }}
-    <li><a :class="{ active: activePage === 'rattigheter' }" href="/om/rattigheter">Rättigheter</a></li>{{ " " }}
-    <li><a :class="{ active: activePage === 'tack' }" href="/om/tack">Tack</a></li>{{ " " }}
-    <li><a :class="{ active: activePage === 'statistik' }" href="/om/statistik">Statistik</a></li>{{ " " }}
-    <li><a :class="{ active: activePage === 'kontakt' }" href="/om/kontakt">Kontakt</a></li>
+    <li><NuxtLink :class="{ active: activePage === 'ide' }" to="/om/ide">Intro</NuxtLink></li>{{ " " }}
+    <li><NuxtLink to="/om/organisation">Organisation</NuxtLink></li>{{ " " }}
+    <li><NuxtLink :class="{ active: activePage === 'hjalp' }" to="/om/hjalp">Hjälp</NuxtLink></li>{{ " " }}
+    <li><NuxtLink :class="{ active: activePage === 'rattigheter' }" to="/om/rattigheter">Rättigheter</NuxtLink></li>{{ " " }}
+    <li><NuxtLink :class="{ active: activePage === 'tack' }" to="/om/tack">Tack</NuxtLink></li>{{ " " }}
+    <li><NuxtLink :class="{ active: activePage === 'statistik' }" to="/om/statistik">Statistik</NuxtLink></li>{{ " " }}
+    <li><NuxtLink :class="{ active: activePage === 'kontakt' }" to="/om/kontakt">Kontakt</NuxtLink></li>
   </ul>
   <slot />
 </template>
