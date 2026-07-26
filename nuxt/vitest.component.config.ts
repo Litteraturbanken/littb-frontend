@@ -1,9 +1,10 @@
 import vue from "@vitejs/plugin-vue"
-import { defineConfig } from "vitest/config"
+import { defineProject } from "vitest/config"
 
-export default defineConfig({
+export default defineProject({
   plugins: [vue()],
   test: {
+    name: "component",
     environment: "./test/helpers/linkedom-vitest-environment.ts",
     include: ["test/unit/search-multi-select.spec.ts"]
   }

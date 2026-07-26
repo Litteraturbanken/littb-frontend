@@ -2,7 +2,16 @@ import { defineConfig } from "vitest/config"
 
 export default defineConfig({
   test: {
-    environment: "node",
-    include: ["test/unit/**/*.spec.ts"]
+    projects: [
+      {
+        test: {
+          name: "node-unit",
+          environment: "node",
+          include: ["test/unit/**/*.spec.ts"],
+          exclude: ["test/unit/search-multi-select.spec.ts"]
+        }
+      },
+      "./vitest.component.config.ts"
+    ]
   }
 })
