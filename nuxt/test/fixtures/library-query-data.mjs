@@ -382,6 +382,12 @@ export function libraryQueryStringResponse(query = {}) {
     response = query.sort_field === "sortkey|desc"
       ? libraryQueryPageTwoResponse
       : libraryQueryPageOneResponse
+  } else if (normalized.includes("pagination window")) {
+    response = {
+      ...libraryQueryPageOneResponse,
+      hits: 1700,
+      distinct_hits: 1700
+    }
   } else if (normalized.includes("inga")) {
     response = libraryQueryEmptyResponse
   } else if (normalized.includes("selma")) {

@@ -55,6 +55,16 @@ function publicOnlyEpubRequests(entries: Awaited<ReturnType<typeof epubRequests>
   return publicEpubRequests(entries).filter(entry => !entry.query.q?.includes(pdfPredicate))
 }
 
+function countOnlyEpubRequests(entries: Awaited<ReturnType<typeof epubRequests>>) {
+  return entries.filter(entry => entry.path === epubPath && entry.query.to === "0"
+    && !entry.query.q?.includes(pdfPredicate))
+}
+
+function countOnlyPdfRequests(entries: Awaited<ReturnType<typeof epubRequests>>) {
+  return entries.filter(entry => entry.path === epubPath && entry.query.to === "0"
+    && entry.query.q?.includes(pdfPredicate))
+}
+
 async function pushRoute(page: import("@playwright/test").Page, path: string) {
   await page.evaluate(async nextPath => {
     const root = document.querySelector("#__nuxt") as HTMLElement & {
@@ -1013,6 +1023,110 @@ test("EPUB pagination owns page state and keeps exact row anchors", async ({ pag
     "href",
     "/txt/epub/LagerlofS_GostaBerlingsSaga.epub"
   )
+})
+
+test("standalone EPUB keeps both format counts current without replacing active rows", async ({
+  page,
+  request
+}) => {
+  await page.goto("/epub?sort=popularitet", { waitUntil: "networkidle" })
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 201")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF: 201")
+  await reset(request)
+
+  await page.locator("[data-library-filter]").fill("Selma")
+  await expect(page.locator("[data-library-epub-row]")).toHaveCount(1)
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 1")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF: 1")
+
+  const ledger = await epubRequests(request)
+  expect(publicOnlyEpubRequests(ledger)).toHaveLength(1)
+  expect(countOnlyPdfRequests(ledger)).toHaveLength(1)
+  expect(countOnlyEpubRequests(ledger)).toHaveLength(0)
+  expect(publicOnlyEpubRequests(ledger)[0]?.query).toMatchObject({ from: "0", to: "100" })
+  expect(countOnlyPdfRequests(ledger)[0]?.query).toMatchObject({ from: "0", to: "0" })
+})
+
+test("a failed inactive standalone count leaves active rows and status intact", async ({ page }) => {
+  await page.goto("/epub?filter=invalid-hits&sort=popularitet", { waitUntil: "networkidle" })
+
+  await expect(page.locator("[data-library-epub-row]")).toHaveCount(3)
+  await expect(page.locator("[data-library-error]")).toHaveCount(0)
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 201")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF")
+})
+
+test("standalone format switches reuse counts but always fetch the selected rows", async ({
+  page,
+  request
+}) => {
+  await page.goto("/epub?sort=popularitet", { waitUntil: "networkidle" })
+  await reset(request)
+
+  await page.locator('[data-library-tab="pdf"]').click()
+  await expect(page.locator("[data-library-pdf-row]")).toHaveCount(5)
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 201")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF: 201")
+
+  const ledger = await epubRequests(request)
+  expect(publicPdfRequests(ledger)).toHaveLength(1)
+  expect(countOnlyEpubRequests(ledger)).toHaveLength(0)
+  expect(countOnlyPdfRequests(ledger)).toHaveLength(0)
+})
+
+test("a stale standalone inactive count cannot overwrite a newer filter identity", async ({
+  page,
+  request
+}) => {
+  await page.goto("/epub?sort=popularitet", { waitUntil: "networkidle" })
+  await reset(request)
+  await request.put(`${fixture}/_library_query_delays`, {
+    data: { [`${pdfQuery("Selma")}|popularity|desc|0|0`]: 900 }
+  })
+
+  const input = page.locator("[data-library-filter]")
+  await input.fill("Selma")
+  await expect.poll(async () => countOnlyPdfRequests(await epubRequests(request)).length).toBe(1)
+  await input.fill("inga")
+
+  await expect(page.locator("[data-library-empty]")).toBeVisible()
+  await page.waitForTimeout(1000)
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF")
+})
+
+test("EPUB pagination matches the legacy ten-page rotating window", async ({ page }) => {
+  await page.goto("/epub?filter=pagination%20window&sort=popularitet", {
+    waitUntil: "networkidle"
+  })
+
+  const items = page.locator('nav[aria-label="Sidnavigation"] li:not(:first-child):not(:last-child)')
+  await expect(items).toHaveText(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "..."])
+  await expect(page.locator('[data-library-page="17"]')).toHaveCount(0)
+})
+
+test("standalone advanced chronology refreshes both counts and preserves repeated query keys", async ({
+  page,
+  request
+}) => {
+  await page.goto("/epub?sort=popularitet", { waitUntil: "networkidle" })
+  await reset(request)
+
+  await pushRoute(
+    page,
+    "/epub?keep&keep=ja&avancerat=1&intervall=1900%2C1910&sort=popularitet"
+  )
+  await expect(page.locator('[data-library-tab="epub"]')).toHaveText("Epub: 201")
+  await expect(page.locator('[data-library-tab="pdf"]')).toHaveText("PDF: 201")
+  const url = new URL(page.url())
+  expect(url.searchParams.getAll("keep")).toEqual(["", "ja"])
+
+  const ledger = await epubRequests(request)
+  expect(publicOnlyEpubRequests(ledger)).toHaveLength(1)
+  expect(countOnlyPdfRequests(ledger)).toHaveLength(1)
+  for (const entry of ledger) {
+    expect(entry.query.q).toContain("sort_date_imprint.date:[1900 TO 1910]")
+  }
 })
 
 test("EPUB Back and Forward restore atomic route states once", async ({ page, request }) => {

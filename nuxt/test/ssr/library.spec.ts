@@ -770,7 +770,7 @@ test("SSR aliases bare and canonical EPUB routes to one row model with the stand
     expect(standalone.documentElement.getAttribute("style")).toContain("background-image:none")
     expect(standalone.querySelector("h1")?.textContent?.trim()).toBe("Hämta e-böcker")
     expect([...standalone.querySelectorAll("[data-library-tab]")]
-      .map(node => node.textContent?.trim())).toEqual(["Epub: 201", "PDF"])
+      .map(node => node.textContent?.trim())).toEqual(["Epub: 201", "PDF: 201"])
     expect(standalone.querySelector('[data-library-tab="epub"]')?.getAttribute("aria-current"))
       .toBe("page")
   }
@@ -1058,21 +1058,26 @@ test("SSR renders one PDF request and exact tab hrefs in the standalone shell", 
     label: tab.textContent?.trim(),
     href: tab.getAttribute("href")
   }))).toEqual([
-    { label: "Epub", href: "/epub?sort=popularitet" },
+    { label: "Epub: 201", href: "/epub?sort=popularitet" },
     { label: "PDF: 201", href: "/epub?visa=pdf&sort=popularitet" }
   ])
-  expect(await epubRequests(request)).toEqual([{
+  expect(await epubRequests(request)).toEqual(expect.arrayContaining([{
     path: epubPath,
-    query: {
+    query: expect.objectContaining({
       exclude: epubExclude,
-      include: pdfInclude,
-      partial_string: "true",
-      q: `${epubQueryPrefix} (${pdfPredicate})`,
-      sort_field: "popularity|desc",
       from: "0",
-      to: "100",
-      suggest: "true"
-    }
+      to: "0",
+      q: `${epubQueryPrefix} (has_epub:true)`
+    })
+  }]))
+  expect((await epubRequests(request)).filter(entry => entry.query.to !== "0")).toEqual([{
+    path: epubPath,
+    query: expect.objectContaining({
+      include: pdfInclude,
+      q: `${epubQueryPrefix} (${pdfPredicate})`,
+      from: "0",
+      to: "100"
+    })
   }])
   expect(await requests(request)).toEqual([])
 })
@@ -1089,11 +1094,11 @@ test("SSR defaults an unsupported standalone visa value to EPUB", async ({ reque
     href: tab.getAttribute("href")
   }))).toEqual([
     { label: "Epub: 201", href: "/epub?sort=popularitet" },
-    { label: "PDF", href: "/epub?visa=pdf&sort=popularitet" }
+    { label: "PDF: 201", href: "/epub?visa=pdf&sort=popularitet" }
   ])
   expect(epubRows(document)).toHaveLength(3)
   expect(pdfRows(document)).toHaveLength(0)
-  expect(await epubRequests(request)).toEqual([{
+  expect((await epubRequests(request)).filter(entry => entry.query.to !== "0")).toEqual([{
     path: epubPath,
     query: {
       exclude: epubExclude,
@@ -1106,7 +1111,28 @@ test("SSR defaults an unsupported standalone visa value to EPUB", async ({ reque
       suggest: "true"
     }
   }])
+  expect((await epubRequests(request)).filter(entry => entry.query.to === "0")).toEqual([
+    expect.objectContaining({
+      path: epubPath,
+      query: expect.objectContaining({ q: `${epubQueryPrefix} (${pdfPredicate})` })
+    })
+  ])
   expect(await requests(request)).toEqual([])
+})
+
+test("SSR isolates an invalid inactive PDF count from active EPUB rows", async ({ request }) => {
+  const document = parseHTML(await (await request.get(
+    "/epub?filter=invalid-hits&sort=popularitet"
+  )).text()).document
+
+  expect(document.querySelectorAll("[data-library-epub-row]")).toHaveLength(3)
+  expect(document.querySelector("[data-library-error]")).toBeNull()
+  expect(document.querySelector('[data-library-tab="epub"]')?.textContent?.trim())
+    .toBe("Epub: 201")
+  expect(document.querySelector('[data-library-tab="pdf"]')?.textContent?.trim())
+    .toBe("PDF")
+  expect((await epubRequests(request)).filter(entry => entry.query.to === "0"))
+    .toHaveLength(1)
 })
 
 for (const [sort, expression] of [

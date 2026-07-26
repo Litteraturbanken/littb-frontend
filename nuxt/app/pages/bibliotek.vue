@@ -2,6 +2,7 @@
 import type { CSSProperties, DirectiveBinding, ObjectDirective } from "vue"
 import type { LocationQuery, RouteLocationRaw } from "vue-router"
 import { canonicalNuxtHref, isNuxtInternalHref } from "~/lib/internal-navigation"
+import { legacyPaginationItems } from "~/lib/legacy-pagination"
 import {
   libraryAuthorTooltipText,
   usefulLibraryTooltipText
@@ -211,8 +212,8 @@ type LibraryPageData =
   | { mode: "authors", response: AuthorBrowseResponse }
   | { mode: "works" | "parts", response: BrowseResponse }
   | { mode: "latest", response: LatestResponse }
-  | { mode: "epub", response: EpubResponse }
-  | { mode: "pdf", response: PdfResponse }
+  | { mode: "epub", response: EpubResponse, inactiveCount?: number | null }
+  | { mode: "pdf", response: PdfResponse, inactiveCount?: number | null }
 
 type UnknownRecord = Record<string, unknown>
 
@@ -2056,6 +2057,42 @@ async function fetchPdfResults(
   }
 }
 
+async function fetchEpubCountResponse(
+  base: string,
+  filter: string,
+  advanced: LibraryAdvancedFilters,
+  signal?: AbortSignal
+): Promise<number | null> {
+  try {
+    const request = countOnlyRequestUrl(
+      epubRequestUrl(base, filter, "popularitet", 1, advanced)
+    )
+    const parsed = parseEpubResponse(await $fetch<unknown>(request, { signal, retry: 0 }))
+    return parsed.failed ? null : parsed.distinctHits
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return null
+  }
+}
+
+async function fetchPdfCountResponse(
+  base: string,
+  filter: string,
+  advanced: LibraryAdvancedFilters,
+  signal?: AbortSignal
+): Promise<number | null> {
+  try {
+    const request = countOnlyRequestUrl(
+      pdfRequestUrl(base, filter, "popularitet", 1, advanced)
+    )
+    const parsed = parsePdfResponse(await $fetch<unknown>(request, { signal, retry: 0 }))
+    return parsed.failed ? null : parsed.distinctHits
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") throw error
+    return null
+  }
+}
+
 const initialApiBase = import.meta.server
   ? config.libraryApiBase
   : config.public.libraryApiBase
@@ -2096,21 +2133,35 @@ const initialBrowseSort = initialState.mode === "authors"
       : "popularitet"
 async function fetchInitialData(): Promise<LibraryPageData> {
   if (initialState.mode === "epub") {
-    return {
-      mode: "epub",
-      response: await fetchEpubResults(
+    const [response, inactiveCount] = await Promise.all([
+      fetchEpubResults(
         initialApiBase, initialFilter, initialEpubSort, initialState.page,
         initialState.advancedFilters
-      )
+      ),
+      standalone
+        ? fetchPdfCountResponse(initialApiBase, initialFilter, initialState.advancedFilters)
+        : Promise.resolve(null)
+    ])
+    return {
+      mode: "epub",
+      response,
+      inactiveCount
     }
   }
   if (initialState.mode === "pdf") {
-    return {
-      mode: "pdf",
-      response: await fetchPdfResults(
+    const [response, inactiveCount] = await Promise.all([
+      fetchPdfResults(
         initialApiBase, initialFilter, initialEpubSort, initialState.page,
         initialState.advancedFilters
-      )
+      ),
+      standalone
+        ? fetchEpubCountResponse(initialApiBase, initialFilter, initialState.advancedFilters)
+        : Promise.resolve(null)
+    ])
+    return {
+      mode: "pdf",
+      response,
+      inactiveCount
     }
   }
   if (initialState.mode === "latest") {
@@ -2246,6 +2297,24 @@ const epubResults = ref(initialData.value?.mode === "epub"
 const pdfResults = ref(initialData.value?.mode === "pdf"
   ? initialData.value.response
   : emptyPdfResponse())
+type DownloadCounts = {
+  identity: string
+  epub: number | null
+  pdf: number | null
+}
+const initialDownloadCountIdentity = JSON.stringify([
+  initialFilter,
+  initialState.advancedFilters
+])
+const downloadCounts = ref<DownloadCounts>({
+  identity: initialDownloadCountIdentity,
+  epub: initialData.value?.mode === "epub" && !initialData.value.response.failed
+    ? initialData.value.response.distinctHits
+    : initialData.value?.mode === "pdf" ? initialData.value.inactiveCount ?? null : null,
+  pdf: initialData.value?.mode === "pdf" && !initialData.value.response.failed
+    ? initialData.value.response.distinctHits
+    : initialData.value?.mode === "epub" ? initialData.value.inactiveCount ?? null : null
+})
 const latestResults = ref(initialData.value?.mode === "latest"
   ? initialData.value.response
   : emptyLatestResponse())
@@ -2339,6 +2408,8 @@ let controller: AbortController | null = null
 let requestVersion = 0
 let countVersion = 0
 let countController: AbortController | null = null
+let downloadCountVersion = 0
+let downloadCountController: AbortController | null = null
 let ownedNavigation: { key: string, version: number } | null = null
 
 type QueryState = {
@@ -2432,6 +2503,63 @@ function invalidateIntent(): number {
 
 function browseCountIdentity(filterValue: string, advanced: LibraryAdvancedFilters): string {
   return JSON.stringify([filterValue, advanced])
+}
+
+function downloadCountIdentity(filterValue: string, advanced: LibraryAdvancedFilters): string {
+  return JSON.stringify([filterValue, advanced])
+}
+
+function invalidateDownloadCounts(filterValue: string, advanced: LibraryAdvancedFilters) {
+  if (!standalone) return
+  const identity = downloadCountIdentity(filterValue, advanced)
+  if (downloadCounts.value.identity === identity) return
+  downloadCountVersion += 1
+  downloadCountController?.abort()
+  downloadCountController = null
+  downloadCounts.value = { identity, epub: null, pdf: null }
+}
+
+function updateDownloadCount(
+  filterValue: string,
+  advanced: LibraryAdvancedFilters,
+  mode: "epub" | "pdf",
+  count: number
+) {
+  const identity = downloadCountIdentity(filterValue, advanced)
+  if (identity !== downloadCountIdentity(filter.value, currentState().advancedFilters)) return
+  const current = downloadCounts.value.identity === identity
+    ? downloadCounts.value
+    : { identity, epub: null, pdf: null }
+  downloadCounts.value = { ...current, identity, [mode]: count }
+}
+
+async function refreshInactiveDownloadCount(
+  filterValue: string,
+  advanced: LibraryAdvancedFilters,
+  activeMode: "epub" | "pdf"
+) {
+  if (!standalone) return
+  const identity = downloadCountIdentity(filterValue, advanced)
+  if (identity !== downloadCountIdentity(filter.value, currentState().advancedFilters)) return
+  if (downloadCounts.value.identity !== identity) invalidateDownloadCounts(filterValue, advanced)
+  const inactiveMode = activeMode === "epub" ? "pdf" : "epub"
+  if (downloadCounts.value[inactiveMode] !== null) return
+
+  const version = ++downloadCountVersion
+  downloadCountController?.abort()
+  const activeController = new AbortController()
+  downloadCountController = activeController
+  const count = await (inactiveMode === "epub"
+    ? fetchEpubCountResponse(
+        config.public.libraryApiBase, filterValue, advanced, activeController.signal
+      )
+    : fetchPdfCountResponse(
+        config.public.libraryApiBase, filterValue, advanced, activeController.signal
+      )).catch(() => null)
+  if (downloadCountController === activeController) downloadCountController = null
+  if (version !== downloadCountVersion || activeController.signal.aborted || count === null
+    || identity !== downloadCountIdentity(filter.value, currentState().advancedFilters)) return
+  updateDownloadCount(filterValue, advanced, inactiveMode, count)
 }
 
 function invalidateBrowseCounts(filterValue: string, advanced: LibraryAdvancedFilters) {
@@ -2632,8 +2760,22 @@ async function runBrowserRequest(state: QueryState, version: number) {
                 reversed
               ).catch(() => null)
   if (version !== requestVersion || response === null) return
-  if (state.mode === "epub") epubResults.value = response as EpubResponse
-  else if (state.mode === "pdf") pdfResults.value = response as PdfResponse
+  if (state.mode === "epub") {
+    epubResults.value = response as EpubResponse
+    if (!epubResults.value.failed) {
+      updateDownloadCount(
+        state.filter, state.advancedFilters, "epub", epubResults.value.distinctHits
+      )
+    }
+  }
+  else if (state.mode === "pdf") {
+    pdfResults.value = response as PdfResponse
+    if (!pdfResults.value.failed) {
+      updateDownloadCount(
+        state.filter, state.advancedFilters, "pdf", pdfResults.value.distinctHits
+      )
+    }
+  }
   else if (state.mode === "latest") latestResults.value = response as LatestResponse
   else if (state.mode === "authors") {
     authorResults.value = response as AuthorBrowseResponse
@@ -2675,6 +2817,9 @@ async function runBrowserRequest(state: QueryState, version: number) {
   if (!(response as { failed: boolean }).failed) {
     void refreshBrowseCounts(state.filter, state.advancedFilters)
   }
+  if (state.mode === "epub" || state.mode === "pdf") {
+    void refreshInactiveDownloadCount(state.filter, state.advancedFilters, state.mode)
+  }
 }
 
 async function persistAndRequest(state: QueryState, version: number) {
@@ -2697,6 +2842,7 @@ function beginIntent(state: QueryState, delay = 0) {
   const version = invalidateIntent()
   currentMode.value = captured.mode
   invalidateBrowseCounts(captured.filter, captured.advancedFilters)
+  invalidateDownloadCounts(captured.filter, captured.advancedFilters)
   filter.value = captured.filter
   currentPage.value = captured.page
   hide1800.value = captured.hide1800
@@ -3085,6 +3231,7 @@ watch(
     syncAdvancedControls(parsedRoute)
     currentMode.value = state.mode
     invalidateBrowseCounts(state.filter, state.advancedFilters)
+    invalidateDownloadCounts(state.filter, state.advancedFilters)
     filter.value = state.filter
     currentPage.value = state.page
     hide1800.value = state.hide1800
@@ -3230,6 +3377,12 @@ const downloadFailed = computed(() => currentMode.value === "pdf"
 const downloadDistinctHits = computed(() => currentMode.value === "pdf"
   ? pdfResults.value.distinctHits
   : epubResults.value.distinctHits)
+const epubTabCount = computed(() => standalone
+  ? downloadCounts.value.epub
+  : epubResults.value.distinctHits)
+const pdfTabCount = computed(() => standalone
+  ? downloadCounts.value.pdf
+  : pdfResults.value.distinctHits)
 const pageCount = computed(() => Math.ceil(
   (currentMode.value === "latest"
     ? latestResults.value.distinctHits
@@ -3242,29 +3395,7 @@ const pageCount = computed(() => Math.ceil(
         : downloadDistinctHits.value)
   / 100
 ))
-type PaginationItem = { key: string, page: number | null }
-
-function paginationItems(total: number, current: number): PaginationItem[] {
-  if (total <= 10) {
-    return Array.from({ length: total }, (_, index) => ({
-      key: `page-${index + 1}`,
-      page: index + 1
-    }))
-  }
-  let start = Math.max(2, Math.min(current - 3, total - 8))
-  let end = Math.min(total - 1, start + 7)
-  start = Math.max(2, end - 7)
-  const items: PaginationItem[] = [{ key: "page-1", page: 1 }]
-  if (start > 2) items.push({ key: "ellipsis-start", page: null })
-  for (let page = start; page <= end; page += 1) {
-    items.push({ key: `page-${page}`, page })
-  }
-  if (end < total - 1) items.push({ key: "ellipsis-end", page: null })
-  items.push({ key: `page-${total}`, page: total })
-  return items
-}
-
-const pages = computed(() => paginationItems(pageCount.value, currentPage.value))
+const pages = computed(() => legacyPaginationItems(pageCount.value, currentPage.value))
 
 function epubPageHref(page: number): string {
   return stateHref({
@@ -3308,6 +3439,9 @@ function disposeLibraryRequest() {
   countVersion += 1
   countController?.abort()
   countController = null
+  downloadCountVersion += 1
+  downloadCountController?.abort()
+  downloadCountController = null
   cancelPending()
 }
 
@@ -3619,7 +3753,7 @@ onUnmounted(() => {
                 class="sc btn btn-small text-base"
                 :class="{ active: currentMode === 'epub' }"
                 @click.prevent="selectMode('epub')"
-              >Epub<span v-if="epubResults.distinctHits" class="num_hits">: {{ epubResults.distinctHits }}</span></a>
+              >Epub<span v-if="epubTabCount" class="num_hits">: {{ epubTabCount }}</span></a>
               <template v-if="currentMode !== 'all'">{{ " " }}</template>
               <a
                 data-library-tab="pdf"
@@ -3628,10 +3762,10 @@ onUnmounted(() => {
                 class="sc btn btn-small text-base"
                 :class="{
                   active: currentMode === 'pdf',
-                  'relevance-unavailable': currentMode !== 'pdf' && !pdfResults.distinctHits
+                  'relevance-unavailable': currentMode !== 'pdf' && !pdfTabCount
                 }"
                 @click.prevent="selectMode('pdf')"
-              >PDF<span v-if="pdfResults.distinctHits" class="num_hits">: {{ pdfResults.distinctHits }}</span></a>
+              >PDF<span v-if="pdfTabCount" class="num_hits">: {{ pdfTabCount }}</span></a>
             </template>
             <template v-else>
               <a
@@ -3900,14 +4034,13 @@ onUnmounted(() => {
                   <a v-else data-library-pagination-previous :href="latestPageHref(currentPage - 1)" @click.prevent="selectPage(currentPage - 1)">Föregående</a>
                 </li>
                 <li v-for="item in pages" :key="item.key" :class="{ active: item.page === currentPage }">
-                  <span v-if="item.page === null" aria-hidden="true">…</span>
                   <a
-                    v-else
-                    :data-library-page="item.page"
+                    :data-library-page="item.label === '...' ? undefined : item.page"
+                    :data-library-pagination-ellipsis="item.label === '...' || undefined"
                     :href="latestPageHref(item.page)"
                     :aria-current="item.page === currentPage ? 'page' : undefined"
                     @click.prevent="selectPage(item.page)"
-                  >{{ item.page }}</a>
+                  >{{ item.label }}</a>
                 </li>
                 <li :class="{ disabled: currentPage >= pageCount }">
                   <span v-if="currentPage >= pageCount" data-library-pagination-next aria-disabled="true">Nästa</span>
@@ -4099,8 +4232,7 @@ onUnmounted(() => {
                   <a v-else data-library-pagination-previous :href="browsePageHref(currentPage - 1)" @click.prevent="selectPage(currentPage - 1)">Föregående</a>
                 </li>
                 <li v-for="item in pages" :key="item.key" :class="{ active: item.page === currentPage }">
-                  <span v-if="item.page === null" aria-hidden="true">…</span>
-                  <a v-else :data-library-page="item.page" :href="browsePageHref(item.page)" :aria-current="item.page === currentPage ? 'page' : undefined" @click.prevent="selectPage(item.page)">{{ item.page }}</a>
+                  <a :data-library-page="item.label === '...' ? undefined : item.page" :data-library-pagination-ellipsis="item.label === '...' || undefined" :href="browsePageHref(item.page)" :aria-current="item.page === currentPage ? 'page' : undefined" @click.prevent="selectPage(item.page)">{{ item.label }}</a>
                 </li>
                 <li :class="{ disabled: currentPage >= pageCount }">
                   <span v-if="currentPage >= pageCount" data-library-pagination-next aria-disabled="true">Nästa</span>
@@ -4219,14 +4351,13 @@ onUnmounted(() => {
                   :key="item.key"
                   :class="{ active: item.page === currentPage }"
                 >
-                  <span v-if="item.page === null" aria-hidden="true">…</span>
                   <a
-                    v-else
-                    :data-library-page="item.page"
+                    :data-library-page="item.label === '...' ? undefined : item.page"
+                    :data-library-pagination-ellipsis="item.label === '...' || undefined"
                     :href="epubPageHref(item.page)"
                     :aria-current="item.page === currentPage ? 'page' : undefined"
                     @click.prevent="selectPage(item.page)"
-                  >{{ item.page }}</a>
+                  >{{ item.label }}</a>
                 </li>
                 <li :class="{ disabled: currentPage >= pageCount }">
                   <span
