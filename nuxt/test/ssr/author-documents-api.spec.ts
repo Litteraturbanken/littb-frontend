@@ -203,7 +203,10 @@ test("supports the sparse descriptor without inventing optional navigation", asy
       audioUrl: null
     },
     documentKind: "presentation",
-    bodyHtml: '<p id="sparse-document-body">Ett litet giltigt författardokument.</p>'
+    bodyHtml: `
+  <p id="sparse-document-body">Ett litet giltigt författardokument.</p>
+  <p><a id="canonical-reader-link" href="/författare/SöderbergH/titlar/Förvillelser/sida/3/etext">Läs Förvillelser</a></p>
+`
   })
 })
 
